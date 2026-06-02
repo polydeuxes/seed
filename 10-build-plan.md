@@ -120,9 +120,29 @@ seed_runtime/policy.py
 tests/test_policy.py
 ```
 
-## Session 6: Tool execution path
+## Session 6: Context composer
 
-Goal: safely execute registered tools.
+Goal: present state to the model before execution logic grows. Even a dumb deterministic composer keeps model-facing context out of workflow code.
+
+Tasks:
+
+1. Implement ContextComposer.
+2. Select active goal.
+3. Select relevant entities and facts.
+4. Select visible tools.
+5. Include open Tool Needs.
+6. Add deterministic tests for context packet shape.
+
+Deliverable:
+
+```text
+seed_runtime/context.py
+tests/test_context.py
+```
+
+## Session 7: Tool execution path
+
+Goal: safely execute registered tools after the runtime has a stable context packet boundary.
 
 Tasks:
 
@@ -142,29 +162,23 @@ toolkits/core/echo/operations.py
 tests/test_execution.py
 ```
 
-## Session 7: Context composer
-
-Goal: present state to the model.
-
-Tasks:
-
-1. Implement ContextComposer.
-2. Select active goal.
-3. Select relevant entities and facts.
-4. Select visible tools.
-5. Include open Tool Needs.
-6. Add deterministic tests for context packet shape.
-
-Deliverable:
-
-```text
-seed_runtime/context.py
-tests/test_context.py
-```
-
 ## Session 8: Runtime loop without real LLM
 
-Goal: complete loop with fake model.
+Goal: complete the boring MVP loop with a fake model and no generated tools.
+
+MVP path:
+
+```text
+user input
+-> append input.user_message event
+-> project state
+-> compose context
+-> fake model returns Decision
+-> validate Decision
+-> echo tool or request_tool
+-> append result event
+-> project state in tests
+```
 
 Tasks:
 
@@ -175,8 +189,8 @@ Tasks:
    - answer
    - ask_question
    - request_tool
-   - call_tool
-5. Add tests for each branch.
+   - call_tool against the core `echo` tool only
+5. Add tests for each branch and one end-to-end MVP event/state projection test.
 
 Deliverable:
 
@@ -208,7 +222,8 @@ tests/test_tool_needs.py
 
 ## Session 10: Builder skeleton
 
-Goal: generate toolkit candidates from Tool Needs.
+Goal: generate toolkit candidates from Tool Needs only after the Session 8 runtime loop is passing. Do not start here; no builder, real LLM adapter, Ansible toolkit, or generated tools are part of the runtime MVP.
+
 
 Tasks:
 
