@@ -26,25 +26,44 @@ def sample_context() -> ContextPacket:
         workspace_id="workspace-1",
         session_id="session-1",
         current_input={"event_id": "event-1", "text": "is node-1 out of disk?"},
-        active_goal={"id": "goal-1", "summary": "Check node health", "status": "active"},
+        active_goal={
+            "id": "goal-1",
+            "summary": "Check node health",
+            "status": "active",
+        },
         entities=[{"id": "entity-1", "kind": "host", "name": "node-1"}],
-        facts=[{"id": "fact-1", "subject_id": "entity-1", "predicate": "disk_status", "value": "unknown"}],
+        facts=[
+            {
+                "id": "fact-1",
+                "subject_id": "entity-1",
+                "predicate": "disk_status",
+                "value": "unknown",
+            }
+        ],
         tools=[
             {
                 "name": "docker_storage_summary",
                 "summary": "Summarize Docker disk usage for a host.",
-                "input_schema": {"type": "object", "properties": {"host": {"type": "string"}}, "required": ["host"]},
+                "input_schema": {
+                    "type": "object",
+                    "properties": {"host": {"type": "string"}},
+                    "required": ["host"],
+                },
                 "policy_action": "read_docker_storage",
                 "risk_class": "L1",
             }
         ],
         open_tool_needs=[],
-        decision_schema={"kinds": ["answer", "ask_question", "call_tool", "request_tool", "refuse"]},
+        decision_schema={
+            "kinds": ["answer", "ask_question", "call_tool", "request_tool", "refuse"]
+        },
     )
 
 
 def test_strict_json_decision_parser_accepts_decision_object():
-    decision = StrictJSONDecisionParser().parse('{"kind":"answer","reason":"done","answer":"hello"}')
+    decision = StrictJSONDecisionParser().parse(
+        '{"kind":"answer","reason":"done","answer":"hello"}'
+    )
     assert decision.kind == "answer"
     assert decision.answer == "hello"
 
@@ -67,20 +86,42 @@ def test_serialize_decision_prompt_uses_stable_small_model_sections():
     assert "Return only one JSON object" in prompt
 
 
+def test_serialize_decision_prompt_includes_retry_prompt_when_present():
+    context = sample_context()
+    retry_context = ContextPacket(
+        **{
+            **context.to_dict(),
+            "retry_prompt": {"validation_errors": ["answer decisions require answer"]},
+        }
+    )
+
+    prompt = serialize_decision_prompt(retry_context)
+
+    assert "\n\nCORRECTION REQUIRED\n" in prompt
+    assert "answer decisions require answer" in prompt
+
+
 def test_decision_prompt_model_client_sends_serialized_context_to_transport():
-    transport = FakeTransport('{"kind":"answer","reason":"context has it","answer":"node-1 is healthy"}')
+    transport = FakeTransport(
+        '{"kind":"answer","reason":"context has it","answer":"node-1 is healthy"}'
+    )
     client = DecisionPromptModelClient(transport)
 
     raw = client.complete(sample_context())
 
-    assert raw == '{"kind":"answer","reason":"context has it","answer":"node-1 is healthy"}'
+    assert (
+        raw
+        == '{"kind":"answer","reason":"context has it","answer":"node-1 is healthy"}'
+    )
     assert len(transport.prompts) == 1
     assert "CURRENT INPUT" in transport.prompts[0]
     assert "OUTPUT JSON SCHEMA" in transport.prompts[0]
 
 
 def test_decision_prompt_model_client_is_injectable_into_parsed_decision_model():
-    transport = FakeTransport('{"kind":"call_tool","reason":"visible tool matches","tool_name":"docker_storage_summary","tool_arguments":{"host":"node-1"}}')
+    transport = FakeTransport(
+        '{"kind":"call_tool","reason":"visible tool matches","tool_name":"docker_storage_summary","tool_arguments":{"host":"node-1"}}'
+    )
     model = ParsedDecisionModel(DecisionPromptModelClient(transport))
 
     decision = model.decide(sample_context())
@@ -91,11 +132,13 @@ def test_decision_prompt_model_client_is_injectable_into_parsed_decision_model()
 
 
 def test_command_transport_writes_prompt_to_stdin_and_returns_stdout():
-    transport = CommandTransport([
-        "python",
-        "-c",
-        "import sys; prompt=sys.stdin.read(); print('{\\\"kind\\\":\\\"answer\\\",\\\"reason\\\":\\\"saw %s chars\\\",\\\"answer\\\":\\\"ok\\\"}' % len(prompt))",
-    ])
+    transport = CommandTransport(
+        [
+            "python",
+            "-c",
+            'import sys; prompt=sys.stdin.read(); print(\'{\\"kind\\":\\"answer\\",\\"reason\\":\\"saw %s chars\\",\\"answer\\":\\"ok\\"}\' % len(prompt))',
+        ]
+    )
 
     raw = transport.complete("hello")
 

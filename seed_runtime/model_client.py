@@ -14,15 +14,13 @@ from seed_runtime.serialization import to_plain
 
 
 class ModelClient(Protocol):
-    def complete(self, context: ContextPacket) -> str:
-        ...
+    def complete(self, context: ContextPacket) -> str: ...
 
 
 class TextCompletionTransport(Protocol):
     """Transport that turns a rendered prompt into raw model text."""
 
-    def complete(self, prompt: str) -> str:
-        ...
+    def complete(self, prompt: str) -> str: ...
 
 
 def serialize_decision_prompt(context: ContextPacket) -> str:
@@ -47,7 +45,14 @@ def serialize_decision_prompt(context: ContextPacket) -> str:
         "required_fields": ["kind", "reason"],
         "allowed_kinds": packet["decision_schema"].get(
             "kinds",
-            ["answer", "ask_question", "call_tool", "request_tool", "propose_state_patch", "refuse"],
+            [
+                "answer",
+                "ask_question",
+                "call_tool",
+                "request_tool",
+                "propose_state_patch",
+                "refuse",
+            ],
         ),
         "allowed_fields": [
             "kind",
@@ -60,8 +65,16 @@ def serialize_decision_prompt(context: ContextPacket) -> str:
             "state_patch",
         ],
         "examples": {
-            "answer": {"kind": "answer", "reason": "The context contains the answer.", "answer": "..."},
-            "ask_question": {"kind": "ask_question", "reason": "A required field is missing.", "question": "..."},
+            "answer": {
+                "kind": "answer",
+                "reason": "The context contains the answer.",
+                "answer": "...",
+            },
+            "ask_question": {
+                "kind": "ask_question",
+                "reason": "A required field is missing.",
+                "question": "...",
+            },
             "call_tool": {
                 "kind": "call_tool",
                 "reason": "A visible tool can satisfy the request.",
@@ -71,9 +84,16 @@ def serialize_decision_prompt(context: ContextPacket) -> str:
             "request_tool": {
                 "kind": "request_tool",
                 "reason": "No visible safe tool can satisfy the request.",
-                "tool_need": {"name": "snake_case_name", "summary": "What the missing tool should do.", "capability": "capability_name"},
+                "tool_need": {
+                    "name": "snake_case_name",
+                    "summary": "What the missing tool should do.",
+                    "capability": "capability_name",
+                },
             },
-            "refuse": {"kind": "refuse", "reason": "The request is unsafe or unsupported."},
+            "refuse": {
+                "kind": "refuse",
+                "reason": "The request is unsafe or unsupported.",
+            },
         },
     }
     sections = [
@@ -83,6 +103,8 @@ def serialize_decision_prompt(context: ContextPacket) -> str:
         ("TOOLS", _stable_json(packet["tools"])),
         ("OUTPUT JSON SCHEMA", _stable_json(output_schema)),
     ]
+    if packet.get("retry_prompt"):
+        sections.append(("CORRECTION REQUIRED", _stable_json(packet["retry_prompt"])))
     return "\n\n".join(f"{heading}\n{body}" for heading, body in sections)
 
 
@@ -105,7 +127,9 @@ class EndpointTransport:
         payload = {**self.extra_payload, self.prompt_field: prompt}
         body = json.dumps(payload).encode("utf-8")
         headers = {"Content-Type": "application/json", **self.headers}
-        http_request = request.Request(self.url, data=body, headers=headers, method="POST")
+        http_request = request.Request(
+            self.url, data=body, headers=headers, method="POST"
+        )
         with request.urlopen(http_request, timeout=self.timeout_seconds) as response:
             raw = response.read().decode("utf-8")
         return _extract_model_text(raw)
@@ -166,7 +190,9 @@ class DecisionPromptModelClient:
         timeout_seconds: float = 60.0,
         env: dict[str, str] | None = None,
     ) -> "DecisionPromptModelClient":
-        return cls(CommandTransport(command=command, timeout_seconds=timeout_seconds, env=env))
+        return cls(
+            CommandTransport(command=command, timeout_seconds=timeout_seconds, env=env)
+        )
 
     def complete(self, context: ContextPacket) -> str:
         return self.transport.complete(serialize_decision_prompt(context))
@@ -183,22 +209,37 @@ class StrictJSONDecisionParser:
         try:
             data = json.loads(text)
         except json.JSONDecodeError as exc:
-            raise DecisionParseError(f"model response is not valid JSON: {exc.msg}") from exc
+            raise DecisionParseError(
+                f"model response is not valid JSON: {exc.msg}"
+            ) from exc
         if not isinstance(data, dict):
             raise DecisionParseError("model response must be a JSON object")
         if "kind" not in data or "reason" not in data:
             raise DecisionParseError("decision requires kind and reason")
-        allowed = {"kind", "reason", "answer", "question", "tool_name", "tool_arguments", "tool_need", "state_patch"}
+        allowed = {
+            "kind",
+            "reason",
+            "answer",
+            "question",
+            "tool_name",
+            "tool_arguments",
+            "tool_need",
+            "state_patch",
+        }
         extra = sorted(set(data) - allowed)
         if extra:
-            raise DecisionParseError(f"decision contains unexpected fields: {', '.join(extra)}")
+            raise DecisionParseError(
+                f"decision contains unexpected fields: {', '.join(extra)}"
+            )
         return Decision(**data)
 
 
 class ParsedDecisionModel:
     """DecisionModel adapter around a text-generating model client."""
 
-    def __init__(self, client: ModelClient, parser: StrictJSONDecisionParser | None = None) -> None:
+    def __init__(
+        self, client: ModelClient, parser: StrictJSONDecisionParser | None = None
+    ) -> None:
         self.client = client
         self.parser = parser or StrictJSONDecisionParser()
 
