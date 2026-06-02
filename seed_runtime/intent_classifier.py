@@ -31,6 +31,11 @@ else:
 IntentLabel = Literal["echo", "answer", "missing_tool", "clarify", "refuse"]
 
 _VALID_TOOL_NAME_CHARS = re.compile(r"[^a-z0-9]+")
+_CATEGORY_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"\b(weather|forecast|temperature)\b", re.IGNORECASE), "weather_lookup"),
+    (re.compile(r"\b(install|setup|set\s+up)\b", re.IGNORECASE), "installation"),
+    (re.compile(r"\b(check|status|inspect)\b", re.IGNORECASE), "inspection"),
+)
 
 
 class IntentClassification(SeedModel):
@@ -295,20 +300,11 @@ class DecisionBuilder:
             answer = str(arguments.get("answer") or arguments.get("message") or "")
             return Decision(kind="answer", reason=reason, answer=answer)
         if classification.intent == "missing_tool":
-            name = _tool_name(arguments, _input_text(context))
-            summary = str(
-                arguments.get("summary")
-                or f"Provide the missing capability for: {_input_text(context) or name}."
-            )
-            capability = _snake_name(str(arguments.get("capability") or name))
+            tool_need = _normalize_tool_need(arguments, _input_text(context))
             return Decision(
                 kind="request_tool",
                 reason=reason,
-                tool_need={
-                    "name": name,
-                    "summary": summary,
-                    "capability": capability,
-                },
+                tool_need=tool_need,
             )
         if classification.intent == "clarify":
             question = str(arguments.get("question") or "What would you like me to do?")
@@ -367,12 +363,70 @@ def _echo_message(text: str) -> str:
     return text[5:] if text.lower().startswith("echo ") else text
 
 
+def _normalize_tool_need(arguments: dict[str, Any], text: str) -> dict[str, str]:
+    name = _tool_name(arguments, text)
+    summary = str(arguments.get("summary") or _tool_summary(name, text))
+    capability = _snake_name(str(arguments.get("capability") or name))
+    return {"name": name, "summary": summary, "capability": capability}
+
+
 def _tool_name(arguments: dict[str, Any], text: str) -> str:
     for key in ("name", "tool_name"):
         value = arguments.get(key)
         if isinstance(value, str) and value.strip():
             return _snake_name(value)
+    category = _tool_need_category(text)
+    if category == "weather_lookup":
+        return category
+    if category == "installation":
+        install_target = _imperative_target(text, ("install", "setup", "set up"))
+        if install_target:
+            action = (
+                "setup"
+                if text.strip().lower().startswith(("setup", "set up"))
+                else "install"
+            )
+            return _snake_name(f"{action} {install_target}")
+        return category
+    if category == "inspection":
+        inspect_target = _imperative_target(text, ("check", "status", "inspect"))
+        if inspect_target:
+            action = "inspect" if text.strip().lower().startswith("inspect") else "check"
+            return _snake_name(f"{action} {inspect_target}")
+        return category
     return _snake_name(text) or "missing_tool"
+
+
+def _tool_summary(name: str, text: str) -> str:
+    category = _tool_need_category(text)
+    if category == "weather_lookup":
+        return "Look up weather information."
+    if category == "installation" and name == category:
+        return "Provide installation or setup support."
+    if category == "inspection" and name == category:
+        return "Inspect or check the requested status."
+    source = text.strip() or name
+    return f"Provide the missing capability for: {source}."
+
+
+def _tool_need_category(text: str) -> str | None:
+    for pattern, category in _CATEGORY_PATTERNS:
+        if pattern.search(text):
+            return category
+    return None
+
+
+def _imperative_target(text: str, verbs: tuple[str, ...]) -> str:
+    stripped = text.strip()
+    for verb in sorted(verbs, key=len, reverse=True):
+        match = re.match(
+            rf"^{re.escape(verb)}\b[\s:,-]*(?P<target>.+)$",
+            stripped,
+            re.IGNORECASE,
+        )
+        if match:
+            return match.group("target").strip()
+    return ""
 
 
 def _snake_name(value: str) -> str:
