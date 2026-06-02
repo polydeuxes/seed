@@ -220,7 +220,30 @@ seed_runtime/tool_needs.py
 tests/test_tool_needs.py
 ```
 
-## Session 10: Builder skeleton
+## Session 10: Evidence and Fact System
+
+Goal: separate observations from facts.
+
+Seed's runtime should make the evidence-to-fact pipeline explicit before generated tools expand what the system can observe. Tools produce observations, Evidence preserves those observations, Facts project validated interpretations, State composes those Facts, and Decisions choose whether to answer, ask, or call tools.
+
+Tasks:
+
+1. Implement Evidence model.
+2. Implement Fact model.
+3. Implement FactExtractor.
+4. Implement FactValidator.
+5. Record provenance links.
+6. Add freshness support.
+
+Deliverable:
+
+```text
+seed_runtime/evidence.py
+seed_runtime/facts.py
+tests/test_fact_extraction.py
+```
+
+## Session 11: Builder skeleton
 
 Goal: generate toolkit candidates from Tool Needs only after the Session 8 runtime loop is passing. Do not start here; no builder, real LLM adapter, Ansible toolkit, or generated tools are part of the runtime MVP.
 
@@ -245,7 +268,7 @@ seed_builder/templates/
 tests/test_builder_generator.py
 ```
 
-## Session 11: Toolkit validator
+## Session 12: Toolkit validator
 
 Goal: reject bad generated candidates.
 
@@ -265,7 +288,7 @@ seed_builder/validator.py
 tests/test_toolkit_validator.py
 ```
 
-## Session 12: Registration flow
+## Session 13: Registration flow
 
 Goal: move validated candidate into registry.
 
@@ -285,7 +308,7 @@ seed_builder/registration.py
 tests/test_toolkit_registration.py
 ```
 
-## Session 13: First realistic generated toolkit
+## Session 14: First realistic generated toolkit
 
 Goal: prove the concept with a harmless toolkit.
 
@@ -306,7 +329,7 @@ Deliverable:
 toolkits/generated/host_notes/...
 ```
 
-## Session 14: SSH access toolkit design
+## Session 15: SSH access toolkit design
 
 Goal: draft but do not blindly execute mutating host tools.
 
@@ -322,7 +345,7 @@ Deliverable:
 toolkits/generated/ssh_access/...
 ```
 
-## Session 15: Model integration
+## Session 16: Model integration
 
 Goal: connect a real model behind DecisionModel.
 
@@ -341,7 +364,7 @@ seed_runtime/model_client.py
 tests/test_model_contract.py
 ```
 
-## Session 16: API shell
+## Session 17: API shell
 
 Goal: expose runtime without making API routes the architecture.
 
@@ -362,7 +385,7 @@ Deliverable:
 seed_runtime/api.py
 ```
 
-## Session 17: Persistence
+## Session 18: Persistence
 
 Goal: replace in-memory store.
 
@@ -373,7 +396,7 @@ Tasks:
 3. Add migration or schema init.
 4. Add tests using temp DB.
 
-## Session 18: Evaluation harness
+## Session 19: Evaluation harness
 
 Goal: stop guessing whether the loop works.
 
@@ -384,7 +407,7 @@ Tasks:
 3. Track validity and correctness.
 4. Include small model and fake model modes.
 
-## Session 19: Hardening
+## Session 20: Hardening
 
 Tasks:
 
@@ -395,7 +418,7 @@ Tasks:
 5. Toolkit versioning.
 6. Context packet persistence.
 
-## Session 20: Demo scenario
+## Session 21: Demo scenario
 
 Build one coherent demo:
 

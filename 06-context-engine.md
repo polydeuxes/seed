@@ -82,6 +82,92 @@ Context composer pulls from:
 - policy summaries
 - previous failed decisions
 
+The context engine should stay focused on selecting and composing relevant state for the model. Knowledge acquisition, evidence capture, fact extraction, and fact validation belong to the knowledge and evidence system.
+
+## Knowledge classes
+
+Not all knowledge should be treated equally. Seed should distinguish between:
+
+1. Operational knowledge
+2. Structured knowledge
+3. Retrieved knowledge
+4. Derived knowledge
+5. User-supplied knowledge
+
+### Operational knowledge
+
+Produced by tools observing real systems.
+
+Examples:
+
+- Prometheus metrics
+- SSH inspection
+- Docker status
+- Home Assistant state
+- Cloud APIs
+
+Operational knowledge has the highest priority for infrastructure decisions because it reflects the current environment.
+
+Examples:
+
+- node210 disk usage
+- container health
+- service status
+
+### Structured knowledge
+
+Produced by curated knowledge systems.
+
+Examples:
+
+- Wikidata
+- local knowledge graphs
+- internal inventories
+- CMDB records
+
+Structured knowledge is useful for stable or curated facts such as:
+
+- capital cities
+- chemical properties
+- astronomical values
+- historical dates
+
+### Retrieved knowledge
+
+Information retrieved from documents.
+
+Examples:
+
+- documentation
+- wiki pages
+- RFCs
+- README files
+
+Retrieved knowledge should be treated as evidence rather than direct fact.
+
+### Derived knowledge
+
+Generated from reasoning over facts.
+
+Examples:
+
+- root-cause hypotheses
+- capacity forecasts
+- risk assessments
+
+Derived knowledge should always record supporting evidence.
+
+### User-supplied knowledge
+
+Claims made by users.
+
+Examples:
+
+- "My server is down."
+- "Node210 is the registry."
+
+User statements are evidence until verified.
+
 ## Context budget
 
 Design for small models first. Keep context short and structured.

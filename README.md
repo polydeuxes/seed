@@ -81,6 +81,7 @@ Read in this order:
 10. [`10-build-plan.md`](10-build-plan.md) — multi-day Codex session plan.
 11. [`11-naming.md`](11-naming.md) — better names and terms to avoid.
 12. [`12-open-questions.md`](12-open-questions.md) — decisions to make while building.
+13. [`13-knowledge-and-evidence.md`](13-knowledge-and-evidence.md) — evidence-to-fact pipeline and knowledge source trust classes.
 
 ## Suggested repo shape
 
@@ -126,4 +127,10 @@ And more like this:
 User -> event -> state -> context -> model decision -> validated action -> state
 ```
 
-The API is not the center. The context loop is the center.
+The API is not the center. The context loop is the center, and the context loop depends on a more fundamental knowledge loop:
+
+```text
+Evidence -> Facts -> State -> Decisions -> Tools
+```
+
+Tools are how Seed observes and acts. Evidence, facts, and state are how Seed knows what is true enough to decide.

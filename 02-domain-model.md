@@ -110,6 +110,7 @@ A claim about an entity or goal, with freshness and provenance.
   "predicate": "ssh.service.running",
   "value": false,
   "source_event_id": "evt_...",
+  "evidence_ids": ["evid_..."],
   "observed_at": "...",
   "expires_at": "...",
   "confidence": 0.8
@@ -117,6 +118,35 @@ A claim about an entity or goal, with freshness and provenance.
 ```
 
 Facts should be explicit about staleness. The context engine should prefer fresh facts and label stale ones.
+
+Facts may be derived from one or more Evidence records. Facts are projected interpretations of Evidence, not raw observations.
+
+### Evidence
+
+Raw observations that may support Facts.
+
+Examples:
+
+- Prometheus query result
+- SSH command output
+- API response
+- User statement
+- Documentation excerpt
+- Wikidata record
+
+Fields:
+
+```json
+{
+  "id": "evid_...",
+  "source": "prometheus",
+  "observed_at": "...",
+  "payload": {},
+  "confidence": 0.95
+}
+```
+
+Evidence is immutable. Facts may be extracted, validated, revised, expired, or superseded as interpretations of one or more Evidence records.
 
 ### Capability
 
