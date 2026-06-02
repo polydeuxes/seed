@@ -115,6 +115,25 @@ class StateProjector:
             action_plan = ActionPlan(**data)
             state.action_plans[action_plan.id] = action_plan
         elif event.kind in {
+            "action_plan.accepted",
+            "action_plan.rejected",
+            "action_plan.superseded",
+        }:
+            action_plan_id = payload["action_plan_id"]
+            if action_plan_id in state.action_plans:
+                current = state.action_plans[action_plan_id]
+                update = {"status": payload.get("status", event.kind.rsplit(".", 1)[-1])}
+                if event.kind == "action_plan.rejected":
+                    update["rejection_reason"] = payload.get("reason")
+                    update["replacement_plan_id"] = None
+                elif event.kind == "action_plan.superseded":
+                    update["rejection_reason"] = None
+                    update["replacement_plan_id"] = payload.get("replacement_plan_id")
+                elif event.kind == "action_plan.accepted":
+                    update["rejection_reason"] = None
+                    update["replacement_plan_id"] = None
+                state.action_plans[action_plan_id] = current.model_copy(update=update)
+        elif event.kind in {
             "pending_action.status_changed",
             "pending_action.approved",
             "pending_action.completed",

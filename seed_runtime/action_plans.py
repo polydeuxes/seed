@@ -6,16 +6,20 @@ from typing import Iterable, cast
 
 from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
-from seed_runtime.models import ActionPlan, RiskClass, ToolNeed
+from seed_runtime.models import ActionPlan, Actor, RiskClass, ToolNeed
 from seed_runtime.recommendation_ranker import RankedRecommendation
-from seed_runtime.state import State
+from seed_runtime.state import State, StateProjector
 from seed_runtime.tool_needs import slugify
 
 _MUTATING_RISK_CLASSES: set[str] = {"L3", "L4"}
 
 
+class ActionPlanNotFoundError(ValueError):
+    """Raised when a lifecycle event targets a missing action plan."""
+
+
 class ActionPlanService:
-    """Create safe proposed next actions from ranked recommendations."""
+    """Create and lifecycle-manage safe proposed next actions."""
 
     def __init__(self, ledger: EventLedger | None = None) -> None:
         self.ledger = ledger
@@ -65,6 +69,121 @@ class ActionPlanService:
                 actor="system",
                 session_id=session_id,
                 causation_id=causation_id,
+            )
+        return plan
+
+    def accept_plan(
+        self,
+        workspace_id: str,
+        action_plan_id: str,
+        *,
+        actor: Actor = "user",
+        session_id: str | None = None,
+        causation_id: str | None = None,
+        correlation_id: str | None = None,
+    ) -> ActionPlan:
+        """Record that a proposed action plan was accepted.
+
+        Acceptance only changes lifecycle state; it does not execute the plan,
+        approve tool calls, or register tools.
+        """
+        plan = self._require_plan(workspace_id, action_plan_id)
+        self._require_ledger().append(
+            "action_plan.accepted",
+            workspace_id,
+            {"action_plan_id": action_plan_id, "status": "accepted"},
+            actor=actor,
+            session_id=session_id,
+            causation_id=causation_id,
+            correlation_id=correlation_id,
+        )
+        return plan.model_copy(
+            update={
+                "status": "accepted",
+                "rejection_reason": None,
+                "replacement_plan_id": None,
+            }
+        )
+
+    def reject_plan(
+        self,
+        workspace_id: str,
+        action_plan_id: str,
+        reason: str,
+        *,
+        actor: Actor = "user",
+        session_id: str | None = None,
+        causation_id: str | None = None,
+        correlation_id: str | None = None,
+    ) -> ActionPlan:
+        """Record that an action plan was rejected with a human-readable reason."""
+        plan = self._require_plan(workspace_id, action_plan_id)
+        self._require_ledger().append(
+            "action_plan.rejected",
+            workspace_id,
+            {
+                "action_plan_id": action_plan_id,
+                "status": "rejected",
+                "reason": reason,
+            },
+            actor=actor,
+            session_id=session_id,
+            causation_id=causation_id,
+            correlation_id=correlation_id,
+        )
+        return plan.model_copy(
+            update={
+                "status": "rejected",
+                "rejection_reason": reason,
+                "replacement_plan_id": None,
+            }
+        )
+
+    def supersede_plan(
+        self,
+        workspace_id: str,
+        action_plan_id: str,
+        replacement_plan_id: str,
+        *,
+        actor: Actor = "user",
+        session_id: str | None = None,
+        causation_id: str | None = None,
+        correlation_id: str | None = None,
+    ) -> ActionPlan:
+        """Record that an action plan was replaced by another plan."""
+        plan = self._require_plan(workspace_id, action_plan_id)
+        self._require_ledger().append(
+            "action_plan.superseded",
+            workspace_id,
+            {
+                "action_plan_id": action_plan_id,
+                "status": "superseded",
+                "replacement_plan_id": replacement_plan_id,
+            },
+            actor=actor,
+            session_id=session_id,
+            causation_id=causation_id,
+            correlation_id=correlation_id,
+        )
+        return plan.model_copy(
+            update={
+                "status": "superseded",
+                "rejection_reason": None,
+                "replacement_plan_id": replacement_plan_id,
+            }
+        )
+
+    def _require_ledger(self) -> EventLedger:
+        if self.ledger is None:
+            raise RuntimeError("ActionPlanService lifecycle methods require a ledger")
+        return self.ledger
+
+    def _require_plan(self, workspace_id: str, action_plan_id: str) -> ActionPlan:
+        state = StateProjector(self._require_ledger()).project(workspace_id)
+        plan = state.action_plans.get(action_plan_id)
+        if plan is None:
+            raise ActionPlanNotFoundError(
+                f"action plan not found in workspace {workspace_id!r}: {action_plan_id}"
             )
         return plan
 

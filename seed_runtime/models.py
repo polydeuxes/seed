@@ -38,6 +38,7 @@ DecisionKind = Literal[
 PolicyOutcome = Literal["allow", "block", "require_confirmation", "require_approval"]
 RiskClass = Literal["L1", "L2", "L3", "L4"]
 PendingActionStatus = Literal["pending", "approved", "completed", "cancelled"]
+ActionPlanStatus = Literal["proposed", "accepted", "rejected", "superseded"]
 
 
 def utc_now() -> datetime:
@@ -117,6 +118,9 @@ class ActionPlan(SeedModel):
     steps: list[str]
     risk_class: RiskClass
     requires_approval: bool
+    status: ActionPlanStatus = "proposed"
+    rejection_reason: str | None = None
+    replacement_plan_id: str | None = None
     executable: Literal[False] = False
 
 
