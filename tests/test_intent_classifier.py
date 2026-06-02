@@ -9,6 +9,7 @@ from seed_runtime.intent_classifier import (
     IntentClassification,
     IntentDecisionModel,
     IntentPromptModelClient,
+    StrictJSONIntentParser,
     TextIntentClassifier,
     build_intent_prompt,
 )
@@ -275,6 +276,55 @@ def test_text_intent_classifier_uses_intent_prompt_client_and_parses_intent():
     assert classification.reason == "needs weather tool"
     assert classification.arguments == {"name": "weather_lookup"}
 
+
+def test_strict_json_intent_parser_defaults_missing_arguments_to_empty_dict():
+    classification = StrictJSONIntentParser().parse(
+        json.dumps({"intent": "answer", "reason": "Can answer directly."})
+    )
+
+    assert classification.arguments == {}
+
+
+def test_strict_json_intent_parser_defaults_null_arguments_to_empty_dict():
+    classification = StrictJSONIntentParser().parse(
+        json.dumps(
+            {
+                "intent": "clarify",
+                "reason": "Need more detail.",
+                "arguments": None,
+            }
+        )
+    )
+
+    assert classification.arguments == {}
+
+
+def test_strict_json_intent_parser_rejects_non_object_arguments():
+    with pytest.raises(DecisionParseError, match="arguments must be a JSON object"):
+        StrictJSONIntentParser().parse(
+            json.dumps(
+                {
+                    "intent": "answer",
+                    "reason": "Can answer directly.",
+                    "arguments": [],
+                }
+            )
+        )
+
+
+def test_strict_json_intent_parser_wraps_invalid_intent_validation():
+    with pytest.raises(
+        DecisionParseError, match="intent classification failed validation"
+    ):
+        StrictJSONIntentParser().parse(
+            json.dumps(
+                {
+                    "intent": "invalid",
+                    "reason": "Unsupported intent label.",
+                    "arguments": {},
+                }
+            )
+        )
 
 def test_text_intent_classifier_uses_strict_json_intent_parser():
     transport = FakeTransport(

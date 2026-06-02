@@ -110,7 +110,19 @@ class StrictJSONIntentParser:
             raise DecisionParseError(
                 "intent classification contains unexpected fields: " + ", ".join(extra)
             )
-        return IntentClassification(**data)
+        arguments = data.get("arguments")
+        if arguments is None:
+            data["arguments"] = {}
+        elif not isinstance(arguments, dict):
+            raise DecisionParseError(
+                "intent classification arguments must be a JSON object"
+            )
+        try:
+            return IntentClassification(**data)
+        except Exception as exc:
+            raise DecisionParseError(
+                f"intent classification failed validation: {exc}"
+            ) from exc
 
 
 class IntentPromptModelClient:
