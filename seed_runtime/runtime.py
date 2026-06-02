@@ -13,6 +13,7 @@ from seed_runtime.model_client import DecisionParseError
 from seed_runtime.models import Decision, RuntimeResponse
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
+from seed_runtime.state_patches import StatePatchError, StatePatchService
 from seed_runtime.tool_needs import ToolNeedService
 
 
@@ -48,6 +49,7 @@ class Runtime:
         self.decision_validator = decision_validator
         self.tool_executor = tool_executor
         self.tool_need_service = tool_need_service
+        self.state_patch_service = StatePatchService(ledger, projector)
         self.model = model
         self.max_decision_retries = max(0, max_decision_retries)
 
@@ -231,6 +233,37 @@ class Runtime:
                 kind=result.kind,
                 message=result.message,
                 payload=result.payload,
+            )
+        if decision.kind == "propose_state_patch":
+            try:
+                result = self.state_patch_service.apply(
+                    workspace_id,
+                    decision.state_patch or {},
+                    session_id=session_id,
+                    causation_id=causation_id,
+                )
+            except StatePatchError as exc:
+                self.ledger.append(
+                    "state.patch.rejected",
+                    workspace_id,
+                    {"error": str(exc), "state_patch": decision.state_patch or {}},
+                    actor="system",
+                    session_id=session_id,
+                    causation_id=causation_id,
+                )
+                return RuntimeResponse(
+                    kind="invalid_state_patch",
+                    message="State patch failed validation.",
+                    payload={"errors": [str(exc)]},
+                )
+            event_ids = [event.id for event in result.events]
+            return RuntimeResponse(
+                kind="state_updated",
+                message=f"Applied {len(result.events)} state patch operation(s).",
+                payload={
+                    "event_ids": event_ids,
+                    "events": [to_plain(event) for event in result.events],
+                },
             )
         if decision.kind == "refuse":
             self.ledger.append(
