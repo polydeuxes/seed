@@ -16,6 +16,7 @@ from seed_runtime.base import SeedModel
 from seed_runtime.context import ContextPacket
 from seed_runtime.model_client import DecisionParseError, ModelClient
 from seed_runtime.models import Decision
+from seed_runtime.serialization import to_plain
 
 if find_spec("pydantic") is not None:
     from pydantic import Field
@@ -76,8 +77,8 @@ class StrictJSONIntentParser:
         return IntentClassification(**data)
 
 
-class ParsedIntentClassifier:
-    """IntentClassifier adapter around an existing text-generating model client."""
+class TextIntentClassifier:
+    """IntentClassifier adapter around any text-generating ModelClient."""
 
     def __init__(
         self, client: ModelClient, parser: StrictJSONIntentParser | None = None
@@ -87,6 +88,32 @@ class ParsedIntentClassifier:
 
     def classify(self, context: ContextPacket) -> IntentClassification:
         return self.parser.parse(self.client.complete(context))
+
+
+ParsedIntentClassifier = TextIntentClassifier
+
+
+def build_intent_prompt(context: ContextPacket) -> str:
+    """Build a provider-neutral prompt for intent-only classification."""
+
+    context_json = _stable_json(to_plain(context.to_dict()))
+    shape_json = json.dumps(
+        {
+            "intent": "echo|answer|missing_tool|clarify|refuse",
+            "reason": "...",
+            "arguments": {},
+        },
+        separators=(",", ":"),
+    )
+    return "\n\n".join(
+        [
+            "You are classifying the user's intent for the Seed runtime.",
+            "Choose exactly one intent: echo, answer, missing_tool, clarify, refuse.",
+            f"CONTEXT JSON\n{context_json}",
+            f"REQUIRED JSON OUTPUT\n{shape_json}",
+            "Return only JSON, no markdown, no prose.",
+        ]
+    )
 
 
 class DecisionBuilder:
@@ -196,3 +223,7 @@ def _snake_name(value: str) -> str:
     stripped = value.strip().lower()
     name = _VALID_TOOL_NAME_CHARS.sub("_", stripped).strip("_")
     return name[:64] or "missing_tool"
+
+
+def _stable_json(value: Any) -> str:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"))
