@@ -15,6 +15,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from seed_runtime.action_plans import ActionPlanService
 from seed_runtime.context import ContextComposer
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
@@ -27,7 +28,7 @@ from seed_runtime.intent_classifier import (
     IntentPromptModelClient,
     TextIntentClassifier,
 )
-from seed_runtime.models import Event, utc_now
+from seed_runtime.models import Event, ToolNeed, utc_now
 from seed_runtime.registry import ToolRegistry
 from seed_runtime.runtime import Runtime
 from seed_runtime.serialization import to_plain
@@ -71,6 +72,52 @@ class LocalSeedApp:
                 to_plain(event) for event in self.ledger.list(self.workspace_id)
             ],
         }
+
+    def create_action_plan(self, result: dict[str, Any]) -> dict[str, Any] | None:
+        """Create a safe, text-only plan for the top tool recommendation, if any."""
+
+        response = result.get("response")
+        if not isinstance(response, dict) or response.get("kind") != "tool_need":
+            return None
+
+        payload = response.get("payload")
+        if not isinstance(payload, dict):
+            return None
+
+        tool_need_payload = payload.get("tool_need")
+        recommendations = payload.get("recommendations")
+        if not isinstance(tool_need_payload, dict):
+            return None
+        if not isinstance(recommendations, list) or not recommendations:
+            return None
+
+        top_recommendation = recommendations[0]
+        if not isinstance(top_recommendation, dict):
+            return None
+        top_provider = top_recommendation.get("provider")
+        if not isinstance(top_provider, str) or not top_provider:
+            return None
+
+        tool_need = ToolNeed(**tool_need_payload)
+        state = self.projector.project(self.workspace_id)
+        ranked_recommendations = self.runtime.recommendation_ranker.rank(
+            tool_need.capability,
+            self.runtime.capability_catalog.recommend_for(tool_need),
+            state,
+        )
+        full_recommendation = next(
+            (
+                recommendation
+                for recommendation in ranked_recommendations
+                if recommendation.provider == top_provider
+            ),
+            None,
+        )
+        if full_recommendation is None:
+            return None
+
+        plan = ActionPlanService().create_plan(tool_need, full_recommendation, state)
+        return to_plain(plan)
 
     def seed_facts(self, facts: list[DevFactSeed]) -> None:
         """Append local development evidence and fact events into the ledger."""
@@ -202,6 +249,14 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="print raw model output and exit without running the runtime",
     )
+    parser.add_argument(
+        "--plan",
+        action="store_true",
+        help=(
+            "when a tool need has ranked recommendations, print a safe, "
+            "non-executable plan for the top recommendation"
+        ),
+    )
     parser.add_argument("--model", default=DEFAULT_MODEL, help="Ollama model name")
     parser.add_argument(
         "--endpoint",
@@ -301,11 +356,14 @@ def format_cli_output(
     *,
     include_events: bool = False,
     raw_output: str | None = None,
+    action_plan: dict[str, Any] | None = None,
 ) -> str:
     sections: list[str] = []
     if raw_output is not None:
         sections.extend(["Raw model output:", raw_output])
     sections.append(format_response_summary(result))
+    if action_plan is not None:
+        sections.append(format_action_plan(action_plan))
     if include_events:
         sections.extend(
             [
@@ -314,6 +372,19 @@ def format_cli_output(
             ]
         )
     return "\n".join(sections)
+
+
+def format_action_plan(plan: dict[str, Any]) -> str:
+    lines = ["Plan:"]
+    summary = str(plan.get("summary") or "").strip()
+    if summary:
+        lines.append(summary)
+    steps = plan.get("steps")
+    if isinstance(steps, list):
+        for step in steps:
+            if step is not None:
+                lines.append(f"- {step}")
+    return "\n".join(lines)
 
 
 def run_http(app: LocalSeedApp, host: str, port: int) -> None:
@@ -376,6 +447,7 @@ def run_shell(
     raw: bool = False,
     raw_only: bool = False,
     events: bool = False,
+    plan: bool = False,
 ) -> None:
     print("Seed local shell. Press Ctrl-D or type 'exit' to quit.", file=sys.stderr)
     while True:
@@ -392,9 +464,14 @@ def run_shell(
             print(app.raw(text))
             continue
         raw_output = app.raw(text) if raw else None
+        result = app.run(text)
+        action_plan = app.create_action_plan(result) if plan else None
         print(
             format_cli_output(
-                app.run(text), include_events=events, raw_output=raw_output
+                result,
+                include_events=events,
+                raw_output=raw_output,
+                action_plan=action_plan,
             )
         )
 
@@ -422,14 +499,21 @@ def main(argv: list[str] | None = None) -> int:
             print(app.raw(message))
             return 0
         raw_output = app.raw(message) if args.raw else None
+        result = app.run(message)
+        action_plan = app.create_action_plan(result) if args.plan else None
         print(
             format_cli_output(
-                app.run(message), include_events=args.events, raw_output=raw_output
+                result,
+                include_events=args.events,
+                raw_output=raw_output,
+                action_plan=action_plan,
             )
         )
         return 0
 
-    run_shell(app, raw=args.raw, raw_only=args.raw_only, events=args.events)
+    run_shell(
+        app, raw=args.raw, raw_only=args.raw_only, events=args.events, plan=args.plan
+    )
     return 0
 
 

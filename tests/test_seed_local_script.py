@@ -61,6 +61,7 @@ def test_parser_supports_required_modes_and_model_selection():
             "--events",
             "--raw",
             "--raw-only",
+            "--plan",
             "--model",
             "qwen2.5:3b",
             "install",
@@ -72,6 +73,7 @@ def test_parser_supports_required_modes_and_model_selection():
     assert args.events is True
     assert args.raw is True
     assert args.raw_only is True
+    assert args.plan is True
     assert args.model == "qwen2.5:3b"
     assert args.message == ["install", "docker"]
 
@@ -246,6 +248,32 @@ def test_cli_fact_seed_influences_service_recommendation_ranking(monkeypatch, ca
         "2. systemctl_cli"
     )
     assert "known runtime: docker" in output
+
+
+def test_cli_plan_prints_non_executable_top_recommendation_plan(monkeypatch, capsys):
+    seed_local = load_seed_local_module()
+
+    monkeypatch.setattr(
+        seed_local.IntentPromptModelClient,
+        "complete",
+        lambda self, context: (
+            '{"intent":"missing_tool","reason":"needs service tool","arguments":{}}'
+        ),
+    )
+
+    assert seed_local.main(
+        ["--fact", "jellyfin", "runtime", "docker", "--plan", "restart jellyfin?"]
+    ) == 0
+
+    output = capsys.readouterr().out
+    assert "1. docker_container_lifecycle" in output
+    assert "Plan:\nPropose using docker_container_lifecycle" in output
+    assert "- Identify target host for service." in output
+    assert "- Confirm container name." in output
+    assert "- Verify Docker access." in output
+    assert "- Request approval before restart." in output
+    assert "tool.call.started" not in output
+    assert "approved" not in output.lower()
 
 
 def test_parser_accepts_repeatable_fact_seed_options():
