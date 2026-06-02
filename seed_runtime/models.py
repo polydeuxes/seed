@@ -1,14 +1,16 @@
-"""Domain models for the Seed runtime.
-
-These dataclasses intentionally keep validation light and explicit. Runtime
-services validate behavior at boundaries so the model layer stays portable.
-"""
+"""Pydantic domain models for the Seed runtime."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Literal
+
+from importlib.util import find_spec
+
+if find_spec("pydantic") is not None:
+    from pydantic import BaseModel, ConfigDict, Field
+else:
+    from seed_runtime._pydantic_compat import BaseModel, ConfigDict, Field
 
 Actor = Literal["user", "model", "system", "tool", "builder", "approver"]
 GoalStatus = Literal["active", "blocked", "complete", "abandoned"]
@@ -23,7 +25,12 @@ ToolNeedStatus = Literal[
     "rejected",
 ]
 DecisionKind = Literal[
-    "answer", "ask_question", "call_tool", "request_tool", "propose_state_patch", "refuse"
+    "answer",
+    "ask_question",
+    "call_tool",
+    "request_tool",
+    "propose_state_patch",
+    "refuse",
 ]
 PolicyOutcome = Literal["allow", "block", "require_confirmation", "require_approval"]
 RiskClass = Literal["L1", "L2", "L3", "L4"]
@@ -34,56 +41,56 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-@dataclass(frozen=True)
-class Event:
+class SeedModel(BaseModel):
+    """Base model with immutable, assignment-friendly domain semantics."""
+
+    model_config = ConfigDict(frozen=True)
+
+
+class Event(SeedModel):
     id: str
     kind: str
-    workspace_id: str
-    actor: Actor
-    timestamp: datetime
-    payload: dict[str, Any] = field(default_factory=dict)
+    workspace_id: str = "default"
+    actor: Actor = "system"
+    timestamp: datetime = Field(default_factory=utc_now)
+    payload: dict[str, Any] = Field(default_factory=dict)
     session_id: str | None = None
     causation_id: str | None = None
     correlation_id: str | None = None
 
 
-@dataclass(frozen=True)
-class Workspace:
+class Workspace(SeedModel):
     id: str
     name: str
 
 
-@dataclass(frozen=True)
-class Session:
+class Session(SeedModel):
     id: str
     workspace_id: str
     title: str | None = None
 
 
-@dataclass(frozen=True)
-class Goal:
+class Goal(SeedModel):
     id: str
-    workspace_id: str
+    workspace_id: str = "default"
     summary: str
     status: GoalStatus = "active"
     created_from_event_id: str | None = None
-    facts: dict[str, Any] = field(default_factory=dict)
-    open_questions: list[str] = field(default_factory=list)
-    related_entities: list[str] = field(default_factory=list)
+    facts: dict[str, Any] = Field(default_factory=dict)
+    open_questions: list[str] = Field(default_factory=list)
+    related_entities: list[str] = Field(default_factory=list)
 
 
-@dataclass(frozen=True)
-class Entity:
+class Entity(SeedModel):
     id: str
     kind: str
     name: str
-    aliases: list[str] = field(default_factory=list)
-    attributes: dict[str, Any] = field(default_factory=dict)
+    aliases: list[str] = Field(default_factory=list)
+    attributes: dict[str, Any] = Field(default_factory=dict)
     confidence: float = 1.0
 
 
-@dataclass(frozen=True)
-class Fact:
+class Fact(SeedModel):
     id: str
     subject_id: str
     predicate: str
@@ -94,8 +101,40 @@ class Fact:
     confidence: float = 1.0
 
 
-@dataclass(frozen=True)
-class ToolSpec:
+class ToolNeed(SeedModel):
+    id: str
+    workspace_id: str = "default"
+    name: str
+    summary: str
+    capability: str
+    reason: str
+    requested_by_event_id: str | None = None
+    risk_hint: str | None = None
+    status: ToolNeedStatus = "proposed"
+    desired_inputs: list[str] = Field(default_factory=list)
+    desired_outputs: list[str] = Field(default_factory=list)
+
+
+class Decision(SeedModel):
+    kind: DecisionKind
+    reason: str
+    answer: str | None = None
+    question: str | None = None
+    tool_name: str | None = None
+    tool_arguments: dict[str, Any] = Field(default_factory=dict)
+    tool_need: dict[str, Any] | None = None
+    state_patch: dict[str, Any] | None = None
+
+
+class PolicyDecision(SeedModel):
+    outcome: PolicyOutcome
+    action: str
+    reason: str
+    risk_class: RiskClass
+    approval_id: str | None = None
+
+
+class ToolSpec(SeedModel):
     name: str
     summary: str
     toolkit_id: str
@@ -106,11 +145,10 @@ class ToolSpec:
     status: str = "registered"
     visibility: str = "model_visible"
     risk_class: RiskClass = "L1"
-    examples: list[dict[str, Any]] = field(default_factory=list)
+    examples: list[dict[str, Any]] = Field(default_factory=list)
 
 
-@dataclass(frozen=True)
-class Toolkit:
+class Toolkit(SeedModel):
     id: str
     name: str
     summary: str
@@ -119,23 +157,7 @@ class Toolkit:
     source: str = "core"
 
 
-@dataclass(frozen=True)
-class ToolNeed:
-    id: str
-    workspace_id: str
-    name: str
-    summary: str
-    capability: str
-    reason: str
-    requested_by_event_id: str | None = None
-    risk_hint: str | None = None
-    status: ToolNeedStatus = "proposed"
-    desired_inputs: list[str] = field(default_factory=list)
-    desired_outputs: list[str] = field(default_factory=list)
-
-
-@dataclass(frozen=True)
-class ToolkitCandidate:
+class ToolkitCandidate(SeedModel):
     id: str
     tool_need_id: str
     workspace_id: str
@@ -145,39 +167,16 @@ class ToolkitCandidate:
     validation_report_id: str | None = None
 
 
-@dataclass(frozen=True)
-class Approval:
+class Approval(SeedModel):
     id: str
     action: str
     scope: str
     approved_by: str
     expires_at: datetime | None = None
-    constraints: dict[str, Any] = field(default_factory=dict)
+    constraints: dict[str, Any] = Field(default_factory=dict)
 
 
-@dataclass(frozen=True)
-class Decision:
-    kind: DecisionKind
-    reason: str
-    answer: str | None = None
-    question: str | None = None
-    tool_name: str | None = None
-    tool_arguments: dict[str, Any] = field(default_factory=dict)
-    tool_need: dict[str, Any] | None = None
-    state_patch: dict[str, Any] | None = None
-
-
-@dataclass(frozen=True)
-class PolicyDecision:
-    outcome: PolicyOutcome
-    action: str
-    reason: str
-    risk_class: RiskClass
-    approval_id: str | None = None
-
-
-@dataclass(frozen=True)
-class RuntimeResponse:
+class RuntimeResponse(SeedModel):
     kind: str
     message: str
-    payload: dict[str, Any] = field(default_factory=dict)
+    payload: dict[str, Any] = Field(default_factory=dict)

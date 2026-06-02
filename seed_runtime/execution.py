@@ -60,7 +60,11 @@ class ToolExecutor:
                 session_id=session_id,
                 causation_id=causation_id,
             )
-            return RuntimeResponse(policy.outcome, policy.reason, {"policy": to_plain(policy)})
+            return RuntimeResponse(
+                kind=policy.outcome,
+                message=policy.reason,
+                payload={"policy": to_plain(policy)},
+            )
         call_event = self.ledger.append(
             "tool.call.started",
             workspace_id,
@@ -70,7 +74,12 @@ class ToolExecutor:
             causation_id=causation_id,
         )
         fn = self._load(tool)
-        output = fn(ToolContext(self.ledger, workspace_id, session_id, tool.name, call_event.id), **arguments)
+        output = fn(
+            ToolContext(
+                self.ledger, workspace_id, session_id, tool.name, call_event.id
+            ),
+            **arguments,
+        )
         validate_schema_value(tool.output_schema, output)
         self.ledger.append(
             "tool.call.completed",
@@ -80,7 +89,11 @@ class ToolExecutor:
             session_id=session_id,
             causation_id=call_event.id,
         )
-        return RuntimeResponse("tool_result", f"Tool {tool.name} completed.", {"output": output})
+        return RuntimeResponse(
+            kind="tool_result",
+            message=f"Tool {tool.name} completed.",
+            payload={"output": output},
+        )
 
     def _load(self, tool: ToolSpec) -> Callable[..., dict[str, Any]]:
         module_name, function_name = tool.implementation.split(":", 1)

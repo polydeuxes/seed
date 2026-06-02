@@ -82,9 +82,9 @@ class Runtime:
                 )
                 if attempt >= self.max_decision_retries:
                     return RuntimeResponse(
-                        "invalid_decision",
-                        "Model decision failed parsing.",
-                        {"errors": [str(exc)]},
+                        kind="invalid_decision",
+                        message="Model decision failed parsing.",
+                        payload={"errors": [str(exc)]},
                     )
 
                 retry_context = self._decision_parse_retry_context(
@@ -123,9 +123,9 @@ class Runtime:
             )
 
         return RuntimeResponse(
-            "invalid_decision",
-            "Model decision failed validation.",
-            {"errors": validation_errors},
+            kind="invalid_decision",
+            message="Model decision failed validation.",
+            payload={"errors": validation_errors},
         )
 
     def _decision_retry_context(
@@ -199,7 +199,7 @@ class Runtime:
                 session_id=session_id,
                 causation_id=causation_id,
             )
-            return RuntimeResponse("answer", decision.answer or "")
+            return RuntimeResponse(kind="answer", message=decision.answer or "")
         if decision.kind == "ask_question":
             self.ledger.append(
                 "response.question",
@@ -209,15 +209,15 @@ class Runtime:
                 session_id=session_id,
                 causation_id=causation_id,
             )
-            return RuntimeResponse("question", decision.question or "")
+            return RuntimeResponse(kind="question", message=decision.question or "")
         if decision.kind == "request_tool":
             need = self.tool_need_service.create_from_decision(
                 workspace_id, decision, causation_id
             )
             return RuntimeResponse(
-                "tool_need",
-                f"Recorded tool need {need.name}.",
-                {"tool_need": to_plain(need)},
+                kind="tool_need",
+                message=f"Recorded tool need {need.name}.",
+                payload={"tool_need": to_plain(need)},
             )
         if decision.kind == "call_tool":
             return self.tool_executor.execute(
@@ -236,5 +236,7 @@ class Runtime:
                 session_id=session_id,
                 causation_id=causation_id,
             )
-            return RuntimeResponse("refusal", decision.reason)
-        return RuntimeResponse("unsupported", "Unsupported valid decision kind.")
+            return RuntimeResponse(kind="refusal", message=decision.reason)
+        return RuntimeResponse(
+            kind="unsupported", message="Unsupported valid decision kind."
+        )

@@ -1,13 +1,20 @@
 from seed_runtime.events import EventLedger
 
 
-def test_append_and_list_events_by_workspace():
+def test_append_records_reality_in_order():
     ledger = EventLedger()
-    first = ledger.append("input.user_message", "ws_1", {"text": "hello"}, actor="user", session_id="ses_1")
-    ledger.append("input.user_message", "ws_2", {"text": "other"}, actor="user")
 
-    events = ledger.list_events("ws_1")
+    ledger.append("user.message")
+    ledger.append("goal.created")
 
-    assert [event.id for event in events] == [first.id]
-    assert events[0].payload == {"text": "hello"}
-    assert events[0].session_id == "ses_1"
+    assert len(ledger.list()) == 2
+    assert ledger.list()[0].kind == "user.message"
+    assert ledger.list()[1].kind == "goal.created"
+
+
+def test_get_returns_appended_event_by_id():
+    ledger = EventLedger()
+
+    event = ledger.append("user.message")
+
+    assert ledger.get(event.id) == event
