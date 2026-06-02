@@ -268,11 +268,13 @@ def test_cli_plan_prints_non_executable_top_recommendation_plan(monkeypatch, cap
     output = capsys.readouterr().out
     assert "1. docker_container_lifecycle" in output
     assert "Plan:\nPropose using docker_container_lifecycle" in output
+    assert "action_plan_id: plan_" in output
     assert "- Identify target host for service." in output
     assert "- Confirm container name." in output
     assert "- Verify Docker access." in output
     assert "- Request approval before restart." in output
     assert "tool.call.started" not in output
+    assert "action_plan.created" not in output
     assert "approved" not in output.lower()
 
 

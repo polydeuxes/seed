@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Iterable, Literal, cast
+from typing import Iterable, cast
 
-from seed_runtime.base import SeedModel
+from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
-from seed_runtime.models import RiskClass, ToolNeed
+from seed_runtime.models import ActionPlan, RiskClass, ToolNeed
 from seed_runtime.recommendation_ranker import RankedRecommendation
 from seed_runtime.state import State
 from seed_runtime.tool_needs import slugify
@@ -14,33 +14,20 @@ from seed_runtime.tool_needs import slugify
 _MUTATING_RISK_CLASSES: set[str] = {"L3", "L4"}
 
 
-class ActionPlan(SeedModel):
-    """A safe, non-executable proposal for satisfying a tool need.
-
-    Action plans deliberately contain only text. They describe a proposed next
-    action for the recommended provider, but they do not carry callable code,
-    executable arguments, or any authority to mutate state or external systems.
-    """
-
-    id: str
-    tool_need_id: str
-    provider: str
-    capability: str
-    summary: str
-    steps: list[str]
-    risk_class: RiskClass
-    requires_approval: bool
-    executable: Literal[False] = False
-
-
 class ActionPlanService:
     """Create safe proposed next actions from ranked recommendations."""
+
+    def __init__(self, ledger: EventLedger | None = None) -> None:
+        self.ledger = ledger
 
     def create_plan(
         self,
         tool_need: ToolNeed,
         ranked_recommendation: RankedRecommendation,
         state: State | None,
+        *,
+        session_id: str | None = None,
+        causation_id: str | None = None,
     ) -> ActionPlan:
         """Return a text-only, non-executable plan for the chosen provider.
 
@@ -57,7 +44,7 @@ class ActionPlanService:
         )
         requires_approval = risk_class in _MUTATING_RISK_CLASSES
 
-        return ActionPlan(
+        plan = ActionPlan(
             id=new_id("plan"),
             tool_need_id=tool_need.id,
             provider=provider,
@@ -68,6 +55,18 @@ class ActionPlanService:
             requires_approval=requires_approval,
             executable=False,
         )
+        if self.ledger is not None:
+            from seed_runtime.serialization import to_plain
+
+            self.ledger.append(
+                "action_plan.created",
+                tool_need.workspace_id,
+                {"action_plan": to_plain(plan)},
+                actor="system",
+                session_id=session_id,
+                causation_id=causation_id,
+            )
+        return plan
 
 
 def _normalize_risk_class(value: str | None) -> RiskClass:

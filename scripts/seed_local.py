@@ -116,8 +116,19 @@ class LocalSeedApp:
         if full_recommendation is None:
             return None
 
-        plan = ActionPlanService().create_plan(tool_need, full_recommendation, state)
-        return to_plain(plan)
+        plan = ActionPlanService(self.ledger).create_plan(
+            tool_need,
+            full_recommendation,
+            state,
+            session_id=self.session_id,
+            causation_id=tool_need.requested_by_event_id,
+        )
+        plain_plan = to_plain(plan)
+        payload["action_plan_id"] = plan.id
+        result["events"] = [
+            to_plain(event) for event in self.ledger.list(self.workspace_id)
+        ]
+        return plain_plan
 
     def seed_facts(self, facts: list[DevFactSeed]) -> None:
         """Append local development evidence and fact events into the ledger."""
@@ -379,6 +390,9 @@ def format_action_plan(plan: dict[str, Any]) -> str:
     summary = str(plan.get("summary") or "").strip()
     if summary:
         lines.append(summary)
+    plan_id = str(plan.get("id") or "").strip()
+    if plan_id:
+        lines.append(f"action_plan_id: {plan_id}")
     steps = plan.get("steps")
     if isinstance(steps, list):
         for step in steps:
