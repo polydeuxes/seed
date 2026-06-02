@@ -8,6 +8,7 @@ from typing import Any, Iterable
 from seed_runtime.context import ContextComposer
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
+from seed_runtime.model_client import DecisionParseError
 from seed_runtime.models import (
     Decision,
     Entity,
@@ -51,9 +52,10 @@ class EvalCase:
 class EvalResult:
     case_name: str
     passed: bool
-    decision: Decision
+    decision: Decision | None
     errors: list[str] = field(default_factory=list)
     validation_errors: list[str] = field(default_factory=list)
+    parse_error: str | None = None
 
 
 @dataclass(frozen=True)
@@ -70,6 +72,13 @@ class EvalRun:
             return 1.0
         passed = sum(1 for result in self.results if result.passed)
         return passed / len(self.results)
+
+    @property
+    def valid_json_rate(self) -> float:
+        if not self.results:
+            return 1.0
+        valid_json = sum(1 for result in self.results if result.parse_error is None)
+        return valid_json / len(self.results)
 
 
 class DecisionEvaluator:
@@ -97,21 +106,44 @@ class DecisionEvaluator:
         context = ContextComposer(self.registry).compose(
             case.workspace_id, case.session_id, input_event, state
         )
-        decision = self.model.decide(context)
+        try:
+            decision = self.model.decide(context)
+        except DecisionParseError as exc:
+            parse_error = f"model response was not valid JSON decision: {exc}"
+            return EvalResult(
+                case_name=case.name,
+                passed=False,
+                decision=None,
+                errors=[parse_error],
+                validation_errors=[],
+                parse_error=parse_error,
+            )
         validation = DecisionValidator(self.registry).validate(decision, state)
         errors = list(validation.errors)
         if decision.kind != case.expected.kind:
-            errors.append(f"expected kind {case.expected.kind!r}, got {decision.kind!r}")
-        if case.expected.tool_name is not None and decision.tool_name != case.expected.tool_name:
-            errors.append(f"expected tool {case.expected.tool_name!r}, got {decision.tool_name!r}")
-        if case.expected.tool_arguments is not None and decision.tool_arguments != case.expected.tool_arguments:
+            errors.append(
+                f"expected kind {case.expected.kind!r}, got {decision.kind!r}"
+            )
+        if (
+            case.expected.tool_name is not None
+            and decision.tool_name != case.expected.tool_name
+        ):
+            errors.append(
+                f"expected tool {case.expected.tool_name!r}, got {decision.tool_name!r}"
+            )
+        if (
+            case.expected.tool_arguments is not None
+            and decision.tool_arguments != case.expected.tool_arguments
+        ):
             errors.append(
                 f"expected tool arguments {case.expected.tool_arguments!r}, got {decision.tool_arguments!r}"
             )
         if case.expected.tool_need_name is not None:
             actual = (decision.tool_need or {}).get("name")
             if actual != case.expected.tool_need_name:
-                errors.append(f"expected tool need {case.expected.tool_need_name!r}, got {actual!r}")
+                errors.append(
+                    f"expected tool need {case.expected.tool_need_name!r}, got {actual!r}"
+                )
         if case.expected.question_required and not decision.question:
             errors.append("expected question to be present")
         if case.expected.refusal_reason_contains is not None:
@@ -135,7 +167,12 @@ class DecisionEvaluator:
         ledger.append(
             "eval.run.completed",
             workspace_id,
-            {"passed": run.passed, "pass_rate": run.pass_rate, "results": to_plain(run.results)},
+            {
+                "passed": run.passed,
+                "pass_rate": run.pass_rate,
+                "valid_json_rate": run.valid_json_rate,
+                "results": to_plain(run.results),
+            },
             actor="system",
         )
 
@@ -195,9 +232,7 @@ def _small_model_mvp_seed_events(workspace_id: str = "ws_eval") -> tuple[Event, 
             actor="system",
             timestamp=now,
             payload={
-                "entity": to_plain(
-                    Entity(id="ent_node_1", kind="host", name="node-1")
-                )
+                "entity": to_plain(Entity(id="ent_node_1", kind="host", name="node-1"))
             },
         ),
         Event(
