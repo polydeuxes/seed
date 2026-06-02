@@ -14,6 +14,12 @@ from seed_runtime.context_budget import (
     RECENT_FACTS,
     ContextBudget,
 )
+from seed_runtime.context_selection import (
+    order_entities,
+    order_evidence,
+    order_facts,
+    order_goals,
+)
 from seed_runtime.models import Event
 from seed_runtime.registry import ToolRegistry
 from seed_runtime.state import State
@@ -52,30 +58,19 @@ class ContextComposer:
         input_event: Event,
         state: State,
     ) -> ContextPacket:
-        active_goals = sorted(
-            (goal for goal in state.goals.values() if goal.status == "active"),
-            key=lambda goal: goal.id,
-        )
-        entities = sorted(state.entities.values(), key=lambda entity: entity.name)
-        facts_by_recency = sorted(
-            state.facts.values(),
-            key=lambda fact: (fact.observed_at, fact.id),
-            reverse=True,
-        )
-        evidence_by_recency = sorted(
-            state.evidence.values(),
-            key=lambda item: (item.observed_at, item.id),
-            reverse=True,
-        )
+        ordered_goals = order_goals(state.goals.values())
+        ordered_entities = order_entities(state.entities.values())
+        ordered_facts = order_facts(state.facts.values())
+        ordered_evidence = order_evidence(state.evidence.values())
         open_needs_by_name = sorted(state.open_tool_needs, key=lambda need: need.name)
         budgeted = self.budget.select_sections(
             {
                 CURRENT_INPUT: [{"event_id": input_event.id, **input_event.payload}],
-                ACTIVE_GOALS: active_goals,
+                ACTIVE_GOALS: ordered_goals,
                 OPEN_TOOL_NEEDS: open_needs_by_name,
-                RECENT_FACTS: facts_by_recency,
-                RECENT_EVIDENCE: evidence_by_recency,
-                ENTITIES: entities,
+                RECENT_FACTS: ordered_facts,
+                RECENT_EVIDENCE: ordered_evidence,
+                ENTITIES: ordered_entities,
             }
         )
 
