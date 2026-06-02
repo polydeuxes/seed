@@ -62,6 +62,8 @@ def test_parser_supports_required_modes_and_model_selection():
             "--raw",
             "--raw-only",
             "--plan",
+            "--db",
+            ".seed-local.sqlite",
             "--model",
             "qwen2.5:3b",
             "install",
@@ -74,6 +76,7 @@ def test_parser_supports_required_modes_and_model_selection():
     assert args.raw is True
     assert args.raw_only is True
     assert args.plan is True
+    assert args.db == ".seed-local.sqlite"
     assert args.model == "qwen2.5:3b"
     assert args.message == ["install", "docker"]
 
@@ -300,3 +303,100 @@ def test_parser_accepts_repeatable_fact_seed_options():
         ["plex", "runtime", "systemd"],
     ]
     assert args.message == ["restart", "jellyfin?"]
+
+
+def seed_cli_action_plan(seed_local, db_path, plan_id="plan_cli"):
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    ledger.append(
+        "action_plan.created",
+        "local",
+        {
+            "action_plan": {
+                "id": plan_id,
+                "tool_need_id": "need_cli",
+                "provider": "open_meteo",
+                "capability": "weather_lookup",
+                "summary": "Propose using open_meteo",
+                "steps": ["Determine location."],
+                "risk_class": "L1",
+                "requires_approval": False,
+                "status": "proposed",
+                "rejection_reason": None,
+                "replacement_plan_id": None,
+                "executable": False,
+            }
+        },
+        session_id="local",
+    )
+    ledger.close()
+
+
+def test_cli_accept_plan_prints_accepted_without_registering_tools(
+    monkeypatch, tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed-local.sqlite"
+    seed_cli_action_plan(seed_local, db_path)
+
+    def fail_load_manifest(self, path):
+        pytest.fail("lifecycle commands must not register tools")
+
+    monkeypatch.setattr(seed_local.ToolRegistry, "load_manifest", fail_load_manifest)
+
+    assert seed_local.main(["--db", str(db_path), "--accept-plan", "plan_cli"]) == 0
+
+    output = capsys.readouterr().out
+    assert "action_plan_id: plan_cli" in output
+    assert "status: accepted" in output
+    assert "tool.call" not in output
+    assert "approved" not in output.lower()
+
+
+def test_cli_reject_plan_prints_rejected_and_reason(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed-local.sqlite"
+    seed_cli_action_plan(seed_local, db_path)
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--reject-plan",
+                "plan_cli",
+                "--reason",
+                "Use another provider",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "action_plan_id: plan_cli" in output
+    assert "status: rejected" in output
+    assert "rejection_reason: Use another provider" in output
+
+
+def test_cli_supersede_plan_prints_superseded_and_replacement_id(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed-local.sqlite"
+    seed_cli_action_plan(seed_local, db_path)
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--supersede-plan",
+                "plan_cli",
+                "--replacement-plan",
+                "plan_replacement",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "action_plan_id: plan_cli" in output
+    assert "status: superseded" in output
+    assert "replacement_plan_id: plan_replacement" in output
