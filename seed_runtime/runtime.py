@@ -12,6 +12,7 @@ from seed_runtime.events import EventLedger
 from seed_runtime.execution import ToolExecutor
 from seed_runtime.model_client import DecisionParseError
 from seed_runtime.models import Decision, RuntimeResponse
+from seed_runtime.recommendation_ranker import RecommendationRanker
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
 from seed_runtime.state_patches import StatePatchError, StatePatchService
@@ -53,6 +54,7 @@ class Runtime:
         self.tool_executor = tool_executor
         self.tool_need_service = tool_need_service
         self.capability_catalog = capability_catalog or CapabilityCatalog.load()
+        self.recommendation_ranker = RecommendationRanker()
         self.tool_intent_guard = ToolIntentGuard()
         self.state_patch_service = StatePatchService(ledger, projector)
         self.model = model
@@ -269,7 +271,11 @@ class Runtime:
             need = self.tool_need_service.create_from_decision(
                 workspace_id, decision, causation_id
             )
-            recommendations = self.capability_catalog.recommend_for(need)
+            recommendations = self.recommendation_ranker.rank(
+                need.capability,
+                self.capability_catalog.recommend_for(need),
+                self.projector.project(workspace_id),
+            )
             payload = {
                 "tool_need": to_plain(need),
                 "recommendations": to_plain(recommendations),
