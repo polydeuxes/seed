@@ -1,0 +1,160 @@
+{
+  "id": "tk_generated_environment_inventory",
+  "name": "environment_inventory",
+  "summary": "Read-only generated toolkit for safely inventorying Seed's registered tools and projected state before host or network discovery.",
+  "source": "generated",
+  "tools": [
+    {
+      "name": "list_registered_tools",
+      "summary": "List model-visible registered tool names, summaries, and risk classes without running shell, network, or filesystem discovery.",
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["ok", "tools"],
+        "properties": {
+          "ok": {"type": "boolean"},
+          "tools": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "summary", "risk_class"],
+              "properties": {
+                "name": {"type": "string"},
+                "summary": {"type": "string"},
+                "risk_class": {"type": "string", "enum": ["L1", "L2", "L3", "L4"]}
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "policy_action": "environment_inventory.list_registered_tools",
+      "implementation": "toolkits.generated.environment_inventory.operations:list_registered_tools",
+      "risk_class": "L1",
+      "visibility": "model_visible"
+    },
+    {
+      "name": "list_open_tool_needs",
+      "summary": "List open ToolNeeds from the projected Seed state without external discovery.",
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["ok", "tool_needs"],
+        "properties": {
+          "ok": {"type": "boolean"},
+          "tool_needs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "workspace_id", "name", "summary", "capability", "reason", "status", "desired_inputs", "desired_outputs"],
+              "properties": {
+                "id": {"type": "string"},
+                "workspace_id": {"type": "string"},
+                "name": {"type": "string"},
+                "summary": {"type": "string"},
+                "capability": {"type": "string"},
+                "reason": {"type": "string"},
+                "requested_by_event_id": {},
+                "risk_hint": {},
+                "status": {"type": "string"},
+                "desired_inputs": {"type": "array", "items": {"type": "string"}},
+                "desired_outputs": {"type": "array", "items": {"type": "string"}}
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "policy_action": "environment_inventory.list_open_tool_needs",
+      "implementation": "toolkits.generated.environment_inventory.operations:list_open_tool_needs",
+      "risk_class": "L1",
+      "visibility": "model_visible"
+    },
+    {
+      "name": "list_known_entities",
+      "summary": "List known entities from the projected Seed state without host or network discovery.",
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["ok", "entities"],
+        "properties": {
+          "ok": {"type": "boolean"},
+          "entities": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "kind", "name", "aliases", "attributes", "confidence"],
+              "properties": {
+                "id": {"type": "string"},
+                "kind": {"type": "string"},
+                "name": {"type": "string"},
+                "aliases": {"type": "array", "items": {"type": "string"}},
+                "attributes": {"type": "object"},
+                "confidence": {"type": "number"}
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "policy_action": "environment_inventory.list_known_entities",
+      "implementation": "toolkits.generated.environment_inventory.operations:list_known_entities",
+      "risk_class": "L1",
+      "visibility": "model_visible"
+    },
+    {
+      "name": "list_known_facts",
+      "summary": "List current facts from the projected Seed state without external discovery.",
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["ok", "facts"],
+        "properties": {
+          "ok": {"type": "boolean"},
+          "facts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "subject_id", "predicate", "value", "evidence_ids", "observed_at", "expires_at", "confidence"],
+              "properties": {
+                "id": {"type": "string"},
+                "subject_id": {"type": "string"},
+                "predicate": {"type": "string"},
+                "value": {},
+                "evidence_ids": {"type": "array", "items": {"type": "string"}},
+                "observed_at": {"type": "string"},
+                "expires_at": {},
+                "confidence": {"type": "number"}
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "policy_action": "environment_inventory.list_known_facts",
+      "implementation": "toolkits.generated.environment_inventory.operations:list_known_facts",
+      "risk_class": "L1",
+      "visibility": "model_visible"
+    }
+  ]
+}

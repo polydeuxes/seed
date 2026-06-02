@@ -48,6 +48,7 @@ class ToolContext:
     session_id: str | None
     tool_name: str
     call_event_id: str
+    registry: ToolRegistry | None = None
 
 
 class ToolExecutor:
@@ -195,7 +196,12 @@ class ToolExecutor:
             fn = self._load_registered(tool)
             output = fn(
                 ToolContext(
-                    self.ledger, workspace_id, session_id, tool.name, call_event.id
+                    self.ledger,
+                    workspace_id,
+                    session_id,
+                    tool.name,
+                    call_event.id,
+                    self.registry,
                 ),
                 **arguments,
             )
