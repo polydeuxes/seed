@@ -3,17 +3,17 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from importlib.util import find_spec
 from typing import Any, Literal
 
+from seed_runtime.base import SeedModel
 from seed_runtime.evidence import Evidence
 from seed_runtime.facts import Fact
 
-from importlib.util import find_spec
-
 if find_spec("pydantic") is not None:
-    from pydantic import BaseModel, ConfigDict, Field
+    from pydantic import Field
 else:
-    from seed_runtime._pydantic_compat import BaseModel, ConfigDict, Field
+    from seed_runtime._pydantic_compat import Field
 
 Actor = Literal["user", "model", "system", "tool", "builder", "approver"]
 GoalStatus = Literal["active", "blocked", "complete", "abandoned"]
@@ -42,12 +42,6 @@ RiskClass = Literal["L1", "L2", "L3", "L4"]
 def utc_now() -> datetime:
     """Return a timezone-aware UTC timestamp."""
     return datetime.now(timezone.utc)
-
-
-class SeedModel(BaseModel):
-    """Base model with immutable, assignment-friendly domain semantics."""
-
-    model_config = ConfigDict(frozen=True)
 
 
 class Event(SeedModel):

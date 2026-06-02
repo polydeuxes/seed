@@ -1,8 +1,10 @@
+from datetime import datetime, timedelta, timezone
+
 from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
 from seed_runtime.serialization import to_plain
+from seed_runtime.models import Approval, Entity, Fact, Goal, ToolNeed, utc_now
 from seed_runtime.state import StateProjector
-from seed_runtime.models import Entity, Fact, Goal, ToolNeed, utc_now, Approval
 
 
 def test_projector_rebuilds_state_deterministically():
@@ -29,3 +31,30 @@ def test_projector_rebuilds_state_deterministically():
     assert first.goals["goal_1"].status == "active"
     assert first.open_tool_needs[0].name == "install_ssh_server"
     assert first.has_approval("ssh.install", "ent_1") is not None
+
+
+def test_has_approval_compares_expiration_against_utc_now():
+    ledger = EventLedger()
+    workspace_id = "ws_utc_approval"
+    approval = Approval(
+        id=new_id("appr"),
+        action="ssh.install",
+        scope="ent_1",
+        approved_by="user",
+        expires_at=datetime.now(timezone.utc) + timedelta(minutes=5),
+    )
+    expired = Approval(
+        id=new_id("appr"),
+        action="ssh.install",
+        scope="ent_2",
+        approved_by="user",
+        expires_at=datetime.now(timezone.utc) - timedelta(minutes=5),
+    )
+
+    ledger.append("approval.granted", workspace_id, {"approval": to_plain(approval)})
+    ledger.append("approval.granted", workspace_id, {"approval": to_plain(expired)})
+
+    state = StateProjector(ledger).project(workspace_id)
+
+    assert state.has_approval("ssh.install", "ent_1") == approval
+    assert state.has_approval("ssh.install", "ent_2") is None
