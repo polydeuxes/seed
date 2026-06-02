@@ -153,6 +153,23 @@ python scripts/seed_local.py "install docker"
 python scripts/seed_local.py --raw "what is the weather in Jacksonville?"
 ```
 
+Seed known local-development facts before a message with repeatable `--fact SUBJECT PREDICATE VALUE` flags. The CLI records each supplied fact as local dev evidence plus a projected fact before the user message is handled, which makes it useful for recommendation-ranking checks without hardcoding a specific service into the runtime. For example, this known runtime fact should rank Docker lifecycle recommendations above systemd service recommendations:
+
+```bash
+python scripts/seed_local.py \
+  --fact jellyfin runtime docker \
+  "restart jellyfin?"
+```
+
+Use additional `--fact` flags to seed more than one fact:
+
+```bash
+python scripts/seed_local.py \
+  --fact jellyfin runtime docker \
+  --fact nas platform linux \
+  "restart jellyfin?"
+```
+
 By default, the CLI posts intent prompts to `http://localhost:11434/api/generate` with model `qwen2.5:3b`, `stream: false`, and JSON-formatted output enabled. Use `--model` to select another local model:
 
 ```bash
