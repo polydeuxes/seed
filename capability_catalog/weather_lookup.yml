@@ -1,0 +1,9 @@
+capability: weather_lookup
+summary: Retrieve current weather conditions or forecasts for a location.
+recommendations:
+  - provider: open_meteo
+    summary: Public weather API suitable for forecast and current-condition lookup.
+    kind: public_api
+    source: https://open-meteo.com/
+    risk_class: L1
+    notes: Requires explicit integration by a builder or operator before use.

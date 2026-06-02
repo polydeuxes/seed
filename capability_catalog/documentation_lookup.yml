@@ -1,0 +1,9 @@
+capability: documentation_lookup
+summary: Retrieve authoritative product, library, or API documentation.
+recommendations:
+  - provider: context7
+    summary: Documentation lookup provider for library and framework references.
+    kind: hosted_api
+    source: https://context7.com/
+    risk_class: L1
+    notes: Requires explicit integration and registration before use.

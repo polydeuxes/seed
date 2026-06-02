@@ -1,0 +1,9 @@
+capability: prometheus_query
+summary: Query Prometheus metrics and time series data.
+recommendations:
+  - provider: prometheus_http_api
+    summary: Use the Prometheus HTTP API for instant and range queries.
+    kind: hosted_or_local_api
+    source: https://prometheus.io/docs/prometheus/latest/querying/api/
+    risk_class: L2
+    notes: Requires endpoint configuration and explicit tool registration before use.
