@@ -23,89 +23,195 @@ class TextCompletionTransport(Protocol):
     def complete(self, prompt: str) -> str: ...
 
 
-def serialize_decision_prompt(context: ContextPacket) -> str:
-    """Serialize a ContextPacket into the stable small-model decision form.
+def render_decision_prompt(context: ContextPacket) -> str:
+    """Render a deterministic compact prompt for one model decision.
 
-    The format intentionally uses fixed section headings and JSON bodies so a
-    small model sees the same structure every turn while the parser still owns
-    strict output validation.
+    Only fields that help the model choose a runtime decision are included. Runtime
+    bookkeeping such as workspace/session ids, event ids, policy actions, and tool
+    implementation details are intentionally omitted from the prompt.
     """
 
     packet = to_plain(context)
-    state = {
-        "workspace_id": packet["workspace_id"],
-        "session_id": packet["session_id"],
-        "active_goal": packet["active_goal"],
-        "entities": packet["entities"],
-        "facts": packet["facts"],
-        "open_tool_needs": packet["open_tool_needs"],
-    }
-    output_schema = {
-        "instruction": "Return only one JSON object. Do not include prose, markdown, or code fences.",
-        "required_fields": ["kind", "reason"],
-        "allowed_kinds": packet["decision_schema"].get(
-            "kinds",
-            [
-                "answer",
-                "ask_question",
-                "call_tool",
-                "request_tool",
-                "propose_state_patch",
-                "refuse",
-            ],
-        ),
-        "allowed_fields": [
-            "kind",
-            "reason",
+    allowed_kinds = packet["decision_schema"].get(
+        "kinds",
+        [
             "answer",
-            "question",
-            "tool_name",
-            "tool_arguments",
-            "tool_need",
-            "state_patch",
+            "ask_question",
+            "call_tool",
+            "request_tool",
+            "propose_state_patch",
+            "refuse",
         ],
-        "examples": {
-            "answer": {
-                "kind": "answer",
-                "reason": "The context contains the answer.",
-                "answer": "...",
-            },
-            "ask_question": {
-                "kind": "ask_question",
-                "reason": "A required field is missing.",
-                "question": "...",
-            },
-            "call_tool": {
-                "kind": "call_tool",
-                "reason": "A visible tool can satisfy the request.",
-                "tool_name": "tool_name",
-                "tool_arguments": {},
-            },
-            "request_tool": {
-                "kind": "request_tool",
-                "reason": "No visible safe tool can satisfy the request.",
-                "tool_need": {
-                    "name": "snake_case_name",
-                    "summary": "What the missing tool should do.",
-                    "capability": "capability_name",
-                },
-            },
-            "refuse": {
-                "kind": "refuse",
-                "reason": "The request is unsafe or unsupported.",
-            },
-        },
-    }
+    )
     sections = [
-        ("TASK", "Choose one decision for the Seed runtime."),
-        ("CURRENT INPUT", _stable_json(packet["current_input"])),
-        ("STATE", _stable_json(state)),
-        ("TOOLS", _stable_json(packet["tools"])),
-        ("OUTPUT JSON SCHEMA", _stable_json(output_schema)),
+        (
+            "TASK INSTRUCTION",
+            "Choose exactly one decision for the Seed runtime.",
+        ),
+        ("CURRENT INPUT", _stable_json(_render_current_input(packet["current_input"]))),
+        ("RELEVANT STATE SUMMARY", _stable_json(_render_state_summary(packet))),
+        ("VISIBLE TOOLS", _stable_json(_render_visible_tools(packet["tools"]))),
+        (
+            "OPEN TOOL NEEDS",
+            _stable_json(_render_open_tool_needs(packet["open_tool_needs"])),
+        ),
+        (
+            "ALLOWED JSON DECISION SHAPES",
+            _stable_json(_decision_shapes(allowed_kinds)),
+        ),
+        (
+            "STRICT OUTPUT",
+            "Output only one JSON object matching one allowed shape. Do not include prose, markdown, code fences, or multiple objects.",
+        ),
     ]
     if packet.get("retry_prompt"):
         sections.append(("CORRECTION REQUIRED", _stable_json(packet["retry_prompt"])))
     return "\n\n".join(f"{heading}\n{body}" for heading, body in sections)
+
+
+def serialize_decision_prompt(context: ContextPacket) -> str:
+    """Backward-compatible alias for :func:`render_decision_prompt`."""
+
+    return render_decision_prompt(context)
+
+
+def _render_current_input(current_input: dict[str, Any]) -> dict[str, Any]:
+    return _without_empty(
+        {
+            key: value
+            for key, value in current_input.items()
+            if key not in {"event_id", "workspace_id", "session_id"}
+        }
+    )
+
+
+def _render_state_summary(packet: dict[str, Any]) -> dict[str, Any]:
+    entities = packet.get("entities", [])
+    entity_names = _entity_name_by_id(entities)
+    return _without_empty(
+        {
+            "active_goal": _render_active_goal(packet.get("active_goal")),
+            "entities": [_render_entity(entity) for entity in entities],
+            "facts": [
+                _render_fact(fact, entity_names) for fact in packet.get("facts", [])
+            ],
+        }
+    )
+
+
+def _render_active_goal(goal: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not goal:
+        return None
+    return _without_empty(
+        {
+            "summary": goal.get("summary"),
+            "status": goal.get("status"),
+            "facts": goal.get("facts"),
+            "open_questions": goal.get("open_questions"),
+            "related_entities": goal.get("related_entities"),
+        }
+    )
+
+
+def _render_entity(entity: dict[str, Any]) -> dict[str, Any]:
+    return _without_empty(
+        {
+            "kind": entity.get("kind"),
+            "name": entity.get("name"),
+            "aliases": entity.get("aliases"),
+            "attributes": entity.get("attributes"),
+            "confidence": entity.get("confidence"),
+        }
+    )
+
+
+def _render_fact(fact: dict[str, Any], entity_names: dict[str, str]) -> dict[str, Any]:
+    return _without_empty(
+        {
+            "subject": entity_names.get(fact.get("subject_id", "")),
+            "predicate": fact.get("predicate"),
+            "value": fact.get("value"),
+            "confidence": fact.get("confidence"),
+            "expires_at": fact.get("expires_at"),
+        }
+    )
+
+
+def _entity_name_by_id(entities: list[dict[str, Any]]) -> dict[str, str]:
+    return {
+        entity["id"]: entity["name"]
+        for entity in entities
+        if isinstance(entity.get("id"), str) and isinstance(entity.get("name"), str)
+    }
+
+
+def _render_visible_tools(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        _without_empty(
+            {
+                "name": tool.get("name"),
+                "summary": tool.get("summary"),
+                "input_schema": tool.get("input_schema"),
+                "output_schema": tool.get("output_schema"),
+                "risk_class": tool.get("risk_class"),
+            }
+        )
+        for tool in sorted(tools, key=lambda tool: tool.get("name", ""))
+    ]
+
+
+def _render_open_tool_needs(needs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        _without_empty(
+            {
+                "name": need.get("name"),
+                "summary": need.get("summary"),
+                "capability": need.get("capability"),
+                "reason": need.get("reason"),
+                "risk_hint": need.get("risk_hint"),
+                "desired_inputs": need.get("desired_inputs"),
+                "desired_outputs": need.get("desired_outputs"),
+            }
+        )
+        for need in sorted(needs, key=lambda need: need.get("name", ""))
+    ]
+
+
+def _decision_shapes(allowed_kinds: list[str]) -> list[dict[str, Any]]:
+    shapes: dict[str, dict[str, Any]] = {
+        "answer": {"kind": "answer", "reason": "...", "answer": "..."},
+        "ask_question": {"kind": "ask_question", "reason": "...", "question": "..."},
+        "call_tool": {
+            "kind": "call_tool",
+            "reason": "...",
+            "tool_name": "visible_tool_name",
+            "tool_arguments": {},
+        },
+        "request_tool": {
+            "kind": "request_tool",
+            "reason": "...",
+            "tool_need": {
+                "name": "snake_case_name",
+                "summary": "What the missing tool should do.",
+                "capability": "capability_name",
+            },
+        },
+        "propose_state_patch": {
+            "kind": "propose_state_patch",
+            "reason": "...",
+            "state_patch": {},
+        },
+        "refuse": {"kind": "refuse", "reason": "..."},
+    }
+    return [shapes[kind] for kind in allowed_kinds if kind in shapes]
+
+
+def _without_empty(value: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: item
+        for key, item in value.items()
+        if item is not None and item != [] and item != {}
+    }
 
 
 @dataclass(frozen=True)
@@ -195,7 +301,7 @@ class DecisionPromptModelClient:
         )
 
     def complete(self, context: ContextPacket) -> str:
-        return self.transport.complete(serialize_decision_prompt(context))
+        return self.transport.complete(render_decision_prompt(context))
 
 
 class DecisionParseError(ValueError):
@@ -248,7 +354,7 @@ class ParsedDecisionModel:
 
 
 def _stable_json(value: Any) -> str:
-    return json.dumps(value, indent=2, sort_keys=True, separators=(",", ": "))
+    return json.dumps(value, sort_keys=True, separators=(",", ":"))
 
 
 def _extract_model_text(raw: str) -> str:

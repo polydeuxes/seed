@@ -61,6 +61,7 @@ class ContextComposer:
                 "name": tool.name,
                 "summary": tool.summary,
                 "input_schema": tool.input_schema,
+                "output_schema": tool.output_schema,
                 "policy_action": tool.policy_action,
                 "risk_class": tool.risk_class,
             }

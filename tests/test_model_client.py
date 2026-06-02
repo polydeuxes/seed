@@ -7,6 +7,7 @@ from seed_runtime.model_client import (
     DecisionPromptModelClient,
     ParsedDecisionModel,
     StrictJSONDecisionParser,
+    render_decision_prompt,
     serialize_decision_prompt,
 )
 
@@ -49,6 +50,11 @@ def sample_context() -> ContextPacket:
                     "properties": {"host": {"type": "string"}},
                     "required": ["host"],
                 },
+                "output_schema": {
+                    "type": "object",
+                    "properties": {"used_bytes": {"type": "integer"}},
+                    "required": ["used_bytes"],
+                },
                 "policy_action": "read_docker_storage",
                 "risk_class": "L1",
             }
@@ -73,17 +79,87 @@ def test_strict_json_decision_parser_rejects_prose():
         StrictJSONDecisionParser().parse('Here is the decision: {"kind":"answer"}')
 
 
-def test_serialize_decision_prompt_uses_stable_small_model_sections():
-    prompt = serialize_decision_prompt(sample_context())
+def test_render_decision_prompt_snapshot_is_compact_and_deterministic():
+    prompt = render_decision_prompt(sample_context())
 
-    assert prompt.startswith("TASK\nChoose one decision for the Seed runtime.")
-    assert "\n\nCURRENT INPUT\n" in prompt
-    assert "\n\nSTATE\n" in prompt
-    assert "\n\nTOOLS\n" in prompt
-    assert "\n\nOUTPUT JSON SCHEMA\n" in prompt
-    assert '"text": "is node-1 out of disk?"' in prompt
-    assert '"name": "docker_storage_summary"' in prompt
-    assert "Return only one JSON object" in prompt
+    assert (
+        prompt
+        == """TASK INSTRUCTION
+Choose exactly one decision for the Seed runtime.
+
+CURRENT INPUT
+{"text":"is node-1 out of disk?"}
+
+RELEVANT STATE SUMMARY
+{"active_goal":{"status":"active","summary":"Check node health"},"entities":[{"kind":"host","name":"node-1"}],"facts":[{"predicate":"disk_status","subject":"node-1","value":"unknown"}]}
+
+VISIBLE TOOLS
+[{"input_schema":{"properties":{"host":{"type":"string"}},"required":["host"],"type":"object"},"name":"docker_storage_summary","output_schema":{"properties":{"used_bytes":{"type":"integer"}},"required":["used_bytes"],"type":"object"},"risk_class":"L1","summary":"Summarize Docker disk usage for a host."}]
+
+OPEN TOOL NEEDS
+[]
+
+ALLOWED JSON DECISION SHAPES
+[{"answer":"...","kind":"answer","reason":"..."},{"kind":"ask_question","question":"...","reason":"..."},{"kind":"call_tool","reason":"...","tool_arguments":{},"tool_name":"visible_tool_name"},{"kind":"request_tool","reason":"...","tool_need":{"capability":"capability_name","name":"snake_case_name","summary":"What the missing tool should do."}},{"kind":"refuse","reason":"..."}]
+
+STRICT OUTPUT
+Output only one JSON object matching one allowed shape. Do not include prose, markdown, code fences, or multiple objects."""
+    )
+    assert render_decision_prompt(sample_context()) == prompt
+    assert len(prompt) < 1300
+
+
+def test_render_decision_prompt_includes_only_model_relevant_fields():
+    prompt = render_decision_prompt(sample_context())
+
+    assert "workspace-1" not in prompt
+    assert "session-1" not in prompt
+    assert "event-1" not in prompt
+    assert "goal-1" not in prompt
+    assert "entity-1" not in prompt
+    assert "fact-1" not in prompt
+    assert "policy_action" not in prompt
+    assert "read_docker_storage" not in prompt
+
+
+def test_render_decision_prompt_includes_open_tool_needs_without_runtime_fields():
+    context = sample_context()
+    context_with_need = ContextPacket(
+        **{
+            **context.to_dict(),
+            "open_tool_needs": [
+                {
+                    "id": "need-1",
+                    "workspace_id": "workspace-1",
+                    "name": "inspect_docker_storage",
+                    "summary": "Inspect Docker storage on a host.",
+                    "capability": "docker_storage_inspection",
+                    "reason": "Current visible tools are insufficient.",
+                    "status": "proposed",
+                    "desired_inputs": ["host"],
+                    "desired_outputs": ["storage_summary"],
+                }
+            ],
+        }
+    )
+
+    prompt = render_decision_prompt(context_with_need)
+
+    assert (
+        '{"capability":"docker_storage_inspection","desired_inputs":["host"],'
+        '"desired_outputs":["storage_summary"],"name":"inspect_docker_storage",'
+        '"reason":"Current visible tools are insufficient.","summary":"Inspect Docker storage on a host."}'
+        in prompt
+    )
+    assert "need-1" not in prompt
+    assert "workspace-1" not in prompt
+    assert "proposed" not in prompt
+
+
+def test_serialize_decision_prompt_is_backward_compatible_alias():
+    assert serialize_decision_prompt(sample_context()) == render_decision_prompt(
+        sample_context()
+    )
 
 
 def test_serialize_decision_prompt_includes_retry_prompt_when_present():
@@ -115,7 +191,7 @@ def test_decision_prompt_model_client_sends_serialized_context_to_transport():
     )
     assert len(transport.prompts) == 1
     assert "CURRENT INPUT" in transport.prompts[0]
-    assert "OUTPUT JSON SCHEMA" in transport.prompts[0]
+    assert "ALLOWED JSON DECISION SHAPES" in transport.prompts[0]
 
 
 def test_decision_prompt_model_client_is_injectable_into_parsed_decision_model():
