@@ -9,7 +9,7 @@ def test_projector_rebuilds_state_deterministically():
     ledger = EventLedger()
     workspace_id = "ws_1"
     entity = Entity(id="ent_1", kind="host", name="node-1")
-    fact = Fact(id="fact_1", subject_id="ent_1", predicate="ssh.running", value=False, source_event_id="evt_source", observed_at=utc_now())
+    fact = Fact(id="fact_1", subject_id="ent_1", predicate="ssh.running", value=False, evidence_ids=["evt_source"], observed_at=utc_now())
     goal = Goal(id="goal_1", workspace_id=workspace_id, summary="Make SSH work")
     need = ToolNeed(id="need_1", workspace_id=workspace_id, name="install_ssh_server", summary="Install SSH", capability="ssh_access", reason="missing tool")
     approval = Approval(id=new_id("appr"), action="ssh.install", scope="ent_1", approved_by="user")

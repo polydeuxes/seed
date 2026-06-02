@@ -5,6 +5,9 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Literal
 
+from seed_runtime.evidence import Evidence
+from seed_runtime.facts import Fact
+
 from importlib.util import find_spec
 
 if find_spec("pydantic") is not None:
@@ -87,17 +90,6 @@ class Entity(SeedModel):
     name: str
     aliases: list[str] = Field(default_factory=list)
     attributes: dict[str, Any] = Field(default_factory=dict)
-    confidence: float = 1.0
-
-
-class Fact(SeedModel):
-    id: str
-    subject_id: str
-    predicate: str
-    value: Any
-    source_event_id: str
-    observed_at: datetime
-    expires_at: datetime | None = None
     confidence: float = 1.0
 
 
