@@ -85,6 +85,65 @@ def test_routes_call_tool():
     assert response.payload["output"]["message"] == "hi"
 
 
+def test_mvp_echo_loop_records_result_event_and_keeps_projected_state_boring():
+    runtime, ledger, model = make_runtime(
+        Decision(
+            kind="call_tool",
+            reason="safe deterministic echo",
+            tool_name="echo",
+            tool_arguments={"message": "hello"},
+        )
+    )
+
+    response = runtime.handle_user_message("ws", "ses", "echo hello")
+    projected_state = runtime.projector.project("ws")
+
+    assert response.kind == "tool_result"
+    assert response.payload["output"] == {
+        "ok": True,
+        "message": "hello",
+        "workspace_id": "ws",
+    }
+    assert [event.kind for event in ledger.list_events("ws")] == [
+        "input.user_message",
+        "model.decision.proposed",
+        "tool.call.started",
+        "tool.call.completed",
+    ]
+    assert model.last_context.current_input["text"] == "echo hello"
+    assert [tool["name"] for tool in model.last_context.tools] == ["echo"]
+    assert projected_state.workspace_id == "ws"
+    assert projected_state.open_tool_needs == []
+
+
+def test_mvp_request_tool_loop_records_need_and_projects_open_state():
+    runtime, ledger, model = make_runtime(
+        Decision(
+            kind="request_tool",
+            reason="missing safe capability",
+            tool_need={
+                "name": "lookup_service_status",
+                "summary": "Look up service status from recorded host inventory",
+                "capability": "service_status_lookup",
+            },
+        )
+    )
+
+    response = runtime.handle_user_message("ws", "ses", "check service")
+    projected_state = runtime.projector.project("ws")
+
+    assert response.kind == "tool_need"
+    assert [event.kind for event in ledger.list_events("ws")] == [
+        "input.user_message",
+        "model.decision.proposed",
+        "tool_need.created",
+    ]
+    assert model.last_context.current_input["text"] == "check service"
+    assert [need.name for need in projected_state.open_tool_needs] == [
+        "lookup_service_status"
+    ]
+
+
 def test_retries_invalid_first_decision_with_corrected_valid_decision():
     model = SequenceDecisionModel(
         [
