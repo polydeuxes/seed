@@ -3,16 +3,39 @@
 from __future__ import annotations
 
 import importlib
-from dataclasses import dataclass
-from typing import Any, Callable
+from dataclasses import dataclass, field
+from typing import Any, Callable, Literal
 
+from seed_runtime.base import SeedModel
 from seed_runtime.events import EventLedger
-from seed_runtime.models import RuntimeResponse, ToolSpec
+from seed_runtime.models import PolicyDecision, ToolSpec
 from seed_runtime.policy import PolicyGate
 from seed_runtime.registry import ToolRegistry
-from seed_runtime.schema import validate_schema_value
+from seed_runtime.schema import SchemaValidationError, validate_schema_value
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
+
+
+ToolCallStatus = Literal[
+    "completed",
+    "failed",
+    "blocked",
+    "require_confirmation",
+    "require_approval",
+]
+
+
+class ToolCallResult(SeedModel):
+    """Structured result returned by the Seed tool executor."""
+
+    kind: str
+    status: ToolCallStatus
+    tool_name: str
+    message: str
+    output: dict[str, Any] | None = None
+    error: str | None = None
+    policy: dict[str, Any] | None = None
+    payload: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -46,25 +69,41 @@ class ToolExecutor:
         *,
         causation_id: str | None = None,
         scope: str | None = None,
-    ) -> RuntimeResponse:
+    ) -> ToolCallResult:
         tool = self.registry.require(tool_name)
-        validate_schema_value(tool.input_schema, arguments)
+        if tool.status != "registered":
+            return self._failed(
+                workspace_id,
+                session_id,
+                tool,
+                f"tool {tool.name!r} is not registered",
+                causation_id=causation_id,
+                phase="registration",
+            )
+
+        try:
+            validate_schema_value(tool.input_schema, arguments)
+        except SchemaValidationError as exc:
+            return self._failed(
+                workspace_id,
+                session_id,
+                tool,
+                str(exc),
+                causation_id=causation_id,
+                phase="input_validation",
+            )
+
         state = self.projector.project(workspace_id)
         policy = self.policy_gate.evaluate(tool, state, scope=scope)
         if policy.outcome != "allow":
-            self.ledger.append(
-                "policy.action_gated",
+            return self._policy_denied(
                 workspace_id,
-                {"tool": tool.name, "policy": to_plain(policy)},
-                actor="system",
-                session_id=session_id,
+                session_id,
+                tool,
+                policy,
                 causation_id=causation_id,
             )
-            return RuntimeResponse(
-                kind=policy.outcome,
-                message=policy.reason,
-                payload={"policy": to_plain(policy)},
-            )
+
         call_event = self.ledger.append(
             "tool.call.started",
             workspace_id,
@@ -73,14 +112,34 @@ class ToolExecutor:
             session_id=session_id,
             causation_id=causation_id,
         )
-        fn = self._load(tool)
-        output = fn(
-            ToolContext(
-                self.ledger, workspace_id, session_id, tool.name, call_event.id
-            ),
-            **arguments,
-        )
-        validate_schema_value(tool.output_schema, output)
+
+        try:
+            fn = self._load_registered(tool)
+            output = fn(
+                ToolContext(
+                    self.ledger, workspace_id, session_id, tool.name, call_event.id
+                ),
+                **arguments,
+            )
+            validate_schema_value(tool.output_schema, output)
+        except Exception as exc:
+            self.ledger.append(
+                "tool.call.failed",
+                workspace_id,
+                {"tool": tool.name, "error": str(exc), "phase": "execution"},
+                actor="tool",
+                session_id=session_id,
+                causation_id=call_event.id,
+            )
+            return ToolCallResult(
+                kind="tool_failed",
+                status="failed",
+                tool_name=tool.name,
+                message=f"Tool {tool.name} failed.",
+                error=str(exc),
+                payload={"error": str(exc)},
+            )
+
         self.ledger.append(
             "tool.call.completed",
             workspace_id,
@@ -89,13 +148,79 @@ class ToolExecutor:
             session_id=session_id,
             causation_id=call_event.id,
         )
-        return RuntimeResponse(
+        return ToolCallResult(
             kind="tool_result",
+            status="completed",
+            tool_name=tool.name,
             message=f"Tool {tool.name} completed.",
+            output=output,
             payload={"output": output},
         )
 
-    def _load(self, tool: ToolSpec) -> Callable[..., dict[str, Any]]:
+    def _policy_denied(
+        self,
+        workspace_id: str,
+        session_id: str | None,
+        tool: ToolSpec,
+        policy: PolicyDecision,
+        *,
+        causation_id: str | None,
+    ) -> ToolCallResult:
+        event_kind = (
+            "tool.policy.blocked" if policy.outcome == "block" else "tool.approval.required"
+        )
+        policy_payload = to_plain(policy)
+        self.ledger.append(
+            event_kind,
+            workspace_id,
+            {"tool": tool.name, "policy": policy_payload},
+            actor="system",
+            session_id=session_id,
+            causation_id=causation_id,
+        )
+        status = "blocked" if policy.outcome == "block" else policy.outcome
+        return ToolCallResult(
+            kind=policy.outcome,
+            status=status,
+            tool_name=tool.name,
+            message=policy.reason,
+            policy=policy_payload,
+            payload={"policy": policy_payload},
+        )
+
+    def _failed(
+        self,
+        workspace_id: str,
+        session_id: str | None,
+        tool: ToolSpec,
+        error: str,
+        *,
+        causation_id: str | None,
+        phase: str,
+    ) -> ToolCallResult:
+        self.ledger.append(
+            "tool.call.failed",
+            workspace_id,
+            {"tool": tool.name, "error": error, "phase": phase},
+            actor="tool",
+            session_id=session_id,
+            causation_id=causation_id,
+        )
+        return ToolCallResult(
+            kind="tool_failed",
+            status="failed",
+            tool_name=tool.name,
+            message=f"Tool {tool.name} failed.",
+            error=error,
+            payload={"error": error},
+        )
+
+    def _load_registered(self, tool: ToolSpec) -> Callable[..., dict[str, Any]]:
+        registered = self.registry.get(tool.name)
+        if registered is None or registered.implementation != tool.implementation:
+            raise ValueError(f"implementation for tool {tool.name!r} is not registered")
+        if ":" not in tool.implementation:
+            raise ValueError(f"invalid implementation reference {tool.implementation!r}")
         module_name, function_name = tool.implementation.split(":", 1)
         module = importlib.import_module(module_name)
         fn = getattr(module, function_name)
