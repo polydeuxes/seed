@@ -99,8 +99,16 @@ def test_format_response_summary_lists_tool_need_recommendations():
                 "payload": {
                     "tool_need": {"capability": "weather_lookup"},
                     "recommendations": [
-                        {"provider": "open_meteo"},
-                        {"provider": "wttr"},
+                        {
+                            "provider": "open_meteo",
+                            "score": 55,
+                            "reasons": ["catalog default"],
+                        },
+                        {
+                            "provider": "wttr",
+                            "score": 50,
+                            "reasons": ["provider matches known runtime: api"],
+                        },
                     ],
                 },
             }
@@ -110,8 +118,11 @@ def test_format_response_summary_lists_tool_need_recommendations():
     assert summary == (
         "Recorded tool need weather_lookup.\n"
         "Recommendations:\n"
-        "- open_meteo\n"
-        "- wttr"
+        "1. open_meteo (score=55)\n"
+        "   - catalog default\n"
+        "\n"
+        "2. wttr (score=50)\n"
+        "   - provider matches known runtime: api"
     )
 
 

@@ -184,14 +184,37 @@ def format_response_summary(result: dict[str, Any]) -> str:
     recommendations = payload.get("recommendations")
     if isinstance(recommendations, list) and recommendations:
         lines.append("Recommendations:")
-        for recommendation in recommendations:
-            if isinstance(recommendation, dict):
-                provider = recommendation.get("provider")
-                if provider is not None:
-                    lines.append(f"- {provider}")
-            elif recommendation is not None:
-                lines.append(f"- {recommendation}")
+        formatted_recommendations = _format_recommendations(recommendations)
+        if formatted_recommendations:
+            lines.extend(formatted_recommendations)
     return "\n".join(lines)
+
+
+def _format_recommendations(recommendations: list[Any]) -> list[str]:
+    lines: list[str] = []
+    for index, recommendation in enumerate(recommendations, start=1):
+        if lines:
+            lines.append("")
+        if isinstance(recommendation, dict):
+            provider = recommendation.get("provider")
+            if provider is None:
+                lines.append(f"{index}. {recommendation}")
+                continue
+            score = recommendation.get("score")
+            if score is None:
+                lines.append(f"{index}. {provider}")
+            else:
+                lines.append(f"{index}. {provider} (score={score})")
+            reasons = recommendation.get("reasons")
+            if not isinstance(reasons, list):
+                reasons = recommendation.get("reasoning")
+            if isinstance(reasons, list):
+                for reason in reasons:
+                    if reason is not None:
+                        lines.append(f"   - {reason}")
+        elif recommendation is not None:
+            lines.append(f"{index}. {recommendation}")
+    return lines
 
 
 def format_cli_output(

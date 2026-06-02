@@ -115,6 +115,13 @@ def test_runtime_tool_need_response_includes_recommendations_without_registering
         recommendation["provider"]
         for recommendation in response.payload["recommendations"]
     ] == ["open_meteo", "wttr"]
+    assert set(response.payload["recommendations"][0]) == {
+        "provider",
+        "score",
+        "reasons",
+    }
+    assert isinstance(response.payload["recommendations"][0]["score"], int)
+    assert response.payload["recommendations"][0]["reasons"]
     assert [tool.name for tool in registry.list_tools()] == ["echo"]
     assert projector.project("ws").tools == {}
 
