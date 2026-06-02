@@ -17,6 +17,7 @@ from seed_runtime.state import StateProjector
 
 @dataclass(frozen=True)
 class ToolContext:
+    ledger: EventLedger
     workspace_id: str
     session_id: str | None
     tool_name: str
@@ -69,7 +70,7 @@ class ToolExecutor:
             causation_id=causation_id,
         )
         fn = self._load(tool)
-        output = fn(ToolContext(workspace_id, session_id, tool.name, call_event.id), **arguments)
+        output = fn(ToolContext(self.ledger, workspace_id, session_id, tool.name, call_event.id), **arguments)
         validate_schema_value(tool.output_schema, output)
         self.ledger.append(
             "tool.call.completed",
