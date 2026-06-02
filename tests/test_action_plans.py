@@ -190,3 +190,115 @@ def test_create_plan_does_not_execute_tools_or_register_tools_or_approve():
     assert "tool.call.completed" not in kinds
     assert "tool.registered" not in kinds
     assert "approval.granted" not in kinds
+
+
+def _weather_need() -> ToolNeed:
+    return ToolNeed(
+        id="need_weather",
+        workspace_id="ws",
+        name="weather_lookup",
+        capability="weather_lookup",
+        summary="Look up a forecast",
+        reason="User asked for weather",
+    )
+
+
+def _weather_recommendation(provider: str = "open_meteo") -> RankedRecommendation:
+    return RankedRecommendation(
+        provider=provider,
+        summary="Public weather API suitable for forecast lookup.",
+        kind="public_api",
+        source="https://open-meteo.com/",
+        risk_class="L1",
+        notes="Requires explicit integration.",
+        score=15,
+        reasons=["lower risk class: L1"],
+        reasoning=["+10 lower risk class: L1"],
+    )
+
+
+def test_created_plan_defaults_to_proposed():
+    plan = ActionPlanService().create_plan(
+        _weather_need(), _weather_recommendation(), State(workspace_id="ws")
+    )
+
+    assert plan.status == "proposed"
+    assert plan.rejection_reason is None
+    assert plan.replacement_plan_id is None
+
+
+def test_accept_plan_changes_projected_status_to_accepted():
+    ledger = EventLedger()
+    service = ActionPlanService(ledger)
+    plan = service.create_plan(
+        _weather_need(), _weather_recommendation(), State(workspace_id="ws")
+    )
+
+    accepted = service.accept_plan("ws", plan.id, session_id="ses")
+
+    assert accepted.status == "accepted"
+    events = ledger.list_events("ws")
+    assert [event.kind for event in events] == [
+        "action_plan.created",
+        "action_plan.accepted",
+    ]
+    assert events[-1].session_id == "ses"
+    projected = StateProjector(ledger).project("ws").action_plans[plan.id]
+    assert projected.status == "accepted"
+    assert projected.executable is False
+
+
+def test_reject_plan_records_reason_in_event_and_projected_state():
+    ledger = EventLedger()
+    service = ActionPlanService(ledger)
+    plan = service.create_plan(
+        _weather_need(), _weather_recommendation(), State(workspace_id="ws")
+    )
+
+    rejected = service.reject_plan("ws", plan.id, "Use another provider")
+
+    assert rejected.status == "rejected"
+    assert rejected.rejection_reason == "Use another provider"
+    event = ledger.list_events("ws")[-1]
+    assert event.kind == "action_plan.rejected"
+    assert event.payload["reason"] == "Use another provider"
+    projected = StateProjector(ledger).project("ws").action_plans[plan.id]
+    assert projected.status == "rejected"
+    assert projected.rejection_reason == "Use another provider"
+
+
+def test_supersede_plan_records_replacement_id_in_event_and_projected_state():
+    ledger = EventLedger()
+    service = ActionPlanService(ledger)
+    original = service.create_plan(
+        _weather_need(), _weather_recommendation(), State(workspace_id="ws")
+    )
+    replacement = service.create_plan(
+        _weather_need(), _weather_recommendation("weather_api"), State(workspace_id="ws")
+    )
+
+    superseded = service.supersede_plan("ws", original.id, replacement.id)
+
+    assert superseded.status == "superseded"
+    assert superseded.replacement_plan_id == replacement.id
+    event = ledger.list_events("ws")[-1]
+    assert event.kind == "action_plan.superseded"
+    assert event.payload["replacement_plan_id"] == replacement.id
+    projected = StateProjector(ledger).project("ws").action_plans[original.id]
+    assert projected.status == "superseded"
+    assert projected.replacement_plan_id == replacement.id
+
+
+def test_lifecycle_unknown_plan_id_raises_clean_error():
+    from seed_runtime.action_plans import ActionPlanNotFoundError
+
+    ledger = EventLedger()
+    service = ActionPlanService(ledger)
+
+    try:
+        service.accept_plan("ws", "plan_missing")
+    except ActionPlanNotFoundError as exc:
+        assert "action plan not found" in str(exc)
+        assert "plan_missing" in str(exc)
+    else:
+        raise AssertionError("expected ActionPlanNotFoundError")
