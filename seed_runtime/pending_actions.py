@@ -29,6 +29,7 @@ class PendingActionService:
         session_id: str | None = None,
         created_from_event_id: str | None = None,
         causation_id: str | None = None,
+        correlation_id: str | None = None,
     ) -> PendingAction:
         """Create a pending action for a tool call that must not execute yet."""
         pending_action = PendingAction(
@@ -49,6 +50,7 @@ class PendingActionService:
             actor="system",
             session_id=session_id,
             causation_id=created_from_event_id or causation_id,
+            correlation_id=correlation_id,
         )
         return pending_action
 
@@ -59,6 +61,7 @@ class PendingActionService:
         *,
         session_id: str | None = None,
         causation_id: str | None = None,
+        correlation_id: str | None = None,
     ) -> PendingAction:
         """Mark a projected pending action as approved without resuming it."""
         return self._set_status(
@@ -67,6 +70,7 @@ class PendingActionService:
             "approved",
             session_id=session_id,
             causation_id=causation_id,
+            correlation_id=correlation_id,
         )
 
     def mark_completed(
@@ -76,6 +80,7 @@ class PendingActionService:
         *,
         session_id: str | None = None,
         causation_id: str | None = None,
+        correlation_id: str | None = None,
     ) -> PendingAction:
         """Mark a projected pending action as completed after external execution."""
         return self._set_status(
@@ -84,6 +89,7 @@ class PendingActionService:
             "completed",
             session_id=session_id,
             causation_id=causation_id,
+            correlation_id=correlation_id,
         )
 
     def _set_status(
@@ -94,6 +100,7 @@ class PendingActionService:
         *,
         session_id: str | None,
         causation_id: str | None,
+        correlation_id: str | None,
     ) -> PendingAction:
         state = self.projector.project(workspace_id)
         if pending_action_id not in state.pending_actions:
@@ -110,5 +117,6 @@ class PendingActionService:
             actor="approver" if status == "approved" else "system",
             session_id=session_id,
             causation_id=causation_id,
+            correlation_id=correlation_id,
         )
         return pending_action

@@ -73,6 +73,7 @@ class ToolExecutor:
         arguments: dict[str, Any],
         *,
         causation_id: str | None = None,
+        correlation_id: str | None = None,
         scope: str | None = None,
     ) -> ToolCallResult:
         tool = self.registry.require(tool_name)
@@ -83,6 +84,7 @@ class ToolExecutor:
                 tool,
                 f"tool {tool.name!r} is not registered",
                 causation_id=causation_id,
+                correlation_id=correlation_id,
                 phase="registration",
             )
 
@@ -95,6 +97,7 @@ class ToolExecutor:
                 tool,
                 str(exc),
                 causation_id=causation_id,
+                correlation_id=correlation_id,
                 phase="input_validation",
             )
 
@@ -109,15 +112,83 @@ class ToolExecutor:
                 arguments=arguments,
                 scope=scope,
                 causation_id=causation_id,
+                correlation_id=correlation_id,
             )
 
+        return self._execute_allowed_tool_call(
+            workspace_id,
+            session_id,
+            tool,
+            arguments,
+            scope=scope,
+            causation_id=causation_id,
+            correlation_id=correlation_id,
+        )
+
+    def resume_approved_tool_call(
+        self,
+        workspace_id: str,
+        pending_action_id: str,
+        session_id: str | None = None,
+    ) -> ToolCallResult:
+        """Execute an approved pending action's stored tool call exactly once."""
+        state = self.projector.project(workspace_id)
+        if pending_action_id not in state.pending_actions:
+            raise ValueError(f"unknown pending action: {pending_action_id}")
+
+        pending_action = state.pending_actions[pending_action_id]
+        if pending_action.status != "approved":
+            raise ValueError(
+                "pending action "
+                f"{pending_action_id} has status {pending_action.status!r}; "
+                "only approved pending actions can be resumed"
+            )
+
+        causation_id, correlation_id = self._resume_event_context(
+            workspace_id, pending_action
+        )
+        tool = self.registry.require(pending_action.tool_name)
+        result = self._execute_allowed_tool_call(
+            workspace_id,
+            session_id,
+            tool,
+            pending_action.arguments,
+            scope=pending_action.scope,
+            causation_id=causation_id,
+            correlation_id=correlation_id,
+        )
+        if result.status == "completed":
+            self.pending_actions.mark_completed(
+                workspace_id,
+                pending_action_id,
+                session_id=session_id,
+                causation_id=result.payload.get("completed_event_id") or causation_id,
+                correlation_id=correlation_id,
+            )
+        return result
+
+    def _execute_allowed_tool_call(
+        self,
+        workspace_id: str,
+        session_id: str | None,
+        tool: ToolSpec,
+        arguments: dict[str, Any],
+        *,
+        scope: str | None,
+        causation_id: str | None,
+        correlation_id: str | None,
+    ) -> ToolCallResult:
+        started_payload = {"tool": tool.name, "arguments": to_plain(arguments)}
+        if scope is not None:
+            started_payload["scope"] = scope
         call_event = self.ledger.append(
             "tool.call.started",
             workspace_id,
-            {"tool": tool.name, "arguments": arguments},
+            started_payload,
             actor="tool",
             session_id=session_id,
             causation_id=causation_id,
+            correlation_id=correlation_id,
         )
 
         try:
@@ -130,13 +201,14 @@ class ToolExecutor:
             )
             validate_schema_value(tool.output_schema, output)
         except Exception as exc:
-            self.ledger.append(
+            failed_event = self.ledger.append(
                 "tool.call.failed",
                 workspace_id,
                 {"tool": tool.name, "error": str(exc), "phase": "execution"},
                 actor="tool",
                 session_id=session_id,
                 causation_id=call_event.id,
+                correlation_id=correlation_id,
             )
             return ToolCallResult(
                 kind="tool_failed",
@@ -144,7 +216,7 @@ class ToolExecutor:
                 tool_name=tool.name,
                 message=f"Tool {tool.name} failed.",
                 error=str(exc),
-                payload={"error": str(exc)},
+                payload={"error": str(exc), "failed_event_id": failed_event.id},
             )
 
         completed_event = self.ledger.append(
@@ -154,6 +226,7 @@ class ToolExecutor:
             actor="tool",
             session_id=session_id,
             causation_id=call_event.id,
+            correlation_id=correlation_id,
         )
         self.fact_extraction.observe_tool_result(completed_event)
         return ToolCallResult(
@@ -162,7 +235,7 @@ class ToolExecutor:
             tool_name=tool.name,
             message=f"Tool {tool.name} completed.",
             output=output,
-            payload={"output": output},
+            payload={"output": output, "completed_event_id": completed_event.id},
         )
 
     def _policy_denied(
@@ -175,6 +248,7 @@ class ToolExecutor:
         arguments: dict[str, Any],
         scope: str | None,
         causation_id: str | None,
+        correlation_id: str | None,
     ) -> ToolCallResult:
         event_kind = (
             "tool.policy.blocked" if policy.outcome == "block" else "tool.approval.required"
@@ -187,6 +261,7 @@ class ToolExecutor:
             actor="system",
             session_id=session_id,
             causation_id=causation_id,
+            correlation_id=correlation_id,
         )
         status = "blocked" if policy.outcome == "block" else policy.outcome
         pending_action = None
@@ -201,6 +276,7 @@ class ToolExecutor:
                 session_id=session_id,
                 created_from_event_id=policy_event.id,
                 causation_id=causation_id,
+                correlation_id=correlation_id,
             )
             payload["pending_action"] = to_plain(pending_action)
         return ToolCallResult(
@@ -221,6 +297,7 @@ class ToolExecutor:
         error: str,
         *,
         causation_id: str | None,
+        correlation_id: str | None,
         phase: str,
     ) -> ToolCallResult:
         self.ledger.append(
@@ -230,6 +307,7 @@ class ToolExecutor:
             actor="tool",
             session_id=session_id,
             causation_id=causation_id,
+            correlation_id=correlation_id,
         )
         return ToolCallResult(
             kind="tool_failed",
@@ -239,6 +317,48 @@ class ToolExecutor:
             error=error,
             payload={"error": error},
         )
+
+    def _resume_event_context(
+        self, workspace_id: str, pending_action: PendingAction
+    ) -> tuple[str | None, str | None]:
+        causation_id = pending_action.created_from_event_id or pending_action.causation_id
+        correlation_id = None
+        created_event = None
+
+        for event in reversed(self.ledger.list_events(workspace_id)):
+            if event.kind == "pending_action.created":
+                event_action = event.payload.get("pending_action", {})
+                if event_action.get("id") == pending_action.id:
+                    created_event = event
+                    if correlation_id is None:
+                        correlation_id = event.correlation_id
+                    continue
+
+            if event.kind not in {
+                "pending_action.approved",
+                "pending_action.status_changed",
+            }:
+                continue
+            if event.payload.get("pending_action_id") != pending_action.id:
+                continue
+            if event.payload.get("status", "approved") != "approved":
+                continue
+            causation_id = event.id
+            correlation_id = event.correlation_id or correlation_id
+            break
+
+        if correlation_id is None and created_event is not None:
+            correlation_id = created_event.correlation_id
+        if correlation_id is None and pending_action.created_from_event_id is not None:
+            source_event = self.ledger.get(pending_action.created_from_event_id)
+            if source_event is not None:
+                correlation_id = source_event.correlation_id
+        if correlation_id is None and pending_action.causation_id is not None:
+            source_event = self.ledger.get(pending_action.causation_id)
+            if source_event is not None:
+                correlation_id = source_event.correlation_id
+
+        return causation_id, correlation_id
 
     def _load_registered(self, tool: ToolSpec) -> Callable[..., dict[str, Any]]:
         registered = self.registry.get(tool.name)
