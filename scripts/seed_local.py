@@ -18,6 +18,8 @@ if str(REPO_ROOT) not in sys.path:
 from seed_runtime.context import ContextComposer
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
+from seed_runtime.evidence import Evidence
+from seed_runtime.facts import Fact
 from seed_runtime.execution import ToolExecutor
 from seed_runtime.ids import new_id
 from seed_runtime.intent_classifier import (
@@ -25,7 +27,7 @@ from seed_runtime.intent_classifier import (
     IntentPromptModelClient,
     TextIntentClassifier,
 )
-from seed_runtime.models import Event
+from seed_runtime.models import Event, utc_now
 from seed_runtime.registry import ToolRegistry
 from seed_runtime.runtime import Runtime
 from seed_runtime.serialization import to_plain
@@ -36,6 +38,15 @@ DEFAULT_ENDPOINT = "http://localhost:11434/api/generate"
 DEFAULT_MODEL = "qwen2.5:3b"
 DEFAULT_WORKSPACE = "local"
 DEFAULT_SESSION = "local"
+
+
+@dataclass(frozen=True)
+class DevFactSeed:
+    """Local development fact supplied from the seed_local CLI."""
+
+    subject_id: str
+    predicate: str
+    value: Any
 
 
 @dataclass
@@ -60,6 +71,49 @@ class LocalSeedApp:
                 to_plain(event) for event in self.ledger.list(self.workspace_id)
             ],
         }
+
+    def seed_facts(self, facts: list[DevFactSeed]) -> None:
+        """Append local development evidence and fact events into the ledger."""
+
+        for index, seed in enumerate(facts, start=1):
+            observed_at = utc_now()
+            evidence = Evidence(
+                id=new_id("evd_dev_fact"),
+                workspace_id=self.workspace_id,
+                source="scripts.seed_local --fact",
+                kind="local_dev.fact",
+                observed_at=observed_at,
+                payload={
+                    "subject_id": seed.subject_id,
+                    "predicate": seed.predicate,
+                    "value": seed.value,
+                    "index": index,
+                },
+                confidence=1.0,
+            )
+            fact = Fact(
+                id=new_id("fact_dev"),
+                subject_id=seed.subject_id,
+                predicate=seed.predicate,
+                value=seed.value,
+                evidence_ids=[evidence.id],
+                observed_at=observed_at,
+                confidence=evidence.confidence,
+            )
+            self.ledger.append(
+                "evidence.observed",
+                self.workspace_id,
+                {"evidence": to_plain(evidence)},
+                actor="system",
+                session_id=self.session_id,
+            )
+            self.ledger.append(
+                "fact.observed",
+                self.workspace_id,
+                {"fact": to_plain(fact)},
+                actor="system",
+                session_id=self.session_id,
+            )
 
     def raw(self, text: str) -> str:
         input_event = Event(
@@ -159,7 +213,32 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--workspace", default=DEFAULT_WORKSPACE, help="workspace id")
     parser.add_argument("--session", default=DEFAULT_SESSION, help="session id")
+    parser.add_argument(
+        "--fact",
+        action="append",
+        nargs=3,
+        metavar=("SUBJECT", "PREDICATE", "VALUE"),
+        default=[],
+        help=(
+            "dev-only seed-state fact to append before handling messages; "
+            "repeat as --fact SUBJECT PREDICATE VALUE"
+        ),
+    )
     return parser
+
+
+def parse_dev_fact(args: list[str]) -> DevFactSeed:
+    subject_id, predicate, raw_value = args
+    return DevFactSeed(
+        subject_id=subject_id, predicate=predicate, value=_parse_fact_value(raw_value)
+    )
+
+
+def _parse_fact_value(value: str) -> Any:
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError:
+        return value
 
 
 def format_response_summary(result: dict[str, Any]) -> str:
@@ -329,6 +408,10 @@ def main(argv: list[str] | None = None) -> int:
         workspace_id=args.workspace,
         session_id=args.session,
     )
+    fact_seeds = [parse_dev_fact(fact) for fact in args.fact]
+    if fact_seeds:
+        app.seed_facts(fact_seeds)
+
     if args.http:
         run_http(app, args.host, args.port)
         return 0

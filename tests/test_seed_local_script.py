@@ -193,3 +193,80 @@ def test_raw_preview_does_not_append_to_runtime_ledger(monkeypatch):
 
     assert app.raw("install docker") == "RAW INTENT"
     assert app.ledger.list(app.workspace_id) == []
+
+
+def test_fact_seed_appends_evidence_and_fact_before_user_message():
+    seed_local = load_seed_local_module()
+    app = seed_local.build_local_app()
+
+    app.seed_facts([seed_local.DevFactSeed("jellyfin", "runtime", "docker")])
+    result = app.run("echo hello")
+
+    event_kinds = [event["kind"] for event in result["events"]]
+    assert event_kinds[:3] == [
+        "evidence.observed",
+        "fact.observed",
+        "input.user_message",
+    ]
+
+    state = app.projector.project(app.workspace_id)
+    fact = next(iter(state.facts.values()))
+    evidence = next(iter(state.evidence.values()))
+    assert fact.subject_id == "jellyfin"
+    assert fact.predicate == "runtime"
+    assert fact.value == "docker"
+    assert fact.evidence_ids == [evidence.id]
+    assert evidence.payload == {
+        "subject_id": "jellyfin",
+        "predicate": "runtime",
+        "value": "docker",
+        "index": 1,
+    }
+
+
+def test_cli_fact_seed_influences_service_recommendation_ranking(monkeypatch, capsys):
+    seed_local = load_seed_local_module()
+
+    monkeypatch.setattr(
+        seed_local.IntentPromptModelClient,
+        "complete",
+        lambda self, context: (
+            '{"intent":"missing_tool","reason":"needs service tool","arguments":{}}'
+        ),
+    )
+
+    assert seed_local.main(
+        ["--fact", "jellyfin", "runtime", "docker", "restart jellyfin?"]
+    ) == 0
+
+    output = capsys.readouterr().out
+    assert "1. docker_container_lifecycle" in output
+    assert "2. systemctl_cli" in output
+    assert output.index("1. docker_container_lifecycle") < output.index(
+        "2. systemctl_cli"
+    )
+    assert "known runtime: docker" in output
+
+
+def test_parser_accepts_repeatable_fact_seed_options():
+    seed_local = load_seed_local_module()
+    args = seed_local.build_parser().parse_args(
+        [
+            "--fact",
+            "jellyfin",
+            "runtime",
+            "docker",
+            "--fact",
+            "plex",
+            "runtime",
+            "systemd",
+            "restart",
+            "jellyfin?",
+        ]
+    )
+
+    assert args.fact == [
+        ["jellyfin", "runtime", "docker"],
+        ["plex", "runtime", "systemd"],
+    ]
+    assert args.message == ["restart", "jellyfin?"]
