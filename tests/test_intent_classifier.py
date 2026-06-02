@@ -83,6 +83,75 @@ def test_missing_tool_intent_requests_install_docker_tool():
     }
 
 
+def test_missing_tool_empty_arguments_derive_install_need_from_input():
+    decision = DecisionBuilder().build(
+        context_for("install docker"),
+        IntentClassification(
+            intent="missing_tool",
+            reason="No registered tool can install Docker.",
+            arguments={},
+        ),
+    )
+
+    assert decision.kind == "request_tool"
+    assert decision.tool_need == {
+        "name": "install_docker",
+        "summary": "Provide the missing capability for: install docker.",
+        "capability": "install_docker",
+    }
+
+
+def test_missing_tool_empty_arguments_recognize_weather_lookup():
+    decision = DecisionBuilder().build(
+        context_for("what is the weather in Jacksonville?"),
+        IntentClassification(
+            intent="missing_tool",
+            reason="No registered tool can look up weather.",
+            arguments={},
+        ),
+    )
+
+    assert decision.kind == "request_tool"
+    assert decision.tool_need == {
+        "name": "weather_lookup",
+        "summary": "Look up weather information.",
+        "capability": "weather_lookup",
+    }
+
+
+def test_missing_tool_empty_arguments_use_broad_categories_and_fallback():
+    builder = DecisionBuilder()
+
+    setup_decision = builder.build(
+        context_for("setup"),
+        IntentClassification(intent="missing_tool", reason="missing", arguments={}),
+    )
+    check_decision = builder.build(
+        context_for("check disk usage"),
+        IntentClassification(intent="missing_tool", reason="missing", arguments={}),
+    )
+    fallback_decision = builder.build(
+        context_for("convert PDF to markdown"),
+        IntentClassification(intent="missing_tool", reason="missing", arguments={}),
+    )
+
+    assert setup_decision.tool_need == {
+        "name": "installation",
+        "summary": "Provide installation or setup support.",
+        "capability": "installation",
+    }
+    assert check_decision.tool_need == {
+        "name": "check_disk_usage",
+        "summary": "Provide the missing capability for: check disk usage.",
+        "capability": "check_disk_usage",
+    }
+    assert fallback_decision.tool_need == {
+        "name": "convert_pdf_to_markdown",
+        "summary": "Provide the missing capability for: convert PDF to markdown.",
+        "capability": "convert_pdf_to_markdown",
+    }
+
+
 def test_clarify_intent_asks_question_for_unknown_vague_input():
     decision = DecisionBuilder().build(
         context_for("unknown vague input"),
