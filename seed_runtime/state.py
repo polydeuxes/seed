@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
-
 from seed_runtime.events import EventLedger
 from seed_runtime.models import Approval, Entity, Event, Fact, Goal, ToolNeed, ToolSpec
 
@@ -78,7 +76,9 @@ class StateProjector:
             need_id = payload["tool_need_id"]
             if need_id in state.tool_needs:
                 current = state.tool_needs[need_id]
-                state.tool_needs[need_id] = ToolNeed(**{**current.__dict__, "status": payload["status"]})
+                state.tool_needs[need_id] = ToolNeed(
+                    **{**current.__dict__, "status": payload["status"]}
+                )
         elif event.kind == "approval.granted":
             data = payload.get("approval", payload).copy()
             data["expires_at"] = _parse_dt(data.get("expires_at"))
