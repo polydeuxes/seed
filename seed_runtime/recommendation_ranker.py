@@ -27,6 +27,7 @@ class RankedRecommendation(SeedModel):
     risk_class: str | None = None
     notes: str | None = None
     score: int
+    reasons: list[str]
     reasoning: list[str]
 
 
@@ -77,12 +78,14 @@ class RecommendationRanker:
         lowest_risk_level = self._lowest_risk_level(recommendation_list)
         for index, recommendation in enumerate(recommendation_list):
             score = 0
+            reasons: list[str] = []
             reasoning: list[str] = []
             provider_key = slugify(recommendation.provider)
             recommendation_tokens = self._recommendation_tokens(recommendation)
 
             if provider_key in registered_providers:
                 score += 100
+                reasons.append("provider already registered")
                 reasoning.append("+100 provider already registered")
 
             matched_runtime = self._matching_value(
@@ -90,6 +93,7 @@ class RecommendationRanker:
             )
             if matched_runtime is not None:
                 score += 50
+                reasons.append(f"provider matches known runtime: {matched_runtime}")
                 reasoning.append(
                     f"+50 provider matches known runtime: {matched_runtime}"
                 )
@@ -99,6 +103,7 @@ class RecommendationRanker:
             )
             if matched_platform is not None:
                 score += 25
+                reasons.append(f"provider matches known platform: {matched_platform}")
                 reasoning.append(
                     f"+25 provider matches known platform: {matched_platform}"
                 )
@@ -106,15 +111,20 @@ class RecommendationRanker:
             risk_level = self._risk_level(recommendation.risk_class)
             if risk_level is not None and risk_level == lowest_risk_level:
                 score += 10
+                reasons.append(
+                    f"lower risk class: {recommendation.risk_class or 'unknown'}"
+                )
                 reasoning.append(
                     f"+10 lower risk class: {recommendation.risk_class or 'unknown'}"
                 )
 
             if index == 0:
                 score += 5
+                reasons.append("catalog default")
                 reasoning.append("+5 catalog default priority")
 
             if not reasoning:
+                reasons.append("no ranking signals matched")
                 reasoning.append("0 no ranking signals matched")
 
             ranked.append(
@@ -123,6 +133,7 @@ class RecommendationRanker:
                     RankedRecommendation(
                         **recommendation.model_dump(mode="python"),
                         score=score,
+                        reasons=reasons,
                         reasoning=reasoning,
                     ),
                 )

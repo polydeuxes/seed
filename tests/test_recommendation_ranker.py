@@ -105,6 +105,7 @@ def test_no_facts_falls_back_to_catalog_order():
     ]
     assert ranked[0].score >= ranked[1].score
     assert "+5 catalog default priority" in ranked[0].reasoning
+    assert "catalog default" in ranked[0].reasons
 
 
 def test_registered_provider_outranks_unregistered_provider():

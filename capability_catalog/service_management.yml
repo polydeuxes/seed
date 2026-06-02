@@ -7,3 +7,9 @@ recommendations:
     source: systemd
     risk_class: L3
     notes: Mutating service actions require confirmation or approval according to policy.
+  - provider: docker_container_lifecycle
+    summary: Use Docker container lifecycle operations for services running as containers.
+    kind: local_cli
+    source: docker
+    risk_class: L3
+    notes: Mutating container lifecycle actions require confirmation or approval according to policy.

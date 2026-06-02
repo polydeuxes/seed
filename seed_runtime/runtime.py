@@ -278,7 +278,14 @@ class Runtime:
             )
             payload = {
                 "tool_need": to_plain(need),
-                "recommendations": to_plain(recommendations),
+                "recommendations": [
+                    {
+                        "provider": recommendation.provider,
+                        "score": recommendation.score,
+                        "reasons": list(recommendation.reasons),
+                    }
+                    for recommendation in recommendations
+                ],
             }
             return RuntimeResponse(
                 kind="tool_need",
