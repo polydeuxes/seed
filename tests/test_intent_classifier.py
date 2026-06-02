@@ -108,6 +108,35 @@ def test_build_intent_prompt_renders_context_and_intent_only_shape():
     assert '"kind":"call_tool"' not in prompt
 
 
+def test_build_intent_prompt_explains_answer_and_missing_tool_boundaries():
+    prompt = build_intent_prompt(context_for("install docker"))
+
+    assert (
+        "Use answer only for conversational replies or questions that can be answered "
+        "directly from the provided context."
+    ) in prompt
+    assert (
+        "Use missing_tool when the user requests an action, lookup, installation, "
+        "search, system operation, file operation, network operation, weather lookup, "
+        "external information retrieval, or any capability that cannot be satisfied "
+        "by visible tools."
+    ) in prompt
+    assert "Never pretend to perform an action." in prompt
+    assert "Never answer with the requested action text." in prompt
+    assert "Never invent tool names." in prompt
+    assert "If no visible tool can satisfy the request, prefer missing_tool." in prompt
+
+
+def test_build_intent_prompt_includes_general_missing_capability_examples():
+    prompt = build_intent_prompt(context_for("check disk usage"))
+
+    assert 'User: "echo hello"\n-> intent: echo' in prompt
+    assert 'User: "what tools do you have?"\n-> intent: answer' in prompt
+    assert 'User: "install docker"\n-> intent: missing_tool' in prompt
+    assert 'User: "check disk usage"\n-> intent: missing_tool' in prompt
+    assert 'User: "what is the weather in Jacksonville?"\n-> intent: missing_tool' in prompt
+
+
 def test_text_intent_classifier_wraps_model_client_and_parses_intent():
     client = FakeModelClient(
         json.dumps(
