@@ -14,6 +14,7 @@ from seed_runtime.models import Decision, RuntimeResponse
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
 from seed_runtime.state_patches import StatePatchError, StatePatchService
+from seed_runtime.tool_intent import ToolIntentGuard
 from seed_runtime.tool_needs import ToolNeedService
 
 
@@ -49,6 +50,7 @@ class Runtime:
         self.decision_validator = decision_validator
         self.tool_executor = tool_executor
         self.tool_need_service = tool_need_service
+        self.tool_intent_guard = ToolIntentGuard()
         self.state_patch_service = StatePatchService(ledger, projector)
         self.model = model
         self.max_decision_retries = max(0, max_decision_retries)
@@ -69,6 +71,7 @@ class Runtime:
         )
         retry_context = context
         validation_errors: list[str] = []
+        invalid_decision_message = "Model decision failed validation."
 
         for attempt in range(self.max_decision_retries + 1):
             try:
@@ -104,11 +107,38 @@ class Runtime:
             )
             validation = self.decision_validator.validate(decision, state)
             if validation.ok:
-                return self._route(
-                    workspace_id, session_id, decision, decision_event.id
+                intent_validation = self.tool_intent_guard.validate(
+                    text, decision, context.tools
                 )
+                if intent_validation.ok:
+                    return self._route(
+                        workspace_id, session_id, decision, decision_event.id
+                    )
+
+                validation_errors = intent_validation.errors
+                invalid_decision_message = "Model decision failed intent validation."
+                rejected_event = self.ledger.append(
+                    "model.decision.intent_rejected",
+                    workspace_id,
+                    {"errors": intent_validation.errors, "attempt": attempt},
+                    actor="system",
+                    session_id=session_id,
+                    causation_id=decision_event.id,
+                )
+                if attempt >= self.max_decision_retries:
+                    break
+
+                retry_context = self._decision_intent_retry_context(
+                    context,
+                    decision,
+                    intent_validation.errors,
+                    attempt + 1,
+                    rejected_event.id,
+                )
+                continue
 
             validation_errors = validation.errors
+            invalid_decision_message = "Model decision failed validation."
             invalid_event = self.ledger.append(
                 "model.decision.invalid",
                 workspace_id,
@@ -126,7 +156,7 @@ class Runtime:
 
         return RuntimeResponse(
             kind="invalid_decision",
-            message="Model decision failed validation.",
+            message=invalid_decision_message,
             payload={"errors": validation_errors},
         )
 
@@ -147,6 +177,26 @@ class Runtime:
                 "invalid_event_id": invalid_event_id,
                 "validation_errors": list(errors),
                 "invalid_decision": to_plain(invalid_decision),
+            },
+        )
+
+    def _decision_intent_retry_context(
+        self,
+        context: ContextPacket,
+        rejected_decision: Decision,
+        errors: list[str],
+        retry_number: int,
+        rejected_event_id: str,
+    ) -> ContextPacket:
+        return replace(
+            context,
+            retry_prompt={
+                "instruction": "Return exactly one corrected JSON decision whose tool call matches the current user intent and satisfies the decision_schema.",
+                "retry_number": retry_number,
+                "max_retries": self.max_decision_retries,
+                "rejected_event_id": rejected_event_id,
+                "intent_errors": list(errors),
+                "rejected_decision": to_plain(rejected_decision),
             },
         )
 
