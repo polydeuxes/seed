@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Protocol
 
 from seed_runtime.context import ContextComposer, ContextPacket
@@ -15,8 +16,7 @@ from seed_runtime.tool_needs import ToolNeedService
 
 
 class DecisionModel(Protocol):
-    def decide(self, context: ContextPacket) -> Decision:
-        ...
+    def decide(self, context: ContextPacket) -> Decision: ...
 
 
 class FakeDecisionModel:
@@ -39,6 +39,7 @@ class Runtime:
         tool_executor: ToolExecutor,
         tool_need_service: ToolNeedService,
         model: DecisionModel,
+        max_decision_retries: int = 1,
     ) -> None:
         self.ledger = ledger
         self.projector = projector
@@ -47,8 +48,11 @@ class Runtime:
         self.tool_executor = tool_executor
         self.tool_need_service = tool_need_service
         self.model = model
+        self.max_decision_retries = max(0, max_decision_retries)
 
-    def handle_user_message(self, workspace_id: str, session_id: str, text: str) -> RuntimeResponse:
+    def handle_user_message(
+        self, workspace_id: str, session_id: str, text: str
+    ) -> RuntimeResponse:
         input_event = self.ledger.append(
             "input.user_message",
             workspace_id,
@@ -57,42 +61,118 @@ class Runtime:
             session_id=session_id,
         )
         state = self.projector.project(workspace_id)
-        context = self.context_composer.compose(workspace_id, session_id, input_event, state)
-        decision = self.model.decide(context)
-        decision_event = self.ledger.append(
-            "model.decision.proposed",
-            workspace_id,
-            {"decision": to_plain(decision)},
-            actor="model",
-            session_id=session_id,
-            causation_id=input_event.id,
+        context = self.context_composer.compose(
+            workspace_id, session_id, input_event, state
         )
-        validation = self.decision_validator.validate(decision, state)
-        if not validation.ok:
-            self.ledger.append(
+        retry_context = context
+        validation_errors: list[str] = []
+
+        for attempt in range(self.max_decision_retries + 1):
+            decision = self.model.decide(retry_context)
+            decision_event = self.ledger.append(
+                "model.decision.proposed",
+                workspace_id,
+                {"decision": to_plain(decision), "attempt": attempt},
+                actor="model",
+                session_id=session_id,
+                causation_id=input_event.id,
+            )
+            validation = self.decision_validator.validate(decision, state)
+            if validation.ok:
+                return self._route(
+                    workspace_id, session_id, decision, decision_event.id
+                )
+
+            validation_errors = validation.errors
+            invalid_event = self.ledger.append(
                 "model.decision.invalid",
                 workspace_id,
-                {"errors": validation.errors},
+                {"errors": validation.errors, "attempt": attempt},
                 actor="system",
                 session_id=session_id,
                 causation_id=decision_event.id,
             )
-            return RuntimeResponse("invalid_decision", "Model decision failed validation.", {"errors": validation.errors})
-        return self._route(workspace_id, session_id, decision, decision_event.id)
+            if attempt >= self.max_decision_retries:
+                break
 
-    def _route(self, workspace_id: str, session_id: str, decision: Decision, causation_id: str) -> RuntimeResponse:
+            retry_context = self._decision_retry_context(
+                context, decision, validation.errors, attempt + 1, invalid_event.id
+            )
+
+        return RuntimeResponse(
+            "invalid_decision",
+            "Model decision failed validation.",
+            {"errors": validation_errors},
+        )
+
+    def _decision_retry_context(
+        self,
+        context: ContextPacket,
+        invalid_decision: Decision,
+        errors: list[str],
+        retry_number: int,
+        invalid_event_id: str,
+    ) -> ContextPacket:
+        return replace(
+            context,
+            retry_prompt={
+                "instruction": "Return exactly one corrected JSON decision that satisfies the decision_schema.",
+                "retry_number": retry_number,
+                "max_retries": self.max_decision_retries,
+                "invalid_event_id": invalid_event_id,
+                "validation_errors": list(errors),
+                "invalid_decision": to_plain(invalid_decision),
+            },
+        )
+
+    def _route(
+        self, workspace_id: str, session_id: str, decision: Decision, causation_id: str
+    ) -> RuntimeResponse:
         if decision.kind == "answer":
-            self.ledger.append("response.answer", workspace_id, {"answer": decision.answer}, actor="system", session_id=session_id, causation_id=causation_id)
+            self.ledger.append(
+                "response.answer",
+                workspace_id,
+                {"answer": decision.answer},
+                actor="system",
+                session_id=session_id,
+                causation_id=causation_id,
+            )
             return RuntimeResponse("answer", decision.answer or "")
         if decision.kind == "ask_question":
-            self.ledger.append("response.question", workspace_id, {"question": decision.question}, actor="system", session_id=session_id, causation_id=causation_id)
+            self.ledger.append(
+                "response.question",
+                workspace_id,
+                {"question": decision.question},
+                actor="system",
+                session_id=session_id,
+                causation_id=causation_id,
+            )
             return RuntimeResponse("question", decision.question or "")
         if decision.kind == "request_tool":
-            need = self.tool_need_service.create_from_decision(workspace_id, decision, causation_id)
-            return RuntimeResponse("tool_need", f"Recorded tool need {need.name}.", {"tool_need": to_plain(need)})
+            need = self.tool_need_service.create_from_decision(
+                workspace_id, decision, causation_id
+            )
+            return RuntimeResponse(
+                "tool_need",
+                f"Recorded tool need {need.name}.",
+                {"tool_need": to_plain(need)},
+            )
         if decision.kind == "call_tool":
-            return self.tool_executor.execute(workspace_id, session_id, decision.tool_name or "", decision.tool_arguments, causation_id=causation_id)
+            return self.tool_executor.execute(
+                workspace_id,
+                session_id,
+                decision.tool_name or "",
+                decision.tool_arguments,
+                causation_id=causation_id,
+            )
         if decision.kind == "refuse":
-            self.ledger.append("response.refusal", workspace_id, {"reason": decision.reason}, actor="system", session_id=session_id, causation_id=causation_id)
+            self.ledger.append(
+                "response.refusal",
+                workspace_id,
+                {"reason": decision.reason},
+                actor="system",
+                session_id=session_id,
+                causation_id=causation_id,
+            )
             return RuntimeResponse("refusal", decision.reason)
         return RuntimeResponse("unsupported", "Unsupported valid decision kind.")

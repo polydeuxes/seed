@@ -21,6 +21,7 @@ class ContextPacket:
     tools: list[dict[str, Any]]
     open_tool_needs: list[dict[str, Any]]
     decision_schema: dict[str, Any]
+    retry_prompt: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return self.__dict__.copy()
@@ -30,11 +31,31 @@ class ContextComposer:
     def __init__(self, registry: ToolRegistry) -> None:
         self.registry = registry
 
-    def compose(self, workspace_id: str, session_id: str | None, input_event: Event, state: State) -> ContextPacket:
-        active_goals = [goal for goal in state.goals.values() if goal.status == "active"]
-        active_goal = min(active_goals, key=lambda goal: goal.id).__dict__ if active_goals else None
-        entities = [entity.__dict__ for entity in sorted(state.entities.values(), key=lambda entity: entity.name)[:20]]
-        facts = [fact.__dict__ for fact in sorted(state.facts.values(), key=lambda fact: fact.id)[:30]]
+    def compose(
+        self,
+        workspace_id: str,
+        session_id: str | None,
+        input_event: Event,
+        state: State,
+    ) -> ContextPacket:
+        active_goals = [
+            goal for goal in state.goals.values() if goal.status == "active"
+        ]
+        active_goal = (
+            min(active_goals, key=lambda goal: goal.id).__dict__
+            if active_goals
+            else None
+        )
+        entities = [
+            entity.__dict__
+            for entity in sorted(
+                state.entities.values(), key=lambda entity: entity.name
+            )[:20]
+        ]
+        facts = [
+            fact.__dict__
+            for fact in sorted(state.facts.values(), key=lambda fact: fact.id)[:30]
+        ]
         tools = [
             {
                 "name": tool.name,
@@ -45,7 +66,10 @@ class ContextComposer:
             }
             for tool in self.registry.list_tools(visible_only=True)
         ]
-        open_needs = [need.__dict__ for need in sorted(state.open_tool_needs, key=lambda need: need.name)]
+        open_needs = [
+            need.__dict__
+            for need in sorted(state.open_tool_needs, key=lambda need: need.name)
+        ]
         return ContextPacket(
             workspace_id=workspace_id,
             session_id=session_id,
@@ -55,5 +79,13 @@ class ContextComposer:
             facts=facts,
             tools=tools,
             open_tool_needs=open_needs,
-            decision_schema={"kinds": ["answer", "ask_question", "call_tool", "request_tool", "refuse"]},
+            decision_schema={
+                "kinds": [
+                    "answer",
+                    "ask_question",
+                    "call_tool",
+                    "request_tool",
+                    "refuse",
+                ]
+            },
         )
