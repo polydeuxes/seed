@@ -12,6 +12,8 @@ import re
 from importlib.util import find_spec
 from typing import Any, Literal, Protocol, Sequence
 
+from seed_runtime.capability_catalog import CapabilityCatalog
+
 from seed_runtime.base import SeedModel
 from seed_runtime.context import ContextPacket
 from seed_runtime.model_client import (
@@ -32,10 +34,46 @@ IntentLabel = Literal["echo", "answer", "missing_tool", "clarify", "refuse"]
 
 _VALID_TOOL_NAME_CHARS = re.compile(r"[^a-z0-9]+")
 _CATEGORY_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
-    (re.compile(r"\b(weather|forecast|temperature)\b", re.IGNORECASE), "weather_lookup"),
+    (
+        re.compile(r"\b(weather|forecast|temperature)\b", re.IGNORECASE),
+        "weather_lookup",
+    ),
+    (
+        re.compile(
+            r"\b(stock|stocks|share\s+price|stock\s+price|ticker|quote)\b",
+            re.IGNORECASE,
+        ),
+        "finance_lookup",
+    ),
+    (
+        re.compile(
+            r"\b(disk\s+usage|disk\s+space|free\s+space|storage\s+usage|df)\b",
+            re.IGNORECASE,
+        ),
+        "disk_inspection",
+    ),
+    (
+        re.compile(
+            r"(?=.*\bdocker\b)(?=.*\b(version|status|inspect|info|ps|container|containers|image|images|network|networks|volume|volumes)\b)",
+            re.IGNORECASE,
+        ),
+        "docker_inspection",
+    ),
+    (
+        re.compile(
+            r"(?=.*\bdocker\b)(?=.*\b(install|setup|set\s+up)\b)", re.IGNORECASE
+        ),
+        "docker_installation",
+    ),
+    (
+        re.compile(r"\b(restart|start|stop|reload)\b", re.IGNORECASE),
+        "service_management",
+    ),
     (re.compile(r"\b(install|setup|set\s+up)\b", re.IGNORECASE), "installation"),
     (re.compile(r"\b(check|status|inspect)\b", re.IGNORECASE), "inspection"),
 )
+
+_CATALOG: CapabilityCatalog | None = None
 
 _INFORMATIONAL_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"^\s*what\s+is\s+(?P<topic>.+?)\s*[?.!]*\s*$", re.IGNORECASE),
@@ -58,7 +96,11 @@ _MISSING_TOOL_PATTERNS: tuple[re.Pattern[str], ...] = (
         re.IGNORECASE,
     ),
     re.compile(
-        r"\b(weather|forecast|temperature|disk\s+usage|system|file|network)\b",
+        r"\b(weather|forecast|temperature|disk\s+usage|disk\s+space|free\s+space|system|file|network)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"(?=.*\bdocker\b)(?=.*\b(version|status|inspect|info|ps|container|containers|image|images|network|networks|volume|volumes)\b)",
         re.IGNORECASE,
     ),
 )
@@ -331,7 +373,9 @@ class DecisionBuilder:
         arguments = classification.arguments
         reason = classification.reason or f"classified as {classification.intent}"
         if classification.intent == "echo":
-            message = str(arguments.get("message") or _echo_message(_input_text(context)))
+            message = str(
+                arguments.get("message") or _echo_message(_input_text(context))
+            )
             return Decision(
                 kind="call_tool",
                 reason=reason,
@@ -461,16 +505,18 @@ def _echo_message(text: str) -> str:
 def _normalize_tool_need(arguments: dict[str, Any], text: str) -> dict[str, str]:
     name = _tool_name(arguments, text)
     summary = str(arguments.get("summary") or _tool_summary(name, text))
-    capability = _snake_name(str(arguments.get("capability") or name))
+    capability = _tool_capability(arguments, name, text)
     return {"name": name, "summary": summary, "capability": capability}
 
 
 def _tool_name(arguments: dict[str, Any], text: str) -> str:
+    category = _tool_need_category(text)
+    if category and _is_catalog_capability(category):
+        return category
     for key in ("name", "tool_name"):
         value = arguments.get(key)
         if isinstance(value, str) and value.strip():
             return _snake_name(value)
-    category = _tool_need_category(text)
     if category == "weather_lookup":
         return category
     if category == "installation":
@@ -486,16 +532,38 @@ def _tool_name(arguments: dict[str, Any], text: str) -> str:
     if category == "inspection":
         inspect_target = _imperative_target(text, ("check", "status", "inspect"))
         if inspect_target:
-            action = "inspect" if text.strip().lower().startswith("inspect") else "check"
+            action = (
+                "inspect" if text.strip().lower().startswith("inspect") else "check"
+            )
             return _snake_name(f"{action} {inspect_target}")
         return category
     return _snake_name(text) or "missing_tool"
+
+
+def _tool_capability(arguments: dict[str, Any], name: str, text: str) -> str:
+    category = _tool_need_category(text)
+    if category and _is_catalog_capability(category):
+        return category
+    requested = _snake_name(str(arguments.get("capability") or name))
+    if _is_catalog_capability(requested):
+        return requested
+    return requested
 
 
 def _tool_summary(name: str, text: str) -> str:
     category = _tool_need_category(text)
     if category == "weather_lookup":
         return "Look up weather information."
+    if category == "finance_lookup":
+        return "Look up financial market information."
+    if category == "disk_inspection":
+        return "Inspect disk capacity and usage."
+    if category == "docker_inspection":
+        return "Inspect Docker runtime information."
+    if category == "docker_installation":
+        return "Install or configure Docker."
+    if category == "service_management":
+        return "Manage operating system services."
     if category == "installation" and name == category:
         return "Provide installation or setup support."
     if category == "inspection" and name == category:
@@ -509,6 +577,13 @@ def _tool_need_category(text: str) -> str | None:
         if pattern.search(text):
             return category
     return None
+
+
+def _is_catalog_capability(capability: str) -> bool:
+    global _CATALOG
+    if _CATALOG is None:
+        _CATALOG = CapabilityCatalog.load()
+    return _CATALOG.get(capability) is not None
 
 
 def _imperative_target(text: str, verbs: tuple[str, ...]) -> str:

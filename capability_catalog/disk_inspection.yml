@@ -1,0 +1,9 @@
+capability: disk_inspection
+summary: Inspect filesystem capacity, disk usage, and available space.
+recommendations:
+  - provider: posix_disk_cli
+    summary: Use read-only disk inspection commands such as df and du.
+    kind: local_cli
+    source: posix
+    risk_class: L1
+    notes: Should remain constrained to read-only inspection operations.

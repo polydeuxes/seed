@@ -90,8 +90,8 @@ def test_external_action_search_and_observation_requests_are_missing_tool():
     examples = (
         ("What is the weather in Jacksonville?", "weather_lookup"),
         ("Search GitHub for Seed.", "search_github_for_seed"),
-        ("Install Docker.", "install_docker"),
-        ("What is the latest Docker version?", "what_is_the_latest_docker_version"),
+        ("Install Docker.", "docker_installation"),
+        ("What is the latest Docker version?", "docker_inspection"),
     )
     for text, name in examples:
         decision = model.decide(context_for(text))
@@ -119,9 +119,9 @@ def test_missing_tool_intent_requests_install_docker_tool():
 
     assert decision.kind == "request_tool"
     assert decision.tool_need == {
-        "name": "install_docker",
+        "name": "docker_installation",
         "summary": "Install Docker on the requested system.",
-        "capability": "install_docker",
+        "capability": "docker_installation",
     }
 
 
@@ -137,9 +137,9 @@ def test_missing_tool_empty_arguments_derive_install_need_from_input():
 
     assert decision.kind == "request_tool"
     assert decision.tool_need == {
-        "name": "install_docker",
-        "summary": "Provide the missing capability for: install docker.",
-        "capability": "install_docker",
+        "name": "docker_installation",
+        "summary": "Install or configure Docker.",
+        "capability": "docker_installation",
     }
 
 
@@ -183,15 +183,37 @@ def test_missing_tool_empty_arguments_use_broad_categories_and_fallback():
         "capability": "installation",
     }
     assert check_decision.tool_need == {
-        "name": "check_disk_usage",
-        "summary": "Provide the missing capability for: check disk usage.",
-        "capability": "check_disk_usage",
+        "name": "disk_inspection",
+        "summary": "Inspect disk capacity and usage.",
+        "capability": "disk_inspection",
     }
     assert fallback_decision.tool_need == {
         "name": "convert_pdf_to_markdown",
         "summary": "Provide the missing capability for: convert PDF to markdown.",
         "capability": "convert_pdf_to_markdown",
     }
+
+
+def test_missing_tool_examples_normalize_to_catalog_capabilities():
+    builder = DecisionBuilder()
+
+    examples = (
+        ("restart jellyfin", "service_management"),
+        ("check disk usage", "disk_inspection"),
+        ("Docker version on node115", "docker_inspection"),
+        ("stock price of Apple", "finance_lookup"),
+        ("weather in Jacksonville", "weather_lookup"),
+    )
+
+    for text, capability in examples:
+        decision = builder.build(
+            context_for(text),
+            IntentClassification(intent="missing_tool", reason="missing", arguments={}),
+        )
+
+        assert decision.tool_need is not None
+        assert decision.tool_need["name"] == capability
+        assert decision.tool_need["capability"] == capability
 
 
 def test_clarify_intent_asks_question_for_unknown_vague_input():
@@ -250,7 +272,10 @@ def test_build_intent_prompt_includes_general_missing_capability_examples():
     assert 'User: "Explain Kubernetes."\n-> intent: answer' in prompt
     assert 'User: "install docker"\n-> intent: missing_tool' in prompt
     assert 'User: "check disk usage"\n-> intent: missing_tool' in prompt
-    assert 'User: "what is the weather in Jacksonville?"\n-> intent: missing_tool' in prompt
+    assert (
+        'User: "what is the weather in Jacksonville?"\n-> intent: missing_tool'
+        in prompt
+    )
 
 
 def test_text_intent_classifier_uses_intent_prompt_client_and_parses_intent():
@@ -325,6 +350,7 @@ def test_strict_json_intent_parser_wraps_invalid_intent_validation():
                 }
             )
         )
+
 
 def test_text_intent_classifier_uses_strict_json_intent_parser():
     transport = FakeTransport(

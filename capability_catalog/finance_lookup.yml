@@ -1,0 +1,9 @@
+capability: finance_lookup
+summary: Retrieve stock prices, quotes, ticker data, and other financial market information.
+recommendations:
+  - provider: market_data_api
+    summary: Use a financial market data API for current quotes and ticker lookups.
+    kind: hosted_api
+    source: market_data_provider
+    risk_class: L2
+    notes: Financial data may be delayed and should not be presented as investment advice.
