@@ -11,20 +11,17 @@ This branch turns the seed blueprint into a runnable Python prototype. It comple
 - Tool Need service with open-need deduplication and status-change events.
 - Builder candidate generation, candidate validation, and registration flow for validated toolkits.
 - Strict JSON model-decision parser and a dependency-light API shell for future web framework adapters.
-- A harmless generated-style `host_notes` toolkit that mutates only Seed's own event ledger.
-- A golden-case decision evaluation harness for checking model outputs against expected decision kind/tool/tool-need contracts.
 
 ## Deliberate constraints
 
-- Toolkit manifests are JSON documents stored as `toolkit.yaml`; this keeps the loader dependency-free while leaving room for a YAML adapter later.
+- Generated toolkit manifests are JSON documents stored as `toolkit.yaml`; this keeps the loader dependency-free while leaving room for a YAML adapter later.
 - The executor only runs registered Python callables after schema validation and policy evaluation; it does not provide arbitrary shell execution.
 - The builder emits untrusted stubs and validation reports rather than treating generated code as automatically safe.
-- The generated-style `host_notes` toolkit is checked in as a demo artifact; it proves the safe registration/execution path without remote infrastructure.
 - The API module is a framework-neutral shell, not a production HTTP server.
 
 ## Suggested next steps
 
-1. Add a real model adapter behind `ParsedDecisionModel` and run it through `DecisionEvaluator` cases.
+1. Add a real model adapter behind `ParsedDecisionModel`.
 2. Add candidate sandboxing/timeouts beyond the current import and pytest checks.
 3. Add generated toolkit versioning and artifact copy/registration into `toolkits/generated`.
 4. Add a proper HTTP adapter once endpoint semantics stabilize.

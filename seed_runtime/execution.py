@@ -21,8 +21,6 @@ class ToolContext:
     session_id: str | None
     tool_name: str
     call_event_id: str
-    ledger: EventLedger
-    projector: StateProjector
 
 
 class ToolExecutor:
@@ -71,15 +69,7 @@ class ToolExecutor:
             causation_id=causation_id,
         )
         fn = self._load(tool)
-        ctx = ToolContext(
-            workspace_id,
-            session_id,
-            tool.name,
-            call_event.id,
-            self.ledger,
-            self.projector,
-        )
-        output = fn(ctx, **arguments)
+        output = fn(ToolContext(workspace_id, session_id, tool.name, call_event.id), **arguments)
         validate_schema_value(tool.output_schema, output)
         self.ledger.append(
             "tool.call.completed",

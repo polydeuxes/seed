@@ -1,12 +1,9 @@
-"""Append-only event ledgers."""
+"""Append-only in-memory event ledger."""
 
 from __future__ import annotations
 
-import json
-import sqlite3
 from collections import defaultdict
 from dataclasses import replace
-from datetime import datetime
 from typing import Any, Iterable
 
 from seed_runtime.ids import new_id
@@ -42,7 +39,8 @@ class EventLedger:
             causation_id=causation_id,
             correlation_id=correlation_id,
         )
-        self._store(event)
+        self._events.append(event)
+        self._by_workspace[workspace_id].append(event)
         return event
 
     def list_events(self, workspace_id: str | None = None) -> list[Event]:
@@ -53,11 +51,14 @@ class EventLedger:
     def extend(self, events: Iterable[Event]) -> None:
         """Append externally constructed events while preserving order and IDs."""
         for event in events:
-            self._store(replace(event))
+            stored = replace(event)
+            self._events.append(stored)
+            self._by_workspace[stored.workspace_id].append(stored)
 
-    def _store(self, event: Event) -> None:
-        self._events.append(event)
-        self._by_workspace[event.workspace_id].append(event)
+# SQLite persistence keeps the in-memory ledger contract while making events durable.
+import json
+import sqlite3
+from datetime import datetime
 
 
 class SQLiteEventLedger(EventLedger):
@@ -70,8 +71,7 @@ class SQLiteEventLedger(EventLedger):
         self._connection.execute(
             """
             CREATE TABLE IF NOT EXISTS events (
-                sequence INTEGER PRIMARY KEY AUTOINCREMENT,
-                id TEXT UNIQUE NOT NULL,
+                id TEXT PRIMARY KEY,
                 kind TEXT NOT NULL,
                 workspace_id TEXT NOT NULL,
                 actor TEXT NOT NULL,
@@ -107,23 +107,24 @@ class SQLiteEventLedger(EventLedger):
             causation_id=causation_id,
             correlation_id=correlation_id,
         )
-        self._store(event)
+        self._insert(event)
         return event
 
     def list_events(self, workspace_id: str | None = None) -> list[Event]:
         if workspace_id is None:
-            rows = self._connection.execute("SELECT * FROM events ORDER BY sequence").fetchall()
+            rows = self._connection.execute("SELECT * FROM events ORDER BY rowid").fetchall()
         else:
-            rows = self._connection.execute(
-                "SELECT * FROM events WHERE workspace_id = ? ORDER BY sequence",
-                (workspace_id,),
-            ).fetchall()
+            rows = self._connection.execute("SELECT * FROM events WHERE workspace_id = ? ORDER BY rowid", (workspace_id,)).fetchall()
         return [self._row_to_event(row) for row in rows]
+
+    def extend(self, events: Iterable[Event]) -> None:
+        for event in events:
+            self._insert(event)
 
     def close(self) -> None:
         self._connection.close()
 
-    def _store(self, event: Event) -> None:
+    def _insert(self, event: Event) -> None:
         self._connection.execute(
             """
             INSERT INTO events (id, kind, workspace_id, actor, timestamp, payload, session_id, causation_id, correlation_id)
