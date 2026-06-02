@@ -32,6 +32,9 @@ class ValidationReport:
 
 
 class ToolkitValidator:
+    def __init__(self, *, test_timeout_seconds: float = 10.0) -> None:
+        self.test_timeout_seconds = test_timeout_seconds
+
     def validate(self, candidate_id: str, artifact_path: str | Path) -> ValidationReport:
         path = Path(artifact_path)
         checks = [
@@ -61,7 +64,10 @@ class ToolkitValidator:
         return CheckResult("schemas", True, "schemas accept generated examples")
 
     def _check_implementation_refs(self, path: Path) -> CheckResult:
-        toolkit = load_toolkit_manifest(path / "toolkit.yaml")
+        try:
+            toolkit = load_toolkit_manifest(path / "toolkit.yaml")
+        except (ManifestError, FileNotFoundError, ValueError) as exc:
+            return CheckResult("implementation_refs", False, str(exc))
         for tool in toolkit.tools:
             if ":" not in tool.implementation:
                 return CheckResult("implementation_refs", False, f"{tool.name} implementation is not module:function")
@@ -69,14 +75,20 @@ class ToolkitValidator:
             module_path = path / f"{module_name.replace('.', '/')}.py"
             if not module_path.exists():
                 return CheckResult("implementation_refs", False, f"{module_path.name} missing")
-            tree = ast.parse(module_path.read_text())
+            try:
+                tree = ast.parse(module_path.read_text())
+            except SyntaxError as exc:
+                return CheckResult("implementation_refs", False, f"{module_path.name} has invalid Python: {exc.msg}")
             if not any(isinstance(node, ast.FunctionDef) and node.name == function_name for node in tree.body):
                 return CheckResult("implementation_refs", False, f"{function_name} missing in {module_path.name}")
         return CheckResult("implementation_refs", True, "implementation references resolve")
 
     def _check_forbidden_imports(self, path: Path) -> CheckResult:
         for py_file in path.rglob("*.py"):
-            tree = ast.parse(py_file.read_text())
+            try:
+                tree = ast.parse(py_file.read_text())
+            except SyntaxError as exc:
+                return CheckResult("forbidden_imports", False, f"{py_file.name} has invalid Python: {exc.msg}")
             for node in ast.walk(tree):
                 if isinstance(node, ast.Import):
                     names = {alias.name.split(".")[0] for alias in node.names}
@@ -93,7 +105,16 @@ class ToolkitValidator:
         tests_dir = path / "tests"
         if not tests_dir.exists():
             return CheckResult("tests", False, "tests directory missing")
-        proc = subprocess.run([sys.executable, "-m", "pytest", "-q", str(tests_dir)], cwd=path, text=True, capture_output=True)
+        try:
+            proc = subprocess.run(
+                [sys.executable, "-m", "pytest", "-q", str(tests_dir)],
+                cwd=path,
+                text=True,
+                capture_output=True,
+                timeout=self.test_timeout_seconds,
+            )
+        except subprocess.TimeoutExpired as exc:
+            return CheckResult("tests", False, f"candidate tests timed out after {exc.timeout} seconds")
         if proc.returncode != 0:
             return CheckResult("tests", False, proc.stdout + proc.stderr)
         return CheckResult("tests", True, proc.stdout.strip())
