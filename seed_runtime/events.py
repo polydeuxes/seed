@@ -8,7 +8,7 @@ import json
 import sqlite3
 from typing import Any, Iterable
 
-from seed_runtime.ids import new_id
+from seed_runtime.ids import new_id, reserve_id_prefix
 from seed_runtime.models import Actor, Event
 
 
@@ -76,6 +76,8 @@ class EventLedger:
 class SQLiteEventLedger(EventLedger):
     """SQLite-backed ledger with the same public API as EventLedger."""
 
+    _PERSISTED_ID_PREFIXES = ("plan", "evd", "fact", "need")
+
     def __init__(self, database_path: str) -> None:
         self.database_path = database_path
         self._connection = sqlite3.connect(database_path)
@@ -94,6 +96,10 @@ class SQLiteEventLedger(EventLedger):
             )
             """)
         self._connection.commit()
+        max_event_suffix = self._max_event_id_suffix()
+        self._next_event_number = max_event_suffix + 1
+        reserve_id_prefix("evt", max_event_suffix)
+        self._reserve_persisted_payload_ids()
 
     def append(
         self,
@@ -107,7 +113,7 @@ class SQLiteEventLedger(EventLedger):
         correlation_id: str | None = None,
     ) -> Event:
         event = Event(
-            id=new_id("evt"),
+            id=self._new_event_id(),
             kind=kind,
             workspace_id=workspace_id,
             actor=actor,
@@ -167,6 +173,8 @@ class SQLiteEventLedger(EventLedger):
             ),
         )
         self._connection.commit()
+        self._advance_event_counter(event.id)
+        self._reserve_payload_ids(event.payload)
 
     def _row_to_event(self, row: sqlite3.Row) -> Event:
         return Event(
@@ -180,3 +188,74 @@ class SQLiteEventLedger(EventLedger):
             causation_id=row["causation_id"],
             correlation_id=row["correlation_id"],
         )
+
+    def _new_event_id(self) -> str:
+        event_id = f"evt_{self._next_event_number:06d}"
+        self._next_event_number += 1
+        reserve_id_prefix("evt", self._next_event_number - 1)
+        return event_id
+
+    def _advance_event_counter(self, event_id: str) -> None:
+        suffix = _numeric_suffix(event_id, "evt")
+        if suffix is None:
+            return
+        self._next_event_number = max(self._next_event_number, suffix + 1)
+        reserve_id_prefix("evt", suffix)
+
+    def _max_event_id_suffix(self) -> int:
+        row = self._connection.execute(
+            """
+            SELECT MAX(CAST(SUBSTR(id, 5) AS INTEGER)) AS max_suffix
+            FROM events
+            WHERE id LIKE 'evt_%'
+              AND SUBSTR(id, 5) GLOB '[0-9]*'
+              AND SUBSTR(id, 5) NOT GLOB '*[^0-9]*'
+            """
+        ).fetchone()
+        return int(row["max_suffix"] or 0)
+
+    def _reserve_persisted_payload_ids(self) -> None:
+        rows = self._connection.execute(
+            "SELECT payload FROM events ORDER BY rowid"
+        ).fetchall()
+        for row in rows:
+            try:
+                payload = json.loads(row["payload"])
+            except (TypeError, json.JSONDecodeError):
+                continue
+            self._reserve_payload_ids(payload)
+
+    def _reserve_payload_ids(self, payload: Any) -> None:
+        max_suffixes = {prefix: 0 for prefix in self._PERSISTED_ID_PREFIXES}
+        for value in _walk_values(payload):
+            if not isinstance(value, str):
+                continue
+            for prefix in self._PERSISTED_ID_PREFIXES:
+                suffix = _numeric_suffix(value, prefix)
+                if suffix is not None:
+                    max_suffixes[prefix] = max(max_suffixes[prefix], suffix)
+        for prefix, max_suffix in max_suffixes.items():
+            if max_suffix:
+                reserve_id_prefix(prefix, max_suffix)
+
+
+def _walk_values(value: Any) -> Iterable[Any]:
+    if isinstance(value, dict):
+        for key, nested in value.items():
+            yield key
+            yield from _walk_values(nested)
+    elif isinstance(value, list):
+        for nested in value:
+            yield from _walk_values(nested)
+    else:
+        yield value
+
+
+def _numeric_suffix(value: str, prefix: str) -> int | None:
+    marker = f"{prefix}_"
+    if not value.startswith(marker):
+        return None
+    suffix = value[len(marker) :]
+    if not suffix.isdigit():
+        return None
+    return int(suffix)
