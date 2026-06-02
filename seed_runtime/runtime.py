@@ -220,12 +220,17 @@ class Runtime:
                 payload={"tool_need": to_plain(need)},
             )
         if decision.kind == "call_tool":
-            return self.tool_executor.execute(
+            result = self.tool_executor.execute(
                 workspace_id,
                 session_id,
                 decision.tool_name or "",
                 decision.tool_arguments,
                 causation_id=causation_id,
+            )
+            return RuntimeResponse(
+                kind=result.kind,
+                message=result.message,
+                payload=result.payload,
             )
         if decision.kind == "refuse":
             self.ledger.append(

@@ -3,7 +3,7 @@ from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
 from seed_runtime.execution import ToolExecutor
 from seed_runtime.model_client import DecisionParseError
-from seed_runtime.models import Decision
+from seed_runtime.models import Decision, RuntimeResponse
 from seed_runtime.registry import ToolRegistry
 from seed_runtime.runtime import FakeDecisionModel, Runtime
 from seed_runtime.state import StateProjector
@@ -81,8 +81,26 @@ def test_routes_call_tool():
         )
     )
     response = runtime.handle_user_message("ws", "ses", "echo hi")
+    assert isinstance(response, RuntimeResponse)
     assert response.kind == "tool_result"
     assert response.payload["output"]["message"] == "hi"
+
+
+def test_routes_refuse():
+    runtime, ledger, _ = make_runtime(
+        Decision(kind="refuse", reason="unsafe request")
+    )
+
+    response = runtime.handle_user_message("ws", "ses", "do unsafe thing")
+
+    assert response.kind == "refusal"
+    assert response.message == "unsafe request"
+    assert [event.kind for event in ledger.list_events("ws")] == [
+        "input.user_message",
+        "model.decision.proposed",
+        "response.refusal",
+    ]
+    assert ledger.list_events("ws")[-1].payload == {"reason": "unsafe request"}
 
 
 def test_mvp_echo_loop_records_result_event_and_keeps_projected_state_boring():
