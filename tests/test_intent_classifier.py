@@ -8,19 +8,20 @@ from seed_runtime.intent_classifier import (
     FakeIntentClassifier,
     IntentClassification,
     IntentDecisionModel,
+    IntentPromptModelClient,
     TextIntentClassifier,
     build_intent_prompt,
 )
 from seed_runtime.model_client import DecisionParseError
 
 
-class FakeModelClient:
+class FakeTransport:
     def __init__(self, response: str) -> None:
         self.response = response
-        self.last_context: ContextPacket | None = None
+        self.prompts: list[str] = []
 
-    def complete(self, context: ContextPacket) -> str:
-        self.last_context = context
+    def complete(self, prompt: str) -> str:
+        self.prompts.append(prompt)
         return self.response
 
 
@@ -99,13 +100,15 @@ def test_clarify_intent_asks_question_for_unknown_vague_input():
 def test_build_intent_prompt_renders_context_and_intent_only_shape():
     prompt = build_intent_prompt(context_for("what is the weather?"))
 
-    assert "You are classifying the user's intent for the Seed runtime." in prompt
+    assert "Classify only the user's intent for the Seed runtime." in prompt
     assert '"text":"what is the weather?"' in prompt
-    assert '"intent":"echo|answer|missing_tool|clarify|refuse"' in prompt
-    assert '"reason":"..."' in prompt
-    assert '"arguments":{}' in prompt
+    assert '"intent": "echo|answer|missing_tool|clarify|refuse"' in prompt
+    assert '"reason": "..."' in prompt
+    assert '"arguments": {}' in prompt
     assert "Return only JSON, no markdown, no prose." in prompt
-    assert '"kind":"call_tool"' not in prompt
+    assert "kind" not in prompt
+    assert "call_tool" not in prompt
+    assert "ALLOWED JSON DECISION SHAPES" not in prompt
 
 
 def test_build_intent_prompt_explains_answer_and_missing_tool_boundaries():
@@ -137,30 +140,32 @@ def test_build_intent_prompt_includes_general_missing_capability_examples():
     assert 'User: "what is the weather in Jacksonville?"\n-> intent: missing_tool' in prompt
 
 
-def test_text_intent_classifier_wraps_model_client_and_parses_intent():
-    client = FakeModelClient(
+def test_text_intent_classifier_uses_intent_prompt_client_and_parses_intent():
+    transport = FakeTransport(
         json.dumps(
             {
                 "intent": "missing_tool",
-                "reason": "No registered tool can check weather.",
+                "reason": "needs weather tool",
                 "arguments": {"name": "weather_lookup"},
             },
             separators=(",", ":"),
         )
     )
+    client = IntentPromptModelClient(transport)
     classifier = TextIntentClassifier(client)
     context = context_for("what is the weather?")
 
     classification = classifier.classify(context)
 
-    assert client.last_context is context
+    assert len(transport.prompts) == 1
+    assert '"text":"what is the weather?"' in transport.prompts[0]
     assert classification.intent == "missing_tool"
-    assert classification.reason == "No registered tool can check weather."
+    assert classification.reason == "needs weather tool"
     assert classification.arguments == {"name": "weather_lookup"}
 
 
 def test_text_intent_classifier_uses_strict_json_intent_parser():
-    client = FakeModelClient(
+    transport = FakeTransport(
         json.dumps(
             {
                 "intent": "answer",
@@ -170,6 +175,7 @@ def test_text_intent_classifier_uses_strict_json_intent_parser():
             }
         )
     )
+    client = IntentPromptModelClient(transport)
     classifier = TextIntentClassifier(client)
 
     with pytest.raises(DecisionParseError, match="unexpected fields: kind"):
