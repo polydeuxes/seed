@@ -7,3 +7,9 @@ recommendations:
     source: https://open-meteo.com/
     risk_class: L1
     notes: Requires explicit integration by a builder or operator before use.
+  - provider: wttr
+    summary: Lightweight weather service suitable for simple text-oriented current weather lookups.
+    kind: public_api
+    source: https://wttr.in/
+    risk_class: L1
+    notes: Requires explicit integration by a builder or operator before use.

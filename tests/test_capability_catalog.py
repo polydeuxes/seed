@@ -29,7 +29,11 @@ def test_loads_checked_in_catalog_entries():
         "weather_lookup",
         "web_search",
     ]
-    assert catalog.get("weather_lookup").recommendations[0].provider == "open_meteo"
+    weather_recommendations = catalog.get("weather_lookup").recommendations
+    assert [recommendation.provider for recommendation in weather_recommendations] == [
+        "open_meteo",
+        "wttr",
+    ]
 
 
 def test_recommend_for_matches_tool_need_capability():
@@ -51,9 +55,11 @@ def test_recommend_for_matches_tool_need_capability():
     recommendations = CapabilityCatalog.load("capability_catalog").recommend_for(need)
 
     assert [recommendation.provider for recommendation in recommendations] == [
-        "open_meteo"
+        "open_meteo",
+        "wttr",
     ]
     assert recommendations[0].kind == "public_api"
+    assert recommendations[1].kind == "public_api"
 
 
 def test_returns_no_recommendations_for_unknown_capability():
@@ -104,7 +110,46 @@ def test_runtime_tool_need_response_includes_recommendations_without_registering
     response = runtime.handle_user_message("ws", "ses", "what is the weather?")
 
     assert response.kind == "tool_need"
-    assert response.payload["recommendations"][0]["provider"] == "open_meteo"
+    assert response.payload["tool_need"]["capability"] == "weather_lookup"
+    assert [
+        recommendation["provider"]
+        for recommendation in response.payload["recommendations"]
+    ] == ["open_meteo", "wttr"]
+    assert [tool.name for tool in registry.list_tools()] == ["echo"]
+    assert projector.project("ws").tools == {}
+
+
+def test_runtime_tool_need_response_uses_empty_recommendations_for_unknown_capability():
+    ledger = EventLedger()
+    registry = ToolRegistry()
+    registry.load_manifest("toolkits/core/echo/toolkit.yaml")
+    projector = StateProjector(ledger)
+    runtime = Runtime(
+        ledger,
+        projector,
+        ContextComposer(registry),
+        DecisionValidator(registry),
+        ToolExecutor(ledger, registry, projector),
+        ToolNeedService(ledger, projector),
+        FakeDecisionModel(
+            Decision(
+                kind="request_tool",
+                reason="missing custom workflow",
+                tool_need={
+                    "name": "custom_workflow",
+                    "summary": "Run a custom workflow that is not in the catalog",
+                    "capability": "custom_workflow",
+                },
+            )
+        ),
+        capability_catalog=CapabilityCatalog.load("capability_catalog"),
+    )
+
+    response = runtime.handle_user_message("ws", "ses", "run custom workflow")
+
+    assert response.kind == "tool_need"
+    assert response.payload["tool_need"]["capability"] == "custom_workflow"
+    assert response.payload["recommendations"] == []
     assert [tool.name for tool in registry.list_tools()] == ["echo"]
     assert projector.project("ws").tools == {}
 

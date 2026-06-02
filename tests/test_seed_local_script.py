@@ -88,6 +88,52 @@ def test_cli_default_prints_concise_summary_without_event_ledger(capsys):
     assert "Events:" not in output
 
 
+def test_format_response_summary_lists_tool_need_recommendations():
+    seed_local = load_seed_local_module()
+
+    summary = seed_local.format_response_summary(
+        {
+            "response": {
+                "kind": "tool_need",
+                "message": "Recorded tool need weather_lookup.",
+                "payload": {
+                    "tool_need": {"capability": "weather_lookup"},
+                    "recommendations": [
+                        {"provider": "open_meteo"},
+                        {"provider": "wttr"},
+                    ],
+                },
+            }
+        }
+    )
+
+    assert summary == (
+        "Recorded tool need weather_lookup.\n"
+        "Recommendations:\n"
+        "- open_meteo\n"
+        "- wttr"
+    )
+
+
+def test_format_response_summary_omits_empty_recommendations_for_unknown_capability():
+    seed_local = load_seed_local_module()
+
+    summary = seed_local.format_response_summary(
+        {
+            "response": {
+                "kind": "tool_need",
+                "message": "Recorded tool need custom_workflow.",
+                "payload": {
+                    "tool_need": {"capability": "custom_workflow"},
+                    "recommendations": [],
+                },
+            }
+        }
+    )
+
+    assert summary == "Recorded tool need custom_workflow."
+
+
 def test_cli_events_includes_full_event_ledger(capsys):
     seed_local = load_seed_local_module()
 
