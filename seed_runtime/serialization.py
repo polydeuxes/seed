@@ -17,7 +17,7 @@ else:
 def to_plain(value: Any) -> Any:
     """Convert Seed models and datetimes into JSON-like values."""
     if isinstance(value, BaseModel):
-        return to_plain(value.model_dump(mode="json"))
+        return to_plain(value.model_dump(mode="python"))
     if is_dataclass(value):
         return to_plain(asdict(value))
     if isinstance(value, datetime):

@@ -9,7 +9,8 @@ from typing import Any, Callable, Literal
 from seed_runtime.base import SeedModel
 from seed_runtime.events import EventLedger
 from seed_runtime.fact_extraction import FactExtractionService
-from seed_runtime.models import PolicyDecision, ToolSpec
+from seed_runtime.models import PendingAction, PolicyDecision, ToolSpec
+from seed_runtime.pending_actions import PendingActionService
 from seed_runtime.policy import PolicyGate
 from seed_runtime.registry import ToolRegistry
 from seed_runtime.schema import SchemaValidationError, validate_schema_value
@@ -36,6 +37,7 @@ class ToolCallResult(SeedModel):
     output: dict[str, Any] | None = None
     error: str | None = None
     policy: dict[str, Any] | None = None
+    pending_action: PendingAction | None = None
     payload: dict[str, Any] = field(default_factory=dict)
 
 
@@ -61,6 +63,7 @@ class ToolExecutor:
         self.projector = projector
         self.policy_gate = policy_gate or PolicyGate()
         self.fact_extraction = FactExtractionService(ledger)
+        self.pending_actions = PendingActionService(ledger, projector)
 
     def execute(
         self,
@@ -103,6 +106,8 @@ class ToolExecutor:
                 session_id,
                 tool,
                 policy,
+                arguments=arguments,
+                scope=scope,
                 causation_id=causation_id,
             )
 
@@ -167,13 +172,15 @@ class ToolExecutor:
         tool: ToolSpec,
         policy: PolicyDecision,
         *,
+        arguments: dict[str, Any],
+        scope: str | None,
         causation_id: str | None,
     ) -> ToolCallResult:
         event_kind = (
             "tool.policy.blocked" if policy.outcome == "block" else "tool.approval.required"
         )
         policy_payload = to_plain(policy)
-        self.ledger.append(
+        policy_event = self.ledger.append(
             event_kind,
             workspace_id,
             {"tool": tool.name, "policy": policy_payload},
@@ -182,13 +189,28 @@ class ToolExecutor:
             causation_id=causation_id,
         )
         status = "blocked" if policy.outcome == "block" else policy.outcome
+        pending_action = None
+        payload = {"policy": policy_payload}
+        if policy.outcome in {"require_confirmation", "require_approval"}:
+            pending_action = self.pending_actions.create_tool_call(
+                workspace_id,
+                action=policy.action,
+                tool_name=tool.name,
+                arguments=arguments,
+                scope=scope,
+                session_id=session_id,
+                created_from_event_id=policy_event.id,
+                causation_id=causation_id,
+            )
+            payload["pending_action"] = to_plain(pending_action)
         return ToolCallResult(
             kind=policy.outcome,
             status=status,
             tool_name=tool.name,
             message=policy.reason,
             policy=policy_payload,
-            payload={"policy": policy_payload},
+            pending_action=pending_action,
+            payload=payload,
         )
 
     def _failed(

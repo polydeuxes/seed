@@ -37,6 +37,7 @@ DecisionKind = Literal[
 ]
 PolicyOutcome = Literal["allow", "block", "require_confirmation", "require_approval"]
 RiskClass = Literal["L1", "L2", "L3", "L4"]
+PendingActionStatus = Literal["pending", "approved", "completed", "cancelled"]
 
 
 def utc_now() -> datetime:
@@ -118,6 +119,18 @@ class PolicyDecision(SeedModel):
     reason: str
     risk_class: RiskClass
     approval_id: str | None = None
+
+
+class PendingAction(SeedModel):
+    id: str
+    workspace_id: str = "default"
+    action: str
+    tool_name: str
+    arguments: dict[str, Any] = Field(default_factory=dict)
+    scope: str | None = None
+    status: PendingActionStatus = "pending"
+    created_from_event_id: str | None = None
+    causation_id: str | None = None
 
 
 class ToolSpec(SeedModel):

@@ -7,7 +7,16 @@ from datetime import datetime, timezone
 
 from seed_runtime.events import EventLedger
 from seed_runtime.evidence import Evidence
-from seed_runtime.models import Approval, Entity, Event, Fact, Goal, ToolNeed, ToolSpec
+from seed_runtime.models import (
+    Approval,
+    Entity,
+    Event,
+    Fact,
+    Goal,
+    PendingAction,
+    ToolNeed,
+    ToolSpec,
+)
 
 
 def _parse_dt(value: str | None) -> datetime | None:
@@ -23,6 +32,7 @@ class State:
     goals: dict[str, Goal] = field(default_factory=dict)
     tool_needs: dict[str, ToolNeed] = field(default_factory=dict)
     approvals: dict[str, Approval] = field(default_factory=dict)
+    pending_actions: dict[str, PendingAction] = field(default_factory=dict)
     tools: dict[str, ToolSpec] = field(default_factory=dict)
 
     @property
@@ -94,6 +104,23 @@ class StateProjector:
             data["expires_at"] = _parse_dt(data.get("expires_at"))
             approval = Approval(**data)
             state.approvals[approval.id] = approval
+        elif event.kind == "pending_action.created":
+            data = payload.get("pending_action", payload)
+            pending_action = PendingAction(**data)
+            state.pending_actions[pending_action.id] = pending_action
+        elif event.kind in {
+            "pending_action.status_changed",
+            "pending_action.approved",
+            "pending_action.completed",
+            "pending_action.cancelled",
+        }:
+            pending_action_id = payload["pending_action_id"]
+            status = payload.get("status", event.kind.rsplit(".", 1)[-1])
+            if pending_action_id in state.pending_actions:
+                current = state.pending_actions[pending_action_id]
+                state.pending_actions[pending_action_id] = current.model_copy(
+                    update={"status": status}
+                )
         elif event.kind == "tool.registered":
             data = payload.get("tool", payload)
             tool = ToolSpec(**data)
