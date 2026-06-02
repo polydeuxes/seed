@@ -37,6 +37,32 @@ _CATEGORY_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"\b(check|status|inspect)\b", re.IGNORECASE), "inspection"),
 )
 
+_INFORMATIONAL_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"^\s*what\s+is\s+(?P<topic>.+?)\s*[?.!]*\s*$", re.IGNORECASE),
+    re.compile(r"^\s*who\s+is\s+(?P<topic>.+?)\s*[?.!]*\s*$", re.IGNORECASE),
+    re.compile(r"^\s*explain\s+(?P<topic>.+?)\s*[?.!]*\s*$", re.IGNORECASE),
+    re.compile(r"^\s*define\s+(?P<topic>.+?)\s*[?.!]*\s*$", re.IGNORECASE),
+)
+_MISSING_TOOL_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(
+        r"\b(search|look\s+up|lookup|find|fetch|retrieve|browse|google)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(latest|current|today|now|news|price|schedule|score|status)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(install|setup|set\s+up|update|upgrade|change|create|delete|remove|"
+        r"write|edit|run|execute|start|stop|restart|send|download|upload)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(weather|forecast|temperature|disk\s+usage|system|file|network)\b",
+        re.IGNORECASE,
+    ),
+)
+
 
 class IntentClassification(SeedModel):
     """Compact model output for intent-first decision making."""
@@ -209,8 +235,10 @@ def build_intent_prompt(context: ContextPacket) -> str:
         [
             "TASK INSTRUCTION\nClassify only the user's intent for the Seed runtime.",
             "INTENTS\necho, answer, missing_tool, clarify, refuse",
-            "GUIDANCE\nUse answer only for conversational replies or questions that can be answered directly from the provided context.",
-            "Use missing_tool when the user requests an action, lookup, installation, search, system operation, file operation, network operation, weather lookup, external information retrieval, or any capability that cannot be satisfied by visible tools.",
+            "GUIDANCE\nUse answer for general informational questions that ask what something is, who someone is, or ask to explain or define a topic.",
+            "Use answer only for conversational replies or questions that can be answered directly from the provided context.",
+            "Use missing_tool when the user requests an action, lookup, installation, search, system operation, file operation, network operation, weather lookup, external information retrieval, observations of the world, or any capability that cannot be satisfied by visible tools.",
+            "When an informational pattern also requests current, external, or observable information, use missing_tool instead of answer.",
             "Never pretend to perform an action.",
             "Never answer with the requested action text.",
             "Never invent tool names.",
@@ -218,6 +246,8 @@ def build_intent_prompt(context: ContextPacket) -> str:
             "EXAMPLES",
             'User: "echo hello"\n-> intent: echo',
             'User: "what tools do you have?"\n-> intent: answer',
+            'User: "What is Docker?"\n-> intent: answer',
+            'User: "Explain Kubernetes."\n-> intent: answer',
             'User: "install docker"\n-> intent: missing_tool',
             'User: "check disk usage"\n-> intent: missing_tool',
             'User: "what is the weather in Jacksonville?"\n-> intent: missing_tool',
@@ -326,23 +356,28 @@ class IntentDecisionModel:
         self.builder = builder or DecisionBuilder()
 
     def decide(self, context: ContextPacket) -> Decision:
+        text = _input_text(context)
         classification = deterministic_intent_fallback(context)
         if classification is None:
             if self.classifier is None:
-                classification = IntentClassification(
-                    intent="clarify",
-                    reason="No intent classifier was configured and no deterministic fallback matched.",
-                    arguments={"question": "What would you like me to do?"},
-                )
+                if _requires_missing_tool(text):
+                    classification = _missing_tool_classification()
+                else:
+                    classification = IntentClassification(
+                        intent="clarify",
+                        reason="No intent classifier was configured and no deterministic fallback matched.",
+                        arguments={"question": "What would you like me to do?"},
+                    )
             else:
                 classification = self.classifier.classify(context)
+        classification = _normalize_classification_for_input(text, classification)
         return self.builder.build(context, classification)
 
 
 def deterministic_intent_fallback(
     context: ContextPacket,
 ) -> IntentClassification | None:
-    """Classify trivial echo requests without calling a model."""
+    """Classify high-confidence requests without calling a model."""
 
     text = _input_text(context)
     if text.lower().startswith("echo "):
@@ -351,7 +386,55 @@ def deterministic_intent_fallback(
             reason="Input starts with the deterministic echo prefix.",
             arguments={"message": text[5:]},
         )
+    if _requires_missing_tool(text):
+        return None
+    informational_topic = _informational_topic(text)
+    if informational_topic:
+        return _informational_answer_classification(informational_topic)
     return None
+
+
+def _normalize_classification_for_input(
+    text: str, classification: IntentClassification
+) -> IntentClassification:
+    if _requires_missing_tool(text) and classification.intent == "answer":
+        return _missing_tool_classification()
+    informational_topic = _informational_topic(text)
+    if (
+        informational_topic
+        and classification.intent == "missing_tool"
+        and not _requires_missing_tool(text)
+    ):
+        return _informational_answer_classification(informational_topic)
+    return classification
+
+
+def _missing_tool_classification() -> IntentClassification:
+    return IntentClassification(
+        intent="missing_tool",
+        reason="Input requests an action, lookup, external information, system change, search, or observation of the world.",
+        arguments={},
+    )
+
+
+def _informational_answer_classification(topic: str) -> IntentClassification:
+    return IntentClassification(
+        intent="answer",
+        reason="Input is a general informational question that should be answered directly.",
+        arguments={"answer": f"This is an informational question about {topic}."},
+    )
+
+
+def _requires_missing_tool(text: str) -> bool:
+    return any(pattern.search(text) for pattern in _MISSING_TOOL_PATTERNS)
+
+
+def _informational_topic(text: str) -> str:
+    for pattern in _INFORMATIONAL_PATTERNS:
+        match = pattern.match(text)
+        if match:
+            return match.group("topic").strip()
+    return ""
 
 
 def _input_text(context: ContextPacket) -> str:

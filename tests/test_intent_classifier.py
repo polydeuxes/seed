@@ -59,6 +59,47 @@ def test_echo_prefix_uses_deterministic_fallback_without_model():
     assert classifier.last_context is None
 
 
+def test_informational_questions_prefer_answer_without_requesting_tools():
+    classifier = FakeIntentClassifier(
+        IntentClassification(
+            intent="missing_tool",
+            reason="Small model incorrectly requested a tool.",
+            arguments={"name": "what_is_docker"},
+        )
+    )
+    model = IntentDecisionModel(classifier)
+
+    for text, topic in (
+        ("What is Docker?", "Docker"),
+        ("who is Grace Hopper", "Grace Hopper"),
+        ("Explain Kubernetes.", "Kubernetes"),
+        ("define containerization", "containerization"),
+    ):
+        decision = model.decide(context_for(text))
+
+        assert decision.kind == "answer"
+        assert topic in (decision.answer or "")
+
+    assert classifier.last_context is None
+
+
+def test_external_action_search_and_observation_requests_are_missing_tool():
+    model = IntentDecisionModel()
+
+    examples = (
+        ("What is the weather in Jacksonville?", "weather_lookup"),
+        ("Search GitHub for Seed.", "search_github_for_seed"),
+        ("Install Docker.", "install_docker"),
+        ("What is the latest Docker version?", "what_is_the_latest_docker_version"),
+    )
+    for text, name in examples:
+        decision = model.decide(context_for(text))
+
+        assert decision.kind == "request_tool"
+        assert decision.tool_need is not None
+        assert decision.tool_need["name"] == name
+
+
 def test_missing_tool_intent_requests_install_docker_tool():
     classifier = FakeIntentClassifier(
         IntentClassification(
@@ -190,8 +231,8 @@ def test_build_intent_prompt_explains_answer_and_missing_tool_boundaries():
     assert (
         "Use missing_tool when the user requests an action, lookup, installation, "
         "search, system operation, file operation, network operation, weather lookup, "
-        "external information retrieval, or any capability that cannot be satisfied "
-        "by visible tools."
+        "external information retrieval, observations of the world, or any capability "
+        "that cannot be satisfied by visible tools."
     ) in prompt
     assert "Never pretend to perform an action." in prompt
     assert "Never answer with the requested action text." in prompt
@@ -204,6 +245,8 @@ def test_build_intent_prompt_includes_general_missing_capability_examples():
 
     assert 'User: "echo hello"\n-> intent: echo' in prompt
     assert 'User: "what tools do you have?"\n-> intent: answer' in prompt
+    assert 'User: "What is Docker?"\n-> intent: answer' in prompt
+    assert 'User: "Explain Kubernetes."\n-> intent: answer' in prompt
     assert 'User: "install docker"\n-> intent: missing_tool' in prompt
     assert 'User: "check disk usage"\n-> intent: missing_tool' in prompt
     assert 'User: "what is the weather in Jacksonville?"\n-> intent: missing_tool' in prompt
