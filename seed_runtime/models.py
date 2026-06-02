@@ -102,6 +102,24 @@ class ToolNeed(SeedModel):
     desired_outputs: list[str] = Field(default_factory=list)
 
 
+class ActionPlan(SeedModel):
+    """Durable, text-only proposal for satisfying a tool need.
+
+    Action plans are intentionally non-executable. They do not grant approval,
+    register tools, or carry callable code.
+    """
+
+    id: str
+    tool_need_id: str
+    provider: str
+    capability: str
+    summary: str
+    steps: list[str]
+    risk_class: RiskClass
+    requires_approval: bool
+    executable: Literal[False] = False
+
+
 class Decision(SeedModel):
     kind: DecisionKind
     reason: str

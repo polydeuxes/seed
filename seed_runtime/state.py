@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from seed_runtime.events import EventLedger
 from seed_runtime.evidence import Evidence
 from seed_runtime.models import (
+    ActionPlan,
     Approval,
     Entity,
     Event,
@@ -33,6 +34,7 @@ class State:
     tool_needs: dict[str, ToolNeed] = field(default_factory=dict)
     approvals: dict[str, Approval] = field(default_factory=dict)
     pending_actions: dict[str, PendingAction] = field(default_factory=dict)
+    action_plans: dict[str, ActionPlan] = field(default_factory=dict)
     tools: dict[str, ToolSpec] = field(default_factory=dict)
 
     @property
@@ -108,6 +110,10 @@ class StateProjector:
             data = payload.get("pending_action", payload)
             pending_action = PendingAction(**data)
             state.pending_actions[pending_action.id] = pending_action
+        elif event.kind == "action_plan.created":
+            data = payload.get("action_plan", payload)
+            action_plan = ActionPlan(**data)
+            state.action_plans[action_plan.id] = action_plan
         elif event.kind in {
             "pending_action.status_changed",
             "pending_action.approved",
