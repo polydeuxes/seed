@@ -6,6 +6,7 @@ from seed_runtime.evaluations import (
     EvalExpectation,
     build_small_model_mvp_registry,
 )
+from seed_runtime.model_client import DecisionParseError
 from seed_runtime.models import Decision
 from seed_runtime.registry import ToolRegistry
 from seed_runtime.runtime import FakeDecisionModel
@@ -15,7 +16,9 @@ class SmallModelMvpDecisionModel:
     def decide(self, context: ContextPacket) -> Decision:
         text = context.current_input["text"]
         if text == "is node-1 out of disk?":
-            assert [tool["name"] for tool in context.tools] == ["docker_storage_summary"]
+            assert [tool["name"] for tool in context.tools] == [
+                "docker_storage_summary"
+            ]
             assert any(fact["value"]["stale"] for fact in context.facts)
             return Decision(
                 kind="call_tool",
@@ -87,10 +90,16 @@ def test_evaluator_reports_validation_and_expectation_errors():
     registry = ToolRegistry()
     registry.load_manifest("toolkits/core/echo/toolkit.yaml")
     model = FakeDecisionModel(
-        Decision(kind="call_tool", reason="safe", tool_name="missing", tool_arguments={})
+        Decision(
+            kind="call_tool", reason="safe", tool_name="missing", tool_arguments={}
+        )
     )
     result = DecisionEvaluator(registry, model).evaluate_case(
-        EvalCase(name="bad call", user_message="do it", expected=EvalExpectation(kind="answer"))
+        EvalCase(
+            name="bad call",
+            user_message="do it",
+            expected=EvalExpectation(kind="answer"),
+        )
     )
 
     assert not result.passed
@@ -150,9 +159,118 @@ def test_small_model_mvp_eval_cases_match_strategy_document():
 
 
 def test_small_model_mvp_eval_cases_pass_with_matching_decisions():
-    run = DecisionEvaluator(build_small_model_mvp_registry(), SmallModelMvpDecisionModel()).evaluate(
-        SMALL_MODEL_MVP_EVAL_CASES
-    )
+    run = DecisionEvaluator(
+        build_small_model_mvp_registry(), SmallModelMvpDecisionModel()
+    ).evaluate(SMALL_MODEL_MVP_EVAL_CASES)
 
     assert run.passed
     assert run.pass_rate == 1.0
+
+
+class ParseFailingDecisionModel:
+    def decide(self, context: ContextPacket) -> Decision:
+        raise DecisionParseError("model response is not valid JSON: Expecting value")
+
+
+class SequencedDecisionModel:
+    def __init__(self, decisions: list[DecisionParseError | Decision]) -> None:
+        self.decisions = decisions
+        self.calls = 0
+
+    def decide(self, context: ContextPacket) -> Decision:
+        outcome = self.decisions[self.calls]
+        self.calls += 1
+        if isinstance(outcome, DecisionParseError):
+            raise outcome
+        return outcome
+
+
+def test_evaluator_records_parse_failure_as_failed_result():
+    result = DecisionEvaluator(
+        ToolRegistry(), ParseFailingDecisionModel()
+    ).evaluate_case(
+        EvalCase(
+            name="bad json",
+            user_message="answer",
+            expected=EvalExpectation(kind="answer"),
+        )
+    )
+
+    assert not result.passed
+    assert result.decision is None
+    assert result.validation_errors == []
+    assert result.parse_error == (
+        "model response was not valid JSON decision: "
+        "model response is not valid JSON: Expecting value"
+    )
+    assert result.errors == [result.parse_error]
+
+
+def test_evaluate_continues_after_parse_failure():
+    model = SequencedDecisionModel(
+        [
+            DecisionParseError("model response must be a JSON object"),
+            Decision(kind="answer", reason="safe", answer="Done."),
+        ]
+    )
+    run = DecisionEvaluator(ToolRegistry(), model).evaluate(
+        [
+            EvalCase(
+                name="bad json",
+                user_message="first",
+                expected=EvalExpectation(kind="answer"),
+            ),
+            EvalCase(
+                name="valid",
+                user_message="second",
+                expected=EvalExpectation(kind="answer"),
+            ),
+        ]
+    )
+
+    assert model.calls == 2
+    assert len(run.results) == 2
+    assert not run.results[0].passed
+    assert run.results[0].parse_error is not None
+    assert run.results[1].passed
+    assert run.results[1].decision == Decision(
+        kind="answer", reason="safe", answer="Done."
+    )
+
+
+def test_eval_run_valid_json_rate_is_computed_correctly():
+    model = SequencedDecisionModel(
+        [
+            Decision(kind="answer", reason="safe", answer="Done."),
+            DecisionParseError("decision requires kind and reason"),
+            Decision(kind="refuse", reason="unsafe"),
+            DecisionParseError("decision contains unexpected fields: extra"),
+        ]
+    )
+    run = DecisionEvaluator(ToolRegistry(), model).evaluate(
+        [
+            EvalCase(
+                name="valid answer",
+                user_message="one",
+                expected=EvalExpectation(kind="answer"),
+            ),
+            EvalCase(
+                name="bad json one",
+                user_message="two",
+                expected=EvalExpectation(kind="answer"),
+            ),
+            EvalCase(
+                name="valid refuse",
+                user_message="three",
+                expected=EvalExpectation(kind="refuse"),
+            ),
+            EvalCase(
+                name="bad json two",
+                user_message="four",
+                expected=EvalExpectation(kind="answer"),
+            ),
+        ]
+    )
+
+    assert run.valid_json_rate == 0.5
+    assert run.pass_rate == 0.5
