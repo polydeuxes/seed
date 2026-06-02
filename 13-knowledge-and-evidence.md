@@ -92,6 +92,46 @@ Examples:
 
 Evidence should preserve the original payload as much as practical, plus source metadata and observation time. Multiple Facts may be extracted from one Evidence record, and one Fact may cite multiple Evidence records.
 
+## Parallel Evidence Collection
+
+Seed may use multiple workers, tools, or subagents to investigate the same goal.
+
+These branches should not be treated as independent authorities. Their primary output is Evidence, not final truth. Parallel workers and subagents do not merge opinions; they emit Evidence. Seed merges Evidence into Facts.
+
+A worker may return:
+
+- raw observations
+- tool outputs
+- cited document excerpts
+- failed attempts
+- uncertainty notes
+- candidate facts
+
+The runtime records these as Events and Evidence.
+
+Fact extraction and validation then condense the collected evidence into Facts. Conflicting evidence should remain visible through provenance rather than being silently averaged away.
+
+This allows Seed to accumulate experience from multiple attempts or viewpoints without turning subagent text into unverified state.
+
+Pattern:
+
+```text
+Goal
+  -> parallel investigation branches
+  -> Evidence records
+  -> Fact extraction / validation
+  -> State projection
+  -> Context composition
+  -> next decision
+```
+
+Core rule:
+
+```text
+Subagents collect experience.
+Seed decides what becomes state.
+```
+
 ## Facts
 
 Facts are projected interpretations of Evidence.
