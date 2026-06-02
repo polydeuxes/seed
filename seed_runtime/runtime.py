@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import Protocol
 
+from seed_runtime.capability_catalog import CapabilityCatalog
 from seed_runtime.context import ContextComposer, ContextPacket
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
@@ -42,6 +43,7 @@ class Runtime:
         tool_executor: ToolExecutor,
         tool_need_service: ToolNeedService,
         model: DecisionModel,
+        capability_catalog: CapabilityCatalog | None = None,
         max_decision_retries: int = 1,
     ) -> None:
         self.ledger = ledger
@@ -50,6 +52,7 @@ class Runtime:
         self.decision_validator = decision_validator
         self.tool_executor = tool_executor
         self.tool_need_service = tool_need_service
+        self.capability_catalog = capability_catalog or CapabilityCatalog.load()
         self.tool_intent_guard = ToolIntentGuard()
         self.state_patch_service = StatePatchService(ledger, projector)
         self.model = model
@@ -266,10 +269,14 @@ class Runtime:
             need = self.tool_need_service.create_from_decision(
                 workspace_id, decision, causation_id
             )
+            recommendations = self.capability_catalog.recommend_for(need)
+            payload = {"tool_need": to_plain(need)}
+            if recommendations:
+                payload["recommendations"] = to_plain(recommendations)
             return RuntimeResponse(
                 kind="tool_need",
                 message=f"Recorded tool need {need.name}.",
-                payload={"tool_need": to_plain(need)},
+                payload=payload,
             )
         if decision.kind == "call_tool":
             result = self.tool_executor.execute(

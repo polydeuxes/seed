@@ -1,0 +1,9 @@
+capability: knowledge_lookup
+summary: Retrieve facts from an internal knowledge base or vector index.
+recommendations:
+  - provider: local_vector_store
+    summary: Query a local or workspace-scoped vector store for indexed knowledge.
+    kind: local_service
+    source: workspace_knowledge
+    risk_class: L1
+    notes: Requires an existing index and explicit registration before use.

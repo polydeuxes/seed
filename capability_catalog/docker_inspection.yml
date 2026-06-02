@@ -1,0 +1,9 @@
+capability: docker_inspection
+summary: Inspect Docker containers, images, networks, volumes, and runtime state.
+recommendations:
+  - provider: docker_cli
+    summary: Use the Docker CLI for read-only inspection commands.
+    kind: local_cli
+    source: docker
+    risk_class: L2
+    notes: Should be constrained to inspection operations unless separately approved.

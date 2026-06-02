@@ -1,10 +1,12 @@
 """Seed runtime package."""
 
+from seed_runtime.capability_catalog import CapabilityCatalog
 from seed_runtime.evidence import Evidence
 from seed_runtime.facts import Fact
 from seed_runtime.models import Event, PendingAction, ToolNeed, ToolSpec, Toolkit
 
 __all__ = [
+    "CapabilityCatalog",
     "Event",
     "Evidence",
     "Fact",
