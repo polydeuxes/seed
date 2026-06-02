@@ -103,7 +103,7 @@ def test_routes_refuse():
     assert ledger.list_events("ws")[-1].payload == {"reason": "unsafe request"}
 
 
-def test_mvp_echo_loop_records_result_event_and_keeps_projected_state_boring():
+def test_mvp_echo_loop_records_result_event_and_projects_tool_output_evidence():
     runtime, ledger, model = make_runtime(
         Decision(
             kind="call_tool",
@@ -127,11 +127,14 @@ def test_mvp_echo_loop_records_result_event_and_keeps_projected_state_boring():
         "model.decision.proposed",
         "tool.call.started",
         "tool.call.completed",
+        "evidence.observed",
     ]
     assert model.last_context.current_input["text"] == "echo hello"
     assert [tool["name"] for tool in model.last_context.tools] == ["echo"]
     assert projected_state.workspace_id == "ws"
     assert projected_state.open_tool_needs == []
+    assert len(projected_state.evidence) == 1
+    assert next(iter(projected_state.evidence.values())).source == "tool:echo"
 
 
 def test_mvp_request_tool_loop_records_need_and_projects_open_state():

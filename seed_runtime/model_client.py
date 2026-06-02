@@ -95,6 +95,10 @@ def _render_state_summary(packet: dict[str, Any]) -> dict[str, Any]:
             "facts": [
                 _render_fact(fact, entity_names) for fact in packet.get("facts", [])
             ],
+            "evidence": [
+                _render_evidence(evidence)
+                for evidence in packet.get("evidence", [])
+            ],
         }
     )
 
@@ -133,6 +137,17 @@ def _render_fact(fact: dict[str, Any], entity_names: dict[str, str]) -> dict[str
             "value": fact.get("value"),
             "confidence": fact.get("confidence"),
             "expires_at": fact.get("expires_at"),
+        }
+    )
+
+
+def _render_evidence(evidence: dict[str, Any]) -> dict[str, Any]:
+    return _without_empty(
+        {
+            "source": evidence.get("source"),
+            "kind": evidence.get("kind"),
+            "payload": evidence.get("payload"),
+            "confidence": evidence.get("confidence"),
         }
     )
 

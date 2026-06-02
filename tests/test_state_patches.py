@@ -89,6 +89,10 @@ def test_state_patch_service_applies_minimum_supported_ops():
 
     state = projector.project("ws")
     assert state.entities["ent_node_1"].attributes == {"os": "linux"}
+    evidence_event = result.events[1]
+    fact_event = result.events[2]
+    assert "observed_at" in evidence_event.payload["evidence"]
+    assert "observed_at" in fact_event.payload["fact"]
     assert state.evidence["evd_status_1"].workspace_id == "ws"
     assert state.facts["fact_ssh_1"].evidence_ids == ["evd_status_1"]
     assert state.goals["goal_fix_ssh"].created_from_event_id == "evt_decision"
