@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
+
 from seed_runtime.events import EventLedger
-from seed_runtime.models import Approval, Entity, Event, Fact, Goal, ToolNeed, ToolSpec
 from seed_runtime.evidence import Evidence
+from seed_runtime.models import Approval, Entity, Event, Fact, Goal, ToolNeed, ToolSpec
 
 
 def _parse_dt(value: str | None) -> datetime | None:
@@ -30,7 +31,7 @@ class State:
         return [need for need in self.tool_needs.values() if need.status not in closed]
 
     def has_approval(self, action: str, scope: str | None = None) -> Approval | None:
-        now = datetime.now().astimezone()
+        now = datetime.now(timezone.utc)
         for approval in self.approvals.values():
             if approval.action != action:
                 continue

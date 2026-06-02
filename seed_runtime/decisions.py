@@ -67,8 +67,8 @@ class DecisionValidator:
         if not isinstance(summary, str) or len(summary.strip()) < 10:
             errors.append("tool_need.summary must be at least 10 characters")
         capability = tool_need.get("capability")
-        if capability is not None and (not isinstance(capability, str) or not _VALID_NAME.match(capability)):
-            errors.append("tool_need.capability must be snake_case when provided")
+        if not isinstance(capability, str) or not _VALID_NAME.match(capability):
+            errors.append("tool_need.capability is required and must be snake_case")
         return errors
 
     def _validate_tool_call(self, decision: Decision, state: State | None) -> list[str]:

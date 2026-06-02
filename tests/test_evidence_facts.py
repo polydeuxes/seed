@@ -1,3 +1,4 @@
+from seed_runtime.base import SeedModel
 from seed_runtime.context import ContextComposer
 from seed_runtime.evidence import Evidence
 from seed_runtime.events import EventLedger
@@ -39,6 +40,11 @@ def test_evidence_backed_fact_projects_with_provenance():
     assert state.evidence[evidence.id] == evidence
     assert state.facts[fact.id].evidence_ids == [evidence.id]
     assert state.facts[fact.id].confidence == evidence.confidence
+
+
+def test_evidence_and_fact_share_seed_model_conventions():
+    assert issubclass(Evidence, SeedModel)
+    assert issubclass(Fact, SeedModel)
 
 
 def test_context_includes_evidence_backed_facts():
