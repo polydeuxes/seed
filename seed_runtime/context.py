@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from seed_runtime.models import Event
@@ -21,6 +21,7 @@ class ContextPacket:
     tools: list[dict[str, Any]]
     open_tool_needs: list[dict[str, Any]]
     decision_schema: dict[str, Any]
+    evidence: list[dict[str, Any]] = field(default_factory=list)
     retry_prompt: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
@@ -61,6 +62,10 @@ class ContextComposer:
                 if evidence_id in state.evidence
             ]
             facts.append(fact_payload)
+        evidence = [
+            item.__dict__
+            for item in sorted(state.evidence.values(), key=lambda item: item.id)[:30]
+        ]
         tools = [
             {
                 "name": tool.name,
@@ -94,4 +99,5 @@ class ContextComposer:
                     "refuse",
                 ]
             },
+            evidence=evidence,
         )

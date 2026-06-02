@@ -31,7 +31,11 @@ def test_successful_echo_tool_execution():
         "message": "hello",
         "workspace_id": "ws_1",
     }
-    assert event_kinds(ledger) == ["tool.call.started", "tool.call.completed"]
+    assert event_kinds(ledger) == [
+        "tool.call.started",
+        "tool.call.completed",
+        "evidence.observed",
+    ]
 
 
 def test_invalid_input_schema_fails_before_execution(monkeypatch):
@@ -98,7 +102,7 @@ def test_completed_tool_call_appends_tool_call_completed():
 
     executor.execute("ws_1", "ses_1", "echo", {"message": "done"})
 
-    completed = ledger.list_events("ws_1")[-1]
+    completed = ledger.list_events("ws_1")[1]
     assert completed.kind == "tool.call.completed"
     assert completed.payload["tool"] == "echo"
     assert completed.payload["output"]["message"] == "done"

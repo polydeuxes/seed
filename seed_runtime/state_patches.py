@@ -7,7 +7,7 @@ from typing import Any
 
 from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
-from seed_runtime.models import Event
+from seed_runtime.models import Event, utc_now
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
 
@@ -99,6 +99,7 @@ class StatePatchService:
             self._require_fields(
                 evidence, "evidence", "id", "workspace_id", "source", "kind"
             )
+            evidence.setdefault("observed_at", utc_now())
             evidence.setdefault("payload", {})
             evidence.setdefault("confidence", 1.0)
             return self.ledger.append(
@@ -113,6 +114,7 @@ class StatePatchService:
             fact = self._operation_payload(operation, "fact")
             fact.setdefault("id", new_id("fact"))
             fact.setdefault("evidence_ids", [])
+            fact.setdefault("observed_at", utc_now())
             self._require_fields(fact, "fact", "id", "subject_id", "predicate", "value")
             return self.ledger.append(
                 "fact.observed",
