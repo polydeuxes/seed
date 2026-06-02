@@ -1,5 +1,5 @@
 from seed_runtime.capability_catalog import CapabilityRecommendation
-from seed_runtime.models import Fact, ToolSpec, utc_now
+from seed_runtime.models import Fact, utc_now
 from seed_runtime.recommendation_ranker import RecommendationRanker
 from seed_runtime.state import State
 
@@ -36,19 +36,6 @@ def _runtime_fact(value: str) -> Fact:
         predicate="runtime",
         value=value,
         observed_at=utc_now(),
-    )
-
-
-def _tool(name: str) -> ToolSpec:
-    return ToolSpec(
-        name=name,
-        summary=f"{name} provider",
-        toolkit_id=f"toolkit_{name}",
-        input_schema={},
-        output_schema={},
-        policy_action=f"{name}.run",
-        implementation=f"toolkits.{name}:run",
-        risk_class="L3",
     )
 
 
@@ -108,16 +95,23 @@ def test_no_facts_falls_back_to_catalog_order():
     assert "catalog default" in ranked[0].reasons
 
 
-def test_registered_provider_outranks_unregistered_provider():
-    state = State(
-        workspace_id="ws",
-        tools={"docker_container_lifecycle": _tool("docker_container_lifecycle")},
-    )
+def test_registered_provider_outranks_catalog_default():
+    registered_tools = {
+        "tools": [
+            {
+                "name": "restart_container",
+                "summary": "Restart Docker containers",
+                "toolkit_id": "docker_container_lifecycle",
+                "policy_action": "docker_container_lifecycle.restart",
+            }
+        ]
+    }
 
     ranked = RecommendationRanker().rank(
         "service_management",
         _service_recommendations(),
-        state,
+        State(workspace_id="ws"),
+        registered_tools=registered_tools,
     )
 
     assert [recommendation.provider for recommendation in ranked] == [
@@ -125,4 +119,4 @@ def test_registered_provider_outranks_unregistered_provider():
         "systemctl_cli",
     ]
     assert ranked[0].score > ranked[1].score
-    assert "+100 provider already registered" in ranked[0].reasoning
+    assert "+1000 provider already registered" in ranked[0].reasoning
