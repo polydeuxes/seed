@@ -208,8 +208,10 @@ def parse_decision_text(text: str) -> Decision:
         raise DecisionParseError(f"model response is not valid JSON: {exc.msg}") from exc
     if not isinstance(data, dict):
         raise DecisionParseError("model response must be a JSON object")
-    if not isinstance(data.get("kind"), str) or not isinstance(data.get("reason"), str):
-        raise DecisionParseError("decision requires string kind and reason")
+    if not isinstance(data.get("kind"), str):
+        raise DecisionParseError("decision requires string kind")
+    if not isinstance(data.get("reason"), str):
+        data["reason"] = "local model omitted reason"
     extra = sorted(set(data) - _DECISION_FIELDS)
     if extra:
         raise DecisionParseError(
