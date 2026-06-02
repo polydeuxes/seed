@@ -251,7 +251,7 @@ def _small_model_mvp_seed_events(workspace_id: str = "ws_eval") -> tuple[Event, 
                             "summary": "node-1 was near disk pressure in a previous check",
                             "stale": True,
                         },
-                        source_event_id="evt_eval_previous_disk_check",
+                        evidence_ids=["evt_eval_previous_disk_check"],
                         observed_at=now,
                     )
                 )

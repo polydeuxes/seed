@@ -52,10 +52,15 @@ class ContextComposer:
                 state.entities.values(), key=lambda entity: entity.name
             )[:20]
         ]
-        facts = [
-            fact.__dict__
-            for fact in sorted(state.facts.values(), key=lambda fact: fact.id)[:30]
-        ]
+        facts = []
+        for fact in sorted(state.facts.values(), key=lambda fact: fact.id)[:30]:
+            fact_payload = fact.__dict__.copy()
+            fact_payload["evidence"] = [
+                state.evidence[evidence_id].__dict__
+                for evidence_id in fact.evidence_ids
+                if evidence_id in state.evidence
+            ]
+            facts.append(fact_payload)
         tools = [
             {
                 "name": tool.name,

@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from seed_runtime.events import EventLedger
 from seed_runtime.models import Approval, Entity, Event, Fact, Goal, ToolNeed, ToolSpec
+from seed_runtime.evidence import Evidence
 
 
 def _parse_dt(value: str | None) -> datetime | None:
@@ -17,6 +18,7 @@ class State:
     workspace_id: str
     entities: dict[str, Entity] = field(default_factory=dict)
     facts: dict[str, Fact] = field(default_factory=dict)
+    evidence: dict[str, Evidence] = field(default_factory=dict)
     goals: dict[str, Goal] = field(default_factory=dict)
     tool_needs: dict[str, ToolNeed] = field(default_factory=dict)
     approvals: dict[str, Approval] = field(default_factory=dict)
@@ -58,10 +60,17 @@ class StateProjector:
             data = payload.get("entity", payload)
             entity = Entity(**data)
             state.entities[entity.id] = entity
+        elif event.kind == "evidence.observed":
+            data = payload.get("evidence", payload).copy()
+            data["observed_at"] = _parse_dt(data.get("observed_at")) or event.timestamp
+            evidence = Evidence(**data)
+            state.evidence[evidence.id] = evidence
         elif event.kind == "fact.observed":
             data = payload.get("fact", payload).copy()
             data["observed_at"] = _parse_dt(data.get("observed_at")) or event.timestamp
             data["expires_at"] = _parse_dt(data.get("expires_at"))
+            if "evidence_ids" not in data and "source_event_id" in data:
+                data["evidence_ids"] = [data.pop("source_event_id")]
             fact = Fact(**data)
             state.facts[fact.id] = fact
         elif event.kind == "goal.created":
