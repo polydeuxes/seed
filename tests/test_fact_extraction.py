@@ -1,7 +1,7 @@
 from seed_runtime.context import ContextComposer
 from seed_runtime.events import EventLedger
 from seed_runtime.execution import ToolExecutor
-from seed_runtime.fact_extraction import FactExtractionError, ToolResultFactExtractor
+from seed_runtime.fact_extraction import FactExtractionError, FactExtractionService
 from seed_runtime.registry import ToolRegistry
 from seed_runtime.state import StateProjector
 
@@ -32,9 +32,9 @@ def test_completed_tool_call_extracts_tool_output_evidence_into_state_and_contex
     assert observed.payload["evidence"]["kind"] == "tool.output"
     assert observed.payload["evidence"]["observed_at"] == completed.timestamp.isoformat()
     assert observed.payload["evidence"]["payload"] == {
-        "tool": "echo",
-        "output": {"ok": True, "message": "hello", "workspace_id": "ws_1"},
-        "tool_call_event_id": completed.id,
+        "ok": True,
+        "message": "hello",
+        "workspace_id": "ws_1",
     }
 
     state = projector.project("ws_1")
@@ -47,12 +47,12 @@ def test_completed_tool_call_extracts_tool_output_evidence_into_state_and_contex
     assert context.evidence == [evidence.__dict__]
 
 
-def test_tool_result_fact_extractor_rejects_non_completed_tool_events():
+def test_fact_extraction_service_rejects_non_completed_tool_events():
     ledger = EventLedger()
     event = ledger.append("tool.call.failed", "ws_1", {"tool": "echo"})
 
     try:
-        ToolResultFactExtractor(ledger).observe_tool_result(event)
+        FactExtractionService(ledger).observe_tool_result(event)
     except FactExtractionError as exc:
         assert str(exc) == "can only extract facts from tool.call.completed"
     else:

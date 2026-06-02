@@ -8,7 +8,7 @@ from typing import Any, Callable, Literal
 
 from seed_runtime.base import SeedModel
 from seed_runtime.events import EventLedger
-from seed_runtime.fact_extraction import ToolResultFactExtractor
+from seed_runtime.fact_extraction import FactExtractionService
 from seed_runtime.models import PolicyDecision, ToolSpec
 from seed_runtime.policy import PolicyGate
 from seed_runtime.registry import ToolRegistry
@@ -60,7 +60,7 @@ class ToolExecutor:
         self.registry = registry
         self.projector = projector
         self.policy_gate = policy_gate or PolicyGate()
-        self.fact_extractor = ToolResultFactExtractor(ledger)
+        self.fact_extraction = FactExtractionService(ledger)
 
     def execute(
         self,
@@ -150,7 +150,7 @@ class ToolExecutor:
             session_id=session_id,
             causation_id=call_event.id,
         )
-        self.fact_extractor.observe_tool_result(completed_event)
+        self.fact_extraction.observe_tool_result(completed_event)
         return ToolCallResult(
             kind="tool_result",
             status="completed",
