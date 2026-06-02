@@ -134,3 +134,44 @@ Evidence -> Facts -> State -> Decisions -> Tools
 ```
 
 Tools are how Seed observes and acts. Evidence, facts, and state are how Seed knows what is true enough to decide.
+
+## Local model development CLI
+
+Seed includes a maintained local runtime CLI for testing the current runtime loop with local models through Ollama's `/api/generate` endpoint. The CLI builds the same intent-first decision path used by the runtime (`IntentDecisionModel` + `TextIntentClassifier` + `IntentPromptModelClient`) and loads the core echo toolkit, so local testing tracks repository code changes instead of relying on a separate local-only script.
+
+Start Ollama and pull a small model if needed:
+
+```bash
+ollama pull qwen2.5:3b
+```
+
+Run one-shot messages:
+
+```bash
+python scripts/seed_local.py "echo hello"
+python scripts/seed_local.py "install docker"
+python scripts/seed_local.py --raw "what is the weather in Jacksonville?"
+```
+
+By default, the CLI posts intent prompts to `http://localhost:11434/api/generate` with model `qwen2.5:3b`, `stream: false`, and JSON-formatted output enabled. Use `--model` to select another local model:
+
+```bash
+python scripts/seed_local.py --model qwen2.5:3b "echo hello"
+```
+
+Run without a message to open shell mode:
+
+```bash
+python scripts/seed_local.py
+```
+
+Run HTTP mode for lightweight local integration tests:
+
+```bash
+python scripts/seed_local.py --http
+curl -s http://127.0.0.1:8765/message \
+  -H 'Content-Type: application/json' \
+  -d '{"message":"echo hello"}'
+```
+
+Normal CLI and HTTP responses are JSON objects with `response` and `events`. `--raw` prints the raw model completion so you can debug the local model's intent JSON before Seed parses it.
