@@ -180,6 +180,17 @@ def format_response_summary(result: dict[str, Any]) -> str:
         lines.append(str(response.get("kind") or "response"))
     if output is not None:
         lines.append("Output: " + json.dumps(output, sort_keys=True))
+
+    recommendations = payload.get("recommendations")
+    if isinstance(recommendations, list) and recommendations:
+        lines.append("Recommendations:")
+        for recommendation in recommendations:
+            if isinstance(recommendation, dict):
+                provider = recommendation.get("provider")
+                if provider is not None:
+                    lines.append(f"- {provider}")
+            elif recommendation is not None:
+                lines.append(f"- {recommendation}")
     return "\n".join(lines)
 
 
