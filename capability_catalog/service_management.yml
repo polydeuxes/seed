@@ -1,0 +1,9 @@
+capability: service_management
+summary: Start, stop, restart, reload, or inspect operating system services.
+recommendations:
+  - provider: systemctl_cli
+    summary: Use systemctl for service lifecycle and status operations on systemd hosts.
+    kind: local_cli
+    source: systemd
+    risk_class: L3
+    notes: Mutating service actions require confirmation or approval according to policy.

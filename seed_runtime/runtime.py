@@ -270,9 +270,10 @@ class Runtime:
                 workspace_id, decision, causation_id
             )
             recommendations = self.capability_catalog.recommend_for(need)
-            payload = {"tool_need": to_plain(need)}
-            if recommendations:
-                payload["recommendations"] = to_plain(recommendations)
+            payload = {
+                "tool_need": to_plain(need),
+                "recommendations": to_plain(recommendations),
+            }
             return RuntimeResponse(
                 kind="tool_need",
                 message=f"Recorded tool need {need.name}.",

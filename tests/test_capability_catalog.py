@@ -18,11 +18,14 @@ def test_loads_checked_in_catalog_entries():
     capabilities = [entry.capability for entry in catalog.list_entries()]
 
     assert capabilities == [
+        "disk_inspection",
         "docker_inspection",
         "docker_installation",
         "documentation_lookup",
+        "finance_lookup",
         "knowledge_lookup",
         "prometheus_query",
+        "service_management",
         "weather_lookup",
         "web_search",
     ]
