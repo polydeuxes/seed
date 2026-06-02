@@ -19,11 +19,13 @@ from seed_runtime.context import ContextComposer
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
 from seed_runtime.execution import ToolExecutor
+from seed_runtime.ids import new_id
 from seed_runtime.intent_classifier import (
     IntentDecisionModel,
     IntentPromptModelClient,
     TextIntentClassifier,
 )
+from seed_runtime.models import Event
 from seed_runtime.registry import ToolRegistry
 from seed_runtime.runtime import Runtime
 from seed_runtime.serialization import to_plain
@@ -54,15 +56,18 @@ class LocalSeedApp:
         )
         return {
             "response": to_plain(response),
-            "events": [to_plain(event) for event in self.ledger.list(self.workspace_id)],
+            "events": [
+                to_plain(event) for event in self.ledger.list(self.workspace_id)
+            ],
         }
 
     def raw(self, text: str) -> str:
-        input_event = self.ledger.append(
-            "input.user_message",
-            self.workspace_id,
-            {"text": text},
+        input_event = Event(
+            id=new_id("evt"),
+            kind="input.user_message",
+            workspace_id=self.workspace_id,
             actor="user",
+            payload={"text": text},
             session_id=self.session_id,
         )
         state = self.projector.project(self.workspace_id)
@@ -130,10 +135,24 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--port", type=int, default=8765, help="HTTP bind port when using --http"
     )
-    parser.add_argument("--raw", action="store_true", help="print raw model output")
+    parser.add_argument(
+        "--events", action="store_true", help="include the full event ledger"
+    )
+    parser.add_argument(
+        "--raw",
+        action="store_true",
+        help="print raw model output before running the normal runtime",
+    )
+    parser.add_argument(
+        "--raw-only",
+        action="store_true",
+        help="print raw model output and exit without running the runtime",
+    )
     parser.add_argument("--model", default=DEFAULT_MODEL, help="Ollama model name")
     parser.add_argument(
-        "--endpoint", default=DEFAULT_ENDPOINT, help="Ollama-compatible generate endpoint"
+        "--endpoint",
+        default=DEFAULT_ENDPOINT,
+        help="Ollama-compatible generate endpoint",
     )
     parser.add_argument(
         "--timeout", type=float, default=30.0, help="model request timeout in seconds"
@@ -141,6 +160,47 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--workspace", default=DEFAULT_WORKSPACE, help="workspace id")
     parser.add_argument("--session", default=DEFAULT_SESSION, help="session id")
     return parser
+
+
+def format_response_summary(result: dict[str, Any]) -> str:
+    response = result.get("response", {})
+    if not isinstance(response, dict):
+        return str(response)
+
+    message = str(response.get("message") or "").strip()
+    payload = (
+        response.get("payload") if isinstance(response.get("payload"), dict) else {}
+    )
+    output = payload.get("output")
+
+    lines = []
+    if message:
+        lines.append(message)
+    else:
+        lines.append(str(response.get("kind") or "response"))
+    if output is not None:
+        lines.append("Output: " + json.dumps(output, sort_keys=True))
+    return "\n".join(lines)
+
+
+def format_cli_output(
+    result: dict[str, Any],
+    *,
+    include_events: bool = False,
+    raw_output: str | None = None,
+) -> str:
+    sections: list[str] = []
+    if raw_output is not None:
+        sections.extend(["Raw model output:", raw_output])
+    sections.append(format_response_summary(result))
+    if include_events:
+        sections.extend(
+            [
+                "Events:",
+                json.dumps(result.get("events", []), indent=2, sort_keys=True),
+            ]
+        )
+    return "\n".join(sections)
 
 
 def run_http(app: LocalSeedApp, host: str, port: int) -> None:
@@ -197,7 +257,13 @@ def run_http(app: LocalSeedApp, host: str, port: int) -> None:
         server.server_close()
 
 
-def run_shell(app: LocalSeedApp, *, raw: bool = False) -> None:
+def run_shell(
+    app: LocalSeedApp,
+    *,
+    raw: bool = False,
+    raw_only: bool = False,
+    events: bool = False,
+) -> None:
     print("Seed local shell. Press Ctrl-D or type 'exit' to quit.", file=sys.stderr)
     while True:
         try:
@@ -209,10 +275,15 @@ def run_shell(app: LocalSeedApp, *, raw: bool = False) -> None:
             return
         if not text:
             continue
-        if raw:
+        if raw_only:
             print(app.raw(text))
-        else:
-            print(json.dumps(app.run(text), indent=2, sort_keys=True))
+            continue
+        raw_output = app.raw(text) if raw else None
+        print(
+            format_cli_output(
+                app.run(text), include_events=events, raw_output=raw_output
+            )
+        )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -230,13 +301,18 @@ def main(argv: list[str] | None = None) -> int:
 
     message = " ".join(args.message).strip()
     if message:
-        if args.raw:
+        if args.raw_only:
             print(app.raw(message))
-        else:
-            print(json.dumps(app.run(message), indent=2, sort_keys=True))
+            return 0
+        raw_output = app.raw(message) if args.raw else None
+        print(
+            format_cli_output(
+                app.run(message), include_events=args.events, raw_output=raw_output
+            )
+        )
         return 0
 
-    run_shell(app, raw=args.raw)
+    run_shell(app, raw=args.raw, raw_only=args.raw_only, events=args.events)
     return 0
 
 
