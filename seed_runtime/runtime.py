@@ -9,6 +9,7 @@ from seed_runtime.context import ContextComposer, ContextPacket
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
 from seed_runtime.execution import ToolExecutor
+from seed_runtime.model_client import DecisionParseError
 from seed_runtime.models import Decision, RuntimeResponse
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
@@ -68,7 +69,29 @@ class Runtime:
         validation_errors: list[str] = []
 
         for attempt in range(self.max_decision_retries + 1):
-            decision = self.model.decide(retry_context)
+            try:
+                decision = self.model.decide(retry_context)
+            except DecisionParseError as exc:
+                invalid_event = self.ledger.append(
+                    "model.decision.parse_failed",
+                    workspace_id,
+                    self._decision_parse_failed_payload(exc, attempt),
+                    actor="system",
+                    session_id=session_id,
+                    causation_id=input_event.id,
+                )
+                if attempt >= self.max_decision_retries:
+                    return RuntimeResponse(
+                        "invalid_decision",
+                        "Model decision failed parsing.",
+                        {"errors": [str(exc)]},
+                    )
+
+                retry_context = self._decision_parse_retry_context(
+                    context, exc, attempt + 1, invalid_event.id
+                )
+                continue
+
             decision_event = self.ledger.append(
                 "model.decision.proposed",
                 workspace_id,
@@ -124,6 +147,45 @@ class Runtime:
                 "invalid_decision": to_plain(invalid_decision),
             },
         )
+
+    def _decision_parse_retry_context(
+        self,
+        context: ContextPacket,
+        exc: DecisionParseError,
+        retry_number: int,
+        invalid_event_id: str,
+    ) -> ContextPacket:
+        retry_prompt = {
+            "instruction": "Your previous output was not valid strict JSON. Return only one JSON decision object matching the decision_schema, with no prose, markdown, code fences, or extra text.",
+            "retry_number": retry_number,
+            "max_retries": self.max_decision_retries,
+            "invalid_event_id": invalid_event_id,
+            "parse_error": str(exc),
+        }
+        failure_classification = self._parse_failure_classification(exc)
+        if failure_classification is not None:
+            retry_prompt["raw_failure_classification"] = failure_classification
+        return replace(context, retry_prompt=retry_prompt)
+
+    def _decision_parse_failed_payload(
+        self, exc: DecisionParseError, attempt: int
+    ) -> dict[str, object]:
+        payload: dict[str, object] = {"attempt": attempt, "parse_error": str(exc)}
+        failure_classification = self._parse_failure_classification(exc)
+        if failure_classification is not None:
+            payload["raw_failure_classification"] = failure_classification
+        return payload
+
+    def _parse_failure_classification(self, exc: DecisionParseError) -> object | None:
+        for attribute in (
+            "raw_failure_classification",
+            "failure_classification",
+            "classification",
+        ):
+            value = getattr(exc, attribute, None)
+            if value is not None:
+                return value
+        return None
 
     def _route(
         self, workspace_id: str, session_id: str, decision: Decision, causation_id: str
