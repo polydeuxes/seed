@@ -18,7 +18,7 @@ if str(REPO_ROOT) not in sys.path:
 from seed_runtime.action_plans import ActionPlanService
 from seed_runtime.context import ContextComposer
 from seed_runtime.decisions import DecisionValidator
-from seed_runtime.events import EventLedger
+from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.evidence import Evidence
 from seed_runtime.facts import Fact
 from seed_runtime.execution import ToolExecutor
@@ -197,10 +197,13 @@ def build_local_app(
     workspace_id: str = DEFAULT_WORKSPACE,
     session_id: str = DEFAULT_SESSION,
     max_decision_retries: int = 1,
+    database_path: str | None = None,
 ) -> LocalSeedApp:
     """Construct a local Seed runtime using the current intent-classifier path."""
 
-    ledger = EventLedger()
+    ledger: EventLedger = (
+        SQLiteEventLedger(database_path) if database_path else EventLedger()
+    )
     registry = ToolRegistry()
     registry.load_manifest(REPO_ROOT / "toolkits/core/echo/toolkit.yaml")
     projector = StateProjector(ledger)
@@ -239,6 +242,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("message", nargs="*", help="message to send in one-shot mode")
     parser.add_argument(
+        "--db",
+        help=(
+            "SQLite event ledger path for sharing local state across runs; "
+            "use this with --plan and lifecycle commands to revisit plan IDs"
+        ),
+    )
+    parser.add_argument(
         "--http", action="store_true", help="serve a small local HTTP API"
     )
     parser.add_argument(
@@ -268,6 +278,30 @@ def build_parser() -> argparse.ArgumentParser:
             "non-executable plan for the top recommendation"
         ),
     )
+    parser.add_argument(
+        "--accept-plan",
+        metavar="PLAN_ID",
+        help="accept a previously created action plan without executing it",
+    )
+    parser.add_argument(
+        "--reject-plan",
+        metavar="PLAN_ID",
+        help="reject a previously created action plan without executing it",
+    )
+    parser.add_argument(
+        "--reason",
+        help="human-readable reason required by --reject-plan",
+    )
+    parser.add_argument(
+        "--supersede-plan",
+        metavar="PLAN_ID",
+        help="mark a previously created action plan as superseded without executing it",
+    )
+    parser.add_argument(
+        "--replacement-plan",
+        metavar="REPLACEMENT_ID",
+        help="replacement action plan id required by --supersede-plan",
+    )
     parser.add_argument("--model", default=DEFAULT_MODEL, help="Ollama model name")
     parser.add_argument(
         "--endpoint",
@@ -291,6 +325,28 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     return parser
+
+
+def validate_lifecycle_args(
+    args: argparse.Namespace, parser: argparse.ArgumentParser
+) -> None:
+    lifecycle_flags = [
+        bool(args.accept_plan),
+        bool(args.reject_plan),
+        bool(args.supersede_plan),
+    ]
+    if sum(lifecycle_flags) > 1:
+        parser.error(
+            "choose only one of --accept-plan, --reject-plan, or --supersede-plan"
+        )
+    if args.reject_plan and not args.reason:
+        parser.error("--reject-plan requires --reason")
+    if args.reason and not args.reject_plan:
+        parser.error("--reason can only be used with --reject-plan")
+    if args.supersede_plan and not args.replacement_plan:
+        parser.error("--supersede-plan requires --replacement-plan")
+    if args.replacement_plan and not args.supersede_plan:
+        parser.error("--replacement-plan can only be used with --supersede-plan")
 
 
 def parse_dev_fact(args: list[str]) -> DevFactSeed:
@@ -383,6 +439,50 @@ def format_cli_output(
             ]
         )
     return "\n".join(sections)
+
+
+def format_action_plan_status(plan: dict[str, Any]) -> str:
+    lines = [
+        f"action_plan_id: {plan.get('id')}",
+        f"status: {plan.get('status')}",
+    ]
+    rejection_reason = plan.get("rejection_reason")
+    if rejection_reason:
+        lines.append(f"rejection_reason: {rejection_reason}")
+    replacement_plan_id = plan.get("replacement_plan_id")
+    if replacement_plan_id:
+        lines.append(f"replacement_plan_id: {replacement_plan_id}")
+    return "\n".join(lines)
+
+
+def update_action_plan_lifecycle(args: argparse.Namespace) -> dict[str, Any] | None:
+    plan_id = args.accept_plan or args.reject_plan or args.supersede_plan
+    if not plan_id:
+        return None
+
+    ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
+    service = ActionPlanService(ledger)
+    try:
+        if args.accept_plan:
+            plan = service.accept_plan(
+                args.workspace, args.accept_plan, session_id=args.session
+            )
+        elif args.reject_plan:
+            plan = service.reject_plan(
+                args.workspace, args.reject_plan, args.reason, session_id=args.session
+            )
+        else:
+            plan = service.supersede_plan(
+                args.workspace,
+                args.supersede_plan,
+                args.replacement_plan,
+                session_id=args.session,
+            )
+        return to_plain(plan)
+    finally:
+        close = getattr(ledger, "close", None)
+        if close is not None:
+            close()
 
 
 def format_action_plan(plan: dict[str, Any]) -> str:
@@ -491,13 +591,22 @@ def run_shell(
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    validate_lifecycle_args(args, parser)
+
+    updated_plan = update_action_plan_lifecycle(args)
+    if updated_plan is not None:
+        print(format_action_plan_status(updated_plan))
+        return 0
+
     app = build_local_app(
         endpoint=args.endpoint,
         model=args.model,
         timeout_seconds=args.timeout,
         workspace_id=args.workspace,
         session_id=args.session,
+        database_path=args.db,
     )
     fact_seeds = [parse_dev_fact(fact) for fact in args.fact]
     if fact_seeds:
