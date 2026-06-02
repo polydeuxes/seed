@@ -45,14 +45,19 @@ class RecommendationRanker:
         recommendations: Iterable[CapabilityRecommendation],
         state: State | None,
         *,
+        registered_tools: (
+            Iterable[Any] | Mapping[str, Any] | Mapping[str, Iterable[Any]] | None
+        ) = None,
         entities: (
             Iterable[Entity | Mapping[str, Any]]
             | Mapping[str, Entity | Mapping[str, Any]]
+            | Mapping[str, Iterable[Entity | Mapping[str, Any]]]
             | None
         ) = None,
         facts: (
             Iterable[Fact | Mapping[str, Any]]
             | Mapping[str, Fact | Mapping[str, Any]]
+            | Mapping[str, Iterable[Fact | Mapping[str, Any]]]
             | None
         ) = None,
     ) -> list[RankedRecommendation]:
@@ -62,11 +67,15 @@ class RecommendationRanker:
             capability: Normalized or human-readable capability name.
             recommendations: Catalog recommendations for the capability.
             state: Current Seed state snapshot.
-            entities: Optional supplemental entities or environment entities.
-            facts: Optional supplemental state/environment facts.
+            registered_tools: Optional supplemental registered-tool inventory, such
+                as the payload returned by environment_inventory.list_registered_tools.
+            entities: Optional supplemental entities or environment entities, such
+                as the payload returned by environment_inventory.list_known_entities.
+            facts: Optional supplemental state/environment facts, such as the
+                payload returned by environment_inventory.list_known_facts.
         """
         recommendation_list = list(recommendations)
-        registered_providers = self._registered_provider_names(state)
+        registered_providers = self._registered_provider_names(state, registered_tools)
         known_runtime_values = self._known_context_values(
             "runtime", state, entities, facts
         )
@@ -84,18 +93,22 @@ class RecommendationRanker:
             recommendation_tokens = self._recommendation_tokens(recommendation)
 
             if provider_key in registered_providers:
-                score += 100
+                score += 1000
                 reasons.append("provider already registered")
-                reasoning.append("+100 provider already registered")
+                reasoning.append("+1000 provider already registered")
 
-            matched_runtime = self._matching_value(
-                known_runtime_values, recommendation_tokens
+            matched_runtime = self._matching_runtime_value(
+                known_runtime_values, recommendation.provider, recommendation_tokens
             )
             if matched_runtime is not None:
-                score += 50
+                runtime_boost = self._runtime_provider_boost(
+                    matched_runtime, recommendation.provider
+                )
+                score += runtime_boost
                 reasons.append(f"provider matches known runtime: {matched_runtime}")
                 reasoning.append(
-                    f"+50 provider matches known runtime: {matched_runtime}"
+                    f"+{runtime_boost} provider matches known runtime: "
+                    f"{matched_runtime}"
                 )
 
             matched_platform = self._matching_value(
@@ -142,10 +155,33 @@ class RecommendationRanker:
         ranked.sort(key=lambda item: (-item[1].score, item[0]))
         return [recommendation for _, recommendation in ranked]
 
-    def _registered_provider_names(self, state: State | None) -> set[str]:
-        if state is None:
-            return set()
-        return {slugify(name) for name in state.tools}
+    def _registered_provider_names(
+        self,
+        state: State | None,
+        registered_tools: (
+            Iterable[Any] | Mapping[str, Any] | Mapping[str, Iterable[Any]] | None
+        ) = None,
+    ) -> set[str]:
+        tools = list(self._mapping_or_iterable_values(state.tools if state else None))
+        tools.extend(self._inventory_items(registered_tools, "tools"))
+
+        names: set[str] = set()
+        if state is not None:
+            names.update(slugify(name) for name in state.tools)
+
+        for tool in tools:
+            for field in ("name", "toolkit_id"):
+                value = self._get(tool, field)
+                if value:
+                    names.add(slugify(str(value)))
+            for field in ("policy_action", "implementation"):
+                value = self._get(tool, field)
+                if isinstance(value, str):
+                    names.update(
+                        slugify(part) for part in re.split(r"[.:]", value) if part
+                    )
+
+        return names
 
     def _known_context_values(
         self,
@@ -163,10 +199,14 @@ class RecommendationRanker:
         ),
     ) -> list[str]:
         values: list[str] = []
-        all_entities = list(self._mapping_or_iterable_values(state.entities if state else None))
-        all_entities.extend(self._mapping_or_iterable_values(entities))
-        all_facts = list(self._mapping_or_iterable_values(state.facts if state else None))
-        all_facts.extend(self._mapping_or_iterable_values(facts))
+        all_entities = list(
+            self._mapping_or_iterable_values(state.entities if state else None)
+        )
+        all_entities.extend(self._inventory_items(entities, "entities"))
+        all_facts = list(
+            self._mapping_or_iterable_values(state.facts if state else None)
+        )
+        all_facts.extend(self._inventory_items(facts, "facts"))
 
         for entity in all_entities:
             attributes = self._get(entity, "attributes") or {}
@@ -206,6 +246,27 @@ class RecommendationRanker:
             return values
         return []
 
+    def _matching_runtime_value(
+        self, values: list[str], provider: str, tokens: set[str]
+    ) -> str | None:
+        provider_key = slugify(provider)
+        for value in values:
+            runtime_key = slugify(value)
+            if runtime_key == "docker" and provider_key == "docker_container_lifecycle":
+                return value
+            if runtime_key == "systemd" and provider_key == "systemctl_cli":
+                return value
+        return self._matching_value(values, tokens)
+
+    def _runtime_provider_boost(self, runtime: str, provider: str) -> int:
+        runtime_key = slugify(runtime)
+        provider_key = slugify(provider)
+        if runtime_key == "docker" and provider_key == "docker_container_lifecycle":
+            return 200
+        if runtime_key == "systemd" and provider_key == "systemctl_cli":
+            return 200
+        return 50
+
     def _recommendation_tokens(self, recommendation: CapabilityRecommendation) -> set[str]:
         text = " ".join(
             part
@@ -243,11 +304,18 @@ class RecommendationRanker:
     def _risk_level(self, risk_class: str | None) -> int | None:
         return _RISK_LEVELS.get((risk_class or "").upper())
 
+    def _inventory_items(self, value: Any, collection_key: str) -> list[Any]:
+        if isinstance(value, Mapping) and collection_key in value:
+            return self._mapping_or_iterable_values(value.get(collection_key))
+        return self._mapping_or_iterable_values(value)
+
     def _mapping_or_iterable_values(self, value: Any) -> list[Any]:
         if value is None:
             return []
         if isinstance(value, Mapping):
             return list(value.values())
+        if isinstance(value, str | bytes):
+            return [value]
         return list(value)
 
     def _get(self, value: Any, name: str) -> Any:
