@@ -693,26 +693,47 @@ def execution_proposal(args: argparse.Namespace) -> dict[str, Any]:
         state = StateProjector(ledger).project(args.workspace)
         plan = state.action_plans.get(args.proposal)
         if plan is None:
-            raise ValueError(
-                f"action plan not found in workspace {args.workspace!r}: "
-                f"{args.proposal}"
-            )
+            return {
+                "proposal_failure": {
+                    "action_plan_id": args.proposal,
+                    "missing_reason": "plan not found",
+                    "detail": (
+                        f"action plan not found in workspace {args.workspace!r}: "
+                        f"{args.proposal}"
+                    ),
+                }
+            }
 
         report = ActionPlanService(ledger).precondition_report(plan, state)
         if not report.plan_ready:
-            return {"precondition_report": to_plain(report)}
+            failure = ExecutionProposalService().diagnose_failure(plan, state)
+            report_payload = to_plain(report)
+            if failure is not None:
+                report_payload["missing_reason"] = failure.missing_reason
+                report_payload["missing_detail"] = failure.detail
+            return {"precondition_report": report_payload}
 
-        proposal = ExecutionProposalService(ledger).create_proposal(
+        proposal_service = ExecutionProposalService(ledger)
+        proposal = proposal_service.create_proposal(
             plan,
             state,
             session_id=args.session,
             causation_id=plan.id,
         )
         if proposal is None:
-            raise ValueError(
-                "execution proposal could not be generated for action plan: "
-                f"{plan.id}"
-            )
+            failure = proposal_service.diagnose_failure(plan, state)
+            if failure is None:
+                failure_payload = {
+                    "action_plan_id": plan.id,
+                    "missing_reason": "proposal builder returned None",
+                    "detail": (
+                        "execution proposal could not be generated for action plan: "
+                        f"{plan.id}"
+                    ),
+                }
+            else:
+                failure_payload = to_plain(failure)
+            return {"proposal_failure": failure_payload}
         return {"execution_proposal": to_plain(proposal)}
     finally:
         close = getattr(ledger, "close", None)
@@ -768,6 +789,10 @@ def format_execution_authorization(authorization: dict[str, Any]) -> str:
 
 
 def format_execution_proposal(result: dict[str, Any]) -> str:
+    failure = result.get("proposal_failure")
+    if isinstance(failure, dict):
+        return format_proposal_failure(failure)
+
     report = result.get("precondition_report")
     if isinstance(report, dict):
         return format_missing_preconditions(report)
@@ -791,9 +816,21 @@ def format_execution_proposal(result: dict[str, Any]) -> str:
     )
 
 
+def format_proposal_failure(failure: dict[str, Any]) -> str:
+    lines = [
+        f"action_plan_id: {failure.get('action_plan_id')}",
+        f"missing_reason: {failure.get('missing_reason')}",
+    ]
+    detail = failure.get("detail")
+    if detail:
+        lines.append(f"detail: {detail}")
+    return "\n".join(lines)
+
+
 def format_missing_preconditions(report: dict[str, Any]) -> str:
     lines = [
         f"action_plan_id: {report.get('action_plan_id')}",
+        f"missing_reason: {report.get('missing_reason', 'preconditions missing')}",
         f"plan_ready: {str(bool(report.get('plan_ready'))).lower()}",
         f"proposal_authorized: {str(bool(report.get('proposal_authorized'))).lower()}",
         f"executable: {str(bool(report.get('executable'))).lower()}",
@@ -1051,7 +1088,12 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.proposal:
-        print(format_execution_proposal(execution_proposal(args)))
+        result = execution_proposal(args)
+        output = format_execution_proposal(result)
+        if "proposal_failure" in result:
+            print(output, file=sys.stderr)
+            return 1
+        print(output)
         return 0
 
     if args.authorize_proposal or args.authorize_execution:
