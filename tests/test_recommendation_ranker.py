@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from seed_runtime.capability_catalog import CapabilityRecommendation
 from seed_runtime.models import Fact, utc_now
 from seed_runtime.recommendation_ranker import RecommendationRanker
@@ -120,3 +122,39 @@ def test_registered_provider_outranks_catalog_default():
     ]
     assert ranked[0].score > ranked[1].score
     assert "+1000 provider already registered" in ranked[0].reasoning
+
+
+def test_expired_docker_fact_does_not_beat_fresh_systemd_fact():
+    now = utc_now()
+    expired_docker = Fact(
+        id="fact_runtime_docker_expired",
+        subject_id="jellyfin",
+        predicate="runtime",
+        value="docker",
+        observed_at=now,
+        expires_at=now - timedelta(seconds=1),
+    )
+    fresh_systemd = Fact(
+        id="fact_runtime_systemd_fresh",
+        subject_id="jellyfin",
+        predicate="runtime",
+        value="systemd",
+        observed_at=now,
+    )
+    state = State(
+        workspace_id="ws",
+        facts={expired_docker.id: expired_docker, fresh_systemd.id: fresh_systemd},
+    )
+
+    ranked = RecommendationRanker().rank(
+        "service_management",
+        _service_recommendations(),
+        state,
+    )
+
+    assert [recommendation.provider for recommendation in ranked] == [
+        "systemctl_cli",
+        "docker_container_lifecycle",
+    ]
+    assert any("known runtime: systemd" in reason for reason in ranked[0].reasoning)
+    assert not any("known runtime: docker" in reason for reason in ranked[1].reasoning)

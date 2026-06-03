@@ -10,6 +10,7 @@ from typing import Any, Iterable
 from seed_runtime.events import EventLedger
 from seed_runtime.evidence import Evidence
 from seed_runtime.inference_rules import infer_facts
+from seed_runtime.facts import is_fact_expired
 from seed_runtime.models import (
     ActionPlan,
     Approval,
@@ -115,15 +116,20 @@ class State:
             ]
         return _dedupe(relationship.object for relationship in relationships)
 
-    def get_best_fact(self, subject: str, predicate: str) -> Fact | None:
+    def get_best_fact(
+        self, subject: str, predicate: str, *, include_expired: bool = False
+    ) -> Fact | None:
         """Return the representative fact for the best-supported current belief."""
-        best_support = self.get_fact_support(subject, predicate)
+        best_support = self.get_fact_support(
+            subject, predicate, include_expired=include_expired
+        )
         if best_support is None:
             return None
         supporting_facts = [
             self.facts[fact_id]
             for fact_id in best_support.supporting_fact_ids
             if fact_id in self.facts
+            and (include_expired or not is_fact_expired(self.facts[fact_id]))
         ]
         if not supporting_facts:
             return None
@@ -137,10 +143,15 @@ class State:
             ),
         )
 
-    def get_fact_supports(self, subject: str, predicate: str) -> list[FactSupport]:
+    def get_fact_supports(
+        self, subject: str, predicate: str, *, include_expired: bool = False
+    ) -> list[FactSupport]:
         """Return aggregate support groups for a subject and predicate."""
-        fact_supports = self.fact_supports or _project_fact_supports(
-            self.facts.values()
+        fact_supports = (
+            _project_fact_supports(self.facts.values(), include_expired=True)
+            if include_expired
+            else self.fact_supports
+            or _project_fact_supports(self.facts.values())
         )
         return [
             support
@@ -148,9 +159,13 @@ class State:
             if support.subject == subject and support.predicate == predicate
         ]
 
-    def get_fact_support(self, subject: str, predicate: str) -> FactSupport | None:
+    def get_fact_support(
+        self, subject: str, predicate: str, *, include_expired: bool = False
+    ) -> FactSupport | None:
         """Return the unambiguous strongest aggregate support, if one exists."""
-        candidates = self.get_fact_supports(subject, predicate)
+        candidates = self.get_fact_supports(
+            subject, predicate, include_expired=include_expired
+        )
         return _select_unambiguous_best_support(candidates)
 
     def has_approval(self, action: str, scope: str | None = None) -> Approval | None:
@@ -369,10 +384,14 @@ _SOURCE_SUPPORT_WEIGHT: dict[str, float] = {
 }
 
 
-def _project_fact_supports(facts: Iterable[Fact]) -> list[FactSupport]:
+def _project_fact_supports(
+    facts: Iterable[Fact], *, include_expired: bool = False
+) -> list[FactSupport]:
     grouped: dict[tuple[str, str, str], list[Fact]] = {}
     values_by_key: dict[tuple[str, str, str], Any] = {}
     for fact in facts:
+        if not include_expired and is_fact_expired(fact):
+            continue
         key = (fact.subject_id, fact.predicate, _fact_value_key(fact.value))
         grouped.setdefault(key, []).append(fact)
         values_by_key.setdefault(key, fact.value)
@@ -447,6 +466,8 @@ def _project_fact_conflicts(state: State) -> list[FactConflict]:
         state.fact_supports = _project_fact_supports(state.facts.values())
     grouped: dict[tuple[str, str], list[Fact]] = {}
     for fact in state.facts.values():
+        if is_fact_expired(fact):
+            continue
         grouped.setdefault((fact.subject_id, fact.predicate), []).append(fact)
 
     conflicts: list[FactConflict] = []

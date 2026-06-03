@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable, Mapping
+from datetime import datetime, timezone
 from typing import Any
 
 from seed_runtime.base import SeedModel
 from seed_runtime.capability_catalog import CapabilityRecommendation
+from seed_runtime.facts import is_fact_expired
 from seed_runtime.models import Entity, Fact
 from seed_runtime.state import State
 from seed_runtime.tool_needs import slugify
@@ -214,6 +216,8 @@ class RecommendationRanker:
                 values.extend(self._extract_context_values(attributes.get(key)))
 
         for fact in all_facts:
+            if self._is_expired_fact(fact):
+                continue
             predicate = str(self._get(fact, "predicate") or "").lower()
             value = self._get(fact, "value")
             if self._predicate_mentions(predicate, key):
@@ -222,6 +226,23 @@ class RecommendationRanker:
                 values.extend(self._extract_context_values(value.get(key)))
 
         return self._dedupe(values)
+
+    def _is_expired_fact(self, fact: Any) -> bool:
+        if isinstance(fact, Fact):
+            return is_fact_expired(fact)
+        expires_at = self._get(fact, "expires_at")
+        if expires_at is None:
+            return False
+        if isinstance(expires_at, str):
+            try:
+                expires_at = datetime.fromisoformat(expires_at)
+            except ValueError:
+                return False
+        if not isinstance(expires_at, datetime):
+            return False
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        return expires_at <= datetime.now(timezone.utc)
 
     def _predicate_mentions(self, predicate: str, key: str) -> bool:
         parts = {part for part in re.split(r"[^a-z0-9]+", predicate) if part}
