@@ -33,6 +33,7 @@ class State:
     goals: dict[str, Goal] = field(default_factory=dict)
     tool_needs: dict[str, ToolNeed] = field(default_factory=dict)
     approvals: dict[str, Approval] = field(default_factory=dict)
+    action_plan_approvals: dict[str, str] = field(default_factory=dict)
     pending_actions: dict[str, PendingAction] = field(default_factory=dict)
     action_plans: dict[str, ActionPlan] = field(default_factory=dict)
     tools: dict[str, ToolSpec] = field(default_factory=dict)
@@ -110,6 +111,8 @@ class StateProjector:
             data = payload.get("pending_action", payload)
             pending_action = PendingAction(**data)
             state.pending_actions[pending_action.id] = pending_action
+        elif event.kind == "action_plan.approved":
+            state.action_plan_approvals[payload["action_plan_id"]] = event.id
         elif event.kind == "action_plan.created":
             data = payload.get("action_plan", payload)
             action_plan = ActionPlan(**data)

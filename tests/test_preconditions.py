@@ -105,3 +105,57 @@ def test_unknown_capability_is_handled_gracefully():
     assert report.action_plan_id == "plan_1"
     assert report.executable is True
     assert report.missing_preconditions == []
+
+
+def test_action_plan_approval_satisfies_approval_present():
+    ledger = EventLedger()
+    workspace_id = "ws"
+    ledger.append("action_plan.approved", workspace_id, {"action_plan_id": "plan_1"})
+    state = StateProjector(ledger).project(workspace_id)
+
+    report = ActionPlanService().precondition_report(_plan(), state)
+
+    approval = next(
+        precondition
+        for precondition in report.preconditions
+        if precondition.id == "approval_present"
+    )
+    assert approval.satisfied is True
+    assert "action plan approval is present" in approval.reason
+    assert report.executable is False
+    assert [precondition.id for precondition in report.missing_preconditions] == [
+        "target_host_known",
+        "provider_registered",
+    ]
+
+
+def test_executable_becomes_true_only_when_all_preconditions_are_true():
+    ledger = EventLedger()
+    workspace_id = "ws"
+    ledger.append(
+        "entity.upserted",
+        workspace_id,
+        {"entity": to_plain(Entity(id="ent_1", kind="host", name="node-1"))},
+    )
+    ledger.append("action_plan.approved", workspace_id, {"action_plan_id": "plan_1"})
+    missing_provider = ActionPlanService().precondition_report(
+        _plan(), StateProjector(ledger).project(workspace_id)
+    )
+
+    assert missing_provider.executable is False
+    assert [precondition.id for precondition in missing_provider.missing_preconditions] == [
+        "provider_registered",
+    ]
+
+    ledger.append("tool.registered", workspace_id, {"tool": to_plain(_tool())})
+    complete = ActionPlanService().precondition_report(
+        _plan(), StateProjector(ledger).project(workspace_id)
+    )
+
+    assert complete.executable is True
+    assert complete.missing_preconditions == []
+    assert [precondition.satisfied for precondition in complete.preconditions] == [
+        True,
+        True,
+        True,
+    ]

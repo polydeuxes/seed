@@ -580,3 +580,44 @@ def test_cli_preconditions_target_host_fact_satisfies_host_requirement(tmp_path,
     assert "target host fact is present" in output
     assert "- provider_registered" in output
     assert "- approval_present" in output
+
+
+def test_cli_approve_plan_prints_approved_without_executing_or_registering(
+    monkeypatch, tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed-local.sqlite"
+    seed_cli_action_plan(seed_local, db_path)
+    assert seed_local.main(["--db", str(db_path), "--accept-plan", "plan_cli"]) == 0
+    capsys.readouterr()
+
+    def fail_load_manifest(self, path):
+        pytest.fail("approve-plan must not register tools")
+
+    monkeypatch.setattr(seed_local.ToolRegistry, "load_manifest", fail_load_manifest)
+
+    assert seed_local.main(["--db", str(db_path), "--approve-plan", "plan_cli"]) == 0
+
+    output = capsys.readouterr().out
+    assert "action_plan_id: plan_cli" in output
+    assert "status: accepted" in output
+    assert "approved: true" in output
+    assert "tool.call" not in output
+
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        kinds = [event.kind for event in ledger.list_events("local")]
+    finally:
+        ledger.close()
+    assert "action_plan.approved" in kinds
+    assert "pending_action.approved" not in kinds
+    assert "tool.registered" not in kinds
+
+
+def test_cli_approve_plan_rejects_proposed_plan(tmp_path):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed-local.sqlite"
+    seed_cli_action_plan(seed_local, db_path)
+
+    with pytest.raises(seed_local.ActionPlanTransitionError):
+        seed_local.main(["--db", str(db_path), "--approve-plan", "plan_cli"])
