@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-import hashlib
-import json
-from typing import Any, Iterable, cast
+from typing import Iterable, cast
 
 from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
@@ -19,7 +17,6 @@ from seed_runtime.models import (
 )
 from seed_runtime.preconditions import PreconditionReport, evaluate_preconditions
 from seed_runtime.recommendation_ranker import RankedRecommendation
-from seed_runtime.secrets import reject_secret_fields
 from seed_runtime.state import State, StateProjector
 from seed_runtime.tool_needs import slugify
 
@@ -177,10 +174,8 @@ class ActionPlanService:
     def grant_execution_authorization(
         self,
         workspace_id: str,
-        action_plan_id: str,
+        execution_proposal_id: str,
         *,
-        tool_name: str,
-        tool_arguments: dict[str, Any],
         granted_by: str,
         interactive_prompt: bool = False,
         ssh_agent: str | None = None,
@@ -192,19 +187,26 @@ class ActionPlanService:
         causation_id: str | None = None,
         correlation_id: str | None = None,
     ) -> ExecutionAuthorization:
-        """Record a short-lived authorization for one concrete tool call.
+        """Record a short-lived authorization for one concrete proposal.
 
         This does not execute anything and does not persist credentials. The
-        stored event contains only a deterministic fingerprint of the proposed
-        arguments plus optional, explicitly modeled secret-free metadata for the
-        just-in-time prompt, agent, sudo timestamp, or external vault reference
-        supplied by the host environment.
+        stored event binds an accepted action plan to an existing execution
+        proposal by ID and copies only the proposal's secret-free tool name and
+        argument fingerprint. Raw tool arguments are never accepted by this
+        authorization path or stored in the authorization event.
         """
-        plan = self._require_plan(workspace_id, action_plan_id)
+        state = StateProjector(self._require_ledger()).project(workspace_id)
+        proposal = state.execution_proposals.get(execution_proposal_id)
+        if proposal is None:
+            raise ValueError(
+                f"execution proposal not found in workspace {workspace_id!r}: "
+                f"{execution_proposal_id}"
+            )
+        plan = self._require_plan(workspace_id, proposal.action_plan_id)
         if plan.status != "accepted":
             raise ActionPlanTransitionError(
                 "only accepted action plans can receive execution authorization "
-                f"({action_plan_id} is {plan.status!r})"
+                f"({plan.id} is {plan.status!r})"
             )
         if ttl_seconds <= 0:
             raise ValueError("execution authorization ttl_seconds must be positive")
@@ -213,13 +215,13 @@ class ActionPlanService:
                 "execution authorization ttl_seconds must be <= "
                 f"{_MAX_EXECUTION_AUTHORIZATION_TTL_SECONDS}"
             )
-        reject_secret_fields(tool_arguments, "tool_arguments")
 
         authorization = ExecutionAuthorization(
             id=new_id("auth"),
-            action_plan_id=action_plan_id,
-            tool_name=tool_name,
-            arguments_fingerprint=_fingerprint_tool_call(tool_name, tool_arguments),
+            execution_proposal_id=proposal.id,
+            action_plan_id=proposal.action_plan_id,
+            tool_name=proposal.tool_name,
+            arguments_fingerprint=proposal.arguments_fingerprint,
             granted_by=granted_by,
             expires_at=datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds),
             interactive_prompt=interactive_prompt,
@@ -337,12 +339,6 @@ class ActionPlanService:
             )
         return plan
 
-
-def _fingerprint_tool_call(tool_name: str, arguments: dict[str, Any]) -> str:
-    payload = {"tool_name": tool_name, "arguments": arguments}
-    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
-    digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
-    return f"sha256:{digest}"
 
 
 def _normalize_risk_class(value: str | None) -> RiskClass:

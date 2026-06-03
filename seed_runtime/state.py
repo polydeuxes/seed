@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Any
 
 from seed_runtime.events import EventLedger
 from seed_runtime.evidence import Evidence
@@ -38,6 +39,7 @@ class State:
     execution_authorizations: dict[str, ExecutionAuthorization] = field(
         default_factory=dict
     )
+    execution_proposals: dict[str, Any] = field(default_factory=dict)
     pending_actions: dict[str, PendingAction] = field(default_factory=dict)
     action_plans: dict[str, ActionPlan] = field(default_factory=dict)
     tools: dict[str, ToolSpec] = field(default_factory=dict)
@@ -118,6 +120,23 @@ class StateProjector:
             )
             authorization = ExecutionAuthorization(**data)
             state.execution_authorizations[authorization.id] = authorization
+            proposal = state.execution_proposals.get(authorization.execution_proposal_id)
+            if (
+                proposal is not None
+                and proposal.action_plan_id == authorization.action_plan_id
+                and proposal.tool_name == authorization.tool_name
+                and proposal.arguments_fingerprint == authorization.arguments_fingerprint
+                and authorization.expires_at >= datetime.now(timezone.utc)
+            ):
+                state.execution_proposals[proposal.id] = proposal.model_copy(
+                    update={"authorized": True, "executable": True}
+                )
+        elif event.kind == "execution_proposal.created":
+            from seed_runtime.execution_proposals import ExecutionProposal
+
+            data = payload.get("execution_proposal", payload)
+            proposal = ExecutionProposal(**data)
+            state.execution_proposals[proposal.id] = proposal
         elif event.kind == "pending_action.created":
             data = payload.get("pending_action", payload)
             pending_action = PendingAction(**data)

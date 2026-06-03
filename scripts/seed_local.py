@@ -327,8 +327,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  python scripts/seed_local.py --db .seed-local.sqlite "
             "--proposal plan_000001\n"
             "  python scripts/seed_local.py --db .seed-local.sqlite "
-            "--authorize-execution plan_000001 --tool-name docker_container_lifecycle "
-            "--tool-arguments-json '{\"action\": \"restart\"}'"
+            "--authorize-proposal eprop_000001"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -387,26 +386,27 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
-        "--authorize-execution",
-        metavar="PLAN_ID",
+        "--authorize-proposal",
+        metavar="PROPOSAL_ID",
         help=(
-            "grant short-lived execution authorization for an accepted action "
-            "plan and concrete tool arguments; never executes tools"
+            "grant short-lived execution authorization for an exact concrete "
+            "execution proposal; never executes tools"
         ),
+    )
+    parser.add_argument(
+        "--authorize-execution",
+        metavar="PROPOSAL_ID",
+        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--tool-name",
         metavar="TOOL",
-        help="tool name required by --authorize-execution",
+        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--tool-arguments-json",
         metavar="JSON",
-        help=(
-            "JSON object of concrete tool arguments required by "
-            "--authorize-execution; secret fields are rejected and raw "
-            "arguments are never stored"
-        ),
+        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--grant-method",
@@ -418,7 +418,7 @@ def build_parser() -> argparse.ArgumentParser:
         ],
         help=(
             "optional secret-free grant metadata marker for "
-            "--authorize-execution"
+            "--authorize-proposal"
         ),
     )
     parser.add_argument(
@@ -500,7 +500,7 @@ def validate_lifecycle_args(
     lifecycle_flags = [
         bool(args.preconditions),
         bool(args.proposal),
-        bool(args.authorize_execution),
+        bool(args.authorize_proposal or args.authorize_execution),
         bool(args.accept_plan),
         bool(args.approve_plan),
         bool(args.reject_plan),
@@ -509,27 +509,24 @@ def validate_lifecycle_args(
     if sum(lifecycle_flags) > 1:
         parser.error(
             "choose only one of --preconditions, --proposal, "
-            "--authorize-execution, --accept-plan, --approve-plan, "
+            "--authorize-proposal, --accept-plan, --approve-plan, "
             "--reject-plan, or --supersede-plan"
         )
     if args.proposal and not args.db:
         parser.error("--proposal requires --db")
-    if args.authorize_execution and not args.db:
-        parser.error("--authorize-execution requires --db")
-    if args.authorize_execution and not args.tool_name:
-        parser.error("--authorize-execution requires --tool-name")
-    if args.authorize_execution and not args.tool_arguments_json:
-        parser.error("--authorize-execution requires --tool-arguments-json")
-    if args.tool_name and not args.authorize_execution:
-        parser.error("--tool-name can only be used with --authorize-execution")
-    if args.tool_arguments_json and not args.authorize_execution:
+    authorization_requested = args.authorize_proposal or args.authorize_execution
+    if authorization_requested and not args.db:
+        parser.error("--authorize-proposal requires --db")
+    if args.tool_name:
+        parser.error("--tool-name is no longer accepted; authorize a proposal ID")
+    if args.tool_arguments_json:
         parser.error(
-            "--tool-arguments-json can only be used with --authorize-execution"
+            "--tool-arguments-json is no longer accepted; authorize a proposal ID"
         )
-    if args.grant_method and not args.authorize_execution:
-        parser.error("--grant-method can only be used with --authorize-execution")
-    if args.ttl_seconds != 300 and not args.authorize_execution:
-        parser.error("--ttl-seconds can only be used with --authorize-execution")
+    if args.grant_method and not authorization_requested:
+        parser.error("--grant-method can only be used with --authorize-proposal")
+    if args.ttl_seconds != 300 and not authorization_requested:
+        parser.error("--ttl-seconds can only be used with --authorize-proposal")
     if args.reject_plan and not args.reason:
         parser.error("--reject-plan requires --reason")
     if args.reason and not args.reject_plan:
@@ -702,7 +699,7 @@ def execution_proposal(args: argparse.Namespace) -> dict[str, Any]:
             )
 
         report = ActionPlanService(ledger).precondition_report(plan, state)
-        if not report.executable:
+        if not report.plan_ready:
             return {"precondition_report": to_plain(report)}
 
         proposal = ExecutionProposalService(ledger).create_proposal(
@@ -723,40 +720,12 @@ def execution_proposal(args: argparse.Namespace) -> dict[str, Any]:
             close()
 
 
-def parse_tool_arguments_json(raw_json: str) -> dict[str, Any]:
-    """Parse and validate secret-free tool arguments for execution authorization."""
-
-    try:
-        value = json.loads(raw_json)
-    except json.JSONDecodeError as exc:
-        raise ValueError(
-            f"--tool-arguments-json must be valid JSON: {exc.msg}"
-        ) from exc
-    if not isinstance(value, dict):
-        raise ValueError("--tool-arguments-json must decode to a JSON object")
-    reject_secret_fields(value, "--tool-arguments-json")
-    return value
-
-
 def grant_execution_authorization(args: argparse.Namespace) -> dict[str, Any]:
-    """Grant JIT execution authorization for an accepted plan without executing."""
+    """Grant JIT execution authorization for an exact proposal without executing."""
 
     ledger: EventLedger = SQLiteEventLedger(args.db)
     try:
-        state = StateProjector(ledger).project(args.workspace)
-        plan = state.action_plans.get(args.authorize_execution)
-        if plan is None:
-            raise ValueError(
-                f"action plan not found in workspace {args.workspace!r}: "
-                f"{args.authorize_execution}"
-            )
-        if plan.status != "accepted":
-            raise ActionPlanTransitionError(
-                "only accepted action plans can receive execution authorization "
-                f"({plan.id} is {plan.status!r})"
-            )
-
-        tool_arguments = parse_tool_arguments_json(args.tool_arguments_json)
+        proposal_id = args.authorize_proposal or args.authorize_execution
         grant_metadata: dict[str, Any] = {}
         if args.grant_method == "interactive_prompt":
             grant_metadata["interactive_prompt"] = True
@@ -766,14 +735,12 @@ def grant_execution_authorization(args: argparse.Namespace) -> dict[str, Any]:
             grant_metadata["sudo_timestamp"] = "sudo_timestamp"
         elif args.grant_method == "external_vault_token_ref":
             grant_metadata["external_vault_token_ref"] = (
-                f"external_vault_token_ref:{args.authorize_execution}:{args.tool_name}"
+                f"external_vault_token_ref:{proposal_id}"
             )
 
         authorization = ActionPlanService(ledger).grant_execution_authorization(
             args.workspace,
-            args.authorize_execution,
-            tool_name=args.tool_name,
-            tool_arguments=tool_arguments,
+            proposal_id,
             granted_by="seed_local_cli",
             session_id=args.session,
             ttl_seconds=args.ttl_seconds,
@@ -790,6 +757,7 @@ def format_execution_authorization(authorization: dict[str, Any]) -> str:
     return "\n".join(
         [
             f"execution_authorization_id: {authorization.get('id')}",
+            f"execution_proposal_id: {authorization.get('execution_proposal_id')}",
             f"action_plan_id: {authorization.get('action_plan_id')}",
             f"tool_name: {authorization.get('tool_name')}",
             f"arguments_fingerprint: {authorization.get('arguments_fingerprint')}",
@@ -817,6 +785,7 @@ def format_execution_proposal(result: dict[str, Any]) -> str:
             "tool_arguments: "
             + json.dumps(proposal.get("tool_arguments", {}), sort_keys=True),
             f"arguments_fingerprint: {proposal.get('arguments_fingerprint')}",
+            f"authorized: {str(bool(proposal.get('authorized'))).lower()}",
             f"executable: {str(bool(proposal.get('executable'))).lower()}",
         ]
     )
@@ -825,6 +794,8 @@ def format_execution_proposal(result: dict[str, Any]) -> str:
 def format_missing_preconditions(report: dict[str, Any]) -> str:
     lines = [
         f"action_plan_id: {report.get('action_plan_id')}",
+        f"plan_ready: {str(bool(report.get('plan_ready'))).lower()}",
+        f"proposal_authorized: {str(bool(report.get('proposal_authorized'))).lower()}",
         f"executable: {str(bool(report.get('executable'))).lower()}",
         "missing:",
     ]
@@ -843,6 +814,8 @@ def format_missing_preconditions(report: dict[str, Any]) -> str:
 def format_precondition_report(report: dict[str, Any]) -> str:
     lines = [
         f"action_plan_id: {report.get('action_plan_id')}",
+        f"plan_ready: {str(bool(report.get('plan_ready'))).lower()}",
+        f"proposal_authorized: {str(bool(report.get('proposal_authorized'))).lower()}",
         f"executable: {str(bool(report.get('executable'))).lower()}",
         "missing:",
     ]
@@ -1081,7 +1054,7 @@ def main(argv: list[str] | None = None) -> int:
         print(format_execution_proposal(execution_proposal(args)))
         return 0
 
-    if args.authorize_execution:
+    if args.authorize_proposal or args.authorize_execution:
         print(format_execution_authorization(grant_execution_authorization(args)))
         return 0
 

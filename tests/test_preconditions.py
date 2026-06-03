@@ -2,7 +2,8 @@ from datetime import datetime, timedelta, timezone
 
 from seed_runtime.action_plans import ActionPlanService
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.models import ActionPlan, Approval, Entity, ToolSpec
+from seed_runtime.execution_proposals import ExecutionProposalService
+from seed_runtime.models import ActionPlan, Approval, Entity, Fact, ToolSpec
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import State, StateProjector
 
@@ -33,6 +34,35 @@ def _tool() -> ToolSpec:
         risk_class="L3",
     )
 
+
+
+
+def _fact(fact_id: str, predicate: str, value):
+    return Fact(
+        id=fact_id,
+        subject_id="service_1",
+        predicate=predicate,
+        value=value,
+        observed_at=datetime.now(timezone.utc),
+    )
+
+
+def _seed_concrete_proposal(ledger: EventLedger, workspace_id: str, plan: ActionPlan):
+    ledger.append(
+        "fact.observed",
+        workspace_id,
+        {"fact": to_plain(_fact("fact_host", "service.host", "node-1"))},
+    )
+    ledger.append(
+        "fact.observed",
+        workspace_id,
+        {"fact": to_plain(_fact("fact_container", "service.container", "web"))},
+    )
+    proposal = ExecutionProposalService(ledger).create_proposal(
+        plan, StateProjector(ledger).project(workspace_id)
+    )
+    assert proposal is not None
+    return proposal
 
 def test_missing_preconditions_are_not_executable():
     report = ActionPlanService().precondition_report(
@@ -146,23 +176,24 @@ def test_executable_becomes_true_only_when_all_preconditions_are_true():
     ledger.append(
         "action_plan.created", workspace_id, {"action_plan": to_plain(plan)}
     )
-    ActionPlanService(ledger).grant_execution_authorization(
-        workspace_id,
-        "plan_1",
-        tool_name="docker_container_lifecycle",
-        tool_arguments={"container": "web", "operation": "restart"},
-        granted_by="operator@example.com",
-    )
     missing_provider = ActionPlanService().precondition_report(
         _plan(), StateProjector(ledger).project(workspace_id)
     )
 
     assert missing_provider.executable is False
+    assert missing_provider.plan_ready is False
     assert [precondition.id for precondition in missing_provider.missing_preconditions] == [
         "provider_registered",
+        "execution_authorization_present",
     ]
 
     ledger.append("tool.registered", workspace_id, {"tool": to_plain(_tool())})
+    proposal = _seed_concrete_proposal(ledger, workspace_id, plan)
+    ActionPlanService(ledger).grant_execution_authorization(
+        workspace_id,
+        proposal.id,
+        granted_by="operator@example.com",
+    )
     complete = ActionPlanService().precondition_report(
         _plan(), StateProjector(ledger).project(workspace_id)
     )
@@ -234,11 +265,10 @@ def test_sqlite_execution_authorization_survives_reopen_for_preconditions(tmp_pa
             {"entity": to_plain(Entity(id="ent_1", kind="host", name="node-1"))},
         )
         ledger.append("tool.registered", workspace_id, {"tool": to_plain(_tool())})
+        proposal = _seed_concrete_proposal(ledger, workspace_id, plan)
         authorization = ActionPlanService(ledger).grant_execution_authorization(
             workspace_id,
-            "plan_1",
-            tool_name="docker_container_lifecycle",
-            tool_arguments={"container": "web", "operation": "restart"},
+            proposal.id,
             granted_by="operator@example.com",
             ttl_seconds=300,
         )
@@ -278,11 +308,29 @@ def test_expired_execution_authorization_does_not_satisfy_precondition():
     )
     ledger.append("tool.registered", workspace_id, {"tool": to_plain(_tool())})
     ledger.append(
+        "execution_proposal.created",
+        workspace_id,
+        {
+            "execution_proposal": {
+                "id": "eprop_expired",
+                "action_plan_id": "plan_1",
+                "provider": "docker_container_lifecycle",
+                "tool_name": "docker_container_lifecycle",
+                "tool_arguments": {"host": "node-1", "container": "web", "action": "restart"},
+                "arguments_fingerprint": "sha256:expired",
+                "risk_class": "L3",
+                "authorized": False,
+                "executable": False,
+            }
+        },
+    )
+    ledger.append(
         "execution_authorization.granted",
         workspace_id,
         {
             "execution_authorization": {
                 "id": "auth_expired",
+                "execution_proposal_id": "eprop_expired",
                 "action_plan_id": "plan_1",
                 "tool_name": "docker_container_lifecycle",
                 "arguments_fingerprint": "sha256:expired",
@@ -326,11 +374,10 @@ def test_execution_authorization_satisfies_mutating_plan_without_storing_argumen
     )
     ledger.append("tool.registered", workspace_id, {"tool": to_plain(_tool())})
 
+    proposal = _seed_concrete_proposal(ledger, workspace_id, plan)
     authorization = ActionPlanService(ledger).grant_execution_authorization(
         workspace_id,
-        "plan_1",
-        tool_name="docker_container_lifecycle",
-        tool_arguments={"container": "web", "operation": "restart"},
+        proposal.id,
         granted_by="operator@example.com",
         interactive_prompt=True,
         ssh_agent="SSH_AUTH_SOCK",
@@ -344,9 +391,12 @@ def test_execution_authorization_satisfies_mutating_plan_without_storing_argumen
 
     assert report.executable is True
     assert report.missing_preconditions == []
+    assert state.execution_authorizations[authorization.id].execution_proposal_id == proposal.id
     assert state.execution_authorizations[authorization.id].tool_name == (
         "docker_container_lifecycle"
     )
+    assert state.execution_proposals[proposal.id].authorized is True
+    assert state.execution_proposals[proposal.id].executable is True
     event = ledger.get(
         next(
             event.id
@@ -365,24 +415,29 @@ def test_execution_authorization_satisfies_mutating_plan_without_storing_argumen
     assert payload["secret_seen_by_seed"] is False
 
 
-def test_execution_authorization_rejects_common_secret_fields():
+def test_wrong_proposal_authorization_does_not_satisfy():
     ledger = EventLedger()
     workspace_id = "ws"
     plan = _plan().model_copy(update={"status": "accepted"})
+    other_plan = plan.model_copy(update={"id": "plan_other"})
+    ledger.append("action_plan.created", workspace_id, {"action_plan": to_plain(plan)})
+    ledger.append("action_plan.created", workspace_id, {"action_plan": to_plain(other_plan)})
     ledger.append(
-        "action_plan.created", workspace_id, {"action_plan": to_plain(plan)}
+        "entity.upserted",
+        workspace_id,
+        {"entity": to_plain(Entity(id="ent_1", kind="host", name="node-1"))},
+    )
+    ledger.append("tool.registered", workspace_id, {"tool": to_plain(_tool())})
+    proposal = _seed_concrete_proposal(ledger, workspace_id, other_plan)
+    ActionPlanService(ledger).grant_execution_authorization(
+        workspace_id, proposal.id, granted_by="operator@example.com"
     )
 
-    for field in ("password", "passphrase", "token", "private_key"):
-        try:
-            ActionPlanService(ledger).grant_execution_authorization(
-                workspace_id,
-                "plan_1",
-                tool_name="docker_container_lifecycle",
-                tool_arguments={field: "not-stored"},
-                granted_by="operator@example.com",
-            )
-        except ValueError as exc:
-            assert "secret field" in str(exc)
-        else:
-            raise AssertionError(f"{field} fields must be rejected")
+    report = ActionPlanService().precondition_report(
+        plan, StateProjector(ledger).project(workspace_id)
+    )
+
+    assert report.executable is False
+    assert [precondition.id for precondition in report.missing_preconditions] == [
+        "execution_authorization_present"
+    ]

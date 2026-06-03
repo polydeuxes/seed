@@ -35,6 +35,9 @@ class PreconditionReport(SeedModel):
 
     action_plan_id: str
     executable: bool
+    plan_ready: bool
+    authorization_required: bool
+    proposal_authorized: bool
     missing_preconditions: list[Precondition]
     preconditions: list[Precondition] = Field(default_factory=list)
 
@@ -80,9 +83,29 @@ class PreconditionEvaluator:
             for precondition in preconditions
             if not precondition.satisfied
         ]
+        auth_required = _requires_execution_authorization(action_plan)
+        non_auth_missing = [
+            precondition
+            for precondition in missing
+            if precondition.id != "execution_authorization_present"
+        ]
+        auth_precondition = next(
+            (
+                precondition
+                for precondition in preconditions
+                if precondition.id == "execution_authorization_present"
+            ),
+            None,
+        )
+        proposal_authorized = (
+            auth_precondition.satisfied if auth_precondition is not None else not auth_required
+        )
         return PreconditionReport(
             action_plan_id=action_plan.id,
             executable=not missing,
+            plan_ready=not non_auth_missing,
+            authorization_required=auth_required,
+            proposal_authorized=proposal_authorized,
             missing_preconditions=missing,
             preconditions=preconditions,
         )
@@ -169,12 +192,25 @@ def _execution_authorization_present(
             continue
         if authorization.expires_at < now:
             continue
+        proposal = state.execution_proposals.get(authorization.execution_proposal_id)
+        if proposal is None:
+            continue
+        if proposal.action_plan_id != action_plan.id:
+            continue
+        if proposal.tool_name != authorization.tool_name:
+            continue
+        if proposal.arguments_fingerprint != authorization.arguments_fingerprint:
+            continue
         return (
             True,
-            "execution authorization is present: "
-            f"{authorization.id} for {authorization.tool_name}",
+            "execution authorization is present for proposal "
+            f"{proposal.id}: {authorization.id} for {authorization.tool_name}",
         )
-    return False, "no current execution authorization is present for this plan"
+    return (
+        False,
+        "no current execution authorization is present for a concrete proposal "
+        "on this plan",
+    )
 
 
 def _approval_present(action_plan: ActionPlan, state: State) -> tuple[bool, str]:
