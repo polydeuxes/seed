@@ -69,7 +69,13 @@ class EntityAlias:
     inferred: bool
 
 
-ALIAS_PREDICATES = {"alias", "prometheus_instance", "ip_address", "hostname"}
+ALIAS_PREDICATES = {"alias", "ip_address", "hostname"}
+
+
+def _is_alias_predicate(predicate: str) -> bool:
+    """Return whether a predicate explicitly links two entity identifiers."""
+
+    return predicate in ALIAS_PREDICATES or predicate.endswith("_instance")
 
 
 class AliasResolver:
@@ -112,7 +118,7 @@ class AliasResolver:
         edges: list[tuple[str, str, Fact]] = []
         names: set[str] = set()
         for fact in facts:
-            if fact.predicate not in ALIAS_PREDICATES:
+            if not _is_alias_predicate(fact.predicate):
                 continue
             alias = _relationship_object(fact.value)
             if alias is None:
