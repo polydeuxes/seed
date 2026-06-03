@@ -197,6 +197,26 @@ class Approval(SeedModel):
     constraints: dict[str, Any] = Field(default_factory=dict)
 
 
+class ExecutionAuthorization(SeedModel):
+    """Just-in-time authorization for one concrete execution attempt.
+
+    The authorization binds an accepted action plan to a proposed concrete tool
+    call by fingerprint. It intentionally stores only secret-free metadata;
+    credentials and session tokens must be supplied just in time by the host
+    environment and never persisted in Seed state.
+    """
+
+    id: str
+    action_plan_id: str
+    tool_name: str
+    arguments_fingerprint: str
+    granted_by: str
+    expires_at: datetime
+    credential_grant_id: str | None = None
+    session_id: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
 class RuntimeResponse(SeedModel):
     kind: str
     message: str

@@ -33,6 +33,23 @@ stateDiagram-v2
 
 Allowed transitions are exactly `proposed -> accepted`, `proposed -> rejected`, `proposed -> superseded`, and `accepted -> superseded`. Rejected and superseded plans are terminal, and accepted plans cannot be rejected. This keeps approval/execution preconditions from seeing contradictory history such as `proposed -> accepted -> rejected`.
 
+
+## Execution authorization boundary
+
+`action_plan.approved` remains plan acceptance. It no longer stands in for
+authorization to perform privileged or mutating work. The precondition layer now
+requires `execution_authorization_present` for plans that require approval or
+carry L3/L4 risk, while low-risk read-only plans can still use plan approval as
+readiness evidence.
+
+`execution_authorization.granted` records only secret-free, short-lived metadata
+for one proposed concrete tool call: the action plan ID, tool name, deterministic
+argument fingerprint, approver, expiry, and optional just-in-time credential or
+session grant identifier. The runtime still does not implement execution from
+Action Plans. Passwords, tokens, private keys, and credential material are never
+stored; credentials must be supplied just in time by the host environment for
+the exact authorized attempt.
+
 ## Deliberate constraints
 
 - Generated toolkit manifests are JSON documents stored as `toolkit.yaml`; this keeps the loader dependency-free while leaving room for a YAML adapter later.

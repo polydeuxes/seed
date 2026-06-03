@@ -45,7 +45,8 @@ CheckFn = Callable[[ActionPlan, State], tuple[bool, str]]
 _PRECONDITION_NAMES: dict[str, str] = {
     "target_host_known": "Target host known",
     "provider_registered": "Provider registered",
-    "approval_present": "Approval present",
+    "approval_present": "Plan approval present",
+    "execution_authorization_present": "Execution authorization present",
 }
 
 
@@ -72,9 +73,7 @@ class PreconditionEvaluator:
         """
         preconditions = [
             self._evaluate(precondition_id, action_plan, state)
-            for precondition_id in _CAPABILITY_PRECONDITIONS.get(
-                action_plan.capability, ()
-            )
+            for precondition_id in _declared_for_plan(action_plan)
         ]
         missing = [
             precondition
@@ -106,8 +105,22 @@ class PreconditionEvaluator:
 
 
 def declared_preconditions(capability: str) -> tuple[str, ...]:
-    """Return the precondition IDs declared for a capability."""
+    """Return the baseline precondition IDs declared for a capability."""
     return _CAPABILITY_PRECONDITIONS.get(capability, ())
+
+
+def _declared_for_plan(action_plan: ActionPlan) -> tuple[str, ...]:
+    baseline = _CAPABILITY_PRECONDITIONS.get(action_plan.capability, ())
+    if not _requires_execution_authorization(action_plan):
+        return baseline
+    return tuple(
+        "execution_authorization_present" if item == "approval_present" else item
+        for item in baseline
+    )
+
+
+def _requires_execution_authorization(action_plan: ActionPlan) -> bool:
+    return action_plan.requires_approval or action_plan.risk_class in {"L3", "L4"}
 
 
 def evaluate_preconditions(
@@ -147,6 +160,23 @@ def _provider_registered(action_plan: ActionPlan, state: State) -> tuple[bool, s
     return False, f"provider is not registered: {provider}"
 
 
+def _execution_authorization_present(
+    action_plan: ActionPlan, state: State
+) -> tuple[bool, str]:
+    now = datetime.now(timezone.utc)
+    for authorization in state.execution_authorizations.values():
+        if authorization.action_plan_id != action_plan.id:
+            continue
+        if authorization.expires_at < now:
+            continue
+        return (
+            True,
+            "execution authorization is present: "
+            f"{authorization.id} for {authorization.tool_name}",
+        )
+    return False, "no current execution authorization is present for this plan"
+
+
 def _approval_present(action_plan: ActionPlan, state: State) -> tuple[bool, str]:
     approval_event_id = state.action_plan_approvals.get(action_plan.id)
     if approval_event_id is not None:
@@ -171,4 +201,5 @@ _CHECKS: dict[str, CheckFn] = {
     "target_host_known": _target_host_known,
     "provider_registered": _provider_registered,
     "approval_present": _approval_present,
+    "execution_authorization_present": _execution_authorization_present,
 }

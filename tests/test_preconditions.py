@@ -42,12 +42,12 @@ def test_missing_preconditions_are_not_executable():
     assert [precondition.id for precondition in report.missing_preconditions] == [
         "target_host_known",
         "provider_registered",
-        "approval_present",
+        "execution_authorization_present",
     ]
     assert [precondition.id for precondition in report.preconditions] == [
         "target_host_known",
         "provider_registered",
-        "approval_present",
+        "execution_authorization_present",
     ]
     assert [precondition.satisfied for precondition in report.preconditions] == [
         False,
@@ -56,7 +56,7 @@ def test_missing_preconditions_are_not_executable():
     ]
 
 
-def test_all_satisfied_preconditions_are_executable_without_execution():
+def test_legacy_approval_no_longer_satisfies_mutating_preconditions():
     ledger = EventLedger()
     workspace_id = "ws"
     ledger.append(
@@ -83,12 +83,14 @@ def test_all_satisfied_preconditions_are_executable_without_execution():
 
     report = ActionPlanService().precondition_report(_plan(), state)
 
-    assert report.executable is True
-    assert report.missing_preconditions == []
+    assert report.executable is False
+    assert [precondition.id for precondition in report.missing_preconditions] == [
+        "execution_authorization_present",
+    ]
     assert [precondition.satisfied for precondition in report.preconditions] == [
         True,
         True,
-        True,
+        False,
     ]
     assert [event.kind for event in ledger.list_events(workspace_id)] == [
         "entity.upserted",
@@ -107,7 +109,7 @@ def test_unknown_capability_is_handled_gracefully():
     assert report.missing_preconditions == []
 
 
-def test_action_plan_approval_satisfies_approval_present():
+def test_action_plan_approval_does_not_satisfy_mutating_authorization():
     ledger = EventLedger()
     workspace_id = "ws"
     ledger.append("action_plan.approved", workspace_id, {"action_plan_id": "plan_1"})
@@ -118,14 +120,15 @@ def test_action_plan_approval_satisfies_approval_present():
     approval = next(
         precondition
         for precondition in report.preconditions
-        if precondition.id == "approval_present"
+        if precondition.id == "execution_authorization_present"
     )
-    assert approval.satisfied is True
-    assert "action plan approval is present" in approval.reason
+    assert approval.satisfied is False
+    assert "no current execution authorization" in approval.reason
     assert report.executable is False
     assert [precondition.id for precondition in report.missing_preconditions] == [
         "target_host_known",
         "provider_registered",
+        "execution_authorization_present",
     ]
 
 
@@ -137,7 +140,15 @@ def test_executable_becomes_true_only_when_all_preconditions_are_true():
         workspace_id,
         {"entity": to_plain(Entity(id="ent_1", kind="host", name="node-1"))},
     )
-    ledger.append("action_plan.approved", workspace_id, {"action_plan_id": "plan_1"})
+    plan = _plan().model_copy(update={"status": "accepted"})
+    ledger.append("action_plan.created", workspace_id, {"action_plan": to_plain(plan)})
+    ActionPlanService(ledger).grant_execution_authorization(
+        workspace_id,
+        "plan_1",
+        tool_name="docker_container_lifecycle",
+        tool_arguments={"container": "web", "operation": "restart"},
+        granted_by="operator@example.com",
+    )
     missing_provider = ActionPlanService().precondition_report(
         _plan(), StateProjector(ledger).project(workspace_id)
     )
@@ -159,3 +170,109 @@ def test_executable_becomes_true_only_when_all_preconditions_are_true():
         True,
         True,
     ]
+
+
+def test_mutating_plan_approval_does_not_satisfy_execution_authorization():
+    ledger = EventLedger()
+    workspace_id = "ws"
+    ledger.append("action_plan.approved", workspace_id, {"action_plan_id": "plan_1"})
+    state = StateProjector(ledger).project(workspace_id)
+
+    report = ActionPlanService().precondition_report(_plan(), state)
+
+    authorization = next(
+        precondition
+        for precondition in report.preconditions
+        if precondition.id == "execution_authorization_present"
+    )
+    assert authorization.satisfied is False
+    assert [precondition.id for precondition in report.missing_preconditions] == [
+        "target_host_known",
+        "provider_registered",
+        "execution_authorization_present",
+    ]
+
+
+def test_low_risk_read_only_plan_can_use_action_plan_approval():
+    ledger = EventLedger()
+    workspace_id = "ws"
+    ledger.append("action_plan.approved", workspace_id, {"action_plan_id": "plan_1"})
+    state = StateProjector(ledger).project(workspace_id)
+    plan = _plan()
+    plan = plan.model_copy(update={"risk_class": "L1", "requires_approval": False})
+
+    report = ActionPlanService().precondition_report(plan, state)
+
+    approval = next(
+        precondition
+        for precondition in report.preconditions
+        if precondition.id == "approval_present"
+    )
+    assert approval.satisfied is True
+    assert "action plan approval is present" in approval.reason
+    assert "execution_authorization_present" not in [
+        precondition.id for precondition in report.preconditions
+    ]
+
+
+def test_execution_authorization_satisfies_mutating_plan_without_storing_arguments():
+    ledger = EventLedger()
+    workspace_id = "ws"
+    plan = _plan().model_copy(update={"status": "accepted"})
+    ledger.append("action_plan.created", workspace_id, {"action_plan": to_plain(plan)})
+    ledger.append(
+        "entity.upserted",
+        workspace_id,
+        {"entity": to_plain(Entity(id="ent_1", kind="host", name="node-1"))},
+    )
+    ledger.append("tool.registered", workspace_id, {"tool": to_plain(_tool())})
+
+    authorization = ActionPlanService(ledger).grant_execution_authorization(
+        workspace_id,
+        "plan_1",
+        tool_name="docker_container_lifecycle",
+        tool_arguments={"container": "web", "operation": "restart"},
+        granted_by="operator@example.com",
+        credential_grant_id="jit_session_1",
+        session_id="ses_1",
+    )
+    state = StateProjector(ledger).project(workspace_id)
+
+    report = ActionPlanService().precondition_report(plan, state)
+
+    assert report.executable is True
+    assert report.missing_preconditions == []
+    assert state.execution_authorizations[authorization.id].tool_name == (
+        "docker_container_lifecycle"
+    )
+    event = ledger.get(
+        next(
+            event.id
+            for event in ledger.list_events(workspace_id)
+            if event.kind == "execution_authorization.granted"
+        )
+    )
+    assert event is not None
+    payload = event.payload["execution_authorization"]
+    assert "tool_arguments" not in payload
+    assert "arguments_fingerprint" in payload
+
+
+def test_execution_authorization_rejects_secret_like_fields():
+    ledger = EventLedger()
+    workspace_id = "ws"
+    plan = _plan().model_copy(update={"status": "accepted"})
+    ledger.append("action_plan.created", workspace_id, {"action_plan": to_plain(plan)})
+
+    try:
+        ActionPlanService(ledger).grant_execution_authorization(
+            workspace_id,
+            "plan_1",
+            tool_name="docker_container_lifecycle",
+            tool_arguments={"password": "not-stored"},
+            granted_by="operator@example.com",
+        )
+    except ValueError as exc:
+        assert "secret-like field" in str(exc)
+    else:
+        raise AssertionError("secret-like fields must be rejected")

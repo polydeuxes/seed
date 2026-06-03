@@ -368,7 +368,7 @@ def test_cli_preconditions_prints_inspect_only_report_without_registering_tools(
     assert "action_plan_id: plan_cli" in output
     assert "executable: false" in output
     assert (
-        "missing:\n- target_host_known\n- provider_registered\n- approval_present"
+        "missing:\n- target_host_known\n- provider_registered\n- execution_authorization_present"
         in output
     )
     assert "preconditions:" in output
@@ -561,13 +561,13 @@ def test_cli_preconditions_satisfy_provider_and_host_but_not_approval(tmp_path, 
 
     output = capsys.readouterr().out
     assert "executable: false" in output
-    assert "missing:\n- approval_present" in output
+    assert "missing:\n- execution_authorization_present" in output
     assert "- id: target_host_known\n  satisfied: true" in output
     assert "entity host fact is present" in output
     assert "- id: provider_registered\n  satisfied: true" in output
     assert "registered tool is available: docker_container_lifecycle" in output
-    assert "- id: approval_present\n  satisfied: false" in output
-    assert "no current approval is present" in output
+    assert "- id: execution_authorization_present\n  satisfied: false" in output
+    assert "no current execution authorization is present" in output
     assert "tool.call" not in output
     assert "approved" not in output.lower()
 
@@ -604,7 +604,7 @@ def test_cli_preconditions_target_host_fact_satisfies_host_requirement(tmp_path,
     assert "- id: target_host_known\n  satisfied: true" in output
     assert "target host fact is present" in output
     assert "- provider_registered" in output
-    assert "- approval_present" in output
+    assert "- execution_authorization_present" in output
 
 
 def test_cli_approve_plan_prints_approved_without_executing_or_registering(

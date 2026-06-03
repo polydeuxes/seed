@@ -143,6 +143,29 @@ tool.call
 
 Avoid implementation-specific names in policy. Policy names describe effects.
 
+
+## Plan approval vs execution authorization
+
+Action Plan approval is plan acceptance only. It records that a user or
+approver accepts the proposed plan text and lifecycle state; it does not grant
+credentials, does not authorize a specific mutating tool call, and does not
+permit credential reuse.
+
+Execution authorization is separate and just in time:
+
+- low-risk, read-only plans may satisfy readiness with `action_plan.approved`
+  / `approval_present`;
+- mutating or privileged plans require `execution_authorization_present`;
+- each `execution_authorization.granted` is bound to one `action_plan_id`, one
+  concrete proposed tool/action call, and a fingerprint of the proposed
+  arguments;
+- it is short-lived and secret-free; persisted state must not contain
+  passwords, tokens, private keys, or raw credential/session material.
+
+Credential/session grants are host-environment resources, not Seed state. They
+are supplied just in time for the exact authorized attempt, referenced only by a
+secret-free grant identifier when needed, and never persisted by Seed.
+
 ## Approval model
 
 Approval is scoped and expiring.
