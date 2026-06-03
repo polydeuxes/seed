@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from seed_runtime.facts import Fact
+from seed_runtime.facts import DEFAULT_CONFIDENCE_BY_SOURCE_TYPE, Fact
 
 _MANAGED_BY_BY_RUNTIME = {
     "docker": "docker_container_lifecycle",
@@ -52,7 +52,11 @@ def _managed_by_fact(runtime_fact: Fact, managed_by: str) -> Fact:
         evidence_ids=list(runtime_fact.evidence_ids),
         observed_at=runtime_fact.observed_at,
         expires_at=runtime_fact.expires_at,
-        confidence=runtime_fact.confidence,
+        source_type="inferred",
+        confidence=min(
+            runtime_fact.confidence,
+            DEFAULT_CONFIDENCE_BY_SOURCE_TYPE["inferred"],
+        ),
         inferred=True,
     )
 

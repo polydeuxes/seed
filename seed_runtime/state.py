@@ -35,6 +35,12 @@ class EntityRelationship:
     subject: str
     predicate: str
     object: str
+    fact_id: str
+    source_type: str
+    confidence: float
+    observed_at: datetime
+    evidence_ids: list[str]
+    inferred: bool
 
 
 @dataclass
@@ -72,20 +78,55 @@ class State:
             if relationship.subject == entity or relationship.object == entity
         ]
 
-    def find_entities(self, predicate: str, object: str) -> list[str]:
+    def find_entities(
+        self, predicate: str, object: str, *, include_provenance: bool = False
+    ) -> list[str] | list[dict[str, Any]]:
         """Return subjects related to an object by the given predicate."""
-        return _dedupe(
-            relationship.subject
+        relationships = [
+            relationship
             for relationship in self.entity_relationships
             if relationship.predicate == predicate and relationship.object == object
-        )
+        ]
+        if include_provenance:
+            return [
+                _relationship_payload(relationship, "subject")
+                for relationship in relationships
+            ]
+        return _dedupe(relationship.subject for relationship in relationships)
 
-    def find_related(self, subject: str, predicate: str) -> list[str]:
+    def find_related(
+        self, subject: str, predicate: str, *, include_provenance: bool = False
+    ) -> list[str] | list[dict[str, Any]]:
         """Return objects related to a subject by the given predicate."""
-        return _dedupe(
-            relationship.object
+        relationships = [
+            relationship
             for relationship in self.entity_relationships
             if relationship.subject == subject and relationship.predicate == predicate
+        ]
+        if include_provenance:
+            return [
+                _relationship_payload(relationship, "object")
+                for relationship in relationships
+            ]
+        return _dedupe(relationship.object for relationship in relationships)
+
+    def get_best_fact(self, subject: str, predicate: str) -> Fact | None:
+        """Return the highest-confidence fact for a subject and predicate."""
+        candidates = [
+            fact
+            for fact in self.facts.values()
+            if fact.subject_id == subject and fact.predicate == predicate
+        ]
+        if not candidates:
+            return None
+        return max(
+            candidates,
+            key=lambda fact: (
+                fact.confidence,
+                not fact.inferred,
+                fact.observed_at,
+                fact.id,
+            ),
         )
 
     def has_approval(self, action: str, scope: str | None = None) -> Approval | None:
@@ -134,9 +175,10 @@ class StateProjector:
             data["expires_at"] = _parse_dt(data.get("expires_at"))
             if "evidence_ids" not in data and "source_event_id" in data:
                 data["evidence_ids"] = [data.pop("source_event_id")]
+            data["inferred"] = False
+            if data.get("source_type") == "inferred":
+                data.pop("source_type")
             fact = Fact(**data)
-            if fact.inferred:
-                fact = fact.model_copy(update={"inferred": False})
             state.facts[fact.id] = fact
             state.entity_relationships = _project_entity_relationships(
                 state.facts.values()
@@ -264,9 +306,30 @@ def _project_entity_relationships(facts: Iterable[Fact]) -> list[EntityRelations
                 subject=fact.subject_id,
                 predicate=fact.predicate,
                 object=object_value,
+                fact_id=fact.id,
+                source_type=fact.source_type,
+                confidence=fact.confidence,
+                observed_at=fact.observed_at,
+                evidence_ids=list(fact.evidence_ids),
+                inferred=fact.inferred,
             )
         )
     return relationships
+
+
+def _relationship_payload(
+    relationship: EntityRelationship, value_key: str
+) -> dict[str, Any]:
+    value = relationship.subject if value_key == "subject" else relationship.object
+    return {
+        value_key: value,
+        "fact_id": relationship.fact_id,
+        "source_type": relationship.source_type,
+        "confidence": relationship.confidence,
+        "observed_at": relationship.observed_at,
+        "evidence_ids": list(relationship.evidence_ids),
+        "inferred": relationship.inferred,
+    }
 
 
 def _relationship_object(value: Any) -> str | None:
