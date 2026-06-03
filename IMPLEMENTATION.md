@@ -10,6 +10,7 @@ This branch turns the Seed blueprint into a runnable Python prototype. The early
 - Context composition and a runtime loop that can answer, ask questions, request tools, propose state patches, refuse unsafe requests, or propose non-executable handoff-adjacent artifacts.
 - Tool Need service with open-need deduplication and status-change events.
 - Evidence and fact models with extraction, state-projection, and Fact Support Aggregation support, so external observations and provider results can become provenance-preserving state instead of hidden memory.
+- Shared `ObservationNormalizationPipeline` support between `ObservationSource` adapters and `ObservationIngestor`, with a default endpoint-alias normalizer that preserves originals and marks provenance-rich derivations.
 - Text-only Action Plans with guarded lifecycle transitions, preventing accepted, rejected, or superseded plans from moving into contradictory states.
 - Strict JSON model-decision parsing, prompt rendering, local-model adapters, intent-first local CLI behavior, and a golden-case evaluation harness.
 - Dependency-light API shell for future web framework adapters.
@@ -65,6 +66,7 @@ Seed owns context composition, the event ledger, state projection, facts/evidenc
 - Seed does not own actual execution; prototype local call surfaces are limited to safe utilities and metadata validation, while real work is handed to external providers.
 - The builder emits untrusted stubs and validation reports rather than treating generated code as automatically safe.
 - Generated toolkit registration remains explicit and policy-gated; generated code does not self-register.
+- Toolkit generation initially targets non-mutating integration artifacts: `ObservationSource`, `ObservationNormalizer`, CapabilityCatalog entries, HandoffProvider metadata, and tests. Execution remains external to Seed.
 - The API module is a framework-neutral shell, not a production HTTP server.
 - Host automation remains external-provider handoff only. The prototype must not add real SSH mutation, shell execution, credential prompts, retries, scheduling, or network SSH access inside Seed.
 

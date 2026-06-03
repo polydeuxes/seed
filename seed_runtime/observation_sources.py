@@ -17,15 +17,13 @@ from urllib.request import Request, urlopen
 from seed_runtime.base import SeedModel
 from seed_runtime.facts import Fact, FactConflict, is_fact_expired
 from seed_runtime.ids import new_id
-from seed_runtime.serialization import to_plain
 from seed_runtime.models import Actor
-from seed_runtime.observations import (
-    EndpointAliasNormalizer,
-    Observation,
-    ObservationIngestor,
-    ObservationNormalizer,
-    ObservationSourceType,
+from seed_runtime.serialization import to_plain
+from seed_runtime.observation_normalizers import (
+    DEFAULT_OBSERVATION_NORMALIZATION_PIPELINE,
+    ObservationNormalizationPipeline,
 )
+from seed_runtime.observations import Observation, ObservationIngestor, ObservationSourceType
 
 if find_spec("pydantic") is not None:
     from pydantic import Field
@@ -278,7 +276,7 @@ class PrometheusObservationSource:
             if query == "node_uname_info":
                 metadata.update(
                     {
-                        "source": "prometheus",
+                        "source_name": "prometheus",
                         "instance": instance,
                     }
                 )
@@ -654,12 +652,12 @@ class ObservationCollectionService:
         self,
         ingestor: ObservationIngestor,
         *,
-        normalizers: list[ObservationNormalizer] | None = None,
+        normalization_pipeline: ObservationNormalizationPipeline | None = (
+            DEFAULT_OBSERVATION_NORMALIZATION_PIPELINE
+        ),
     ) -> None:
         self.ingestor = ingestor
-        self.normalizers = (
-            [EndpointAliasNormalizer()] if normalizers is None else list(normalizers)
-        )
+        self.normalization_pipeline = normalization_pipeline
 
     def collect(
         self,
@@ -682,8 +680,8 @@ class ObservationCollectionService:
             self._normalize_observation(source, observation)
             for observation in observations
         ]
-        for normalizer in self.normalizers:
-            normalized = normalizer.normalize(normalized)
+        if self.normalization_pipeline is not None:
+            normalized = self.normalization_pipeline.normalize(normalized)
 
         return [
             self.ingestor.ingest(
