@@ -142,3 +142,93 @@ def test_sqlite_ledger_reserves_persisted_domain_id_counters(tmp_path):
     assert int(plan.id.removeprefix("plan_")) > 7
     assert plan.id != "plan_000007"
     reopened.close()
+
+
+def test_sqlite_observation_ingest_reopen_projects_current_belief(tmp_path):
+    from datetime import datetime, timezone
+
+    from seed_runtime.observations import Observation, ObservationIngestor
+
+    db = tmp_path / "events.db"
+    ledger = SQLiteEventLedger(str(db))
+    observation = Observation(
+        id="obs_node115_architecture",
+        source_type="discovery",
+        observed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        subject="node115",
+        predicate="architecture",
+        value="x86_64",
+        confidence=0.94,
+    )
+    fact = ObservationIngestor(ledger).ingest(observation, "ws")
+    persisted_fact_payload = ledger.list_events("ws")[-1].payload["fact"]
+    assert persisted_fact_payload["subject_id"] == "node115"
+    ledger.close()
+
+    reopened = SQLiteEventLedger(str(db))
+    state = StateProjector(reopened).project("ws")
+
+    assert fact.id in state.facts
+    assert any(
+        support.subject == "node115"
+        and support.predicate == "architecture"
+        and support.value == "x86_64"
+        and support.supporting_fact_ids == [fact.id]
+        for support in state.fact_supports
+    )
+    best_fact = state.get_best_fact("node115", "architecture")
+    assert best_fact is not None
+    assert best_fact.value == "x86_64"
+    reopened.close()
+
+
+def test_projector_accepts_legacy_fact_observed_subject_payload_after_reopen(tmp_path):
+    from datetime import datetime, timezone
+
+    db = tmp_path / "events.db"
+    observed_at = datetime(2026, 1, 1, tzinfo=timezone.utc).isoformat()
+    ledger = SQLiteEventLedger(str(db))
+    ledger.append(
+        "fact.observed",
+        "ws",
+        {
+            "fact": {
+                "id": "fact_obs_000009",
+                "subject": "node115",
+                "predicate": "architecture",
+                "value": "x86_64",
+                "evidence_ids": [],
+                "source_type": "discovery",
+                "confidence": 0.94,
+                "observed_at": observed_at,
+            }
+        },
+    )
+    ledger.append(
+        "fact.observed",
+        "ws",
+        {
+            "id": "fact_obs_000010",
+            "subject": "node115",
+            "predicate": "kernel",
+            "value": "linux",
+            "evidence_ids": [],
+            "source_type": "discovery",
+            "confidence": 0.94,
+            "observed_at": observed_at,
+        },
+    )
+    ledger.close()
+
+    reopened = SQLiteEventLedger(str(db))
+    state = StateProjector(reopened).project("ws")
+
+    architecture = state.get_best_fact("node115", "architecture")
+    assert architecture is not None
+    assert architecture.value == "x86_64"
+    assert state.get_fact_support("node115", "architecture") is not None
+    kernel = state.get_best_fact("node115", "kernel")
+    assert kernel is not None
+    assert kernel.value == "linux"
+    assert state.get_fact_support("node115", "kernel") is not None
+    reopened.close()
