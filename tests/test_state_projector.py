@@ -11,10 +11,26 @@ def test_projector_rebuilds_state_deterministically():
     ledger = EventLedger()
     workspace_id = "ws_1"
     entity = Entity(id="ent_1", kind="host", name="node-1")
-    fact = Fact(id="fact_1", subject_id="ent_1", predicate="ssh.running", value=False, evidence_ids=["evt_source"], observed_at=utc_now())
+    fact = Fact(
+        id="fact_1",
+        subject_id="ent_1",
+        predicate="ssh.running",
+        value=False,
+        evidence_ids=["evt_source"],
+        observed_at=utc_now(),
+    )
     goal = Goal(id="goal_1", workspace_id=workspace_id, summary="Make SSH work")
-    need = ToolNeed(id="need_1", workspace_id=workspace_id, name="install_ssh_server", summary="Install SSH", capability="ssh_access", reason="missing tool")
-    approval = Approval(id=new_id("appr"), action="ssh.install", scope="ent_1", approved_by="user")
+    need = ToolNeed(
+        id="need_1",
+        workspace_id=workspace_id,
+        name="install_ssh_server",
+        summary="Install SSH",
+        capability="ssh_access",
+        reason="missing tool",
+    )
+    approval = Approval(
+        id=new_id("appr"), action="ssh.install", scope="ent_1", approved_by="user"
+    )
 
     ledger.append("entity.upserted", workspace_id, {"entity": to_plain(entity)})
     ledger.append("fact.observed", workspace_id, {"fact": to_plain(fact)})
@@ -222,9 +238,7 @@ def test_runtime_systemd_infers_managed_by_systemctl_cli():
     state = StateProjector(ledger).project(workspace_id)
 
     assert state.find_related("sshd", "managed_by") == ["systemctl_cli"]
-    inferred = state.inferred_facts[
-        "fact_inferred_sshd_managed_by_systemctl_cli"
-    ]
+    inferred = state.inferred_facts["fact_inferred_sshd_managed_by_systemctl_cli"]
     assert inferred.inferred is True
 
 
@@ -319,9 +333,7 @@ def test_relationship_query_helpers_preserve_provenance_when_requested():
     ledger.append("fact.observed", workspace_id, {"fact": to_plain(fact)})
     state = StateProjector(ledger).project(workspace_id)
 
-    assert state.find_related(
-        "jellyfin", "host", include_provenance=True
-    ) == [
+    assert state.find_related("jellyfin", "host", include_provenance=True) == [
         {
             "object": "node115",
             "fact_id": "fact_host",
@@ -332,9 +344,7 @@ def test_relationship_query_helpers_preserve_provenance_when_requested():
             "inferred": False,
         }
     ]
-    assert state.find_entities(
-        "host", "node115", include_provenance=True
-    ) == [
+    assert state.find_entities("host", "node115", include_provenance=True) == [
         {
             "subject": "jellyfin",
             "fact_id": "fact_host",
@@ -372,12 +382,15 @@ def test_inferred_confidence_is_capped_by_source_fact_confidence():
     assert inferred.confidence <= runtime.confidence
 
 
-def _projected_conflicts(facts: list[Fact]):
+def _projected_state(facts: list[Fact], workspace_id: str = "ws_fact_conflicts"):
     ledger = EventLedger()
-    workspace_id = "ws_fact_conflicts"
     for fact in facts:
         ledger.append("fact.observed", workspace_id, {"fact": to_plain(fact)})
-    return StateProjector(ledger).project(workspace_id).fact_conflicts
+    return StateProjector(ledger).project(workspace_id)
+
+
+def _projected_conflicts(facts: list[Fact]):
+    return _projected_state(facts).fact_conflicts
 
 
 def test_fact_conflicts_no_conflict_for_single_value():
@@ -405,9 +418,9 @@ def test_fact_conflicts_no_conflict_for_single_value():
     assert conflicts == []
 
 
-def test_fact_conflicts_detects_docker_vs_systemd():
+def test_fact_conflicts_detects_docker_vs_systemd_equal_confidence_without_winner():
     observed_at = utc_now()
-    conflicts = _projected_conflicts(
+    state = _projected_state(
         [
             Fact(
                 id="fact_runtime_docker",
@@ -427,13 +440,131 @@ def test_fact_conflicts_detects_docker_vs_systemd():
     )
 
     conflict = next(
-        conflict for conflict in conflicts if conflict.predicate == "runtime"
+        conflict for conflict in state.fact_conflicts if conflict.predicate == "runtime"
     )
     assert conflict.subject == "jellyfin"
     assert conflict.predicate == "runtime"
     assert conflict.values == ["docker", "systemd"]
-    assert conflict.best_fact_id in {"fact_runtime_docker", "fact_runtime_systemd"}
+    assert conflict.winning_value is None
+    assert conflict.best_fact_id is None
+    assert conflict.conflicting_fact_ids == [
+        "fact_runtime_docker",
+        "fact_runtime_systemd",
+    ]
+    assert state.get_best_fact("jellyfin", "runtime") is None
     assert "multiple values" in conflict.reason
+
+
+def test_ambiguous_runtime_does_not_infer_managed_by():
+    observed_at = utc_now()
+    state = _projected_state(
+        [
+            Fact(
+                id="fact_runtime_docker",
+                subject_id="jellyfin",
+                predicate="runtime",
+                value="docker",
+                observed_at=observed_at,
+                source_type="provider",
+                confidence=0.95,
+            ),
+            Fact(
+                id="fact_runtime_systemd",
+                subject_id="jellyfin",
+                predicate="runtime",
+                value="systemd",
+                observed_at=observed_at,
+                source_type="provider",
+                confidence=0.95,
+            ),
+        ],
+        workspace_id="ws_ambiguous_runtime_no_infer",
+    )
+
+    assert state.find_related("jellyfin", "managed_by") == []
+    assert state.inferred_facts == {}
+
+
+def test_fact_conflicts_two_docker_supports_win_over_one_systemd():
+    observed_at = utc_now()
+    state = _projected_state(
+        [
+            Fact(
+                id="fact_runtime_docker_1",
+                subject_id="jellyfin",
+                predicate="runtime",
+                value="docker",
+                observed_at=observed_at,
+                source_type="provider",
+                confidence=0.8,
+                evidence_ids=["evd_docker_1"],
+            ),
+            Fact(
+                id="fact_runtime_docker_2",
+                subject_id="jellyfin",
+                predicate="runtime",
+                value="docker",
+                observed_at=observed_at,
+                source_type="provider",
+                confidence=0.8,
+                evidence_ids=["evd_docker_2"],
+            ),
+            Fact(
+                id="fact_runtime_systemd",
+                subject_id="jellyfin",
+                predicate="runtime",
+                value="systemd",
+                observed_at=observed_at,
+                source_type="provider",
+                confidence=0.8,
+                evidence_ids=["evd_systemd"],
+            ),
+        ],
+        workspace_id="ws_two_docker_one_systemd",
+    )
+
+    conflict = next(
+        conflict for conflict in state.fact_conflicts if conflict.predicate == "runtime"
+    )
+    assert conflict.winning_value == "docker"
+    assert conflict.best_fact_id in {"fact_runtime_docker_1", "fact_runtime_docker_2"}
+    assert conflict.conflicting_fact_ids == ["fact_runtime_systemd"]
+    assert state.get_best_fact("jellyfin", "runtime").value == "docker"
+
+
+def test_discovery_docker_wins_over_lower_confidence_user_systemd():
+    observed_at = utc_now()
+    state = _projected_state(
+        [
+            Fact(
+                id="fact_runtime_docker",
+                subject_id="jellyfin",
+                predicate="runtime",
+                value="docker",
+                observed_at=observed_at,
+                source_type="discovery",
+                confidence=0.95,
+            ),
+            Fact(
+                id="fact_runtime_systemd",
+                subject_id="jellyfin",
+                predicate="runtime",
+                value="systemd",
+                observed_at=observed_at,
+                source_type="user",
+                confidence=0.9,
+            ),
+        ],
+        workspace_id="ws_discovery_docker_user_systemd",
+    )
+
+    conflict = next(
+        conflict for conflict in state.fact_conflicts if conflict.predicate == "runtime"
+    )
+    assert conflict.winning_value == "docker"
+    assert conflict.best_fact_id == "fact_runtime_docker"
+    assert conflict.conflicting_fact_ids == ["fact_runtime_systemd"]
+    assert state.get_best_fact("jellyfin", "runtime").value == "docker"
 
 
 def test_fact_conflicts_selects_highest_confidence_as_best():
