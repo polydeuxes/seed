@@ -48,7 +48,8 @@ class FactConflict(SeedModel):
     subject: str
     predicate: str
     values: list[Any]
-    best_fact_id: str
+    winning_value: Any | None = None
+    best_fact_id: str | None = None
     conflicting_fact_ids: list[str] = Field(default_factory=list)
     reason: str
 

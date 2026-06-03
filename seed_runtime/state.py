@@ -139,7 +139,9 @@ class State:
 
     def get_fact_supports(self, subject: str, predicate: str) -> list[FactSupport]:
         """Return aggregate support groups for a subject and predicate."""
-        fact_supports = self.fact_supports or _project_fact_supports(self.facts.values())
+        fact_supports = self.fact_supports or _project_fact_supports(
+            self.facts.values()
+        )
         return [
             support
             for support in fact_supports
@@ -147,20 +149,9 @@ class State:
         ]
 
     def get_fact_support(self, subject: str, predicate: str) -> FactSupport | None:
-        """Return the strongest aggregate support for a subject and predicate."""
+        """Return the unambiguous strongest aggregate support, if one exists."""
         candidates = self.get_fact_supports(subject, predicate)
-        if not candidates:
-            return None
-        return max(
-            candidates,
-            key=lambda support: (
-                support.confidence,
-                _support_strength(support.source_types),
-                len(support.supporting_fact_ids),
-                support.latest_observed_at,
-                _fact_value_key(support.value),
-            ),
-        )
+        return _select_unambiguous_best_support(candidates)
 
     def has_approval(self, action: str, scope: str | None = None) -> Approval | None:
         now = datetime.now(timezone.utc)
@@ -187,9 +178,7 @@ class StateProjector:
             self.apply(state, event)
         _project_inferred_facts(state)
         state.fact_supports = _project_fact_supports(state.facts.values())
-        state.entity_relationships = _project_entity_relationships(
-            state.facts.values()
-        )
+        state.entity_relationships = _project_entity_relationships(state.facts.values())
         state.fact_conflicts = _project_fact_conflicts(state)
         return state
 
@@ -244,17 +233,18 @@ class StateProjector:
             state.approvals[approval.id] = approval
         elif event.kind == "execution_authorization.granted":
             data = payload.get("execution_authorization", payload).copy()
-            data["expires_at"] = (
-                _parse_dt(data.get("expires_at")) or event.timestamp
-            )
+            data["expires_at"] = _parse_dt(data.get("expires_at")) or event.timestamp
             authorization = ExecutionAuthorization(**data)
             state.execution_authorizations[authorization.id] = authorization
-            proposal = state.execution_proposals.get(authorization.execution_proposal_id)
+            proposal = state.execution_proposals.get(
+                authorization.execution_proposal_id
+            )
             if (
                 proposal is not None
                 and proposal.action_plan_id == authorization.action_plan_id
                 and proposal.tool_name == authorization.tool_name
-                and proposal.arguments_fingerprint == authorization.arguments_fingerprint
+                and proposal.arguments_fingerprint
+                == authorization.arguments_fingerprint
                 and authorization.expires_at >= datetime.now(timezone.utc)
             ):
                 state.execution_proposals[proposal.id] = proposal.model_copy(
@@ -288,7 +278,9 @@ class StateProjector:
             action_plan_id = payload["action_plan_id"]
             if action_plan_id in state.action_plans:
                 current = state.action_plans[action_plan_id]
-                update = {"status": payload.get("status", event.kind.rsplit(".", 1)[-1])}
+                update = {
+                    "status": payload.get("status", event.kind.rsplit(".", 1)[-1])
+                }
                 if event.kind == "action_plan.rejected":
                     update["rejection_reason"] = payload.get("reason")
                     update["replacement_plan_id"] = None
@@ -325,11 +317,47 @@ def _project_inferred_facts(state: State) -> None:
     state.inferred_facts = {
         fact_id: fact for fact_id, fact in state.facts.items() if fact.inferred
     }
-    state.inferred_facts.update(infer_facts(state.observed_facts.values()))
+    inferable_observed_facts = _observed_facts_with_unambiguous_runtimes(
+        state.observed_facts.values()
+    )
+    state.inferred_facts.update(infer_facts(inferable_observed_facts))
     state.facts = {**state.observed_facts}
     for fact_id, fact in state.inferred_facts.items():
         if fact_id not in state.facts:
             state.facts[fact_id] = fact
+
+
+def _observed_facts_with_unambiguous_runtimes(facts: Iterable[Fact]) -> list[Fact]:
+    observed_facts = list(facts)
+    runtime_facts_by_subject: dict[str, list[Fact]] = {}
+    for fact in observed_facts:
+        if fact.predicate == "runtime":
+            runtime_facts_by_subject.setdefault(fact.subject_id, []).append(fact)
+
+    winning_runtime_value_by_subject: dict[str, str] = {}
+    ambiguous_runtime_subjects: set[str] = set()
+    for subject, runtime_facts in runtime_facts_by_subject.items():
+        supports = _project_fact_supports(runtime_facts)
+        best_support = _select_unambiguous_best_support(supports)
+        if best_support is None:
+            ambiguous_runtime_subjects.add(subject)
+        else:
+            winning_runtime_value_by_subject[subject] = _fact_value_key(
+                best_support.value
+            )
+
+    inferable_facts: list[Fact] = []
+    for fact in observed_facts:
+        if fact.predicate != "runtime":
+            inferable_facts.append(fact)
+            continue
+        if fact.subject_id in ambiguous_runtime_subjects:
+            continue
+        if _fact_value_key(fact.value) == winning_runtime_value_by_subject.get(
+            fact.subject_id
+        ):
+            inferable_facts.append(fact)
+    return inferable_facts
 
 
 _SOURCE_SUPPORT_WEIGHT: dict[str, float] = {
@@ -395,6 +423,25 @@ def _support_strength(source_types: Iterable[str]) -> float:
     return sum(_SOURCE_SUPPORT_WEIGHT[source_type] for source_type in set(source_types))
 
 
+def _support_tie_key(support: FactSupport) -> tuple[float, int]:
+    return (support.confidence, len(support.supporting_fact_ids))
+
+
+def _select_unambiguous_best_support(
+    candidates: Iterable[FactSupport],
+) -> FactSupport | None:
+    ordered = list(candidates)
+    if not ordered:
+        return None
+    top_key = max(_support_tie_key(support) for support in ordered)
+    top_supports = [
+        support for support in ordered if _support_tie_key(support) == top_key
+    ]
+    if len(top_supports) != 1:
+        return None
+    return top_supports[0]
+
+
 def _project_fact_conflicts(state: State) -> list[FactConflict]:
     if not state.fact_supports:
         state.fact_supports = _project_fact_supports(state.facts.values())
@@ -412,18 +459,25 @@ def _project_fact_conflicts(state: State) -> list[FactConflict]:
 
         best_fact = state.get_best_fact(subject, predicate)
         if best_fact is None:
-            continue
+            winning_value = None
+            best_fact_id = None
+            conflicting_fact_ids = [fact.id for fact in facts]
+        else:
+            winning_value = best_fact.value
+            best_fact_id = best_fact.id
+            conflicting_fact_ids = [
+                fact.id
+                for fact in facts
+                if _fact_value_key(fact.value) != _fact_value_key(best_fact.value)
+            ]
         conflicts.append(
             FactConflict(
                 subject=subject,
                 predicate=predicate,
                 values=list(values_by_key.values()),
-                best_fact_id=best_fact.id,
-                conflicting_fact_ids=[
-                    fact.id
-                    for fact in facts
-                    if _fact_value_key(fact.value) != _fact_value_key(best_fact.value)
-                ],
+                winning_value=winning_value,
+                best_fact_id=best_fact_id,
+                conflicting_fact_ids=conflicting_fact_ids,
                 reason=(
                     f"multiple values for {subject}/{predicate}: "
                     + ", ".join(str(value) for value in values_by_key.values())

@@ -431,10 +431,7 @@ def build_parser() -> argparse.ArgumentParser:
             "sudo_timestamp",
             "external_vault_token_ref",
         ],
-        help=(
-            "optional secret-free grant metadata marker for "
-            "--authorize-proposal"
-        ),
+        help=("optional secret-free grant metadata marker for " "--authorize-proposal"),
     )
     parser.add_argument(
         "--ttl-seconds",
@@ -741,8 +738,7 @@ def format_fact_supports(
                 [
                     f"value: {_format_fact_value(support.value)}",
                     f"aggregate_confidence: {support.confidence}",
-                    "supporting_fact_ids: "
-                    + ", ".join(support.supporting_fact_ids),
+                    "supporting_fact_ids: " + ", ".join(support.supporting_fact_ids),
                     "source_types: " + ", ".join(support.source_types),
                     f"first_observed: {_format_datetime(support.observed_at)}",
                     f"latest_observed: {_format_datetime(support.latest_observed_at)}",
@@ -776,8 +772,10 @@ def format_fact_conflicts(conflicts: list[FactConflict], facts: dict[str, Fact])
 
     sections: list[str] = []
     for conflict in conflicts:
-        best_fact = facts.get(conflict.best_fact_id)
-        winning_value = best_fact.value if best_fact is not None else None
+        best_fact = facts.get(conflict.best_fact_id) if conflict.best_fact_id else None
+        winning_value = conflict.winning_value
+        if winning_value is None and best_fact is not None:
+            winning_value = best_fact.value
         sections.append(
             "\n".join(
                 [
@@ -787,8 +785,7 @@ def format_fact_conflicts(conflicts: list[FactConflict], facts: dict[str, Fact])
                     + ", ".join(_format_fact_value(value) for value in conflict.values),
                     f"winning_value: {_format_fact_value(winning_value)}",
                     f"winning_fact_id: {conflict.best_fact_id}",
-                    "conflicting_fact_ids: "
-                    + ", ".join(conflict.conflicting_fact_ids),
+                    "conflicting_fact_ids: " + ", ".join(conflict.conflicting_fact_ids),
                     f"reason: {conflict.reason}",
                 ]
             )
@@ -1123,7 +1120,10 @@ def update_action_plan_lifecycle(args: argparse.Namespace) -> dict[str, Any] | N
                 return approved_plan
             elif args.reject_plan:
                 plan = service.reject_plan(
-                    args.workspace, args.reject_plan, args.reason, session_id=args.session
+                    args.workspace,
+                    args.reject_plan,
+                    args.reason,
+                    session_id=args.session,
                 )
             else:
                 plan = service.supersede_plan(
