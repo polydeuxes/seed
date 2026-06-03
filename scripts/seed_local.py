@@ -22,6 +22,7 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.evidence import Evidence
 from seed_runtime.facts import Fact
 from seed_runtime.execution import ToolExecutor
+from seed_runtime.execution_proposals import ExecutionProposalService
 from seed_runtime.ids import new_id
 from seed_runtime.intent_classifier import (
     IntentDecisionModel,
@@ -322,7 +323,9 @@ def build_parser() -> argparse.ArgumentParser:
             "--fact jellyfin runtime docker 'restart jellyfin?'\n"
             "  python scripts/seed_local.py --db .seed-local.sqlite "
             "--registered-provider docker_container_lifecycle "
-            "--fact jellyfin host node115 --preconditions plan_000001"
+            "--fact jellyfin host node115 --preconditions plan_000001\n"
+            "  python scripts/seed_local.py --db .seed-local.sqlite "
+            "--proposal plan_000001"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -370,6 +373,14 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "print an inspect-only execution precondition report for an "
             "action plan without executing or approving it"
+        ),
+    )
+    parser.add_argument(
+        "--proposal",
+        metavar="PLAN_ID",
+        help=(
+            "create and print a concrete inspect-only execution proposal for an "
+            "action plan when preconditions are satisfied; never executes tools"
         ),
     )
     parser.add_argument(
@@ -444,6 +455,7 @@ def validate_lifecycle_args(
 ) -> None:
     lifecycle_flags = [
         bool(args.preconditions),
+        bool(args.proposal),
         bool(args.accept_plan),
         bool(args.approve_plan),
         bool(args.reject_plan),
@@ -451,9 +463,11 @@ def validate_lifecycle_args(
     ]
     if sum(lifecycle_flags) > 1:
         parser.error(
-            "choose only one of --preconditions, --accept-plan, "
+            "choose only one of --preconditions, --proposal, --accept-plan, "
             "--approve-plan, --reject-plan, or --supersede-plan"
         )
+    if args.proposal and not args.db:
+        parser.error("--proposal requires --db")
     if args.reject_plan and not args.reason:
         parser.error("--reject-plan requires --reason")
     if args.reason and not args.reject_plan:
@@ -609,6 +623,83 @@ def precondition_report(args: argparse.Namespace) -> dict[str, Any]:
         close = getattr(ledger, "close", None)
         if close is not None:
             close()
+
+
+def execution_proposal(args: argparse.Namespace) -> dict[str, Any]:
+    """Create an inspect-only execution proposal for a stored action plan."""
+
+    ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
+    try:
+        seed_dev_state_from_args(args, ledger)
+        state = StateProjector(ledger).project(args.workspace)
+        plan = state.action_plans.get(args.proposal)
+        if plan is None:
+            raise ValueError(
+                f"action plan not found in workspace {args.workspace!r}: "
+                f"{args.proposal}"
+            )
+
+        report = ActionPlanService(ledger).precondition_report(plan, state)
+        if not report.executable:
+            return {"precondition_report": to_plain(report)}
+
+        proposal = ExecutionProposalService(ledger).create_proposal(
+            plan,
+            state,
+            session_id=args.session,
+            causation_id=plan.id,
+        )
+        if proposal is None:
+            raise ValueError(
+                "execution proposal could not be generated for action plan: "
+                f"{plan.id}"
+            )
+        return {"execution_proposal": to_plain(proposal)}
+    finally:
+        close = getattr(ledger, "close", None)
+        if close is not None:
+            close()
+
+
+def format_execution_proposal(result: dict[str, Any]) -> str:
+    report = result.get("precondition_report")
+    if isinstance(report, dict):
+        return format_missing_preconditions(report)
+
+    proposal = result.get("execution_proposal")
+    if not isinstance(proposal, dict):
+        raise ValueError("execution proposal result is missing")
+
+    return "\n".join(
+        [
+            f"execution_proposal_id: {proposal.get('id')}",
+            f"action_plan_id: {proposal.get('action_plan_id')}",
+            f"provider: {proposal.get('provider')}",
+            f"tool_name: {proposal.get('tool_name')}",
+            "tool_arguments: "
+            + json.dumps(proposal.get("tool_arguments", {}), sort_keys=True),
+            f"arguments_fingerprint: {proposal.get('arguments_fingerprint')}",
+            f"executable: {str(bool(proposal.get('executable'))).lower()}",
+        ]
+    )
+
+
+def format_missing_preconditions(report: dict[str, Any]) -> str:
+    lines = [
+        f"action_plan_id: {report.get('action_plan_id')}",
+        f"executable: {str(bool(report.get('executable'))).lower()}",
+        "missing:",
+    ]
+    missing_preconditions = report.get("missing_preconditions")
+    if isinstance(missing_preconditions, list) and missing_preconditions:
+        for precondition in missing_preconditions:
+            if isinstance(precondition, dict):
+                lines.append(f"- {precondition.get('id')}")
+            else:
+                lines.append(f"- {precondition}")
+    else:
+        lines.append("- none")
+    return "\n".join(lines)
 
 
 def format_precondition_report(report: dict[str, Any]) -> str:
@@ -846,6 +937,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.preconditions:
         print(format_precondition_report(precondition_report(args)))
+        return 0
+
+    if args.proposal:
+        print(format_execution_proposal(execution_proposal(args)))
         return 0
 
     updated_plan = update_action_plan_lifecycle(args)
