@@ -218,7 +218,7 @@ def test_raw_preview_does_not_append_to_runtime_ledger(monkeypatch):
     assert app.ledger.list(app.workspace_id) == []
 
 
-def test_fact_seed_appends_evidence_and_fact_before_user_message():
+def test_fact_seed_ingests_observation_evidence_and_fact_before_user_message():
     seed_local = load_seed_local_module()
     app = seed_local.build_local_app()
 
@@ -226,25 +226,81 @@ def test_fact_seed_appends_evidence_and_fact_before_user_message():
     result = app.run("echo hello")
 
     event_kinds = [event["kind"] for event in result["events"]]
-    assert event_kinds[:3] == [
+    assert event_kinds[:4] == [
+        "observation.observed",
         "evidence.observed",
         "fact.observed",
         "input.user_message",
     ]
 
     state = app.projector.project(app.workspace_id)
+    observation = next(iter(state.observations.values()))
     fact = next(iter(state.facts.values()))
     evidence = next(iter(state.evidence.values()))
     assert fact.subject_id == "jellyfin"
     assert fact.predicate == "runtime"
     assert fact.value == "docker"
     assert fact.evidence_ids == [evidence.id]
+    assert fact.source_type == "user"
+    assert fact.confidence == 1.0
+    assert fact.observed_at == observation.observed_at
     assert evidence.payload == {
-        "subject_id": "jellyfin",
+        "observation_id": observation.id,
+        "source_type": "user",
+        "subject": "jellyfin",
         "predicate": "runtime",
         "value": "docker",
-        "index": 1,
+        "metadata": {"ingested_by": "scripts.seed_local --fact"},
+        "expires_at": None,
     }
+
+
+def test_cli_fact_creates_observation_fact_through_ingestor(capsys):
+    seed_local = load_seed_local_module()
+
+    assert (
+        seed_local.main(["--fact", "jellyfin", "runtime", "docker"]) == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "fact_id: fact_obs_" in output
+    assert "subject: jellyfin" in output
+    assert "predicate: runtime" in output
+    assert "value: docker" in output
+    assert "source_type: user" in output
+    assert "confidence: 1.0" in output
+
+
+def test_observe_and_fact_produce_equivalent_projected_facts():
+    seed_local = load_seed_local_module()
+
+    fact_app = seed_local.build_local_app()
+    observe_app = seed_local.build_local_app()
+
+    fact_app.seed_facts([seed_local.DevFactSeed("jellyfin", "runtime", "docker")])
+    observe_app.observe(
+        [seed_local.DevObservationSeed("jellyfin", "runtime", "docker")]
+    )
+
+    fact_state = fact_app.projector.project(fact_app.workspace_id)
+    observe_state = observe_app.projector.project(observe_app.workspace_id)
+    fact_best = fact_state.get_best_fact("jellyfin", "runtime")
+    observe_best = observe_state.get_best_fact("jellyfin", "runtime")
+    fact_support = fact_state.get_fact_support("jellyfin", "runtime")
+    observe_support = observe_state.get_fact_support("jellyfin", "runtime")
+
+    assert fact_best is not None
+    assert observe_best is not None
+    assert fact_best.subject_id == observe_best.subject_id == "jellyfin"
+    assert fact_best.predicate == observe_best.predicate == "runtime"
+    assert fact_best.value == observe_best.value == "docker"
+    assert fact_best.source_type == observe_best.source_type == "user"
+    assert fact_best.confidence == observe_best.confidence == 1.0
+    assert fact_support is not None
+    assert observe_support is not None
+    assert fact_support.value == observe_support.value == "docker"
+    assert fact_support.confidence == observe_support.confidence == 0.85
+    assert fact_support.source_types == observe_support.source_types == ["user"]
 
 
 def test_cli_fact_seed_influences_service_recommendation_ranking(monkeypatch, capsys):
@@ -1329,7 +1385,7 @@ def test_cli_fact_support_prints_projected_grouped_values(capsys):
     assert "value: systemd" in output
     assert "aggregate_confidence: 0.9775" in output
     assert "aggregate_confidence: 0.85" in output
-    assert "supporting_fact_ids: fact_dev_" in output
+    assert "supporting_fact_ids: fact_obs_" in output
     assert "source_types: user" in output
     assert "first_observed:" in output
     assert "latest_observed:" in output
@@ -1399,8 +1455,8 @@ def test_cli_fact_conflicts_prints_projected_active_conflicts_and_winner(capsys)
     assert "predicate: runtime" in output
     assert "values: docker, systemd" in output
     assert "winning_value: docker" in output
-    assert "winning_fact_id: fact_dev_" in output
-    assert "conflicting_fact_ids: fact_dev_" in output
+    assert "winning_fact_id: fact_obs_" in output
+    assert "conflicting_fact_ids: fact_obs_" in output
     assert "reason: multiple values for jellyfin/runtime" in output
 
 
