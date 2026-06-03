@@ -275,6 +275,7 @@ Example context entry:
 
 Toolkit generation initially targets non-mutating integration artifacts:
 
+- `InputInspector` implementations when file-backed inputs need content-based dispatch
 - `ObservationSource` adapters
 - `ObservationNormalizer` implementations
 - CapabilityCatalog entries
@@ -283,7 +284,7 @@ Toolkit generation initially targets non-mutating integration artifacts:
 
 These artifacts may collect, normalize, describe, and validate integrations. Execution remains external to Seed.
 
-`AnsibleInventoryObservationSource` is the reference example for a toolkit-generated integration in this scope. It only parses local static inventory files and emits ordinary observations. It does not SSH, invoke Ansible, validate inventory hosts, resolve identities internally, or mutate runtime state. Its inventory hostname, IP, alias, and group observations flow through the same `ObservationNormalizer` and ingestion pipeline as every other source.
+`AnsibleInventoryObservationSource` is the reference example for a toolkit-generated integration in this scope. Its raw file input is inspected before parser dispatch, so extensions are hints rather than parser authority. It only parses local static inventory files and emits ordinary observations. It does not SSH, invoke Ansible, validate inventory hosts, resolve identities internally, or mutate runtime state. Its inventory hostname, IP, alias, and group observations flow through the same `ObservationNormalizer` and ingestion pipeline as every other source.
 
 ## Toolkit generation output contract
 

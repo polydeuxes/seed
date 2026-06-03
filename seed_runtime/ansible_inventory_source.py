@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from seed_runtime.ids import new_id
+from seed_runtime.input_inspector import InputArtifact, InputInspector
 from seed_runtime.observations import Observation, ObservationSourceType
 
 
@@ -21,27 +22,44 @@ class AnsibleInventoryObservationSource:
 
     source_type: ObservationSourceType = "imported"
     confidence = 0.95
-    _SUPPORTED_SUFFIXES = {".ini", ".yml", ".yaml"}
+    _EXTENSION_FORMATS = {".ini": "ini", ".yml": "yaml", ".yaml": "yaml"}
+    _SECRET_INVENTORY_FIELDS = {
+        "ansible_ssh_private_key_file",
+        "ansible_password",
+        "ansible_become_password",
+        "password",
+        "passphrase",
+        "token",
+        "private_key",
+    }
 
     def __init__(self, path: str | Path, *, name: str = "ansible_inventory") -> None:
         self.path = Path(path)
         self.name = name
-        if self.path.suffix.lower() not in self._SUPPORTED_SUFFIXES:
-            raise ValueError(
-                "unsupported Ansible inventory format; expected .ini, .yml, or .yaml"
-            )
+        self.input_artifact: InputArtifact | None = None
 
     def collect(self) -> list[Observation]:
         """Parse the inventory file and emit ordinary identity observations."""
+
+        artifact = InputInspector.inspect_file(
+            self.path, declared_purpose="ansible_inventory"
+        )
+        self.input_artifact = artifact
+        parser_format = artifact.detected_format
+        if parser_format == "unknown":
+            parser_format = self._EXTENSION_FORMATS.get(artifact.extension, "unknown")
+        if parser_format not in {"ini", "yaml"}:
+            raise ValueError(
+                f"unsupported Ansible inventory format: {artifact.detected_format}"
+            )
 
         try:
             text = self.path.read_text(encoding="utf-8")
         except UnicodeDecodeError as exc:
             raise ValueError(f"Ansible inventory must be UTF-8: {self.path}") from exc
 
-        suffix = self.path.suffix.lower()
         memberships = (
-            self._parse_ini(text) if suffix == ".ini" else self._parse_yaml(text)
+            self._parse_ini(text) if parser_format == "ini" else self._parse_yaml(text)
         )
         observed_at = datetime.now(timezone.utc)
         observations: list[Observation] = []
@@ -50,7 +68,9 @@ class AnsibleInventoryObservationSource:
             ansible_host = host_data.get("ansible_host")
             primary_group = groups[0]
             observations.append(
-                self._observation(observed_at, hostname, "hostname", hostname, primary_group)
+                self._observation(
+                    observed_at, hostname, "hostname", hostname, primary_group, artifact
+                )
             )
             if ansible_host is not None:
                 for predicate in ("ansible_host", "ip_address", "alias"):
@@ -61,11 +81,14 @@ class AnsibleInventoryObservationSource:
                             predicate,
                             ansible_host,
                             primary_group,
+                            artifact,
                         )
                     )
             for group in groups:
                 observations.append(
-                    self._observation(observed_at, hostname, "group", group, group)
+                    self._observation(
+                        observed_at, hostname, "group", group, group, artifact
+                    )
                 )
         return observations
 
@@ -76,6 +99,7 @@ class AnsibleInventoryObservationSource:
         predicate: str,
         value: str,
         inventory_group: str,
+        artifact: InputArtifact,
     ) -> Observation:
         return Observation(
             id=new_id("obs_ansible_inventory"),
@@ -89,6 +113,10 @@ class AnsibleInventoryObservationSource:
                 "source_name": "ansible_inventory",
                 "inventory_path": str(self.path),
                 "inventory_group": inventory_group,
+                "input_path": artifact.path,
+                "input_sha256": artifact.sha256,
+                "input_detected_format": artifact.detected_format,
+                "input_warnings": artifact.warnings,
             },
         )
 
@@ -137,6 +165,7 @@ class AnsibleInventoryObservationSource:
                 for field in fields[1:]
                 if "=" in field
                 for key, value in [field.split("=", 1)]
+                if key not in self._SECRET_INVENTORY_FIELDS
             }
             self._record_host(hosts, hostname, group, variables.get("ansible_host"))
         return hosts
@@ -166,6 +195,11 @@ class AnsibleInventoryObservationSource:
                         raise ValueError(
                             f"unsupported Ansible YAML host {hostname!r}: variables must be a mapping"
                         )
+                    variables = {
+                        key: variable
+                        for key, variable in variables.items()
+                        if key not in self._SECRET_INVENTORY_FIELDS
+                    }
                     ansible_host = variables.get("ansible_host")
                     self._record_host(hosts, hostname, group, ansible_host)
             children = value.get("children", {})
