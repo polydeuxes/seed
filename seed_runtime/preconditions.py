@@ -9,10 +9,16 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import datetime, timezone
+from importlib.util import find_spec
 
 from seed_runtime.base import SeedModel
 from seed_runtime.models import ActionPlan
 from seed_runtime.state import State
+
+if find_spec("pydantic") is not None:
+    from pydantic import Field
+else:
+    from seed_runtime._pydantic_compat import Field
 
 
 class Precondition(SeedModel):
@@ -30,6 +36,7 @@ class PreconditionReport(SeedModel):
     action_plan_id: str
     executable: bool
     missing_preconditions: list[Precondition]
+    preconditions: list[Precondition] = Field(default_factory=list)
 
 
 CheckFn = Callable[[ActionPlan, State], tuple[bool, str]]
@@ -78,6 +85,7 @@ class PreconditionEvaluator:
             action_plan_id=action_plan.id,
             executable=not missing,
             missing_preconditions=missing,
+            preconditions=preconditions,
         )
 
     def _evaluate(
