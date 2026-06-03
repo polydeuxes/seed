@@ -10,9 +10,9 @@ seed_runtime/
   state.py
   context.py
   decisions.py
-  registry.py
+  capability_catalog.py
   policy.py
-  execution.py
+  handoff_plans.py
   tool_needs.py
   api.py
 
@@ -34,8 +34,9 @@ EventKind = str
 DecisionKind = Literal[
     "answer",
     "ask_question",
-    "call_tool",
     "request_tool",
+    "propose_action_plan",
+    "propose_handoff_plan",
     "propose_state_patch",
     "refuse",
 ]
@@ -281,59 +282,49 @@ class PolicyGate:
         return PolicyDecision("allow", action, rule.risk, rule.reason, scope)
 ```
 
-## Tool execution
+## Handoff planning
 
 ```python
-class ToolExecutor:
-    def call(self, tool_name: str, arguments: dict[str, Any], *, workspace_id: str, causation_id: str) -> ToolCallResult:
+class HandoffPlanner:
+    def create(self, action_plan: ActionPlan, target: str, *, workspace_id: str, causation_id: str) -> HandoffPlan:
         state = self.projector.project(workspace_id)
-        tool = self.registry.require(tool_name)
-        args = self.schema_validator.validate(tool.input_schema, arguments)
+        capability = self.capability_catalog.require(action_plan.capability)
 
-        policy = self.policy.evaluate(
-            tool.policy_action,
-            scope=infer_scope(args),
+        policy = self.policy.summarize(
+            capability.policy_action,
+            scope=target,
             actor=self.actor.current(),
             state=state,
-            args=args,
-        )
-
-        self.ledger.append(
-            "policy.evaluated",
-            workspace_id,
-            {"action": tool.policy_action, "decision": policy.__dict__},
-            causation_id=causation_id,
         )
 
         if policy.decision == "block":
-            return ToolCallResult.blocked(policy)
+            return HandoffPlanResult.blocked(policy)
 
-        if policy.decision in {"confirm", "approve"}:
-            approval = self.approvals.request(tool, args, policy)
-            self.ledger.append("approval.requested", workspace_id, approval.to_payload(), causation_id=causation_id)
-            return ToolCallResult.waiting_for_approval(approval)
+        provider = self.recommendation_ranker.choose_provider(capability, target, state)
+        handoff = HandoffPlan(
+            action_plan_id=action_plan.id,
+            provider=provider.name,
+            backend_type=provider.backend_type,
+            operation=provider.operation,
+            target=target,
+            policy_summary=policy.summary,
+            secret_boundary=provider.secret_boundary_summary,
+            requires_external_approval=policy.requires_external_approval,
+            executable=False,
+        )
 
-        call_event = self.ledger.append(
-            "tool.call.started",
+        self.ledger.append(
+            "handoff_plan.created",
             workspace_id,
-            {"tool": tool.name, "arguments": redact(args)},
+            {"handoff_plan": handoff.to_payload()},
             causation_id=causation_id,
         )
 
-        ctx = self.context_factory.for_tool_call(workspace_id, tool, call_event.id)
-        fn = self.implementation_loader.load(tool.implementation)
-        raw = self.sandbox.run(fn, ctx, args)
-        output = self.schema_validator.validate(tool.output_schema, raw)
-
-        self.ledger.append(
-            "tool.call.completed",
-            workspace_id,
-            {"tool": tool.name, "output": output},
-            causation_id=call_event.id,
-        )
-
-        return ToolCallResult.completed(output)
+        return handoff
 ```
+
+No execution happens here. External providers own credentials, retries, schedules, and long-running jobs.
+
 
 ## Runtime handler
 

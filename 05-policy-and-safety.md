@@ -1,19 +1,19 @@
 # 05 Policy and Safety
 
-Policy is the boundary between desire and execution.
+Policy is the boundary between desire and external-provider handoff.
 
 ## Core rule
 
-A user or model can desire an action. Only policy can allow execution.
+A user or model can desire an action. Policy metadata determines whether Seed may recommend a non-executable handoff, but actual execution remains outside Seed.
 
 ```text
-desire -> decision -> validation -> policy -> execution
+desire -> decision -> validation -> policy metadata -> HandoffPlan(executable=false) -> external provider
 ```
 
 Never:
 
 ```text
-desire -> execution
+desire -> Seed execution
 ```
 
 ## Risk levels
@@ -26,7 +26,7 @@ No external system access. No sensitive data.
 
 Examples:
 
-- list registered tools
+- list registered capabilities
 - show toolkit docs
 - inspect local manifest
 
@@ -144,34 +144,27 @@ tool.call
 Avoid implementation-specific names in policy. Policy names describe effects.
 
 
-## Plan approval vs execution authorization
+## Plan approval vs external-provider handoff
 
-Action Plan approval is plan acceptance only. It records that a user or
-approver accepts the proposed plan text and lifecycle state; it does not grant
-credentials, does not authorize a specific mutating tool call, and does not
-permit credential reuse.
+Action Plan approval is plan acceptance only. It records that a user or approver accepts the proposed plan text and lifecycle state; it does not grant credentials, authorize Seed to run a mutating call, or permit credential reuse.
 
-Execution authorization is separate and just in time:
+The core path after plan acceptance is a non-executable HandoffPlan:
 
-- low-risk, read-only plans may satisfy readiness with `action_plan.approved`
-  / `approval_present`;
-- mutating or privileged plans require `execution_authorization_present`;
-- each `execution_authorization.granted` is bound to one `action_plan_id`, one
-  concrete proposed tool/action call, and a fingerprint of the proposed
-  arguments;
-- it is short-lived and secret-free; persisted state must not contain
-  passwords, passphrases, raw tokens, private keys, or raw credential/session
-  material;
-- the authorization model records `secret_seen_by_seed: false` and may store
-  only `interactive_prompt`, `ssh_agent`, `sudo_timestamp`, and
-  `external_vault_token_ref` as grant metadata.
+- `HandoffPlan.action_plan_id` references the accepted plan;
+- `HandoffPlan.provider` names the external provider or manual runbook target;
+- `HandoffPlan.backend_type` is `ansible`, `mcp`, `temporal`, or `manual`;
+- `HandoffPlan.operation` and `HandoffPlan.target` describe what to hand off;
+- `HandoffPlan.policy_summary` captures relevant policy metadata for the provider/operator;
+- `HandoffPlan.secret_boundary` states that credentials and prompts stay outside Seed;
+- `HandoffPlan.requires_external_approval` records whether the external provider/operator still needs approval before execution;
+- `HandoffPlan.executable` is always `false`.
 
-Credential/session grants are host-environment resources, not Seed state. They
-are supplied just in time for the exact authorized attempt through an external
-prompt or agent, referenced only by explicit secret-free metadata when needed,
-and never persisted by Seed. The preferred privileged execution path is outside
-Seed's secret boundary, for example Ansible prompting for `become`, an SSH
-agent, sudo's timestamp cache, or a vault lookup resolved by the host.
+A HandoffPlan is not an approval object. It does not imply user approval, execution authorization, credential availability, provider trust, or tool registration. Those remain separate Seed events or external-provider controls.
+
+ExecutionProposal and ExecutionAuthorization are experimental and not part of the core path yet. They must not be used to build an internal execution lifecycle.
+
+Credential/session grants are external-provider resources, not Seed state. They are supplied just in time by systems such as Ansible/AWX, Vault, ssh-agent, sudo/become flows, MCP server configuration, Temporal/Prefect workers, or manual operator procedures. Seed never persists passwords, passphrases, raw tokens, private keys, raw credential/session material, or credential prompts.
+
 
 ## Approval model
 
@@ -182,7 +175,7 @@ Example:
 ```json
 {
   "action": "ssh.install",
-  "tool": "install_ssh_server",
+  "capability": "ssh_access",
   "scope": "host:node-1",
   "approved_by": "operator@example.com",
   "expires_at": "2026-06-02T15:00:00Z",
@@ -209,48 +202,56 @@ Policy-relevant toolkit metadata:
 - required providers
 - dependency list
 
-Generated mutating tools should start disabled or approval-only.
+Generated mutating capabilities should start as handoff-only and provider-controlled.
 
 ## Sandbox expectations
 
-Generated code should run with:
+Generated capability validation should use:
 
-- timeout
-- memory limits
-- network restrictions
-- filesystem restrictions
+- bounded validation time
+- memory limits where available
+- network restrictions where available
+- filesystem restrictions where available
 - no raw environment access
 - no direct secrets access
-- controlled provider facades
-- structured logging
+- metadata-only provider contracts
+- structured validation reports
 
 ## Forbidden shortcuts
 
 Never allow:
 
-- arbitrary shell as a generic model tool
+- arbitrary shell as a Seed execution tool
 - generated code self-registration
 - generated code editing policy
-- generated code accessing raw secrets
+- generated code or metadata accessing raw secrets
 - model-supplied implementation references
 - importing unregistered modules as tools
 - policy decisions generated solely by the model
 
-## Tool call safety sequence
+## Handoff safety sequence
 
 ```python
-def safe_tool_call(tool_name, args):
-    tool = registry.require_registered(tool_name)
-    typed_args = schema.validate(tool.input_schema, args)
-    policy = policy_gate.evaluate(tool.policy_action, typed_args.scope)
+def safe_handoff(action_plan, target):
+    capability = capability_catalog.require(action_plan.capability)
+    policy = policy_gate.summarize(capability.policy_action, target)
 
     if policy.decision == "block":
         return blocked(policy)
 
-    if policy.decision in {"confirm", "approve"}:
-        return request_approval(policy, tool, typed_args)
+    provider = recommendation_ranker.choose_provider(capability, target)
 
-    return executor.invoke(tool, typed_args)
+    return HandoffPlan(
+        action_plan_id=action_plan.id,
+        provider=provider.name,
+        backend_type=provider.backend_type,
+        operation=provider.operation,
+        target=target,
+        policy_summary=policy.summary,
+        secret_boundary=provider.secret_boundary_summary,
+        requires_external_approval=policy.requires_external_approval,
+        executable=False,
+    )
 ```
 
 ## Tool generation safety sequence
@@ -279,21 +280,21 @@ def safe_tool_generation(tool_need):
 Record events for:
 
 - policy evaluated
-- action allowed
-- action blocked
+- handoff allowed
+- handoff blocked
 - approval requested
 - approval granted
 - approval denied
-- tool call started
-- tool call completed
-- tool call failed
+- HandoffPlan created
+- external provider result ingested
+- external provider failure ingested
 - toolkit generated
 - toolkit validation failed
 - toolkit registered
 
 ## Defense in depth
 
-Even though policy gates execution, provider facades may still enforce low-level safety. This is acceptable if it prevents bypasses. But keep policy source-of-truth in the policy service, not scattered in provider code.
+Even though policy gates Seed handoff recommendations, external providers must still enforce low-level safety for execution. This is acceptable and expected. Keep Seed policy metadata auditable, but do not duplicate provider credential, retry, schedule, or job lifecycle logic in Seed.
 
 ## Human-readable policy summaries
 
@@ -301,8 +302,9 @@ The context packet should not include giant policy tables. It should include rel
 
 ```json
 {
-  "tool": "install_ssh_server",
-  "policy_summary": "Requires operator approval before changing host packages or services."
+  "capability": "ssh_access",
+  "policy_summary": "Requires operator/provider approval before changing host packages or services. This is not an approval grant.",
+  "requires_external_approval": true
 }
 ```
 
@@ -310,10 +312,11 @@ The context packet should not include giant policy tables. It should include rel
 
 The model should be told:
 
-- You may propose actions.
-- You may not claim an action has run unless a tool result says so.
-- If policy requires approval, explain what approval is needed.
-- If a tool is missing, request a Tool Need instead of inventing execution.
+- You may propose actions and HandoffPlans.
+- You may not claim an action has run unless external provider Evidence says so.
+- If policy requires approval, explain what approval is needed in Seed or the external provider.
+- If a capability/backend is missing, request a ToolNeed instead of inventing execution.
+- Never ask for credentials or build retry, scheduling, or long-running job lifecycle inside Seed.
 
 ## Policy as product UX
 
@@ -328,5 +331,5 @@ Blocked.
 Good:
 
 ```text
-Installing SSH changes host node-1, so I need operator approval. I can create an approval request for install_ssh_server(host=node-1), or I can first run the read-only verify_ssh_access check.
+Installing SSH changes host node-1, so Seed can prepare a non-executable HandoffPlan for AWX with the required policy summary and secret boundary. AWX/Vault/ssh-agent handle credentials, prompts, retries, and the job lifecycle.
 ```

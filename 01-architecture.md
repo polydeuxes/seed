@@ -2,12 +2,14 @@
 
 ## System summary
 
-Seed is a context-native tool-growing runtime. It has two large halves:
+Seed is a context-native planning and handoff runtime. It composes context, records evidence-backed state, ranks capabilities, and produces auditable recommendations and non-executable plans. Seed does **not** own an internal execution lifecycle.
 
-1. **Runtime** — handles events, builds context, lets models decide, invokes registered tools, and records outcomes.
-2. **Builder** — turns explicit tool needs into generated toolkit candidates, validates them, and prepares them for registration.
+Seed has two large halves:
 
-The runtime is always conservative. The builder can be creative, but its outputs are untrusted until validated and registered.
+1. **Runtime** — handles events, builds context, lets models decide, records state, manages Tool Needs, ranks recommendations, and emits non-executable Action Plans and HandoffPlans.
+2. **Builder** — turns explicit Tool Needs into generated toolkit candidates, validates metadata/contracts, and prepares capabilities for registration.
+
+The runtime is always conservative. The builder can be creative, but its outputs are untrusted until validated and registered. Actual execution is delegated to external providers.
 
 ## High-level flow
 
@@ -21,13 +23,50 @@ External input
   -> Decision Validator
        -> Answer
        -> Clarifying Question
-       -> Registered Tool Call
        -> Tool Need Request
        -> State Patch Proposal
-  -> Policy Gate / Registry / Builder / Executor
+       -> Non-executable Action Plan
+       -> HandoffPlan
+  -> Policy Gate / CapabilityCatalog / Builder / Handoff Composer
   -> Event Ledger
   -> Response Composer
+  -> External Provider (outside Seed, if user/operator proceeds)
 ```
+
+
+## Ownership boundary
+
+Seed owns:
+
+- Context composition
+- Event ledger
+- State projection
+- Fact/evidence model
+- ToolNeeds
+- CapabilityCatalog
+- RecommendationRanker
+- ActionPlans as non-executable plans
+- HandoffPlans as non-executable provider handoffs
+- Policy metadata
+- Audit trail
+
+Seed delegates:
+
+- actual execution
+- secrets
+- retries
+- scheduling
+- long-running jobs
+- credential prompts
+
+Preferred execution backends live outside Seed:
+
+- Ansible/AWX for host automation
+- Temporal/Prefect for workflows
+- MCP servers for tool integration
+- Vault, ssh-agent, sudo, and become-aware automation for secrets and privilege boundaries
+
+Seed may record a HandoffPlan and later ingest external provider observations as Evidence, but it must not become the executor of record.
 
 ## Main components
 
@@ -58,8 +97,8 @@ Stores:
 - user messages
 - system observations
 - model decisions
-- tool calls
-- tool results
+- handoff plans
+- external observations/results when reported back
 - policy blocks
 - approvals
 - generated toolkit artifacts
@@ -78,9 +117,8 @@ Maintains projections such as:
 - active goals
 - known entities
 - known capabilities
-- open tool needs
-- registered tools
-- tool validation status
+- open ToolNeeds
+- CapabilityCatalog entries
 - unresolved approvals
 - recent evidence
 - stale facts
@@ -100,9 +138,10 @@ It decides what the model sees:
 - active goals
 - known facts
 - missing facts
-- available tools
-- blocked tools
-- open tool needs
+- available capabilities
+- blocked or policy-limited capabilities
+- open ToolNeeds
+- candidate HandoffPlans
 - policy summaries
 - expected decision schema
 
@@ -116,8 +155,9 @@ The model may output:
 
 - answer user
 - ask a question
-- call registered tool
-- request new tool
+- request a ToolNeed
+- propose a non-executable Action Plan
+- propose a HandoffPlan
 - propose state update
 - refuse/block
 
@@ -130,8 +170,8 @@ Checks the model output against schemas and state.
 Validates:
 
 - decision type is allowed
-- referenced tool exists
-- arguments match schema
+- referenced capability or backend exists in the CapabilityCatalog
+- HandoffPlan fields match schema
 - referenced entities exist or can be created
 - confidence/ambiguity rules
 - approval requirement
@@ -139,24 +179,25 @@ Validates:
 
 Invalid decisions become model-correction events or user-facing clarification.
 
-### 7. Tool Registry
+### 7. CapabilityCatalog
 
-Catalog of registered tools.
+Catalog of capabilities and external provider handoff targets.
 
-A registered tool includes:
+A catalog entry includes:
 
-- name
+- capability name
 - natural-language summary
-- input schema
-- output schema
+- supported backend types
+- provider/backend references
+- operation names
+- input/target metadata
 - policy action
-- implementation reference
-- toolkit ID
+- toolkit ID or catalog source
 - lifecycle status
 - visibility rules
 - examples
 
-The registry may load tools from hand-written core toolkits and generated toolkits.
+The catalog may load capabilities from hand-written metadata, generated toolkit metadata, MCP server descriptions, and external automation inventory. It describes what Seed can recommend or hand off; it does not imply that Seed can execute the operation itself.
 
 ### 8. Policy Gate
 
@@ -179,23 +220,26 @@ Policy returns:
 - require confirmation
 - require human approval
 - require different credential/provider
+- produce handoff-only recommendation
 
 Policy is deterministic and auditable.
 
-### 9. Executor
+### 9. Handoff Composer
 
-Runs registered tool implementations.
+Builds non-executable HandoffPlans for external providers.
 
-Executor responsibilities:
+Handoff Composer responsibilities:
 
-- resolve implementation reference
-- run in the right sandbox/environment
-- enforce timeout and resource limits
-- capture stdout/stderr/artifacts
-- normalize result
-- emit events
+- select an appropriate provider/backend from the CapabilityCatalog
+- summarize policy constraints
+- state the target and operation
+- describe the secret boundary
+- record whether external/provider approval is still required
+- mark the plan `executable: false`
+- avoid implying user approval, execution authorization, credential availability, provider trust, or tool registration
+- emit auditable handoff events
 
-Executor does not decide what should exist. It only runs registered tools after validation and policy.
+The Handoff Composer does not run tools, ask for credentials, retry operations, schedule jobs, monitor long-running work, or manage execution state. Those responsibilities belong to external providers such as Ansible/AWX, Temporal/Prefect, MCP servers, Vault, ssh-agent, sudo, or become-aware automation.
 
 ### 10. Tool Need Store
 
@@ -250,7 +294,7 @@ Checks:
 - import safety
 - static code rules
 - test suite
-- sandbox execution
+- sandbox validation
 - forbidden APIs
 - dependency declarations
 - documentation completeness
@@ -263,9 +307,10 @@ Only validated toolkits can be registered.
 Runtime:
   - receives user input
   - builds context
-  - invokes registered tools
-  - records state
-  - requests missing tools
+  - records events and projected state
+  - maintains facts, evidence, ToolNeeds, CapabilityCatalog, recommendations, policy metadata, and audit trail
+  - proposes non-executable Action Plans and HandoffPlans
+  - delegates actual execution to external providers
 
 Builder:
   - generates candidate toolkits
@@ -281,9 +326,9 @@ Level 0: User/model desire
 Level 1: Tool Need recorded
 Level 2: Toolkit candidate generated
 Level 3: Toolkit candidate validated in sandbox
-Level 4: Toolkit registered but approval-gated
-Level 5: Tool allowed for current context
-Level 6: Tool executed and result recorded
+Level 4: Capability registered but policy-gated
+Level 5: HandoffPlan emitted with `executable: false`
+Level 6: External provider reports result back as Evidence
 ```
 
 Each level is explicit. No implicit promotion.
@@ -299,7 +344,7 @@ Avoid:
 - policy lives inside prompt text only
 - context window becomes the database
 - every user phrase becomes a hardcoded branch
-- tool execution returns results without recording them
+- Seed runs tools, manages retries/schedules, or handles credentials instead of delegating to external providers
 
 ## Minimal viable architecture
 
@@ -309,7 +354,7 @@ The first build does not need everything. Minimum useful system:
 2. State projector.
 3. Context composer.
 4. Decision schema.
-5. Static tool registry.
+5. Static CapabilityCatalog.
 6. Policy gate.
 7. Tool Need object.
 8. Builder stub that emits toolkit templates.

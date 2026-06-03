@@ -64,11 +64,12 @@ Recommendation: use **Seed** for the new repo unless a better name emerges.
 | Current derived view | State Projector | chain manager |
 | Model-facing state | Context Composer | prompt builder only |
 | Model output | Decision | intent |
-| Missing executable capability | Tool Need | requirement |
-| Executable operation | Tool | provider operation |
-| Tool package | Toolkit | plugin if too broad |
-| Permission check | Policy Gate | guardrails only |
-| Action runner | Executor | provider caller |
+| Missing capability/backend | ToolNeed | requirement |
+| Capability inventory | CapabilityCatalog | provider operation list |
+| External provider handoff | HandoffPlan | execution job |
+| Capability package | Toolkit | plugin if too broad |
+| Permission metadata/check | Policy Gate | guardrails only |
+| Action runner | External provider | internal executor |
 | Tool generator | Builder | self-modifier |
 | Generated untrusted output | Toolkit Candidate | tool |
 | External thing | Entity | resource if ambiguous |
@@ -95,7 +96,7 @@ Implies fixed workflow. Use Goal or Session.
 
 ### Requirement
 
-Useful in some domains, but overloaded. Use Tool Need for missing tools and Capability for desired entity state.
+Useful in some domains, but overloaded. Use ToolNeed for missing capabilities/backends and Capability for desired entity state.
 
 ### Remediation
 
@@ -165,7 +166,7 @@ A name is good if a new contributor can answer:
 
 1. Is this durable or transient?
 2. Is this model-facing or internal?
-3. Is this a desire, a policy, or an execution?
+3. Is this a desire, policy metadata, or external-provider handoff?
 4. Is this generated or registered?
 5. Does this mutate the world?
 
@@ -174,7 +175,7 @@ A name is good if a new contributor can answer:
 Use:
 
 ```text
-The user created a Goal. The context composer selected relevant Facts and Tools. The model produced a Decision to request a Tool Need. The builder generated a Toolkit Candidate. Validation passed. Policy required approval before registration.
+The user created a Goal. The context composer selected relevant Facts and CapabilityCatalog entries. The model produced a Decision to request a ToolNeed. The builder generated a Toolkit Candidate. Validation passed. Seed emitted a non-executable HandoffPlan for AWX with policy metadata.
 ```
 
 Avoid:
