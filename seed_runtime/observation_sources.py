@@ -3,10 +3,16 @@
 from __future__ import annotations
 
 import json
+import os
+import platform
+import shutil
 from datetime import datetime, timezone
 from importlib.util import find_spec
 from pathlib import Path
 from typing import Any, Protocol
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode, urljoin
+from urllib.request import Request, urlopen
 
 from seed_runtime.base import SeedModel
 from seed_runtime.facts import Fact, FactConflict, is_fact_expired
@@ -78,6 +84,264 @@ class FakeObservationSource:
         """Return configured observations without mutating source state."""
 
         return list(self._observations)
+
+
+class LocalHostObservationSource:
+    """Read-only local host observation source using Python stdlib APIs only.
+
+    This source intentionally does not execute shells or subprocesses. It reads
+    process-local platform and disk metadata via Python standard library calls.
+    """
+
+    source_type: ObservationSourceType = "discovery"
+
+    def __init__(self, *, name: str = "local-host") -> None:
+        self.name = name
+
+    def collect(self) -> list[Observation]:
+        """Return local host facts without executing or mutating the host."""
+
+        observed_at = datetime.now(timezone.utc)
+        hostname = platform.node() or "localhost"
+        system = (platform.system() or "unknown").lower()
+        architecture = platform.machine() or "unknown"
+        uname_metadata: dict[str, Any] = {}
+        if hasattr(os, "uname"):
+            uname = os.uname()
+            uname_metadata = {
+                "sysname": uname.sysname,
+                "nodename": uname.nodename,
+                "release": uname.release,
+                "version": uname.version,
+                "machine": uname.machine,
+            }
+        disk_usage = shutil.disk_usage("/")
+        metadata = {
+            "collector": "LocalHostObservationSource",
+            "read_only": True,
+            "shell_execution": False,
+            **uname_metadata,
+        }
+        return [
+            self._observation(
+                observed_at, hostname, "os", system, metadata={**metadata}
+            ),
+            self._observation(
+                observed_at,
+                hostname,
+                "architecture",
+                architecture,
+                metadata={**metadata},
+            ),
+            self._observation(
+                observed_at,
+                hostname,
+                "disk_total_bytes",
+                int(disk_usage.total),
+                metadata={**metadata, "path": "/"},
+            ),
+            self._observation(
+                observed_at,
+                hostname,
+                "disk_free_bytes",
+                int(disk_usage.free),
+                metadata={**metadata, "path": "/"},
+            ),
+        ]
+
+    def _observation(
+        self,
+        observed_at: datetime,
+        subject: str,
+        predicate: str,
+        value: Any,
+        *,
+        metadata: dict[str, Any],
+    ) -> Observation:
+        return Observation(
+            id=new_id("obs_local_host"),
+            source_type=self.source_type,
+            observed_at=observed_at,
+            subject=subject,
+            predicate=predicate,
+            value=value,
+            confidence=1.0,
+            metadata=metadata,
+        )
+
+
+class PrometheusObservationSource:
+    """Read-only Prometheus HTTP API observation source.
+
+    The source only performs HTTP GET requests against a fixed allowlist of safe
+    metric names and does not accept arbitrary PromQL from users.
+    """
+
+    SAFE_QUERIES = (
+        "up",
+        "node_uname_info",
+        "node_filesystem_avail_bytes",
+        "node_filesystem_size_bytes",
+    )
+
+    def __init__(
+        self,
+        base_url: str,
+        *,
+        name: str | None = None,
+        source_type: ObservationSourceType = "provider",
+        timeout_seconds: float = 5.0,
+    ) -> None:
+        if timeout_seconds <= 0:
+            raise ValueError(
+                "PrometheusObservationSource timeout_seconds must be positive"
+            )
+        self.base_url = base_url.rstrip("/") + "/"
+        self.name = name or f"prometheus:{base_url.rstrip('/')}"
+        self.source_type = source_type
+        self.timeout_seconds = timeout_seconds
+        self.last_error: str | None = None
+
+    def collect(self) -> list[Observation]:
+        """Collect safe Prometheus metrics, returning [] if unreachable."""
+
+        observed_at = datetime.now(timezone.utc)
+        observations: list[Observation] = []
+        self.last_error = None
+        for query in self.SAFE_QUERIES:
+            try:
+                payload = self._query(query)
+            except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
+                self.last_error = f"{type(exc).__name__}: {exc}"
+                return []
+            observations.extend(
+                self._observations_from_query(query, payload, observed_at)
+            )
+        return observations
+
+    def _query(self, query: str) -> dict[str, Any]:
+        if query not in self.SAFE_QUERIES:
+            raise ValueError(f"Prometheus query is not allowlisted: {query}")
+        url = (
+            urljoin(self.base_url, "api/v1/query")
+            + "?"
+            + urlencode({"query": query})
+        )
+        request = Request(url, method="GET", headers={"Accept": "application/json"})
+        with urlopen(request, timeout=self.timeout_seconds) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+        if not isinstance(payload, dict):
+            raise ValueError("Prometheus response must be a JSON object")
+        if payload.get("status") != "success":
+            raise ValueError("Prometheus response status was not success")
+        data = payload.get("data")
+        if not isinstance(data, dict) or data.get("resultType") != "vector":
+            raise ValueError("Prometheus response data must be a vector")
+        result = data.get("result")
+        if not isinstance(result, list):
+            raise ValueError("Prometheus vector result must be a list")
+        return payload
+
+    def _observations_from_query(
+        self, query: str, payload: dict[str, Any], observed_at: datetime
+    ) -> list[Observation]:
+        result = payload["data"]["result"]
+        observations: list[Observation] = []
+        for sample in result:
+            if not isinstance(sample, dict):
+                continue
+            metric = sample.get("metric")
+            value = sample.get("value")
+            if (
+                not isinstance(metric, dict)
+                or not isinstance(value, list)
+                or len(value) < 2
+            ):
+                continue
+            instance = metric.get("instance")
+            if not isinstance(instance, str) or not instance:
+                continue
+            sample_value = value[1]
+            metadata = {
+                "collector": "PrometheusObservationSource",
+                "prometheus_base_url": self.base_url.rstrip("/"),
+                "prometheus_metric": query,
+                "metric_labels": dict(metric),
+                "read_only": True,
+                "http_method": "GET",
+            }
+            if query == "up":
+                observations.append(
+                    self._observation(
+                        observed_at,
+                        instance,
+                        "up",
+                        _prometheus_int(sample_value),
+                        metadata,
+                    )
+                )
+            elif query == "node_uname_info":
+                os_value = _prometheus_os_from_uname(metric)
+                if os_value is not None:
+                    observations.append(
+                        self._observation(
+                            observed_at, instance, "os", os_value, metadata
+                        )
+                    )
+            elif query == "node_filesystem_avail_bytes":
+                observations.append(
+                    self._observation(
+                        observed_at,
+                        instance,
+                        "filesystem_avail_bytes",
+                        _prometheus_int(sample_value),
+                        metadata,
+                    )
+                )
+            elif query == "node_filesystem_size_bytes":
+                observations.append(
+                    self._observation(
+                        observed_at,
+                        instance,
+                        "filesystem_size_bytes",
+                        _prometheus_int(sample_value),
+                        metadata,
+                    )
+                )
+        return observations
+
+    def _observation(
+        self,
+        observed_at: datetime,
+        subject: str,
+        predicate: str,
+        value: Any,
+        metadata: dict[str, Any],
+    ) -> Observation:
+        return Observation(
+            id=new_id("obs_prometheus"),
+            source_type=self.source_type,
+            observed_at=observed_at,
+            subject=subject,
+            predicate=predicate,
+            value=value,
+            confidence=0.95,
+            metadata=metadata,
+        )
+
+
+def _prometheus_int(value: Any) -> int:
+    return int(float(str(value)))
+
+
+def _prometheus_os_from_uname(metric: dict[str, Any]) -> str | None:
+    sysname = metric.get("sysname") or metric.get("system")
+    if not isinstance(sysname, str) or not sysname.strip():
+        return None
+    normalized = sysname.strip().lower()
+    if normalized in {"linux", "darwin", "windows"}:
+        return normalized
+    return normalized
 
 
 class JsonObservationSource:
