@@ -84,6 +84,16 @@ def test_parser_supports_required_modes_and_model_selection():
     assert args.message == ["install", "docker"]
 
 
+def test_parser_supports_execution_proposal_generation():
+    seed_local = load_seed_local_module()
+    args = seed_local.build_parser().parse_args(
+        ["--db", ".seed-local.sqlite", "--proposal", "plan_cli"]
+    )
+
+    assert args.db == ".seed-local.sqlite"
+    assert args.proposal == "plan_cli"
+
+
 def test_cli_default_prints_concise_summary_without_event_ledger(capsys):
     seed_local = load_seed_local_module()
 
@@ -376,6 +386,120 @@ def test_cli_preconditions_prints_inspect_only_report_without_registering_tools(
     assert "reason: no host entity, entity host fact, or target host fact is present" in output
     assert "tool.call" not in output
     assert "approved" not in output.lower()
+
+
+def test_cli_proposal_prints_missing_preconditions_without_creating_proposal(
+    monkeypatch, tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed-local.sqlite"
+    seed_cli_action_plan(
+        seed_local,
+        db_path,
+        provider="docker_container_lifecycle",
+        capability="service_management",
+        risk_class="L3",
+        requires_approval=True,
+    )
+
+    def fail_load_manifest(self, path):
+        pytest.fail("proposal reports must not register tools")
+
+    monkeypatch.setattr(seed_local.ToolRegistry, "load_manifest", fail_load_manifest)
+
+    assert seed_local.main(["--db", str(db_path), "--proposal", "plan_cli"]) == 0
+
+    output = capsys.readouterr().out
+    assert "action_plan_id: plan_cli" in output
+    assert "executable: false" in output
+    assert (
+        "missing:\n- target_host_known\n- provider_registered\n"
+        "- execution_authorization_present"
+        in output
+    )
+    assert "execution_proposal_id:" not in output
+    assert "tool.call" not in output
+
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        kinds = [event.kind for event in ledger.list_events("local")]
+    finally:
+        ledger.close()
+    assert "execution_proposal.created" not in kinds
+    assert "tool.call.started" not in kinds
+    assert "tool.call.completed" not in kinds
+
+
+def test_cli_proposal_creates_concrete_non_executable_proposal_without_executing(
+    monkeypatch, tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed-local.sqlite"
+    seed_cli_action_plan(
+        seed_local,
+        db_path,
+        provider="docker_container_lifecycle",
+        capability="service_management",
+        risk_class="L1",
+        requires_approval=False,
+    )
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    ledger.append("action_plan.approved", "local", {"action_plan_id": "plan_cli"})
+    ledger.close()
+
+    def fail_load_manifest(self, path):
+        pytest.fail("proposal generation must not register tools")
+
+    monkeypatch.setattr(seed_local.ToolRegistry, "load_manifest", fail_load_manifest)
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--registered-provider",
+                "docker_container_lifecycle",
+                "--fact",
+                "jellyfin",
+                "host",
+                "node115",
+                "--fact",
+                "jellyfin",
+                "container",
+                "jellyfin",
+                "--proposal",
+                "plan_cli",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "execution_proposal_id: eprop_" in output
+    assert "action_plan_id: plan_cli" in output
+    assert "provider: docker_container_lifecycle" in output
+    assert "tool_name: docker_container_lifecycle" in output
+    assert (
+        'tool_arguments: {"action": "restart", "container": "jellyfin", "host": "node115"}'
+        in output
+    )
+    assert "arguments_fingerprint: sha256:" in output
+    assert "executable: false" in output
+    assert "tool.call" not in output
+
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        events = ledger.list_events("local")
+    finally:
+        ledger.close()
+    kinds = [event.kind for event in events]
+    assert "execution_proposal.created" in kinds
+    assert "tool.call.started" not in kinds
+    assert "tool.call.completed" not in kinds
+    proposal_event = next(
+        event for event in events if event.kind == "execution_proposal.created"
+    )
+    assert proposal_event.payload["execution_proposal"]["executable"] is False
 
 
 def test_cli_preconditions_reports_satisfied_preconditions(tmp_path, capsys):
