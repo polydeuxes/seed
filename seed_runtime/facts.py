@@ -24,6 +24,25 @@ DEFAULT_CONFIDENCE_BY_SOURCE_TYPE: dict[str, float] = {
 }
 
 
+STALE_FACT_REFRESH_CAPABILITY_BY_PREDICATE: dict[str, str] = {
+    "runtime": "service_inspection",
+    "host": "environment_inventory",
+    "container": "docker_inspection",
+    "weather": "weather_lookup",
+    "current_weather": "weather_lookup",
+}
+
+FALLBACK_STALE_FACT_REFRESH_CAPABILITY = "knowledge_lookup"
+
+
+def recommended_capability_for_stale_fact(predicate: str) -> str:
+    """Return the deterministic capability that can refresh a stale predicate."""
+
+    return STALE_FACT_REFRESH_CAPABILITY_BY_PREDICATE.get(
+        predicate, FALLBACK_STALE_FACT_REFRESH_CAPABILITY
+    )
+
+
 class FactSupport(SeedModel):
     """Aggregated support for one subject/predicate/value claim.
 
@@ -53,6 +72,17 @@ class FactConflict(SeedModel):
     winning_value: Any | None = None
     best_fact_id: str | None = None
     conflicting_fact_ids: list[str] = Field(default_factory=list)
+    reason: str
+
+
+class StaleFactRefreshRecommendation(SeedModel):
+    """A deterministic capability recommendation for refreshing a stale fact."""
+
+    fact_id: str
+    subject: str
+    predicate: str
+    value: Any
+    recommended_capability: str
     reason: str
 
 
