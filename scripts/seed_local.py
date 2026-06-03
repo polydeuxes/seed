@@ -20,7 +20,7 @@ from seed_runtime.context import ContextComposer
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.evidence import Evidence
-from seed_runtime.facts import Fact
+from seed_runtime.facts import Fact, FactConflict, FactSupport
 from seed_runtime.execution import ToolExecutor
 from seed_runtime.execution_proposals import ExecutionProposalService
 from seed_runtime.handoff_plans import (
@@ -43,7 +43,7 @@ from seed_runtime.secrets import (
     normalize_field_name,
     reject_secret_fields,
 )
-from seed_runtime.state import StateProjector
+from seed_runtime.state import State, StateProjector
 from seed_runtime.tool_needs import ToolNeedService
 
 DEFAULT_ENDPOINT = "http://localhost:11434/api/generate"
@@ -506,6 +506,23 @@ def build_parser() -> argparse.ArgumentParser:
             "load, register, approve, or execute real tools"
         ),
     )
+    parser.add_argument(
+        "--fact-support",
+        nargs=2,
+        metavar=("SUBJECT", "PREDICATE"),
+        help="print projected aggregate support groups for a subject/predicate",
+    )
+    parser.add_argument(
+        "--best-fact",
+        nargs=2,
+        metavar=("SUBJECT", "PREDICATE"),
+        help="print the projected current belief for a subject/predicate",
+    )
+    parser.add_argument(
+        "--fact-conflicts",
+        action="store_true",
+        help="print projected active fact conflicts and their winning values",
+    )
     return parser
 
 
@@ -521,12 +538,16 @@ def validate_lifecycle_args(
         bool(args.approve_plan),
         bool(args.reject_plan),
         bool(args.supersede_plan),
+        bool(args.fact_support),
+        bool(args.best_fact),
+        bool(args.fact_conflicts),
     ]
     if sum(lifecycle_flags) > 1:
         parser.error(
             "choose only one of --preconditions, --proposal, --handoff, "
             "--authorize-proposal, --accept-plan, --approve-plan, "
-            "--reject-plan, or --supersede-plan"
+            "--reject-plan, --supersede-plan, --fact-support, --best-fact, "
+            "or --fact-conflicts"
         )
     if args.proposal and not args.db:
         parser.error("--proposal requires --db")
@@ -679,6 +700,100 @@ def seed_dev_state_from_args(args: argparse.Namespace, ledger: EventLedger) -> N
             provider_seeds,
             session_id=args.session,
         )
+
+
+def _format_fact_value(value: Any) -> str:
+    if isinstance(value, str):
+        return value
+    return json.dumps(value, sort_keys=True)
+
+
+def _format_datetime(value: Any) -> str:
+    isoformat = getattr(value, "isoformat", None)
+    if callable(isoformat):
+        return isoformat()
+    return str(value)
+
+
+def fact_query_state(args: argparse.Namespace) -> State:
+    """Seed requested dev state and return the projected State for fact queries."""
+
+    ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
+    try:
+        seed_dev_state_from_args(args, ledger)
+        return StateProjector(ledger).project(args.workspace)
+    finally:
+        close = getattr(ledger, "close", None)
+        if close is not None:
+            close()
+
+
+def format_fact_supports(
+    supports: list[FactSupport], subject: str, predicate: str
+) -> str:
+    if not supports:
+        return f"no fact support for {subject} {predicate}"
+
+    sections: list[str] = []
+    for support in supports:
+        sections.append(
+            "\n".join(
+                [
+                    f"value: {_format_fact_value(support.value)}",
+                    f"aggregate_confidence: {support.confidence}",
+                    "supporting_fact_ids: "
+                    + ", ".join(support.supporting_fact_ids),
+                    "source_types: " + ", ".join(support.source_types),
+                    f"first_observed: {_format_datetime(support.observed_at)}",
+                    f"latest_observed: {_format_datetime(support.latest_observed_at)}",
+                ]
+            )
+        )
+    return "\n\n".join(sections)
+
+
+def format_best_fact(state: State, subject: str, predicate: str) -> str:
+    best_fact = state.get_best_fact(subject, predicate)
+    best_support = state.get_fact_support(subject, predicate)
+    if best_fact is None or best_support is None:
+        return f"no current belief for {subject} {predicate}"
+
+    return "\n".join(
+        [
+            f"subject: {best_fact.subject_id}",
+            f"predicate: {best_fact.predicate}",
+            f"value: {_format_fact_value(best_support.value)}",
+            f"confidence: {best_support.confidence}",
+            "reason: best-supported current belief",
+            f"support_count: {len(best_support.supporting_fact_ids)}",
+        ]
+    )
+
+
+def format_fact_conflicts(conflicts: list[FactConflict], facts: dict[str, Fact]) -> str:
+    if not conflicts:
+        return "no active fact conflicts"
+
+    sections: list[str] = []
+    for conflict in conflicts:
+        best_fact = facts.get(conflict.best_fact_id)
+        winning_value = best_fact.value if best_fact is not None else None
+        sections.append(
+            "\n".join(
+                [
+                    f"subject: {conflict.subject}",
+                    f"predicate: {conflict.predicate}",
+                    "values: "
+                    + ", ".join(_format_fact_value(value) for value in conflict.values),
+                    f"winning_value: {_format_fact_value(winning_value)}",
+                    f"winning_fact_id: {conflict.best_fact_id}",
+                    "conflicting_fact_ids: "
+                    + ", ".join(conflict.conflicting_fact_ids),
+                    f"reason: {conflict.reason}",
+                ]
+            )
+        )
+    return "\n\n".join(sections)
 
 
 def precondition_report(args: argparse.Namespace) -> dict[str, Any]:
@@ -1190,6 +1305,24 @@ def main(argv: list[str] | None = None) -> int:
     updated_plan = update_action_plan_lifecycle(args)
     if updated_plan is not None:
         print(format_action_plan_status(updated_plan))
+        return 0
+
+    if args.fact_support:
+        subject, predicate = args.fact_support
+        state = fact_query_state(args)
+        supports = state.get_fact_supports(subject, predicate)
+        print(format_fact_supports(supports, subject, predicate))
+        return 0
+
+    if args.best_fact:
+        subject, predicate = args.best_fact
+        state = fact_query_state(args)
+        print(format_best_fact(state, subject, predicate))
+        return 0
+
+    if args.fact_conflicts:
+        state = fact_query_state(args)
+        print(format_fact_conflicts(state.fact_conflicts, state.facts))
         return 0
 
     app = build_local_app(

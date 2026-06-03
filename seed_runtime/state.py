@@ -137,14 +137,18 @@ class State:
             ),
         )
 
-    def get_fact_support(self, subject: str, predicate: str) -> FactSupport | None:
-        """Return the strongest aggregate support for a subject and predicate."""
+    def get_fact_supports(self, subject: str, predicate: str) -> list[FactSupport]:
+        """Return aggregate support groups for a subject and predicate."""
         fact_supports = self.fact_supports or _project_fact_supports(self.facts.values())
-        candidates = [
+        return [
             support
             for support in fact_supports
             if support.subject == subject and support.predicate == predicate
         ]
+
+    def get_fact_support(self, subject: str, predicate: str) -> FactSupport | None:
+        """Return the strongest aggregate support for a subject and predicate."""
+        candidates = self.get_fact_supports(subject, predicate)
         if not candidates:
             return None
         return max(
