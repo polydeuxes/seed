@@ -1424,7 +1424,22 @@ def test_parser_supports_fact_projection_queries():
     conflicts_args = parser.parse_args(["--fact-conflicts"])
     refreshes_args = parser.parse_args(["--stale-fact-refreshes"])
 
+    history_args = parser.parse_args([
+        "--fact-support",
+        "node115",
+        "up",
+        "--include-history",
+    ])
+    history_alias_args = parser.parse_args([
+        "--fact-support",
+        "node115",
+        "up",
+        "--history",
+    ])
+
     assert support_args.fact_support == ["jellyfin", "runtime"]
+    assert history_args.include_history is True
+    assert history_alias_args.include_history is True
     assert best_args.best_fact == ["jellyfin", "runtime"]
     assert conflicts_args.fact_conflicts is True
     assert refreshes_args.stale_fact_refreshes is True
@@ -1466,6 +1481,97 @@ def test_cli_fact_support_prints_projected_grouped_values(capsys):
     assert "first_observed:" in output
     assert "latest_observed:" in output
 
+
+def test_cli_measurement_fact_support_hides_old_samples_by_default(capsys):
+    seed_local = load_seed_local_module()
+
+    assert (
+        seed_local.main(
+            [
+                "--fact",
+                "node115",
+                "up",
+                "0",
+                "--fact",
+                "node115",
+                "up",
+                "1",
+                "--fact-support",
+                "node115",
+                "up",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "value: 1" in output
+    assert "value: 0" not in output
+    assert "support_kind: current_sample" in output
+    assert "historical samples hidden; use --include-history" in output
+
+
+def test_cli_measurement_fact_support_include_history_shows_all_samples(capsys):
+    seed_local = load_seed_local_module()
+
+    assert (
+        seed_local.main(
+            [
+                "--fact",
+                "node115",
+                "up",
+                "0",
+                "--fact",
+                "node115",
+                "up",
+                "1",
+                "--fact",
+                "node115",
+                "up",
+                "1",
+                "--fact-support",
+                "node115",
+                "up",
+                "--include-history",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "value: 0" in output
+    assert output.count("value: 1") == 2
+    assert output.count("support_kind: current_sample") == 3
+    assert "historical samples hidden" not in output
+
+
+def test_cli_durable_runtime_fact_support_still_shows_all_conflicting_values(capsys):
+    seed_local = load_seed_local_module()
+
+    assert (
+        seed_local.main(
+            [
+                "--fact",
+                "jellyfin",
+                "runtime",
+                "docker",
+                "--fact",
+                "jellyfin",
+                "runtime",
+                "systemd",
+                "--fact-support",
+                "jellyfin",
+                "runtime",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "value: docker" in output
+    assert "value: systemd" in output
+    assert output.count("support_kind: aggregate") == 2
+    assert "historical samples hidden" not in output
 
 def test_cli_best_fact_prints_projected_current_belief(capsys):
     seed_local = load_seed_local_module()
