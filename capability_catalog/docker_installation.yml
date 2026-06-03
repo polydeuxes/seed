@@ -4,6 +4,8 @@ recommendations:
   - provider: docker_official_packages
     summary: Follow official Docker package installation flows for the host platform.
     kind: installation_workflow
+    backend_type: ansible
+    operation: docker.install
     source: https://docs.docker.com/engine/install/
     risk_class: L4
     notes: Installation is high impact and requires explicit approval outside the catalog.

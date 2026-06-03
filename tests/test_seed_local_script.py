@@ -4,6 +4,10 @@ from pathlib import Path
 
 import pytest
 
+from seed_runtime.models import ToolNeed
+from seed_runtime.recommendation_ranker import RankedRecommendation
+from seed_runtime.state import State
+
 from seed_runtime.intent_classifier import IntentDecisionModel, IntentPromptModelClient
 
 
@@ -1185,3 +1189,69 @@ def test_dev_fact_cli_rejects_json_values_with_secret_fields():
 
     with pytest.raises(ValueError, match="secret field"):
         seed_local.parse_dev_fact(["node-1", "auth", '{"token": "not-accepted"}'])
+
+
+def test_parser_supports_handoff_generation():
+    seed_local = load_seed_local_module()
+    args = seed_local.build_parser().parse_args(
+        ["--db", ".seed-local.sqlite", "--handoff", "plan_cli"]
+    )
+
+    assert args.db == ".seed-local.sqlite"
+    assert args.handoff == "plan_cli"
+
+
+def test_handoff_cli_function_prints_non_executable_plan_for_accepted_action_plan(tmp_path):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed.sqlite"
+    setup_args = seed_local.build_parser().parse_args(
+        [
+            "--db",
+            str(db_path),
+            "--workspace",
+            "ws",
+            "--session",
+            "ses",
+            "--handoff",
+            "placeholder",
+        ]
+    )
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        service = seed_local.ActionPlanService(ledger)
+        plan = service.create_plan(
+            ToolNeed(
+                id="need_service",
+                workspace_id="ws",
+                name="restart_jellyfin",
+                capability="service_management",
+                summary="Restart Jellyfin",
+                reason="User asked",
+            ),
+            RankedRecommendation(
+                provider="docker_container_lifecycle",
+                summary="Use Docker lifecycle operations.",
+                kind="local_cli",
+                source="docker",
+                risk_class="L3",
+                notes="Requires approval.",
+                score=100,
+                reasons=[],
+                reasoning=[],
+            ),
+            State(workspace_id="ws"),
+        )
+        service.accept_plan("ws", plan.id)
+    finally:
+        ledger.close()
+
+    setup_args.handoff = plan.id
+    result = seed_local.handoff_plan(setup_args)
+    output = seed_local.format_handoff_plan(result)
+
+    assert "handoff_plan" in result
+    assert "provider: docker_container_lifecycle" in output
+    assert "backend_type: ansible" in output
+    assert "operation: service.manage" in output
+    assert "policy_summary: risk_class=L3" in output
+    assert "secret_boundary: Seed passes only this non-secret plan boundary" in output

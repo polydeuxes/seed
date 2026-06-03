@@ -4,6 +4,8 @@ recommendations:
   - provider: docker_cli
     summary: Use the Docker CLI for read-only inspection commands.
     kind: local_cli
+    backend_type: manual
+    operation: docker.inspect
     source: docker
     risk_class: L2
     notes: Should be constrained to inspection operations unless separately approved.

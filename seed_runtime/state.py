@@ -16,6 +16,7 @@ from seed_runtime.models import (
     ExecutionAuthorization,
     Fact,
     Goal,
+    HandoffPlan,
     PendingAction,
     ToolNeed,
     ToolSpec,
@@ -42,6 +43,7 @@ class State:
     execution_proposals: dict[str, Any] = field(default_factory=dict)
     pending_actions: dict[str, PendingAction] = field(default_factory=dict)
     action_plans: dict[str, ActionPlan] = field(default_factory=dict)
+    handoff_plans: dict[str, HandoffPlan] = field(default_factory=dict)
     tools: dict[str, ToolSpec] = field(default_factory=dict)
 
     @property
@@ -137,6 +139,10 @@ class StateProjector:
             data = payload.get("execution_proposal", payload)
             proposal = ExecutionProposal(**data)
             state.execution_proposals[proposal.id] = proposal
+        elif event.kind == "handoff_plan.created":
+            data = payload.get("handoff_plan", payload)
+            handoff_plan = HandoffPlan(**data)
+            state.handoff_plans[handoff_plan.action_plan_id] = handoff_plan
         elif event.kind == "pending_action.created":
             data = payload.get("pending_action", payload)
             pending_action = PendingAction(**data)
