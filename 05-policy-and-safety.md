@@ -160,11 +160,18 @@ Execution authorization is separate and just in time:
   concrete proposed tool/action call, and a fingerprint of the proposed
   arguments;
 - it is short-lived and secret-free; persisted state must not contain
-  passwords, tokens, private keys, or raw credential/session material.
+  passwords, passphrases, raw tokens, private keys, or raw credential/session
+  material;
+- the authorization model records `secret_seen_by_seed: false` and may store
+  only `interactive_prompt`, `ssh_agent`, `sudo_timestamp`, and
+  `external_vault_token_ref` as grant metadata.
 
 Credential/session grants are host-environment resources, not Seed state. They
-are supplied just in time for the exact authorized attempt, referenced only by a
-secret-free grant identifier when needed, and never persisted by Seed.
+are supplied just in time for the exact authorized attempt through an external
+prompt or agent, referenced only by explicit secret-free metadata when needed,
+and never persisted by Seed. The preferred privileged execution path is outside
+Seed's secret boundary, for example Ansible prompting for `become`, an SSH
+agent, sudo's timestamp cache, or a vault lookup resolved by the host.
 
 ## Approval model
 

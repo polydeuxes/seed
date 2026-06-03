@@ -19,6 +19,7 @@ from seed_runtime.models import (
 )
 from seed_runtime.preconditions import PreconditionReport, evaluate_preconditions
 from seed_runtime.recommendation_ranker import RankedRecommendation
+from seed_runtime.secrets import reject_secret_fields
 from seed_runtime.state import State, StateProjector
 from seed_runtime.tool_needs import slugify
 
@@ -181,9 +182,11 @@ class ActionPlanService:
         tool_name: str,
         tool_arguments: dict[str, Any],
         granted_by: str,
-        credential_grant_id: str | None = None,
+        interactive_prompt: bool = False,
+        ssh_agent: str | None = None,
+        sudo_timestamp: str | None = None,
+        external_vault_token_ref: str | None = None,
         session_id: str | None = None,
-        metadata: dict[str, Any] | None = None,
         ttl_seconds: int = 300,
         actor: Actor = "approver",
         causation_id: str | None = None,
@@ -193,8 +196,9 @@ class ActionPlanService:
 
         This does not execute anything and does not persist credentials. The
         stored event contains only a deterministic fingerprint of the proposed
-        arguments plus optional secret-free metadata identifying the just-in-time
-        credential/session grant supplied by the host environment.
+        arguments plus optional, explicitly modeled secret-free metadata for the
+        just-in-time prompt, agent, sudo timestamp, or external vault reference
+        supplied by the host environment.
         """
         plan = self._require_plan(workspace_id, action_plan_id)
         if plan.status != "accepted":
@@ -209,9 +213,7 @@ class ActionPlanService:
                 "execution authorization ttl_seconds must be <= "
                 f"{_MAX_EXECUTION_AUTHORIZATION_TTL_SECONDS}"
             )
-        _reject_secret_like_payload(tool_arguments, "tool_arguments")
-        safe_metadata = metadata or {}
-        _reject_secret_like_payload(safe_metadata, "metadata")
+        reject_secret_fields(tool_arguments, "tool_arguments")
 
         authorization = ExecutionAuthorization(
             id=new_id("auth"),
@@ -220,9 +222,11 @@ class ActionPlanService:
             arguments_fingerprint=_fingerprint_tool_call(tool_name, tool_arguments),
             granted_by=granted_by,
             expires_at=datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds),
-            credential_grant_id=credential_grant_id,
-            session_id=session_id,
-            metadata=safe_metadata,
+            interactive_prompt=interactive_prompt,
+            ssh_agent=ssh_agent,
+            sudo_timestamp=sudo_timestamp,
+            external_vault_token_ref=external_vault_token_ref,
+            secret_seen_by_seed=False,
         )
         from seed_runtime.serialization import to_plain
 
@@ -334,35 +338,11 @@ class ActionPlanService:
         return plan
 
 
-_SECRET_KEY_MARKERS = (
-    "password",
-    "passwd",
-    "secret",
-    "token",
-    "credential",
-    "private_key",
-)
-
-
 def _fingerprint_tool_call(tool_name: str, arguments: dict[str, Any]) -> str:
     payload = {"tool_name": tool_name, "arguments": arguments}
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
     digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
     return f"sha256:{digest}"
-
-
-def _reject_secret_like_payload(value: Any, path: str) -> None:
-    if isinstance(value, dict):
-        for key, nested in value.items():
-            lowered = str(key).lower()
-            if any(marker in lowered for marker in _SECRET_KEY_MARKERS):
-                raise ValueError(
-                    f"secret-like field is not allowed in {path}: {key}"
-                )
-            _reject_secret_like_payload(nested, f"{path}.{key}")
-    elif isinstance(value, list):
-        for index, nested in enumerate(value):
-            _reject_secret_like_payload(nested, f"{path}[{index}]")
 
 
 def _normalize_risk_class(value: str | None) -> RiskClass:
