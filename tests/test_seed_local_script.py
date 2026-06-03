@@ -1767,3 +1767,47 @@ def test_cli_stale_fact_refreshes_fall_back_to_knowledge_lookup(capsys):
     assert "value: mystery" in output
     assert "recommended_capability: knowledge_lookup" in output
     assert "reason: predicate 'unknown_predicate' maps to 'knowledge_lookup'" in output
+
+
+def test_parser_accepts_json_observation_diff_option():
+    seed_local = load_seed_local_module()
+    args = seed_local.build_parser().parse_args(
+        ["--diff-observations-json", "inventory.json"]
+    )
+
+    assert args.diff_observations_json == "inventory.json"
+
+
+def test_cli_diff_observations_json_does_not_ingest_inventory(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed.db"
+    json_path = tmp_path / "observations.json"
+    json_path.write_text(
+        '{"observations":[{"subject":"jellyfin","predicate":"runtime",'
+        '"value":"docker"}]}',
+        encoding="utf-8",
+    )
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--diff-observations-json",
+                str(json_path),
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "new_facts: 1" in output
+    assert "matching_facts: 0" in output
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--fact-support", "jellyfin", "runtime"]
+        )
+        == 0
+    )
+    support_output = capsys.readouterr().out
+    assert "no fact support for jellyfin runtime" in support_output

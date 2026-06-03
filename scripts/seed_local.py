@@ -44,6 +44,7 @@ from seed_runtime.models import Event, Observation, ToolNeed, ToolSpec, utc_now
 from seed_runtime.observation_sources import (
     JsonObservationSource,
     ObservationCollectionService,
+    diff_observations_json,
     export_observations_json,
 )
 from seed_runtime.observations import ObservationIngestor
@@ -605,6 +606,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="export projected observations/facts to a local JSON inventory file",
     )
     parser.add_argument(
+        "--diff-observations-json",
+        metavar="PATH",
+        help=(
+            "dry-run compare a local JSON observation inventory against current "
+            "projected state without ingesting it"
+        ),
+    )
+    parser.add_argument(
         "--source-type",
         choices=["user", "discovery", "provider", "imported"],
         default="user",
@@ -963,6 +972,32 @@ def fact_query_state(args: argparse.Namespace) -> State:
         close = getattr(ledger, "close", None)
         if close is not None:
             close()
+
+
+def diff_observations_json_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    """Dry-run compare a JSON observation inventory with projected state."""
+
+    state = fact_query_state(args)
+    input_path = Path(args.diff_observations_json)
+    payload = json.loads(input_path.read_text(encoding="utf-8"))
+    diff = diff_observations_json(state, payload)
+    plain_diff = to_plain(diff)
+    return {"path": str(input_path), "diff": plain_diff}
+
+
+def format_observation_inventory_diff(result: dict[str, Any]) -> str:
+    diff = result["diff"]
+    lines = [f"observation inventory diff for {result['path']}:"]
+    for category in (
+        "new_facts",
+        "matching_facts",
+        "changed_facts",
+        "expired_incoming",
+        "conflicts_introduced",
+    ):
+        lines.append(f"{category}: {len(diff[category])}")
+    lines.append(json.dumps(diff, indent=2, sort_keys=True))
+    return "\n".join(lines)
 
 
 def export_observations_json_from_args(args: argparse.Namespace) -> dict[str, Any]:
@@ -1750,6 +1785,10 @@ def main(argv: list[str] | None = None) -> int:
                 state.get_stale_fact_refresh_recommendations()
             )
         )
+        return 0
+
+    if args.diff_observations_json:
+        print(format_observation_inventory_diff(diff_observations_json_from_args(args)))
         return 0
 
     if args.export_observations_json:

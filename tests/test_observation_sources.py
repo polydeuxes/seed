@@ -335,3 +335,131 @@ def test_export_observations_json_excludes_inferred_facts_by_default(tmp_path):
     assert "fact_inferred_jellyfin_managed_by_docker_container_lifecycle" in (
         imported_state.inferred_facts
     )
+
+
+def test_diff_observations_json_matching_inventory_reports_matching():
+    ledger = EventLedger()
+    observation = _observation("obs_existing")
+    ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        FakeObservationSource([observation], name="fake-provider"), "ws_diff"
+    )
+    state = StateProjector(ledger).project("ws_diff")
+
+    from seed_runtime.observation_sources import (
+        diff_observations_json,
+        export_observations_json,
+    )
+
+    diff = diff_observations_json(state, export_observations_json(state))
+
+    assert len(diff.matching_facts) == 1
+    assert diff.matching_facts[0].observation["subject"] == "service-a"
+    assert diff.new_facts == []
+    assert diff.changed_facts == []
+    assert diff.expired_incoming == []
+    assert diff.conflicts_introduced == []
+
+
+def test_diff_observations_json_new_observation_reports_new_facts():
+    state = StateProjector(EventLedger()).project("ws_diff")
+
+    from seed_runtime.observation_sources import diff_observations_json
+
+    diff = diff_observations_json(
+        state,
+        {
+            "observations": [
+                {
+                    "subject": "new-service",
+                    "predicate": "runtime",
+                    "value": "docker",
+                }
+            ]
+        },
+    )
+
+    assert len(diff.new_facts) == 1
+    assert diff.new_facts[0].observation["subject"] == "new-service"
+    assert diff.matching_facts == []
+    assert diff.conflicts_introduced == []
+
+
+def test_diff_observations_json_conflicting_value_reports_conflicts_introduced():
+    ledger = EventLedger()
+    ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        FakeObservationSource([_observation("obs_existing", value="docker")]),
+        "ws_diff",
+    )
+    state = StateProjector(ledger).project("ws_diff")
+
+    from seed_runtime.observation_sources import diff_observations_json
+
+    diff = diff_observations_json(
+        state,
+        {
+            "observations": [
+                {
+                    "subject": "service-a",
+                    "predicate": "runtime",
+                    "value": "systemd",
+                }
+            ]
+        },
+    )
+
+    assert len(diff.changed_facts) == 1
+    assert len(diff.conflicts_introduced) == 1
+    conflict = diff.conflicts_introduced[0]
+    assert conflict.subject == "service-a"
+    assert conflict.predicate == "runtime"
+    assert conflict.values == ["docker", "systemd"]
+
+
+def test_diff_observations_json_expired_incoming_reported_separately():
+    state = StateProjector(EventLedger()).project("ws_diff")
+
+    from seed_runtime.observation_sources import diff_observations_json
+
+    diff = diff_observations_json(
+        state,
+        {
+            "observations": [
+                {
+                    "subject": "old-service",
+                    "predicate": "runtime",
+                    "value": "docker",
+                    "expires_at": "2000-01-01T00:00:00+00:00",
+                }
+            ]
+        },
+    )
+
+    assert len(diff.expired_incoming) == 1
+    assert diff.expired_incoming[0].observation["subject"] == "old-service"
+    assert diff.new_facts == []
+    assert diff.matching_facts == []
+    assert diff.changed_facts == []
+    assert diff.conflicts_introduced == []
+
+
+def test_diff_observations_json_does_not_append_events():
+    ledger = EventLedger()
+    state = StateProjector(ledger).project("ws_diff")
+
+    from seed_runtime.observation_sources import diff_observations_json
+
+    diff_observations_json(
+        state,
+        {
+            "observations": [
+                {
+                    "subject": "new-service",
+                    "predicate": "runtime",
+                    "value": "docker",
+                }
+            ]
+        },
+    )
+
+    assert ledger.list_events("ws_diff") == []
+    assert state.facts == {}
