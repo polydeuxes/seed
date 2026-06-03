@@ -1256,3 +1256,122 @@ def test_handoff_cli_function_prints_non_executable_plan_for_accepted_action_pla
     assert "operation: service.manage" in output
     assert "policy_summary: risk_class=L3" in output
     assert "secret_boundary: Seed passes only this non-secret plan boundary" in output
+
+
+def test_parser_supports_fact_projection_queries():
+    seed_local = load_seed_local_module()
+    parser = seed_local.build_parser()
+
+    support_args = parser.parse_args(["--fact-support", "jellyfin", "runtime"])
+    best_args = parser.parse_args(["--best-fact", "jellyfin", "runtime"])
+    conflicts_args = parser.parse_args(["--fact-conflicts"])
+
+    assert support_args.fact_support == ["jellyfin", "runtime"]
+    assert best_args.best_fact == ["jellyfin", "runtime"]
+    assert conflicts_args.fact_conflicts is True
+
+
+def test_cli_fact_support_prints_projected_grouped_values(capsys):
+    seed_local = load_seed_local_module()
+
+    assert (
+        seed_local.main(
+            [
+                "--fact",
+                "jellyfin",
+                "runtime",
+                "docker",
+                "--fact",
+                "jellyfin",
+                "runtime",
+                "docker",
+                "--fact",
+                "jellyfin",
+                "runtime",
+                "systemd",
+                "--fact-support",
+                "jellyfin",
+                "runtime",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "value: docker" in output
+    assert "value: systemd" in output
+    assert "aggregate_confidence: 0.9775" in output
+    assert "aggregate_confidence: 0.85" in output
+    assert "supporting_fact_ids: fact_dev_" in output
+    assert "source_types: user" in output
+    assert "first_observed:" in output
+    assert "latest_observed:" in output
+
+
+def test_cli_best_fact_prints_projected_current_belief(capsys):
+    seed_local = load_seed_local_module()
+
+    assert (
+        seed_local.main(
+            [
+                "--fact",
+                "jellyfin",
+                "runtime",
+                "docker",
+                "--fact",
+                "jellyfin",
+                "runtime",
+                "docker",
+                "--fact",
+                "jellyfin",
+                "runtime",
+                "systemd",
+                "--best-fact",
+                "jellyfin",
+                "runtime",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "subject: jellyfin" in output
+    assert "predicate: runtime" in output
+    assert "value: docker" in output
+    assert "confidence: 0.9775" in output
+    assert "reason: best-supported current belief" in output
+    assert "support_count: 2" in output
+
+
+def test_cli_fact_conflicts_prints_projected_active_conflicts_and_winner(capsys):
+    seed_local = load_seed_local_module()
+
+    assert (
+        seed_local.main(
+            [
+                "--fact",
+                "jellyfin",
+                "runtime",
+                "docker",
+                "--fact",
+                "jellyfin",
+                "runtime",
+                "docker",
+                "--fact",
+                "jellyfin",
+                "runtime",
+                "systemd",
+                "--fact-conflicts",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "subject: jellyfin" in output
+    assert "predicate: runtime" in output
+    assert "values: docker, systemd" in output
+    assert "winning_value: docker" in output
+    assert "winning_fact_id: fact_dev_" in output
+    assert "conflicting_fact_ids: fact_dev_" in output
+    assert "reason: multiple values for jellyfin/runtime" in output
