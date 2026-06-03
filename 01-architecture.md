@@ -122,8 +122,24 @@ Maintains projections such as:
 - unresolved approvals
 - recent evidence
 - stale facts
+- FactSupport aggregates and fact conflicts
 
 State should be deterministic and inspectable.
+
+
+#### Fact Support Aggregation
+
+Verification is not a separate subsystem in Seed's core architecture. A provider check, user correction, discovery result, imported record, or deterministic inference enters the system as Evidence and Facts. The projector then groups Facts by `subject + predicate + value` into FactSupport objects.
+
+Seed preserves provenance instead of stamping a claim with `verified: true`. The current belief for a `subject + predicate` is derived from:
+
+- supporting Facts for each value
+- conflicting Facts for other values
+- aggregate confidence
+- source type strength (`discovery`/`provider`/observed sources generally outrank inferred-only support)
+- recency via latest observation time
+
+This keeps disagreement auditable: multiple values can remain in state while `get_best_fact(subject, predicate)` returns the representative Fact for the best-supported current belief.
 
 ### 4. Context Composer
 

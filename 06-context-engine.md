@@ -166,7 +166,7 @@ Examples:
 - "My server is down."
 - "Node210 is the registry."
 
-User statements are evidence until verified.
+User statements are evidence until supported or disputed by additional observed Facts; Seed preserves provenance rather than stamping them `verified`.
 
 ## Context budget
 

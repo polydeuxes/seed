@@ -24,6 +24,24 @@ DEFAULT_CONFIDENCE_BY_SOURCE_TYPE: dict[str, float] = {
 }
 
 
+class FactSupport(SeedModel):
+    """Aggregated support for one subject/predicate/value claim.
+
+    FactSupport preserves the contributing fact IDs instead of turning support
+    into a single verified flag. Confidence is a projection over the supporting
+    facts and their provenance source types.
+    """
+
+    subject: str
+    predicate: str
+    value: Any
+    supporting_fact_ids: list[str] = Field(default_factory=list)
+    source_types: list[FactSourceType] = Field(default_factory=list)
+    confidence: float
+    observed_at: datetime
+    latest_observed_at: datetime
+
+
 class FactConflict(SeedModel):
     """A detected disagreement among facts for one subject and predicate."""
 

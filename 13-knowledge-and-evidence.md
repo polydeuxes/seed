@@ -12,7 +12,7 @@ Core pipeline:
 Observation
   -> Evidence
   -> Fact Extraction
-  -> Fact Validation
+  -> Fact Support Aggregation
   -> State Projection
   -> Context Composition
 ```
@@ -109,7 +109,7 @@ A worker may return:
 
 The runtime records these as Events and Evidence.
 
-Fact extraction and validation then condense the collected evidence into Facts. Conflicting evidence should remain visible through provenance rather than being silently averaged away.
+Fact extraction and deterministic support aggregation then condense the collected evidence into Facts and current-belief projections. Conflicting evidence should remain visible through provenance rather than being silently averaged away.
 
 This allows Seed to accumulate experience from multiple attempts or viewpoints without turning subagent text into unverified state.
 
@@ -146,9 +146,35 @@ Facts should include:
 - observed time
 - expiry or freshness policy
 - confidence (defaulting by source type to 0.90, 0.95, 0.85, 0.60, or 0.70)
-- validation status
+- confidence derived from source type and support
 
-Facts can become stale, conflict with newer facts, or be superseded. Inferred Facts should use `source_type: "inferred"` and cap confidence at or below the source Fact's confidence. Evidence remains immutable; Facts are the state projection layer used for context and decisions.
+Facts can become stale, conflict with newer facts, or be superseded. Inferred Facts should use `source_type: "inferred"` and cap confidence at or below the source Fact's confidence. Evidence remains immutable; Facts are the state projection layer used for context and decisions. Seed should preserve provenance rather than adding `verified: true`; current belief is derived from supporting/conflicting facts, confidence, source type, and recency.
+
+
+## Fact Support Aggregation
+
+Verification is modeled as more evidence entering the system. If an operator, provider, monitor, discovery source, or import supports or disputes an existing claim, Seed records another Evidence-backed Fact. It does not create a separate FactVerification object and does not overwrite the claim with a boolean verified stamp.
+
+The projector groups Facts by `subject + predicate + value` and produces FactSupport objects containing:
+
+- subject
+- predicate
+- value
+- supporting Fact IDs
+- source types
+- aggregate confidence
+- first observed time
+- latest observed time
+
+Aggregate confidence increases when multiple independent sources support the same value. Conflicting values remain visible as conflicting Facts for the same `subject + predicate`. `get_best_fact(subject, predicate)` returns a representative Fact for the best-supported current belief, based on support, confidence, source type, and recency. Inferred-only support is intentionally weaker than direct observed/provider/discovery support.
+
+Terminology:
+
+- **Observed fact** — a Fact extracted from direct user input, provider output, discovery, or imported data.
+- **Inferred fact** — a deterministic Fact derived from other Facts.
+- **Supporting fact** — a Fact that has the same subject, predicate, and value as another claim.
+- **Conflicting fact** — a Fact that has the same subject and predicate but a different value.
+- **Best fact/current belief** — the representative Fact for the value with the strongest aggregate support.
 
 ## Recommended Toolkit Roadmap
 
@@ -167,20 +193,20 @@ Provide retrieved and structured knowledge.
 
 Knowledge toolkit outputs should be recorded as Evidence. Structured source results may also feed fact extraction when validation rules are available.
 
-### Verification Toolkit
+### Observation Toolkit
 
 Tools:
 
-- `verify_service_status`
-- `verify_disk_usage`
-- `verify_container_health`
-- `verify_ssh_access`
+- `observe_service_status`
+- `observe_disk_usage`
+- `observe_container_health`
+- `observe_ssh_access`
 
 Purpose:
 
-Convert operational observations into facts.
+Convert operational observations into evidence-backed observed Facts.
 
-Verification tools should prefer direct observations of the current environment and should emit evidence records suitable for deterministic fact extraction.
+Observation tools should prefer direct observations of the current environment and should emit Evidence records suitable for deterministic fact extraction and Fact Support Aggregation. Existing names such as `verify_ssh_access` should be treated as observation surfaces, not as a reason to add a standalone verification subsystem.
 
 ### Computation Toolkit
 
