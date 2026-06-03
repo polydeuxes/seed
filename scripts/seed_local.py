@@ -26,6 +26,7 @@ from seed_runtime.facts import (
     FactSupport,
     StaleFactRefreshRecommendation,
     is_fact_expired,
+    is_measurement_predicate,
 )
 from seed_runtime.execution import ToolExecutor
 from seed_runtime.execution_proposals import ExecutionProposalService
@@ -778,7 +779,21 @@ def build_parser() -> argparse.ArgumentParser:
         "--fact-support",
         nargs=2,
         metavar=("SUBJECT", "PREDICATE"),
-        help="print projected aggregate support groups for a subject/predicate",
+        help=(
+            "print projected support groups for a subject/predicate; "
+            "measurement predicates show only the latest current sample unless "
+            "--include-history is used"
+        ),
+    )
+    parser.add_argument(
+        "--include-history",
+        "--history",
+        dest="include_history",
+        action="store_true",
+        help=(
+            "include prior measurement samples in --fact-support output "
+            "(durable fact output is unchanged)"
+        ),
     )
     parser.add_argument(
         "--best-fact",
@@ -871,6 +886,8 @@ def validate_lifecycle_args(
             "--include-expired can only be used with --fact-support, "
             "--best-fact, or --fact-conflicts"
         )
+    if args.include_history and not args.fact_support:
+        parser.error("--include-history can only be used with --fact-support")
     if args.fact_expires_at and args.fact_ttl_seconds is not None:
         parser.error("choose only one of --fact-expires-at or --fact-ttl-seconds")
     if (args.fact_expires_at or args.fact_ttl_seconds is not None) and not (
@@ -1244,7 +1261,11 @@ def export_observations_json_from_args(args: argparse.Namespace) -> dict[str, An
 
 
 def format_fact_supports(
-    supports: list[FactSupport], subject: str, predicate: str
+    supports: list[FactSupport],
+    subject: str,
+    predicate: str,
+    *,
+    historical_samples_hidden: bool = False,
 ) -> str:
     if not supports:
         return f"no fact support for {subject} {predicate}"
@@ -1267,7 +1288,71 @@ def format_fact_supports(
                 ]
             )
         )
-    return "\n\n".join(sections)
+    output = "\n\n".join(sections)
+    if historical_samples_hidden:
+        output += "\n\nhistorical samples hidden; use --include-history"
+    return output
+
+
+def _fact_support_for_measurement_sample(
+    state: State, fact: Fact
+) -> FactSupport:
+    return FactSupport(
+        subject=state.alias_resolver.canonical(fact.subject_id),
+        predicate=fact.predicate,
+        value=fact.value,
+        supporting_fact_ids=[fact.id],
+        source_types=[fact.source_type],
+        confidence=fact.confidence,
+        observed_at=fact.observed_at,
+        latest_observed_at=fact.observed_at,
+        expired=is_fact_expired(fact),
+        expires_at=fact.expires_at,
+        predicate_semantics="measurement",
+        support_kind="current_sample",
+    )
+
+
+def fact_support_query(
+    state: State,
+    subject: str,
+    predicate: str,
+    *,
+    include_expired: bool = False,
+    include_history: bool = False,
+) -> tuple[list[FactSupport], bool]:
+    if not is_measurement_predicate(predicate):
+        return (
+            state.get_fact_supports(
+                subject, predicate, include_expired=include_expired
+            ),
+            False,
+        )
+
+    resolved_subjects = state.resolve_fact_subjects(subject)
+    samples = [
+        fact
+        for fact in state.facts.values()
+        if fact.predicate == predicate
+        and fact.subject_id in resolved_subjects
+        and (include_expired or not is_fact_expired(fact))
+    ]
+    samples.sort(key=lambda fact: (fact.observed_at, fact.id))
+
+    if include_history:
+        return (
+            [_fact_support_for_measurement_sample(state, fact) for fact in samples],
+            False,
+        )
+
+    current = state.get_fact_support(
+        subject, predicate, include_expired=include_expired
+    )
+    if current is None:
+        return [], bool(samples)
+    current_ids = set(current.supporting_fact_ids)
+    historical_samples_hidden = any(fact.id not in current_ids for fact in samples)
+    return [current], historical_samples_hidden
 
 
 def format_best_fact(
@@ -2030,10 +2115,21 @@ def main(argv: list[str] | None = None) -> int:
     if args.fact_support:
         subject, predicate = args.fact_support
         state = fact_query_state(args)
-        supports = state.get_fact_supports(
-            subject, predicate, include_expired=args.include_expired
+        supports, historical_samples_hidden = fact_support_query(
+            state,
+            subject,
+            predicate,
+            include_expired=args.include_expired,
+            include_history=args.include_history,
         )
-        print(format_fact_supports(supports, subject, predicate))
+        print(
+            format_fact_supports(
+                supports,
+                subject,
+                predicate,
+                historical_samples_hidden=historical_samples_hidden,
+            )
+        )
         return 0
 
     if args.best_fact:
