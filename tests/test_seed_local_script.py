@@ -305,6 +305,26 @@ def test_cli_plan_prints_non_executable_top_recommendation_plan(monkeypatch, cap
     assert "approved" not in output.lower()
 
 
+def test_parser_accepts_observation_ingestion_options():
+    seed_local = load_seed_local_module()
+    args = seed_local.build_parser().parse_args(
+        [
+            "--observe",
+            "jellyfin",
+            "runtime",
+            "docker",
+            "--source-type",
+            "discovery",
+            "--confidence",
+            "0.81",
+        ]
+    )
+
+    assert args.observe == [["jellyfin", "runtime", "docker"]]
+    assert args.source_type == "discovery"
+    assert args.confidence == 0.81
+
+
 def test_parser_accepts_repeatable_fact_seed_options():
     seed_local = load_seed_local_module()
     args = seed_local.build_parser().parse_args(

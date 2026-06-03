@@ -8,6 +8,7 @@ from typing import Any, Literal
 
 from seed_runtime.base import SeedModel
 from seed_runtime.evidence import Evidence
+from seed_runtime.observations import Observation
 from seed_runtime.facts import (
     Fact,
     FactConflict,

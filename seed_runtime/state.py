@@ -26,6 +26,7 @@ from seed_runtime.models import (
     FactSupport,
     Goal,
     HandoffPlan,
+    Observation,
     PendingAction,
     ToolNeed,
     ToolSpec,
@@ -62,6 +63,7 @@ class State:
     fact_supports: list[FactSupport] = field(default_factory=list)
     fact_conflicts: list[FactConflict] = field(default_factory=list)
     evidence: dict[str, Evidence] = field(default_factory=dict)
+    observations: dict[str, Observation] = field(default_factory=dict)
     goals: dict[str, Goal] = field(default_factory=dict)
     tool_needs: dict[str, ToolNeed] = field(default_factory=dict)
     approvals: dict[str, Approval] = field(default_factory=dict)
@@ -247,6 +249,11 @@ class StateProjector:
             data = payload.get("entity", payload)
             entity = Entity(**data)
             state.entities[entity.id] = entity
+        elif event.kind == "observation.observed":
+            data = payload.get("observation", payload).copy()
+            data["observed_at"] = _parse_dt(data.get("observed_at")) or event.timestamp
+            observation = Observation(**data)
+            state.observations[observation.id] = observation
         elif event.kind == "evidence.observed":
             data = payload.get("evidence", payload).copy()
             data["observed_at"] = _parse_dt(data.get("observed_at")) or event.timestamp
