@@ -7,6 +7,7 @@ from typing import Iterable, cast
 from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
 from seed_runtime.models import ActionPlan, ActionPlanStatus, Actor, RiskClass, ToolNeed
+from seed_runtime.preconditions import PreconditionReport, evaluate_preconditions
 from seed_runtime.recommendation_ranker import RankedRecommendation
 from seed_runtime.state import State, StateProjector
 from seed_runtime.tool_needs import slugify
@@ -83,6 +84,17 @@ class ActionPlanService:
                 causation_id=causation_id,
             )
         return plan
+
+    def precondition_report(
+        self, action_plan: ActionPlan, state: State
+    ) -> PreconditionReport:
+        """Generate an inspect-only execution precondition report.
+
+        Reporting never executes the action plan, invokes tools, registers
+        providers, or grants approvals. It only reads the supplied projected
+        state and the action plan's declared capability.
+        """
+        return evaluate_preconditions(action_plan, state)
 
     def accept_plan(
         self,
