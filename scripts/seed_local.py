@@ -686,6 +686,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="canonical intake: ingest an external Observation and derive a Fact",
     )
     parser.add_argument(
+        "--alias",
+        action="append",
+        nargs=2,
+        metavar=("SUBJECT", "ALIAS"),
+        default=[],
+        help=(
+            "record SUBJECT alias ALIAS as an Observation-derived Fact; repeat to "
+            "link stable hostnames to raw instance labels"
+        ),
+    )
+    parser.add_argument(
         "--observe-json",
         metavar="PATH",
         help="ingest external Observations from a local JSON inventory file",
@@ -931,6 +942,21 @@ def parse_observation(
     )
 
 
+def parse_alias(args: list[str]) -> DevObservationSeed:
+    """Return the Observation seed represented by --alias SUBJECT ALIAS."""
+
+    subject, alias = args
+    reject_secret_fields({"subject": subject, "alias": alias}, "--alias")
+    return DevObservationSeed(
+        subject=subject,
+        predicate="alias",
+        value=alias,
+        source_type="user",
+        confidence=1.0,
+        ingested_by="scripts.seed_local --alias",
+    )
+
+
 def parse_registered_provider(provider_name: str) -> DevRegisteredProviderSeed:
     return DevRegisteredProviderSeed(provider_name=provider_name)
 
@@ -1050,6 +1076,7 @@ def seed_dev_state_from_args(args: argparse.Namespace, ledger: EventLedger) -> N
         )
         for observation in args.observe
     ]
+    observation_seeds.extend(parse_alias(alias) for alias in args.alias)
     if observation_seeds:
         ingest_observations(
             ledger,
@@ -1387,6 +1414,7 @@ def ingest_observations_from_args(args: argparse.Namespace) -> list[Fact]:
             )
             for observation in args.observe
         ]
+        observation_seeds.extend(parse_alias(alias) for alias in args.alias)
         facts = seed_dev_facts(
             ledger, args.workspace, fact_seeds, session_id=args.session
         )
@@ -2053,6 +2081,7 @@ def main(argv: list[str] | None = None) -> int:
     if (
         args.observe
         or args.fact
+        or args.alias
         or args.observe_json
         or args.observe_local_host
         or args.observe_prometheus

@@ -52,6 +52,125 @@ class EntityRelationship:
     inferred: bool
 
 
+@dataclass(frozen=True)
+class EntityAlias:
+    """An explicit alias edge projected from alias-like facts."""
+
+    canonical: str
+    subject: str
+    alias: str
+    predicate: str
+    fact_id: str
+    source_type: str
+    confidence: float
+    observed_at: datetime
+    evidence_ids: list[str]
+    inferred: bool
+
+
+ALIAS_PREDICATES = {"alias", "prometheus_instance", "ip_address", "hostname"}
+
+
+class AliasResolver:
+    """Deterministic identity resolver built only from explicit alias facts."""
+
+    def __init__(self, facts: Iterable[Fact] = ()) -> None:
+        self._aliases: list[EntityAlias] = []
+        self._aliases_by_name: dict[str, set[str]] = {}
+        self._canonical_by_name: dict[str, str] = {}
+        self._build(list(facts))
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, AliasResolver):
+            return NotImplemented
+        return (
+            self._aliases == other._aliases
+            and self._aliases_by_name == other._aliases_by_name
+            and self._canonical_by_name == other._canonical_by_name
+        )
+
+    @property
+    def aliases(self) -> list[EntityAlias]:
+        return list(self._aliases)
+
+    def resolve(self, subject: str, *, exact: bool = False) -> set[str]:
+        """Return explicit aliases for subject, or just subject in exact mode."""
+
+        if exact:
+            return {subject}
+        return set(self._aliases_by_name.get(subject, {subject}))
+
+    def canonical(self, subject: str, *, exact: bool = False) -> str:
+        """Return the canonical entity name for subject when an alias links it."""
+
+        if exact:
+            return subject
+        return self._canonical_by_name.get(subject, subject)
+
+    def _build(self, facts: list[Fact]) -> None:
+        edges: list[tuple[str, str, Fact]] = []
+        names: set[str] = set()
+        for fact in facts:
+            if fact.predicate not in ALIAS_PREDICATES:
+                continue
+            alias = _relationship_object(fact.value)
+            if alias is None:
+                continue
+            edges.append((fact.subject_id, alias, fact))
+            names.add(fact.subject_id)
+            names.add(alias)
+
+        if not edges:
+            return
+
+        adjacency: dict[str, set[str]] = {name: set() for name in names}
+        for subject, alias, _fact in edges:
+            adjacency.setdefault(subject, set()).add(alias)
+            adjacency.setdefault(alias, set()).add(subject)
+
+        visited: set[str] = set()
+        canonical_by_component: dict[str, str] = {}
+        for name in sorted(adjacency):
+            if name in visited:
+                continue
+            stack = [name]
+            component: set[str] = set()
+            while stack:
+                current = stack.pop()
+                if current in visited:
+                    continue
+                visited.add(current)
+                component.add(current)
+                stack.extend(sorted(adjacency[current] - visited, reverse=True))
+            canonical = _choose_canonical_alias_name(component, edges)
+            for component_name in component:
+                canonical_by_component[component_name] = canonical
+                self._aliases_by_name[component_name] = set(component)
+                self._canonical_by_name[component_name] = canonical
+
+        seen_aliases: set[tuple[str, str, str, str]] = set()
+        for subject, alias, fact in edges:
+            canonical = canonical_by_component[subject]
+            key = (canonical, subject, alias, fact.predicate)
+            if key in seen_aliases:
+                continue
+            seen_aliases.add(key)
+            self._aliases.append(
+                EntityAlias(
+                    canonical=canonical,
+                    subject=subject,
+                    alias=alias,
+                    predicate=fact.predicate,
+                    fact_id=fact.id,
+                    source_type=fact.source_type,
+                    confidence=fact.confidence,
+                    observed_at=fact.observed_at,
+                    evidence_ids=list(fact.evidence_ids),
+                    inferred=fact.inferred,
+                )
+            )
+
+
 @dataclass
 class State:
     workspace_id: str
@@ -60,6 +179,8 @@ class State:
     observed_facts: dict[str, Fact] = field(default_factory=dict)
     inferred_facts: dict[str, Fact] = field(default_factory=dict)
     entity_relationships: list[EntityRelationship] = field(default_factory=list)
+    entity_aliases: list[EntityAlias] = field(default_factory=list)
+    alias_resolver: AliasResolver = field(default_factory=AliasResolver)
     fact_supports: list[FactSupport] = field(default_factory=list)
     fact_conflicts: list[FactConflict] = field(default_factory=list)
     evidence: dict[str, Evidence] = field(default_factory=dict)
@@ -123,11 +244,19 @@ class State:
         return _dedupe(relationship.object for relationship in relationships)
 
     def get_best_fact(
-        self, subject: str, predicate: str, *, include_expired: bool = False
+        self,
+        subject: str,
+        predicate: str,
+        *,
+        include_expired: bool = False,
+        resolve_aliases: bool = True,
     ) -> Fact | None:
         """Return the representative fact for the best-supported current belief."""
         best_support = self.get_fact_support(
-            subject, predicate, include_expired=include_expired
+            subject,
+            predicate,
+            include_expired=include_expired,
+            resolve_aliases=resolve_aliases,
         )
         if best_support is None:
             return None
@@ -150,7 +279,12 @@ class State:
         )
 
     def get_fact_supports(
-        self, subject: str, predicate: str, *, include_expired: bool = False
+        self,
+        subject: str,
+        predicate: str,
+        *,
+        include_expired: bool = False,
+        resolve_aliases: bool = True,
     ) -> list[FactSupport]:
         """Return aggregate support groups for a subject and predicate.
 
@@ -159,22 +293,44 @@ class State:
         qualified hostname.  Resolve those aliases before filtering supports so
         persisted observation facts remain queryable after reopening a ledger.
         """
-        resolved_subjects = self.resolve_fact_subjects(subject)
-        fact_supports = (
-            _project_fact_supports(self.facts.values(), include_expired=True)
-            if include_expired
-            else self.fact_supports or _project_fact_supports(self.facts.values())
+        resolved_subjects = self.resolve_fact_subjects(
+            subject, resolve_aliases=resolve_aliases
         )
+        if resolve_aliases:
+            fact_supports = _project_fact_supports(
+                (
+                    fact
+                    for fact in self.facts.values()
+                    if fact.subject_id in resolved_subjects
+                ),
+                include_expired=include_expired,
+                subject_key=self.alias_resolver.canonical,
+            )
+        else:
+            fact_supports = (
+                _project_fact_supports(self.facts.values(), include_expired=True)
+                if include_expired
+                else self.fact_supports or _project_fact_supports(self.facts.values())
+            )
+        canonical_subject = self.alias_resolver.canonical(subject)
         return [
             support
             for support in fact_supports
-            if support.subject in resolved_subjects and support.predicate == predicate
+            if support.predicate == predicate
+            and (
+                support.subject in resolved_subjects
+                or (resolve_aliases and support.subject == canonical_subject)
+            )
         ]
 
-    def resolve_fact_subjects(self, subject: str) -> set[str]:
+    def resolve_fact_subjects(
+        self, subject: str, *, resolve_aliases: bool = True
+    ) -> set[str]:
         """Return fact subject IDs matching an exact ID, entity name, or hostname alias."""
 
         candidates = {subject}
+        if resolve_aliases:
+            candidates.update(self.alias_resolver.resolve(subject))
         for entity in self.entities.values():
             entity_aliases = [entity.id, entity.name, *entity.aliases]
             if any(_subject_alias_matches(subject, alias) for alias in entity_aliases):
@@ -186,11 +342,19 @@ class State:
         return candidates
 
     def get_fact_support(
-        self, subject: str, predicate: str, *, include_expired: bool = False
+        self,
+        subject: str,
+        predicate: str,
+        *,
+        include_expired: bool = False,
+        resolve_aliases: bool = True,
     ) -> FactSupport | None:
         """Return the unambiguous strongest aggregate support, if one exists."""
         candidates = self.get_fact_supports(
-            subject, predicate, include_expired=include_expired
+            subject,
+            predicate,
+            include_expired=include_expired,
+            resolve_aliases=resolve_aliases,
         )
         return _select_unambiguous_best_support(candidates)
 
@@ -261,6 +425,8 @@ class StateProjector:
         _project_inferred_facts(state)
         state.fact_supports = _project_fact_supports(state.facts.values())
         state.entity_relationships = _project_entity_relationships(state.facts.values())
+        state.alias_resolver = AliasResolver(state.facts.values())
+        state.entity_aliases = state.alias_resolver.aliases
         state.fact_conflicts = _project_fact_conflicts(state)
         return state
 
@@ -473,14 +639,18 @@ def _normalize_fact_event_payload(payload: dict[str, Any], event: Event) -> dict
 
 
 def _project_fact_supports(
-    facts: Iterable[Fact], *, include_expired: bool = False
+    facts: Iterable[Fact],
+    *,
+    include_expired: bool = False,
+    subject_key: Any | None = None,
 ) -> list[FactSupport]:
     grouped: dict[tuple[str, str, str], list[Fact]] = {}
     values_by_key: dict[tuple[str, str, str], Any] = {}
     for fact in facts:
         if not include_expired and is_fact_expired(fact):
             continue
-        key = (fact.subject_id, fact.predicate, _fact_value_key(fact.value))
+        subject = subject_key(fact.subject_id) if subject_key is not None else fact.subject_id
+        key = (subject, fact.predicate, _fact_value_key(fact.value))
         grouped.setdefault(key, []).append(fact)
         values_by_key.setdefault(key, fact.value)
 
@@ -568,7 +738,8 @@ def _project_fact_conflicts(
     for fact in state.facts.values():
         if not include_expired and is_fact_expired(fact):
             continue
-        grouped.setdefault((fact.subject_id, fact.predicate), []).append(fact)
+        canonical_subject = state.alias_resolver.canonical(fact.subject_id)
+        grouped.setdefault((canonical_subject, fact.predicate), []).append(fact)
 
     conflicts: list[FactConflict] = []
     for (subject, predicate), facts in grouped.items():
@@ -639,6 +810,41 @@ def _project_entity_relationships(facts: Iterable[Fact]) -> list[EntityRelations
             )
         )
     return relationships
+
+
+def _choose_canonical_alias_name(
+    component: set[str], edges: list[tuple[str, str, Fact]]
+) -> str:
+    component_edges = [edge for edge in edges if edge[0] in component and edge[1] in component]
+    subject_names = {subject for subject, _alias, _fact in component_edges}
+
+    def sort_key(name: str) -> tuple[int, int, int, str]:
+        return (
+            0 if name in subject_names and _looks_like_stable_hostname(name) else 1,
+            0 if _looks_like_stable_hostname(name) else 1,
+            len(name),
+            name,
+        )
+
+    return min(component, key=sort_key)
+
+
+def _looks_like_stable_hostname(name: str) -> bool:
+    if not name or ":" in name or "/" in name:
+        return False
+    if _looks_like_ip_address(name):
+        return False
+    return any(character.isalpha() for character in name)
+
+
+def _looks_like_ip_address(name: str) -> bool:
+    parts = name.split(".")
+    if len(parts) != 4:
+        return False
+    try:
+        return all(0 <= int(part) <= 255 for part in parts)
+    except ValueError:
+        return False
 
 
 def _subject_alias_matches(requested: str, stored: str) -> bool:

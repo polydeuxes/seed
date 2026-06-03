@@ -652,3 +652,151 @@ def test_fact_conflicts_preserves_provenance():
     conflict = conflicts[0]
     assert conflict.best_fact_id == "fact_runtime_docker"
     assert conflict.conflicting_fact_ids == ["fact_runtime_systemd"]
+
+
+def test_alias_observation_resolves_best_fact_and_preserves_original_subject():
+    observed_at = utc_now()
+    state = _projected_state(
+        [
+            Fact(
+                id="fact_alias_node115_instance",
+                subject_id="node115",
+                predicate="alias",
+                value="192.168.254.115:9100",
+                observed_at=observed_at,
+            ),
+            Fact(
+                id="fact_prometheus_up",
+                subject_id="192.168.254.115:9100",
+                predicate="up",
+                value=1,
+                observed_at=observed_at,
+                source_type="provider",
+                confidence=0.95,
+            ),
+        ],
+        workspace_id="ws_alias_best_fact",
+    )
+
+    best = state.get_best_fact("node115", "up")
+    assert best is not None
+    assert best.id == "fact_prometheus_up"
+    assert best.subject_id == "192.168.254.115:9100"
+    assert state.entity_aliases[0].canonical == "node115"
+
+
+def test_prometheus_instance_observation_resolves_best_fact():
+    observed_at = utc_now()
+    state = _projected_state(
+        [
+            Fact(
+                id="fact_prometheus_instance",
+                subject_id="node115",
+                predicate="prometheus_instance",
+                value="192.168.254.115:9100",
+                observed_at=observed_at,
+            ),
+            Fact(
+                id="fact_prometheus_up",
+                subject_id="192.168.254.115:9100",
+                predicate="up",
+                value=1,
+                observed_at=observed_at,
+                source_type="provider",
+                confidence=0.95,
+            ),
+        ],
+        workspace_id="ws_prometheus_instance_best_fact",
+    )
+
+    assert state.get_best_fact("node115", "up").id == "fact_prometheus_up"
+
+
+def test_exact_subject_query_can_disable_alias_resolution():
+    observed_at = utc_now()
+    state = _projected_state(
+        [
+            Fact(
+                id="fact_alias_node115_instance",
+                subject_id="node115",
+                predicate="alias",
+                value="192.168.254.115:9100",
+                observed_at=observed_at,
+            ),
+            Fact(
+                id="fact_prometheus_up",
+                subject_id="192.168.254.115:9100",
+                predicate="up",
+                value=1,
+                observed_at=observed_at,
+            ),
+        ],
+        workspace_id="ws_alias_exact_mode",
+    )
+
+    assert state.get_best_fact("192.168.254.115:9100", "up") is not None
+    assert state.get_best_fact("node115", "up", resolve_aliases=False) is None
+
+
+def test_unrelated_ip_does_not_merge_without_explicit_alias():
+    observed_at = utc_now()
+    state = _projected_state(
+        [
+            Fact(
+                id="fact_alias_node115_instance",
+                subject_id="node115",
+                predicate="alias",
+                value="192.168.254.115:9100",
+                observed_at=observed_at,
+            ),
+            Fact(
+                id="fact_unrelated_up",
+                subject_id="192.168.254.116:9100",
+                predicate="up",
+                value=1,
+                observed_at=observed_at,
+            ),
+        ],
+        workspace_id="ws_alias_no_unrelated_merge",
+    )
+
+    assert state.get_best_fact("node115", "up") is None
+
+
+def test_fact_conflicts_group_aliases_under_canonical_entity():
+    observed_at = utc_now()
+    state = _projected_state(
+        [
+            Fact(
+                id="fact_alias_node115_instance",
+                subject_id="node115",
+                predicate="alias",
+                value="192.168.254.115:9100",
+                observed_at=observed_at,
+            ),
+            Fact(
+                id="fact_node_up",
+                subject_id="node115",
+                predicate="up",
+                value=0,
+                observed_at=observed_at,
+                source_type="user",
+                confidence=0.7,
+            ),
+            Fact(
+                id="fact_prometheus_up",
+                subject_id="192.168.254.115:9100",
+                predicate="up",
+                value=1,
+                observed_at=observed_at,
+                source_type="provider",
+                confidence=0.95,
+            ),
+        ],
+        workspace_id="ws_alias_conflicts",
+    )
+
+    conflict = next(conflict for conflict in state.fact_conflicts if conflict.predicate == "up")
+    assert conflict.subject == "node115"
+    assert conflict.best_fact_id == "fact_prometheus_up"
+    assert conflict.conflicting_fact_ids == ["fact_node_up"]
