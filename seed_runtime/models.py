@@ -8,7 +8,7 @@ from typing import Any, Literal
 
 from seed_runtime.base import SeedModel
 from seed_runtime.evidence import Evidence
-from seed_runtime.facts import Fact
+from seed_runtime.facts import Fact, FactConflict
 from seed_runtime.ids import new_id
 from seed_runtime.secrets import (
     SECRET_FREE_GRANT_METADATA_FIELDS,
