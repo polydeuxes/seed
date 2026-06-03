@@ -461,7 +461,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--port", type=int, default=8765, help="HTTP bind port when using --http"
     )
     parser.add_argument(
-        "--events", action="store_true", help="include the full event ledger"
+        "--events",
+        action="store_true",
+        help=(
+            "include the full event ledger with message output; when provided "
+            "without a message, list persisted event summaries and exit"
+        ),
+    )
+    parser.add_argument(
+        "--events-only",
+        action="store_true",
+        help="list persisted event summaries and exit",
     )
     parser.add_argument(
         "--raw",
@@ -732,13 +742,15 @@ def validate_lifecycle_args(
         bool(args.fact_conflicts),
         bool(args.stale_facts),
         bool(args.stale_fact_refreshes),
+        bool(args.events_only),
     ]
     if sum(lifecycle_flags) > 1:
         parser.error(
             "choose only one of --preconditions, --proposal, --handoff, "
             "--authorize-proposal, --accept-plan, --approve-plan, "
             "--reject-plan, --supersede-plan, --fact-support, --best-fact, "
-            "--fact-conflicts, --stale-facts, or --stale-fact-refreshes"
+            "--fact-conflicts, --stale-facts, --stale-fact-refreshes, "
+            "or --events-only"
         )
     if args.proposal and not args.db:
         parser.error("--proposal requires --db")
@@ -1021,6 +1033,61 @@ def _format_datetime(value: Any) -> str:
         return isoformat()
     return str(value)
 
+
+def list_events_from_args(args: argparse.Namespace) -> list[Event]:
+    """Return persisted event ledger entries for the requested workspace."""
+
+    ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
+    try:
+        seed_dev_state_from_args(args, ledger)
+        return ledger.list_events(args.workspace)
+    finally:
+        close = getattr(ledger, "close", None)
+        if close is not None:
+            close()
+
+
+def format_event_summaries(events: list[Event]) -> str:
+    """Format event ledger entries as compact debug summaries."""
+
+    if not events:
+        return "no events"
+
+    lines = [f"Events: {len(events)}"]
+    for event in events:
+        summary = _event_payload_summary(event)
+        line = (
+            f"{event.id} {event.timestamp.isoformat()} "
+            f"workspace={event.workspace_id} actor={event.actor} kind={event.kind}"
+        )
+        if event.session_id:
+            line += f" session={event.session_id}"
+        if summary:
+            line += f" {summary}"
+        lines.append(line)
+    return "\n".join(lines)
+
+
+def _event_payload_summary(event: Event) -> str:
+    payload = event.payload
+    if event.kind in {"observation.observed", "fact.observed", "fact.inferred"}:
+        data = payload.get("observation") or payload.get("fact") or payload
+        subject = data.get("subject") or data.get("subject_id")
+        predicate = data.get("predicate")
+        if subject is not None and predicate is not None:
+            return f"subject={subject} predicate={predicate}"
+    if event.kind == "evidence.observed":
+        data = payload.get("evidence", payload)
+        evidence_id = data.get("id")
+        kind = data.get("kind")
+        if evidence_id is not None:
+            return f"evidence_id={evidence_id} evidence_kind={kind}"
+    if event.kind == "tool.registered":
+        data = payload.get("tool", payload)
+        tool_name = data.get("name")
+        if tool_name is not None:
+            return f"tool={tool_name}"
+    return ""
 
 def fact_query_state(args: argparse.Namespace) -> State:
     """Seed requested dev state and return the projected State for fact queries."""
@@ -1880,6 +1947,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     message = " ".join(args.message).strip()
+    if args.events_only or (args.events and not message and not args.http):
+        print(format_event_summaries(list_events_from_args(args)))
+        return 0
+
     if (
         args.observe
         or args.fact

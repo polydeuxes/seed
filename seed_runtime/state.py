@@ -152,7 +152,14 @@ class State:
     def get_fact_supports(
         self, subject: str, predicate: str, *, include_expired: bool = False
     ) -> list[FactSupport]:
-        """Return aggregate support groups for a subject and predicate."""
+        """Return aggregate support groups for a subject and predicate.
+
+        The CLI and model-facing state can refer to subjects by exact fact subject
+        IDs, entity names, or a short hostname for facts stored with a fully
+        qualified hostname.  Resolve those aliases before filtering supports so
+        persisted observation facts remain queryable after reopening a ledger.
+        """
+        resolved_subjects = self.resolve_fact_subjects(subject)
         fact_supports = (
             _project_fact_supports(self.facts.values(), include_expired=True)
             if include_expired
@@ -161,8 +168,22 @@ class State:
         return [
             support
             for support in fact_supports
-            if support.subject == subject and support.predicate == predicate
+            if support.subject in resolved_subjects and support.predicate == predicate
         ]
+
+    def resolve_fact_subjects(self, subject: str) -> set[str]:
+        """Return fact subject IDs matching an exact ID, entity name, or hostname alias."""
+
+        candidates = {subject}
+        for entity in self.entities.values():
+            entity_aliases = [entity.id, entity.name, *entity.aliases]
+            if any(_subject_alias_matches(subject, alias) for alias in entity_aliases):
+                candidates.add(entity.id)
+
+        for fact in self.facts.values():
+            if _subject_alias_matches(subject, fact.subject_id):
+                candidates.add(fact.subject_id)
+        return candidates
 
     def get_fact_support(
         self, subject: str, predicate: str, *, include_expired: bool = False
@@ -602,6 +623,14 @@ def _project_entity_relationships(facts: Iterable[Fact]) -> list[EntityRelations
             )
         )
     return relationships
+
+
+def _subject_alias_matches(requested: str, stored: str) -> bool:
+    if requested == stored:
+        return True
+    requested_short = requested.split(".", 1)[0]
+    stored_short = stored.split(".", 1)[0]
+    return requested == stored_short or requested_short == stored
 
 
 def _relationship_payload(

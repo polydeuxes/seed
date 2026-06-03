@@ -1843,6 +1843,141 @@ def test_cli_observe_local_host_prints_count_and_summary(monkeypatch, capsys):
     assert "source_type: discovery" in output
 
 
+def test_cli_events_without_message_lists_persisted_events_and_exits(
+    monkeypatch, tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed.sqlite"
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--observe", "node115", "architecture", "x86_64"]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    def fail_shell(*args, **kwargs):
+        pytest.fail("--events without a message should list events instead of shell mode")
+
+    monkeypatch.setattr(seed_local, "run_shell", fail_shell)
+
+    assert seed_local.main(["--db", str(db_path), "--events"]) == 0
+
+    output = capsys.readouterr().out
+    assert "Events: 3" in output
+    assert "kind=observation.observed" in output
+    assert "kind=evidence.observed" in output
+    assert "evidence_id=evd_obs_" in output
+    assert "kind=fact.observed" in output
+    assert output.count("subject=node115 predicate=architecture") == 2
+
+
+def test_sqlite_observation_reopen_projects_best_fact_and_fact_support(
+    monkeypatch, tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed.sqlite"
+
+    class FakeLocalSource:
+        source_type = "discovery"
+        name = "fake-local-host"
+
+        def collect(self):
+            return [
+                seed_local.Observation(
+                    id="obs_cli_local_architecture",
+                    source_type="discovery",
+                    observed_at=seed_local.utc_now(),
+                    subject="node115",
+                    predicate="architecture",
+                    value="x86_64",
+                )
+            ]
+
+    monkeypatch.setattr(seed_local, "LocalHostObservationSource", FakeLocalSource)
+
+    assert seed_local.main(["--db", str(db_path), "--observe-local-host"]) == 0
+    ingest_output = capsys.readouterr().out
+    assert "subject: node115" in ingest_output
+    assert "predicate: architecture" in ingest_output
+    assert "value: x86_64" in ingest_output
+
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        events = ledger.list_events(seed_local.DEFAULT_WORKSPACE)
+        assert [event.kind for event in events] == [
+            "observation.observed",
+            "evidence.observed",
+            "fact.observed",
+        ]
+        persisted_fact_payload = events[-1].payload["fact"]
+        assert persisted_fact_payload["subject_id"] == "node115"
+        assert persisted_fact_payload["predicate"] == "architecture"
+        assert persisted_fact_payload["value"] == "x86_64"
+
+        state = seed_local.StateProjector(ledger).project(seed_local.DEFAULT_WORKSPACE)
+        projected_best = state.get_best_fact("node115", "architecture")
+        assert projected_best is not None
+        assert projected_best.value == "x86_64"
+        projected_support = state.get_fact_support("node115", "architecture")
+        assert projected_support is not None
+        assert projected_support.value == "x86_64"
+        assert projected_support.supporting_fact_ids == [projected_best.id]
+    finally:
+        ledger.close()
+
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--best-fact", "node115", "architecture"]
+        )
+        == 0
+    )
+    best_output = capsys.readouterr().out
+    assert "subject: node115" in best_output
+    assert "predicate: architecture" in best_output
+    assert "value: x86_64" in best_output
+    assert "no current belief" not in best_output
+
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--fact-support", "node115", "architecture"]
+        )
+        == 0
+    )
+    support_output = capsys.readouterr().out
+    assert "value: x86_64" in support_output
+    assert "supporting_fact_ids: fact_obs_" in support_output
+    assert "source_types: discovery" in support_output
+
+
+def test_best_fact_accepts_short_hostname_for_persisted_fqdn_observation(tmp_path):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed.sqlite"
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        seed_local.ingest_observations(
+            ledger,
+            seed_local.DEFAULT_WORKSPACE,
+            [
+                seed_local.DevObservationSeed(
+                    "node115.example.test",
+                    "architecture",
+                    "x86_64",
+                    source_type="discovery",
+                )
+            ],
+        )
+    finally:
+        ledger.close()
+
+    reopened = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        state = seed_local.StateProjector(reopened).project(seed_local.DEFAULT_WORKSPACE)
+        assert state.get_best_fact("node115", "architecture").value == "x86_64"
+        assert state.get_fact_support("node115", "architecture").value == "x86_64"
+    finally:
+        reopened.close()
+
 def test_cli_observe_prometheus_supports_db_and_prints_count(
     monkeypatch, tmp_path, capsys
 ):
