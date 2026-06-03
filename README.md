@@ -153,7 +153,7 @@ python scripts/seed_local.py "install docker"
 python scripts/seed_local.py --raw "what is the weather in Jacksonville?"
 ```
 
-Seed known local-development facts before a message with repeatable `--fact SUBJECT PREDICATE VALUE` flags. The CLI records each supplied fact as local dev evidence plus a projected fact before the user message is handled, which makes it useful for recommendation-ranking checks without hardcoding a specific service into the runtime. For example, this known runtime fact should rank Docker lifecycle recommendations above systemd service recommendations:
+Seed known local-development facts before a message with repeatable `--fact SUBJECT PREDICATE VALUE` flags. `--fact` is only a dev shorthand: the canonical intake remains an `Observation`, and the CLI routes each shorthand through `ObservationIngestor` so the ledger records `Observation -> Evidence -> Fact -> State` instead of appending Facts directly. This makes it useful for recommendation-ranking checks without hardcoding a specific service into the runtime. For example, this observed runtime fact should rank Docker lifecycle recommendations above systemd service recommendations:
 
 ```bash
 python scripts/seed_local.py \
@@ -161,13 +161,23 @@ python scripts/seed_local.py \
   "restart jellyfin?"
 ```
 
-Use additional `--fact` flags to seed more than one fact:
+Use additional `--fact` flags to seed more than one shorthand observation:
 
 ```bash
 python scripts/seed_local.py \
   --fact jellyfin runtime docker \
   --fact nas platform linux \
   "restart jellyfin?"
+```
+
+For canonical local intake, use repeatable `--observe SUBJECT PREDICATE VALUE` flags. `--source-type` and `--confidence` preserve observation provenance, while `--fact-expires-at` or `--fact-ttl-seconds` can make the derived Fact expire for stale-fact checks:
+
+```bash
+python scripts/seed_local.py \
+  --observe jellyfin runtime docker \
+  --source-type discovery \
+  --confidence 0.81 \
+  --fact-support jellyfin runtime
 ```
 
 By default, the CLI posts intent prompts to `http://localhost:11434/api/generate` with model `qwen2.5:3b`, `stream: false`, and JSON-formatted output enabled. Use `--model` to select another local model:

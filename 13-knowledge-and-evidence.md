@@ -17,6 +17,8 @@ Observation
   -> Context Composition
 ```
 
+Local development seeding follows the same single intake path. `scripts/seed_local.py --observe` is the canonical CLI surface, and `--fact` is a developer shorthand that creates an Observation before `ObservationIngestor` derives Evidence and a Fact. There should not be a separate CLI path that appends `fact.observed` directly.
+
 The biggest conceptual shift is:
 
 ```text

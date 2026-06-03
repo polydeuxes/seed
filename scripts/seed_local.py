@@ -20,7 +20,6 @@ from seed_runtime.action_plans import ActionPlanService, ActionPlanTransitionErr
 from seed_runtime.context import ContextComposer
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.evidence import Evidence
 from seed_runtime.facts import (
     Fact,
     FactConflict,
@@ -62,11 +61,13 @@ DEFAULT_SESSION = "local"
 
 @dataclass(frozen=True)
 class DevFactSeed:
-    """Local development fact supplied from the seed_local CLI."""
+    """Local development fact shorthand supplied from the seed_local CLI."""
 
     subject_id: str
     predicate: str
     value: Any
+    source_type: str = "user"
+    confidence: float = 1.0
     expires_at: datetime | None = None
     ttl_seconds: int | None = None
 
@@ -80,6 +81,9 @@ class DevObservationSeed:
     value: Any
     source_type: str = "user"
     confidence: float = 1.0
+    expires_at: datetime | None = None
+    ttl_seconds: int | None = None
+    ingested_by: str = "scripts.seed_local --observe"
 
 
 @dataclass(frozen=True)
@@ -169,10 +173,10 @@ class LocalSeedApp:
         ]
         return plain_plan
 
-    def seed_facts(self, facts: list[DevFactSeed]) -> None:
-        """Append local development evidence and fact events into the ledger."""
+    def seed_facts(self, facts: list[DevFactSeed]) -> list[Fact]:
+        """Ingest local development fact shorthand through observations."""
 
-        seed_dev_facts(
+        return seed_dev_facts(
             self.ledger,
             self.workspace_id,
             facts,
@@ -223,57 +227,25 @@ def seed_dev_facts(
     facts: list[DevFactSeed],
     *,
     session_id: str | None = None,
-) -> None:
-    """Append local development evidence and fact events into a ledger."""
+) -> list[Fact]:
+    """Ingest --fact compatibility shorthand through ObservationIngestor."""
 
-    for index, seed in enumerate(facts, start=1):
-        observed_at = utc_now()
-        expires_at = seed.expires_at
-        if expires_at is None and seed.ttl_seconds is not None:
-            expires_at = observed_at + timedelta(seconds=seed.ttl_seconds)
-        evidence_payload = {
-            "subject_id": seed.subject_id,
-            "predicate": seed.predicate,
-            "value": seed.value,
-            "index": index,
-        }
-        if expires_at is not None:
-            evidence_payload["expires_at"] = expires_at.isoformat()
-        if seed.ttl_seconds is not None:
-            evidence_payload["ttl_seconds"] = seed.ttl_seconds
-        evidence = Evidence(
-            id=new_id("evd_dev_fact"),
-            workspace_id=workspace_id,
-            source="scripts.seed_local --fact",
-            kind="local_dev.fact",
-            observed_at=observed_at,
-            payload=evidence_payload,
-            confidence=1.0,
-        )
-        fact = Fact(
-            id=new_id("fact_dev"),
-            subject_id=seed.subject_id,
+    observation_seeds = [
+        DevObservationSeed(
+            subject=seed.subject_id,
             predicate=seed.predicate,
             value=seed.value,
-            evidence_ids=[evidence.id],
-            observed_at=observed_at,
-            expires_at=expires_at,
-            confidence=evidence.confidence,
+            source_type=seed.source_type,
+            confidence=seed.confidence,
+            expires_at=seed.expires_at,
+            ttl_seconds=seed.ttl_seconds,
+            ingested_by="scripts.seed_local --fact",
         )
-        ledger.append(
-            "evidence.observed",
-            workspace_id,
-            {"evidence": to_plain(evidence)},
-            actor="system",
-            session_id=session_id,
-        )
-        ledger.append(
-            "fact.observed",
-            workspace_id,
-            {"fact": to_plain(fact)},
-            actor="system",
-            session_id=session_id,
-        )
+        for seed in facts
+    ]
+    return ingest_observations(
+        ledger, workspace_id, observation_seeds, session_id=session_id
+    )
 
 
 def ingest_observations(
@@ -288,15 +260,23 @@ def ingest_observations(
     ingestor = ObservationIngestor(ledger)
     facts: list[Fact] = []
     for seed in observations:
+        observed_at = utc_now()
+        expires_at = seed.expires_at
+        if expires_at is None and seed.ttl_seconds is not None:
+            expires_at = observed_at + timedelta(seconds=seed.ttl_seconds)
+        metadata: dict[str, Any] = {"ingested_by": seed.ingested_by}
+        if seed.ttl_seconds is not None:
+            metadata["ttl_seconds"] = seed.ttl_seconds
         observation = Observation(
             id=new_id("obs"),
             source_type=seed.source_type,
-            observed_at=utc_now(),
+            observed_at=observed_at,
             subject=seed.subject,
             predicate=seed.predicate,
             value=seed.value,
             confidence=seed.confidence,
-            metadata={"ingested_by": "scripts.seed_local --observe"},
+            metadata=metadata,
+            expires_at=expires_at,
         )
         facts.append(
             ingestor.ingest(
@@ -559,8 +539,8 @@ def build_parser() -> argparse.ArgumentParser:
         metavar=("SUBJECT", "PREDICATE", "VALUE"),
         default=[],
         help=(
-            "dev-only seed-state fact to append before handling messages or "
-            "precondition reports; repeat as --fact SUBJECT PREDICATE VALUE "
+            "dev shorthand for an Observation-derived Fact before handling messages "
+            "or precondition reports; repeat as --fact SUBJECT PREDICATE VALUE "
             "(for example: --fact jellyfin host node115, "
             "--fact jellyfin runtime docker)"
         ),
@@ -580,7 +560,7 @@ def build_parser() -> argparse.ArgumentParser:
         nargs=3,
         metavar=("SUBJECT", "PREDICATE", "VALUE"),
         default=[],
-        help="ingest an external observation and derive a Fact",
+        help="canonical intake: ingest an external Observation and derive a Fact",
     )
     parser.add_argument(
         "--source-type",
@@ -702,8 +682,10 @@ def validate_lifecycle_args(
         )
     if args.fact_expires_at and args.fact_ttl_seconds is not None:
         parser.error("choose only one of --fact-expires-at or --fact-ttl-seconds")
-    if (args.fact_expires_at or args.fact_ttl_seconds is not None) and not args.fact:
-        parser.error("fact expiry options require at least one --fact")
+    if (args.fact_expires_at or args.fact_ttl_seconds is not None) and not (
+        args.fact or args.observe
+    ):
+        parser.error("fact expiry options require at least one --fact or --observe")
     if args.fact_ttl_seconds is not None and args.fact_ttl_seconds < 0:
         parser.error("--fact-ttl-seconds must be non-negative")
     if args.confidence < 0.0 or args.confidence > 1.0:
@@ -733,13 +715,20 @@ def parse_dev_fact(
         subject_id=subject_id,
         predicate=predicate,
         value=value,
+        source_type="user",
+        confidence=1.0,
         expires_at=expires_at,
         ttl_seconds=ttl_seconds,
     )
 
 
 def parse_observation(
-    args: list[str], *, source_type: str, confidence: float
+    args: list[str],
+    *,
+    source_type: str,
+    confidence: float,
+    expires_at: datetime | None = None,
+    ttl_seconds: int | None = None,
 ) -> DevObservationSeed:
     subject, predicate, raw_value = args
     value = _parse_fact_value(raw_value)
@@ -755,6 +744,8 @@ def parse_observation(
         value=value,
         source_type=source_type,
         confidence=confidence,
+        expires_at=expires_at,
+        ttl_seconds=ttl_seconds,
     )
 
 
@@ -869,7 +860,11 @@ def seed_dev_state_from_args(args: argparse.Namespace, ledger: EventLedger) -> N
 
     observation_seeds = [
         parse_observation(
-            observation, source_type=args.source_type, confidence=args.confidence
+            observation,
+            source_type=args.source_type,
+            confidence=args.confidence,
+            expires_at=fact_expires_at,
+            ttl_seconds=args.fact_ttl_seconds,
         )
         for observation in args.observe
     ]
@@ -1043,18 +1038,39 @@ def format_observed_facts(facts: list[Fact]) -> str:
 def ingest_observations_from_args(args: argparse.Namespace) -> list[Fact]:
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
     try:
+        fact_expires_at = (
+            datetime.fromisoformat(args.fact_expires_at)
+            if args.fact_expires_at
+            else None
+        )
+        fact_seeds = [
+            parse_dev_fact(
+                fact, expires_at=fact_expires_at, ttl_seconds=args.fact_ttl_seconds
+            )
+            for fact in args.fact
+        ]
         observation_seeds = [
             parse_observation(
-                observation, source_type=args.source_type, confidence=args.confidence
+                observation,
+                source_type=args.source_type,
+                confidence=args.confidence,
+                expires_at=fact_expires_at,
+                ttl_seconds=args.fact_ttl_seconds,
             )
             for observation in args.observe
         ]
-        return ingest_observations(
-            ledger,
-            args.workspace,
-            observation_seeds,
-            session_id=args.session,
+        facts = seed_dev_facts(
+            ledger, args.workspace, fact_seeds, session_id=args.session
         )
+        facts.extend(
+            ingest_observations(
+                ledger,
+                args.workspace,
+                observation_seeds,
+                session_id=args.session,
+            )
+        )
+        return facts
     finally:
         close = getattr(ledger, "close", None)
         if close is not None:
@@ -1664,7 +1680,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     message = " ".join(args.message).strip()
-    if args.observe and not message and not args.http:
+    if (args.observe or args.fact) and not message and not args.http:
         print(format_observed_facts(ingest_observations_from_args(args)))
         return 0
 
