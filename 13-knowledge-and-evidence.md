@@ -142,12 +142,13 @@ Facts should include:
 - predicate
 - value
 - supporting evidence IDs
+- source type (`user`, `discovery`, `provider`, `inferred`, or `imported`)
 - observed time
 - expiry or freshness policy
-- confidence
+- confidence (defaulting by source type to 0.90, 0.95, 0.85, 0.60, or 0.70)
 - validation status
 
-Facts can become stale, conflict with newer facts, or be superseded. Evidence remains immutable; Facts are the state projection layer used for context and decisions.
+Facts can become stale, conflict with newer facts, or be superseded. Inferred Facts should use `source_type: "inferred"` and cap confidence at or below the source Fact's confidence. Evidence remains immutable; Facts are the state projection layer used for context and decisions.
 
 ## Recommended Toolkit Roadmap
 

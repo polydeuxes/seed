@@ -111,13 +111,16 @@ A claim about an entity or goal, with freshness and provenance.
   "value": false,
   "source_event_id": "evt_...",
   "evidence_ids": ["evid_..."],
+  "source_type": "provider",
   "observed_at": "...",
   "expires_at": "...",
   "confidence": 0.8
 }
 ```
 
-Facts should be explicit about staleness. The context engine should prefer fresh facts and label stale ones.
+Facts should be explicit about staleness and provenance. The context engine should prefer fresh, high-confidence facts and label stale ones.
+
+Fact `source_type` values are `user`, `discovery`, `provider`, `inferred`, or `imported`, with default confidence scores of 0.90, 0.95, 0.85, 0.60, and 0.70 respectively. Inferred facts are marked with `source_type: "inferred"` and their confidence cannot exceed the confidence of the source fact.
 
 Facts may be derived from one or more Evidence records. Facts are projected interpretations of Evidence, not raw observations.
 

@@ -248,3 +248,125 @@ def test_observed_managed_by_fact_wins_over_inferred_managed_by():
     assert state.find_related("jellyfin", "managed_by") == ["custom_cli"]
     assert state.facts[managed_by.id] == managed_by
     assert state.facts[managed_by.id].inferred is False
+
+
+def test_get_best_fact_prefers_observed_fact_over_tied_inferred_fact():
+    observed_at = utc_now()
+    state = StateProjector(EventLedger()).project("ws_empty")
+    observed = Fact(
+        id="fact_observed",
+        subject_id="svc",
+        predicate="managed_by",
+        value="custom_cli",
+        observed_at=observed_at,
+        confidence=0.6,
+    )
+    inferred = Fact(
+        id="fact_inferred",
+        subject_id="svc",
+        predicate="managed_by",
+        value="docker_container_lifecycle",
+        observed_at=observed_at,
+        confidence=0.6,
+        inferred=True,
+    )
+    state.facts = {observed.id: observed, inferred.id: inferred}
+
+    assert state.get_best_fact("svc", "managed_by") == observed
+
+
+def test_get_best_fact_selects_highest_confidence_fact():
+    observed_at = utc_now()
+    state = StateProjector(EventLedger()).project("ws_empty")
+    lower = Fact(
+        id="fact_lower",
+        subject_id="svc",
+        predicate="runtime",
+        value="docker",
+        observed_at=observed_at,
+        source_type="provider",
+        confidence=0.85,
+    )
+    higher = Fact(
+        id="fact_higher",
+        subject_id="svc",
+        predicate="runtime",
+        value="systemd",
+        observed_at=observed_at,
+        source_type="discovery",
+        confidence=0.95,
+    )
+    state.facts = {lower.id: lower, higher.id: higher}
+
+    assert state.get_best_fact("svc", "runtime") == higher
+
+
+def test_relationship_query_helpers_preserve_provenance_when_requested():
+    ledger = EventLedger()
+    workspace_id = "ws_relationship_provenance"
+    observed_at = utc_now()
+    fact = Fact(
+        id="fact_host",
+        subject_id="jellyfin",
+        predicate="host",
+        value="node115",
+        evidence_ids=["evd_1"],
+        observed_at=observed_at,
+        source_type="discovery",
+        confidence=0.95,
+    )
+
+    ledger.append("fact.observed", workspace_id, {"fact": to_plain(fact)})
+    state = StateProjector(ledger).project(workspace_id)
+
+    assert state.find_related(
+        "jellyfin", "host", include_provenance=True
+    ) == [
+        {
+            "object": "node115",
+            "fact_id": "fact_host",
+            "source_type": "discovery",
+            "confidence": 0.95,
+            "observed_at": observed_at,
+            "evidence_ids": ["evd_1"],
+            "inferred": False,
+        }
+    ]
+    assert state.find_entities(
+        "host", "node115", include_provenance=True
+    ) == [
+        {
+            "subject": "jellyfin",
+            "fact_id": "fact_host",
+            "source_type": "discovery",
+            "confidence": 0.95,
+            "observed_at": observed_at,
+            "evidence_ids": ["evd_1"],
+            "inferred": False,
+        }
+    ]
+
+
+def test_inferred_confidence_is_capped_by_source_fact_confidence():
+    ledger = EventLedger()
+    workspace_id = "ws_inference_confidence_cap"
+    observed_at = utc_now()
+    runtime = Fact(
+        id="fact_runtime_docker",
+        subject_id="jellyfin",
+        predicate="runtime",
+        value="docker",
+        observed_at=observed_at,
+        source_type="provider",
+        confidence=0.4,
+    )
+
+    ledger.append("fact.observed", workspace_id, {"fact": to_plain(runtime)})
+    state = StateProjector(ledger).project(workspace_id)
+
+    inferred = state.inferred_facts[
+        "fact_inferred_jellyfin_managed_by_docker_container_lifecycle"
+    ]
+    assert inferred.source_type == "inferred"
+    assert inferred.confidence == 0.4
+    assert inferred.confidence <= runtime.confidence
