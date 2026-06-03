@@ -281,6 +281,44 @@ A durable permission decision for a specific action, scope, and actor.
 }
 ```
 
+
+### Execution Authorization
+
+`action_plan.approved` means the human accepted the durable text plan. It is
+not credential approval and it is not permission to run an arbitrary future
+tool call. Privileged or mutating work needs a separate
+`execution_authorization.granted` event for each concrete execution attempt.
+
+Execution authorizations are short-lived and bind all of the following:
+
+- the `action_plan_id` that was accepted;
+- the proposed concrete tool/action name;
+- a deterministic fingerprint of the exact proposed arguments;
+- a secret-free identifier for any just-in-time credential/session grant.
+
+Example:
+
+```json
+{
+  "id": "auth_...",
+  "action_plan_id": "plan_...",
+  "tool_name": "restart_container",
+  "arguments_fingerprint": "sha256:...",
+  "granted_by": "operator@example.com",
+  "expires_at": "2026-06-03T15:05:00Z",
+  "credential_grant_id": "jit_session_...",
+  "session_id": "ses_...",
+  "metadata": {
+    "reason": "one restart attempt"
+  }
+}
+```
+
+Passwords, tokens, private keys, and other secrets are never stored in Action
+Plans, durable Approvals, Execution Authorizations, or event payloads. Any
+credential material must be supplied just in time by the host environment for
+the exact authorized attempt and discarded outside Seed's persistent state.
+
 ### Decision
 
 Structured output from a model.

@@ -12,6 +12,7 @@ from seed_runtime.models import (
     Approval,
     Entity,
     Event,
+    ExecutionAuthorization,
     Fact,
     Goal,
     PendingAction,
@@ -34,6 +35,9 @@ class State:
     tool_needs: dict[str, ToolNeed] = field(default_factory=dict)
     approvals: dict[str, Approval] = field(default_factory=dict)
     action_plan_approvals: dict[str, str] = field(default_factory=dict)
+    execution_authorizations: dict[str, ExecutionAuthorization] = field(
+        default_factory=dict
+    )
     pending_actions: dict[str, PendingAction] = field(default_factory=dict)
     action_plans: dict[str, ActionPlan] = field(default_factory=dict)
     tools: dict[str, ToolSpec] = field(default_factory=dict)
@@ -107,6 +111,13 @@ class StateProjector:
             data["expires_at"] = _parse_dt(data.get("expires_at"))
             approval = Approval(**data)
             state.approvals[approval.id] = approval
+        elif event.kind == "execution_authorization.granted":
+            data = payload.get("execution_authorization", payload).copy()
+            data["expires_at"] = (
+                _parse_dt(data.get("expires_at")) or event.timestamp
+            )
+            authorization = ExecutionAuthorization(**data)
+            state.execution_authorizations[authorization.id] = authorization
         elif event.kind == "pending_action.created":
             data = payload.get("pending_action", payload)
             pending_action = PendingAction(**data)

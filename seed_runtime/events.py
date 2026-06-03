@@ -80,6 +80,8 @@ class SQLiteEventLedger(EventLedger):
 
     def __init__(self, database_path: str) -> None:
         self.database_path = database_path
+        self._ephemeral_events: list[Event] = []
+        self._ephemeral_by_id: dict[str, Event] = {}
         self._connection = sqlite3.connect(database_path)
         self._connection.row_factory = sqlite3.Row
         self._connection.execute("""
@@ -122,10 +124,15 @@ class SQLiteEventLedger(EventLedger):
             causation_id=causation_id,
             correlation_id=correlation_id,
         )
-        self._insert(event)
+        if kind == "execution_authorization.granted":
+            self._store_ephemeral(event)
+        else:
+            self._insert(event)
         return event
 
     def get(self, event_id: str) -> Event | None:
+        if event_id in self._ephemeral_by_id:
+            return self._ephemeral_by_id[event_id].model_copy(deep=True)
         row = self._connection.execute(
             "SELECT * FROM events WHERE id = ?",
             (event_id,),
@@ -142,17 +149,36 @@ class SQLiteEventLedger(EventLedger):
                 "SELECT * FROM events WHERE workspace_id = ? ORDER BY rowid",
                 (workspace_id,),
             ).fetchall()
-        return [self._row_to_event(row) for row in rows]
+        events = [self._row_to_event(row) for row in rows]
+        if workspace_id is None:
+            events.extend(self._ephemeral_events)
+        else:
+            events.extend(
+                event
+                for event in self._ephemeral_events
+                if event.workspace_id == workspace_id
+            )
+        return events
 
     def list_events(self, workspace_id: str | None = None) -> list[Event]:
         return self.list(workspace_id)
 
     def extend(self, events: Iterable[Event]) -> None:
         for event in events:
-            self._insert(event)
+            if event.kind == "execution_authorization.granted":
+                self._store_ephemeral(event)
+            else:
+                self._insert(event)
 
     def close(self) -> None:
         self._connection.close()
+
+    def _store_ephemeral(self, event: Event) -> None:
+        if event.id in self._ephemeral_by_id:
+            raise ValueError(f"event id already exists: {event.id}")
+        self._ephemeral_events.append(event.model_copy(deep=True))
+        self._ephemeral_by_id[event.id] = event.model_copy(deep=True)
+        self._advance_event_counter(event.id)
 
     def _insert(self, event: Event) -> None:
         self._connection.execute(
