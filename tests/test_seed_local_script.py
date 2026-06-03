@@ -62,6 +62,8 @@ def test_parser_supports_required_modes_and_model_selection():
             "--raw",
             "--raw-only",
             "--plan",
+            "--preconditions",
+            "plan_cli",
             "--db",
             ".seed-local.sqlite",
             "--model",
@@ -76,6 +78,7 @@ def test_parser_supports_required_modes_and_model_selection():
     assert args.raw is True
     assert args.raw_only is True
     assert args.plan is True
+    assert args.preconditions == "plan_cli"
     assert args.db == ".seed-local.sqlite"
     assert args.model == "qwen2.5:3b"
     assert args.message == ["install", "docker"]
@@ -305,7 +308,16 @@ def test_parser_accepts_repeatable_fact_seed_options():
     assert args.message == ["restart", "jellyfin?"]
 
 
-def seed_cli_action_plan(seed_local, db_path, plan_id="plan_cli"):
+def seed_cli_action_plan(
+    seed_local,
+    db_path,
+    plan_id="plan_cli",
+    *,
+    provider="open_meteo",
+    capability="weather_lookup",
+    risk_class="L1",
+    requires_approval=False,
+):
     ledger = seed_local.SQLiteEventLedger(str(db_path))
     ledger.append(
         "action_plan.created",
@@ -314,12 +326,12 @@ def seed_cli_action_plan(seed_local, db_path, plan_id="plan_cli"):
             "action_plan": {
                 "id": plan_id,
                 "tool_need_id": "need_cli",
-                "provider": "open_meteo",
-                "capability": "weather_lookup",
-                "summary": "Propose using open_meteo",
+                "provider": provider,
+                "capability": capability,
+                "summary": f"Propose using {provider}",
                 "steps": ["Determine location."],
-                "risk_class": "L1",
-                "requires_approval": False,
+                "risk_class": risk_class,
+                "requires_approval": requires_approval,
                 "status": "proposed",
                 "rejection_reason": None,
                 "replacement_plan_id": None,
@@ -329,6 +341,74 @@ def seed_cli_action_plan(seed_local, db_path, plan_id="plan_cli"):
         session_id="local",
     )
     ledger.close()
+
+
+def test_cli_preconditions_prints_inspect_only_report_without_registering_tools(
+    monkeypatch, tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed-local.sqlite"
+    seed_cli_action_plan(
+        seed_local,
+        db_path,
+        provider="docker_container_lifecycle",
+        capability="service_management",
+        risk_class="L3",
+        requires_approval=True,
+    )
+
+    def fail_load_manifest(self, path):
+        pytest.fail("precondition reports must not register tools")
+
+    monkeypatch.setattr(seed_local.ToolRegistry, "load_manifest", fail_load_manifest)
+
+    assert seed_local.main(["--db", str(db_path), "--preconditions", "plan_cli"]) == 0
+
+    output = capsys.readouterr().out
+    assert "action_plan_id: plan_cli" in output
+    assert "executable: false" in output
+    assert (
+        "missing:\n- target_host_known\n- provider_registered\n- approval_present"
+        in output
+    )
+    assert "preconditions:" in output
+    assert "- id: target_host_known\n  satisfied: false" in output
+    assert "reason: no host entity or target host fact is present" in output
+    assert "tool.call" not in output
+    assert "approved" not in output.lower()
+
+
+def test_cli_preconditions_reports_satisfied_preconditions(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed-local.sqlite"
+    seed_cli_action_plan(seed_local, db_path)
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    ledger.append(
+        "tool.registered",
+        "local",
+        {
+            "tool": {
+                "name": "open_meteo",
+                "summary": "Weather lookup.",
+                "toolkit_id": "open_meteo",
+                "input_schema": {},
+                "output_schema": {},
+                "policy_action": "weather_lookup.open_meteo",
+                "implementation": "toolkits.generated.weather:lookup",
+                "risk_class": "L1",
+            }
+        },
+    )
+    ledger.close()
+
+    assert seed_local.main(["--db", str(db_path), "--preconditions", "plan_cli"]) == 0
+
+    output = capsys.readouterr().out
+    assert "action_plan_id: plan_cli" in output
+    assert "executable: true" in output
+    assert "missing:\n- none" in output
+    assert "- id: provider_registered\n  satisfied: true" in output
+    assert "registered tool is available: open_meteo" in output
 
 
 def test_cli_accept_plan_prints_accepted_without_registering_tools(

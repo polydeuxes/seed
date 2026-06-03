@@ -279,6 +279,14 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--preconditions",
+        metavar="PLAN_ID",
+        help=(
+            "print an inspect-only execution precondition report for an "
+            "action plan without executing or approving it"
+        ),
+    )
+    parser.add_argument(
         "--accept-plan",
         metavar="PLAN_ID",
         help="accept a previously created action plan without executing it",
@@ -331,13 +339,15 @@ def validate_lifecycle_args(
     args: argparse.Namespace, parser: argparse.ArgumentParser
 ) -> None:
     lifecycle_flags = [
+        bool(args.preconditions),
         bool(args.accept_plan),
         bool(args.reject_plan),
         bool(args.supersede_plan),
     ]
     if sum(lifecycle_flags) > 1:
         parser.error(
-            "choose only one of --accept-plan, --reject-plan, or --supersede-plan"
+            "choose only one of --preconditions, --accept-plan, "
+            "--reject-plan, or --supersede-plan"
         )
     if args.reject_plan and not args.reason:
         parser.error("--reject-plan requires --reason")
@@ -439,6 +449,63 @@ def format_cli_output(
             ]
         )
     return "\n".join(sections)
+
+
+def precondition_report(args: argparse.Namespace) -> dict[str, Any]:
+    """Return an inspect-only precondition report for a stored action plan."""
+
+    ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
+    try:
+        state = StateProjector(ledger).project(args.workspace)
+        plan = state.action_plans.get(args.preconditions)
+        if plan is None:
+            raise ValueError(
+                f"action plan not found in workspace {args.workspace!r}: "
+                f"{args.preconditions}"
+            )
+        report = ActionPlanService(ledger).precondition_report(plan, state)
+        return to_plain(report)
+    finally:
+        close = getattr(ledger, "close", None)
+        if close is not None:
+            close()
+
+
+def format_precondition_report(report: dict[str, Any]) -> str:
+    lines = [
+        f"action_plan_id: {report.get('action_plan_id')}",
+        f"executable: {str(bool(report.get('executable'))).lower()}",
+        "missing:",
+    ]
+
+    missing_preconditions = report.get("missing_preconditions")
+    if isinstance(missing_preconditions, list) and missing_preconditions:
+        for precondition in missing_preconditions:
+            if isinstance(precondition, dict):
+                lines.append(f"- {precondition.get('id')}")
+            else:
+                lines.append(f"- {precondition}")
+    else:
+        lines.append("- none")
+
+    lines.append("preconditions:")
+    preconditions = report.get("preconditions")
+    if isinstance(preconditions, list) and preconditions:
+        for precondition in preconditions:
+            if isinstance(precondition, dict):
+                lines.extend(
+                    [
+                        f"- id: {precondition.get('id')}",
+                        "  satisfied: "
+                        f"{str(bool(precondition.get('satisfied'))).lower()}",
+                        f"  reason: {precondition.get('reason')}",
+                    ]
+                )
+            else:
+                lines.append(f"- {precondition}")
+    else:
+        lines.append("- none")
+    return "\n".join(lines)
 
 
 def format_action_plan_status(plan: dict[str, Any]) -> str:
@@ -594,6 +661,10 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     validate_lifecycle_args(args, parser)
+
+    if args.preconditions:
+        print(format_precondition_report(precondition_report(args)))
+        return 0
 
     updated_plan = update_action_plan_lifecycle(args)
     if updated_plan is not None:

@@ -44,6 +44,16 @@ def test_missing_preconditions_are_not_executable():
         "provider_registered",
         "approval_present",
     ]
+    assert [precondition.id for precondition in report.preconditions] == [
+        "target_host_known",
+        "provider_registered",
+        "approval_present",
+    ]
+    assert [precondition.satisfied for precondition in report.preconditions] == [
+        False,
+        False,
+        False,
+    ]
 
 
 def test_all_satisfied_preconditions_are_executable_without_execution():
@@ -75,6 +85,11 @@ def test_all_satisfied_preconditions_are_executable_without_execution():
 
     assert report.executable is True
     assert report.missing_preconditions == []
+    assert [precondition.satisfied for precondition in report.preconditions] == [
+        True,
+        True,
+        True,
+    ]
     assert [event.kind for event in ledger.list_events(workspace_id)] == [
         "entity.upserted",
         "tool.registered",
