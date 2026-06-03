@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from seed_runtime.base import SeedModel
-from seed_runtime.models import ToolNeed
+from seed_runtime.models import HandoffBackendType, ToolNeed
 from seed_runtime.tool_needs import slugify
 
 
@@ -19,6 +19,8 @@ class CapabilityRecommendation(SeedModel):
     source: str | None = None
     risk_class: str | None = None
     notes: str | None = None
+    backend_type: HandoffBackendType | None = None
+    operation: str | None = None
 
 
 class CapabilityCatalogEntry(SeedModel):

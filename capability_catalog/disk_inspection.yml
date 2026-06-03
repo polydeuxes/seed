@@ -4,6 +4,8 @@ recommendations:
   - provider: posix_disk_cli
     summary: Use read-only disk inspection commands such as df and du.
     kind: local_cli
+    backend_type: manual
+    operation: disk.inspect
     source: posix
     risk_class: L1
     notes: Should remain constrained to read-only inspection operations.

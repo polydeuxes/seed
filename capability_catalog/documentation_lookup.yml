@@ -4,6 +4,8 @@ recommendations:
   - provider: context7
     summary: Documentation lookup provider for library and framework references.
     kind: hosted_api
+    backend_type: mcp
+    operation: documentation.lookup
     source: https://context7.com/
     risk_class: L1
     notes: Requires explicit integration and registration before use.

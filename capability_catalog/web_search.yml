@@ -4,12 +4,16 @@ recommendations:
   - provider: tavily
     summary: Search API commonly used by agents for public web retrieval.
     kind: hosted_api
+    backend_type: mcp
+    operation: web.search
     source: https://tavily.com/
     risk_class: L2
     notes: Requires API credentials and explicit tool registration before use.
   - provider: brave_search
     summary: Search API for public web results and snippets.
     kind: hosted_api
+    backend_type: mcp
+    operation: web.search
     source: https://brave.com/search/api/
     risk_class: L2
     notes: Requires API credentials and explicit tool registration before use.

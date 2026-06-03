@@ -4,12 +4,16 @@ recommendations:
   - provider: systemctl_cli
     summary: Use systemctl for service lifecycle and status operations on systemd hosts.
     kind: local_cli
+    backend_type: ansible
+    operation: service.manage
     source: systemd
     risk_class: L3
     notes: Mutating service actions require confirmation or approval according to policy.
   - provider: docker_container_lifecycle
     summary: Use Docker container lifecycle operations for services running as containers.
     kind: local_cli
+    backend_type: ansible
+    operation: service.manage
     source: docker
     risk_class: L3
     notes: Mutating container lifecycle actions require confirmation or approval according to policy.

@@ -23,6 +23,11 @@ from seed_runtime.evidence import Evidence
 from seed_runtime.facts import Fact
 from seed_runtime.execution import ToolExecutor
 from seed_runtime.execution_proposals import ExecutionProposalService
+from seed_runtime.handoff_plans import (
+    HandoffPlanNotFoundError,
+    HandoffPlanService,
+    HandoffPlanStatusError,
+)
 from seed_runtime.ids import new_id
 from seed_runtime.intent_classifier import (
     IntentDecisionModel,
@@ -327,6 +332,8 @@ def build_parser() -> argparse.ArgumentParser:
             "  python scripts/seed_local.py --db .seed-local.sqlite "
             "--proposal plan_000001\n"
             "  python scripts/seed_local.py --db .seed-local.sqlite "
+            "--handoff plan_000001\n"
+            "  python scripts/seed_local.py --db .seed-local.sqlite "
             "--authorize-proposal eprop_000001"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -383,6 +390,14 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "create and print a concrete inspect-only execution proposal for an "
             "action plan when preconditions are satisfied; never executes tools"
+        ),
+    )
+    parser.add_argument(
+        "--handoff",
+        metavar="PLAN_ID",
+        help=(
+            "create and print a non-executable provider handoff plan for an "
+            "accepted action plan; never executes or approves"
         ),
     )
     parser.add_argument(
@@ -500,6 +515,7 @@ def validate_lifecycle_args(
     lifecycle_flags = [
         bool(args.preconditions),
         bool(args.proposal),
+        bool(args.handoff),
         bool(args.authorize_proposal or args.authorize_execution),
         bool(args.accept_plan),
         bool(args.approve_plan),
@@ -508,12 +524,14 @@ def validate_lifecycle_args(
     ]
     if sum(lifecycle_flags) > 1:
         parser.error(
-            "choose only one of --preconditions, --proposal, "
+            "choose only one of --preconditions, --proposal, --handoff, "
             "--authorize-proposal, --accept-plan, --approve-plan, "
             "--reject-plan, or --supersede-plan"
         )
     if args.proposal and not args.db:
         parser.error("--proposal requires --db")
+    if args.handoff and not args.db:
+        parser.error("--handoff requires --db")
     authorization_requested = args.authorize_proposal or args.authorize_execution
     if authorization_requested and not args.db:
         parser.error("--authorize-proposal requires --db")
@@ -739,6 +757,65 @@ def execution_proposal(args: argparse.Namespace) -> dict[str, Any]:
         close = getattr(ledger, "close", None)
         if close is not None:
             close()
+
+
+def handoff_plan(args: argparse.Namespace) -> dict[str, Any]:
+    """Create a non-executable handoff plan for an accepted action plan."""
+
+    ledger: EventLedger = SQLiteEventLedger(args.db)
+    try:
+        seed_dev_state_from_args(args, ledger)
+        state = StateProjector(ledger).project(args.workspace)
+        service = HandoffPlanService(ledger)
+        try:
+            plan = service.create_handoff_plan(
+                state,
+                args.handoff,
+                session_id=args.session,
+                causation_id=args.handoff,
+            )
+        except HandoffPlanNotFoundError as exc:
+            return {
+                "handoff_failure": {
+                    "action_plan_id": args.handoff,
+                    "missing_reason": "plan not found",
+                    "detail": str(exc),
+                }
+            }
+        except HandoffPlanStatusError as exc:
+            return {
+                "handoff_failure": {
+                    "action_plan_id": args.handoff,
+                    "missing_reason": "plan not accepted",
+                    "detail": str(exc),
+                }
+            }
+        return {"handoff_plan": to_plain(plan)}
+    finally:
+        close = getattr(ledger, "close", None)
+        if close is not None:
+            close()
+
+
+def format_handoff_plan(result: dict[str, Any]) -> str:
+    failure = result.get("handoff_failure")
+    if isinstance(failure, dict):
+        return format_proposal_failure(failure)
+
+    plan = result.get("handoff_plan")
+    if not isinstance(plan, dict):
+        raise ValueError("handoff plan result is missing")
+    return "\n".join(
+        [
+            f"action_plan_id: {plan.get('action_plan_id')}",
+            f"provider: {plan.get('provider')}",
+            f"backend_type: {plan.get('backend_type')}",
+            f"operation: {plan.get('operation')}",
+            f"target: {plan.get('target')}",
+            f"policy_summary: {plan.get('policy_summary')}",
+            f"secret_boundary: {plan.get('secret_boundary')}",
+        ]
+    )
 
 
 def grant_execution_authorization(args: argparse.Namespace) -> dict[str, Any]:
@@ -1091,6 +1168,15 @@ def main(argv: list[str] | None = None) -> int:
         result = execution_proposal(args)
         output = format_execution_proposal(result)
         if "proposal_failure" in result:
+            print(output, file=sys.stderr)
+            return 1
+        print(output)
+        return 0
+
+    if args.handoff:
+        result = handoff_plan(args)
+        output = format_handoff_plan(result)
+        if "handoff_failure" in result:
             print(output, file=sys.stderr)
             return 1
         print(output)
