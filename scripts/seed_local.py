@@ -21,7 +21,7 @@ from seed_runtime.context import ContextComposer
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.evidence import Evidence
-from seed_runtime.facts import Fact, FactConflict, FactSupport
+from seed_runtime.facts import Fact, FactConflict, FactSupport, is_fact_expired
 from seed_runtime.execution import ToolExecutor
 from seed_runtime.execution_proposals import ExecutionProposalService
 from seed_runtime.handoff_plans import (
@@ -541,6 +541,19 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="print projected active fact conflicts and their winning values",
     )
+    parser.add_argument(
+        "--include-expired",
+        action="store_true",
+        help=(
+            "include expired facts in --fact-support, --best-fact, and "
+            "--fact-conflicts query output"
+        ),
+    )
+    parser.add_argument(
+        "--stale-facts",
+        action="store_true",
+        help="print expired facts that no longer influence projected state",
+    )
     return parser
 
 
@@ -559,13 +572,14 @@ def validate_lifecycle_args(
         bool(args.fact_support),
         bool(args.best_fact),
         bool(args.fact_conflicts),
+        bool(args.stale_facts),
     ]
     if sum(lifecycle_flags) > 1:
         parser.error(
             "choose only one of --preconditions, --proposal, --handoff, "
             "--authorize-proposal, --accept-plan, --approve-plan, "
             "--reject-plan, --supersede-plan, --fact-support, --best-fact, "
-            "or --fact-conflicts"
+            "--fact-conflicts, or --stale-facts"
         )
     if args.proposal and not args.db:
         parser.error("--proposal requires --db")
@@ -592,6 +606,13 @@ def validate_lifecycle_args(
         parser.error("--supersede-plan requires --replacement-plan")
     if args.replacement_plan and not args.supersede_plan:
         parser.error("--replacement-plan can only be used with --supersede-plan")
+    if args.include_expired and not (
+        args.fact_support or args.best_fact or args.fact_conflicts
+    ):
+        parser.error(
+            "--include-expired can only be used with --fact-support, "
+            "--best-fact, or --fact-conflicts"
+        )
     if args.fact_expires_at and args.fact_ttl_seconds is not None:
         parser.error("choose only one of --fact-expires-at or --fact-ttl-seconds")
     if (args.fact_expires_at or args.fact_ttl_seconds is not None) and not args.fact:
@@ -789,6 +810,8 @@ def format_fact_supports(
                 [
                     f"value: {_format_fact_value(support.value)}",
                     f"aggregate_confidence: {support.confidence}",
+                    f"expired: {str(support.expired).lower()}",
+                    f"expires_at: {_format_datetime(support.expires_at)}",
                     "supporting_fact_ids: " + ", ".join(support.supporting_fact_ids),
                     "source_types: " + ", ".join(support.source_types),
                     f"first_observed: {_format_datetime(support.observed_at)}",
@@ -799,9 +822,13 @@ def format_fact_supports(
     return "\n\n".join(sections)
 
 
-def format_best_fact(state: State, subject: str, predicate: str) -> str:
-    best_fact = state.get_best_fact(subject, predicate)
-    best_support = state.get_fact_support(subject, predicate)
+def format_best_fact(
+    state: State, subject: str, predicate: str, *, include_expired: bool = False
+) -> str:
+    best_fact = state.get_best_fact(subject, predicate, include_expired=include_expired)
+    best_support = state.get_fact_support(
+        subject, predicate, include_expired=include_expired
+    )
     if best_fact is None or best_support is None:
         return f"no current belief for {subject} {predicate}"
 
@@ -811,10 +838,25 @@ def format_best_fact(state: State, subject: str, predicate: str) -> str:
             f"predicate: {best_fact.predicate}",
             f"value: {_format_fact_value(best_support.value)}",
             f"confidence: {best_support.confidence}",
+            f"expired: {str(is_fact_expired(best_fact)).lower()}",
+            f"expires_at: {_format_datetime(best_fact.expires_at)}",
             "reason: best-supported current belief",
             f"support_count: {len(best_support.supporting_fact_ids)}",
         ]
     )
+
+
+def _format_fact_expiry_statuses(fact_ids: list[str], facts: dict[str, Fact]) -> str:
+    statuses: list[str] = []
+    for fact_id in fact_ids:
+        fact = facts.get(fact_id)
+        if fact is None:
+            continue
+        statuses.append(
+            f"{fact_id} (expired: {str(is_fact_expired(fact)).lower()}, "
+            f"expires_at: {_format_datetime(fact.expires_at)})"
+        )
+    return ", ".join(statuses)
 
 
 def format_fact_conflicts(conflicts: list[FactConflict], facts: dict[str, Fact]) -> str:
@@ -837,7 +879,37 @@ def format_fact_conflicts(conflicts: list[FactConflict], facts: dict[str, Fact])
                     f"winning_value: {_format_fact_value(winning_value)}",
                     f"winning_fact_id: {conflict.best_fact_id}",
                     "conflicting_fact_ids: " + ", ".join(conflict.conflicting_fact_ids),
+                    "winning_fact_status: "
+                    + _format_fact_expiry_statuses(
+                        [conflict.best_fact_id] if conflict.best_fact_id else [], facts
+                    ),
+                    "conflicting_fact_statuses: "
+                    + _format_fact_expiry_statuses(
+                        conflict.conflicting_fact_ids, facts
+                    ),
                     f"reason: {conflict.reason}",
+                ]
+            )
+        )
+    return "\n\n".join(sections)
+
+
+def format_stale_facts(facts: list[Fact]) -> str:
+    if not facts:
+        return "no stale facts"
+
+    sections: list[str] = []
+    for fact in facts:
+        sections.append(
+            "\n".join(
+                [
+                    f"subject: {fact.subject_id}",
+                    f"predicate: {fact.predicate}",
+                    f"value: {_format_fact_value(fact.value)}",
+                    f"source_type: {fact.source_type}",
+                    f"confidence: {fact.confidence}",
+                    f"expired: {str(is_fact_expired(fact)).lower()}",
+                    f"expires_at: {_format_datetime(fact.expires_at)}",
                 ]
             )
         )
@@ -1361,19 +1433,35 @@ def main(argv: list[str] | None = None) -> int:
     if args.fact_support:
         subject, predicate = args.fact_support
         state = fact_query_state(args)
-        supports = state.get_fact_supports(subject, predicate)
+        supports = state.get_fact_supports(
+            subject, predicate, include_expired=args.include_expired
+        )
         print(format_fact_supports(supports, subject, predicate))
         return 0
 
     if args.best_fact:
         subject, predicate = args.best_fact
         state = fact_query_state(args)
-        print(format_best_fact(state, subject, predicate))
+        print(
+            format_best_fact(
+                state, subject, predicate, include_expired=args.include_expired
+            )
+        )
         return 0
 
     if args.fact_conflicts:
         state = fact_query_state(args)
-        print(format_fact_conflicts(state.fact_conflicts, state.facts))
+        print(
+            format_fact_conflicts(
+                state.get_fact_conflicts(include_expired=args.include_expired),
+                state.facts,
+            )
+        )
+        return 0
+
+    if args.stale_facts:
+        state = fact_query_state(args)
+        print(format_stale_facts(state.get_stale_facts()))
         return 0
 
     app = build_local_app(

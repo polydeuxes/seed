@@ -40,6 +40,8 @@ class FactSupport(SeedModel):
     confidence: float
     observed_at: datetime
     latest_observed_at: datetime
+    expired: bool = False
+    expires_at: datetime | None = None
 
 
 class FactConflict(SeedModel):

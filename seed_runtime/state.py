@@ -150,8 +150,7 @@ class State:
         fact_supports = (
             _project_fact_supports(self.facts.values(), include_expired=True)
             if include_expired
-            else self.fact_supports
-            or _project_fact_supports(self.facts.values())
+            else self.fact_supports or _project_fact_supports(self.facts.values())
         )
         return [
             support
@@ -167,6 +166,24 @@ class State:
             subject, predicate, include_expired=include_expired
         )
         return _select_unambiguous_best_support(candidates)
+
+    def get_fact_conflicts(
+        self, *, include_expired: bool = False
+    ) -> list[FactConflict]:
+        """Return projected fact conflicts, optionally including expired facts."""
+        if include_expired:
+            return _project_fact_conflicts(self, include_expired=True)
+        return self.fact_conflicts or _project_fact_conflicts(self)
+
+    def get_stale_facts(self) -> list[Fact]:
+        """Return facts that no longer influence projected state due to expiry."""
+        return sorted(
+            (fact for fact in self.facts.values() if is_fact_expired(fact)),
+            key=lambda fact: (
+                fact.expires_at or datetime.min.replace(tzinfo=timezone.utc),
+                fact.id,
+            ),
+        )
 
     def has_approval(self, action: str, scope: str | None = None) -> Approval | None:
         now = datetime.now(timezone.utc)
@@ -402,6 +419,14 @@ def _project_fact_supports(
             supporting_facts, key=lambda fact: (fact.observed_at, fact.id)
         )
         source_types = _dedupe(fact.source_type for fact in ordered_facts)
+        expires_at_values = [fact.expires_at for fact in ordered_facts]
+        support_expires_at = (
+            max(
+                expires_at for expires_at in expires_at_values if expires_at is not None
+            )
+            if all(expires_at is not None for expires_at in expires_at_values)
+            else None
+        )
         supports.append(
             FactSupport(
                 subject=subject,
@@ -412,6 +437,8 @@ def _project_fact_supports(
                 confidence=_aggregate_support_confidence(ordered_facts),
                 observed_at=min(fact.observed_at for fact in ordered_facts),
                 latest_observed_at=max(fact.observed_at for fact in ordered_facts),
+                expired=all(is_fact_expired(fact) for fact in ordered_facts),
+                expires_at=support_expires_at,
             )
         )
     return supports
@@ -461,12 +488,14 @@ def _select_unambiguous_best_support(
     return top_supports[0]
 
 
-def _project_fact_conflicts(state: State) -> list[FactConflict]:
-    if not state.fact_supports:
+def _project_fact_conflicts(
+    state: State, *, include_expired: bool = False
+) -> list[FactConflict]:
+    if not include_expired and not state.fact_supports:
         state.fact_supports = _project_fact_supports(state.facts.values())
     grouped: dict[tuple[str, str], list[Fact]] = {}
     for fact in state.facts.values():
-        if is_fact_expired(fact):
+        if not include_expired and is_fact_expired(fact):
             continue
         grouped.setdefault((fact.subject_id, fact.predicate), []).append(fact)
 
@@ -478,7 +507,9 @@ def _project_fact_conflicts(state: State) -> list[FactConflict]:
         if len(values_by_key) <= 1:
             continue
 
-        best_fact = state.get_best_fact(subject, predicate)
+        best_fact = state.get_best_fact(
+            subject, predicate, include_expired=include_expired
+        )
         if best_fact is None:
             winning_value = None
             best_fact_id = None
