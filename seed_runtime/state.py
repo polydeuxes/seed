@@ -10,7 +10,11 @@ from typing import Any, Iterable
 from seed_runtime.events import EventLedger
 from seed_runtime.evidence import Evidence
 from seed_runtime.inference_rules import infer_facts
-from seed_runtime.facts import is_fact_expired
+from seed_runtime.facts import (
+    StaleFactRefreshRecommendation,
+    is_fact_expired,
+    recommended_capability_for_stale_fact,
+)
 from seed_runtime.models import (
     ActionPlan,
     Approval,
@@ -184,6 +188,29 @@ class State:
                 fact.id,
             ),
         )
+
+    def get_stale_fact_refresh_recommendations(
+        self,
+    ) -> list[StaleFactRefreshRecommendation]:
+        """Return capability recommendations for refreshing expired facts."""
+
+        recommendations: list[StaleFactRefreshRecommendation] = []
+        for fact in self.get_stale_facts():
+            capability = recommended_capability_for_stale_fact(fact.predicate)
+            recommendations.append(
+                StaleFactRefreshRecommendation(
+                    fact_id=fact.id,
+                    subject=fact.subject_id,
+                    predicate=fact.predicate,
+                    value=fact.value,
+                    recommended_capability=capability,
+                    reason=(
+                        f"predicate {fact.predicate!r} maps to "
+                        f"{capability!r} for stale fact refresh"
+                    ),
+                )
+            )
+        return recommendations
 
     def has_approval(self, action: str, scope: str | None = None) -> Approval | None:
         now = datetime.now(timezone.utc)

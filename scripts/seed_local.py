@@ -21,7 +21,13 @@ from seed_runtime.context import ContextComposer
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.evidence import Evidence
-from seed_runtime.facts import Fact, FactConflict, FactSupport, is_fact_expired
+from seed_runtime.facts import (
+    Fact,
+    FactConflict,
+    FactSupport,
+    StaleFactRefreshRecommendation,
+    is_fact_expired,
+)
 from seed_runtime.execution import ToolExecutor
 from seed_runtime.execution_proposals import ExecutionProposalService
 from seed_runtime.handoff_plans import (
@@ -554,6 +560,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="print expired facts that no longer influence projected state",
     )
+    parser.add_argument(
+        "--stale-fact-refreshes",
+        action="store_true",
+        help="print capability recommendations for refreshing expired facts",
+    )
     return parser
 
 
@@ -573,13 +584,14 @@ def validate_lifecycle_args(
         bool(args.best_fact),
         bool(args.fact_conflicts),
         bool(args.stale_facts),
+        bool(args.stale_fact_refreshes),
     ]
     if sum(lifecycle_flags) > 1:
         parser.error(
             "choose only one of --preconditions, --proposal, --handoff, "
             "--authorize-proposal, --accept-plan, --approve-plan, "
             "--reject-plan, --supersede-plan, --fact-support, --best-fact, "
-            "--fact-conflicts, or --stale-facts"
+            "--fact-conflicts, --stale-facts, or --stale-fact-refreshes"
         )
     if args.proposal and not args.db:
         parser.error("--proposal requires --db")
@@ -910,6 +922,29 @@ def format_stale_facts(facts: list[Fact]) -> str:
                     f"confidence: {fact.confidence}",
                     f"expired: {str(is_fact_expired(fact)).lower()}",
                     f"expires_at: {_format_datetime(fact.expires_at)}",
+                ]
+            )
+        )
+    return "\n\n".join(sections)
+
+
+def format_stale_fact_refresh_recommendations(
+    recommendations: list[StaleFactRefreshRecommendation],
+) -> str:
+    if not recommendations:
+        return "no stale fact refresh recommendations"
+
+    sections: list[str] = []
+    for recommendation in recommendations:
+        sections.append(
+            "\n".join(
+                [
+                    f"fact_id: {recommendation.fact_id}",
+                    f"subject: {recommendation.subject}",
+                    f"predicate: {recommendation.predicate}",
+                    f"value: {_format_fact_value(recommendation.value)}",
+                    f"recommended_capability: {recommendation.recommended_capability}",
+                    f"reason: {recommendation.reason}",
                 ]
             )
         )
@@ -1462,6 +1497,15 @@ def main(argv: list[str] | None = None) -> int:
     if args.stale_facts:
         state = fact_query_state(args)
         print(format_stale_facts(state.get_stale_facts()))
+        return 0
+
+    if args.stale_fact_refreshes:
+        state = fact_query_state(args)
+        print(
+            format_stale_fact_refresh_recommendations(
+                state.get_stale_fact_refresh_recommendations()
+            )
+        )
         return 0
 
     app = build_local_app(

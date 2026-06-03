@@ -1270,10 +1270,12 @@ def test_parser_supports_fact_projection_queries():
     support_args = parser.parse_args(["--fact-support", "jellyfin", "runtime"])
     best_args = parser.parse_args(["--best-fact", "jellyfin", "runtime"])
     conflicts_args = parser.parse_args(["--fact-conflicts"])
+    refreshes_args = parser.parse_args(["--stale-fact-refreshes"])
 
     assert support_args.fact_support == ["jellyfin", "runtime"]
     assert best_args.best_fact == ["jellyfin", "runtime"]
     assert conflicts_args.fact_conflicts is True
+    assert refreshes_args.stale_fact_refreshes is True
 
 
 def test_cli_fact_support_prints_projected_grouped_values(capsys):
@@ -1536,3 +1538,80 @@ def test_cli_stale_facts_prints_expired_facts(capsys):
     assert "confidence: 1.0" in output
     assert "expired: true" in output
     assert "expires_at:" in output
+
+
+def test_cli_stale_fact_refreshes_recommend_service_inspection_for_runtime(capsys):
+    seed_local = load_seed_local_module()
+
+    assert (
+        seed_local.main(
+            [
+                "--fact",
+                "jellyfin",
+                "runtime",
+                "docker",
+                "--fact-ttl-seconds",
+                "0",
+                "--stale-fact-refreshes",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "subject: jellyfin" in output
+    assert "predicate: runtime" in output
+    assert "value: docker" in output
+    assert "recommended_capability: service_inspection" in output
+    assert "reason: predicate 'runtime' maps to 'service_inspection'" in output
+
+
+def test_cli_stale_fact_refreshes_recommend_environment_inventory_for_host(capsys):
+    seed_local = load_seed_local_module()
+
+    assert (
+        seed_local.main(
+            [
+                "--fact",
+                "jellyfin",
+                "host",
+                "node115",
+                "--fact-ttl-seconds",
+                "0",
+                "--stale-fact-refreshes",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "subject: jellyfin" in output
+    assert "predicate: host" in output
+    assert "value: node115" in output
+    assert "recommended_capability: environment_inventory" in output
+    assert "reason: predicate 'host' maps to 'environment_inventory'" in output
+
+
+def test_cli_stale_fact_refreshes_fall_back_to_knowledge_lookup(capsys):
+    seed_local = load_seed_local_module()
+
+    assert (
+        seed_local.main(
+            [
+                "--fact",
+                "jellyfin",
+                "unknown_predicate",
+                "mystery",
+                "--fact-ttl-seconds",
+                "0",
+                "--stale-fact-refreshes",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "predicate: unknown_predicate" in output
+    assert "value: mystery" in output
+    assert "recommended_capability: knowledge_lookup" in output
+    assert "reason: predicate 'unknown_predicate' maps to 'knowledge_lookup'" in output
