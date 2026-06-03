@@ -14,6 +14,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urljoin
 from urllib.request import Request, urlopen
 
+from seed_runtime.ansible_inventory_source import AnsibleInventoryObservationSource
 from seed_runtime.base import SeedModel
 from seed_runtime.facts import Fact, FactConflict, is_fact_expired
 from seed_runtime.ids import new_id

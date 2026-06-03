@@ -2331,3 +2331,85 @@ def test_cli_fact_support_marks_measurement_current_sample():
 
     assert "semantics: measurement" in output
     assert "support_kind: current_sample" in output
+
+
+def test_cli_observe_ansible_inventory_ingests_identity_observations(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    inventory_path = tmp_path / "inventory.ini"
+    inventory_path.write_text(
+        "[nodegroup]\nnode115 ansible_host=192.168.254.115\n", encoding="utf-8"
+    )
+
+    assert seed_local.main(["--observe-ansible-inventory", str(inventory_path)]) == 0
+
+    output = capsys.readouterr().out
+    assert "subject: node115" in output
+    assert "predicate: hostname" in output
+    assert "predicate: ip_address" in output
+    assert "predicate: alias" in output
+    assert "predicate: group" in output
+
+
+def test_cli_ansible_inventory_and_prometheus_support_best_fact(
+    tmp_path, monkeypatch, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed.sqlite"
+    inventory_path = tmp_path / "inventory.yaml"
+    inventory_path.write_text(
+        """all:
+  hosts:
+    node115:
+      ansible_host: 192.168.254.115
+""",
+        encoding="utf-8",
+    )
+
+    class FakePrometheusSource:
+        source_type = "provider"
+        name = "prometheus"
+
+        def __init__(self, base_url, timeout_seconds=5.0):
+            self.base_url = base_url
+            self.timeout_seconds = timeout_seconds
+
+        def collect(self):
+            from datetime import datetime, timezone
+            from seed_runtime.observations import Observation
+
+            return [
+                Observation(
+                    id="obs_cli_ansible_prometheus",
+                    source_type="provider",
+                    observed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+                    subject="192.168.254.115:9100",
+                    predicate="up",
+                    value=1,
+                    confidence=0.95,
+                    metadata={
+                        "source_name": "prometheus",
+                        "nodename": "node115",
+                        "instance": "192.168.254.115:9100",
+                    },
+                )
+            ]
+
+    monkeypatch.setattr(seed_local, "PrometheusObservationSource", FakePrometheusSource)
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--observe-ansible-inventory",
+                str(inventory_path),
+                "--observe-prometheus",
+                "http://prom.example:9090",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    assert seed_local.main(["--db", str(db_path), "--best-fact", "node115", "up"]) == 0
+    assert "subject: 192.168.254.115:9100" in capsys.readouterr().out

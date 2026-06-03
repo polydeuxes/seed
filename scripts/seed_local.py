@@ -17,6 +17,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from seed_runtime.action_plans import ActionPlanService, ActionPlanTransitionError
+from seed_runtime.ansible_inventory_source import AnsibleInventoryObservationSource
 from seed_runtime.context import ContextComposer
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger, SQLiteEventLedger
@@ -703,6 +704,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="ingest external Observations from a local JSON inventory file",
     )
     parser.add_argument(
+        "--observe-ansible-inventory",
+        metavar="PATH",
+        help=(
+            "read-only identity intake from a local static Ansible .ini, .yml, "
+            "or .yaml inventory"
+        ),
+    )
+    parser.add_argument(
         "--observe-local-host",
         action="store_true",
         help=(
@@ -1107,6 +1116,14 @@ def seed_dev_state_from_args(args: argparse.Namespace, ledger: EventLedger) -> N
             ledger,
             args.workspace,
             args.observe_json,
+            session_id=args.session,
+        )
+
+    if args.observe_ansible_inventory:
+        ingest_observation_source(
+            ledger,
+            args.workspace,
+            AnsibleInventoryObservationSource(args.observe_ansible_inventory),
             session_id=args.session,
         )
 
@@ -1525,6 +1542,15 @@ def ingest_observations_from_args(args: argparse.Namespace) -> list[Fact]:
                     ledger,
                     args.workspace,
                     args.observe_json,
+                    session_id=args.session,
+                )
+            )
+        if args.observe_ansible_inventory:
+            facts.extend(
+                ingest_observation_source(
+                    ledger,
+                    args.workspace,
+                    AnsibleInventoryObservationSource(args.observe_ansible_inventory),
                     session_id=args.session,
                 )
             )
@@ -2187,6 +2213,7 @@ def main(argv: list[str] | None = None) -> int:
         or args.fact
         or args.alias
         or args.observe_json
+        or args.observe_ansible_inventory
         or args.observe_local_host
         or args.observe_prometheus
     ) and not message and not args.http:
