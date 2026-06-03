@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from seed_runtime.capability_catalog import CapabilityCatalog, CapabilityRecommendation
 from seed_runtime.events import EventLedger
+from seed_runtime.ids import new_id
 from seed_runtime.models import ActionPlan, HandoffBackendType, HandoffPlan
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import State
@@ -60,6 +61,7 @@ class HandoffPlanService:
         recommendation = self._catalog_recommendation(action_plan)
         backend_type = _backend_type_from_metadata(recommendation)
         handoff_plan = HandoffPlan(
+            id=new_id("handoff"),
             action_plan_id=action_plan.id,
             provider=action_plan.provider,
             backend_type=backend_type,

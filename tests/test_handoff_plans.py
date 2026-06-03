@@ -26,6 +26,7 @@ def test_handoff_plan_is_non_executable():
         executable=False,
     )
 
+    assert plan.id.startswith("handoff_")
     assert plan.action_plan_id == "plan_1"
     assert plan.backend_type == "ansible"
     assert plan.requires_external_approval is True
@@ -153,10 +154,19 @@ def test_handoff_service_creates_plan_from_accepted_action_plan_and_catalog_meta
         "handoff_plan.created",
     ]
     projected = StateProjector(ledger).project("ws")
-    assert projected.handoff_plans[plan.id] == handoff
+    event = ledger.list_events("ws")[-1]
+    assert event.kind == "handoff_plan.created"
+    assert event.payload["handoff_plan"]["id"] == handoff.id
+    assert projected.handoff_plans[handoff.id] == handoff
+    assert handoff.action_plan_id not in projected.handoff_plans
     assert "approval.granted" not in kinds
     assert "execution_authorization.granted" not in kinds
     assert "tool.call.started" not in kinds
+    assert projected.approvals == {}
+    assert projected.execution_authorizations == {}
+    assert projected.execution_proposals == {}
+    assert projected.pending_actions == {}
+    assert projected.tools == {}
 
 
 def test_handoff_service_requires_accepted_action_plan():

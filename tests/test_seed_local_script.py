@@ -1250,6 +1250,7 @@ def test_handoff_cli_function_prints_non_executable_plan_for_accepted_action_pla
     output = seed_local.format_handoff_plan(result)
 
     assert "handoff_plan" in result
+    assert "handoff_plan_id: handoff_" in output
     assert "provider: docker_container_lifecycle" in output
     assert "backend_type: ansible" in output
     assert "operation: service.manage" in output
