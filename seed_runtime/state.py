@@ -18,6 +18,7 @@ from seed_runtime.models import (
     ExecutionAuthorization,
     Fact,
     FactConflict,
+    FactSupport,
     Goal,
     HandoffPlan,
     PendingAction,
@@ -53,6 +54,7 @@ class State:
     observed_facts: dict[str, Fact] = field(default_factory=dict)
     inferred_facts: dict[str, Fact] = field(default_factory=dict)
     entity_relationships: list[EntityRelationship] = field(default_factory=list)
+    fact_supports: list[FactSupport] = field(default_factory=list)
     fact_conflicts: list[FactConflict] = field(default_factory=list)
     evidence: dict[str, Evidence] = field(default_factory=dict)
     goals: dict[str, Goal] = field(default_factory=dict)
@@ -114,21 +116,45 @@ class State:
         return _dedupe(relationship.object for relationship in relationships)
 
     def get_best_fact(self, subject: str, predicate: str) -> Fact | None:
-        """Return the highest-confidence fact for a subject and predicate."""
-        candidates = [
-            fact
-            for fact in self.facts.values()
-            if fact.subject_id == subject and fact.predicate == predicate
+        """Return the representative fact for the best-supported current belief."""
+        best_support = self.get_fact_support(subject, predicate)
+        if best_support is None:
+            return None
+        supporting_facts = [
+            self.facts[fact_id]
+            for fact_id in best_support.supporting_fact_ids
+            if fact_id in self.facts
         ]
-        if not candidates:
+        if not supporting_facts:
             return None
         return max(
-            candidates,
+            supporting_facts,
             key=lambda fact: (
                 fact.confidence,
                 not fact.inferred,
                 fact.observed_at,
                 fact.id,
+            ),
+        )
+
+    def get_fact_support(self, subject: str, predicate: str) -> FactSupport | None:
+        """Return the strongest aggregate support for a subject and predicate."""
+        fact_supports = self.fact_supports or _project_fact_supports(self.facts.values())
+        candidates = [
+            support
+            for support in fact_supports
+            if support.subject == subject and support.predicate == predicate
+        ]
+        if not candidates:
+            return None
+        return max(
+            candidates,
+            key=lambda support: (
+                support.confidence,
+                _support_strength(support.source_types),
+                len(support.supporting_fact_ids),
+                support.latest_observed_at,
+                _fact_value_key(support.value),
             ),
         )
 
@@ -156,6 +182,7 @@ class StateProjector:
         for event in self.ledger.list_events(workspace_id):
             self.apply(state, event)
         _project_inferred_facts(state)
+        state.fact_supports = _project_fact_supports(state.facts.values())
         state.entity_relationships = _project_entity_relationships(
             state.facts.values()
         )
@@ -173,15 +200,19 @@ class StateProjector:
             data["observed_at"] = _parse_dt(data.get("observed_at")) or event.timestamp
             evidence = Evidence(**data)
             state.evidence[evidence.id] = evidence
-        elif event.kind == "fact.observed":
+        elif event.kind in {"fact.observed", "fact.inferred"}:
             data = payload.get("fact", payload).copy()
             data["observed_at"] = _parse_dt(data.get("observed_at")) or event.timestamp
             data["expires_at"] = _parse_dt(data.get("expires_at"))
             if "evidence_ids" not in data and "source_event_id" in data:
                 data["evidence_ids"] = [data.pop("source_event_id")]
-            data["inferred"] = False
-            if data.get("source_type") == "inferred":
-                data.pop("source_type")
+            if event.kind == "fact.inferred":
+                data["inferred"] = True
+                data["source_type"] = "inferred"
+            else:
+                data["inferred"] = False
+                if data.get("source_type") == "inferred":
+                    data.pop("source_type")
             fact = Fact(**data)
             state.facts[fact.id] = fact
             state.entity_relationships = _project_entity_relationships(
@@ -287,14 +318,82 @@ def _project_inferred_facts(state: State) -> None:
     state.observed_facts = {
         fact_id: fact for fact_id, fact in state.facts.items() if not fact.inferred
     }
-    state.inferred_facts = infer_facts(state.observed_facts.values())
+    state.inferred_facts = {
+        fact_id: fact for fact_id, fact in state.facts.items() if fact.inferred
+    }
+    state.inferred_facts.update(infer_facts(state.observed_facts.values()))
     state.facts = {**state.observed_facts}
     for fact_id, fact in state.inferred_facts.items():
         if fact_id not in state.facts:
             state.facts[fact_id] = fact
 
 
+_SOURCE_SUPPORT_WEIGHT: dict[str, float] = {
+    "discovery": 1.0,
+    "provider": 1.0,
+    "user": 0.85,
+    "imported": 0.75,
+    "inferred": 0.50,
+}
+
+
+def _project_fact_supports(facts: Iterable[Fact]) -> list[FactSupport]:
+    grouped: dict[tuple[str, str, str], list[Fact]] = {}
+    values_by_key: dict[tuple[str, str, str], Any] = {}
+    for fact in facts:
+        key = (fact.subject_id, fact.predicate, _fact_value_key(fact.value))
+        grouped.setdefault(key, []).append(fact)
+        values_by_key.setdefault(key, fact.value)
+
+    supports: list[FactSupport] = []
+    for (subject, predicate, _value_key), supporting_facts in grouped.items():
+        ordered_facts = sorted(
+            supporting_facts, key=lambda fact: (fact.observed_at, fact.id)
+        )
+        source_types = _dedupe(fact.source_type for fact in ordered_facts)
+        supports.append(
+            FactSupport(
+                subject=subject,
+                predicate=predicate,
+                value=values_by_key[(subject, predicate, _value_key)],
+                supporting_fact_ids=[fact.id for fact in ordered_facts],
+                source_types=source_types,
+                confidence=_aggregate_support_confidence(ordered_facts),
+                observed_at=min(fact.observed_at for fact in ordered_facts),
+                latest_observed_at=max(fact.observed_at for fact in ordered_facts),
+            )
+        )
+    return supports
+
+
+def _aggregate_support_confidence(facts: Iterable[Fact]) -> float:
+    independent_support: dict[tuple[str, ...], float] = {}
+    for fact in facts:
+        identity = _support_identity(fact)
+        adjusted_confidence = fact.confidence * _SOURCE_SUPPORT_WEIGHT[fact.source_type]
+        independent_support[identity] = max(
+            independent_support.get(identity, 0.0), adjusted_confidence
+        )
+
+    unsupported_probability = 1.0
+    for confidence in independent_support.values():
+        unsupported_probability *= 1.0 - confidence
+    return round(min(1.0, 1.0 - unsupported_probability), 6)
+
+
+def _support_identity(fact: Fact) -> tuple[str, ...]:
+    if fact.evidence_ids:
+        return ("evidence", *sorted(fact.evidence_ids))
+    return ("fact", fact.source_type, fact.id)
+
+
+def _support_strength(source_types: Iterable[str]) -> float:
+    return sum(_SOURCE_SUPPORT_WEIGHT[source_type] for source_type in set(source_types))
+
+
 def _project_fact_conflicts(state: State) -> list[FactConflict]:
+    if not state.fact_supports:
+        state.fact_supports = _project_fact_supports(state.facts.values())
     grouped: dict[tuple[str, str], list[Fact]] = {}
     for fact in state.facts.values():
         grouped.setdefault((fact.subject_id, fact.predicate), []).append(fact)

@@ -149,7 +149,35 @@ Fields:
 }
 ```
 
-Evidence is immutable. Facts may be extracted, validated, revised, expired, or superseded as interpretations of one or more Evidence records.
+Evidence is immutable. Facts may be extracted, aggregated, revised, expired, or superseded as interpretations of one or more Evidence records. Validation-like checks are represented as additional evidence-backed Facts, not as a separate verified flag.
+
+
+### Fact Support
+
+A projected aggregate for one claim value. FactSupport is not appended as authoritative truth; it is rebuilt from Facts.
+
+```json
+{
+  "subject": "host:node-1",
+  "predicate": "ssh.running",
+  "value": true,
+  "supporting_fact_ids": ["fact_provider_1", "fact_discovery_2"],
+  "source_types": ["provider", "discovery"],
+  "confidence": 0.94,
+  "observed_at": "2026-06-03T10:00:00Z",
+  "latest_observed_at": "2026-06-03T10:05:00Z"
+}
+```
+
+Terminology:
+
+- **Observed fact**: extracted from direct input, provider output, discovery, or imported records.
+- **Inferred fact**: deterministically derived from other Facts and treated as weaker support.
+- **Supporting fact**: same subject, predicate, and value.
+- **Conflicting fact**: same subject and predicate with a different value.
+- **Best fact/current belief**: the representative Fact for the value with the strongest aggregate support, confidence, provenance, and recency.
+
+Seed preserves provenance through `supporting_fact_ids` and Evidence IDs. It should not collapse provenance into `verified: true`.
 
 ### Capability
 
@@ -171,8 +199,8 @@ Fields:
   "name": "ssh_access",
   "summary": "Host accepts SSH login with approved credentials.",
   "entity_kinds": ["host"],
-  "verification": {
-    "preferred_operation": "ssh.verify"
+  "support_observation": {
+    "preferred_operation": "ssh.observe"
   }
 }
 ```
@@ -231,7 +259,7 @@ This is one of the most important objects in Seed. It records what capability is
   "risk_hint": "mutating",
   "status": "proposed|accepted|generating|generated|validating|validated|registered|rejected",
   "desired_inputs": ["host"],
-  "desired_outputs": ["installed", "service_status", "next_verification"]
+  "desired_outputs": ["installed", "service_status", "supporting_evidence"]
 }
 ```
 

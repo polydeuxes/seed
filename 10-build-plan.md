@@ -397,11 +397,11 @@ tests/test_handoff_plans.py
 
 ## Session 15: SSH access toolkit design
 
-Goal: draft host automation as external-provider handoff only; do not execute mutating host tools inside Seed.
+Goal: draft host automation as external-provider handoff only; do not execute mutating host tools inside Seed. Returned provider/manual observations become Evidence and observed Facts that participate in Fact Support Aggregation.
 
 Handoff surfaces:
 
-- `verify_ssh_access` — handoff to Ansible/AWX, MCP, or manual verification.
+- `observe_ssh_access` / `verify_ssh_access` — external provider or manual observation whose result enters Seed as Evidence and supporting/conflicting Facts.
 - `plan_ssh_install` — non-executable ActionPlan steps.
 - `install_ssh_server` — external provider operation only; Seed emits HandoffPlan with `executable: false`.
 
@@ -410,6 +410,8 @@ Deliverable:
 ```text
 toolkits/generated/ssh_access/...
 ```
+
+Do not add a standalone FactVerification model here. Model current belief through Evidence, Facts, FactSupport aggregates, and conflicts.
 
 ## Session 16: Model integration
 

@@ -300,7 +300,7 @@ Context composer can mark facts:
 }
 ```
 
-The model can then propose a verification HandoffPlan or request a missing ToolNeed.
+The model can then propose an observation HandoffPlan whose returned evidence becomes supporting or conflicting Facts, or request a missing ToolNeed.
 
 ## Model correction loop
 
