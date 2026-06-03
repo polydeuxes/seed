@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
+from importlib.util import find_spec
 from pathlib import Path
 from typing import Any, Protocol
 
-from seed_runtime.facts import Fact
+from seed_runtime.base import SeedModel
+from seed_runtime.facts import Fact, FactConflict, is_fact_expired
 from seed_runtime.ids import new_id
 from seed_runtime.serialization import to_plain
 from seed_runtime.models import Actor
@@ -17,7 +19,31 @@ from seed_runtime.observations import (
     ObservationSourceType,
 )
 
+if find_spec("pydantic") is not None:
+    from pydantic import Field
+else:
+    from seed_runtime._pydantic_compat import Field
+
 DEFAULT_JSON_OBSERVED_AT = datetime(1970, 1, 1)
+
+
+class ObservationInventoryDiffEntry(SeedModel):
+    """One incoming observation and the projected state it would affect."""
+
+    observation: dict[str, Any]
+    current_fact_ids: list[str] = Field(default_factory=list)
+    current_values: list[Any] = Field(default_factory=list)
+    reason: str
+
+
+class ObservationInventoryDiff(SeedModel):
+    """Dry-run diff for a JSON observation inventory against projected state."""
+
+    new_facts: list[ObservationInventoryDiffEntry] = Field(default_factory=list)
+    matching_facts: list[ObservationInventoryDiffEntry] = Field(default_factory=list)
+    changed_facts: list[ObservationInventoryDiffEntry] = Field(default_factory=list)
+    expired_incoming: list[ObservationInventoryDiffEntry] = Field(default_factory=list)
+    conflicts_introduced: list[FactConflict] = Field(default_factory=list)
 
 
 class ObservationSource(Protocol):
@@ -159,6 +185,147 @@ class JsonObservationSource:
             raise ValueError(
                 f"observations[{index}].{field} must be an ISO timestamp"
             ) from exc
+
+
+def diff_observations_json(state: Any, payload: Any) -> ObservationInventoryDiff:
+    """Compare a JSON observation inventory with current projected state.
+
+    This is a pure dry-run helper: it validates and normalizes the incoming JSON
+    payload into Observation instances but does not append events, ingest
+    observations, or mutate the supplied State.
+    """
+
+    observations = _observations_from_json_payload(payload)
+    current_by_claim: dict[tuple[str, str], list[Fact]] = {}
+    for fact in state.facts.values():
+        if is_fact_expired(fact):
+            continue
+        current_by_claim.setdefault((fact.subject_id, fact.predicate), []).append(fact)
+
+    new_facts: list[ObservationInventoryDiffEntry] = []
+    matching_facts: list[ObservationInventoryDiffEntry] = []
+    changed_facts: list[ObservationInventoryDiffEntry] = []
+    expired_incoming: list[ObservationInventoryDiffEntry] = []
+    conflicts_introduced: list[FactConflict] = []
+
+    for observation in observations:
+        incoming_entry = _diff_entry(observation)
+        if _is_observation_expired(observation):
+            expired_incoming.append(
+                incoming_entry.model_copy(
+                    update={"reason": "incoming observation is already expired"}
+                )
+            )
+            continue
+
+        current_facts = current_by_claim.get(
+            (observation.subject, observation.predicate), []
+        )
+        current_value_keys = {_json_value_key(fact.value) for fact in current_facts}
+        incoming_value_key = _json_value_key(observation.value)
+        current_values = _dedupe_values(fact.value for fact in current_facts)
+        current_fact_ids = [fact.id for fact in current_facts]
+
+        if not current_facts:
+            new_facts.append(
+                incoming_entry.model_copy(
+                    update={
+                        "reason": "no current fact for subject and predicate",
+                    }
+                )
+            )
+            continue
+
+        if incoming_value_key in current_value_keys:
+            matching_facts.append(
+                incoming_entry.model_copy(
+                    update={
+                        "current_fact_ids": current_fact_ids,
+                        "current_values": current_values,
+                        "reason": "incoming observation matches current projected fact value",
+                    }
+                )
+            )
+            continue
+
+        changed_facts.append(
+            incoming_entry.model_copy(
+                update={
+                    "current_fact_ids": current_fact_ids,
+                    "current_values": current_values,
+                    "reason": "incoming observation value differs from current projected fact value",
+                }
+            )
+        )
+        values = [*current_values, observation.value]
+        conflicts_introduced.append(
+            FactConflict(
+                subject=observation.subject,
+                predicate=observation.predicate,
+                values=values,
+                winning_value=None,
+                best_fact_id=None,
+                conflicting_fact_ids=current_fact_ids,
+                reason=(
+                    f"incoming observation would introduce multiple values for "
+                    f"{observation.subject}/{observation.predicate}"
+                ),
+            )
+        )
+
+    return ObservationInventoryDiff(
+        new_facts=new_facts,
+        matching_facts=matching_facts,
+        changed_facts=changed_facts,
+        expired_incoming=expired_incoming,
+        conflicts_introduced=conflicts_introduced,
+    )
+
+
+def _observations_from_json_payload(payload: Any) -> list[Observation]:
+    if not isinstance(payload, dict):
+        raise ValueError("JSON observation payload must contain a top-level object")
+    entries = payload.get("observations")
+    if not isinstance(entries, list):
+        raise ValueError("JSON observation payload must contain an observations array")
+    source = JsonObservationSource("<payload>")
+    return [
+        source._observation_from_entry(entry, index)
+        for index, entry in enumerate(entries)
+    ]
+
+
+def _diff_entry(observation: Observation) -> ObservationInventoryDiffEntry:
+    return ObservationInventoryDiffEntry(
+        observation=to_plain(observation),
+        reason="",
+    )
+
+
+def _is_observation_expired(observation: Observation) -> bool:
+    if observation.expires_at is None:
+        return False
+    comparison_time = datetime.now(timezone.utc)
+    expires_at = observation.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    return expires_at <= comparison_time
+
+
+def _json_value_key(value: Any) -> str:
+    return json.dumps(value, sort_keys=True, default=str)
+
+
+def _dedupe_values(values: Any) -> list[Any]:
+    deduped: list[Any] = []
+    seen: set[str] = set()
+    for value in values:
+        key = _json_value_key(value)
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(value)
+    return deduped
 
 
 def export_observations_json(
