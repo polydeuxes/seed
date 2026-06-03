@@ -13,6 +13,7 @@ from seed_runtime.inference_rules import infer_facts
 from seed_runtime.facts import (
     StaleFactRefreshRecommendation,
     is_fact_expired,
+    is_measurement_predicate,
     recommended_capability_for_stale_fact,
 )
 from seed_runtime.models import (
@@ -668,20 +669,43 @@ def _project_fact_supports(
             if all(expires_at is not None for expires_at in expires_at_values)
             else None
         )
-        supports.append(
-            FactSupport(
-                subject=subject,
-                predicate=predicate,
-                value=values_by_key[(subject, predicate, _value_key)],
-                supporting_fact_ids=[fact.id for fact in ordered_facts],
-                source_types=source_types,
-                confidence=_aggregate_support_confidence(ordered_facts),
-                observed_at=min(fact.observed_at for fact in ordered_facts),
-                latest_observed_at=max(fact.observed_at for fact in ordered_facts),
-                expired=all(is_fact_expired(fact) for fact in ordered_facts),
-                expires_at=support_expires_at,
+        if is_measurement_predicate(predicate):
+            current_sample = max(
+                ordered_facts, key=lambda fact: (fact.observed_at, fact.id)
             )
-        )
+            supports.append(
+                FactSupport(
+                    subject=subject,
+                    predicate=predicate,
+                    value=current_sample.value,
+                    supporting_fact_ids=[current_sample.id],
+                    source_types=[current_sample.source_type],
+                    confidence=current_sample.confidence,
+                    observed_at=current_sample.observed_at,
+                    latest_observed_at=current_sample.observed_at,
+                    expired=is_fact_expired(current_sample),
+                    expires_at=current_sample.expires_at,
+                    predicate_semantics="measurement",
+                    support_kind="current_sample",
+                )
+            )
+        else:
+            supports.append(
+                FactSupport(
+                    subject=subject,
+                    predicate=predicate,
+                    value=values_by_key[(subject, predicate, _value_key)],
+                    supporting_fact_ids=[fact.id for fact in ordered_facts],
+                    source_types=source_types,
+                    confidence=_aggregate_support_confidence(ordered_facts),
+                    observed_at=min(fact.observed_at for fact in ordered_facts),
+                    latest_observed_at=max(fact.observed_at for fact in ordered_facts),
+                    expired=all(is_fact_expired(fact) for fact in ordered_facts),
+                    expires_at=support_expires_at,
+                    predicate_semantics="durable",
+                    support_kind="aggregate",
+                )
+            )
     return supports
 
 
@@ -710,7 +734,13 @@ def _support_strength(source_types: Iterable[str]) -> float:
     return sum(_SOURCE_SUPPORT_WEIGHT[source_type] for source_type in set(source_types))
 
 
-def _support_tie_key(support: FactSupport) -> tuple[float, int]:
+def _support_tie_key(support: FactSupport) -> tuple[Any, ...]:
+    if support.predicate_semantics == "measurement":
+        return (
+            support.latest_observed_at,
+            support.confidence,
+            len(support.supporting_fact_ids),
+        )
     return (support.confidence, len(support.supporting_fact_ids))
 
 

@@ -2202,3 +2202,26 @@ def test_cli_alias_records_alias_observation_fact(capsys):
     assert "subject: node115" in output
     assert "predicate: alias" in output
     assert "value: 192.168.254.115:9100" in output
+
+
+def test_cli_fact_support_marks_measurement_current_sample():
+    seed_local = load_seed_local_module()
+    supports = [
+        seed_local.FactSupport(
+            subject="node",
+            predicate="up",
+            value=1,
+            supporting_fact_ids=["fact_up_new"],
+            source_types=["provider"],
+            confidence=0.85,
+            observed_at=seed_local.datetime(2026, 1, 1),
+            latest_observed_at=seed_local.datetime(2026, 1, 1),
+            predicate_semantics="measurement",
+            support_kind="current_sample",
+        )
+    ]
+
+    output = seed_local.format_fact_supports(supports, "node", "up")
+
+    assert "semantics: measurement" in output
+    assert "support_kind: current_sample" in output

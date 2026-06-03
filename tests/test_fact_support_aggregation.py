@@ -19,10 +19,11 @@ def _fact(
     evidence_ids: list[str] | None = None,
     predicate: str = "service.running",
     expires_at: datetime | None = None,
+    subject_id: str = "svc_ssh",
 ) -> Fact:
     return Fact(
         id=fact_id,
-        subject_id="svc_ssh",
+        subject_id=subject_id,
         predicate=predicate,
         value=value,
         source_type=source_type,
@@ -231,3 +232,106 @@ def test_conflicts_ignore_expired_facts_by_default():
     assert state.get_best_fact("svc_ssh", "runtime") == fresh_systemd
     supports = state.get_fact_supports("svc_ssh", "runtime", include_expired=True)
     assert {support.value for support in supports} == {"docker", "systemd"}
+
+
+def test_measurement_up_old_zero_new_one_prefers_latest_sample():
+    old_down = _fact("fact_up_old_down", 0, predicate="up", observed_offset=0)
+    new_up = _fact("fact_up_new_up", 1, predicate="up", observed_offset=1)
+
+    state = _project(old_down, new_up)
+
+    best = state.get_best_fact("svc_ssh", "up")
+    support = state.get_fact_support("svc_ssh", "up")
+    assert best == new_up
+    assert support is not None
+    assert support.value == 1
+    assert support.predicate_semantics == "measurement"
+    assert support.support_kind == "current_sample"
+    assert support.supporting_fact_ids == [new_up.id]
+
+
+def test_measurement_up_old_one_new_zero_prefers_latest_sample():
+    old_up = _fact("fact_up_old_up", 1, predicate="up", observed_offset=0)
+    new_down = _fact("fact_up_new_down", 0, predicate="up", observed_offset=1)
+
+    state = _project(old_up, new_down)
+
+    best = state.get_best_fact("svc_ssh", "up")
+    support = state.get_fact_support("svc_ssh", "up")
+    assert best == new_down
+    assert support is not None
+    assert support.value == 0
+    assert support.predicate_semantics == "measurement"
+    assert support.support_kind == "current_sample"
+    assert support.supporting_fact_ids == [new_down.id]
+
+
+def test_measurement_repeated_values_do_not_strengthen_confidence_like_durable_facts():
+    first = _fact("fact_up_first", 1, predicate="up", confidence=0.70)
+    second = _fact(
+        "fact_up_second",
+        1,
+        predicate="up",
+        confidence=0.60,
+        observed_offset=1,
+    )
+
+    state = _project(first, second)
+
+    support = state.get_fact_support("svc_ssh", "up")
+    assert support is not None
+    assert support.confidence == second.confidence
+    assert support.supporting_fact_ids == [second.id]
+
+
+def test_runtime_docker_repeated_observations_still_aggregate_support():
+    first = _fact("fact_runtime_first", "docker", predicate="runtime", confidence=0.70)
+    second = _fact(
+        "fact_runtime_second",
+        "docker",
+        predicate="runtime",
+        confidence=0.60,
+        observed_offset=1,
+    )
+
+    state = _project(first, second)
+
+    support = state.get_fact_support("svc_ssh", "runtime")
+    assert support is not None
+    assert support.predicate_semantics == "durable"
+    assert support.support_kind == "aggregate"
+    assert support.confidence > first.confidence
+    assert support.confidence > second.confidence
+    assert support.supporting_fact_ids == [first.id, second.id]
+
+
+def test_alias_resolution_still_works_for_measurements():
+    alias = _fact(
+        "fact_alias",
+        "node.example.com:9100",
+        predicate="alias",
+        subject_id="node",
+    )
+    old_down = _fact(
+        "fact_node_old_down",
+        0,
+        predicate="up",
+        subject_id="node.example.com:9100",
+    )
+    new_up = _fact(
+        "fact_node_new_up",
+        1,
+        predicate="up",
+        subject_id="node.example.com:9100",
+        observed_offset=1,
+    )
+
+    state = _project(alias, old_down, new_up)
+
+    best = state.get_best_fact("node", "up")
+    support = state.get_fact_support("node", "up")
+    assert best == new_up
+    assert support is not None
+    assert support.subject == "node"
+    assert support.value == 1
+    assert support.support_kind == "current_sample"
