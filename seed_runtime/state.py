@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Iterable
 
 from seed_runtime.events import EventLedger
 from seed_runtime.evidence import Evidence
@@ -27,11 +27,21 @@ def _parse_dt(value: str | None) -> datetime | None:
     return datetime.fromisoformat(value) if value else None
 
 
+@dataclass(frozen=True)
+class EntityRelationship:
+    """A directed subject-predicate-object relationship projected from facts."""
+
+    subject: str
+    predicate: str
+    object: str
+
+
 @dataclass
 class State:
     workspace_id: str
     entities: dict[str, Entity] = field(default_factory=dict)
     facts: dict[str, Fact] = field(default_factory=dict)
+    entity_relationships: list[EntityRelationship] = field(default_factory=list)
     evidence: dict[str, Evidence] = field(default_factory=dict)
     goals: dict[str, Goal] = field(default_factory=dict)
     tool_needs: dict[str, ToolNeed] = field(default_factory=dict)
@@ -50,6 +60,30 @@ class State:
     def open_tool_needs(self) -> list[ToolNeed]:
         closed = {"registered", "rejected"}
         return [need for need in self.tool_needs.values() if need.status not in closed]
+
+    def get_entity_relationships(self, entity: str) -> list[EntityRelationship]:
+        """Return relationships where the entity is the subject or object."""
+        return [
+            relationship
+            for relationship in self.entity_relationships
+            if relationship.subject == entity or relationship.object == entity
+        ]
+
+    def find_entities(self, predicate: str, object: str) -> list[str]:
+        """Return subjects related to an object by the given predicate."""
+        return _dedupe(
+            relationship.subject
+            for relationship in self.entity_relationships
+            if relationship.predicate == predicate and relationship.object == object
+        )
+
+    def find_related(self, subject: str, predicate: str) -> list[str]:
+        """Return objects related to a subject by the given predicate."""
+        return _dedupe(
+            relationship.object
+            for relationship in self.entity_relationships
+            if relationship.subject == subject and relationship.predicate == predicate
+        )
 
     def has_approval(self, action: str, scope: str | None = None) -> Approval | None:
         now = datetime.now(timezone.utc)
@@ -74,6 +108,9 @@ class StateProjector:
         state = State(workspace_id=workspace_id)
         for event in self.ledger.list_events(workspace_id):
             self.apply(state, event)
+        state.entity_relationships = _project_entity_relationships(
+            state.facts.values()
+        )
         return state
 
     def apply(self, state: State, event: Event) -> None:
@@ -95,6 +132,9 @@ class StateProjector:
                 data["evidence_ids"] = [data.pop("source_event_id")]
             fact = Fact(**data)
             state.facts[fact.id] = fact
+            state.entity_relationships = _project_entity_relationships(
+                state.facts.values()
+            )
         elif event.kind == "goal.created":
             data = payload.get("goal", payload)
             goal = Goal(**data)
@@ -189,3 +229,35 @@ class StateProjector:
             data = payload.get("tool", payload)
             tool = ToolSpec(**data)
             state.tools[tool.name] = tool
+
+
+def _project_entity_relationships(facts: Iterable[Fact]) -> list[EntityRelationship]:
+    relationships: list[EntityRelationship] = []
+    seen: set[tuple[str, str, str]] = set()
+    for fact in facts:
+        object_value = _relationship_object(fact.value)
+        if object_value is None:
+            continue
+        key = (fact.subject_id, fact.predicate, object_value)
+        if key in seen:
+            continue
+        seen.add(key)
+        relationships.append(
+            EntityRelationship(
+                subject=fact.subject_id,
+                predicate=fact.predicate,
+                object=object_value,
+            )
+        )
+    return relationships
+
+
+def _relationship_object(value: Any) -> str | None:
+    if isinstance(value, str):
+        value = value.strip()
+        return value or None
+    return None
+
+
+def _dedupe(values: Iterable[str]) -> list[str]:
+    return list(dict.fromkeys(values))

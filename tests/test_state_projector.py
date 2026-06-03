@@ -58,3 +58,109 @@ def test_has_approval_compares_expiration_against_utc_now():
 
     assert state.has_approval("ssh.install", "ent_1") == approval
     assert state.has_approval("ssh.install", "ent_2") is None
+
+
+def test_projector_projects_entity_relationships_from_string_facts():
+    ledger = EventLedger()
+    workspace_id = "ws_relationships"
+    observed_at = utc_now()
+    facts = [
+        Fact(
+            id="fact_host",
+            subject_id="jellyfin",
+            predicate="host",
+            value="node115",
+            evidence_ids=["evt_source"],
+            observed_at=observed_at,
+        ),
+        Fact(
+            id="fact_runtime",
+            subject_id="jellyfin",
+            predicate="runtime",
+            value="docker",
+            evidence_ids=["evt_source"],
+            observed_at=observed_at,
+        ),
+        Fact(
+            id="fact_container",
+            subject_id="jellyfin",
+            predicate="container",
+            value="jellyfin",
+            evidence_ids=["evt_source"],
+            observed_at=observed_at,
+        ),
+        Fact(
+            id="fact_running",
+            subject_id="jellyfin",
+            predicate="running",
+            value=True,
+            evidence_ids=["evt_source"],
+            observed_at=observed_at,
+        ),
+    ]
+
+    for fact in facts:
+        ledger.append("fact.observed", workspace_id, {"fact": to_plain(fact)})
+
+    state = StateProjector(ledger).project(workspace_id)
+
+    assert [
+        (relationship.subject, relationship.predicate, relationship.object)
+        for relationship in state.entity_relationships
+    ] == [
+        ("jellyfin", "host", "node115"),
+        ("jellyfin", "runtime", "docker"),
+        ("jellyfin", "container", "jellyfin"),
+    ]
+
+
+def test_entity_relationship_query_helpers_return_deduped_matches():
+    ledger = EventLedger()
+    workspace_id = "ws_relationship_queries"
+    observed_at = utc_now()
+    facts = [
+        Fact(
+            id="fact_host",
+            subject_id="jellyfin",
+            predicate="host",
+            value="node115",
+            evidence_ids=["evt_source"],
+            observed_at=observed_at,
+        ),
+        Fact(
+            id="fact_runtime",
+            subject_id="jellyfin",
+            predicate="runtime",
+            value="docker",
+            evidence_ids=["evt_source"],
+            observed_at=observed_at,
+        ),
+        Fact(
+            id="fact_runtime_duplicate",
+            subject_id="jellyfin",
+            predicate="runtime",
+            value="docker",
+            evidence_ids=["evt_source"],
+            observed_at=observed_at,
+        ),
+        Fact(
+            id="fact_runtime_other",
+            subject_id="grafana",
+            predicate="runtime",
+            value="docker",
+            evidence_ids=["evt_source"],
+            observed_at=observed_at,
+        ),
+    ]
+
+    for fact in facts:
+        ledger.append("fact.observed", workspace_id, {"fact": to_plain(fact)})
+
+    state = StateProjector(ledger).project(workspace_id)
+
+    assert state.find_related("jellyfin", "host") == ["node115"]
+    assert state.find_entities("runtime", "docker") == ["jellyfin", "grafana"]
+    assert [
+        (relationship.subject, relationship.predicate, relationship.object)
+        for relationship in state.get_entity_relationships("node115")
+    ] == [("jellyfin", "host", "node115")]
