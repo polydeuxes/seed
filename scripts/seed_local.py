@@ -44,6 +44,7 @@ from seed_runtime.models import Event, Observation, ToolNeed, ToolSpec, utc_now
 from seed_runtime.observation_sources import (
     JsonObservationSource,
     ObservationCollectionService,
+    export_observations_json,
 )
 from seed_runtime.observations import ObservationIngestor
 from seed_runtime.registry import ToolRegistry
@@ -599,6 +600,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="ingest external Observations from a local JSON inventory file",
     )
     parser.add_argument(
+        "--export-observations-json",
+        metavar="PATH",
+        help="export projected observations/facts to a local JSON inventory file",
+    )
+    parser.add_argument(
         "--source-type",
         choices=["user", "discovery", "provider", "imported"],
         default="user",
@@ -957,6 +963,20 @@ def fact_query_state(args: argparse.Namespace) -> State:
         close = getattr(ledger, "close", None)
         if close is not None:
             close()
+
+
+def export_observations_json_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    """Seed requested dev state and write the projected observation inventory."""
+
+    payload = export_observations_json(fact_query_state(args))
+    output_path = Path(args.export_observations_json)
+    output_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    return {
+        "path": str(output_path),
+        "observation_count": len(payload["observations"]),
+    }
 
 
 def format_fact_supports(
@@ -1729,6 +1749,13 @@ def main(argv: list[str] | None = None) -> int:
             format_stale_fact_refresh_recommendations(
                 state.get_stale_fact_refresh_recommendations()
             )
+        )
+        return 0
+
+    if args.export_observations_json:
+        result = export_observations_json_from_args(args)
+        print(
+            f"exported {result['observation_count']} observation(s) to {result['path']}"
         )
         return 0
 

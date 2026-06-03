@@ -21,7 +21,9 @@ if find_spec("pydantic") is not None:
 else:
     from seed_runtime._pydantic_compat import Field
 
-ObservationSourceType = Literal["user", "discovery", "provider", "imported"]
+ObservationSourceType = Literal[
+    "user", "discovery", "provider", "imported", "inferred"
+]
 
 
 class Observation(SeedModel):
@@ -89,8 +91,9 @@ class ObservationIngestor:
             causation_id=causation_id or observation.id,
             correlation_id=correlation_id,
         )
+        fact_event_kind = "fact.inferred" if fact.inferred else "fact.observed"
         self.ledger.append(
-            "fact.observed",
+            fact_event_kind,
             workspace_id,
             {"fact": to_plain(fact), **event_metadata},
             actor=actor,  # type: ignore[arg-type]
@@ -141,4 +144,5 @@ class ObservationIngestor:
             confidence=observation.confidence,
             observed_at=observation.observed_at,
             expires_at=observation.expires_at,
+            inferred=observation.source_type == "inferred",
         )

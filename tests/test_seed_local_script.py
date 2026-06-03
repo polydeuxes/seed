@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -406,6 +407,54 @@ def test_cli_observe_json_ingests_imported_observations(tmp_path, capsys):
     assert "value: docker" in output
     assert "source_type: imported" in output
     assert "confidence: 0.95" in output
+
+
+def test_parser_accepts_json_observation_export_option():
+    seed_local = load_seed_local_module()
+    args = seed_local.build_parser().parse_args(
+        ["--export-observations-json", "inventory.json"]
+    )
+
+    assert args.export_observations_json == "inventory.json"
+
+
+def test_cli_export_observations_json_writes_inventory(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    output_path = tmp_path / "observations.json"
+
+    assert (
+        seed_local.main(
+            [
+                "--observe",
+                "jellyfin",
+                "runtime",
+                "docker",
+                "--source-type",
+                "discovery",
+                "--confidence",
+                "0.81",
+                "--export-observations-json",
+                str(output_path),
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    payload = json.loads(output_path.read_text(encoding="utf-8"))
+    assert "exported 1 observation(s)" in output
+    assert payload == {
+        "observations": [
+            {
+                "confidence": 0.81,
+                "observed_at": payload["observations"][0]["observed_at"],
+                "predicate": "runtime",
+                "source_type": "discovery",
+                "subject": "jellyfin",
+                "value": "docker",
+            }
+        ]
+    }
 
 
 def test_parser_accepts_repeatable_fact_seed_options():
