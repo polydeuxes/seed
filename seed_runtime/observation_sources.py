@@ -9,6 +9,7 @@ from typing import Any, Protocol
 
 from seed_runtime.facts import Fact
 from seed_runtime.ids import new_id
+from seed_runtime.serialization import to_plain
 from seed_runtime.models import Actor
 from seed_runtime.observations import (
     Observation,
@@ -72,6 +73,7 @@ class JsonObservationSource:
         self.path = Path(path)
         self.name = name or f"json:{self.path}"
         self.source_type = source_type
+        self.allow_mixed_source_types = True
 
     def collect(self) -> list[Observation]:
         """Read, validate, and return all observations from the JSON file."""
@@ -137,11 +139,6 @@ class JsonObservationSource:
         }
         if not isinstance(data["id"], str) or not data["id"].strip():
             raise ValueError(f"observations[{index}].id must be a non-empty string")
-        if data["source_type"] != self.source_type:
-            raise ValueError(
-                f"observations[{index}].source_type must match source type "
-                f"{self.source_type!r}"
-            )
         try:
             return Observation(**data)
         except (TypeError, ValueError) as exc:
@@ -162,6 +159,46 @@ class JsonObservationSource:
             raise ValueError(
                 f"observations[{index}].{field} must be an ISO timestamp"
             ) from exc
+
+
+def export_observations_json(
+    state: Any, *, include_inferred: bool = False
+) -> dict[str, list[dict[str, Any]]]:
+    """Export projected facts as a JSON observation inventory payload.
+
+    The returned dictionary matches the ``JsonObservationSource`` input shape:
+    ``{"observations": [...]}``. Each fact is represented as one observation
+    entry so re-importing the payload preserves independent fact support rather
+    than collapsing support into one aggregate claim. Inferred facts are omitted
+    by default because they are derivable from observed facts.
+    """
+
+    facts = sorted(
+        state.facts.values(),
+        key=lambda fact: (
+            fact.inferred,
+            fact.observed_at,
+            fact.subject_id,
+            fact.predicate,
+            fact.id,
+        ),
+    )
+    observations: list[dict[str, Any]] = []
+    for fact in facts:
+        if fact.inferred and not include_inferred:
+            continue
+        entry = {
+            "subject": fact.subject_id,
+            "predicate": fact.predicate,
+            "value": to_plain(fact.value),
+            "source_type": fact.source_type,
+            "confidence": fact.confidence,
+            "observed_at": fact.observed_at.isoformat(),
+        }
+        if fact.expires_at is not None:
+            entry["expires_at"] = fact.expires_at.isoformat()
+        observations.append(entry)
+    return {"observations": observations}
 
 
 class ObservationCollectionService:
@@ -210,7 +247,9 @@ class ObservationCollectionService:
     ) -> Observation:
         if not isinstance(observation, Observation):
             raise TypeError("observation sources must collect Observation instances")
-        if observation.source_type != source.source_type:
+        if observation.source_type != source.source_type and not getattr(
+            source, "allow_mixed_source_types", False
+        ):
             raise ValueError(
                 "observation source_type must match its ObservationSource source_type"
             )
