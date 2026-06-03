@@ -24,6 +24,17 @@ DEFAULT_CONFIDENCE_BY_SOURCE_TYPE: dict[str, float] = {
 }
 
 
+class FactConflict(SeedModel):
+    """A detected disagreement among facts for one subject and predicate."""
+
+    subject: str
+    predicate: str
+    values: list[Any]
+    best_fact_id: str
+    conflicting_fact_ids: list[str] = Field(default_factory=list)
+    reason: str
+
+
 class Fact(SeedModel):
     """A state fact with provenance links to evidence observations."""
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Iterable
@@ -16,6 +17,7 @@ from seed_runtime.models import (
     Event,
     ExecutionAuthorization,
     Fact,
+    FactConflict,
     Goal,
     HandoffPlan,
     PendingAction,
@@ -51,6 +53,7 @@ class State:
     observed_facts: dict[str, Fact] = field(default_factory=dict)
     inferred_facts: dict[str, Fact] = field(default_factory=dict)
     entity_relationships: list[EntityRelationship] = field(default_factory=list)
+    fact_conflicts: list[FactConflict] = field(default_factory=list)
     evidence: dict[str, Evidence] = field(default_factory=dict)
     goals: dict[str, Goal] = field(default_factory=dict)
     tool_needs: dict[str, ToolNeed] = field(default_factory=dict)
@@ -156,6 +159,7 @@ class StateProjector:
         state.entity_relationships = _project_entity_relationships(
             state.facts.values()
         )
+        state.fact_conflicts = _project_fact_conflicts(state)
         return state
 
     def apply(self, state: State, event: Event) -> None:
@@ -288,6 +292,46 @@ def _project_inferred_facts(state: State) -> None:
     for fact_id, fact in state.inferred_facts.items():
         if fact_id not in state.facts:
             state.facts[fact_id] = fact
+
+
+def _project_fact_conflicts(state: State) -> list[FactConflict]:
+    grouped: dict[tuple[str, str], list[Fact]] = {}
+    for fact in state.facts.values():
+        grouped.setdefault((fact.subject_id, fact.predicate), []).append(fact)
+
+    conflicts: list[FactConflict] = []
+    for (subject, predicate), facts in grouped.items():
+        values_by_key: dict[str, Any] = {}
+        for fact in facts:
+            values_by_key.setdefault(_fact_value_key(fact.value), fact.value)
+        if len(values_by_key) <= 1:
+            continue
+
+        best_fact = state.get_best_fact(subject, predicate)
+        if best_fact is None:
+            continue
+        conflicts.append(
+            FactConflict(
+                subject=subject,
+                predicate=predicate,
+                values=list(values_by_key.values()),
+                best_fact_id=best_fact.id,
+                conflicting_fact_ids=[
+                    fact.id
+                    for fact in facts
+                    if _fact_value_key(fact.value) != _fact_value_key(best_fact.value)
+                ],
+                reason=(
+                    f"multiple values for {subject}/{predicate}: "
+                    + ", ".join(str(value) for value in values_by_key.values())
+                ),
+            )
+        )
+    return conflicts
+
+
+def _fact_value_key(value: Any) -> str:
+    return json.dumps(value, sort_keys=True, default=str)
 
 
 def _project_entity_relationships(facts: Iterable[Fact]) -> list[EntityRelationship]:

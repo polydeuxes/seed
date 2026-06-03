@@ -370,3 +370,154 @@ def test_inferred_confidence_is_capped_by_source_fact_confidence():
     assert inferred.source_type == "inferred"
     assert inferred.confidence == 0.4
     assert inferred.confidence <= runtime.confidence
+
+
+def _projected_conflicts(facts: list[Fact]):
+    ledger = EventLedger()
+    workspace_id = "ws_fact_conflicts"
+    for fact in facts:
+        ledger.append("fact.observed", workspace_id, {"fact": to_plain(fact)})
+    return StateProjector(ledger).project(workspace_id).fact_conflicts
+
+
+def test_fact_conflicts_no_conflict_for_single_value():
+    observed_at = utc_now()
+    conflicts = _projected_conflicts(
+        [
+            Fact(
+                id="fact_runtime_docker_1",
+                subject_id="jellyfin",
+                predicate="runtime",
+                value="docker",
+                observed_at=observed_at,
+            ),
+            Fact(
+                id="fact_runtime_docker_2",
+                subject_id="jellyfin",
+                predicate="runtime",
+                value="docker",
+                observed_at=observed_at,
+                confidence=0.95,
+            ),
+        ]
+    )
+
+    assert conflicts == []
+
+
+def test_fact_conflicts_detects_docker_vs_systemd():
+    observed_at = utc_now()
+    conflicts = _projected_conflicts(
+        [
+            Fact(
+                id="fact_runtime_docker",
+                subject_id="jellyfin",
+                predicate="runtime",
+                value="docker",
+                observed_at=observed_at,
+            ),
+            Fact(
+                id="fact_runtime_systemd",
+                subject_id="jellyfin",
+                predicate="runtime",
+                value="systemd",
+                observed_at=observed_at,
+            ),
+        ]
+    )
+
+    conflict = next(
+        conflict for conflict in conflicts if conflict.predicate == "runtime"
+    )
+    assert conflict.subject == "jellyfin"
+    assert conflict.predicate == "runtime"
+    assert conflict.values == ["docker", "systemd"]
+    assert conflict.best_fact_id in {"fact_runtime_docker", "fact_runtime_systemd"}
+    assert "multiple values" in conflict.reason
+
+
+def test_fact_conflicts_selects_highest_confidence_as_best():
+    observed_at = utc_now()
+    conflicts = _projected_conflicts(
+        [
+            Fact(
+                id="fact_runtime_docker",
+                subject_id="jellyfin",
+                predicate="runtime",
+                value="docker",
+                observed_at=observed_at,
+                confidence=0.8,
+            ),
+            Fact(
+                id="fact_runtime_systemd",
+                subject_id="jellyfin",
+                predicate="runtime",
+                value="systemd",
+                observed_at=observed_at,
+                confidence=0.95,
+            ),
+        ]
+    )
+
+    assert conflicts[0].best_fact_id == "fact_runtime_systemd"
+    assert conflicts[0].conflicting_fact_ids == ["fact_runtime_docker"]
+
+
+def test_fact_conflicts_lower_confidence_inferred_fact_loses_to_observed_fact():
+    observed_at = utc_now()
+    state = StateProjector(EventLedger()).project("ws_empty")
+    observed = Fact(
+        id="fact_observed_runtime",
+        subject_id="jellyfin",
+        predicate="runtime",
+        value="docker",
+        observed_at=observed_at,
+        confidence=0.9,
+    )
+    inferred = Fact(
+        id="fact_inferred_runtime",
+        subject_id="jellyfin",
+        predicate="runtime",
+        value="systemd",
+        observed_at=observed_at,
+        confidence=0.6,
+        inferred=True,
+    )
+    state.facts = {observed.id: observed, inferred.id: inferred}
+
+    from seed_runtime.state import _project_fact_conflicts
+
+    state.fact_conflicts = _project_fact_conflicts(state)
+
+    assert state.fact_conflicts[0].best_fact_id == "fact_observed_runtime"
+    assert state.fact_conflicts[0].conflicting_fact_ids == ["fact_inferred_runtime"]
+
+
+def test_fact_conflicts_preserves_provenance():
+    observed_at = utc_now()
+    conflicts = _projected_conflicts(
+        [
+            Fact(
+                id="fact_runtime_docker",
+                subject_id="jellyfin",
+                predicate="runtime",
+                value="docker",
+                evidence_ids=["evd_docker"],
+                observed_at=observed_at,
+                confidence=0.95,
+            ),
+            Fact(
+                id="fact_runtime_systemd",
+                subject_id="jellyfin",
+                predicate="runtime",
+                value="systemd",
+                evidence_ids=["evd_systemd"],
+                observed_at=observed_at,
+                confidence=0.9,
+            ),
+        ]
+    )
+
+    conflict = conflicts[0]
+    assert conflict.best_fact_id == "fact_runtime_docker"
+    assert conflict.conflicting_fact_ids == ["fact_runtime_systemd"]
