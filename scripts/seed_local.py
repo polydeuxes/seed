@@ -41,6 +41,10 @@ from seed_runtime.intent_classifier import (
     TextIntentClassifier,
 )
 from seed_runtime.models import Event, Observation, ToolNeed, ToolSpec, utc_now
+from seed_runtime.observation_sources import (
+    JsonObservationSource,
+    ObservationCollectionService,
+)
 from seed_runtime.observations import ObservationIngestor
 from seed_runtime.registry import ToolRegistry
 from seed_runtime.runtime import Runtime
@@ -193,6 +197,16 @@ class LocalSeedApp:
             session_id=self.session_id,
         )
 
+    def observe_json(self, path: str | Path) -> list[Fact]:
+        """Append observations from a local JSON inventory file."""
+
+        return ingest_json_observations(
+            self.ledger,
+            self.workspace_id,
+            path,
+            session_id=self.session_id,
+        )
+
     def seed_registered_providers(
         self, providers: list[DevRegisteredProviderSeed]
     ) -> None:
@@ -287,6 +301,23 @@ def ingest_observations(
             )
         )
     return facts
+
+
+def ingest_json_observations(
+    ledger: EventLedger,
+    workspace_id: str,
+    path: str | Path,
+    *,
+    session_id: str | None = None,
+) -> list[Fact]:
+    """Ingest observations from a local JSON file through source collection."""
+
+    return ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        JsonObservationSource(path),
+        workspace_id,
+        actor="system",
+        session_id=session_id,
+    )
 
 
 def seed_dev_registered_providers(
@@ -561,6 +592,11 @@ def build_parser() -> argparse.ArgumentParser:
         metavar=("SUBJECT", "PREDICATE", "VALUE"),
         default=[],
         help="canonical intake: ingest an external Observation and derive a Fact",
+    )
+    parser.add_argument(
+        "--observe-json",
+        metavar="PATH",
+        help="ingest external Observations from a local JSON inventory file",
     )
     parser.add_argument(
         "--source-type",
@@ -876,6 +912,14 @@ def seed_dev_state_from_args(args: argparse.Namespace, ledger: EventLedger) -> N
             session_id=args.session,
         )
 
+    if args.observe_json:
+        ingest_json_observations(
+            ledger,
+            args.workspace,
+            args.observe_json,
+            session_id=args.session,
+        )
+
     provider_seeds = [
         parse_registered_provider(provider_name)
         for provider_name in args.registered_provider
@@ -1070,6 +1114,15 @@ def ingest_observations_from_args(args: argparse.Namespace) -> list[Fact]:
                 session_id=args.session,
             )
         )
+        if args.observe_json:
+            facts.extend(
+                ingest_json_observations(
+                    ledger,
+                    args.workspace,
+                    args.observe_json,
+                    session_id=args.session,
+                )
+            )
         return facts
     finally:
         close = getattr(ledger, "close", None)
@@ -1680,7 +1733,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     message = " ".join(args.message).strip()
-    if (args.observe or args.fact) and not message and not args.http:
+    if (
+        args.observe or args.fact or args.observe_json
+    ) and not message and not args.http:
         print(format_observed_facts(ingest_observations_from_args(args)))
         return 0
 

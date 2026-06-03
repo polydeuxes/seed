@@ -2,15 +2,21 @@
 
 from __future__ import annotations
 
+import json
+from datetime import datetime
+from pathlib import Path
 from typing import Any, Protocol
 
 from seed_runtime.facts import Fact
+from seed_runtime.ids import new_id
 from seed_runtime.models import Actor
 from seed_runtime.observations import (
     Observation,
     ObservationIngestor,
     ObservationSourceType,
 )
+
+DEFAULT_JSON_OBSERVED_AT = datetime(1970, 1, 1)
 
 
 class ObservationSource(Protocol):
@@ -45,6 +51,117 @@ class FakeObservationSource:
         """Return configured observations without mutating source state."""
 
         return list(self._observations)
+
+
+class JsonObservationSource:
+    """Observation source backed by a local JSON inventory file.
+
+    The file must contain an object with an ``observations`` array. Every entry
+    is validated and converted into an :class:`Observation` before any entries
+    are returned, allowing callers to fail the whole ingest when one entry is
+    malformed.
+    """
+
+    def __init__(
+        self,
+        path: str | Path,
+        *,
+        name: str | None = None,
+        source_type: ObservationSourceType = "imported",
+    ) -> None:
+        self.path = Path(path)
+        self.name = name or f"json:{self.path}"
+        self.source_type = source_type
+
+    def collect(self) -> list[Observation]:
+        """Read, validate, and return all observations from the JSON file."""
+
+        try:
+            payload = json.loads(self.path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise ValueError(
+                f"invalid JSON observation file {self.path}: {exc}"
+            ) from exc
+        if not isinstance(payload, dict):
+            raise ValueError("JSON observation file must contain a top-level object")
+
+        entries = payload.get("observations")
+        if not isinstance(entries, list):
+            raise ValueError("JSON observation file must contain an observations array")
+
+        observations: list[Observation] = []
+        for index, entry in enumerate(entries):
+            observations.append(self._observation_from_entry(entry, index))
+        return observations
+
+    def _observation_from_entry(self, entry: Any, index: int) -> Observation:
+        if not isinstance(entry, dict):
+            raise ValueError(f"observations[{index}] must be an object")
+
+        required_fields = ("subject", "predicate", "value")
+        missing = [field for field in required_fields if field not in entry]
+        if missing:
+            raise ValueError(
+                f"observations[{index}] missing required field(s): "
+                + ", ".join(missing)
+            )
+        for field in ("subject", "predicate"):
+            if not isinstance(entry[field], str) or not entry[field].strip():
+                raise ValueError(
+                    f"observations[{index}].{field} must be a non-empty string"
+                )
+
+        metadata = entry.get("metadata", {})
+        if metadata is None:
+            metadata = {}
+        if not isinstance(metadata, dict):
+            raise ValueError(f"observations[{index}].metadata must be an object")
+        metadata = {**metadata, "json_path": str(self.path)}
+
+        observed_at = (
+            self._parse_datetime_field(entry, index, "observed_at")
+            or DEFAULT_JSON_OBSERVED_AT
+        )
+        expires_at = self._parse_datetime_field(entry, index, "expires_at")
+
+        data = {
+            "id": entry.get("id") or new_id("obs_json"),
+            "source_type": entry.get("source_type", self.source_type),
+            "observed_at": observed_at,
+            "subject": entry["subject"],
+            "predicate": entry["predicate"],
+            "value": entry["value"],
+            "confidence": entry.get("confidence", 1.0),
+            "metadata": metadata,
+            "expires_at": expires_at,
+        }
+        if not isinstance(data["id"], str) or not data["id"].strip():
+            raise ValueError(f"observations[{index}].id must be a non-empty string")
+        if data["source_type"] != self.source_type:
+            raise ValueError(
+                f"observations[{index}].source_type must match source type "
+                f"{self.source_type!r}"
+            )
+        try:
+            return Observation(**data)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"observations[{index}] is malformed: {exc}") from exc
+
+    @staticmethod
+    def _parse_datetime_field(
+        entry: dict[str, Any], index: int, field: str
+    ) -> datetime | None:
+        value = entry.get(field)
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise ValueError(f"observations[{index}].{field} must be an ISO timestamp")
+        try:
+            return datetime.fromisoformat(value)
+        except ValueError as exc:
+            raise ValueError(
+                f"observations[{index}].{field} must be an ISO timestamp"
+            ) from exc
 
 
 class ObservationCollectionService:

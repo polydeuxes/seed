@@ -5,6 +5,7 @@ import pytest
 from seed_runtime.events import EventLedger
 from seed_runtime.observation_sources import (
     FakeObservationSource,
+    JsonObservationSource,
     ObservationCollectionService,
 )
 from seed_runtime.observations import Observation, ObservationIngestor
@@ -106,3 +107,119 @@ def test_bad_source_failure_does_not_partially_corrupt_state():
     assert state.evidence == {}
     assert state.facts == {}
     assert ledger.list_events("ws_sources") == []
+
+
+def test_json_source_valid_file_ingests_observations(tmp_path):
+    json_path = tmp_path / "observations.json"
+    json_path.write_text(
+        """
+        {
+          "observations": [
+            {
+              "id": "obs_json_fixture",
+              "subject": "jellyfin",
+              "predicate": "runtime",
+              "value": "docker",
+              "confidence": 0.95,
+              "observed_at": "2026-01-01T00:00:00+00:00"
+            }
+          ]
+        }
+        """,
+        encoding="utf-8",
+    )
+    ledger = EventLedger()
+    source = JsonObservationSource(json_path)
+
+    facts = ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        source, "ws_json"
+    )
+    state = StateProjector(ledger).project("ws_json")
+
+    assert source.source_type == "imported"
+    assert len(facts) == 1
+    fact = facts[0]
+    assert fact.id in state.facts
+    assert fact.subject_id == "jellyfin"
+    assert fact.predicate == "runtime"
+    assert fact.value == "docker"
+    assert fact.source_type == "imported"
+    assert fact.confidence == 0.95
+
+
+def test_json_source_malformed_file_fails_without_partial_ingest(tmp_path):
+    json_path = tmp_path / "observations.json"
+    json_path.write_text(
+        """
+        {
+          "observations": [
+            {
+              "id": "obs_valid_before_bad",
+              "subject": "jellyfin",
+              "predicate": "runtime",
+              "value": "docker"
+            },
+            {
+              "id": "obs_bad_missing_predicate",
+              "subject": "plex",
+              "value": "systemd"
+            }
+          ]
+        }
+        """,
+        encoding="utf-8",
+    )
+    ledger = EventLedger()
+
+    with pytest.raises(ValueError, match="observations\\[1\\] missing"):
+        ObservationCollectionService(ObservationIngestor(ledger)).collect(
+            JsonObservationSource(json_path), "ws_json"
+        )
+
+    state = StateProjector(ledger).project("ws_json")
+    assert state.observations == {}
+    assert state.evidence == {}
+    assert state.facts == {}
+    assert ledger.list_events("ws_json") == []
+
+
+def test_json_source_provenance_and_source_metadata_preserved(tmp_path):
+    json_path = tmp_path / "observations.json"
+    json_path.write_text(
+        """
+        {
+          "observations": [
+            {
+              "id": "obs_json_provenance",
+              "subject": "jellyfin",
+              "predicate": "runtime",
+              "value": "docker",
+              "metadata": {"scanner": "inventory-export"}
+            }
+          ]
+        }
+        """,
+        encoding="utf-8",
+    )
+    ledger = EventLedger()
+
+    facts = ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        JsonObservationSource(json_path, name="json-inventory"), "ws_json"
+    )
+    state = StateProjector(ledger).project("ws_json")
+
+    projected_observation = state.observations["obs_json_provenance"]
+    projected_fact = state.facts[facts[0].id]
+    evidence = state.evidence[projected_fact.evidence_ids[0]]
+
+    assert projected_observation.source_type == "imported"
+    assert projected_observation.metadata == {
+        "scanner": "inventory-export",
+        "json_path": str(json_path),
+        "observation_source": "json-inventory",
+    }
+    assert projected_fact.source_type == "imported"
+    assert evidence.source == "observation:imported"
+    assert evidence.payload["observation_id"] == "obs_json_provenance"
+    assert evidence.payload["source_type"] == "imported"
+    assert evidence.payload["metadata"] == projected_observation.metadata

@@ -381,6 +381,33 @@ def test_parser_accepts_observation_ingestion_options():
     assert args.confidence == 0.81
 
 
+def test_parser_accepts_json_observation_ingestion_option():
+    seed_local = load_seed_local_module()
+    args = seed_local.build_parser().parse_args(["--observe-json", "inventory.json"])
+
+    assert args.observe_json == "inventory.json"
+
+
+def test_cli_observe_json_ingests_imported_observations(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    json_path = tmp_path / "observations.json"
+    json_path.write_text(
+        '{"observations":[{"subject":"jellyfin","predicate":"runtime",'
+        '"value":"docker","confidence":0.95}]}',
+        encoding="utf-8",
+    )
+
+    assert seed_local.main(["--observe-json", str(json_path)]) == 0
+
+    output = capsys.readouterr().out
+    assert "fact_id: fact_obs_" in output
+    assert "subject: jellyfin" in output
+    assert "predicate: runtime" in output
+    assert "value: docker" in output
+    assert "source_type: imported" in output
+    assert "confidence: 0.95" in output
+
+
 def test_parser_accepts_repeatable_fact_seed_options():
     seed_local = load_seed_local_module()
     args = seed_local.build_parser().parse_args(
