@@ -191,7 +191,7 @@ python scripts/seed_local.py \
   --observe-timeout 5
 ```
 
-Both live sources ingest through `ObservationCollectionService`, then print the ingested observation count and a concise fact summary. If Prometheus is unreachable, the source fails gracefully by ingesting zero observations.
+Both live sources ingest through `ObservationCollectionService`. Prometheus intake prints a concise summary by default: the ingested observation count, discovered hosts/instances, and counts by predicate. Add `--verbose-observations` to print every ingested fact. Use `--prometheus-instance INSTANCE` or `--prometheus-mountpoint MOUNTPOINT` to limit Prometheus ingestion; without those filters, the full allowlisted metric intake is ingested unchanged. If Prometheus is unreachable, the source fails gracefully by ingesting zero observations.
 
 By default, the CLI posts intent prompts to `http://localhost:11434/api/generate` with model `qwen2.5:3b`, `stream: false`, and JSON-formatted output enabled. Use `--model` to select another local model:
 
