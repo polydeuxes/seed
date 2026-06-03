@@ -87,6 +87,7 @@ def test_context_includes_evidence_backed_facts():
             "observed_at": observed_at,
             "expires_at": None,
             "confidence": 1.0,
+            "inferred": False,
             "evidence": [
                 {
                     "id": "evd_1",
