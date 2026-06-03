@@ -41,7 +41,8 @@ from seed_runtime.intent_classifier import (
     IntentPromptModelClient,
     TextIntentClassifier,
 )
-from seed_runtime.models import Event, ToolNeed, ToolSpec, utc_now
+from seed_runtime.models import Event, Observation, ToolNeed, ToolSpec, utc_now
+from seed_runtime.observations import ObservationIngestor
 from seed_runtime.registry import ToolRegistry
 from seed_runtime.runtime import Runtime
 from seed_runtime.serialization import to_plain
@@ -68,6 +69,17 @@ class DevFactSeed:
     value: Any
     expires_at: datetime | None = None
     ttl_seconds: int | None = None
+
+
+@dataclass(frozen=True)
+class DevObservationSeed:
+    """External observation supplied from the seed_local CLI."""
+
+    subject: str
+    predicate: str
+    value: Any
+    source_type: str = "user"
+    confidence: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -167,6 +179,16 @@ class LocalSeedApp:
             session_id=self.session_id,
         )
 
+    def observe(self, observations: list[DevObservationSeed]) -> list[Fact]:
+        """Append external observations and derived facts into the ledger."""
+
+        return ingest_observations(
+            self.ledger,
+            self.workspace_id,
+            observations,
+            session_id=self.session_id,
+        )
+
     def seed_registered_providers(
         self, providers: list[DevRegisteredProviderSeed]
     ) -> None:
@@ -252,6 +274,39 @@ def seed_dev_facts(
             actor="system",
             session_id=session_id,
         )
+
+
+def ingest_observations(
+    ledger: EventLedger,
+    workspace_id: str,
+    observations: list[DevObservationSeed],
+    *,
+    session_id: str | None = None,
+) -> list[Fact]:
+    """Ingest CLI observations through the canonical observation pipeline."""
+
+    ingestor = ObservationIngestor(ledger)
+    facts: list[Fact] = []
+    for seed in observations:
+        observation = Observation(
+            id=new_id("obs"),
+            source_type=seed.source_type,
+            observed_at=utc_now(),
+            subject=seed.subject,
+            predicate=seed.predicate,
+            value=seed.value,
+            confidence=seed.confidence,
+            metadata={"ingested_by": "scripts.seed_local --observe"},
+        )
+        facts.append(
+            ingestor.ingest(
+                observation,
+                workspace_id,
+                actor="user" if seed.source_type == "user" else "system",
+                session_id=session_id,
+            )
+        )
+    return facts
 
 
 def seed_dev_registered_providers(
@@ -520,6 +575,26 @@ def build_parser() -> argparse.ArgumentParser:
         help="seconds from observation time until dev-only --fact entries expire",
     )
     parser.add_argument(
+        "--observe",
+        action="append",
+        nargs=3,
+        metavar=("SUBJECT", "PREDICATE", "VALUE"),
+        default=[],
+        help="ingest an external observation and derive a Fact",
+    )
+    parser.add_argument(
+        "--source-type",
+        choices=["user", "discovery", "provider", "imported"],
+        default="user",
+        help="source type for --observe entries (default: user)",
+    )
+    parser.add_argument(
+        "--confidence",
+        type=float,
+        default=1.0,
+        help="confidence for --observe entries from 0.0 to 1.0 (default: 1.0)",
+    )
+    parser.add_argument(
         "--registered-provider",
         action="append",
         metavar="PROVIDER_NAME",
@@ -631,6 +706,8 @@ def validate_lifecycle_args(
         parser.error("fact expiry options require at least one --fact")
     if args.fact_ttl_seconds is not None and args.fact_ttl_seconds < 0:
         parser.error("--fact-ttl-seconds must be non-negative")
+    if args.confidence < 0.0 or args.confidence > 1.0:
+        parser.error("--confidence must be between 0.0 and 1.0")
     if args.fact_expires_at:
         try:
             datetime.fromisoformat(args.fact_expires_at)
@@ -658,6 +735,26 @@ def parse_dev_fact(
         value=value,
         expires_at=expires_at,
         ttl_seconds=ttl_seconds,
+    )
+
+
+def parse_observation(
+    args: list[str], *, source_type: str, confidence: float
+) -> DevObservationSeed:
+    subject, predicate, raw_value = args
+    value = _parse_fact_value(raw_value)
+    if normalize_field_name(predicate) in SECRET_FIELD_NAMES:
+        raise ValueError(f"secret field is not allowed in --observe: {predicate}")
+    reject_secret_fields(
+        {"subject": subject, "predicate": predicate, "value": value},
+        "--observe",
+    )
+    return DevObservationSeed(
+        subject=subject,
+        predicate=predicate,
+        value=value,
+        source_type=source_type,
+        confidence=confidence,
     )
 
 
@@ -767,6 +864,20 @@ def seed_dev_state_from_args(args: argparse.Namespace, ledger: EventLedger) -> N
             ledger,
             args.workspace,
             fact_seeds,
+            session_id=args.session,
+        )
+
+    observation_seeds = [
+        parse_observation(
+            observation, source_type=args.source_type, confidence=args.confidence
+        )
+        for observation in args.observe
+    ]
+    if observation_seeds:
+        ingest_observations(
+            ledger,
+            args.workspace,
+            observation_seeds,
             session_id=args.session,
         )
 
@@ -904,6 +1015,50 @@ def format_fact_conflicts(conflicts: list[FactConflict], facts: dict[str, Fact])
             )
         )
     return "\n\n".join(sections)
+
+
+def format_observed_facts(facts: list[Fact]) -> str:
+    if not facts:
+        return "no observations ingested"
+
+    sections: list[str] = []
+    for fact in facts:
+        sections.append(
+            "\n".join(
+                [
+                    f"fact_id: {fact.id}",
+                    f"subject: {fact.subject_id}",
+                    f"predicate: {fact.predicate}",
+                    f"value: {_format_fact_value(fact.value)}",
+                    f"source_type: {fact.source_type}",
+                    f"confidence: {fact.confidence}",
+                    f"observed_at: {_format_datetime(fact.observed_at)}",
+                    "evidence_ids: " + ", ".join(fact.evidence_ids),
+                ]
+            )
+        )
+    return "\n\n".join(sections)
+
+
+def ingest_observations_from_args(args: argparse.Namespace) -> list[Fact]:
+    ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
+    try:
+        observation_seeds = [
+            parse_observation(
+                observation, source_type=args.source_type, confidence=args.confidence
+            )
+            for observation in args.observe
+        ]
+        return ingest_observations(
+            ledger,
+            args.workspace,
+            observation_seeds,
+            session_id=args.session,
+        )
+    finally:
+        close = getattr(ledger, "close", None)
+        if close is not None:
+            close()
 
 
 def format_stale_facts(facts: list[Fact]) -> str:
@@ -1506,6 +1661,11 @@ def main(argv: list[str] | None = None) -> int:
                 state.get_stale_fact_refresh_recommendations()
             )
         )
+        return 0
+
+    message = " ".join(args.message).strip()
+    if args.observe and not message and not args.http:
+        print(format_observed_facts(ingest_observations_from_args(args)))
         return 0
 
     app = build_local_app(
