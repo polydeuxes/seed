@@ -807,6 +807,7 @@ def format_handoff_plan(result: dict[str, Any]) -> str:
         raise ValueError("handoff plan result is missing")
     return "\n".join(
         [
+            f"handoff_plan_id: {plan.get('id')}",
             f"action_plan_id: {plan.get('action_plan_id')}",
             f"provider: {plan.get('provider')}",
             f"backend_type: {plan.get('backend_type')}",

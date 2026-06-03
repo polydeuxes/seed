@@ -142,7 +142,7 @@ class StateProjector:
         elif event.kind == "handoff_plan.created":
             data = payload.get("handoff_plan", payload)
             handoff_plan = HandoffPlan(**data)
-            state.handoff_plans[handoff_plan.action_plan_id] = handoff_plan
+            state.handoff_plans[handoff_plan.id] = handoff_plan
         elif event.kind == "pending_action.created":
             data = payload.get("pending_action", payload)
             pending_action = PendingAction(**data)

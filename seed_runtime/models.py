@@ -9,6 +9,7 @@ from typing import Any, Literal
 from seed_runtime.base import SeedModel
 from seed_runtime.evidence import Evidence
 from seed_runtime.facts import Fact
+from seed_runtime.ids import new_id
 from seed_runtime.secrets import (
     SECRET_FREE_GRANT_METADATA_FIELDS,
     normalize_field_name,
@@ -152,6 +153,7 @@ class HandoffPlan(SeedModel):
             raise ValueError("handoff plan executable must be false")
         super().__init__(**data)
 
+    id: str = Field(default_factory=lambda: new_id("handoff"))
     action_plan_id: str
     provider: str
     backend_type: HandoffBackendType
