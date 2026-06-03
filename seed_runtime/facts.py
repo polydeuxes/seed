@@ -34,6 +34,26 @@ STALE_FACT_REFRESH_CAPABILITY_BY_PREDICATE: dict[str, str] = {
 
 FALLBACK_STALE_FACT_REFRESH_CAPABILITY = "knowledge_lookup"
 
+MEASUREMENT_PREDICATES: frozenset[str] = frozenset(
+    {
+        "up",
+        "filesystem_avail_bytes",
+        "filesystem_size_bytes",
+        "disk_free_bytes",
+        "disk_total_bytes",
+    }
+)
+
+DURABLE_FACT_PREDICATES: frozenset[str] = frozenset(
+    {"os", "architecture", "runtime", "host", "container", "alias"}
+)
+
+
+def is_measurement_predicate(predicate: str) -> bool:
+    """Return whether a predicate represents a volatile time-series measurement."""
+
+    return predicate in MEASUREMENT_PREDICATES
+
 
 def recommended_capability_for_stale_fact(predicate: str) -> str:
     """Return the deterministic capability that can refresh a stale predicate."""
@@ -44,11 +64,11 @@ def recommended_capability_for_stale_fact(predicate: str) -> str:
 
 
 class FactSupport(SeedModel):
-    """Aggregated support for one subject/predicate/value claim.
+    """Projected support for one subject/predicate/value claim.
 
-    FactSupport preserves the contributing fact IDs instead of turning support
-    into a single verified flag. Confidence is a projection over the supporting
-    facts and their provenance source types.
+    Durable predicates use aggregate support across independent observations.
+    Measurement predicates represent volatile samples, so their support records
+    identify the latest current sample instead of strengthening repeated values.
     """
 
     subject: str
@@ -61,6 +81,8 @@ class FactSupport(SeedModel):
     latest_observed_at: datetime
     expired: bool = False
     expires_at: datetime | None = None
+    predicate_semantics: Literal["durable", "measurement"] = "durable"
+    support_kind: Literal["aggregate", "current_sample"] = "aggregate"
 
 
 class FactConflict(SeedModel):

@@ -1255,6 +1255,8 @@ def format_fact_supports(
             "\n".join(
                 [
                     f"value: {_format_fact_value(support.value)}",
+                    f"semantics: {support.predicate_semantics}",
+                    f"support_kind: {support.support_kind}",
                     f"aggregate_confidence: {support.confidence}",
                     f"expired: {str(support.expired).lower()}",
                     f"expires_at: {_format_datetime(support.expires_at)}",
@@ -1283,10 +1285,16 @@ def format_best_fact(
             f"subject: {best_fact.subject_id}",
             f"predicate: {best_fact.predicate}",
             f"value: {_format_fact_value(best_support.value)}",
+            f"semantics: {best_support.predicate_semantics}",
+            f"support_kind: {best_support.support_kind}",
             f"confidence: {best_support.confidence}",
             f"expired: {str(is_fact_expired(best_fact)).lower()}",
             f"expires_at: {_format_datetime(best_fact.expires_at)}",
-            "reason: best-supported current belief",
+            (
+                "reason: latest current measurement"
+                if best_support.predicate_semantics == "measurement"
+                else "reason: best-supported current belief"
+            ),
             f"support_count: {len(best_support.supporting_fact_ids)}",
         ]
     )
