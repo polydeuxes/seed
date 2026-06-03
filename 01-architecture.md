@@ -34,6 +34,22 @@ External input
 ```
 
 
+## File-backed raw IN inspection
+
+File-backed raw IN is inspected before source/parser dispatch:
+
+```text
+raw IN
+  -> InputInspector
+  -> source/parser dispatch
+  -> ObservationSource
+  -> ObservationNormalizer
+  -> ObservationIngestor
+  -> Evidence / Facts / State
+```
+
+`InputInspector` treats a filename extension as a hint, never as authority. It reads files without executing them, importing them, or following includes; detects obvious JSON, YAML, INI, empty, unknown, and null-byte inputs; and records classification plus size/hash audit metadata in an `InputArtifact`. It is not a security scanner, but it prevents obvious parser misrouting and makes the dispatch decision auditable. Unsupported formats remain the responsibility of the source/parser layer, and source adapters remain read-only and non-executing.
+
 ## Ownership boundary
 
 Seed owns:
