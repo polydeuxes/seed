@@ -353,18 +353,14 @@ def seed_cli_action_plan(
     ledger.close()
 
 
-def test_parser_supports_execution_authorization_grant():
+def test_parser_supports_execution_proposal_authorization_grant():
     seed_local = load_seed_local_module()
     args = seed_local.build_parser().parse_args(
         [
             "--db",
             ".seed-local.sqlite",
-            "--authorize-execution",
-            "plan_cli",
-            "--tool-name",
-            "docker_container_lifecycle",
-            "--tool-arguments-json",
-            '{"container": "web", "operation": "restart"}',
+            "--authorize-proposal",
+            "eprop_cli",
             "--grant-method",
             "interactive_prompt",
             "--ttl-seconds",
@@ -373,9 +369,7 @@ def test_parser_supports_execution_authorization_grant():
     )
 
     assert args.db == ".seed-local.sqlite"
-    assert args.authorize_execution == "plan_cli"
-    assert args.tool_name == "docker_container_lifecycle"
-    assert args.tool_arguments_json == '{"container": "web", "operation": "restart"}'
+    assert args.authorize_proposal == "eprop_cli"
     assert args.grant_method == "interactive_prompt"
     assert args.ttl_seconds == 300
 
@@ -393,11 +387,38 @@ def test_cli_authorize_execution_grants_for_accepted_plan_without_executing(
         risk_class="L3",
         requires_approval=True,
     )
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--registered-provider",
+                "docker_container_lifecycle",
+                "--fact",
+                "jellyfin",
+                "host",
+                "node115",
+                "--fact",
+                "jellyfin",
+                "container",
+                "jellyfin",
+                "--proposal",
+                "plan_cli",
+            ]
+        )
+        == 0
+    )
+    proposal_output = capsys.readouterr().out
+    proposal_id = next(
+        line.split(": ", 1)[1]
+        for line in proposal_output.splitlines()
+        if line.startswith("execution_proposal_id: ")
+    )
     assert seed_local.main(["--db", str(db_path), "--accept-plan", "plan_cli"]) == 0
     capsys.readouterr()
 
     def fail_load_manifest(self, path):
-        pytest.fail("authorize-execution must not register tools")
+        pytest.fail("authorize-proposal must not register tools")
 
     monkeypatch.setattr(seed_local.ToolRegistry, "load_manifest", fail_load_manifest)
 
@@ -406,12 +427,8 @@ def test_cli_authorize_execution_grants_for_accepted_plan_without_executing(
             [
                 "--db",
                 str(db_path),
-                "--authorize-execution",
-                "plan_cli",
-                "--tool-name",
-                "docker_container_lifecycle",
-                "--tool-arguments-json",
-                '{"container": "web", "operation": "restart"}',
+                "--authorize-proposal",
+                proposal_id,
                 "--grant-method",
                 "interactive_prompt",
                 "--ttl-seconds",
@@ -423,6 +440,7 @@ def test_cli_authorize_execution_grants_for_accepted_plan_without_executing(
 
     output = capsys.readouterr().out
     assert "execution_authorization_id: auth_" in output
+    assert f"execution_proposal_id: {proposal_id}" in output
     assert "action_plan_id: plan_cli" in output
     assert "tool_name: docker_container_lifecycle" in output
     assert "arguments_fingerprint: sha256:" in output
@@ -440,41 +458,68 @@ def test_cli_authorize_execution_grants_for_accepted_plan_without_executing(
     assert "tool.call.completed" not in kinds
 
 
-def test_cli_authorize_execution_requires_accepted_plan(tmp_path):
+def test_cli_authorize_proposal_requires_accepted_plan(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed-local.sqlite"
-    seed_cli_action_plan(seed_local, db_path)
+    seed_cli_action_plan(
+        seed_local,
+        db_path,
+        provider="docker_container_lifecycle",
+        capability="service_management",
+        risk_class="L3",
+        requires_approval=True,
+    )
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--registered-provider",
+                "docker_container_lifecycle",
+                "--fact",
+                "jellyfin",
+                "host",
+                "node115",
+                "--fact",
+                "jellyfin",
+                "container",
+                "jellyfin",
+                "--proposal",
+                "plan_cli",
+            ]
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    proposal_id = next(
+        line.split(": ", 1)[1]
+        for line in output.splitlines()
+        if line.startswith("execution_proposal_id: ")
+    )
 
     with pytest.raises(seed_local.ActionPlanTransitionError, match="only accepted"):
         seed_local.main(
             [
                 "--db",
                 str(db_path),
-                "--authorize-execution",
-                "plan_cli",
-                "--tool-name",
-                "open_meteo",
-                "--tool-arguments-json",
-                '{"location": "Boston"}',
+                "--authorize-proposal",
+                proposal_id,
             ]
         )
 
 
-def test_cli_authorize_execution_rejects_secret_tool_argument_fields(tmp_path):
+def test_cli_authorize_proposal_rejects_direct_tool_arguments(tmp_path):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed-local.sqlite"
     seed_cli_action_plan(seed_local, db_path)
-    assert seed_local.main(["--db", str(db_path), "--accept-plan", "plan_cli"]) == 0
 
-    with pytest.raises(ValueError, match="secret field"):
+    with pytest.raises(SystemExit):
         seed_local.main(
             [
                 "--db",
                 str(db_path),
-                "--authorize-execution",
-                "plan_cli",
-                "--tool-name",
-                "open_meteo",
+                "--authorize-proposal",
+                "eprop_cli",
                 "--tool-arguments-json",
                 '{"token": "not-accepted"}',
             ]
@@ -568,12 +613,9 @@ def test_cli_proposal_creates_concrete_non_executable_proposal_without_executing
         db_path,
         provider="docker_container_lifecycle",
         capability="service_management",
-        risk_class="L1",
-        requires_approval=False,
+        risk_class="L3",
+        requires_approval=True,
     )
-    ledger = seed_local.SQLiteEventLedger(str(db_path))
-    ledger.append("action_plan.approved", "local", {"action_plan_id": "plan_cli"})
-    ledger.close()
 
     def fail_load_manifest(self, path):
         pytest.fail("proposal generation must not register tools")

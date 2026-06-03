@@ -30,6 +30,7 @@ def test_sqlite_execution_authorization_events_persist_secret_free_metadata(tmp_
             {
                 "execution_authorization": {
                     "id": "auth_1",
+                    "execution_proposal_id": "eprop_1",
                     "action_plan_id": "plan_1",
                     "tool_name": "restart_container",
                     "arguments_fingerprint": "abc123",
@@ -58,6 +59,7 @@ def test_sqlite_execution_authorization_events_persist_secret_free_metadata(tmp_
         ]
         payload = events[0].payload["execution_authorization"]
         assert payload["id"] == "auth_1"
+        assert payload["execution_proposal_id"] == "eprop_1"
         assert "password" not in payload
         assert "passphrase" not in payload
         assert "token" not in payload
@@ -88,6 +90,7 @@ def test_execution_authorization_event_rejects_non_grant_metadata():
             {
                 "execution_authorization": {
                     "id": "auth_1",
+                    "execution_proposal_id": "eprop_1",
                     "action_plan_id": "plan_1",
                     "tool_name": "restart_container",
                     "arguments_fingerprint": "sha256:abc123",

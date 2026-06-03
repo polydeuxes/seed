@@ -13,7 +13,6 @@ from seed_runtime.facts import Fact
 from seed_runtime.models import (
     ActionPlan,
     Entity,
-    ExecutionAuthorization,
     ToolSpec,
     utc_now,
 )
@@ -48,21 +47,6 @@ def _tool() -> ToolSpec:
     )
 
 
-def _authorization() -> ExecutionAuthorization:
-    return ExecutionAuthorization(
-        id="auth_1",
-        action_plan_id="plan_1",
-        tool_name="docker_container_lifecycle",
-        arguments_fingerprint=fingerprint_tool_call(
-            "docker_container_lifecycle",
-            {"host": "node-1", "container": "web", "action": "restart"},
-        ),
-        granted_by="operator@example.com",
-        expires_at=utc_now() + timedelta(days=1),
-        secret_seen_by_seed=False,
-    )
-
-
 def _fact(fact_id: str, predicate: str, value):
     return Fact(
         id=fact_id,
@@ -82,11 +66,6 @@ def _executable_state() -> State:
         {"entity": to_plain(Entity(id="ent_1", kind="host", name="node-1"))},
     )
     ledger.append("tool.registered", workspace_id, {"tool": to_plain(_tool())})
-    ledger.append(
-        "execution_authorization.granted",
-        workspace_id,
-        {"execution_authorization": to_plain(_authorization())},
-    )
     ledger.append(
         "fact.observed",
         workspace_id,

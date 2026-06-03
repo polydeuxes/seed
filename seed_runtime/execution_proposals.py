@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import Any, Literal
+from typing import Any
 
 from seed_runtime.base import SeedModel
 from seed_runtime.events import EventLedger
@@ -35,7 +35,8 @@ class ExecutionProposal(SeedModel):
     tool_arguments: dict[str, Any]
     arguments_fingerprint: str
     risk_class: RiskClass
-    executable: Literal[False] = False
+    authorized: bool = False
+    executable: bool = False
 
 
 class ExecutionProposalService:
@@ -60,7 +61,7 @@ class ExecutionProposalService:
         approvals or execution authorizations, or registers tools.
         """
         report = evaluate_preconditions(action_plan, state)
-        if not report.executable:
+        if not report.plan_ready:
             return None
 
         tool_call = self._tool_call_for_plan(action_plan, state)
@@ -77,6 +78,7 @@ class ExecutionProposalService:
             tool_arguments=tool_arguments,
             arguments_fingerprint=fingerprint_tool_call(tool_name, tool_arguments),
             risk_class=action_plan.risk_class,
+            authorized=False,
             executable=False,
         )
 

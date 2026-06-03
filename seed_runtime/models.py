@@ -208,8 +208,9 @@ class Approval(SeedModel):
 class ExecutionAuthorization(SeedModel):
     """Just-in-time authorization for one concrete execution attempt.
 
-    The authorization binds an accepted action plan to a proposed concrete tool
-    call by fingerprint. It intentionally stores only secret-free grant metadata;
+    The authorization binds an accepted action plan to an exact execution
+    proposal by ID and fingerprint. It intentionally stores only secret-free
+    grant metadata;
     raw passwords, passphrases, tokens, private keys, and credential/session
     material must be supplied just in time by the host environment and never
     enter Seed events, models, CLI arguments, or persistent storage.
@@ -232,6 +233,7 @@ class ExecutionAuthorization(SeedModel):
         super().__init__(**data)
 
     id: str
+    execution_proposal_id: str
     action_plan_id: str
     tool_name: str
     arguments_fingerprint: str
