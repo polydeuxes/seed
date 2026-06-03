@@ -2146,3 +2146,59 @@ def test_cli_observe_prometheus_mountpoint_filter_limits_ingestion(
     assert len(facts) == 1
     assert facts[0].subject_id == "node-a:9100"
     assert facts[0].predicate == "filesystem_size_bytes"
+
+
+def test_cli_alias_resolves_best_fact_after_sqlite_reopen(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed.sqlite"
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--fact",
+                "192.168.254.115:9100",
+                "up",
+                "1",
+                "--alias",
+                "node115",
+                "192.168.254.115:9100",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    assert (
+        seed_local.main(["--db", str(db_path), "--best-fact", "node115", "up"])
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "subject: 192.168.254.115:9100" in output
+    assert "predicate: up" in output
+    assert "value: 1" in output
+
+    reopened = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        state = seed_local.StateProjector(reopened).project(seed_local.DEFAULT_WORKSPACE)
+        support = state.get_fact_support("node115", "up")
+        best = state.get_best_fact("node115", "up")
+    finally:
+        reopened.close()
+
+    assert best is not None
+    assert best.subject_id == "192.168.254.115:9100"
+    assert support is not None
+    assert support.supporting_fact_ids == [best.id]
+
+
+def test_cli_alias_records_alias_observation_fact(capsys):
+    seed_local = load_seed_local_module()
+
+    assert seed_local.main(["--alias", "node115", "192.168.254.115:9100"]) == 0
+
+    output = capsys.readouterr().out
+    assert "subject: node115" in output
+    assert "predicate: alias" in output
+    assert "value: 192.168.254.115:9100" in output
