@@ -341,6 +341,67 @@ def ingest_observation_source(
     )
 
 
+class FilteredObservationSource:
+    """Apply CLI observation filters before ingestion."""
+
+    def __init__(
+        self,
+        source: Any,
+        *,
+        prometheus_instance: str | None = None,
+        prometheus_mountpoint: str | None = None,
+    ) -> None:
+        self.source = source
+        self.name = getattr(source, "name", "filtered-observation-source")
+        self.source_type = getattr(source, "source_type", None)
+        self.prometheus_instance = prometheus_instance
+        self.prometheus_mountpoint = prometheus_mountpoint
+
+    def collect(self) -> list[Observation]:
+        observations = self.source.collect()
+        return [
+            observation
+            for observation in observations
+            if _matches_prometheus_observation_filters(
+                observation,
+                instance=self.prometheus_instance,
+                mountpoint=self.prometheus_mountpoint,
+            )
+        ]
+
+
+def _matches_prometheus_observation_filters(
+    observation: Observation,
+    *,
+    instance: str | None = None,
+    mountpoint: str | None = None,
+) -> bool:
+    labels = observation.metadata.get("metric_labels")
+    if not isinstance(labels, dict):
+        labels = {}
+    if (
+        instance is not None
+        and labels.get("instance", observation.subject) != instance
+    ):
+        return False
+    if mountpoint is not None and labels.get("mountpoint") != mountpoint:
+        return False
+    return True
+
+
+def build_prometheus_observation_source(args: argparse.Namespace) -> Any:
+    source = PrometheusObservationSource(
+        args.observe_prometheus, timeout_seconds=args.observe_timeout
+    )
+    if args.prometheus_instance is None and args.prometheus_mountpoint is None:
+        return source
+    return FilteredObservationSource(
+        source,
+        prometheus_instance=args.prometheus_instance,
+        prometheus_mountpoint=args.prometheus_mountpoint,
+    )
+
+
 def seed_dev_registered_providers(
     ledger: EventLedger,
     workspace_id: str,
@@ -644,6 +705,21 @@ def build_parser() -> argparse.ArgumentParser:
             "read-only Prometheus API intake from BASE_URL using only allowlisted "
             "safe metric queries"
         ),
+    )
+    parser.add_argument(
+        "--verbose-observations",
+        action="store_true",
+        help="print every ingested observation-derived fact instead of a summary",
+    )
+    parser.add_argument(
+        "--prometheus-instance",
+        metavar="INSTANCE",
+        help="only ingest Prometheus observations for INSTANCE",
+    )
+    parser.add_argument(
+        "--prometheus-mountpoint",
+        metavar="MOUNTPOINT",
+        help="only ingest Prometheus filesystem observations for MOUNTPOINT",
     )
     parser.add_argument(
         "--observe-timeout",
@@ -1002,9 +1078,7 @@ def seed_dev_state_from_args(args: argparse.Namespace, ledger: EventLedger) -> N
         ingest_observation_source(
             ledger,
             args.workspace,
-            PrometheusObservationSource(
-                args.observe_prometheus, timeout_seconds=args.observe_timeout
-            ),
+            build_prometheus_observation_source(args),
             session_id=args.session,
         )
 
@@ -1262,6 +1336,33 @@ def format_observed_facts(facts: list[Fact]) -> str:
     return "\n\n".join(sections)
 
 
+def format_observed_fact_summary(facts: list[Fact]) -> str:
+    if not facts:
+        return (
+            "ingested 0 observation(s)\n"
+            "hosts/instances discovered: none\n"
+            "counts by predicate: none"
+        )
+
+    hosts = sorted({fact.subject_id for fact in facts})
+    predicate_counts: dict[str, int] = {}
+    for fact in facts:
+        predicate_counts[fact.predicate] = (
+            predicate_counts.get(fact.predicate, 0) + 1
+        )
+
+    sections = [
+        f"ingested {len(facts)} observation(s)",
+        "hosts/instances discovered: " + ", ".join(hosts),
+        "counts by predicate:",
+    ]
+    sections.extend(
+        f"- {predicate}: {predicate_counts[predicate]}"
+        for predicate in sorted(predicate_counts)
+    )
+    return "\n".join(sections)
+
+
 def ingest_observations_from_args(args: argparse.Namespace) -> list[Fact]:
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
     try:
@@ -1320,9 +1421,7 @@ def ingest_observations_from_args(args: argparse.Namespace) -> list[Fact]:
                 ingest_observation_source(
                     ledger,
                     args.workspace,
-                    PrometheusObservationSource(
-                        args.observe_prometheus, timeout_seconds=args.observe_timeout
-                    ),
+                    build_prometheus_observation_source(args),
                     session_id=args.session,
                 )
             )
@@ -1958,7 +2057,11 @@ def main(argv: list[str] | None = None) -> int:
         or args.observe_local_host
         or args.observe_prometheus
     ) and not message and not args.http:
-        print(format_observed_facts(ingest_observations_from_args(args)))
+        observed_facts = ingest_observations_from_args(args)
+        if args.observe_prometheus and not args.verbose_observations:
+            print(format_observed_fact_summary(observed_facts))
+        else:
+            print(format_observed_facts(observed_facts))
         return 0
 
     app = build_local_app(

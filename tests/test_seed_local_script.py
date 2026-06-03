@@ -1978,11 +1978,8 @@ def test_best_fact_accepts_short_hostname_for_persisted_fqdn_observation(tmp_pat
     finally:
         reopened.close()
 
-def test_cli_observe_prometheus_supports_db_and_prints_count(
-    monkeypatch, tmp_path, capsys
-):
-    seed_local = load_seed_local_module()
 
+def _patch_fake_prometheus_source(monkeypatch, seed_local):
     class FakePrometheusSource:
         source_type = "provider"
 
@@ -1992,26 +1989,65 @@ def test_cli_observe_prometheus_supports_db_and_prints_count(
             self.timeout_seconds = timeout_seconds
 
         def collect(self):
+            observed_at = seed_local.utc_now()
             return [
                 seed_local.Observation(
-                    id="obs_cli_prometheus",
+                    id="obs_cli_prometheus_up_a",
                     source_type="provider",
-                    observed_at=seed_local.utc_now(),
+                    observed_at=observed_at,
                     subject="node-a:9100",
                     predicate="up",
                     value=1,
-                )
+                    metadata={"metric_labels": {"instance": "node-a:9100"}},
+                ),
+                seed_local.Observation(
+                    id="obs_cli_prometheus_avail_a_root",
+                    source_type="provider",
+                    observed_at=observed_at,
+                    subject="node-a:9100",
+                    predicate="filesystem_avail_bytes",
+                    value=100,
+                    metadata={
+                        "metric_labels": {
+                            "instance": "node-a:9100",
+                            "mountpoint": "/",
+                        }
+                    },
+                ),
+                seed_local.Observation(
+                    id="obs_cli_prometheus_size_a_data",
+                    source_type="provider",
+                    observed_at=observed_at,
+                    subject="node-a:9100",
+                    predicate="filesystem_size_bytes",
+                    value=200,
+                    metadata={
+                        "metric_labels": {
+                            "instance": "node-a:9100",
+                            "mountpoint": "/data",
+                        }
+                    },
+                ),
+                seed_local.Observation(
+                    id="obs_cli_prometheus_up_b",
+                    source_type="provider",
+                    observed_at=observed_at,
+                    subject="node-b:9100",
+                    predicate="up",
+                    value=0,
+                    metadata={"metric_labels": {"instance": "node-b:9100"}},
+                ),
             ]
 
-    monkeypatch.setattr(
-        seed_local, "PrometheusObservationSource", FakePrometheusSource
-    )
-    db_path = tmp_path / "seed.sqlite"
+    monkeypatch.setattr(seed_local, "PrometheusObservationSource", FakePrometheusSource)
+
+
+def test_cli_observe_prometheus_prints_summary_by_default(monkeypatch, capsys):
+    seed_local = load_seed_local_module()
+    _patch_fake_prometheus_source(monkeypatch, seed_local)
 
     assert seed_local.main(
         [
-            "--db",
-            str(db_path),
             "--observe-prometheus",
             "http://prom.example:9090",
             "--observe-timeout",
@@ -2020,13 +2056,93 @@ def test_cli_observe_prometheus_supports_db_and_prints_count(
     ) == 0
 
     output = capsys.readouterr().out
-    assert "ingested 1 observation(s)" in output
-    assert "subject: node-a:9100" in output
-    assert "predicate: up" in output
+    assert "ingested 4 observation(s)" in output
+    assert "hosts/instances discovered: node-a:9100, node-b:9100" in output
+    assert "counts by predicate:" in output
+    assert "- filesystem_avail_bytes: 1" in output
+    assert "- filesystem_size_bytes: 1" in output
+    assert "- up: 2" in output
+    assert "fact_id:" not in output
 
+
+def test_cli_observe_prometheus_verbose_prints_every_fact(monkeypatch, capsys):
+    seed_local = load_seed_local_module()
+    _patch_fake_prometheus_source(monkeypatch, seed_local)
+
+    assert seed_local.main(
+        [
+            "--observe-prometheus",
+            "http://prom.example:9090",
+            "--verbose-observations",
+        ]
+    ) == 0
+
+    output = capsys.readouterr().out
+    assert "ingested 4 observation(s)" in output
+    assert "fact_id: fact_obs_" in output
+    assert "subject: node-a:9100" in output
+    assert "subject: node-b:9100" in output
+    assert "predicate: filesystem_avail_bytes" in output
+    assert "hosts/instances discovered:" not in output
+
+
+def test_cli_observe_prometheus_instance_filter_limits_ingestion(
+    monkeypatch, tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    _patch_fake_prometheus_source(monkeypatch, seed_local)
+    db_path = tmp_path / "seed.sqlite"
+
+    assert seed_local.main(
+        [
+            "--db",
+            str(db_path),
+            "--observe-prometheus",
+            "http://prom.example:9090",
+            "--prometheus-instance",
+            "node-b:9100",
+        ]
+    ) == 0
+
+    output = capsys.readouterr().out
+    assert "ingested 1 observation(s)" in output
+    assert "hosts/instances discovered: node-b:9100" in output
     ledger = seed_local.SQLiteEventLedger(str(db_path))
     try:
         state = seed_local.StateProjector(ledger).project(seed_local.DEFAULT_WORKSPACE)
     finally:
         ledger.close()
-    assert any(fact.subject_id == "node-a:9100" for fact in state.facts.values())
+    assert [fact.subject_id for fact in state.facts.values()] == ["node-b:9100"]
+
+
+def test_cli_observe_prometheus_mountpoint_filter_limits_ingestion(
+    monkeypatch, tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    _patch_fake_prometheus_source(monkeypatch, seed_local)
+    db_path = tmp_path / "seed.sqlite"
+
+    assert seed_local.main(
+        [
+            "--db",
+            str(db_path),
+            "--observe-prometheus",
+            "http://prom.example:9090",
+            "--prometheus-mountpoint",
+            "/data",
+        ]
+    ) == 0
+
+    output = capsys.readouterr().out
+    assert "ingested 1 observation(s)" in output
+    assert "hosts/instances discovered: node-a:9100" in output
+    assert "- filesystem_size_bytes: 1" in output
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        state = seed_local.StateProjector(ledger).project(seed_local.DEFAULT_WORKSPACE)
+    finally:
+        ledger.close()
+    facts = list(state.facts.values())
+    assert len(facts) == 1
+    assert facts[0].subject_id == "node-a:9100"
+    assert facts[0].predicate == "filesystem_size_bytes"
