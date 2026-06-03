@@ -432,6 +432,31 @@ def test_cli_accept_plan_prints_accepted_without_registering_tools(
     assert "approved" not in output.lower()
 
 
+def test_cli_accept_plan_prints_clean_error_for_already_accepted_plan(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed-local.sqlite"
+    seed_cli_action_plan(seed_local, db_path, plan_id="plan_000001")
+    assert (
+        seed_local.main(["--db", str(db_path), "--accept-plan", "plan_000001"])
+        == 0
+    )
+    capsys.readouterr()
+
+    assert (
+        seed_local.main(["--db", str(db_path), "--accept-plan", "plan_000001"])
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert output == (
+        "action_plan_id: plan_000001\n"
+        "status: accepted\n"
+        "error: invalid transition accepted -> accepted\n"
+    )
+
+
 def test_cli_reject_plan_prints_rejected_and_reason(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed-local.sqlite"
@@ -614,10 +639,14 @@ def test_cli_approve_plan_prints_approved_without_executing_or_registering(
     assert "tool.registered" not in kinds
 
 
-def test_cli_approve_plan_rejects_proposed_plan(tmp_path):
+def test_cli_approve_plan_prints_clean_error_for_proposed_plan(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed-local.sqlite"
     seed_cli_action_plan(seed_local, db_path)
 
-    with pytest.raises(seed_local.ActionPlanTransitionError):
-        seed_local.main(["--db", str(db_path), "--approve-plan", "plan_cli"])
+    assert seed_local.main(["--db", str(db_path), "--approve-plan", "plan_cli"]) == 0
+
+    output = capsys.readouterr().out
+    assert "action_plan_id: plan_cli" in output
+    assert "status: proposed" in output
+    assert "error: invalid transition proposed -> approved" in output

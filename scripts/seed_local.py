@@ -643,6 +643,9 @@ def format_action_plan_status(plan: dict[str, Any]) -> str:
         f"action_plan_id: {plan.get('id')}",
         f"status: {plan.get('status')}",
     ]
+    error = plan.get("error")
+    if error:
+        lines.append(f"error: {error}")
     rejection_reason = plan.get("rejection_reason")
     if rejection_reason:
         lines.append(f"rejection_reason: {rejection_reason}")
@@ -664,33 +667,60 @@ def update_action_plan_lifecycle(args: argparse.Namespace) -> dict[str, Any] | N
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
     service = ActionPlanService(ledger)
     try:
-        if args.accept_plan:
-            plan = service.accept_plan(
-                args.workspace, args.accept_plan, session_id=args.session
-            )
-        elif args.approve_plan:
-            plan = service.approve_plan(
-                args.workspace, args.approve_plan, session_id=args.session
-            )
-            approved_plan = to_plain(plan)
-            approved_plan["approved"] = True
-            return approved_plan
-        elif args.reject_plan:
-            plan = service.reject_plan(
-                args.workspace, args.reject_plan, args.reason, session_id=args.session
-            )
-        else:
-            plan = service.supersede_plan(
-                args.workspace,
-                args.supersede_plan,
-                args.replacement_plan,
-                session_id=args.session,
-            )
+        try:
+            if args.accept_plan:
+                plan = service.accept_plan(
+                    args.workspace, args.accept_plan, session_id=args.session
+                )
+            elif args.approve_plan:
+                plan = service.approve_plan(
+                    args.workspace, args.approve_plan, session_id=args.session
+                )
+                approved_plan = to_plain(plan)
+                approved_plan["approved"] = True
+                return approved_plan
+            elif args.reject_plan:
+                plan = service.reject_plan(
+                    args.workspace, args.reject_plan, args.reason, session_id=args.session
+                )
+            else:
+                plan = service.supersede_plan(
+                    args.workspace,
+                    args.supersede_plan,
+                    args.replacement_plan,
+                    session_id=args.session,
+                )
+        except ActionPlanTransitionError:
+            return _format_transition_error_plan(args, ledger, plan_id)
         return to_plain(plan)
     finally:
         close = getattr(ledger, "close", None)
         if close is not None:
             close()
+
+
+def _format_transition_error_plan(
+    args: argparse.Namespace, ledger: EventLedger, plan_id: str
+) -> dict[str, Any]:
+    state = StateProjector(ledger).project(args.workspace)
+    plan = state.action_plans.get(plan_id)
+    status = plan.status if plan is not None else "unknown"
+    target_status = _lifecycle_target_status(args)
+    return {
+        "id": plan_id,
+        "status": status,
+        "error": f"invalid transition {status} -> {target_status}",
+    }
+
+
+def _lifecycle_target_status(args: argparse.Namespace) -> str:
+    if args.accept_plan:
+        return "accepted"
+    if args.approve_plan:
+        return "approved"
+    if args.reject_plan:
+        return "rejected"
+    return "superseded"
 
 
 def format_action_plan(plan: dict[str, Any]) -> str:
