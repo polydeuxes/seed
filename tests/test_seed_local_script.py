@@ -10,7 +10,6 @@ from seed_runtime.state import State
 
 from seed_runtime.intent_classifier import IntentDecisionModel, IntentPromptModelClient
 
-
 SCRIPT_PATH = Path("scripts/seed_local.py")
 
 
@@ -30,7 +29,9 @@ def test_build_local_app_uses_intent_classifier_path_and_loads_echo_toolkit():
 
     assert isinstance(app.model_client, IntentPromptModelClient)
     assert isinstance(app.runtime.model, IntentDecisionModel)
-    assert [tool.name for tool in app.context_composer.registry.list_tools()] == ["echo"]
+    assert [tool.name for tool in app.context_composer.registry.list_tools()] == [
+        "echo"
+    ]
     assert app.model_client.transport.extra_payload == {
         "model": "qwen2.5:3b",
         "stream": False,
@@ -257,9 +258,12 @@ def test_cli_fact_seed_influences_service_recommendation_ranking(monkeypatch, ca
         ),
     )
 
-    assert seed_local.main(
-        ["--fact", "jellyfin", "runtime", "docker", "restart jellyfin?"]
-    ) == 0
+    assert (
+        seed_local.main(
+            ["--fact", "jellyfin", "runtime", "docker", "restart jellyfin?"]
+        )
+        == 0
+    )
 
     output = capsys.readouterr().out
     assert "1. docker_container_lifecycle" in output
@@ -281,9 +285,12 @@ def test_cli_plan_prints_non_executable_top_recommendation_plan(monkeypatch, cap
         ),
     )
 
-    assert seed_local.main(
-        ["--fact", "jellyfin", "runtime", "docker", "--plan", "restart jellyfin?"]
-    ) == 0
+    assert (
+        seed_local.main(
+            ["--fact", "jellyfin", "runtime", "docker", "--plan", "restart jellyfin?"]
+        )
+        == 0
+    )
 
     output = capsys.readouterr().out
     assert "1. docker_container_lifecycle" in output
@@ -560,7 +567,10 @@ def test_cli_preconditions_prints_inspect_only_report_without_registering_tools(
     )
     assert "preconditions:" in output
     assert "- id: target_host_known\n  satisfied: false" in output
-    assert "reason: no host entity, entity host fact, or target host fact is present" in output
+    assert (
+        "reason: no host entity, entity host fact, or target host fact is present"
+        in output
+    )
     assert "tool.call" not in output
     assert "approved" not in output.lower()
 
@@ -817,8 +827,7 @@ def test_cli_proposal_prints_missing_preconditions_without_creating_proposal(
     assert "executable: false" in output
     assert (
         "missing:\n- target_host_known\n- provider_registered\n"
-        "- execution_authorization_present"
-        in output
+        "- execution_authorization_present" in output
     )
     assert "execution_proposal_id:" not in output
     assert "tool.call" not in output
@@ -956,22 +965,14 @@ def test_cli_accept_plan_prints_accepted_without_registering_tools(
     assert "approved" not in output.lower()
 
 
-def test_cli_accept_plan_prints_clean_error_for_already_accepted_plan(
-    tmp_path, capsys
-):
+def test_cli_accept_plan_prints_clean_error_for_already_accepted_plan(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed-local.sqlite"
     seed_cli_action_plan(seed_local, db_path, plan_id="plan_000001")
-    assert (
-        seed_local.main(["--db", str(db_path), "--accept-plan", "plan_000001"])
-        == 0
-    )
+    assert seed_local.main(["--db", str(db_path), "--accept-plan", "plan_000001"]) == 0
     capsys.readouterr()
 
-    assert (
-        seed_local.main(["--db", str(db_path), "--accept-plan", "plan_000001"])
-        == 0
-    )
+    assert seed_local.main(["--db", str(db_path), "--accept-plan", "plan_000001"]) == 0
 
     output = capsys.readouterr().out
     assert output == (
@@ -1096,7 +1097,9 @@ def test_cli_preconditions_satisfy_provider_and_host_but_not_approval(tmp_path, 
     assert "approved" not in output.lower()
 
 
-def test_cli_preconditions_target_host_fact_satisfies_host_requirement(tmp_path, capsys):
+def test_cli_preconditions_target_host_fact_satisfies_host_requirement(
+    tmp_path, capsys
+):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed-local.sqlite"
     seed_cli_action_plan(
@@ -1201,7 +1204,9 @@ def test_parser_supports_handoff_generation():
     assert args.handoff == "plan_cli"
 
 
-def test_handoff_cli_function_prints_non_executable_plan_for_accepted_action_plan(tmp_path):
+def test_handoff_cli_function_prints_non_executable_plan_for_accepted_action_plan(
+    tmp_path,
+):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
     setup_args = seed_local.build_parser().parse_args(
@@ -1453,3 +1458,81 @@ def test_cli_fact_expires_at_keeps_unexpired_seeded_fact(capsys):
     assert "subject: jellyfin" in output
     assert "predicate: runtime" in output
     assert "value: docker" in output
+
+
+def test_cli_expired_fact_hidden_by_default(capsys):
+    seed_local = load_seed_local_module()
+
+    assert (
+        seed_local.main(
+            [
+                "--fact",
+                "jellyfin",
+                "runtime",
+                "docker",
+                "--fact-ttl-seconds",
+                "0",
+                "--fact-support",
+                "jellyfin",
+                "runtime",
+            ]
+        )
+        == 0
+    )
+
+    assert capsys.readouterr().out.strip() == "no fact support for jellyfin runtime"
+
+
+def test_cli_expired_fact_visible_with_include_expired(capsys):
+    seed_local = load_seed_local_module()
+
+    assert (
+        seed_local.main(
+            [
+                "--fact",
+                "jellyfin",
+                "runtime",
+                "docker",
+                "--fact-ttl-seconds",
+                "0",
+                "--fact-support",
+                "jellyfin",
+                "runtime",
+                "--include-expired",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "value: docker" in output
+    assert "expired: true" in output
+    assert "expires_at:" in output
+
+
+def test_cli_stale_facts_prints_expired_facts(capsys):
+    seed_local = load_seed_local_module()
+
+    assert (
+        seed_local.main(
+            [
+                "--fact",
+                "jellyfin",
+                "runtime",
+                "docker",
+                "--fact-ttl-seconds",
+                "0",
+                "--stale-facts",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "subject: jellyfin" in output
+    assert "predicate: runtime" in output
+    assert "value: docker" in output
+    assert "source_type: user" in output
+    assert "confidence: 1.0" in output
+    assert "expired: true" in output
+    assert "expires_at:" in output
