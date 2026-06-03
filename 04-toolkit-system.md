@@ -271,6 +271,18 @@ Example context entry:
 }
 ```
 
+## Initial integration-artifact generation scope
+
+Toolkit generation initially targets non-mutating integration artifacts:
+
+- `ObservationSource` adapters
+- `ObservationNormalizer` implementations
+- CapabilityCatalog entries
+- HandoffProvider metadata
+- tests
+
+These artifacts may collect, normalize, describe, and validate integrations. Execution remains external to Seed.
+
 ## Toolkit generation output contract
 
 A builder must output:

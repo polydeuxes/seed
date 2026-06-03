@@ -602,43 +602,6 @@ def test_prometheus_source_unreachable_fails_gracefully(monkeypatch):
     assert "network unreachable" in (source.last_error or "")
 
 
-def test_endpoint_alias_normalizer_derives_generic_source_alias():
-    from seed_runtime.observations import EndpointAliasNormalizer
-
-    observation = _observation(
-        "obs_generic_endpoint",
-        subject="10.0.0.8:1234",
-        predicate="status",
-        value="ready",
-        metadata={
-            "hostname": "node-generic",
-            "instance": "10.0.0.8:1234",
-            "source": "generic-monitor",
-        },
-    )
-
-    normalized = EndpointAliasNormalizer().normalize([observation])
-
-    assert len(normalized) == 2
-    alias = normalized[1]
-    assert alias.subject == "node-generic"
-    assert alias.predicate == "generic_monitor_instance"
-    assert alias.value == "10.0.0.8:1234"
-    assert alias.metadata["derived_from_observation_id"] == observation.id
-
-
-def test_endpoint_alias_normalizer_without_stable_name_creates_no_alias():
-    from seed_runtime.observations import EndpointAliasNormalizer
-
-    observation = _observation(
-        "obs_endpoint_only",
-        subject="10.0.0.8:1234",
-        metadata={"instance": "10.0.0.8:1234", "source": "generic-monitor"},
-    )
-
-    assert EndpointAliasNormalizer().normalize([observation]) == [observation]
-
-
 def test_collection_normalized_alias_resolves_best_fact_by_stable_name():
     ledger = EventLedger()
     source = FakeObservationSource(
