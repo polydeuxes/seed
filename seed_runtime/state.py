@@ -281,11 +281,7 @@ class StateProjector:
             evidence = Evidence(**data)
             state.evidence[evidence.id] = evidence
         elif event.kind in {"fact.observed", "fact.inferred"}:
-            data = payload.get("fact", payload).copy()
-            data["observed_at"] = _parse_dt(data.get("observed_at")) or event.timestamp
-            data["expires_at"] = _parse_dt(data.get("expires_at"))
-            if "evidence_ids" not in data and "source_event_id" in data:
-                data["evidence_ids"] = [data.pop("source_event_id")]
+            data = _normalize_fact_event_payload(payload, event)
             if event.kind == "fact.inferred":
                 data["inferred"] = True
                 data["source_type"] = "inferred"
@@ -454,6 +450,26 @@ _SOURCE_SUPPORT_WEIGHT: dict[str, float] = {
     "imported": 0.75,
     "inferred": 0.50,
 }
+
+
+def _normalize_fact_event_payload(payload: dict[str, Any], event: Event) -> dict[str, Any]:
+    """Return a Fact-compatible payload for observed/inferred fact events.
+
+    Current ObservationIngestor events store facts under a ``fact`` key with the
+    Fact model's ``subject_id`` field.  Older or hand-written events may use the
+    observation-facing ``subject`` key either in that nested fact payload or as a
+    flat fact event payload.  Preserve both shapes so persisted ledgers continue
+    to project into FactSupport/current-belief state after reopen.
+    """
+
+    data = payload.get("fact", payload).copy()
+    if "subject_id" not in data and "subject" in data:
+        data["subject_id"] = data.pop("subject")
+    data["observed_at"] = _parse_dt(data.get("observed_at")) or event.timestamp
+    data["expires_at"] = _parse_dt(data.get("expires_at"))
+    if "evidence_ids" not in data and "source_event_id" in data:
+        data["evidence_ids"] = [data.pop("source_event_id")]
+    return data
 
 
 def _project_fact_supports(
