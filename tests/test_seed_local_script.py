@@ -561,6 +561,232 @@ def test_cli_preconditions_prints_inspect_only_report_without_registering_tools(
     assert "approved" not in output.lower()
 
 
+def test_cli_proposal_missing_plan_prints_reason_without_traceback(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed-local.sqlite"
+
+    assert seed_local.main(["--db", str(db_path), "--proposal", "plan_missing"]) == 1
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "missing_reason: plan not found" in captured.err
+    assert "action_plan_id: plan_missing" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_cli_proposal_reports_provider_tool_not_registered(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed-local.sqlite"
+    seed_cli_action_plan(
+        seed_local,
+        db_path,
+        provider="docker_container_lifecycle",
+        capability="service_management",
+        risk_class="L1",
+        requires_approval=False,
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--proposal", "plan_cli"]) == 0
+
+    output = capsys.readouterr().out
+    assert "missing_reason: provider/tool not registered" in output
+    assert "provider_registered" in output
+
+
+def test_cli_proposal_reports_preconditions_missing(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed-local.sqlite"
+    seed_cli_action_plan(
+        seed_local,
+        db_path,
+        provider="docker_container_lifecycle",
+        capability="service_management",
+        risk_class="L3",
+        requires_approval=True,
+    )
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--registered-provider",
+                "docker_container_lifecycle",
+                "--proposal",
+                "plan_cli",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "missing_reason: preconditions missing" in output
+    assert "target_host_known" in output
+
+
+def test_cli_proposal_reports_service_host_missing(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed-local.sqlite"
+    seed_cli_action_plan(
+        seed_local,
+        db_path,
+        provider="docker_container_lifecycle",
+        capability="service_management",
+        risk_class="L3",
+        requires_approval=True,
+    )
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        ledger.append(
+            "entity.upserted",
+            "local",
+            {"entity": {"id": "host_1", "kind": "host", "name": "node-1"}},
+        )
+    finally:
+        ledger.close()
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--registered-provider",
+                "docker_container_lifecycle",
+                "--fact",
+                "svc",
+                "container",
+                "web",
+                "--proposal",
+                "plan_cli",
+            ]
+        )
+        == 1
+    )
+
+    captured = capsys.readouterr()
+    assert "missing_reason: service host missing" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_cli_proposal_reports_unsupported_provider(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed-local.sqlite"
+    seed_cli_action_plan(
+        seed_local,
+        db_path,
+        provider="systemd_service_lifecycle",
+        capability="service_management",
+        risk_class="L3",
+        requires_approval=True,
+    )
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--registered-provider",
+                "systemd_service_lifecycle",
+                "--fact",
+                "svc",
+                "host",
+                "node-1",
+                "--fact",
+                "svc",
+                "container",
+                "web",
+                "--proposal",
+                "plan_cli",
+            ]
+        )
+        == 1
+    )
+
+    captured = capsys.readouterr()
+    assert "missing_reason: provider unsupported" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_cli_proposal_reports_container_name_missing(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed-local.sqlite"
+    seed_cli_action_plan(
+        seed_local,
+        db_path,
+        provider="docker_container_lifecycle",
+        capability="service_management",
+        risk_class="L3",
+        requires_approval=True,
+    )
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--registered-provider",
+                "docker_container_lifecycle",
+                "--fact",
+                "svc",
+                "host",
+                "node-1",
+                "--proposal",
+                "plan_cli",
+            ]
+        )
+        == 1
+    )
+
+    captured = capsys.readouterr()
+    assert "missing_reason: container name missing" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_cli_proposal_reports_builder_returned_none(monkeypatch, tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed-local.sqlite"
+    seed_cli_action_plan(
+        seed_local,
+        db_path,
+        provider="docker_container_lifecycle",
+        capability="service_management",
+        risk_class="L3",
+        requires_approval=True,
+    )
+
+    monkeypatch.setattr(
+        seed_local.ExecutionProposalService,
+        "_tool_call_for_plan",
+        lambda self, action_plan, state: None,
+    )
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--registered-provider",
+                "docker_container_lifecycle",
+                "--fact",
+                "svc",
+                "host",
+                "node-1",
+                "--fact",
+                "svc",
+                "container",
+                "web",
+                "--proposal",
+                "plan_cli",
+            ]
+        )
+        == 1
+    )
+
+    captured = capsys.readouterr()
+    assert "missing_reason: proposal builder returned None" in captured.err
+    assert "Traceback" not in captured.err
+
+
 def test_cli_proposal_prints_missing_preconditions_without_creating_proposal(
     monkeypatch, tmp_path, capsys
 ):

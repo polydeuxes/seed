@@ -10,7 +10,7 @@ from seed_runtime.base import SeedModel
 from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
 from seed_runtime.models import ActionPlan, RiskClass
-from seed_runtime.preconditions import evaluate_preconditions
+from seed_runtime.preconditions import PreconditionReport, evaluate_preconditions
 from seed_runtime.secrets import reject_secret_fields
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import State
@@ -37,6 +37,14 @@ class ExecutionProposal(SeedModel):
     risk_class: RiskClass
     authorized: bool = False
     executable: bool = False
+
+
+class ExecutionProposalFailure(SeedModel):
+    """Diagnostic for why a concrete execution proposal cannot be built."""
+
+    action_plan_id: str
+    missing_reason: str
+    detail: str | None = None
 
 
 class ExecutionProposalService:
@@ -94,6 +102,26 @@ class ExecutionProposalService:
             )
         return proposal
 
+    def diagnose_failure(
+        self, action_plan: ActionPlan, state: State
+    ) -> ExecutionProposalFailure | None:
+        """Return a stable, CLI-friendly reason proposal generation would fail."""
+        report = evaluate_preconditions(action_plan, state)
+        if not report.plan_ready:
+            return ExecutionProposalFailure(
+                action_plan_id=action_plan.id,
+                missing_reason=_precondition_failure_reason(report),
+                detail=_precondition_failure_detail(report),
+            )
+
+        tool_call_failure = _tool_call_failure_reason(action_plan, state)
+        if tool_call_failure is not None:
+            reason, detail = tool_call_failure
+            return ExecutionProposalFailure(
+                action_plan_id=action_plan.id, missing_reason=reason, detail=detail
+            )
+        return None
+
     def _tool_call_for_plan(
         self, action_plan: ActionPlan, state: State
     ) -> tuple[str, dict[str, Any]] | None:
@@ -103,32 +131,8 @@ class ExecutionProposalService:
         ):
             return None
 
-        host = _find_fact_value(
-            state,
-            {
-                "service.host",
-                "service_host",
-                "service.host.name",
-                "service_host_name",
-                "target_host",
-                "host",
-            },
-        )
-        container = _find_fact_value(
-            state,
-            {
-                "service.container",
-                "service_container",
-                "service.container.name",
-                "service_container_name",
-                "container",
-                "container.name",
-                "container_name",
-                "service.name",
-                "service_name",
-                "service",
-            },
-        )
+        host = _find_fact_value(state, _SERVICE_HOST_PREDICATES)
+        container = _find_fact_value(state, _SERVICE_CONTAINER_PREDICATES)
         if host is None or container is None:
             return None
 
@@ -136,6 +140,76 @@ class ExecutionProposalService:
             "docker_container_lifecycle",
             {"host": host, "container": container, "action": "restart"},
         )
+
+
+def _precondition_failure_reason(report: PreconditionReport) -> str:
+    missing_ids = {precondition.id for precondition in report.missing_preconditions}
+    if "provider_registered" in missing_ids:
+        return "provider/tool not registered"
+    return "preconditions missing"
+
+
+def _precondition_failure_detail(report: PreconditionReport) -> str | None:
+    if not report.missing_preconditions:
+        return None
+    return ", ".join(
+        f"{precondition.id}: {precondition.reason}"
+        for precondition in report.missing_preconditions
+    )
+
+
+def _tool_call_failure_reason(
+    action_plan: ActionPlan, state: State
+) -> tuple[str, str | None] | None:
+    if (
+        action_plan.capability != "service_management"
+        or action_plan.provider != "docker_container_lifecycle"
+    ):
+        detail = (
+            "no proposal builder is available for "
+            f"{action_plan.capability}/{action_plan.provider}"
+        )
+        return "provider unsupported", detail
+
+    host = _find_fact_value(state, _SERVICE_HOST_PREDICATES)
+    if host is None:
+        return (
+            "service host missing",
+            "no service host fact is present for the action plan",
+        )
+
+    container = _find_fact_value(state, _SERVICE_CONTAINER_PREDICATES)
+    if container is None:
+        return (
+            "container name missing",
+            "no service container name fact is present for the action plan",
+        )
+
+    return None
+
+
+_SERVICE_HOST_PREDICATES = {
+    "service.host",
+    "service_host",
+    "service.host.name",
+    "service_host_name",
+    "target_host",
+    "host",
+}
+
+
+_SERVICE_CONTAINER_PREDICATES = {
+    "service.container",
+    "service_container",
+    "service.container.name",
+    "service_container_name",
+    "container",
+    "container.name",
+    "container_name",
+    "service.name",
+    "service_name",
+    "service",
+}
 
 
 def fingerprint_tool_call(tool_name: str, arguments: dict[str, Any]) -> str:

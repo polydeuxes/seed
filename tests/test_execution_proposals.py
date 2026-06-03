@@ -1,6 +1,4 @@
 from dataclasses import replace
-from datetime import timedelta
-
 import pytest
 
 from seed_runtime.events import EventLedger
@@ -165,3 +163,56 @@ def test_no_tool_execution_occurs():
     assert "pending_action.approved" not in kinds
     assert "approval.granted" not in kinds
     assert "tool.registered" not in kinds
+
+def test_diagnose_failure_reports_preconditions_missing():
+    failure = ExecutionProposalService().diagnose_failure(_plan(), State(workspace_id="ws"))
+
+    assert failure is not None
+    assert failure.missing_reason == "provider/tool not registered"
+    assert "provider_registered" in (failure.detail or "")
+
+
+def test_diagnose_failure_reports_service_host_missing_when_plan_ready():
+    state = replace(
+        _executable_state(),
+        facts={
+            "fact_container": _fact("fact_container", "service.container", "web"),
+        },
+    )
+
+    failure = ExecutionProposalService().diagnose_failure(_plan(), state)
+
+    assert failure is not None
+    assert failure.missing_reason == "service host missing"
+
+
+def test_diagnose_failure_reports_container_name_missing_when_plan_ready():
+    state = replace(
+        _executable_state(),
+        facts={"fact_host": _fact("fact_host", "service.host", "node-1")},
+    )
+
+    failure = ExecutionProposalService().diagnose_failure(_plan(), state)
+
+    assert failure is not None
+    assert failure.missing_reason == "container name missing"
+
+
+def test_diagnose_failure_reports_unsupported_provider_when_plan_ready():
+    plan = _plan().model_copy(update={"provider": "systemd_service_lifecycle"})
+    state = replace(
+        _executable_state(),
+        tools={
+            "systemd_service_lifecycle": _tool().model_copy(
+                update={
+                    "name": "systemd_service_lifecycle",
+                    "toolkit_id": "systemd_service_lifecycle",
+                }
+            )
+        },
+    )
+
+    failure = ExecutionProposalService().diagnose_failure(plan, state)
+
+    assert failure is not None
+    assert failure.missing_reason == "provider unsupported"
