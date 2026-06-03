@@ -20,8 +20,10 @@ from seed_runtime.ids import new_id
 from seed_runtime.serialization import to_plain
 from seed_runtime.models import Actor
 from seed_runtime.observations import (
+    EndpointAliasNormalizer,
     Observation,
     ObservationIngestor,
+    ObservationNormalizer,
     ObservationSourceType,
 )
 
@@ -270,6 +272,19 @@ class PrometheusObservationSource:
                 "read_only": True,
                 "http_method": "GET",
             }
+            # Only node_uname_info is authoritative for stable host identity.
+            # Other metrics remain endpoint-scoped and do not participate in
+            # endpoint alias normalization.
+            if query == "node_uname_info":
+                metadata.update(
+                    {
+                        "source": "prometheus",
+                        "instance": instance,
+                    }
+                )
+                nodename = metric.get("nodename")
+                if isinstance(nodename, str) and nodename.strip():
+                    metadata["nodename"] = nodename.strip()
             if query == "up":
                 observations.append(
                     self._observation(
@@ -635,8 +650,16 @@ def export_observations_json(
 class ObservationCollectionService:
     """Collect observations from a source and ingest them through Seed events."""
 
-    def __init__(self, ingestor: ObservationIngestor) -> None:
+    def __init__(
+        self,
+        ingestor: ObservationIngestor,
+        *,
+        normalizers: list[ObservationNormalizer] | None = None,
+    ) -> None:
         self.ingestor = ingestor
+        self.normalizers = (
+            [EndpointAliasNormalizer()] if normalizers is None else list(normalizers)
+        )
 
     def collect(
         self,
@@ -659,6 +682,8 @@ class ObservationCollectionService:
             self._normalize_observation(source, observation)
             for observation in observations
         ]
+        for normalizer in self.normalizers:
+            normalized = normalizer.normalize(normalized)
 
         return [
             self.ingestor.ingest(

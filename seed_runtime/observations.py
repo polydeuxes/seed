@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import re
 from datetime import datetime
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any, Literal
@@ -47,6 +49,96 @@ class Observation(SeedModel):
     confidence: float = 1.0
     metadata: dict[str, Any] = Field(default_factory=dict)
     expires_at: datetime | None = None
+
+
+class ObservationNormalizer:
+    """Base mapper for deriving canonical observations from provider metadata."""
+
+    def normalize(self, observations: list[Observation]) -> list[Observation]:
+        """Return original observations plus any derived observations."""
+
+        normalized: list[Observation] = []
+        for observation in observations:
+            normalized.append(observation)
+            normalized.extend(self.derive(observation))
+        return normalized
+
+    def derive(self, observation: Observation) -> list[Observation]:
+        """Return derived observations for one input observation."""
+
+        return []
+
+
+class EndpointAliasNormalizer(ObservationNormalizer):
+    """Derive stable host-to-endpoint alias facts from observation metadata.
+
+    Sources participate by placing a stable entity name in ``metadata.hostname``
+    or ``metadata.nodename`` and an endpoint identifier in ``metadata.instance``.
+    If ``metadata.source`` is present, the derived predicate is
+    ``<source>_instance``; otherwise the generic ``alias`` predicate is used.
+    """
+
+    def derive(self, observation: Observation) -> list[Observation]:
+        metadata = dict(observation.metadata)
+        endpoint = _metadata_string(metadata.get("instance"))
+        stable_name = _metadata_string(metadata.get("hostname")) or _metadata_string(
+            metadata.get("nodename")
+        )
+        if stable_name is None or endpoint is None or stable_name == endpoint:
+            return []
+
+        source = _metadata_string(metadata.get("source"))
+        predicate = (
+            f"{_normalize_source_name(source)}_instance" if source else "alias"
+        )
+        derived_metadata = {
+            "derived_from_observation_id": observation.id,
+            "derived_by": "EndpointAliasNormalizer",
+            "alias_source_predicate": observation.predicate,
+        }
+        if source is not None:
+            derived_metadata["source"] = source
+        observation_source = _metadata_string(metadata.get("observation_source"))
+        if observation_source is not None:
+            derived_metadata["observation_source"] = observation_source
+
+        return [
+            Observation(
+                id=_derived_observation_id(
+                    "obs_endpoint_alias",
+                    observation.id,
+                    stable_name,
+                    predicate,
+                    endpoint,
+                ),
+                source_type=observation.source_type,
+                observed_at=observation.observed_at,
+                subject=stable_name,
+                predicate=predicate,
+                value=endpoint,
+                confidence=observation.confidence,
+                metadata=derived_metadata,
+                expires_at=observation.expires_at,
+            )
+        ]
+
+
+def _metadata_string(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    stripped = value.strip()
+    return stripped or None
+
+
+def _normalize_source_name(source: str) -> str:
+    normalized = re.sub(r"[^a-z0-9]+", "_", source.strip().lower()).strip("_")
+    return normalized or "source"
+
+
+def _derived_observation_id(prefix: str, *parts: Any) -> str:
+    payload = "\x1f".join(str(part) for part in parts)
+    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+    return f"{prefix}_{digest}"
 
 
 class ObservationIngestor:

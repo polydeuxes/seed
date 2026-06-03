@@ -10,13 +10,19 @@ from seed_runtime.observation_sources import (
     ObservationSource,
     export_observations_json,
 )
-from seed_runtime.observations import Observation, ObservationIngestor
+from seed_runtime.observations import (
+    EndpointAliasNormalizer,
+    Observation,
+    ObservationIngestor,
+    ObservationNormalizer,
+)
 from seed_runtime.models import Event, HandoffPlan, PendingAction, ToolNeed, ToolSpec, Toolkit
 from seed_runtime.preconditions import Precondition, PreconditionReport
 from seed_runtime.state import EntityRelationship
 
 __all__ = [
     "CapabilityCatalog",
+    "EndpointAliasNormalizer",
     "EntityRelationship",
     "Event",
     "Evidence",
@@ -29,6 +35,7 @@ __all__ = [
     "ObservationCollectionService",
     "ObservationSource",
     "ObservationIngestor",
+    "ObservationNormalizer",
     "export_observations_json",
     "HandoffPlan",
     "PendingAction",

@@ -600,3 +600,128 @@ def test_prometheus_source_unreachable_fails_gracefully(monkeypatch):
 
     assert source.collect() == []
     assert "network unreachable" in (source.last_error or "")
+
+
+def test_endpoint_alias_normalizer_derives_generic_source_alias():
+    from seed_runtime.observations import EndpointAliasNormalizer
+
+    observation = _observation(
+        "obs_generic_endpoint",
+        subject="10.0.0.8:1234",
+        predicate="status",
+        value="ready",
+        metadata={
+            "hostname": "node-generic",
+            "instance": "10.0.0.8:1234",
+            "source": "generic-monitor",
+        },
+    )
+
+    normalized = EndpointAliasNormalizer().normalize([observation])
+
+    assert len(normalized) == 2
+    alias = normalized[1]
+    assert alias.subject == "node-generic"
+    assert alias.predicate == "generic_monitor_instance"
+    assert alias.value == "10.0.0.8:1234"
+    assert alias.metadata["derived_from_observation_id"] == observation.id
+
+
+def test_endpoint_alias_normalizer_without_stable_name_creates_no_alias():
+    from seed_runtime.observations import EndpointAliasNormalizer
+
+    observation = _observation(
+        "obs_endpoint_only",
+        subject="10.0.0.8:1234",
+        metadata={"instance": "10.0.0.8:1234", "source": "generic-monitor"},
+    )
+
+    assert EndpointAliasNormalizer().normalize([observation]) == [observation]
+
+
+def test_collection_normalized_alias_resolves_best_fact_by_stable_name():
+    ledger = EventLedger()
+    source = FakeObservationSource(
+        [
+            _observation(
+                "obs_generic_up",
+                subject="192.168.254.115:9100",
+                predicate="up",
+                value=1,
+                metadata={
+                    "hostname": "node115",
+                    "instance": "192.168.254.115:9100",
+                    "source": "generic",
+                },
+            )
+        ],
+        name="generic",
+    )
+
+    facts = ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        source, "ws_generic_alias"
+    )
+    state = StateProjector(ledger).project("ws_generic_alias")
+
+    assert len(facts) == 2
+    assert state.get_best_fact("node115", "up").value == 1
+    assert any(
+        fact.subject_id == "node115"
+        and fact.predicate == "generic_instance"
+        and fact.value == "192.168.254.115:9100"
+        for fact in state.facts.values()
+    )
+
+
+def test_prometheus_nodename_creates_prometheus_instance_alias_via_normalizer(
+    monkeypatch,
+):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import PrometheusObservationSource
+
+    class Response:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self):
+            return json.dumps(self.payload).encode("utf-8")
+
+    def fake_urlopen(request, timeout):
+        query = request.full_url.rsplit("query=", 1)[1]
+        metric = {"instance": "192.168.254.115:9100"}
+        if query == "node_uname_info":
+            metric.update({"nodename": "node115", "sysname": "Linux"})
+        return Response(
+            {
+                "status": "success",
+                "data": {
+                    "resultType": "vector",
+                    "result": [{"metric": metric, "value": [1, "1"]}],
+                },
+            }
+        )
+
+    monkeypatch.setattr(sources, "urlopen", fake_urlopen)
+    source = PrometheusObservationSource("http://prom.example:9090", name="prometheus")
+
+    raw = source.collect()
+    assert all("nodename" not in obs.metadata for obs in raw if obs.predicate != "os")
+    assert all("instance" not in obs.metadata for obs in raw if obs.predicate != "os")
+
+    ledger = EventLedger()
+    facts = ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        source, "ws_prometheus_alias"
+    )
+    state = StateProjector(ledger).project("ws_prometheus_alias")
+
+    aliases = [fact for fact in facts if fact.predicate == "prometheus_instance"]
+    assert len(aliases) == 1
+    assert aliases[0].subject_id == "node115"
+    assert aliases[0].value == "192.168.254.115:9100"
+    assert state.get_best_fact("node115", "up").value == 1
