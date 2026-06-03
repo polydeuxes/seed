@@ -32,6 +32,11 @@ from seed_runtime.models import Event, ToolNeed, ToolSpec, utc_now
 from seed_runtime.registry import ToolRegistry
 from seed_runtime.runtime import Runtime
 from seed_runtime.serialization import to_plain
+from seed_runtime.secrets import (
+    SECRET_FIELD_NAMES,
+    normalize_field_name,
+    reject_secret_fields,
+)
 from seed_runtime.state import StateProjector
 from seed_runtime.tool_needs import ToolNeedService
 
@@ -461,9 +466,14 @@ def validate_lifecycle_args(
 
 def parse_dev_fact(args: list[str]) -> DevFactSeed:
     subject_id, predicate, raw_value = args
-    return DevFactSeed(
-        subject_id=subject_id, predicate=predicate, value=_parse_fact_value(raw_value)
+    value = _parse_fact_value(raw_value)
+    if normalize_field_name(predicate) in SECRET_FIELD_NAMES:
+        raise ValueError(f"secret field is not allowed in --fact: {predicate}")
+    reject_secret_fields(
+        {"subject": subject_id, "predicate": predicate, "value": value},
+        "--fact",
     )
+    return DevFactSeed(subject_id=subject_id, predicate=predicate, value=value)
 
 
 def parse_registered_provider(provider_name: str) -> DevRegisteredProviderSeed:
@@ -753,6 +763,7 @@ def run_http(app: LocalSeedApp, host: str, port: int) -> None:
                 return
             try:
                 payload = self._read_json()
+                reject_secret_fields(payload, "http_request")
                 text = payload.get("message", payload.get("text"))
                 if not isinstance(text, str) or not text.strip():
                     raise ValueError("POST JSON requires non-empty 'message' or 'text'")

@@ -294,7 +294,8 @@ Execution authorizations are short-lived and bind all of the following:
 - the `action_plan_id` that was accepted;
 - the proposed concrete tool/action name;
 - a deterministic fingerprint of the exact proposed arguments;
-- a secret-free identifier for any just-in-time credential/session grant.
+- secret-free grant metadata for any just-in-time external prompt, agent, sudo
+  timestamp, or vault reference.
 
 Example:
 
@@ -306,18 +307,24 @@ Example:
   "arguments_fingerprint": "sha256:...",
   "granted_by": "operator@example.com",
   "expires_at": "2026-06-03T15:05:00Z",
-  "credential_grant_id": "jit_session_...",
-  "session_id": "ses_...",
-  "metadata": {
-    "reason": "one restart attempt"
-  }
+  "interactive_prompt": true,
+  "ssh_agent": "SSH_AUTH_SOCK",
+  "sudo_timestamp": "host-sudo-cache",
+  "external_vault_token_ref": "vault://seed/jit/session-ref",
+  "secret_seen_by_seed": false
 }
 ```
 
-Passwords, tokens, private keys, and other secrets are never stored in Action
-Plans, durable Approvals, Execution Authorizations, or event payloads. Any
-credential material must be supplied just in time by the host environment for
-the exact authorized attempt and discarded outside Seed's persistent state.
+Passwords, passphrases, raw tokens, private keys, and other secrets are never
+stored in Action Plans, durable Approvals, Execution Authorizations, event
+payloads, CLI arguments, models, or the database. Execution Authorization may
+store only these secret-free grant metadata fields: `interactive_prompt`,
+`ssh_agent`, `sudo_timestamp`, and `external_vault_token_ref`; it must also
+record `secret_seen_by_seed: false`. Any credential material must be supplied
+just in time by the host environment for the exact authorized attempt and
+discarded outside Seed's persistent state. The preferred privileged execution
+path is an external prompt or agent such as Ansible's `become` prompt, an
+SSH agent, sudo's host-managed timestamp cache, or an external vault reference.
 
 ### Decision
 

@@ -9,6 +9,10 @@ from typing import Any, Literal
 from seed_runtime.base import SeedModel
 from seed_runtime.evidence import Evidence
 from seed_runtime.facts import Fact
+from seed_runtime.secrets import (
+    SECRET_FREE_GRANT_METADATA_FIELDS,
+    reject_secret_fields,
+)
 
 if find_spec("pydantic") is not None:
     from pydantic import Field
@@ -47,6 +51,10 @@ def utc_now() -> datetime:
 
 
 class Event(SeedModel):
+    def __init__(self, **data: Any) -> None:
+        reject_secret_fields(data.get("payload", {}), "event.payload")
+        super().__init__(**data)
+
     id: str
     kind: str
     workspace_id: str = "default"
@@ -201,10 +209,27 @@ class ExecutionAuthorization(SeedModel):
     """Just-in-time authorization for one concrete execution attempt.
 
     The authorization binds an accepted action plan to a proposed concrete tool
-    call by fingerprint. It intentionally stores only secret-free metadata;
-    credentials and session tokens must be supplied just in time by the host
-    environment and never persisted in Seed state.
+    call by fingerprint. It intentionally stores only secret-free grant metadata;
+    raw passwords, passphrases, tokens, private keys, and credential/session
+    material must be supplied just in time by the host environment and never
+    enter Seed events, models, CLI arguments, or persistent storage.
     """
+
+    def __init__(self, **data: Any) -> None:
+        reject_secret_fields(
+            data,
+            "execution_authorization",
+            allowed_fields=SECRET_FREE_GRANT_METADATA_FIELDS,
+        )
+        unknown_fields = set(data) - set(type(self).__annotations__)
+        if unknown_fields:
+            raise ValueError(
+                "execution authorization may only store secret-free grant "
+                f"metadata fields: {', '.join(sorted(unknown_fields))}"
+            )
+        if data.get("secret_seen_by_seed", False) is not False:
+            raise ValueError("execution authorization secret_seen_by_seed must be false")
+        super().__init__(**data)
 
     id: str
     action_plan_id: str
@@ -212,9 +237,11 @@ class ExecutionAuthorization(SeedModel):
     arguments_fingerprint: str
     granted_by: str
     expires_at: datetime
-    credential_grant_id: str | None = None
-    session_id: str | None = None
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    interactive_prompt: bool = False
+    ssh_agent: str | None = None
+    sudo_timestamp: str | None = None
+    external_vault_token_ref: str | None = None
+    secret_seen_by_seed: Literal[False] = False
 
 
 class RuntimeResponse(SeedModel):

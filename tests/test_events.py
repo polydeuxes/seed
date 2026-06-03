@@ -35,9 +35,11 @@ def test_sqlite_execution_authorization_events_are_ephemeral(tmp_path):
                     "arguments_fingerprint": "abc123",
                     "granted_by": "operator@example.com",
                     "expires_at": "2026-06-03T00:05:00+00:00",
-                    "credential_grant_id": "jit_1",
-                    "session_id": "ses_1",
-                    "metadata": {"reason": "one attempt"},
+                    "interactive_prompt": True,
+                    "ssh_agent": "SSH_AUTH_SOCK",
+                    "sudo_timestamp": "host-sudo-cache",
+                    "external_vault_token_ref": "vault://seed/jit/1",
+                    "secret_seen_by_seed": False,
                 }
             },
         )
@@ -53,3 +55,41 @@ def test_sqlite_execution_authorization_events_are_ephemeral(tmp_path):
         assert reopened.list_events("ws") == []
     finally:
         reopened.close()
+
+
+def test_event_ledger_rejects_secret_fields_in_payloads():
+    ledger = EventLedger()
+
+    for field in ("password", "passphrase", "token", "private_key"):
+        try:
+            ledger.append("tool.call_requested", "ws", {field: "not-accepted"})
+        except ValueError as exc:
+            assert "secret field" in str(exc)
+        else:
+            raise AssertionError(f"{field} must be rejected")
+
+
+def test_execution_authorization_event_rejects_non_grant_metadata():
+    ledger = EventLedger()
+
+    try:
+        ledger.append(
+            "execution_authorization.granted",
+            "ws",
+            {
+                "execution_authorization": {
+                    "id": "auth_1",
+                    "action_plan_id": "plan_1",
+                    "tool_name": "restart_container",
+                    "arguments_fingerprint": "sha256:abc123",
+                    "granted_by": "operator@example.com",
+                    "expires_at": "2026-06-03T00:05:00+00:00",
+                    "credential_grant_id": "legacy-grant",
+                    "secret_seen_by_seed": False,
+                }
+            },
+        )
+    except ValueError as exc:
+        assert "only store secret-free grant metadata" in str(exc)
+    else:
+        raise AssertionError("execution authorization must reject legacy metadata")

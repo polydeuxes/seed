@@ -233,7 +233,10 @@ def test_execution_authorization_satisfies_mutating_plan_without_storing_argumen
         tool_name="docker_container_lifecycle",
         tool_arguments={"container": "web", "operation": "restart"},
         granted_by="operator@example.com",
-        credential_grant_id="jit_session_1",
+        interactive_prompt=True,
+        ssh_agent="SSH_AUTH_SOCK",
+        sudo_timestamp="host-sudo-cache",
+        external_vault_token_ref="vault://seed/jit/session-1",
         session_id="ses_1",
     )
     state = StateProjector(ledger).project(workspace_id)
@@ -256,23 +259,29 @@ def test_execution_authorization_satisfies_mutating_plan_without_storing_argumen
     payload = event.payload["execution_authorization"]
     assert "tool_arguments" not in payload
     assert "arguments_fingerprint" in payload
+    assert payload["interactive_prompt"] is True
+    assert payload["ssh_agent"] == "SSH_AUTH_SOCK"
+    assert payload["sudo_timestamp"] == "host-sudo-cache"
+    assert payload["external_vault_token_ref"] == "vault://seed/jit/session-1"
+    assert payload["secret_seen_by_seed"] is False
 
 
-def test_execution_authorization_rejects_secret_like_fields():
+def test_execution_authorization_rejects_common_secret_fields():
     ledger = EventLedger()
     workspace_id = "ws"
     plan = _plan().model_copy(update={"status": "accepted"})
     ledger.append("action_plan.created", workspace_id, {"action_plan": to_plain(plan)})
 
-    try:
-        ActionPlanService(ledger).grant_execution_authorization(
-            workspace_id,
-            "plan_1",
-            tool_name="docker_container_lifecycle",
-            tool_arguments={"password": "not-stored"},
-            granted_by="operator@example.com",
-        )
-    except ValueError as exc:
-        assert "secret-like field" in str(exc)
-    else:
-        raise AssertionError("secret-like fields must be rejected")
+    for field in ("password", "passphrase", "token", "private_key"):
+        try:
+            ActionPlanService(ledger).grant_execution_authorization(
+                workspace_id,
+                "plan_1",
+                tool_name="docker_container_lifecycle",
+                tool_arguments={field: "not-stored"},
+                granted_by="operator@example.com",
+            )
+        except ValueError as exc:
+            assert "secret field" in str(exc)
+        else:
+            raise AssertionError(f"{field} fields must be rejected")

@@ -9,7 +9,7 @@ import sqlite3
 from typing import Any, Iterable
 
 from seed_runtime.ids import new_id, reserve_id_prefix
-from seed_runtime.models import Actor, Event
+from seed_runtime.models import Actor, Event, ExecutionAuthorization
 
 
 class EventLedger:
@@ -65,6 +65,7 @@ class EventLedger:
             self._store(event.model_copy(deep=True))
 
     def _store(self, event: Event) -> None:
+        _validate_execution_authorization_event(event)
         if event.id in self._by_id:
             raise ValueError(f"event id already exists: {event.id}")
         self._events.append(event)
@@ -174,6 +175,7 @@ class SQLiteEventLedger(EventLedger):
         self._connection.close()
 
     def _store_ephemeral(self, event: Event) -> None:
+        _validate_execution_authorization_event(event)
         if event.id in self._ephemeral_by_id:
             raise ValueError(f"event id already exists: {event.id}")
         self._ephemeral_events.append(event.model_copy(deep=True))
@@ -181,6 +183,7 @@ class SQLiteEventLedger(EventLedger):
         self._advance_event_counter(event.id)
 
     def _insert(self, event: Event) -> None:
+        _validate_execution_authorization_event(event)
         self._connection.execute(
             """
             INSERT INTO events (id, kind, workspace_id, actor, timestamp, payload, session_id, causation_id, correlation_id)
@@ -275,6 +278,15 @@ def _walk_values(value: Any) -> Iterable[Any]:
             yield from _walk_values(nested)
     else:
         yield value
+
+
+def _validate_execution_authorization_event(event: Event) -> None:
+    if event.kind != "execution_authorization.granted":
+        return
+    payload = event.payload.get("execution_authorization", event.payload)
+    if not isinstance(payload, dict):
+        raise ValueError("execution_authorization.granted requires an object payload")
+    ExecutionAuthorization(**payload)
 
 
 def _numeric_suffix(value: str, prefix: str) -> int | None:

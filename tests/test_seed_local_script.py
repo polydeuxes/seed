@@ -650,3 +650,18 @@ def test_cli_approve_plan_prints_clean_error_for_proposed_plan(tmp_path, capsys)
     assert "action_plan_id: plan_cli" in output
     assert "status: proposed" in output
     assert "error: invalid transition proposed -> approved" in output
+
+
+def test_dev_fact_cli_rejects_secret_field_names():
+    seed_local = load_seed_local_module()
+
+    for field in ("password", "passphrase", "token", "private_key"):
+        with pytest.raises(ValueError, match="secret field"):
+            seed_local.parse_dev_fact(["node-1", field, "not-accepted"])
+
+
+def test_dev_fact_cli_rejects_json_values_with_secret_fields():
+    seed_local = load_seed_local_module()
+
+    with pytest.raises(ValueError, match="secret field"):
+        seed_local.parse_dev_fact(["node-1", "auth", '{"token": "not-accepted"}'])

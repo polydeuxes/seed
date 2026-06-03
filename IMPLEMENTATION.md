@@ -44,11 +44,15 @@ readiness evidence.
 
 `execution_authorization.granted` records only secret-free, short-lived metadata
 for one proposed concrete tool call: the action plan ID, tool name, deterministic
-argument fingerprint, approver, expiry, and optional just-in-time credential or
-session grant identifier. The runtime still does not implement execution from
-Action Plans. Passwords, tokens, private keys, and credential material are never
-stored; credentials must be supplied just in time by the host environment for
-the exact authorized attempt.
+argument fingerprint, approver, expiry, `secret_seen_by_seed: false`, and the
+explicit grant metadata fields `interactive_prompt`, `ssh_agent`,
+`sudo_timestamp`, and `external_vault_token_ref`. The runtime still does not
+implement execution from Action Plans. Passwords, passphrases, raw tokens,
+private keys, and credential material are never stored in events, models, CLI
+arguments, or the database; credentials must be supplied just in time by the
+host environment for the exact authorized attempt. Preferred privileged
+execution stays outside Seed's secret boundary, for example Ansible `become`
+prompts, SSH agents, sudo timestamp caches, or external vault references.
 
 ## Deliberate constraints
 
