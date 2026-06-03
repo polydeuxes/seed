@@ -28,7 +28,7 @@ from seed_runtime.intent_classifier import (
     IntentPromptModelClient,
     TextIntentClassifier,
 )
-from seed_runtime.models import Event, ToolNeed, utc_now
+from seed_runtime.models import Event, ToolNeed, ToolSpec, utc_now
 from seed_runtime.registry import ToolRegistry
 from seed_runtime.runtime import Runtime
 from seed_runtime.serialization import to_plain
@@ -48,6 +48,13 @@ class DevFactSeed:
     subject_id: str
     predicate: str
     value: Any
+
+
+@dataclass(frozen=True)
+class DevRegisteredProviderSeed:
+    """Local development provider/tool registration supplied from the CLI."""
+
+    provider_name: str
 
 
 @dataclass
@@ -133,45 +140,24 @@ class LocalSeedApp:
     def seed_facts(self, facts: list[DevFactSeed]) -> None:
         """Append local development evidence and fact events into the ledger."""
 
-        for index, seed in enumerate(facts, start=1):
-            observed_at = utc_now()
-            evidence = Evidence(
-                id=new_id("evd_dev_fact"),
-                workspace_id=self.workspace_id,
-                source="scripts.seed_local --fact",
-                kind="local_dev.fact",
-                observed_at=observed_at,
-                payload={
-                    "subject_id": seed.subject_id,
-                    "predicate": seed.predicate,
-                    "value": seed.value,
-                    "index": index,
-                },
-                confidence=1.0,
-            )
-            fact = Fact(
-                id=new_id("fact_dev"),
-                subject_id=seed.subject_id,
-                predicate=seed.predicate,
-                value=seed.value,
-                evidence_ids=[evidence.id],
-                observed_at=observed_at,
-                confidence=evidence.confidence,
-            )
-            self.ledger.append(
-                "evidence.observed",
-                self.workspace_id,
-                {"evidence": to_plain(evidence)},
-                actor="system",
-                session_id=self.session_id,
-            )
-            self.ledger.append(
-                "fact.observed",
-                self.workspace_id,
-                {"fact": to_plain(fact)},
-                actor="system",
-                session_id=self.session_id,
-            )
+        seed_dev_facts(
+            self.ledger,
+            self.workspace_id,
+            facts,
+            session_id=self.session_id,
+        )
+
+    def seed_registered_providers(
+        self, providers: list[DevRegisteredProviderSeed]
+    ) -> None:
+        """Append dev-only tool registration events into the ledger."""
+
+        seed_dev_registered_providers(
+            self.ledger,
+            self.workspace_id,
+            providers,
+            session_id=self.session_id,
+        )
 
     def raw(self, text: str) -> str:
         input_event = Event(
@@ -187,6 +173,92 @@ class LocalSeedApp:
             self.workspace_id, self.session_id, input_event, state
         )
         return self.model_client.complete(context)
+
+
+def seed_dev_facts(
+    ledger: EventLedger,
+    workspace_id: str,
+    facts: list[DevFactSeed],
+    *,
+    session_id: str | None = None,
+) -> None:
+    """Append local development evidence and fact events into a ledger."""
+
+    for index, seed in enumerate(facts, start=1):
+        observed_at = utc_now()
+        evidence = Evidence(
+            id=new_id("evd_dev_fact"),
+            workspace_id=workspace_id,
+            source="scripts.seed_local --fact",
+            kind="local_dev.fact",
+            observed_at=observed_at,
+            payload={
+                "subject_id": seed.subject_id,
+                "predicate": seed.predicate,
+                "value": seed.value,
+                "index": index,
+            },
+            confidence=1.0,
+        )
+        fact = Fact(
+            id=new_id("fact_dev"),
+            subject_id=seed.subject_id,
+            predicate=seed.predicate,
+            value=seed.value,
+            evidence_ids=[evidence.id],
+            observed_at=observed_at,
+            confidence=evidence.confidence,
+        )
+        ledger.append(
+            "evidence.observed",
+            workspace_id,
+            {"evidence": to_plain(evidence)},
+            actor="system",
+            session_id=session_id,
+        )
+        ledger.append(
+            "fact.observed",
+            workspace_id,
+            {"fact": to_plain(fact)},
+            actor="system",
+            session_id=session_id,
+        )
+
+
+def seed_dev_registered_providers(
+    ledger: EventLedger,
+    workspace_id: str,
+    providers: list[DevRegisteredProviderSeed],
+    *,
+    session_id: str | None = None,
+) -> None:
+    """Append dev-only registered-tool state without loading or registering tools."""
+
+    for seed in providers:
+        provider_name = seed.provider_name.strip()
+        if not provider_name:
+            continue
+        tool = ToolSpec(
+            name=provider_name,
+            summary=f"Dev-only seeded provider registration for {provider_name}.",
+            toolkit_id=provider_name,
+            input_schema={},
+            output_schema={},
+            policy_action=provider_name,
+            implementation="scripts.seed_local:dev_only_noop",
+            risk_class="L1",
+        )
+        ledger.append(
+            "tool.registered",
+            workspace_id,
+            {
+                "tool": to_plain(tool),
+                "source": "scripts.seed_local --registered-provider",
+                "dev_only": True,
+            },
+            actor="system",
+            session_id=session_id,
+        )
 
 
 def build_local_app(
@@ -238,7 +310,16 @@ def build_local_app(
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run Seed locally with Ollama /api/generate intent classification."
+        description="Run Seed locally with Ollama /api/generate intent classification.",
+        epilog=(
+            "Examples:\n"
+            "  python scripts/seed_local.py --fact jellyfin host node115 "
+            "--fact jellyfin runtime docker 'restart jellyfin?'\n"
+            "  python scripts/seed_local.py --db .seed-local.sqlite "
+            "--registered-provider docker_container_lifecycle "
+            "--fact jellyfin host node115 --preconditions plan_000001"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("message", nargs="*", help="message to send in one-shot mode")
     parser.add_argument(
@@ -328,8 +409,21 @@ def build_parser() -> argparse.ArgumentParser:
         metavar=("SUBJECT", "PREDICATE", "VALUE"),
         default=[],
         help=(
-            "dev-only seed-state fact to append before handling messages; "
-            "repeat as --fact SUBJECT PREDICATE VALUE"
+            "dev-only seed-state fact to append before handling messages or "
+            "precondition reports; repeat as --fact SUBJECT PREDICATE VALUE "
+            "(for example: --fact jellyfin host node115, "
+            "--fact jellyfin runtime docker)"
+        ),
+    )
+    parser.add_argument(
+        "--registered-provider",
+        action="append",
+        metavar="PROVIDER_NAME",
+        default=[],
+        help=(
+            "dev-only provider/tool registration state to append before "
+            "precondition reports; records inspectable state only and does not "
+            "load, register, approve, or execute real tools"
         ),
     )
     return parser
@@ -364,6 +458,10 @@ def parse_dev_fact(args: list[str]) -> DevFactSeed:
     return DevFactSeed(
         subject_id=subject_id, predicate=predicate, value=_parse_fact_value(raw_value)
     )
+
+
+def parse_registered_provider(provider_name: str) -> DevRegisteredProviderSeed:
+    return DevRegisteredProviderSeed(provider_name=provider_name)
 
 
 def _parse_fact_value(value: str) -> Any:
@@ -451,11 +549,37 @@ def format_cli_output(
     return "\n".join(sections)
 
 
+def seed_dev_state_from_args(args: argparse.Namespace, ledger: EventLedger) -> None:
+    """Seed dev-only facts and provider registrations requested by CLI args."""
+
+    fact_seeds = [parse_dev_fact(fact) for fact in args.fact]
+    if fact_seeds:
+        seed_dev_facts(
+            ledger,
+            args.workspace,
+            fact_seeds,
+            session_id=args.session,
+        )
+
+    provider_seeds = [
+        parse_registered_provider(provider_name)
+        for provider_name in args.registered_provider
+    ]
+    if provider_seeds:
+        seed_dev_registered_providers(
+            ledger,
+            args.workspace,
+            provider_seeds,
+            session_id=args.session,
+        )
+
+
 def precondition_report(args: argparse.Namespace) -> dict[str, Any]:
     """Return an inspect-only precondition report for a stored action plan."""
 
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
     try:
+        seed_dev_state_from_args(args, ledger)
         state = StateProjector(ledger).project(args.workspace)
         plan = state.action_plans.get(args.preconditions)
         if plan is None:
@@ -679,9 +803,7 @@ def main(argv: list[str] | None = None) -> int:
         session_id=args.session,
         database_path=args.db,
     )
-    fact_seeds = [parse_dev_fact(fact) for fact in args.fact]
-    if fact_seeds:
-        app.seed_facts(fact_seeds)
+    seed_dev_state_from_args(args, app.ledger)
 
     if args.http:
         run_http(app, args.host, args.port)

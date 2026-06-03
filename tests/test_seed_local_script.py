@@ -373,7 +373,7 @@ def test_cli_preconditions_prints_inspect_only_report_without_registering_tools(
     )
     assert "preconditions:" in output
     assert "- id: target_host_known\n  satisfied: false" in output
-    assert "reason: no host entity or target host fact is present" in output
+    assert "reason: no host entity, entity host fact, or target host fact is present" in output
     assert "tool.call" not in output
     assert "approved" not in output.lower()
 
@@ -480,3 +480,103 @@ def test_cli_supersede_plan_prints_superseded_and_replacement_id(tmp_path, capsy
     assert "action_plan_id: plan_cli" in output
     assert "status: superseded" in output
     assert "replacement_plan_id: plan_replacement" in output
+
+
+def test_parser_accepts_registered_provider_and_fact_examples():
+    seed_local = load_seed_local_module()
+    args = seed_local.build_parser().parse_args(
+        [
+            "--db",
+            ".seed-local.sqlite",
+            "--registered-provider",
+            "docker_container_lifecycle",
+            "--fact",
+            "jellyfin",
+            "host",
+            "node115",
+            "--preconditions",
+            "plan_000001",
+        ]
+    )
+
+    assert args.registered_provider == ["docker_container_lifecycle"]
+    assert args.fact == [["jellyfin", "host", "node115"]]
+    assert args.preconditions == "plan_000001"
+
+
+def test_cli_preconditions_satisfy_provider_and_host_but_not_approval(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed-local.sqlite"
+    seed_cli_action_plan(
+        seed_local,
+        db_path,
+        provider="docker_container_lifecycle",
+        capability="service_management",
+        risk_class="L3",
+        requires_approval=True,
+    )
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--registered-provider",
+                "docker_container_lifecycle",
+                "--fact",
+                "jellyfin",
+                "host",
+                "node115",
+                "--preconditions",
+                "plan_cli",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "executable: false" in output
+    assert "missing:\n- approval_present" in output
+    assert "- id: target_host_known\n  satisfied: true" in output
+    assert "entity host fact is present" in output
+    assert "- id: provider_registered\n  satisfied: true" in output
+    assert "registered tool is available: docker_container_lifecycle" in output
+    assert "- id: approval_present\n  satisfied: false" in output
+    assert "no current approval is present" in output
+    assert "tool.call" not in output
+    assert "approved" not in output.lower()
+
+
+def test_cli_preconditions_target_host_fact_satisfies_host_requirement(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed-local.sqlite"
+    seed_cli_action_plan(
+        seed_local,
+        db_path,
+        provider="docker_container_lifecycle",
+        capability="service_management",
+        risk_class="L3",
+        requires_approval=True,
+    )
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--fact",
+                "jellyfin",
+                "target_host",
+                "node115",
+                "--preconditions",
+                "plan_cli",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "- id: target_host_known\n  satisfied: true" in output
+    assert "target host fact is present" in output
+    assert "- provider_registered" in output
+    assert "- approval_present" in output

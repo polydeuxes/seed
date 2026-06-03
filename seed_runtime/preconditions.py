@@ -123,10 +123,14 @@ def _target_host_known(_action_plan: ActionPlan, state: State) -> tuple[bool, st
             return True, f"host entity is known: {entity.id}"
 
     for fact in state.facts.values():
-        if fact.predicate in {"target_host", "target_host_known"} and bool(fact.value):
+        if fact.predicate in {"host", "target_host", "target_host_known"} and bool(
+            fact.value
+        ):
+            if fact.predicate == "host":
+                return True, f"entity host fact is present: {fact.id}"
             return True, f"target host fact is present: {fact.id}"
 
-    return False, "no host entity or target host fact is present"
+    return False, "no host entity, entity host fact, or target host fact is present"
 
 
 def _provider_registered(action_plan: ActionPlan, state: State) -> tuple[bool, str]:
