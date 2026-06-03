@@ -18,6 +18,7 @@ def _fact(
     observed_offset: int = 0,
     evidence_ids: list[str] | None = None,
     predicate: str = "service.running",
+    expires_at: datetime | None = None,
 ) -> Fact:
     return Fact(
         id=fact_id,
@@ -28,6 +29,7 @@ def _fact(
         confidence=confidence,
         evidence_ids=evidence_ids or [f"evd_{fact_id}"],
         observed_at=BASE_TIME + timedelta(minutes=observed_offset),
+        expires_at=expires_at,
         inferred=source_type == "inferred",
     )
 
@@ -165,3 +167,67 @@ def test_fact_support_preserves_provenance_without_verified_stamp():
     }
     assert not hasattr(support, "verified")
     assert not hasattr(state.facts[first.id], "verified")
+
+
+def test_unexpired_fact_still_counts():
+    unexpired = _fact(
+        "fact_unexpired",
+        True,
+        confidence=0.70,
+        expires_at=datetime.now(timezone.utc) + timedelta(days=1),
+    )
+
+    state = _project(unexpired)
+
+    support = state.get_fact_support("svc_ssh", "service.running")
+    assert support is not None
+    assert support.value is True
+    assert support.supporting_fact_ids == [unexpired.id]
+    assert state.get_best_fact("svc_ssh", "service.running") == unexpired
+
+
+def test_expired_support_is_visible_only_when_include_expired_true():
+    expired = _fact(
+        "fact_expired",
+        True,
+        confidence=0.70,
+        expires_at=datetime.now(timezone.utc) - timedelta(seconds=1),
+    )
+
+    state = _project(expired)
+
+    assert state.get_fact_supports("svc_ssh", "service.running") == []
+    assert state.get_fact_support("svc_ssh", "service.running") is None
+    assert state.get_best_fact("svc_ssh", "service.running") is None
+
+    supports = state.get_fact_supports(
+        "svc_ssh", "service.running", include_expired=True
+    )
+    assert len(supports) == 1
+    assert supports[0].value is True
+    assert supports[0].supporting_fact_ids == [expired.id]
+    assert state.get_best_fact(
+        "svc_ssh", "service.running", include_expired=True
+    ) == expired
+
+
+def test_conflicts_ignore_expired_facts_by_default():
+    expired_docker = _fact(
+        "fact_expired_docker",
+        "docker",
+        predicate="runtime",
+        expires_at=datetime.now(timezone.utc) - timedelta(seconds=1),
+    )
+    fresh_systemd = _fact(
+        "fact_fresh_systemd",
+        "systemd",
+        predicate="runtime",
+        expires_at=datetime.now(timezone.utc) + timedelta(days=1),
+    )
+
+    state = _project(expired_docker, fresh_systemd)
+
+    assert state.fact_conflicts == []
+    assert state.get_best_fact("svc_ssh", "runtime") == fresh_systemd
+    supports = state.get_fact_supports("svc_ssh", "runtime", include_expired=True)
+    assert {support.value for support in supports} == {"docker", "systemd"}

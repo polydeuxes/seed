@@ -7,6 +7,7 @@ import argparse
 import json
 import sys
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
@@ -59,6 +60,8 @@ class DevFactSeed:
     subject_id: str
     predicate: str
     value: Any
+    expires_at: datetime | None = None
+    ttl_seconds: int | None = None
 
 
 @dataclass(frozen=True)
@@ -197,18 +200,26 @@ def seed_dev_facts(
 
     for index, seed in enumerate(facts, start=1):
         observed_at = utc_now()
+        expires_at = seed.expires_at
+        if expires_at is None and seed.ttl_seconds is not None:
+            expires_at = observed_at + timedelta(seconds=seed.ttl_seconds)
+        evidence_payload = {
+            "subject_id": seed.subject_id,
+            "predicate": seed.predicate,
+            "value": seed.value,
+            "index": index,
+        }
+        if expires_at is not None:
+            evidence_payload["expires_at"] = expires_at.isoformat()
+        if seed.ttl_seconds is not None:
+            evidence_payload["ttl_seconds"] = seed.ttl_seconds
         evidence = Evidence(
             id=new_id("evd_dev_fact"),
             workspace_id=workspace_id,
             source="scripts.seed_local --fact",
             kind="local_dev.fact",
             observed_at=observed_at,
-            payload={
-                "subject_id": seed.subject_id,
-                "predicate": seed.predicate,
-                "value": seed.value,
-                "index": index,
-            },
+            payload=evidence_payload,
             confidence=1.0,
         )
         fact = Fact(
@@ -218,6 +229,7 @@ def seed_dev_facts(
             value=seed.value,
             evidence_ids=[evidence.id],
             observed_at=observed_at,
+            expires_at=expires_at,
             confidence=evidence.confidence,
         )
         ledger.append(
@@ -493,6 +505,15 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--fact-expires-at",
+        help="ISO timestamp when dev-only --fact entries should expire",
+    )
+    parser.add_argument(
+        "--fact-ttl-seconds",
+        type=int,
+        help="seconds from observation time until dev-only --fact entries expire",
+    )
+    parser.add_argument(
         "--registered-provider",
         action="append",
         metavar="PROVIDER_NAME",
@@ -571,9 +592,25 @@ def validate_lifecycle_args(
         parser.error("--supersede-plan requires --replacement-plan")
     if args.replacement_plan and not args.supersede_plan:
         parser.error("--replacement-plan can only be used with --supersede-plan")
+    if args.fact_expires_at and args.fact_ttl_seconds is not None:
+        parser.error("choose only one of --fact-expires-at or --fact-ttl-seconds")
+    if (args.fact_expires_at or args.fact_ttl_seconds is not None) and not args.fact:
+        parser.error("fact expiry options require at least one --fact")
+    if args.fact_ttl_seconds is not None and args.fact_ttl_seconds < 0:
+        parser.error("--fact-ttl-seconds must be non-negative")
+    if args.fact_expires_at:
+        try:
+            datetime.fromisoformat(args.fact_expires_at)
+        except ValueError:
+            parser.error("--fact-expires-at must be an ISO timestamp")
 
 
-def parse_dev_fact(args: list[str]) -> DevFactSeed:
+def parse_dev_fact(
+    args: list[str],
+    *,
+    expires_at: datetime | None = None,
+    ttl_seconds: int | None = None,
+) -> DevFactSeed:
     subject_id, predicate, raw_value = args
     value = _parse_fact_value(raw_value)
     if normalize_field_name(predicate) in SECRET_FIELD_NAMES:
@@ -582,7 +619,13 @@ def parse_dev_fact(args: list[str]) -> DevFactSeed:
         {"subject": subject_id, "predicate": predicate, "value": value},
         "--fact",
     )
-    return DevFactSeed(subject_id=subject_id, predicate=predicate, value=value)
+    return DevFactSeed(
+        subject_id=subject_id,
+        predicate=predicate,
+        value=value,
+        expires_at=expires_at,
+        ttl_seconds=ttl_seconds,
+    )
 
 
 def parse_registered_provider(provider_name: str) -> DevRegisteredProviderSeed:
@@ -677,7 +720,15 @@ def format_cli_output(
 def seed_dev_state_from_args(args: argparse.Namespace, ledger: EventLedger) -> None:
     """Seed dev-only facts and provider registrations requested by CLI args."""
 
-    fact_seeds = [parse_dev_fact(fact) for fact in args.fact]
+    fact_expires_at = (
+        datetime.fromisoformat(args.fact_expires_at) if args.fact_expires_at else None
+    )
+    fact_seeds = [
+        parse_dev_fact(
+            fact, expires_at=fact_expires_at, ttl_seconds=args.fact_ttl_seconds
+        )
+        for fact in args.fact
+    ]
     if fact_seeds:
         seed_dev_facts(
             ledger,

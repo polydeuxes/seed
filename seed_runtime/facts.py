@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from importlib.util import find_spec
 from typing import Any, Literal
 
@@ -52,6 +52,20 @@ class FactConflict(SeedModel):
     best_fact_id: str | None = None
     conflicting_fact_ids: list[str] = Field(default_factory=list)
     reason: str
+
+
+def is_fact_expired(fact: "Fact", *, now: datetime | None = None) -> bool:
+    """Return whether a fact has passed its optional expiry timestamp."""
+
+    if fact.expires_at is None:
+        return False
+    comparison_time = now or datetime.now(timezone.utc)
+    expires_at = fact.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if comparison_time.tzinfo is None:
+        comparison_time = comparison_time.replace(tzinfo=timezone.utc)
+    return expires_at <= comparison_time
 
 
 class Fact(SeedModel):

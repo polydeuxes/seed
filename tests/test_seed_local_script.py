@@ -1375,3 +1375,81 @@ def test_cli_fact_conflicts_prints_projected_active_conflicts_and_winner(capsys)
     assert "winning_fact_id: fact_dev_" in output
     assert "conflicting_fact_ids: fact_dev_" in output
     assert "reason: multiple values for jellyfin/runtime" in output
+
+
+def test_parser_supports_fact_expiry_options():
+    seed_local = load_seed_local_module()
+    parser = seed_local.build_parser()
+
+    expires_args = parser.parse_args(
+        [
+            "--fact",
+            "jellyfin",
+            "runtime",
+            "docker",
+            "--fact-expires-at",
+            "2026-01-01T00:00:00+00:00",
+        ]
+    )
+    ttl_args = parser.parse_args(
+        [
+            "--fact",
+            "jellyfin",
+            "runtime",
+            "docker",
+            "--fact-ttl-seconds",
+            "60",
+        ]
+    )
+
+    assert expires_args.fact_expires_at == "2026-01-01T00:00:00+00:00"
+    assert ttl_args.fact_ttl_seconds == 60
+
+
+def test_cli_fact_ttl_can_expire_seeded_fact(capsys):
+    seed_local = load_seed_local_module()
+
+    assert (
+        seed_local.main(
+            [
+                "--fact",
+                "jellyfin",
+                "runtime",
+                "docker",
+                "--fact-ttl-seconds",
+                "0",
+                "--best-fact",
+                "jellyfin",
+                "runtime",
+            ]
+        )
+        == 0
+    )
+
+    assert capsys.readouterr().out.strip() == "no current belief for jellyfin runtime"
+
+
+def test_cli_fact_expires_at_keeps_unexpired_seeded_fact(capsys):
+    seed_local = load_seed_local_module()
+
+    assert (
+        seed_local.main(
+            [
+                "--fact",
+                "jellyfin",
+                "runtime",
+                "docker",
+                "--fact-expires-at",
+                "2999-01-01T00:00:00+00:00",
+                "--best-fact",
+                "jellyfin",
+                "runtime",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "subject: jellyfin" in output
+    assert "predicate: runtime" in output
+    assert "value: docker" in output
