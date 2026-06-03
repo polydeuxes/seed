@@ -109,9 +109,9 @@ Here are 200 tools. Pick one.
 Good:
 
 ```text
-Relevant tools:
-1. verify_ssh_access(host) - read-only
-2. request_tool(...) - for missing tools
+Relevant capabilities/backends:
+1. ssh.verify via AWX/MCP/manual handoff - read-only provider operation
+2. request_tool(...) - for missing capabilities/backends
 ```
 
 ### Use explicit decision schema
@@ -125,7 +125,7 @@ What should we do?
 Good:
 
 ```text
-Return one JSON object with kind answer, ask_question, call_tool, request_tool, propose_state_patch, or refuse.
+Return one JSON object with kind answer, ask_question, request_tool, propose_action_plan, propose_handoff_plan, propose_state_patch, or refuse. HandoffPlans must be executable=false.
 ```
 
 ### Include policy summaries
@@ -139,24 +139,24 @@ install_ssh_server requires approval because it changes packages and services.
 ### Include missing capability hints
 
 ```text
-Current request appears to need capability ssh_access. Registered verify tool exists. No install tool exists.
+Current request appears to need capability ssh_access. A verify handoff backend exists. No install handoff backend exists.
 ```
 
-## Tool calling with small models
+## Handoff planning with small models
 
-Small models can do tool calls if:
+Small models can propose HandoffPlans if:
 
-- tools have simple names
+- capabilities/backends have simple names
 - schemas are small
-- arguments are obvious
-- only relevant tools are shown
+- targets are obvious
+- only relevant providers are shown
 - validation catches errors
 - retry loop gives clear errors
 
 Example correction:
 
 ```text
-Your previous decision called install_ssh but no such registered tool exists. Available choices are verify_ssh_access or request_tool. Return a corrected JSON decision.
+Your previous decision proposed install_ssh but no such registered handoff backend exists. Available choices are propose_handoff_plan for ssh.verify or request_tool. Return a corrected JSON decision.
 ```
 
 ## Runtime fallback strategy
@@ -174,7 +174,7 @@ Escalation should be explicit and logged.
 
 Use a small model for:
 
-- deciding answer versus ask_question versus call_tool versus request_tool
+- deciding answer versus ask_question versus request_tool versus propose_handoff_plan
 
 Use deterministic code for:
 
@@ -182,7 +182,7 @@ Use deterministic code for:
 - schema validation
 - policy
 - state mutation
-- tool execution
+- HandoffPlan construction and external-provider result ingestion
 
 Use a stronger model manually/offline for:
 
@@ -196,10 +196,10 @@ Cases:
 
 ```text
 1. "is node-1 out of disk?"
-   facts stale, docker tool exists -> call_tool docker_storage_summary
+   facts stale, docker backend exists -> propose_handoff_plan docker.storage_summary
 
 2. "install ssh on node-1"
-   install tool missing -> request_tool install_ssh_server
+   install backend missing -> request_tool install_ssh_server
 
 3. "install ssh"
    host missing -> ask_question

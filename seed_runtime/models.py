@@ -11,6 +11,7 @@ from seed_runtime.evidence import Evidence
 from seed_runtime.facts import Fact
 from seed_runtime.secrets import (
     SECRET_FREE_GRANT_METADATA_FIELDS,
+    normalize_field_name,
     reject_secret_fields,
 )
 
@@ -36,6 +37,8 @@ DecisionKind = Literal[
     "ask_question",
     "call_tool",
     "request_tool",
+    "propose_action_plan",
+    "propose_handoff_plan",
     "propose_state_patch",
     "refuse",
 ]
@@ -43,6 +46,7 @@ PolicyOutcome = Literal["allow", "block", "require_confirmation", "require_appro
 RiskClass = Literal["L1", "L2", "L3", "L4"]
 PendingActionStatus = Literal["pending", "approved", "completed", "cancelled"]
 ActionPlanStatus = Literal["proposed", "accepted", "rejected", "superseded"]
+HandoffBackendType = Literal["ansible", "mcp", "temporal", "manual"]
 
 
 def utc_now() -> datetime:
@@ -132,6 +136,64 @@ class ActionPlan(SeedModel):
     executable: Literal[False] = False
 
 
+class HandoffPlan(SeedModel):
+    """Non-executable external-provider handoff for an ActionPlan.
+
+    Seed records the handoff boundary but does not execute the operation, grant
+    user approval or execution authorization, assert provider trust, register a
+    tool, ask for credentials, retry, schedule, or manage long-running provider
+    jobs.
+    """
+
+    def __init__(self, **data: Any) -> None:
+        reject_secret_fields(data, "handoff_plan")
+        _reject_handoff_approval_claims(data)
+        if data.get("executable", False) is not False:
+            raise ValueError("handoff plan executable must be false")
+        super().__init__(**data)
+
+    action_plan_id: str
+    provider: str
+    backend_type: HandoffBackendType
+    operation: str
+    target: str
+    policy_summary: str
+    secret_boundary: str
+    requires_external_approval: bool = False
+    executable: Literal[False] = False
+
+
+_HANDOFF_APPROVAL_CLAIM_FIELDS = frozenset(
+    {
+        "approved",
+        "approval_id",
+        "user_approval",
+        "user_approved",
+        "execution_authorization",
+        "execution_authorization_id",
+        "credentials_available",
+        "credential_available",
+        "provider_trusted",
+        "tool_registered",
+        "registration_id",
+    }
+)
+
+
+def _reject_handoff_approval_claims(data: dict[str, Any]) -> None:
+    claim_fields = {
+        key
+        for key in data
+        if normalize_field_name(key) in _HANDOFF_APPROVAL_CLAIM_FIELDS
+    }
+    if claim_fields:
+        raise ValueError(
+            "handoff plan may not imply approval, execution authorization, "
+            "credential availability, provider trust, or tool registration: "
+            + ", ".join(sorted(claim_fields))
+        )
+
+
 class Decision(SeedModel):
     kind: DecisionKind
     reason: str
@@ -140,6 +202,8 @@ class Decision(SeedModel):
     tool_name: str | None = None
     tool_arguments: dict[str, Any] = Field(default_factory=dict)
     tool_need: dict[str, Any] | None = None
+    action_plan: dict[str, Any] | None = None
+    handoff_plan: dict[str, Any] | None = None
     state_patch: dict[str, Any] | None = None
 
 
@@ -206,14 +270,11 @@ class Approval(SeedModel):
 
 
 class ExecutionAuthorization(SeedModel):
-    """Just-in-time authorization for one concrete execution attempt.
+    """Experimental, non-core authorization metadata.
 
-    The authorization binds an accepted action plan to an exact execution
-    proposal by ID and fingerprint. It intentionally stores only secret-free
-    grant metadata;
-    raw passwords, passphrases, tokens, private keys, and credential/session
-    material must be supplied just in time by the host environment and never
-    enter Seed events, models, CLI arguments, or persistent storage.
+    This model is not part of the core Seed path. Prefer HandoffPlan for current
+    architecture work. It must not be used to add internal execution lifecycle,
+    credential prompts, retries, scheduling, or long-running job management.
     """
 
     def __init__(self, **data: Any) -> None:

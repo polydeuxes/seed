@@ -10,7 +10,7 @@ The name is intentionally different from the old repo. The core idea is not a ga
 
 ## One-sentence product definition
 
-Seed receives unique user or system inputs, turns them into durable state, presents a compact context packet to an LLM, lets the LLM answer, ask, call registered tools, or request missing tools, and records every result back into state.
+Seed receives unique user or system inputs, turns them into durable state, presents a compact context packet to an LLM, lets the LLM answer, ask, request ToolNeeds, or propose non-executable ActionPlans/HandoffPlans, and records every result back into state.
 
 ## Core thesis
 
@@ -22,8 +22,8 @@ input
   -> state update
   -> context packet
   -> model decision
-  -> tool call or tool need
-  -> validation/policy/execution/build
+  -> ToolNeed, ActionPlan, or HandoffPlan
+  -> validation/policy metadata/build/external-provider handoff
   -> state update
   -> response
 ```
@@ -38,9 +38,9 @@ Most automation systems begin with a catalog of hand-written tools and then bolt
 4. Convert missing capabilities into explicit **Tool Needs**.
 5. Use a separate builder to generate toolkits.
 6. Validate and register toolkits.
-7. Expose registered tools back to the model.
+7. Expose registered capabilities and provider handoff options back to the model.
 
-The model does not get unrestricted power to rewrite its runtime. It can request and help specify tools. A separate builder and validation pipeline produce tools. A registry and policy gate decide what becomes available.
+The model does not get unrestricted power to rewrite its runtime. It can request and help specify capabilities. A separate builder and validation pipeline produce capability metadata/contracts. A CapabilityCatalog and policy gate decide what becomes available for handoff planning.
 
 ## Design principles
 
@@ -51,19 +51,19 @@ The model does not get unrestricted power to rewrite its runtime. It can request
    Design so a small model can succeed: short context, explicit choices, typed actions, deterministic validation.
 
 3. **Tools are generated products, not prompt tricks**  
-   A tool is a manifest, schemas, policy metadata, implementation, tests, documentation, and lifecycle state.
+   A toolkit is a manifest, schemas, policy metadata, integration contracts, tests, documentation, and lifecycle state; execution stays with external providers.
 
 4. **Desire is not permission**  
-   A model or user can desire an action. Policy decides whether it can happen.
+   A model or user can desire an action. Policy decides whether Seed may recommend a non-executable handoff; external providers decide and perform actual execution.
 
 5. **Generated does not mean trusted**  
    Generated toolkits must be sandboxed, tested, classified, reviewed when needed, and registered before use.
 
 6. **The runtime does not build itself while running production actions**  
-   Tool building is separate from tool execution.
+   Tool/capability building is separate from external-provider execution, which Seed does not own.
 
 7. **Every action returns to state**  
-   Answers, questions, tool calls, tool results, failed attempts, approvals, and generated artifacts all become durable events.
+   Answers, questions, ToolNeeds, ActionPlans, HandoffPlans, external provider evidence, approvals, and generated artifacts all become durable events.
 
 ## Document map
 
@@ -71,7 +71,7 @@ Read in this order:
 
 1. [`01-architecture.md`](01-architecture.md) — system overview and component boundaries.
 2. [`02-domain-model.md`](02-domain-model.md) — names and core objects.
-3. [`03-runtime-loop.md`](03-runtime-loop.md) — event-to-context-to-decision execution loop.
+3. [`03-runtime-loop.md`](03-runtime-loop.md) — event-to-context-to-decision handoff loop.
 4. [`04-toolkit-system.md`](04-toolkit-system.md) — generated toolkit format and lifecycle.
 5. [`05-policy-and-safety.md`](05-policy-and-safety.md) — trust boundaries, risk classes, approval model.
 6. [`06-context-engine.md`](06-context-engine.md) — how to build model context packets.

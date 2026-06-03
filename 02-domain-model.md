@@ -169,28 +169,29 @@ Fields:
   "summary": "Host accepts SSH login with approved credentials.",
   "entity_kinds": ["host"],
   "verification": {
-    "preferred_tool": "verify_ssh_access"
+    "preferred_operation": "ssh.verify"
   }
 }
 ```
 
-### Tool
+### CapabilityCatalog Entry
 
-A registered executable operation visible to the runtime.
+A registered capability and provider handoff description visible to the runtime.
 
-A tool has a typed contract and an implementation reference.
+A catalog entry has a typed contract, policy metadata, and provider/backend references. It is not an instruction for Seed to execute.
 
 Fields:
 
 ```json
 {
-  "name": "verify_ssh_access",
-  "summary": "Verify whether SSH is reachable on a host.",
+  "name": "ssh_access",
+  "summary": "Host accepts SSH login with approved credentials.",
   "toolkit_id": "tk_ssh_access",
-  "input_schema": {},
-  "output_schema": {},
-  "policy_action": "ssh.verify",
-  "implementation": "toolkits.ssh_access.operations:verify_ssh_access",
+  "backend_types": ["ansible", "manual"],
+  "operations": ["ssh.verify", "ssh.install"],
+  "target_schema": {},
+  "policy_action": "ssh.install",
+  "provider_refs": ["awx:ssh-access-template", "runbook:ssh-access"],
   "status": "registered",
   "visibility": "model_visible"
 }
@@ -198,7 +199,7 @@ Fields:
 
 ### Toolkit
 
-A package containing related tools, schemas, policy metadata, tests, and docs.
+A package containing related capability metadata, schemas, policy metadata, tests, docs, and optional integration contracts.
 
 Examples:
 
@@ -212,9 +213,9 @@ A toolkit can be hand-written or generated.
 
 ### Tool Need
 
-A durable request for a missing tool or capability.
+A durable request for a missing capability or provider handoff target.
 
-This is one of the most important objects in Seed.
+This is one of the most important objects in Seed. It records what capability is missing without inventing internal execution.
 
 ```json
 {
@@ -228,6 +229,29 @@ This is one of the most important objects in Seed.
   "status": "proposed|accepted|generating|generated|validating|validated|registered|rejected",
   "desired_inputs": ["host"],
   "desired_outputs": ["installed", "service_status", "next_verification"]
+}
+```
+
+### Action Plan
+
+A durable, text-only, non-executable plan for satisfying a ToolNeed or user goal.
+
+ActionPlans are not runbooks that Seed executes. They are auditable planning artifacts that can later be accepted, rejected, superseded, or used as the source for a non-executable HandoffPlan.
+
+Fields:
+
+```json
+{
+  "id": "plan_...",
+  "tool_need_id": "need_...",
+  "provider": "awx-prod",
+  "capability": "ssh_access",
+  "summary": "Use AWX to install and start OpenSSH on node-1.",
+  "steps": ["Confirm host target", "Launch AWX job template", "Review provider result"],
+  "risk_class": "L3",
+  "requires_approval": true,
+  "status": "proposed",
+  "executable": false
 }
 ```
 
@@ -282,49 +306,60 @@ A durable permission decision for a specific action, scope, and actor.
 ```
 
 
-### Execution Authorization
+### HandoffPlan
 
-`action_plan.approved` means the human accepted the durable text plan. It is
-not credential approval and it is not permission to run an arbitrary future
-tool call. Privileged or mutating work needs a separate
-`execution_authorization.granted` event for each concrete execution attempt.
+A non-executable provider handoff derived from an accepted Action Plan or other validated planning path. HandoffPlans are the core execution-adjacent object: they tell a user or external provider what Seed recommends handing off, while making the boundary explicit.
 
-Execution authorizations are short-lived and bind all of the following:
+Seed does not run a HandoffPlan. It does not prompt for credentials, hold secrets, retry, schedule, or monitor long-running work. External systems own those responsibilities.
 
-- the `action_plan_id` that was accepted;
-- the proposed concrete tool/action name;
-- a deterministic fingerprint of the exact proposed arguments;
-- secret-free grant metadata for any just-in-time external prompt, agent, sudo
-  timestamp, or vault reference.
+A HandoffPlan is explicitly **not** an approval. It does not imply user approval, execution authorization, credential availability, provider trust, or tool registration. `requires_external_approval` records that the external backend or operator must still approve the handoff before execution; it is not an approval grant.
 
-Example:
+Fields:
 
 ```json
 {
-  "id": "auth_...",
+  "id": "handoff_...",
   "action_plan_id": "plan_...",
-  "tool_name": "restart_container",
-  "arguments_fingerprint": "sha256:...",
-  "granted_by": "operator@example.com",
-  "expires_at": "2026-06-03T15:05:00Z",
-  "interactive_prompt": true,
-  "ssh_agent": "SSH_AUTH_SOCK",
-  "sudo_timestamp": "host-sudo-cache",
-  "external_vault_token_ref": "vault://seed/jit/session-ref",
-  "secret_seen_by_seed": false
+  "provider": "awx-prod",
+  "backend_type": "ansible",
+  "operation": "ssh.install",
+  "target": "host:node-1",
+  "policy_summary": "Requires operator approval in AWX before host package/service changes. This is not a Seed approval grant.",
+  "secret_boundary": "Credentials, become prompts, retries, and job lifecycle stay in AWX/Vault/ssh-agent; Seed stores no secrets.",
+  "requires_external_approval": true,
+  "executable": false
 }
 ```
 
-Passwords, passphrases, raw tokens, private keys, and other secrets are never
-stored in Action Plans, durable Approvals, Execution Authorizations, event
-payloads, CLI arguments, models, or the database. Execution Authorization may
-store only these secret-free grant metadata fields: `interactive_prompt`,
-`ssh_agent`, `sudo_timestamp`, and `external_vault_token_ref`; it must also
-record `secret_seen_by_seed: false`. Any credential material must be supplied
-just in time by the host environment for the exact authorized attempt and
-discarded outside Seed's persistent state. The preferred privileged execution
-path is an external prompt or agent such as Ansible's `become` prompt, an
-SSH agent, sudo's host-managed timestamp cache, or an external vault reference.
+`backend_type` is one of:
+
+- `ansible` — host automation through Ansible/AWX.
+- `mcp` — tool integration through an MCP server.
+- `temporal` — workflow handoff through Temporal or Prefect-style orchestration.
+- `manual` — human/operator runbook handoff.
+
+Required fields:
+
+- `action_plan_id`
+- `provider`
+- `backend_type`
+- `operation`
+- `target`
+- `policy_summary`
+- `secret_boundary`
+- `requires_external_approval`
+- `executable: false`
+
+### ExecutionProposal (experimental)
+
+`ExecutionProposal` is experimental and is not part of Seed's core path yet. It may be useful as a research object for concrete-call shaping, but the architecture should not depend on it for execution lifecycle, credentials, retries, scheduling, or long-running jobs. Prefer `HandoffPlan` for the current architecture.
+
+### Execution Authorization (experimental)
+
+`ExecutionAuthorization` is experimental and is not part of Seed's core path yet. It does not grant credentials and should not be treated as permission for Seed to execute anything. The core path is Action Plan acceptance followed by a non-executable HandoffPlan to an external provider.
+
+Passwords, passphrases, raw tokens, private keys, and other secrets are never stored in Action Plans, HandoffPlans, durable Approvals, experimental Execution Authorizations, event payloads, CLI arguments, models, or the database. Credential material belongs to external systems such as Ansible/AWX prompts, Vault, ssh-agent, sudo/become flows, MCP server configuration, Temporal/Prefect workers, or manual operator procedures.
+
 
 ### Decision
 
@@ -334,8 +369,9 @@ Possible kinds:
 
 - `answer`
 - `ask_question`
-- `call_tool`
 - `request_tool`
+- `propose_action_plan`
+- `propose_handoff_plan`
 - `propose_state_patch`
 - `refuse`
 
@@ -344,7 +380,7 @@ Example:
 ```json
 {
   "kind": "request_tool",
-  "reason": "No registered tool can install SSH on the host.",
+  "reason": "No registered capability/backend handoff can install SSH on the host.",
   "tool_need": {
     "name": "install_ssh_server",
     "capability": "ssh_access",
@@ -364,25 +400,29 @@ Workspace
   has many Entities
   has many Facts
   has many Toolkits
-  has many Tools
-  has many Tool Needs
+  has many ToolNeeds
+  has one or more CapabilityCatalog views
+  has many ActionPlans
+  has many HandoffPlans
 
 Event
   may create Goal
   may update Fact
-  may request Tool Call
-  may request Tool Need
-  may record Tool Result
+  may request ToolNeed
+  may record ActionPlan or HandoffPlan
+  may record external provider Evidence
 
-Tool Need
+ToolNeed
   may create Toolkit Candidate
-  may become Toolkit
-  may register Tools
+  may become CapabilityCatalog metadata
+  may produce non-executable ActionPlans
 
-Tool
-  belongs to Toolkit
-  has Policy Action
-  has Implementation
+HandoffPlan
+  references ActionPlan
+  references provider/backend type
+  records whether external approval is still required
+  never implies approval, execution authorization, credentials, provider trust, or tool registration
+  is always executable: false
 ```
 
 ## Lifecycle summaries
@@ -408,14 +448,14 @@ validated -> rejected
 registered -> deprecated
 ```
 
-### Tool lifecycle
+### Capability metadata lifecycle
 
 ```text
 draft
   -> generated
   -> validated
-  -> registered
-  -> visible
+  -> registered in CapabilityCatalog
+  -> visible for handoff planning
   -> deprecated
 ```
 
@@ -444,6 +484,8 @@ Use:
 - Tool Need
 - Policy Action
 - Approval
+- Action Plan
+- HandoffPlan
 - Decision
 - Context Packet
 
@@ -464,7 +506,9 @@ The old system mixed execution implementation, provider metadata, and user inten
 - **State** is projected.
 - **Context** is composed.
 - **Decisions** are proposed.
-- **Tools** are registered.
-- **Tool Needs** are missing tools.
-- **Toolkits** package tools.
-- **Policy** gates action.
+- **Capabilities** are registered in the CapabilityCatalog.
+- **ToolNeeds** are missing capabilities.
+- **ActionPlans** are non-executable plans.
+- **HandoffPlans** describe external provider handoff with `executable: false`.
+- **Toolkits** package capability metadata and integration contracts.
+- **Policy** supplies auditable metadata and constraints for handoff.

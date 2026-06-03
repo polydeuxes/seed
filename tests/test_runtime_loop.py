@@ -200,6 +200,8 @@ def test_retries_invalid_first_decision_with_corrected_valid_decision():
             "tool_name": None,
             "tool_arguments": {},
             "tool_need": None,
+            "action_plan": None,
+            "handoff_plan": None,
             "state_patch": None,
         },
     }

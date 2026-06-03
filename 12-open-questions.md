@@ -90,7 +90,7 @@ Toolkit manifest: YAML
 Tool implementations: Python
 Runtime model: swappable interface, fake model first
 Builder model: manual/template first, stronger model later
-Tool execution: in-process for core tools, sandbox later
+Execution: external-provider handoff only; Seed does not own execution lifecycle
 Generated mutating tools: disabled or approval-required by default
 Unknown policy action: approval-required or blocked
 Context persistence: store full packet for early debugging

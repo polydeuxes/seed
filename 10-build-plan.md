@@ -66,7 +66,7 @@ Tasks:
 2. Implement DecisionValidator.
 3. Validate:
    - required fields by kind
-   - call_tool references registered tool
+   - propose_handoff_plan references registered CapabilityCatalog backend
    - request_tool has valid name/summary
    - ask_question includes question
 4. Add tests for valid/invalid decisions.
@@ -140,19 +140,19 @@ seed_runtime/context.py
 tests/test_context.py
 ```
 
-## Session 7: Tool execution path
+## Session 7: Handoff planning path
 
-Goal: safely execute registered tools after the runtime has a stable context packet boundary.
+Goal: safely create non-executable HandoffPlans after the runtime has a stable context packet boundary.
 
 Tasks:
 
-1. Implement ToolExecutor.
-2. Validate input schema.
-3. Evaluate policy.
-4. Load implementation.
-5. Validate output schema.
-6. Append tool events.
-7. Add an `echo` tool for safe testing.
+1. Implement HandoffPlan model/service.
+2. Validate target schema.
+3. Summarize policy metadata.
+4. Select provider/backend from CapabilityCatalog.
+5. Force `executable: false`.
+6. Append handoff events.
+7. Add an `echo`/manual backend for safe testing.
 
 Deliverable:
 
@@ -189,7 +189,7 @@ Tasks:
    - answer
    - ask_question
    - request_tool
-   - call_tool against the core `echo` tool only
+   - propose_handoff_plan against the core `echo`/manual backend only
 5. Add tests for each branch and one end-to-end MVP event/state projection test.
 
 Deliverable:
@@ -331,7 +331,7 @@ toolkits/generated/host_notes/...
 
 ## Session 14.5: Action Plan lifecycle guards
 
-Goal: make Action Plan state transitions airtight before execution preconditions, approvals, SSH, Docker, or any generated-tool mutation path.
+Goal: make Action Plan state transitions airtight before handoff preconditions, approvals, SSH, Docker, or any generated-capability mutation handoff path.
 
 Lifecycle diagram:
 
@@ -367,7 +367,7 @@ Tasks:
 1. Enforce lifecycle transitions in `ActionPlanService`.
 2. Raise `ActionPlanTransitionError` for invalid transitions.
 3. Add tests for every valid transition and every invalid transition.
-4. Keep execution, approval, SSH, and Docker work blocked behind a later execution-preconditions framework.
+4. Keep execution, credentials, retries, scheduling, SSH, and Docker work outside Seed behind external-provider handoff.
 
 Deliverable:
 
@@ -376,33 +376,34 @@ seed_runtime/action_plans.py
 tests/test_action_plans.py
 ```
 
-## Session 14.6: Execution-preconditions framework
+## Session 14.6: HandoffPlan framework
 
-Goal: define the preflight checks that must pass after Action Plan acceptance and before any tool execution or generated-tool mutation path.
+Goal: define the non-executable handoff artifact that follows Action Plan acceptance without creating an internal execution lifecycle.
 
 Tasks:
 
-1. Require an accepted Action Plan when executing from a plan-driven path.
-2. Reject terminal plans (`rejected` or `superseded`) as execution sources.
-3. Compose policy, approval, pending-action, and tool-registration checks into one explicit precondition result.
-4. Add tests that execution cannot proceed from proposed, rejected, or superseded plans.
+1. Add a `HandoffPlan` model with `action_plan_id`, `provider`, `backend_type`, `operation`, `target`, `policy_summary`, `secret_boundary`, `requires_external_approval`, and `executable: false`.
+2. Restrict `backend_type` to `ansible`, `mcp`, `temporal`, or `manual`.
+3. Keep actual execution, secrets, retries, scheduling, long-running jobs, and credential prompts outside Seed.
+4. Mark `ExecutionProposal` and `ExecutionAuthorization` experimental and not part of the core path.
+5. Add tests that HandoffPlans reject secrets, cannot be executable, and cannot imply user approval, execution authorization, credential availability, provider trust, or tool registration.
 
 Deliverable:
 
 ```text
-seed_runtime/execution_preconditions.py
-tests/test_execution_preconditions.py
+seed_runtime/models.py
+tests/test_handoff_plans.py
 ```
 
 ## Session 15: SSH access toolkit design
 
-Goal: draft but do not blindly execute mutating host tools.
+Goal: draft host automation as external-provider handoff only; do not execute mutating host tools inside Seed.
 
-Tools:
+Handoff surfaces:
 
-- `verify_ssh_access(host)` — read-only.
-- `plan_ssh_install(host)` — no mutation, returns steps.
-- `install_ssh_server(host)` — L3 approval required, initially disabled.
+- `verify_ssh_access` — handoff to Ansible/AWX, MCP, or manual verification.
+- `plan_ssh_install` — non-executable ActionPlan steps.
+- `install_ssh_server` — external provider operation only; Seed emits HandoffPlan with `executable: false`.
 
 Deliverable:
 

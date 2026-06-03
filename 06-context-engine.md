@@ -75,7 +75,7 @@ Context composer pulls from:
 - active goal
 - relevant entities
 - facts about entities
-- available tools
+- available capabilities and handoff backends
 - open tool needs
 - approval state
 - toolkit registry
@@ -179,7 +179,7 @@ system rules:        500-1000 tokens
 current input:       100-500 tokens
 state summary:       500-1500 tokens
 facts:               500-1500 tokens
-available tools:     500-2000 tokens
+available capabilities:     500-2000 tokens
 decision schema:     500-1000 tokens
 ```
 
@@ -192,7 +192,7 @@ Target: under 6k tokens for normal interactions.
 Tell the model what it can do.
 
 ```text
-You are Seed's decision model. You do not execute actions directly. You produce one structured decision: answer, ask_question, call_tool, request_tool, propose_state_patch, or refuse.
+You are Seed's decision model. You do not execute actions directly, ask for credentials, or manage retries/schedules/jobs. You produce one structured decision: answer, ask_question, request_tool, propose_action_plan, propose_handoff_plan, propose_state_patch, or refuse. HandoffPlans must include requires_external_approval and executable=false, and must not imply approval or credentials.
 ```
 
 ### 2. Current input
@@ -306,11 +306,11 @@ You are Seed's decision model.
 
 Rules:
 - Produce exactly one JSON decision.
-- Do not claim tools have run unless a tool result is in context.
-- If a required tool is missing, request_tool.
+- Do not claim external work has run unless provider Evidence is in context.
+- If a required capability/backend is missing, request_tool.
 - If arguments are missing for a risky action, ask_question.
-- If a tool requires approval, you may still call it; the runtime will create an approval request.
-- Never invent tool names outside available_tools unless using request_tool.
+- If a backend requires approval, propose a HandoffPlan with requires_external_approval=true; do not imply approval has been granted.
+- Never invent provider/backend names outside available capabilities unless using request_tool.
 
 Current input:
 {{trigger.text}}
@@ -343,13 +343,13 @@ Short form for model:
 
 ```json
 {
-  "kind": "answer|ask_question|call_tool|request_tool|propose_state_patch|refuse",
+  "kind": "answer|ask_question|request_tool|propose_action_plan|propose_handoff_plan|propose_state_patch|refuse",
   "reason": "string",
   "message": "string for answer",
   "question": "string for ask_question",
-  "tool": "registered tool name for call_tool",
-  "arguments": "object for call_tool",
   "tool_need": "object for request_tool",
+  "action_plan": "non-executable object for propose_action_plan",
+  "handoff_plan": "provider handoff object with requires_external_approval and executable=false",
   "patches": "array for propose_state_patch",
   "safe_alternative": "string for refuse"
 }
@@ -362,11 +362,11 @@ Use strict schema validation outside the model.
 Create golden cases:
 
 1. User asks to check known host with fresh fact -> answer.
-2. User asks to check known host with stale fact and tool exists -> call_tool.
-3. User asks to install SSH and install tool missing -> request_tool.
-4. User asks to install SSH and tool exists but needs approval -> call_tool, policy handles approval.
+2. User asks to check known host with stale fact and provider exists -> propose_handoff_plan.
+3. User asks to install SSH and install backend missing -> request_tool.
+4. User asks to install SSH and backend exists but needs approval -> propose_handoff_plan with policy summary.
 5. User asks vague action without host -> ask_question.
-6. User asks arbitrary shell -> refuse or request_tool, not call generic shell.
+6. User asks arbitrary shell -> refuse or request_tool, not internal execution.
 
 ## Context engine anti-patterns
 

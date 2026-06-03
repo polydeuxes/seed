@@ -222,7 +222,7 @@ User:
 Solve x^2 - 5x + 6 = 0
 
 Decision:
-call_tool(sympy_compute)
+propose_handoff_plan(sympy_compute via MCP/manual backend)
 
 Result:
 x = 2

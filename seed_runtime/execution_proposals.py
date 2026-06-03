@@ -1,4 +1,4 @@
-"""Concrete, non-executing execution proposal generation."""
+"""Experimental concrete-call proposal generation; not on the core path."""
 
 from __future__ import annotations
 
@@ -17,11 +17,11 @@ from seed_runtime.state import State
 
 
 class ExecutionProposal(SeedModel):
-    """A proposed concrete tool call that is not executable by itself.
+    """Experimental concrete-call shape that is not executable by itself.
 
-    Execution proposals intentionally stop at the boundary of concrete call
-    construction. They do not execute tools, approve tool calls, grant execution
-    authorization, or register providers.
+    ExecutionProposal is not part of Seed's core path yet. Prefer HandoffPlan for
+    external-provider handoff, and do not use this model to add internal
+    execution lifecycle, credentials, retries, scheduling, or long-running jobs.
     """
 
     def __init__(self, **data: Any) -> None:
@@ -48,7 +48,7 @@ class ExecutionProposalFailure(SeedModel):
 
 
 class ExecutionProposalService:
-    """Create concrete tool-call proposals from executable action plans."""
+    """Experimental helper for concrete-call proposals, outside the core path."""
 
     def __init__(self, ledger: EventLedger | None = None) -> None:
         self.ledger = ledger
