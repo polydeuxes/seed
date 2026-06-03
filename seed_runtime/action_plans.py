@@ -6,7 +6,7 @@ from typing import Iterable, cast
 
 from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
-from seed_runtime.models import ActionPlan, Actor, RiskClass, ToolNeed
+from seed_runtime.models import ActionPlan, ActionPlanStatus, Actor, RiskClass, ToolNeed
 from seed_runtime.recommendation_ranker import RankedRecommendation
 from seed_runtime.state import State, StateProjector
 from seed_runtime.tool_needs import slugify
@@ -16,6 +16,18 @@ _MUTATING_RISK_CLASSES: set[str] = {"L3", "L4"}
 
 class ActionPlanNotFoundError(ValueError):
     """Raised when a lifecycle event targets a missing action plan."""
+
+
+class ActionPlanTransitionError(ValueError):
+    """Raised when an action plan lifecycle transition is not allowed."""
+
+
+_ALLOWED_TRANSITIONS: dict[ActionPlanStatus, set[ActionPlanStatus]] = {
+    "proposed": {"accepted", "rejected", "superseded"},
+    "accepted": {"superseded"},
+    "rejected": set(),
+    "superseded": set(),
+}
 
 
 class ActionPlanService:
@@ -87,7 +99,7 @@ class ActionPlanService:
         Acceptance only changes lifecycle state; it does not execute the plan,
         approve tool calls, or register tools.
         """
-        plan = self._require_plan(workspace_id, action_plan_id)
+        plan = self._transition_plan(workspace_id, action_plan_id, "accepted")
         self._require_ledger().append(
             "action_plan.accepted",
             workspace_id,
@@ -117,7 +129,7 @@ class ActionPlanService:
         correlation_id: str | None = None,
     ) -> ActionPlan:
         """Record that an action plan was rejected with a human-readable reason."""
-        plan = self._require_plan(workspace_id, action_plan_id)
+        plan = self._transition_plan(workspace_id, action_plan_id, "rejected")
         self._require_ledger().append(
             "action_plan.rejected",
             workspace_id,
@@ -151,7 +163,7 @@ class ActionPlanService:
         correlation_id: str | None = None,
     ) -> ActionPlan:
         """Record that an action plan was replaced by another plan."""
-        plan = self._require_plan(workspace_id, action_plan_id)
+        plan = self._transition_plan(workspace_id, action_plan_id, "superseded")
         self._require_ledger().append(
             "action_plan.superseded",
             workspace_id,
@@ -184,6 +196,20 @@ class ActionPlanService:
         if plan is None:
             raise ActionPlanNotFoundError(
                 f"action plan not found in workspace {workspace_id!r}: {action_plan_id}"
+            )
+        return plan
+
+    def _transition_plan(
+        self,
+        workspace_id: str,
+        action_plan_id: str,
+        target_status: ActionPlanStatus,
+    ) -> ActionPlan:
+        plan = self._require_plan(workspace_id, action_plan_id)
+        if target_status not in _ALLOWED_TRANSITIONS[plan.status]:
+            raise ActionPlanTransitionError(
+                "invalid action plan transition "
+                f"{plan.status!r} -> {target_status!r} for {action_plan_id}"
             )
         return plan
 

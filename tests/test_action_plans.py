@@ -1,4 +1,9 @@
-from seed_runtime.action_plans import ActionPlanService
+import pytest
+
+from seed_runtime.action_plans import (
+    ActionPlanService,
+    ActionPlanTransitionError,
+)
 from seed_runtime.events import EventLedger
 from seed_runtime.models import ToolNeed
 from seed_runtime.recommendation_ranker import RankedRecommendation
@@ -302,3 +307,93 @@ def test_lifecycle_unknown_plan_id_raises_clean_error():
         assert "plan_missing" in str(exc)
     else:
         raise AssertionError("expected ActionPlanNotFoundError")
+
+
+def _create_projected_plan(
+    service: ActionPlanService, provider: str = "open_meteo"
+):
+    return service.create_plan(
+        _weather_need(), _weather_recommendation(provider), State(workspace_id="ws")
+    )
+
+
+def _set_plan_status(service: ActionPlanService, plan_id: str, status: str) -> None:
+    if status == "proposed":
+        return
+    if status == "accepted":
+        service.accept_plan("ws", plan_id)
+        return
+    if status == "rejected":
+        service.reject_plan("ws", plan_id, "not this provider")
+        return
+    if status == "superseded":
+        service.supersede_plan("ws", plan_id, "plan_replacement")
+        return
+    raise AssertionError(f"unknown status: {status}")
+
+
+def _apply_transition(
+    service: ActionPlanService, plan_id: str, target_status: str
+):
+    if target_status == "accepted":
+        return service.accept_plan("ws", plan_id)
+    if target_status == "rejected":
+        return service.reject_plan("ws", plan_id, "no longer preferred")
+    if target_status == "superseded":
+        return service.supersede_plan("ws", plan_id, f"replacement_for_{plan_id}")
+    raise AssertionError(f"unknown target status: {target_status}")
+
+
+@pytest.mark.parametrize(
+    ("initial_status", "target_status"),
+    [
+        ("proposed", "accepted"),
+        ("proposed", "rejected"),
+        ("proposed", "superseded"),
+        ("accepted", "superseded"),
+    ],
+)
+def test_action_plan_service_allows_valid_lifecycle_transitions(
+    initial_status: str, target_status: str
+):
+    ledger = EventLedger()
+    service = ActionPlanService(ledger)
+    plan = _create_projected_plan(service)
+    _set_plan_status(service, plan.id, initial_status)
+
+    transitioned = _apply_transition(service, plan.id, target_status)
+
+    assert transitioned.status == target_status
+    projected = StateProjector(ledger).project("ws").action_plans[plan.id]
+    assert projected.status == target_status
+
+
+@pytest.mark.parametrize(
+    ("initial_status", "target_status"),
+    [
+        ("accepted", "accepted"),
+        ("accepted", "rejected"),
+        ("rejected", "accepted"),
+        ("rejected", "rejected"),
+        ("rejected", "superseded"),
+        ("superseded", "accepted"),
+        ("superseded", "rejected"),
+        ("superseded", "superseded"),
+    ],
+)
+def test_action_plan_service_rejects_invalid_lifecycle_transitions(
+    initial_status: str, target_status: str
+):
+    ledger = EventLedger()
+    service = ActionPlanService(ledger)
+    plan = _create_projected_plan(service)
+    _set_plan_status(service, plan.id, initial_status)
+    events_before = ledger.list_events("ws")
+
+    with pytest.raises(ActionPlanTransitionError) as excinfo:
+        _apply_transition(service, plan.id, target_status)
+
+    assert f"{initial_status!r} -> {target_status!r}" in str(excinfo.value)
+    assert ledger.list_events("ws") == events_before
+    projected = StateProjector(ledger).project("ws").action_plans[plan.id]
+    assert projected.status == initial_status

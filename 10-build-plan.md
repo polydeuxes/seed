@@ -329,6 +329,71 @@ Deliverable:
 toolkits/generated/host_notes/...
 ```
 
+## Session 14.5: Action Plan lifecycle guards
+
+Goal: make Action Plan state transitions airtight before execution preconditions, approvals, SSH, Docker, or any generated-tool mutation path.
+
+Lifecycle diagram:
+
+```mermaid
+stateDiagram-v2
+    [*] --> proposed
+    proposed --> accepted
+    proposed --> rejected
+    proposed --> superseded
+    accepted --> superseded
+    rejected --> [*]
+    superseded --> [*]
+```
+
+Valid transitions:
+
+- `proposed -> accepted`
+- `proposed -> rejected`
+- `proposed -> superseded`
+- `accepted -> superseded`
+
+Invalid examples that must raise `ActionPlanTransitionError` instead of appending lifecycle events:
+
+- `accepted -> rejected`
+- `rejected -> accepted`
+- `rejected -> superseded`
+- `superseded -> accepted`
+- `superseded -> rejected`
+- `superseded -> superseded`
+
+Tasks:
+
+1. Enforce lifecycle transitions in `ActionPlanService`.
+2. Raise `ActionPlanTransitionError` for invalid transitions.
+3. Add tests for every valid transition and every invalid transition.
+4. Keep execution, approval, SSH, and Docker work blocked behind a later execution-preconditions framework.
+
+Deliverable:
+
+```text
+seed_runtime/action_plans.py
+tests/test_action_plans.py
+```
+
+## Session 14.6: Execution-preconditions framework
+
+Goal: define the preflight checks that must pass after Action Plan acceptance and before any tool execution or generated-tool mutation path.
+
+Tasks:
+
+1. Require an accepted Action Plan when executing from a plan-driven path.
+2. Reject terminal plans (`rejected` or `superseded`) as execution sources.
+3. Compose policy, approval, pending-action, and tool-registration checks into one explicit precondition result.
+4. Add tests that execution cannot proceed from proposed, rejected, or superseded plans.
+
+Deliverable:
+
+```text
+seed_runtime/execution_preconditions.py
+tests/test_execution_preconditions.py
+```
+
 ## Session 15: SSH access toolkit design
 
 Goal: draft but do not blindly execute mutating host tools.

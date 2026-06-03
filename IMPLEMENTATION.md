@@ -10,10 +10,28 @@ This branch turns the Seed blueprint into a runnable Python prototype. The early
 - Context composition and a runtime loop that can answer, ask questions, request tools, propose state patches, refuse unsafe requests, or call registered tools.
 - Tool Need service with open-need deduplication and status-change events.
 - Evidence and fact models with extraction and state-projection support, so tool outputs can become evidence-backed state instead of hidden memory.
+- Text-only Action Plans with guarded lifecycle transitions, preventing accepted, rejected, or superseded plans from moving into contradictory states.
 - Strict JSON model-decision parsing, prompt rendering, local-model adapters, intent-first local CLI behavior, and a golden-case evaluation harness.
 - Dependency-light API shell for future web framework adapters.
 - Builder candidate generation, candidate validation, and registration flow for moving validated generated toolkits into the registry.
 - First harmless generated-style toolkit, `host_notes`, which records and lists host notes only in Seed's ledger.
+
+## Action Plan lifecycle
+
+Action Plans are durable, text-only proposals. Lifecycle events are accepted only through `ActionPlanService`, which enforces this state machine before appending an event:
+
+```mermaid
+stateDiagram-v2
+    [*] --> proposed
+    proposed --> accepted
+    proposed --> rejected
+    proposed --> superseded
+    accepted --> superseded
+    rejected --> [*]
+    superseded --> [*]
+```
+
+Allowed transitions are exactly `proposed -> accepted`, `proposed -> rejected`, `proposed -> superseded`, and `accepted -> superseded`. Rejected and superseded plans are terminal, and accepted plans cannot be rejected. This keeps approval/execution preconditions from seeing contradictory history such as `proposed -> accepted -> rejected`.
 
 ## Deliberate constraints
 
@@ -26,10 +44,11 @@ This branch turns the Seed blueprint into a runnable Python prototype. The early
 
 ## Suggested next steps
 
-1. Implement Session 15 `ssh_access` as a safe generated toolkit with read-only/stub verification and plan-only operations.
-2. Keep any future `install_ssh_server` surface disabled, model-hidden, or L3 approval-gated until sandboxing, policy, and review workflows are stronger.
-3. Add deeper candidate sandboxing beyond bounded pytest execution and static import checks before promoting more powerful builder output.
-4. Add generated toolkit versioning and artifact copy/registration hardening for generated toolkit lifecycle management.
-5. Add a proper HTTP adapter once endpoint semantics stabilize.
-6. Expand policy tables from risk-class defaults into workspace-specific configuration.
-7. Continue using the evaluation harness to check model decisions before relying on stronger local or hosted model adapters.
+1. Add an execution-preconditions framework that consumes the now-guarded Action Plan lifecycle before any execution, approvals, SSH, Docker, or generated-tool mutation path.
+2. Implement Session 15 `ssh_access` as a safe generated toolkit with read-only/stub verification and plan-only operations.
+3. Keep any future `install_ssh_server` surface disabled, model-hidden, or L3 approval-gated until sandboxing, policy, and review workflows are stronger.
+4. Add deeper candidate sandboxing beyond bounded pytest execution and static import checks before promoting more powerful builder output.
+5. Add generated toolkit versioning and artifact copy/registration hardening for generated toolkit lifecycle management.
+6. Add a proper HTTP adapter once endpoint semantics stabilize.
+7. Expand policy tables from risk-class defaults into workspace-specific configuration.
+8. Continue using the evaluation harness to check model decisions before relying on stronger local or hosted model adapters.
