@@ -8,6 +8,7 @@ from typing import Any, Iterable
 
 from seed_runtime.events import EventLedger
 from seed_runtime.evidence import Evidence
+from seed_runtime.inference_rules import infer_facts
 from seed_runtime.models import (
     ActionPlan,
     Approval,
@@ -41,6 +42,8 @@ class State:
     workspace_id: str
     entities: dict[str, Entity] = field(default_factory=dict)
     facts: dict[str, Fact] = field(default_factory=dict)
+    observed_facts: dict[str, Fact] = field(default_factory=dict)
+    inferred_facts: dict[str, Fact] = field(default_factory=dict)
     entity_relationships: list[EntityRelationship] = field(default_factory=list)
     evidence: dict[str, Evidence] = field(default_factory=dict)
     goals: dict[str, Goal] = field(default_factory=dict)
@@ -108,6 +111,7 @@ class StateProjector:
         state = State(workspace_id=workspace_id)
         for event in self.ledger.list_events(workspace_id):
             self.apply(state, event)
+        _project_inferred_facts(state)
         state.entity_relationships = _project_entity_relationships(
             state.facts.values()
         )
@@ -131,6 +135,8 @@ class StateProjector:
             if "evidence_ids" not in data and "source_event_id" in data:
                 data["evidence_ids"] = [data.pop("source_event_id")]
             fact = Fact(**data)
+            if fact.inferred:
+                fact = fact.model_copy(update={"inferred": False})
             state.facts[fact.id] = fact
             state.entity_relationships = _project_entity_relationships(
                 state.facts.values()
@@ -229,6 +235,17 @@ class StateProjector:
             data = payload.get("tool", payload)
             tool = ToolSpec(**data)
             state.tools[tool.name] = tool
+
+
+def _project_inferred_facts(state: State) -> None:
+    state.observed_facts = {
+        fact_id: fact for fact_id, fact in state.facts.items() if not fact.inferred
+    }
+    state.inferred_facts = infer_facts(state.observed_facts.values())
+    state.facts = {**state.observed_facts}
+    for fact_id, fact in state.inferred_facts.items():
+        if fact_id not in state.facts:
+            state.facts[fact_id] = fact
 
 
 def _project_entity_relationships(facts: Iterable[Fact]) -> list[EntityRelationship]:

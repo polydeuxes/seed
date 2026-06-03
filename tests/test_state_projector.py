@@ -111,6 +111,7 @@ def test_projector_projects_entity_relationships_from_string_facts():
         ("jellyfin", "host", "node115"),
         ("jellyfin", "runtime", "docker"),
         ("jellyfin", "container", "jellyfin"),
+        ("jellyfin", "managed_by", "docker_container_lifecycle"),
     ]
 
 
@@ -164,3 +165,86 @@ def test_entity_relationship_query_helpers_return_deduped_matches():
         (relationship.subject, relationship.predicate, relationship.object)
         for relationship in state.get_entity_relationships("node115")
     ] == [("jellyfin", "host", "node115")]
+
+
+def _observed_fact(
+    fact_id: str,
+    subject_id: str,
+    predicate: str,
+    value: object,
+    observed_at: datetime,
+) -> Fact:
+    return Fact(
+        id=fact_id,
+        subject_id=subject_id,
+        predicate=predicate,
+        value=value,
+        evidence_ids=["evt_source"],
+        observed_at=observed_at,
+    )
+
+
+def test_runtime_docker_infers_managed_by_docker_container_lifecycle():
+    ledger = EventLedger()
+    workspace_id = "ws_infer_docker"
+    observed_at = utc_now()
+    runtime = _observed_fact(
+        "fact_runtime_docker", "jellyfin", "runtime", "docker", observed_at
+    )
+
+    ledger.append("fact.observed", workspace_id, {"fact": to_plain(runtime)})
+
+    state = StateProjector(ledger).project(workspace_id)
+
+    assert state.observed_facts == {runtime.id: runtime}
+    assert state.find_related("jellyfin", "managed_by") == [
+        "docker_container_lifecycle"
+    ]
+    inferred = state.inferred_facts[
+        "fact_inferred_jellyfin_managed_by_docker_container_lifecycle"
+    ]
+    assert inferred.inferred is True
+    assert inferred.subject_id == "jellyfin"
+    assert inferred.predicate == "managed_by"
+    assert inferred.value == "docker_container_lifecycle"
+
+
+def test_runtime_systemd_infers_managed_by_systemctl_cli():
+    ledger = EventLedger()
+    workspace_id = "ws_infer_systemd"
+    observed_at = utc_now()
+    runtime = _observed_fact(
+        "fact_runtime_systemd", "sshd", "runtime", "systemd", observed_at
+    )
+
+    ledger.append("fact.observed", workspace_id, {"fact": to_plain(runtime)})
+
+    state = StateProjector(ledger).project(workspace_id)
+
+    assert state.find_related("sshd", "managed_by") == ["systemctl_cli"]
+    inferred = state.inferred_facts[
+        "fact_inferred_sshd_managed_by_systemctl_cli"
+    ]
+    assert inferred.inferred is True
+
+
+def test_observed_managed_by_fact_wins_over_inferred_managed_by():
+    ledger = EventLedger()
+    workspace_id = "ws_observed_wins"
+    observed_at = utc_now()
+    runtime = _observed_fact(
+        "fact_runtime_docker", "jellyfin", "runtime", "docker", observed_at
+    )
+    managed_by = _observed_fact(
+        "fact_managed_by_custom", "jellyfin", "managed_by", "custom_cli", observed_at
+    )
+
+    ledger.append("fact.observed", workspace_id, {"fact": to_plain(runtime)})
+    ledger.append("fact.observed", workspace_id, {"fact": to_plain(managed_by)})
+
+    state = StateProjector(ledger).project(workspace_id)
+
+    assert state.inferred_facts == {}
+    assert state.find_related("jellyfin", "managed_by") == ["custom_cli"]
+    assert state.facts[managed_by.id] == managed_by
+    assert state.facts[managed_by.id].inferred is False

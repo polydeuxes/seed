@@ -25,3 +25,4 @@ class Fact(SeedModel):
     observed_at: datetime
     expires_at: datetime | None = None
     confidence: float = 1.0
+    inferred: bool = False

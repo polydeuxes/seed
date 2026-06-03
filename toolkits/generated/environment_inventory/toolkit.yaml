@@ -134,7 +134,7 @@
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["id", "subject_id", "predicate", "value", "evidence_ids", "observed_at", "expires_at", "confidence"],
+              "required": ["id", "subject_id", "predicate", "value", "evidence_ids", "observed_at", "expires_at", "confidence", "inferred"],
               "properties": {
                 "id": {"type": "string"},
                 "subject_id": {"type": "string"},
@@ -143,7 +143,8 @@
                 "evidence_ids": {"type": "array", "items": {"type": "string"}},
                 "observed_at": {"type": "string"},
                 "expires_at": {},
-                "confidence": {"type": "number"}
+                "confidence": {"type": "number"},
+                "inferred": {"type": "boolean"}
               },
               "additionalProperties": false
             }
