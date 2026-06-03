@@ -20,7 +20,7 @@ def test_get_returns_appended_event_by_id():
     assert ledger.get(event.id) == event
 
 
-def test_sqlite_execution_authorization_events_are_ephemeral(tmp_path):
+def test_sqlite_execution_authorization_events_persist_secret_free_metadata(tmp_path):
     db_path = tmp_path / "events.sqlite"
     ledger = SQLiteEventLedger(str(db_path))
     try:
@@ -52,7 +52,16 @@ def test_sqlite_execution_authorization_events_are_ephemeral(tmp_path):
 
     reopened = SQLiteEventLedger(str(db_path))
     try:
-        assert reopened.list_events("ws") == []
+        events = reopened.list_events("ws")
+        assert [stored.kind for stored in events] == [
+            "execution_authorization.granted"
+        ]
+        payload = events[0].payload["execution_authorization"]
+        assert payload["id"] == "auth_1"
+        assert "password" not in payload
+        assert "passphrase" not in payload
+        assert "token" not in payload
+        assert "private_key" not in payload
     finally:
         reopened.close()
 
