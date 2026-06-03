@@ -180,6 +180,19 @@ python scripts/seed_local.py \
   --fact-support jellyfin runtime
 ```
 
+Live read-only observation sources can collect practical host and monitoring metadata without execution, credentials, mutation, shell commands, or arbitrary PromQL. `--observe-local-host` uses Python standard-library platform and disk APIs to emit the local hostname's OS, architecture, and `/` disk totals. `--observe-prometheus BASE_URL` performs HTTP `GET` requests to Prometheus's read API with a fixed allowlist of safe metric names: `up`, `node_uname_info`, `node_filesystem_avail_bytes`, and `node_filesystem_size_bytes`. Use `--db` when you want the resulting observations to persist across CLI runs:
+
+```bash
+python scripts/seed_local.py --observe-local-host
+
+python scripts/seed_local.py \
+  --db .seed-local.sqlite \
+  --observe-prometheus http://10.0.0.201:9090 \
+  --observe-timeout 5
+```
+
+Both live sources ingest through `ObservationCollectionService`, then print the ingested observation count and a concise fact summary. If Prometheus is unreachable, the source fails gracefully by ingesting zero observations.
+
 By default, the CLI posts intent prompts to `http://localhost:11434/api/generate` with model `qwen2.5:3b`, `stream: false`, and JSON-formatted output enabled. Use `--model` to select another local model:
 
 ```bash

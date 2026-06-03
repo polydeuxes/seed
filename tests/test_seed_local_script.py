@@ -1811,3 +1811,87 @@ def test_cli_diff_observations_json_does_not_ingest_inventory(tmp_path, capsys):
     )
     support_output = capsys.readouterr().out
     assert "no fact support for jellyfin runtime" in support_output
+
+
+def test_cli_observe_local_host_prints_count_and_summary(monkeypatch, capsys):
+    seed_local = load_seed_local_module()
+
+    class FakeLocalSource:
+        source_type = "discovery"
+        name = "fake-local-host"
+
+        def collect(self):
+            return [
+                seed_local.Observation(
+                    id="obs_cli_local",
+                    source_type="discovery",
+                    observed_at=seed_local.utc_now(),
+                    subject="node-a",
+                    predicate="os",
+                    value="linux",
+                )
+            ]
+
+    monkeypatch.setattr(seed_local, "LocalHostObservationSource", FakeLocalSource)
+
+    assert seed_local.main(["--observe-local-host"]) == 0
+
+    output = capsys.readouterr().out
+    assert "ingested 1 observation(s)" in output
+    assert "subject: node-a" in output
+    assert "predicate: os" in output
+    assert "source_type: discovery" in output
+
+
+def test_cli_observe_prometheus_supports_db_and_prints_count(
+    monkeypatch, tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+
+    class FakePrometheusSource:
+        source_type = "provider"
+
+        def __init__(self, base_url, *, timeout_seconds):
+            self.name = f"fake-prometheus:{base_url}"
+            self.base_url = base_url
+            self.timeout_seconds = timeout_seconds
+
+        def collect(self):
+            return [
+                seed_local.Observation(
+                    id="obs_cli_prometheus",
+                    source_type="provider",
+                    observed_at=seed_local.utc_now(),
+                    subject="node-a:9100",
+                    predicate="up",
+                    value=1,
+                )
+            ]
+
+    monkeypatch.setattr(
+        seed_local, "PrometheusObservationSource", FakePrometheusSource
+    )
+    db_path = tmp_path / "seed.sqlite"
+
+    assert seed_local.main(
+        [
+            "--db",
+            str(db_path),
+            "--observe-prometheus",
+            "http://prom.example:9090",
+            "--observe-timeout",
+            "3",
+        ]
+    ) == 0
+
+    output = capsys.readouterr().out
+    assert "ingested 1 observation(s)" in output
+    assert "subject: node-a:9100" in output
+    assert "predicate: up" in output
+
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        state = seed_local.StateProjector(ledger).project(seed_local.DEFAULT_WORKSPACE)
+    finally:
+        ledger.close()
+    assert any(fact.subject_id == "node-a:9100" for fact in state.facts.values())

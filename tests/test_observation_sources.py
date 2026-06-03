@@ -463,3 +463,140 @@ def test_diff_observations_json_does_not_append_events():
 
     assert ledger.list_events("ws_diff") == []
     assert state.facts == {}
+
+
+def test_local_host_source_emits_read_only_host_observations(monkeypatch):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    monkeypatch.setattr(sources.platform, "node", lambda: "node-a")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+
+    observations = LocalHostObservationSource().collect()
+
+    assert [(obs.subject, obs.predicate, obs.value) for obs in observations] == [
+        ("node-a", "os", "linux"),
+        ("node-a", "architecture", "x86_64"),
+        ("node-a", "disk_total_bytes", 1000),
+        ("node-a", "disk_free_bytes", 250),
+    ]
+    assert {obs.source_type for obs in observations} == {"discovery"}
+    assert all(obs.metadata["shell_execution"] is False for obs in observations)
+
+
+def test_prometheus_source_uses_safe_get_queries_and_converts_observations(
+    monkeypatch,
+):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import PrometheusObservationSource
+
+    requested_urls = []
+
+    class Response:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self):
+            return json.dumps(self.payload).encode("utf-8")
+
+    payloads = {
+        "up": {
+            "status": "success",
+            "data": {
+                "resultType": "vector",
+                "result": [
+                    {"metric": {"instance": "node-a:9100"}, "value": [1, "1"]}
+                ],
+            },
+        },
+        "node_uname_info": {
+            "status": "success",
+            "data": {
+                "resultType": "vector",
+                "result": [
+                    {
+                        "metric": {"instance": "node-a:9100", "sysname": "Linux"},
+                        "value": [1, "1"],
+                    }
+                ],
+            },
+        },
+        "node_filesystem_avail_bytes": {
+            "status": "success",
+            "data": {
+                "resultType": "vector",
+                "result": [
+                    {
+                        "metric": {"instance": "node-a:9100", "mountpoint": "/"},
+                        "value": [1, "512"],
+                    }
+                ],
+            },
+        },
+        "node_filesystem_size_bytes": {
+            "status": "success",
+            "data": {
+                "resultType": "vector",
+                "result": [
+                    {
+                        "metric": {"instance": "node-a:9100", "mountpoint": "/"},
+                        "value": [1, "1024"],
+                    }
+                ],
+            },
+        },
+    }
+
+    def fake_urlopen(request, timeout):
+        requested_urls.append((request.full_url, request.get_method(), timeout))
+        query = request.full_url.rsplit("query=", 1)[1]
+        return Response(payloads[query])
+
+    monkeypatch.setattr(sources, "urlopen", fake_urlopen)
+
+    source = PrometheusObservationSource(
+        "http://prom.example:9090", timeout_seconds=2.5
+    )
+    observations = source.collect()
+
+    assert [(obs.subject, obs.predicate, obs.value) for obs in observations] == [
+        ("node-a:9100", "up", 1),
+        ("node-a:9100", "os", "linux"),
+        ("node-a:9100", "filesystem_avail_bytes", 512),
+        ("node-a:9100", "filesystem_size_bytes", 1024),
+    ]
+    assert {obs.source_type for obs in observations} == {"provider"}
+    assert [method for _, method, _ in requested_urls] == ["GET"] * 4
+    assert [timeout for _, _, timeout in requested_urls] == [2.5] * 4
+    assert [url.rsplit("query=", 1)[1] for url, _, _ in requested_urls] == list(
+        PrometheusObservationSource.SAFE_QUERIES
+    )
+
+
+def test_prometheus_source_unreachable_fails_gracefully(monkeypatch):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import PrometheusObservationSource
+
+    def fake_urlopen(request, timeout):
+        raise OSError("network unreachable")
+
+    monkeypatch.setattr(sources, "urlopen", fake_urlopen)
+
+    source = PrometheusObservationSource(
+        "http://prom.example:9090", timeout_seconds=1
+    )
+
+    assert source.collect() == []
+    assert "network unreachable" in (source.last_error or "")

@@ -43,7 +43,9 @@ from seed_runtime.intent_classifier import (
 from seed_runtime.models import Event, Observation, ToolNeed, ToolSpec, utc_now
 from seed_runtime.observation_sources import (
     JsonObservationSource,
+    LocalHostObservationSource,
     ObservationCollectionService,
+    PrometheusObservationSource,
     diff_observations_json,
     export_observations_json,
 )
@@ -316,6 +318,23 @@ def ingest_json_observations(
 
     return ObservationCollectionService(ObservationIngestor(ledger)).collect(
         JsonObservationSource(path),
+        workspace_id,
+        actor="system",
+        session_id=session_id,
+    )
+
+
+def ingest_observation_source(
+    ledger: EventLedger,
+    workspace_id: str,
+    source: Any,
+    *,
+    session_id: str | None = None,
+) -> list[Fact]:
+    """Collect a live read-only source through ObservationCollectionService."""
+
+    return ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        source,
         workspace_id,
         actor="system",
         session_id=session_id,
@@ -601,6 +620,28 @@ def build_parser() -> argparse.ArgumentParser:
         help="ingest external Observations from a local JSON inventory file",
     )
     parser.add_argument(
+        "--observe-local-host",
+        action="store_true",
+        help=(
+            "read-only discovery intake for this host using Python stdlib APIs; "
+            "does not execute shell commands"
+        ),
+    )
+    parser.add_argument(
+        "--observe-prometheus",
+        metavar="BASE_URL",
+        help=(
+            "read-only Prometheus API intake from BASE_URL using only allowlisted "
+            "safe metric queries"
+        ),
+    )
+    parser.add_argument(
+        "--observe-timeout",
+        type=float,
+        default=5.0,
+        help="live observation source HTTP timeout in seconds (default: 5.0)",
+    )
+    parser.add_argument(
         "--export-observations-json",
         metavar="PATH",
         help="export projected observations/facts to a local JSON inventory file",
@@ -741,6 +782,8 @@ def validate_lifecycle_args(
         parser.error("--fact-ttl-seconds must be non-negative")
     if args.confidence < 0.0 or args.confidence > 1.0:
         parser.error("--confidence must be between 0.0 and 1.0")
+    if args.observe_timeout <= 0:
+        parser.error("--observe-timeout must be positive")
     if args.fact_expires_at:
         try:
             datetime.fromisoformat(args.fact_expires_at)
@@ -935,6 +978,24 @@ def seed_dev_state_from_args(args: argparse.Namespace, ledger: EventLedger) -> N
             session_id=args.session,
         )
 
+    if args.observe_local_host:
+        ingest_observation_source(
+            ledger,
+            args.workspace,
+            LocalHostObservationSource(),
+            session_id=args.session,
+        )
+
+    if args.observe_prometheus:
+        ingest_observation_source(
+            ledger,
+            args.workspace,
+            PrometheusObservationSource(
+                args.observe_prometheus, timeout_seconds=args.observe_timeout
+            ),
+            session_id=args.session,
+        )
+
     provider_seeds = [
         parse_registered_provider(provider_name)
         for provider_name in args.registered_provider
@@ -1113,9 +1174,9 @@ def format_fact_conflicts(conflicts: list[FactConflict], facts: dict[str, Fact])
 
 def format_observed_facts(facts: list[Fact]) -> str:
     if not facts:
-        return "no observations ingested"
+        return "ingested 0 observation(s)\nno observations ingested"
 
-    sections: list[str] = []
+    sections: list[str] = [f"ingested {len(facts)} observation(s)"]
     for fact in facts:
         sections.append(
             "\n".join(
@@ -1175,6 +1236,26 @@ def ingest_observations_from_args(args: argparse.Namespace) -> list[Fact]:
                     ledger,
                     args.workspace,
                     args.observe_json,
+                    session_id=args.session,
+                )
+            )
+        if args.observe_local_host:
+            facts.extend(
+                ingest_observation_source(
+                    ledger,
+                    args.workspace,
+                    LocalHostObservationSource(),
+                    session_id=args.session,
+                )
+            )
+        if args.observe_prometheus:
+            facts.extend(
+                ingest_observation_source(
+                    ledger,
+                    args.workspace,
+                    PrometheusObservationSource(
+                        args.observe_prometheus, timeout_seconds=args.observe_timeout
+                    ),
                     session_id=args.session,
                 )
             )
@@ -1800,7 +1881,11 @@ def main(argv: list[str] | None = None) -> int:
 
     message = " ".join(args.message).strip()
     if (
-        args.observe or args.fact or args.observe_json
+        args.observe
+        or args.fact
+        or args.observe_json
+        or args.observe_local_host
+        or args.observe_prometheus
     ) and not message and not args.http:
         print(format_observed_facts(ingest_observations_from_args(args)))
         return 0
