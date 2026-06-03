@@ -397,3 +397,69 @@ def test_action_plan_service_rejects_invalid_lifecycle_transitions(
     assert ledger.list_events("ws") == events_before
     projected = StateProjector(ledger).project("ws").action_plans[plan.id]
     assert projected.status == initial_status
+
+
+def test_proposed_plan_cannot_be_approved():
+    ledger = EventLedger()
+    service = ActionPlanService(ledger)
+    plan = service.create_plan(
+        _weather_need(), _weather_recommendation(), State(workspace_id="ws")
+    )
+    events_before = ledger.list_events("ws")
+
+    with pytest.raises(ActionPlanTransitionError) as excinfo:
+        service.approve_plan("ws", plan.id)
+
+    assert "only accepted action plans can be approved" in str(excinfo.value)
+    assert ledger.list_events("ws") == events_before
+    projected = StateProjector(ledger).project("ws")
+    assert plan.id not in projected.action_plan_approvals
+
+
+def test_accepted_plan_can_be_approved_without_status_transition():
+    ledger = EventLedger()
+    service = ActionPlanService(ledger)
+    plan = service.create_plan(
+        _weather_need(), _weather_recommendation(), State(workspace_id="ws")
+    )
+    service.accept_plan("ws", plan.id)
+
+    approved = service.approve_plan("ws", plan.id, session_id="ses")
+
+    assert approved.status == "accepted"
+    events = ledger.list_events("ws")
+    assert [event.kind for event in events] == [
+        "action_plan.created",
+        "action_plan.accepted",
+        "action_plan.approved",
+    ]
+    assert events[-1].payload == {"action_plan_id": plan.id}
+    assert events[-1].actor == "approver"
+    assert events[-1].session_id == "ses"
+    projected = StateProjector(ledger).project("ws")
+    assert projected.action_plans[plan.id].status == "accepted"
+    assert projected.action_plan_approvals[plan.id] == events[-1].id
+
+
+def test_approve_plan_does_not_execute_tools_register_tools_or_approve_tool_calls():
+    ledger = EventLedger()
+    service = ActionPlanService(ledger)
+    plan = service.create_plan(
+        _weather_need(), _weather_recommendation(), State(workspace_id="ws")
+    )
+    service.accept_plan("ws", plan.id)
+
+    service.approve_plan("ws", plan.id)
+
+    kinds = [event.kind for event in ledger.list_events("ws")]
+    assert kinds == [
+        "action_plan.created",
+        "action_plan.accepted",
+        "action_plan.approved",
+    ]
+    assert "tool.call.started" not in kinds
+    assert "tool.call.completed" not in kinds
+    assert "tool.registered" not in kinds
+    assert "approval.granted" not in kinds
+    assert "pending_action.approved" not in kinds
+    assert StateProjector(ledger).project("ws").tools == {}

@@ -15,7 +15,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from seed_runtime.action_plans import ActionPlanService
+from seed_runtime.action_plans import ActionPlanService, ActionPlanTransitionError
 from seed_runtime.context import ContextComposer
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger, SQLiteEventLedger
@@ -373,6 +373,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="accept a previously created action plan without executing it",
     )
     parser.add_argument(
+        "--approve-plan",
+        metavar="PLAN_ID",
+        help="approve an accepted action plan without executing it",
+    )
+    parser.add_argument(
         "--reject-plan",
         metavar="PLAN_ID",
         help="reject a previously created action plan without executing it",
@@ -435,13 +440,14 @@ def validate_lifecycle_args(
     lifecycle_flags = [
         bool(args.preconditions),
         bool(args.accept_plan),
+        bool(args.approve_plan),
         bool(args.reject_plan),
         bool(args.supersede_plan),
     ]
     if sum(lifecycle_flags) > 1:
         parser.error(
             "choose only one of --preconditions, --accept-plan, "
-            "--reject-plan, or --supersede-plan"
+            "--approve-plan, --reject-plan, or --supersede-plan"
         )
     if args.reject_plan and not args.reason:
         parser.error("--reject-plan requires --reason")
@@ -640,6 +646,8 @@ def format_action_plan_status(plan: dict[str, Any]) -> str:
     rejection_reason = plan.get("rejection_reason")
     if rejection_reason:
         lines.append(f"rejection_reason: {rejection_reason}")
+    if plan.get("approved") is True:
+        lines.append("approved: true")
     replacement_plan_id = plan.get("replacement_plan_id")
     if replacement_plan_id:
         lines.append(f"replacement_plan_id: {replacement_plan_id}")
@@ -647,7 +655,9 @@ def format_action_plan_status(plan: dict[str, Any]) -> str:
 
 
 def update_action_plan_lifecycle(args: argparse.Namespace) -> dict[str, Any] | None:
-    plan_id = args.accept_plan or args.reject_plan or args.supersede_plan
+    plan_id = (
+        args.accept_plan or args.approve_plan or args.reject_plan or args.supersede_plan
+    )
     if not plan_id:
         return None
 
@@ -658,6 +668,13 @@ def update_action_plan_lifecycle(args: argparse.Namespace) -> dict[str, Any] | N
             plan = service.accept_plan(
                 args.workspace, args.accept_plan, session_id=args.session
             )
+        elif args.approve_plan:
+            plan = service.approve_plan(
+                args.workspace, args.approve_plan, session_id=args.session
+            )
+            approved_plan = to_plain(plan)
+            approved_plan["approved"] = True
+            return approved_plan
         elif args.reject_plan:
             plan = service.reject_plan(
                 args.workspace, args.reject_plan, args.reason, session_id=args.session

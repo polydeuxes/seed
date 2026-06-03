@@ -129,6 +129,38 @@ class ActionPlanService:
             }
         )
 
+    def approve_plan(
+        self,
+        workspace_id: str,
+        action_plan_id: str,
+        *,
+        actor: Actor = "approver",
+        session_id: str | None = None,
+        causation_id: str | None = None,
+        correlation_id: str | None = None,
+    ) -> ActionPlan:
+        """Record approval for an accepted action plan without executing it.
+
+        Approval is a separate readiness record: it does not change lifecycle
+        status, execute the plan, approve pending tool calls, or register tools.
+        """
+        plan = self._require_plan(workspace_id, action_plan_id)
+        if plan.status != "accepted":
+            raise ActionPlanTransitionError(
+                "only accepted action plans can be approved "
+                f"({action_plan_id} is {plan.status!r})"
+            )
+        self._require_ledger().append(
+            "action_plan.approved",
+            workspace_id,
+            {"action_plan_id": action_plan_id},
+            actor=actor,
+            session_id=session_id,
+            causation_id=causation_id,
+            correlation_id=correlation_id,
+        )
+        return plan
+
     def reject_plan(
         self,
         workspace_id: str,

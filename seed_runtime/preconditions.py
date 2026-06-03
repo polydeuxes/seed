@@ -148,6 +148,10 @@ def _provider_registered(action_plan: ActionPlan, state: State) -> tuple[bool, s
 
 
 def _approval_present(action_plan: ActionPlan, state: State) -> tuple[bool, str]:
+    approval_event_id = state.action_plan_approvals.get(action_plan.id)
+    if approval_event_id is not None:
+        return True, f"action plan approval is present: {approval_event_id}"
+
     now = datetime.now(timezone.utc)
     for approval in state.approvals.values():
         if approval.expires_at is not None and approval.expires_at < now:
