@@ -222,3 +222,14 @@ Normal CLI and HTTP responses are JSON objects with `response` and `events`. `--
 ### Predicate catalog
 
 Seed's built-in `PredicateCatalog` defines the canonical vocabulary for what can be known and maps provider-specific observations into canonical observations without discarding the originals. The default normalization order is endpoint alias, endpoint identity, then predicate normalization. Use `--predicate-catalog PATH` to load a custom JSON catalog for observation-source ingestion, or `--show-predicate-catalog` to print canonical predicates and mappings. `CapabilityCatalog` separately describes what can be done.
+
+### Inspect projected relationships
+
+Seed derives topology edges from facts using `relationship_catalog/core.json`.
+Facts describe claims about entities, relationships describe how entities connect,
+and capabilities describe what Seed can do.
+
+```bash
+python scripts/seed_local.py --db seed.sqlite --relationships
+python scripts/seed_local.py --db seed.sqlite --relationships --relationship member_of
+```

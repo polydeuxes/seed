@@ -1,0 +1,35 @@
+{
+  "relationships": [
+    {
+      "relationship": "member_of",
+      "subject_type": "host",
+      "object_type": "group",
+      "derived_from_predicates": ["group"]
+    },
+    {
+      "relationship": "alias_of",
+      "subject_type": "entity",
+      "object_type": "entity",
+      "derived_from_predicates": ["alias", "hostname", "ip_address", "ansible_host", "prometheus_instance"]
+    },
+    {
+      "relationship": "monitored_by",
+      "subject_type": "host",
+      "object_type": "monitoring_system",
+      "derived_from_predicates": ["prometheus_instance"],
+      "object": "prometheus"
+    },
+    {
+      "relationship": "provides",
+      "subject_type": "host",
+      "object_type": "capability",
+      "derived_from_predicates": ["provides"]
+    },
+    {
+      "relationship": "runs_on",
+      "subject_type": "service",
+      "object_type": "host",
+      "derived_from_predicates": ["host", "runs_on"]
+    }
+  ]
+}
