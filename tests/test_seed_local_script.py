@@ -1546,6 +1546,54 @@ def test_cli_measurement_fact_support_include_history_shows_all_samples(capsys):
     assert "historical samples hidden" not in output
 
 
+def test_cli_availability_status_history_visibility_does_not_change_current(capsys):
+    seed_local = load_seed_local_module()
+    facts = [
+        "--fact",
+        "node115",
+        "availability_status",
+        "up",
+        "--fact",
+        "node115",
+        "availability_status",
+        "down",
+    ]
+
+    assert (
+        seed_local.main(
+            [*facts, "--fact-support", "node115", "availability_status"]
+        )
+        == 0
+    )
+    default_output = capsys.readouterr().out
+    assert "value: down" in default_output
+    assert "value: up" not in default_output
+
+    assert (
+        seed_local.main(
+            [
+                *facts,
+                "--fact-support",
+                "node115",
+                "availability_status",
+                "--include-history",
+            ]
+        )
+        == 0
+    )
+    history_output = capsys.readouterr().out
+    assert "value: up" in history_output
+    assert "value: down" in history_output
+
+    assert (
+        seed_local.main([*facts, "--best-fact", "node115", "availability_status"])
+        == 0
+    )
+    best_output = capsys.readouterr().out
+    assert "value: down" in best_output
+    assert "value: up" not in best_output
+
+
 def test_cli_durable_runtime_fact_support_still_shows_all_conflicting_values(capsys):
     seed_local = load_seed_local_module()
 
