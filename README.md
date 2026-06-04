@@ -1,12 +1,6 @@
-# Seed System Blueprint
+# Seed System 
 
-This directory is a portable architecture packet for a new repository. It is written to be copied out of this codebase without depending on legacy module names.
-
-## Working name
-
-**Seed**: a context-native runtime that grows operational tools from recorded capability gaps.
-
-The name is intentionally different from the old repo. The core idea is not a gateway, not an automation wrapper, and not a permission engine. It is a system that accumulates context, understands missing capabilities, and safely grows a typed tool vocabulary.
+A system that accumulates context, understands missing capabilities, and safely grows a typed tool vocabulary.
 
 ## One-sentence product definition
 
