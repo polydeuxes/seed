@@ -578,6 +578,7 @@ def test_prometheus_source_uses_safe_get_queries_and_converts_observations(
         ("node-a:9100", "filesystem_size_bytes", 1024),
     ]
     assert {obs.source_type for obs in observations} == {"provider"}
+    assert {obs.metadata["source_name"] for obs in observations} == {"prometheus"}
     assert [method for _, method, _ in requested_urls] == ["GET"] * 4
     assert [timeout for _, _, timeout in requested_urls] == [2.5] * 4
     assert [url.rsplit("query=", 1)[1] for url, _, _ in requested_urls] == list(
@@ -683,6 +684,10 @@ def test_prometheus_nodename_creates_prometheus_instance_alias_via_normalizer(
     )
     state = StateProjector(ledger).project("ws_prometheus_alias")
 
+    canonical = {(fact.predicate, fact.value) for fact in facts}
+    assert ("availability_status", "up") in canonical
+    assert ("filesystem_free_bytes", 1) in canonical
+    assert ("filesystem_total_bytes", 1) in canonical
     aliases = [fact for fact in facts if fact.predicate == "prometheus_instance"]
     assert len(aliases) == 1
     assert aliases[0].subject_id == "node115"
