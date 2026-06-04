@@ -74,6 +74,21 @@ def test_group_alias_prometheus_and_host_facts_create_relationships():
     ]
 
 
+def test_self_alias_facts_are_retained_without_projecting_relationships():
+    state = _project(
+        _fact("fact_hostname", "node200", "hostname", "node200"),
+        _fact("fact_self_alias", "node200", "alias", "node200"),
+        _fact("fact_ip_alias", "node200", "alias", "192.168.254.200"),
+    )
+
+    assert set(state.facts) == {"fact_hostname", "fact_self_alias", "fact_ip_alias"}
+    assert [
+        (edge.subject, edge.relationship, edge.object)
+        for edge in state.get_relationships()
+    ] == [("node200", "alias_of", "192.168.254.200")]
+    assert seed_local.state_summary(state)["graph_issue_count"] == 0
+
+
 def test_relationship_preserves_source_fact_provenance_and_is_deterministic():
     fact = _fact("fact_group", "node115", "group", "servers")
 

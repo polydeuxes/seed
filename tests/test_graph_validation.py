@@ -62,16 +62,18 @@ def test_group_runs_on_host_is_error():
     assert "subject type is group; expected service" in issue.reason
 
 
-def test_self_alias_is_warning_while_other_aliases_are_loose():
+def test_self_alias_is_suppressed_without_a_graph_issue():
     state = _project(
         _fact("self_alias", "node", "alias", "node"),
         _fact("other_alias", "node", "alias", "node.example"),
     )
 
-    assert len(state.graph_issues) == 1
-    assert state.graph_issues[0].severity == "warning"
-    assert state.graph_issues[0].relationship == "alias_of"
-    assert "aliases an entity to itself" in state.graph_issues[0].reason
+    assert state.graph_issues == []
+    assert [
+        (edge.subject, edge.relationship, edge.object)
+        for edge in state.get_relationships()
+    ] == [("node", "alias_of", "node.example")]
+    assert "self_alias" in state.facts
 
 
 def test_unknown_entity_type_is_warning():

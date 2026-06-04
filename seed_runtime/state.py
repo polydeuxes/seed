@@ -1166,18 +1166,6 @@ class GraphValidator:
             if definition is None:
                 continue
             if definition.relationship_kind == "identity":
-                if edge.subject == edge.object:
-                    issues.append(
-                        self._issue(
-                            edge,
-                            "warning",
-                            "identity relationship aliases an entity to itself",
-                            [definition.subject_type],
-                            [definition.object_type],
-                            state.get_current_entity_types(edge.subject),
-                            state.get_current_entity_types(edge.object),
-                        )
-                    )
                 continue
 
             subject_types = state.get_current_entity_types(edge.subject)
@@ -1429,6 +1417,8 @@ def _project_catalog_relationships(
             continue
         for definition in catalog.for_predicate(fact.predicate):
             object_value = definition.object or fact_object
+            if definition.relationship == "alias_of" and fact.subject_id == object_value:
+                continue
             identity = "\0".join(
                 [fact.id, fact.subject_id, definition.relationship, object_value]
             )
