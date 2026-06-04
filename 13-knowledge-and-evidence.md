@@ -271,3 +271,24 @@ x = 3
 ```
 
 The result should be recorded as evidence and returned to the user. If the answer is stored for future use, it should be projected into a Fact with a provenance link back to the computation Evidence.
+
+
+## Explanation Layer
+
+Provenance, inference, and explanation are related but separate:
+
+- **Provenance** records where knowledge came from. Fact IDs, Evidence IDs,
+  source types, observation times, and explicit alias metadata preserve this
+  history.
+- **Inference** records how a deterministic `InferenceRule` selected from the
+  read-only `InferenceCatalog` derived a new Fact from a source Fact, including
+  the rule ID and any confidence cap.
+- **Explanation** is the human-readable, recursive traversal of projected
+  provenance and inference used to answer a `--why ENTITY PREDICATE` query.
+
+Explanation does not add, retract, or rank facts and is not a new reasoning
+layer. It operates entirely on projected state and deterministically reports
+current beliefs, multi-valued beliefs, ambiguity, conflicts, alias-resolution
+paths, and recursive inference sources. This separation allows future
+`--why-not`, `--how`, and `--what-changed` queries to reuse the explanation model
+without changing Seed's reasoning behavior.

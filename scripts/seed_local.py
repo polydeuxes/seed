@@ -31,6 +31,12 @@ from seed_runtime.facts import (
     is_measurement_predicate,
 )
 from seed_runtime.execution import ToolExecutor
+from seed_runtime.explanations import (
+    BeliefExplanation,
+    Explanation,
+    ExplanationBuilder,
+    FactExplanation,
+)
 from seed_runtime.execution_proposals import ExecutionProposalService
 from seed_runtime.handoff_plans import (
     HandoffPlanNotFoundError,
@@ -38,6 +44,7 @@ from seed_runtime.handoff_plans import (
     HandoffPlanStatusError,
 )
 from seed_runtime.ids import new_id
+from seed_runtime.inference_catalog import InferenceCatalog
 from seed_runtime.intent_classifier import (
     IntentDecisionModel,
     IntentPromptModelClient,
@@ -762,6 +769,15 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--inference-catalog",
+        help="path to an inference catalog JSON file (defaults to built-in core)",
+    )
+    parser.add_argument(
+        "--show-inference-catalog",
+        action="store_true",
+        help="print deterministic inference rules and exit",
+    )
+    parser.add_argument(
         "--predicate-catalog",
         metavar="PATH",
         help="load canonical predicates and provider mappings from a JSON file",
@@ -885,6 +901,12 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--why",
+        nargs=2,
+        metavar=("ENTITY", "PREDICATE"),
+        help="explain the projected current belief and its provenance",
+    )
+    parser.add_argument(
         "--fact-support",
         nargs=2,
         metavar=("SUBJECT", "PREDICATE"),
@@ -955,6 +977,7 @@ def validate_lifecycle_args(
         bool(args.reject_plan),
         bool(args.supersede_plan),
         bool(args.impact),
+        bool(args.why),
         bool(args.fact_support),
         bool(args.best_fact),
         bool(args.current_facts),
@@ -967,7 +990,7 @@ def validate_lifecycle_args(
         parser.error(
             "choose only one of --preconditions, --proposal, --handoff, "
             "--authorize-proposal, --accept-plan, --approve-plan, "
-            "--reject-plan, --supersede-plan, --impact, --fact-support, --best-fact, "
+            "--reject-plan, --supersede-plan, --impact, --why, --fact-support, --best-fact, "
             "--current-facts, "
             "--fact-conflicts, --stale-facts, --stale-fact-refreshes, "
             "or --events-only"
@@ -1350,6 +1373,7 @@ def fact_query_state(args: argparse.Namespace) -> State:
             ledger,
             measurement_history_limit=history_limit,
             predicate_catalog=PredicateCatalog.load(args.predicate_catalog),
+            inference_catalog=InferenceCatalog.load(args.inference_catalog),
         ).project(args.workspace)
     finally:
         close = getattr(ledger, "close", None)
@@ -1363,7 +1387,9 @@ def projected_state_from_args(args: argparse.Namespace) -> State:
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
     try:
         return StateProjector(
-            ledger, predicate_catalog=PredicateCatalog.load(args.predicate_catalog)
+            ledger,
+            predicate_catalog=PredicateCatalog.load(args.predicate_catalog),
+            inference_catalog=InferenceCatalog.load(args.inference_catalog),
         ).project(args.workspace)
     finally:
         close = getattr(ledger, "close", None)
@@ -1727,6 +1753,97 @@ def export_observations_json_from_args(args: argparse.Namespace) -> dict[str, An
         "path": str(output_path),
         "observation_count": len(payload["observations"]),
     }
+
+
+def format_explanation(explanation: Explanation) -> str:
+    """Format a deterministic operator-facing why-query explanation."""
+
+    lines: list[str] = ["Current belief:", ""]
+    if explanation.current_beliefs:
+        for belief in explanation.current_beliefs:
+            lines.append(f"{explanation.predicate}={_format_fact_value(belief.value)}")
+    else:
+        lines.append("No current belief.")
+
+    if explanation.competing_beliefs:
+        lines.extend(["", "Competing supported values:", ""])
+        lines.extend(
+            _format_fact_value(item.value) for item in explanation.competing_beliefs
+        )
+
+    beliefs = [*explanation.current_beliefs, *explanation.competing_beliefs]
+    if beliefs:
+        lines.extend(["", "Explanation:"])
+        for belief in beliefs:
+            lines.extend(["", f"value: {_format_fact_value(belief.value)}"])
+            lines.extend(_format_belief_explanation(belief))
+
+    if explanation.conflicts:
+        lines.extend(["", "Conflicts:"])
+        for conflict in explanation.conflicts:
+            lines.extend(
+                [
+                    "",
+                    "competing_values:",
+                    *[f"- {_format_fact_value(value)}" for value in conflict.values],
+                    "competing_fact_ids:",
+                    *[f"- {fact_id}" for fact_id in conflict.conflicting_fact_ids],
+                ]
+            )
+    return "\n".join(lines)
+
+
+def _format_belief_explanation(belief: BeliefExplanation) -> list[str]:
+    lines = [
+        f"aggregate_confidence: {belief.confidence:.3f}",
+        "supporting_fact_ids:",
+        *[f"- {fact_id}" for fact_id in belief.supporting_fact_ids],
+    ]
+    for fact in belief.facts:
+        lines.extend(["", "support:", *_format_fact_explanation(fact)])
+    return lines
+
+
+def _format_fact_explanation(fact: FactExplanation, *, indent: str = "") -> list[str]:
+    lines = [
+        f"{indent}fact_id: {fact.fact_id}",
+        f"{indent}source_type: {fact.source_type}",
+        (
+            f"{indent}{'inferred_confidence' if fact.source_type == 'inferred' else 'observed_confidence'}: "
+            f"{fact.confidence:.3f}"
+        ),
+        f"{indent}observation_time: {fact.observed_at.isoformat()}",
+        f"{indent}evidence_ids:",
+        *[f"{indent}- {evidence_id}" for evidence_id in fact.evidence_ids],
+    ]
+    if fact.resolution_chain and len(fact.resolution_chain) > 1:
+        lines.extend(
+            [
+                f"{indent}entity_resolution:",
+                f"{indent}{('\n' + indent + '-> ').join(fact.resolution_chain)}",
+            ]
+        )
+    if fact.inference_rule_id:
+        lines.append(f"{indent}inference_rule: {fact.inference_rule_id}")
+    if fact.inference_rule is not None and fact.inference_rule.description:
+        lines.append(f"{indent}inference_rule_description: {fact.inference_rule.description}")
+    if fact.source_fact_id:
+        lines.append(f"{indent}source_fact_id: {fact.source_fact_id}")
+    if fact.confidence_cap is not None:
+        lines.append(f"{indent}confidence_cap: {fact.confidence_cap:.3f}")
+    if fact.source_fact is not None:
+        lines.extend(
+            [
+                (
+                    f"{indent}derived_from: {fact.source_fact.predicate}="
+                    f"{_format_fact_value(fact.source_fact.value)}"
+                ),
+                *_format_fact_explanation(fact.source_fact, indent=indent + "  "),
+            ]
+        )
+    if fact.recursion_stopped:
+        lines.append(f"{indent}recursion_stopped: cycle detected")
+    return lines
 
 
 def format_fact_supports(
@@ -2570,6 +2687,19 @@ def run_shell(
         )
 
 
+def format_inference_catalog(catalog: InferenceCatalog) -> str:
+    """Format deterministic inference rules in stable ID order."""
+
+    lines = ["inference rules:"]
+    for rule in catalog.list_inference_rules():
+        lines.append(
+            f"- {rule.id}: {rule.source_predicate}={_format_fact_value(rule.source_value)} "
+            f"-> {rule.target_predicate}={_format_fact_value(rule.target_value)} "
+            f"(confidence_cap={rule.confidence_cap:.3f})"
+        )
+    return "\n".join(lines)
+
+
 def format_predicate_catalog(catalog: PredicateCatalog) -> str:
     """Format canonical predicates and raw-provider mappings for debugging."""
 
@@ -2597,6 +2727,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     validate_lifecycle_args(args, parser)
+    if args.show_inference_catalog:
+        print(format_inference_catalog(InferenceCatalog.load(args.inference_catalog)))
+        return 0
     if args.show_predicate_catalog:
         print(format_predicate_catalog(PredicateCatalog.load(args.predicate_catalog)))
         return 0
@@ -2650,6 +2783,12 @@ def main(argv: list[str] | None = None) -> int:
     updated_plan = update_action_plan_lifecycle(args)
     if updated_plan is not None:
         print(format_action_plan_status(updated_plan))
+        return 0
+
+    if args.why:
+        subject, predicate = args.why
+        explanation = ExplanationBuilder(fact_query_state(args)).why(subject, predicate)
+        print(format_explanation(explanation))
         return 0
 
     if args.fact_support:

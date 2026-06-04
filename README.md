@@ -229,6 +229,43 @@ Inspect every current value of a multi-valued predicate with:
 python scripts/seed_local.py --db seed.sqlite --current-facts node115 alias
 ```
 
+### Explanation engine (`--why`)
+
+The explanation engine is a read-only traversal of projected state, not a new
+reasoning layer. Ask why Seed currently believes a subject/predicate claim with:
+
+```bash
+python scripts/seed_local.py --db seed.sqlite --why node115 health_status
+python scripts/seed_local.py --db seed.sqlite --why node115 alias
+```
+
+Inference is catalog-driven. The built-in `inference_catalog/core.json` contains
+`InferenceRule` definitions, and `--inference-catalog PATH` selects a custom
+read-only catalog. Use `--show-inference-catalog` to inspect the active built-in
+rules.
+
+For observed facts, the output includes every supporting Fact ID, Evidence ID,
+source type, observed confidence, and observation time. For inferred facts, it
+also resolves the rule ID through the projected state's `InferenceCatalog` and
+includes the rule description, source Fact ID, inferred confidence, any
+confidence cap, and a recursive explanation of the source Fact. Queries resolve
+explicit aliases and show the resolution chain used to reach a supporting fact.
+Multi-valued predicates return every current value and its support. When a
+single-valued predicate has equally supported values, the output says there is
+no current belief and explains each competing value and active conflict.
+
+Explanation generation is deterministic and uses only projected state. It does
+not invoke a shell, execute external commands, mutate hosts, make network calls,
+or involve an LLM.
+
+The three related concepts have distinct responsibilities:
+
+- **Provenance** records where knowledge came from, including Evidence and source
+  Facts.
+- **Inference** records how deterministic rules derived new knowledge.
+- **Explanation** presents a human-readable traversal of provenance and inference
+  for a projected belief.
+
 ### Inspect projected relationships
 
 Seed derives topology edges from facts using `relationship_catalog/core.json`.

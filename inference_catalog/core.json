@@ -1,0 +1,22 @@
+{
+  "inference_rules": [
+    {
+      "id": "runtime_docker_managed_by_container_lifecycle",
+      "source_predicate": "runtime",
+      "source_value": "docker",
+      "target_predicate": "managed_by",
+      "target_value": "docker_container_lifecycle",
+      "confidence_cap": 0.6,
+      "description": "Docker services are managed through the Docker container lifecycle."
+    },
+    {
+      "id": "runtime_systemd_managed_by_systemctl",
+      "source_predicate": "runtime",
+      "source_value": "systemd",
+      "target_predicate": "managed_by",
+      "target_value": "systemctl_cli",
+      "confidence_cap": 0.6,
+      "description": "Systemd services are managed through systemctl."
+    }
+  ]
+}

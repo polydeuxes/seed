@@ -10,6 +10,7 @@ This branch turns the Seed blueprint into a runnable Python prototype. The early
 - Context composition and a runtime loop that can answer, ask questions, request tools, propose state patches, refuse unsafe requests, or propose non-executable handoff-adjacent artifacts.
 - Tool Need service with open-need deduplication and status-change events.
 - Evidence and fact models with extraction, state-projection, and Fact Support Aggregation support, so external observations and provider results can become provenance-preserving state instead of hidden memory.
+- A read-only `InferenceCatalog` drives deterministic `InferenceRule` projection, and the Explanation Engine's `--why ENTITY PREDICATE` CLI query resolves those canonical rules while traversing projected support, evidence, aliases, conflicts, inference sources, and confidence caps without adding a new reasoning layer.
 - Shared `ObservationNormalizationPipeline` support between `ObservationSource` adapters and `ObservationIngestor`, with a default endpoint-alias normalizer that preserves originals and marks provenance-rich derivations.
 - Content-based `InputInspector` dispatch for file-backed raw IN, with file extensions treated only as fallback hints and audit metadata attached to Ansible inventory observations.
 - Text-only Action Plans with guarded lifecycle transitions, preventing accepted, rejected, or superseded plans from moving into contradictory states.

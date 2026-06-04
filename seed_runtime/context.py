@@ -86,6 +86,13 @@ class ContextComposer:
         facts = []
         for fact in budgeted.sections[RECENT_FACTS]:
             fact_payload = fact.__dict__.copy()
+            for explanation_field in (
+                "inference_rule_id",
+                "source_fact_id",
+                "confidence_cap",
+            ):
+                if fact_payload.get(explanation_field) is None:
+                    fact_payload.pop(explanation_field, None)
             fact_payload["evidence"] = [
                 state.evidence[evidence_id].__dict__
                 for evidence_id in fact.evidence_ids

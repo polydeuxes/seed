@@ -3,6 +3,7 @@
 from seed_runtime.ansible_inventory_source import AnsibleInventoryObservationSource
 from seed_runtime.capability_catalog import CapabilityCatalog
 from seed_runtime.entity_type_catalog import EntityTypeCatalog, EntityTypeDefinition
+from seed_runtime.inference_catalog import InferenceCatalog, InferenceRule
 from seed_runtime.predicate_catalog import PredicateCatalog
 from seed_runtime.relationship_catalog import (
     RelationshipCatalog,
@@ -11,6 +12,12 @@ from seed_runtime.relationship_catalog import (
 )
 from seed_runtime.predicate_normalizers import PredicateNormalizer
 from seed_runtime.evidence import Evidence
+from seed_runtime.explanations import (
+    BeliefExplanation,
+    Explanation,
+    ExplanationBuilder,
+    FactExplanation,
+)
 from seed_runtime.facts import Fact, FactConflict, FactSupport
 from seed_runtime.observation_sources import (
     FakeObservationSource,
@@ -42,6 +49,10 @@ __all__ = [
     "EntityTypeDefinition",
     "Event",
     "Evidence",
+    "BeliefExplanation",
+    "Explanation",
+    "ExplanationBuilder",
+    "FactExplanation",
     "Fact",
     "FactConflict",
     "FactSupport",
@@ -61,6 +72,8 @@ __all__ = [
     "export_observations_json",
     "HandoffPlan",
     "InputArtifact",
+    "InferenceCatalog",
+    "InferenceRule",
     "InputInspector",
     "PendingAction",
     "Precondition",

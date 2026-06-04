@@ -11,6 +11,7 @@ from typing import Any, Iterable, Literal
 
 from seed_runtime.events import EventLedger
 from seed_runtime.evidence import Evidence
+from seed_runtime.inference_catalog import InferenceCatalog
 from seed_runtime.inference_rules import infer_facts
 from seed_runtime.facts import (
     StaleFactRefreshRecommendation,
@@ -234,6 +235,9 @@ class State:
     workspace_id: str
     predicate_catalog: PredicateCatalog = field(
         default_factory=PredicateCatalog.load, compare=False, repr=False
+    )
+    inference_catalog: InferenceCatalog = field(
+        default_factory=InferenceCatalog.load, compare=False, repr=False
     )
     entities: dict[str, Entity] = field(default_factory=dict)
     facts: dict[str, Fact] = field(default_factory=dict)
@@ -673,6 +677,7 @@ class StateProjector:
         relationship_catalog: RelationshipCatalog | None = None,
         entity_type_catalog: EntityTypeCatalog | None = None,
         predicate_catalog: PredicateCatalog | None = None,
+        inference_catalog: InferenceCatalog | None = None,
     ) -> None:
         if measurement_history_limit < 1:
             raise ValueError("measurement_history_limit must be at least 1")
@@ -681,9 +686,14 @@ class StateProjector:
         self.relationship_catalog = relationship_catalog or RelationshipCatalog.load()
         self.entity_type_catalog = entity_type_catalog or EntityTypeCatalog.load()
         self.predicate_catalog = predicate_catalog or PredicateCatalog.load()
+        self.inference_catalog = inference_catalog or InferenceCatalog.load()
 
     def project(self, workspace_id: str) -> State:
-        state = State(workspace_id=workspace_id, predicate_catalog=self.predicate_catalog)
+        state = State(
+            workspace_id=workspace_id,
+            predicate_catalog=self.predicate_catalog,
+            inference_catalog=self.inference_catalog,
+        )
         for event in self.ledger.list_events(workspace_id):
             self.apply(state, event)
         _project_inferred_facts(state)
@@ -860,47 +870,52 @@ def _project_inferred_facts(state: State) -> None:
     state.inferred_facts = {
         fact_id: fact for fact_id, fact in state.facts.items() if fact.inferred
     }
-    inferable_observed_facts = _observed_facts_with_unambiguous_runtimes(
-        state.observed_facts.values()
+    inferable_observed_facts = _observed_facts_with_unambiguous_rule_sources(
+        state.observed_facts.values(), state.inference_catalog
     )
-    state.inferred_facts.update(infer_facts(inferable_observed_facts))
+    state.inferred_facts.update(
+        infer_facts(inferable_observed_facts, state.inference_catalog)
+    )
     state.facts = {**state.observed_facts}
     for fact_id, fact in state.inferred_facts.items():
         if fact_id not in state.facts:
             state.facts[fact_id] = fact
 
 
-def _observed_facts_with_unambiguous_runtimes(facts: Iterable[Fact]) -> list[Fact]:
+def _observed_facts_with_unambiguous_rule_sources(
+    facts: Iterable[Fact], inference_catalog: InferenceCatalog
+) -> list[Fact]:
+    """Keep only the current unambiguous source values eligible for inference."""
+
     observed_facts = list(facts)
-    runtime_facts_by_subject: dict[str, list[Fact]] = {}
+    source_predicates = inference_catalog.source_predicates
+    grouped: dict[tuple[str, str], list[Fact]] = {}
     for fact in observed_facts:
-        if fact.predicate == "runtime":
-            runtime_facts_by_subject.setdefault(fact.subject_id, []).append(fact)
+        if fact.predicate in source_predicates:
+            grouped.setdefault((fact.subject_id, fact.predicate), []).append(fact)
 
-    winning_runtime_value_by_subject: dict[str, str] = {}
-    ambiguous_runtime_subjects: set[str] = set()
-    for subject, runtime_facts in runtime_facts_by_subject.items():
-        supports = _project_fact_supports(runtime_facts)
-        best_support = _select_unambiguous_best_support(supports)
+    winning_values: dict[tuple[str, str], str] = {}
+    ambiguous: set[tuple[str, str]] = set()
+    for key, source_facts in grouped.items():
+        best_support = _select_unambiguous_best_support(
+            _project_fact_supports(source_facts)
+        )
         if best_support is None:
-            ambiguous_runtime_subjects.add(subject)
+            ambiguous.add(key)
         else:
-            winning_runtime_value_by_subject[subject] = _fact_value_key(
-                best_support.value
-            )
+            winning_values[key] = _fact_value_key(best_support.value)
 
-    inferable_facts: list[Fact] = []
+    inferable: list[Fact] = []
     for fact in observed_facts:
-        if fact.predicate != "runtime":
-            inferable_facts.append(fact)
-            continue
-        if fact.subject_id in ambiguous_runtime_subjects:
-            continue
-        if _fact_value_key(fact.value) == winning_runtime_value_by_subject.get(
-            fact.subject_id
+        key = (fact.subject_id, fact.predicate)
+        if fact.predicate not in source_predicates:
+            inferable.append(fact)
+        elif (
+            key not in ambiguous
+            and _fact_value_key(fact.value) == winning_values.get(key)
         ):
-            inferable_facts.append(fact)
-    return inferable_facts
+            inferable.append(fact)
+    return inferable
 
 
 _SOURCE_SUPPORT_WEIGHT: dict[str, float] = {

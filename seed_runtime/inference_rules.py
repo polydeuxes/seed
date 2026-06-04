@@ -1,26 +1,20 @@
-"""Deterministic relationship inference rules for projected state."""
+"""Deterministic catalog-driven fact inference for projected state."""
 
 from __future__ import annotations
 
-from typing import Iterable
+import json
+from typing import Any, Iterable
 
-from seed_runtime.facts import DEFAULT_CONFIDENCE_BY_SOURCE_TYPE, Fact
-
-_MANAGED_BY_BY_RUNTIME = {
-    "docker": "docker_container_lifecycle",
-    "systemd": "systemctl_cli",
-}
+from seed_runtime.facts import Fact
+from seed_runtime.inference_catalog import InferenceCatalog, InferenceRule
 
 
-def infer_facts(facts: Iterable[Fact]) -> dict[str, Fact]:
-    """Infer relationship facts from observed facts without overwriting them.
+def infer_facts(
+    facts: Iterable[Fact], inference_catalog: InferenceCatalog | None = None
+) -> dict[str, Fact]:
+    """Infer facts using the catalog without overwriting observed predicates."""
 
-    Rules are deliberately deterministic and local: only observed runtime
-    relationships produce managed_by relationships. If the subject already has
-    an observed managed_by fact, the observed fact wins and no managed_by fact is
-    inferred for that subject.
-    """
-
+    catalog = inference_catalog or InferenceCatalog.load()
     observed_facts = [fact for fact in facts if not fact.inferred]
     observed_predicates = {
         (fact.subject_id, fact.predicate) for fact in observed_facts
@@ -28,43 +22,50 @@ def infer_facts(facts: Iterable[Fact]) -> dict[str, Fact]:
     inferred: dict[str, Fact] = {}
 
     for fact in observed_facts:
-        if fact.predicate != "runtime" or not isinstance(fact.value, str):
-            continue
-        runtime = fact.value.strip().lower()
-        managed_by = _MANAGED_BY_BY_RUNTIME.get(runtime)
-        if managed_by is None:
-            continue
-        if (fact.subject_id, "managed_by") in observed_predicates:
-            continue
-
-        inferred_fact = _managed_by_fact(fact, managed_by)
-        inferred.setdefault(inferred_fact.id, inferred_fact)
+        for rule in catalog.for_source_predicate(fact.predicate):
+            if not _values_equal(fact.value, rule.source_value):
+                continue
+            if (fact.subject_id, rule.target_predicate) in observed_predicates:
+                continue
+            inferred_fact = _inferred_fact(fact, rule)
+            inferred.setdefault(inferred_fact.id, inferred_fact)
 
     return inferred
 
 
-def _managed_by_fact(runtime_fact: Fact, managed_by: str) -> Fact:
+def _inferred_fact(source_fact: Fact, rule: InferenceRule) -> Fact:
     return Fact(
-        id=_inferred_fact_id(runtime_fact.subject_id, "managed_by", managed_by),
-        subject_id=runtime_fact.subject_id,
-        predicate="managed_by",
-        value=managed_by,
-        evidence_ids=list(runtime_fact.evidence_ids),
-        observed_at=runtime_fact.observed_at,
-        expires_at=runtime_fact.expires_at,
-        source_type="inferred",
-        confidence=min(
-            runtime_fact.confidence,
-            DEFAULT_CONFIDENCE_BY_SOURCE_TYPE["inferred"],
+        id=_inferred_fact_id(
+            source_fact.subject_id, rule.target_predicate, rule.target_value
         ),
+        subject_id=source_fact.subject_id,
+        predicate=rule.target_predicate,
+        value=rule.target_value,
+        dimensions=dict(source_fact.dimensions),
+        evidence_ids=list(source_fact.evidence_ids),
+        observed_at=source_fact.observed_at,
+        expires_at=source_fact.expires_at,
+        source_type="inferred",
+        confidence=min(source_fact.confidence, rule.confidence_cap),
         inferred=True,
+        inference_rule_id=rule.id,
+        source_fact_id=source_fact.id,
+        confidence_cap=(
+            rule.confidence_cap if source_fact.confidence > rule.confidence_cap else None
+        ),
     )
 
 
-def _inferred_fact_id(subject_id: str, predicate: str, value: str) -> str:
+def _values_equal(first: Any, second: Any) -> bool:
+    return json.dumps(first, sort_keys=True, default=str) == json.dumps(
+        second, sort_keys=True, default=str
+    )
+
+
+def _inferred_fact_id(subject_id: str, predicate: str, value: Any) -> str:
     safe_subject = _safe_id_part(subject_id)
     safe_predicate = _safe_id_part(predicate)
-    safe_value = _safe_id_part(value)
+    safe_value = _safe_id_part(str(value))
     return f"fact_inferred_{safe_subject}_{safe_predicate}_{safe_value}"
 
 
