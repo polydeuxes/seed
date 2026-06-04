@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -854,6 +854,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="print projected graph validation issues and exit",
     )
     parser.add_argument(
+        "--severity",
+        choices=["warning", "error"],
+        help="filter --graph-issues by severity",
+    )
+    parser.add_argument(
         "--entity-types",
         action="store_true",
         help="print projected current entity types and exit",
@@ -984,6 +989,8 @@ def validate_lifecycle_args(
         )
     if args.include_history and not args.fact_support:
         parser.error("--include-history can only be used with --fact-support")
+    if args.severity and not args.graph_issues:
+        parser.error("--severity can only be used with --graph-issues")
     if args.fact_expires_at and args.fact_ttl_seconds is not None:
         parser.error("choose only one of --fact-expires-at or --fact-ttl-seconds")
     if (args.fact_expires_at or args.fact_ttl_seconds is not None) and not (
@@ -1356,13 +1363,16 @@ def format_relationships(state: State, args: argparse.Namespace) -> str:
     ) or "no relationships"
 
 
-def format_graph_issues(state: State) -> str:
+def format_graph_issues(
+    state: State, severity: Literal["warning", "error"] | None = None
+) -> str:
     """Format projected graph validation issues for terminal inspection."""
 
-    if not state.graph_issues:
-        return "no graph issues"
+    issues = state.get_graph_issues(severity)
+    if not issues:
+        return f"no {severity + ' ' if severity else ''}graph issues"
     sections = []
-    for issue in state.graph_issues:
+    for issue in issues:
         sections.append(
             "\n".join(
                 [
@@ -1484,6 +1494,8 @@ def state_summary(
         "conflict_count": len(state.fact_conflicts),
         "stale_fact_count": len(state.get_stale_facts()),
         "graph_issue_count": len(state.graph_issues),
+        "graph_issue_warning_count": len(state.get_graph_issues("warning")),
+        "graph_issue_error_count": len(state.get_graph_issues("error")),
         "observation_source_counts": dict(
             sorted(Counter(obs.source_type for obs in state.observations.values()).items())
         ),
@@ -1507,7 +1519,11 @@ def format_state_summary(summary: dict[str, Any]) -> str:
         f"measurement current samples: {summary['measurement_current_sample_count']}",
         f"conflicts: {summary['conflict_count']}",
         f"stale facts: {summary['stale_fact_count']}",
-        f"graph issues: {summary['graph_issue_count']}",
+        "graph issues: "
+        f"{summary['graph_issue_warning_count']} "
+        f"warning{'s' if summary['graph_issue_warning_count'] != 1 else ''}, "
+        f"{summary['graph_issue_error_count']} "
+        f"error{'s' if summary['graph_issue_error_count'] != 1 else ''}",
         "observation sources:",
     ]
     if "relationship_count" in summary:
@@ -2448,7 +2464,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.graph_issues:
-        print(format_graph_issues(projected_state_from_args(args)))
+        print(format_graph_issues(projected_state_from_args(args), args.severity))
         return 0
 
     if args.entity_types or args.entity_type:

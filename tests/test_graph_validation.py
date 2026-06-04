@@ -84,6 +84,19 @@ def test_unknown_entity_type_is_warning():
     assert state.graph_issues[0].actual_subject_types == ["unknown"]
 
 
+def test_unknown_monitored_by_subject_is_warning():
+    state = _project(
+        _fact("prometheus_alias", "mystery", "prometheus_instance", "mystery:9100")
+    )
+
+    assert len(state.graph_issues) == 1
+    issue = state.graph_issues[0]
+    assert issue.severity == "warning"
+    assert issue.subject == "mystery"
+    assert issue.relationship == "monitored_by"
+    assert issue.actual_subject_types == ["unknown"]
+
+
 def test_ambiguous_entity_type_is_warning():
     state = _project(
         _fact("host_type", "api:8080", "os", "linux"),
@@ -132,7 +145,39 @@ def test_graph_issues_cli_and_state_summary(tmp_path, capsys):
     assert "warning: mystery member_of servers" in output
     assert "subject type is unknown; expected host" in output
 
+    assert (
+        seed_local.main(
+            ["--db", str(path), "--graph-issues", "--severity", "warning"]
+        )
+        == 0
+    )
+    assert "warning: mystery member_of servers" in capsys.readouterr().out
+
+    assert (
+        seed_local.main(["--db", str(path), "--graph-issues", "--severity", "error"])
+        == 0
+    )
+    assert capsys.readouterr().out == "no error graph issues\n"
+
     state = _project(_fact("membership", "mystery", "group", "servers"))
     summary = seed_local.state_summary(state)
     assert summary["graph_issue_count"] == 1
-    assert "graph issues: 1" in seed_local.format_state_summary(summary)
+    assert summary["graph_issue_warning_count"] == 1
+    assert summary["graph_issue_error_count"] == 0
+    assert "graph issues: 1 warning, 0 errors" in seed_local.format_state_summary(summary)
+
+
+def test_state_summary_separates_graph_warnings_and_errors():
+    state = _project(
+        _fact("unknown_membership", "mystery", "group", "servers"),
+        _fact("host_type", "node", "os", "linux"),
+        _fact("wrong_service_type", "workers", "os", "linux"),
+        _fact("bad_hosting", "workers", "runs_on", "node"),
+    )
+
+    summary = seed_local.state_summary(state)
+
+    assert summary["graph_issue_count"] == 2
+    assert summary["graph_issue_warning_count"] == 1
+    assert summary["graph_issue_error_count"] == 1
+    assert "graph issues: 1 warning, 1 error" in seed_local.format_state_summary(summary)
