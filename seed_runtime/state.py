@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -16,6 +17,7 @@ from seed_runtime.facts import (
     is_measurement_predicate,
     recommended_capability_for_stale_fact,
 )
+from seed_runtime.relationship_catalog import RelationshipCatalog
 from seed_runtime.models import (
     ActionPlan,
     Approval,
@@ -40,7 +42,22 @@ def _parse_dt(value: str | None) -> datetime | None:
 
 @dataclass(frozen=True)
 class EntityRelationship:
-    """A directed subject-predicate-object relationship projected from facts."""
+    """A catalog-defined topology edge projected deterministically from a fact."""
+
+    id: str
+    subject: str
+    relationship: str
+    object: str
+    source_fact_id: str
+    source_type: str
+    confidence: float
+    observed_at: datetime
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class LegacyEntityRelationship:
+    """Backward-compatible direct string-fact projection."""
 
     subject: str
     predicate: str
@@ -185,7 +202,8 @@ class State:
     facts: dict[str, Fact] = field(default_factory=dict)
     observed_facts: dict[str, Fact] = field(default_factory=dict)
     inferred_facts: dict[str, Fact] = field(default_factory=dict)
-    entity_relationships: list[EntityRelationship] = field(default_factory=list)
+    relationships: list[EntityRelationship] = field(default_factory=list)
+    entity_relationships: list[LegacyEntityRelationship] = field(default_factory=list)
     entity_aliases: list[EntityAlias] = field(default_factory=list)
     alias_resolver: AliasResolver = field(default_factory=AliasResolver)
     fact_supports: list[FactSupport] = field(default_factory=list)
@@ -209,6 +227,30 @@ class State:
     def open_tool_needs(self) -> list[ToolNeed]:
         closed = {"registered", "rejected"}
         return [need for need in self.tool_needs.values() if need.status not in closed]
+
+    def get_relationships(
+        self,
+        subject: str | None = None,
+        relationship: str | None = None,
+        object: str | None = None,
+    ) -> list[EntityRelationship]:
+        """Return catalog relationships matching all supplied filters."""
+
+        return [
+            edge
+            for edge in self.relationships
+            if (subject is None or edge.subject == subject)
+            and (relationship is None or edge.relationship == relationship)
+            and (object is None or edge.object == object)
+        ]
+
+    def find_subjects(self, relationship: str, object: str) -> list[str]:
+        """Return deduplicated subjects connected to an object."""
+
+        return _dedupe(
+            edge.subject
+            for edge in self.get_relationships(relationship=relationship, object=object)
+        )
 
     def get_entity_relationships(self, entity: str) -> list[EntityRelationship]:
         """Return relationships where the entity is the subject or object."""
@@ -235,20 +277,34 @@ class State:
         return _dedupe(relationship.subject for relationship in relationships)
 
     def find_related(
-        self, subject: str, predicate: str, *, include_provenance: bool = False
+        self, subject: str, relationship: str, *, include_provenance: bool = False
     ) -> list[str] | list[dict[str, Any]]:
-        """Return objects related to a subject by the given predicate."""
-        relationships = [
-            relationship
-            for relationship in self.entity_relationships
-            if relationship.subject == subject and relationship.predicate == predicate
+        """Return objects connected to a subject by a catalog relationship."""
+
+        matches = self.get_relationships(subject=subject, relationship=relationship)
+        if matches:
+            if include_provenance:
+                return [
+                    {
+                        "object": edge.object,
+                        "source_fact_id": edge.source_fact_id,
+                        "source_type": edge.source_type,
+                        "confidence": edge.confidence,
+                        "observed_at": edge.observed_at,
+                        "metadata": dict(edge.metadata),
+                    }
+                    for edge in matches
+                ]
+            return _dedupe(edge.object for edge in matches)
+        # Preserve the earlier direct-fact query behavior for callers using it.
+        legacy_matches = [
+            edge
+            for edge in self.entity_relationships
+            if edge.subject == subject and edge.predicate == relationship
         ]
         if include_provenance:
-            return [
-                _relationship_payload(relationship, "object")
-                for relationship in relationships
-            ]
-        return _dedupe(relationship.object for relationship in relationships)
+            return [_relationship_payload(edge, "object") for edge in legacy_matches]
+        return _dedupe(edge.object for edge in legacy_matches)
 
     def get_best_fact(
         self,
@@ -431,12 +487,17 @@ class StateProjector:
     """Rebuild current inspectable state from ledger events."""
 
     def __init__(
-        self, ledger: EventLedger, *, measurement_history_limit: int = 1
+        self,
+        ledger: EventLedger,
+        *,
+        measurement_history_limit: int = 1,
+        relationship_catalog: RelationshipCatalog | None = None,
     ) -> None:
         if measurement_history_limit < 1:
             raise ValueError("measurement_history_limit must be at least 1")
         self.ledger = ledger
         self.measurement_history_limit = measurement_history_limit
+        self.relationship_catalog = relationship_catalog or RelationshipCatalog.load()
 
     def project(self, workspace_id: str) -> State:
         state = State(workspace_id=workspace_id)
@@ -464,6 +525,9 @@ class StateProjector:
         _prune_projected_measurement_provenance(state, all_measurement_evidence_ids)
         state.fact_supports = _project_fact_supports(state.facts.values())
         state.entity_relationships = _project_entity_relationships(state.facts.values())
+        state.relationships = _project_catalog_relationships(
+            state.facts.values(), self.relationship_catalog
+        )
         state.entity_aliases = state.alias_resolver.aliases
         state.fact_conflicts = _project_fact_conflicts(state)
         return state
@@ -497,6 +561,9 @@ class StateProjector:
             state.facts[fact.id] = fact
             state.entity_relationships = _project_entity_relationships(
                 state.facts.values()
+            )
+            state.relationships = _project_catalog_relationships(
+                state.facts.values(), self.relationship_catalog
             )
         elif event.kind == "goal.created":
             data = payload.get("goal", payload)
@@ -941,8 +1008,8 @@ def _fact_value_key(value: Any) -> str:
     return json.dumps(value, sort_keys=True, default=str)
 
 
-def _project_entity_relationships(facts: Iterable[Fact]) -> list[EntityRelationship]:
-    relationships: list[EntityRelationship] = []
+def _project_entity_relationships(facts: Iterable[Fact]) -> list[LegacyEntityRelationship]:
+    relationships: list[LegacyEntityRelationship] = []
     seen: set[tuple[str, str, str]] = set()
     for fact in facts:
         object_value = _relationship_object(fact.value)
@@ -953,7 +1020,7 @@ def _project_entity_relationships(facts: Iterable[Fact]) -> list[EntityRelations
             continue
         seen.add(key)
         relationships.append(
-            EntityRelationship(
+            LegacyEntityRelationship(
                 subject=fact.subject_id,
                 predicate=fact.predicate,
                 object=object_value,
@@ -965,6 +1032,43 @@ def _project_entity_relationships(facts: Iterable[Fact]) -> list[EntityRelations
                 inferred=fact.inferred,
             )
         )
+    return relationships
+
+
+def _project_catalog_relationships(
+    facts: Iterable[Fact], catalog: RelationshipCatalog
+) -> list[EntityRelationship]:
+    relationships: list[EntityRelationship] = []
+    for fact in sorted(facts, key=lambda item: item.id):
+        fact_object = _relationship_object(fact.value)
+        if fact_object is None:
+            continue
+        for definition in catalog.for_predicate(fact.predicate):
+            object_value = definition.object or fact_object
+            identity = "\0".join(
+                [fact.id, fact.subject_id, definition.relationship, object_value]
+            )
+            relationship_id = "rel_" + hashlib.sha256(identity.encode()).hexdigest()[:24]
+            relationships.append(
+                EntityRelationship(
+                    id=relationship_id,
+                    subject=fact.subject_id,
+                    relationship=definition.relationship,
+                    object=object_value,
+                    source_fact_id=fact.id,
+                    source_type=fact.source_type,
+                    confidence=fact.confidence,
+                    observed_at=fact.observed_at,
+                    metadata={
+                        "source_predicate": fact.predicate,
+                        "subject_type": definition.subject_type,
+                        "object_type": definition.object_type,
+                        "dimensions": dict(fact.dimensions),
+                        "evidence_ids": list(fact.evidence_ids),
+                        "inferred": fact.inferred,
+                    },
+                )
+            )
     return relationships
 
 
@@ -1014,7 +1118,7 @@ def _subject_alias_matches(requested: str, stored: str) -> bool:
 
 
 def _relationship_payload(
-    relationship: EntityRelationship, value_key: str
+    relationship: LegacyEntityRelationship, value_key: str
 ) -> dict[str, Any]:
     value = relationship.subject if value_key == "subject" else relationship.object
     return {

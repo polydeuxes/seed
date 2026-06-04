@@ -404,3 +404,12 @@ Seed reasons over canonical predicates when they are available while preserving 
 ### Measurement retention policy
 
 Seed is a current-belief and audit system, not a time-series database. Durable facts retain projected history and aggregate independent support. Measurement predicates use current-sample semantics: projection keeps only the latest sample for each canonical subject/alias component, predicate, and dimensions tuple. The default projected measurement history limit is `N=1`; callers may explicitly request a larger recent `N` for debugging, but only the latest retained sample is current. Projection retention never deletes append-only events; physical deletion is reserved for a future explicit compaction operation. Prometheus remains the historian for measurement time series, while Seed stores current belief and audit events. Filesystem measurement dimensions are `mountpoint`, `device`, and `fstype`.
+
+## Relationship projection
+
+Facts are claims about entities. Relationships are derived topology edges between
+entities, projected from facts while preserving the source fact's provenance.
+`RelationshipCatalog` is Seed's vocabulary for entity connections. It complements
+`PredicateCatalog` (what can be known) and `CapabilityCatalog` (what can be done).
+Relationships are inspect-only projected state; they are never directly injected
+or executed.

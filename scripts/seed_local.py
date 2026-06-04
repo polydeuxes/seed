@@ -829,6 +829,26 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--relationships",
+        action="store_true",
+        help="print projected topology relationships and exit",
+    )
+    parser.add_argument(
+        "--relationship-subject",
+        metavar="SUBJECT",
+        help="filter --relationships by subject",
+    )
+    parser.add_argument(
+        "--relationship",
+        metavar="RELATIONSHIP",
+        help="filter --relationships by relationship name",
+    )
+    parser.add_argument(
+        "--relationship-object",
+        metavar="OBJECT",
+        help="filter --relationships by object",
+    )
+    parser.add_argument(
         "--state-summary",
         action="store_true",
         help=(
@@ -1308,7 +1328,22 @@ def projected_state_from_args(args: argparse.Namespace) -> State:
             close()
 
 
-def state_summary(state: State, *, top_entity_limit: int = 10) -> dict[str, Any]:
+def format_relationships(state: State, args: argparse.Namespace) -> str:
+    """Format filtered projected topology edges for terminal inspection."""
+
+    relationships = state.get_relationships(
+        subject=args.relationship_subject,
+        relationship=args.relationship,
+        object=args.relationship_object,
+    )
+    return "\n".join(
+        f"{edge.subject} {edge.relationship} {edge.object}" for edge in relationships
+    ) or "no relationships"
+
+
+def state_summary(
+    state: State, *, top_entity_limit: int = 10, include_relationship_count: bool = False
+) -> dict[str, Any]:
     """Build a concise operator summary using only the projected State."""
 
     current_measurements = [
@@ -1371,7 +1406,7 @@ def state_summary(state: State, *, top_entity_limit: int = 10) -> dict[str, Any]
         if "free" in values and "total" in values
     ]
 
-    return {
+    summary = {
         "entity_count": len(entity_aliases),
         "fact_count": len(state.facts),
         "durable_fact_count": len(durable_facts),
@@ -1385,6 +1420,9 @@ def state_summary(state: State, *, top_entity_limit: int = 10) -> dict[str, Any]
         "availability": dict(availability),
         "filesystems": filesystem_summary,
     }
+    if include_relationship_count:
+        summary["relationship_count"] = len(state.relationships)
+    return summary
 
 
 def format_state_summary(summary: dict[str, Any]) -> str:
@@ -1400,6 +1438,8 @@ def format_state_summary(summary: dict[str, Any]) -> str:
         f"stale facts: {summary['stale_fact_count']}",
         "observation sources:",
     ]
+    if "relationship_count" in summary:
+        lines.insert(3, f"relationships: {summary['relationship_count']}")
     sources = summary["observation_source_counts"]
     lines.extend(
         [f"  {source}: {count}" for source, count in sources.items()]
@@ -2329,6 +2369,10 @@ def main(argv: list[str] | None = None) -> int:
     validate_lifecycle_args(args, parser)
     if args.show_predicate_catalog:
         print(format_predicate_catalog(PredicateCatalog.load(args.predicate_catalog)))
+        return 0
+
+    if args.relationships:
+        print(format_relationships(projected_state_from_args(args), args))
         return 0
 
     if args.state_summary:

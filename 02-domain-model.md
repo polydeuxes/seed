@@ -543,3 +543,11 @@ The old system mixed execution implementation, provider metadata, and user inten
 - **HandoffPlans** describe external provider handoff with `executable: false`.
 - **Toolkits** package capability metadata and integration contracts.
 - **Policy** supplies auditable metadata and constraints for handoff.
+
+## Entity relationships
+
+An `EntityRelationship` is a deterministic, directed topology edge derived from a
+fact through `RelationshipCatalog`. It records its subject, relationship, object,
+source fact ID, source type, confidence, observation time, and metadata. Facts
+remain the source of truth; relationship projection does not replace fact
+retention, support aggregation, or alias resolution.
