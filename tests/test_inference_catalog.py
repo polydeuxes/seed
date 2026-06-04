@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
+from seed_runtime.explanations import ExplanationBuilder
 from seed_runtime.facts import Fact
 from seed_runtime.inference_catalog import InferenceCatalog, InferenceRule
 from seed_runtime.serialization import to_plain
@@ -81,6 +82,18 @@ def test_ambiguous_runtime_docker_systemd_infers_no_managed_by():
     assert state.get_current_facts("service", "managed_by") == []
 
 
+def test_alias_resolved_ambiguous_source_infers_nothing():
+    state = _project(
+        _fact("fact_alias_docker", "service", "alias", "service:9100"),
+        _fact("fact_alias_systemd", "service", "alias", "service:9200"),
+        _fact("fact_docker", "service:9100", "runtime", "docker"),
+        _fact("fact_systemd", "service:9200", "runtime", "systemd"),
+    )
+
+    assert state.get_best_fact("service", "runtime") is None
+    assert state.get_current_facts("service", "managed_by") == []
+
+
 def test_availability_down_infers_health_degraded():
     state = _project(
         _fact("fact_availability", "node115", "availability_status", "down")
@@ -95,6 +108,50 @@ def test_availability_up_infers_health_ok():
     )
 
     assert state.get_best_fact("node115", "health_status").value == "ok"
+
+
+def test_alias_resolved_current_availability_drives_one_health_inference():
+    state = _project(
+        _fact("fact_alias_9100", "node115", "alias", "192.168.254.115:9100"),
+        _fact("fact_alias_9200", "node115", "alias", "192.168.254.115:9200"),
+        _fact(
+            "fact_endpoint_up",
+            "192.168.254.115:9200",
+            "availability_status",
+            "up",
+        ),
+        _fact(
+            "fact_endpoint_z_down",
+            "192.168.254.115:9100",
+            "availability_status",
+            "down",
+        ),
+    )
+
+    availability = state.get_best_fact("node115", "availability_status")
+    health = state.get_best_fact("node115", "health_status")
+    inferred_health = [
+        fact
+        for fact in state.inferred_facts.values()
+        if fact.subject_id == "node115" and fact.predicate == "health_status"
+    ]
+
+    assert availability is not None
+    assert availability.id == "fact_endpoint_z_down"
+    assert availability.value == "down"
+    assert health is not None
+    assert health.value == "degraded"
+    assert health.source_fact_id == availability.id
+    assert [(fact.value, fact.source_fact_id) for fact in inferred_health] == [
+        ("degraded", availability.id)
+    ]
+
+    explanation = ExplanationBuilder(state).why("node115", "health_status")
+    explained_health = explanation.current_beliefs[0].facts[0]
+    assert explained_health.source_fact_id == availability.id
+    assert explained_health.source_fact is not None
+    assert explained_health.source_fact.fact_id == availability.id
+    assert explained_health.source_fact.value == availability.value
 
 
 def test_inferred_confidence_is_capped_by_source_confidence():

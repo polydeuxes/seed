@@ -689,9 +689,6 @@ class StateProjector:
         state = State(workspace_id=workspace_id, predicate_catalog=self.predicate_catalog)
         for event in self.ledger.list_events(workspace_id):
             self.apply(state, event)
-        _project_inferred_facts(
-            state, self.inference_catalog, self.predicate_catalog
-        )
         state.alias_resolver = AliasResolver(state.facts.values())
         all_measurement_evidence_ids = {
             evidence_id
@@ -699,6 +696,15 @@ class StateProjector:
             if is_measurement_predicate(fact.predicate)
             for evidence_id in fact.evidence_ids
         }
+        state.facts = _retain_projected_measurement_history(
+            state.facts.values(),
+            subject_key=state.alias_resolver.canonical,
+            limit=self.measurement_history_limit,
+        )
+        _project_inferred_facts(
+            state, self.inference_catalog, self.predicate_catalog
+        )
+        state.alias_resolver = AliasResolver(state.facts.values())
         state.facts = _retain_projected_measurement_history(
             state.facts.values(),
             subject_key=state.alias_resolver.canonical,
@@ -869,11 +875,14 @@ def _project_inferred_facts(
     state.inferred_facts = {
         fact_id: fact for fact_id, fact in state.facts.items() if fact.inferred
     }
-    current_observed_facts = _observed_facts_with_unambiguous_single_values(
-        state.observed_facts.values(), predicate_catalog
-    )
+    current_observed_facts = _current_belief_source_facts(state, predicate_catalog)
     state.inferred_facts.update(
-        infer_facts(current_observed_facts, inference_catalog, predicate_catalog)
+        infer_facts(
+            current_observed_facts,
+            inference_catalog,
+            predicate_catalog,
+            subject_key=state.alias_resolver.canonical,
+        )
     )
     state.facts = {**state.observed_facts}
     for fact_id, fact in state.inferred_facts.items():
@@ -881,40 +890,46 @@ def _project_inferred_facts(
             state.facts[fact_id] = fact
 
 
-def _observed_facts_with_unambiguous_single_values(
-    facts: Iterable[Fact], predicate_catalog: PredicateCatalog
+def _current_belief_source_facts(
+    state: State, predicate_catalog: PredicateCatalog
 ) -> list[Fact]:
-    observed_facts = list(facts)
-    facts_by_single_subject_predicate: dict[tuple[str, str], list[Fact]] = {}
-    for fact in observed_facts:
-        definition = predicate_catalog.get(fact.predicate)
-        if definition is not None and definition.cardinality == "single":
-            facts_by_single_subject_predicate.setdefault(
-                (fact.subject_id, fact.predicate), []
-            ).append(fact)
+    """Return one representative source fact per alias-resolved current belief."""
 
-    winning_values: dict[tuple[str, str], str] = {}
-    ambiguous: set[tuple[str, str]] = set()
-    for key, predicate_facts in facts_by_single_subject_predicate.items():
-        best_support = _select_unambiguous_best_support(
-            _project_fact_supports(predicate_facts)
-        )
-        if best_support is None:
-            ambiguous.add(key)
-        else:
-            winning_values[key] = _fact_value_key(best_support.value)
+    supports = _project_fact_supports(
+        state.observed_facts.values(), subject_key=state.alias_resolver.canonical
+    )
+    grouped: dict[tuple[str, str], list[FactSupport]] = {}
+    for support in supports:
+        grouped.setdefault((support.subject, support.predicate), []).append(support)
 
-    current: list[Fact] = []
-    for fact in observed_facts:
-        key = (fact.subject_id, fact.predicate)
-        if key in ambiguous:
+    selected: list[FactSupport] = []
+    for (_, predicate), candidates in sorted(grouped.items()):
+        if predicate_catalog.is_multi(predicate):
+            selected.extend(candidates)
             continue
-        if (
-            key not in winning_values
-            or _fact_value_key(fact.value) == winning_values[key]
-        ):
-            current.append(fact)
-    return current
+        best = _select_unambiguous_best_support(candidates)
+        if best is not None:
+            selected.append(best)
+
+    representatives: list[Fact] = []
+    for support in selected:
+        supporting_facts = [
+            state.observed_facts[fact_id]
+            for fact_id in support.supporting_fact_ids
+            if fact_id in state.observed_facts
+        ]
+        if supporting_facts:
+            representatives.append(
+                max(
+                    supporting_facts,
+                    key=lambda fact: (
+                        fact.confidence,
+                        fact.observed_at,
+                        fact.id,
+                    ),
+                )
+            )
+    return representatives
 
 
 _SOURCE_SUPPORT_WEIGHT: dict[str, float] = {
