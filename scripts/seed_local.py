@@ -31,6 +31,12 @@ from seed_runtime.facts import (
     is_measurement_predicate,
 )
 from seed_runtime.execution import ToolExecutor
+from seed_runtime.explanations import (
+    BeliefExplanation,
+    Explanation,
+    ExplanationBuilder,
+    FactExplanation,
+)
 from seed_runtime.execution_proposals import ExecutionProposalService
 from seed_runtime.handoff_plans import (
     HandoffPlanNotFoundError,
@@ -891,6 +897,12 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--why",
+        nargs=2,
+        metavar=("ENTITY", "PREDICATE"),
+        help="explain why Seed holds, rejects, or considers a current belief ambiguous",
+    )
+    parser.add_argument(
         "--fact-support",
         nargs=2,
         metavar=("SUBJECT", "PREDICATE"),
@@ -966,6 +978,7 @@ def validate_lifecycle_args(
         bool(args.reject_plan),
         bool(args.supersede_plan),
         bool(args.impact),
+        bool(args.why),
         bool(args.fact_support),
         bool(args.best_fact),
         bool(args.current_facts),
@@ -979,7 +992,7 @@ def validate_lifecycle_args(
         parser.error(
             "choose only one of --preconditions, --proposal, --handoff, "
             "--authorize-proposal, --accept-plan, --approve-plan, "
-            "--reject-plan, --supersede-plan, --impact, --fact-support, --best-fact, "
+            "--reject-plan, --supersede-plan, --impact, --why, --fact-support, --best-fact, "
             "--current-facts, --inferred-facts, "
             "--fact-conflicts, --stale-facts, --stale-fact-refreshes, "
             "or --events-only"
@@ -1894,6 +1907,90 @@ def _format_fact_expiry_statuses(fact_ids: list[str], facts: dict[str, Fact]) ->
     return ", ".join(statuses)
 
 
+def format_explanation(explanation: Explanation) -> str:
+    """Render a deterministic operator-facing why explanation."""
+
+    sections: list[str] = []
+    if explanation.current_beliefs:
+        sections.append("Current belief:")
+        sections.extend(
+            _format_belief_explanation(item) for item in explanation.current_beliefs
+        )
+    else:
+        sections.append("No current belief.")
+
+    if explanation.competing_beliefs:
+        sections.append("Competing supported values:")
+        sections.extend(
+            _format_belief_explanation(item) for item in explanation.competing_beliefs
+        )
+    if explanation.conflict is not None:
+        sections.append(f"Conflict: {explanation.conflict.reason}")
+    return "\n\n".join(sections)
+
+
+def _format_belief_explanation(belief: BeliefExplanation) -> str:
+    lines = [
+        f"{belief.predicate}={_format_fact_value(belief.value)}",
+        "",
+        "Explanation:",
+        "",
+        "supporting_fact_ids:",
+        *[f"- {fact_id}" for fact_id in belief.supporting_fact_ids],
+        "evidence_ids:",
+        *([f"- {item}" for item in belief.evidence_ids] or ["- none"]),
+        "source_types:",
+        *[f"- {item}" for item in belief.source_types],
+        f"support_confidence: {belief.support_confidence:.6f}",
+        f"observation_time: {belief.latest_observed_at}",
+    ]
+    for fact in belief.facts:
+        lines.extend(["", *_format_recursive_fact_explanation(fact)])
+    return "\n".join(lines)
+
+
+def _format_recursive_fact_explanation(
+    fact: FactExplanation, *, indent: str = ""
+) -> list[str]:
+    lines = [f"{indent}fact: {fact.fact_id}"]
+    if fact.inference_rule_id:
+        lines.extend(
+            [
+                f"{indent}inference_rule: {fact.inference_rule_id}",
+                f"{indent}derived_from: "
+                + (
+                    f"{fact.source_fact.predicate}={_format_fact_value(fact.source_fact.value)}"
+                    if fact.source_fact is not None
+                    else str(fact.source_fact_id)
+                ),
+                f"{indent}source_fact: {fact.source_fact_id}",
+                f"{indent}inferred_confidence: {fact.inferred_confidence:.6f}",
+            ]
+        )
+        if fact.confidence_cap is not None:
+            lines.append(f"{indent}confidence_cap: {fact.confidence_cap:.6f}")
+    else:
+        lines.extend(
+            [
+                f"{indent}source_type: {fact.source_type}",
+                f"{indent}observed_confidence: {fact.observed_confidence:.6f}",
+                f"{indent}observation_time: {fact.observed_at}",
+                f"{indent}evidence_ids: " + (", ".join(fact.evidence_ids) or "none"),
+            ]
+        )
+    if len(fact.entity_resolution) > 1:
+        lines.append(f"{indent}entity_resolution:")
+        lines.extend(
+            f"{indent}{'-> ' if index else ''}{value}"
+            for index, value in enumerate(fact.entity_resolution)
+        )
+    if fact.source_fact is not None:
+        lines.extend(
+            _format_recursive_fact_explanation(fact.source_fact, indent=indent + "  ")
+        )
+    return lines
+
+
 def format_fact_conflicts(conflicts: list[FactConflict], facts: dict[str, Fact]) -> str:
     if not conflicts:
         return "no active fact conflicts"
@@ -2707,6 +2804,12 @@ def main(argv: list[str] | None = None) -> int:
     updated_plan = update_action_plan_lifecycle(args)
     if updated_plan is not None:
         print(format_action_plan_status(updated_plan))
+        return 0
+
+    if args.why:
+        subject, predicate = args.why
+        state = fact_query_state(args)
+        print(format_explanation(ExplanationBuilder(state).why(subject, predicate)))
         return 0
 
     if args.fact_support:

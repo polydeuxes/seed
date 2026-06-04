@@ -271,3 +271,23 @@ x = 3
 ```
 
 The result should be recorded as evidence and returned to the user. If the answer is stored for future use, it should be projected into a Fact with a provenance link back to the computation Evidence.
+
+## Explanation Engine (`--why`)
+
+Seed's explanation layer answers why a projected belief is current without adding a new reasoning mechanism. It deterministically traverses the already-projected fact support, conflicts, alias resolution, provenance, and inference links. It performs no external command execution, shell invocation, host mutation, network request, or LLM call.
+
+The three related concepts have distinct responsibilities:
+
+- **Provenance** records where knowledge came from: supporting Fact IDs, Evidence IDs, source types, confidence, and observation times.
+- **Inference** records how deterministic rules derived new knowledge: `inference_rule_id`, `source_fact_id`, and any applied confidence cap.
+- **Explanation** renders a human-readable recursive traversal of provenance and inference for an operator query.
+
+For a directly observed fact, an explanation shows its supporting facts, evidence, source types, observed confidence, and observation time. For an inferred fact, it shows the rule, source fact, inferred confidence, any rule confidence cap, and recursively explains the source fact. Alias-resolved queries include the deterministic identity-resolution path. Multi-valued predicates return every current value; ambiguous or blocked single-valued predicates return the competing supported values and conflict details.
+
+```bash
+python scripts/seed_local.py --db seed.sqlite --why node115 health_status
+python scripts/seed_local.py --db seed.sqlite --why node115 alias
+python scripts/seed_local.py --db seed.sqlite --why jellyfin runtime
+```
+
+`ExplanationBuilder` consumes only a projected `State`. Its result model separates current beliefs from competing beliefs so future `--why-not`, `--how`, and `--what-changed` query modes can reuse the traversal; those modes are not implemented yet.
