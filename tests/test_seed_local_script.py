@@ -2104,7 +2104,10 @@ def _patch_fake_prometheus_source(monkeypatch, seed_local):
                     subject="node-a:9100",
                     predicate="up",
                     value=1,
-                    metadata={"metric_labels": {"instance": "node-a:9100"}},
+                    metadata={
+                        "source_name": "prometheus",
+                        "metric_labels": {"instance": "node-a:9100"},
+                    },
                 ),
                 seed_local.Observation(
                     id="obs_cli_prometheus_avail_a_root",
@@ -2114,6 +2117,7 @@ def _patch_fake_prometheus_source(monkeypatch, seed_local):
                     predicate="filesystem_avail_bytes",
                     value=100,
                     metadata={
+                        "source_name": "prometheus",
                         "metric_labels": {
                             "instance": "node-a:9100",
                             "mountpoint": "/",
@@ -2128,6 +2132,7 @@ def _patch_fake_prometheus_source(monkeypatch, seed_local):
                     predicate="filesystem_size_bytes",
                     value=200,
                     metadata={
+                        "source_name": "prometheus",
                         "metric_labels": {
                             "instance": "node-a:9100",
                             "mountpoint": "/data",
@@ -2141,7 +2146,10 @@ def _patch_fake_prometheus_source(monkeypatch, seed_local):
                     subject="node-b:9100",
                     predicate="up",
                     value=0,
-                    metadata={"metric_labels": {"instance": "node-b:9100"}},
+                    metadata={
+                        "source_name": "prometheus",
+                        "metric_labels": {"instance": "node-b:9100"},
+                    },
                 ),
             ]
 
@@ -2162,11 +2170,14 @@ def test_cli_observe_prometheus_prints_summary_by_default(monkeypatch, capsys):
     ) == 0
 
     output = capsys.readouterr().out
-    assert "ingested 4 observation(s)" in output
+    assert "ingested 8 observation(s)" in output
     assert "hosts/instances discovered: node-a:9100, node-b:9100" in output
     assert "counts by predicate:" in output
+    assert "- availability_status: 2" in output
     assert "- filesystem_avail_bytes: 1" in output
+    assert "- filesystem_free_bytes: 1" in output
     assert "- filesystem_size_bytes: 1" in output
+    assert "- filesystem_total_bytes: 1" in output
     assert "- up: 2" in output
     assert "fact_id:" not in output
 
@@ -2184,12 +2195,44 @@ def test_cli_observe_prometheus_verbose_prints_every_fact(monkeypatch, capsys):
     ) == 0
 
     output = capsys.readouterr().out
-    assert "ingested 4 observation(s)" in output
+    assert "ingested 8 observation(s)" in output
     assert "fact_id: fact_obs_" in output
     assert "subject: node-a:9100" in output
     assert "subject: node-b:9100" in output
+    assert "predicate: availability_status" in output
     assert "predicate: filesystem_avail_bytes" in output
+    assert "predicate: filesystem_free_bytes" in output
+    assert "predicate: filesystem_total_bytes" in output
     assert "hosts/instances discovered:" not in output
+
+
+@pytest.mark.parametrize(
+    ("instance", "expected"), [("node-a:9100", "up"), ("node-b:9100", "down")]
+)
+def test_cli_observe_prometheus_supports_canonical_availability_best_fact(
+    monkeypatch, tmp_path, capsys, instance, expected
+):
+    seed_local = load_seed_local_module()
+    _patch_fake_prometheus_source(monkeypatch, seed_local)
+    db_path = tmp_path / "seed.sqlite"
+
+    assert seed_local.main(
+        [
+            "--db",
+            str(db_path),
+            "--observe-prometheus",
+            "http://prom.example:9090",
+        ]
+    ) == 0
+    capsys.readouterr()
+
+    assert seed_local.main(
+        ["--db", str(db_path), "--best-fact", instance, "availability_status"]
+    ) == 0
+    output = capsys.readouterr().out
+    assert f"subject: {instance}" in output
+    assert "predicate: availability_status" in output
+    assert f"value: {expected}" in output
 
 
 def test_cli_observe_prometheus_instance_filter_limits_ingestion(
@@ -2211,14 +2254,18 @@ def test_cli_observe_prometheus_instance_filter_limits_ingestion(
     ) == 0
 
     output = capsys.readouterr().out
-    assert "ingested 1 observation(s)" in output
+    assert "ingested 2 observation(s)" in output
     assert "hosts/instances discovered: node-b:9100" in output
     ledger = seed_local.SQLiteEventLedger(str(db_path))
     try:
         state = seed_local.StateProjector(ledger).project(seed_local.DEFAULT_WORKSPACE)
     finally:
         ledger.close()
-    assert [fact.subject_id for fact in state.facts.values()] == ["node-b:9100"]
+    assert {fact.subject_id for fact in state.facts.values()} == {"node-b:9100"}
+    assert {(fact.predicate, fact.value) for fact in state.facts.values()} == {
+        ("up", 0),
+        ("availability_status", "down"),
+    }
 
 
 def test_cli_observe_prometheus_mountpoint_filter_limits_ingestion(
@@ -2240,18 +2287,22 @@ def test_cli_observe_prometheus_mountpoint_filter_limits_ingestion(
     ) == 0
 
     output = capsys.readouterr().out
-    assert "ingested 1 observation(s)" in output
+    assert "ingested 2 observation(s)" in output
     assert "hosts/instances discovered: node-a:9100" in output
     assert "- filesystem_size_bytes: 1" in output
+    assert "- filesystem_total_bytes: 1" in output
     ledger = seed_local.SQLiteEventLedger(str(db_path))
     try:
         state = seed_local.StateProjector(ledger).project(seed_local.DEFAULT_WORKSPACE)
     finally:
         ledger.close()
     facts = list(state.facts.values())
-    assert len(facts) == 1
-    assert facts[0].subject_id == "node-a:9100"
-    assert facts[0].predicate == "filesystem_size_bytes"
+    assert len(facts) == 2
+    assert {fact.subject_id for fact in facts} == {"node-a:9100"}
+    assert {fact.predicate for fact in facts} == {
+        "filesystem_size_bytes",
+        "filesystem_total_bytes",
+    }
 
 
 def test_cli_alias_resolves_best_fact_after_sqlite_reopen(tmp_path, capsys):

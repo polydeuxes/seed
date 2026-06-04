@@ -265,6 +265,7 @@ class PrometheusObservationSource:
             sample_value = value[1]
             metadata = {
                 "collector": "PrometheusObservationSource",
+                "source_name": "prometheus",
                 "prometheus_base_url": self.base_url.rstrip("/"),
                 "prometheus_metric": query,
                 "metric_labels": dict(metric),
@@ -275,12 +276,7 @@ class PrometheusObservationSource:
             # Other metrics remain endpoint-scoped and do not participate in
             # endpoint alias normalization.
             if query == "node_uname_info":
-                metadata.update(
-                    {
-                        "source_name": "prometheus",
-                        "instance": instance,
-                    }
-                )
+                metadata["instance"] = instance
                 nodename = metric.get("nodename")
                 if isinstance(nodename, str) and nodename.strip():
                     metadata["nodename"] = nodename.strip()
