@@ -1,0 +1,64 @@
+{
+  "predicates": [
+    {
+      "predicate": "availability_status",
+      "kind": "measurement",
+      "value_type": "enum",
+      "allowed_values": ["up", "down", "unknown"]
+    },
+    {
+      "predicate": "filesystem_free_bytes",
+      "kind": "measurement",
+      "value_type": "integer"
+    },
+    {
+      "predicate": "filesystem_total_bytes",
+      "kind": "measurement",
+      "value_type": "integer"
+    },
+    {
+      "predicate": "os",
+      "kind": "durable_fact",
+      "value_type": "string"
+    },
+    {
+      "predicate": "architecture",
+      "kind": "durable_fact",
+      "value_type": "string"
+    },
+    {
+      "predicate": "runtime",
+      "kind": "durable_fact",
+      "value_type": "enum",
+      "allowed_values": ["docker", "systemd", "kubernetes", "baremetal", "unknown"]
+    }
+  ],
+  "mappings": [
+    {
+      "source_name": "prometheus",
+      "predicate": "up",
+      "canonical_predicate": "availability_status",
+      "value_map": {"1": "up", "0": "down"}
+    },
+    {
+      "source_name": "prometheus",
+      "predicate": "node_filesystem_avail_bytes",
+      "canonical_predicate": "filesystem_free_bytes"
+    },
+    {
+      "source_name": "prometheus",
+      "predicate": "filesystem_avail_bytes",
+      "canonical_predicate": "filesystem_free_bytes"
+    },
+    {
+      "source_name": "prometheus",
+      "predicate": "node_filesystem_size_bytes",
+      "canonical_predicate": "filesystem_total_bytes"
+    },
+    {
+      "source_name": "prometheus",
+      "predicate": "filesystem_size_bytes",
+      "canonical_predicate": "filesystem_total_bytes"
+    }
+  ]
+}

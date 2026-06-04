@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Any, Protocol
 
 from seed_runtime.observations import Observation
+from seed_runtime.predicate_normalizers import PredicateNormalizer
 from seed_runtime.serialization import to_plain
 
 
@@ -208,8 +209,10 @@ class EndpointIdentityNormalizer:
         )
 
 
+# Identity normalization runs first so canonical observations inherit the same raw
+# endpoint subjects and participate in the aliases derived earlier in the batch.
 DEFAULT_OBSERVATION_NORMALIZATION_PIPELINE = ObservationNormalizationPipeline(
-    [EndpointAliasNormalizer(), EndpointIdentityNormalizer()]
+    [EndpointAliasNormalizer(), EndpointIdentityNormalizer(), PredicateNormalizer()]
 )
 
 

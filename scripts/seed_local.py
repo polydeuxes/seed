@@ -43,6 +43,13 @@ from seed_runtime.intent_classifier import (
     TextIntentClassifier,
 )
 from seed_runtime.models import Event, Observation, ToolNeed, ToolSpec, utc_now
+from seed_runtime.observation_normalizers import (
+    EndpointAliasNormalizer,
+    EndpointIdentityNormalizer,
+    ObservationNormalizationPipeline,
+)
+from seed_runtime.predicate_catalog import PredicateCatalog
+from seed_runtime.predicate_normalizers import PredicateNormalizer
 from seed_runtime.observation_sources import (
     JsonObservationSource,
     LocalHostObservationSource,
@@ -309,16 +316,36 @@ def ingest_observations(
     return facts
 
 
+def build_observation_normalization_pipeline(
+    predicate_catalog_path: str | Path | None = None,
+) -> ObservationNormalizationPipeline:
+    """Build the default alias/identity/predicate normalization pipeline."""
+
+    return ObservationNormalizationPipeline(
+        [
+            EndpointAliasNormalizer(),
+            EndpointIdentityNormalizer(),
+            PredicateNormalizer(PredicateCatalog.load(predicate_catalog_path)),
+        ]
+    )
+
+
 def ingest_json_observations(
     ledger: EventLedger,
     workspace_id: str,
     path: str | Path,
     *,
     session_id: str | None = None,
+    predicate_catalog_path: str | Path | None = None,
 ) -> list[Fact]:
     """Ingest observations from a local JSON file through source collection."""
 
-    return ObservationCollectionService(ObservationIngestor(ledger)).collect(
+    return ObservationCollectionService(
+        ObservationIngestor(ledger),
+        normalization_pipeline=build_observation_normalization_pipeline(
+            predicate_catalog_path
+        ),
+    ).collect(
         JsonObservationSource(path),
         workspace_id,
         actor="system",
@@ -332,10 +359,16 @@ def ingest_observation_source(
     source: Any,
     *,
     session_id: str | None = None,
+    predicate_catalog_path: str | Path | None = None,
 ) -> list[Fact]:
     """Collect a live read-only source through ObservationCollectionService."""
 
-    return ObservationCollectionService(ObservationIngestor(ledger)).collect(
+    return ObservationCollectionService(
+        ObservationIngestor(ledger),
+        normalization_pipeline=build_observation_normalization_pipeline(
+            predicate_catalog_path
+        ),
+    ).collect(
         source,
         workspace_id,
         actor="system",
@@ -726,6 +759,16 @@ def build_parser() -> argparse.ArgumentParser:
             "read-only Prometheus API intake from BASE_URL using only allowlisted "
             "safe metric queries"
         ),
+    )
+    parser.add_argument(
+        "--predicate-catalog",
+        metavar="PATH",
+        help="load canonical predicates and provider mappings from a JSON file",
+    )
+    parser.add_argument(
+        "--show-predicate-catalog",
+        action="store_true",
+        help="print canonical predicates and provider mappings, then exit",
     )
     parser.add_argument(
         "--verbose-observations",
@@ -1543,6 +1586,7 @@ def ingest_observations_from_args(args: argparse.Namespace) -> list[Fact]:
                     args.workspace,
                     args.observe_json,
                     session_id=args.session,
+                    predicate_catalog_path=args.predicate_catalog,
                 )
             )
         if args.observe_ansible_inventory:
@@ -1552,6 +1596,7 @@ def ingest_observations_from_args(args: argparse.Namespace) -> list[Fact]:
                     args.workspace,
                     AnsibleInventoryObservationSource(args.observe_ansible_inventory),
                     session_id=args.session,
+                    predicate_catalog_path=args.predicate_catalog,
                 )
             )
         if args.observe_local_host:
@@ -1561,6 +1606,7 @@ def ingest_observations_from_args(args: argparse.Namespace) -> list[Fact]:
                     args.workspace,
                     LocalHostObservationSource(),
                     session_id=args.session,
+                    predicate_catalog_path=args.predicate_catalog,
                 )
             )
         if args.observe_prometheus:
@@ -1570,6 +1616,7 @@ def ingest_observations_from_args(args: argparse.Namespace) -> list[Fact]:
                     args.workspace,
                     build_prometheus_observation_source(args),
                     session_id=args.session,
+                    predicate_catalog_path=args.predicate_catalog,
                 )
             )
         return facts
@@ -2102,10 +2149,35 @@ def run_shell(
         )
 
 
+def format_predicate_catalog(catalog: PredicateCatalog) -> str:
+    """Format canonical predicates and raw-provider mappings for debugging."""
+
+    lines = ["canonical predicates:"]
+    for predicate in catalog.list_predicates():
+        allowed = (
+            " [" + ", ".join(str(value) for value in predicate.allowed_values) + "]"
+            if predicate.allowed_values
+            else ""
+        )
+        lines.append(
+            f"- {predicate.predicate}: {predicate.kind}/{predicate.value_type}{allowed}"
+        )
+    lines.append("mappings:")
+    for mapping in catalog.list_mappings():
+        source = mapping.source_name or "*"
+        lines.append(
+            f"- {source}:{mapping.predicate} -> {mapping.canonical_predicate}"
+        )
+    return "\n".join(lines)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     validate_lifecycle_args(args, parser)
+    if args.show_predicate_catalog:
+        print(format_predicate_catalog(PredicateCatalog.load(args.predicate_catalog)))
+        return 0
 
     if args.preconditions:
         print(format_precondition_report(precondition_report(args)))

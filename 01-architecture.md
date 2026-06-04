@@ -392,3 +392,11 @@ The first build does not need everything. Minimum useful system:
 8. Builder stub that emits toolkit templates.
 
 Even if tools are not fully generated on day one, Tool Needs should be first-class from the beginning.
+
+## Canonical predicate vocabulary
+
+`PredicateCatalog` is Seed's vocabulary for **what can be known**. It defines canonical predicates, their value types, and whether they represent volatile measurements or durable facts. `CapabilityCatalog` remains Seed's vocabulary for **what can be done**.
+
+Providers emit raw, provider-specific observations. The default observation normalization pipeline preserves those raw observations and their provenance, then runs `EndpointAliasNormalizer`, `EndpointIdentityNormalizer`, and `PredicateNormalizer`, in that order. Predicate normalization derives canonical observations from catalog mappings after identity aliases have been discovered; it never overwrites the provider observation.
+
+Seed reasons over canonical predicates when they are available while preserving raw observations for auditability and backward compatibility. Canonical predicate metadata supplies measurement semantics where possible; legacy raw measurement predicates continue to work during migration.
