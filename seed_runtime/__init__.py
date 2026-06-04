@@ -13,6 +13,7 @@ from seed_runtime.observation_sources import (
 )
 from seed_runtime.observation_normalizers import (
     EndpointAliasNormalizer,
+    EndpointIdentityNormalizer,
     ObservationNormalizationPipeline,
     ObservationNormalizer,
 )
@@ -26,6 +27,7 @@ __all__ = [
     "AnsibleInventoryObservationSource",
     "CapabilityCatalog",
     "EndpointAliasNormalizer",
+    "EndpointIdentityNormalizer",
     "EntityRelationship",
     "Event",
     "Evidence",

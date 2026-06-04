@@ -19,6 +19,18 @@ Observation
 
 Local development seeding follows the same single intake path. `scripts/seed_local.py --observe` is the canonical CLI surface, and `--fact` is a developer shorthand that creates an Observation before `ObservationIngestor` derives Evidence and a Fact. There should not be a separate CLI path that appends `fact.observed` directly.
 
+### Endpoint identity normalization
+
+Endpoint-scoped operational facts often use an `IP:PORT` or `hostname:PORT` subject while inventory facts use a stable node name. The default observation normalization pipeline bridges those identities only when the same observation batch contains an explicit `ip_address`, `alias`, or `ansible_host` relationship. For example:
+
+```text
+Inventory:  node115 -> 192.168.254.115
+Metrics:    192.168.254.115:9100 -> up / os / filesystem_*
+Normalizer: node115 -> 192.168.254.115:9100
+```
+
+`EndpointIdentityNormalizer` derives a `node115 alias 192.168.254.115:9100` observation, allowing alias-aware fact queries for `node115` to find endpoint-scoped facts. The derivation preserves the endpoint and matched identity provenance. It does not infer relationships from naming or node-number conventions, contain source-specific logic, execute commands, make network calls, mutate hosts, or call external services.
+
 The biggest conceptual shift is:
 
 ```text

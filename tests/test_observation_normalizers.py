@@ -1,8 +1,9 @@
 from datetime import datetime, timezone
 
-from seed_runtime.events import EventLedger
+from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.observation_normalizers import (
     EndpointAliasNormalizer,
+    EndpointIdentityNormalizer,
     ObservationNormalizationPipeline,
 )
 from seed_runtime.observation_sources import (
@@ -39,7 +40,13 @@ def _observation(
 
 
 def _default_pipeline() -> ObservationNormalizationPipeline:
-    return ObservationNormalizationPipeline([EndpointAliasNormalizer()])
+    return ObservationNormalizationPipeline(
+        [EndpointAliasNormalizer(), EndpointIdentityNormalizer()]
+    )
+
+
+def _identity_pipeline() -> ObservationNormalizationPipeline:
+    return ObservationNormalizationPipeline([EndpointIdentityNormalizer()])
 
 
 def test_generic_hostname_and_instance_create_alias_observation():
@@ -178,3 +185,156 @@ def test_derived_alias_preserves_source_type_and_bounded_confidence():
     assert alias.confidence <= original.confidence
     assert alias.metadata["derived"] is True
     assert alias.metadata["derived_from_observation_id"] == original.id
+
+
+def test_endpoint_identity_matches_ip_address_in_same_batch():
+    identity = _observation(
+        "obs_ip_address",
+        subject="node115",
+        predicate="ip_address",
+        value="192.168.254.115",
+    )
+    endpoint_fact = _observation("obs_endpoint_up")
+
+    normalized = _identity_pipeline().normalize([identity, endpoint_fact])
+
+    assert normalized[:2] == [identity, endpoint_fact]
+    assert len(normalized) == 3
+    alias = normalized[2]
+    assert (alias.subject, alias.predicate, alias.value) == (
+        "node115",
+        "alias",
+        ENDPOINT,
+    )
+    assert alias.metadata["derived"] is True
+    assert alias.metadata["normalizer"] == "endpoint_identity"
+    assert alias.metadata["original_endpoint_subject"] == ENDPOINT
+    assert alias.metadata["matched_identity_subject"] == "node115"
+    assert alias.metadata["matched_identity_predicate"] == "ip_address"
+
+
+def test_endpoint_identity_matches_ansible_host():
+    identity = _observation(
+        "obs_ansible_host",
+        subject="node115",
+        predicate="ansible_host",
+        value="192.168.254.115",
+    )
+
+    alias = _identity_pipeline().normalize([identity, _observation("obs_up")])[2]
+
+    assert (alias.subject, alias.predicate, alias.value) == (
+        "node115",
+        "alias",
+        ENDPOINT,
+    )
+    assert alias.metadata["matched_identity_predicate"] == "ansible_host"
+
+
+def test_endpoint_identity_does_not_match_unrelated_ip_or_guess_node_number():
+    identity = _observation(
+        "obs_other_ip",
+        subject="node115",
+        predicate="ip_address",
+        value="192.168.254.114",
+    )
+
+    assert _identity_pipeline().normalize([identity, _observation("obs_up")]) == [
+        identity,
+        _observation("obs_up"),
+    ]
+
+
+def test_endpoint_identity_matches_hostname_endpoint_from_explicit_alias():
+    identity = _observation(
+        "obs_hostname_alias",
+        subject="node115",
+        predicate="alias",
+        value="metrics.internal",
+    )
+    endpoint_fact = _observation(
+        "obs_hostname_up", subject="metrics.internal:9100"
+    )
+
+    alias = _identity_pipeline().normalize([identity, endpoint_fact])[2]
+
+    assert (alias.subject, alias.predicate, alias.value) == (
+        "node115",
+        "alias",
+        "metrics.internal:9100",
+    )
+
+
+def test_endpoint_identity_avoids_duplicate_aliases_for_multiple_identity_facts():
+    ip_address = _observation(
+        "obs_ip", subject="node115", predicate="ip_address", value="192.168.254.115"
+    )
+    alias_identity = _observation(
+        "obs_base_alias", subject="node115", predicate="alias", value="192.168.254.115"
+    )
+    endpoint_up = _observation("obs_up")
+    endpoint_os = _observation("obs_os", predicate="os", value="linux")
+
+    normalized = _identity_pipeline().normalize(
+        [ip_address, alias_identity, endpoint_up, endpoint_os]
+    )
+
+    endpoint_aliases = [
+        observation
+        for observation in normalized
+        if observation.subject == "node115"
+        and observation.predicate == "alias"
+        and observation.value == ENDPOINT
+    ]
+    assert len(endpoint_aliases) == 1
+    assert endpoint_aliases[0].metadata["matched_identity_predicate"] == "ip_address"
+
+
+def test_endpoint_identity_alias_enables_alias_aware_query():
+    observations = [
+        _observation(
+            "obs_ip_address",
+            subject="node115",
+            predicate="ip_address",
+            value="192.168.254.115",
+        ),
+        _observation("obs_endpoint_up"),
+    ]
+    ledger = EventLedger()
+    service = ObservationCollectionService(ObservationIngestor(ledger))
+
+    service.collect(FakeObservationSource(observations), "ws_endpoint_alias")
+    state = StateProjector(ledger).project("ws_endpoint_alias")
+
+    assert state.get_best_fact("node115", "up").value == 1
+
+
+def test_sqlite_reopen_preserves_endpoint_identity_alias_behavior(tmp_path):
+    db = tmp_path / "endpoint-identity.db"
+    ledger = SQLiteEventLedger(str(db))
+    service = ObservationCollectionService(ObservationIngestor(ledger))
+    observations = [
+        _observation(
+            "obs_ip_address",
+            subject="node115",
+            predicate="ip_address",
+            value="192.168.254.115",
+        ),
+        _observation("obs_endpoint_up"),
+    ]
+
+    service.collect(FakeObservationSource(observations), "ws_endpoint_reopen")
+    ledger.close()
+
+    reopened = SQLiteEventLedger(str(db))
+    state = StateProjector(reopened).project("ws_endpoint_reopen")
+
+    assert state.get_best_fact("node115", "up").value == 1
+    assert any(
+        observation.subject == "node115"
+        and observation.predicate == "alias"
+        and observation.value == ENDPOINT
+        and observation.metadata["normalizer"] == "endpoint_identity"
+        for observation in state.observations.values()
+    )
+    reopened.close()

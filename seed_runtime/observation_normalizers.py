@@ -49,6 +49,12 @@ class ObservationNormalizationPipeline:
         return normalized
 
 
+_ENDPOINT_IDENTITY_PREDICATES = {"ip_address", "alias", "ansible_host"}
+_ENDPOINT_HOST_PATTERN = re.compile(
+    r"(?:[A-Za-z0-9_](?:[A-Za-z0-9_.-]*[A-Za-z0-9_])?)"
+)
+
+
 class EndpointAliasNormalizer:
     """Derive stable hostname-to-endpoint aliases from generic source metadata."""
 
@@ -118,9 +124,113 @@ class EndpointAliasNormalizer:
         )
 
 
+class EndpointIdentityNormalizer:
+    """Link explicitly known base identities to observed endpoint subjects."""
+
+    name = "endpoint_identity"
+
+    def normalize(self, observations: list[Observation]) -> list[Observation]:
+        """Derive one alias per identity subject and matching endpoint."""
+
+        identities: dict[str, list[Observation]] = {}
+        endpoints: dict[str, list[Observation]] = {}
+        endpoint_bases: dict[str, str] = {}
+        existing_aliases: set[tuple[str, str]] = set()
+
+        for observation in observations:
+            if observation.predicate in _ENDPOINT_IDENTITY_PREDICATES:
+                identity = _observation_string_value(observation.value)
+                if identity is not None:
+                    identities.setdefault(identity, []).append(observation)
+                    if observation.predicate == "alias":
+                        existing_aliases.add((observation.subject, identity))
+
+            endpoint = observation.subject
+            base_identity = _endpoint_base_identity(endpoint)
+            if base_identity is not None:
+                endpoints.setdefault(endpoint, []).append(observation)
+                endpoint_bases[endpoint] = base_identity
+
+        derived: list[Observation] = []
+        seen: set[tuple[str, str]] = set()
+        for endpoint, endpoint_observations in endpoints.items():
+            matching_identities = identities.get(endpoint_bases[endpoint], [])
+            for identity_observation in sorted(
+                matching_identities, key=_identity_observation_sort_key
+            ):
+                key = (identity_observation.subject, endpoint)
+                if (
+                    key in seen
+                    or key in existing_aliases
+                    or identity_observation.subject == endpoint
+                ):
+                    continue
+                seen.add(key)
+                derived.append(
+                    self._derive_alias(
+                        identity_observation, endpoint, endpoint_observations
+                    )
+                )
+
+        return derived
+
+    def _derive_alias(
+        self,
+        identity_observation: Observation,
+        endpoint: str,
+        endpoint_observations: list[Observation],
+    ) -> Observation:
+        first_endpoint = endpoint_observations[0]
+        sources = [identity_observation, *endpoint_observations]
+        source_ids = list(dict.fromkeys(observation.id for observation in sources))
+        metadata = {
+            **dict(first_endpoint.metadata),
+            "derived": True,
+            "derived_from_observation_id": first_endpoint.id,
+            "derived_from_observation_ids": source_ids,
+            "normalizer": self.name,
+            "original_endpoint_subject": endpoint,
+            "matched_identity_subject": identity_observation.subject,
+            "matched_identity_predicate": identity_observation.predicate,
+        }
+        return Observation(
+            id=_derived_observation_id(
+                self.name, identity_observation.subject, "alias", endpoint
+            ),
+            source_type=first_endpoint.source_type,
+            observed_at=max(observation.observed_at for observation in sources),
+            subject=identity_observation.subject,
+            predicate="alias",
+            value=endpoint,
+            confidence=min(observation.confidence for observation in sources),
+            metadata=metadata,
+            expires_at=_earliest_expiration(sources),
+        )
+
+
 DEFAULT_OBSERVATION_NORMALIZATION_PIPELINE = ObservationNormalizationPipeline(
-    [EndpointAliasNormalizer()]
+    [EndpointAliasNormalizer(), EndpointIdentityNormalizer()]
 )
+
+
+def _observation_string_value(value: Any) -> str | None:
+    return _metadata_string(value)
+
+
+def _endpoint_base_identity(subject: str) -> str | None:
+    base, separator, port = subject.rpartition(":")
+    if not separator or not base or not port.isdigit():
+        return None
+    if not 1 <= int(port) <= 65535:
+        return None
+    if _ENDPOINT_HOST_PATTERN.fullmatch(base) is None:
+        return None
+    return base
+
+
+def _identity_observation_sort_key(observation: Observation) -> tuple[int, str]:
+    predicate_priority = {"ip_address": 0, "ansible_host": 1, "alias": 2}
+    return (predicate_priority[observation.predicate], observation.id)
 
 
 def _metadata_string(value: Any) -> str | None:
