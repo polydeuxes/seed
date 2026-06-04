@@ -1561,15 +1561,15 @@ def test_cli_state_summary_reports_projected_world_model_without_ingestion(
 
     output = capsys.readouterr().out
     assert "entities: 3" in output
-    assert "facts: 8" in output
+    assert "facts: 10" in output
     assert "durable facts: 4" in output
-    assert "measurement current samples: 4" in output
+    assert "measurement current samples: 6" in output
     assert "conflicts: 1" in output
     assert "stale facts: 1" in output
     assert "  discovery: 4" in output
     assert "  imported: 1" in output
     assert "  user: 3" in output
-    assert "host-up (aliases: 10.0.0.10; facts: 6)" in output
+    assert "host-up (aliases: 10.0.0.10; facts: 7)" in output
     assert "  up: 1" in output
     assert "  down: 1" in output
     assert "  unknown: 0" in output
@@ -2444,6 +2444,7 @@ def test_cli_observe_prometheus_instance_filter_limits_ingestion(
     assert {(fact.predicate, fact.value) for fact in state.facts.values()} == {
         ("up", 0),
         ("availability_status", "down"),
+        ("health_status", "degraded"),
     }
 
 
@@ -2841,3 +2842,31 @@ def test_cli_impact_does_not_ingest_or_execute(tmp_path, capsys, monkeypatch):
         assert ledger.list_events(seed_local.DEFAULT_WORKSPACE) == []
     finally:
         ledger.close()
+
+
+def test_cli_show_inference_catalog_displays_rules(capsys):
+    seed_local = load_seed_local_module()
+
+    assert seed_local.main(["--show-inference-catalog"]) == 0
+
+    output = capsys.readouterr().out
+    assert "deterministic inference rules:" in output
+    assert "docker_runtime_managed_by" in output
+    assert "runtime=docker -> managed_by=docker_container_lifecycle" in output
+    assert "availability_down_health_degraded" in output
+
+
+def test_cli_inferred_facts_displays_projection_provenance(capsys):
+    seed_local = load_seed_local_module()
+
+    assert (
+        seed_local.main(
+            ["--fact", "jellyfin", "runtime", "docker", "--inferred-facts", "jellyfin"]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "managed_by: docker_container_lifecycle" in output
+    assert "source_fact_id=" in output
+    assert "inference_rule_id=docker_runtime_managed_by" in output

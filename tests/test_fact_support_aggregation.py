@@ -431,7 +431,11 @@ def test_debug_history_availability_status_keeps_samples_without_conflict():
 
     state = _project(old_up, new_down, measurement_history_limit=2)
 
-    assert set(state.facts) == {old_up.id, new_down.id}
+    assert set(state.facts) == {
+        old_up.id,
+        new_down.id,
+        "fact_inferred_node115_health_status_degraded",
+    }
     assert state.get_best_fact("node115", "availability_status") == new_down
     support = state.get_fact_support("node115", "availability_status")
     assert support is not None

@@ -146,7 +146,9 @@
                 "observed_at": {"type": "string"},
                 "expires_at": {},
                 "confidence": {"type": "number"},
-                "inferred": {"type": "boolean"}
+                "inferred": {"type": "boolean"},
+                "source_fact_id": {},
+                "inference_rule_id": {}
               },
               "additionalProperties": false
             }

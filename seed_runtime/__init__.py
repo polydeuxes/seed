@@ -3,6 +3,7 @@
 from seed_runtime.ansible_inventory_source import AnsibleInventoryObservationSource
 from seed_runtime.capability_catalog import CapabilityCatalog
 from seed_runtime.entity_type_catalog import EntityTypeCatalog, EntityTypeDefinition
+from seed_runtime.inference_catalog import InferenceCatalog, InferenceRule
 from seed_runtime.predicate_catalog import PredicateCatalog
 from seed_runtime.relationship_catalog import (
     RelationshipCatalog,
@@ -61,6 +62,8 @@ __all__ = [
     "export_observations_json",
     "HandoffPlan",
     "InputArtifact",
+    "InferenceCatalog",
+    "InferenceRule",
     "InputInspector",
     "PendingAction",
     "Precondition",

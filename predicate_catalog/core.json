@@ -48,10 +48,27 @@
       "cardinality": "multi"
     },
     {
+      "predicate": "health_status",
+      "kind": "measurement",
+      "value_type": "enum",
+      "allowed_values": [
+        "ok",
+        "degraded",
+        "unknown"
+      ],
+      "cardinality": "single"
+    },
+    {
       "predicate": "ip_address",
       "kind": "durable_fact",
       "value_type": "string",
       "cardinality": "multi"
+    },
+    {
+      "predicate": "managed_by",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "single"
     },
     {
       "predicate": "os",

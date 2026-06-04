@@ -168,3 +168,5 @@ class Fact(SeedModel):
     observed_at: datetime
     expires_at: datetime | None = None
     inferred: bool = False
+    source_fact_id: str | None = None
+    inference_rule_id: str | None = None
