@@ -17,7 +17,7 @@ from seed_runtime.facts import (
     is_measurement_predicate,
     recommended_capability_for_stale_fact,
 )
-from seed_runtime.relationship_catalog import RelationshipCatalog
+from seed_runtime.relationship_catalog import RelationshipCatalog, RelationshipKind
 from seed_runtime.models import (
     ActionPlan,
     Approval,
@@ -42,11 +42,12 @@ def _parse_dt(value: str | None) -> datetime | None:
 
 @dataclass(frozen=True)
 class EntityRelationship:
-    """A catalog-defined topology edge projected deterministically from a fact."""
+    """A catalog-defined semantic edge projected deterministically from a fact."""
 
     id: str
     subject: str
     relationship: str
+    relationship_kind: RelationshipKind
     object: str
     source_fact_id: str
     source_type: str
@@ -233,6 +234,7 @@ class State:
         subject: str | None = None,
         relationship: str | None = None,
         object: str | None = None,
+        relationship_kind: RelationshipKind | None = None,
     ) -> list[EntityRelationship]:
         """Return catalog relationships matching all supplied filters."""
 
@@ -242,7 +244,44 @@ class State:
             if (subject is None or edge.subject == subject)
             and (relationship is None or edge.relationship == relationship)
             and (object is None or edge.object == object)
+            and (
+                relationship_kind is None
+                or edge.relationship_kind == relationship_kind
+            )
         ]
+
+    def find_dependencies(self, entity: str) -> list[str]:
+        """Return entities reachable through dependency and hosting edges."""
+
+        return self._traverse_relationships(entity, reverse=False)
+
+    def find_dependents(self, entity: str) -> list[str]:
+        """Return entities that reach this entity through dependency and hosting edges."""
+
+        return self._traverse_relationships(entity, reverse=True)
+
+    def _traverse_relationships(self, entity: str, *, reverse: bool) -> list[str]:
+        traversable_kinds = {"dependency", "hosting"}
+        found: list[str] = []
+        seen = {entity}
+        pending = [entity]
+        while pending:
+            current = pending.pop(0)
+            for edge in self.relationships:
+                source, target = (
+                    (edge.object, edge.subject)
+                    if reverse
+                    else (edge.subject, edge.object)
+                )
+                if (
+                    source == current
+                    and edge.relationship_kind in traversable_kinds
+                    and target not in seen
+                ):
+                    seen.add(target)
+                    found.append(target)
+                    pending.append(target)
+        return found
 
     def find_subjects(self, relationship: str, object: str) -> list[str]:
         """Return deduplicated subjects connected to an object."""
@@ -1054,6 +1093,7 @@ def _project_catalog_relationships(
                     id=relationship_id,
                     subject=fact.subject_id,
                     relationship=definition.relationship,
+                    relationship_kind=definition.relationship_kind,
                     object=object_value,
                     source_fact_id=fact.id,
                     source_type=fact.source_type,

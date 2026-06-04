@@ -4,15 +4,19 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Literal
 
 from seed_runtime.base import SeedModel
+
+
+RelationshipKind = Literal["identity", "topology", "dependency", "hosting", "grouping"]
 
 
 class RelationshipDefinition(SeedModel):
     """Definition of one directed relationship Seed can project from facts."""
 
     relationship: str
+    relationship_kind: RelationshipKind
     subject_type: str
     object_type: str
     derived_from_predicates: list[str]
