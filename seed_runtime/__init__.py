@@ -2,6 +2,7 @@
 
 from seed_runtime.ansible_inventory_source import AnsibleInventoryObservationSource
 from seed_runtime.capability_catalog import CapabilityCatalog
+from seed_runtime.entity_type_catalog import EntityTypeCatalog, EntityTypeDefinition
 from seed_runtime.predicate_catalog import PredicateCatalog
 from seed_runtime.relationship_catalog import (
     RelationshipCatalog,
@@ -28,7 +29,7 @@ from seed_runtime.observations import Observation, ObservationIngestor
 from seed_runtime.input_inspector import InputArtifact, InputInspector
 from seed_runtime.models import Event, HandoffPlan, PendingAction, ToolNeed, ToolSpec, Toolkit
 from seed_runtime.preconditions import Precondition, PreconditionReport
-from seed_runtime.state import EntityRelationship
+from seed_runtime.state import EntityRelationship, EntityTypeAssertion
 
 __all__ = [
     "AnsibleInventoryObservationSource",
@@ -36,6 +37,9 @@ __all__ = [
     "EndpointAliasNormalizer",
     "EndpointIdentityNormalizer",
     "EntityRelationship",
+    "EntityTypeAssertion",
+    "EntityTypeCatalog",
+    "EntityTypeDefinition",
     "Event",
     "Evidence",
     "Fact",

@@ -2679,3 +2679,13 @@ def test_cli_ansible_inventory_and_prometheus_support_best_fact(
     assert "subject: 192.168.254.115:9100" in output
     assert "predicate: availability_status" in output
     assert "value: down" in output
+
+
+def test_cli_entity_type_projection_queries():
+    seed_local = load_seed_local_module()
+    parser = seed_local.build_parser()
+
+    assert parser.parse_args(["--entity-types"]).entity_types is True
+    assert parser.parse_args(["--entity-type", "node115"]).entity_type == "node115"
+    state = seed_local.State(workspace_id="ws")
+    assert seed_local.format_entity_types(state, "node115") == "node115: unknown"

@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from seed_runtime import AnsibleInventoryObservationSource
 from seed_runtime.events import SQLiteEventLedger
-from seed_runtime.models import Entity
+from seed_runtime.models import Entity, Fact
 from seed_runtime.observation_sources import (
     FakeObservationSource,
     ObservationCollectionService,
@@ -288,4 +288,29 @@ def test_sqlite_inventory_identity_resolves_endpoint_fact_after_reopen(tmp_path)
     assert best_fact is not None
     assert best_fact.subject_id == "192.168.254.115:9100"
     assert best_fact.value == "down"
+    reopened.close()
+
+
+def test_sqlite_reopen_preserves_entity_type_projection(tmp_path):
+    db = tmp_path / "entity-types.db"
+    ledger = SQLiteEventLedger(str(db))
+    fact = Fact(
+        id="fact_node115_os",
+        subject_id="node115",
+        predicate="os",
+        value="linux",
+        evidence_ids=[],
+        observed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+    )
+    ledger.append("fact.observed", "ws", {"fact": to_plain(fact)})
+    before = StateProjector(ledger).project("ws").entity_type_assertions
+    ledger.close()
+
+    reopened = SQLiteEventLedger(str(db))
+    after = StateProjector(reopened).project("ws").entity_type_assertions
+
+    assert after == before
+    assert StateProjector(reopened).project("ws").get_current_entity_types(
+        "node115"
+    ) == ["host"]
     reopened.close()
