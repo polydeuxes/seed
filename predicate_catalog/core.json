@@ -30,6 +30,12 @@
       "cardinality": "single"
     },
     {
+      "predicate": "endpoint_role",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
       "predicate": "filesystem_free_bytes",
       "kind": "measurement",
       "value_type": "integer",

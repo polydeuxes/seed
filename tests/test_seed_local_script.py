@@ -1561,15 +1561,15 @@ def test_cli_state_summary_reports_projected_world_model_without_ingestion(
 
     output = capsys.readouterr().out
     assert "entities: 3" in output
-    assert "facts: 10" in output
+    assert "facts: 8" in output
     assert "durable facts: 4" in output
-    assert "measurement current samples: 6" in output
+    assert "measurement current samples: 4" in output
     assert "conflicts: 1" in output
     assert "stale facts: 1" in output
     assert "  discovery: 4" in output
     assert "  imported: 1" in output
     assert "  user: 3" in output
-    assert "host-up (aliases: 10.0.0.10; facts: 7)" in output
+    assert "host-up (aliases: 10.0.0.10; facts: 6)" in output
     assert "  up: 1" in output
     assert "  down: 1" in output
     assert "  unknown: 0" in output
@@ -2530,7 +2530,7 @@ def test_cli_alias_resolves_best_fact_after_sqlite_reopen(tmp_path, capsys):
     assert support.supporting_fact_ids == [best.id]
 
 
-def test_cli_alias_resolves_canonical_measurement_best_fact(tmp_path, capsys):
+def test_cli_alias_does_not_flatten_endpoint_availability_best_fact(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
 
@@ -2551,6 +2551,19 @@ def test_cli_alias_resolves_canonical_measurement_best_fact(tmp_path, capsys):
 
     assert seed_local.main(
         ["--db", str(db_path), "--best-fact", "node115", "availability_status"]
+    ) == 0
+    assert capsys.readouterr().out == (
+        "no current belief for node115 availability_status\n"
+    )
+
+    assert seed_local.main(
+        [
+            "--db",
+            str(db_path),
+            "--best-fact",
+            "192.168.254.115:9100",
+            "availability_status",
+        ]
     ) == 0
     output = capsys.readouterr().out
     assert "subject: 192.168.254.115:9100" in output
@@ -2676,6 +2689,19 @@ def test_cli_ansible_inventory_and_prometheus_support_best_fact(
     assert seed_local.main(
         ["--db", str(db_path), "--best-fact", "node115", "availability_status"]
     ) == 0
+    assert capsys.readouterr().out == (
+        "no current belief for node115 availability_status\n"
+    )
+
+    assert seed_local.main(
+        [
+            "--db",
+            str(db_path),
+            "--best-fact",
+            "192.168.254.115:9100",
+            "availability_status",
+        ]
+    ) == 0
     output = capsys.readouterr().out
     assert "subject: 192.168.254.115:9100" in output
     assert "predicate: availability_status" in output
@@ -2735,7 +2761,8 @@ def test_cli_impact_resolves_host_alias_and_reports_availability(tmp_path, capsy
     assert "entity: node115" in output
     assert "entity types: host" in output
     assert "aliases:\n- 192.168.254.115:9100" in output
-    assert "availability_status: up" in output
+    assert "availability_status: unknown" in output
+    assert "endpoint availability by role:\n- 192.168.254.115:9100: up" in output
     assert "groups/member_of: servers" in output
 
 
@@ -2872,7 +2899,7 @@ def test_cli_inferred_facts_displays_projection_provenance(capsys):
     assert "inference_rule_id=docker_runtime_managed_by" in output
 
 
-def test_cli_why_displays_recursive_inference_and_alias_resolution(capsys):
+def test_cli_why_displays_recursive_endpoint_health_inference(capsys):
     seed_local = load_seed_local_module()
 
     assert (
@@ -2891,7 +2918,7 @@ def test_cli_why_displays_recursive_inference_and_alias_resolution(capsys):
                 "availability_status",
                 "down",
                 "--why",
-                "node115",
+                "192.168.254.115:9100",
                 "health_status",
             ]
         )
@@ -2903,5 +2930,29 @@ def test_cli_why_displays_recursive_inference_and_alias_resolution(capsys):
     assert "health_status=degraded" in output
     assert "inference_rule: availability_down_health_degraded" in output
     assert "derived_from: availability_status=down" in output
-    assert "entity_resolution:" in output
-    assert "-> 192.168.254.115:9100" in output
+
+
+def test_cli_impact_groups_endpoint_availability_by_role(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "impact-endpoint-roles.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [
+            ("node115", "os", "linux"),
+            ("node115", "alias", "192.168.254.115:9100"),
+            ("node115", "alias", "192.168.254.115:9200"),
+            ("192.168.254.115:9100", "endpoint_role", "node-exporter"),
+            ("192.168.254.115:9100", "availability_status", "down"),
+            ("192.168.254.115:9200", "endpoint_role", "cadvisor"),
+            ("192.168.254.115:9200", "availability_status", "up"),
+        ],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+
+    output = capsys.readouterr().out
+    assert "availability_status: unknown" in output
+    assert "endpoint availability by role:" in output
+    assert "- node-exporter: down (192.168.254.115:9100)" in output
+    assert "- cadvisor: up (192.168.254.115:9200)" in output

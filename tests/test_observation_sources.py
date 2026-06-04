@@ -515,7 +515,7 @@ def test_prometheus_source_uses_safe_get_queries_and_converts_observations(
             "status": "success",
             "data": {
                 "resultType": "vector",
-                "result": [{"metric": {"instance": "node-a:9100"}, "value": [1, "1"]}],
+                "result": [{"metric": {"instance": "node-a:9100", "job": "node-exporter"}, "value": [1, "1"]}],
             },
         },
         "node_uname_info": {
@@ -579,18 +579,19 @@ def test_prometheus_source_uses_safe_get_queries_and_converts_observations(
     observations = source.collect()
 
     assert [(obs.subject, obs.predicate, obs.value) for obs in observations] == [
+        ("node-a:9100", "endpoint_role", "node-exporter"),
         ("node-a:9100", "up", 1),
         ("node-a:9100", "os", "linux"),
         ("node-a:9100", "filesystem_avail_bytes", 512),
         ("node-a:9100", "filesystem_size_bytes", 1024),
     ]
     assert observations[0].dimensions == {}
-    assert observations[2].dimensions == {
+    assert observations[3].dimensions == {
         "mountpoint": "/",
         "device": "/dev/sda1",
         "fstype": "ext4",
     }
-    assert observations[3].dimensions == observations[2].dimensions
+    assert observations[4].dimensions == observations[3].dimensions
     assert {obs.source_type for obs in observations} == {"provider"}
     assert {obs.metadata["source_name"] for obs in observations} == {"prometheus"}
     assert [method for _, method, _ in requested_urls] == ["GET"] * 4

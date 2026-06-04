@@ -78,7 +78,7 @@ def test_unknown_predicate_passes_through_unchanged():
     assert DEFAULT_OBSERVATION_NORMALIZATION_PIPELINE.normalize([original]) == [original]
 
 
-def test_canonical_availability_is_measurement_and_alias_aware():
+def test_canonical_availability_is_measurement_and_endpoint_scoped():
     original = _prometheus(
         "up", 1, metadata={"hostname": "node115", "instance": ENDPOINT}
     )
@@ -89,9 +89,9 @@ def test_canonical_availability_is_measurement_and_alias_aware():
     )
     state = StateProjector(ledger).project("ws_predicates")
 
-    assert state.get_best_fact("node115", "availability_status").value == "up"
+    assert state.get_best_fact("node115", "availability_status") is None
     assert state.get_best_fact(ENDPOINT, "availability_status").value == "up"
-    support = state.get_fact_support("node115", "availability_status")
+    support = state.get_fact_support(ENDPOINT, "availability_status")
     assert support.predicate_semantics == "measurement"
 
 

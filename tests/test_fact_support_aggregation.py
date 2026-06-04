@@ -311,7 +311,7 @@ def test_runtime_docker_repeated_observations_still_aggregate_support():
     assert support.supporting_fact_ids == [first.id, second.id]
 
 
-def test_canonical_measurement_uses_current_sample_across_alias_component():
+def test_endpoint_availability_keeps_current_sample_per_endpoint():
     first_alias = _fact(
         "fact_alias_9100",
         "192.168.254.115:9100",
@@ -339,17 +339,16 @@ def test_canonical_measurement_uses_current_sample_across_alias_component():
 
     state = _project(first_alias, second_alias, endpoint_up, endpoint_down)
 
-    best = state.get_best_fact("node115", "availability_status")
-    support = state.get_fact_support("node115", "availability_status")
-    assert best == endpoint_down
-    assert support is not None
-    assert support.subject == "node115"
-    assert support.value == "down"
-    assert support.supporting_fact_ids == [endpoint_down.id]
-    assert (
-        state.get_best_fact("node115", "availability_status", resolve_aliases=False)
-        is None
-    )
+    assert state.get_best_fact("node115", "availability_status") is None
+    assert state.get_fact_support("node115", "availability_status") is None
+    assert state.get_best_fact(
+        "192.168.254.115:9100", "availability_status"
+    ) == endpoint_down
+    assert state.get_best_fact(
+        "192.168.254.115:9200", "availability_status"
+    ) == endpoint_up
+    assert endpoint_down.id in state.facts
+    assert endpoint_up.id in state.facts
 
 
 def test_alias_resolution_still_works_for_measurements():
@@ -431,11 +430,8 @@ def test_debug_history_availability_status_keeps_samples_without_conflict():
 
     state = _project(old_up, new_down, measurement_history_limit=2)
 
-    assert set(state.facts) == {
-        old_up.id,
-        new_down.id,
-        "fact_inferred_node115_health_status_degraded",
-    }
+    assert set(state.facts) == {old_up.id, new_down.id}
+    assert state.get_best_fact("node115", "health_status") is None
     assert state.get_best_fact("node115", "availability_status") == new_down
     support = state.get_fact_support("node115", "availability_status")
     assert support is not None
@@ -647,3 +643,45 @@ def test_single_cardinality_get_current_facts_returns_only_best_supported_value(
 
     assert state.get_current_facts("svc_ssh", "runtime") == [docker]
     assert [conflict.predicate for conflict in state.get_fact_conflicts()] == ["runtime"]
+
+
+def test_endpoint_availability_and_health_do_not_flatten_to_host_alias():
+    aliases = [
+        _fact(
+            "fact_alias_9100_role_scope",
+            "192.168.254.115:9100",
+            predicate="alias",
+            subject_id="node115",
+        ),
+        _fact(
+            "fact_alias_9200_role_scope",
+            "192.168.254.115:9200",
+            predicate="alias",
+            subject_id="node115",
+        ),
+    ]
+    node_exporter_down = _fact(
+        "fact_node_exporter_down",
+        "down",
+        predicate="availability_status",
+        subject_id="192.168.254.115:9100",
+    )
+    cadvisor_up = _fact(
+        "fact_cadvisor_up",
+        "up",
+        predicate="availability_status",
+        subject_id="192.168.254.115:9200",
+    )
+
+    state = _project(*aliases, node_exporter_down, cadvisor_up)
+
+    assert state.get_best_fact("node115", "availability_status") is None
+    assert state.get_best_fact("node115", "health_status") is None
+    assert state.get_best_fact("192.168.254.115:9100", "health_status").value == (
+        "degraded"
+    )
+    assert state.get_best_fact("192.168.254.115:9200", "health_status").value == "ok"
+    assert not any(
+        fact.subject_id == "node115" and fact.predicate == "health_status"
+        for fact in state.facts.values()
+    )

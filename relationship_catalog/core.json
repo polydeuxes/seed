@@ -25,9 +25,9 @@
     {
       "relationship": "provides",
       "relationship_kind": "dependency",
-      "subject_type": "host",
+      "subject_type": "entity",
       "object_type": "capability",
-      "derived_from_predicates": ["provides"]
+      "derived_from_predicates": ["provides", "endpoint_role"]
     },
     {
       "relationship": "runs_on",

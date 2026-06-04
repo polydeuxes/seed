@@ -284,7 +284,8 @@ def test_sqlite_inventory_identity_resolves_endpoint_fact_after_reopen(tmp_path)
         and fact.value == "192.168.254.115:9100"
     ]
     assert len(endpoint_aliases) == 1
-    best_fact = state.get_best_fact("node115", "availability_status")
+    assert state.get_best_fact("node115", "availability_status") is None
+    best_fact = state.get_best_fact("192.168.254.115:9100", "availability_status")
     assert best_fact is not None
     assert best_fact.subject_id == "192.168.254.115:9100"
     assert best_fact.value == "down"
