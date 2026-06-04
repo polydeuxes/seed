@@ -25,6 +25,7 @@ from seed_runtime.observation_normalizers import (
     ObservationNormalizationPipeline,
 )
 from seed_runtime.observations import Observation, ObservationIngestor, ObservationSourceType
+from seed_runtime.state import StateProjector
 
 if find_spec("pydantic") is not None:
     from pydantic import Field
@@ -678,7 +679,8 @@ class ObservationCollectionService:
             for observation in observations
         ]
         if self.normalization_pipeline is not None:
-            normalized = self.normalization_pipeline.normalize(normalized)
+            state = StateProjector(self.ingestor.ledger).project(workspace_id)
+            normalized = self.normalization_pipeline.normalize(normalized, state=state)
 
         return [
             self.ingestor.ingest(

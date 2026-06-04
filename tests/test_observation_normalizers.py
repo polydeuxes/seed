@@ -309,8 +309,113 @@ def test_endpoint_identity_alias_enables_alias_aware_query():
     assert state.get_best_fact("node115", "up").value == 1
 
 
-def test_sqlite_reopen_preserves_endpoint_identity_alias_behavior(tmp_path):
+def test_sqlite_reopen_uses_persisted_identity_to_alias_later_endpoint(tmp_path):
     db = tmp_path / "endpoint-identity.db"
+    ledger = SQLiteEventLedger(str(db))
+    service = ObservationCollectionService(ObservationIngestor(ledger))
+    service.collect(
+        FakeObservationSource(
+            [
+                _observation(
+                    "obs_ip_address",
+                    subject="node115",
+                    predicate="ip_address",
+                    value="192.168.254.115",
+                )
+            ]
+        ),
+        "ws_endpoint_reopen",
+    )
+    ledger.close()
+
+    reopened = SQLiteEventLedger(str(db))
+    service = ObservationCollectionService(ObservationIngestor(reopened))
+    service.collect(
+        FakeObservationSource(
+            [
+                _observation(
+                    "obs_endpoint_availability",
+                    predicate="availability_status",
+                    value="down",
+                )
+            ]
+        ),
+        "ws_endpoint_reopen",
+    )
+
+    state = StateProjector(reopened).project("ws_endpoint_reopen")
+
+    assert state.get_best_fact("node115", "availability_status").value == "down"
+    assert any(
+        observation.subject == "node115"
+        and observation.predicate == "alias"
+        and observation.value == ENDPOINT
+        and observation.metadata["normalizer"] == "endpoint_identity"
+        for observation in state.observations.values()
+    )
+    reopened.close()
+
+
+def test_endpoint_identity_matches_alias_from_projected_state():
+    ledger = EventLedger()
+    service = ObservationCollectionService(ObservationIngestor(ledger))
+    service.collect(
+        FakeObservationSource(
+            [
+                _observation(
+                    "obs_base_alias",
+                    subject="node115",
+                    predicate="alias",
+                    value="192.168.254.115",
+                )
+            ]
+        ),
+        "ws_endpoint_state_alias",
+    )
+
+    service.collect(
+        FakeObservationSource([_observation("obs_later_endpoint")]),
+        "ws_endpoint_state_alias",
+    )
+    state = StateProjector(ledger).project("ws_endpoint_state_alias")
+
+    assert state.get_best_fact("node115", "up").value == 1
+    assert any(
+        observation.subject == "node115"
+        and observation.predicate == "alias"
+        and observation.value == ENDPOINT
+        for observation in state.observations.values()
+    )
+
+
+def test_endpoint_identity_matches_ansible_host_from_projected_state():
+    ledger = EventLedger()
+    service = ObservationCollectionService(ObservationIngestor(ledger))
+    service.collect(
+        FakeObservationSource(
+            [
+                _observation(
+                    "obs_ansible_host_state",
+                    subject="node115",
+                    predicate="ansible_host",
+                    value="192.168.254.115",
+                )
+            ]
+        ),
+        "ws_endpoint_state_ansible",
+    )
+
+    service.collect(
+        FakeObservationSource([_observation("obs_later_ansible_endpoint")]),
+        "ws_endpoint_state_ansible",
+    )
+    state = StateProjector(ledger).project("ws_endpoint_state_ansible")
+
+    assert state.get_best_fact("node115", "up").value == 1
+
+
+def test_sqlite_same_batch_preserves_endpoint_identity_alias_behavior(tmp_path):
+    db = tmp_path / "endpoint-identity-same-batch.db"
     ledger = SQLiteEventLedger(str(db))
     service = ObservationCollectionService(ObservationIngestor(ledger))
     observations = [

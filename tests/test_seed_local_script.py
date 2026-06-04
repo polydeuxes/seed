@@ -2435,32 +2435,40 @@ def test_cli_ansible_inventory_and_prometheus_support_best_fact(
                     observed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
                     subject="192.168.254.115:9100",
                     predicate="up",
-                    value=1,
+                    value=0,
                     confidence=0.95,
-                    metadata={
-                        "source_name": "prometheus",
-                        "nodename": "node115",
-                        "instance": "192.168.254.115:9100",
-                    },
+                    metadata={"source_name": "prometheus"},
                 )
             ]
 
     monkeypatch.setattr(seed_local, "PrometheusObservationSource", FakePrometheusSource)
 
-    assert (
-        seed_local.main(
-            [
-                "--db",
-                str(db_path),
-                "--observe-ansible-inventory",
-                str(inventory_path),
-                "--observe-prometheus",
-                "http://prom.example:9090",
-            ]
-        )
-        == 0
-    )
+    assert seed_local.main(
+        ["--db", str(db_path), "--observe-ansible-inventory", str(inventory_path)]
+    ) == 0
     capsys.readouterr()
 
-    assert seed_local.main(["--db", str(db_path), "--best-fact", "node115", "up"]) == 0
-    assert "subject: 192.168.254.115:9100" in capsys.readouterr().out
+    assert seed_local.main(
+        ["--db", str(db_path), "--observe-prometheus", "http://prom.example:9090"]
+    ) == 0
+    capsys.readouterr()
+
+    reopened = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        state = seed_local.StateProjector(reopened).project(seed_local.DEFAULT_WORKSPACE)
+    finally:
+        reopened.close()
+    assert any(
+        fact.subject_id == "node115"
+        and fact.predicate == "alias"
+        and fact.value == "192.168.254.115:9100"
+        for fact in state.facts.values()
+    )
+
+    assert seed_local.main(
+        ["--db", str(db_path), "--best-fact", "node115", "availability_status"]
+    ) == 0
+    output = capsys.readouterr().out
+    assert "subject: 192.168.254.115:9100" in output
+    assert "predicate: availability_status" in output
+    assert "value: down" in output

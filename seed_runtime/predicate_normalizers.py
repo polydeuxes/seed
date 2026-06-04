@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import hashlib
+from typing import TYPE_CHECKING
 
 from seed_runtime.observations import Observation
 from seed_runtime.predicate_catalog import PredicateCatalog
+
+if TYPE_CHECKING:
+    from seed_runtime.state import State
 
 
 class PredicateNormalizer:
@@ -16,7 +20,9 @@ class PredicateNormalizer:
     def __init__(self, catalog: PredicateCatalog | None = None) -> None:
         self.catalog = catalog or PredicateCatalog.load()
 
-    def normalize(self, observations: list[Observation]) -> list[Observation]:
+    def normalize(
+        self, observations: list[Observation], *, state: "State | None" = None
+    ) -> list[Observation]:
         """Return canonical derivations while leaving all raw observations intact."""
 
         derived: list[Observation] = []

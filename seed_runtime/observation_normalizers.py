@@ -3,14 +3,19 @@
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 import re
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from seed_runtime.observations import Observation
 from seed_runtime.predicate_normalizers import PredicateNormalizer
 from seed_runtime.serialization import to_plain
+
+if TYPE_CHECKING:
+    from seed_runtime.state import State
 
 
 class ObservationNormalizer(Protocol):
@@ -18,8 +23,10 @@ class ObservationNormalizer(Protocol):
 
     name: str
 
-    def normalize(self, observations: list[Observation]) -> list[Observation]:
-        """Return observations derived from the supplied observations."""
+    def normalize(
+        self, observations: list[Observation], *, state: "State | None" = None
+    ) -> list[Observation]:
+        """Return observations derived from the supplied observations and state."""
 
 
 class ObservationNormalizationPipeline:
@@ -28,14 +35,16 @@ class ObservationNormalizationPipeline:
     def __init__(self, normalizers: list[ObservationNormalizer] | None = None) -> None:
         self.normalizers = list(normalizers or [])
 
-    def normalize(self, observations: list[Observation]) -> list[Observation]:
-        """Return originals followed by unique observations derived in pipeline order."""
+    def normalize(
+        self, observations: list[Observation], *, state: "State | None" = None
+    ) -> list[Observation]:
+        """Return originals plus unique derivations using optional projected state."""
 
         normalized = list(observations)
         original_ids = {observation.id for observation in observations}
         derived_keys: set[str] = set()
         for normalizer in self.normalizers:
-            for derived in normalizer.normalize(list(normalized)):
+            for derived in _normalize_with_state(normalizer, list(normalized), state):
                 if not isinstance(derived, Observation):
                     raise TypeError(
                         "observation normalizers must return Observation instances"
@@ -61,7 +70,9 @@ class EndpointAliasNormalizer:
 
     name = "endpoint_alias"
 
-    def normalize(self, observations: list[Observation]) -> list[Observation]:
+    def normalize(
+        self, observations: list[Observation], *, state: "State | None" = None
+    ) -> list[Observation]:
         """Return one derived alias for each unique hostname and endpoint pair."""
 
         aliases: dict[tuple[str, str, str, str], list[Observation]] = {}
@@ -130,21 +141,18 @@ class EndpointIdentityNormalizer:
 
     name = "endpoint_identity"
 
-    def normalize(self, observations: list[Observation]) -> list[Observation]:
+    def normalize(
+        self, observations: list[Observation], *, state: "State | None" = None
+    ) -> list[Observation]:
         """Derive one alias per identity subject and matching endpoint."""
 
-        identities: dict[str, list[Observation]] = {}
+        identities: dict[str, list[_IdentityMatch]] = {}
         endpoints: dict[str, list[Observation]] = {}
         endpoint_bases: dict[str, str] = {}
         existing_aliases: set[tuple[str, str]] = set()
 
         for observation in observations:
-            if observation.predicate in _ENDPOINT_IDENTITY_PREDICATES:
-                identity = _observation_string_value(observation.value)
-                if identity is not None:
-                    identities.setdefault(identity, []).append(observation)
-                    if observation.predicate == "alias":
-                        existing_aliases.add((observation.subject, identity))
+            self._add_identity(observation, identities, existing_aliases)
 
             endpoint = observation.subject
             base_identity = _endpoint_base_identity(endpoint)
@@ -152,38 +160,62 @@ class EndpointIdentityNormalizer:
                 endpoints.setdefault(endpoint, []).append(observation)
                 endpoint_bases[endpoint] = base_identity
 
+        if state is not None:
+            for fact in state.facts.values():
+                self._add_identity(fact, identities, existing_aliases)
+
         derived: list[Observation] = []
         seen: set[tuple[str, str]] = set()
         for endpoint, endpoint_observations in endpoints.items():
             matching_identities = identities.get(endpoint_bases[endpoint], [])
-            for identity_observation in sorted(
-                matching_identities, key=_identity_observation_sort_key
-            ):
-                key = (identity_observation.subject, endpoint)
-                if (
-                    key in seen
-                    or key in existing_aliases
-                    or identity_observation.subject == endpoint
-                ):
+            for identity in sorted(matching_identities, key=_identity_match_sort_key):
+                key = (identity.subject, endpoint)
+                if key in seen or key in existing_aliases or identity.subject == endpoint:
                     continue
                 seen.add(key)
-                derived.append(
-                    self._derive_alias(
-                        identity_observation, endpoint, endpoint_observations
-                    )
-                )
+                derived.append(self._derive_alias(identity, endpoint, endpoint_observations))
 
         return derived
 
+    @staticmethod
+    def _add_identity(
+        source: Any,
+        identities: dict[str, list["_IdentityMatch"]],
+        existing_aliases: set[tuple[str, str]],
+    ) -> None:
+        predicate = source.predicate
+        if predicate not in _ENDPOINT_IDENTITY_PREDICATES:
+            return
+        identity = _observation_string_value(source.value)
+        if identity is None:
+            return
+        subject = getattr(source, "subject", None)
+        if subject is None:
+            subject = source.subject_id
+        match = _IdentityMatch(
+            id=source.id,
+            subject=subject,
+            predicate=predicate,
+            observed_at=source.observed_at,
+            confidence=source.confidence,
+            expires_at=source.expires_at,
+        )
+        identities.setdefault(identity, []).append(match)
+        if predicate == "alias":
+            existing_aliases.add((subject, identity))
+
     def _derive_alias(
         self,
-        identity_observation: Observation,
+        identity: "_IdentityMatch",
         endpoint: str,
         endpoint_observations: list[Observation],
     ) -> Observation:
         first_endpoint = endpoint_observations[0]
-        sources = [identity_observation, *endpoint_observations]
-        source_ids = list(dict.fromkeys(observation.id for observation in sources))
+        source_ids = list(
+            dict.fromkeys(
+                [identity.id, *(observation.id for observation in endpoint_observations)]
+            )
+        )
         metadata = {
             **dict(first_endpoint.metadata),
             "derived": True,
@@ -191,22 +223,43 @@ class EndpointIdentityNormalizer:
             "derived_from_observation_ids": source_ids,
             "normalizer": self.name,
             "original_endpoint_subject": endpoint,
-            "matched_identity_subject": identity_observation.subject,
-            "matched_identity_predicate": identity_observation.predicate,
+            "matched_identity_subject": identity.subject,
+            "matched_identity_predicate": identity.predicate,
         }
         return Observation(
-            id=_derived_observation_id(
-                self.name, identity_observation.subject, "alias", endpoint
-            ),
+            id=_derived_observation_id(self.name, identity.subject, "alias", endpoint),
             source_type=first_endpoint.source_type,
-            observed_at=max(observation.observed_at for observation in sources),
-            subject=identity_observation.subject,
+            observed_at=max(
+                identity.observed_at,
+                *(observation.observed_at for observation in endpoint_observations),
+            ),
+            subject=identity.subject,
             predicate="alias",
             value=endpoint,
-            confidence=min(observation.confidence for observation in sources),
+            confidence=min(
+                identity.confidence,
+                *(observation.confidence for observation in endpoint_observations),
+            ),
             metadata=metadata,
-            expires_at=_earliest_expiration(sources),
+            expires_at=_earliest_expiration_values(
+                [
+                    identity.expires_at,
+                    *(observation.expires_at for observation in endpoint_observations),
+                ]
+            ),
         )
+
+
+@dataclass(frozen=True)
+class _IdentityMatch:
+    """Identity evidence from either the current batch or projected state."""
+
+    id: str
+    subject: str
+    predicate: str
+    observed_at: datetime
+    confidence: float
+    expires_at: datetime | None
 
 
 # Identity normalization runs first so canonical observations inherit the same raw
@@ -220,6 +273,23 @@ def _observation_string_value(value: Any) -> str | None:
     return _metadata_string(value)
 
 
+def _normalize_with_state(
+    normalizer: ObservationNormalizer,
+    observations: list[Observation],
+    state: "State | None",
+) -> list[Observation]:
+    """Pass state to context-aware normalizers without breaking older extensions."""
+
+    parameters = inspect.signature(normalizer.normalize).parameters.values()
+    accepts_state = any(
+        parameter.name == "state" or parameter.kind == inspect.Parameter.VAR_KEYWORD
+        for parameter in parameters
+    )
+    if accepts_state:
+        return normalizer.normalize(observations, state=state)
+    return normalizer.normalize(observations)  # type: ignore[call-arg]
+
+
 def _endpoint_base_identity(subject: str) -> str | None:
     base, separator, port = subject.rpartition(":")
     if not separator or not base or not port.isdigit():
@@ -231,9 +301,9 @@ def _endpoint_base_identity(subject: str) -> str | None:
     return base
 
 
-def _identity_observation_sort_key(observation: Observation) -> tuple[int, str]:
+def _identity_match_sort_key(identity: _IdentityMatch) -> tuple[int, str]:
     predicate_priority = {"ip_address": 0, "ansible_host": 1, "alias": 2}
-    return (predicate_priority[observation.predicate], observation.id)
+    return (predicate_priority[identity.predicate], identity.id)
 
 
 def _metadata_string(value: Any) -> str | None:
@@ -265,5 +335,9 @@ def _derived_observation_key(observation: Observation) -> str:
 
 
 def _earliest_expiration(observations: list[Observation]) -> datetime | None:
-    expirations = [obs.expires_at for obs in observations if obs.expires_at is not None]
+    return _earliest_expiration_values([obs.expires_at for obs in observations])
+
+
+def _earliest_expiration_values(values: list[datetime | None]) -> datetime | None:
+    expirations = [value for value in values if value is not None]
     return min(expirations) if expirations else None
