@@ -395,7 +395,11 @@ Even if tools are not fully generated on day one, Tool Needs should be first-cla
 
 ## Canonical predicate vocabulary
 
-`PredicateCatalog` is Seed's vocabulary for **what can be known**. It defines canonical predicates, their value types, and whether they represent volatile measurements or durable facts. `CapabilityCatalog` remains Seed's vocabulary for **what can be done**.
+`PredicateCatalog` is Seed's vocabulary for **what can be known**. It defines each canonical predicate's semantics, value type, and cardinality. Semantics distinguish volatile measurements from durable facts. Cardinality controls whether multiple values are valid simultaneously: `single` predicates select one current belief and may project conflicts, while `multi` predicates maintain support independently for every current value and do not conflict solely because multiple values exist. `CapabilityCatalog` remains Seed's vocabulary for **what can be done**.
+
+For example, `runtime` has `cardinality: single`, so `runtime=docker` and
+`runtime=systemd` disagree. Identity and grouping predicates such as `alias` and
+`group` have `cardinality: multi`, so all supported values remain current.
 
 Providers emit raw, provider-specific observations. The default observation normalization pipeline preserves those raw observations and their provenance, then runs `EndpointAliasNormalizer`, `EndpointIdentityNormalizer`, and `PredicateNormalizer`, in that order. Predicate normalization derives canonical observations from catalog mappings after identity aliases have been discovered; it never overwrites the provider observation.
 

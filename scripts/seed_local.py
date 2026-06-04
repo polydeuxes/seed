@@ -911,6 +911,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="print the projected current belief for a subject/predicate",
     )
     parser.add_argument(
+        "--current-facts",
+        nargs=2,
+        metavar=("SUBJECT", "PREDICATE"),
+        help="print all projected current values for a subject/predicate",
+    )
+    parser.add_argument(
         "--fact-conflicts",
         action="store_true",
         help="print projected active fact conflicts and their winning values",
@@ -919,8 +925,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--include-expired",
         action="store_true",
         help=(
-            "include expired facts in --fact-support, --best-fact, and "
-            "--fact-conflicts query output"
+            "include expired facts in --fact-support, --best-fact, "
+            "--current-facts, and --fact-conflicts query output"
         ),
     )
     parser.add_argument(
@@ -951,6 +957,7 @@ def validate_lifecycle_args(
         bool(args.impact),
         bool(args.fact_support),
         bool(args.best_fact),
+        bool(args.current_facts),
         bool(args.fact_conflicts),
         bool(args.stale_facts),
         bool(args.stale_fact_refreshes),
@@ -961,6 +968,7 @@ def validate_lifecycle_args(
             "choose only one of --preconditions, --proposal, --handoff, "
             "--authorize-proposal, --accept-plan, --approve-plan, "
             "--reject-plan, --supersede-plan, --impact, --fact-support, --best-fact, "
+            "--current-facts, "
             "--fact-conflicts, --stale-facts, --stale-fact-refreshes, "
             "or --events-only"
         )
@@ -990,11 +998,11 @@ def validate_lifecycle_args(
     if args.replacement_plan and not args.supersede_plan:
         parser.error("--replacement-plan can only be used with --supersede-plan")
     if args.include_expired and not (
-        args.fact_support or args.best_fact or args.fact_conflicts
+        args.fact_support or args.best_fact or args.current_facts or args.fact_conflicts
     ):
         parser.error(
             "--include-expired can only be used with --fact-support, "
-            "--best-fact, or --fact-conflicts"
+            "--best-fact, --current-facts, or --fact-conflicts"
         )
     if args.include_history and not args.fact_support:
         parser.error("--include-history can only be used with --fact-support")
@@ -1339,7 +1347,9 @@ def fact_query_state(args: argparse.Namespace) -> State:
             else 1
         )
         return StateProjector(
-            ledger, measurement_history_limit=history_limit
+            ledger,
+            measurement_history_limit=history_limit,
+            predicate_catalog=PredicateCatalog.load(args.predicate_catalog),
         ).project(args.workspace)
     finally:
         close = getattr(ledger, "close", None)
@@ -1352,7 +1362,9 @@ def projected_state_from_args(args: argparse.Namespace) -> State:
 
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
     try:
-        return StateProjector(ledger).project(args.workspace)
+        return StateProjector(
+            ledger, predicate_catalog=PredicateCatalog.load(args.predicate_catalog)
+        ).project(args.workspace)
     finally:
         close = getattr(ledger, "close", None)
         if close is not None:
@@ -1381,7 +1393,9 @@ def format_entity_impact(state: State, entity: str) -> str:
                 if entity_type != "unknown"
             }
         ) or ["unknown"]
-    aliases = sorted(resolved - {canonical})
+    aliases = [fact.value for fact in state.get_current_facts(canonical, "alias")]
+    if not aliases:
+        aliases = sorted(resolved - {canonical})
 
     availability = state.get_best_fact(canonical, "availability_status")
     groups = _canonical_entities(
@@ -1425,7 +1439,7 @@ def format_entity_impact(state: State, entity: str) -> str:
     lines = [
         f"entity: {canonical}",
         f"entity types: {', '.join(entity_types)}",
-        f"aliases: {', '.join(aliases) if aliases else 'none'}",
+        "aliases:",
         "availability_status: "
         + (
             _format_fact_value(availability.value)
@@ -1437,6 +1451,8 @@ def format_entity_impact(state: State, entity: str) -> str:
         f"dependents: {', '.join(dependents) if dependents else 'none'}",
         "active conflicts:",
     ]
+    alias_lines = [f"- {_format_fact_value(alias)}" for alias in aliases] or ["- none"]
+    lines[3:3] = alias_lines
     if conflicts:
         for conflict in conflicts:
             winning = (
@@ -1837,6 +1853,17 @@ def format_best_fact(
             f"support_count: {len(best_support.supporting_fact_ids)}",
         ]
     )
+
+
+def format_current_facts(
+    state: State, subject: str, predicate: str, *, include_expired: bool = False
+) -> str:
+    """Format every current supported value, one per line."""
+
+    facts = state.get_current_facts(subject, predicate, include_expired=include_expired)
+    if not facts:
+        return f"no current facts for {subject} {predicate}"
+    return "\n".join(_format_fact_value(fact.value) for fact in facts)
 
 
 def _format_fact_expiry_statuses(fact_ids: list[str], facts: dict[str, Fact]) -> str:
@@ -2554,7 +2581,8 @@ def format_predicate_catalog(catalog: PredicateCatalog) -> str:
             else ""
         )
         lines.append(
-            f"- {predicate.predicate}: {predicate.kind}/{predicate.value_type}{allowed}"
+            f"- {predicate.predicate}: {predicate.kind}/{predicate.value_type}/"
+            f"{predicate.cardinality}{allowed}"
         )
     lines.append("mappings:")
     for mapping in catalog.list_mappings():
@@ -2650,6 +2678,18 @@ def main(argv: list[str] | None = None) -> int:
         print(
             format_best_fact(
                 state, subject, predicate, include_expired=args.include_expired
+            )
+        )
+        return 0
+
+    if args.current_facts:
+        subject, predicate = args.current_facts
+        print(
+            format_current_facts(
+                fact_query_state(args),
+                subject,
+                predicate,
+                include_expired=args.include_expired,
             )
         )
         return 0

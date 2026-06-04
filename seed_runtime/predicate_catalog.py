@@ -21,6 +21,7 @@ class PredicateDefinition(SeedModel):
     predicate: str
     kind: Literal["measurement", "durable_fact"]
     value_type: Literal["enum", "integer", "string"]
+    cardinality: Literal["single", "multi"] = "single"
     allowed_values: list[Any] = Field(default_factory=list)
 
 
@@ -93,6 +94,17 @@ class PredicateCatalog:
             elif source_name == mapping.source_name:
                 return mapping
         return generic
+
+    def cardinality(self, predicate: str) -> Literal["single", "multi"]:
+        """Return predicate cardinality, defaulting unknown predicates to single."""
+
+        definition = self.get(predicate)
+        return definition.cardinality if definition is not None else "single"
+
+    def is_multi(self, predicate: str) -> bool:
+        """Return whether multiple values may be current simultaneously."""
+
+        return self.cardinality(predicate) == "multi"
 
     def is_measurement(self, predicate: str) -> bool:
         """Return whether a canonical predicate has measurement semantics."""

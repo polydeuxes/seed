@@ -19,6 +19,7 @@ from seed_runtime.facts import (
     recommended_capability_for_stale_fact,
 )
 from seed_runtime.entity_type_catalog import EntityTypeCatalog
+from seed_runtime.predicate_catalog import PredicateCatalog
 from seed_runtime.relationship_catalog import RelationshipCatalog, RelationshipKind
 from seed_runtime.models import (
     ActionPlan,
@@ -231,6 +232,9 @@ class AliasResolver:
 @dataclass
 class State:
     workspace_id: str
+    predicate_catalog: PredicateCatalog = field(
+        default_factory=PredicateCatalog.load, compare=False, repr=False
+    )
     entities: dict[str, Entity] = field(default_factory=dict)
     facts: dict[str, Fact] = field(default_factory=dict)
     observed_facts: dict[str, Fact] = field(default_factory=dict)
@@ -469,6 +473,55 @@ class State:
             ),
         )
 
+    def get_current_facts(
+        self,
+        subject: str,
+        predicate: str,
+        *,
+        include_expired: bool = False,
+        resolve_aliases: bool = True,
+        dimensions: dict[str, str] | None = None,
+    ) -> list[Fact]:
+        """Return all current facts allowed by the predicate's cardinality."""
+
+        if not self.predicate_catalog.is_multi(predicate):
+            best = self.get_best_fact(
+                subject,
+                predicate,
+                include_expired=include_expired,
+                resolve_aliases=resolve_aliases,
+                dimensions=dimensions,
+            )
+            return [best] if best is not None else []
+
+        current: list[Fact] = []
+        for support in self.get_fact_supports(
+            subject,
+            predicate,
+            include_expired=include_expired,
+            resolve_aliases=resolve_aliases,
+            dimensions=dimensions,
+        ):
+            representatives = [
+                self.facts[fact_id]
+                for fact_id in support.supporting_fact_ids
+                if fact_id in self.facts
+                and (include_expired or not is_fact_expired(self.facts[fact_id]))
+            ]
+            if representatives:
+                current.append(
+                    max(
+                        representatives,
+                        key=lambda fact: (
+                            fact.confidence,
+                            not fact.inferred,
+                            fact.observed_at,
+                            fact.id,
+                        ),
+                    )
+                )
+        return sorted(current, key=lambda fact: _fact_value_key(fact.value))
+
     def get_fact_supports(
         self,
         subject: str,
@@ -619,6 +672,7 @@ class StateProjector:
         measurement_history_limit: int = 1,
         relationship_catalog: RelationshipCatalog | None = None,
         entity_type_catalog: EntityTypeCatalog | None = None,
+        predicate_catalog: PredicateCatalog | None = None,
     ) -> None:
         if measurement_history_limit < 1:
             raise ValueError("measurement_history_limit must be at least 1")
@@ -626,9 +680,10 @@ class StateProjector:
         self.measurement_history_limit = measurement_history_limit
         self.relationship_catalog = relationship_catalog or RelationshipCatalog.load()
         self.entity_type_catalog = entity_type_catalog or EntityTypeCatalog.load()
+        self.predicate_catalog = predicate_catalog or PredicateCatalog.load()
 
     def project(self, workspace_id: str) -> State:
-        state = State(workspace_id=workspace_id)
+        state = State(workspace_id=workspace_id, predicate_catalog=self.predicate_catalog)
         for event in self.ledger.list_events(workspace_id):
             self.apply(state, event)
         _project_inferred_facts(state)
@@ -1084,6 +1139,8 @@ def _project_fact_conflicts(
         # Retained measurement samples are history, not competing durable claims.
         # Their newest sample has already been selected by fact-support projection.
         if is_measurement_predicate(fact.predicate):
+            continue
+        if state.predicate_catalog.is_multi(fact.predicate):
             continue
         canonical_subject = state.alias_resolver.canonical(fact.subject_id)
         grouped.setdefault(

@@ -599,3 +599,47 @@ def test_measurement_projection_prunes_old_observation_provenance_not_events():
     assert len(state.evidence) == 1
     assert len(state.facts) == 1
     assert len(ledger.list_events("ws_provenance_retention")) == 6
+
+
+def test_multi_cardinality_predicates_keep_all_values_current_without_conflicts():
+    for predicate, values in (
+        ("alias", ["node:9100", "node:9200"]),
+        ("group", ["servers", "production"]),
+        ("ip_address", ["192.0.2.10", "2001:db8::10"]),
+    ):
+        facts = [
+            _fact(
+                f"fact_{predicate}_{index}",
+                value,
+                predicate=predicate,
+                subject_id="node115",
+                observed_offset=index,
+            )
+            for index, value in enumerate(values)
+        ]
+
+        state = _project(*facts)
+
+        assert [
+            fact.value for fact in state.get_current_facts("node115", predicate)
+        ] == sorted(values)
+        assert [
+            support.value for support in state.get_fact_supports("node115", predicate)
+        ] == values
+        assert not any(
+            conflict.predicate == predicate for conflict in state.get_fact_conflicts()
+        )
+
+
+def test_single_cardinality_get_current_facts_returns_only_best_supported_value():
+    docker = _fact(
+        "fact_runtime_docker", "docker", predicate="runtime", confidence=0.9
+    )
+    systemd = _fact(
+        "fact_runtime_systemd", "systemd", predicate="runtime", confidence=0.5
+    )
+
+    state = _project(docker, systemd)
+
+    assert state.get_current_facts("svc_ssh", "runtime") == [docker]
+    assert [conflict.predicate for conflict in state.get_fact_conflicts()] == ["runtime"]

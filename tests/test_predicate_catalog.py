@@ -12,6 +12,12 @@ def test_builtin_catalog_defines_canonical_predicates_and_prometheus_mappings():
     assert availability.value_type == "enum"
     assert availability.allowed_values == ["up", "down", "unknown"]
     assert catalog.get("runtime").kind == "durable_fact"
+    assert catalog.get("runtime").cardinality == "single"
+    assert catalog.get("alias").cardinality == "multi"
+    assert catalog.get("group").cardinality == "multi"
+    assert catalog.get("ip_address").cardinality == "multi"
+    assert catalog.get("ansible_host").cardinality == "multi"
+    assert catalog.get("prometheus_instance").cardinality == "multi"
     assert catalog.find_mapping("up", source_name="prometheus").canonical_predicate == (
         "availability_status"
     )
@@ -45,6 +51,8 @@ def test_custom_predicate_catalog_can_be_loaded_from_file(tmp_path):
     catalog = PredicateCatalog.load(path)
 
     assert catalog.is_measurement("service_health")
+    assert catalog.cardinality("service_health") == "single"
+    assert catalog.cardinality("unknown_predicate") == "single"
     assert catalog.find_mapping("health", source_name="custom") is not None
 
 
@@ -74,5 +82,5 @@ def test_show_predicate_catalog_cli_uses_custom_file(tmp_path, capsys):
 
     assert seed_local.main(["--predicate-catalog", str(path), "--show-predicate-catalog"]) == 0
     output = capsys.readouterr().out
-    assert "service_health: measurement/string" in output
+    assert "service_health: measurement/string/single" in output
     assert "*:health -> service_health" in output

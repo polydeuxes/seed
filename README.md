@@ -221,7 +221,13 @@ Normal CLI and HTTP responses are JSON objects with `response` and `events`. `--
 
 ### Predicate catalog
 
-Seed's built-in `PredicateCatalog` defines the canonical vocabulary for what can be known and maps provider-specific observations into canonical observations without discarding the originals. The default normalization order is endpoint alias, endpoint identity, then predicate normalization. Use `--predicate-catalog PATH` to load a custom JSON catalog for observation-source ingestion, or `--show-predicate-catalog` to print canonical predicates and mappings. `CapabilityCatalog` separately describes what can be done.
+Seed's built-in `PredicateCatalog` defines the canonical vocabulary for what can be known and maps provider-specific observations into canonical observations without discarding the originals. Each predicate declares its semantics, value type, and cardinality. `single` predicates such as `runtime` retain winner/conflict behavior; `multi` predicates such as `alias`, `group`, and `ip_address` keep independently supported values current without creating a conflict solely because several values exist. The default normalization order is endpoint alias, endpoint identity, then predicate normalization. Use `--predicate-catalog PATH` to load a custom JSON catalog for observation-source ingestion and projection, or `--show-predicate-catalog` to print canonical predicates and mappings. `CapabilityCatalog` separately describes what can be done.
+
+Inspect every current value of a multi-valued predicate with:
+
+```bash
+python scripts/seed_local.py --db seed.sqlite --current-facts node115 alias
+```
 
 ### Inspect projected relationships
 
