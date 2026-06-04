@@ -546,8 +546,12 @@ The old system mixed execution implementation, provider metadata, and user inten
 
 ## Entity relationships
 
-An `EntityRelationship` is a deterministic, directed topology edge derived from a
+An `EntityRelationship` is a deterministic, directed semantic edge derived from a
 fact through `RelationshipCatalog`. It records its subject, relationship, object,
-source fact ID, source type, confidence, observation time, and metadata. Facts
-remain the source of truth; relationship projection does not replace fact
-retention, support aggregation, or alias resolution.
+source fact ID, source type, confidence, observation time, metadata, and a
+`relationship_kind` (`identity`, `topology`, `dependency`, `hosting`, or `grouping`).
+The kind controls graph traversal semantics: dependency queries traverse dependency
+and hosting edges, but not identity or grouping edges. It is preserved during
+projection so future reasoning can distinguish the meaning of otherwise similar
+edges. Facts remain the source of truth; relationship projection does not replace
+fact retention, support aggregation, or alias resolution.

@@ -3,7 +3,11 @@
 from seed_runtime.ansible_inventory_source import AnsibleInventoryObservationSource
 from seed_runtime.capability_catalog import CapabilityCatalog
 from seed_runtime.predicate_catalog import PredicateCatalog
-from seed_runtime.relationship_catalog import RelationshipCatalog, RelationshipDefinition
+from seed_runtime.relationship_catalog import (
+    RelationshipCatalog,
+    RelationshipDefinition,
+    RelationshipKind,
+)
 from seed_runtime.predicate_normalizers import PredicateNormalizer
 from seed_runtime.evidence import Evidence
 from seed_runtime.facts import Fact, FactConflict, FactSupport
@@ -44,6 +48,7 @@ __all__ = [
     "PredicateCatalog",
     "RelationshipCatalog",
     "RelationshipDefinition",
+    "RelationshipKind",
     "PredicateNormalizer",
     "ObservationSource",
     "ObservationIngestor",

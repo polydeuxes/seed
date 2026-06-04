@@ -227,7 +227,12 @@ Seed's built-in `PredicateCatalog` defines the canonical vocabulary for what can
 
 Seed derives topology edges from facts using `relationship_catalog/core.json`.
 Facts describe claims about entities, relationships describe how entities connect,
-and capabilities describe what Seed can do.
+and capabilities describe what Seed can do. Each catalog relationship declares a
+`relationship_kind`: `identity`, `topology`, `dependency`, `hosting`, or `grouping`.
+The kind is preserved on projected edges and controls graph traversal semantics:
+`find_dependencies(entity)` and `find_dependents(entity)` traverse dependency and
+hosting edges, while excluding identity and grouping edges. This semantic metadata
+also gives future reasoning systems a stable way to distinguish what an edge means.
 
 ```bash
 python scripts/seed_local.py --db seed.sqlite --relationships

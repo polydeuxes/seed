@@ -41,6 +41,16 @@ def test_core_catalog_contains_initial_relationship_vocabulary():
         "provides",
         "runs_on",
     ]
+    assert {
+        entry.relationship: entry.relationship_kind
+        for entry in catalog.list_relationships()
+    } == {
+        "alias_of": "identity",
+        "member_of": "grouping",
+        "monitored_by": "dependency",
+        "provides": "dependency",
+        "runs_on": "hosting",
+    }
     assert catalog.get("member_of").derived_from_predicates == ["group"]
 
 
@@ -89,6 +99,23 @@ def test_relationship_query_helpers_filter_edges():
     assert state.find_related("jellyfin", "runs_on") == ["node115"]
     assert state.find_subjects("member_of", "servers") == ["node115", "node210"]
     assert state.get_relationships(subject="node115", object="servers")[0].relationship == "member_of"
+    assert [
+        edge.relationship for edge in state.get_relationships(relationship_kind="hosting")
+    ] == ["runs_on"]
+
+
+def test_dependency_traversal_uses_relationship_semantics():
+    state = _project(
+        _fact("fact_alias", "node115", "alias", "primary-node"),
+        _fact("fact_group", "node115", "group", "servers"),
+        _fact("fact_host", "jellyfin", "host", "node115"),
+        _fact("fact_prom", "node115", "prometheus_instance", "node115:9100"),
+    )
+
+    assert state.find_dependencies("jellyfin") == ["node115", "prometheus"]
+    assert state.find_dependents("prometheus") == ["node115", "jellyfin"]
+    assert "primary-node" not in state.find_dependencies("node115")
+    assert "servers" not in state.find_dependencies("node115")
 
 
 def test_sqlite_reopen_preserves_relationship_projection(tmp_path):
@@ -106,6 +133,7 @@ def test_sqlite_reopen_preserves_relationship_projection(tmp_path):
         reopened.close()
 
     assert actual == expected
+    assert actual[0].relationship_kind == "grouping"
 
 
 def test_state_summary_optionally_includes_relationship_count():
