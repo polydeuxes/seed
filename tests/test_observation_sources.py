@@ -12,7 +12,6 @@ from seed_runtime.observation_sources import (
 from seed_runtime.observations import Observation, ObservationIngestor
 from seed_runtime.state import StateProjector
 
-
 BASE_TIME = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
 
@@ -516,9 +515,7 @@ def test_prometheus_source_uses_safe_get_queries_and_converts_observations(
             "status": "success",
             "data": {
                 "resultType": "vector",
-                "result": [
-                    {"metric": {"instance": "node-a:9100"}, "value": [1, "1"]}
-                ],
+                "result": [{"metric": {"instance": "node-a:9100"}, "value": [1, "1"]}],
             },
         },
         "node_uname_info": {
@@ -539,7 +536,12 @@ def test_prometheus_source_uses_safe_get_queries_and_converts_observations(
                 "resultType": "vector",
                 "result": [
                     {
-                        "metric": {"instance": "node-a:9100", "mountpoint": "/"},
+                        "metric": {
+                            "instance": "node-a:9100",
+                            "mountpoint": "/",
+                            "device": "/dev/sda1",
+                            "fstype": "ext4",
+                        },
                         "value": [1, "512"],
                     }
                 ],
@@ -551,7 +553,12 @@ def test_prometheus_source_uses_safe_get_queries_and_converts_observations(
                 "resultType": "vector",
                 "result": [
                     {
-                        "metric": {"instance": "node-a:9100", "mountpoint": "/"},
+                        "metric": {
+                            "instance": "node-a:9100",
+                            "mountpoint": "/",
+                            "device": "/dev/sda1",
+                            "fstype": "ext4",
+                        },
                         "value": [1, "1024"],
                     }
                 ],
@@ -577,6 +584,13 @@ def test_prometheus_source_uses_safe_get_queries_and_converts_observations(
         ("node-a:9100", "filesystem_avail_bytes", 512),
         ("node-a:9100", "filesystem_size_bytes", 1024),
     ]
+    assert observations[0].dimensions == {}
+    assert observations[2].dimensions == {
+        "mountpoint": "/",
+        "device": "/dev/sda1",
+        "fstype": "ext4",
+    }
+    assert observations[3].dimensions == observations[2].dimensions
     assert {obs.source_type for obs in observations} == {"provider"}
     assert {obs.metadata["source_name"] for obs in observations} == {"prometheus"}
     assert [method for _, method, _ in requested_urls] == ["GET"] * 4
@@ -595,9 +609,7 @@ def test_prometheus_source_unreachable_fails_gracefully(monkeypatch):
 
     monkeypatch.setattr(sources, "urlopen", fake_urlopen)
 
-    source = PrometheusObservationSource(
-        "http://prom.example:9090", timeout_seconds=1
-    )
+    source = PrometheusObservationSource("http://prom.example:9090", timeout_seconds=1)
 
     assert source.collect() == []
     assert "network unreachable" in (source.last_error or "")

@@ -134,12 +134,13 @@
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["id", "subject_id", "predicate", "value", "evidence_ids", "source_type", "observed_at", "expires_at", "confidence", "inferred"],
+              "required": ["id", "subject_id", "predicate", "value", "dimensions", "evidence_ids", "source_type", "observed_at", "expires_at", "confidence", "inferred"],
               "properties": {
                 "id": {"type": "string"},
                 "subject_id": {"type": "string"},
                 "predicate": {"type": "string"},
                 "value": {},
+                "dimensions": {"type": "object", "additionalProperties": {"type": "string"}},
                 "evidence_ids": {"type": "array", "items": {"type": "string"}},
                 "source_type": {"type": "string", "enum": ["user", "discovery", "provider", "inferred", "imported"]},
                 "observed_at": {"type": "string"},

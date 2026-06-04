@@ -5,7 +5,6 @@ from seed_runtime.facts import Fact, FactSupport
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
 
-
 BASE_TIME = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
 
@@ -20,12 +19,14 @@ def _fact(
     predicate: str = "service.running",
     expires_at: datetime | None = None,
     subject_id: str = "svc_ssh",
+    dimensions: dict[str, str] | None = None,
 ) -> Fact:
     return Fact(
         id=fact_id,
         subject_id=subject_id,
         predicate=predicate,
         value=value,
+        dimensions=dimensions or {},
         source_type=source_type,
         confidence=confidence,
         evidence_ids=evidence_ids or [f"evd_{fact_id}"],
@@ -134,7 +135,9 @@ def test_inferred_only_support_is_weaker_than_observed_provider_support():
     state = _project(inferred, provider)
 
     inferred_support = next(
-        support for support in state.fact_supports if support.value == "docker_container_lifecycle"
+        support
+        for support in state.fact_supports
+        if support.value == "docker_container_lifecycle"
     )
     provider_support = next(
         support for support in state.fact_supports if support.value == "systemctl_cli"
@@ -207,9 +210,10 @@ def test_expired_support_is_visible_only_when_include_expired_true():
     assert len(supports) == 1
     assert supports[0].value is True
     assert supports[0].supporting_fact_ids == [expired.id]
-    assert state.get_best_fact(
-        "svc_ssh", "service.running", include_expired=True
-    ) == expired
+    assert (
+        state.get_best_fact("svc_ssh", "service.running", include_expired=True)
+        == expired
+    )
 
 
 def test_conflicts_ignore_expired_facts_by_default():
@@ -340,9 +344,10 @@ def test_canonical_measurement_uses_current_sample_across_alias_component():
     assert support.subject == "node115"
     assert support.value == "down"
     assert support.supporting_fact_ids == [endpoint_down.id]
-    assert state.get_best_fact(
-        "node115", "availability_status", resolve_aliases=False
-    ) is None
+    assert (
+        state.get_best_fact("node115", "availability_status", resolve_aliases=False)
+        is None
+    )
 
 
 def test_alias_resolution_still_works_for_measurements():
@@ -375,3 +380,119 @@ def test_alias_resolution_still_works_for_measurements():
     assert support.subject == "node"
     assert support.value == 1
     assert support.support_kind == "current_sample"
+
+
+def test_default_projection_retains_only_latest_measurement_fact_and_all_events():
+    old = _fact("fact_old", 10, predicate="filesystem_avail_bytes")
+    current = _fact(
+        "fact_current", 20, predicate="filesystem_avail_bytes", observed_offset=1
+    )
+    ledger = EventLedger()
+    for fact in (old, current):
+        ledger.append("fact.observed", "ws_retention", {"fact": to_plain(fact)})
+
+    state = StateProjector(ledger).project("ws_retention")
+
+    assert set(state.facts) == {current.id}
+    assert len(ledger.list_events("ws_retention")) == 2
+
+
+def test_requested_measurement_debug_history_retains_recent_n_but_current_is_latest():
+    samples = [
+        _fact(f"fact_{offset}", offset, predicate="up", observed_offset=offset)
+        for offset in range(4)
+    ]
+    ledger = EventLedger()
+    for fact in samples:
+        ledger.append("fact.observed", "ws_history", {"fact": to_plain(fact)})
+
+    state = StateProjector(ledger, measurement_history_limit=3).project("ws_history")
+
+    assert set(state.facts) == {"fact_1", "fact_2", "fact_3"}
+    assert state.get_fact_support("svc_ssh", "up").supporting_fact_ids == ["fact_3"]
+
+
+def test_measurement_retention_is_per_alias_component_predicate_and_dimensions():
+    alias = _fact("fact_alias", "node:9100", predicate="alias", subject_id="node")
+    root_old = _fact(
+        "fact_root_old",
+        10,
+        predicate="filesystem_avail_bytes",
+        subject_id="node",
+        dimensions={"mountpoint": "/", "device": "/dev/sda1", "fstype": "ext4"},
+    )
+    root_new = _fact(
+        "fact_root_new",
+        20,
+        predicate="filesystem_avail_bytes",
+        subject_id="node:9100",
+        observed_offset=1,
+        dimensions={"mountpoint": "/", "device": "/dev/sda1", "fstype": "ext4"},
+    )
+    data = _fact(
+        "fact_data",
+        30,
+        predicate="filesystem_avail_bytes",
+        subject_id="node:9100",
+        dimensions={"mountpoint": "/data", "device": "/dev/sdb1", "fstype": "xfs"},
+    )
+
+    state = _project(alias, root_old, root_new, data)
+
+    assert set(state.facts) == {alias.id, root_new.id, data.id}
+    root = state.get_fact_support(
+        "node",
+        "filesystem_avail_bytes",
+        dimensions={"mountpoint": "/", "device": "/dev/sda1", "fstype": "ext4"},
+    )
+    assert root is not None
+    assert root.value == 20
+    assert len(state.get_fact_supports("node", "filesystem_avail_bytes")) == 2
+
+
+def test_durable_fact_history_still_aggregates_after_projection():
+    first = _fact("fact_first", "linux", predicate="os", confidence=0.6)
+    second = _fact(
+        "fact_second", "linux", predicate="os", confidence=0.7, observed_offset=1
+    )
+
+    state = _project(first, second)
+
+    assert set(state.facts) == {first.id, second.id}
+    assert state.get_fact_support("svc_ssh", "os").supporting_fact_ids == [
+        first.id,
+        second.id,
+    ]
+
+
+def test_measurement_history_limit_must_be_positive():
+    import pytest
+
+    with pytest.raises(ValueError, match="at least 1"):
+        StateProjector(EventLedger(), measurement_history_limit=0)
+
+
+def test_measurement_projection_prunes_old_observation_provenance_not_events():
+    from seed_runtime.observations import Observation, ObservationIngestor
+
+    ledger = EventLedger()
+    ingestor = ObservationIngestor(ledger)
+    for offset, value in enumerate((0, 1)):
+        ingestor.ingest(
+            Observation(
+                id=f"obs_{offset}",
+                source_type="provider",
+                observed_at=BASE_TIME + timedelta(minutes=offset),
+                subject="node",
+                predicate="up",
+                value=value,
+            ),
+            "ws_provenance_retention",
+        )
+
+    state = StateProjector(ledger).project("ws_provenance_retention")
+
+    assert set(state.observations) == {"obs_1"}
+    assert len(state.evidence) == 1
+    assert len(state.facts) == 1
+    assert len(ledger.list_events("ws_provenance_retention")) == 6

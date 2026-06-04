@@ -83,6 +83,7 @@ def test_context_includes_evidence_backed_facts():
             "subject_id": "ent_1",
             "predicate": "ssh.running",
             "value": False,
+            "dimensions": {},
             "evidence_ids": ["evd_1"],
             "observed_at": observed_at,
             "expires_at": None,

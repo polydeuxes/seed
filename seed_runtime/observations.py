@@ -46,6 +46,7 @@ class Observation(SeedModel):
     value: Any
     confidence: float = 1.0
     metadata: dict[str, Any] = Field(default_factory=dict)
+    dimensions: dict[str, str] = Field(default_factory=dict)
     expires_at: datetime | None = None
 
 
@@ -123,6 +124,7 @@ class ObservationIngestor:
                 "predicate": observation.predicate,
                 "value": observation.value,
                 "metadata": dict(observation.metadata),
+                "dimensions": dict(observation.dimensions),
                 "expires_at": observation.expires_at.isoformat()
                 if observation.expires_at is not None
                 else None,
@@ -140,6 +142,7 @@ class ObservationIngestor:
             subject_id=observation.subject,
             predicate=observation.predicate,
             value=observation.value,
+            dimensions=dict(observation.dimensions),
             evidence_ids=[evidence.id],
             source_type=source_type,
             confidence=observation.confidence,

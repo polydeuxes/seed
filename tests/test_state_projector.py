@@ -796,7 +796,6 @@ def test_fact_conflicts_group_aliases_under_canonical_entity():
         workspace_id="ws_alias_conflicts",
     )
 
-    conflict = next(conflict for conflict in state.fact_conflicts if conflict.predicate == "up")
-    assert conflict.subject == "node115"
-    assert conflict.best_fact_id == "fact_prometheus_up"
-    assert conflict.conflicting_fact_ids == ["fact_node_up"]
+    assert not any(conflict.predicate == "up" for conflict in state.fact_conflicts)
+    assert "fact_node_up" not in state.facts
+    assert state.get_best_fact("node115", "up").id == "fact_prometheus_up"

@@ -59,6 +59,7 @@ class PredicateNormalizer:
                     subject=observation.subject,
                     predicate=mapping.canonical_predicate,
                     value=value,
+                    dimensions=dict(observation.dimensions),
                     confidence=observation.confidence,
                     metadata=metadata,
                     expires_at=observation.expires_at,
