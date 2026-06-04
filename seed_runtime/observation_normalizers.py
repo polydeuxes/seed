@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Protocol
 
+from seed_runtime.facts import is_fact_expired
 from seed_runtime.observations import Observation
 from seed_runtime.predicate_normalizers import PredicateNormalizer
 from seed_runtime.serialization import to_plain
@@ -162,6 +163,8 @@ class EndpointIdentityNormalizer:
 
         if state is not None:
             for fact in state.facts.values():
+                if is_fact_expired(fact):
+                    continue
                 self._add_identity(fact, identities, existing_aliases)
 
         derived: list[Observation] = []

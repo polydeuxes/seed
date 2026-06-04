@@ -356,6 +356,77 @@ def test_sqlite_reopen_uses_persisted_identity_to_alias_later_endpoint(tmp_path)
     reopened.close()
 
 
+def test_endpoint_identity_ignores_expired_identity_from_projected_state():
+    ledger = EventLedger()
+    service = ObservationCollectionService(ObservationIngestor(ledger))
+    service.collect(
+        FakeObservationSource(
+            [
+                _observation(
+                    "obs_expired_ip_address",
+                    subject="node115",
+                    predicate="ip_address",
+                    value="192.168.254.115",
+                ).model_copy(update={"expires_at": OBSERVED_AT})
+            ]
+        ),
+        "ws_endpoint_expired_identity",
+    )
+
+    service.collect(
+        FakeObservationSource([_observation("obs_later_endpoint")]),
+        "ws_endpoint_expired_identity",
+    )
+    state = StateProjector(ledger).project("ws_endpoint_expired_identity")
+
+    assert not any(
+        observation.subject == "node115"
+        and observation.predicate == "alias"
+        and observation.value == ENDPOINT
+        for observation in state.observations.values()
+    )
+
+
+def test_endpoint_identity_avoids_alias_already_in_projected_state():
+    ledger = EventLedger()
+    service = ObservationCollectionService(ObservationIngestor(ledger))
+    existing_alias = _observation(
+        "obs_existing_endpoint_alias",
+        subject="node115",
+        predicate="alias",
+        value=ENDPOINT,
+    )
+    service.collect(
+        FakeObservationSource(
+            [
+                _observation(
+                    "obs_base_ip_address",
+                    subject="node115",
+                    predicate="ip_address",
+                    value="192.168.254.115",
+                ),
+                existing_alias,
+            ]
+        ),
+        "ws_endpoint_existing_alias",
+    )
+
+    service.collect(
+        FakeObservationSource([_observation("obs_later_endpoint")]),
+        "ws_endpoint_existing_alias",
+    )
+    state = StateProjector(ledger).project("ws_endpoint_existing_alias")
+
+    endpoint_aliases = [
+        observation
+        for observation in state.observations.values()
+        if observation.subject == "node115"
+        and observation.predicate == "alias"
+        and observation.value == ENDPOINT
+    ]
+    assert endpoint_aliases == [state.observations[existing_alias.id]]
+
+
 def test_endpoint_identity_matches_alias_from_projected_state():
     ledger = EventLedger()
     service = ObservationCollectionService(ObservationIngestor(ledger))
