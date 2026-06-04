@@ -95,6 +95,17 @@ def test_unknown_monitored_by_subject_is_warning():
     assert issue.subject == "mystery"
     assert issue.relationship == "monitored_by"
     assert issue.actual_subject_types == ["unknown"]
+    assert issue.hint == (
+        "Add inventory or alias evidence if this monitored endpoint should map to a "
+        "known host."
+    )
+
+
+def test_other_graph_warning_has_no_hint():
+    state = _project(_fact("membership", "mystery", "group", "servers"))
+
+    assert len(state.graph_issues) == 1
+    assert state.graph_issues[0].hint is None
 
 
 def test_duplicate_monitored_by_warnings_collapse_and_preserve_relationship_ids():
@@ -112,11 +123,11 @@ def test_duplicate_monitored_by_warnings_collapse_and_preserve_relationship_ids(
     )
     assert issue.severity == "warning"
     assert issue.reason == "subject type is unknown; expected host"
-    assert issue.relationship_ids == [
-        edge.id
-        for edge in state.relationships
-        if edge.relationship == "monitored_by"
+    matching_edges = [
+        edge for edge in state.relationships if edge.relationship == "monitored_by"
     ]
+    assert issue.relationship_ids == [edge.id for edge in matching_edges]
+    assert issue.source_fact_ids == [edge.source_fact_id for edge in matching_edges]
 
 
 def test_provides_accepts_any_subject_entity_type():
