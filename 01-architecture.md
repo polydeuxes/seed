@@ -2,7 +2,7 @@
 
 ## System summary
 
-Seed is a context-native planning and handoff runtime. It composes context, records evidence-backed state, ranks capabilities, and produces auditable recommendations and non-executable plans. Seed does **not** own an internal execution lifecycle.
+Seed is a planning, knowledge, and handoff runtime. It safely turns raw inputs into evidence-backed knowledge, composes context from projected state, ranks capabilities, and produces auditable recommendations plus non-executable plans/handoffs. Seed does **not** own an internal executor, secret store, retry loop, scheduler, or workflow engine.
 
 Seed has two large halves:
 
@@ -14,10 +14,14 @@ The runtime is always conservative. The builder can be creative, but its outputs
 ## High-level flow
 
 ```text
-External input
-  -> Ingestor
+raw input
+  -> InputInspector
+  -> ObservationSource
+  -> ObservationNormalizer
+  -> ObservationIngestor
+  -> Evidence / Facts
   -> Event Ledger
-  -> State Projector
+  -> State Projector / ProjectionStore
   -> Context Composer
   -> Model Orchestrator
   -> Decision Validator
@@ -49,6 +53,31 @@ raw IN
 ```
 
 `InputInspector` treats a filename extension as a hint, never as authority. It reads files without executing them, importing them, or following includes; detects obvious JSON, YAML, INI, empty, unknown, and null-byte inputs; and records classification plus size/hash audit metadata in an `InputArtifact`. It is not a security scanner, but it prevents obvious parser misrouting and makes the dispatch decision auditable. Unsupported formats remain the responsibility of the source/parser layer, and source adapters remain read-only and non-executing.
+
+
+## Semantic catalogs
+
+Seed separates knowledge vocabulary from action/handoff vocabulary through small semantic catalogs:
+
+- `PredicateCatalog` defines what can be known: canonical predicate names, value types, cardinality, units, and provider-specific mappings. Cardinality matters because single-valued predicates create current-belief winner/conflict behavior, while multi-valued predicates such as aliases, groups, and IP addresses can hold several current values.
+- `RelationshipCatalog` defines how entities connect: identity, topology, dependency, hosting, grouping, and other graph semantics used for traversal and validation.
+- `EntityTypeCatalog` defines what kind of thing an entity is and which predicates or relationships are valid for that type.
+- `CapabilityCatalog` defines what can be recommended or handed off, including external provider metadata, policy actions, operation names, target schemas, and visibility. It does not grant execution capability to Seed.
+- `InferenceCatalog` defines deterministic reasoning rules. These rules project inferred facts from already-projected observations; they are not LLM reasoning, shell invocation, host mutation, or network calls.
+
+## Knowledge projection
+
+The knowledge layer projects current belief from immutable observations rather than treating the latest model answer as state. Core projection responsibilities include:
+
+- Facts derived from Evidence with confidence and provenance.
+- FactSupport aggregates grouped by `subject + predicate + value`.
+- Predicate cardinality for single-valued conflict handling and multi-valued current sets.
+- Measurements distinguished from durable facts. Measurements are retained as current projected samples with bounded recent history while Prometheus or another upstream system remains the historian.
+- Identity and alias resolution so inventory names, IPs, endpoint subjects, and hostnames can converge without hiding provenance.
+- Relationships and topology projection from facts using the RelationshipCatalog.
+- Entity type projection and validation using EntityTypeCatalog rules.
+- Graph validation for impossible edges, unknown types, ambiguous identity, and type/predicate mismatches.
+- Explanation/why queries that traverse fact support, conflicts, inference links, and provenance without adding a new reasoning mechanism.
 
 ## Ownership boundary
 
@@ -156,6 +185,11 @@ Seed preserves provenance instead of stamping a claim with `verified: true`. The
 - recency via latest observation time
 
 This keeps disagreement auditable: multiple values can remain in state while `get_best_fact(subject, predicate)` returns the representative Fact for the best-supported current belief.
+
+
+### ProjectionStore
+
+`EventLedger` owns append-only facts about what happened. `ProjectionStore` owns cached projected state derived from those events: current facts, FactSupport aggregates, aliases, entity types, relationship edges, graph issues, recommendations, and cache metadata. The current SQLite implementation is intentionally portable: it favors deterministic rebuilds and simple tables so the same projection boundary can move to Postgres later. Operator flags such as `--rebuild-state-cache` and `--state-cache-status` expose this cache lifecycle without changing the ledger.
 
 ### 4. Context Composer
 
@@ -302,15 +336,19 @@ The queue decouples runtime from generation. Production runtime can say “tool 
 
 Generates toolkit candidates from Tool Needs.
 
-Produces:
+Produces non-mutating integration artifacts first:
 
-- manifest
-- schemas
-- implementation
+- `InputInspector` when a new raw input class needs safe pre-dispatch inspection
+- `ObservationSource` adapters
+- `ObservationNormalizer` logic
+- `PredicateCatalog` entries
+- `RelationshipCatalog` entries
+- `CapabilityCatalog` entries
+- `HandoffProvider` metadata
 - tests
-- docs
-- policy proposals
-- validation report
+- docs and validation reports
+
+Generated artifacts describe observation and handoff integration before they describe mutation. They must not add Seed-owned secret handling, shell execution, host mutation, retries, or scheduling.
 
 The builder can use stronger models or deterministic templates. It is not the same as the runtime model.
 
@@ -337,7 +375,8 @@ Only validated toolkits can be registered.
 
 ```text
 Runtime:
-  - receives user input
+  - receives and inspects raw input
+  - normalizes observations into Evidence and Facts
   - builds context
   - records events and projected state
   - maintains facts, evidence, ToolNeeds, CapabilityCatalog, recommendations, policy metadata, and audit trail

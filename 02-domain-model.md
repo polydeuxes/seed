@@ -2,6 +2,28 @@
 
 This document defines clean names for the new system. Avoid legacy terms that imply the old architecture.
 
+
+## Raw IN and semantic catalogs
+
+Raw inputs enter Seed through a non-executing pipeline:
+
+```text
+raw input
+  -> InputInspector
+  -> ObservationSource
+  -> ObservationNormalizer
+  -> ObservationIngestor
+  -> Evidence / Facts
+```
+
+The domain vocabulary is split into catalogs so current state remains explainable:
+
+- `PredicateCatalog` defines what can be known, including canonical predicate names, value types, units, provider mappings, and cardinality.
+- `RelationshipCatalog` defines how entities connect and which relationship kinds control graph traversal.
+- `EntityTypeCatalog` defines the classes of entities and validates which predicates/relationships fit those classes.
+- `CapabilityCatalog` defines what can be recommended or handed off to external providers.
+- `InferenceCatalog` defines deterministic rules that produce inferred facts from unambiguous observed facts. It is not LLM projection logic.
+
 ## Core objects
 
 ### Event
@@ -12,13 +34,13 @@ Examples:
 
 - user message
 - model decision
-- tool call requested
-- tool call completed
+- observation ingested
+- handoff plan proposed
 - policy blocked action
 - tool need created
 - toolkit generated
 - validation failed
-- approval granted
+- generated toolkit artifacts
 
 Fields:
 
@@ -131,7 +153,9 @@ Raw observations that may support Facts.
 Examples:
 
 - Prometheus query result
-- SSH command output
+- Prometheus read result
+- Ansible inventory parse result
+- local host observation
 - API response
 - User statement
 - Documentation excerpt
@@ -178,6 +202,11 @@ Terminology:
 - **Best fact/current belief**: the representative Fact for the value with the strongest aggregate support, confidence, provenance, and recency.
 
 Seed preserves provenance through `supporting_fact_ids` and Evidence IDs. It should not collapse provenance into `verified: true`.
+
+
+### ProjectionStore
+
+A deterministic cache of current projected state. `EventLedger` owns append-only events; `ProjectionStore` owns rebuildable projections such as current facts, FactSupport aggregates, measurement samples, identity/alias indexes, entity types, relationships/topology, graph validation issues, and explanation inputs. It is cache, not source of truth. The current SQLite backing should stay portable to Postgres by keeping projection rebuilds deterministic and avoiding SQLite-only semantics in domain logic.
 
 ### Capability
 

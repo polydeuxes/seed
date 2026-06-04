@@ -1,18 +1,18 @@
 # 04 Toolkit System
 
-A toolkit is a portable package of generated or hand-written operational capability.
+A toolkit is a portable package of generated or hand-written observation, catalog, capability, and handoff metadata. In the current core path it is not an internal execution plugin.
 
 ## Definition
 
 A toolkit contains:
 
 - manifest
-- tools
-- capability definitions
+- observation sources and normalizers
+- predicate, relationship, and capability definitions
 - policy action definitions
 - input schemas
 - output schemas
-- implementation code
+- optional read-only or metadata-only implementation code
 - tests
 - docs
 - examples
@@ -54,7 +54,7 @@ name: SSH Access Toolkit
 version: 0.1.0
 origin: generated
 status: candidate
-summary: Tools for verifying and managing SSH access on Linux hosts.
+summary: Observation and handoff metadata for SSH access on Linux hosts.
 
 generated_by:
   builder: seed-builder
@@ -65,7 +65,7 @@ capabilities:
   - name: ssh_access
     summary: Host accepts SSH login with approved credentials.
     entity_kinds: [host]
-    verification_tool: verify_ssh_access
+    observation_source: observe_ssh_access
 
 policy_actions:
   - name: ssh.verify
@@ -75,37 +75,38 @@ policy_actions:
     summary: Verify SSH service state and reachability.
   - name: ssh.install
     risk: L3
-    effect: mutating
+    effect: external_handoff
     approval_required: true
-    summary: Install and start SSH server.
+    summary: Prepare a non-executable handoff to install and start SSH server through an external provider.
 
-tools:
-  - name: verify_ssh_access
-    summary: Verify SSH daemon is installed, running, and reachable.
-    implementation: operations:verify_ssh_access
-    input_schema: schemas/verify_ssh_access.input.json
-    output_schema: schemas/verify_ssh_access.output.json
+observation_sources:
+  - name: observe_ssh_access
+    summary: Observe whether SSH daemon appears installed, running, and reachable from reported provider evidence.
+    implementation: observation_sources:observe_ssh_access
+    input_schema: schemas/observe_ssh_access.input.json
+    output_schema: schemas/observe_ssh_access.output.json
     policy_action: ssh.verify
     visibility: model_visible
     examples:
       - input: {host: node-1}
         output: {reachable: true, service_running: true}
 
+handoff_providers:
   - name: install_ssh_server
-    summary: Install and start OpenSSH server on a Linux host.
-    implementation: operations:install_ssh_server
-    input_schema: schemas/install_ssh_server.input.json
-    output_schema: schemas/install_ssh_server.output.json
+    summary: Prepare a non-executable external-provider handoff to install and start OpenSSH server on a Linux host.
+    backend_types: [ansible, manual]
+    target_schema: schemas/install_ssh_server.target.json
     policy_action: ssh.install
-    visibility: approval_required
+    executable: false
+    visibility: handoff_only
     examples:
-      - input: {host: node-1, package_manager: apt}
-        output: {installed: true, service_running: true}
+      - target: {host: node-1}
+        output: {executable: false, provider: awx, operation: install_ssh_server}
 ```
 
-## Tool schema example
+## Handoff target schema example
 
-`schemas/install_ssh_server.input.json`:
+`schemas/install_ssh_server.target.json`:
 
 ```json
 {
@@ -117,81 +118,65 @@ tools:
       "type": "string",
       "description": "Known host entity name or ID."
     },
-    "package_manager": {
+    "provider": {
       "type": "string",
-      "enum": ["apt", "dnf", "yum", "apk", "auto"],
-      "default": "auto"
-    },
-    "start_service": {
-      "type": "boolean",
-      "default": true
+      "description": "External provider or runbook target; Seed does not execute it."
     }
   }
 }
 ```
 
-`schemas/install_ssh_server.output.json`:
+`handoff_providers.json` excerpt:
 
 ```json
 {
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["ok", "host", "installed", "service_running", "summary"],
-  "properties": {
-    "ok": {"type": "boolean"},
-    "host": {"type": "string"},
-    "installed": {"type": "boolean"},
-    "service_running": {"type": "boolean"},
-    "changed": {"type": "boolean"},
-    "summary": {"type": "string"},
-    "evidence": {
-      "type": "object",
-      "additionalProperties": true
+  "providers": [
+    {
+      "name": "install_ssh_server",
+      "backend_type": "ansible",
+      "operation": "awx:install-ssh-server",
+      "target_schema": "schemas/install_ssh_server.target.json",
+      "policy_action": "ssh.install",
+      "secret_boundary": "Credentials, become prompts, retries, and job lifecycle stay in AWX/Vault/ssh-agent; Seed stores no secrets.",
+      "requires_external_approval": true,
+      "executable": false
     }
-  }
+  ]
 }
 ```
 
-## Operation implementation shape
+## Integration implementation shape
 
-Operations should be small adapters around provider primitives.
+Observation implementations should be small read-only adapters that emit observations for ingestion. Handoff implementations should emit metadata for a non-executable `HandoffPlan`; they should not call providers directly.
 
 ```python
-def verify_ssh_access(ctx: ToolContext, host: str) -> dict:
-    """Verify SSH service status and port reachability."""
+def observe_ssh_access(ctx: IntegrationContext, host: str) -> list[Observation]:
+    """Convert externally reported SSH status into observations."""
     host_ref = ctx.entities.require("host", host)
-    result = ctx.providers.ssh.check(host_ref)
-    return {
-        "ok": result.reachable and result.service_running,
-        "host": host_ref.name,
-        "reachable": result.reachable,
-        "service_running": result.service_running,
-        "summary": result.summary,
-        "evidence": result.evidence,
-    }
+    provider_report = ctx.inputs.require_report()
+    return ctx.observations.from_provider_report(host_ref, provider_report)
 ```
 
-Generated operations should receive a `ToolContext` rather than importing the whole runtime.
+Generated integrations should receive a constrained context rather than importing the whole runtime.
 
-## ToolContext
+## IntegrationContext
 
-The runtime passes a constrained context object to tools.
+The runtime passes a constrained context object to read-only integration code. It deliberately excludes secret access and execution providers.
 
 ```python
 @dataclass
-class ToolContext:
+class IntegrationContext:
     workspace_id: str
-    tool_name: str
-    call_id: str
+    integration_name: str
     entities: EntityAccessor
     facts: FactAccessor
-    providers: ProviderFacade
-    secrets: SecretAccessor
+    inputs: InputAccessor
+    observations: ObservationWriter
     artifacts: ArtifactWriter
-    logger: ToolLogger
+    logger: IntegrationLogger
 ```
 
-ToolContext limits what tool code can access.
+IntegrationContext limits what generated code can access.
 
 ## Lifecycle
 
@@ -221,7 +206,7 @@ candidate generated
 
 Core toolkits are hand-written and reviewed. Generated toolkits follow the same manifest format.
 
-Runtime should not care whether a toolkit is generated or core after registration. It should only care about status, schema, policy, and implementation reference.
+Runtime should not care whether a toolkit is generated or core after registration. It should only care about status, schema, policy, catalog entries, observation contracts, and handoff metadata.
 
 ## Toolkit loading
 
@@ -260,14 +245,14 @@ Example context entry:
 ```json
 {
   "name": "install_ssh_server",
-  "summary": "Install and start OpenSSH server on a Linux host.",
-  "input_schema_summary": "requires host; optional package_manager",
+  "summary": "Prepare a non-executable handoff to install and start OpenSSH server on a Linux host.",
+  "target_schema_summary": "requires host; optional external provider reference",
   "policy": {
     "action": "ssh.install",
     "risk": "L3",
     "requires_approval": true
   },
-  "visibility_reason": "Relevant to current goal but cannot execute without approval."
+  "visibility_reason": "Relevant to current goal but Seed can only produce a handoff boundary; execution, credentials, retries, and scheduling stay external."
 }
 ```
 
@@ -278,6 +263,8 @@ Toolkit generation initially targets non-mutating integration artifacts:
 - `InputInspector` implementations when file-backed inputs need content-based dispatch
 - `ObservationSource` adapters
 - `ObservationNormalizer` implementations
+- PredicateCatalog entries
+- RelationshipCatalog entries
 - CapabilityCatalog entries
 - HandoffProvider metadata
 - tests
@@ -293,7 +280,13 @@ A builder must output:
 ```text
 candidate_dir/
   toolkit.yaml
-  operations.py
+  input_inspectors/          # optional
+  observation_sources/
+  observation_normalizers/
+  catalogs/predicates.json
+  catalogs/relationships.json
+  catalogs/capabilities.json
+  handoff_providers.json
   schemas/*.json
   tests/test_*.py
   docs.md
@@ -318,7 +311,8 @@ When a toolkit is registered, append an event:
   "payload": {
     "toolkit_id": "ssh_access",
     "version": "0.1.0",
-    "tools": ["verify_ssh_access", "install_ssh_server"],
+    "observation_sources": ["observe_ssh_access"],
+      "handoff_providers": ["install_ssh_server"],
     "source_candidate_id": "cand_...",
     "validation_report_id": "val_..."
   }
@@ -344,7 +338,8 @@ Generated toolkit code should not:
 - read environment variables directly
 - open network sockets directly unless declared
 - access filesystem outside sandbox/artifact paths
-- spawn subprocesses directly unless provider allows it
+- spawn subprocesses directly
+- execute host commands or mutate hosts
 - manage secrets directly
 - change registry or policy directly
 - self-register
