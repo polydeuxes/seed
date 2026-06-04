@@ -7,7 +7,7 @@ import json
 import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Iterable
+from typing import Any, Iterable, Literal
 
 from seed_runtime.events import EventLedger
 from seed_runtime.evidence import Evidence
@@ -69,6 +69,23 @@ class EntityRelationship:
     confidence: float
     observed_at: datetime
     metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class GraphValidationIssue:
+    """A suspicious or invalid projected relationship edge."""
+
+    id: str
+    severity: Literal["warning", "error"]
+    subject: str
+    relationship: str
+    object: str
+    relationship_id: str
+    reason: str
+    expected_subject_types: list[str]
+    actual_subject_types: list[str]
+    expected_object_types: list[str]
+    actual_object_types: list[str]
 
 
 @dataclass(frozen=True)
@@ -222,6 +239,7 @@ class State:
     entity_relationships: list[LegacyEntityRelationship] = field(default_factory=list)
     entity_aliases: list[EntityAlias] = field(default_factory=list)
     entity_type_assertions: list[EntityTypeAssertion] = field(default_factory=list)
+    graph_issues: list[GraphValidationIssue] = field(default_factory=list)
     alias_resolver: AliasResolver = field(default_factory=AliasResolver)
     fact_supports: list[FactSupport] = field(default_factory=list)
     fact_conflicts: list[FactConflict] = field(default_factory=list)
@@ -281,6 +299,17 @@ class State:
             entity_id: self.get_current_entity_types(entity_id)
             for entity_id in sorted({a.entity_id for a in self.entity_type_assertions})
         }
+
+    def get_graph_issues(
+        self, severity: Literal["warning", "error"] | None = None
+    ) -> list[GraphValidationIssue]:
+        """Return graph validation issues, optionally filtered by severity."""
+
+        return [
+            issue
+            for issue in self.graph_issues
+            if severity is None or issue.severity == severity
+        ]
 
     @property
     def open_tool_needs(self) -> list[ToolNeed]:
@@ -630,6 +659,9 @@ class StateProjector:
         state.entity_type_assertions = _project_entity_type_assertions(
             state, self.entity_type_catalog
         )
+        state.graph_issues = GraphValidator(
+            self.relationship_catalog, self.entity_type_catalog
+        ).validate(state)
         state.entity_aliases = state.alias_resolver.aliases
         state.fact_conflicts = _project_fact_conflicts(state)
         return state
@@ -1112,6 +1144,157 @@ def _fact_value_key(value: Any) -> str:
 
 _HOST_PREDICATES = {"ip_address", "ansible_host", "architecture", "os"}
 _ENDPOINT_SUBJECT = re.compile(r"^(?:\[[^]]+\]|[^:]+):[0-9]{1,5}$")
+
+
+class GraphValidator:
+    """Validate projected edges against relationship and entity type catalogs."""
+
+    def __init__(
+        self,
+        relationship_catalog: RelationshipCatalog,
+        entity_type_catalog: EntityTypeCatalog,
+    ) -> None:
+        self.relationship_catalog = relationship_catalog
+        self.entity_type_catalog = entity_type_catalog
+
+    def validate(self, state: State) -> list[GraphValidationIssue]:
+        """Return deterministic issues for suspicious or invalid graph edges."""
+
+        issues: list[GraphValidationIssue] = []
+        for edge in state.relationships:
+            definition = self.relationship_catalog.get(edge.relationship)
+            if definition is None:
+                continue
+            if definition.relationship_kind == "identity":
+                if edge.subject == edge.object:
+                    issues.append(
+                        self._issue(
+                            edge,
+                            "warning",
+                            "identity relationship aliases an entity to itself",
+                            [definition.subject_type],
+                            [definition.object_type],
+                            state.get_current_entity_types(edge.subject),
+                            state.get_current_entity_types(edge.object),
+                        )
+                    )
+                continue
+
+            subject_types = state.get_current_entity_types(edge.subject)
+            object_types = state.get_current_entity_types(edge.object)
+            checks = [
+                self._check_side(
+                    state, edge, "subject", definition.subject_type, subject_types
+                ),
+                self._check_side(
+                    state, edge, "object", definition.object_type, object_types
+                ),
+            ]
+            failures = [check for check in checks if check is not None]
+            if not failures:
+                continue
+            severity: Literal["warning", "error"] = (
+                "error"
+                if any(item[0] == "error" for item in failures)
+                else "warning"
+            )
+            issues.append(
+                self._issue(
+                    edge,
+                    severity,
+                    "; ".join(item[1] for item in failures),
+                    [definition.subject_type],
+                    [definition.object_type],
+                    subject_types,
+                    object_types,
+                )
+            )
+        return issues
+
+    def _check_side(
+        self,
+        state: State,
+        edge: EntityRelationship,
+        side: str,
+        expected: str,
+        actual: list[str],
+    ) -> tuple[Literal["warning", "error"], str] | None:
+        if expected == "entity":
+            return None
+        if self.entity_type_catalog.get(expected) is None:
+            return "warning", f"{side} expects unknown catalog type {expected}"
+        if actual == ["unknown"]:
+            return "warning", f"{side} type is unknown; expected {expected}"
+        if len(actual) > 1:
+            independent = _current_entity_types_excluding_relationship(
+                state, getattr(edge, side), edge.id
+            )
+            if (
+                independent != ["unknown"]
+                and len(independent) == 1
+                and expected not in independent
+            ):
+                return "error", f"{side} type is {independent[0]}; expected {expected}"
+            return (
+                "warning",
+                f"{side} type is ambiguous ({', '.join(actual)}); expected {expected}",
+            )
+        if actual[0] != expected:
+            return "error", f"{side} type is {actual[0]}; expected {expected}"
+        return None
+
+    @staticmethod
+    def _issue(
+        edge: EntityRelationship,
+        severity: Literal["warning", "error"],
+        reason: str,
+        expected_subject_types: list[str],
+        expected_object_types: list[str],
+        actual_subject_types: list[str],
+        actual_object_types: list[str],
+    ) -> GraphValidationIssue:
+        return GraphValidationIssue(
+            id="graph_issue_" + hashlib.sha256(edge.id.encode()).hexdigest()[:24],
+            severity=severity,
+            subject=edge.subject,
+            relationship=edge.relationship,
+            object=edge.object,
+            relationship_id=edge.id,
+            reason=reason,
+            expected_subject_types=expected_subject_types,
+            actual_subject_types=actual_subject_types,
+            expected_object_types=expected_object_types,
+            actual_object_types=actual_object_types,
+        )
+
+
+def _current_entity_types_excluding_relationship(
+    state: State, entity_id: str, relationship_id: str
+) -> list[str]:
+    """Select current types without circular support from the edge being validated."""
+
+    assertions = [
+        assertion
+        for assertion in state.entity_type_assertions
+        if assertion.entity_id == entity_id
+        and assertion.entity_type != "unknown"
+        and assertion.source_relationship_id != relationship_id
+    ]
+    if not assertions:
+        return ["unknown"]
+    by_type: dict[str, list[EntityTypeAssertion]] = {}
+    for assertion in assertions:
+        by_type.setdefault(assertion.entity_type, []).append(assertion)
+    ranks = {
+        entity_type: (max(item.confidence for item in items), len(items))
+        for entity_type, items in by_type.items()
+    }
+    best_rank = max(ranks.values())
+    return sorted(
+        entity_type for entity_type, rank in ranks.items() if rank == best_rank
+    )
+
+
 _RELATIONSHIP_TYPE_RULES = {
     "member_of": ("object", "group"),
     "runs_on": ("subject", "service"),
