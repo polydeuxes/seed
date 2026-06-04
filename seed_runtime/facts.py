@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from functools import lru_cache
 from importlib.util import find_spec
 from typing import Any, Literal
 
@@ -50,9 +51,24 @@ DURABLE_FACT_PREDICATES: frozenset[str] = frozenset(
 
 
 def is_measurement_predicate(predicate: str) -> bool:
-    """Return whether a predicate represents a volatile time-series measurement."""
+    """Return whether a predicate represents a volatile time-series measurement.
 
-    return predicate in MEASUREMENT_PREDICATES
+    Canonical predicate metadata is authoritative when present. The legacy set is
+    retained for provider/raw predicates so existing measurement behavior remains
+    compatible while sources migrate to canonical observations.
+    """
+
+    return (
+        _core_predicate_catalog().is_measurement(predicate)
+        or predicate in MEASUREMENT_PREDICATES
+    )
+
+
+@lru_cache(maxsize=1)
+def _core_predicate_catalog():
+    from seed_runtime.predicate_catalog import PredicateCatalog
+
+    return PredicateCatalog.load()
 
 
 def recommended_capability_for_stale_fact(predicate: str) -> str:

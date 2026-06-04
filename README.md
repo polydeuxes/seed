@@ -216,3 +216,7 @@ curl -s http://127.0.0.1:8765/message \
 ```
 
 Normal CLI and HTTP responses are JSON objects with `response` and `events`. `--raw` prints the raw model completion so you can debug the local model's intent JSON before Seed parses it.
+
+### Predicate catalog
+
+Seed's built-in `PredicateCatalog` defines the canonical vocabulary for what can be known and maps provider-specific observations into canonical observations without discarding the originals. The default normalization order is endpoint alias, endpoint identity, then predicate normalization. Use `--predicate-catalog PATH` to load a custom JSON catalog for observation-source ingestion, or `--show-predicate-catalog` to print canonical predicates and mappings. `CapabilityCatalog` separately describes what can be done.
