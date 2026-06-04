@@ -238,3 +238,14 @@ also gives future reasoning systems a stable way to distinguish what an edge mea
 python scripts/seed_local.py --db seed.sqlite --relationships
 python scripts/seed_local.py --db seed.sqlite --relationships --relationship member_of
 ```
+
+Inspect graph validation findings with `--graph-issues`; add `--severity warning`
+or `--severity error` to focus on one severity. Unknown or ambiguous entity types
+are warnings, while known type mismatches are errors. `--state-summary` reports
+warning and error totals separately so warnings do not present the graph as
+unhealthy in the same way as errors.
+
+```bash
+python scripts/seed_local.py --db seed.sqlite --graph-issues --severity warning
+python scripts/seed_local.py --db seed.sqlite --state-summary
+```
