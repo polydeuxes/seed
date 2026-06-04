@@ -333,11 +333,13 @@ class State:
     def resolve_fact_subjects(
         self, subject: str, *, resolve_aliases: bool = True
     ) -> set[str]:
-        """Return fact subject IDs matching an exact ID, entity name, or hostname alias."""
+        """Return an exact fact subject, or all matching aliases when enabled."""
 
         candidates = {subject}
-        if resolve_aliases:
-            candidates.update(self.alias_resolver.resolve(subject))
+        if not resolve_aliases:
+            return candidates
+
+        candidates.update(self.alias_resolver.resolve(subject))
         for entity in self.entities.values():
             entity_aliases = [entity.id, entity.name, *entity.aliases]
             if any(_subject_alias_matches(subject, alias) for alias in entity_aliases):
@@ -657,7 +659,14 @@ def _project_fact_supports(
         if not include_expired and is_fact_expired(fact):
             continue
         subject = subject_key(fact.subject_id) if subject_key is not None else fact.subject_id
-        key = (subject, fact.predicate, _fact_value_key(fact.value))
+        # A measurement has one current sample per resolved subject/predicate,
+        # regardless of how many alias subjects or historical values supplied it.
+        value_key = (
+            ""
+            if is_measurement_predicate(fact.predicate)
+            else _fact_value_key(fact.value)
+        )
+        key = (subject, fact.predicate, value_key)
         grouped.setdefault(key, []).append(fact)
         values_by_key.setdefault(key, fact.value)
 
