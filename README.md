@@ -180,6 +180,13 @@ python scripts/seed_local.py \
   --fact-support jellyfin runtime
 ```
 
+Ask for a deterministic explanation of a projected belief, including observed provenance, recursive inference rules, alias resolution, ambiguity, and conflicts:
+
+```bash
+python scripts/seed_local.py --db seed.sqlite --why node115 health_status
+python scripts/seed_local.py --db seed.sqlite --why jellyfin runtime
+```
+
 Live read-only observation sources can collect practical host and monitoring metadata without execution, credentials, mutation, shell commands, or arbitrary PromQL. `--observe-ansible-inventory PATH` inspects raw file content before parser dispatch, treats `.ini`, `.yml`, and `.yaml` extensions only as fallback hints, and emits authoritative hostname, `ansible_host`, IP-address, alias, and group observations without invoking Ansible or connecting to hosts. `--observe-local-host` uses Python standard-library platform and disk APIs to emit the local hostname's OS, architecture, and `/` disk totals. `--observe-prometheus BASE_URL` performs HTTP `GET` requests to Prometheus's read API with a fixed allowlist of safe metric names: `up`, `node_uname_info`, `node_filesystem_avail_bytes`, and `node_filesystem_size_bytes`. Use `--db` when you want the resulting observations to persist across CLI runs:
 
 ```bash

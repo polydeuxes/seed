@@ -2870,3 +2870,38 @@ def test_cli_inferred_facts_displays_projection_provenance(capsys):
     assert "managed_by: docker_container_lifecycle" in output
     assert "source_fact_id=" in output
     assert "inference_rule_id=docker_runtime_managed_by" in output
+
+
+def test_cli_why_displays_recursive_inference_and_alias_resolution(capsys):
+    seed_local = load_seed_local_module()
+
+    assert (
+        seed_local.main(
+            [
+                "--fact",
+                "node115",
+                "alias",
+                "192.168.254.115",
+                "--fact",
+                "192.168.254.115",
+                "alias",
+                "192.168.254.115:9100",
+                "--fact",
+                "192.168.254.115:9100",
+                "availability_status",
+                "down",
+                "--why",
+                "node115",
+                "health_status",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "Current belief:" in output
+    assert "health_status=degraded" in output
+    assert "inference_rule: availability_down_health_degraded" in output
+    assert "derived_from: availability_status=down" in output
+    assert "entity_resolution:" in output
+    assert "-> 192.168.254.115:9100" in output
