@@ -849,6 +849,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="filter --relationships by object",
     )
     parser.add_argument(
+        "--graph-issues",
+        action="store_true",
+        help="print projected graph validation issues and exit",
+    )
+    parser.add_argument(
         "--entity-types",
         action="store_true",
         help="print projected current entity types and exit",
@@ -1351,6 +1356,31 @@ def format_relationships(state: State, args: argparse.Namespace) -> str:
     ) or "no relationships"
 
 
+def format_graph_issues(state: State) -> str:
+    """Format projected graph validation issues for terminal inspection."""
+
+    if not state.graph_issues:
+        return "no graph issues"
+    sections = []
+    for issue in state.graph_issues:
+        sections.append(
+            "\n".join(
+                [
+                    f"{issue.severity}: {issue.subject} {issue.relationship} {issue.object}",
+                    f"relationship_id: {issue.relationship_id}",
+                    f"reason: {issue.reason}",
+                    "subject types: "
+                    f"expected={','.join(issue.expected_subject_types)} "
+                    f"actual={','.join(issue.actual_subject_types)}",
+                    "object types: "
+                    f"expected={','.join(issue.expected_object_types)} "
+                    f"actual={','.join(issue.actual_object_types)}",
+                ]
+            )
+        )
+    return "\n\n".join(sections)
+
+
 def format_entity_types(state: State, entity_id: str | None = None) -> str:
     """Format current entity classifications and their supporting assertions."""
 
@@ -1453,6 +1483,7 @@ def state_summary(
         "measurement_current_sample_count": len(current_measurements),
         "conflict_count": len(state.fact_conflicts),
         "stale_fact_count": len(state.get_stale_facts()),
+        "graph_issue_count": len(state.graph_issues),
         "observation_source_counts": dict(
             sorted(Counter(obs.source_type for obs in state.observations.values()).items())
         ),
@@ -1476,6 +1507,7 @@ def format_state_summary(summary: dict[str, Any]) -> str:
         f"measurement current samples: {summary['measurement_current_sample_count']}",
         f"conflicts: {summary['conflict_count']}",
         f"stale facts: {summary['stale_fact_count']}",
+        f"graph issues: {summary['graph_issue_count']}",
         "observation sources:",
     ]
     if "relationship_count" in summary:
@@ -2413,6 +2445,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.relationships:
         print(format_relationships(projected_state_from_args(args), args))
+        return 0
+
+    if args.graph_issues:
+        print(format_graph_issues(projected_state_from_args(args)))
         return 0
 
     if args.entity_types or args.entity_type:
