@@ -2350,6 +2350,34 @@ def test_cli_alias_resolves_best_fact_after_sqlite_reopen(tmp_path, capsys):
     assert support.supporting_fact_ids == [best.id]
 
 
+def test_cli_alias_resolves_canonical_measurement_best_fact(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed.sqlite"
+
+    assert seed_local.main(
+        [
+            "--db",
+            str(db_path),
+            "--fact",
+            "192.168.254.115:9100",
+            "availability_status",
+            "down",
+            "--alias",
+            "node115",
+            "192.168.254.115:9100",
+        ]
+    ) == 0
+    capsys.readouterr()
+
+    assert seed_local.main(
+        ["--db", str(db_path), "--best-fact", "node115", "availability_status"]
+    ) == 0
+    output = capsys.readouterr().out
+    assert "subject: 192.168.254.115:9100" in output
+    assert "predicate: availability_status" in output
+    assert "value: down" in output
+
+
 def test_cli_alias_records_alias_observation_fact(capsys):
     seed_local = load_seed_local_module()
 

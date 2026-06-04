@@ -305,6 +305,46 @@ def test_runtime_docker_repeated_observations_still_aggregate_support():
     assert support.supporting_fact_ids == [first.id, second.id]
 
 
+def test_canonical_measurement_uses_current_sample_across_alias_component():
+    first_alias = _fact(
+        "fact_alias_9100",
+        "192.168.254.115:9100",
+        predicate="alias",
+        subject_id="node115",
+    )
+    second_alias = _fact(
+        "fact_alias_9200",
+        "192.168.254.115:9200",
+        predicate="alias",
+        subject_id="node115",
+    )
+    endpoint_up = _fact(
+        "fact_endpoint_up",
+        "up",
+        predicate="availability_status",
+        subject_id="192.168.254.115:9200",
+    )
+    endpoint_down = _fact(
+        "fact_endpoint_z_down",
+        "down",
+        predicate="availability_status",
+        subject_id="192.168.254.115:9100",
+    )
+
+    state = _project(first_alias, second_alias, endpoint_up, endpoint_down)
+
+    best = state.get_best_fact("node115", "availability_status")
+    support = state.get_fact_support("node115", "availability_status")
+    assert best == endpoint_down
+    assert support is not None
+    assert support.subject == "node115"
+    assert support.value == "down"
+    assert support.supporting_fact_ids == [endpoint_down.id]
+    assert state.get_best_fact(
+        "node115", "availability_status", resolve_aliases=False
+    ) is None
+
+
 def test_alias_resolution_still_works_for_measurements():
     alias = _fact(
         "fact_alias",
