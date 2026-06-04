@@ -1426,6 +1426,19 @@ def format_entity_impact(state: State, entity: str) -> str:
         aliases = sorted(resolved - {canonical})
 
     availability = state.get_best_fact(canonical, "availability_status")
+    endpoint_availability: dict[str, list[tuple[str, str]]] = {}
+    for endpoint in sorted(resolved):
+        if "endpoint" not in state.get_current_entity_types(endpoint):
+            continue
+        endpoint_status = state.get_best_fact(endpoint, "availability_status")
+        if endpoint_status is None:
+            continue
+        roles = state.get_current_facts(endpoint, "endpoint_role")
+        role_names = [str(role.value) for role in roles] or [endpoint]
+        for role in role_names:
+            endpoint_availability.setdefault(role, []).append(
+                (endpoint, _format_fact_value(endpoint_status.value))
+            )
     groups = _canonical_entities(
         state,
         (
@@ -1474,6 +1487,7 @@ def format_entity_impact(state: State, entity: str) -> str:
             if availability is not None
             else "unknown"
         ),
+        "endpoint availability by role:",
         f"groups/member_of: {', '.join(groups) if groups else 'none'}",
         f"dependencies: {', '.join(dependencies) if dependencies else 'none'}",
         f"dependents: {', '.join(dependents) if dependents else 'none'}",
@@ -1481,6 +1495,13 @@ def format_entity_impact(state: State, entity: str) -> str:
     ]
     alias_lines = [f"- {_format_fact_value(alias)}" for alias in aliases] or ["- none"]
     lines[3:3] = alias_lines
+    endpoint_lines = []
+    for role, statuses in sorted(endpoint_availability.items()):
+        values = sorted({status for _, status in statuses})
+        endpoints = ", ".join(endpoint for endpoint, _ in statuses)
+        endpoint_lines.append(f"- {role}: {', '.join(values)} ({endpoints})")
+    endpoint_heading = lines.index("endpoint availability by role:")
+    lines[endpoint_heading + 1:endpoint_heading + 1] = endpoint_lines or ["- none"]
     if conflicts:
         for conflict in conflicts:
             winning = (

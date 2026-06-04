@@ -345,7 +345,8 @@ def test_sqlite_reopen_uses_persisted_identity_to_alias_later_endpoint(tmp_path)
 
     state = StateProjector(reopened).project("ws_endpoint_reopen")
 
-    assert state.get_best_fact("node115", "availability_status").value == "down"
+    assert state.get_best_fact("node115", "availability_status") is None
+    assert state.get_best_fact(ENDPOINT, "availability_status").value == "down"
     assert any(
         observation.subject == "node115"
         and observation.predicate == "alias"

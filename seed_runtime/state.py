@@ -7,7 +7,7 @@ import json
 import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Iterable, Literal
+from typing import Any, Callable, Iterable, Literal
 
 from seed_runtime.events import EventLedger
 from seed_runtime.evidence import Evidence
@@ -539,6 +539,8 @@ class State:
         qualified hostname.  Resolve those aliases before filtering supports so
         persisted observation facts remain queryable after reopening a ledger.
         """
+        if predicate in _ENDPOINT_SCOPED_PREDICATES:
+            resolve_aliases = False
         resolved_subjects = self.resolve_fact_subjects(
             subject, resolve_aliases=resolve_aliases
         )
@@ -698,7 +700,9 @@ class StateProjector:
         }
         state.facts = _retain_projected_measurement_history(
             state.facts.values(),
-            subject_key=state.alias_resolver.canonical,
+            subject_key=lambda fact: _projection_subject(
+                fact, state.alias_resolver.canonical
+            ),
             limit=self.measurement_history_limit,
         )
         _project_inferred_facts(
@@ -707,7 +711,9 @@ class StateProjector:
         state.alias_resolver = AliasResolver(state.facts.values())
         state.facts = _retain_projected_measurement_history(
             state.facts.values(),
-            subject_key=state.alias_resolver.canonical,
+            subject_key=lambda fact: _projection_subject(
+                fact, state.alias_resolver.canonical
+            ),
             limit=self.measurement_history_limit,
         )
         state.observed_facts = {
@@ -875,7 +881,9 @@ def _project_inferred_facts(
     state.inferred_facts = {
         fact_id: fact for fact_id, fact in state.facts.items() if fact.inferred
     }
-    current_observed_facts = _current_belief_source_facts(state, predicate_catalog)
+    current_observed_facts = _current_belief_source_facts(
+        state, predicate_catalog, exclude_predicates={"availability_status"}
+    )
     state.inferred_facts.update(
         infer_facts(
             current_observed_facts,
@@ -884,6 +892,16 @@ def _project_inferred_facts(
             subject_key=state.alias_resolver.canonical,
         )
     )
+    endpoint_availability = _current_belief_source_facts(
+        state,
+        predicate_catalog,
+        include_predicates={"availability_status"},
+        subject_key=lambda subject: subject,
+        subject_filter=_looks_like_endpoint,
+    )
+    state.inferred_facts.update(
+        infer_facts(endpoint_availability, inference_catalog, predicate_catalog)
+    )
     state.facts = {**state.observed_facts}
     for fact_id, fact in state.inferred_facts.items():
         if fact_id not in state.facts:
@@ -891,12 +909,25 @@ def _project_inferred_facts(
 
 
 def _current_belief_source_facts(
-    state: State, predicate_catalog: PredicateCatalog
+    state: State,
+    predicate_catalog: PredicateCatalog,
+    *,
+    include_predicates: set[str] | None = None,
+    exclude_predicates: set[str] | None = None,
+    subject_key: Callable[[str], str] | None = None,
+    subject_filter: Callable[[str], bool] | None = None,
 ) -> list[Fact]:
-    """Return one representative source fact per alias-resolved current belief."""
+    """Return one representative source fact per selected current belief."""
 
+    facts = (
+        fact
+        for fact in state.observed_facts.values()
+        if (include_predicates is None or fact.predicate in include_predicates)
+        and (exclude_predicates is None or fact.predicate not in exclude_predicates)
+        and (subject_filter is None or subject_filter(fact.subject_id))
+    )
     supports = _project_fact_supports(
-        state.observed_facts.values(), subject_key=state.alias_resolver.canonical
+        facts, subject_key=subject_key or state.alias_resolver.canonical
     )
     grouped: dict[tuple[str, str], list[FactSupport]] = {}
     for support in supports:
@@ -986,8 +1017,16 @@ def _prune_projected_measurement_provenance(
         state.observations.pop(observation_id, None)
 
 
+def _projection_subject(fact: Fact, canonical: Callable[[str], str]) -> str:
+    """Keep endpoint-scoped facts separate from their host alias component."""
+
+    if fact.predicate in _ENDPOINT_SCOPED_PREDICATES:
+        return fact.subject_id
+    return canonical(fact.subject_id)
+
+
 def _retain_projected_measurement_history(
-    facts: Iterable[Fact], *, subject_key: Any, limit: int
+    facts: Iterable[Fact], *, subject_key: Callable[[Fact], str], limit: int
 ) -> dict[str, Fact]:
     """Keep durable history and only recent measurement samples in projection.
 
@@ -1002,7 +1041,7 @@ def _retain_projected_measurement_history(
             durable.append(fact)
             continue
         key = (
-            subject_key(fact.subject_id),
+            subject_key(fact),
             fact.predicate,
             _dimensions_key(fact.dimensions),
         )
@@ -1229,6 +1268,11 @@ def _fact_value_key(value: Any) -> str:
 
 
 _HOST_PREDICATES = {"ip_address", "ansible_host", "architecture", "os"}
+_ENDPOINT_SCOPED_PREDICATES = {
+    "availability_status",
+    "health_status",
+    "endpoint_role",
+}
 _ENDPOINT_SUBJECT = re.compile(r"^(?:\[[^]]+\]|[^:]+):[0-9]{1,5}$")
 
 

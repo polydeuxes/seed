@@ -96,21 +96,21 @@ def test_alias_resolved_ambiguous_source_infers_nothing():
 
 def test_availability_down_infers_health_degraded():
     state = _project(
-        _fact("fact_availability", "node115", "availability_status", "down")
+        _fact("fact_availability", "node115:9100", "availability_status", "down")
     )
 
-    assert state.get_best_fact("node115", "health_status").value == "degraded"
+    assert state.get_best_fact("node115:9100", "health_status").value == "degraded"
 
 
 def test_availability_up_infers_health_ok():
     state = _project(
-        _fact("fact_availability", "node115", "availability_status", "up")
+        _fact("fact_availability", "node115:9100", "availability_status", "up")
     )
 
-    assert state.get_best_fact("node115", "health_status").value == "ok"
+    assert state.get_best_fact("node115:9100", "health_status").value == "ok"
 
 
-def test_alias_resolved_current_availability_drives_one_health_inference():
+def test_alias_resolved_endpoint_availability_drives_endpoint_health_inference():
     state = _project(
         _fact("fact_alias_9100", "node115", "alias", "192.168.254.115:9100"),
         _fact("fact_alias_9200", "node115", "alias", "192.168.254.115:9200"),
@@ -128,44 +128,37 @@ def test_alias_resolved_current_availability_drives_one_health_inference():
         ),
     )
 
-    availability = state.get_best_fact("node115", "availability_status")
-    health = state.get_best_fact("node115", "health_status")
-    inferred_health = [
-        fact
-        for fact in state.inferred_facts.values()
-        if fact.subject_id == "node115" and fact.predicate == "health_status"
-    ]
+    assert state.get_best_fact("node115", "availability_status") is None
+    assert state.get_best_fact("node115", "health_status") is None
+    down_health = state.get_best_fact("192.168.254.115:9100", "health_status")
+    up_health = state.get_best_fact("192.168.254.115:9200", "health_status")
+    assert (down_health.value, down_health.source_fact_id) == (
+        "degraded",
+        "fact_endpoint_z_down",
+    )
+    assert (up_health.value, up_health.source_fact_id) == ("ok", "fact_endpoint_up")
 
-    assert availability is not None
-    assert availability.id == "fact_endpoint_z_down"
-    assert availability.value == "down"
-    assert health is not None
-    assert health.value == "degraded"
-    assert health.source_fact_id == availability.id
-    assert [(fact.value, fact.source_fact_id) for fact in inferred_health] == [
-        ("degraded", availability.id)
-    ]
-
-    explanation = ExplanationBuilder(state).why("node115", "health_status")
+    explanation = ExplanationBuilder(state).why(
+        "192.168.254.115:9100", "health_status"
+    )
     explained_health = explanation.current_beliefs[0].facts[0]
-    assert explained_health.source_fact_id == availability.id
+    assert explained_health.source_fact_id == "fact_endpoint_z_down"
     assert explained_health.source_fact is not None
-    assert explained_health.source_fact.fact_id == availability.id
-    assert explained_health.source_fact.value == availability.value
+    assert explained_health.source_fact.value == "down"
 
 
 def test_inferred_confidence_is_capped_by_source_confidence():
     state = _project(
         _fact(
             "fact_availability",
-            "node115",
+            "node115:9100",
             "availability_status",
             "down",
             confidence=0.31,
         )
     )
 
-    inferred = state.get_best_fact("node115", "health_status")
+    inferred = state.get_best_fact("node115:9100", "health_status")
     assert inferred.confidence == 0.31
 
 

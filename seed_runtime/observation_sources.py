@@ -282,6 +282,17 @@ class PrometheusObservationSource:
                 if isinstance(nodename, str) and nodename.strip():
                     metadata["nodename"] = nodename.strip()
             if query == "up":
+                job = metric.get("job")
+                if isinstance(job, str) and job.strip():
+                    observations.append(
+                        self._observation(
+                            observed_at,
+                            instance,
+                            "endpoint_role",
+                            job.strip(),
+                            metadata,
+                        )
+                    )
                 observations.append(
                     self._observation(
                         observed_at,

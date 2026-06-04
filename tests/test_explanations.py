@@ -59,9 +59,11 @@ def test_observed_fact_explanation_includes_provenance():
 
 
 def test_inferred_fact_explanation_recurses_to_observed_source():
-    state = _state([_fact("fact_obs_down", "node", "availability_status", "down")])
+    state = _state(
+        [_fact("fact_obs_down", "node:9100", "availability_status", "down")]
+    )
 
-    explanation = ExplanationBuilder(state).why("node", "health_status")
+    explanation = ExplanationBuilder(state).why("node:9100", "health_status")
 
     inferred = explanation.current_beliefs[0].facts[0]
     assert inferred.inference_rule_id == "availability_down_health_degraded"
@@ -70,7 +72,7 @@ def test_inferred_fact_explanation_recurses_to_observed_source():
     assert inferred.source_fact.observed_confidence == 0.9
 
 
-def test_alias_resolved_explanation_includes_resolution_chain():
+def test_endpoint_scoped_explanation_resolves_only_endpoint():
     state = _state(
         [
             _fact("fact_alias_ip", "node115", "alias", "192.168.254.115"),
@@ -84,15 +86,13 @@ def test_alias_resolved_explanation_includes_resolution_chain():
         ]
     )
 
-    explanation = ExplanationBuilder(state).why("node115", "health_status")
+    explanation = ExplanationBuilder(state).why(
+        "192.168.254.115:9100", "health_status"
+    )
 
     observed_source = explanation.current_beliefs[0].facts[0].source_fact
     assert observed_source is not None
-    assert observed_source.entity_resolution == [
-        "node115",
-        "192.168.254.115",
-        "192.168.254.115:9100",
-    ]
+    assert observed_source.entity_resolution == ["192.168.254.115:9100"]
 
 
 def test_ambiguous_runtime_explanation_returns_competing_supported_values():

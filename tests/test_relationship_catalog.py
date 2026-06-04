@@ -52,6 +52,10 @@ def test_core_catalog_contains_initial_relationship_vocabulary():
         "runs_on": "hosting",
     }
     assert catalog.get("member_of").derived_from_predicates == ["group"]
+    assert catalog.get("provides").derived_from_predicates == [
+        "provides",
+        "endpoint_role",
+    ]
 
 
 def test_group_alias_prometheus_and_host_facts_create_relationships():
@@ -191,3 +195,22 @@ def test_cli_relationship_filters_print_projected_edges(tmp_path, capsys):
     ) == 0
 
     assert capsys.readouterr().out == "node115 member_of servers\n"
+
+
+def test_endpoint_role_projects_provides_relationship():
+    state = _project(
+        _fact(
+            "fact_endpoint_role",
+            "192.168.254.115:9100",
+            "endpoint_role",
+            "node-exporter",
+        )
+    )
+
+    assert [
+        (edge.subject, edge.relationship, edge.object)
+        for edge in state.get_relationships()
+    ] == [("192.168.254.115:9100", "provides", "node-exporter")]
+    assert state.get_current_entity_types("192.168.254.115:9100") == ["endpoint"]
+    assert state.get_current_entity_types("node-exporter") == ["capability"]
+    assert state.get_graph_issues() == []

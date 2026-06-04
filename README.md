@@ -187,7 +187,7 @@ python scripts/seed_local.py --db seed.sqlite --why node115 health_status
 python scripts/seed_local.py --db seed.sqlite --why jellyfin runtime
 ```
 
-Live read-only observation sources can collect practical host and monitoring metadata without execution, credentials, mutation, shell commands, or arbitrary PromQL. `--observe-ansible-inventory PATH` inspects raw file content before parser dispatch, treats `.ini`, `.yml`, and `.yaml` extensions only as fallback hints, and emits authoritative hostname, `ansible_host`, IP-address, alias, and group observations without invoking Ansible or connecting to hosts. `--observe-local-host` uses Python standard-library platform and disk APIs to emit the local hostname's OS, architecture, and `/` disk totals. `--observe-prometheus BASE_URL` performs HTTP `GET` requests to Prometheus's read API with a fixed allowlist of safe metric names: `up`, `node_uname_info`, `node_filesystem_avail_bytes`, and `node_filesystem_size_bytes`. Use `--db` when you want the resulting observations to persist across CLI runs:
+Live read-only observation sources can collect practical host and monitoring metadata without execution, credentials, mutation, shell commands, or arbitrary PromQL. `--observe-ansible-inventory PATH` inspects raw file content before parser dispatch, treats `.ini`, `.yml`, and `.yaml` extensions only as fallback hints, and emits authoritative hostname, `ansible_host`, IP-address, alias, and group observations without invoking Ansible or connecting to hosts. `--observe-local-host` uses Python standard-library platform and disk APIs to emit the local hostname's OS, architecture, and `/` disk totals. `--observe-prometheus BASE_URL` performs HTTP `GET` requests to Prometheus's read API with a fixed allowlist of safe metric names: `up`, `node_uname_info`, `node_filesystem_avail_bytes`, and `node_filesystem_size_bytes`. Prometheus `up` samples also emit the metric's `job` label as the endpoint's durable `endpoint_role`. Use `--db` when you want the resulting observations to persist across CLI runs:
 
 ```bash
 python scripts/seed_local.py --observe-local-host
@@ -199,7 +199,7 @@ python scripts/seed_local.py \
   --observe-timeout 5
 ```
 
-Seed projects measurements as current belief rather than an unbounded time series. By default it retains the latest sample per canonical subject/alias component, predicate, and dimensions; filesystem dimensions are `mountpoint`, `device`, and `fstype`. A larger recent projection history can be explicitly requested for debugging, while append-only audit events remain untouched until an explicit future compaction operation. Prometheus remains the historian.
+Seed projects measurements as current belief rather than an unbounded time series. By default it retains the latest sample per canonical subject/alias component, predicate, and dimensions; filesystem dimensions are `mountpoint`, `device`, and `fstype`. Endpoint availability and derived endpoint health remain scoped to the exact endpoint rather than being flattened into its host alias component. A larger recent projection history can be explicitly requested for debugging, while append-only audit events remain untouched until an explicit future compaction operation. Prometheus remains the historian.
 
 All read-only sources ingest through `ObservationCollectionService`. Prometheus intake prints a concise summary by default: the ingested observation count, discovered hosts/instances, and counts by predicate. Add `--verbose-observations` to print every ingested fact. Use `--prometheus-instance INSTANCE` or `--prometheus-mountpoint MOUNTPOINT` to limit Prometheus ingestion; without those filters, the full allowlisted metric intake is ingested unchanged. If Prometheus is unreachable, the source fails gracefully by ingesting zero observations.
 
@@ -253,9 +253,9 @@ python scripts/seed_local.py --db seed.sqlite --relationships --relationship mem
 ```
 
 Inspect one entity's projected status and blast radius with `--impact ENTITY`. The
-read-only query resolves aliases and reports current types, aliases, availability,
-groups, dependencies, dependents, active conflicts, and related graph issues without
-ingesting observations or executing tools.
+read-only query resolves aliases and reports current types, aliases, host availability,
+endpoint availability grouped by role, groups, dependencies, dependents, active
+conflicts, and related graph issues without ingesting observations or executing tools.
 
 ```bash
 python scripts/seed_local.py --db seed.sqlite --impact node115

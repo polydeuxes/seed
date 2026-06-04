@@ -18,6 +18,8 @@ def test_builtin_catalog_defines_canonical_predicates_and_prometheus_mappings():
     assert catalog.get("ip_address").cardinality == "multi"
     assert catalog.get("ansible_host").cardinality == "multi"
     assert catalog.get("prometheus_instance").cardinality == "multi"
+    assert catalog.get("endpoint_role").kind == "durable_fact"
+    assert catalog.get("endpoint_role").cardinality == "multi"
     assert catalog.find_mapping("up", source_name="prometheus").canonical_predicate == (
         "availability_status"
     )

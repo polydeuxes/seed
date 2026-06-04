@@ -97,16 +97,14 @@ def test_unknown_monitored_by_subject_is_warning():
     assert issue.actual_subject_types == ["unknown"]
 
 
-def test_ambiguous_entity_type_is_warning():
+def test_provides_accepts_any_subject_entity_type():
     state = _project(
         _fact("host_type", "api:8080", "os", "linux"),
         _fact("endpoint_type", "api:8080", "status", "up"),
         _fact("capability", "api:8080", "provides", "http"),
     )
 
-    assert len(state.graph_issues) == 1
-    assert state.graph_issues[0].severity == "warning"
-    assert state.graph_issues[0].actual_subject_types == ["endpoint", "host"]
+    assert state.graph_issues == []
 
 
 def test_sqlite_reopen_preserves_graph_validation_result(tmp_path):
