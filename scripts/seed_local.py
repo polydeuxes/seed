@@ -38,6 +38,7 @@ from seed_runtime.handoff_plans import (
     HandoffPlanStatusError,
 )
 from seed_runtime.ids import new_id
+from seed_runtime.inference_catalog import InferenceCatalog
 from seed_runtime.intent_classifier import (
     IntentDecisionModel,
     IntentPromptModelClient,
@@ -772,6 +773,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="print canonical predicates and provider mappings, then exit",
     )
     parser.add_argument(
+        "--show-inference-catalog",
+        action="store_true",
+        help="print deterministic inference rules, then exit",
+    )
+    parser.add_argument(
         "--verbose-observations",
         action="store_true",
         help="print every ingested observation-derived fact instead of a summary",
@@ -930,6 +936,11 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--inferred-facts",
+        metavar="ENTITY",
+        help="print projected inferred facts for an entity",
+    )
+    parser.add_argument(
         "--stale-facts",
         action="store_true",
         help="print expired facts that no longer influence projected state",
@@ -958,6 +969,7 @@ def validate_lifecycle_args(
         bool(args.fact_support),
         bool(args.best_fact),
         bool(args.current_facts),
+        bool(args.inferred_facts),
         bool(args.fact_conflicts),
         bool(args.stale_facts),
         bool(args.stale_fact_refreshes),
@@ -968,7 +980,7 @@ def validate_lifecycle_args(
             "choose only one of --preconditions, --proposal, --handoff, "
             "--authorize-proposal, --accept-plan, --approve-plan, "
             "--reject-plan, --supersede-plan, --impact, --fact-support, --best-fact, "
-            "--current-facts, "
+            "--current-facts, --inferred-facts, "
             "--fact-conflicts, --stale-facts, --stale-fact-refreshes, "
             "or --events-only"
         )
@@ -1350,6 +1362,7 @@ def fact_query_state(args: argparse.Namespace) -> State:
             ledger,
             measurement_history_limit=history_limit,
             predicate_catalog=PredicateCatalog.load(args.predicate_catalog),
+            inference_catalog=InferenceCatalog.load(),
         ).project(args.workspace)
     finally:
         close = getattr(ledger, "close", None)
@@ -1363,7 +1376,9 @@ def projected_state_from_args(args: argparse.Namespace) -> State:
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
     try:
         return StateProjector(
-            ledger, predicate_catalog=PredicateCatalog.load(args.predicate_catalog)
+            ledger,
+            predicate_catalog=PredicateCatalog.load(args.predicate_catalog),
+            inference_catalog=InferenceCatalog.load(),
         ).project(args.workspace)
     finally:
         close = getattr(ledger, "close", None)
@@ -2593,12 +2608,54 @@ def format_predicate_catalog(catalog: PredicateCatalog) -> str:
     return "\n".join(lines)
 
 
+def format_inference_catalog(catalog: InferenceCatalog) -> str:
+    """Format deterministic inference rules for inspection."""
+
+    lines = ["deterministic inference rules:"]
+    for rule in catalog.list_rules():
+        when_value = (
+            "*" if rule.when_value is None else _format_fact_value(rule.when_value)
+        )
+        lines.append(
+            f"- {rule.id}: {rule.when_predicate}={when_value} -> "
+            f"{rule.then_predicate}={_format_fact_value(rule.then_value)} "
+            f"(confidence={rule.confidence}; reason={rule.reason})"
+        )
+    return "\n".join(lines)
+
+
+def format_inferred_facts(state: State, entity: str) -> str:
+    """Format inferred projection artifacts for an entity."""
+
+    subjects = state.resolve_fact_subjects(entity)
+    facts = sorted(
+        (fact for fact in state.inferred_facts.values() if fact.subject_id in subjects),
+        key=lambda fact: (fact.predicate, _format_fact_value(fact.value), fact.id),
+    )
+    if not facts:
+        return f"no inferred facts for {entity}"
+    return "\n".join(
+        f"{fact.predicate}: {_format_fact_value(fact.value)} "
+        f"(confidence={fact.confidence}, source_fact_id={fact.source_fact_id}, "
+        f"inference_rule_id={fact.inference_rule_id})"
+        for fact in facts
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     validate_lifecycle_args(args, parser)
     if args.show_predicate_catalog:
         print(format_predicate_catalog(PredicateCatalog.load(args.predicate_catalog)))
+        return 0
+
+    if args.show_inference_catalog:
+        print(format_inference_catalog(InferenceCatalog.load()))
+        return 0
+
+    if args.inferred_facts:
+        print(format_inferred_facts(fact_query_state(args), args.inferred_facts))
         return 0
 
     if args.impact:

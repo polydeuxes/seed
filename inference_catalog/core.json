@@ -1,0 +1,44 @@
+{
+  "rules": [
+    {
+      "id": "docker_runtime_managed_by",
+      "name": "Docker runtime managed by container lifecycle",
+      "when_predicate": "runtime",
+      "when_value": "docker",
+      "then_predicate": "managed_by",
+      "then_value": "docker_container_lifecycle",
+      "confidence": 0.60,
+      "reason": "Docker services are deterministically managed through the Docker container lifecycle."
+    },
+    {
+      "id": "systemd_runtime_managed_by",
+      "name": "Systemd runtime managed by systemctl",
+      "when_predicate": "runtime",
+      "when_value": "systemd",
+      "then_predicate": "managed_by",
+      "then_value": "systemctl_cli",
+      "confidence": 0.60,
+      "reason": "Systemd services are deterministically managed through systemctl."
+    },
+    {
+      "id": "availability_down_health_degraded",
+      "name": "Down availability implies degraded health",
+      "when_predicate": "availability_status",
+      "when_value": "down",
+      "then_predicate": "health_status",
+      "then_value": "degraded",
+      "confidence": 0.70,
+      "reason": "A currently unavailable entity has degraded health."
+    },
+    {
+      "id": "availability_up_health_ok",
+      "name": "Up availability implies healthy status",
+      "when_predicate": "availability_status",
+      "when_value": "up",
+      "then_predicate": "health_status",
+      "then_value": "ok",
+      "confidence": 0.70,
+      "reason": "A currently available entity has healthy status."
+    }
+  ]
+}

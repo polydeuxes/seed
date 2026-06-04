@@ -264,3 +264,9 @@ unhealthy in the same way as errors.
 python scripts/seed_local.py --db seed.sqlite --graph-issues --severity warning
 python scripts/seed_local.py --db seed.sqlite --state-summary
 ```
+
+### Inference catalog
+
+Seed's built-in `InferenceCatalog` defines deterministic reasoning rules that project new facts from unambiguous current observed facts. It is not LLM reasoning and it never executes commands, mutates hosts, or performs network calls. `PredicateCatalog` defines the vocabulary for what can be known, `RelationshipCatalog` defines topology semantics, `EntityTypeCatalog` defines entity classes, `InferenceCatalog` defines deterministic reasoning rules, and `CapabilityCatalog` defines what can be done.
+
+Inferred facts are projection artifacts rather than observations. They are marked with `source_type=inferred` and `inferred=true`, link back to the activating fact and catalog rule through `source_fact_id` and `inference_rule_id`, never exceed the source fact's confidence, and never overwrite observed facts. Single-cardinality predicate ambiguity suppresses inference. Use `--show-inference-catalog` to inspect the built-in rules.

@@ -417,3 +417,15 @@ entities, projected from facts while preserving the source fact's provenance.
 `PredicateCatalog` (what can be known) and `CapabilityCatalog` (what can be done).
 Relationships are inspect-only projected state; they are never directly injected
 or executed.
+
+### InferenceCatalog and deterministic projection
+
+Seed's catalogs have separate responsibilities:
+
+- `PredicateCatalog` defines vocabulary: what can be known.
+- `RelationshipCatalog` defines topology semantics: how entities connect.
+- `EntityTypeCatalog` defines entity classes: what kind of thing an entity is.
+- `InferenceCatalog` defines deterministic reasoning rules: which current facts imply projection artifacts.
+- `CapabilityCatalog` defines capabilities: what can be done.
+
+`InferenceCatalog` is not LLM reasoning. The `StateProjector` applies its local, declarative rules only after observed and canonical facts have been projected. Inferred facts are reproducible projection artifacts from unambiguous observed/current facts; they carry their source fact and rule IDs, respect predicate cardinality, cap confidence at the source fact's confidence, and cannot overwrite observed facts. Inference projection performs no command execution, shell invocation, host mutation, network access, or model call.
