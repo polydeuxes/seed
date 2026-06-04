@@ -252,6 +252,7 @@ def test_fact_seed_ingests_observation_evidence_and_fact_before_user_message():
         "predicate": "runtime",
         "value": "docker",
         "metadata": {"ingested_by": "scripts.seed_local --fact"},
+        "dimensions": {},
         "expires_at": None,
     }
 
@@ -1508,7 +1509,7 @@ def test_cli_measurement_fact_support_hides_old_samples_by_default(capsys):
     assert "value: 1" in output
     assert "value: 0" not in output
     assert "support_kind: current_sample" in output
-    assert "historical samples hidden; use --include-history" in output
+    assert "historical samples hidden" not in output
 
 
 def test_cli_measurement_fact_support_include_history_shows_all_samples(capsys):

@@ -24,7 +24,11 @@ from seed_runtime.observation_normalizers import (
     DEFAULT_OBSERVATION_NORMALIZATION_PIPELINE,
     ObservationNormalizationPipeline,
 )
-from seed_runtime.observations import Observation, ObservationIngestor, ObservationSourceType
+from seed_runtime.observations import (
+    Observation,
+    ObservationIngestor,
+    ObservationSourceType,
+)
 from seed_runtime.state import StateProjector
 
 if find_spec("pydantic") is not None:
@@ -224,11 +228,7 @@ class PrometheusObservationSource:
     def _query(self, query: str) -> dict[str, Any]:
         if query not in self.SAFE_QUERIES:
             raise ValueError(f"Prometheus query is not allowlisted: {query}")
-        url = (
-            urljoin(self.base_url, "api/v1/query")
-            + "?"
-            + urlencode({"query": query})
-        )
+        url = urljoin(self.base_url, "api/v1/query") + "?" + urlencode({"query": query})
         request = Request(url, method="GET", headers={"Accept": "application/json"})
         with urlopen(request, timeout=self.timeout_seconds) as response:
             payload = json.loads(response.read().decode("utf-8"))
@@ -338,7 +338,23 @@ class PrometheusObservationSource:
             value=value,
             confidence=0.95,
             metadata=metadata,
+            dimensions=_filesystem_dimensions(predicate, metadata),
         )
+
+
+def _filesystem_dimensions(predicate: str, metadata: dict[str, Any]) -> dict[str, str]:
+    """Return the stable identity labels for one filesystem measurement series."""
+
+    if predicate not in {"filesystem_avail_bytes", "filesystem_size_bytes"}:
+        return {}
+    labels = metadata.get("metric_labels", {})
+    if not isinstance(labels, dict):
+        return {}
+    return {
+        key: value
+        for key in ("mountpoint", "device", "fstype")
+        if isinstance((value := labels.get(key)), str) and value
+    }
 
 
 def _prometheus_int(value: Any) -> int:

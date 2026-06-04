@@ -90,6 +90,7 @@ class FactSupport(SeedModel):
     subject: str
     predicate: str
     value: Any
+    dimensions: dict[str, str] = Field(default_factory=dict)
     supporting_fact_ids: list[str] = Field(default_factory=list)
     source_types: list[FactSourceType] = Field(default_factory=list)
     confidence: float
@@ -106,6 +107,7 @@ class FactConflict(SeedModel):
 
     subject: str
     predicate: str
+    dimensions: dict[str, str] = Field(default_factory=dict)
     values: list[Any]
     winning_value: Any | None = None
     best_fact_id: str | None = None
@@ -159,6 +161,7 @@ class Fact(SeedModel):
     subject_id: str
     predicate: str
     value: Any
+    dimensions: dict[str, str] = Field(default_factory=dict)
     evidence_ids: list[str] = Field(default_factory=list)
     source_type: FactSourceType = "user"
     confidence: float = DEFAULT_CONFIDENCE_BY_SOURCE_TYPE["user"]

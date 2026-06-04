@@ -257,6 +257,7 @@ class State:
         *,
         include_expired: bool = False,
         resolve_aliases: bool = True,
+        dimensions: dict[str, str] | None = None,
     ) -> Fact | None:
         """Return the representative fact for the best-supported current belief."""
         best_support = self.get_fact_support(
@@ -264,6 +265,7 @@ class State:
             predicate,
             include_expired=include_expired,
             resolve_aliases=resolve_aliases,
+            dimensions=dimensions,
         )
         if best_support is None:
             return None
@@ -292,6 +294,7 @@ class State:
         *,
         include_expired: bool = False,
         resolve_aliases: bool = True,
+        dimensions: dict[str, str] | None = None,
     ) -> list[FactSupport]:
         """Return aggregate support groups for a subject and predicate.
 
@@ -324,6 +327,7 @@ class State:
             support
             for support in fact_supports
             if support.predicate == predicate
+            and (dimensions is None or support.dimensions == dimensions)
             and (
                 support.subject in resolved_subjects
                 or (resolve_aliases and support.subject == canonical_subject)
@@ -357,6 +361,7 @@ class State:
         *,
         include_expired: bool = False,
         resolve_aliases: bool = True,
+        dimensions: dict[str, str] | None = None,
     ) -> FactSupport | None:
         """Return the unambiguous strongest aggregate support, if one exists."""
         candidates = self.get_fact_supports(
@@ -364,6 +369,7 @@ class State:
             predicate,
             include_expired=include_expired,
             resolve_aliases=resolve_aliases,
+            dimensions=dimensions,
         )
         return _select_unambiguous_best_support(candidates)
 
@@ -424,17 +430,40 @@ class State:
 class StateProjector:
     """Rebuild current inspectable state from ledger events."""
 
-    def __init__(self, ledger: EventLedger) -> None:
+    def __init__(
+        self, ledger: EventLedger, *, measurement_history_limit: int = 1
+    ) -> None:
+        if measurement_history_limit < 1:
+            raise ValueError("measurement_history_limit must be at least 1")
         self.ledger = ledger
+        self.measurement_history_limit = measurement_history_limit
 
     def project(self, workspace_id: str) -> State:
         state = State(workspace_id=workspace_id)
         for event in self.ledger.list_events(workspace_id):
             self.apply(state, event)
         _project_inferred_facts(state)
+        state.alias_resolver = AliasResolver(state.facts.values())
+        all_measurement_evidence_ids = {
+            evidence_id
+            for fact in state.facts.values()
+            if is_measurement_predicate(fact.predicate)
+            for evidence_id in fact.evidence_ids
+        }
+        state.facts = _retain_projected_measurement_history(
+            state.facts.values(),
+            subject_key=state.alias_resolver.canonical,
+            limit=self.measurement_history_limit,
+        )
+        state.observed_facts = {
+            fact_id: fact for fact_id, fact in state.facts.items() if not fact.inferred
+        }
+        state.inferred_facts = {
+            fact_id: fact for fact_id, fact in state.facts.items() if fact.inferred
+        }
+        _prune_projected_measurement_provenance(state, all_measurement_evidence_ids)
         state.fact_supports = _project_fact_supports(state.facts.values())
         state.entity_relationships = _project_entity_relationships(state.facts.values())
-        state.alias_resolver = AliasResolver(state.facts.values())
         state.entity_aliases = state.alias_resolver.aliases
         state.fact_conflicts = _project_fact_conflicts(state)
         return state
@@ -627,7 +656,9 @@ _SOURCE_SUPPORT_WEIGHT: dict[str, float] = {
 }
 
 
-def _normalize_fact_event_payload(payload: dict[str, Any], event: Event) -> dict[str, Any]:
+def _normalize_fact_event_payload(
+    payload: dict[str, Any], event: Event
+) -> dict[str, Any]:
     """Return a Fact-compatible payload for observed/inferred fact events.
 
     Current ObservationIngestor events store facts under a ``fact`` key with the
@@ -647,18 +678,75 @@ def _normalize_fact_event_payload(payload: dict[str, Any], event: Event) -> dict
     return data
 
 
+def _prune_projected_measurement_provenance(
+    state: State, all_measurement_evidence_ids: set[str]
+) -> None:
+    """Remove provenance belonging only to measurement samples pruned from state."""
+
+    retained_evidence_ids = {
+        evidence_id
+        for fact in state.facts.values()
+        for evidence_id in fact.evidence_ids
+    }
+    pruned_evidence_ids = all_measurement_evidence_ids - retained_evidence_ids
+    pruned_observation_ids = {
+        observation_id
+        for evidence_id in pruned_evidence_ids
+        if (evidence := state.evidence.get(evidence_id)) is not None
+        and isinstance((observation_id := evidence.payload.get("observation_id")), str)
+    }
+    for evidence_id in pruned_evidence_ids:
+        state.evidence.pop(evidence_id, None)
+    for observation_id in pruned_observation_ids:
+        state.observations.pop(observation_id, None)
+
+
+def _retain_projected_measurement_history(
+    facts: Iterable[Fact], *, subject_key: Any, limit: int
+) -> dict[str, Fact]:
+    """Keep durable history and only recent measurement samples in projection.
+
+    The append-only ledger remains untouched. Measurement series are identified by
+    canonical alias component, predicate, and dimensions.
+    """
+
+    durable: list[Fact] = []
+    measurements: dict[tuple[str, str, str], list[Fact]] = {}
+    for fact in facts:
+        if not is_measurement_predicate(fact.predicate):
+            durable.append(fact)
+            continue
+        key = (
+            subject_key(fact.subject_id),
+            fact.predicate,
+            _dimensions_key(fact.dimensions),
+        )
+        measurements.setdefault(key, []).append(fact)
+
+    retained = list(durable)
+    for samples in measurements.values():
+        retained.extend(
+            sorted(samples, key=lambda fact: (fact.observed_at, fact.id), reverse=True)[
+                :limit
+            ]
+        )
+    return {fact.id: fact for fact in retained}
+
+
 def _project_fact_supports(
     facts: Iterable[Fact],
     *,
     include_expired: bool = False,
     subject_key: Any | None = None,
 ) -> list[FactSupport]:
-    grouped: dict[tuple[str, str, str], list[Fact]] = {}
-    values_by_key: dict[tuple[str, str, str], Any] = {}
+    grouped: dict[tuple[str, str, str, str], list[Fact]] = {}
+    values_by_key: dict[tuple[str, str, str, str], Any] = {}
     for fact in facts:
         if not include_expired and is_fact_expired(fact):
             continue
-        subject = subject_key(fact.subject_id) if subject_key is not None else fact.subject_id
+        subject = (
+            subject_key(fact.subject_id) if subject_key is not None else fact.subject_id
+        )
         # A measurement has one current sample per resolved subject/predicate,
         # regardless of how many alias subjects or historical values supplied it.
         value_key = (
@@ -666,12 +754,17 @@ def _project_fact_supports(
             if is_measurement_predicate(fact.predicate)
             else _fact_value_key(fact.value)
         )
-        key = (subject, fact.predicate, value_key)
+        key = (subject, fact.predicate, _dimensions_key(fact.dimensions), value_key)
         grouped.setdefault(key, []).append(fact)
         values_by_key.setdefault(key, fact.value)
 
     supports: list[FactSupport] = []
-    for (subject, predicate, _value_key), supporting_facts in grouped.items():
+    for (
+        subject,
+        predicate,
+        dimensions_key,
+        _value_key,
+    ), supporting_facts in grouped.items():
         ordered_facts = sorted(
             supporting_facts, key=lambda fact: (fact.observed_at, fact.id)
         )
@@ -693,6 +786,7 @@ def _project_fact_supports(
                     subject=subject,
                     predicate=predicate,
                     value=current_sample.value,
+                    dimensions=dict(current_sample.dimensions),
                     supporting_fact_ids=[current_sample.id],
                     source_types=[current_sample.source_type],
                     confidence=current_sample.confidence,
@@ -709,7 +803,10 @@ def _project_fact_supports(
                 FactSupport(
                     subject=subject,
                     predicate=predicate,
-                    value=values_by_key[(subject, predicate, _value_key)],
+                    value=values_by_key[
+                        (subject, predicate, dimensions_key, _value_key)
+                    ],
+                    dimensions=dict(ordered_facts[-1].dimensions),
                     supporting_fact_ids=[fact.id for fact in ordered_facts],
                     source_types=source_types,
                     confidence=_aggregate_support_confidence(ordered_facts),
@@ -779,15 +876,17 @@ def _project_fact_conflicts(
 ) -> list[FactConflict]:
     if not include_expired and not state.fact_supports:
         state.fact_supports = _project_fact_supports(state.facts.values())
-    grouped: dict[tuple[str, str], list[Fact]] = {}
+    grouped: dict[tuple[str, str, str], list[Fact]] = {}
     for fact in state.facts.values():
         if not include_expired and is_fact_expired(fact):
             continue
         canonical_subject = state.alias_resolver.canonical(fact.subject_id)
-        grouped.setdefault((canonical_subject, fact.predicate), []).append(fact)
+        grouped.setdefault(
+            (canonical_subject, fact.predicate, _dimensions_key(fact.dimensions)), []
+        ).append(fact)
 
     conflicts: list[FactConflict] = []
-    for (subject, predicate), facts in grouped.items():
+    for (subject, predicate, _dimensions), facts in grouped.items():
         values_by_key: dict[str, Any] = {}
         for fact in facts:
             values_by_key.setdefault(_fact_value_key(fact.value), fact.value)
@@ -795,7 +894,10 @@ def _project_fact_conflicts(
             continue
 
         best_fact = state.get_best_fact(
-            subject, predicate, include_expired=include_expired
+            subject,
+            predicate,
+            include_expired=include_expired,
+            dimensions=facts[0].dimensions,
         )
         if best_fact is None:
             winning_value = None
@@ -813,6 +915,7 @@ def _project_fact_conflicts(
             FactConflict(
                 subject=subject,
                 predicate=predicate,
+                dimensions=dict(facts[0].dimensions),
                 values=list(values_by_key.values()),
                 winning_value=winning_value,
                 best_fact_id=best_fact_id,
@@ -824,6 +927,10 @@ def _project_fact_conflicts(
             )
         )
     return conflicts
+
+
+def _dimensions_key(dimensions: dict[str, str]) -> str:
+    return json.dumps(dimensions, sort_keys=True, separators=(",", ":"))
 
 
 def _fact_value_key(value: Any) -> str:
@@ -860,7 +967,9 @@ def _project_entity_relationships(facts: Iterable[Fact]) -> list[EntityRelations
 def _choose_canonical_alias_name(
     component: set[str], edges: list[tuple[str, str, Fact]]
 ) -> str:
-    component_edges = [edge for edge in edges if edge[0] in component and edge[1] in component]
+    component_edges = [
+        edge for edge in edges if edge[0] in component and edge[1] in component
+    ]
     subject_names = {subject for subject, _alias, _fact in component_edges}
 
     def sort_key(name: str) -> tuple[int, int, int, str]:

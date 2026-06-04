@@ -192,6 +192,8 @@ python scripts/seed_local.py \
   --observe-timeout 5
 ```
 
+Seed projects measurements as current belief rather than an unbounded time series. By default it retains the latest sample per canonical subject/alias component, predicate, and dimensions; filesystem dimensions are `mountpoint`, `device`, and `fstype`. A larger recent projection history can be explicitly requested for debugging, while append-only audit events remain untouched until an explicit future compaction operation. Prometheus remains the historian.
+
 All read-only sources ingest through `ObservationCollectionService`. Prometheus intake prints a concise summary by default: the ingested observation count, discovered hosts/instances, and counts by predicate. Add `--verbose-observations` to print every ingested fact. Use `--prometheus-instance INSTANCE` or `--prometheus-mountpoint MOUNTPOINT` to limit Prometheus ingestion; without those filters, the full allowlisted metric intake is ingested unchanged. If Prometheus is unreachable, the source fails gracefully by ingesting zero observations.
 
 By default, the CLI posts intent prompts to `http://localhost:11434/api/generate` with model `qwen2.5:3b`, `stream: false`, and JSON-formatted output enabled. Use `--model` to select another local model:

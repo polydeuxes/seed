@@ -1273,7 +1273,14 @@ def fact_query_state(args: argparse.Namespace) -> State:
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
     try:
         seed_dev_state_from_args(args, ledger)
-        return StateProjector(ledger).project(args.workspace)
+        history_limit = (
+            max(1, len(ledger.list_events(args.workspace)))
+            if getattr(args, "include_history", False)
+            else 1
+        )
+        return StateProjector(
+            ledger, measurement_history_limit=history_limit
+        ).project(args.workspace)
     finally:
         close = getattr(ledger, "close", None)
         if close is not None:
@@ -1361,6 +1368,7 @@ def _fact_support_for_measurement_sample(
         subject=state.alias_resolver.canonical(fact.subject_id),
         predicate=fact.predicate,
         value=fact.value,
+        dimensions=dict(fact.dimensions),
         supporting_fact_ids=[fact.id],
         source_types=[fact.source_type],
         confidence=fact.confidence,
