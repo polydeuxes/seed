@@ -1,5 +1,13 @@
+from datetime import datetime, timezone
+
+from seed_runtime import AnsibleInventoryObservationSource
 from seed_runtime.events import SQLiteEventLedger
 from seed_runtime.models import Entity
+from seed_runtime.observation_sources import (
+    FakeObservationSource,
+    ObservationCollectionService,
+)
+from seed_runtime.observations import Observation, ObservationIngestor
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
 
@@ -231,4 +239,53 @@ def test_projector_accepts_legacy_fact_observed_subject_payload_after_reopen(tmp
     assert kernel is not None
     assert kernel.value == "linux"
     assert state.get_fact_support("node115", "kernel") is not None
+    reopened.close()
+
+
+def test_sqlite_inventory_identity_resolves_endpoint_fact_after_reopen(tmp_path):
+    inventory_path = tmp_path / "inventory.ini"
+    inventory_path.write_text(
+        "[nodes]\nnode115 ansible_host=192.168.254.115\n", encoding="utf-8"
+    )
+    db = tmp_path / "inventory-endpoint.db"
+    workspace_id = "ws_inventory_endpoint"
+
+    ledger = SQLiteEventLedger(str(db))
+    ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        AnsibleInventoryObservationSource(inventory_path), workspace_id
+    )
+    ledger.close()
+
+    reopened = SQLiteEventLedger(str(db))
+    ObservationCollectionService(ObservationIngestor(reopened)).collect(
+        FakeObservationSource(
+            [
+                Observation(
+                    id="obs_endpoint_availability",
+                    source_type="provider",
+                    observed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+                    subject="192.168.254.115:9100",
+                    predicate="availability_status",
+                    value="down",
+                    confidence=0.95,
+                )
+            ]
+        ),
+        workspace_id,
+    )
+
+    state = StateProjector(reopened).project(workspace_id)
+
+    endpoint_aliases = [
+        fact
+        for fact in state.facts.values()
+        if fact.subject_id == "node115"
+        and fact.predicate == "alias"
+        and fact.value == "192.168.254.115:9100"
+    ]
+    assert len(endpoint_aliases) == 1
+    best_fact = state.get_best_fact("node115", "availability_status")
+    assert best_fact is not None
+    assert best_fact.subject_id == "192.168.254.115:9100"
+    assert best_fact.value == "down"
     reopened.close()
