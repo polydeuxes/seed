@@ -829,6 +829,14 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--impact",
+        metavar="ENTITY",
+        help=(
+            "print a concise projected-state impact view for an entity; "
+            "resolves aliases and never ingests observations or executes tools"
+        ),
+    )
+    parser.add_argument(
         "--relationships",
         action="store_true",
         help="print projected topology relationships and exit",
@@ -940,6 +948,7 @@ def validate_lifecycle_args(
         bool(args.approve_plan),
         bool(args.reject_plan),
         bool(args.supersede_plan),
+        bool(args.impact),
         bool(args.fact_support),
         bool(args.best_fact),
         bool(args.fact_conflicts),
@@ -951,7 +960,7 @@ def validate_lifecycle_args(
         parser.error(
             "choose only one of --preconditions, --proposal, --handoff, "
             "--authorize-proposal, --accept-plan, --approve-plan, "
-            "--reject-plan, --supersede-plan, --fact-support, --best-fact, "
+            "--reject-plan, --supersede-plan, --impact, --fact-support, --best-fact, "
             "--fact-conflicts, --stale-facts, --stale-fact-refreshes, "
             "or --events-only"
         )
@@ -1348,6 +1357,111 @@ def projected_state_from_args(args: argparse.Namespace) -> State:
         close = getattr(ledger, "close", None)
         if close is not None:
             close()
+
+
+def _canonical_entities(state: State, entities: Any) -> list[str]:
+    """Return deterministic canonical entity names from an iterable."""
+
+    return sorted({state.alias_resolver.canonical(entity) for entity in entities})
+
+
+def format_entity_impact(state: State, entity: str) -> str:
+    """Format a concise entity impact view using only projected State."""
+
+    canonical = state.alias_resolver.canonical(entity)
+    resolved = state.alias_resolver.resolve(entity) | {canonical}
+
+    entity_types = state.get_current_entity_types(canonical)
+    if entity_types == ["unknown"]:
+        entity_types = sorted(
+            {
+                entity_type
+                for name in resolved
+                for entity_type in state.get_current_entity_types(name)
+                if entity_type != "unknown"
+            }
+        ) or ["unknown"]
+    aliases = sorted(resolved - {canonical})
+
+    availability = state.get_best_fact(canonical, "availability_status")
+    groups = _canonical_entities(
+        state,
+        (
+            edge.object
+            for edge in state.relationships
+            if edge.relationship == "member_of" and edge.subject in resolved
+        ),
+    )
+    dependencies = _canonical_entities(
+        state,
+        (
+            dependency
+            for name in sorted(resolved)
+            for dependency in state.find_dependencies(name)
+        ),
+    )
+    dependents = _canonical_entities(
+        state,
+        (
+            dependent
+            for name in sorted(resolved)
+            for dependent in state.find_dependents(name)
+        ),
+    )
+    dependencies = [name for name in dependencies if name != canonical]
+    dependents = [name for name in dependents if name != canonical]
+
+    conflicts = [
+        conflict
+        for conflict in state.get_fact_conflicts()
+        if state.alias_resolver.canonical(conflict.subject) == canonical
+    ]
+    issues = [
+        issue
+        for issue in state.get_graph_issues()
+        if issue.subject in resolved or issue.object in resolved
+    ]
+
+    lines = [
+        f"entity: {canonical}",
+        f"entity types: {', '.join(entity_types)}",
+        f"aliases: {', '.join(aliases) if aliases else 'none'}",
+        "availability_status: "
+        + (
+            _format_fact_value(availability.value)
+            if availability is not None
+            else "unknown"
+        ),
+        f"groups/member_of: {', '.join(groups) if groups else 'none'}",
+        f"dependencies: {', '.join(dependencies) if dependencies else 'none'}",
+        f"dependents: {', '.join(dependents) if dependents else 'none'}",
+        "active conflicts:",
+    ]
+    if conflicts:
+        for conflict in conflicts:
+            winning = (
+                _format_fact_value(conflict.winning_value)
+                if conflict.winning_value is not None
+                else "none"
+            )
+            lines.append(
+                f"- {conflict.predicate}: values="
+                + ", ".join(_format_fact_value(value) for value in conflict.values)
+                + f"; winning={winning}"
+            )
+    else:
+        lines.append("- none")
+
+    lines.append("graph issues:")
+    if issues:
+        for issue in issues:
+            lines.append(
+                f"- {issue.severity}: {issue.subject} {issue.relationship} "
+                f"{issue.object}; {issue.reason}"
+            )
+    else:
+        lines.append("- none")
+    return "\n".join(lines)
 
 
 def format_relationships(state: State, args: argparse.Namespace) -> str:
@@ -2457,6 +2571,10 @@ def main(argv: list[str] | None = None) -> int:
     validate_lifecycle_args(args, parser)
     if args.show_predicate_catalog:
         print(format_predicate_catalog(PredicateCatalog.load(args.predicate_catalog)))
+        return 0
+
+    if args.impact:
+        print(format_entity_impact(projected_state_from_args(args), args.impact))
         return 0
 
     if args.relationships:

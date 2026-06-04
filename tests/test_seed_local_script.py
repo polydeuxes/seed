@@ -2689,3 +2689,125 @@ def test_cli_entity_type_projection_queries():
     assert parser.parse_args(["--entity-type", "node115"]).entity_type == "node115"
     state = seed_local.State(workspace_id="ws")
     assert seed_local.format_entity_types(state, "node115") == "node115: unknown"
+
+
+def _persist_impact_facts(seed_local, db_path, facts):
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        for index, (subject, predicate, value) in enumerate(facts):
+            fact = seed_local.Fact(
+                id=f"fact_impact_{index}",
+                subject_id=subject,
+                predicate=predicate,
+                value=value,
+                source_type="imported",
+                confidence=0.9,
+                evidence_ids=[],
+                observed_at=seed_local.utc_now(),
+            )
+            ledger.append(
+                "fact.observed",
+                seed_local.DEFAULT_WORKSPACE,
+                {"fact": seed_local.to_plain(fact)},
+            )
+    finally:
+        ledger.close()
+
+
+def test_cli_impact_resolves_host_alias_and_reports_availability(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "impact-alias.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [
+            ("node115", "os", "linux"),
+            ("node115", "alias", "192.168.254.115:9100"),
+            ("192.168.254.115:9100", "availability_status", "up"),
+            ("node115", "group", "servers"),
+        ],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--impact", "192.168.254.115:9100"]) == 0
+
+    output = capsys.readouterr().out
+    assert "entity: node115" in output
+    assert "entity types: host" in output
+    assert "aliases: 192.168.254.115:9100" in output
+    assert "availability_status: up" in output
+    assert "groups/member_of: servers" in output
+
+
+def test_cli_impact_reports_service_running_on_host_as_dependent(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "impact-dependent.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [("node115", "os", "linux"), ("jellyfin", "runs_on", "node115")],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+
+    assert "dependents: jellyfin" in capsys.readouterr().out
+
+
+def test_cli_impact_includes_active_conflicts(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "impact-conflict.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [("jellyfin", "runtime", "docker"), ("jellyfin", "runtime", "systemd")],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--impact", "jellyfin"]) == 0
+
+    output = capsys.readouterr().out
+    assert "active conflicts:" in output
+    assert "- runtime: values=docker, systemd; winning=none" in output
+
+
+def test_cli_impact_includes_graph_warnings(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "impact-warning.sqlite"
+    _persist_impact_facts(seed_local, db_path, [("mystery", "group", "servers")])
+
+    assert seed_local.main(["--db", str(db_path), "--impact", "mystery"]) == 0
+
+    output = capsys.readouterr().out
+    assert "graph issues:" in output
+    assert "- warning: mystery member_of servers" in output
+    assert "subject type is unknown; expected host" in output
+
+
+def test_cli_impact_does_not_ingest_or_execute(tmp_path, capsys, monkeypatch):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "impact-read-only.sqlite"
+    monkeypatch.setattr(
+        seed_local,
+        "build_local_app",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("runtime was built")),
+    )
+
+    assert seed_local.main(
+        [
+            "--db",
+            str(db_path),
+            "--fact",
+            "node115",
+            "os",
+            "linux",
+            "--impact",
+            "node115",
+            "restart",
+            "node115",
+        ]
+    ) == 0
+    assert "entity types: unknown" in capsys.readouterr().out
+
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        assert ledger.list_events(seed_local.DEFAULT_WORKSPACE) == []
+    finally:
+        ledger.close()

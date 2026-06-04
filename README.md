@@ -239,6 +239,15 @@ python scripts/seed_local.py --db seed.sqlite --relationships
 python scripts/seed_local.py --db seed.sqlite --relationships --relationship member_of
 ```
 
+Inspect one entity's projected status and blast radius with `--impact ENTITY`. The
+read-only query resolves aliases and reports current types, aliases, availability,
+groups, dependencies, dependents, active conflicts, and related graph issues without
+ingesting observations or executing tools.
+
+```bash
+python scripts/seed_local.py --db seed.sqlite --impact node115
+```
+
 Inspect graph validation findings with `--graph-issues`; add `--severity warning`
 or `--severity error` to focus on one severity. Unknown or ambiguous entity types
 are warnings, while known type mismatches are errors. `--state-summary` reports
