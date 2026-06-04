@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Iterable
@@ -17,6 +18,7 @@ from seed_runtime.facts import (
     is_measurement_predicate,
     recommended_capability_for_stale_fact,
 )
+from seed_runtime.entity_type_catalog import EntityTypeCatalog
 from seed_runtime.relationship_catalog import RelationshipCatalog, RelationshipKind
 from seed_runtime.models import (
     ActionPlan,
@@ -38,6 +40,19 @@ from seed_runtime.models import (
 
 def _parse_dt(value: str | None) -> datetime | None:
     return datetime.fromisoformat(value) if value else None
+
+
+@dataclass(frozen=True)
+class EntityTypeAssertion:
+    """One evidence-backed assertion that classifies an entity."""
+
+    entity_id: str
+    entity_type: str
+    source: str
+    confidence: float
+    source_fact_id: str | None = None
+    source_relationship_id: str | None = None
+    reason: str = ""
 
 
 @dataclass(frozen=True)
@@ -206,6 +221,7 @@ class State:
     relationships: list[EntityRelationship] = field(default_factory=list)
     entity_relationships: list[LegacyEntityRelationship] = field(default_factory=list)
     entity_aliases: list[EntityAlias] = field(default_factory=list)
+    entity_type_assertions: list[EntityTypeAssertion] = field(default_factory=list)
     alias_resolver: AliasResolver = field(default_factory=AliasResolver)
     fact_supports: list[FactSupport] = field(default_factory=list)
     fact_conflicts: list[FactConflict] = field(default_factory=list)
@@ -223,6 +239,48 @@ class State:
     action_plans: dict[str, ActionPlan] = field(default_factory=dict)
     handoff_plans: dict[str, HandoffPlan] = field(default_factory=dict)
     tools: dict[str, ToolSpec] = field(default_factory=dict)
+
+    def get_entity_type_assertions(
+        self, entity_id: str | None = None
+    ) -> list[EntityTypeAssertion]:
+        """Return entity type assertions, optionally limited to one entity."""
+
+        return [
+            assertion
+            for assertion in self.entity_type_assertions
+            if entity_id is None or assertion.entity_id == entity_id
+        ]
+
+    def get_current_entity_types(self, entity_id: str) -> list[str]:
+        """Return strongest supported types, preserving equal-rank ambiguity."""
+
+        assertions = [
+            assertion
+            for assertion in self.entity_type_assertions
+            if assertion.entity_id == entity_id and assertion.entity_type != "unknown"
+        ]
+        if not assertions:
+            return ["unknown"]
+        by_type: dict[str, list[EntityTypeAssertion]] = {}
+        for assertion in assertions:
+            by_type.setdefault(assertion.entity_type, []).append(assertion)
+        ranks = {
+            entity_type: (max(item.confidence for item in items), len(items))
+            for entity_type, items in by_type.items()
+        }
+        best_rank = max(ranks.values())
+        return sorted(
+            entity_type for entity_type, rank in ranks.items() if rank == best_rank
+        )
+
+    @property
+    def current_entity_types(self) -> dict[str, list[str]]:
+        """Return current, potentially ambiguous classifications for all entities."""
+
+        return {
+            entity_id: self.get_current_entity_types(entity_id)
+            for entity_id in sorted({a.entity_id for a in self.entity_type_assertions})
+        }
 
     @property
     def open_tool_needs(self) -> list[ToolNeed]:
@@ -531,12 +589,14 @@ class StateProjector:
         *,
         measurement_history_limit: int = 1,
         relationship_catalog: RelationshipCatalog | None = None,
+        entity_type_catalog: EntityTypeCatalog | None = None,
     ) -> None:
         if measurement_history_limit < 1:
             raise ValueError("measurement_history_limit must be at least 1")
         self.ledger = ledger
         self.measurement_history_limit = measurement_history_limit
         self.relationship_catalog = relationship_catalog or RelationshipCatalog.load()
+        self.entity_type_catalog = entity_type_catalog or EntityTypeCatalog.load()
 
     def project(self, workspace_id: str) -> State:
         state = State(workspace_id=workspace_id)
@@ -566,6 +626,9 @@ class StateProjector:
         state.entity_relationships = _project_entity_relationships(state.facts.values())
         state.relationships = _project_catalog_relationships(
             state.facts.values(), self.relationship_catalog
+        )
+        state.entity_type_assertions = _project_entity_type_assertions(
+            state, self.entity_type_catalog
         )
         state.entity_aliases = state.alias_resolver.aliases
         state.fact_conflicts = _project_fact_conflicts(state)
@@ -1045,6 +1108,105 @@ def _dimensions_key(dimensions: dict[str, str]) -> str:
 
 def _fact_value_key(value: Any) -> str:
     return json.dumps(value, sort_keys=True, default=str)
+
+
+_HOST_PREDICATES = {"ip_address", "ansible_host", "architecture", "os"}
+_ENDPOINT_SUBJECT = re.compile(r"^(?:\[[^]]+\]|[^:]+):[0-9]{1,5}$")
+_RELATIONSHIP_TYPE_RULES = {
+    "member_of": ("object", "group"),
+    "runs_on": ("subject", "service"),
+    "monitored_by": ("object", "monitoring_system"),
+    "provides": ("object", "capability"),
+}
+
+
+def _project_entity_type_assertions(
+    state: State, catalog: EntityTypeCatalog
+) -> list[EntityTypeAssertion]:
+    """Derive deterministic, provenance-bearing entity classifications."""
+
+    assertions: list[EntityTypeAssertion] = []
+    entities = {entity.id for entity in state.entities.values()}
+    endpoint_facts: dict[str, Fact] = {}
+    for fact in sorted(state.facts.values(), key=lambda item: item.id):
+        entities.add(fact.subject_id)
+        if fact.predicate in _HOST_PREDICATES:
+            assertions.append(
+                _fact_type_assertion(fact, "host", f"subject has {fact.predicate}")
+            )
+        if _looks_like_endpoint(fact.subject_id):
+            current = endpoint_facts.get(fact.subject_id)
+            if current is None or fact.confidence > current.confidence:
+                endpoint_facts[fact.subject_id] = fact
+    assertions.extend(
+        _fact_type_assertion(fact, "endpoint", "subject looks like host:port")
+        for fact in endpoint_facts.values()
+    )
+
+    for relationship in state.relationships:
+        entities.update((relationship.subject, relationship.object))
+        rule = _RELATIONSHIP_TYPE_RULES.get(relationship.relationship)
+        if rule is None:
+            continue
+        side, entity_type = rule
+        entity_id = getattr(relationship, side)
+        assertions.append(
+            EntityTypeAssertion(
+                entity_id=entity_id,
+                entity_type=entity_type,
+                source="relationship_projection",
+                confidence=relationship.confidence,
+                source_relationship_id=relationship.id,
+                reason=f"{side} of {relationship.relationship}",
+            )
+        )
+
+    known = {assertion.entity_id for assertion in assertions}
+    for entity_id in sorted(entities - known):
+        assertions.append(
+            EntityTypeAssertion(
+                entity_id=entity_id,
+                entity_type="unknown",
+                source="entity_type_projection",
+                confidence=0.0,
+                reason="no supported entity type derivation",
+            )
+        )
+    for assertion in assertions:
+        if catalog.get(assertion.entity_type) is None:
+            raise ValueError(f"unknown projected entity type {assertion.entity_type!r}")
+    return sorted(
+        assertions,
+        key=lambda item: (
+            item.entity_id,
+            item.entity_type,
+            item.source_fact_id or "",
+            item.source_relationship_id or "",
+        ),
+    )
+
+
+def _fact_type_assertion(
+    fact: Fact, entity_type: str, reason: str
+) -> EntityTypeAssertion:
+    return EntityTypeAssertion(
+        entity_id=fact.subject_id,
+        entity_type=entity_type,
+        source="fact_projection",
+        confidence=fact.confidence,
+        source_fact_id=fact.id,
+        reason=reason,
+    )
+
+
+def _looks_like_endpoint(subject: str) -> bool:
+    if not _ENDPOINT_SUBJECT.fullmatch(subject):
+        return False
+    try:
+        port = int(subject.rsplit(":", 1)[1])
+    except ValueError:
+        return False
+    return 0 < port <= 65535
 
 
 def _project_entity_relationships(facts: Iterable[Fact]) -> list[LegacyEntityRelationship]:

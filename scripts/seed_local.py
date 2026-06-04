@@ -849,6 +849,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="filter --relationships by object",
     )
     parser.add_argument(
+        "--entity-types",
+        action="store_true",
+        help="print projected current entity types and exit",
+    )
+    parser.add_argument(
+        "--entity-type",
+        metavar="ENTITY",
+        help="print projected type assertions for one entity and exit",
+    )
+    parser.add_argument(
         "--state-summary",
         action="store_true",
         help=(
@@ -1339,6 +1349,36 @@ def format_relationships(state: State, args: argparse.Namespace) -> str:
     return "\n".join(
         f"{edge.subject} {edge.relationship} {edge.object}" for edge in relationships
     ) or "no relationships"
+
+
+def format_entity_types(state: State, entity_id: str | None = None) -> str:
+    """Format current entity classifications and their supporting assertions."""
+
+    entity_ids = (
+        [entity_id]
+        if entity_id is not None
+        else sorted(state.current_entity_types)
+    )
+    lines: list[str] = []
+    for current_entity_id in entity_ids:
+        current_types = state.get_current_entity_types(current_entity_id)
+        label = ", ".join(current_types)
+        if len(current_types) > 1:
+            label += " (ambiguous)"
+        lines.append(f"{current_entity_id}: {label}")
+        for assertion in state.get_entity_type_assertions(current_entity_id):
+            if assertion.entity_type == "unknown" and current_types != ["unknown"]:
+                continue
+            source_id = (
+                assertion.source_fact_id
+                or assertion.source_relationship_id
+                or "projection"
+            )
+            lines.append(
+                f"  - {assertion.entity_type} confidence={assertion.confidence:g} "
+                f"source={assertion.source}:{source_id} reason={assertion.reason}"
+            )
+    return "\n".join(lines) or "no entity types"
 
 
 def state_summary(
@@ -2373,6 +2413,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.relationships:
         print(format_relationships(projected_state_from_args(args), args))
+        return 0
+
+    if args.entity_types or args.entity_type:
+        print(format_entity_types(projected_state_from_args(args), args.entity_type))
         return 0
 
     if args.state_summary:

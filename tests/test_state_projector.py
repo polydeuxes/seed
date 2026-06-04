@@ -799,3 +799,122 @@ def test_fact_conflicts_group_aliases_under_canonical_entity():
     assert not any(conflict.predicate == "up" for conflict in state.fact_conflicts)
     assert "fact_node_up" not in state.facts
     assert state.get_best_fact("node115", "up").id == "fact_prometheus_up"
+
+
+def test_projector_derives_entity_types_from_facts_and_relationships():
+    ledger = EventLedger()
+    workspace_id = "ws_entity_types"
+    observed_at = utc_now()
+
+    def fact(fact_id, subject, predicate, value):
+        return Fact(
+            id=fact_id,
+            subject_id=subject,
+            predicate=predicate,
+            value=value,
+            evidence_ids=[],
+            observed_at=observed_at,
+        )
+
+    facts = [
+        fact("fact_ansible", "node115", "ansible_host", "192.168.1.115"),
+        fact("fact_ip", "node115", "ip_address", "192.168.1.115"),
+        fact("fact_os", "node115", "os", "linux"),
+        fact("fact_group", "node115", "group", "servers"),
+        fact("fact_runs", "jellyfin", "runs_on", "node115"),
+        fact("fact_monitor", "node115", "prometheus_instance", "node115:9100"),
+        fact("fact_capability", "node115", "provides", "ssh_access"),
+        fact("fact_endpoint", "192.168.1.115:8096", "status", "up"),
+    ]
+    for observed_fact in facts:
+        ledger.append("fact.observed", workspace_id, {"fact": to_plain(observed_fact)})
+
+    state = StateProjector(ledger).project(workspace_id)
+
+    assert state.get_current_entity_types("node115") == ["host"]
+    assert state.get_current_entity_types("servers") == ["group"]
+    assert state.get_current_entity_types("jellyfin") == ["service"]
+    assert state.get_current_entity_types("prometheus") == ["monitoring_system"]
+    assert state.get_current_entity_types("ssh_access") == ["capability"]
+    assert state.get_current_entity_types("192.168.1.115:8096") == ["endpoint"]
+    assert any(
+        assertion.source_fact_id == "fact_os"
+        for assertion in state.get_entity_type_assertions("node115")
+    )
+    assert any(
+        assertion.source_relationship_id
+        for assertion in state.get_entity_type_assertions("servers")
+    )
+
+
+def test_equal_confidence_equal_support_entity_types_remain_ambiguous():
+    ledger = EventLedger()
+    workspace_id = "ws_entity_type_ambiguity"
+    observed_at = utc_now()
+    facts = [
+        Fact(
+            id="fact_host",
+            subject_id="api:8080",
+            predicate="os",
+            value="linux",
+            evidence_ids=[],
+            observed_at=observed_at,
+            confidence=0.8,
+        ),
+        Fact(
+            id="fact_endpoint",
+            subject_id="api:8080",
+            predicate="status",
+            value="up",
+            evidence_ids=[],
+            observed_at=observed_at,
+            confidence=0.8,
+        ),
+    ]
+    for fact in facts:
+        ledger.append("fact.observed", workspace_id, {"fact": to_plain(fact)})
+
+    state = StateProjector(ledger).project(workspace_id)
+
+    assert state.get_current_entity_types("api:8080") == ["endpoint", "host"]
+
+
+def test_entity_type_selection_uses_confidence_then_support_count():
+    ledger = EventLedger()
+    workspace_id = "ws_entity_type_support"
+    observed_at = utc_now()
+    facts = [
+        Fact(
+            id="fact_host",
+            subject_id="worker",
+            predicate="os",
+            value="linux",
+            evidence_ids=[],
+            observed_at=observed_at,
+            confidence=0.8,
+        ),
+        Fact(
+            id="fact_service_a",
+            subject_id="worker",
+            predicate="runs_on",
+            value="node-a",
+            evidence_ids=[],
+            observed_at=observed_at,
+            confidence=0.8,
+        ),
+        Fact(
+            id="fact_service_b",
+            subject_id="worker",
+            predicate="runs_on",
+            value="node-b",
+            evidence_ids=[],
+            observed_at=observed_at,
+            confidence=0.8,
+        ),
+    ]
+    for fact in facts:
+        ledger.append("fact.observed", workspace_id, {"fact": to_plain(fact)})
+
+    state = StateProjector(ledger).project(workspace_id)
+
+    assert state.get_current_entity_types("worker") == ["service"]
