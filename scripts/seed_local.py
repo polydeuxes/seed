@@ -58,6 +58,11 @@ from seed_runtime.observation_normalizers import (
 )
 from seed_runtime.predicate_catalog import PredicateCatalog
 from seed_runtime.predicate_normalizers import PredicateNormalizer
+from seed_runtime.projection_store import (
+    SQLiteProjectionStore,
+    project_state_with_cache,
+    rebuild_state_cache,
+)
 from seed_runtime.observation_sources import (
     JsonObservationSource,
     LocalHostObservationSource,
@@ -912,6 +917,16 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--rebuild-state-cache",
+        action="store_true",
+        help="clear and rebuild the persisted projected State cache for --db",
+    )
+    parser.add_argument(
+        "--state-cache-status",
+        action="store_true",
+        help="print projected State cache hit/miss status for --db",
+    )
+    parser.add_argument(
         "--why",
         nargs=2,
         metavar=("ENTITY", "PREDICATE"),
@@ -1002,6 +1017,8 @@ def validate_lifecycle_args(
         bool(args.fact_conflicts),
         bool(args.stale_facts),
         bool(args.stale_fact_refreshes),
+        bool(args.rebuild_state_cache),
+        bool(args.state_cache_status),
         bool(args.events_only),
     ]
     if sum(lifecycle_flags) > 1:
@@ -1012,8 +1029,12 @@ def validate_lifecycle_args(
             "--fact-support, --best-fact, "
             "--current-facts, --inferred-facts, "
             "--fact-conflicts, --stale-facts, --stale-fact-refreshes, "
-            "or --events-only"
+            "--rebuild-state-cache, --state-cache-status, or --events-only"
         )
+    if args.rebuild_state_cache and not args.db:
+        parser.error("--rebuild-state-cache requires --db")
+    if (args.rebuild_state_cache or args.state_cache_status) and args.predicate_catalog:
+        parser.error("state cache commands require the built-in predicate catalog")
     if args.proposal and not args.db:
         parser.error("--proposal requires --db")
     if args.handoff and not args.db:
@@ -1379,10 +1400,35 @@ def _event_payload_summary(event: Event) -> str:
             return f"tool={tool_name}"
     return ""
 
+
+def _state_projector_from_args(
+    args: argparse.Namespace, ledger: EventLedger, *, measurement_history_limit: int = 1
+) -> StateProjector:
+    return StateProjector(
+        ledger,
+        measurement_history_limit=measurement_history_limit,
+        predicate_catalog=PredicateCatalog.load(args.predicate_catalog),
+        inference_catalog=InferenceCatalog.load(),
+    )
+
+
+def _can_use_state_cache(
+    args: argparse.Namespace, *, measurement_history_limit: int = 1
+) -> bool:
+    """Return whether CLI projection can safely use the default state cache."""
+
+    return (
+        bool(args.db)
+        and args.predicate_catalog is None
+        and measurement_history_limit == 1
+    )
+
+
 def fact_query_state(args: argparse.Namespace) -> State:
     """Seed requested dev state and return the projected State for fact queries."""
 
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
+    store = SQLiteProjectionStore(args.db) if args.db else None
     try:
         seed_dev_state_from_args(args, ledger)
         history_limit = (
@@ -1390,32 +1436,92 @@ def fact_query_state(args: argparse.Namespace) -> State:
             if getattr(args, "include_history", False)
             else 1
         )
-        return StateProjector(
-            ledger,
-            measurement_history_limit=history_limit,
-            predicate_catalog=PredicateCatalog.load(args.predicate_catalog),
-            inference_catalog=InferenceCatalog.load(),
-        ).project(args.workspace)
+        projector = _state_projector_from_args(
+            args, ledger, measurement_history_limit=history_limit
+        )
+        if store is not None and _can_use_state_cache(
+            args, measurement_history_limit=history_limit
+        ):
+            state, _status = project_state_with_cache(
+                ledger, args.workspace, store, projector=projector
+            )
+            return state
+        return projector.project(args.workspace)
     finally:
-        close = getattr(ledger, "close", None)
-        if close is not None:
-            close()
+        for resource in (store, ledger):
+            close = getattr(resource, "close", None)
+            if close is not None:
+                close()
 
 
 def projected_state_from_args(args: argparse.Namespace) -> State:
     """Return persisted projected State without ingesting or executing anything."""
 
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
+    store = SQLiteProjectionStore(args.db) if args.db else None
     try:
-        return StateProjector(
-            ledger,
-            predicate_catalog=PredicateCatalog.load(args.predicate_catalog),
-            inference_catalog=InferenceCatalog.load(),
-        ).project(args.workspace)
+        projector = _state_projector_from_args(args, ledger)
+        if store is not None and _can_use_state_cache(args):
+            state, _status = project_state_with_cache(
+                ledger, args.workspace, store, projector=projector
+            )
+            return state
+        return projector.project(args.workspace)
     finally:
-        close = getattr(ledger, "close", None)
-        if close is not None:
-            close()
+        for resource in (store, ledger):
+            close = getattr(resource, "close", None)
+            if close is not None:
+                close()
+
+
+def rebuild_state_cache_from_args(args: argparse.Namespace) -> str:
+    """Clear and rebuild the persisted State projection cache."""
+
+    if not args.db:
+        raise ValueError("--rebuild-state-cache requires --db")
+    ledger = SQLiteEventLedger(args.db)
+    store = SQLiteProjectionStore(args.db)
+    try:
+        state, status = rebuild_state_cache(
+            ledger,
+            args.workspace,
+            store,
+            projector=_state_projector_from_args(args, ledger),
+        )
+        return (
+            f"rebuilt state cache for workspace {args.workspace!r} "
+            f"({len(state.facts)} facts, last_event_id={status.current_last_event_id or 'none'})"
+        )
+    finally:
+        store.close()
+        ledger.close()
+
+
+def format_state_cache_status_from_args(args: argparse.Namespace) -> str:
+    """Return a concise State projection cache status report."""
+
+    if not args.db:
+        return "state cache unavailable: --db is required"
+    ledger = SQLiteEventLedger(args.db)
+    store = SQLiteProjectionStore(args.db)
+    try:
+        _state, status = project_state_with_cache(
+            ledger,
+            args.workspace,
+            store,
+            projector=_state_projector_from_args(args, ledger),
+        )
+        return "\n".join(
+            [
+                f"cache: {'hit' if status.cache_hit else 'miss'}",
+                f"projection_version: {status.projection_version}",
+                f"snapshot last_event_id: {status.snapshot_last_event_id or 'none'}",
+                f"current last_event_id: {status.current_last_event_id or 'none'}",
+            ]
+        )
+    finally:
+        store.close()
+        ledger.close()
 
 
 def _canonical_entities(state: State, entities: Any) -> list[str]:
@@ -2884,6 +2990,14 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.state_summary:
         print(format_state_summary(state_summary(projected_state_from_args(args))))
+        return 0
+
+    if args.rebuild_state_cache:
+        print(rebuild_state_cache_from_args(args))
+        return 0
+
+    if args.state_cache_status:
+        print(format_state_cache_status_from_args(args))
         return 0
 
     if args.preconditions:
