@@ -1,36 +1,82 @@
 {
   "predicates": [
     {
-      "predicate": "availability_status",
-      "kind": "measurement",
-      "value_type": "enum",
-      "allowed_values": ["up", "down", "unknown"]
-    },
-    {
-      "predicate": "filesystem_free_bytes",
-      "kind": "measurement",
-      "value_type": "integer"
-    },
-    {
-      "predicate": "filesystem_total_bytes",
-      "kind": "measurement",
-      "value_type": "integer"
-    },
-    {
-      "predicate": "os",
+      "predicate": "alias",
       "kind": "durable_fact",
-      "value_type": "string"
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "ansible_host",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
     },
     {
       "predicate": "architecture",
       "kind": "durable_fact",
-      "value_type": "string"
+      "value_type": "string",
+      "cardinality": "single"
+    },
+    {
+      "predicate": "availability_status",
+      "kind": "measurement",
+      "value_type": "enum",
+      "allowed_values": [
+        "up",
+        "down",
+        "unknown"
+      ],
+      "cardinality": "single"
+    },
+    {
+      "predicate": "filesystem_free_bytes",
+      "kind": "measurement",
+      "value_type": "integer",
+      "cardinality": "single"
+    },
+    {
+      "predicate": "filesystem_total_bytes",
+      "kind": "measurement",
+      "value_type": "integer",
+      "cardinality": "single"
+    },
+    {
+      "predicate": "group",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "ip_address",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "os",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "single"
+    },
+    {
+      "predicate": "prometheus_instance",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
     },
     {
       "predicate": "runtime",
       "kind": "durable_fact",
       "value_type": "enum",
-      "allowed_values": ["docker", "systemd", "kubernetes", "baremetal", "unknown"]
+      "allowed_values": [
+        "docker",
+        "systemd",
+        "kubernetes",
+        "baremetal",
+        "unknown"
+      ],
+      "cardinality": "single"
     }
   ],
   "mappings": [
@@ -38,7 +84,10 @@
       "source_name": "prometheus",
       "predicate": "up",
       "canonical_predicate": "availability_status",
-      "value_map": {"1": "up", "0": "down"}
+      "value_map": {
+        "1": "up",
+        "0": "down"
+      }
     },
     {
       "source_name": "prometheus",

@@ -314,3 +314,31 @@ def test_sqlite_reopen_preserves_entity_type_projection(tmp_path):
         "node115"
     ) == ["host"]
     reopened.close()
+
+
+def test_sqlite_reopen_preserves_multi_predicate_cardinality(tmp_path):
+    db = tmp_path / "cardinality.db"
+    ledger = SQLiteEventLedger(str(db))
+    for index, value in enumerate(("node115:9100", "node115:9200")):
+        fact = Fact(
+            id=f"fact_alias_{index}",
+            subject_id="node115",
+            predicate="alias",
+            value=value,
+            source_type="imported",
+            confidence=0.9,
+            evidence_ids=[],
+            observed_at=datetime(2026, 1, index + 1, tzinfo=timezone.utc),
+        )
+        ledger.append("fact.observed", "ws", {"fact": to_plain(fact)})
+    ledger.close()
+
+    reopened = SQLiteEventLedger(str(db))
+    state = StateProjector(reopened).project("ws")
+
+    assert [fact.value for fact in state.get_current_facts("node115", "alias")] == [
+        "node115:9100",
+        "node115:9200",
+    ]
+    assert state.get_fact_conflicts() == []
+    reopened.close()

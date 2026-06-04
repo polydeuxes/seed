@@ -2733,7 +2733,7 @@ def test_cli_impact_resolves_host_alias_and_reports_availability(tmp_path, capsy
     output = capsys.readouterr().out
     assert "entity: node115" in output
     assert "entity types: host" in output
-    assert "aliases: 192.168.254.115:9100" in output
+    assert "aliases:\n- 192.168.254.115:9100" in output
     assert "availability_status: up" in output
     assert "groups/member_of: servers" in output
 
@@ -2766,6 +2766,36 @@ def test_cli_impact_includes_active_conflicts(tmp_path, capsys):
     output = capsys.readouterr().out
     assert "active conflicts:" in output
     assert "- runtime: values=docker, systemd; winning=none" in output
+
+
+def test_cli_current_facts_and_impact_keep_all_aliases_without_conflict(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "multi-alias.sqlite"
+    aliases = [
+        "192.168.254.115",
+        "192.168.254.115:9100",
+        "192.168.254.115:9200",
+    ]
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [("node115", "alias", alias) for alias in aliases],
+    )
+
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--current-facts", "node115", "alias"]
+        )
+        == 0
+    )
+    assert capsys.readouterr().out.splitlines() == aliases
+
+    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+    output = capsys.readouterr().out
+    assert "aliases:\n" + "\n".join(f"- {alias}" for alias in aliases) in output
+    assert "- alias:" not in output
 
 
 def test_cli_impact_includes_graph_warnings(tmp_path, capsys):
