@@ -36,13 +36,15 @@ def _fact(
     )
 
 
-def _project(*facts: Fact):
+def _project(*facts: Fact, measurement_history_limit: int = 1):
     ledger = EventLedger()
     workspace_id = "ws_support"
     for fact in facts:
         kind = "fact.inferred" if fact.inferred else "fact.observed"
         ledger.append(kind, workspace_id, {"fact": to_plain(fact)})
-    return StateProjector(ledger).project(workspace_id)
+    return StateProjector(
+        ledger, measurement_history_limit=measurement_history_limit
+    ).project(workspace_id)
 
 
 def test_two_sources_supporting_same_value_raise_aggregate_confidence():
@@ -410,6 +412,107 @@ def test_requested_measurement_debug_history_retains_recent_n_but_current_is_lat
 
     assert set(state.facts) == {"fact_1", "fact_2", "fact_3"}
     assert state.get_fact_support("svc_ssh", "up").supporting_fact_ids == ["fact_3"]
+
+
+def test_debug_history_availability_status_keeps_samples_without_conflict():
+    old_up = _fact(
+        "fact_availability_old_up",
+        "up",
+        predicate="availability_status",
+        subject_id="node115",
+    )
+    new_down = _fact(
+        "fact_availability_new_down",
+        "down",
+        predicate="availability_status",
+        subject_id="node115",
+        observed_offset=1,
+    )
+
+    state = _project(old_up, new_down, measurement_history_limit=2)
+
+    assert set(state.facts) == {old_up.id, new_down.id}
+    assert state.get_best_fact("node115", "availability_status") == new_down
+    support = state.get_fact_support("node115", "availability_status")
+    assert support is not None
+    assert support.value == "down"
+    assert support.supporting_fact_ids == [new_down.id]
+    assert state.get_fact_conflicts() == []
+
+
+def test_debug_history_filesystem_dimensions_coexist_without_conflict():
+    root = _fact(
+        "fact_root_current",
+        20,
+        predicate="filesystem_free_bytes",
+        subject_id="node115",
+        dimensions={"mountpoint": "/", "device": "/dev/sda1"},
+    )
+    data = _fact(
+        "fact_data_current",
+        30,
+        predicate="filesystem_free_bytes",
+        subject_id="node115",
+        dimensions={"mountpoint": "/data", "device": "/dev/sdb1"},
+    )
+
+    state = _project(root, data, measurement_history_limit=2)
+
+    assert set(state.facts) == {root.id, data.id}
+    supports = state.get_fact_supports("node115", "filesystem_free_bytes")
+    assert {(support.dimensions["mountpoint"], support.value) for support in supports} == {
+        ("/", 20),
+        ("/data", 30),
+    }
+    assert state.get_fact_conflicts() == []
+
+
+def test_debug_history_filesystem_series_uses_newest_without_conflict():
+    dimensions = {"mountpoint": "/", "device": "/dev/sda1"}
+    old = _fact(
+        "fact_root_old",
+        10,
+        predicate="filesystem_free_bytes",
+        subject_id="node115",
+        dimensions=dimensions,
+    )
+    current = _fact(
+        "fact_root_current",
+        20,
+        predicate="filesystem_free_bytes",
+        subject_id="node115",
+        dimensions=dimensions,
+        observed_offset=1,
+    )
+
+    state = _project(old, current, measurement_history_limit=2)
+
+    assert set(state.facts) == {old.id, current.id}
+    assert state.get_best_fact(
+        "node115", "filesystem_free_bytes", dimensions=dimensions
+    ) == current
+    support = state.get_fact_support(
+        "node115", "filesystem_free_bytes", dimensions=dimensions
+    )
+    assert support is not None
+    assert support.value == 20
+    assert support.supporting_fact_ids == [current.id]
+    assert state.get_fact_conflicts() == []
+
+
+def test_measurement_retention_does_not_suppress_durable_runtime_conflict():
+    docker = _fact("fact_runtime_docker", "docker", predicate="runtime")
+    systemd = _fact(
+        "fact_runtime_systemd", "systemd", predicate="runtime", observed_offset=1
+    )
+
+    state = _project(docker, systemd, measurement_history_limit=2)
+
+    assert set(state.facts) == {docker.id, systemd.id}
+    conflicts = state.get_fact_conflicts()
+    assert len(conflicts) == 1
+    assert conflicts[0].predicate == "runtime"
+    assert set(conflicts[0].values) == {"docker", "systemd"}
 
 
 def test_measurement_retention_is_per_alias_component_predicate_and_dimensions():

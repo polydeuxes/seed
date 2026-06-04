@@ -880,6 +880,10 @@ def _project_fact_conflicts(
     for fact in state.facts.values():
         if not include_expired and is_fact_expired(fact):
             continue
+        # Retained measurement samples are history, not competing durable claims.
+        # Their newest sample has already been selected by fact-support projection.
+        if is_measurement_predicate(fact.predicate):
+            continue
         canonical_subject = state.alias_resolver.canonical(fact.subject_id)
         grouped.setdefault(
             (canonical_subject, fact.predicate, _dimensions_key(fact.dimensions)), []
