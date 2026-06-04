@@ -849,6 +849,21 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--unhealthy",
+        "--down",
+        dest="unhealthy",
+        action="store_true",
+        help=(
+            "print current down endpoints and graph errors from projected state; "
+            "never ingests observations or executes tools"
+        ),
+    )
+    parser.add_argument(
+        "--include-warnings",
+        action="store_true",
+        help="include graph warnings in --unhealthy output",
+    )
+    parser.add_argument(
         "--relationships",
         action="store_true",
         help="print projected topology relationships and exit",
@@ -978,6 +993,7 @@ def validate_lifecycle_args(
         bool(args.reject_plan),
         bool(args.supersede_plan),
         bool(args.impact),
+        bool(args.unhealthy),
         bool(args.why),
         bool(args.fact_support),
         bool(args.best_fact),
@@ -992,7 +1008,8 @@ def validate_lifecycle_args(
         parser.error(
             "choose only one of --preconditions, --proposal, --handoff, "
             "--authorize-proposal, --accept-plan, --approve-plan, "
-            "--reject-plan, --supersede-plan, --impact, --why, --fact-support, --best-fact, "
+            "--reject-plan, --supersede-plan, --impact, --unhealthy, --why, "
+            "--fact-support, --best-fact, "
             "--current-facts, --inferred-facts, "
             "--fact-conflicts, --stale-facts, --stale-fact-refreshes, "
             "or --events-only"
@@ -1033,6 +1050,8 @@ def validate_lifecycle_args(
         parser.error("--include-history can only be used with --fact-support")
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
+    if args.include_warnings and not args.unhealthy:
+        parser.error("--include-warnings can only be used with --unhealthy")
     if args.fact_expires_at and args.fact_ttl_seconds is not None:
         parser.error("choose only one of --fact-expires-at or --fact-ttl-seconds")
     if (args.fact_expires_at or args.fact_ttl_seconds is not None) and not (
@@ -1520,12 +1539,73 @@ def format_entity_impact(state: State, entity: str) -> str:
     lines.append("graph issues:")
     if issues:
         for issue in issues:
-            lines.append(
-                f"- {issue.severity}: {issue.subject} {issue.relationship} "
-                f"{issue.object}; {issue.reason}"
-            )
+            lines.extend(_format_graph_issue_summary(issue))
     else:
         lines.append("- none")
+    return "\n".join(lines)
+
+
+def _format_graph_issue_summary(issue: Any) -> list[str]:
+    """Format one graph issue compactly, including actionable guidance."""
+
+    lines = [
+        f"- {issue.severity}: {issue.subject} {issue.relationship} "
+        f"{issue.object}; {issue.reason}"
+    ]
+    if issue.hint:
+        lines.append(f"  hint: {issue.hint}")
+    return lines
+
+
+def format_unhealthy(state: State, *, include_warnings: bool = False) -> str:
+    """Format current down endpoints and graph issues from projected State only."""
+
+    endpoints_by_host: dict[str, list[tuple[str, str]]] = defaultdict(list)
+    endpoint_subjects = sorted(
+        {
+            fact.subject_id
+            for fact in state.facts.values()
+            if fact.predicate == "availability_status"
+        }
+    )
+    for endpoint in endpoint_subjects:
+        if "endpoint" not in state.get_current_entity_types(endpoint):
+            continue
+        availability = state.get_best_fact(endpoint, "availability_status")
+        if availability is None or availability.value != "down":
+            continue
+        roles = state.get_current_facts(endpoint, "endpoint_role")
+        role_names = sorted({str(role.value) for role in roles}) or ["endpoint"]
+        host = state.alias_resolver.canonical(endpoint)
+        for role in role_names:
+            endpoints_by_host[host].append((role, endpoint))
+
+    lines = ["unhealthy endpoints:"]
+    if endpoints_by_host:
+        for host, endpoints in sorted(endpoints_by_host.items()):
+            lines.append(f"{host}:")
+            for role, endpoint in sorted(endpoints):
+                lines.append(f"  - {role} down {endpoint}")
+    else:
+        lines.append("- none")
+
+    lines.append("graph errors:")
+    errors = state.get_graph_issues("error")
+    if errors:
+        for issue in errors:
+            lines.extend(_format_graph_issue_summary(issue))
+    else:
+        lines.append("- none")
+
+    if include_warnings:
+        lines.append("graph warnings:")
+        warnings = state.get_graph_issues("warning")
+        if warnings:
+            for issue in warnings:
+                lines.extend(_format_graph_issue_summary(issue))
+        else:
+            lines.append("- none")
+
     return "\n".join(lines)
 
 
@@ -1557,7 +1637,9 @@ def format_graph_issues(
                 [
                     f"{issue.severity}: {issue.subject} {issue.relationship} {issue.object}",
                     f"relationship_ids: {','.join(issue.relationship_ids)}",
+                    f"source_fact_ids: {','.join(issue.source_fact_ids)}",
                     f"reason: {issue.reason}",
+                    *([f"hint: {issue.hint}"] if issue.hint else []),
                     "subject types: "
                     f"expected={','.join(issue.expected_subject_types)} "
                     f"actual={','.join(issue.actual_subject_types)}",
@@ -2778,6 +2860,14 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.impact:
         print(format_entity_impact(projected_state_from_args(args), args.impact))
+        return 0
+
+    if args.unhealthy:
+        print(
+            format_unhealthy(
+                projected_state_from_args(args), include_warnings=args.include_warnings
+            )
+        )
         return 0
 
     if args.relationships:

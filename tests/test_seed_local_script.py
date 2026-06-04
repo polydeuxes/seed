@@ -2975,3 +2975,126 @@ def test_cli_impact_groups_endpoint_availability_by_role(tmp_path, capsys):
     assert "endpoint availability by role:" in output
     assert "- node-exporter: down (192.168.254.115:9100)" in output
     assert "- cadvisor: up (192.168.254.115:9200)" in output
+
+
+def test_cli_unhealthy_groups_current_down_endpoint_under_aliased_host_with_role(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "unhealthy-endpoints.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [
+            ("node115", "os", "linux"),
+            ("node115", "alias", "192.168.254.115:9100"),
+            ("192.168.254.115:9100", "endpoint_role", "node-exporter"),
+            ("192.168.254.115:9100", "availability_status", "down"),
+            ("node116:9100", "endpoint_role", "node-exporter"),
+            ("node116:9100", "availability_status", "up"),
+            ("host-down-is-not-an-endpoint", "os", "linux"),
+            ("host-down-is-not-an-endpoint", "availability_status", "down"),
+        ],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--unhealthy"]) == 0
+
+    output = capsys.readouterr().out
+    assert "unhealthy endpoints:\nnode115:\n  - node-exporter down 192.168.254.115:9100" in output
+    assert "node116:9100" not in output
+    assert "host-down-is-not-an-endpoint" not in output
+    assert "graph errors:" in output
+    assert "graph warnings:" not in output
+
+
+def test_cli_down_alias_uses_current_measurement_sample(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "unhealthy-current-sample.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [
+            ("node115:9100", "availability_status", "down"),
+            ("node115:9100", "availability_status", "up"),
+        ],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--down"]) == 0
+
+    assert "node115:9100" not in capsys.readouterr().out
+
+
+def test_cli_unhealthy_shows_errors_and_optionally_warnings(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "unhealthy-graph-issues.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [
+            ("node115", "os", "linux"),
+            ("workers", "group", "team"),
+            ("workers", "runs_on", "node115"),
+            ("mystery", "group", "servers"),
+        ],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--unhealthy"]) == 0
+    output = capsys.readouterr().out
+    assert "graph errors:" in output
+    assert "- error: workers member_of team" in output
+    assert "graph warnings:" not in output
+    assert "mystery member_of servers" not in output
+
+    assert seed_local.main(
+        ["--db", str(db_path), "--unhealthy", "--include-warnings"]
+    ) == 0
+    output = capsys.readouterr().out
+    assert "graph warnings:" in output
+    assert "- warning: mystery member_of servers" in output
+
+
+def test_cli_graph_issue_output_prints_hint_when_present(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "graph-issue-hint.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [("e1f9104e9a8d", "prometheus_instance", "e1f9104e9a8d:9100")],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--graph-issues"]) == 0
+
+    output = capsys.readouterr().out
+    assert "hint: Add inventory or alias evidence if this monitored endpoint should map to a known host." in output
+    assert "source_fact_ids: fact_impact_0" in output
+
+
+def test_cli_unhealthy_does_not_ingest_or_execute(tmp_path, capsys, monkeypatch):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "unhealthy-read-only.sqlite"
+    monkeypatch.setattr(
+        seed_local,
+        "build_local_app",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("runtime was built")),
+    )
+
+    assert seed_local.main(
+        [
+            "--db",
+            str(db_path),
+            "--fact",
+            "node115:9100",
+            "availability_status",
+            "down",
+            "--unhealthy",
+            "restart",
+            "node115",
+        ]
+    ) == 0
+    assert "unhealthy endpoints:\n- none" in capsys.readouterr().out
+
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        assert ledger.list_events(seed_local.DEFAULT_WORKSPACE) == []
+    finally:
+        ledger.close()

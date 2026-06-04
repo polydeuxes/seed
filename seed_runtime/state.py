@@ -83,7 +83,9 @@ class GraphValidationIssue:
     relationship: str
     object: str
     relationship_ids: list[str]
+    source_fact_ids: list[str]
     reason: str
+    hint: str | None
     expected_subject_types: list[str]
     actual_subject_types: list[str]
     expected_object_types: list[str]
@@ -1323,7 +1325,11 @@ class GraphValidator:
             existing = issues_by_key.get(key)
             if existing is not None:
                 issues_by_key[key] = replace(
-                    existing, relationship_ids=[*existing.relationship_ids, edge.id]
+                    existing,
+                    relationship_ids=[*existing.relationship_ids, edge.id],
+                    source_fact_ids=list(
+                        dict.fromkeys([*existing.source_fact_ids, edge.source_fact_id])
+                    ),
                 )
                 continue
             issues_by_key[key] = self._issue(
@@ -1389,7 +1395,15 @@ class GraphValidator:
             relationship=edge.relationship,
             object=edge.object,
             relationship_ids=[edge.id],
+            source_fact_ids=[edge.source_fact_id],
             reason=reason,
+            hint=(
+                "Add inventory or alias evidence if this monitored endpoint should "
+                "map to a known host."
+                if edge.relationship == "monitored_by"
+                and actual_subject_types == ["unknown"]
+                else None
+            ),
             expected_subject_types=expected_subject_types,
             actual_subject_types=actual_subject_types,
             expected_object_types=expected_object_types,
