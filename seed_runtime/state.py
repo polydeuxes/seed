@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from typing import Any, Callable, Iterable, Literal
 
@@ -82,7 +82,7 @@ class GraphValidationIssue:
     subject: str
     relationship: str
     object: str
-    relationship_id: str
+    relationship_ids: list[str]
     reason: str
     expected_subject_types: list[str]
     actual_subject_types: list[str]
@@ -1290,7 +1290,9 @@ class GraphValidator:
     def validate(self, state: State) -> list[GraphValidationIssue]:
         """Return deterministic issues for suspicious or invalid graph edges."""
 
-        issues: list[GraphValidationIssue] = []
+        issues_by_key: dict[
+            tuple[str, str, str, str, str], GraphValidationIssue
+        ] = {}
         for edge in state.relationships:
             definition = self.relationship_catalog.get(edge.relationship)
             if definition is None:
@@ -1316,18 +1318,24 @@ class GraphValidator:
                 if any(item[0] == "error" for item in failures)
                 else "warning"
             )
-            issues.append(
-                self._issue(
-                    edge,
-                    severity,
-                    "; ".join(item[1] for item in failures),
-                    [definition.subject_type],
-                    [definition.object_type],
-                    subject_types,
-                    object_types,
+            reason = "; ".join(item[1] for item in failures)
+            key = (edge.subject, edge.relationship, edge.object, severity, reason)
+            existing = issues_by_key.get(key)
+            if existing is not None:
+                issues_by_key[key] = replace(
+                    existing, relationship_ids=[*existing.relationship_ids, edge.id]
                 )
+                continue
+            issues_by_key[key] = self._issue(
+                edge,
+                severity,
+                reason,
+                [definition.subject_type],
+                [definition.object_type],
+                subject_types,
+                object_types,
             )
-        return issues
+        return list(issues_by_key.values())
 
     def _check_side(
         self,
@@ -1371,13 +1379,16 @@ class GraphValidator:
         actual_subject_types: list[str],
         actual_object_types: list[str],
     ) -> GraphValidationIssue:
+        identity = "\0".join(
+            [edge.subject, edge.relationship, edge.object, severity, reason]
+        )
         return GraphValidationIssue(
-            id="graph_issue_" + hashlib.sha256(edge.id.encode()).hexdigest()[:24],
+            id="graph_issue_" + hashlib.sha256(identity.encode()).hexdigest()[:24],
             severity=severity,
             subject=edge.subject,
             relationship=edge.relationship,
             object=edge.object,
-            relationship_id=edge.id,
+            relationship_ids=[edge.id],
             reason=reason,
             expected_subject_types=expected_subject_types,
             actual_subject_types=actual_subject_types,

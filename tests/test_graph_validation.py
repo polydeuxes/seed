@@ -97,6 +97,28 @@ def test_unknown_monitored_by_subject_is_warning():
     assert issue.actual_subject_types == ["unknown"]
 
 
+def test_duplicate_monitored_by_warnings_collapse_and_preserve_relationship_ids():
+    state = _project(
+        _fact("node_exporter", "node115", "prometheus_instance", "node115:9100"),
+        _fact("cadvisor", "node115", "prometheus_instance", "node115:8080"),
+    )
+
+    assert len(state.graph_issues) == 1
+    issue = state.graph_issues[0]
+    assert (issue.subject, issue.relationship, issue.object) == (
+        "node115",
+        "monitored_by",
+        "prometheus",
+    )
+    assert issue.severity == "warning"
+    assert issue.reason == "subject type is unknown; expected host"
+    assert issue.relationship_ids == [
+        edge.id
+        for edge in state.relationships
+        if edge.relationship == "monitored_by"
+    ]
+
+
 def test_provides_accepts_any_subject_entity_type():
     state = _project(
         _fact("host_type", "api:8080", "os", "linux"),
