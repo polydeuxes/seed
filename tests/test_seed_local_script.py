@@ -2839,6 +2839,25 @@ def test_cli_impact_includes_graph_warnings(tmp_path, capsys):
     assert "subject type is unknown; expected host" in output
 
 
+def test_cli_impact_collapses_duplicate_monitored_by_warnings(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "impact-duplicate-warning.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [
+            ("node115", "prometheus_instance", "node115:9100"),
+            ("node115", "prometheus_instance", "node115:8080"),
+        ],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+
+    output = capsys.readouterr().out
+    warning = "- warning: node115 monitored_by prometheus"
+    assert output.count(warning) == 1
+
+
 def test_cli_impact_does_not_ingest_or_execute(tmp_path, capsys, monkeypatch):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "impact-read-only.sqlite"

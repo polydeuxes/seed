@@ -1556,7 +1556,7 @@ def format_graph_issues(
             "\n".join(
                 [
                     f"{issue.severity}: {issue.subject} {issue.relationship} {issue.object}",
-                    f"relationship_id: {issue.relationship_id}",
+                    f"relationship_ids: {','.join(issue.relationship_ids)}",
                     f"reason: {issue.reason}",
                     "subject types: "
                     f"expected={','.join(issue.expected_subject_types)} "
