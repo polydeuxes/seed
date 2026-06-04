@@ -4,19 +4,23 @@ A system that accumulates context, understands missing capabilities, and safely 
 
 ## One-sentence product definition
 
-Seed receives unique user or system inputs, turns them into durable state, presents a compact context packet to an LLM, lets the LLM answer, ask, request ToolNeeds, or propose non-executable ActionPlans/HandoffPlans, and records every result back into state.
+Seed receives raw user, file, provider, and system inputs; safely inspects and normalizes them into Evidence-backed Facts; projects a knowledge graph and current state; presents compact context to an LLM; lets the LLM answer, ask, request ToolNeeds, or propose non-executable ActionPlans/HandoffPlans; and records every result back into state.
 
 ## Core thesis
 
 Permissions and flow control are necessary infrastructure, but they are not the architecture. The architecture is the **context engine** plus a **tool-growing loop**:
 
 ```text
-input
-  -> event record
-  -> state update
+raw input
+  -> InputInspector
+  -> ObservationSource
+  -> ObservationNormalizer
+  -> ObservationIngestor
+  -> Evidence / Facts / FactSupport
+  -> projected knowledge state
   -> context packet
   -> model decision
-  -> ToolNeed, ActionPlan, or HandoffPlan
+  -> ToolNeed, recommendation, ActionPlan, or HandoffPlan
   -> validation/policy metadata/build/external-provider handoff
   -> state update
   -> response
@@ -59,6 +63,33 @@ The model does not get unrestricted power to rewrite its runtime. It can request
 7. **Every action returns to state**  
    Answers, questions, ToolNeeds, ActionPlans, HandoffPlans, external provider evidence, approvals, and generated artifacts all become durable events.
 
+
+## Current MVP slice
+
+Seed can now:
+
+- inspect and ingest inputs safely
+- ingest Ansible inventory and Prometheus observations
+- ingest local host observations
+- normalize provider predicates into canonical vocabulary
+- resolve aliases and identity links
+- classify entities through `EntityTypeCatalog`
+- project topology relationships through `RelationshipCatalog`
+- detect graph issues
+- infer deterministic facts through `InferenceCatalog`
+- explain why it believes something
+- summarize current state
+- produce non-executable plans and handoffs
+
+Seed still does **not**:
+
+- execute host commands
+- handle secrets
+- schedule jobs
+- retry work
+- replace Prometheus as historian
+- replace Ansible, Temporal, AWX, MCP, or manual providers as executor
+
 ## Document map
 
 Read in this order:
@@ -88,12 +119,15 @@ seed/
     context-engine.md
   seed_runtime/
     api/
+    catalogs/
     context/
     decisions/
     events/
-    execution/
+    handoff/
+    knowledge/
     ledger/
     policy/
+    projection_store/
     registry/
     state/
   seed_builder/
@@ -266,8 +300,29 @@ python scripts/seed_local.py --db seed.sqlite --graph-issues --severity warning
 python scripts/seed_local.py --db seed.sqlite --state-summary
 ```
 
+### Operator query surfaces
+
+The maintained CLI exposes read-only operator queries over projected state. These queries do not ingest new observations, execute tools, mutate hosts, or ask an LLM to reason over projection state:
+
+- `--state-summary` prints counts and health of projected entities, facts, conflicts, relationship edges, graph warnings/errors, and cache status.
+- `--impact ENTITY` resolves aliases and summarizes an entity's current types, aliases, availability, endpoints, groups, dependencies, dependents, conflicts, and related graph issues.
+- `--why ENTITY PREDICATE` explains the current belief by traversing FactSupport, provenance, conflicts, aliases, and deterministic inference links.
+- `--unhealthy` and `--down` list currently unhealthy or unavailable entities/endpoints from projected facts.
+- `--graph-issues` reports topology/type validation findings.
+- `--relationships` prints projected relationship edges, optionally filtered by relationship.
+- `--entity-types` prints projected entity classifications.
+- `--current-facts [ENTITY] [PREDICATE]` prints current facts, including multi-cardinality predicates.
+
 ### Inference catalog
 
 Seed's built-in `InferenceCatalog` defines deterministic reasoning rules that project new facts from unambiguous current observed facts. It is not LLM reasoning and it never executes commands, mutates hosts, or performs network calls. `PredicateCatalog` defines the vocabulary for what can be known, `RelationshipCatalog` defines topology semantics, `EntityTypeCatalog` defines entity classes, `InferenceCatalog` defines deterministic reasoning rules, and `CapabilityCatalog` defines what can be done.
 
 Inferred facts are projection artifacts rather than observations. They are marked with `source_type=inferred` and `inferred=true`, link back to the activating fact and catalog rule through `source_fact_id` and `inference_rule_id`, never exceed the source fact's confidence, and never overwrite observed facts. Single-cardinality predicate ambiguity suppresses inference. Use `--show-inference-catalog` to inspect the built-in rules.
+
+### Performance and projection cache
+
+Seed uses an event-sourced performance model. `EventLedger` owns append-only events and audit history; deterministic projectors derive current state; `ProjectionStore` owns cached projected state for fast operator queries and context composition. The current implementation is SQLite-backed for local portability, with schema boundaries kept narrow enough to move to Postgres later. Use `--rebuild-state-cache` to rebuild cached projections from the ledger and `--state-cache-status` to inspect cache freshness and coverage.
+
+## Next comparison task
+
+After this documentation refresh, create a branch at the earlier prototype point and compare the original proto/control-loop approach with the current knowledge/handoff runtime. The comparison should identify what improved, what became overbuilt, and what should be simplified before the next implementation push.

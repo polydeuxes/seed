@@ -1,12 +1,12 @@
 # 07 Builder Service
 
-The builder service turns Tool Needs into generated toolkit candidates.
+The builder service turns Tool Needs into generated toolkit candidates for observation, catalog, and handoff integration.
 
 ## Builder mission
 
 Given a durable Tool Need, produce a toolkit candidate that can be validated and eventually registered.
 
-The builder is not the runtime. It does not execute production actions. It creates artifacts.
+The builder is not the runtime. It does not execute production actions, handle secrets, schedule jobs, retry work, or create a Seed-owned execution lifecycle. It creates artifacts.
 
 ## Builder inputs
 
@@ -37,12 +37,33 @@ The builder is not the runtime. It does not execute production actions. It creat
 ```text
 candidate_dir/
   toolkit.yaml
-  operations.py
+  input_inspectors/        # only when a raw input class needs pre-dispatch inspection
+  observation_sources/
+  observation_normalizers/
+  catalogs/
+    predicates.json
+    relationships.json
+    capabilities.json
+  handoff_providers.json
   schemas/
   tests/
   docs.md
   generation_notes.md
 ```
+
+
+The first generated artifacts should be non-mutating integration products:
+
+- `InputInspector` when needed
+- `ObservationSource`
+- `ObservationNormalizer`
+- `PredicateCatalog` entries
+- `RelationshipCatalog` entries
+- `CapabilityCatalog` entries
+- `HandoffProvider` metadata
+- tests
+
+Generated operation code, if any, must remain read-only or metadata-only unless an external provider owns the real execution path. Mutating work is represented as non-executable HandoffPlan metadata.
 
 ## Builder phases
 
@@ -79,9 +100,9 @@ risks:
 
 Generate contracts before implementation.
 
-### 4. Generate Implementation
+### 4. Generate Integration Artifacts
 
-Implementation should use provider facades, not raw subprocess by default.
+Generate non-mutating integration artifacts before any operation wrapper: inspectors, observation sources, normalizers, catalog entries, handoff-provider metadata, schemas, and tests. Implementation should not use raw subprocess, direct host mutation, credential prompts, or undeclared network access.
 
 ### 5. Generate Tests
 
@@ -140,13 +161,12 @@ Generated tools should target stable provider facades.
 Examples:
 
 ```python
-ctx.providers.packages.install(host, package="openssh-server")
-ctx.providers.services.enable(host, service="ssh")
-ctx.providers.services.start(host, service="ssh")
-ctx.providers.network.check_port(host, port=22)
+ctx.observations.ansible_inventory.parse(path)
+ctx.observations.prometheus.collect(base_url, allowlisted_metrics)
+ctx.handoffs.provider("awx").operation("install_ssh_server")
 ```
 
-This avoids generated tools shelling out arbitrarily.
+This avoids generated artifacts shelling out arbitrarily and keeps host mutation in Ansible/AWX, MCP, Temporal/Prefect, or manual provider boundaries.
 
 ## Candidate validation checklist
 
@@ -160,8 +180,9 @@ This avoids generated tools shelling out arbitrarily.
 - tests pass
 - forbidden imports absent
 - no direct secret access
-- no raw subprocess unless explicitly allowed
-- no network access unless declared
+- no raw subprocess
+- no Seed-owned host mutation or direct execution
+- no network access unless declared for a read-only observation source
 - no self-registration code
 - docs exist
 
@@ -256,7 +277,9 @@ First version can be template-only:
 
 - accepts Tool Need
 - generates manifest skeleton
-- generates empty operation stubs
+- generates observation source/normalizer skeletons
+- generates catalog-entry skeletons
+- generates HandoffProvider metadata skeletons
 - generates TODO tests
 - records candidate
 

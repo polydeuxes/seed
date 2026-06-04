@@ -2,6 +2,21 @@
 
 This is a suggested sequence for several Codex sessions in a new repo.
 
+
+## Current knowledge-layer milestone
+
+The current MVP slice has moved beyond the early control-loop prototype. Seed can now safely inspect and ingest raw inputs; ingest Ansible inventory, Prometheus, and local-host observations; normalize provider predicates into canonical vocabulary; resolve aliases/identity; classify entities; project topology relationships; detect graph issues; infer deterministic facts; explain why it believes something; summarize current state; and produce non-executable plans/handoffs.
+
+The build plan from here should treat Seed as a planning + knowledge + handoff runtime, not as an internal executor/workflow engine. New work must preserve these runtime boundaries: no new Seed-owned execution behavior, shell invocation, host mutation, secret handling, retries, scheduling, or LLM-driven projection logic. Prometheus remains the historian, and Ansible/AWX, Temporal/Prefect, MCP, or manual providers remain the executors.
+
+### Knowledge and projection surfaces now in scope
+
+- Raw IN pipeline: raw input -> `InputInspector` -> `ObservationSource` -> `ObservationNormalizer` -> `ObservationIngestor` -> Evidence/Facts.
+- Semantic catalogs: `PredicateCatalog`, `RelationshipCatalog`, `EntityTypeCatalog`, `CapabilityCatalog`, and `InferenceCatalog`.
+- Knowledge projection: Facts, FactSupport, confidence/provenance, predicate cardinality, measurements versus durable facts, measurement retention, identity/alias resolution, relationships/topology, entity types, graph validation, and explanation/why queries.
+- Projection performance model: append-only `EventLedger`, deterministic projected state, `ProjectionStore` cache, `--rebuild-state-cache`, and `--state-cache-status`.
+- Operator queries: `--state-summary`, `--impact ENTITY`, `--why ENTITY PREDICATE`, `--unhealthy`, `--down`, `--graph-issues`, `--relationships`, `--entity-types`, and `--current-facts`.
+
 ## Session 1: Create skeleton and domain model
 
 Goal: establish names and package boundaries.
@@ -142,7 +157,7 @@ tests/test_context.py
 
 ## Session 7: Handoff planning path
 
-Goal: safely create non-executable HandoffPlans after the runtime has a stable context packet boundary.
+Goal: safely create non-executable HandoffPlans after the runtime has a stable context packet and knowledge-projection boundary.
 
 Tasks:
 
@@ -497,16 +512,16 @@ Seed:
   - sees verify tool exists but install tool missing
   - creates Tool Need install_ssh_server
 Builder:
-  - generates ssh_access toolkit candidate
+  - generates non-mutating integration artifacts first: InputInspector if needed, ObservationSource, ObservationNormalizer, PredicateCatalog entries, RelationshipCatalog entries, CapabilityCatalog entries, HandoffProvider metadata, and tests
 Validator:
-  - validates manifest/schemas/tests
+  - validates manifest/catalogs/schemas/tests and forbidden behavior
 Runtime:
-  - registers read-only verify tool
-  - keeps install tool approval-gated or disabled
+  - registers observation and handoff metadata
+  - keeps install as external-provider HandoffPlan only
 User:
   - asks again
 Seed:
-  - now sees tool exists but requires approval
+  - now sees an external provider handoff exists, summarizes policy/secret boundaries, and emits a non-executable HandoffPlan
 ```
 
 ## What not to build early
@@ -522,3 +537,13 @@ Avoid in early sessions:
 - giant provider library
 
 First prove the loop.
+
+## Next comparison task
+
+After the documentation refresh, create a branch at the earlier prototype point and compare:
+
+- original proto/control-loop approach
+- current knowledge/handoff runtime
+- what improved
+- what became overbuilt
+- what should be simplified

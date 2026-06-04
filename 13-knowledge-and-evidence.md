@@ -190,6 +190,28 @@ Terminology:
 - **Conflicting fact** — a Fact that has the same subject and predicate but a different value.
 - **Best fact/current belief** — the representative Fact for the value with the strongest aggregate support.
 
+
+## Raw IN pipeline and live examples
+
+The knowledge layer starts before parsing. File-backed and provider-backed raw inputs flow through:
+
+```text
+raw input
+  -> InputInspector
+  -> ObservationSource
+  -> ObservationNormalizer
+  -> ObservationIngestor
+  -> Evidence / Facts
+```
+
+Current live read-only examples are Ansible inventory ingestion, Prometheus observation ingestion, and local host observation. Ansible inventory is inspected as raw file content before parser dispatch and does not invoke Ansible or connect to hosts. Prometheus ingestion uses allowlisted read API queries and keeps Prometheus as the historian. Local host observation uses local read-only platform/disk APIs to emit observations about the current machine.
+
+## ProjectionStore and operator queries
+
+The `EventLedger` owns append-only events. `ProjectionStore` owns cached projected state derived from those events: current facts, FactSupport aggregates, recent measurements, alias/identity indexes, relationship edges, entity types, graph validation findings, and explanation inputs. Measurements are projected as current samples with bounded retention rather than an unbounded time series; durable facts and measurement facts stay distinguishable through predicates, dimensions, timestamps, and provenance.
+
+Operators can inspect this projection with read-only queries such as `--state-summary`, `--impact ENTITY`, `--why ENTITY PREDICATE`, `--unhealthy`, `--down`, `--graph-issues`, `--relationships`, `--entity-types`, and `--current-facts`. Cache lifecycle is explicit through `--rebuild-state-cache` and `--state-cache-status`.
+
 ## Recommended Toolkit Roadmap
 
 ### Knowledge Toolkit
@@ -220,7 +242,7 @@ Purpose:
 
 Convert operational observations into evidence-backed observed Facts.
 
-Observation tools should prefer direct observations of the current environment and should emit Evidence records suitable for deterministic fact extraction and Fact Support Aggregation. Existing names such as `verify_ssh_access` should be treated as observation surfaces, not as a reason to add a standalone verification subsystem.
+Observation tools should prefer direct observations of the current environment and should emit Evidence records suitable for deterministic fact extraction and Fact Support Aggregation. Existing names such as `verify_ssh_access` should be treated as observation surfaces, not as a reason to add a standalone verification subsystem or internal execution lifecycle.
 
 ### Computation Toolkit
 
