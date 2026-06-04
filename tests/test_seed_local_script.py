@@ -1424,6 +1424,7 @@ def test_parser_supports_fact_projection_queries():
     best_args = parser.parse_args(["--best-fact", "jellyfin", "runtime"])
     conflicts_args = parser.parse_args(["--fact-conflicts"])
     refreshes_args = parser.parse_args(["--stale-fact-refreshes"])
+    summary_args = parser.parse_args(["--state-summary"])
 
     history_args = parser.parse_args([
         "--fact-support",
@@ -1444,6 +1445,135 @@ def test_parser_supports_fact_projection_queries():
     assert best_args.best_fact == ["jellyfin", "runtime"]
     assert conflicts_args.fact_conflicts is True
     assert refreshes_args.stale_fact_refreshes is True
+    assert summary_args.state_summary is True
+
+
+def test_cli_state_summary_reports_projected_world_model_without_ingestion(
+    tmp_path, monkeypatch, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "state-summary.sqlite"
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    ingestor = seed_local.ObservationIngestor(ledger)
+    now = seed_local.utc_now()
+
+    observations = [
+        seed_local.Observation(
+            id="obs_host_up_old",
+            source_type="discovery",
+            observed_at=now - seed_local.timedelta(minutes=2),
+            subject="host-up",
+            predicate="availability_status",
+            value="down",
+        ),
+        seed_local.Observation(
+            id="obs_host_up_current",
+            source_type="discovery",
+            observed_at=now - seed_local.timedelta(minutes=1),
+            subject="host-up",
+            predicate="availability_status",
+            value="up",
+        ),
+        seed_local.Observation(
+            id="obs_host_down",
+            source_type="discovery",
+            observed_at=now,
+            subject="host-down",
+            predicate="availability_status",
+            value="down",
+        ),
+        seed_local.Observation(
+            id="obs_alias",
+            source_type="user",
+            observed_at=now,
+            subject="host-up",
+            predicate="alias",
+            value="10.0.0.10",
+        ),
+        seed_local.Observation(
+            id="obs_runtime_docker",
+            source_type="user",
+            observed_at=now,
+            subject="host-up",
+            predicate="runtime",
+            value="docker",
+        ),
+        seed_local.Observation(
+            id="obs_runtime_systemd",
+            source_type="user",
+            observed_at=now,
+            subject="host-up",
+            predicate="runtime",
+            value="systemd",
+        ),
+        seed_local.Observation(
+            id="obs_stale_os",
+            source_type="imported",
+            observed_at=now - seed_local.timedelta(days=2),
+            subject="old-host",
+            predicate="os",
+            value="linux",
+            expires_at=now - seed_local.timedelta(days=1),
+        ),
+        seed_local.Observation(
+            id="obs_filesystem_free",
+            source_type="discovery",
+            observed_at=now,
+            subject="10.0.0.10",
+            predicate="filesystem_free_bytes",
+            value=40,
+            dimensions={"mountpoint": "/", "device": "/dev/sda1"},
+        ),
+        seed_local.Observation(
+            id="obs_filesystem_total",
+            source_type="discovery",
+            observed_at=now,
+            subject="10.0.0.10",
+            predicate="filesystem_total_bytes",
+            value=100,
+            dimensions={"mountpoint": "/", "device": "/dev/sda1"},
+        ),
+    ]
+    try:
+        for observation in observations:
+            ingestor.ingest(observation, "local")
+    finally:
+        ledger.close()
+
+    monkeypatch.setattr(
+        seed_local,
+        "seed_dev_state_from_args",
+        lambda args, ledger: pytest.fail("state summary must not ingest"),
+    )
+
+    monkeypatch.setattr(
+        seed_local,
+        "build_local_app",
+        lambda *args, **kwargs: pytest.fail("state summary must not execute"),
+    )
+
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--state-summary", "--fact", "ignored", "os", "x"]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "entities: 3" in output
+    assert "facts: 8" in output
+    assert "durable facts: 4" in output
+    assert "measurement current samples: 4" in output
+    assert "conflicts: 1" in output
+    assert "stale facts: 1" in output
+    assert "  discovery: 4" in output
+    assert "  imported: 1" in output
+    assert "  user: 3" in output
+    assert "host-up (aliases: 10.0.0.10; facts: 6)" in output
+    assert "  up: 1" in output
+    assert "  down: 1" in output
+    assert "  unknown: 0" in output
+    assert "host-up /: 40/100 bytes free/total" in output
 
 
 def test_cli_fact_support_prints_projected_grouped_values(capsys):

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter, defaultdict
 import json
 import sys
 from dataclasses import dataclass
@@ -828,6 +829,14 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--state-summary",
+        action="store_true",
+        help=(
+            "print a concise read-only summary of the projected world model; "
+            "does not ingest observations or execute tools"
+        ),
+    )
+    parser.add_argument(
         "--fact-support",
         nargs=2,
         metavar=("SUBJECT", "PREDICATE"),
@@ -1285,6 +1294,141 @@ def fact_query_state(args: argparse.Namespace) -> State:
         close = getattr(ledger, "close", None)
         if close is not None:
             close()
+
+
+def projected_state_from_args(args: argparse.Namespace) -> State:
+    """Return persisted projected State without ingesting or executing anything."""
+
+    ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
+    try:
+        return StateProjector(ledger).project(args.workspace)
+    finally:
+        close = getattr(ledger, "close", None)
+        if close is not None:
+            close()
+
+
+def state_summary(state: State, *, top_entity_limit: int = 10) -> dict[str, Any]:
+    """Build a concise operator summary using only the projected State."""
+
+    current_measurements = [
+        fact
+        for fact in state.facts.values()
+        if is_measurement_predicate(fact.predicate) and not is_fact_expired(fact)
+    ]
+    durable_facts = [
+        fact
+        for fact in state.facts.values()
+        if not is_measurement_predicate(fact.predicate)
+    ]
+
+    entity_aliases: dict[str, set[str]] = defaultdict(set)
+    entity_fact_counts: Counter[str] = Counter()
+    for fact in state.facts.values():
+        canonical = state.alias_resolver.canonical(fact.subject_id)
+        entity_aliases[canonical].update(state.alias_resolver.resolve(fact.subject_id))
+        entity_fact_counts[canonical] += 1
+    for entity in state.entities.values():
+        canonical = state.alias_resolver.canonical(entity.name)
+        entity_aliases[canonical].update({entity.name, *entity.aliases})
+        entity_fact_counts.setdefault(canonical, 0)
+
+    top_entities = [
+        {
+            "name": canonical,
+            "aliases": sorted(entity_aliases[canonical] - {canonical}),
+            "fact_count": entity_fact_counts[canonical],
+        }
+        for canonical in sorted(
+            entity_aliases, key=lambda name: (-entity_fact_counts[name], name)
+        )[:top_entity_limit]
+    ]
+
+    availability = Counter({"up": 0, "down": 0, "unknown": 0})
+    for fact in current_measurements:
+        if fact.predicate == "availability_status":
+            status = fact.value if fact.value in availability else "unknown"
+            availability[status] += 1
+
+    filesystems: dict[tuple[str, str, str], dict[str, Any]] = defaultdict(dict)
+    for fact in current_measurements:
+        if fact.predicate not in {"filesystem_free_bytes", "filesystem_total_bytes"}:
+            continue
+        mountpoint = fact.dimensions.get("mountpoint")
+        if mountpoint is None:
+            continue
+        canonical = state.alias_resolver.canonical(fact.subject_id)
+        dimensions_key = json.dumps(
+            fact.dimensions, sort_keys=True, separators=(",", ":")
+        )
+        key = (canonical, mountpoint, dimensions_key)
+        field = "free" if fact.predicate == "filesystem_free_bytes" else "total"
+        filesystems[key][field] = fact.value
+
+    filesystem_summary = [
+        {"host": host, "mountpoint": mountpoint, **values}
+        for (host, mountpoint, _dimensions), values in sorted(filesystems.items())
+        if "free" in values and "total" in values
+    ]
+
+    return {
+        "entity_count": len(entity_aliases),
+        "fact_count": len(state.facts),
+        "durable_fact_count": len(durable_facts),
+        "measurement_current_sample_count": len(current_measurements),
+        "conflict_count": len(state.fact_conflicts),
+        "stale_fact_count": len(state.get_stale_facts()),
+        "observation_source_counts": dict(
+            sorted(Counter(obs.source_type for obs in state.observations.values()).items())
+        ),
+        "top_entities": top_entities,
+        "availability": dict(availability),
+        "filesystems": filesystem_summary,
+    }
+
+
+def format_state_summary(summary: dict[str, Any]) -> str:
+    """Format the projected state summary for concise terminal inspection."""
+
+    lines = [
+        "State summary",
+        f"entities: {summary['entity_count']}",
+        f"facts: {summary['fact_count']}",
+        f"durable facts: {summary['durable_fact_count']}",
+        f"measurement current samples: {summary['measurement_current_sample_count']}",
+        f"conflicts: {summary['conflict_count']}",
+        f"stale facts: {summary['stale_fact_count']}",
+        "observation sources:",
+    ]
+    sources = summary["observation_source_counts"]
+    lines.extend(
+        [f"  {source}: {count}" for source, count in sources.items()]
+        or ["  (none)"]
+    )
+    lines.append("top entities:")
+    for entity in summary["top_entities"]:
+        aliases = ", ".join(entity["aliases"]) or "none"
+        lines.append(
+            f"  {entity['name']} (aliases: {aliases}; facts: {entity['fact_count']})"
+        )
+    if not summary["top_entities"]:
+        lines.append("  (none)")
+    lines.extend(
+        [
+            "availability:",
+            f"  up: {summary['availability']['up']}",
+            f"  down: {summary['availability']['down']}",
+            f"  unknown: {summary['availability']['unknown']}",
+        ]
+    )
+    if summary["filesystems"]:
+        lines.append("filesystems:")
+        for filesystem in summary["filesystems"]:
+            lines.append(
+                f"  {filesystem['host']} {filesystem['mountpoint']}: "
+                f"{filesystem['free']}/{filesystem['total']} bytes free/total"
+            )
+    return "\n".join(lines)
 
 
 def diff_observations_json_from_args(args: argparse.Namespace) -> dict[str, Any]:
@@ -2185,6 +2329,10 @@ def main(argv: list[str] | None = None) -> int:
     validate_lifecycle_args(args, parser)
     if args.show_predicate_catalog:
         print(format_predicate_catalog(PredicateCatalog.load(args.predicate_catalog)))
+        return 0
+
+    if args.state_summary:
+        print(format_state_summary(state_summary(projected_state_from_args(args))))
         return 0
 
     if args.preconditions:
