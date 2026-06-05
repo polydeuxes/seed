@@ -10,6 +10,8 @@ from seed_runtime.recommendation_ranker import RankedRecommendation
 from seed_runtime.state import State
 
 from seed_runtime.intent_classifier import IntentDecisionModel, IntentPromptModelClient
+from seed_runtime.runtime import Runtime
+from seed_runtime.runtime_loop import RuntimeLoop
 
 SCRIPT_PATH = Path("scripts/seed_local.py")
 
@@ -29,7 +31,10 @@ def test_build_local_app_uses_intent_classifier_path_and_loads_echo_toolkit():
     app = seed_local.build_local_app(model="qwen2.5:3b", timeout_seconds=12.0)
 
     assert isinstance(app.model_client, IntentPromptModelClient)
+    assert isinstance(app.runtime, Runtime)
+    assert isinstance(app.runtime_loop, RuntimeLoop)
     assert isinstance(app.runtime.model, IntentDecisionModel)
+    assert app.runtime_loop.decision_provider is app.runtime.model
     assert [tool.name for tool in app.context_composer.registry.list_tools()] == [
         "echo"
     ]
@@ -52,11 +57,67 @@ def test_one_shot_echo_uses_deterministic_fallback_without_ollama():
     assert result["response"]["payload"]["output"]["message"] == "hello"
     assert [event["kind"] for event in result["events"]] == [
         "input.user_message",
-        "model.decision.proposed",
-        "tool.call.started",
-        "tool.call.completed",
+        "tool.result",
         "evidence.observed",
+        "decision.recorded",
     ]
+    assert result["events"][0]["payload"]["metadata"]["session_id"] == app.session_id
+
+
+def test_normal_cli_missing_tool_records_open_tool_need_and_recommendations(monkeypatch):
+    seed_local = load_seed_local_module()
+    app = seed_local.build_local_app()
+
+    monkeypatch.setattr(
+        app.model_client,
+        "complete",
+        lambda context: (
+            '{"intent":"missing_tool","reason":"needs service tool","arguments":{}}'
+        ),
+    )
+
+    result = app.run("restart jellyfin?")
+
+    assert result["response"]["kind"] == "tool_need"
+    assert result["response"]["payload"]["tool_need"]["capability"] == "service_management"
+    assert isinstance(result["response"]["payload"]["recommendations"], list)
+    state = app.projector.project(app.workspace_id)
+    assert [need.capability for need in state.open_tool_needs] == ["service_management"]
+
+
+def test_normal_cli_answer_uses_runtime_loop():
+    seed_local = load_seed_local_module()
+    app = seed_local.build_local_app()
+
+    result = app.run("What is Docker?")
+
+    assert result["response"]["kind"] == "answer"
+    assert "Docker" in result["response"]["message"]
+    assert [event["kind"] for event in result["events"]] == [
+        "input.user_message",
+        "assistant.answer",
+        "decision.recorded",
+    ]
+
+
+def test_runtime_loop_tool_output_evidence_appears_in_projected_state():
+    seed_local = load_seed_local_module()
+    app = seed_local.build_local_app()
+
+    app.run("echo evidence")
+
+    state = app.projector.project(app.workspace_id)
+    assert len(state.evidence) == 1
+    evidence = next(iter(state.evidence.values()))
+    assert evidence.source == "tool:echo"
+    assert evidence.payload["message"] == "evidence"
+
+
+def test_old_runtime_module_remains_available():
+    seed_local = load_seed_local_module()
+
+    assert seed_local.Runtime is Runtime
+    assert Path("seed_runtime/runtime.py").exists()
 
 
 def test_parser_supports_required_modes_and_model_selection():
@@ -177,8 +238,8 @@ def test_cli_events_includes_full_event_ledger(capsys):
     output = capsys.readouterr().out
     assert "Tool echo completed." in output
     assert "Events:" in output
-    assert "tool.call.started" in output
-    assert "tool.call.completed" in output
+    assert "tool.result" in output
+    assert "decision.recorded" in output
 
 
 def test_cli_raw_continues_through_runtime(monkeypatch, capsys):
