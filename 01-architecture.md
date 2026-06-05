@@ -309,7 +309,7 @@ A catalog entry includes:
 - visibility rules
 - examples
 
-The catalog may load capabilities from hand-written metadata, generated toolkit metadata, MCP server descriptions, and external automation inventory. It describes what Seed can recommend or hand off; it does not imply that Seed can execute the operation itself.
+The catalog may load capabilities from hand-written metadata, generated toolkit metadata, MCP server descriptions, and external automation inventory. It describes what Seed can recommend or hand off; it does not imply that Seed can execute the operation itself. For the canonical distinction between requirements, capabilities, operations, implementations, providers, toolkits, and ToolNeeds, see `02-domain-model.md`.
 
 ### 8. Policy Gate
 

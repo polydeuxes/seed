@@ -1,24 +1,27 @@
 # 04 Toolkit System
 
-A toolkit is a portable package of generated or hand-written observation, catalog, capability, and handoff metadata. In the current core path it is not an internal execution plugin.
+A toolkit is a portable package of generated or hand-written observation, catalog, capability, operation, provider, and handoff metadata. In the current core path it is not an internal execution plugin. Use the canonical capability/tool vocabulary in `02-domain-model.md`: capabilities explain why Seed needs an ability, operations define what can be called, implementations define how calls are fulfilled, and providers are the external backends.
 
 ## Definition
 
 A toolkit contains:
 
 - manifest
-- observation sources and normalizers
-- predicate, relationship, and capability definitions
-- policy action definitions
+- capability metadata
+- named operations / callable interfaces
 - input schemas
 - output schemas
+- policy action definitions
+- observation sources and normalizers
+- provider and handoff metadata
+- predicate and relationship definitions when observations create knowledge
 - optional read-only or metadata-only implementation code
 - tests
 - docs
 - examples
 - validation metadata
 
-A toolkit is not just a Python file. The contract is as important as the implementation.
+A toolkit is not just a Python file. The contract is as important as the implementation, and a provider name such as Prometheus or SSH should not be collapsed into a single tool. Providers expose implementations; operations are the callable surfaces that Seed may register and policy-check.
 
 ## Directory layout
 
