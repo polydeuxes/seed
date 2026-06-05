@@ -210,7 +210,25 @@ Current live read-only examples are Ansible inventory ingestion, Prometheus obse
 
 The `EventLedger` owns append-only events. `ProjectionStore` owns cached projected state derived from those events: current facts, FactSupport aggregates, recent measurements, alias/identity indexes, relationship edges, entity types, graph validation findings, and explanation inputs. Measurements are projected as current samples with bounded retention rather than an unbounded time series; durable facts and measurement facts stay distinguishable through predicates, dimensions, timestamps, and provenance.
 
-Operators can inspect this projection with read-only queries such as `--state-summary`, `--impact ENTITY`, `--why ENTITY PREDICATE`, `--unhealthy`, `--down`, `--graph-issues`, `--relationships`, `--entity-types`, and `--current-facts`. Cache lifecycle is explicit through `--rebuild-state-cache` and `--state-cache-status`.
+Operators can inspect this projection with read-only queries such as `--state-summary`, `--impact ENTITY`, `--why ENTITY PREDICATE`, `--unhealthy`, `--down`, `--graph-issues`, `--relationships`, `--entity-types`, `--current-facts`, and `--decision-context`. Cache lifecycle is explicit through `--rebuild-state-cache` and `--state-cache-status`.
+
+## Context Views and the decision boundary
+
+Context Views formalize how projected knowledge becomes runtime context. The target knowledge path is:
+
+```text
+Events
+→ State
+→ Evidence
+→ Contradictions
+→ Confidence
+→ Context Views
+→ DecisionProvider
+```
+
+A `DecisionContextView` is assembled only from projected State, the Evidence Graph, Contradiction Detection, and Confidence Aggregation. It carries decision-ready facts with confidence, contradiction flags, and evidence counts, plus projected issues, requirements, capabilities, and summary counts. Unsupported facts are excluded by default; contradicted facts are retained and marked so providers can see conflicts without Seed resolving or hiding them.
+
+Context Views are read-only projections. They do not execute runtime behavior, invoke providers, invoke tools, evaluate policy, call LLMs, mutate State, append events, replay the ledger, or create new persistence. Future providers must consume Context Views rather than directly traversing State structures, preserving a clear boundary between the knowledge layer and decision-making.
 
 ## Recommended Toolkit Roadmap
 

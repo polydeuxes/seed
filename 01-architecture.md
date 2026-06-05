@@ -191,6 +191,32 @@ State Views answer:
 
 They are projections and not separate persistence systems. They do not append events, replay runtime decisions, invoke `RuntimeLoop`, call providers, evaluate policy, execute tools, run shell commands, or perform network calls. CLI flags such as `--current-facts`, `--current-observations`, `--current-requirements`, `--current-capabilities`, `--current-issues`, and `--state-summary` load projected State, reuse `ProjectionStore` snapshots when available, and render plain text.
 
+### Context Views
+
+Context Views are the supported boundary between Seed's knowledge system and decision-making. `seed_runtime/context_views.py` builds a deterministic `DecisionContextView` from already-projected State plus the Evidence Graph, Contradiction Detection, and Confidence Aggregation layers. Future `DecisionProvider` implementations should consume Context Views instead of directly traversing raw `State` structures.
+
+The knowledge-to-decision path is:
+
+```text
+Events
+→ State
+→ Evidence
+→ Contradictions
+→ Confidence
+→ Context Views
+→ DecisionProvider
+```
+
+Context Views answer:
+
+- What is currently true?
+- What evidence supports it?
+- What conflicts exist?
+- How confident are we?
+- What should the provider see?
+
+Context Views are projections. They are read-only and do not append events, mutate State, replay runtime behavior, invoke `RuntimeLoop`, call providers, evaluate policy, execute tools, call LLMs, run shell commands, perform network calls, or create a new persistence layer. The v1 selection rules are intentionally simple and deterministic: supported facts are selected first, higher confidence sorts first, contradicted facts remain visible but marked, and unsupported facts are excluded by default. Operators can inspect the exact provider-facing projection with `--decision-context`.
+
 
 #### Fact Support Aggregation
 
@@ -213,7 +239,7 @@ This keeps disagreement auditable: multiple values can remain in state while `ge
 
 ### 4. Context Composer
 
-Builds a compact model-facing packet from state.
+Builds compact model-facing packets from projected knowledge. The supported knowledge input for future decision providers is the Decision Context View, not direct traversal of raw State dictionaries.
 
 This is the heart of the product.
 

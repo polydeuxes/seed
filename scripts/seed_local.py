@@ -20,6 +20,10 @@ if str(REPO_ROOT) not in sys.path:
 from seed_runtime.action_plans import ActionPlanService, ActionPlanTransitionError
 from seed_runtime.ansible_inventory_source import AnsibleInventoryObservationSource
 from seed_runtime.context import ContextComposer
+from seed_runtime.context_views import (
+    DecisionContextView,
+    build_decision_context_view,
+)
 from seed_runtime.confidence import (
     FactConfidence,
     build_confidence_summary,
@@ -1082,6 +1086,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="print read-only projected Issue views and exit",
     )
     parser.add_argument(
+        "--decision-context",
+        action="store_true",
+        help="print the read-only Decision Context View and exit",
+    )
+    parser.add_argument(
         "--fact-conflicts",
         action="store_true",
         help="print projected active fact conflicts and their winning values",
@@ -1162,6 +1171,7 @@ def validate_lifecycle_args(
         bool(args.current_requirements),
         bool(args.current_capabilities),
         bool(args.current_issues),
+        bool(args.decision_context),
         bool(args.state_summary),
         bool(args.inferred_facts),
         bool(args.fact_conflicts),
@@ -1180,7 +1190,8 @@ def validate_lifecycle_args(
             "--confidence, --confidence-fact, --trace-run, "
             "--why-run, --fact-support, --best-fact, "
             "--current-facts, --current-observations, --current-requirements, "
-            "--current-capabilities, --current-issues, --state-summary, "
+            "--current-capabilities, --current-issues, --decision-context, "
+            "--state-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --rebuild-state-cache, --state-cache-status, "
             "or --events-only"
@@ -2314,6 +2325,12 @@ def format_issue_views(views: list[IssueView]) -> str:
     if not views:
         lines.append("(none)")
     return "\n".join(lines)
+
+
+def format_decision_context_view(view: DecisionContextView) -> str:
+    """Format the exact read-only Decision Context View as deterministic JSON."""
+
+    return json.dumps(to_plain(view), sort_keys=True, indent=2)
 
 
 def _format_view_value(value: Any) -> str:
@@ -3736,6 +3753,14 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.current_issues:
         print(format_issue_views(build_issue_view(projected_state_from_args(args))))
+        return 0
+
+    if args.decision_context:
+        print(
+            format_decision_context_view(
+                build_decision_context_view(projected_state_from_args(args))
+            )
+        )
         return 0
 
     if args.fact_conflicts:

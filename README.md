@@ -342,6 +342,7 @@ The maintained CLI exposes read-only operator queries over projected state. Stat
 - `--entity-types` prints projected entity classifications.
 - `--current-facts` prints all read-only projected Fact Views; `--current-facts ENTITY PREDICATE` keeps the focused current-fact query for a subject/predicate.
 - `--current-observations`, `--current-requirements`, `--current-capabilities`, and `--current-issues` print read-only State Views for the rest of the projected world model.
+- `--decision-context` prints the exact read-only Context View that a `DecisionProvider` receives: confidence-bearing facts, contradiction flags, issues, requirements, capabilities, and summary counts.
 - `--evidence` prints the read-only Evidence Graph summary and concise evidence-to-fact links.
 - `--why-fact SUBJECT PREDICATE [OBJECT]` explains a matched projected fact with confidence, evidence, and supporting event IDs.
 - `--unsupported-facts` lists projected facts that currently have no linked supporting evidence.
