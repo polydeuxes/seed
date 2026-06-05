@@ -79,6 +79,7 @@ Seed can now:
 - infer deterministic facts through `InferenceCatalog`
 - explain why it believes something
 - summarize current state
+- detect conservative read-only contradictions between projected facts
 - produce non-executable plans and handoffs
 
 Seed still does **not**:
@@ -169,10 +170,11 @@ The API is not the center. The context loop is the center, and the context loop 
 
 ```text
 Events -> projected State -> Evidence Graph -> Fact explanations
+Events -> projected State -> Evidence Graph -> Contradiction Detection
 Evidence -> Facts -> State -> Decisions -> Tools
 ```
 
-Tools are how Seed observes and acts. Evidence, facts, state, and the read-only Evidence Graph are how Seed knows what is true enough to decide and why a fact is believed.
+Tools are how Seed observes and acts. Evidence, facts, state, the read-only Evidence Graph, and read-only Contradiction Detection are how Seed knows what is true enough to decide, why a fact is believed, whether a fact is unsupported, and whether projected facts conflict. Contradictions are not resolutions: Seed reports that facts cannot both be true and shows evidence for each side, but it does not choose a winner or mutate state.
 
 ## Local model development CLI
 

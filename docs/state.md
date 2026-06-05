@@ -9,6 +9,7 @@ Seed's State layer turns append-only EventLedger data into a current world model
 - **State**: current world model produced by the state projector.
 - **State Views**: read-only projection views over State.
 - **Evidence Graph**: read-only explanation layer over projected State that links evidence to facts.
+- **Contradiction Detection**: read-only projection view over projected facts and evidence that reports conservative conflicts without resolving them.
 
 ## State Views v1
 
@@ -55,6 +56,30 @@ Evidence Graph v1 models:
 
 Facts without linked evidence are counted and rendered as unsupported. This makes unsupported assertions visible without mutating State or inventing a new persistence layer.
 
+## Contradiction Detection v1
+
+`seed_runtime/contradictions.py` exposes read-only builders:
+
+- `build_contradictions(state, evidence_graph=None, exclusive_predicates=None)`
+- `build_contradiction_summary(state, contradictions=None)`
+- `find_contradictions_for_fact(state, fact_id, evidence_graph=None)`
+
+The contradiction view is derived from projected `State` facts and, when supplied, the read-only `EvidenceGraph`. The flow is:
+
+```text
+Events -> projected State -> Evidence Graph -> Contradiction Detection
+```
+
+Contradiction Detection v1 starts with a conservative built-in exclusive predicate set: `status`, `runs_on`, `located_on`, `ip`, `hostname`, `enabled`, `available`, and `version`. It reports a contradiction when facts share the same subject and predicate but have different values for one of those exclusive predicates. Duplicate identical facts are not contradictions, and non-exclusive predicates are ignored by default. Callers may pass an additional `exclusive_predicates` set for future extension.
+
+Contradictions include the subject, predicate, conflicting fact IDs, values, severity, reason, evidence by fact ID, supporting event IDs, last event, and projection version. They are not resolutions: Seed does not choose a winner, aggregate confidence, rewrite facts, delete facts, append events, call providers, evaluate policy, execute tools, run shell commands, mutate hosts, make network calls, or call LLMs. The preferred failure mode is a false negative rather than a noisy false positive.
+
+With State Views, Evidence Graph, and Contradiction Detection together, Seed can distinguish:
+
+- unsupported facts
+- supported facts
+- conflicting facts
+
 ## CLI
 
 The read-only CLI views are:
@@ -68,5 +93,6 @@ The read-only CLI views are:
 - `--evidence`
 - `--why-fact SUBJECT PREDICATE [OBJECT]`
 - `--unsupported-facts`
+- `--contradictions`
 
 The commands load projected State, use `ProjectionStore` cache when available, and render plain text. They never append events, invoke runtime behavior, call providers, evaluate policy, execute tools, run shell commands, mutate hosts, make network calls, or call LLMs.
