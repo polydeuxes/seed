@@ -7,7 +7,7 @@ from typing import Any, Iterable
 
 from seed_runtime.base import SeedModel
 from seed_runtime.models import HandoffBackendType, ToolNeed
-from seed_runtime.tool_needs import slugify
+from seed_runtime.capabilities import slugify
 
 
 class CapabilityRecommendation(SeedModel):

@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from seed_runtime.capabilities import normalize_capabilities, normalize_capability
 from seed_runtime.models import ToolSpec, Toolkit
 
 
@@ -40,7 +41,14 @@ class ToolRegistry:
     def list_tools(self, *, visible_only: bool = False) -> list[ToolSpec]:
         tools = list(self._tools.values())
         if visible_only:
-            tools = [tool for tool in tools if tool.visibility == "model_visible" and tool.status == "registered"]
+            tools = [tool for tool in tools if _is_model_visible(tool)]
+        return sorted(tools, key=lambda tool: tool.name)
+
+    def list_tools_for_capability(self, capability: str, *, visible_only: bool = False) -> list[ToolSpec]:
+        normalized = normalize_capability(capability)
+        tools = [tool for tool in self._tools.values() if normalized in tool.capabilities]
+        if visible_only:
+            tools = [tool for tool in tools if _is_model_visible(tool)]
         return sorted(tools, key=lambda tool: tool.name)
 
     def list_toolkits(self) -> list[Toolkit]:
@@ -69,6 +77,7 @@ def toolkit_from_manifest(data: dict[str, Any]) -> Toolkit:
         for key in ("name", "summary", "input_schema", "output_schema", "policy_action", "implementation"):
             if key not in tool_data:
                 raise ManifestError(f"tool missing {key!r}")
+        capabilities = _capabilities_from_manifest(tool_data)
         tools.append(
             ToolSpec(
                 toolkit_id=data["id"],
@@ -81,6 +90,7 @@ def toolkit_from_manifest(data: dict[str, Any]) -> Toolkit:
                 status=tool_data.get("status", "registered"),
                 visibility=tool_data.get("visibility", "model_visible"),
                 risk_class=tool_data.get("risk_class", "L1"),
+                capabilities=capabilities,
                 examples=tool_data.get("examples", []),
             )
         )
@@ -92,3 +102,17 @@ def toolkit_from_manifest(data: dict[str, Any]) -> Toolkit:
         status=data.get("status", "registered"),
         source=data.get("source", "core"),
     )
+
+
+def _is_model_visible(tool: ToolSpec) -> bool:
+    return tool.visibility == "model_visible" and tool.status == "registered"
+
+
+def _capabilities_from_manifest(tool_data: dict[str, Any]) -> list[str]:
+    raw_capabilities = tool_data.get("capabilities", [])
+    if not isinstance(raw_capabilities, list):
+        raise ManifestError("tool capabilities must be a list of strings")
+    try:
+        return normalize_capabilities(raw_capabilities)
+    except ValueError as exc:
+        raise ManifestError(str(exc)) from exc

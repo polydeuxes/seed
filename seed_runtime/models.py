@@ -7,6 +7,7 @@ from importlib.util import find_spec
 from typing import Any, Literal
 
 from seed_runtime.base import SeedModel
+from seed_runtime.capabilities import normalize_capabilities
 from seed_runtime.evidence import Evidence
 from seed_runtime.observations import Observation
 from seed_runtime.facts import (
@@ -236,6 +237,11 @@ class PendingAction(SeedModel):
 
 
 class ToolSpec(SeedModel):
+    def __init__(self, **data: Any) -> None:
+        if "capabilities" in data:
+            data["capabilities"] = normalize_capabilities(data["capabilities"])
+        super().__init__(**data)
+
     name: str
     summary: str
     toolkit_id: str
@@ -246,6 +252,7 @@ class ToolSpec(SeedModel):
     status: str = "registered"
     visibility: str = "model_visible"
     risk_class: RiskClass = "L1"
+    capabilities: list[str] = Field(default_factory=list)
     examples: list[dict[str, Any]] = Field(default_factory=list)
 
 

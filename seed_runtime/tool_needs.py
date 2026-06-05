@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from dataclasses import replace
 
 from seed_runtime.events import EventLedger
@@ -10,14 +9,7 @@ from seed_runtime.ids import new_id
 from seed_runtime.models import Decision, ToolNeed
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
-
-_SLUG_CHARS = re.compile(r"[^a-z0-9_]+")
-
-
-def slugify(value: str) -> str:
-    normalized = value.strip().lower().replace("-", "_").replace(" ", "_")
-    normalized = _SLUG_CHARS.sub("_", normalized).strip("_")
-    return normalized or "unnamed_tool"
+from seed_runtime.capabilities import slugify
 
 
 class ToolNeedService:
