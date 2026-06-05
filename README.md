@@ -168,10 +168,11 @@ User -> event -> state -> context -> model decision -> validated action -> state
 The API is not the center. The context loop is the center, and the context loop depends on a more fundamental knowledge loop:
 
 ```text
+Events -> projected State -> Evidence Graph -> Fact explanations
 Evidence -> Facts -> State -> Decisions -> Tools
 ```
 
-Tools are how Seed observes and acts. Evidence, facts, and state are how Seed knows what is true enough to decide.
+Tools are how Seed observes and acts. Evidence, facts, state, and the read-only Evidence Graph are how Seed knows what is true enough to decide and why a fact is believed.
 
 ## Local model development CLI
 
@@ -330,6 +331,9 @@ The maintained CLI exposes read-only operator queries over projected state. Stat
 - `--entity-types` prints projected entity classifications.
 - `--current-facts` prints all read-only projected Fact Views; `--current-facts ENTITY PREDICATE` keeps the focused current-fact query for a subject/predicate.
 - `--current-observations`, `--current-requirements`, `--current-capabilities`, and `--current-issues` print read-only State Views for the rest of the projected world model.
+- `--evidence` prints the read-only Evidence Graph summary and concise evidence-to-fact links.
+- `--why-fact SUBJECT PREDICATE [OBJECT]` explains a matched projected fact with confidence, evidence, and supporting event IDs.
+- `--unsupported-facts` lists projected facts that currently have no linked supporting evidence.
 
 ### Inference catalog
 
@@ -339,7 +343,7 @@ Inferred facts are projection artifacts rather than observations. They are marke
 
 ### Performance and projection cache
 
-Seed uses an event-sourced performance model. `EventLedger` owns append-only events and audit history; deterministic projectors derive current state; `ProjectionStore` owns cached projected state for fast operator queries and context composition. The current implementation is SQLite-backed for local portability, with schema boundaries kept narrow enough to move to Postgres later. Use `--rebuild-state-cache` to rebuild cached projections from the ledger and `--state-cache-status` to inspect cache freshness and coverage.
+Seed uses an event-sourced performance model. `EventLedger` owns append-only events and audit history; deterministic projectors derive current state; `ProjectionStore` owns cached projected state for fast operator queries and context composition. The Evidence Graph is another read-only projection over State, not a separate persistence layer or evidence database. The current implementation is SQLite-backed for local portability, with schema boundaries kept narrow enough to move to Postgres later. Use `--rebuild-state-cache` to rebuild cached projections from the ledger and `--state-cache-status` to inspect cache freshness and coverage.
 
 ## Next comparison task
 

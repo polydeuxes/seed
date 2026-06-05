@@ -31,6 +31,13 @@ from seed_runtime.facts import (
     is_measurement_predicate,
 )
 from seed_runtime.execution import ToolExecutor
+from seed_runtime.evidence_graph import (
+    FactEvidenceView,
+    build_evidence_graph,
+    build_evidence_summary,
+    find_evidence_for_fact,
+    unsupported_fact_views,
+)
 from seed_runtime.explanations import (
     BeliefExplanation,
     Explanation,
@@ -948,6 +955,25 @@ def build_parser() -> argparse.ArgumentParser:
         help="explain why Seed holds, rejects, or considers a current belief ambiguous",
     )
     parser.add_argument(
+        "--evidence",
+        action="store_true",
+        help=(
+            "print a read-only Evidence Graph summary and linked evidence list; "
+            "does not execute runtime behavior or append events"
+        ),
+    )
+    parser.add_argument(
+        "--why-fact",
+        nargs="+",
+        metavar="ARG",
+        help="explain evidence for SUBJECT PREDICATE [OBJECT] from projected State",
+    )
+    parser.add_argument(
+        "--unsupported-facts",
+        action="store_true",
+        help="print projected facts with no linked supporting evidence",
+    )
+    parser.add_argument(
         "--trace-run",
         metavar="RUN_ID",
         help=(
@@ -1064,6 +1090,9 @@ def validate_lifecycle_args(
         bool(args.impact),
         bool(args.unhealthy),
         bool(args.why),
+        bool(args.evidence),
+        bool(args.why_fact),
+        bool(args.unsupported_facts),
         bool(args.trace_run),
         bool(args.why_run),
         bool(args.fact_support),
@@ -1087,7 +1116,8 @@ def validate_lifecycle_args(
             "choose only one of --preconditions, --proposal, --handoff, "
             "--authorize-proposal, --accept-plan, --approve-plan, "
             "--reject-plan, --supersede-plan, --impact, --unhealthy, --why, "
-            "--trace-run, --why-run, --fact-support, --best-fact, "
+            "--evidence, --why-fact, --unsupported-facts, --trace-run, "
+            "--why-run, --fact-support, --best-fact, "
             "--current-facts, --current-observations, --current-requirements, "
             "--current-capabilities, --current-issues, --state-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
@@ -1096,6 +1126,8 @@ def validate_lifecycle_args(
         )
     if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
         parser.error("--current-facts accepts either no values or SUBJECT PREDICATE")
+    if args.why_fact is not None and len(args.why_fact) not in {2, 3}:
+        parser.error("--why-fact accepts SUBJECT PREDICATE [OBJECT]")
     if args.rebuild_state_cache and not args.db:
         parser.error("--rebuild-state-cache requires --db")
     if (args.rebuild_state_cache or args.state_cache_status) and args.predicate_catalog:
@@ -1940,6 +1972,92 @@ def state_summary(
     return summary
 
 
+
+
+
+def format_evidence_graph(state: State) -> str:
+    """Format the read-only Evidence Graph summary and concise links."""
+
+    summary = build_evidence_summary(state)
+    graph = build_evidence_graph(state)
+    lines = [
+        "Evidence Summary",
+        "",
+        f"Evidence Nodes: {summary.evidence_count}",
+        f"Linked Facts: {summary.linked_fact_count}",
+        f"Unsupported Facts: {summary.unsupported_fact_count}",
+        f"Average Confidence: {summary.average_confidence:.2f}",
+        "",
+        f"Projection Version: {summary.projection_version}",
+        f"Last Event: {summary.last_event_id or 'none'}",
+        "",
+        "Evidence",
+        "",
+    ]
+    if not graph.evidence_links:
+        lines.append("(none)")
+        return "\n".join(lines)
+    facts_by_id = {view.fact_id: view for view in graph.fact_evidence}
+    nodes_by_id = {node.evidence_id: node for node in graph.evidence_nodes}
+    for link in graph.evidence_links:
+        fact = facts_by_id.get(link.target_fact_id)
+        node = nodes_by_id.get(link.source_evidence_id)
+        if fact is None or node is None:
+            continue
+        source = node.source_event_id or node.evidence_id
+        lines.append(
+            f"* {node.evidence_type} event {source}: {node.summary} -> "
+            f"{fact.subject} {fact.predicate} {_format_view_value(fact.object)}"
+        )
+    return "\n".join(lines)
+
+
+def format_why_fact(
+    views: list[FactEvidenceView], subject: str, predicate: str, object_value: str | None
+) -> str:
+    """Format evidence explanation for a fact query."""
+
+    if not views:
+        query = f"{subject} {predicate}" + (f" {object_value}" if object_value else "")
+        return "\n".join(["Fact", "", f"No matching fact found for {query}."])
+    view = views[0]
+    lines = [
+        "Fact",
+        "",
+        f"{view.subject} {view.predicate} {_format_view_value(view.object)}",
+        f"confidence: {view.confidence:.2f}",
+        "",
+        "Explanation",
+        "",
+        view.explanation,
+        "",
+        "Evidence",
+        "",
+    ]
+    if view.evidence:
+        for node in view.evidence:
+            source = node.source_event_id or node.evidence_id
+            lines.append(f"* {node.evidence_type} event {source}: {node.summary}")
+    else:
+        lines.append("(none)")
+    lines.extend(["", "Supporting Event IDs", ""])
+    if view.supporting_event_ids:
+        lines.extend(f"* {event_id}" for event_id in view.supporting_event_ids)
+    else:
+        lines.append("(none)")
+    return "\n".join(lines)
+
+
+def format_unsupported_facts(views: list[FactEvidenceView]) -> str:
+    lines = ["Unsupported Facts", ""]
+    if not views:
+        lines.append("(none)")
+        return "\n".join(lines)
+    lines.extend(
+        f"* {view.subject} {view.predicate} {_format_view_value(view.object)}"
+        for view in views
+    )
+    return "\n".join(lines)
 
 def format_state_view_summary(summary: StateSummary) -> str:
     """Format the v1 State View summary."""
@@ -3303,6 +3421,31 @@ def main(argv: list[str] | None = None) -> int:
         subject, predicate = args.why
         state = fact_query_state(args)
         print(format_explanation(ExplanationBuilder(state).why(subject, predicate)))
+        return 0
+
+    if args.evidence:
+        print(format_evidence_graph(projected_state_from_args(args)))
+        return 0
+
+    if args.why_fact:
+        subject, predicate, *maybe_object = args.why_fact
+        print(
+            format_why_fact(
+                find_evidence_for_fact(
+                    projected_state_from_args(args),
+                    subject,
+                    predicate,
+                    maybe_object[0] if maybe_object else None,
+                ),
+                subject,
+                predicate,
+                maybe_object[0] if maybe_object else None,
+            )
+        )
+        return 0
+
+    if args.unsupported_facts:
+        print(format_unsupported_facts(unsupported_fact_views(projected_state_from_args(args))))
         return 0
 
     if args.fact_support:
