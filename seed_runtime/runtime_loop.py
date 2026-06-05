@@ -1,0 +1,344 @@
+"""Small deterministic RuntimeLoop v1.
+
+This module intentionally does not call LLMs, providers, shells, subprocesses,
+network clients, or generated tools.  RuntimeLoop coordinates existing Seed
+boundaries: EventLedger records events, ProjectionStore caches projected State,
+ToolRegistry identifies registered tools, PolicyEngine evaluates registered tool
+calls, and DecisionProvider proposes deterministic decisions.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any, Mapping, Protocol, Literal
+
+from seed_runtime.events import EventLedger
+from seed_runtime.models import PolicyDecision, ToolSpec
+from seed_runtime.policy import PolicyGate
+from seed_runtime.projection_store import ProjectionStore, project_state_with_cache
+from seed_runtime.registry import ToolRegistry
+from seed_runtime.serialization import to_plain
+from seed_runtime.state import State, StateProjector
+
+DecisionKind = Literal["answer", "call_tool"]
+
+
+@dataclass(frozen=True)
+class RuntimeInput:
+    workspace_id: str
+    user_text: str
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class RuntimeResult:
+    workspace_id: str
+    run_id: str
+    decision_kind: str | None
+    response_text: str | None
+    events_appended: list[str]
+    tool_name: str | None = None
+    tool_result: dict[str, Any] | None = None
+    policy_allowed: bool | None = None
+    error: str | None = None
+
+
+@dataclass(frozen=True)
+class Decision:
+    kind: DecisionKind
+    text: str | None = None
+    tool_name: str | None = None
+    tool_args: dict[str, Any] = field(default_factory=dict)
+    reason: str = ""
+
+
+@dataclass(frozen=True)
+class RuntimeContext:
+    workspace_id: str
+    run_id: str
+    state: State
+    current_input: dict[str, Any]
+    tools: list[dict[str, Any]]
+
+
+class DecisionProvider(Protocol):
+    def decide(self, context: RuntimeContext) -> Decision: ...
+
+
+class PolicyEngine(Protocol):
+    def evaluate(
+        self, tool: ToolSpec, state: State, *, scope: str | None = None
+    ) -> PolicyDecision: ...
+
+
+class RuntimeTool(Protocol):
+    def execute(self, context: RuntimeContext, arguments: dict[str, Any]) -> dict[str, Any]: ...
+
+
+class FakeDecisionProvider:
+    """Deterministic DecisionProvider useful for tests."""
+
+    def __init__(self, decision: object) -> None:
+        self.decision = decision
+        self.last_context: RuntimeContext | None = None
+
+    def decide(self, context: RuntimeContext) -> object:
+        self.last_context = context
+        return self.decision
+
+
+class EchoTool:
+    """Deterministic in-memory echo tool useful for RuntimeLoop tests."""
+
+    def __init__(self) -> None:
+        self.calls: list[dict[str, Any]] = []
+
+    def execute(
+        self, context: RuntimeContext, arguments: dict[str, Any]
+    ) -> dict[str, Any]:
+        self.calls.append(dict(arguments))
+        return {
+            "ok": True,
+            "message": arguments.get("message"),
+            "workspace_id": context.workspace_id,
+        }
+
+
+class RuntimeLoop:
+    """Coordinate one deterministic user-request run through Seed boundaries."""
+
+    def __init__(
+        self,
+        ledger: EventLedger,
+        projection_store: ProjectionStore | None,
+        tool_registry: ToolRegistry,
+        policy_engine: PolicyEngine | None,
+        decision_provider: DecisionProvider,
+        tool_handlers: Mapping[str, RuntimeTool] | None = None,
+        *,
+        projector: StateProjector | None = None,
+    ) -> None:
+        self.ledger = ledger
+        self.projection_store = projection_store
+        self.tool_registry = tool_registry
+        self.policy_engine = policy_engine or PolicyGate()
+        self.decision_provider = decision_provider
+        self.tool_handlers = dict(tool_handlers or {})
+        self.projector = projector or StateProjector(ledger)
+
+    def run(self, runtime_input: RuntimeInput) -> RuntimeResult:
+        events_appended: list[str] = []
+        input_event = self.ledger.append(
+            "input.user_message",
+            runtime_input.workspace_id,
+            {"text": runtime_input.user_text, "metadata": dict(runtime_input.metadata)},
+            actor="user",
+        )
+        events_appended.append(input_event.id)
+        run_id = input_event.id
+
+        state, _cache_status = project_state_with_cache(
+            self.ledger,
+            runtime_input.workspace_id,
+            self.projection_store,
+            projector=self.projector,
+        )
+        context = self._compose_context(runtime_input, run_id, state)
+        proposed = self.decision_provider.decide(context)
+        decision, validation_error = self._validate_decision(proposed)
+        if validation_error is not None or decision is None:
+            rejected_event = self.ledger.append(
+                "runtime.decision.rejected",
+                runtime_input.workspace_id,
+                {"error": validation_error, "decision": self._safe_decision_payload(proposed)},
+                actor="system",
+                causation_id=input_event.id,
+            )
+            events_appended.append(rejected_event.id)
+            return RuntimeResult(
+                workspace_id=runtime_input.workspace_id,
+                run_id=run_id,
+                decision_kind=None,
+                response_text=None,
+                events_appended=events_appended,
+                policy_allowed=None,
+                error=validation_error,
+            )
+
+        if decision.kind == "answer":
+            answer_event = self.ledger.append(
+                "assistant.answer",
+                runtime_input.workspace_id,
+                {"text": decision.text, "reason": decision.reason},
+                actor="system",
+                causation_id=input_event.id,
+            )
+            events_appended.append(answer_event.id)
+            return RuntimeResult(
+                workspace_id=runtime_input.workspace_id,
+                run_id=run_id,
+                decision_kind="answer",
+                response_text=decision.text,
+                events_appended=events_appended,
+                policy_allowed=True,
+            )
+
+        return self._run_tool_decision(
+            runtime_input, run_id, input_event.id, state, context, decision, events_appended
+        )
+
+    def _run_tool_decision(
+        self,
+        runtime_input: RuntimeInput,
+        run_id: str,
+        input_event_id: str,
+        state: State,
+        context: RuntimeContext,
+        decision: Decision,
+        events_appended: list[str],
+    ) -> RuntimeResult:
+        tool_name = decision.tool_name or ""
+        tool = self.tool_registry.get(tool_name)
+        if tool is None:
+            unknown_event = self.ledger.append(
+                "runtime.tool.unknown",
+                runtime_input.workspace_id,
+                {"tool_name": tool_name, "reason": decision.reason},
+                actor="system",
+                causation_id=input_event_id,
+            )
+            events_appended.append(unknown_event.id)
+            return RuntimeResult(
+                workspace_id=runtime_input.workspace_id,
+                run_id=run_id,
+                decision_kind="call_tool",
+                response_text=None,
+                events_appended=events_appended,
+                tool_name=tool_name,
+                policy_allowed=False,
+                error=f"unknown tool: {tool_name}",
+            )
+
+        policy = self.policy_engine.evaluate(tool, state, scope=None)
+        if policy.outcome != "allow":
+            denied_event = self.ledger.append(
+                "runtime.policy.denied",
+                runtime_input.workspace_id,
+                {
+                    "tool_name": tool.name,
+                    "tool_args": to_plain(decision.tool_args),
+                    "policy": to_plain(policy),
+                    "reason": decision.reason,
+                },
+                actor="system",
+                causation_id=input_event_id,
+            )
+            events_appended.append(denied_event.id)
+            return RuntimeResult(
+                workspace_id=runtime_input.workspace_id,
+                run_id=run_id,
+                decision_kind="call_tool",
+                response_text=None,
+                events_appended=events_appended,
+                tool_name=tool.name,
+                policy_allowed=False,
+                error=f"policy denied tool {tool.name}: {policy.outcome}",
+            )
+
+        handler = self.tool_handlers.get(tool.name)
+        if handler is None:
+            missing_event = self.ledger.append(
+                "runtime.tool.handler_missing",
+                runtime_input.workspace_id,
+                {"tool_name": tool.name},
+                actor="system",
+                causation_id=input_event_id,
+            )
+            events_appended.append(missing_event.id)
+            return RuntimeResult(
+                workspace_id=runtime_input.workspace_id,
+                run_id=run_id,
+                decision_kind="call_tool",
+                response_text=None,
+                events_appended=events_appended,
+                tool_name=tool.name,
+                policy_allowed=True,
+                error=f"no runtime handler registered for tool: {tool.name}",
+            )
+
+        output = handler.execute(context, dict(decision.tool_args))
+        result_event = self.ledger.append(
+            "tool.result",
+            runtime_input.workspace_id,
+            {"tool_name": tool.name, "output": to_plain(output), "reason": decision.reason},
+            actor="tool",
+            causation_id=input_event_id,
+        )
+        events_appended.append(result_event.id)
+        return RuntimeResult(
+            workspace_id=runtime_input.workspace_id,
+            run_id=run_id,
+            decision_kind="call_tool",
+            response_text=None,
+            events_appended=events_appended,
+            tool_name=tool.name,
+            tool_result=output,
+            policy_allowed=True,
+        )
+
+    def _compose_context(
+        self, runtime_input: RuntimeInput, run_id: str, state: State
+    ) -> RuntimeContext:
+        tools = [
+            {
+                "name": tool.name,
+                "summary": tool.summary,
+                "policy_action": tool.policy_action,
+                "risk_class": tool.risk_class,
+            }
+            for tool in self.tool_registry.list_tools(visible_only=True)
+        ]
+        return RuntimeContext(
+            workspace_id=runtime_input.workspace_id,
+            run_id=run_id,
+            state=state,
+            current_input={
+                "text": runtime_input.user_text,
+                "metadata": dict(runtime_input.metadata),
+            },
+            tools=tools,
+        )
+
+    def _validate_decision(self, proposed: object) -> tuple[Decision | None, str | None]:
+        if not isinstance(proposed, Decision):
+            return None, "decision provider must return a runtime_loop.Decision"
+        if proposed.kind not in {"answer", "call_tool"}:
+            return None, "decision kind must be 'answer' or 'call_tool'"
+        if not isinstance(proposed.reason, str):
+            return None, "decision reason must be a string"
+        if proposed.kind == "answer":
+            if not isinstance(proposed.text, str) or proposed.text == "":
+                return None, "answer decisions require non-empty text"
+            if proposed.tool_name is not None or proposed.tool_args:
+                return None, "answer decisions may not include tool output fields"
+        if proposed.kind == "call_tool":
+            if not isinstance(proposed.tool_name, str) or proposed.tool_name == "":
+                return None, "tool decisions require a non-empty tool_name"
+            if not isinstance(proposed.tool_args, dict):
+                return None, "tool decisions require tool_args to be a dict"
+            if proposed.text is not None:
+                return None, "tool decisions may not include answer text"
+        return proposed, None
+
+    def _safe_decision_payload(self, proposed: object) -> dict[str, Any]:
+        if isinstance(proposed, Decision):
+            return {
+                "kind": proposed.kind,
+                "text": proposed.text,
+                "tool_name": proposed.tool_name,
+                "tool_args": to_plain(proposed.tool_args),
+                "reason": proposed.reason,
+            }
+        if isinstance(proposed, dict):
+            return to_plain(proposed)
+        return {"type": type(proposed).__name__}
