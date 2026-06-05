@@ -383,9 +383,9 @@ Do **not** delete now. Candidate status means “appears removable later after m
 4. **`ExecutionAuthorization` validation in EventLedger**
    - Candidate only if historical `execution_authorization.granted` events are migrated or dropped.
 
-5. **Package exports that keep quarantined concepts looking current**
-   - `seed_runtime.__init__` exports `HandoffPlan`, `Precondition`, and `PreconditionReport`.
-   - Risk: public import compatibility.
+5. **Package exports that previously kept quarantined concepts looking current**
+   - `seed_runtime.__init__` no longer exports `HandoffPlan`, `Precondition`, or `PreconditionReport`; import them from implementation modules for explicit legacy side-path tests.
+   - Risk: direct package-root import compatibility was intentionally narrowed while preserving implementation-module compatibility.
 
 6. **`ToolkitCandidate`**
    - Possible delete candidate only after a builder/toolkit-generation audit; it is not Runtime or Core MVP reachable.
