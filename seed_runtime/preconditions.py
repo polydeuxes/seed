@@ -1,4 +1,4 @@
-"""Execution precondition reporting for action plans.
+"""Legacy/experimental precondition reporting for quarantined action plans.
 
 This module is intentionally inspect-only: it derives whether a future
 execution path would have the declared prerequisites, without invoking tools,

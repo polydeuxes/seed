@@ -1,4 +1,4 @@
-"""Text-only action plan generation for ranked provider recommendations."""
+"""Legacy/experimental action plan helpers retained outside Core MVP Runtime."""
 
 from __future__ import annotations
 

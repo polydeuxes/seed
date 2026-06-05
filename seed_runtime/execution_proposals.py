@@ -1,4 +1,4 @@
-"""Experimental concrete-call proposal generation; not on the core path."""
+"""Legacy/experimental concrete-call proposal generation; not on Core MVP."""
 
 from __future__ import annotations
 

@@ -323,11 +323,11 @@ This is one of the most important objects in Seed. It records what capability is
 }
 ```
 
-### Action Plan
+### Action Plan (legacy/experimental; quarantined from Core MVP)
 
 A durable, text-only, non-executable plan for satisfying a ToolNeed or user goal.
 
-ActionPlans are not runbooks that Seed executes. They are auditable planning artifacts that can later be accepted, rejected, superseded, or used as the source for a non-executable HandoffPlan.
+ActionPlans are legacy/experimental planning artifacts retained for historical projection and explicit CLI side paths. They are not part of the current Core MVP runtime path, are not routed by canonical Runtime decisions, and are not runbooks that Seed executes.
 
 Fields:
 
@@ -397,9 +397,9 @@ A durable permission decision for a specific action, scope, and actor.
 ```
 
 
-### HandoffPlan
+### HandoffPlan (legacy/experimental; quarantined from Core MVP)
 
-A non-executable provider handoff derived from an accepted Action Plan or other validated planning path. HandoffPlans are the core execution-adjacent object: they tell a user or external provider what Seed recommends handing off, while making the boundary explicit.
+A non-executable provider handoff derived from an accepted legacy Action Plan or other validated planning path. HandoffPlans are retained for historical projection and explicit CLI side paths, but they are quarantined from the current Core MVP. The Core MVP stops at ToolNeed, capability_resolution, registered operation candidates, and provider/handoff recommendations.
 
 Seed does not run a HandoffPlan. It does not prompt for credentials, hold secrets, retry, schedule, or monitor long-running work. External systems own those responsibilities.
 
@@ -443,11 +443,11 @@ Required fields:
 
 ### ExecutionProposal (experimental)
 
-`ExecutionProposal` is experimental and is not part of Seed's core path yet. It may be useful as a research object for concrete-call shaping, but the architecture should not depend on it for execution lifecycle, credentials, retries, scheduling, or long-running jobs. Prefer `HandoffPlan` for the current architecture.
+`ExecutionProposal` is experimental/legacy and is not part of Seed's core path. It may be useful as a research object for concrete-call shaping or historical compatibility, but the architecture must not depend on it for execution lifecycle, credentials, retries, scheduling, long-running jobs, ToolNeed, capability_resolution, or Runtime routing.
 
 ### Execution Authorization (experimental)
 
-`ExecutionAuthorization` is experimental and is not part of Seed's core path yet. It does not grant credentials and should not be treated as permission for Seed to execute anything. The core path is Action Plan acceptance followed by a non-executable HandoffPlan to an external provider.
+`ExecutionAuthorization` is experimental/legacy and is not part of Seed's core path. It does not grant credentials and should not be treated as permission for Seed to execute anything. The Core MVP path is ToolNeed -> capability_resolution -> registered operation candidates -> provider/handoff recommendations.
 
 Passwords, passphrases, raw tokens, private keys, and other secrets are never stored in Action Plans, HandoffPlans, durable Approvals, experimental Execution Authorizations, event payloads, CLI arguments, models, or the database. Credential material belongs to external systems such as Ansible/AWX prompts, Vault, ssh-agent, sudo/become flows, MCP server configuration, Temporal/Prefect workers, or manual operator procedures.
 
@@ -461,8 +461,6 @@ Possible kinds:
 - `answer`
 - `ask_question`
 - `request_tool`
-- `propose_action_plan`
-- `propose_handoff_plan`
 - `propose_state_patch`
 - `refuse`
 
@@ -493,25 +491,23 @@ Workspace
   has many Toolkits
   has many ToolNeeds
   has one or more CapabilityCatalog views
-  has many ActionPlans
-  has many HandoffPlans
+  may project legacy ActionPlans/HandoffPlans for historical compatibility
 
 Event
   may create Goal
   may update Fact
   may request ToolNeed
-  may record ActionPlan or HandoffPlan
   may record external provider Evidence
+  may project legacy planning/handoff events for historical compatibility
 
 ToolNeed
   may create Toolkit Candidate
   may become CapabilityCatalog metadata
-  may produce non-executable ActionPlans
+  may produce capability_resolution and provider/handoff recommendations
 
-HandoffPlan
-  references ActionPlan
-  references provider/backend type
-  records whether external approval is still required
+Legacy HandoffPlan
+  references legacy ActionPlan
+  remains projection/CLI compatibility only
   never implies approval, execution authorization, credentials, provider trust, or tool registration
   is always executable: false
 ```
@@ -546,7 +542,7 @@ draft
   -> generated
   -> validated
   -> registered in CapabilityCatalog
-  -> visible for handoff planning
+  -> visible for provider/handoff recommendations
   -> deprecated
 ```
 
@@ -575,8 +571,8 @@ Use:
 - Tool Need
 - Policy Action
 - Approval
-- Action Plan
-- HandoffPlan
+- Action Plan (legacy/experimental only)
+- HandoffPlan (legacy/experimental only)
 - Decision
 - Context Packet
 
@@ -599,10 +595,10 @@ The old system mixed execution implementation, provider metadata, and user inten
 - **Decisions** are proposed.
 - **Capabilities** are registered in the CapabilityCatalog.
 - **ToolNeeds** are missing capabilities.
-- **ActionPlans** are non-executable plans.
-- **HandoffPlans** describe external provider handoff with `executable: false`.
+- **ActionPlans** are legacy/experimental non-executable plans retained outside Core MVP routing.
+- **HandoffPlans** are legacy/experimental provider handoff records retained outside Core MVP routing with `executable: false`.
 - **Toolkits** package capability metadata and integration contracts.
-- **Policy** supplies auditable metadata and constraints for handoff.
+- **Policy** supplies auditable metadata and constraints for registered operation candidates and provider/handoff recommendations.
 
 ## Entity relationships
 

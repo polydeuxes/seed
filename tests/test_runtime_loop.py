@@ -75,6 +75,57 @@ def test_routes_request_tool():
     assert "tool_need.created" in [event.kind for event in ledger.list_events("ws")]
 
 
+def test_runtime_rejects_propose_action_plan_decision():
+    runtime, ledger, _ = make_runtime(
+        Decision(
+            kind="propose_action_plan",
+            reason="legacy planning side path",
+            action_plan={"summary": "Plan something outside current core."},
+        ),
+        max_decision_retries=0,
+    )
+
+    response = runtime.handle_user_message("ws", "ses", "make a plan")
+
+    assert response.kind == "invalid_decision"
+    assert response.payload == {
+        "errors": ["unsupported decision kind 'propose_action_plan'"]
+    }
+    assert [event.kind for event in ledger.list_events("ws")] == [
+        "input.user_message",
+        "model.decision.proposed",
+        "model.decision.invalid",
+    ]
+    assert "action_plan.created" not in [
+        event.kind for event in ledger.list_events("ws")
+    ]
+
+
+def test_runtime_rejects_propose_handoff_plan_decision():
+    runtime, ledger, _ = make_runtime(
+        Decision(
+            kind="propose_handoff_plan",
+            reason="legacy handoff side path",
+            handoff_plan={"operation": "legacy.side_path", "executable": False},
+        ),
+        max_decision_retries=0,
+    )
+
+    response = runtime.handle_user_message("ws", "ses", "handoff this")
+
+    assert response.kind == "invalid_decision"
+    assert response.payload == {
+        "errors": ["unsupported decision kind 'propose_handoff_plan'"]
+    }
+    assert [event.kind for event in ledger.list_events("ws")] == [
+        "input.user_message",
+        "model.decision.proposed",
+        "model.decision.invalid",
+    ]
+    assert "handoff_plan.created" not in [
+        event.kind for event in ledger.list_events("ws")
+    ]
+
 def test_routes_call_tool():
     runtime, _, _ = make_runtime(
         Decision(

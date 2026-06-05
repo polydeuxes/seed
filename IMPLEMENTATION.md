@@ -28,9 +28,9 @@ This branch turns the Seed blueprint into a runnable Python prototype and has no
 
 ## Current MVP slice
 
-Seed can now inspect and ingest inputs safely; ingest Ansible inventory, Prometheus, and local-host observations; normalize provider predicates into canonical vocabulary; resolve aliases/identity; classify entities; project topology relationships; detect graph issues; infer deterministic facts; explain why it believes something; summarize current state; and produce non-executable plans/handoffs.
+Seed can now inspect and ingest inputs safely; ingest Ansible inventory, Prometheus, and local-host observations; normalize provider predicates into canonical vocabulary; resolve aliases/identity; classify entities; project topology relationships; detect graph issues; infer deterministic facts; explain why it believes something; summarize current state; and produce ToolNeeds with capability resolution, registered operation candidates, and provider/handoff recommendations.
 
-Seed still does **not** execute host commands, handle secrets, schedule jobs, retry work, replace Prometheus as historian, or replace Ansible/Temporal/AWX/MCP/manual providers as executor.
+Seed still does **not** execute host commands, own internal workflow execution, run authorization workflows, orchestrate action plans, handle secrets, schedule jobs, retry work, replace Prometheus as historian, or replace Ansible/Temporal/AWX/MCP/manual providers as executor.
 
 ## Fact Support Aggregation
 
@@ -48,7 +48,7 @@ Terminology:
 
 ## Action Plan lifecycle
 
-Action Plans are durable, text-only proposals. Lifecycle events are accepted only through `ActionPlanService`, which enforces this state machine before appending an event:
+Action Plans are quarantined legacy/experimental planning artifacts, retained for historical projection and explicit CLI side paths only. They are not Core MVP runtime routing. Lifecycle events are accepted only through `ActionPlanService`, which enforces this state machine before appending an event:
 
 ```mermaid
 stateDiagram-v2
@@ -68,11 +68,11 @@ Allowed transitions are exactly `proposed -> accepted`, `proposed -> rejected`, 
 
 `action_plan.approved` remains plan acceptance. It is not credential approval and it is not permission for Seed to execute anything. ActionPlans are durable, text-only, non-executable plans.
 
-The core path is now a `HandoffPlan` with `executable: false`. A HandoffPlan records the `action_plan_id`, `provider`, `backend_type` (`ansible`, `mcp`, `temporal`, or `manual`), `operation`, `target`, `policy_summary`, `secret_boundary`, and `requires_external_approval`. It is an auditable handoff artifact, not an approval, execution authorization, credential availability claim, provider-trust claim, tool registration, or execution lifecycle.
+`HandoffPlan` is quarantined as a legacy/experimental external-provider handoff artifact, retained for historical projection and explicit CLI side paths only. The Core MVP path stops at `ToolNeed`, `capability_resolution`, registered operation candidates, and provider/handoff recommendations. A retained HandoffPlan remains non-executable and is not an approval, execution authorization, credential availability claim, provider-trust claim, tool registration, runtime route, or execution lifecycle.
 
-Seed owns context composition, the event ledger, state projection, facts/evidence, ToolNeeds, CapabilityCatalog, RecommendationRanker, non-executable ActionPlans, policy metadata, and the audit trail. Seed delegates actual execution, secrets, retries, scheduling, long-running jobs, and credential prompts. Preferred execution backends are Ansible/AWX for host automation, Temporal/Prefect for workflows, MCP servers for tool integration, and Vault/ssh-agent/sudo/become for secrets.
+Seed owns context composition, the event ledger, state projection, facts/evidence, ToolNeeds, CapabilityCatalog, RecommendationRanker, capability resolution/recommendations, policy metadata, and the audit trail. Legacy ActionPlan/HandoffPlan artifacts are retained only outside current-core routing. Seed delegates actual execution, secrets, retries, scheduling, long-running jobs, and credential prompts. Preferred execution backends are Ansible/AWX for host automation, Temporal/Prefect for workflows, MCP servers for tool integration, and Vault/ssh-agent/sudo/become for secrets.
 
-`ExecutionProposal` and `ExecutionAuthorization` remain experimental and are not part of the core path yet. They must not be used to continue building an internal execution lifecycle. Passwords, passphrases, raw tokens, private keys, and credential material are never stored in events, models, CLI arguments, HandoffPlans, ActionPlans, or the database.
+`ExecutionProposal` and `ExecutionAuthorization` remain experimental/legacy and are not part of the core path. They must not be used to continue building an internal execution lifecycle. Passwords, passphrases, raw tokens, private keys, and credential material are never stored in events, models, CLI arguments, HandoffPlans, ActionPlans, or the database.
 
 ## Deliberate constraints
 
@@ -86,8 +86,8 @@ Seed owns context composition, the event ledger, state projection, facts/evidenc
 
 ## Suggested next steps
 
-1. Add first-class HandoffPlan service/projection support for external-provider handoff without execution.
-2. Reframe Session 15 `ssh_access` as capability metadata plus Ansible/AWX or manual HandoffPlan examples only.
+1. Keep legacy ActionPlan/HandoffPlan/ExecutionProposal/ExecutionAuthorization projection compatibility while removing them from current-core docs and runtime routing.
+2. Reframe Session 15 `ssh_access` as capability metadata plus registered operation candidates and provider/handoff recommendations only.
 3. Keep any future `install_ssh_server` surface outside Seed as an AWX/Ansible, MCP, Temporal/Prefect, or manual provider operation.
 4. Add deeper candidate sandboxing beyond bounded pytest validation and static import checks before promoting more powerful builder output.
 5. Add generated toolkit versioning and artifact copy/registration hardening for generated toolkit lifecycle management.
