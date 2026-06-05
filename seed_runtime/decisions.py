@@ -8,7 +8,7 @@ from typing import Any
 
 from seed_runtime.models import Decision
 from seed_runtime.registry import ToolRegistry
-from seed_runtime.schema import SchemaValidationError, validate_schema_value
+from seed_runtime.tool_validation import ToolValidationService
 from seed_runtime.state import State
 
 _VALID_NAME = re.compile(r"^[a-z][a-z0-9_]{1,63}$")
@@ -31,8 +31,13 @@ class ValidationResult:
 class DecisionValidator:
     """Validate structured model decisions against current runtime state."""
 
-    def __init__(self, registry: ToolRegistry | None = None) -> None:
+    def __init__(
+        self,
+        registry: ToolRegistry | None = None,
+        tool_validation: ToolValidationService | None = None,
+    ) -> None:
         self.registry = registry or ToolRegistry()
+        self.tool_validation = tool_validation or ToolValidationService(self.registry)
 
     def validate(self, decision: Decision, state: State | None = None) -> ValidationResult:
         errors: list[str] = []
@@ -74,13 +79,7 @@ class DecisionValidator:
     def _validate_tool_call(self, decision: Decision, state: State | None) -> list[str]:
         if not decision.tool_name:
             return ["call_tool decisions require tool_name"]
-        tool = self.registry.get(decision.tool_name)
-        if tool is None and state is not None:
-            tool = state.tools.get(decision.tool_name)
-        if tool is None:
-            return [f"unknown tool {decision.tool_name!r}"]
-        try:
-            validate_schema_value(tool.input_schema, decision.tool_arguments)
-        except SchemaValidationError as exc:
-            return [str(exc)]
-        return []
+        validation = self.tool_validation.validate_tool_input(
+            decision.tool_name, decision.tool_arguments, state
+        )
+        return validation.errors

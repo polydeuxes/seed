@@ -13,7 +13,7 @@ from seed_runtime.models import PendingAction, PolicyDecision, ToolSpec
 from seed_runtime.pending_actions import PendingActionService
 from seed_runtime.policy import PolicyGate
 from seed_runtime.registry import ToolRegistry
-from seed_runtime.schema import SchemaValidationError, validate_schema_value
+from seed_runtime.tool_validation import ToolValidationService
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
 
@@ -58,11 +58,13 @@ class ToolExecutor:
         registry: ToolRegistry,
         projector: StateProjector,
         policy_gate: PolicyGate | None = None,
+        tool_validation: ToolValidationService | None = None,
     ) -> None:
         self.ledger = ledger
         self.registry = registry
         self.projector = projector
         self.policy_gate = policy_gate or PolicyGate()
+        self.tool_validation = tool_validation or ToolValidationService(registry)
         self.fact_extraction = FactExtractionService(ledger)
         self.pending_actions = PendingActionService(ledger, projector)
 
@@ -77,26 +79,26 @@ class ToolExecutor:
         correlation_id: str | None = None,
         scope: str | None = None,
     ) -> ToolCallResult:
-        tool = self.registry.require(tool_name)
-        if tool.status != "registered":
+        tool = self.tool_validation.require_tool(tool_name)
+        status_validation = self.tool_validation.validate_tool_status(tool)
+        if not status_validation.ok:
             return self._failed(
                 workspace_id,
                 session_id,
                 tool,
-                f"tool {tool.name!r} is not registered",
+                status_validation.errors[0],
                 causation_id=causation_id,
                 correlation_id=correlation_id,
                 phase="registration",
             )
 
-        try:
-            validate_schema_value(tool.input_schema, arguments)
-        except SchemaValidationError as exc:
+        input_validation = self.tool_validation.validate_input_schema(tool, arguments)
+        if not input_validation.ok:
             return self._failed(
                 workspace_id,
                 session_id,
                 tool,
-                str(exc),
+                input_validation.errors[0],
                 causation_id=causation_id,
                 correlation_id=correlation_id,
                 phase="input_validation",
@@ -205,7 +207,9 @@ class ToolExecutor:
                 ),
                 **arguments,
             )
-            validate_schema_value(tool.output_schema, output)
+            output_validation = self.tool_validation.validate_output_schema(tool, output)
+            if not output_validation.ok:
+                raise ValueError(output_validation.errors[0])
         except Exception as exc:
             failed_event = self.ledger.append(
                 "tool.call.failed",
