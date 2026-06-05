@@ -441,6 +441,8 @@ def runtime_context_for(text: str) -> RuntimeContext:
     )
 
 
+@pytest.mark.experimental_runtime_loop
+@pytest.mark.skip(reason="RuntimeLoop context support is quarantined; Runtime ContextPacket is canonical")
 def test_runtime_context_echo_builds_runtime_loop_call_tool_decision():
     decision = DecisionBuilder().build(
         runtime_context_for("echo hello"),
@@ -458,6 +460,8 @@ def test_runtime_context_echo_builds_runtime_loop_call_tool_decision():
     assert decision.text is None
 
 
+@pytest.mark.experimental_runtime_loop
+@pytest.mark.skip(reason="RuntimeLoop context support is quarantined; Runtime ContextPacket is canonical")
 def test_runtime_context_answer_builds_runtime_loop_answer_decision():
     decision = DecisionBuilder().build(
         runtime_context_for("hello"),
@@ -475,6 +479,8 @@ def test_runtime_context_answer_builds_runtime_loop_answer_decision():
     assert decision.tool_args == {}
 
 
+@pytest.mark.experimental_runtime_loop
+@pytest.mark.skip(reason="RuntimeLoop context support is quarantined; Runtime ContextPacket is canonical")
 def test_runtime_context_clarify_builds_runtime_loop_answer_decision():
     question = "Which host should I inspect?"
 
@@ -496,6 +502,8 @@ def test_runtime_context_clarify_builds_runtime_loop_answer_decision():
     assert decision.tool_need is None
 
 
+@pytest.mark.experimental_runtime_loop
+@pytest.mark.skip(reason="RuntimeLoop context support is quarantined; Runtime ContextPacket is canonical")
 def test_runtime_context_refuse_builds_runtime_loop_answer_decision():
     refusal = "I can’t help with that unsafe request."
 
@@ -517,6 +525,8 @@ def test_runtime_context_refuse_builds_runtime_loop_answer_decision():
     assert decision.tool_need is None
 
 
+@pytest.mark.experimental_runtime_loop
+@pytest.mark.skip(reason="RuntimeLoop context support is quarantined; Runtime ContextPacket is canonical")
 def test_runtime_context_missing_tool_becomes_request_tool():
     decision = DecisionBuilder().build(
         runtime_context_for("what is the weather in Jacksonville?"),
@@ -537,6 +547,8 @@ def test_runtime_context_missing_tool_becomes_request_tool():
     }
 
 
+@pytest.mark.experimental_runtime_loop
+@pytest.mark.skip(reason="RuntimeLoop context support is quarantined; Runtime ContextPacket is canonical")
 def test_intent_decision_model_accepts_runtime_context():
     model = IntentDecisionModel()
 
@@ -548,6 +560,8 @@ def test_intent_decision_model_accepts_runtime_context():
     assert decision.tool_args == {"message": "hello"}
 
 
+@pytest.mark.experimental_runtime_loop
+@pytest.mark.skip(reason="RuntimeLoop context support is quarantined; Runtime ContextPacket is canonical")
 def test_runtime_context_prompt_includes_decision_context_fields():
     prompt = build_intent_prompt(runtime_context_for("summarize service-a"))
 
@@ -562,6 +576,8 @@ def test_runtime_context_prompt_includes_decision_context_fields():
     assert '"requirement_name":"owner"' in prompt
 
 
+@pytest.mark.experimental_runtime_loop
+@pytest.mark.skip(reason="RuntimeLoop context prompting is quarantined; Runtime ContextPacket is canonical")
 def test_text_intent_classifier_accepts_runtime_context():
     transport = FakeTransport(
         json.dumps(

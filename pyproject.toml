@@ -6,5 +6,6 @@ requires-python = ">=3.11"
 dependencies = ["pydantic>=2,<3"]
 
 [tool.pytest.ini_options]
+markers = ["experimental_runtime_loop: quarantined RuntimeLoop coverage; not canonical runtime behavior"]
 pythonpath = ["."]
 testpaths = ["tests"]

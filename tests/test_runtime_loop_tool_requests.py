@@ -1,3 +1,7 @@
+import pytest
+
+pytestmark = pytest.mark.experimental_runtime_loop
+
 from seed_runtime.decision_journal import DecisionJournal
 from seed_runtime.events import EventLedger
 from seed_runtime.models import ToolNeed

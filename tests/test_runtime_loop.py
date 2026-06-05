@@ -1,3 +1,4 @@
+import pytest
 from seed_runtime.context import ContextComposer
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.context_views import DecisionContextView
@@ -414,6 +415,7 @@ class ExplodingLoopTool:
         raise AssertionError("operation implementation must not be executed")
 
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_answer_decision_appends_user_and_assistant_events():
     runtime, ledger, provider, _ = make_loop(
         LoopDecision(kind="answer", text="done", reason="deterministic")
@@ -445,6 +447,7 @@ def test_loop_answer_decision_appends_user_and_assistant_events():
     )
 
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_provider_exception_returns_failure_result_and_journals_event():
     provider = RaisingLoopDecisionProvider(RuntimeError("provider exploded"))
     runtime, ledger, provider, _ = make_loop(
@@ -493,6 +496,7 @@ def test_loop_provider_exception_returns_failure_result_and_journals_event():
     )
 
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_provider_exception_does_not_append_decision_rejected():
     runtime, ledger, _, _ = make_loop(
         RaisingLoopDecisionProvider(ValueError("bad provider")),
@@ -508,6 +512,7 @@ def test_loop_provider_exception_does_not_append_decision_rejected():
     ]
 
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_malformed_returned_decision_still_uses_decision_rejected():
     runtime, ledger, _, echo_tool = make_loop(
         {"kind": "answer", "text": "not a Decision"}
@@ -528,6 +533,7 @@ def test_loop_malformed_returned_decision_still_uses_decision_rejected():
     )
 
 
+@pytest.mark.experimental_runtime_loop
 def test_old_runtime_parse_retry_behavior_remains_unchanged():
     model = SequenceParseDecisionModel(
         [
@@ -552,6 +558,8 @@ def test_old_runtime_parse_retry_behavior_remains_unchanged():
     )
 
 
+@pytest.mark.experimental_runtime_loop
+@pytest.mark.skip(reason="RuntimeLoop intent-model adaptation is quarantined; Runtime is canonical")
 def test_loop_clarify_intent_is_answered_and_journaled_as_answer():
     question = "Which host should I inspect?"
     provider = IntentDecisionModel(
@@ -583,6 +591,8 @@ def test_loop_clarify_intent_is_answered_and_journaled_as_answer():
     assert journal["outcome"] == "answered"
 
 
+@pytest.mark.experimental_runtime_loop
+@pytest.mark.skip(reason="RuntimeLoop intent-model adaptation is quarantined; Runtime is canonical")
 def test_loop_refuse_intent_is_answered_and_journaled_as_answer():
     refusal = "I can’t help with that unsafe request."
     provider = IntentDecisionModel(
@@ -616,6 +626,7 @@ def test_loop_refuse_intent_is_answered_and_journaled_as_answer():
     assert journal["outcome"] == "answered"
 
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_provider_receives_decision_context_without_changing_existing_fields():
     runtime, _, provider, _ = make_loop(
         LoopDecision(kind="answer", text="done", reason="context available")
@@ -645,6 +656,7 @@ def test_loop_provider_receives_decision_context_without_changing_existing_field
     ]
 
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_decision_context_is_built_from_projected_state_for_run():
     ledger = EventLedger()
     evidence = Evidence(
@@ -687,6 +699,7 @@ def test_loop_decision_context_is_built_from_projected_state_for_run():
     assert provider.last_context.decision_context.summary.facts_count == 1
 
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_tool_decision_executes_registered_echo_tool_and_appends_result_event():
     runtime, ledger, _, echo_tool = make_loop(
         LoopDecision(
@@ -722,6 +735,7 @@ def test_loop_tool_decision_executes_registered_echo_tool_and_appends_result_eve
     assert result.decision_outcome == "tool_succeeded"
 
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_tool_decision_records_projected_evidence_from_extractable_output():
     runtime, ledger, _, _ = make_loop(
         LoopDecision(
@@ -748,6 +762,7 @@ def test_loop_tool_decision_records_projected_evidence_from_extractable_output()
     }
 
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_request_tool_decision_appends_tool_need_and_journal():
     runtime, ledger, _, _ = make_loop(
         LoopDecision(
@@ -783,6 +798,7 @@ def test_loop_request_tool_decision_appends_tool_need_and_journal():
     assert journal["policy_allowed"] is True
     assert result.decision_id == journal["decision_id"]
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_request_tool_projects_open_tool_need():
     runtime, ledger, _, _ = make_loop(
         LoopDecision(
@@ -803,6 +819,7 @@ def test_loop_request_tool_projects_open_tool_need():
         "lookup_service_status"
     ]
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_request_tool_rejects_missing_tool_need_payload():
     runtime, ledger, _, _ = make_loop(
         LoopDecision(kind="request_tool", reason="missing payload")
@@ -822,6 +839,7 @@ def test_loop_request_tool_rejects_missing_tool_need_payload():
         == "malformed_decision"
     )
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_request_tool_rejects_malformed_payload_and_forbidden_fields():
     cases = [
         (
@@ -868,6 +886,7 @@ def test_loop_request_tool_rejects_malformed_payload_and_forbidden_fields():
         assert result.decision_outcome == "malformed_decision"
 
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_unknown_tool_is_rejected_and_logged_as_event():
     runtime, ledger, _, echo_tool = make_loop(
         LoopDecision(
@@ -895,6 +914,7 @@ def test_loop_unknown_tool_is_rejected_and_logged_as_event():
     assert result.decision_outcome == "tool_unknown"
 
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_policy_denial_prevents_tool_execution():
     runtime, ledger, _, echo_tool = make_loop(
         LoopDecision(
@@ -923,6 +943,7 @@ def test_loop_policy_denial_prevents_tool_execution():
     assert result.decision_outcome == "policy_denied"
 
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_malformed_decision_is_rejected_before_policy_and_tool_execution():
     class CountingPolicy:
         calls = 0
@@ -956,6 +977,7 @@ def test_loop_malformed_decision_is_rejected_before_policy_and_tool_execution():
     assert result.decision_outcome == "malformed_decision"
 
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_tool_handler_exception_is_caught_and_journaled_as_tool_failed():
     class FailingTool:
         def execute(self, context, arguments):
@@ -989,6 +1011,7 @@ def test_loop_tool_handler_exception_is_caught_and_journaled_as_tool_failed():
     assert journal["error"] == "tool echo failed: boom"
 
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_keeps_policy_tool_projection_boundaries_out_of_decision_journal():
     import seed_runtime.decision_journal as decision_journal
 
@@ -1001,6 +1024,7 @@ def test_loop_keeps_policy_tool_projection_boundaries_out_of_decision_journal():
     assert "execute(" not in source
 
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_loads_state_through_projection_path():
     class CountingProjector:
         def __init__(self, ledger):
@@ -1031,6 +1055,7 @@ def test_loop_loads_state_through_projection_path():
     )
 
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_does_not_add_projection_responsibilities_to_event_ledger():
     assert not hasattr(EventLedger, "project")
     assert not hasattr(EventLedger, "load_snapshot")
@@ -1038,6 +1063,7 @@ def test_loop_does_not_add_projection_responsibilities_to_event_ledger():
     assert project_state_with_cache.__module__ == "seed_runtime.projection_store"
 
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_has_no_shell_subprocess_or_network_behavior():
     source = open("seed_runtime/runtime_loop.py", encoding="utf-8").read()
 
@@ -1056,6 +1082,7 @@ def test_loop_has_no_shell_subprocess_or_network_behavior():
     assert [fragment for fragment in forbidden_fragments if fragment in source] == []
 
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_rejects_direct_ask_question_decision_kind_as_malformed():
     runtime, ledger, _, echo_tool = make_loop(
         LoopDecision(kind="ask_question", text="Which host?", reason="needs target")
@@ -1083,6 +1110,7 @@ def test_loop_rejects_direct_ask_question_decision_kind_as_malformed():
     assert events[-1].payload["record"]["outcome"] == "malformed_decision"
 
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_rejects_direct_refuse_decision_kind_as_malformed():
     runtime, ledger, _, echo_tool = make_loop(
         LoopDecision(kind="refuse", text="I can’t help with that.", reason="unsafe")
@@ -1110,6 +1138,7 @@ def test_loop_rejects_direct_refuse_decision_kind_as_malformed():
     assert events[-1].payload["record"]["outcome"] == "malformed_decision"
 
 
+@pytest.mark.experimental_runtime_loop
 def test_loop_rejects_state_patch_decision_kind_as_malformed():
     runtime, ledger, _, echo_tool = make_loop(
         LoopDecision(

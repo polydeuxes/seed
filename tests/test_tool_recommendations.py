@@ -1,3 +1,4 @@
+import pytest
 from seed_runtime.capability_catalog import (
     CapabilityCatalog,
     CapabilityCatalogEntry,
@@ -212,6 +213,7 @@ class RecordingToolRecommendationService(ToolRecommendationService):
         ]
 
 
+@pytest.mark.experimental_runtime_loop
 def test_runtime_loop_request_tool_result_includes_ranked_recommendations():
     ledger = EventLedger()
     projector = StateProjector(ledger)
@@ -265,6 +267,7 @@ def test_runtime_loop_request_tool_result_includes_ranked_recommendations():
     assert set(events[2].payload) == {"tool_need"}
 
 
+@pytest.mark.experimental_runtime_loop
 def test_runtime_loop_request_tool_uses_injected_recommendation_service_without_events():
     ledger = EventLedger()
     registry = ToolRegistry()

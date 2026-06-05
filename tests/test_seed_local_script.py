@@ -11,7 +11,6 @@ from seed_runtime.state import State
 
 from seed_runtime.intent_classifier import IntentDecisionModel, IntentPromptModelClient
 from seed_runtime.runtime import Runtime
-from seed_runtime.runtime_loop import RuntimeLoop
 
 SCRIPT_PATH = Path("scripts/seed_local.py")
 
@@ -32,9 +31,7 @@ def test_build_local_app_uses_intent_classifier_path_and_loads_echo_toolkit():
 
     assert isinstance(app.model_client, IntentPromptModelClient)
     assert isinstance(app.runtime, Runtime)
-    assert isinstance(app.runtime_loop, RuntimeLoop)
     assert isinstance(app.runtime.model, IntentDecisionModel)
-    assert app.runtime_loop.decision_provider is app.runtime.model
     assert [tool.name for tool in app.context_composer.registry.list_tools()] == [
         "echo"
     ]
@@ -57,11 +54,12 @@ def test_one_shot_echo_uses_deterministic_fallback_without_ollama():
     assert result["response"]["payload"]["output"]["message"] == "hello"
     assert [event["kind"] for event in result["events"]] == [
         "input.user_message",
-        "tool.result",
+        "model.decision.proposed",
+        "tool.call.started",
+        "tool.call.completed",
         "evidence.observed",
-        "decision.recorded",
     ]
-    assert result["events"][0]["payload"]["metadata"]["session_id"] == app.session_id
+    assert result["events"][0]["session_id"] == app.session_id
 
 
 def test_normal_cli_missing_tool_records_open_tool_need_and_recommendations(monkeypatch):
@@ -85,7 +83,7 @@ def test_normal_cli_missing_tool_records_open_tool_need_and_recommendations(monk
     assert [need.capability for need in state.open_tool_needs] == ["service_management"]
 
 
-def test_normal_cli_answer_uses_runtime_loop():
+def test_normal_cli_answer_uses_runtime():
     seed_local = load_seed_local_module()
     app = seed_local.build_local_app()
 
@@ -95,12 +93,12 @@ def test_normal_cli_answer_uses_runtime_loop():
     assert "Docker" in result["response"]["message"]
     assert [event["kind"] for event in result["events"]] == [
         "input.user_message",
-        "assistant.answer",
-        "decision.recorded",
+        "model.decision.proposed",
+        "response.answer",
     ]
 
 
-def test_runtime_loop_tool_output_evidence_appears_in_projected_state():
+def test_runtime_tool_output_evidence_appears_in_projected_state():
     seed_local = load_seed_local_module()
     app = seed_local.build_local_app()
 
@@ -238,8 +236,8 @@ def test_cli_events_includes_full_event_ledger(capsys):
     output = capsys.readouterr().out
     assert "Tool echo completed." in output
     assert "Events:" in output
-    assert "tool.result" in output
-    assert "decision.recorded" in output
+    assert "tool.call.completed" in output
+    assert "model.decision.proposed" in output
 
 
 def test_cli_raw_continues_through_runtime(monkeypatch, capsys):

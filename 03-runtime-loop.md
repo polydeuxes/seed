@@ -1,5 +1,7 @@
 # 03 Runtime Loop
 
+Runtime is the canonical runtime orchestration path in Seed. RuntimeLoop v1 is deprecated/experimental and is not wired into CLI, API, or default production paths. It may remain only as quarantined historical/experimental code and must not define canonical runtime behavior.
+
 The runtime loop is the center of Seed. Seed is closer to a state engine / distributed state machine than an agent framework: a provider proposes a structured decision, but the runtime owns validation, policy boundaries, registered operation-handler dispatch, and append-only events.
 
 ## Loop overview
@@ -30,7 +32,7 @@ Runtime sovereignty:
 
 ## Decision branches
 
-The broader runtime model supports answer/question/tool-need/plan/handoff/state-patch/refusal branches. RuntimeLoop v1 focuses on answers and registered operation/tool calls (legacy decision field: `tool`): answers are recorded directly, and operation/tool calls must pass validation, registry lookup, and policy before a registered handler can run. Seed never runs shell commands, subprocesses, network calls, generated code, or arbitrary provider output as part of Decision Journal v1.
+The broader runtime model supports answer/question/tool-need/plan/handoff/state-patch/refusal branches. Runtime focuses on the canonical answer/question/tool-need/plan/handoff/state-patch/refusal branches. Deprecated RuntimeLoop v1 focused on answers and registered operation/tool calls (legacy decision field: `tool`): answers are recorded directly, and operation/tool calls must pass validation, registry lookup, and policy before a registered handler can run. Seed never runs shell commands, subprocesses, network calls, generated code, or arbitrary provider output as part of Decision Journal v1.
 
 ### 1. Answer
 
@@ -164,14 +166,16 @@ This journal explains why a path was chosen and what happened afterward. It prep
 
 ## Runtime Trace
 
-`RuntimeTrace` is a read-only view over one RuntimeLoop run. Given a `workspace_id` and `run_id`, the trace reader loads matching `EventLedger` events, preserves append order, snapshots their payloads, and reconstructs the user input, `decision.recorded` journal record, policy denial event, tool result/failure/unknown event, assistant answer, and errors. It does not replay the runtime and does not call `DecisionProvider`, `PolicyEngine`, registered operations/tools, projectors, shell commands, subprocesses, network clients, generated toolkit operations, LLMs, or host-mutating code.
+`RuntimeTrace` is a read-only view over one historical/experimental RuntimeLoop run. Given a `workspace_id` and `run_id`, the trace reader loads matching `EventLedger` events, preserves append order, snapshots their payloads, and reconstructs the user input, `decision.recorded` journal record, policy denial event, tool result/failure/unknown event, assistant answer, and errors. It does not replay the runtime and does not call `DecisionProvider`, `PolicyEngine`, registered operations/tools, projectors, shell commands, subprocesses, network clients, generated toolkit operations, LLMs, or host-mutating code.
 
 Trace summaries expose the operator-facing facts needed for audit and explanation surfaces: input text, decision kind and reason, outcome, selected operation/tool, policy allowed/denied status, final response text, and any error. Missing run IDs return an empty trace with `summary.found = false`, rather than inventing or replaying state.
 
 Runtime responsibilities stay separated:
 
-- `RuntimeLoop` writes append-only events describing what happened.
-- `DecisionJournal` records decision intent, context hash, selected operation/tool, policy status, outcome, and errors.
+- `Runtime` is the canonical coordinator and appends canonical runtime events through `EventLedger` and owned services.
+- `ToolExecutor` owns registered tool execution and its events.
+- `PendingActionService` owns pending-action lifecycle events.
+- `DecisionJournal` records historical experimental RuntimeLoop decision intent, context hash, selected operation/tool, policy status, outcome, and errors.
 - `RuntimeTrace` reconstructs one run from those events only.
 - CLI `--trace-run RUN_ID` renders the full ordered trace without mutating history.
 - CLI `--why-run RUN_ID` renders a concise human explanation from the same read-only trace.
@@ -234,7 +238,7 @@ def handle_input(workspace_id: str, session_id: str, input_payload: dict) -> Res
         )
         return response_composer.invalid_decision(validated)
 
-    result = runtime_loop.route_valid_decision(validated.decision, state, context_hash, causation_id=decision_event.id)
+    result = runtime.route_valid_decision(validated.decision, state, context_hash, causation_id=decision_event.id)
 
     final_state = projector.project(workspace_id)
     return response_composer.compose(result, final_state)
@@ -366,8 +370,10 @@ Never silently coerce a dangerous invalid decision into an action.
 
 ## Runtime invariants
 
-- RuntimeLoop is the coordinator; it does not own policy, projection storage, operation registration, or journal persistence responsibilities.
-- EventLedger is the historical event source.
+- Runtime is the canonical coordinator; RuntimeLoop is deprecated/experimental and not an active CLI/API/default path.
+- ToolExecutor owns registered tool execution.
+- PendingActionService owns pending-action lifecycle events.
+- EventLedger is the append-only historical event source.
 - ProjectionStore only caches projected state snapshots.
 - DecisionProvider proposes; it does not execute.
 - Decision validation happens before policy or operation implementation execution.

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pytest
 from typing import Any
 
 from seed_runtime.context import ContextComposer
@@ -265,6 +266,7 @@ def make_loop_runtime(
     return runtime, ledger, handler
 
 
+@pytest.mark.experimental_runtime_loop
 def test_runtime_loop_rejects_unregistered_status_before_handler_execution():
     runtime, ledger, handler = make_loop_runtime(
         LoopDecision(
@@ -300,6 +302,7 @@ def test_runtime_loop_rejects_unregistered_status_before_handler_execution():
     assert journal["error"] == "tool 'echo' is not registered"
 
 
+@pytest.mark.experimental_runtime_loop
 def test_runtime_loop_rejects_invalid_input_schema_before_handler_execution():
     runtime, ledger, handler = make_loop_runtime(
         LoopDecision(
@@ -326,6 +329,7 @@ def test_runtime_loop_rejects_invalid_input_schema_before_handler_execution():
     assert invalid_event.payload["errors"] == ["$.message must be a string"]
 
 
+@pytest.mark.experimental_runtime_loop
 def test_runtime_loop_rejects_invalid_output_schema_after_handler_return():
     handler = RecordingLoopTool({"ok": "yes"})
     runtime, ledger, handler = make_loop_runtime(
@@ -356,6 +360,7 @@ def test_runtime_loop_rejects_invalid_output_schema_after_handler_return():
     assert "tool.result" not in event_kinds(ledger, "ws_loop")
 
 
+@pytest.mark.experimental_runtime_loop
 def test_runtime_loop_unknown_tool_still_uses_existing_unknown_event_and_outcome():
     runtime, ledger, handler = make_loop_runtime(
         LoopDecision(
@@ -381,6 +386,7 @@ def test_runtime_loop_unknown_tool_still_uses_existing_unknown_event_and_outcome
     assert journal["outcome"] == "tool_unknown"
 
 
+@pytest.mark.experimental_runtime_loop
 def test_runtime_loop_valid_echo_call_still_succeeds_and_records_evidence():
     runtime, ledger, handler = make_loop_runtime(
         LoopDecision(

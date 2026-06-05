@@ -27,10 +27,10 @@ class FactExtractionService:
     """Turn successful tool results into evidence observations.
 
     The generic service records tool output as evidence only. It intentionally does
-    not infer facts unless a future explicit mapping is added. RuntimeLoop emits
-    ``tool.result`` while the older ToolExecutor path emits
-    ``tool.call.completed``; both event shapes are accepted so callers reuse the
-    same evidence pipeline.
+    not infer facts unless a future explicit mapping is added. Deprecated
+    RuntimeLoop emitted ``tool.result`` while canonical ToolExecutor emits
+    ``tool.call.completed``; both event shapes are accepted so historical traces
+    and the canonical runtime reuse the same evidence pipeline.
     """
 
     def __init__(self, ledger: EventLedger) -> None:
