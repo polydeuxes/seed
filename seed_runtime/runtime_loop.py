@@ -12,8 +12,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Protocol, Literal
 
-from seed_runtime.context_views import DecisionContextView, build_decision_context_view
+from seed_runtime.context_views import DecisionContextView
 from seed_runtime.decision_journal import DecisionJournal, context_hash
+from seed_runtime.runtime_loop_context import RuntimeLoopContextComposer
 from seed_runtime.runtime_loop_decisions import RuntimeLoopDecisionValidator
 from seed_runtime.events import EventLedger
 from seed_runtime.fact_extraction import FactExtractionService
@@ -154,6 +155,7 @@ class RuntimeLoop:
         self.decision_journal = DecisionJournal(ledger)
         self.decision_validator = RuntimeLoopDecisionValidator()
         self.fact_extraction = FactExtractionService(ledger)
+        self.context_composer = RuntimeLoopContextComposer(self.tool_registry)
         tool_request_module = __import__(
             "seed_runtime.runtime_loop_tool_" + "re" + "quests",
             fromlist=["RuntimeLoopToolRequestHandler"],
@@ -666,26 +668,11 @@ class RuntimeLoop:
     def _compose_context(
         self, runtime_input: RuntimeInput, run_id: str, state: State
     ) -> RuntimeContext:
-        tools = [
-            {
-                "name": tool.name,
-                "summary": tool.summary,
-                "policy_action": tool.policy_action,
-                "risk_class": tool.risk_class,
-            }
-            for tool in self.tool_registry.list_tools(visible_only=True)
-        ]
-        decision_context = build_decision_context_view(state)
-        return RuntimeContext(
+        return self.context_composer.compose(
             workspace_id=runtime_input.workspace_id,
             run_id=run_id,
+            runtime_input=runtime_input,
             state=state,
-            current_input={
-                "text": runtime_input.user_text,
-                "metadata": dict(runtime_input.metadata),
-            },
-            tools=tools,
-            decision_context=decision_context,
         )
 
     def _safe_decision_payload(self, proposed: object) -> dict[str, Any]:
