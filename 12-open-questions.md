@@ -7,13 +7,13 @@ These are decisions to make while building the new repo.
 1. Is Seed primarily local-first, hosted, or hybrid?
 2. Should generated toolkits be shared between workspaces?
 3. Is the first user a developer/operator or an end-user?
-4. Should the system optimize for infrastructure ops first or generic personal/work tools?
+4. Should the system optimize for infrastructure ops first or generic personal/work capabilities?
 5. What is the first demo scenario?
 
 ## Model questions
 
 1. Which small model should be the design target?
-2. Does the runtime model need native tool calling, or only structured JSON decisions?
+2. Does the runtime model need native operation/tool calling, or only structured JSON decisions?
 3. When should the system escalate to a stronger model?
 4. Should builder use a different model than runtime?
 5. How are model prompts/versioned context templates evaluated?
@@ -31,10 +31,10 @@ These are decisions to make while building the new repo.
 1. What is the minimum valid toolkit?
 2. Should toolkit manifests be YAML or JSON?
 3. Should operation implementations be Python-only at first?
-4. Should tools receive `ToolContext` as first arg?
+4. Should operation implementations receive `ToolContext` as first arg?
 5. How are dependencies declared and installed?
 6. Can a toolkit include multiple risk classes?
-7. How are tool versions selected in context?
+7. How are operation versions selected in context?
 
 ## Builder questions
 
@@ -43,7 +43,7 @@ These are decisions to make while building the new repo.
 3. Does builder open PRs for generated toolkits?
 4. What validation is mandatory before registration?
 5. Can generated toolkits modify existing toolkits?
-6. Should generated mutating tools be disabled by default?
+6. Should generated mutating toolkit operations be disabled by default?
 
 ## Policy questions
 
@@ -52,32 +52,32 @@ These are decisions to make while building the new repo.
 3. How granular are approvals?
 4. Can approvals be delegated?
 5. How are approvals revoked?
-6. Are generated tools assigned higher default risk?
+6. Are generated toolkit operations assigned higher default risk?
 
 ## Safety questions
 
 1. What sandbox is used for generated code?
 2. Are network calls allowed from generated code?
 3. Are subprocesses ever allowed from generated code?
-4. How are secrets exposed to tools?
+4. How are secrets exposed to operation implementations?
 5. How are logs redacted?
-6. What is the maximum execution time for tools?
+6. What is the maximum execution time for operation implementations?
 
 ## Data questions
 
 1. What database should be used first?
 2. How are artifacts stored?
-3. How are large tool outputs summarized?
+3. How are large operation outputs summarized?
 4. How are stale facts expired?
 5. How are conflicting facts represented?
 
 ## UX questions
 
-1. How does Seed explain that a tool is missing?
-2. How does it show Tool Need progress?
+1. How does Seed explain that a capability/operation is missing?
+2. How does it show ToolNeed / capability-gap progress?
 3. How does it ask for approval?
 4. How does it explain generated toolkit risk?
-5. How does a user disable a generated tool?
+5. How does a user disable a generated toolkit operation?
 
 ## Recommended initial answers
 
@@ -87,11 +87,11 @@ If you want to move fast:
 Runtime: local FastAPI or CLI
 Database: SQLite
 Toolkit manifest: YAML
-Tool implementations: Python
+Operation implementations: Python
 Runtime model: swappable interface, fake model first
 Builder model: manual/template first, stronger model later
 Execution: external-provider handoff only; Seed does not own execution lifecycle
-Generated mutating tools: disabled or approval-required by default
+Generated mutating toolkit operations: disabled or approval-required by default
 Unknown policy action: approval-required or blocked
 Context persistence: store full packet for early debugging
 First demo: host_notes, then ssh_access plan

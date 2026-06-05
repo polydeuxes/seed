@@ -131,7 +131,7 @@ Important model distinction: an `approval.granted` event can make future `Policy
 - **Causation/correlation:** no special pending-action reconstruction uses this event.
 - **Projector behavior:** stores `state.approvals[approval.id]`; subsequent policy evaluation can return `allow` with that `approval_id`. [`seed_runtime/state.py:794-798`](../seed_runtime/state.py#L794-L798) [`seed_runtime/policy.py:36-45`](../seed_runtime/policy.py#L36-L45)
 
-### Related tool execution events during resume
+### Related operation implementation execution events during resume
 
 - `tool.call.started`: emitted before loading/calling the registered operation, with payload `tool`, `arguments`, and optional `scope`; causation/correlation come from `_resume_event_context()` during resume. [`seed_runtime/execution.py:185-207`](../seed_runtime/execution.py#L185-L207)
 - `tool.call.completed`: emitted after successful output validation, payload includes `tool` and `output`, causation is the started event id, and fact extraction observes it. [`seed_runtime/execution.py:244-260`](../seed_runtime/execution.py#L244-L260)
@@ -176,7 +176,7 @@ Approval path facts:
 
 Current caller/API/CLI exposure:
 
-- There is no `SeedAPI` pending-action approve method; API exposes posting a user message, state, toolkits, tools, and tool needs. [`seed_runtime/api.py:15-44`](../seed_runtime/api.py#L15-L44)
+- There is no `SeedAPI` pending-action approve method; API exposes posting a user message, state, toolkits, registered operations/tools, and ToolNeeds / capability gaps. [`seed_runtime/api.py:15-44`](../seed_runtime/api.py#L15-L44)
 - `scripts/seed_local.py` exposes action-plan approval (`--approve-plan`) but not pending-action approval. [`scripts/seed_local.py:828-843`](../scripts/seed_local.py#L828-L843) [`scripts/seed_local.py:3311-3333`](../scripts/seed_local.py#L3311-L3333)
 - CLI tests explicitly assert `--approve-plan` appends `action_plan.approved` and not `pending_action.approved`, confirming that plan approval is not pending-action approval. [`tests/test_seed_local_script.py:1351-1379`](../tests/test_seed_local_script.py#L1351-L1379)
 
@@ -267,7 +267,7 @@ Legacy `Runtime` owns a `ToolExecutor` dependency. [`seed_runtime/runtime.py:37-
 
 - Shared validation and policy evaluation before execution. [`seed_runtime/execution.py:86-121`](../seed_runtime/execution.py#L86-L121)
 - Pending-action creation for `require_confirmation` and `require_approval`. [`seed_runtime/execution.py:263-312`](../seed_runtime/execution.py#L263-L312)
-- Direct allowed tool execution with `tool.call.*` events. [`seed_runtime/execution.py:185-260`](../seed_runtime/execution.py#L185-L260)
+- Direct allowed operation implementation execution with `tool.call.*` events. [`seed_runtime/execution.py:185-260`](../seed_runtime/execution.py#L185-L260)
 - Approved pending-action resume, completion, and failure behavior. [`seed_runtime/execution.py:143-183`](../seed_runtime/execution.py#L143-L183)
 
 `Runtime` itself does not expose approval or resume as a user-message decision kind; resume is a `ToolExecutor` method that external callers/tests invoke directly. [`seed_runtime/runtime.py:252-354`](../seed_runtime/runtime.py#L252-L354) [`tests/test_action_resume.py:50-159`](../tests/test_action_resume.py#L50-L159)
@@ -291,7 +291,7 @@ RuntimeLoop lacks all of the following pending-action behaviors:
 - No pending-action approval path.
 - No approved-action resume method.
 - No pending-action completion/cancellation path.
-- No RuntimeLoop test asserting pending-action creation or resume; the existing non-allow test asserts denial and no tool execution. [`tests/test_runtime_loop.py:898-923`](../tests/test_runtime_loop.py#L898-L923)
+- No RuntimeLoop test asserting pending-action creation or resume; the existing non-allow test asserts denial and no operation implementation execution. [`tests/test_runtime_loop.py:898-923`](../tests/test_runtime_loop.py#L898-L923)
 
 ## 8. CLI/API exposure
 
@@ -332,7 +332,7 @@ Because the API posts messages through RuntimeLoop, policy-gated RuntimeLoop too
 ### Covered
 
 - **`require_confirmation` pending creation:** `test_pending_action_is_projected_in_state()` configures L2 and verifies a pending action is projected with status, workspace, action, tool name, arguments, scope, and source event linkage. [`tests/test_pending_actions.py:55-73`](../tests/test_pending_actions.py#L55-L73)
-- **`require_approval` pending creation:** `test_approval_required_tool_does_not_execute()` configures L3, verifies no tool execution, event order `tool.approval.required` then `pending_action.created`, pending status, action/tool/arguments/scope. [`tests/test_pending_actions.py:23-52`](../tests/test_pending_actions.py#L23-L52)
+- **`require_approval` pending creation:** `test_approval_required_tool_does_not_execute()` configures L3, verifies no operation implementation execution, event order `tool.approval.required` then `pending_action.created`, pending status, action/tool/arguments/scope. [`tests/test_pending_actions.py:23-52`](../tests/test_pending_actions.py#L23-L52)
 - **Policy outcomes:** `tests/test_policy.py` covers L2 `require_confirmation`, L3 `require_approval`, broad matching approval allowing execution, and nonmatching approval still requiring approval. [`tests/test_policy.py:38-53`](../tests/test_policy.py#L38-L53) [`tests/test_policy.py:74-121`](../tests/test_policy.py#L74-L121)
 - **Shared execution-policy non-allow results:** `tests/test_tool_execution_policy.py` covers L2 and L3 returning non-allow and `allowed_to_execute is False`. [`tests/test_tool_execution_policy.py:130-153`](../tests/test_tool_execution_policy.py#L130-L153)
 - **Approval event status transition:** `test_approval_event_can_mark_pending_action_approved()` covers direct `PendingActionService.mark_approved()`, projected status transition, event order, actor, and causation. [`tests/test_pending_actions.py:76-98`](../tests/test_pending_actions.py#L76-L98)
@@ -377,5 +377,5 @@ The following are boundary candidates identified from current source shape. They
 - **PendingActionService expansion:** current service owns creation and two status transitions but lacks cancellation, status guards, expiry, approval-grant integration, and list helpers. [`seed_runtime/pending_actions.py:14-122`](../seed_runtime/pending_actions.py#L14-L122)
 - **ApprovalResumeService:** resume logic currently lives inside `ToolExecutor`, combining pending-action lookup/status checks, causation/correlation reconstruction, registered implementation dispatch, completion marking, and failure semantics. [`seed_runtime/execution.py:143-183`](../seed_runtime/execution.py#L143-L183) [`seed_runtime/execution.py:343-383`](../seed_runtime/execution.py#L343-L383)
 - **RuntimeLoop pending-action routing:** RuntimeLoop's non-allow policy branch is a single denial branch; a parity port would need a boundary at the post-policy, pre-handler point. [`seed_runtime/runtime_loop.py:440-484`](../seed_runtime/runtime_loop.py#L440-L484)
-- **Shared resume executor:** direct tool execution for legacy resume uses registered implementation import paths and `tool.call.*` events, while RuntimeLoop uses injected handlers and `tool.result` / `tool.failure` events. Any shared executor boundary would have to decide which dispatch/event contract it owns. [`seed_runtime/execution.py:185-260`](../seed_runtime/execution.py#L185-L260) [`seed_runtime/runtime_loop.py:486-626`](../seed_runtime/runtime_loop.py#L486-L626)
+- **Shared resume executor:** direct operation implementation execution for legacy resume uses registered implementation import paths and `tool.call.*` events, while RuntimeLoop uses injected handlers and `tool.result` / `tool.failure` events. Any shared executor boundary would have to decide which dispatch/event contract it owns. [`seed_runtime/execution.py:185-260`](../seed_runtime/execution.py#L185-L260) [`seed_runtime/runtime_loop.py:486-626`](../seed_runtime/runtime_loop.py#L486-L626)
 - **CLI/API approval surface:** no current CLI/API route covers pending-action list, approval, resume, or cancellation; the only approval-style CLI route is action-plan approval. [`scripts/seed_local.py:828-843`](../scripts/seed_local.py#L828-L843) [`scripts/seed_local.py:3311-3333`](../scripts/seed_local.py#L3311-L3333) [`seed_runtime/api.py:15-44`](../seed_runtime/api.py#L15-L44)

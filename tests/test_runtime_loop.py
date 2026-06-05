@@ -365,7 +365,7 @@ def make_loop(decision, *, policy_engine=None, handlers=None, ledger=None, proje
         Toolkit(
             id="tk_loop_echo",
             name="loop echo",
-            summary="RuntimeLoop test tools.",
+            summary="RuntimeLoop test operations.",
             tools=[
                 ToolSpec(
                     toolkit_id="tk_loop_echo",
@@ -411,7 +411,7 @@ class ExplodingLoopPolicy:
 
 class ExplodingLoopTool:
     def execute(self, context, arguments):  # pragma: no cover - failure path
-        raise AssertionError("tool must not be executed")
+        raise AssertionError("operation implementation must not be executed")
 
 
 def test_loop_answer_decision_appends_user_and_assistant_events():

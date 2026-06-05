@@ -1,9 +1,9 @@
-# Tool Execution Ownership Audit
+# Operation Implementation Execution Ownership Audit
 
 ## Scope
 
 This audit compares the registered `ToolExecutor` path with the remaining
-RuntimeLoop-owned tool execution path in `RuntimeLoop._run_tool_decision`. It is
+RuntimeLoop-owned operation implementation execution path in `RuntimeLoop._run_tool_decision`. It is
 focused on ownership only: no refactor, migration, runtime behavior change, or
 test change is proposed here.
 
@@ -16,12 +16,12 @@ Inspected areas:
 - `seed_runtime/fact_extraction.py`
 - pending-action execution/resume code in `seed_runtime/pending_actions.py`,
   `seed_runtime/runtime.py`, and `seed_runtime/execution.py`
-- RuntimeLoop and ToolExecutor tool execution tests
+- RuntimeLoop and ToolExecutor operation implementation execution tests
 
 ## 1. ToolExecutor responsibilities
 
-`ToolExecutor` is the production registered-tool executor. It owns the full
-registered-tool call lifecycle for callers that invoke `execute` or
+`ToolExecutor` is the production registered operation implementation executor. It owns the full
+registered operation/tool call lifecycle for callers that invoke `execute` or
 `resume_approved_tool_call`.
 
 ### Execution
@@ -96,7 +96,7 @@ That shared extraction service appends `evidence.observed` for both executor
 constructs `ToolExecutionPolicyService` from the registry, validation service,
 and policy gate, then maps service results to executor behavior. The shared
 policy service intentionally stops at validation and raw policy evaluation; it
-does not execute tools, emit events, create pending actions, or collapse
+does not execute operation implementations, emit events, create pending actions, or collapse
 non-allow outcomes.
 
 ### Validation integration
@@ -105,10 +105,10 @@ non-allow outcomes.
 validation before policy evaluation and uses `ToolValidationService` directly for
 output schema validation after invoking the registered function. Unknown tool
 behavior is intentionally registry-backed: if the shared policy service cannot
-resolve a tool, the executor calls `registry.require(tool_name)`, preserving the
-older raising behavior for unknown tools.
+resolve an operation/tool, the executor calls `registry.require(tool_name)`, preserving the
+older raising behavior for unknown operations/tools.
 
-## 2. RuntimeLoop tool execution responsibilities
+## 2. RuntimeLoop operation implementation execution responsibilities
 
 `RuntimeLoop._run_tool_decision` owns the entire `call_tool` decision execution
 path for the deterministic RuntimeLoop. In order, it currently:
@@ -116,13 +116,13 @@ path for the deterministic RuntimeLoop. In order, it currently:
 1. normalizes missing `decision.tool_name` to an empty string;
 2. calls the same `ToolExecutionPolicyService.evaluate` with the already
    projected run state and `scope=None`;
-3. converts unknown tools into `runtime.tool.unknown` plus a decision journal
+3. converts unknown operations/tools into `runtime.tool.unknown` plus a decision journal
    record with outcome `tool_unknown`;
 4. converts status/input validation failures into `runtime.tool.invalid` plus a
    decision journal record with outcome `tool_failed`;
 5. converts non-allow policy outcomes into `runtime.policy.denied` plus a
    decision journal record with outcome `policy_denied`;
-6. finds an in-memory `RuntimeTool` handler by tool name in `self.tool_handlers`;
+6. finds an in-memory `RuntimeTool` handler by operation/tool name in `self.tool_handlers`;
 7. emits `runtime.tool.handler_missing` and journals `tool_failed` when no
    handler is registered;
 8. calls `handler.execute(context, dict(decision.tool_args))`;
@@ -134,7 +134,7 @@ path for the deterministic RuntimeLoop. In order, it currently:
 12. appends `tool.result` for successful output with the decision reason;
 13. asks `FactExtractionService.observe_tool_result` to append evidence from the
     result event;
-14. appends a `decision.recorded` journal entry with selected tool name/args,
+14. appends a `decision.recorded` journal entry with selected operation/tool name/args,
     context hash, reason, policy flag, and outcome; and
 15. shapes the final `RuntimeResult` with RuntimeLoop decision metadata.
 
@@ -219,7 +219,7 @@ execution.
 
 ## 5. Ownership conclusion
 
-RuntimeLoop tool execution is **mixed**.
+RuntimeLoop operation implementation execution is **mixed**.
 
 It is not purely runtime-specific because several core execution concerns are
 real duplicates of ToolExecutor/shared service ownership:

@@ -1,10 +1,10 @@
 # 07 Builder Service
 
-The builder service turns Tool Needs into generated toolkit candidates for observation, catalog, and handoff integration.
+The builder service turns ToolNeeds / capability gaps into generated toolkit candidates for observation, catalog, operation-contract, and handoff integration. Use the canonical capability/operation/implementation/provider/toolkit vocabulary in `02-domain-model.md`.
 
 ## Builder mission
 
-Given a durable Tool Need, produce a toolkit candidate that can be validated and eventually registered.
+Given a durable ToolNeed / capability gap, produce a toolkit candidate that can be validated and eventually registered.
 
 The builder is not the runtime. It does not execute production actions, handle secrets, schedule jobs, retry work, or create a Seed-owned execution lifecycle. It creates artifacts.
 
@@ -26,7 +26,7 @@ The builder is not the runtime. It does not execute production actions, handle s
     "target_os_families": ["debian", "rhel"]
   },
   "existing_registry_summary": {
-    "related_tools": ["verify_ssh_access"],
+    "related_operations": ["verify_ssh_access"],
     "related_capabilities": ["ssh_access"]
   }
 }
@@ -67,7 +67,7 @@ Generated operation code, if any, must remain read-only or metadata-only unless 
 
 ## Builder phases
 
-### 1. Analyze Tool Need
+### 1. Analyze ToolNeed / capability gap
 
 Determine:
 
@@ -77,7 +77,7 @@ Determine:
 - inputs
 - outputs
 - safety risks
-- related existing tools
+- related existing operations/toolkits
 
 ### 2. Draft Toolkit Plan
 
@@ -119,7 +119,7 @@ Tests should cover:
 Docs should explain:
 
 - purpose
-- tools
+- operations and provider boundaries
 - inputs/outputs
 - policy implications
 - rollback considerations
@@ -132,7 +132,7 @@ Call validator and record report.
 
 ```text
 Builder API
-  -> Tool Need Loader
+  -> ToolNeed Loader
   -> Planning Model / Template Engine
   -> Manifest Generator
   -> Schema Generator
@@ -149,14 +149,14 @@ Use stronger models for code generation if needed. Runtime can still use a small
 
 Suggested split:
 
-- small runtime model: detects missing tool, requests Tool Need
+- small runtime model: detects missing capability/operation/provider path, requests ToolNeed / capability gap
 - medium builder model: creates manifest and schema
 - strong code model: writes implementation and tests
 - deterministic validator: accepts/rejects output
 
 ## Provider facades
 
-Generated tools should target stable provider facades.
+Generated operation wrappers and handoff metadata should target stable provider facades.
 
 Examples:
 
@@ -173,7 +173,7 @@ This avoids generated artifacts shelling out arbitrarily and keeps host mutation
 - manifest parses
 - IDs and names are valid
 - schemas are valid JSON Schema
-- every tool has policy action
+- every operation has policy action
 - every policy action has risk classification
 - implementation reference resolves inside candidate
 - tests exist
@@ -275,7 +275,7 @@ Even if builder says “looks good,” runtime registry decides whether to regis
 
 First version can be template-only:
 
-- accepts Tool Need
+- accepts ToolNeed / capability gap
 - generates manifest skeleton
 - generates observation source/normalizer skeletons
 - generates catalog-entry skeletons

@@ -1,6 +1,6 @@
 # 03 Runtime Loop
 
-The runtime loop is the center of Seed. Seed is closer to a state engine / distributed state machine than an agent framework: a provider proposes a structured decision, but the runtime owns validation, policy boundaries, registered-handler execution, and append-only events.
+The runtime loop is the center of Seed. Seed is closer to a state engine / distributed state machine than an agent framework: a provider proposes a structured decision, but the runtime owns validation, policy boundaries, registered operation-handler dispatch, and append-only events.
 
 ## Loop overview
 
@@ -12,7 +12,7 @@ Input
   -> DecisionProvider
   -> Decision Validation
   -> PolicyEngine
-  -> ToolRegistry or Answer
+  -> ToolRegistry operation or Answer
   -> New Events
 ```
 
@@ -22,15 +22,15 @@ Runtime sovereignty:
 2. Project current state, optionally using `ProjectionStore` snapshot caching.
 3. Compose the context packet and deterministic context hash.
 4. Ask a `DecisionProvider` for a structured decision. The provider can be deterministic code or a model adapter; LLMs are not required.
-5. Reject malformed decisions before policy or tool execution.
-6. Evaluate valid tool decisions with `PolicyEngine`. Policy denial prevents tool execution.
-7. Execute only registered `ToolRegistry` handlers, or return an answer. Raw provider output is never executed.
+5. Reject malformed decisions before policy or operation implementation execution.
+6. Evaluate valid operation-call decisions with `PolicyEngine`. Policy denial prevents operation implementation execution.
+7. Dispatch only registered `ToolRegistry` operation handlers, or return an answer. Raw provider output is never executed.
 8. Append runtime outcome events and Decision Journal events.
 9. Re-project state as needed and respond to the user.
 
 ## Decision branches
 
-The broader runtime model supports answer/question/tool-need/plan/handoff/state-patch/refusal branches. RuntimeLoop v1 focuses on answers and registered tool calls: answers are recorded directly, and tool calls must pass validation, registry lookup, and policy before a registered handler can run. Seed never runs shell commands, subprocesses, network calls, generated code, or arbitrary provider output as part of Decision Journal v1.
+The broader runtime model supports answer/question/tool-need/plan/handoff/state-patch/refusal branches. RuntimeLoop v1 focuses on answers and registered operation/tool calls (legacy decision field: `tool`): answers are recorded directly, and operation/tool calls must pass validation, registry lookup, and policy before a registered handler can run. Seed never runs shell commands, subprocesses, network calls, generated code, or arbitrary provider output as part of Decision Journal v1.
 
 ### 1. Answer
 
@@ -155,7 +155,7 @@ Decision Journal is an append-only event layer, not a separate mutable decision 
 - workspace and decision kind
 - provider reason
 - deterministic `context_hash` of the context the provider saw
-- selected tool name and arguments when present
+- selected operation/tool name and arguments when present
 - policy allowed/denied status
 - final outcome: `answered`, `tool_succeeded`, `tool_failed`, `tool_unknown`, `policy_denied`, or `malformed_decision`
 - error details when a decision is malformed, a tool is unknown, policy denies, or a handler fails
@@ -164,14 +164,14 @@ This journal explains why a path was chosen and what happened afterward. It prep
 
 ## Runtime Trace
 
-`RuntimeTrace` is a read-only view over one RuntimeLoop run. Given a `workspace_id` and `run_id`, the trace reader loads matching `EventLedger` events, preserves append order, snapshots their payloads, and reconstructs the user input, `decision.recorded` journal record, policy denial event, tool result/failure/unknown event, assistant answer, and errors. It does not replay the runtime and does not call `DecisionProvider`, `PolicyEngine`, registered tools, projectors, shell commands, subprocesses, network clients, generated tools, LLMs, or host-mutating code.
+`RuntimeTrace` is a read-only view over one RuntimeLoop run. Given a `workspace_id` and `run_id`, the trace reader loads matching `EventLedger` events, preserves append order, snapshots their payloads, and reconstructs the user input, `decision.recorded` journal record, policy denial event, tool result/failure/unknown event, assistant answer, and errors. It does not replay the runtime and does not call `DecisionProvider`, `PolicyEngine`, registered operations/tools, projectors, shell commands, subprocesses, network clients, generated toolkit operations, LLMs, or host-mutating code.
 
-Trace summaries expose the operator-facing facts needed for audit and explanation surfaces: input text, decision kind and reason, outcome, selected tool, policy allowed/denied status, final response text, and any error. Missing run IDs return an empty trace with `summary.found = false`, rather than inventing or replaying state.
+Trace summaries expose the operator-facing facts needed for audit and explanation surfaces: input text, decision kind and reason, outcome, selected operation/tool, policy allowed/denied status, final response text, and any error. Missing run IDs return an empty trace with `summary.found = false`, rather than inventing or replaying state.
 
 Runtime responsibilities stay separated:
 
 - `RuntimeLoop` writes append-only events describing what happened.
-- `DecisionJournal` records decision intent, context hash, selected tool, policy status, outcome, and errors.
+- `DecisionJournal` records decision intent, context hash, selected operation/tool, policy status, outcome, and errors.
 - `RuntimeTrace` reconstructs one run from those events only.
 - CLI `--trace-run RUN_ID` renders the full ordered trace without mutating history.
 - CLI `--why-run RUN_ID` renders a concise human explanation from the same read-only trace.
@@ -277,7 +277,7 @@ def handle_decision(decision: Decision, state: State, causation_id: str) -> Deci
 
 ## Handoff branch
 
-Seed does not invoke a tool after policy review. It creates a non-executable HandoffPlan that an external provider can consume or that a human can follow manually. The HandoffPlan is not an approval and does not imply user approval, execution authorization, credential availability, provider trust, or tool registration.
+Seed does not invoke an operation implementation after policy review. It creates a non-executable HandoffPlan that an external provider can consume or that a human can follow manually. The HandoffPlan is not an approval and does not imply user approval, execution authorization, credential availability, provider trust, or operation registration.
 
 ```python
 def create_handoff_plan(action_plan: ActionPlan, target: str, causation_id: str) -> HandoffPlanResult:
@@ -332,9 +332,9 @@ Do not let the model guess high-impact missing arguments.
 Rules:
 
 - Low-risk read-only handoff recommendations may use high-confidence entity inference.
-- Mutating tools require explicit scope.
+- Mutating operations/provider handoffs require explicit scope.
 - Unknown host/environment requires clarification.
-- Tool generation requests should capture uncertainty in the Tool Need.
+- Toolkit generation requests should capture uncertainty in the ToolNeed / capability gap.
 
 ## Handling stale facts
 
@@ -351,7 +351,7 @@ Context composer can mark facts:
 }
 ```
 
-The model can then propose an observation HandoffPlan whose returned evidence becomes supporting or conflicting Facts, or request a missing ToolNeed.
+The model can then propose an observation HandoffPlan whose returned evidence becomes supporting or conflicting Facts, or request a missing ToolNeed / capability gap.
 
 ## Model correction loop
 
@@ -366,13 +366,13 @@ Never silently coerce a dangerous invalid decision into an action.
 
 ## Runtime invariants
 
-- RuntimeLoop is the coordinator; it does not own policy, projection storage, tool registration, or journal persistence responsibilities.
+- RuntimeLoop is the coordinator; it does not own policy, projection storage, operation registration, or journal persistence responsibilities.
 - EventLedger is the historical event source.
 - ProjectionStore only caches projected state snapshots.
 - DecisionProvider proposes; it does not execute.
-- Decision validation happens before policy or tool execution.
-- PolicyEngine denial prevents tool execution.
-- ToolRegistry executes only registered handlers; raw provider output, shell commands, subprocesses, generated tools, and arbitrary host mutation are not execution paths.
+- Decision validation happens before policy or operation implementation execution.
+- PolicyEngine denial prevents operation implementation execution.
+- ToolRegistry dispatches only registered operation handlers; raw provider output, shell commands, subprocesses, generated toolkit operations, and arbitrary host mutation are not execution paths.
 - DecisionJournal records reasoning and outcomes as append-only events only.
 - No credentials, retries, scheduling, or long-running job lifecycle in Seed.
 - No HandoffPlan without CapabilityCatalog metadata and policy summary.

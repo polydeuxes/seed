@@ -1,6 +1,6 @@
 # 04 Toolkit System
 
-A toolkit is a portable package of generated or hand-written observation, catalog, capability, operation, provider, and handoff metadata. In the current core path it is not an internal execution plugin. Use the canonical capability/tool vocabulary in `02-domain-model.md`: capabilities explain why Seed needs an ability, operations define what can be called, implementations define how calls are fulfilled, and providers are the external backends.
+A toolkit is a portable package of generated or hand-written observation, catalog, capability, operation, provider, and handoff metadata. In the current core path it is not an internal execution plugin. Use the canonical capability/operation vocabulary in `02-domain-model.md`: capabilities explain why Seed needs an ability, operations define what can be called, implementations define how calls are fulfilled, and providers are the external backends.
 
 ## Definition
 
@@ -229,7 +229,7 @@ def load_toolkits(paths: list[Path]) -> Registry:
 
 ## Context visibility
 
-Not every registered tool should be shown to every model call.
+Not every registered operation should be shown to every model call.
 
 Visibility depends on:
 
@@ -240,7 +240,7 @@ Visibility depends on:
 - risk
 - user role
 - environment
-- tool maturity
+- operation maturity
 - whether arguments are known
 
 Example context entry:
@@ -324,13 +324,13 @@ When a toolkit is registered, append an event:
 
 ## Versioning
 
-Tool names should be stable. Toolkit versions can change.
+Operation names should be stable. Toolkit versions can change.
 
 Rules:
 
 - breaking schema change requires new major version
 - old events reference exact toolkit version
-- deprecated tools remain resolvable for audit
+- deprecated operations remain resolvable for audit
 - model context shows only current visible versions
 
 ## Safety constraints for generated toolkits

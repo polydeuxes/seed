@@ -73,7 +73,7 @@ Events -> projected State -> Evidence Graph -> Contradiction Detection
 
 Contradiction Detection v1 starts with a conservative built-in exclusive predicate set: `status`, `runs_on`, `located_on`, `ip`, `hostname`, `enabled`, `available`, and `version`. It reports a contradiction when facts share the same subject and predicate but have different values for one of those exclusive predicates. Duplicate identical facts are not contradictions, and non-exclusive predicates are ignored by default. Callers may pass an additional `exclusive_predicates` set for future extension.
 
-Contradictions include the subject, predicate, conflicting fact IDs, values, severity, reason, evidence by fact ID, supporting event IDs, last event, and projection version. They are not resolutions: Seed does not choose a winner, aggregate confidence, rewrite facts, delete facts, append events, call providers, evaluate policy, execute tools, run shell commands, mutate hosts, make network calls, or call LLMs. The preferred failure mode is a false negative rather than a noisy false positive.
+Contradictions include the subject, predicate, conflicting fact IDs, values, severity, reason, evidence by fact ID, supporting event IDs, last event, and projection version. They are not resolutions: Seed does not choose a winner, aggregate confidence, rewrite facts, delete facts, append events, call providers, evaluate policy, execute operation implementations, run shell commands, mutate hosts, make network calls, or call LLMs. The preferred failure mode is a false negative rather than a noisy false positive.
 
 ## Confidence Aggregation v1
 
@@ -90,7 +90,7 @@ Confidence Aggregation is derived from projected `State`, the read-only `Evidenc
 Events -> projected State -> Evidence Graph -> Contradiction Detection -> Confidence Aggregation
 ```
 
-Confidence is support estimation, not truth. It does not resolve contradictions, choose winners, rewrite facts, delete unsupported facts, append events, invoke runtime behavior, call providers, evaluate policy, execute tools, run shell commands, mutate hosts, make network calls, call LLMs, or persist a separate confidence database.
+Confidence is support estimation, not truth. It does not resolve contradictions, choose winners, rewrite facts, delete unsupported facts, append events, invoke runtime behavior, call providers, evaluate policy, execute operation implementations, run shell commands, mutate hosts, make network calls, call LLMs, or persist a separate confidence database.
 
 Confidence Aggregation v1 models:
 
@@ -130,4 +130,4 @@ The read-only CLI views are:
 - `--confidence`
 - `--confidence-fact SUBJECT PREDICATE [OBJECT]`
 
-The commands load projected State, use `ProjectionStore` cache when available, and render plain text. They never append events, invoke runtime behavior, call providers, evaluate policy, execute tools, run shell commands, mutate hosts, make network calls, or call LLMs.
+The commands load projected State, use `ProjectionStore` cache when available, and render plain text. They never append events, invoke runtime behavior, call providers, evaluate policy, execute operation implementations, run shell commands, mutate hosts, make network calls, or call LLMs.

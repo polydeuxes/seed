@@ -1,6 +1,6 @@
 # Seed System 
 
-A system that accumulates context, understands missing capabilities, and safely grows a typed tool vocabulary.
+A system that accumulates context, understands missing capabilities, and safely grows a typed operation/toolkit vocabulary.
 
 ## One-sentence product definition
 
@@ -8,7 +8,7 @@ Seed receives raw user, file, provider, and system inputs; safely inspects and n
 
 ## Core thesis
 
-Permissions and flow control are necessary infrastructure, but they are not the architecture. The architecture is the **context engine** plus a **tool-growing loop**:
+Permissions and flow control are necessary infrastructure, but they are not the architecture. The architecture is the **context engine** plus a **capability-to-toolkit loop**:
 
 ```text
 raw input
@@ -28,17 +28,17 @@ raw input
 
 ## What is new
 
-Most automation systems begin with a catalog of hand-written tools and then bolt on an LLM. Seed starts from the opposite direction:
+Most automation systems begin with a catalog of hand-written operations or backend adapters and then bolt on an LLM. Seed starts from the opposite direction:
 
 1. Start with a small, constrained model.
 2. Give it durable state and compact context.
 3. Let it discover missing capabilities.
-4. Convert missing capabilities into explicit **Tool Needs**.
-5. Use a separate builder to generate toolkits.
-6. Validate and register toolkits.
-7. Expose registered capabilities and provider handoff options back to the model.
+4. Convert missing capabilities into explicit **ToolNeeds / capability gaps**.
+5. Use a separate builder to generate toolkit candidates.
+6. Validate and register toolkit operations and metadata.
+7. Expose registered capabilities, visible operations, and provider handoff options back to the model.
 
-The model does not get unrestricted power to rewrite its runtime. It can request and help specify capabilities. A separate builder and validation pipeline produce capability metadata/contracts. A CapabilityCatalog and policy gate decide what becomes available for handoff planning.
+The model does not get unrestricted power to rewrite its runtime. It can request and help specify capabilities. A separate builder and validation pipeline produce toolkit metadata, operation contracts, schemas, and policies. A CapabilityCatalog and policy gate decide what becomes available for handoff planning.
 
 ## Design principles
 
@@ -48,20 +48,20 @@ The model does not get unrestricted power to rewrite its runtime. It can request
 2. **Small-model pressure is good**  
    Design so a small model can succeed: short context, explicit choices, typed actions, deterministic validation.
 
-3. **Tools are generated products, not prompt tricks**  
-   A toolkit is a manifest, schemas, policy metadata, integration contracts, tests, documentation, and lifecycle state; execution stays with external providers.
+3. **Toolkits are generated products, not prompt tricks**
+   A toolkit is a manifest, capability metadata, operation schemas, policy metadata, integration contracts, tests, documentation, and lifecycle state; operation implementation execution stays with external providers.
 
 4. **Desire is not permission**  
    A model or user can desire an action. Policy decides whether Seed may recommend a non-executable handoff; external providers decide and perform actual execution.
 
 5. **Generated does not mean trusted**  
-   Generated toolkits must be sandboxed, tested, classified, reviewed when needed, and registered before use.
+   Generated toolkit candidates must be sandboxed, tested, classified, reviewed when needed, and registered before their operations are visible.
 
 6. **The runtime does not build itself while running production actions**  
-   Tool/capability building is separate from external-provider execution, which Seed does not own.
+   Toolkit/capability building is separate from external-provider implementation execution, which Seed does not own.
 
 7. **Every action returns to state**  
-   Answers, questions, ToolNeeds, ActionPlans, HandoffPlans, external provider evidence, approvals, and generated artifacts all become durable events.
+   Answers, questions, ToolNeeds / capability gaps, ActionPlans, HandoffPlans, external provider evidence, approvals, and generated toolkit artifacts all become durable events.
 
 
 ## Current MVP slice
@@ -101,7 +101,7 @@ Read in this order:
 4. [`04-toolkit-system.md`](04-toolkit-system.md) — generated toolkit format and lifecycle.
 5. [`05-policy-and-safety.md`](05-policy-and-safety.md) — trust boundaries, risk classes, approval model.
 6. [`06-context-engine.md`](06-context-engine.md) — how to build model context packets.
-7. [`07-builder-service.md`](07-builder-service.md) — separate tool builder design.
+7. [`07-builder-service.md`](07-builder-service.md) — separate toolkit builder design.
 8. [`08-small-model-strategy.md`](08-small-model-strategy.md) — designing for small local models and model tiers.
 9. [`09-pseudocode.md`](09-pseudocode.md) — implementation sketches.
 10. [`10-build-plan.md`](10-build-plan.md) — multi-day Codex session plan.
@@ -147,10 +147,10 @@ seed/
 Seed is not primarily an agent framework. It is a state engine / distributed state machine whose core loop is:
 
 ```text
-Input -> EventLedger -> State Projection -> Context Composer -> DecisionProvider -> Decision Validation -> PolicyEngine -> ToolRegistry or Answer -> New Events
+Input -> EventLedger -> State Projection -> Context Composer -> DecisionProvider -> Decision Validation -> PolicyEngine -> ToolRegistry operation or Answer -> New Events
 ```
 
-The provider proposes; the runtime validates; policy allows or denies; and `ToolRegistry` can execute only registered handlers. Raw provider output is never executed, LLMs are optional, generated tools are not active by default, and Seed does not run shell commands or arbitrary host mutation. `DecisionJournal` records decision reason, context hash, selected tool, policy status, final outcome, and errors as append-only events so future `--why`, audit, explain, impact, relationship, graph issue, and verification commands can explain both what happened and why.
+The provider proposes; the runtime validates; policy allows or denies; and `ToolRegistry` exposes only registered operations and dispatches only registered handlers. Raw provider output is never executed, LLMs are optional, generated toolkit operations are not active by default, and Seed does not run shell commands or arbitrary host mutation. `DecisionJournal` records decision reason, context hash, selected operation/tool, policy status, final outcome, and errors as append-only events so future `--why`, audit, explain, impact, relationship, graph issue, and verification commands can explain both what happened and why.
 
 ## Mental model
 
@@ -171,10 +171,10 @@ The API is not the center. The context loop is the center, and the context loop 
 ```text
 Events -> projected State -> Evidence Graph -> Fact explanations
 Events -> projected State -> Evidence Graph -> Contradiction Detection
-Evidence -> Facts -> State -> Decisions -> Tools
+Evidence -> Facts -> State -> Decisions -> Operations / Handoffs
 ```
 
-Tools are how Seed observes and acts. Evidence, facts, state, the read-only Evidence Graph, and read-only Contradiction Detection are how Seed knows what is true enough to decide, why a fact is believed, whether a fact is unsupported, and whether projected facts conflict. Contradictions are not resolutions: Seed reports that facts cannot both be true and shows evidence for each side, but it does not choose a winner or mutate state.
+Operations and provider handoffs are how Seed observes and acts. Evidence, facts, state, the read-only Evidence Graph, and read-only Contradiction Detection are how Seed knows what is true enough to decide, why a fact is believed, whether a fact is unsupported, and whether projected facts conflict. Contradictions are not resolutions: Seed reports that facts cannot both be true and shows evidence for each side, but it does not choose a winner or mutate state.
 
 ## Local model development CLI
 
@@ -228,7 +228,7 @@ python scripts/seed_local.py --db seed.sqlite --why node115 health_status
 python scripts/seed_local.py --db seed.sqlite --why jellyfin runtime
 ```
 
-Ask for read-only confidence aggregation over projected facts. Confidence estimates support strength; it is not truth resolution and does not rewrite facts, delete unsupported facts, resolve contradictions, invoke runtime behavior, call providers/policy/tools, or append events:
+Ask for read-only confidence aggregation over projected facts. Confidence estimates support strength; it is not truth resolution and does not rewrite facts, delete unsupported facts, resolve contradictions, invoke runtime behavior, call providers/policy/operations, or append events:
 
 ```bash
 python scripts/seed_local.py --db seed.sqlite --confidence
@@ -281,7 +281,7 @@ python scripts/seed_local.py --db seed.sqlite --trace-run evt_000001
 python scripts/seed_local.py --db seed.sqlite --why-run evt_000001
 ```
 
-`--trace-run RUN_ID` prints the workspace, run id, user input, decision kind/reason/context hash, policy status, selected tool, final outcome/response/error, and ordered event list. `--why-run RUN_ID` prints a shorter human explanation of what the user asked, what Seed decided, why, whether policy allowed it, and what happened. Both commands are read-only: they do not replay the runtime, call providers, evaluate policy, execute tools, ingest observations, or append events. If no `--db` is supplied, they follow the CLI's in-memory convention and will only see an empty process-local ledger, so unknown or missing runs print a clear not-found message.
+`--trace-run RUN_ID` prints the workspace, run id, user input, decision kind/reason/context hash, policy status, selected operation/tool, final outcome/response/error, and ordered event list. `--why-run RUN_ID` prints a shorter human explanation of what the user asked, what Seed decided, why, whether policy allowed it, and what happened. Both commands are read-only: they do not replay the runtime, call providers, evaluate policy, execute operation implementations, ingest observations, or append events. If no `--db` is supplied, they follow the CLI's in-memory convention and will only see an empty process-local ledger, so unknown or missing runs print a clear not-found message.
 
 ### Predicate catalog
 
@@ -331,7 +331,7 @@ python scripts/seed_local.py --db seed.sqlite --state-summary
 
 ### Operator query surfaces
 
-The maintained CLI exposes read-only operator queries over projected state. State Views are projections over the current world model rather than a separate persistence layer. These queries do not ingest new observations, append events, execute tools, mutate hosts, call providers/policy, or ask an LLM to reason over projection state:
+The maintained CLI exposes read-only operator queries over projected state. State Views are projections over the current world model rather than a separate persistence layer. These queries do not ingest new observations, append events, execute operation implementations, mutate hosts, call providers/policy, or ask an LLM to reason over projection state:
 
 - `--state-summary` prints a read-only State View summary with counts for facts, observations, requirements, capabilities, issues, projection version, and last projected event.
 - `--impact ENTITY` resolves aliases and summarizes an entity's current types, aliases, availability, endpoints, groups, dependencies, dependents, conflicts, and related graph issues.

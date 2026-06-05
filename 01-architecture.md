@@ -6,8 +6,8 @@ Seed is best understood as a state engine / distributed state machine that can u
 
 Seed has two large halves:
 
-1. **Runtime** — handles events, builds context, lets models decide, records state, manages Tool Needs, ranks recommendations, and emits non-executable Action Plans and HandoffPlans.
-2. **Builder** — turns explicit Tool Needs into generated toolkit candidates, validates metadata/contracts, and prepares capabilities for registration.
+1. **Runtime** — handles events, builds context, lets models decide, records state, manages ToolNeeds / capability gaps, ranks recommendations, and emits non-executable Action Plans and HandoffPlans.
+2. **Builder** — turns explicit ToolNeeds / capability gaps into generated toolkit candidates, validates metadata/contracts, and prepares capabilities and operations for registration.
 
 The runtime is always conservative. The builder can be creative, but its outputs are untrusted until validated and registered. Actual execution is delegated to external providers.
 
@@ -26,7 +26,7 @@ Input
   -> Events
 ```
 
-Runtime sovereignty is explicit: the model/provider proposes decisions, the runtime validates decisions, policy allows or denies valid tool decisions, and `ToolRegistry` execution is limited to registered handlers. Raw provider output is never executed, and generated tools are not active merely because they exist.
+Runtime sovereignty is explicit: the model/provider proposes decisions, the runtime validates decisions, policy allows or denies valid operation-call decisions, and `ToolRegistry` dispatch is limited to registered operation handlers. Raw provider output is never executed, and generated toolkit operations are not active merely because they exist. See `02-domain-model.md` for the canonical capability/operation/implementation/provider/toolkit vocabulary.
 
 
 ## File-backed raw IN inspection
@@ -78,8 +78,8 @@ The knowledge layer projects current belief from immutable observations rather t
 - `State Views` = read-only representations of projected State for facts, observations, requirements, capabilities, issues, and summary counts. They are projection views, not a second state store.
 - `RuntimeLoop` = coordinator for one request execution.
 - `DecisionProvider` = proposes structured decisions; it may be deterministic code, a model adapter, or another provider. LLMs are optional, not required.
-- `PolicyEngine` = authorization/safety boundary for valid tool decisions.
-- `ToolRegistry` = executable capability registry; only registered handlers may run, and Seed does not execute shell commands or arbitrary provider text.
+- `PolicyEngine` = authorization/safety boundary for valid operation-call decisions.
+- `ToolRegistry` = registered operation inventory; only registered operation handlers may run, and Seed does not execute shell commands or arbitrary provider text.
 - `DecisionJournal` = append-only audit/explanation trail that records why a decision was made and what happened afterward.
 
 ## Ownership boundary
@@ -90,7 +90,7 @@ Seed owns:
 - Event ledger
 - State projection
 - Fact/evidence model
-- ToolNeeds
+- ToolNeeds / capability gaps
 - CapabilityCatalog
 - RecommendationRanker
 - ActionPlans as non-executable plans
@@ -168,7 +168,7 @@ Maintains projections such as:
 - active goals
 - known entities
 - known capabilities
-- open ToolNeeds
+- open ToolNeeds / capability gaps
 - CapabilityCatalog entries
 - unresolved approvals
 - recent evidence
@@ -189,7 +189,7 @@ State Views answer:
 - What capabilities exist?
 - What issues exist?
 
-They are projections and not separate persistence systems. They do not append events, replay runtime decisions, invoke `RuntimeLoop`, call providers, evaluate policy, execute tools, run shell commands, or perform network calls. CLI flags such as `--current-facts`, `--current-observations`, `--current-requirements`, `--current-capabilities`, `--current-issues`, and `--state-summary` load projected State, reuse `ProjectionStore` snapshots when available, and render plain text.
+They are projections and not separate persistence systems. They do not append events, replay runtime decisions, invoke `RuntimeLoop`, call providers, evaluate policy, execute operation implementations, run shell commands, or perform network calls. CLI flags such as `--current-facts`, `--current-observations`, `--current-requirements`, `--current-capabilities`, `--current-issues`, and `--state-summary` load projected State, reuse `ProjectionStore` snapshots when available, and render plain text.
 
 ### Context Views
 
@@ -215,7 +215,7 @@ Context Views answer:
 - How confident are we?
 - What should the provider see?
 
-Context Views are projections. They are read-only and do not append events, mutate State, replay runtime behavior, invoke `RuntimeLoop`, call providers, evaluate policy, execute tools, call LLMs, run shell commands, perform network calls, or create a new persistence layer. The v1 selection rules are intentionally simple and deterministic: supported facts are selected first, higher confidence sorts first, contradicted facts remain visible but marked, and unsupported facts are excluded by default. Operators can inspect the exact provider-facing projection with `--decision-context`.
+Context Views are projections. They are read-only and do not append events, mutate State, replay runtime behavior, invoke `RuntimeLoop`, call providers, evaluate policy, execute operation implementations, call LLMs, run shell commands, perform network calls, or create a new persistence layer. The v1 selection rules are intentionally simple and deterministic: supported facts are selected first, higher confidence sorts first, contradicted facts remain visible but marked, and unsupported facts are excluded by default. Operators can inspect the exact provider-facing projection with `--decision-context`.
 
 
 #### Fact Support Aggregation
@@ -252,7 +252,7 @@ It decides what the model sees:
 - missing facts
 - available capabilities
 - blocked or policy-limited capabilities
-- open ToolNeeds
+- open ToolNeeds / capability gaps
 - candidate HandoffPlans
 - policy summaries
 - expected decision schema
@@ -267,13 +267,13 @@ The model may output:
 
 - answer user
 - ask a question
-- request a ToolNeed
+- request a ToolNeed / capability gap
 - propose a non-executable Action Plan
 - propose a HandoffPlan
 - propose state update
 - refuse/block
 
-The model should not directly execute tools or mutate durable state. Its output is a proposal until validated.
+The model should not directly execute operation implementations, call providers, or mutate durable state. Its output is a proposal until validated.
 
 ### 6. Decision Validator
 
@@ -309,7 +309,7 @@ A catalog entry includes:
 - visibility rules
 - examples
 
-The catalog may load capabilities from hand-written metadata, generated toolkit metadata, MCP server descriptions, and external automation inventory. It describes what Seed can recommend or hand off; it does not imply that Seed can execute the operation itself. For the canonical distinction between requirements, capabilities, operations, implementations, providers, toolkits, and ToolNeeds, see `02-domain-model.md`.
+The catalog may load capabilities from hand-written metadata, generated toolkit metadata, MCP server descriptions, and external automation inventory. It describes what Seed can recommend or hand off; it does not imply that Seed can execute the operation itself. For the canonical distinction between requirements, capabilities, operations, implementations, providers, toolkits, and ToolNeeds / capability gaps, see `02-domain-model.md`.
 
 ### 8. Policy Gate
 
@@ -348,16 +348,16 @@ Handoff Composer responsibilities:
 - describe the secret boundary
 - record whether external/provider approval is still required
 - mark the plan `executable: false`
-- avoid implying user approval, execution authorization, credential availability, provider trust, or tool registration
+- avoid implying user approval, execution authorization, credential availability, provider trust, or operation registration
 - emit auditable handoff events
 
 The Handoff Composer does not run tools, ask for credentials, retry operations, schedule jobs, monitor long-running work, or manage execution state. Those responsibilities belong to external providers such as Ansible/AWX, Temporal/Prefect, MCP servers, Vault, ssh-agent, sudo, or become-aware automation.
 
-### 10. Tool Need Store
+### 10. ToolNeed Store
 
 Tracks desired missing capabilities.
 
-A Tool Need is a durable object saying: “The system needs a tool/capability that does not currently exist.”
+A ToolNeed is a durable object recording a capability gap or missing provider handoff target, for example: “The system needs a capability/operation/provider path that does not currently exist.”
 
 Example:
 
@@ -374,13 +374,13 @@ Example:
 
 ### 11. Builder Queue
 
-Moves approved Tool Needs to the builder service.
+Moves approved ToolNeeds / capability gaps to the builder service.
 
-The queue decouples runtime from generation. Production runtime can say “tool needed” without immediately creating executable code.
+The queue decouples runtime from generation. Production runtime can record “capability/operation needed” without immediately creating executable code.
 
 ### 12. Builder Service
 
-Generates toolkit candidates from Tool Needs.
+Generates toolkit candidates from ToolNeeds / capability gaps.
 
 Produces non-mutating integration artifacts first:
 
@@ -425,7 +425,7 @@ Runtime:
   - normalizes observations into Evidence and Facts
   - builds context
   - records events and projected state
-  - maintains facts, evidence, ToolNeeds, CapabilityCatalog, recommendations, policy metadata, and audit trail
+  - maintains facts, evidence, ToolNeeds / capability gaps, CapabilityCatalog, recommendations, policy metadata, and audit trail
   - proposes non-executable Action Plans and HandoffPlans
   - delegates actual execution to external providers
 
@@ -440,7 +440,7 @@ Builder:
 
 ```text
 Level 0: User/model desire
-Level 1: Tool Need recorded
+Level 1: ToolNeed / capability gap recorded
 Level 2: Toolkit candidate generated
 Level 3: Toolkit candidate validated in sandbox
 Level 4: Capability registered but policy-gated
@@ -457,11 +457,11 @@ Avoid:
 - model writes code and immediately runs it
 - route handlers import provider internals
 - registry imports executable provider modules during metadata listing
-- generated tool bypasses manifest/validation
+- generated operation/implementation bypasses manifest/validation
 - policy lives inside prompt text only
 - context window becomes the database
 - every user phrase becomes a hardcoded branch
-- Seed runs tools, manages retries/schedules, or handles credentials instead of delegating to external providers
+- Seed runs operation implementations, manages retries/schedules, or handles credentials instead of delegating to external providers
 
 ## Minimal viable architecture
 
@@ -473,10 +473,10 @@ The first build does not need everything. Minimum useful system:
 4. Decision schema.
 5. Static CapabilityCatalog.
 6. Policy gate.
-7. Tool Need object.
+7. ToolNeed / capability-gap object.
 8. Builder stub that emits toolkit templates.
 
-Even if tools are not fully generated on day one, Tool Needs should be first-class from the beginning.
+Even if toolkit operations are not fully generated on day one, ToolNeeds / capability gaps should be first-class from the beginning.
 
 ## Canonical predicate vocabulary
 

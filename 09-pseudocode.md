@@ -220,13 +220,13 @@ class ContextComposer:
             "active_goal": summarize_goal(active_goal),
             "entities": [summarize_entity(e) for e in entities],
             "facts": [summarize_fact(f) for f in facts],
-            "available_tools": [summarize_tool(t) for t in tools],
+            "available_tools": [summarize_tool(t) for t in tools],  # legacy field name; entries are registered operations
             "open_tool_needs": [summarize_tool_need(n) for n in open_needs],
             "decision_schema": DecisionSchemaV1.model_json_schema(),
         }
 ```
 
-## Tool registry
+## ToolRegistry registered operation inventory
 
 ```python
 class ToolRegistry:
@@ -361,7 +361,7 @@ class Runtime:
         return self.response_composer.compose(result)
 ```
 
-## Tool Need service
+## ToolNeed / capability-gap service
 
 ```python
 class ToolNeedService:

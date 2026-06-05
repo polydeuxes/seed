@@ -22,7 +22,7 @@ Pros:
 
 Cons:
 
-- less explicit about tool growth
+- less explicit about capability/toolkit growth
 
 ### Forge
 
@@ -32,7 +32,7 @@ Pros:
 
 Cons:
 
-- overemphasizes tool creation over context engine
+- overemphasizes toolkit creation over context engine
 
 ### Sprout
 
@@ -65,13 +65,13 @@ Recommendation: use **Seed** for the new repo unless a better name emerges.
 | Model-facing state | Context Composer | prompt builder only |
 | Model output | Decision | intent |
 | Missing capability/backend | ToolNeed | requirement |
-| Capability inventory | CapabilityCatalog | provider operation list |
-| External provider handoff | HandoffPlan | execution job |
+| Capability inventory | CapabilityCatalog | registered operation list |
+| External provider handoff | HandoffPlan | provider execution job |
 | Capability package | Toolkit | plugin if too broad |
 | Permission metadata/check | Policy Gate | guardrails only |
 | Action runner | External provider | internal executor |
-| Tool generator | Builder | self-modifier |
-| Generated untrusted output | Toolkit Candidate | tool |
+| Toolkit builder | Builder | self-modifier |
+| Generated untrusted output | Toolkit Candidate | tool/implementation |
 | External thing | Entity | resource if ambiguous |
 | Claim about entity | Fact | metadata only |
 | User objective | Goal | chain |
@@ -82,9 +82,9 @@ Recommendation: use **Seed** for the new repo unless a better name emerges.
 
 Suggests API proxy rather than context engine.
 
-### Provider operation
+### Provider operation as product language
 
-Too implementation-centered. Use Tool.
+Too implementation-centered when it hides the capability and provider boundary. Use Capability for the abstract ability, Tool/Operation for the callable interface, Implementation for the adapter, and Provider for the external backend.
 
 ### CapabilitySpec
 
@@ -96,7 +96,7 @@ Implies fixed workflow. Use Goal or Session.
 
 ### Requirement
 
-Useful in some domains, but overloaded. Use ToolNeed for missing capabilities/backends and Capability for desired entity state.
+Use Requirement for what the user or system needs accomplished. Do not use it for missing callable surfaces; use ToolNeed for durable capability gaps or missing provider handoff targets, and Capability for abstract abilities.
 
 ### Remediation
 
@@ -108,7 +108,7 @@ Fine as a transient parse concept, but avoid as durable core object. Use Decisio
 
 ## Naming conventions
 
-### Tool names
+### Operation/tool names
 
 Use verbs and objects:
 
@@ -181,5 +181,5 @@ The user created a Goal. The context composer selected relevant Facts and Capabi
 Avoid:
 
 ```text
-The gateway parsed intent into a chain and invoked a provider operation to satisfy a requirement.
+The gateway parsed intent into a chain and invoked a provider operation directly to satisfy a requirement.
 ```
