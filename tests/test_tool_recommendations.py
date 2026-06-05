@@ -10,7 +10,7 @@ from seed_runtime.execution import ToolExecutor
 from seed_runtime.models import Decision, Fact, ToolNeed, ToolSpec, Toolkit, utc_now
 from seed_runtime.policy import PolicyGate
 from seed_runtime.projection_store import InMemoryProjectionStore
-from seed_runtime.recommendation_ranker import RecommendationRanker
+from seed_runtime.recommendation_ranker import RankedRecommendation, RecommendationRanker
 from seed_runtime.registry import ToolRegistry
 from seed_runtime.runtime import FakeDecisionModel, Runtime
 from seed_runtime.runtime_loop import (
@@ -180,7 +180,92 @@ def test_existing_capability_recommendation_ranking_behavior_remains_intact():
     assert "catalog default" in ranked[0].reasons
 
 
-def test_runtime_loop_request_tool_behavior_has_no_recommendation_changes():
+class RecordingToolRecommendationService(ToolRecommendationService):
+    def __init__(self) -> None:
+        self.calls: list[tuple[ToolNeed, State]] = []
+
+    def recommend_for(
+        self, tool_need: ToolNeed, state: State
+    ) -> list[RankedRecommendation]:
+        self.calls.append((tool_need, state))
+        return [
+            RankedRecommendation(
+                provider="docker_container_lifecycle",
+                summary="Use Docker container lifecycle operations.",
+                kind="local_cli",
+                source="docker",
+                risk_class="L3",
+                score=50,
+                reasons=["provider matches known runtime: docker"],
+                reasoning=["+50 provider matches known runtime: docker"],
+            ),
+            RankedRecommendation(
+                provider="systemctl_cli",
+                summary="Use systemctl on systemd hosts.",
+                kind="local_cli",
+                source="systemd",
+                risk_class="L3",
+                score=15,
+                reasons=["catalog default"],
+                reasoning=["+5 catalog default priority"],
+            ),
+        ]
+
+
+def test_runtime_loop_request_tool_result_includes_ranked_recommendations():
+    ledger = EventLedger()
+    projector = StateProjector(ledger)
+    fact = Fact(
+        id="fact_runtime_docker",
+        subject_id="jellyfin",
+        predicate="runtime",
+        value="docker",
+        observed_at=utc_now(),
+    )
+    ledger.append("fact.observed", "ws_loop", {"fact": to_plain(fact)}, actor="system")
+    registry = ToolRegistry()
+    recommendation_service = ToolRecommendationService(_service_management_catalog())
+    runtime = RuntimeLoop(
+        ledger,
+        InMemoryProjectionStore(),
+        registry,
+        PolicyGate(),
+        FakeDecisionProvider(
+            LoopDecision(
+                kind="request_tool",
+                reason="missing service management capability",
+                tool_need={
+                    "name": "Manage Service",
+                    "summary": "Manage the Jellyfin service",
+                    "capability": "service_management",
+                },
+            )
+        ),
+        {},
+        projector=projector,
+        tool_recommendation_service=recommendation_service,
+    )
+
+    result = runtime.run(RuntimeInput(workspace_id="ws_loop", user_text="manage jellyfin"))
+    events = ledger.list_events("ws_loop")
+
+    assert result.decision_kind == "request_tool"
+    assert [recommendation["provider"] for recommendation in result.recommendations] == [
+        "docker_container_lifecycle",
+        "systemctl_cli",
+    ]
+    assert set(result.recommendations[0]) == {"provider", "score", "reasons"}
+    assert result.recommendations[0]["score"] > result.recommendations[1]["score"]
+    assert [event.kind for event in events] == [
+        "fact.observed",
+        "input.user_message",
+        "tool_need.created",
+        "decision.recorded",
+    ]
+    assert set(events[2].payload) == {"tool_need"}
+
+
+def test_runtime_loop_request_tool_uses_injected_recommendation_service_without_events():
     ledger = EventLedger()
     registry = ToolRegistry()
     registry.register_toolkit(
@@ -202,6 +287,7 @@ def test_runtime_loop_request_tool_behavior_has_no_recommendation_changes():
             ],
         )
     )
+    recommendation_service = RecordingToolRecommendationService()
     runtime = RuntimeLoop(
         ledger,
         InMemoryProjectionStore(),
@@ -219,6 +305,7 @@ def test_runtime_loop_request_tool_behavior_has_no_recommendation_changes():
             )
         ),
         {"echo": EchoTool()},
+        tool_recommendation_service=recommendation_service,
     )
 
     result = runtime.run(RuntimeInput(workspace_id="ws_loop", user_text="check service"))
@@ -226,6 +313,18 @@ def test_runtime_loop_request_tool_behavior_has_no_recommendation_changes():
 
     assert result.decision_kind == "request_tool"
     assert result.response_text == "Recorded tool need lookup_service_status."
+    assert result.recommendations == [
+        {
+            "provider": "docker_container_lifecycle",
+            "score": 50,
+            "reasons": ["provider matches known runtime: docker"],
+        },
+        {
+            "provider": "systemctl_cli",
+            "score": 15,
+            "reasons": ["catalog default"],
+        },
+    ]
     assert [event.kind for event in events] == [
         "input.user_message",
         "tool_need.created",
@@ -233,4 +332,8 @@ def test_runtime_loop_request_tool_behavior_has_no_recommendation_changes():
     ]
     assert set(events[1].payload) == {"tool_need"}
     assert "recommendations" not in events[1].payload
-    assert not hasattr(result, "recommendations")
+    assert len(recommendation_service.calls) == 1
+    service_tool_need, service_state = recommendation_service.calls[0]
+    assert service_tool_need.name == "lookup_service_status"
+    assert service_tool_need.capability == "service_status_lookup"
+    assert service_state.open_tool_needs[0].name == "lookup_service_status"

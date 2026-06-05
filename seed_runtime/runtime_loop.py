@@ -24,6 +24,7 @@ from seed_runtime.registry import ToolRegistry
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import State, StateProjector
 from seed_runtime.tool_needs import slugify
+from seed_runtime.tool_recommendations import ToolRecommendationService
 
 DecisionKind = Literal["answer", "call_tool", "request_tool"]
 
@@ -50,6 +51,7 @@ class RuntimeResult:
     context_hash: str | None = None
     decision_reason: str | None = None
     decision_outcome: str | None = None
+    recommendations: list[dict[str, object]] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -128,6 +130,7 @@ class RuntimeLoop:
         tool_handlers: Mapping[str, RuntimeTool] | None = None,
         *,
         projector: StateProjector | None = None,
+        tool_recommendation_service: ToolRecommendationService | None = None,
     ) -> None:
         self.ledger = ledger
         self.projection_store = projection_store
@@ -136,6 +139,9 @@ class RuntimeLoop:
         self.decision_provider = decision_provider
         self.tool_handlers = dict(tool_handlers or {})
         self.projector = projector or StateProjector(ledger)
+        self.tool_recommendation_service = (
+            tool_recommendation_service or ToolRecommendationService()
+        )
         self.decision_journal = DecisionJournal(ledger)
         self.fact_extraction = FactExtractionService(ledger)
 
@@ -275,6 +281,22 @@ class RuntimeLoop:
             causation_id=input_event_id,
         )
         events_appended.append(need_event.id)
+        recommendation_state, _cache_status = project_state_with_cache(
+            self.ledger,
+            runtime_input.workspace_id,
+            self.projection_store,
+            projector=self.projector,
+        )
+        recommendations = [
+            {
+                "provider": recommendation.provider,
+                "score": recommendation.score,
+                "reasons": list(recommendation.reasons),
+            }
+            for recommendation in self.tool_recommendation_service.recommend_for(
+                tool_need, recommendation_state
+            )
+        ]
         journal_event = self.decision_journal.append_record(
             workspace_id=runtime_input.workspace_id,
             run_id=run_id,
@@ -300,6 +322,7 @@ class RuntimeLoop:
             context_hash=context_digest,
             decision_reason=decision.reason,
             decision_outcome="tool_requested",
+            recommendations=recommendations,
         )
 
     def _build_tool_need(
