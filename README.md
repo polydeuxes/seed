@@ -319,16 +319,17 @@ python scripts/seed_local.py --db seed.sqlite --state-summary
 
 ### Operator query surfaces
 
-The maintained CLI exposes read-only operator queries over projected state. These queries do not ingest new observations, execute tools, mutate hosts, or ask an LLM to reason over projection state:
+The maintained CLI exposes read-only operator queries over projected state. State Views are projections over the current world model rather than a separate persistence layer. These queries do not ingest new observations, append events, execute tools, mutate hosts, call providers/policy, or ask an LLM to reason over projection state:
 
-- `--state-summary` prints counts and health of projected entities, facts, conflicts, relationship edges, graph warnings/errors, and cache status.
+- `--state-summary` prints a read-only State View summary with counts for facts, observations, requirements, capabilities, issues, projection version, and last projected event.
 - `--impact ENTITY` resolves aliases and summarizes an entity's current types, aliases, availability, endpoints, groups, dependencies, dependents, conflicts, and related graph issues.
 - `--why ENTITY PREDICATE` explains the current belief by traversing FactSupport, provenance, conflicts, aliases, and deterministic inference links.
 - `--unhealthy` and `--down` list currently unhealthy or unavailable entities/endpoints from projected facts.
 - `--graph-issues` reports topology/type validation findings.
 - `--relationships` prints projected relationship edges, optionally filtered by relationship.
 - `--entity-types` prints projected entity classifications.
-- `--current-facts [ENTITY] [PREDICATE]` prints current facts, including multi-cardinality predicates.
+- `--current-facts` prints all read-only projected Fact Views; `--current-facts ENTITY PREDICATE` keeps the focused current-fact query for a subject/predicate.
+- `--current-observations`, `--current-requirements`, `--current-capabilities`, and `--current-issues` print read-only State Views for the rest of the projected world model.
 
 ### Inference catalog
 
