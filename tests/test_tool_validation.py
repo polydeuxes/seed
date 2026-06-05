@@ -244,36 +244,166 @@ def test_runtime_still_rejects_invalid_output_schema_after_start(monkeypatch):
     assert ledger.list_events("ws")[-1].payload["phase"] == "execution"
 
 
-def test_runtime_loop_schema_behavior_is_unchanged_when_not_migrated():
+def make_loop_runtime(
+    decision: LoopDecision,
+    *,
+    registry: ToolRegistry | None = None,
+    handler: RecordingLoopTool | None = None,
+):
     ledger = EventLedger()
-    registry = make_registry()
-    projector = StateProjector(ledger)
-    handler = RecordingLoopTool({"ok": "not validated by loop"})
+    registry = registry or make_registry()
+    handler = handler or RecordingLoopTool({"ok": True})
     runtime = RuntimeLoop(
         ledger,
         InMemoryProjectionStore(),
         registry,
         PolicyGate(),
-        FakeDecisionProvider(
-            LoopDecision(
-                kind="call_tool",
-                tool_name="echo",
-                tool_args={"message": 123},
-                reason="loop keeps existing validation scope",
-            )
-        ),
+        FakeDecisionProvider(decision),
         {"echo": handler},
-        projector=projector,
+        projector=StateProjector(ledger),
+    )
+    return runtime, ledger, handler
+
+
+def test_runtime_loop_rejects_unregistered_status_before_handler_execution():
+    runtime, ledger, handler = make_loop_runtime(
+        LoopDecision(
+            kind="call_tool",
+            tool_name="echo",
+            tool_args={"message": "hello"},
+            reason="disabled tool",
+        ),
+        registry=make_registry(tool_status="disabled"),
+    )
+
+    result = runtime.run(RuntimeInput(workspace_id="ws_loop", user_text="echo hello"))
+
+    assert result.error == "tool 'echo' is not registered"
+    assert result.decision_outcome == "tool_failed"
+    assert result.policy_allowed is False
+    assert handler.calls == []
+    assert event_kinds(ledger, "ws_loop") == [
+        "input.user_message",
+        "runtime.tool.invalid",
+        "decision.recorded",
+    ]
+    invalid_event = ledger.list_events("ws_loop")[-2]
+    assert invalid_event.payload == {
+        "tool_name": "echo",
+        "tool_args": {"message": "hello"},
+        "phase": "status",
+        "errors": ["tool 'echo' is not registered"],
+        "reason": "disabled tool",
+    }
+    journal = ledger.list_events("ws_loop")[-1].payload["record"]
+    assert journal["outcome"] == "tool_failed"
+    assert journal["error"] == "tool 'echo' is not registered"
+
+
+def test_runtime_loop_rejects_invalid_input_schema_before_handler_execution():
+    runtime, ledger, handler = make_loop_runtime(
+        LoopDecision(
+            kind="call_tool",
+            tool_name="echo",
+            tool_args={"message": 123},
+            reason="bad input",
+        )
     )
 
     result = runtime.run(RuntimeInput(workspace_id="ws_loop", user_text="echo bad"))
 
+    assert result.error == "$.message must be a string"
+    assert result.decision_outcome == "tool_failed"
+    assert result.policy_allowed is False
+    assert handler.calls == []
+    assert event_kinds(ledger, "ws_loop") == [
+        "input.user_message",
+        "runtime.tool.invalid",
+        "decision.recorded",
+    ]
+    invalid_event = ledger.list_events("ws_loop")[-2]
+    assert invalid_event.payload["phase"] == "input"
+    assert invalid_event.payload["errors"] == ["$.message must be a string"]
+
+
+def test_runtime_loop_rejects_invalid_output_schema_after_handler_return():
+    handler = RecordingLoopTool({"ok": "yes"})
+    runtime, ledger, handler = make_loop_runtime(
+        LoopDecision(
+            kind="call_tool",
+            tool_name="echo",
+            tool_args={"message": "hello"},
+            reason="bad output",
+        ),
+        handler=handler,
+    )
+
+    result = runtime.run(RuntimeInput(workspace_id="ws_loop", user_text="echo hello"))
+
+    assert result.error == "$.ok must be a boolean"
+    assert result.tool_result is None
+    assert result.decision_outcome == "tool_failed"
+    assert result.policy_allowed is True
+    assert handler.calls == [{"message": "hello"}]
+    assert event_kinds(ledger, "ws_loop") == [
+        "input.user_message",
+        "runtime.tool.invalid",
+        "decision.recorded",
+    ]
+    invalid_event = ledger.list_events("ws_loop")[-2]
+    assert invalid_event.payload["phase"] == "output"
+    assert invalid_event.payload["errors"] == ["$.ok must be a boolean"]
+    assert "tool.result" not in event_kinds(ledger, "ws_loop")
+
+
+def test_runtime_loop_unknown_tool_still_uses_existing_unknown_event_and_outcome():
+    runtime, ledger, handler = make_loop_runtime(
+        LoopDecision(
+            kind="call_tool",
+            tool_name="missing",
+            tool_args={"message": "hello"},
+            reason="missing tool",
+        )
+    )
+
+    result = runtime.run(RuntimeInput(workspace_id="ws_loop", user_text="use missing"))
+
+    assert result.error == "unknown tool: missing"
+    assert result.decision_outcome == "tool_unknown"
+    assert result.policy_allowed is False
+    assert handler.calls == []
+    assert event_kinds(ledger, "ws_loop") == [
+        "input.user_message",
+        "runtime.tool.unknown",
+        "decision.recorded",
+    ]
+    journal = ledger.list_events("ws_loop")[-1].payload["record"]
+    assert journal["outcome"] == "tool_unknown"
+
+
+def test_runtime_loop_valid_echo_call_still_succeeds_and_records_evidence():
+    runtime, ledger, handler = make_loop_runtime(
+        LoopDecision(
+            kind="call_tool",
+            tool_name="echo",
+            tool_args={"message": "hello"},
+            reason="valid echo",
+        )
+    )
+
+    result = runtime.run(RuntimeInput(workspace_id="ws_loop", user_text="echo hello"))
+
     assert result.error is None
-    assert result.tool_result == {"ok": "not validated by loop"}
-    assert handler.calls == [{"message": 123}]
+    assert result.tool_result == {"ok": True}
+    assert result.decision_outcome == "tool_succeeded"
+    assert result.policy_allowed is True
+    assert handler.calls == [{"message": "hello"}]
     assert event_kinds(ledger, "ws_loop") == [
         "input.user_message",
         "tool.result",
         "evidence.observed",
         "decision.recorded",
     ]
+    journal = ledger.list_events("ws_loop")[-1].payload["record"]
+    assert journal["outcome"] == "tool_succeeded"
+    assert journal["selected_tool_name"] == "echo"
