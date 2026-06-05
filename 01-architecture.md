@@ -2,7 +2,7 @@
 
 ## System summary
 
-Seed is a planning, knowledge, and handoff runtime. It safely turns raw inputs into evidence-backed knowledge, composes context from projected state, ranks capabilities, and produces auditable recommendations plus non-executable plans/handoffs. Seed does **not** own an internal executor, secret store, retry loop, scheduler, or workflow engine.
+Seed is best understood as a state engine / distributed state machine that can use LLMs as one possible `DecisionProvider`; it is not primarily an agent framework. It safely turns raw inputs into append-only events, projects evidence-backed state, composes context, validates proposed decisions, applies policy, and records auditable outcomes. Seed does **not** own shell execution, arbitrary provider-output execution, secrets, host mutation, retries, scheduling, or long-running workflow lifecycle.
 
 Seed has two large halves:
 
@@ -13,29 +13,21 @@ The runtime is always conservative. The builder can be creative, but its outputs
 
 ## High-level flow
 
+The core loop is the product:
+
 ```text
-raw input
-  -> InputInspector
-  -> ObservationSource
-  -> ObservationNormalizer
-  -> ObservationIngestor
-  -> Evidence / Facts
-  -> Event Ledger
-  -> State Projector / ProjectionStore
+Input
+  -> EventLedger
+  -> State Projection
   -> Context Composer
-  -> Model Orchestrator
-  -> Decision Validator
-       -> Answer
-       -> Clarifying Question
-       -> Tool Need Request
-       -> State Patch Proposal
-       -> Non-executable Action Plan
-       -> HandoffPlan
-  -> Policy Gate / CapabilityCatalog / Builder / Handoff Composer
-  -> Event Ledger
-  -> Response Composer
-  -> External Provider (outside Seed, if user/operator proceeds)
+  -> DecisionProvider
+  -> Decision Validation
+  -> PolicyEngine
+  -> ToolRegistry or Answer
+  -> New Events
 ```
+
+Runtime sovereignty is explicit: the model/provider proposes decisions, the runtime validates decisions, policy allows or denies valid tool decisions, and `ToolRegistry` execution is limited to registered handlers. Raw provider output is never executed, and generated tools are not active merely because they exist.
 
 
 ## File-backed raw IN inspection
@@ -79,6 +71,16 @@ The knowledge layer projects current belief from immutable observations rather t
 - Graph validation for impossible edges, unknown types, ambiguous identity, and type/predicate mismatches.
 - Explanation/why queries that traverse fact support, conflicts, inference links, and provenance without adding a new reasoning mechanism.
 
+## Boundary clarity
+
+- `EventLedger` = historical event source.
+- `ProjectionStore` = cached current world-model snapshots; it never becomes the source of truth.
+- `RuntimeLoop` = coordinator for one request execution.
+- `DecisionProvider` = proposes structured decisions; it may be deterministic code, a model adapter, or another provider. LLMs are optional, not required.
+- `PolicyEngine` = authorization/safety boundary for valid tool decisions.
+- `ToolRegistry` = executable capability registry; only registered handlers may run, and Seed does not execute shell commands or arbitrary provider text.
+- `DecisionJournal` = append-only audit/explanation trail that records why a decision was made and what happened afterward.
+
 ## Ownership boundary
 
 Seed owns:
@@ -94,10 +96,12 @@ Seed owns:
 - HandoffPlans as non-executable provider handoffs
 - Policy metadata
 - Audit trail
+- DecisionJournal events for why/outcome explanations
 
 Seed delegates:
 
-- actual execution
+- unregistered or arbitrary execution
+- shell commands and host mutation
 - secrets
 - retries
 - scheduling
@@ -111,7 +115,7 @@ Preferred execution backends live outside Seed:
 - MCP servers for tool integration
 - Vault, ssh-agent, sudo, and become-aware automation for secrets and privilege boundaries
 
-Seed may record a HandoffPlan and later ingest external provider observations as Evidence, but it must not become the executor of record.
+Seed may record a HandoffPlan and later ingest external provider observations as Evidence, but it must not become the executor of record for host automation. RuntimeLoop v1 may invoke only registered in-process `ToolRegistry` handlers and records their results, unknown-tool rejections, policy denials, malformed decisions, and failures as events.
 
 ## Main components
 

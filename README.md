@@ -141,6 +141,16 @@ seed/
   tests/
 ```
 
+## Runtime architecture update
+
+Seed is not primarily an agent framework. It is a state engine / distributed state machine whose core loop is:
+
+```text
+Input -> EventLedger -> State Projection -> Context Composer -> DecisionProvider -> Decision Validation -> PolicyEngine -> ToolRegistry or Answer -> New Events
+```
+
+The provider proposes; the runtime validates; policy allows or denies; and `ToolRegistry` can execute only registered handlers. Raw provider output is never executed, LLMs are optional, generated tools are not active by default, and Seed does not run shell commands or arbitrary host mutation. `DecisionJournal` records decision reason, context hash, selected tool, policy status, final outcome, and errors as append-only events so future `--why`, audit, explain, impact, relationship, graph issue, and verification commands can explain both what happened and why.
+
 ## Mental model
 
 Seed should feel less like this:
