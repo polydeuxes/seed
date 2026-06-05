@@ -96,12 +96,6 @@ from seed_runtime.observation_sources import (
 from seed_runtime.observations import ObservationIngestor
 from seed_runtime.registry import ToolRegistry
 from seed_runtime.runtime import Runtime
-from seed_runtime.runtime_loop import (
-    EchoTool,
-    RuntimeInput,
-    RuntimeLoop,
-    RuntimeResult,
-)
 from seed_runtime.runtime_trace import RuntimeTrace, load_runtime_trace
 from seed_runtime.serialization import to_plain
 from seed_runtime.secrets import (
@@ -166,66 +160,12 @@ class DevRegisteredProviderSeed:
     provider_name: str
 
 
-def runtime_result_response(result: RuntimeResult) -> dict[str, Any]:
-    """Map RuntimeLoop results to the existing local CLI response shape."""
-
-    payload: dict[str, Any] = {
-        "run_id": result.run_id,
-        "decision_id": result.decision_id,
-        "decision_kind": result.decision_kind,
-        "decision_outcome": result.decision_outcome,
-        "decision_reason": result.decision_reason,
-        "context_hash": result.context_hash,
-        "events_appended": list(result.events_appended),
-    }
-    if result.policy_allowed is not None:
-        payload["policy_allowed"] = result.policy_allowed
-    if result.tool_name is not None:
-        payload["tool_name"] = result.tool_name
-
-    if result.error is not None:
-        payload["error"] = result.error
-        return {
-            "kind": "runtime_error",
-            "message": result.error,
-            "payload": payload,
-        }
-
-    if result.decision_kind == "answer":
-        return {
-            "kind": "answer",
-            "message": result.response_text or "",
-            "payload": payload,
-        }
-
-    if result.decision_kind == "call_tool":
-        payload["output"] = to_plain(result.tool_result)
-        return {
-            "kind": "tool_result",
-            "message": f"Tool {result.tool_name} completed.",
-            "payload": payload,
-        }
-
-    if result.decision_kind == "request_tool":
-        return {
-            "kind": "tool_need",
-            "message": result.response_text or "Recorded tool need.",
-            "payload": payload,
-        }
-
-    return {
-        "kind": "runtime_error",
-        "message": result.error or "RuntimeLoop did not produce a supported response.",
-        "payload": payload,
-    }
-
 
 @dataclass
 class LocalSeedApp:
     """Container for a locally configured Seed runtime and its event ledger."""
 
     runtime: Runtime
-    runtime_loop: RuntimeLoop
     ledger: EventLedger
     projector: StateProjector
     context_composer: ContextComposer
@@ -234,60 +174,6 @@ class LocalSeedApp:
     session_id: str = DEFAULT_SESSION
 
     def run(self, text: str) -> dict[str, Any]:
-        result = self.runtime_loop.run(
-            RuntimeInput(
-                workspace_id=self.workspace_id,
-                user_text=text,
-                metadata={"session_id": self.session_id},
-            )
-        )
-        response = runtime_result_response(result)
-        self._enrich_runtime_response(response, result)
-        return {
-            "response": response,
-            "events": [
-                to_plain(event) for event in self.ledger.list(self.workspace_id)
-            ],
-        }
-
-    def _enrich_runtime_response(
-        self, response: dict[str, Any], result: RuntimeResult
-    ) -> None:
-        """Add CLI-useful local projections that are not carried by RuntimeResult."""
-
-        if response.get("kind") != "tool_need":
-            return
-        payload = response.get("payload")
-        if not isinstance(payload, dict):
-            return
-        event_ids = set(result.events_appended)
-        need = None
-        for event in reversed(self.ledger.list(self.workspace_id)):
-            if event.id not in event_ids or event.kind != "tool_need.created":
-                continue
-            need_payload = event.payload.get("tool_need")
-            if isinstance(need_payload, dict):
-                need = ToolNeed(**need_payload)
-                break
-        if need is None:
-            return
-        state = self.projector.project(self.workspace_id)
-        recommendations = self.runtime.recommendation_ranker.rank(
-            need.capability,
-            self.runtime.capability_catalog.recommend_for(need),
-            state,
-        )
-        payload["tool_need"] = to_plain(need)
-        payload["recommendations"] = [
-            {
-                "provider": recommendation.provider,
-                "score": recommendation.score,
-                "reasons": list(recommendation.reasons),
-            }
-            for recommendation in recommendations
-        ]
-
-    def run_legacy(self, text: str) -> dict[str, Any]:
         response = self.runtime.handle_user_message(
             self.workspace_id, self.session_id, text
         )
@@ -674,18 +560,8 @@ def build_local_app(
         model,
         max_decision_retries=max_decision_retries,
     )
-    runtime_loop = RuntimeLoop(
-        ledger,
-        None,
-        registry,
-        None,
-        model,
-        {"echo": EchoTool()},
-        projector=projector,
-    )
     return LocalSeedApp(
         runtime=runtime,
-        runtime_loop=runtime_loop,
         ledger=ledger,
         projector=projector,
         context_composer=context_composer,
@@ -1143,7 +1019,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--trace-run",
         metavar="RUN_ID",
         help=(
-            "print a read-only ordered RuntimeLoop trace for RUN_ID; "
+            "print a read-only ordered historical RuntimeLoop trace for RUN_ID; "
             "does not replay, call providers/policy/tools, or append events"
         ),
     )
@@ -1151,7 +1027,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--why-run",
         metavar="RUN_ID",
         help=(
-            "print a concise read-only explanation for RuntimeLoop RUN_ID; "
+            "print a concise read-only explanation for historical RuntimeLoop RUN_ID; "
             "does not replay, call providers/policy/tools, or append events"
         ),
     )
@@ -3469,7 +3345,7 @@ def run_shell(
             print(app.raw(text))
             continue
         raw_output = app.raw(text) if raw else None
-        result = app.run_legacy(text) if plan else app.run(text)
+        result = app.run(text)
         action_plan = app.create_action_plan(result) if plan else None
         print(
             format_cli_output(
@@ -3540,7 +3416,7 @@ def format_inferred_facts(state: State, entity: str) -> str:
 
 
 def runtime_trace_from_args(args: argparse.Namespace, run_id: str) -> RuntimeTrace:
-    """Load a RuntimeLoop trace without seeding state or appending events."""
+    """Load a historical RuntimeLoop trace without seeding state or appending events."""
 
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
     try:
@@ -3629,7 +3505,7 @@ def _why_policy_phrase(trace: RuntimeTrace) -> str:
 
 
 def format_runtime_why(trace: RuntimeTrace) -> str:
-    """Render a short human explanation for a RuntimeLoop run."""
+    """Render a short human explanation for a historical RuntimeLoop run."""
 
     if not trace.summary.get("found"):
         return f"Runtime trace not found for run_id: {trace.run_id}"
@@ -3964,7 +3840,7 @@ def main(argv: list[str] | None = None) -> int:
             print(app.raw(message))
             return 0
         raw_output = app.raw(message) if args.raw else None
-        result = app.run_legacy(message) if args.plan else app.run(message)
+        result = app.run(message)
         action_plan = app.create_action_plan(result) if args.plan else None
         print(
             format_cli_output(

@@ -2,69 +2,61 @@ import ast
 from pathlib import Path
 
 from seed_runtime.api import SeedAPI
+from seed_runtime.context import ContextComposer
+from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
-from seed_runtime.policy import PolicyGate
-from seed_runtime.projection_store import InMemoryProjectionStore
+from seed_runtime.execution import ToolExecutor
+from seed_runtime.models import Decision, RuntimeResponse
 from seed_runtime.registry import ToolRegistry
-from seed_runtime.runtime_loop import (
-    Decision as LoopDecision,
-    EchoTool,
-    FakeDecisionProvider,
-    RuntimeLoop,
-    RuntimeResult,
-)
+from seed_runtime.runtime import FakeDecisionModel, Runtime
 from seed_runtime.state import StateProjector
+from seed_runtime.tool_needs import ToolNeedService
 
 
-def make_api(decision: LoopDecision) -> tuple[SeedAPI, EventLedger, FakeDecisionProvider]:
+def make_api(decision: Decision) -> tuple[SeedAPI, EventLedger, FakeDecisionModel]:
     ledger = EventLedger()
     registry = ToolRegistry()
     registry.load_manifest("toolkits/core/echo/toolkit.yaml")
     projector = StateProjector(ledger)
-    provider = FakeDecisionProvider(decision)
-    runtime = RuntimeLoop(
+    provider = FakeDecisionModel(decision)
+    runtime = Runtime(
         ledger,
-        InMemoryProjectionStore(),
-        registry,
-        PolicyGate(),
+        projector,
+        ContextComposer(registry),
+        DecisionValidator(registry),
+        ToolExecutor(ledger, registry, projector),
+        ToolNeedService(ledger, projector),
         provider,
-        {"echo": EchoTool()},
-        projector=projector,
     )
     return SeedAPI(runtime, projector, registry), ledger, provider
 
 
-def test_post_user_message_answer_path_returns_runtime_result():
+def test_post_user_message_answer_path_returns_runtime_response():
     api, ledger, provider = make_api(
-        LoopDecision(kind="answer", text="done", reason="api answer")
+        Decision(kind="answer", answer="done", reason="api answer")
     )
 
     result = api.post_user_message("ws", "ses", "hello")
 
-    assert isinstance(result, RuntimeResult)
-    assert result.decision_kind == "answer"
-    assert result.response_text == "done"
-    assert result.workspace_id == "ws"
-    assert result.error is None
+    assert isinstance(result, RuntimeResponse)
+    assert result.kind == "answer"
+    assert result.message == "done"
     assert provider.last_context is not None
-    assert provider.last_context.current_input == {
-        "text": "hello",
-        "metadata": {"session_id": "ses"},
-    }
+    assert provider.last_context.current_input["text"] == "hello"
     input_event = ledger.list_events("ws")[0]
     assert input_event.kind == "input.user_message"
-    assert input_event.payload["metadata"] == {"session_id": "ses"}
+    assert input_event.session_id == "ses"
 
 
-def test_post_user_message_request_tool_path_returns_runtime_result():
+def test_post_user_message_request_tool_path_returns_runtime_response():
     api, ledger, _ = make_api(
-        LoopDecision(
+        Decision(
             kind="request_tool",
             reason="need a new capability",
             tool_need={
-                "name": "Weather Lookup",
+                "name": "weather_lookup",
                 "summary": "Look up weather for a location.",
-                "capability": "weather lookup",
+                "capability": "weather_lookup",
                 "desired_inputs": ["location"],
                 "desired_outputs": ["forecast"],
             },
@@ -73,20 +65,19 @@ def test_post_user_message_request_tool_path_returns_runtime_result():
 
     result = api.post_user_message("ws", "ses", "what is the weather?")
 
-    assert isinstance(result, RuntimeResult)
-    assert result.decision_kind == "request_tool"
-    assert result.response_text == "Recorded tool need weather_lookup."
-    assert result.decision_outcome == "tool_requested"
-    assert result.error is None
+    assert isinstance(result, RuntimeResponse)
+    assert result.kind == "tool_need"
+    assert result.message == "Recorded tool need weather_lookup."
+    assert result.payload["tool_need"]["capability"] == "weather_lookup"
     assert [event.kind for event in ledger.list_events("ws")] == [
         "input.user_message",
+        "model.decision.proposed",
         "tool_need.created",
-        "decision.recorded",
     ]
 
 
 def test_get_state_returns_projected_workspace_state():
-    api, _, _ = make_api(LoopDecision(kind="answer", text="done", reason="api state"))
+    api, _, _ = make_api(Decision(kind="answer", answer="done", reason="api state"))
 
     state = api.get_state("ws_state")
 
@@ -95,7 +86,7 @@ def test_get_state_returns_projected_workspace_state():
 
 
 def test_get_tools_returns_registered_tools():
-    api, _, _ = make_api(LoopDecision(kind="answer", text="done", reason="api tools"))
+    api, _, _ = make_api(Decision(kind="answer", answer="done", reason="api tools"))
 
     tools = api.get_tools()
 
@@ -103,7 +94,7 @@ def test_get_tools_returns_registered_tools():
     assert tools[0]["toolkit_id"] == "tk_core_echo"
 
 
-def test_api_migration_does_not_import_old_runtime():
+def test_api_uses_canonical_runtime_not_runtime_loop():
     imports: list[tuple[str | None, str | None]] = []
     tree = ast.parse(Path("seed_runtime/api.py").read_text())
     for node in ast.walk(tree):
@@ -112,14 +103,13 @@ def test_api_migration_does_not_import_old_runtime():
         elif isinstance(node, ast.ImportFrom):
             imports.extend((node.module, alias.name) for alias in node.names)
 
-    assert ("seed_runtime.runtime", "Runtime") not in imports
-    assert any(
-        module == "seed_runtime.runtime_loop" and name == "RuntimeLoop"
-        for module, name in imports
+    assert ("seed_runtime.runtime", "Runtime") in imports
+    assert not any(
+        module == "seed_runtime.runtime_loop" for module, _name in imports
     )
 
 
-def test_old_runtime_module_still_exists_for_now():
+def test_runtime_module_is_canonical():
     from seed_runtime.runtime import Runtime
 
     assert Runtime.__name__ == "Runtime"

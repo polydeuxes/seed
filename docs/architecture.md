@@ -21,11 +21,14 @@ Events -> projected State -> Evidence Graph -> Contradiction Detection -> Confid
 - **Evidence Graph** is a read-only explanation layer derived from projected State. It links Evidence records to Facts so Seed can explain why a fact exists, which projected evidence supports it, and which facts remain unsupported.
 - **Contradiction Detection** is a read-only projection view derived from projected facts and the Evidence Graph. It reports conservative conflicts such as exclusive predicates with multiple values, includes evidence and supporting event IDs for each side, and never decides which fact is correct.
 - **Confidence Aggregation** is a read-only projection view derived from projected State, Evidence Graph, and Contradiction Detection. It estimates support strength for each fact, but confidence is not truth and does not resolve contradictions.
-- **RuntimeLoop** coordinates one execution request. RuntimeLoop providers may use `context.decision_context` for the canonical provider-facing knowledge view, while `context.state` remains available. RuntimeLoop is not the sole runtime yet, and this change does not remove any legacy runtime path.
-- **DecisionJournal** records why a runtime decision was made and what happened afterward.
-- **RuntimeTrace** reconstructs one runtime run for audit/explanation without replaying execution.
+- **Runtime** is the single canonical runtime orchestration path. Runtime owns input handling, context composition, decision validation/routing, and delegation to the services below.
+- **ToolExecutor** owns registered tool execution and emits canonical tool execution events.
+- **PendingActionService** owns pending-action lifecycle events such as creation, approval, and completion.
+- **DecisionJournal** records why historical experimental RuntimeLoop decisions were made and what happened afterward.
+- **RuntimeTrace** reconstructs historical/experimental RuntimeLoop runs for audit/explanation without replaying execution.
+- **RuntimeLoop** is deprecated and experimental. It is not wired into CLI, API, or default production paths and must not define canonical runtime behavior.
 
-State Views, the Evidence Graph, Contradiction Detection, and Confidence Aggregation are projections and are not second state stores. They do not append events, invoke the RuntimeLoop, call a DecisionProvider, evaluate policy, execute operation implementations, run shell commands, mutate hosts, perform network calls, call LLMs, or create separate persistence layers.
+State Views, the Evidence Graph, Contradiction Detection, and Confidence Aggregation are projections and are not second state stores. They do not append events, invoke a runtime loop, call a DecisionProvider, evaluate policy, execute operation implementations, run shell commands, mutate hosts, perform network calls, call LLMs, or create separate persistence layers.
 
 Evidence Graph v1 keeps the model intentionally small: projected evidence nodes support, contradict, mention, or derive from facts, with `supports` as the initial relationship emitted for fact evidence. Facts should become explainable through linked evidence rather than existing as unsupported assertions; unsupported facts are still shown explicitly so operators can identify knowledge gaps.
 

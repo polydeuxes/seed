@@ -274,7 +274,7 @@ curl -s http://127.0.0.1:8765/message \
   -d '{"message":"echo hello"}'
 ```
 
-Normal CLI and HTTP responses are JSON objects with `response` and `events`. `--raw` prints the raw model completion so you can debug the local model's intent JSON before Seed parses it. Runtime trace support is intentionally read-only: `RuntimeTrace` reconstructs a single RuntimeLoop run from ledger events. The maintained CLI exposes two plain-text views over that reader for completed RuntimeLoop runs stored in the event ledger:
+Normal CLI and HTTP responses are JSON objects with `response` and `events`. `--raw` prints the raw model completion so you can debug the local model's intent JSON before Seed parses it. The CLI and HTTP paths use `Runtime`, the single canonical runtime orchestration path. Runtime trace support is intentionally read-only for historical/experimental RuntimeLoop runs: `RuntimeTrace` reconstructs a single recorded run from ledger events. The maintained CLI exposes two plain-text views over that reader for completed RuntimeLoop runs stored in the event ledger:
 
 ```bash
 python scripts/seed_local.py --db seed.sqlite --trace-run evt_000001

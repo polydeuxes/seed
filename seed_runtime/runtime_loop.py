@@ -1,5 +1,9 @@
 """Small deterministic RuntimeLoop v1.
 
+DEPRECATED / EXPERIMENTAL: Runtime is the only canonical Seed runtime path.
+This RuntimeLoop module is quarantined for historical/experimental tests and
+must not be wired into CLI, API, default production paths, or canonical tests.
+
 This module intentionally does not call LLMs, providers, shells, subprocesses,
 network clients, or generated tools.  RuntimeLoop coordinates existing Seed
 boundaries: EventLedger records events, ProjectionStore caches projected State,

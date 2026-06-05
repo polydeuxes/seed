@@ -1,5 +1,9 @@
 """RuntimeLoop context composition service.
 
+DEPRECATED / EXPERIMENTAL: Runtime is the only canonical Seed runtime path.
+This RuntimeLoop module is quarantined for historical/experimental tests and
+must not be wired into CLI, API, default production paths, or canonical tests.
+
 This module owns the read-only construction of RuntimeContext for RuntimeLoop.
 It does not read ledgers, append events, evaluate policy, execute tools, call
 providers, mutate State, or change Runtime's legacy ContextComposer boundary.

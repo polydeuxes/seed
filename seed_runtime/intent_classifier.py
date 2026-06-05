@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import re
 from importlib.util import find_spec
-from typing import Any, Literal, Protocol, Sequence, TypeAlias
+from typing import Any, Literal, Protocol, Sequence
 
 from seed_runtime.capability_catalog import CapabilityCatalog
 
@@ -23,8 +23,6 @@ from seed_runtime.model_client import (
     TextCompletionTransport,
 )
 from seed_runtime.models import Decision
-from seed_runtime.runtime_loop import Decision as RuntimeLoopDecision
-from seed_runtime.runtime_loop import RuntimeContext
 from seed_runtime.serialization import to_plain
 
 if find_spec("pydantic") is not None:
@@ -33,8 +31,8 @@ else:
     from seed_runtime._pydantic_compat import Field
 
 IntentLabel = Literal["echo", "answer", "missing_tool", "clarify", "refuse"]
-IntentContext: TypeAlias = ContextPacket | RuntimeContext
-IntentDecision: TypeAlias = Decision | RuntimeLoopDecision
+IntentContext = ContextPacket
+IntentDecision = Decision
 
 _VALID_TOOL_NAME_CHARS = re.compile(r"[^a-z0-9]+")
 _CATEGORY_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
@@ -369,41 +367,6 @@ def _render_intent_context(packet: dict[str, Any]) -> dict[str, Any]:
 
 
 def _render_intent_context_for_prompt(context: IntentContext) -> dict[str, Any]:
-    if isinstance(context, RuntimeContext):
-        packet = to_plain(context)
-        decision_context = packet.get("decision_context") or {}
-        return _without_empty(
-            {
-                "input": _without_empty(
-                    {
-                        "text": packet.get("current_input", {}).get("text"),
-                        "metadata": packet.get("current_input", {}).get("metadata"),
-                    }
-                ),
-                "tools": [
-                    _without_empty(
-                        {
-                            "name": tool.get("name"),
-                            "summary": tool.get("summary"),
-                            "policy_action": tool.get("policy_action"),
-                            "risk_class": tool.get("risk_class"),
-                        }
-                    )
-                    for tool in sorted(
-                        packet.get("tools", []), key=lambda tool: tool.get("name", "")
-                    )
-                ],
-                "decision_context": _without_empty(
-                    {
-                        "summary": decision_context.get("summary"),
-                        "facts": decision_context.get("facts"),
-                        "issues": decision_context.get("issues"),
-                        "capabilities": decision_context.get("capabilities"),
-                        "requirements": decision_context.get("requirements"),
-                    }
-                ),
-            }
-        )
     return _render_intent_context(to_plain(context))
 
 
@@ -419,13 +382,6 @@ class DecisionBuilder:
             message = str(
                 arguments.get("message") or _echo_message(_input_text(context))
             )
-            if isinstance(context, RuntimeContext):
-                return RuntimeLoopDecision(
-                    kind="call_tool",
-                    reason=reason,
-                    tool_name="echo",
-                    tool_args={"message": message},
-                )
             return Decision(
                 kind="call_tool",
                 reason=reason,
@@ -434,17 +390,9 @@ class DecisionBuilder:
             )
         if classification.intent == "answer":
             answer = str(arguments.get("answer") or arguments.get("message") or "")
-            if isinstance(context, RuntimeContext):
-                return RuntimeLoopDecision(kind="answer", reason=reason, text=answer)
             return Decision(kind="answer", reason=reason, answer=answer)
         if classification.intent == "missing_tool":
             tool_need = _normalize_tool_need(arguments, _input_text(context))
-            if isinstance(context, RuntimeContext):
-                return RuntimeLoopDecision(
-                    kind="request_tool",
-                    reason=reason,
-                    tool_need=tool_need,
-                )
             return Decision(
                 kind="request_tool",
                 reason=reason,
@@ -452,13 +400,9 @@ class DecisionBuilder:
             )
         if classification.intent == "clarify":
             question = str(arguments.get("question") or "What would you like me to do?")
-            if isinstance(context, RuntimeContext):
-                return RuntimeLoopDecision(kind="answer", reason=reason, text=question)
             return Decision(kind="ask_question", reason=reason, question=question)
         if classification.intent == "refuse":
             refusal = str(arguments.get("refusal") or arguments.get("message") or reason)
-            if isinstance(context, RuntimeContext):
-                return RuntimeLoopDecision(kind="answer", reason=reason, text=refusal)
             return Decision(kind="refuse", reason=reason)
         raise ValueError(f"unsupported intent {classification.intent!r}")
 

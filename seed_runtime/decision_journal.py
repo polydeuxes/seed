@@ -1,7 +1,9 @@
-"""Append-only decision journal events for RuntimeLoop v1.
+"""Append-only decision journal events.
 
-DecisionJournal does not own a mutable store.  It formats decision audit records
+DecisionJournal does not own a mutable store. It formats decision audit records
 and appends them to EventLedger so the ledger remains the source of truth.
+Runtime is the canonical runtime path; historical RuntimeLoop traces may still
+read these records without replaying execution.
 """
 
 from __future__ import annotations

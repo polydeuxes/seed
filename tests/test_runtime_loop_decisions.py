@@ -1,3 +1,7 @@
+import pytest
+
+pytestmark = pytest.mark.experimental_runtime_loop
+
 from seed_runtime.context import ContextComposer
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
