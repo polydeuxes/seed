@@ -2,8 +2,8 @@
 
 DecisionJournal does not own a mutable store. It formats decision audit records
 and appends them to EventLedger so the ledger remains the source of truth.
-Runtime is the canonical runtime path; historical RuntimeLoop traces may still
-read these records without replaying execution.
+Runtime is the canonical runtime path; read-only traces may inspect
+these records without replaying execution.
 """
 
 from __future__ import annotations
@@ -97,7 +97,7 @@ class DecisionJournal:
 
 
 def context_hash(context: object) -> str:
-    """Return a deterministic hash of RuntimeContext-like content."""
+    """Return a deterministic hash of runtime context-like content."""
     payload = context_hash_payload(context)
     serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(serialized.encode("utf-8")).hexdigest()

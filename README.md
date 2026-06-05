@@ -11,18 +11,14 @@ Seed receives raw user, file, provider, and system inputs; safely inspects and n
 Permissions and flow control are necessary infrastructure, but they are not the architecture. The architecture is the **context engine** plus a **capability-to-toolkit loop**:
 
 ```text
-raw input
-  -> InputInspector
-  -> ObservationSource
-  -> ObservationNormalizer
-  -> ObservationIngestor
-  -> Evidence / Facts / FactSupport
-  -> projected knowledge state
-  -> context packet
-  -> model decision
-  -> ToolNeed / capability_resolution
-  -> registered operation candidates and provider/handoff recommendations
-  -> state update
+Input / observations
+  -> evidence / facts
+  -> relationships / entity types
+  -> explanations / current state
+  -> ToolNeed
+  -> capability_resolution
+     -> registered operation candidates
+     -> provider / handoff recommendations
   -> response
 ```
 
@@ -82,15 +78,18 @@ Seed can now:
 - detect conservative read-only contradictions between projected facts
 - produce ToolNeeds, capability resolution, registered-operation candidates, and provider/handoff recommendations
 
-Seed still does **not**:
+Seed still does **not** own:
 
-- execute host commands
-- own internal workflow execution, authorization workflows, or action-plan orchestration
-- handle secrets
-- schedule jobs
-- retry work
-- replace Prometheus as historian
-- replace Ansible, Temporal, AWX, MCP, or manual providers as executor
+- shell execution
+- host mutation
+- secrets
+- scheduling
+- retries
+- internal workflow execution
+- RuntimeLoop or any second runtime orchestration path
+- authorization workflows or action-plan orchestration
+- Prometheus history
+- Ansible, Temporal, AWX, MCP, or manual-provider execution
 
 ## Document map
 
@@ -275,7 +274,7 @@ curl -s http://127.0.0.1:8765/message \
   -d '{"message":"echo hello"}'
 ```
 
-Normal CLI and HTTP responses are JSON objects with `response` and `events`. `--raw` prints the raw model completion so you can debug the local model's intent JSON before Seed parses it. The CLI and HTTP paths use `Runtime`, the single canonical runtime orchestration path. Runtime trace support is intentionally read-only for historical/experimental RuntimeLoop runs: `RuntimeTrace` reconstructs a single recorded run from ledger events. The maintained CLI exposes two plain-text views over that reader for completed RuntimeLoop runs stored in the event ledger:
+Normal CLI and HTTP responses are JSON objects with `response` and `events`. `--raw` prints the raw model completion so you can debug the local model's intent JSON before Seed parses it. The CLI and HTTP paths use `Runtime`, the single canonical runtime orchestration path. Runtime trace support is intentionally read-only: `RuntimeTrace` reconstructs a single recorded run from ledger events. The maintained CLI exposes two plain-text views over that reader for completed runs stored in the event ledger:
 
 ```bash
 python scripts/seed_local.py --db seed.sqlite --trace-run evt_000001

@@ -1,6 +1,6 @@
 from seed_runtime.decision_journal import DecisionJournal, context_hash
 from seed_runtime.events import EventLedger
-from seed_runtime.runtime_loop import RuntimeContext
+from types import SimpleNamespace
 from seed_runtime.state import State
 
 
@@ -27,14 +27,14 @@ def test_decision_journal_appends_eventledger_event_not_mutable_store():
 
 
 def test_context_hash_is_deterministic_for_equivalent_context():
-    first = RuntimeContext(
+    first = SimpleNamespace(
         workspace_id="ws",
         run_id="run-1",
         state=State(workspace_id="ws"),
         current_input={"metadata": {"b": 2, "a": 1}, "text": "hello"},
         tools=[{"risk_class": "L1", "name": "echo"}],
     )
-    second = RuntimeContext(
+    second = SimpleNamespace(
         workspace_id="ws",
         run_id="run-1",
         state=State(workspace_id="ws"),

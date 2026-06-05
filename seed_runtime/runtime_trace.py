@@ -1,4 +1,4 @@
-"""Read-only RuntimeLoop trace reconstruction from append-only events."""
+"""Read-only runtime trace reconstruction from append-only events."""
 
 from __future__ import annotations
 
@@ -42,7 +42,7 @@ class RuntimeTrace(SeedModel):
 
 
 class RuntimeTraceReader:
-    """Reconstruct a single RuntimeLoop run without replaying or mutating it."""
+    """Reconstruct a single recorded runtime run without replaying or mutating it."""
 
     def __init__(self, ledger: EventReader) -> None:
         self.ledger = ledger
