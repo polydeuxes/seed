@@ -4,7 +4,7 @@ A system that accumulates context, understands missing capabilities, and safely 
 
 ## One-sentence product definition
 
-Seed receives raw user, file, provider, and system inputs; safely inspects and normalizes them into Evidence-backed Facts; projects a knowledge graph and current state; presents compact context to an LLM; lets the LLM answer, ask, request ToolNeeds, or propose non-executable ActionPlans/HandoffPlans; and records every result back into state.
+Seed receives raw user, file, provider, and system inputs; safely inspects and normalizes them into Evidence-backed Facts; projects a knowledge graph and current state; presents compact context to an LLM; lets the LLM answer, ask, or request ToolNeeds; resolves capabilities to registered operations and provider/handoff recommendations; and records every result back into state.
 
 ## Core thesis
 
@@ -20,8 +20,8 @@ raw input
   -> projected knowledge state
   -> context packet
   -> model decision
-  -> ToolNeed, recommendation, ActionPlan, or HandoffPlan
-  -> validation/policy metadata/build/external-provider handoff
+  -> ToolNeed / capability_resolution
+  -> registered operation candidates and provider/handoff recommendations
   -> state update
   -> response
 ```
@@ -38,7 +38,7 @@ Most automation systems begin with a catalog of hand-written operations or backe
 6. Validate and register toolkit operations and metadata.
 7. Expose registered capabilities, visible operations, and provider handoff options back to the model.
 
-The model does not get unrestricted power to rewrite its runtime. It can request and help specify capabilities. A separate builder and validation pipeline produce toolkit metadata, operation contracts, schemas, and policies. A CapabilityCatalog and policy gate decide what becomes available for handoff planning.
+The model does not get unrestricted power to rewrite its runtime. It can request and help specify capabilities. A separate builder and validation pipeline produce toolkit metadata, operation contracts, schemas, and policies. A CapabilityCatalog and policy gate decide what becomes available as registered operations or provider/handoff recommendations.
 
 ## Design principles
 
@@ -61,7 +61,7 @@ The model does not get unrestricted power to rewrite its runtime. It can request
    Toolkit/capability building is separate from external-provider implementation execution, which Seed does not own.
 
 7. **Every action returns to state**  
-   Answers, questions, ToolNeeds / capability gaps, ActionPlans, HandoffPlans, external provider evidence, approvals, and generated toolkit artifacts all become durable events.
+   Answers, questions, ToolNeeds / capability gaps, capability resolution results, external provider evidence, approvals, and generated toolkit artifacts all become durable events. Legacy planning/handoff artifacts may still be projected for historical compatibility, but they are not Core MVP runtime orchestration.
 
 
 ## Current MVP slice
@@ -80,11 +80,12 @@ Seed can now:
 - explain why it believes something
 - summarize current state
 - detect conservative read-only contradictions between projected facts
-- produce non-executable plans and handoffs
+- produce ToolNeeds, capability resolution, registered-operation candidates, and provider/handoff recommendations
 
 Seed still does **not**:
 
 - execute host commands
+- own internal workflow execution, authorization workflows, or action-plan orchestration
 - handle secrets
 - schedule jobs
 - retry work

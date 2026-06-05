@@ -6,7 +6,7 @@ Seed is best understood as a state engine / distributed state machine that can u
 
 Seed has two large halves:
 
-1. **Runtime** — handles events, builds context, lets models decide, records state, manages ToolNeeds / capability gaps, ranks recommendations, and emits non-executable Action Plans and HandoffPlans.
+1. **Runtime** — handles events, builds context, lets models decide, records state, manages ToolNeeds / capability gaps, ranks recommendations, resolves capabilities, and surfaces registered operation candidates plus provider/handoff recommendations. It does not emit or orchestrate ActionPlans/HandoffPlans on the Core MVP path.
 2. **Builder** — turns explicit ToolNeeds / capability gaps into generated toolkit candidates, validates metadata/contracts, and prepares capabilities and operations for registration.
 
 The runtime is always conservative. The builder can be creative, but its outputs are untrusted until validated and registered. Actual execution is delegated to external providers.
@@ -21,8 +21,8 @@ Input
   -> State
   -> Context
   -> Decision
-  -> Policy
-  -> Execution
+  -> ToolNeed / capability_resolution or registered tool call
+  -> Policy for valid registered operation calls
   -> Events
 ```
 
@@ -93,8 +93,7 @@ Seed owns:
 - ToolNeeds / capability gaps
 - CapabilityCatalog
 - RecommendationRanker
-- ActionPlans as non-executable plans
-- HandoffPlans as non-executable provider handoffs
+- Legacy ActionPlans/HandoffPlans only for historical projection and explicit experimental CLI side paths
 - Policy metadata
 - Audit trail
 - DecisionJournal events for why/outcome explanations
@@ -253,7 +252,7 @@ It decides what the model sees:
 - available capabilities
 - blocked or policy-limited capabilities
 - open ToolNeeds / capability gaps
-- candidate HandoffPlans
+- provider/handoff recommendation metadata
 - policy summaries
 - expected decision schema
 
@@ -338,7 +337,7 @@ Policy is deterministic and auditable.
 
 ### 9. Handoff Composer
 
-Builds non-executable HandoffPlans for external providers.
+Surfaces provider/handoff recommendations for external providers; legacy HandoffPlan materialization is quarantined outside Core MVP runtime routing.
 
 Handoff Composer responsibilities:
 
@@ -426,7 +425,7 @@ Runtime:
   - builds context
   - records events and projected state
   - maintains facts, evidence, ToolNeeds / capability gaps, CapabilityCatalog, recommendations, policy metadata, and audit trail
-  - proposes non-executable Action Plans and HandoffPlans
+  - records ToolNeeds and capability resolution/recommendation metadata
   - delegates actual execution to external providers
 
 Builder:

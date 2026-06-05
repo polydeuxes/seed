@@ -76,48 +76,11 @@ Use when the system lacks a needed capability or provider handoff target.
 }
 ```
 
-### 4. Propose ActionPlan
+### 4. Legacy planning/handoff decisions are quarantined
 
-Use when Seed can produce a durable, text-only plan that a user can accept, reject, or supersede.
+`propose_action_plan` and `propose_handoff_plan` are historical decision literals only. Canonical Runtime rejects them as unsupported and does not route them. Current Core MVP decisions stop at ToolNeed/capability_resolution/recommendations, state patches, answers, questions, refusals, and registered tool calls.
 
-```json
-{
-  "kind": "propose_action_plan",
-  "action_plan": {
-    "tool_need_id": "need_ssh",
-    "provider": "awx-prod",
-    "capability": "ssh_access",
-    "summary": "Use AWX to install and start OpenSSH on node-1.",
-    "steps": ["Confirm node-1", "Launch AWX job template", "Review provider evidence"],
-    "risk_class": "L3",
-    "requires_approval": true,
-    "executable": false
-  }
-}
-```
-
-### 5. Propose HandoffPlan
-
-Use when an accepted ActionPlan can be handed to an external provider. The plan must remain non-executable inside Seed.
-
-```json
-{
-  "kind": "propose_handoff_plan",
-  "handoff_plan": {
-    "action_plan_id": "plan_ssh",
-    "provider": "awx-prod",
-    "backend_type": "ansible",
-    "operation": "ssh.install",
-    "target": "host:node-1",
-    "policy_summary": "Operator approval required in AWX before host mutation.",
-    "secret_boundary": "AWX/Vault/ssh-agent own credentials, prompts, retries, and job lifecycle.",
-    "requires_external_approval": true,
-    "executable": false
-  }
-}
-```
-
-### 6. Propose state patch
+### 5. Propose state patch
 
 Use for non-executable state updates, such as recognizing a named host or goal.
 
@@ -265,14 +228,6 @@ def handle_decision(decision: Decision, state: State, causation_id: str) -> Deci
         case "request_tool":
             need = tool_need_service.create(decision.tool_need, causation_id=causation_id)
             return ToolNeedResult(tool_need=need)
-
-        case "propose_action_plan":
-            plan = action_plan_service.create_plan(decision.action_plan, causation_id=causation_id)
-            return ActionPlanResult(action_plan=plan)
-
-        case "propose_handoff_plan":
-            handoff = handoff_service.create_handoff(decision.handoff_plan, causation_id=causation_id)
-            return HandoffPlanResult(handoff_plan=handoff)
 
         case "refuse":
             ledger.append("response.refusal.created", decision.payload, causation_id=causation_id)

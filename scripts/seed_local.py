@@ -592,7 +592,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  python scripts/seed_local.py --db .seed-local.sqlite "
             "--handoff plan_000001\n"
             "  python scripts/seed_local.py --db .seed-local.sqlite "
-            "--authorize-proposal eprop_000001"
+            "--authorize-proposal eprop_000001  # experimental/legacy"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -601,7 +601,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--db",
         help=(
             "SQLite event ledger path for sharing local state across runs; "
-            "use this with --plan and lifecycle commands to revisit plan IDs"
+            "use this with state/query commands; --plan lifecycle side paths are experimental/legacy"
         ),
     )
     parser.add_argument(
@@ -640,40 +640,45 @@ def build_parser() -> argparse.ArgumentParser:
         "--plan",
         action="store_true",
         help=(
-            "when a tool need has ranked recommendations, print a safe, "
-            "non-executable plan for the top recommendation"
+            "experimental/legacy side path: when a tool need has ranked "
+            "recommendations, print a safe, non-executable plan for the top "
+            "recommendation; not Core MVP runtime routing"
         ),
     )
     parser.add_argument(
         "--preconditions",
         metavar="PLAN_ID",
         help=(
-            "print an inspect-only execution precondition report for an "
-            "action plan without executing or approving it"
+            "experimental/legacy side path: print an inspect-only execution "
+            "precondition report for an action plan without executing or "
+            "approving it"
         ),
     )
     parser.add_argument(
         "--proposal",
         metavar="PLAN_ID",
         help=(
-            "create and print a concrete inspect-only execution proposal for an "
-            "action plan when preconditions are satisfied; never executes tools"
+            "experimental/legacy side path: create and print a concrete "
+            "inspect-only execution proposal for an action plan when "
+            "preconditions are satisfied; never executes tools"
         ),
     )
     parser.add_argument(
         "--handoff",
         metavar="PLAN_ID",
         help=(
-            "create and print a non-executable provider handoff plan for an "
-            "accepted action plan; never executes or approves"
+            "experimental/legacy side path: create and print a non-executable "
+            "provider handoff plan for an accepted action plan; never executes "
+            "or approves; not Core MVP runtime routing"
         ),
     )
     parser.add_argument(
         "--authorize-proposal",
         metavar="PROPOSAL_ID",
         help=(
-            "grant short-lived execution authorization for an exact concrete "
-            "execution proposal; never executes tools"
+            "experimental/legacy side path: grant short-lived execution "
+            "authorization metadata for an exact concrete execution proposal; "
+            "never executes tools"
         ),
     )
     parser.add_argument(

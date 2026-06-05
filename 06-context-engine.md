@@ -192,7 +192,7 @@ Target: under 6k tokens for normal interactions.
 Tell the model what it can do.
 
 ```text
-You are Seed's decision model. You do not execute actions directly, ask for credentials, or manage retries/schedules/jobs. You produce one structured decision: answer, ask_question, request_tool, propose_action_plan, propose_handoff_plan, propose_state_patch, or refuse. HandoffPlans must include requires_external_approval and executable=false, and must not imply approval or credentials.
+You are Seed's decision model. You do not execute actions directly, ask for credentials, manage retries/schedules/jobs, or orchestrate action plans. You produce one structured current-core decision: answer, ask_question, request_tool, propose_state_patch, or refuse. The Core MVP stops at ToolNeed, capability_resolution, registered operation candidates, and provider/handoff recommendations.
 ```
 
 ### 2. Current input
@@ -309,7 +309,7 @@ Rules:
 - Do not claim external work has run unless provider Evidence is in context.
 - If a required capability/backend is missing, request_tool.
 - If arguments are missing for a risky action, ask_question.
-- If a backend requires approval, propose a HandoffPlan with requires_external_approval=true; do not imply approval has been granted.
+- If a backend requires approval, surface that as provider/handoff recommendation metadata; do not imply approval has been granted.
 - Never invent provider/backend names outside available capabilities unless using request_tool.
 
 Current input:
@@ -343,13 +343,11 @@ Short form for model:
 
 ```json
 {
-  "kind": "answer|ask_question|request_tool|propose_action_plan|propose_handoff_plan|propose_state_patch|refuse",
+  "kind": "answer|ask_question|request_tool|propose_state_patch|refuse",
   "reason": "string",
   "message": "string for answer",
   "question": "string for ask_question",
   "tool_need": "object for request_tool",
-  "action_plan": "non-executable object for propose_action_plan",
-  "handoff_plan": "provider handoff object with requires_external_approval and executable=false",
   "patches": "array for propose_state_patch",
   "safe_alternative": "string for refuse"
 }
@@ -362,9 +360,9 @@ Use strict schema validation outside the model.
 Create golden cases:
 
 1. User asks to check known host with fresh fact -> answer.
-2. User asks to check known host with stale fact and provider exists -> propose_handoff_plan.
+2. User asks to check known host with stale fact and provider exists -> request_tool or answer with provider/handoff recommendation context, depending on available state.
 3. User asks to install SSH and install backend missing -> request_tool.
-4. User asks to install SSH and backend exists but needs approval -> propose_handoff_plan with policy summary.
+4. User asks to install SSH and backend exists but needs approval -> request_tool/capability_resolution with provider recommendation metadata; do not create a Runtime-routed plan.
 5. User asks vague action without host -> ask_question.
 6. User asks arbitrary shell -> refuse or request_tool, not internal execution.
 

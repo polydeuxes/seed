@@ -35,8 +35,6 @@ DecisionKind = Literal[
     "answer",
     "ask_question",
     "request_tool",
-    "propose_action_plan",
-    "propose_handoff_plan",
     "propose_state_patch",
     "refuse",
 ]

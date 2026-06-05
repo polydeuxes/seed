@@ -1,4 +1,4 @@
-"""Non-executable handoff plan generation for accepted action plans."""
+"""Legacy/experimental handoff plan helpers retained outside Core MVP Runtime."""
 
 from __future__ import annotations
 

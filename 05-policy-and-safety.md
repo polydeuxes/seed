@@ -144,24 +144,20 @@ tool.call
 Avoid implementation-specific names in policy. Policy names describe effects; `tool.call` remains legacy event/action vocabulary for registered operation calls.
 
 
-## Plan approval vs external-provider handoff
+## Legacy plan approval vs external-provider recommendations
 
-Action Plan approval is plan acceptance only. It records that a user or approver accepts the proposed plan text and lifecycle state; it does not grant credentials, authorize Seed to run a mutating call, or permit credential reuse.
+ActionPlan approval, HandoffPlan materialization, ExecutionProposal, and ExecutionAuthorization are quarantined legacy/experimental side paths. They may be retained for historical projection and explicit CLI inspection, but they are not the current Core MVP path and must not be used to build internal workflow execution, authorization workflows, or action-plan orchestration.
 
-The core path after plan acceptance is a non-executable HandoffPlan:
+The Core MVP policy path is:
 
-- `HandoffPlan.action_plan_id` references the accepted plan;
-- `HandoffPlan.provider` names the external provider or manual runbook target;
-- `HandoffPlan.backend_type` is `ansible`, `mcp`, `temporal`, or `manual`;
-- `HandoffPlan.operation` and `HandoffPlan.target` describe what to hand off;
-- `HandoffPlan.policy_summary` captures relevant policy metadata for the provider/operator;
-- `HandoffPlan.secret_boundary` states that credentials and prompts stay outside Seed;
-- `HandoffPlan.requires_external_approval` records whether the external provider/operator still needs approval before execution;
-- `HandoffPlan.executable` is always `false`.
+```text
+ToolNeed
+-> capability_resolution
+-> registered operation candidates
+-> provider/handoff recommendations
+```
 
-A HandoffPlan is not an approval object. It does not imply user approval, execution authorization, credential availability, provider trust, or operation registration. Those remain separate Seed events or external-provider controls.
-
-ExecutionProposal and ExecutionAuthorization are experimental and not part of the core path yet. They must not be used to build an internal execution lifecycle.
+Provider/handoff recommendation metadata may summarize external approval and secret boundaries, but it is not a Seed approval object and does not imply execution authorization, credential availability, provider trust, operation registration, retries, scheduling, or long-running job ownership.
 
 Credential/session grants are external-provider resources, not Seed state. They are supplied just in time by systems such as Ansible/AWX, Vault, ssh-agent, sudo/become flows, MCP server configuration, Temporal/Prefect workers, or manual operator procedures. Seed never persists passwords, passphrases, raw tokens, private keys, raw credential/session material, or credential prompts.
 
@@ -312,7 +308,7 @@ The context packet should not include giant policy tables. It should include rel
 
 The model should be told:
 
-- You may propose actions and HandoffPlans.
+- You may request ToolNeeds and summarize provider/handoff recommendation metadata; do not propose ActionPlans/HandoffPlans on the Core MVP runtime path.
 - You may not claim an action has run unless external provider Evidence says so.
 - If policy requires approval, explain what approval is needed in Seed or the external provider.
 - If a capability/backend is missing, request a ToolNeed instead of inventing execution.
