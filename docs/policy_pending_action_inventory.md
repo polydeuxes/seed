@@ -1,6 +1,35 @@
 # Policy approval and pending-action inventory
 
-This is a source-file-based inventory only. It documents current behavior for policy evaluation, approval, pending actions, and approved-action resume. It intentionally proposes no implementation, refactor, runtime behavior change, test change, event change, or new service.
+This is a source-file-based inventory only. It documents current behavior for policy evaluation, approval, pending actions, and approved-action resume. It intentionally proposes no implementation, refactor, runtime behavior change, test change, or event change.
+
+
+## Recent shared-service extraction delta
+
+Recent Strategy B extractions moved duplicated lookup, validation, recommendation, and validation-before-policy sequencing into shared services without changing the policy and pending-action semantics documented below. These services remove infrastructure gaps, not the remaining semantic gaps around approval, resume, retry, unsupported decision kinds, state patches, or context budgeting.
+
+### `ToolRecommendationService`
+
+- **Behavior moved:** recommendation lookup against `CapabilityCatalog` and ranking through `RecommendationRanker` are now centralized in a read-only service. It does not create providers, register tools, append events, or mutate state. [`seed_runtime/tool_recommendations.py:11-35`](../seed_runtime/tool_recommendations.py#L11-L35)
+- **Runtime path using it:** legacy `Runtime` builds the service from its capability catalog and uses it when `request_tool` creates a `ToolNeed`; it exposes the service ranker through `recommendation_ranker` for compatibility. [`seed_runtime/runtime.py:56-62`](../seed_runtime/runtime.py#L56-L62) [`seed_runtime/runtime.py:275-290`](../seed_runtime/runtime.py#L275-L290)
+- **RuntimeLoop path using it:** `RuntimeLoop` accepts/defaults a recommendation service and uses it after projecting state for a request-tool decision. [`seed_runtime/runtime_loop.py:136-148`](../seed_runtime/runtime_loop.py#L136-L148) [`seed_runtime/runtime_loop.py:294-308`](../seed_runtime/runtime_loop.py#L294-L308)
+- **Behavior still different:** tool-need creation, event/journal vocabulary, result types, and catalog ownership remain runtime-specific; this service does not affect approval or pending-action behavior. [`seed_runtime/tool_needs.py:28-55`](../seed_runtime/tool_needs.py#L28-L55) [`seed_runtime/runtime_loop.py:274-322`](../seed_runtime/runtime_loop.py#L274-L322)
+- **Files involved:** `seed_runtime/tool_recommendations.py`, `seed_runtime/runtime.py`, `seed_runtime/runtime_loop.py`, `seed_runtime/capability_catalog.py`, `seed_runtime/recommendation_ranker.py`, and `tests/test_tool_recommendations.py`.
+
+### `ToolValidationService`
+
+- **Behavior moved:** tool existence lookup, registration-status checks, input schema validation, output schema validation, and the legacy decision-validator tool-input helper are centralized. [`seed_runtime/tool_validation.py:33-97`](../seed_runtime/tool_validation.py#L33-L97)
+- **Runtime path using it:** `DecisionValidator` uses the service for `call_tool` decisions, and `ToolExecutor` uses the same validation service through `ToolExecutionPolicyService` before executing or routing policy outcomes. [`seed_runtime/decisions.py:34-40`](../seed_runtime/decisions.py#L34-L40) [`seed_runtime/decisions.py:79-85`](../seed_runtime/decisions.py#L79-L85) [`seed_runtime/execution.py:56-71`](../seed_runtime/execution.py#L56-L71)
+- **RuntimeLoop path using it:** `RuntimeLoop` injects/defaults the service, shares it with `ToolExecutionPolicyService` for pre-policy validation, and calls it for post-handler output validation. [`seed_runtime/runtime_loop.py:136-154`](../seed_runtime/runtime_loop.py#L136-L154) [`seed_runtime/runtime_loop.py:369-394`](../seed_runtime/runtime_loop.py#L369-L394) [`seed_runtime/runtime_loop.py:533-548`](../seed_runtime/runtime_loop.py#L533-L548)
+- **Behavior still different:** validation errors still surface through each path's own retry/event/result contract: Runtime can retry model-decision validation and emits legacy tool-call failures; RuntimeLoop emits RuntimeLoop-specific unknown/invalid tool events and journal records with no retry loop. [`seed_runtime/runtime.py:123-166`](../seed_runtime/runtime.py#L123-L166) [`seed_runtime/execution.py:92-113`](../seed_runtime/execution.py#L92-L113) [`seed_runtime/runtime_loop.py:372-394`](../seed_runtime/runtime_loop.py#L372-L394)
+- **Files involved:** `seed_runtime/tool_validation.py`, `seed_runtime/decisions.py`, `seed_runtime/execution.py`, `seed_runtime/runtime_loop.py`, and `tests/test_tool_validation.py`.
+
+### `ToolExecutionPolicyService`
+
+- **Behavior moved:** both execution paths now share the sequence: resolve tool, validate status, validate input schema, then evaluate policy with scope. The service deliberately returns raw validation/policy details and does not execute tools, emit events, create pending actions, or collapse non-allow outcomes. [`seed_runtime/tool_execution_policy.py:35-42`](../seed_runtime/tool_execution_policy.py#L35-L42) [`seed_runtime/tool_execution_policy.py:88-119`](../seed_runtime/tool_execution_policy.py#L88-L119)
+- **Runtime path using it:** `ToolExecutor.execute()` calls `evaluate_with_state_factory()` so state projection is lazy after validation, then preserves legacy routing for validation failures, allow, block, confirmation/approval pending actions, and resume behavior outside the shared service. [`seed_runtime/execution.py:56-73`](../seed_runtime/execution.py#L56-L73) [`seed_runtime/execution.py:86-128`](../seed_runtime/execution.py#L86-L128) [`seed_runtime/execution.py:263-296`](../seed_runtime/execution.py#L263-L296)
+- **RuntimeLoop path using it:** `RuntimeLoop._run_tool_decision()` calls `evaluate()` using already projected state, then preserves RuntimeLoop-specific handling for invalid tools, non-allow policy denial, handler lookup, handler failures, output validation, successful tool results, and decision journaling. [`seed_runtime/runtime_loop.py:360-410`](../seed_runtime/runtime_loop.py#L360-L410) [`seed_runtime/runtime_loop.py:448-548`](../seed_runtime/runtime_loop.py#L448-L548)
+- **Behavior still different:** confirmation and approval outcomes remain semantic gaps. Runtime turns them into `tool.approval.required` plus `pending_action.created`; RuntimeLoop still emits `runtime.policy.denied`, journals `policy_denied`, and returns an error for every non-allow outcome. Approved-action resume remains Runtime-only. [`seed_runtime/execution.py:121-128`](../seed_runtime/execution.py#L121-L128) [`seed_runtime/execution.py:263-296`](../seed_runtime/execution.py#L263-L296) [`seed_runtime/runtime_loop.py:402-446`](../seed_runtime/runtime_loop.py#L402-L446)
+- **Files involved:** `seed_runtime/tool_execution_policy.py`, `seed_runtime/tool_validation.py`, `seed_runtime/execution.py`, `seed_runtime/runtime_loop.py`, `seed_runtime/policy.py`, and `tests/test_tool_execution_policy.py`.
 
 ## 1. Policy model
 
@@ -97,12 +126,14 @@ The old `Runtime` delegates tool calls to `ToolExecutor.execute()` from the `cal
 
 ### Allow behavior
 
-`ToolExecutor.execute()` validates:
+`ToolExecutor.execute()` now delegates the common pre-execution sequence to `ToolExecutionPolicyService.evaluate_with_state_factory()`, which validates:
 
-1. The tool exists / is registered through `ToolValidationService.require_tool()`.
+1. The tool exists through `ToolValidationService.validate_tool_exists()`.
 2. Tool registration status is valid.
 3. Input schema is valid.
-4. Policy is evaluated with `self.policy_gate.evaluate(tool, state, scope=scope)`.
+4. Policy is evaluated through the configured policy engine with `scope`.
+
+`ToolExecutor` still owns the legacy routing and event behavior after the shared service returns.
 
 When policy outcome is `allow`, `ToolExecutor` calls `_execute_allowed_tool_call()`.
 
@@ -264,7 +295,7 @@ Source files:
 - `seed_runtime/decision_journal.py`
 - `seed_runtime/runtime_trace.py`
 
-`RuntimeLoop` evaluates policy in `_run_tool_decision()` after tool existence, status, and input validation. It calls `self.policy_engine.evaluate(tool, state, scope=None)`.
+`RuntimeLoop` evaluates policy in `_run_tool_decision()` through `ToolExecutionPolicyService.evaluate()` after shared tool existence, status, and input validation. The service calls the configured policy engine with `scope=None`; RuntimeLoop still owns the RuntimeLoop-specific event, result, and journal routing after the shared service returns.
 
 ### Allow behavior
 
@@ -467,20 +498,21 @@ Current source seam:
 
 ### `ToolExecutionPolicyService`
 
-Possible responsibility:
+Status: implemented as shared infrastructure. It now validates tool existence/status/input, evaluates policy with scope, and returns a structured execution-policy result before handler/tool execution. [`seed_runtime/tool_execution_policy.py:35-119`](../seed_runtime/tool_execution_policy.py#L35-L119)
 
-- Validate tool existence/status/input.
-- Evaluate policy with scope.
-- Return a structured execution-policy result before handler/tool execution.
-- Avoid duplicating validation and policy sequencing between old Runtime / ToolExecutor and RuntimeLoop.
+Current source seams that remain:
 
-Current source seams:
-
-- `ToolExecutor.execute()` validates tool/status/input before policy.
-- `RuntimeLoop._run_tool_decision()` validates tool/status/input before policy.
-- The two paths diverge after non-allow policy outcomes.
+- `ToolExecutor.execute()` uses the shared result but still owns legacy validation-failure mapping, `tool.policy.blocked`, confirmation/approval pending actions, allowed execution, and approved-action resume. [`seed_runtime/execution.py:86-128`](../seed_runtime/execution.py#L86-L128) [`seed_runtime/execution.py:263-296`](../seed_runtime/execution.py#L263-L296)
+- `RuntimeLoop._run_tool_decision()` uses the shared result but still owns RuntimeLoop invalid-tool events, `runtime.policy.denied`, handler-missing/failure/success events, output validation handling, and decision journaling. [`seed_runtime/runtime_loop.py:369-446`](../seed_runtime/runtime_loop.py#L369-L446) [`seed_runtime/runtime_loop.py:448-548`](../seed_runtime/runtime_loop.py#L448-L548)
+- The two paths still diverge after non-allow policy outcomes.
 
 ## 8. Risks if RuntimeLoop replaced Runtime today for policy / approval flows
+
+Shared recommendation lookup/ranking, shared tool validation, and shared validation-plus-policy-evaluation sequencing are no longer gaps by themselves. If RuntimeLoop replaced old Runtime / ToolExecutor for policy and approval flows today, the remaining risks are semantic and contract-level: confirmation/approval pending actions, approved-action resume, retry handling, `ask_question`/`refuse`, `state_patch`, and context budgeting.
+
+### Current recommended next step
+
+Continue Strategy B. Do not delete `Runtime`, do not migrate the CLI yet, and choose next candidates by auditing semantic gaps rather than infrastructure duplication. Possible next candidates are auditing `state_patch` behavior, auditing retry/parse-failure behavior, auditing `ask_question`/`refuse` semantics, and deciding whether approval/resume should remain Runtime-only or become shared.
 
 If RuntimeLoop replaced old Runtime / ToolExecutor for policy and approval flows today, source inspection indicates these risks:
 
