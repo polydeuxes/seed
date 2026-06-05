@@ -24,6 +24,37 @@ The domain vocabulary is split into catalogs so current state remains explainabl
 - `CapabilityCatalog` defines what can be recommended or handed off to external providers.
 - `InferenceCatalog` defines deterministic rules that produce inferred facts from unambiguous observed facts. It is not LLM projection logic.
 
+## Canonical capability/tool vocabulary
+
+Use this vocabulary when describing how Seed moves from user/system needs to safe recommendations, handoffs, and registered calls. Some current code and docs still use “tool” broadly; until names are cleaned up, read the terms through these boundaries.
+
+| Term | Meaning | Examples | Boundary |
+| --- | --- | --- | --- |
+| Requirement | What a user or system needs accomplished. | “Find why Docker storage is full”; “make this host reachable over SSH.” | Explains the desired outcome; it is not a callable interface. |
+| Capability | Abstract ability Seed needs or can recommend. | `observe_metrics`, `inspect_filesystem`, `remote_access`, `hear_human`, `speak_human`, `observe_video`. | Explains **why** Seed needs an ability; conceptual and not necessarily executable. |
+| Tool / Operation | Named callable interface satisfying a capability. | `prometheus_query`, `read_file`, `list_dir`, `stat_file`, `grep_file`, `ssh_exec`, `sftp_read`, `sftp_write`, `sshfs_mount`, `piper_tts`. | Defines **what** can be called, subject to registry, visibility, schema, and policy. |
+| Implementation | Concrete backend adapter fulfilling an operation. | Prometheus HTTP API adapter, local filesystem adapter, OpenSSH adapter, Paramiko adapter, Piper adapter, Whisper adapter. | Defines **how** a registered operation is fulfilled. |
+| Provider | External system or backend exposing one or more implementations. | Prometheus, SSH, local OS, Frigate, Piper, AWX. | Owns backend behavior, credentials, side effects, and provider-specific limits outside Seed’s conceptual model. |
+| Toolkit | Package of capability metadata, operations, schemas, policies, observation adapters, handoff metadata, tests, and docs. | SSH access toolkit, Docker observability toolkit, file inspection toolkit. | Packages and validates contracts; existence does not grant execution. |
+| ToolNeed | Durable request for a missing capability or provider handoff target. | “Need metric observation through Prometheus”; “need remote file inspection over SSH/SFTP.” | Records the gap; often means “CapabilityNeed” in practice and does not invent execution. |
+
+Architecture rule: capabilities explain why Seed needs an ability; tools/operations define what can be called; implementations define how the call is fulfilled; providers are external backends or systems; toolkits package and validate those contracts. Seed should reason about capabilities first, then choose visible tools/operations and implementations through registry, policy, and provider boundaries.
+
+Clarifying examples:
+
+- Prometheus is not one tool; it is a provider/backend that can expose metric observation operations such as `prometheus_query`.
+- SSH is not one tool; it is a provider/backend family that can expose operations such as `ssh_exec`, `sftp_read`, `sftp_write`, `sshfs_mount`, and remote file inspection.
+- Filesystem access is a capability area with operations such as `list_dir`, `read_file`, `stat_file`, and `grep_file`, plus parsers such as `parse_json`, `parse_yaml`, and `parse_logs`.
+- STT, TTS, video, and sensor input are operations under broader capabilities such as `hear_human`, `speak_human`, and `observe_video`.
+
+Current naming mismatch to interpret carefully:
+
+- `ToolNeed` often means “CapabilityNeed” in practice.
+- `ToolRegistry` is closer to a registered callable operation inventory.
+- `CapabilityCatalog` is the cognitive recommendation and handoff layer.
+- `ToolExecutor` executes registered operation implementations.
+- `RuntimeTool` is an in-memory `RuntimeLoop` handler shape, not the entire tool model.
+
 ## Core objects
 
 ### Event
