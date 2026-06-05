@@ -147,10 +147,10 @@ seed/
 Seed is not primarily an agent framework. It is a state engine / distributed state machine whose core loop is:
 
 ```text
-Input -> EventLedger -> State Projection -> Context Composer -> DecisionProvider -> Decision Validation -> PolicyEngine -> ToolRegistry operation or Answer -> New Events
+Input -> EventLedger -> State Projection -> Context Composer -> DecisionProvider -> Decision Validation -> PolicyGate / ToolExecutionPolicyService -> ToolExecutor registered operation or Answer -> New Events
 ```
 
-The provider proposes; the runtime validates; policy allows or denies; and `ToolRegistry` exposes only registered operations and dispatches only registered handlers. Raw provider output is never executed, LLMs are optional, generated toolkit operations are not active by default, and Seed does not run shell commands or arbitrary host mutation. `DecisionJournal` records decision reason, context hash, selected operation/tool, policy status, final outcome, and errors as append-only events so future `--why`, audit, explain, impact, relationship, graph issue, and verification commands can explain both what happened and why.
+The provider proposes; the runtime validates; `PolicyGate` / `ToolExecutionPolicyService` govern whether execution may proceed; `ToolRegistry` exposes registered operation contracts; and `ToolExecutor` executes registered operations. `CapabilityCatalog` provides non-executable provider/handoff recommendations. Raw provider output is never executed, LLMs are optional, generated toolkit operations are not active by default, and Seed does not run shell commands or arbitrary host mutation. `DecisionJournal` records decision reason, context hash, selected operation/tool, policy status, final outcome, and errors as append-only events so future `--why`, audit, explain, impact, relationship, graph issue, and verification commands can explain both what happened and why.
 
 ## Mental model
 

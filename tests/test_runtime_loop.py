@@ -96,9 +96,9 @@ def test_runtime_rejects_propose_action_plan_decision():
         "model.decision.proposed",
         "model.decision.invalid",
     ]
-    assert "action_plan.created" not in [
-        event.kind for event in ledger.list_events("ws")
-    ]
+    event_kinds = [event.kind for event in ledger.list_events("ws")]
+    assert "action_plan.created" not in event_kinds
+    assert "handoff_plan.created" not in event_kinds
 
 
 def test_runtime_rejects_propose_handoff_plan_decision():
@@ -122,9 +122,9 @@ def test_runtime_rejects_propose_handoff_plan_decision():
         "model.decision.proposed",
         "model.decision.invalid",
     ]
-    assert "handoff_plan.created" not in [
-        event.kind for event in ledger.list_events("ws")
-    ]
+    event_kinds = [event.kind for event in ledger.list_events("ws")]
+    assert "action_plan.created" not in event_kinds
+    assert "handoff_plan.created" not in event_kinds
 
 def test_routes_call_tool():
     runtime, _, _ = make_runtime(

@@ -124,10 +124,12 @@ class ToolNeed(SeedModel):
 
 
 class ActionPlan(SeedModel):
-    """Durable, text-only proposal for satisfying a tool need.
+    """Legacy/experimental, text-only proposal for satisfying a tool need.
 
     Action plans are intentionally non-executable. They do not grant approval,
-    register tools, or carry callable code.
+    register tools, or carry callable code. They are retained for historical
+    projection compatibility and explicit side-path tests only; they are not
+    canonical Runtime behavior and are not part of the Core MVP.
     """
 
     id: str
@@ -145,12 +147,14 @@ class ActionPlan(SeedModel):
 
 
 class HandoffPlan(SeedModel):
-    """Non-executable external-provider handoff for an ActionPlan.
+    """Legacy/experimental external-provider handoff for an ActionPlan.
 
-    Seed records the handoff boundary but does not execute the operation, grant
-    user approval or execution authorization, assert provider trust, register a
-    tool, ask for credentials, retry, schedule, or manage long-running provider
-    jobs.
+    Handoff plans are retained for historical projection compatibility and
+    explicit side-path tests only; they are not canonical Runtime behavior and
+    are not part of the Core MVP. Seed records the handoff boundary but does
+    not execute the operation, grant user approval or execution authorization,
+    assert provider trust, register a tool, ask for credentials, retry,
+    schedule, or manage long-running provider jobs.
     """
 
     def __init__(self, **data: Any) -> None:
@@ -285,10 +289,11 @@ class Approval(SeedModel):
 
 
 class ExecutionAuthorization(SeedModel):
-    """Experimental, non-core authorization metadata.
+    """Legacy/experimental, non-core authorization metadata.
 
-    This model is not part of the core Seed path. Prefer HandoffPlan for current
-    architecture work. It must not be used to add internal execution lifecycle,
+    This model is retained for historical projection compatibility and explicit
+    side-path tests only; it is not canonical Runtime behavior and is not part
+    of the Core MVP. It must not be used to add internal execution lifecycle,
     credential prompts, retries, scheduling, or long-running job management.
     """
 
