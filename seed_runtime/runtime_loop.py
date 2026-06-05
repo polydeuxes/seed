@@ -12,6 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Protocol, Literal
 
+from seed_runtime.context_views import DecisionContextView, build_decision_context_view
 from seed_runtime.decision_journal import DecisionJournal, context_hash
 from seed_runtime.events import EventLedger
 from seed_runtime.models import PolicyDecision, ToolSpec
@@ -64,6 +65,7 @@ class RuntimeContext:
     state: State
     current_input: dict[str, Any]
     tools: list[dict[str, Any]]
+    decision_context: DecisionContextView = field(default_factory=DecisionContextView)
 
 
 class DecisionProvider(Protocol):
@@ -483,6 +485,7 @@ class RuntimeLoop:
                 "metadata": dict(runtime_input.metadata),
             },
             tools=tools,
+            decision_context=build_decision_context_view(state),
         )
 
     def _validate_decision(self, proposed: object) -> tuple[Decision | None, str | None]:
