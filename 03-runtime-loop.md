@@ -1,25 +1,36 @@
 # 03 Runtime Loop
 
-The runtime loop is the center of Seed.
+The runtime loop is the center of Seed. Seed is closer to a state engine / distributed state machine than an agent framework: a provider proposes a structured decision, but the runtime owns validation, policy boundaries, registered-handler execution, and append-only events.
 
 ## Loop overview
 
 ```text
-1. Receive input.
-2. Append input event.
-3. Project current state.
-4. Compose context packet.
-5. Ask model for a structured decision.
-6. Validate decision.
-7. Handle decision branch without execution.
-8. Append result or handoff events.
-9. Re-project state.
-10. Respond to user.
+Input
+  -> EventLedger
+  -> State Projection
+  -> Context Composer
+  -> DecisionProvider
+  -> Decision Validation
+  -> PolicyEngine
+  -> ToolRegistry or Answer
+  -> New Events
 ```
+
+Runtime sovereignty:
+
+1. Receive input and append an input event.
+2. Project current state, optionally using `ProjectionStore` snapshot caching.
+3. Compose the context packet and deterministic context hash.
+4. Ask a `DecisionProvider` for a structured decision. The provider can be deterministic code or a model adapter; LLMs are not required.
+5. Reject malformed decisions before policy or tool execution.
+6. Evaluate valid tool decisions with `PolicyEngine`. Policy denial prevents tool execution.
+7. Execute only registered `ToolRegistry` handlers, or return an answer. Raw provider output is never executed.
+8. Append runtime outcome events and Decision Journal events.
+9. Re-project state as needed and respond to the user.
 
 ## Decision branches
 
-The model may choose one of seven branches. None of them causes Seed to execute external work.
+The broader runtime model supports answer/question/tool-need/plan/handoff/state-patch/refusal branches. RuntimeLoop v1 focuses on answers and registered tool calls: answers are recorded directly, and tool calls must pass validation, registry lookup, and policy before a registered handler can run. Seed never runs shell commands, subprocesses, network calls, generated code, or arbitrary provider output as part of Decision Journal v1.
 
 ### 1. Answer
 
@@ -136,6 +147,21 @@ Use when the request is unsafe, impossible, or prohibited.
 }
 ```
 
+## Decision Journal
+
+Decision Journal is an append-only event layer, not a separate mutable decision database. It records a `decision.recorded` event containing:
+
+- `decision_id` and `run_id`
+- workspace and decision kind
+- provider reason
+- deterministic `context_hash` of the context the provider saw
+- selected tool name and arguments when present
+- policy allowed/denied status
+- final outcome: `answered`, `tool_succeeded`, `tool_failed`, `tool_unknown`, `policy_denied`, or `malformed_decision`
+- error details when a decision is malformed, a tool is unknown, policy denies, or a handler fails
+
+This journal explains why a path was chosen and what happened afterward. It prepares Seed for `--why`, `--impact`, `--state-summary`, `--relationships`, `--graph-issues`, audit/explain views, and verification commands while preserving `EventLedger` as the source of truth. If an outcome changes after a proposal, Seed appends another event instead of mutating a prior event.
+
 ## Runtime algorithm
 
 ```python
@@ -164,7 +190,8 @@ def handle_input(workspace_id: str, session_id: str, input_payload: dict) -> Res
         causation_id=input_event.id,
     )
 
-    decision = model_orchestrator.decide(context)
+    context_hash = decision_journal.context_hash(context)
+    decision = decision_provider.decide(context)
 
     decision_event = ledger.append(
         kind="model.decision.proposed",
@@ -176,14 +203,23 @@ def handle_input(workspace_id: str, session_id: str, input_payload: dict) -> Res
 
     validated = decision_validator.validate(decision, state)
     if not validated.ok:
-        ledger.append(
+        invalid_event = ledger.append(
             kind="model.decision.invalid",
             payload=validated.error_payload(),
             causation_id=decision_event.id,
         )
+        decision_journal.append_record(
+            decision_kind=decision.kind,
+            reason=decision.reason,
+            context_hash=context_hash,
+            policy_allowed=False,
+            outcome="malformed_decision",
+            error=validated.error_text,
+            causation_id=invalid_event.id,
+        )
         return response_composer.invalid_decision(validated)
 
-    result = decision_handler.handle(validated.decision, state, causation_id=decision_event.id)
+    result = runtime_loop.route_valid_decision(validated.decision, state, context_hash, causation_id=decision_event.id)
 
     final_state = projector.project(workspace_id)
     return response_composer.compose(result, final_state)
@@ -315,7 +351,14 @@ Never silently coerce a dangerous invalid decision into an action.
 
 ## Runtime invariants
 
-- No actual execution in Seed.
+- RuntimeLoop is the coordinator; it does not own policy, projection storage, tool registration, or journal persistence responsibilities.
+- EventLedger is the historical event source.
+- ProjectionStore only caches projected state snapshots.
+- DecisionProvider proposes; it does not execute.
+- Decision validation happens before policy or tool execution.
+- PolicyEngine denial prevents tool execution.
+- ToolRegistry executes only registered handlers; raw provider output, shell commands, subprocesses, generated tools, and arbitrary host mutation are not execution paths.
+- DecisionJournal records reasoning and outcomes as append-only events only.
 - No credentials, retries, scheduling, or long-running job lifecycle in Seed.
 - No HandoffPlan without CapabilityCatalog metadata and policy summary.
 - No generated capability metadata before validation and registration.

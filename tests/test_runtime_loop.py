@@ -400,8 +400,14 @@ def test_loop_answer_decision_appends_user_and_assistant_events():
     assert [event.kind for event in ledger.list_events("ws_loop")] == [
         "input.user_message",
         "assistant.answer",
+        "decision.recorded",
     ]
-    assert len(result.events_appended) == 2
+    journal = ledger.list_events("ws_loop")[-1].payload["record"]
+    assert journal["decision_kind"] == "answer"
+    assert journal["outcome"] == "answered"
+    assert result.decision_id == journal["decision_id"]
+    assert result.decision_outcome == "answered"
+    assert len(result.events_appended) == 3
     assert provider.last_context.current_input["text"] == "hello"
     assert provider.last_context.state.workspace_id == "ws_loop"
 
@@ -431,8 +437,13 @@ def test_loop_tool_decision_executes_registered_echo_tool_and_appends_result_eve
     assert [event.kind for event in ledger.list_events("ws_loop")] == [
         "input.user_message",
         "tool.result",
+        "decision.recorded",
     ]
-    assert ledger.list_events("ws_loop")[-1].payload["output"]["message"] == "hello"
+    assert ledger.list_events("ws_loop")[-2].payload["output"]["message"] == "hello"
+    journal = ledger.list_events("ws_loop")[-1].payload["record"]
+    assert journal["selected_tool_name"] == "echo"
+    assert journal["outcome"] == "tool_succeeded"
+    assert result.decision_outcome == "tool_succeeded"
 
 
 def test_loop_unknown_tool_is_rejected_and_logged_as_event():
@@ -454,7 +465,12 @@ def test_loop_unknown_tool_is_rejected_and_logged_as_event():
     assert [event.kind for event in ledger.list_events("ws_loop")] == [
         "input.user_message",
         "runtime.tool.unknown",
+        "decision.recorded",
     ]
+    journal = ledger.list_events("ws_loop")[-1].payload["record"]
+    assert journal["outcome"] == "tool_unknown"
+    assert journal["error"] == "unknown tool: missing"
+    assert result.decision_outcome == "tool_unknown"
 
 
 def test_loop_policy_denial_prevents_tool_execution():
@@ -476,8 +492,13 @@ def test_loop_policy_denial_prevents_tool_execution():
     assert [event.kind for event in ledger.list_events("ws_loop")] == [
         "input.user_message",
         "runtime.policy.denied",
+        "decision.recorded",
     ]
-    assert ledger.list_events("ws_loop")[-1].payload["policy"]["outcome"] == "block"
+    assert ledger.list_events("ws_loop")[-2].payload["policy"]["outcome"] == "block"
+    journal = ledger.list_events("ws_loop")[-1].payload["record"]
+    assert journal["policy_allowed"] is False
+    assert journal["outcome"] == "policy_denied"
+    assert result.decision_outcome == "policy_denied"
 
 
 def test_loop_malformed_decision_is_rejected_before_policy_and_tool_execution():
@@ -497,14 +518,67 @@ def test_loop_malformed_decision_is_rejected_before_policy_and_tool_execution():
     result = runtime.run(RuntimeInput(workspace_id="ws_loop", user_text="bad"))
 
     assert result.decision_kind is None
-    assert result.policy_allowed is None
+    assert result.policy_allowed is False
     assert result.error == "decision provider must return a runtime_loop.Decision"
     assert policy.calls == 0
     assert echo_tool.calls == []
     assert [event.kind for event in ledger.list_events("ws_loop")] == [
         "input.user_message",
         "runtime.decision.rejected",
+        "decision.recorded",
     ]
+    journal = ledger.list_events("ws_loop")[-1].payload["record"]
+    assert journal["outcome"] == "malformed_decision"
+    assert journal["policy_allowed"] is False
+    assert journal["error"] == "decision provider must return a runtime_loop.Decision"
+    assert result.decision_outcome == "malformed_decision"
+
+
+
+
+def test_loop_tool_handler_exception_is_caught_and_journaled_as_tool_failed():
+    class FailingTool:
+        def execute(self, context, arguments):
+            raise RuntimeError("boom")
+
+    runtime, ledger, _, _ = make_loop(
+        LoopDecision(
+            kind="call_tool",
+            tool_name="echo",
+            tool_args={"message": "explode"},
+            reason="registered handler may fail",
+        ),
+        handlers={"echo": FailingTool()},
+    )
+
+    result = runtime.run(RuntimeInput(workspace_id="ws_loop", user_text="echo explode"))
+
+    assert result.tool_name == "echo"
+    assert result.tool_result is None
+    assert result.policy_allowed is True
+    assert result.error == "tool echo failed: boom"
+    assert result.decision_outcome == "tool_failed"
+    assert [event.kind for event in ledger.list_events("ws_loop")] == [
+        "input.user_message",
+        "tool.failure",
+        "decision.recorded",
+    ]
+    journal = ledger.list_events("ws_loop")[-1].payload["record"]
+    assert journal["outcome"] == "tool_failed"
+    assert journal["selected_tool_args"] == {"message": "explode"}
+    assert journal["error"] == "tool echo failed: boom"
+
+
+def test_loop_keeps_policy_tool_projection_boundaries_out_of_decision_journal():
+    import seed_runtime.decision_journal as decision_journal
+
+    source = open("seed_runtime/decision_journal.py", encoding="utf-8").read()
+
+    assert decision_journal.DecisionJournal.event_kind == "decision.recorded"
+    assert "PolicyGate" not in source
+    assert "ToolRegistry" not in source
+    assert "ProjectionStore" not in source
+    assert "execute(" not in source
 
 
 def test_loop_loads_state_through_projection_path():

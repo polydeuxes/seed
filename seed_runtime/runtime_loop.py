@@ -12,6 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Protocol, Literal
 
+from seed_runtime.decision_journal import DecisionJournal, context_hash
 from seed_runtime.events import EventLedger
 from seed_runtime.models import PolicyDecision, ToolSpec
 from seed_runtime.policy import PolicyGate
@@ -41,6 +42,10 @@ class RuntimeResult:
     tool_result: dict[str, Any] | None = None
     policy_allowed: bool | None = None
     error: str | None = None
+    decision_id: str | None = None
+    context_hash: str | None = None
+    decision_reason: str | None = None
+    decision_outcome: str | None = None
 
 
 @dataclass(frozen=True)
@@ -125,6 +130,7 @@ class RuntimeLoop:
         self.decision_provider = decision_provider
         self.tool_handlers = dict(tool_handlers or {})
         self.projector = projector or StateProjector(ledger)
+        self.decision_journal = DecisionJournal(ledger)
 
     def run(self, runtime_input: RuntimeInput) -> RuntimeResult:
         events_appended: list[str] = []
@@ -144,6 +150,7 @@ class RuntimeLoop:
             projector=self.projector,
         )
         context = self._compose_context(runtime_input, run_id, state)
+        context_digest = context_hash(context)
         proposed = self.decision_provider.decide(context)
         decision, validation_error = self._validate_decision(proposed)
         if validation_error is not None or decision is None:
@@ -155,14 +162,34 @@ class RuntimeLoop:
                 causation_id=input_event.id,
             )
             events_appended.append(rejected_event.id)
+            journal_event = self.decision_journal.append_record(
+                workspace_id=runtime_input.workspace_id,
+                run_id=run_id,
+                decision_kind=self._safe_decision_payload(proposed).get("kind"),
+                reason=self._safe_decision_payload(proposed).get("reason", ""),
+                context_hash=context_digest,
+                selected_tool_name=self._safe_decision_payload(proposed).get("tool_name"),
+                selected_tool_args=self._safe_decision_payload(proposed).get("tool_args", {}),
+                policy_allowed=False,
+                outcome="malformed_decision",
+                error=validation_error,
+                causation_id=rejected_event.id,
+                correlation_id=input_event.id,
+            )
+            events_appended.append(journal_event.id)
+            record = journal_event.payload["record"]
             return RuntimeResult(
                 workspace_id=runtime_input.workspace_id,
                 run_id=run_id,
                 decision_kind=None,
                 response_text=None,
                 events_appended=events_appended,
-                policy_allowed=None,
+                policy_allowed=False,
                 error=validation_error,
+                decision_id=record["decision_id"],
+                context_hash=context_digest,
+                decision_reason=record["reason"],
+                decision_outcome="malformed_decision",
             )
 
         if decision.kind == "answer":
@@ -174,6 +201,19 @@ class RuntimeLoop:
                 causation_id=input_event.id,
             )
             events_appended.append(answer_event.id)
+            journal_event = self.decision_journal.append_record(
+                workspace_id=runtime_input.workspace_id,
+                run_id=run_id,
+                decision_kind="answer",
+                reason=decision.reason,
+                context_hash=context_digest,
+                policy_allowed=True,
+                outcome="answered",
+                causation_id=answer_event.id,
+                correlation_id=input_event.id,
+            )
+            events_appended.append(journal_event.id)
+            record = journal_event.payload["record"]
             return RuntimeResult(
                 workspace_id=runtime_input.workspace_id,
                 run_id=run_id,
@@ -181,10 +221,21 @@ class RuntimeLoop:
                 response_text=decision.text,
                 events_appended=events_appended,
                 policy_allowed=True,
+                decision_id=record["decision_id"],
+                context_hash=context_digest,
+                decision_reason=decision.reason,
+                decision_outcome="answered",
             )
 
         return self._run_tool_decision(
-            runtime_input, run_id, input_event.id, state, context, decision, events_appended
+            runtime_input,
+            run_id,
+            input_event.id,
+            state,
+            context,
+            context_digest,
+            decision,
+            events_appended,
         )
 
     def _run_tool_decision(
@@ -194,6 +245,7 @@ class RuntimeLoop:
         input_event_id: str,
         state: State,
         context: RuntimeContext,
+        context_digest: str,
         decision: Decision,
         events_appended: list[str],
     ) -> RuntimeResult:
@@ -208,6 +260,23 @@ class RuntimeLoop:
                 causation_id=input_event_id,
             )
             events_appended.append(unknown_event.id)
+            error = f"unknown tool: {tool_name}"
+            journal_event = self.decision_journal.append_record(
+                workspace_id=runtime_input.workspace_id,
+                run_id=run_id,
+                decision_kind="call_tool",
+                reason=decision.reason,
+                context_hash=context_digest,
+                selected_tool_name=tool_name,
+                selected_tool_args=decision.tool_args,
+                policy_allowed=False,
+                outcome="tool_unknown",
+                error=error,
+                causation_id=unknown_event.id,
+                correlation_id=input_event_id,
+            )
+            events_appended.append(journal_event.id)
+            record = journal_event.payload["record"]
             return RuntimeResult(
                 workspace_id=runtime_input.workspace_id,
                 run_id=run_id,
@@ -216,7 +285,11 @@ class RuntimeLoop:
                 events_appended=events_appended,
                 tool_name=tool_name,
                 policy_allowed=False,
-                error=f"unknown tool: {tool_name}",
+                error=error,
+                decision_id=record["decision_id"],
+                context_hash=context_digest,
+                decision_reason=decision.reason,
+                decision_outcome="tool_unknown",
             )
 
         policy = self.policy_engine.evaluate(tool, state, scope=None)
@@ -234,6 +307,23 @@ class RuntimeLoop:
                 causation_id=input_event_id,
             )
             events_appended.append(denied_event.id)
+            error = f"policy denied tool {tool.name}: {policy.outcome}"
+            journal_event = self.decision_journal.append_record(
+                workspace_id=runtime_input.workspace_id,
+                run_id=run_id,
+                decision_kind="call_tool",
+                reason=decision.reason,
+                context_hash=context_digest,
+                selected_tool_name=tool.name,
+                selected_tool_args=decision.tool_args,
+                policy_allowed=False,
+                outcome="policy_denied",
+                error=error,
+                causation_id=denied_event.id,
+                correlation_id=input_event_id,
+            )
+            events_appended.append(journal_event.id)
+            record = journal_event.payload["record"]
             return RuntimeResult(
                 workspace_id=runtime_input.workspace_id,
                 run_id=run_id,
@@ -242,7 +332,11 @@ class RuntimeLoop:
                 events_appended=events_appended,
                 tool_name=tool.name,
                 policy_allowed=False,
-                error=f"policy denied tool {tool.name}: {policy.outcome}",
+                error=error,
+                decision_id=record["decision_id"],
+                context_hash=context_digest,
+                decision_reason=decision.reason,
+                decision_outcome="policy_denied",
             )
 
         handler = self.tool_handlers.get(tool.name)
@@ -255,6 +349,23 @@ class RuntimeLoop:
                 causation_id=input_event_id,
             )
             events_appended.append(missing_event.id)
+            error = f"no runtime handler registered for tool: {tool.name}"
+            journal_event = self.decision_journal.append_record(
+                workspace_id=runtime_input.workspace_id,
+                run_id=run_id,
+                decision_kind="call_tool",
+                reason=decision.reason,
+                context_hash=context_digest,
+                selected_tool_name=tool.name,
+                selected_tool_args=decision.tool_args,
+                policy_allowed=True,
+                outcome="tool_failed",
+                error=error,
+                causation_id=missing_event.id,
+                correlation_id=input_event_id,
+            )
+            events_appended.append(journal_event.id)
+            record = journal_event.payload["record"]
             return RuntimeResult(
                 workspace_id=runtime_input.workspace_id,
                 run_id=run_id,
@@ -263,10 +374,56 @@ class RuntimeLoop:
                 events_appended=events_appended,
                 tool_name=tool.name,
                 policy_allowed=True,
-                error=f"no runtime handler registered for tool: {tool.name}",
+                error=error,
+                decision_id=record["decision_id"],
+                context_hash=context_digest,
+                decision_reason=decision.reason,
+                decision_outcome="tool_failed",
             )
 
-        output = handler.execute(context, dict(decision.tool_args))
+        try:
+            output = handler.execute(context, dict(decision.tool_args))
+        except Exception as exc:
+            error = f"tool {tool.name} failed: {exc}"
+            failure_event = self.ledger.append(
+                "tool.failure",
+                runtime_input.workspace_id,
+                {"tool_name": tool.name, "error": error, "reason": decision.reason},
+                actor="tool",
+                causation_id=input_event_id,
+            )
+            events_appended.append(failure_event.id)
+            journal_event = self.decision_journal.append_record(
+                workspace_id=runtime_input.workspace_id,
+                run_id=run_id,
+                decision_kind="call_tool",
+                reason=decision.reason,
+                context_hash=context_digest,
+                selected_tool_name=tool.name,
+                selected_tool_args=decision.tool_args,
+                policy_allowed=True,
+                outcome="tool_failed",
+                error=error,
+                causation_id=failure_event.id,
+                correlation_id=input_event_id,
+            )
+            events_appended.append(journal_event.id)
+            record = journal_event.payload["record"]
+            return RuntimeResult(
+                workspace_id=runtime_input.workspace_id,
+                run_id=run_id,
+                decision_kind="call_tool",
+                response_text=None,
+                events_appended=events_appended,
+                tool_name=tool.name,
+                policy_allowed=True,
+                error=error,
+                decision_id=record["decision_id"],
+                context_hash=context_digest,
+                decision_reason=decision.reason,
+                decision_outcome="tool_failed",
+            )
+
         result_event = self.ledger.append(
             "tool.result",
             runtime_input.workspace_id,
@@ -275,6 +432,21 @@ class RuntimeLoop:
             causation_id=input_event_id,
         )
         events_appended.append(result_event.id)
+        journal_event = self.decision_journal.append_record(
+            workspace_id=runtime_input.workspace_id,
+            run_id=run_id,
+            decision_kind="call_tool",
+            reason=decision.reason,
+            context_hash=context_digest,
+            selected_tool_name=tool.name,
+            selected_tool_args=decision.tool_args,
+            policy_allowed=True,
+            outcome="tool_succeeded",
+            causation_id=result_event.id,
+            correlation_id=input_event_id,
+        )
+        events_appended.append(journal_event.id)
+        record = journal_event.payload["record"]
         return RuntimeResult(
             workspace_id=runtime_input.workspace_id,
             run_id=run_id,
@@ -284,6 +456,10 @@ class RuntimeLoop:
             tool_name=tool.name,
             tool_result=output,
             policy_allowed=True,
+            decision_id=record["decision_id"],
+            context_hash=context_digest,
+            decision_reason=decision.reason,
+            decision_outcome="tool_succeeded",
         )
 
     def _compose_context(
