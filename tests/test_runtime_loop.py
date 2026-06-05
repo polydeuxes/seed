@@ -410,6 +410,11 @@ def test_loop_answer_decision_appends_user_and_assistant_events():
     assert len(result.events_appended) == 3
     assert provider.last_context.current_input["text"] == "hello"
     assert provider.last_context.state.workspace_id == "ws_loop"
+    assert provider.last_context.decision_context.projection_version == "v1"
+    assert (
+        provider.last_context.decision_context.last_event_id
+        == result.events_appended[0]
+    )
 
 
 def test_loop_tool_decision_executes_registered_echo_tool_and_appends_result_event():
@@ -604,6 +609,11 @@ def test_loop_loads_state_through_projection_path():
     assert result.error is None
     assert projector.calls == 1
     assert provider.last_context.state.workspace_id == "ws_loop"
+    assert provider.last_context.decision_context.projection_version == "v1"
+    assert (
+        provider.last_context.decision_context.last_event_id
+        == result.events_appended[0]
+    )
 
 
 def test_loop_does_not_add_projection_responsibilities_to_event_ledger():
