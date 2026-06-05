@@ -174,7 +174,45 @@ class RuntimeLoop:
         )
         context = self._compose_context(runtime_input, run_id, state)
         context_digest = context_hash(context)
-        proposed = self.decision_provider.decide(context)
+        try:
+            proposed = self.decision_provider.decide(context)
+        except Exception as exc:
+            error = str(exc)
+            provider_failed_event = self.ledger.append(
+                "runtime.decision.provider_failed",
+                runtime_input.workspace_id,
+                {"error": error, "exception_type": type(exc).__name__},
+                actor="system",
+                causation_id=input_event.id,
+            )
+            events_appended.append(provider_failed_event.id)
+            journal_event = self.decision_journal.append_record(
+                workspace_id=runtime_input.workspace_id,
+                run_id=run_id,
+                decision_kind=None,
+                reason="",
+                context_hash=context_digest,
+                policy_allowed=False,
+                outcome="provider_failed",
+                error=error,
+                causation_id=provider_failed_event.id,
+                correlation_id=input_event.id,
+            )
+            events_appended.append(journal_event.id)
+            record = journal_event.payload["record"]
+            return RuntimeResult(
+                workspace_id=runtime_input.workspace_id,
+                run_id=run_id,
+                decision_kind=None,
+                response_text=None,
+                events_appended=events_appended,
+                policy_allowed=False,
+                error=error,
+                decision_id=record["decision_id"],
+                context_hash=context_digest,
+                decision_reason=record["reason"],
+                decision_outcome="provider_failed",
+            )
         decision, validation_error = self._validate_decision(proposed)
         if validation_error is not None or decision is None:
             rejected_event = self.ledger.append(

@@ -146,6 +146,7 @@ def _decision_record(decision_event: RuntimeTraceEvent | None) -> dict[str, Any]
 def _is_error_event(event: RuntimeTraceEvent) -> bool:
     if event.event_type in {
         "runtime.decision.rejected",
+        "runtime.decision.provider_failed",
         "runtime.policy.denied",
         "runtime.tool.unknown",
         "runtime.tool.handler_missing",
