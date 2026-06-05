@@ -15,6 +15,7 @@ from typing import Any, Mapping, Protocol, Literal
 from seed_runtime.context_views import DecisionContextView, build_decision_context_view
 from seed_runtime.decision_journal import DecisionJournal, context_hash
 from seed_runtime.events import EventLedger
+from seed_runtime.fact_extraction import FactExtractionService
 from seed_runtime.ids import new_id
 from seed_runtime.models import PolicyDecision, ToolNeed, ToolSpec
 from seed_runtime.policy import PolicyGate
@@ -136,6 +137,7 @@ class RuntimeLoop:
         self.tool_handlers = dict(tool_handlers or {})
         self.projector = projector or StateProjector(ledger)
         self.decision_journal = DecisionJournal(ledger)
+        self.fact_extraction = FactExtractionService(ledger)
 
     def run(self, runtime_input: RuntimeInput) -> RuntimeResult:
         events_appended: list[str] = []
@@ -513,6 +515,8 @@ class RuntimeLoop:
             causation_id=input_event_id,
         )
         events_appended.append(result_event.id)
+        evidence_result = self.fact_extraction.observe_tool_result(result_event)
+        events_appended.extend(event.id for event in evidence_result.events)
         journal_event = self.decision_journal.append_record(
             workspace_id=runtime_input.workspace_id,
             run_id=run_id,

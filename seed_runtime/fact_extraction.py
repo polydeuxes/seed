@@ -24,19 +24,24 @@ class FactExtractionError(ValueError):
 
 
 class FactExtractionService:
-    """Turn completed tool calls into evidence observations.
+    """Turn successful tool results into evidence observations.
 
     The generic service records tool output as evidence only. It intentionally does
-    not infer facts unless a future explicit mapping is added.
+    not infer facts unless a future explicit mapping is added. RuntimeLoop emits
+    ``tool.result`` while the older ToolExecutor path emits
+    ``tool.call.completed``; both event shapes are accepted so callers reuse the
+    same evidence pipeline.
     """
 
     def __init__(self, ledger: EventLedger) -> None:
         self.ledger = ledger
 
     def observe_tool_result(self, event: Event) -> FactExtractionResult:
-        """Append evidence for a ``tool.call.completed`` event."""
-        if event.kind != "tool.call.completed":
-            raise FactExtractionError("can only extract facts from tool.call.completed")
+        """Append evidence for a successful tool result event."""
+        if event.kind not in {"tool.call.completed", "tool.result"}:
+            raise FactExtractionError(
+                "can only extract facts from tool.call.completed or tool.result"
+            )
 
         tool_name = self._tool_name(event.payload)
         evidence = Evidence(
@@ -61,8 +66,10 @@ class FactExtractionService:
 
     def _tool_name(self, payload: dict[str, Any]) -> str:
         tool_name = payload.get("tool")
+        if tool_name is None:
+            tool_name = payload.get("tool_name")
         if not isinstance(tool_name, str) or not tool_name:
-            raise FactExtractionError("tool.call.completed payload requires tool")
+            raise FactExtractionError("tool result payload requires tool or tool_name")
         return tool_name
 
 

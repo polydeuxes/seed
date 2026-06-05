@@ -516,13 +516,40 @@ def test_loop_tool_decision_executes_registered_echo_tool_and_appends_result_eve
     assert [event.kind for event in ledger.list_events("ws_loop")] == [
         "input.user_message",
         "tool.result",
+        "evidence.observed",
         "decision.recorded",
     ]
-    assert ledger.list_events("ws_loop")[-2].payload["output"]["message"] == "hello"
+    assert ledger.list_events("ws_loop")[-3].payload["output"]["message"] == "hello"
     journal = ledger.list_events("ws_loop")[-1].payload["record"]
     assert journal["selected_tool_name"] == "echo"
     assert journal["outcome"] == "tool_succeeded"
     assert result.decision_outcome == "tool_succeeded"
+
+
+def test_loop_tool_decision_records_projected_evidence_from_extractable_output():
+    runtime, ledger, _, _ = make_loop(
+        LoopDecision(
+            kind="call_tool",
+            tool_name="echo",
+            tool_args={"message": "project me"},
+            reason="record tool output evidence",
+        )
+    )
+
+    result = runtime.run(RuntimeInput(workspace_id="ws_loop", user_text="echo evidence"))
+    projected_state = StateProjector(ledger).project("ws_loop")
+
+    assert result.error is None
+    assert "evidence.observed" in [event.kind for event in ledger.list_events("ws_loop")]
+    assert len(projected_state.evidence) == 1
+    evidence = next(iter(projected_state.evidence.values()))
+    assert evidence.source == "tool:echo"
+    assert evidence.kind == "tool.output"
+    assert evidence.payload == {
+        "ok": True,
+        "message": "project me",
+        "workspace_id": "ws_loop",
+    }
 
 
 def test_loop_request_tool_decision_appends_tool_need_and_journal():
@@ -560,7 +587,6 @@ def test_loop_request_tool_decision_appends_tool_need_and_journal():
     assert journal["policy_allowed"] is True
     assert result.decision_id == journal["decision_id"]
 
-
 def test_loop_request_tool_projects_open_tool_need():
     runtime, ledger, _, _ = make_loop(
         LoopDecision(
@@ -581,7 +607,6 @@ def test_loop_request_tool_projects_open_tool_need():
         "lookup_service_status"
     ]
 
-
 def test_loop_request_tool_rejects_missing_tool_need_payload():
     runtime, ledger, _, _ = make_loop(
         LoopDecision(kind="request_tool", reason="missing payload")
@@ -600,7 +625,6 @@ def test_loop_request_tool_rejects_missing_tool_need_payload():
         ledger.list_events("ws_loop")[-1].payload["record"]["outcome"]
         == "malformed_decision"
     )
-
 
 def test_loop_request_tool_rejects_malformed_payload_and_forbidden_fields():
     cases = [
