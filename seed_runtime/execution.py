@@ -13,6 +13,7 @@ from seed_runtime.models import PendingAction, PolicyDecision, ToolSpec
 from seed_runtime.pending_actions import PendingActionService
 from seed_runtime.policy import PolicyGate
 from seed_runtime.registry import ToolRegistry
+from seed_runtime.tool_execution_policy import ToolExecutionPolicyService
 from seed_runtime.tool_validation import ToolValidationService
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
@@ -65,6 +66,9 @@ class ToolExecutor:
         self.projector = projector
         self.policy_gate = policy_gate or PolicyGate()
         self.tool_validation = tool_validation or ToolValidationService(registry)
+        self.tool_execution_policy = ToolExecutionPolicyService(
+            registry, self.tool_validation, self.policy_gate
+        )
         self.fact_extraction = FactExtractionService(ledger)
         self.pending_actions = PendingActionService(ledger, projector)
 
@@ -79,33 +83,41 @@ class ToolExecutor:
         correlation_id: str | None = None,
         scope: str | None = None,
     ) -> ToolCallResult:
-        tool = self.tool_validation.require_tool(tool_name)
-        status_validation = self.tool_validation.validate_tool_status(tool)
-        if not status_validation.ok:
+        policy_result = self.tool_execution_policy.evaluate_with_state_factory(
+            tool_name=tool_name,
+            arguments=arguments,
+            state_factory=lambda: self.projector.project(workspace_id),
+            scope=scope,
+        )
+        if not policy_result.validation.ok:
+            if policy_result.tool is None:
+                # Preserve the registry-backed ToolExecutor's existing
+                # unknown-tool behavior.
+                self.registry.require(tool_name)
+            tool = policy_result.tool
+            if tool is None:
+                raise RuntimeError("tool execution policy returned no validated tool")
+            phase = (
+                "registration"
+                if policy_result.validation_phase == "status"
+                else "input_validation"
+            )
             return self._failed(
                 workspace_id,
                 session_id,
                 tool,
-                status_validation.errors[0],
+                policy_result.error or policy_result.validation.errors[0],
                 causation_id=causation_id,
                 correlation_id=correlation_id,
-                phase="registration",
+                phase=phase,
             )
 
-        input_validation = self.tool_validation.validate_input_schema(tool, arguments)
-        if not input_validation.ok:
-            return self._failed(
-                workspace_id,
-                session_id,
-                tool,
-                input_validation.errors[0],
-                causation_id=causation_id,
-                correlation_id=correlation_id,
-                phase="input_validation",
+        tool = policy_result.tool
+        policy = policy_result.policy
+        if tool is None or policy is None:
+            raise RuntimeError(
+                "tool execution policy returned no validated tool or policy"
             )
-
-        state = self.projector.project(workspace_id)
-        policy = self.policy_gate.evaluate(tool, state, scope=scope)
         if policy.outcome != "allow":
             return self._policy_denied(
                 workspace_id,
