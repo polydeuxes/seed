@@ -25,6 +25,8 @@ from seed_runtime.serialization import to_plain
 from seed_runtime.state import State, StateProjector
 from seed_runtime.tool_needs import slugify
 from seed_runtime.tool_recommendations import ToolRecommendationService
+from seed_runtime.tool_validation import ToolValidationResult, ToolValidationService
+
 
 DecisionKind = Literal["answer", "call_tool", "request_tool"]
 
@@ -131,6 +133,7 @@ class RuntimeLoop:
         *,
         projector: StateProjector | None = None,
         tool_recommendation_service: ToolRecommendationService | None = None,
+        tool_validation_service: ToolValidationService | None = None,
     ) -> None:
         self.ledger = ledger
         self.projection_store = projection_store
@@ -141,6 +144,9 @@ class RuntimeLoop:
         self.projector = projector or StateProjector(ledger)
         self.tool_recommendation_service = (
             tool_recommendation_service or ToolRecommendationService()
+        )
+        self.tool_validation_service = (
+            tool_validation_service or ToolValidationService(self.tool_registry)
         )
         self.decision_journal = DecisionJournal(ledger)
         self.fact_extraction = FactExtractionService(ledger)
@@ -356,46 +362,49 @@ class RuntimeLoop:
         events_appended: list[str],
     ) -> RuntimeResult:
         tool_name = decision.tool_name or ""
-        tool = self.tool_registry.get(tool_name)
-        if tool is None:
-            unknown_event = self.ledger.append(
-                "runtime.tool.unknown",
-                runtime_input.workspace_id,
-                {"tool_name": tool_name, "reason": decision.reason},
-                actor="system",
-                causation_id=input_event_id,
+        existence = self.tool_validation_service.validate_tool_exists(tool_name)
+        if not existence.ok or existence.tool is None:
+            return self._record_unknown_tool(
+                runtime_input,
+                run_id,
+                input_event_id,
+                context_digest,
+                decision,
+                events_appended,
+                tool_name,
             )
-            events_appended.append(unknown_event.id)
-            error = f"unknown tool: {tool_name}"
-            journal_event = self.decision_journal.append_record(
-                workspace_id=runtime_input.workspace_id,
-                run_id=run_id,
-                decision_kind="call_tool",
-                reason=decision.reason,
-                context_hash=context_digest,
-                selected_tool_name=tool_name,
-                selected_tool_args=decision.tool_args,
+        tool = existence.tool
+
+        status = self.tool_validation_service.validate_tool_status(tool)
+        if not status.ok:
+            return self._record_invalid_tool_validation(
+                runtime_input,
+                run_id,
+                input_event_id,
+                context_digest,
+                decision,
+                events_appended,
+                tool,
+                status,
+                phase="status",
                 policy_allowed=False,
-                outcome="tool_unknown",
-                error=error,
-                causation_id=unknown_event.id,
-                correlation_id=input_event_id,
             )
-            events_appended.append(journal_event.id)
-            record = journal_event.payload["record"]
-            return RuntimeResult(
-                workspace_id=runtime_input.workspace_id,
-                run_id=run_id,
-                decision_kind="call_tool",
-                response_text=None,
-                events_appended=events_appended,
-                tool_name=tool_name,
+
+        input_validation = self.tool_validation_service.validate_input_schema(
+            tool, decision.tool_args
+        )
+        if not input_validation.ok:
+            return self._record_invalid_tool_validation(
+                runtime_input,
+                run_id,
+                input_event_id,
+                context_digest,
+                decision,
+                events_appended,
+                tool,
+                input_validation,
+                phase="input",
                 policy_allowed=False,
-                error=error,
-                decision_id=record["decision_id"],
-                context_hash=context_digest,
-                decision_reason=decision.reason,
-                decision_outcome="tool_unknown",
             )
 
         policy = self.policy_engine.evaluate(tool, state, scope=None)
@@ -530,6 +539,23 @@ class RuntimeLoop:
                 decision_outcome="tool_failed",
             )
 
+        output_validation = self.tool_validation_service.validate_output_schema(
+            tool, output
+        )
+        if not output_validation.ok:
+            return self._record_invalid_tool_validation(
+                runtime_input,
+                run_id,
+                input_event_id,
+                context_digest,
+                decision,
+                events_appended,
+                tool,
+                output_validation,
+                phase="output",
+                policy_allowed=True,
+            )
+
         result_event = self.ledger.append(
             "tool.result",
             runtime_input.workspace_id,
@@ -568,6 +594,116 @@ class RuntimeLoop:
             context_hash=context_digest,
             decision_reason=decision.reason,
             decision_outcome="tool_succeeded",
+        )
+
+    def _record_unknown_tool(
+        self,
+        runtime_input: RuntimeInput,
+        run_id: str,
+        input_event_id: str,
+        context_digest: str,
+        decision: Decision,
+        events_appended: list[str],
+        tool_name: str,
+    ) -> RuntimeResult:
+        unknown_event = self.ledger.append(
+            "runtime.tool.unknown",
+            runtime_input.workspace_id,
+            {"tool_name": tool_name, "reason": decision.reason},
+            actor="system",
+            causation_id=input_event_id,
+        )
+        events_appended.append(unknown_event.id)
+        error = f"unknown tool: {tool_name}"
+        journal_event = self.decision_journal.append_record(
+            workspace_id=runtime_input.workspace_id,
+            run_id=run_id,
+            decision_kind="call_tool",
+            reason=decision.reason,
+            context_hash=context_digest,
+            selected_tool_name=tool_name,
+            selected_tool_args=decision.tool_args,
+            policy_allowed=False,
+            outcome="tool_unknown",
+            error=error,
+            causation_id=unknown_event.id,
+            correlation_id=input_event_id,
+        )
+        events_appended.append(journal_event.id)
+        record = journal_event.payload["record"]
+        return RuntimeResult(
+            workspace_id=runtime_input.workspace_id,
+            run_id=run_id,
+            decision_kind="call_tool",
+            response_text=None,
+            events_appended=events_appended,
+            tool_name=tool_name,
+            policy_allowed=False,
+            error=error,
+            decision_id=record["decision_id"],
+            context_hash=context_digest,
+            decision_reason=decision.reason,
+            decision_outcome="tool_unknown",
+        )
+
+    def _record_invalid_tool_validation(
+        self,
+        runtime_input: RuntimeInput,
+        run_id: str,
+        input_event_id: str,
+        context_digest: str,
+        decision: Decision,
+        events_appended: list[str],
+        tool: ToolSpec,
+        validation: ToolValidationResult,
+        *,
+        phase: str,
+        policy_allowed: bool,
+    ) -> RuntimeResult:
+        error = "; ".join(validation.errors) or f"tool {tool.name} validation failed"
+        invalid_event = self.ledger.append(
+            "runtime.tool.invalid",
+            runtime_input.workspace_id,
+            {
+                "tool_name": tool.name,
+                "tool_args": to_plain(decision.tool_args),
+                "phase": phase,
+                "errors": list(validation.errors),
+                "reason": decision.reason,
+            },
+            actor="system",
+            causation_id=input_event_id,
+        )
+        events_appended.append(invalid_event.id)
+        journal_event = self.decision_journal.append_record(
+            workspace_id=runtime_input.workspace_id,
+            run_id=run_id,
+            decision_kind="call_tool",
+            reason=decision.reason,
+            context_hash=context_digest,
+            selected_tool_name=tool.name,
+            selected_tool_args=decision.tool_args,
+            policy_allowed=policy_allowed,
+            outcome="tool_failed",
+            error=error,
+            causation_id=invalid_event.id,
+            correlation_id=input_event_id,
+        )
+        events_appended.append(journal_event.id)
+        record = journal_event.payload["record"]
+        return RuntimeResult(
+            workspace_id=runtime_input.workspace_id,
+            run_id=run_id,
+            decision_kind="call_tool",
+            response_text=None,
+            events_appended=events_appended,
+            tool_name=tool.name,
+            policy_allowed=policy_allowed,
+            error=error,
+            decision_id=record["decision_id"],
+            context_hash=context_digest,
+            decision_reason=decision.reason,
+            decision_outcome="tool_failed",
         )
 
     def _compose_context(
