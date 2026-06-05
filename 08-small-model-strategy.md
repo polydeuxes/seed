@@ -249,7 +249,7 @@ Keep the model interface generic:
 
 ```python
 class DecisionModel(Protocol):
-    def decide(self, context: ContextPacket) -> DecisionText: ...
+    def decide(self, context: RuntimeContext) -> DecisionText: ...
 ```
 
 Then swap:

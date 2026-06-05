@@ -279,8 +279,8 @@ def test_cli_confidence_commands_do_not_append_or_invoke_runtime_provider_policy
     monkeypatch.setattr(seed_local.SQLiteEventLedger, "append", fail_execution)
     monkeypatch.setattr(seed_local, "build_local_app", fail_execution)
     monkeypatch.setattr(seed_local, "run_shell", fail_execution)
-    monkeypatch.setattr(seed_local.Runtime, "handle_user_message", fail_execution)
-    monkeypatch.setattr(seed_local.ToolExecutor, "execute", fail_execution)
+    monkeypatch.setattr(seed_local.RuntimeLoop, "run", fail_execution)
+    monkeypatch.setattr(seed_local.EchoTool, "execute", fail_execution)
 
     assert seed_local.main(["--db", str(db_path), "--confidence"]) == 0
     assert seed_local.main(["--db", str(db_path), "--confidence-fact", "service", "runs_on"]) == 0

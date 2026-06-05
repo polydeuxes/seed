@@ -19,7 +19,6 @@ if str(REPO_ROOT) not in sys.path:
 
 from seed_runtime.action_plans import ActionPlanService, ActionPlanTransitionError
 from seed_runtime.ansible_inventory_source import AnsibleInventoryObservationSource
-from seed_runtime.context import ContextComposer
 from seed_runtime.context_views import (
     DecisionContextView,
     build_decision_context_view,
@@ -35,7 +34,6 @@ from seed_runtime.contradictions import (
     build_contradiction_summary,
     build_contradictions,
 )
-from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.facts import (
     Fact,
@@ -45,7 +43,6 @@ from seed_runtime.facts import (
     is_fact_expired,
     is_measurement_predicate,
 )
-from seed_runtime.execution import ToolExecutor
 from seed_runtime.evidence_graph import (
     FactEvidenceView,
     build_evidence_graph,
@@ -81,6 +78,7 @@ from seed_runtime.observation_normalizers import (
 from seed_runtime.predicate_catalog import PredicateCatalog
 from seed_runtime.predicate_normalizers import PredicateNormalizer
 from seed_runtime.projection_store import (
+    InMemoryProjectionStore,
     SQLiteProjectionStore,
     project_state_with_cache,
     rebuild_state_cache,
@@ -95,7 +93,7 @@ from seed_runtime.observation_sources import (
 )
 from seed_runtime.observations import ObservationIngestor
 from seed_runtime.registry import ToolRegistry
-from seed_runtime.runtime import Runtime
+from seed_runtime.runtime_loop import EchoTool, RuntimeInput, RuntimeLoop
 from seed_runtime.runtime_trace import RuntimeTrace, load_runtime_trace
 from seed_runtime.serialization import to_plain
 from seed_runtime.secrets import (
@@ -118,7 +116,6 @@ from seed_runtime.state_views import (
     build_requirement_view,
     build_state_summary,
 )
-from seed_runtime.tool_needs import ToolNeedService
 
 DEFAULT_ENDPOINT = "http://localhost:11434/api/generate"
 DEFAULT_MODEL = "qwen2.5:3b"
@@ -164,81 +161,32 @@ class DevRegisteredProviderSeed:
 class LocalSeedApp:
     """Container for a locally configured Seed runtime and its event ledger."""
 
-    runtime: Runtime
+    runtime: RuntimeLoop
     ledger: EventLedger
     projector: StateProjector
-    context_composer: ContextComposer
     model_client: IntentPromptModelClient
     workspace_id: str = DEFAULT_WORKSPACE
     session_id: str = DEFAULT_SESSION
 
     def run(self, text: str) -> dict[str, Any]:
-        response = self.runtime.handle_user_message(
-            self.workspace_id, self.session_id, text
+        result = self.runtime.run(
+            RuntimeInput(
+                workspace_id=self.workspace_id,
+                user_text=text,
+                metadata={"session_id": self.session_id},
+            )
         )
         return {
-            "response": to_plain(response),
+            "response": runtime_result_response(result),
             "events": [
                 to_plain(event) for event in self.ledger.list(self.workspace_id)
             ],
         }
 
     def create_action_plan(self, result: dict[str, Any]) -> dict[str, Any] | None:
-        """Create a safe, text-only plan for the top tool recommendation, if any."""
+        """RuntimeLoop no longer emits tool-need recommendation responses."""
 
-        response = result.get("response")
-        if not isinstance(response, dict) or response.get("kind") != "tool_need":
-            return None
-
-        payload = response.get("payload")
-        if not isinstance(payload, dict):
-            return None
-
-        tool_need_payload = payload.get("tool_need")
-        recommendations = payload.get("recommendations")
-        if not isinstance(tool_need_payload, dict):
-            return None
-        if not isinstance(recommendations, list) or not recommendations:
-            return None
-
-        top_recommendation = recommendations[0]
-        if not isinstance(top_recommendation, dict):
-            return None
-        top_provider = top_recommendation.get("provider")
-        if not isinstance(top_provider, str) or not top_provider:
-            return None
-
-        tool_need = ToolNeed(**tool_need_payload)
-        state = self.projector.project(self.workspace_id)
-        ranked_recommendations = self.runtime.recommendation_ranker.rank(
-            tool_need.capability,
-            self.runtime.capability_catalog.recommend_for(tool_need),
-            state,
-        )
-        full_recommendation = next(
-            (
-                recommendation
-                for recommendation in ranked_recommendations
-                if recommendation.provider == top_provider
-            ),
-            None,
-        )
-        if full_recommendation is None:
-            return None
-
-        plan = ActionPlanService(self.ledger).create_plan(
-            tool_need,
-            full_recommendation,
-            state,
-            session_id=self.session_id,
-            causation_id=tool_need.requested_by_event_id,
-        )
-        plain_plan = to_plain(plan)
-        payload["action_plan_id"] = plan.id
-        result["events"] = [
-            to_plain(event) for event in self.ledger.list(self.workspace_id)
-        ]
-        return plain_plan
+        return None
 
     def seed_facts(self, facts: list[DevFactSeed]) -> list[Fact]:
         """Ingest local development fact shorthand through observations."""
@@ -283,17 +231,15 @@ class LocalSeedApp:
         )
 
     def raw(self, text: str) -> str:
-        input_event = Event(
-            id=new_id("evt"),
-            kind="input.user_message",
-            workspace_id=self.workspace_id,
-            actor="user",
-            payload={"text": text},
-            session_id=self.session_id,
-        )
         state = self.projector.project(self.workspace_id)
-        context = self.context_composer.compose(
-            self.workspace_id, self.session_id, input_event, state
+        context = self.runtime._compose_context(
+            RuntimeInput(
+                workspace_id=self.workspace_id,
+                user_text=text,
+                metadata={"session_id": self.session_id},
+            ),
+            "raw_preview",
+            state,
         )
         return self.model_client.complete(context)
 
@@ -541,7 +487,6 @@ def build_local_app(
     registry = ToolRegistry()
     registry.load_manifest(REPO_ROOT / "toolkits/core/echo/toolkit.yaml")
     projector = StateProjector(ledger)
-    context_composer = ContextComposer(registry)
     model_client = IntentPromptModelClient.for_endpoint(
         endpoint,
         timeout_seconds=timeout_seconds,
@@ -549,21 +494,19 @@ def build_local_app(
     )
     classifier = TextIntentClassifier(model_client)
     model = IntentDecisionModel(classifier)
-    runtime = Runtime(
+    runtime = RuntimeLoop(
         ledger,
-        projector,
-        context_composer,
-        DecisionValidator(registry),
-        ToolExecutor(ledger, registry, projector),
-        ToolNeedService(ledger, projector),
+        InMemoryProjectionStore(),
+        registry,
+        None,
         model,
-        max_decision_retries=max_decision_retries,
+        {"echo": EchoTool()},
+        projector=projector,
     )
     return LocalSeedApp(
         runtime=runtime,
         ledger=ledger,
         projector=projector,
-        context_composer=context_composer,
         model_client=model_client,
         workspace_id=workspace_id,
         session_id=session_id,
@@ -1312,6 +1255,45 @@ def parse_observation(
         ttl_seconds=ttl_seconds,
     )
 
+
+
+def runtime_result_response(result: Any) -> dict[str, Any]:
+    """Convert canonical RuntimeLoop results into CLI response dictionaries."""
+
+    if result.decision_kind == "answer" and result.response_text is not None:
+        return {
+            "kind": "answer",
+            "message": result.response_text,
+            "payload": {
+                "decision_id": result.decision_id,
+                "context_hash": result.context_hash,
+                "outcome": result.decision_outcome,
+            },
+        }
+    if result.decision_kind == "call_tool" and result.tool_result is not None:
+        return {
+            "kind": "tool_result",
+            "message": f"Tool {result.tool_name} completed.",
+            "payload": {
+                "tool_name": result.tool_name,
+                "output": result.tool_result,
+                "decision_id": result.decision_id,
+                "context_hash": result.context_hash,
+                "outcome": result.decision_outcome,
+            },
+        }
+    return {
+        "kind": "runtime_error" if result.error else result.decision_kind or "runtime_result",
+        "message": result.error or result.response_text or result.decision_outcome or "RuntimeLoop completed.",
+        "payload": {
+            "tool_name": result.tool_name,
+            "policy_allowed": result.policy_allowed,
+            "decision_id": result.decision_id,
+            "context_hash": result.context_hash,
+            "outcome": result.decision_outcome,
+            "error": result.error,
+        },
+    }
 
 def parse_alias(args: list[str]) -> DevObservationSeed:
     """Return the Observation seed represented by --alias SUBJECT ALIAS."""

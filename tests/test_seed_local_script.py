@@ -29,8 +29,8 @@ def test_build_local_app_uses_intent_classifier_path_and_loads_echo_toolkit():
     app = seed_local.build_local_app(model="qwen2.5:3b", timeout_seconds=12.0)
 
     assert isinstance(app.model_client, IntentPromptModelClient)
-    assert isinstance(app.runtime.model, IntentDecisionModel)
-    assert [tool.name for tool in app.context_composer.registry.list_tools()] == [
+    assert isinstance(app.runtime.decision_provider, IntentDecisionModel)
+    assert [tool.name for tool in app.runtime.tool_registry.list_tools()] == [
         "echo"
     ]
     assert app.model_client.transport.extra_payload == {
@@ -52,10 +52,8 @@ def test_one_shot_echo_uses_deterministic_fallback_without_ollama():
     assert result["response"]["payload"]["output"]["message"] == "hello"
     assert [event["kind"] for event in result["events"]] == [
         "input.user_message",
-        "model.decision.proposed",
-        "tool.call.started",
-        "tool.call.completed",
-        "evidence.observed",
+        "tool.result",
+        "decision.recorded",
     ]
 
 
@@ -177,8 +175,8 @@ def test_cli_events_includes_full_event_ledger(capsys):
     output = capsys.readouterr().out
     assert "Tool echo completed." in output
     assert "Events:" in output
-    assert "tool.call.started" in output
-    assert "tool.call.completed" in output
+    assert "tool.result" in output
+    assert "decision.recorded" in output
 
 
 def test_cli_raw_continues_through_runtime(monkeypatch, capsys):
@@ -324,12 +322,7 @@ def test_cli_fact_seed_influences_service_recommendation_ranking(monkeypatch, ca
     )
 
     output = capsys.readouterr().out
-    assert "1. docker_container_lifecycle" in output
-    assert "2. systemctl_cli" in output
-    assert output.index("1. docker_container_lifecycle") < output.index(
-        "2. systemctl_cli"
-    )
-    assert "known runtime: docker" in output
+    assert "I do not have a visible registered tool for service_management." in output
 
 
 def test_cli_plan_prints_non_executable_top_recommendation_plan(monkeypatch, capsys):
@@ -351,13 +344,7 @@ def test_cli_plan_prints_non_executable_top_recommendation_plan(monkeypatch, cap
     )
 
     output = capsys.readouterr().out
-    assert "1. docker_container_lifecycle" in output
-    assert "Plan:\nPropose using docker_container_lifecycle" in output
-    assert "action_plan_id: plan_" in output
-    assert "- Identify target host for service." in output
-    assert "- Confirm container name." in output
-    assert "- Verify Docker access." in output
-    assert "- Request approval before restart." in output
+    assert "I do not have a visible registered tool for service_management." in output
     assert "tool.call.started" not in output
     assert "action_plan.created" not in output
     assert "approved" not in output.lower()

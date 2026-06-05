@@ -206,7 +206,7 @@ class Decision:
 ## Context composer
 
 ```python
-class ContextComposer:
+class RuntimeContext:
     def compose(self, workspace_id: str, session_id: str, trigger_event: Event, state: State) -> dict[str, Any]:
         active_goal = self.goal_selector.select(trigger_event, state)
         entities = self.entity_selector.select(trigger_event, active_goal, state)

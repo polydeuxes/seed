@@ -15,14 +15,13 @@ from typing import Any, Literal, Protocol, Sequence
 from seed_runtime.capability_catalog import CapabilityCatalog
 
 from seed_runtime.base import SeedModel
-from seed_runtime.context import ContextPacket
 from seed_runtime.model_client import (
     CommandTransport,
     DecisionParseError,
     EndpointTransport,
     TextCompletionTransport,
 )
-from seed_runtime.models import Decision
+from seed_runtime.runtime_loop import Decision, RuntimeContext
 from seed_runtime.serialization import to_plain
 
 if find_spec("pydantic") is not None:
@@ -117,7 +116,7 @@ class IntentClassification(SeedModel):
 class IntentClassifier(Protocol):
     """Classify a context packet into one compact intent label."""
 
-    def classify(self, context: ContextPacket) -> IntentClassification: ...
+    def classify(self, context: RuntimeContext) -> IntentClassification: ...
 
 
 class FakeIntentClassifier:
@@ -125,9 +124,9 @@ class FakeIntentClassifier:
 
     def __init__(self, classification: IntentClassification) -> None:
         self.classification = classification
-        self.last_context: ContextPacket | None = None
+        self.last_context: RuntimeContext | None = None
 
-    def classify(self, context: ContextPacket) -> IntentClassification:
+    def classify(self, context: RuntimeContext) -> IntentClassification:
         self.last_context = context
         return self.classification
 
@@ -205,7 +204,7 @@ class IntentPromptModelClient:
             CommandTransport(command=command, timeout_seconds=timeout_seconds, env=env)
         )
 
-    def complete(self, context: ContextPacket) -> str:
+    def complete(self, context: RuntimeContext) -> str:
         return self.transport.complete(build_intent_prompt(context))
 
 
@@ -266,14 +265,14 @@ class TextIntentClassifier:
             parser=parser,
         )
 
-    def classify(self, context: ContextPacket) -> IntentClassification:
+    def classify(self, context: RuntimeContext) -> IntentClassification:
         return self.parser.parse(self.client.complete(context))
 
 
 ParsedIntentClassifier = TextIntentClassifier
 
 
-def build_intent_prompt(context: ContextPacket) -> str:
+def build_intent_prompt(context: RuntimeContext) -> str:
     """Build a provider-neutral prompt for intent-only classification."""
 
     context_json = _stable_json(_render_intent_context(to_plain(context)))
@@ -368,7 +367,7 @@ class DecisionBuilder:
     """Build full runtime decisions from compact intent classifications."""
 
     def build(
-        self, context: ContextPacket, classification: IntentClassification
+        self, context: RuntimeContext, classification: IntentClassification
     ) -> Decision:
         arguments = classification.arguments
         reason = classification.reason or f"classified as {classification.intent}"
@@ -380,23 +379,23 @@ class DecisionBuilder:
                 kind="call_tool",
                 reason=reason,
                 tool_name="echo",
-                tool_arguments={"message": message},
+                tool_args={"message": message},
             )
         if classification.intent == "answer":
             answer = str(arguments.get("answer") or arguments.get("message") or "")
-            return Decision(kind="answer", reason=reason, answer=answer)
+            return Decision(kind="answer", reason=reason, text=answer)
         if classification.intent == "missing_tool":
             tool_need = _normalize_tool_need(arguments, _input_text(context))
             return Decision(
-                kind="request_tool",
+                kind="answer",
                 reason=reason,
-                tool_need=tool_need,
+                text=f"I do not have a visible registered tool for {tool_need['capability']}.",
             )
         if classification.intent == "clarify":
             question = str(arguments.get("question") or "What would you like me to do?")
-            return Decision(kind="ask_question", reason=reason, question=question)
+            return Decision(kind="answer", reason=reason, text=question)
         if classification.intent == "refuse":
-            return Decision(kind="refuse", reason=reason)
+            return Decision(kind="answer", reason=reason, text=reason)
         raise ValueError(f"unsupported intent {classification.intent!r}")
 
 
@@ -411,7 +410,7 @@ class IntentDecisionModel:
         self.classifier = classifier
         self.builder = builder or DecisionBuilder()
 
-    def decide(self, context: ContextPacket) -> Decision:
+    def decide(self, context: RuntimeContext) -> Decision:
         text = _input_text(context)
         classification = deterministic_intent_fallback(context)
         if classification is None:
@@ -431,7 +430,7 @@ class IntentDecisionModel:
 
 
 def deterministic_intent_fallback(
-    context: ContextPacket,
+    context: RuntimeContext,
 ) -> IntentClassification | None:
     """Classify high-confidence requests without calling a model."""
 
@@ -493,7 +492,7 @@ def _informational_topic(text: str) -> str:
     return ""
 
 
-def _input_text(context: ContextPacket) -> str:
+def _input_text(context: RuntimeContext) -> str:
     text = context.current_input.get("text")
     return text if isinstance(text, str) else ""
 

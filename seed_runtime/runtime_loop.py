@@ -60,6 +60,13 @@ class Decision:
 
 @dataclass(frozen=True)
 class RuntimeContext:
+    """Canonical DecisionProvider input for RuntimeLoop.
+
+    Providers should use ``decision_context`` for provider-facing knowledge.
+    The raw ``state`` projection remains available only as temporary compatibility
+    for code that explicitly needs lower-level projected State details.
+    """
+
     workspace_id: str
     run_id: str
     state: State
@@ -471,6 +478,8 @@ class RuntimeLoop:
             {
                 "name": tool.name,
                 "summary": tool.summary,
+                "input_schema": tool.input_schema,
+                "output_schema": tool.output_schema,
                 "policy_action": tool.policy_action,
                 "risk_class": tool.risk_class,
             }

@@ -141,7 +141,7 @@ Goal: present state to the model before execution logic grows. Even a dumb deter
 
 Tasks:
 
-1. Implement ContextComposer.
+1. Use RuntimeLoop with RuntimeContext and DecisionContextView as the canonical provider boundary.
 2. Select active goal.
 3. Select relevant entities and facts.
 4. Select visible tools.

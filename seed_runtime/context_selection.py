@@ -2,7 +2,7 @@
 
 These helpers intentionally do not perform semantic matching, token counting, or
 LLM-based ranking. They provide deterministic freshness/relevance ordering inside
-sections before :class:`seed_runtime.context_budget.ContextBudget` applies limits.
+sections before :class:`seed_runtime.context_budget.ContextBudget` applies limits. This helper is retained for non-provider selection experiments; RuntimeLoop providers receive DecisionContextView instead.
 """
 
 from __future__ import annotations

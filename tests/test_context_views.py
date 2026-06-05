@@ -291,7 +291,7 @@ def test_cli_decision_context_does_not_invoke_runtime_provider_policy_or_tools(
         raise AssertionError("decision context must not execute runtime behavior")
 
     monkeypatch.setattr(seed_local, "build_local_app", explode)
-    monkeypatch.setattr(seed_local.ToolExecutor, "execute", explode)
-    monkeypatch.setattr(seed_local.Runtime, "handle_user_message", explode)
+    monkeypatch.setattr(seed_local.EchoTool, "execute", explode)
+    monkeypatch.setattr(seed_local.RuntimeLoop, "run", explode)
 
     assert seed_local.main(["--db", str(db_path), "--decision-context"]) == 0
