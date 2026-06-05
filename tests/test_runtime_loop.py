@@ -394,6 +394,26 @@ def make_loop(decision, *, policy_engine=None, handlers=None, ledger=None, proje
     return runtime, ledger, provider, echo_tool
 
 
+class RaisingLoopDecisionProvider:
+    def __init__(self, exc):
+        self.exc = exc
+        self.contexts = []
+
+    def decide(self, context):
+        self.contexts.append(context)
+        raise self.exc
+
+
+class ExplodingLoopPolicy:
+    def evaluate(self, tool, state, *, scope=None):  # pragma: no cover - failure path
+        raise AssertionError("policy must not be evaluated")
+
+
+class ExplodingLoopTool:
+    def execute(self, context, arguments):  # pragma: no cover - failure path
+        raise AssertionError("tool must not be executed")
+
+
 def test_loop_answer_decision_appends_user_and_assistant_events():
     runtime, ledger, provider, _ = make_loop(
         LoopDecision(kind="answer", text="done", reason="deterministic")
@@ -422,6 +442,113 @@ def test_loop_answer_decision_appends_user_and_assistant_events():
     assert (
         provider.last_context.decision_context.last_event_id
         == result.events_appended[0]
+    )
+
+
+def test_loop_provider_exception_returns_failure_result_and_journals_event():
+    provider = RaisingLoopDecisionProvider(RuntimeError("provider exploded"))
+    runtime, ledger, provider, _ = make_loop(
+        provider,
+        policy_engine=ExplodingLoopPolicy(),
+        handlers={"echo": ExplodingLoopTool()},
+    )
+
+    result = runtime.run(RuntimeInput(workspace_id="ws_loop", user_text="hello"))
+
+    assert result.decision_kind is None
+    assert result.response_text is None
+    assert result.policy_allowed is False
+    assert result.error == "provider exploded"
+    assert result.decision_outcome == "provider_failed"
+    assert result.decision_id is not None
+    assert result.context_hash is not None
+    assert result.decision_reason == ""
+    assert len(provider.contexts) == 1
+    assert [event.kind for event in ledger.list_events("ws_loop")] == [
+        "input.user_message",
+        "runtime.decision.provider_failed",
+        "decision.recorded",
+    ]
+    assert result.events_appended == [
+        event.id for event in ledger.list_events("ws_loop")
+    ]
+    provider_failed = ledger.list_events("ws_loop")[1]
+    assert provider_failed.payload == {
+        "error": "provider exploded",
+        "exception_type": "RuntimeError",
+    }
+    assert provider_failed.causation_id == ledger.list_events("ws_loop")[0].id
+    journal = ledger.list_events("ws_loop")[-1].payload["record"]
+    assert journal["decision_id"] == result.decision_id
+    assert journal["decision_kind"] is None
+    assert journal["reason"] == ""
+    assert journal["context_hash"] == result.context_hash
+    assert journal["policy_allowed"] is False
+    assert journal["outcome"] == "provider_failed"
+    assert journal["error"] == "provider exploded"
+    assert ledger.list_events("ws_loop")[-1].causation_id == provider_failed.id
+    assert (
+        ledger.list_events("ws_loop")[-1].correlation_id
+        == ledger.list_events("ws_loop")[0].id
+    )
+
+
+def test_loop_provider_exception_does_not_append_decision_rejected():
+    runtime, ledger, _, _ = make_loop(
+        RaisingLoopDecisionProvider(ValueError("bad provider")),
+        policy_engine=ExplodingLoopPolicy(),
+        handlers={"echo": ExplodingLoopTool()},
+    )
+
+    result = runtime.run(RuntimeInput(workspace_id="ws_loop", user_text="hello"))
+
+    assert result.decision_outcome == "provider_failed"
+    assert "runtime.decision.rejected" not in [
+        event.kind for event in ledger.list_events("ws_loop")
+    ]
+
+
+def test_loop_malformed_returned_decision_still_uses_decision_rejected():
+    runtime, ledger, _, echo_tool = make_loop(
+        {"kind": "answer", "text": "not a Decision"}
+    )
+
+    result = runtime.run(RuntimeInput(workspace_id="ws_loop", user_text="hello"))
+
+    assert result.decision_outcome == "malformed_decision"
+    assert result.error == "decision provider must return a runtime_loop.Decision"
+    assert echo_tool.calls == []
+    assert [event.kind for event in ledger.list_events("ws_loop")] == [
+        "input.user_message",
+        "runtime.decision.rejected",
+        "decision.recorded",
+    ]
+    assert ledger.list_events("ws_loop")[-1].payload["record"]["outcome"] == (
+        "malformed_decision"
+    )
+
+
+def test_old_runtime_parse_retry_behavior_remains_unchanged():
+    model = SequenceParseDecisionModel(
+        [
+            DecisionParseError("model response is not valid JSON: Expecting value"),
+            Decision(kind="answer", reason="corrected", answer="done"),
+        ]
+    )
+    runtime, ledger, model = make_runtime(model)
+
+    response = runtime.handle_user_message("ws", "ses", "hi")
+
+    assert response.kind == "answer"
+    assert response.message == "done"
+    assert [event.kind for event in ledger.list_events("ws")] == [
+        "input.user_message",
+        "model.decision.parse_failed",
+        "model.decision.proposed",
+        "response.answer",
+    ]
+    assert model.contexts[1].retry_prompt["instruction"].startswith(
+        "Your previous output was not valid strict JSON."
     )
 
 
@@ -827,8 +954,6 @@ def test_loop_malformed_decision_is_rejected_before_policy_and_tool_execution():
     assert journal["policy_allowed"] is False
     assert journal["error"] == "decision provider must return a runtime_loop.Decision"
     assert result.decision_outcome == "malformed_decision"
-
-
 
 
 def test_loop_tool_handler_exception_is_caught_and_journaled_as_tool_failed():

@@ -34,6 +34,11 @@ class FailingTool:
         raise RuntimeError("boom")
 
 
+class RaisingProvider:
+    def decide(self, context):
+        raise RuntimeError("provider unavailable")
+
+
 class ExplodingLedger(EventLedger):
     def append(self, *args, **kwargs):  # pragma: no cover - should never be called
         raise AssertionError("trace must not append events")
@@ -174,6 +179,34 @@ def test_trace_reconstructs_malformed_decision_run():
         "runtime.decision.rejected",
         "decision.recorded",
     ]
+
+
+def test_trace_can_include_provider_failure_error_event():
+    ledger = EventLedger()
+    registry = ToolRegistry()
+    registry.load_manifest("toolkits/core/echo/toolkit.yaml")
+    runtime = RuntimeLoop(
+        ledger,
+        None,
+        registry,
+        ExplodingPolicy(),
+        RaisingProvider(),
+        {"echo": ExplodingTool()},
+    )
+    result = runtime.run(RuntimeInput("ws", "hi"))
+
+    trace = trace_for(result, ledger)
+
+    assert trace.summary["outcome"] == "provider_failed"
+    assert trace.summary["error"] == "provider unavailable"
+    assert [event.event_type for event in trace.error_events] == [
+        "runtime.decision.provider_failed",
+        "decision.recorded",
+    ]
+    assert trace.error_events[0].payload == {
+        "error": "provider unavailable",
+        "exception_type": "RuntimeError",
+    }
 
 
 def test_trace_reconstructs_tool_failure_run():
