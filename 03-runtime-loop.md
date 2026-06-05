@@ -162,6 +162,19 @@ Decision Journal is an append-only event layer, not a separate mutable decision 
 
 This journal explains why a path was chosen and what happened afterward. It prepares Seed for `--why`, `--impact`, `--state-summary`, `--relationships`, `--graph-issues`, audit/explain views, and verification commands while preserving `EventLedger` as the source of truth. If an outcome changes after a proposal, Seed appends another event instead of mutating a prior event.
 
+## Runtime Trace
+
+`RuntimeTrace` is a read-only view over one RuntimeLoop run. Given a `workspace_id` and `run_id`, the trace reader loads matching `EventLedger` events, preserves append order, snapshots their payloads, and reconstructs the user input, `decision.recorded` journal record, policy denial event, tool result/failure/unknown event, assistant answer, and errors. It does not replay the runtime and does not call `DecisionProvider`, `PolicyEngine`, registered tools, projectors, shell commands, subprocesses, network clients, generated tools, LLMs, or host-mutating code.
+
+Trace summaries expose the operator-facing facts needed for audit and explanation surfaces: input text, decision kind and reason, outcome, selected tool, policy allowed/denied status, final response text, and any error. Missing run IDs return an empty trace with `summary.found = false`, rather than inventing or replaying state.
+
+Runtime responsibilities stay separated:
+
+- `RuntimeLoop` writes append-only events describing what happened.
+- `DecisionJournal` records decision intent, context hash, selected tool, policy status, outcome, and errors.
+- `RuntimeTrace` reconstructs one run from those events only.
+- Future `--why`, `--audit`, `--trace-run`, `--explain`, and `--impact` views can render the trace without mutating history.
+
 ## Runtime algorithm
 
 ```python
