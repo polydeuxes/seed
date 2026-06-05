@@ -20,6 +20,11 @@ if str(REPO_ROOT) not in sys.path:
 from seed_runtime.action_plans import ActionPlanService, ActionPlanTransitionError
 from seed_runtime.ansible_inventory_source import AnsibleInventoryObservationSource
 from seed_runtime.context import ContextComposer
+from seed_runtime.contradictions import (
+    Contradiction,
+    build_contradiction_summary,
+    build_contradictions,
+)
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.facts import (
@@ -974,6 +979,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="print projected facts with no linked supporting evidence",
     )
     parser.add_argument(
+        "--contradictions",
+        action="store_true",
+        help=(
+            "print read-only contradictions from projected State and Evidence Graph; "
+            "does not resolve facts, execute runtime behavior, or append events"
+        ),
+    )
+    parser.add_argument(
         "--trace-run",
         metavar="RUN_ID",
         help=(
@@ -1093,6 +1106,7 @@ def validate_lifecycle_args(
         bool(args.evidence),
         bool(args.why_fact),
         bool(args.unsupported_facts),
+        bool(args.contradictions),
         bool(args.trace_run),
         bool(args.why_run),
         bool(args.fact_support),
@@ -1116,7 +1130,8 @@ def validate_lifecycle_args(
             "choose only one of --preconditions, --proposal, --handoff, "
             "--authorize-proposal, --accept-plan, --approve-plan, "
             "--reject-plan, --supersede-plan, --impact, --unhealthy, --why, "
-            "--evidence, --why-fact, --unsupported-facts, --trace-run, "
+            "--evidence, --why-fact, --unsupported-facts, --contradictions, "
+            "--trace-run, "
             "--why-run, --fact-support, --best-fact, "
             "--current-facts, --current-observations, --current-requirements, "
             "--current-capabilities, --current-issues, --state-summary, "
@@ -2058,6 +2073,61 @@ def format_unsupported_facts(views: list[FactEvidenceView]) -> str:
         for view in views
     )
     return "\n".join(lines)
+
+
+def format_contradictions(state: State, contradictions: list[Contradiction]) -> str:
+    """Format the read-only Contradiction Detection view."""
+
+    summary = build_contradiction_summary(state, contradictions)
+    lines = [
+        "Contradictions",
+        "",
+        f"Count: {summary.contradiction_count}",
+        f"Affected Facts: {summary.affected_fact_count}",
+        f"High Severity: {summary.high_severity_count}",
+        f"Medium Severity: {summary.medium_severity_count}",
+        f"Low Severity: {summary.low_severity_count}",
+        "",
+        f"Projection Version: {summary.projection_version}",
+        f"Last Event: {summary.last_event_id or 'none'}",
+        "",
+    ]
+    if not contradictions:
+        lines.append("(none)")
+        return "\n".join(lines)
+
+    facts_by_id = state.facts
+    for contradiction in contradictions:
+        lines.append(f"* {contradiction.subject} {contradiction.predicate}")
+        lines.append(f"  severity: {contradiction.severity}")
+        lines.append(f"  reason: {contradiction.reason}")
+        lines.append(
+            "  values: "
+            + ", ".join(_format_view_value(value) for value in contradiction.values)
+        )
+        lines.append("  facts:")
+        for fact_id in contradiction.fact_ids:
+            fact = facts_by_id.get(fact_id)
+            if fact is None:
+                lines.append(f"  {fact_id}: (missing from projected State)")
+                continue
+            lines.append(
+                f"  {fact_id}: {fact.subject_id} {fact.predicate} "
+                f"{_format_view_value(fact.value)}"
+            )
+            evidence_view = contradiction.evidence_by_fact_id.get(fact_id)
+            if evidence_view is None or not evidence_view.evidence:
+                lines.append("    evidence: none")
+            else:
+                evidence_bits = []
+                for node in evidence_view.evidence:
+                    source = node.source_event_id or node.evidence_id
+                    evidence_bits.append(f"{node.evidence_type} {source}")
+                lines.append("    evidence: " + "; ".join(evidence_bits))
+        supporting = ", ".join(contradiction.supporting_event_ids) or "none"
+        lines.append(f"  supporting events: {supporting}")
+    return "\n".join(lines)
+
 
 def format_state_view_summary(summary: StateSummary) -> str:
     """Format the v1 State View summary."""
@@ -3446,6 +3516,12 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.unsupported_facts:
         print(format_unsupported_facts(unsupported_fact_views(projected_state_from_args(args))))
+        return 0
+
+    if args.contradictions:
+        state = projected_state_from_args(args)
+        evidence_graph = build_evidence_graph(state)
+        print(format_contradictions(state, build_contradictions(state, evidence_graph)))
         return 0
 
     if args.fact_support:
