@@ -525,6 +525,129 @@ def test_loop_tool_decision_executes_registered_echo_tool_and_appends_result_eve
     assert result.decision_outcome == "tool_succeeded"
 
 
+def test_loop_request_tool_decision_appends_tool_need_and_journal():
+    runtime, ledger, _, _ = make_loop(
+        LoopDecision(
+            kind="request_tool",
+            reason="missing capability",
+            tool_need={
+                "name": "Lookup Service Status",
+                "summary": "Look up service status from inventory",
+                "capability": "Service Status Lookup",
+            },
+        )
+    )
+
+    result = runtime.run(RuntimeInput(workspace_id="ws_loop", user_text="check service"))
+
+    assert result.decision_kind == "request_tool"
+    assert result.response_text == "Recorded tool need lookup_service_status."
+    assert result.policy_allowed is True
+    assert result.error is None
+    assert result.decision_outcome == "tool_requested"
+    assert [event.kind for event in ledger.list_events("ws_loop")] == [
+        "input.user_message",
+        "tool_need.created",
+        "decision.recorded",
+    ]
+    need_payload = ledger.list_events("ws_loop")[-2].payload["tool_need"]
+    assert need_payload["name"] == "lookup_service_status"
+    assert need_payload["summary"] == "Look up service status from inventory"
+    assert need_payload["capability"] == "service_status_lookup"
+    journal = ledger.list_events("ws_loop")[-1].payload["record"]
+    assert journal["decision_kind"] == "request_tool"
+    assert journal["outcome"] == "tool_requested"
+    assert journal["policy_allowed"] is True
+    assert result.decision_id == journal["decision_id"]
+
+
+def test_loop_request_tool_projects_open_tool_need():
+    runtime, ledger, _, _ = make_loop(
+        LoopDecision(
+            kind="request_tool",
+            reason="missing lookup",
+            tool_need={
+                "name": "lookup_service_status",
+                "summary": "Look up service status from inventory",
+                "capability": "service_status_lookup",
+            },
+        )
+    )
+
+    runtime.run(RuntimeInput(workspace_id="ws_loop", user_text="check service"))
+    projected_state = StateProjector(ledger).project("ws_loop")
+
+    assert [need.name for need in projected_state.open_tool_needs] == [
+        "lookup_service_status"
+    ]
+
+
+def test_loop_request_tool_rejects_missing_tool_need_payload():
+    runtime, ledger, _, _ = make_loop(
+        LoopDecision(kind="request_tool", reason="missing payload")
+    )
+
+    result = runtime.run(RuntimeInput(workspace_id="ws_loop", user_text="need tool"))
+
+    assert result.decision_kind is None
+    assert result.error == "request_tool decisions require tool_need dict"
+    assert [event.kind for event in ledger.list_events("ws_loop")] == [
+        "input.user_message",
+        "runtime.decision.rejected",
+        "decision.recorded",
+    ]
+    assert (
+        ledger.list_events("ws_loop")[-1].payload["record"]["outcome"]
+        == "malformed_decision"
+    )
+
+
+def test_loop_request_tool_rejects_malformed_payload_and_forbidden_fields():
+    cases = [
+        (
+            LoopDecision(
+                kind="request_tool",
+                reason="missing name",
+                tool_need={"name": "", "summary": "Summary", "capability": "cap"},
+            ),
+            "request_tool decisions require non-empty name",
+        ),
+        (
+            LoopDecision(
+                kind="request_tool",
+                reason="missing summary",
+                tool_need={"name": "need", "summary": "", "capability": "cap"},
+            ),
+            "request_tool decisions require non-empty summary",
+        ),
+        (
+            LoopDecision(
+                kind="request_tool",
+                reason="missing capability",
+                tool_need={"name": "need", "summary": "Summary", "capability": ""},
+            ),
+            "request_tool decisions require non-empty capability",
+        ),
+        (
+            LoopDecision(
+                kind="request_tool",
+                reason="forbidden tool fields",
+                tool_name="echo",
+                tool_args={"message": "hi"},
+                text="no",
+                tool_need={"name": "need", "summary": "Summary", "capability": "cap"},
+            ),
+            "request_tool decisions may not include tool_name, tool_args, or text",
+        ),
+    ]
+
+    for decision, expected_error in cases:
+        runtime, _, _, _ = make_loop(decision)
+        result = runtime.run(RuntimeInput(workspace_id="ws_loop", user_text="need tool"))
+        assert result.error == expected_error
+        assert result.decision_outcome == "malformed_decision"
+
+
 def test_loop_unknown_tool_is_rejected_and_logged_as_event():
     runtime, ledger, _, echo_tool = make_loop(
         LoopDecision(

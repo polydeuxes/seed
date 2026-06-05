@@ -15,14 +15,16 @@ from typing import Any, Mapping, Protocol, Literal
 from seed_runtime.context_views import DecisionContextView, build_decision_context_view
 from seed_runtime.decision_journal import DecisionJournal, context_hash
 from seed_runtime.events import EventLedger
-from seed_runtime.models import PolicyDecision, ToolSpec
+from seed_runtime.ids import new_id
+from seed_runtime.models import PolicyDecision, ToolNeed, ToolSpec
 from seed_runtime.policy import PolicyGate
 from seed_runtime.projection_store import ProjectionStore, project_state_with_cache
 from seed_runtime.registry import ToolRegistry
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import State, StateProjector
+from seed_runtime.tool_needs import slugify
 
-DecisionKind = Literal["answer", "call_tool"]
+DecisionKind = Literal["answer", "call_tool", "request_tool"]
 
 
 @dataclass(frozen=True)
@@ -55,6 +57,7 @@ class Decision:
     text: str | None = None
     tool_name: str | None = None
     tool_args: dict[str, Any] = field(default_factory=dict)
+    tool_need: dict[str, Any] | None = None
     reason: str = ""
 
 
@@ -229,6 +232,16 @@ class RuntimeLoop:
                 decision_outcome="answered",
             )
 
+        if decision.kind == "request_tool":
+            return self._run_request_tool_decision(
+                runtime_input,
+                run_id,
+                input_event.id,
+                context_digest,
+                decision,
+                events_appended,
+            )
+
         return self._run_tool_decision(
             runtime_input,
             run_id,
@@ -238,6 +251,72 @@ class RuntimeLoop:
             context_digest,
             decision,
             events_appended,
+        )
+
+    def _run_request_tool_decision(
+        self,
+        runtime_input: RuntimeInput,
+        run_id: str,
+        input_event_id: str,
+        context_digest: str,
+        decision: Decision,
+        events_appended: list[str],
+    ) -> RuntimeResult:
+        tool_need = self._build_tool_need(
+            runtime_input.workspace_id, decision, input_event_id
+        )
+        need_event = self.ledger.append(
+            "tool_need.created",
+            runtime_input.workspace_id,
+            {"tool_need": to_plain(tool_need)},
+            actor="system",
+            causation_id=input_event_id,
+        )
+        events_appended.append(need_event.id)
+        journal_event = self.decision_journal.append_record(
+            workspace_id=runtime_input.workspace_id,
+            run_id=run_id,
+            decision_kind="request_tool",
+            reason=decision.reason,
+            context_hash=context_digest,
+            policy_allowed=True,
+            outcome="tool_requested",
+            causation_id=need_event.id,
+            correlation_id=input_event_id,
+        )
+        events_appended.append(journal_event.id)
+        record = journal_event.payload["record"]
+        return RuntimeResult(
+            workspace_id=runtime_input.workspace_id,
+            run_id=run_id,
+            decision_kind="request_tool",
+            response_text=f"Recorded tool need {tool_need.name}.",
+            events_appended=events_appended,
+            policy_allowed=True,
+            error=None,
+            decision_id=record["decision_id"],
+            context_hash=context_digest,
+            decision_reason=decision.reason,
+            decision_outcome="tool_requested",
+        )
+
+    def _build_tool_need(
+        self, workspace_id: str, decision: Decision, requested_by_event_id: str
+    ) -> ToolNeed:
+        payload = decision.tool_need or {}
+        name = slugify(str(payload["name"]))
+        capability = slugify(str(payload["capability"]))
+        return ToolNeed(
+            id=new_id("need"),
+            workspace_id=workspace_id,
+            name=name,
+            summary=str(payload["summary"]),
+            capability=capability,
+            reason=decision.reason,
+            requested_by_event_id=requested_by_event_id,
+            risk_hint=payload.get("risk_hint"),
+            desired_inputs=list(payload.get("desired_inputs", [])),
+            desired_outputs=list(payload.get("desired_outputs", [])),
         )
 
     def _run_tool_decision(
@@ -492,8 +571,8 @@ class RuntimeLoop:
     def _validate_decision(self, proposed: object) -> tuple[Decision | None, str | None]:
         if not isinstance(proposed, Decision):
             return None, "decision provider must return a runtime_loop.Decision"
-        if proposed.kind not in {"answer", "call_tool"}:
-            return None, "decision kind must be 'answer' or 'call_tool'"
+        if proposed.kind not in {"answer", "call_tool", "request_tool"}:
+            return None, "decision kind must be 'answer', 'call_tool', or 'request_tool'"
         if not isinstance(proposed.reason, str):
             return None, "decision reason must be a string"
         if proposed.kind == "answer":
@@ -501,6 +580,8 @@ class RuntimeLoop:
                 return None, "answer decisions require non-empty text"
             if proposed.tool_name is not None or proposed.tool_args:
                 return None, "answer decisions may not include tool output fields"
+            if proposed.tool_need is not None:
+                return None, "answer decisions may not include tool_need"
         if proposed.kind == "call_tool":
             if not isinstance(proposed.tool_name, str) or proposed.tool_name == "":
                 return None, "tool decisions require a non-empty tool_name"
@@ -508,6 +589,17 @@ class RuntimeLoop:
                 return None, "tool decisions require tool_args to be a dict"
             if proposed.text is not None:
                 return None, "tool decisions may not include answer text"
+            if proposed.tool_need is not None:
+                return None, "tool decisions may not include tool_need"
+        if proposed.kind == "request_tool":
+            if not isinstance(proposed.tool_need, dict):
+                return None, "request_tool decisions require tool_need dict"
+            for field_name in ("name", "summary", "capability"):
+                value = proposed.tool_need.get(field_name)
+                if not isinstance(value, str) or value.strip() == "":
+                    return None, f"request_tool decisions require non-empty {field_name}"
+            if proposed.tool_name is not None or proposed.tool_args or proposed.text is not None:
+                return None, "request_tool decisions may not include tool_name, tool_args, or text"
         return proposed, None
 
     def _safe_decision_payload(self, proposed: object) -> dict[str, Any]:
@@ -517,6 +609,7 @@ class RuntimeLoop:
                 "text": proposed.text,
                 "tool_name": proposed.tool_name,
                 "tool_args": to_plain(proposed.tool_args),
+                "tool_need": to_plain(proposed.tool_need),
                 "reason": proposed.reason,
             }
         if isinstance(proposed, dict):

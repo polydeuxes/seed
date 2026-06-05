@@ -475,7 +475,7 @@ def test_runtime_context_answer_builds_runtime_loop_answer_decision():
     assert decision.tool_args == {}
 
 
-def test_runtime_context_missing_tool_becomes_answer_not_request_tool():
+def test_runtime_context_missing_tool_becomes_request_tool():
     decision = DecisionBuilder().build(
         runtime_context_for("what is the weather in Jacksonville?"),
         IntentClassification(
@@ -486,11 +486,13 @@ def test_runtime_context_missing_tool_becomes_answer_not_request_tool():
     )
 
     assert isinstance(decision, RuntimeLoopDecision)
-    assert decision.kind == "answer"
-    assert decision.text is not None
-    assert "visible capability" in decision.text
-    assert "weather" in decision.text
-    assert not hasattr(decision, "tool_need")
+    assert decision.kind == "request_tool"
+    assert decision.text is None
+    assert decision.tool_need == {
+        "name": "weather_lookup",
+        "summary": "Look up weather information.",
+        "capability": "weather_lookup",
+    }
 
 
 def test_intent_decision_model_accepts_runtime_context():

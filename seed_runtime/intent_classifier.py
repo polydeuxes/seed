@@ -440,11 +440,10 @@ class DecisionBuilder:
         if classification.intent == "missing_tool":
             tool_need = _normalize_tool_need(arguments, _input_text(context))
             if isinstance(context, RuntimeContext):
-                summary = tool_need["summary"].rstrip(".").lower()
                 return RuntimeLoopDecision(
-                    kind="answer",
+                    kind="request_tool",
                     reason=reason,
-                    text=f"I do not have a visible capability for {summary} yet.",
+                    tool_need=tool_need,
                 )
             return Decision(
                 kind="request_tool",

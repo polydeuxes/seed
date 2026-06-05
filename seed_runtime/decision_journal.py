@@ -25,6 +25,7 @@ DecisionOutcome = Literal[
     "tool_unknown",
     "policy_denied",
     "malformed_decision",
+    "tool_requested",
 ]
 
 
