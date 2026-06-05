@@ -47,13 +47,38 @@ def test_completed_tool_call_extracts_tool_output_evidence_into_state_and_contex
     assert context.evidence == [evidence.__dict__]
 
 
-def test_fact_extraction_service_rejects_non_completed_tool_events():
+def test_fact_extraction_service_rejects_non_successful_tool_result_events():
     ledger = EventLedger()
     event = ledger.append("tool.call.failed", "ws_1", {"tool": "echo"})
 
     try:
         FactExtractionService(ledger).observe_tool_result(event)
     except FactExtractionError as exc:
-        assert str(exc) == "can only extract facts from tool.call.completed"
+        assert str(exc) == (
+            "can only extract facts from tool.call.completed or tool.result"
+        )
     else:
         raise AssertionError("expected FactExtractionError")
+
+
+def test_runtime_loop_tool_result_extracts_tool_output_evidence_into_state():
+    ledger = EventLedger()
+    event = ledger.append(
+        "tool.result",
+        "ws_1",
+        {"tool_name": "echo", "output": {"message": "hello"}},
+    )
+
+    result = FactExtractionService(ledger).observe_tool_result(event)
+
+    assert len(result.events) == 1
+    observed = result.events[0]
+    assert observed.kind == "evidence.observed"
+    assert observed.causation_id == event.id
+    assert observed.payload["evidence"]["source"] == "tool:echo"
+    assert observed.payload["evidence"]["payload"] == {"message": "hello"}
+
+    state = StateProjector(ledger).project("ws_1")
+    evidence = next(iter(state.evidence.values()))
+    assert evidence.source == "tool:echo"
+    assert evidence.payload == {"message": "hello"}
