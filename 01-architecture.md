@@ -17,14 +17,13 @@ The core loop is the product:
 
 ```text
 Input
-  -> EventLedger
-  -> State Projection
-  -> Context Composer
-  -> DecisionProvider
-  -> Decision Validation
-  -> PolicyEngine
-  -> ToolRegistry or Answer
-  -> New Events
+  -> Events
+  -> State
+  -> Context
+  -> Decision
+  -> Policy
+  -> Execution
+  -> Events
 ```
 
 Runtime sovereignty is explicit: the model/provider proposes decisions, the runtime validates decisions, policy allows or denies valid tool decisions, and `ToolRegistry` execution is limited to registered handlers. Raw provider output is never executed, and generated tools are not active merely because they exist.
@@ -75,6 +74,8 @@ The knowledge layer projects current belief from immutable observations rather t
 
 - `EventLedger` = historical event source.
 - `ProjectionStore` = cached current world-model snapshots; it never becomes the source of truth.
+- `State` = current projected world model derived from the EventLedger.
+- `State Views` = read-only representations of projected State for facts, observations, requirements, capabilities, issues, and summary counts. They are projection views, not a second state store.
 - `RuntimeLoop` = coordinator for one request execution.
 - `DecisionProvider` = proposes structured decisions; it may be deterministic code, a model adapter, or another provider. LLMs are optional, not required.
 - `PolicyEngine` = authorization/safety boundary for valid tool decisions.
@@ -97,6 +98,7 @@ Seed owns:
 - Policy metadata
 - Audit trail
 - DecisionJournal events for why/outcome explanations
+- State Views that answer what Seed currently knows without reading raw events or invoking runtime behavior
 
 Seed delegates:
 
@@ -174,6 +176,20 @@ Maintains projections such as:
 - FactSupport aggregates and fact conflicts
 
 State should be deterministic and inspectable.
+
+### State Views
+
+State Views expose the current world model without requiring callers to read raw events. `seed_runtime/state_views.py` builds read-only `FactView`, `ObservationView`, `RequirementView`, `CapabilityView`, `IssueView`, and `StateSummary` objects from an already projected `State`.
+
+State Views answer:
+
+- What does Seed currently know?
+- What facts exist?
+- What requirements exist?
+- What capabilities exist?
+- What issues exist?
+
+They are projections and not separate persistence systems. They do not append events, replay runtime decisions, invoke `RuntimeLoop`, call providers, evaluate policy, execute tools, run shell commands, or perform network calls. CLI flags such as `--current-facts`, `--current-observations`, `--current-requirements`, `--current-capabilities`, `--current-issues`, and `--state-summary` load projected State, reuse `ProjectionStore` snapshots when available, and render plain text.
 
 
 #### Fact Support Aggregation

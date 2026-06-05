@@ -82,6 +82,20 @@ from seed_runtime.secrets import (
     reject_secret_fields,
 )
 from seed_runtime.state import State, StateProjector
+from seed_runtime.state_views import (
+    CapabilityView,
+    FactView,
+    IssueView,
+    ObservationView,
+    RequirementView,
+    StateSummary,
+    build_capability_view,
+    build_fact_view,
+    build_issue_view,
+    build_observation_view,
+    build_requirement_view,
+    build_state_summary,
+)
 from seed_runtime.tool_needs import ToolNeedService
 
 DEFAULT_ENDPOINT = "http://localhost:11434/api/generate"
@@ -977,9 +991,32 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--current-facts",
-        nargs=2,
+        nargs="*",
         metavar=("SUBJECT", "PREDICATE"),
-        help="print all projected current values for a subject/predicate",
+        help=(
+            "print all projected Fact views; optionally pass SUBJECT PREDICATE "
+            "for the legacy current-fact query"
+        ),
+    )
+    parser.add_argument(
+        "--current-observations",
+        action="store_true",
+        help="print read-only projected Observation views and exit",
+    )
+    parser.add_argument(
+        "--current-requirements",
+        action="store_true",
+        help="print read-only projected Requirement views and exit",
+    )
+    parser.add_argument(
+        "--current-capabilities",
+        action="store_true",
+        help="print read-only projected Capability views and exit",
+    )
+    parser.add_argument(
+        "--current-issues",
+        action="store_true",
+        help="print read-only projected Issue views and exit",
     )
     parser.add_argument(
         "--fact-conflicts",
@@ -1031,7 +1068,12 @@ def validate_lifecycle_args(
         bool(args.why_run),
         bool(args.fact_support),
         bool(args.best_fact),
-        bool(args.current_facts),
+        bool(args.current_facts is not None),
+        bool(args.current_observations),
+        bool(args.current_requirements),
+        bool(args.current_capabilities),
+        bool(args.current_issues),
+        bool(args.state_summary),
         bool(args.inferred_facts),
         bool(args.fact_conflicts),
         bool(args.stale_facts),
@@ -1046,10 +1088,14 @@ def validate_lifecycle_args(
             "--authorize-proposal, --accept-plan, --approve-plan, "
             "--reject-plan, --supersede-plan, --impact, --unhealthy, --why, "
             "--trace-run, --why-run, --fact-support, --best-fact, "
-            "--current-facts, --inferred-facts, "
-            "--fact-conflicts, --stale-facts, --stale-fact-refreshes, "
-            "--rebuild-state-cache, --state-cache-status, or --events-only"
+            "--current-facts, --current-observations, --current-requirements, "
+            "--current-capabilities, --current-issues, --state-summary, "
+            "--inferred-facts, --fact-conflicts, --stale-facts, "
+            "--stale-fact-refreshes, --rebuild-state-cache, --state-cache-status, "
+            "or --events-only"
         )
+    if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
+        parser.error("--current-facts accepts either no values or SUBJECT PREDICATE")
     if args.rebuild_state_cache and not args.db:
         parser.error("--rebuild-state-cache requires --db")
     if (args.rebuild_state_cache or args.state_cache_status) and args.predicate_catalog:
@@ -1893,6 +1939,80 @@ def state_summary(
         summary["relationship_count"] = len(state.relationships)
     return summary
 
+
+
+def format_state_view_summary(summary: StateSummary) -> str:
+    """Format the v1 State View summary."""
+
+    return "\n".join(
+        [
+            "State Summary",
+            "",
+            f"Facts: {summary.facts_count}",
+            f"Observations: {summary.observations_count}",
+            f"Requirements: {summary.requirements_count}",
+            f"Capabilities: {summary.capabilities_count}",
+            f"Issues: {summary.issues_count}",
+            "",
+            f"Projection Version: {summary.projection_version}",
+            f"Last Event: {summary.last_event_id or 'none'}",
+        ]
+    )
+
+
+def format_fact_views(views: list[FactView]) -> str:
+    lines = ["Current Facts", ""]
+    lines.extend(
+        f"* {view.subject} {view.predicate} {_format_view_value(view.object)}"
+        for view in views
+    )
+    if not views:
+        lines.append("(none)")
+    return "\n".join(lines)
+
+
+def format_observation_views(views: list[ObservationView]) -> str:
+    lines = ["Current Observations", ""]
+    lines.extend(f"* {view.summary}" for view in views)
+    if not views:
+        lines.append("(none)")
+    return "\n".join(lines)
+
+
+def format_requirement_views(views: list[RequirementView]) -> str:
+    lines = ["Current Requirements", ""]
+    lines.extend(
+        f"* {view.requirement_name} ({view.status})" for view in views
+    )
+    if not views:
+        lines.append("(none)")
+    return "\n".join(lines)
+
+
+def format_capability_views(views: list[CapabilityView]) -> str:
+    lines = ["Current Capabilities", ""]
+    lines.extend(
+        f"* {view.capability_name} ({view.status})" for view in views
+    )
+    if not views:
+        lines.append("(none)")
+    return "\n".join(lines)
+
+
+def format_issue_views(views: list[IssueView]) -> str:
+    lines = ["Current Issues", ""]
+    lines.extend(f"* {view.summary} ({view.severity})" for view in views)
+    if not views:
+        lines.append("(none)")
+    return "\n".join(lines)
+
+
+def _format_view_value(value: Any) -> str:
+    if isinstance(value, bool):
+        return str(value).lower()
+    if isinstance(value, (dict, list)):
+        return json.dumps(value, sort_keys=True, separators=(",", ":"))
+    return str(value)
 
 def format_state_summary(summary: dict[str, Any]) -> str:
     """Format the projected state summary for concise terminal inspection."""
@@ -3132,7 +3252,12 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.state_summary:
-        print(format_state_summary(state_summary(projected_state_from_args(args))))
+        state = projected_state_from_args(args)
+        print(
+            format_state_view_summary(build_state_summary(state))
+            + "\n\n"
+            + format_state_summary(state_summary(state))
+        )
         return 0
 
     if args.rebuild_state_cache:
@@ -3210,7 +3335,10 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
 
-    if args.current_facts:
+    if args.current_facts is not None:
+        if len(args.current_facts) == 0:
+            print(format_fact_views(build_fact_view(projected_state_from_args(args))))
+            return 0
         subject, predicate = args.current_facts
         print(
             format_current_facts(
@@ -3220,6 +3348,22 @@ def main(argv: list[str] | None = None) -> int:
                 include_expired=args.include_expired,
             )
         )
+        return 0
+
+    if args.current_observations:
+        print(format_observation_views(build_observation_view(projected_state_from_args(args))))
+        return 0
+
+    if args.current_requirements:
+        print(format_requirement_views(build_requirement_view(projected_state_from_args(args))))
+        return 0
+
+    if args.current_capabilities:
+        print(format_capability_views(build_capability_view(projected_state_from_args(args))))
+        return 0
+
+    if args.current_issues:
+        print(format_issue_views(build_issue_view(projected_state_from_args(args))))
         return 0
 
     if args.fact_conflicts:

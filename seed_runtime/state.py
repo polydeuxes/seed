@@ -235,6 +235,8 @@ class AliasResolver:
 @dataclass
 class State:
     workspace_id: str
+    last_event_id: str | None = None
+    projection_version: str = "v1"
     predicate_catalog: PredicateCatalog = field(
         default_factory=PredicateCatalog.load, compare=False, repr=False
     )
@@ -692,6 +694,7 @@ class StateProjector:
     def project(self, workspace_id: str) -> State:
         state = State(workspace_id=workspace_id, predicate_catalog=self.predicate_catalog)
         for event in self.ledger.list_events(workspace_id):
+            state.last_event_id = event.id
             self.apply(state, event)
         state.alias_resolver = AliasResolver(state.facts.values())
         all_measurement_evidence_ids = {

@@ -277,6 +277,8 @@ def state_to_payload(state: State) -> dict[str, Any]:
     return to_plain(
         {
             "workspace_id": state.workspace_id,
+            "last_event_id": state.last_event_id,
+            "projection_version": state.projection_version,
             "entities": state.entities,
             "facts": state.facts,
             "observed_facts": state.observed_facts,
@@ -308,7 +310,10 @@ def state_from_payload(payload: dict[str, Any]) -> State:
     """Deserialize a State snapshot produced by :func:`state_to_payload`."""
 
     state = State(
-        workspace_id=str(payload["workspace_id"]), predicate_catalog=PredicateCatalog.load()
+        workspace_id=str(payload["workspace_id"]),
+        predicate_catalog=PredicateCatalog.load(),
+        last_event_id=payload.get("last_event_id"),
+        projection_version=str(payload.get("projection_version", "v1")),
     )
     state.entities = _model_dict(payload, "entities", Entity)
     state.facts = _model_dict(payload, "facts", Fact)
