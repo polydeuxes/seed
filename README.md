@@ -262,7 +262,7 @@ curl -s http://127.0.0.1:8765/message \
   -d '{"message":"echo hello"}'
 ```
 
-Normal CLI and HTTP responses are JSON objects with `response` and `events`. `--raw` prints the raw model completion so you can debug the local model's intent JSON before Seed parses it.
+Normal CLI and HTTP responses are JSON objects with `response` and `events`. `--raw` prints the raw model completion so you can debug the local model's intent JSON before Seed parses it. Runtime trace support is intentionally read-only: `RuntimeTrace` reconstructs a single RuntimeLoop run from ledger events and is the foundation for future CLI views such as `--trace-run`, `--audit`, `--explain`, and run-level `--why` output without replaying the runtime or calling providers, policy, or tools.
 
 ### Predicate catalog
 
