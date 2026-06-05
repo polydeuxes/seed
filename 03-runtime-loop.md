@@ -173,7 +173,9 @@ Runtime responsibilities stay separated:
 - `RuntimeLoop` writes append-only events describing what happened.
 - `DecisionJournal` records decision intent, context hash, selected tool, policy status, outcome, and errors.
 - `RuntimeTrace` reconstructs one run from those events only.
-- Future `--why`, `--audit`, `--trace-run`, `--explain`, and `--impact` views can render the trace without mutating history.
+- CLI `--trace-run RUN_ID` renders the full ordered trace without mutating history.
+- CLI `--why-run RUN_ID` renders a concise human explanation from the same read-only trace.
+- Future `--audit`, `--explain`, and `--impact` views can render the trace without mutating history.
 
 ## Runtime algorithm
 

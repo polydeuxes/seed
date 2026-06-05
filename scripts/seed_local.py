@@ -74,6 +74,7 @@ from seed_runtime.observation_sources import (
 from seed_runtime.observations import ObservationIngestor
 from seed_runtime.registry import ToolRegistry
 from seed_runtime.runtime import Runtime
+from seed_runtime.runtime_trace import RuntimeTrace, load_runtime_trace
 from seed_runtime.serialization import to_plain
 from seed_runtime.secrets import (
     SECRET_FIELD_NAMES,
@@ -933,6 +934,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="explain why Seed holds, rejects, or considers a current belief ambiguous",
     )
     parser.add_argument(
+        "--trace-run",
+        metavar="RUN_ID",
+        help=(
+            "print a read-only ordered RuntimeLoop trace for RUN_ID; "
+            "does not replay, call providers/policy/tools, or append events"
+        ),
+    )
+    parser.add_argument(
+        "--why-run",
+        metavar="RUN_ID",
+        help=(
+            "print a concise read-only explanation for RuntimeLoop RUN_ID; "
+            "does not replay, call providers/policy/tools, or append events"
+        ),
+    )
+    parser.add_argument(
         "--fact-support",
         nargs=2,
         metavar=("SUBJECT", "PREDICATE"),
@@ -1010,6 +1027,8 @@ def validate_lifecycle_args(
         bool(args.impact),
         bool(args.unhealthy),
         bool(args.why),
+        bool(args.trace_run),
+        bool(args.why_run),
         bool(args.fact_support),
         bool(args.best_fact),
         bool(args.current_facts),
@@ -1026,7 +1045,7 @@ def validate_lifecycle_args(
             "choose only one of --preconditions, --proposal, --handoff, "
             "--authorize-proposal, --accept-plan, --approve-plan, "
             "--reject-plan, --supersede-plan, --impact, --unhealthy, --why, "
-            "--fact-support, --best-fact, "
+            "--trace-run, --why-run, --fact-support, --best-fact, "
             "--current-facts, --inferred-facts, "
             "--fact-conflicts, --stale-facts, --stale-fact-refreshes, "
             "--rebuild-state-cache, --state-cache-status, or --events-only"
@@ -2948,6 +2967,122 @@ def format_inferred_facts(state: State, entity: str) -> str:
     )
 
 
+
+def runtime_trace_from_args(args: argparse.Namespace, run_id: str) -> RuntimeTrace:
+    """Load a RuntimeLoop trace without seeding state or appending events."""
+
+    ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
+    try:
+        return load_runtime_trace(ledger, args.workspace, run_id)
+    finally:
+        close = getattr(ledger, "close", None)
+        if close is not None:
+            close()
+
+
+def _format_trace_value(value: Any) -> str:
+    if value is None or value == "":
+        return "none"
+    if isinstance(value, bool):
+        return str(value).lower()
+    if isinstance(value, (dict, list)):
+        return json.dumps(value, sort_keys=True)
+    return str(value)
+
+
+def _trace_policy_allowed(trace: RuntimeTrace) -> str:
+    value = trace.summary.get("policy_allowed")
+    if value is None:
+        return "unknown"
+    return str(bool(value)).lower()
+
+
+def format_runtime_trace(trace: RuntimeTrace) -> str:
+    """Render a deterministic plain-text RuntimeTrace."""
+
+    if not trace.summary.get("found"):
+        return f"Runtime trace not found for run_id: {trace.run_id}"
+
+    summary = trace.summary
+    decision = trace.decision_record or {}
+    event_lines = [
+        f"* {event.created_at.isoformat()} {event.event_id} {event.event_type}"
+        for event in trace.events
+    ]
+    if not event_lines:
+        event_lines = ["* none"]
+
+    return "\n".join(
+        [
+            "Runtime Trace",
+            f"workspace: {trace.workspace_id}",
+            f"run: {trace.run_id}",
+            "",
+            f"Input: {_format_trace_value(summary.get('input_text'))}",
+            "",
+            "Decision:",
+            f"kind: {_format_trace_value(summary.get('decision_kind'))}",
+            f"reason: {_format_trace_value(summary.get('decision_reason'))}",
+            f"context_hash: {_format_trace_value(decision.get('context_hash'))}",
+            "",
+            "Policy:",
+            f"allowed: {_trace_policy_allowed(trace)}",
+            "",
+            "Execution:",
+            f"tool: {_format_trace_value(summary.get('selected_tool'))}",
+            f"outcome: {_format_trace_value(summary.get('outcome'))}",
+            f"response: {_format_trace_value(summary.get('final_response_text'))}",
+            f"error: {_format_trace_value(summary.get('error'))}",
+            "",
+            "Events:",
+            *event_lines,
+        ]
+    )
+
+
+def _why_decision_phrase(kind: Any, selected_tool: Any) -> str:
+    if kind == "answer":
+        return "answer"
+    if kind == "call_tool":
+        tool = _format_trace_value(selected_tool)
+        return f"call tool {tool}" if tool != "none" else "call a tool"
+    return _format_trace_value(kind)
+
+
+def _why_policy_phrase(trace: RuntimeTrace) -> str:
+    if trace.summary.get("policy_allowed") is True:
+        return "allowed"
+    if trace.summary.get("policy_allowed") is False or trace.summary.get("policy_denied"):
+        return "denied"
+    return "had unknown policy status for"
+
+
+def format_runtime_why(trace: RuntimeTrace) -> str:
+    """Render a short human explanation for a RuntimeLoop run."""
+
+    if not trace.summary.get("found"):
+        return f"Runtime trace not found for run_id: {trace.run_id}"
+
+    summary = trace.summary
+    lines = [
+        f"User asked: {_format_trace_value(summary.get('input_text'))}.",
+        "",
+        "Seed decided to "
+        f"{_why_decision_phrase(summary.get('decision_kind'), summary.get('selected_tool'))} "
+        f"because: {_format_trace_value(summary.get('decision_reason'))}.",
+        "",
+        f"Policy {_why_policy_phrase(trace)} the decision.",
+        "",
+        f"Outcome: {_format_trace_value(summary.get('outcome'))}.",
+    ]
+    final_response = summary.get("final_response_text")
+    error = summary.get("error")
+    if final_response:
+        lines.extend(["", str(final_response)])
+    if error:
+        lines.extend(["", f"Error: {error}"])
+    return "\n".join(lines)
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -2958,6 +3093,14 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.show_inference_catalog:
         print(format_inference_catalog(InferenceCatalog.load()))
+        return 0
+
+    if args.trace_run:
+        print(format_runtime_trace(runtime_trace_from_args(args, args.trace_run)))
+        return 0
+
+    if args.why_run:
+        print(format_runtime_why(runtime_trace_from_args(args, args.why_run)))
         return 0
 
     if args.inferred_facts:
