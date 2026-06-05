@@ -860,3 +860,42 @@ def test_loop_has_no_shell_subprocess_or_network_behavior():
         "eval(",
     ]
     assert [fragment for fragment in forbidden_fragments if fragment in source] == []
+
+
+def test_loop_rejects_state_patch_decision_kind_as_malformed():
+    runtime, ledger, _, echo_tool = make_loop(
+        LoopDecision(
+            kind="propose_state_patch", reason="runtime loop does not patch state"
+        )
+    )
+
+    result = runtime.run(
+        RuntimeInput(workspace_id="ws_loop", user_text="remember state")
+    )
+
+    assert result.decision_kind is None
+    assert result.decision_outcome == "malformed_decision"
+    assert result.policy_allowed is False
+    assert (
+        result.error
+        == "decision kind must be 'answer', 'call_tool', or 'request_tool'"
+    )
+    assert echo_tool.calls == []
+    events = ledger.list_events("ws_loop")
+    assert [event.kind for event in events] == [
+        "input.user_message",
+        "runtime.decision.rejected",
+        "decision.recorded",
+    ]
+    assert events[1].payload == {
+        "error": "decision kind must be 'answer', 'call_tool', or 'request_tool'",
+        "decision": {
+            "kind": "propose_state_patch",
+            "text": None,
+            "tool_name": None,
+            "tool_args": {},
+            "tool_need": None,
+            "reason": "runtime loop does not patch state",
+        },
+    }
+    assert events[-1].payload["record"]["outcome"] == "malformed_decision"
