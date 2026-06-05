@@ -279,16 +279,24 @@ class Runtime:
             recommendations = self.tool_recommendation_service.recommend_for(
                 need, self.projector.project(workspace_id)
             )
+            recommendation_payload = [
+                {
+                    "provider": recommendation.provider,
+                    "score": recommendation.score,
+                    "reasons": list(recommendation.reasons),
+                }
+                for recommendation in recommendations
+            ]
+            capability_resolution = self.tool_need_service.resolve_capability(
+                need,
+                capability_catalog=self.capability_catalog,
+                tool_registry=self.context_composer.registry,
+                provider_recommendations=recommendations,
+            )
             payload = {
                 "tool_need": to_plain(need),
-                "recommendations": [
-                    {
-                        "provider": recommendation.provider,
-                        "score": recommendation.score,
-                        "reasons": list(recommendation.reasons),
-                    }
-                    for recommendation in recommendations
-                ],
+                "recommendations": recommendation_payload,
+                "capability_resolution": capability_resolution,
             }
             return RuntimeResponse(
                 kind="tool_need",
