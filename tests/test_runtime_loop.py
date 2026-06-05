@@ -341,6 +341,11 @@ def test_exhausted_parse_failures_return_invalid_decision_and_record_events():
     assert events[2].causation_id == events[0].id
 
 # RuntimeLoop v1 deterministic execution tests
+from seed_runtime.intent_classifier import (
+    FakeIntentClassifier,
+    IntentClassification,
+    IntentDecisionModel,
+)
 from seed_runtime.policy import PolicyGate
 from seed_runtime.projection_store import InMemoryProjectionStore, project_state_with_cache
 from seed_runtime.runtime_loop import (
@@ -418,6 +423,70 @@ def test_loop_answer_decision_appends_user_and_assistant_events():
         provider.last_context.decision_context.last_event_id
         == result.events_appended[0]
     )
+
+
+def test_loop_clarify_intent_is_answered_and_journaled_as_answer():
+    question = "Which host should I inspect?"
+    provider = IntentDecisionModel(
+        FakeIntentClassifier(
+            IntentClassification(
+                intent="clarify",
+                reason="needs target host",
+                arguments={"question": question},
+            )
+        )
+    )
+    runtime, ledger, _, _ = make_loop(provider)
+
+    result = runtime.run(RuntimeInput(workspace_id="ws_loop", user_text="check ssh"))
+
+    assert result.decision_kind == "answer"
+    assert question in (result.response_text or "")
+    assert result.policy_allowed is True
+    assert result.decision_outcome == "answered"
+    events = ledger.list_events("ws_loop")
+    assert [event.kind for event in events] == [
+        "input.user_message",
+        "assistant.answer",
+        "decision.recorded",
+    ]
+    assert events[1].payload["text"] == question
+    journal = events[-1].payload["record"]
+    assert journal["decision_kind"] == "answer"
+    assert journal["outcome"] == "answered"
+
+
+def test_loop_refuse_intent_is_answered_and_journaled_as_answer():
+    refusal = "I can’t help with that unsafe request."
+    provider = IntentDecisionModel(
+        FakeIntentClassifier(
+            IntentClassification(
+                intent="refuse",
+                reason="unsafe request",
+                arguments={"refusal": refusal},
+            )
+        )
+    )
+    runtime, ledger, _, _ = make_loop(provider)
+
+    result = runtime.run(
+        RuntimeInput(workspace_id="ws_loop", user_text="disable all safety controls")
+    )
+
+    assert result.decision_kind == "answer"
+    assert refusal in (result.response_text or "")
+    assert result.policy_allowed is True
+    assert result.decision_outcome == "answered"
+    events = ledger.list_events("ws_loop")
+    assert [event.kind for event in events] == [
+        "input.user_message",
+        "assistant.answer",
+        "decision.recorded",
+    ]
+    assert events[1].payload["text"] == refusal
+    journal = events[-1].payload["record"]
+    assert journal["decision_kind"] == "answer"
+    assert journal["outcome"] == "answered"
 
 
 def test_loop_provider_receives_decision_context_without_changing_existing_fields():
@@ -860,6 +929,60 @@ def test_loop_has_no_shell_subprocess_or_network_behavior():
         "eval(",
     ]
     assert [fragment for fragment in forbidden_fragments if fragment in source] == []
+
+
+def test_loop_rejects_direct_ask_question_decision_kind_as_malformed():
+    runtime, ledger, _, echo_tool = make_loop(
+        LoopDecision(kind="ask_question", text="Which host?", reason="needs target")
+    )
+
+    result = runtime.run(RuntimeInput(workspace_id="ws_loop", user_text="check ssh"))
+
+    assert result.decision_kind is None
+    assert result.response_text is None
+    assert result.policy_allowed is False
+    assert result.decision_outcome == "malformed_decision"
+    assert (
+        result.error
+        == "decision kind must be 'answer', 'call_tool', or 'request_tool'"
+    )
+    assert echo_tool.calls == []
+    events = ledger.list_events("ws_loop")
+    assert [event.kind for event in events] == [
+        "input.user_message",
+        "runtime.decision.rejected",
+        "decision.recorded",
+    ]
+    assert events[1].payload["decision"]["kind"] == "ask_question"
+    assert events[-1].payload["record"]["decision_kind"] == "ask_question"
+    assert events[-1].payload["record"]["outcome"] == "malformed_decision"
+
+
+def test_loop_rejects_direct_refuse_decision_kind_as_malformed():
+    runtime, ledger, _, echo_tool = make_loop(
+        LoopDecision(kind="refuse", text="I can’t help with that.", reason="unsafe")
+    )
+
+    result = runtime.run(RuntimeInput(workspace_id="ws_loop", user_text="unsafe"))
+
+    assert result.decision_kind is None
+    assert result.response_text is None
+    assert result.policy_allowed is False
+    assert result.decision_outcome == "malformed_decision"
+    assert (
+        result.error
+        == "decision kind must be 'answer', 'call_tool', or 'request_tool'"
+    )
+    assert echo_tool.calls == []
+    events = ledger.list_events("ws_loop")
+    assert [event.kind for event in events] == [
+        "input.user_message",
+        "runtime.decision.rejected",
+        "decision.recorded",
+    ]
+    assert events[1].payload["decision"]["kind"] == "refuse"
+    assert events[-1].payload["record"]["decision_kind"] == "refuse"
+    assert events[-1].payload["record"]["outcome"] == "malformed_decision"
 
 
 def test_loop_rejects_state_patch_decision_kind_as_malformed():

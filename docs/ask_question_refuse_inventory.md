@@ -17,7 +17,7 @@ This inventory is source-file based and records current behavior only. It does n
 - RuntimeLoop's local `DecisionKind` is only `Literal["answer", "call_tool", "request_tool"]`. [`seed_runtime/runtime_loop.py:32`](../seed_runtime/runtime_loop.py#L32)
 - RuntimeLoop's `Decision` dataclass has `kind`, `text`, `tool_name`, `tool_args`, `tool_need`, and `reason`; it has no `question`, `answer`, or refusal-specific field. [`seed_runtime/runtime_loop.py:60-68`](../seed_runtime/runtime_loop.py#L60-L68)
 - RuntimeLoop validation rejects any kind outside `answer`, `call_tool`, and `request_tool` with `decision kind must be 'answer', 'call_tool', or 'request_tool'`. [`seed_runtime/runtime_loop.py:725-729`](../seed_runtime/runtime_loop.py#L725-L729)
-- Today, clarify/refuse semantics enter RuntimeLoop through intent classification and are represented as `answer` decisions with `text`, not distinct decision kinds. [`seed_runtime/intent_classifier.py:453-462`](../seed_runtime/intent_classifier.py#L453-L462)
+- Today, clarify/refuse semantics enter RuntimeLoop through intent classification and are intentionally represented as `answer` decisions with `text`, not distinct decision kinds. Distinct Runtime response categories such as `question` and `refusal` are considered legacy Runtime behavior. [`seed_runtime/intent_classifier.py:453-462`](../seed_runtime/intent_classifier.py#L453-L462)
 
 ## 2. Prompt / model-client behavior
 
@@ -54,7 +54,7 @@ This inventory is source-file based and records current behavior only. It does n
 
 ## 4. RuntimeLoop behavior
 
-- RuntimeLoop does not support `ask_question` or `refuse` as decision kinds; validation only accepts `answer`, `call_tool`, and `request_tool`. [`seed_runtime/runtime_loop.py:32`](../seed_runtime/runtime_loop.py#L32) [`seed_runtime/runtime_loop.py:725-757`](../seed_runtime/runtime_loop.py#L725-L757)
+- RuntimeLoop does not support `ask_question` or `refuse` as decision kinds; validation only accepts `answer`, `call_tool`, and `request_tool`. This is intentional: RuntimeLoop represents clarify/refuse user-facing behavior as answer responses, while distinct Runtime response categories are legacy Runtime behavior. [`seed_runtime/runtime_loop.py:32`](../seed_runtime/runtime_loop.py#L32) [`seed_runtime/runtime_loop.py:725-757`](../seed_runtime/runtime_loop.py#L725-L757)
 - RuntimeLoop receives the same `IntentDecisionModel` object in the local app as old Runtime, but the context type is `RuntimeContext`, so `clarify` and `refuse` are mapped to `RuntimeLoopDecision(kind="answer", text=...)`. [`scripts/seed_local.py:660-685`](../scripts/seed_local.py#L660-L685) [`seed_runtime/intent_classifier.py:453-462`](../seed_runtime/intent_classifier.py#L453-L462)
 - A mapped clarify/refuse answer appends `assistant.answer` with payload `{"text": decision.text, "reason": decision.reason}`, appends a decision journal record with `decision_kind="answer"` and `outcome="answered"`, and returns `RuntimeResult(decision_kind="answer", response_text=decision.text, policy_allowed=True, decision_outcome="answered", ...)`. [`seed_runtime/runtime_loop.py:218-251`](../seed_runtime/runtime_loop.py#L218-L251)
 - A provider-returned unsupported kind such as `ask_question` or `refuse` is rejected before routing: RuntimeLoop appends `runtime.decision.rejected`, records a decision journal entry with `outcome="malformed_decision"`, and returns `RuntimeResult(decision_kind=None, response_text=None, policy_allowed=False, error=..., decision_outcome="malformed_decision", ...)`. [`seed_runtime/runtime_loop.py:177-216`](../seed_runtime/runtime_loop.py#L177-L216)
@@ -79,37 +79,36 @@ This inventory is source-file based and records current behavior only. It does n
 - Old Runtime invalid-decision retry behavior includes missing-answer followed by missing-question and checks final invalid-decision payload plus deterministic invalid-event payloads. [`tests/test_runtime_loop.py:213-262`](../tests/test_runtime_loop.py#L213-L262)
 - Intent classifier `clarify` mapping for legacy `ContextPacket` is covered by `test_clarify_intent_asks_question_for_unknown_vague_input`. [`tests/test_intent_classifier.py:230-241`](../tests/test_intent_classifier.py#L230-L241)
 - Intent prompt coverage verifies that the prompt exposes the compact intent labels including `clarify` and `refuse` and does not expose decision `kind` shapes. [`tests/test_intent_classifier.py:244-255`](../tests/test_intent_classifier.py#L244-L255)
-- RuntimeContext mapping is covered for `echo`, `answer`, and `missing_tool`; these tests prove the builder switches to `RuntimeLoopDecision` for RuntimeLoop contexts, but they do not cover RuntimeContext `clarify` or `refuse`. [`tests/test_intent_classifier.py:444-507`](../tests/test_intent_classifier.py#L444-L507)
-- RuntimeLoop unsupported-kind rejection is covered by the state-patch unsupported-kind test, which asserts the generic allowed-kind error, `runtime.decision.rejected`, decision journal `malformed_decision`, and no tool execution. [`tests/test_runtime_loop.py:865-901`](../tests/test_runtime_loop.py#L865-L901)
+- RuntimeContext mapping is covered for `echo`, `answer`, `missing_tool`, `clarify`, and `refuse`; the clarify/refuse tests lock down `RuntimeLoopDecision(kind="answer")` with the question/refusal text preserved in `text`. [`tests/test_intent_classifier.py:444-555`](../tests/test_intent_classifier.py#L444-L555)
+- RuntimeLoop end-to-end mapped clarify/refuse coverage verifies `assistant.answer`, decision journal `decision_kind="answer"`, and `outcome="answered"`. [`tests/test_runtime_loop.py:428-489`](../tests/test_runtime_loop.py#L428-L489)
+- RuntimeLoop unsupported-kind rejection is covered by dedicated direct `ask_question` and direct `refuse` tests, plus the generic state-patch unsupported-kind test; these assert the allowed-kind error, `runtime.decision.rejected`, decision journal `malformed_decision`, and no tool execution. [`tests/test_runtime_loop.py:934-979`](../tests/test_runtime_loop.py#L934-L979) [`tests/test_runtime_loop.py:982-1018`](../tests/test_runtime_loop.py#L982-L1018)
 - RuntimeLoop malformed provider returns are covered by trace tests and request-tool validation tests that assert `runtime.decision.rejected` and `decision.recorded` with `malformed_decision`. [`tests/test_runtime_trace.py:165-176`](../tests/test_runtime_trace.py#L165-L176) [`tests/test_runtime_loop.py:610-627`](../tests/test_runtime_loop.py#L610-L627)
 - Legacy/local model-client prompt tests cover filtering decision shapes and explicitly assert that an unallowed `ask_question` shape is omitted when the context schema excludes it. [`tests/test_model_clients.py:70-112`](../tests/test_model_clients.py#L70-L112)
 
 ### Missing or indirect coverage
 
-- No dedicated RuntimeLoop test constructs a `RuntimeLoopDecision(kind="ask_question")` or `RuntimeLoopDecision(kind="refuse")` to document that those specific kinds are rejected; current coverage is generic through `propose_state_patch`.
-- No RuntimeContext intent-builder tests cover `clarify -> RuntimeLoopDecision(kind="answer", text=<question>)` or `refuse -> RuntimeLoopDecision(kind="answer", text=<refusal/message/reason>)`.
-- No RuntimeLoop end-to-end test covers mapped clarify/refuse through `IntentDecisionModel` and verifies emitted `assistant.answer`, decision journal `decision_kind="answer"`, and `RuntimeResult.response_text`.
 - No CLI/API tests specifically cover old Runtime `question`/`refusal` response shape or RuntimeLoop mapped clarify/refuse response shape.
 - No old Runtime test specifically covers missing `refuse.reason` through the retry loop; validation is covered at the validator level, and the retry-loop test uses missing `ask_question.question`.
 - No parser test specifically covers a `refuse` JSON object with an extra refusal payload field and the resulting unexpected-field rejection.
 
 ## 7. Migration risk
 
-If old Runtime were removed before ask-question/refusal parity or an intentional adaptation decision:
+RuntimeLoop now has an intentional adaptation decision for clarify/refuse semantics:
 
-- Distinct old Runtime response kinds `question` and `refusal` would disappear from the reachable runtime route. RuntimeLoop maps clarify/refuse intent to `answer` or rejects direct ask/refuse decision kinds. [`seed_runtime/runtime.py:265-274`](../seed_runtime/runtime.py#L265-L274) [`seed_runtime/runtime.py:342-351`](../seed_runtime/runtime.py#L342-L351) [`seed_runtime/runtime_loop.py:725-757`](../seed_runtime/runtime_loop.py#L725-L757)
+- Distinct old Runtime response kinds `question` and `refusal` are legacy Runtime behavior. RuntimeLoop intentionally maps clarify/refuse intent to `answer` responses and rejects direct ask/refuse decision kinds. [`seed_runtime/runtime.py:265-274`](../seed_runtime/runtime.py#L265-L274) [`seed_runtime/runtime.py:342-351`](../seed_runtime/runtime.py#L342-L351) [`seed_runtime/runtime_loop.py:725-757`](../seed_runtime/runtime_loop.py#L725-L757)
 - Event taxonomy would change: old Runtime emits `response.question` / `response.refusal`; RuntimeLoop mapped behavior emits `assistant.answer`, and unsupported ask/refuse emits `runtime.decision.rejected` plus `decision.recorded`. [`seed_runtime/runtime.py:265-274`](../seed_runtime/runtime.py#L265-L274) [`seed_runtime/runtime.py:342-351`](../seed_runtime/runtime.py#L342-L351) [`seed_runtime/runtime_loop.py:180-216`](../seed_runtime/runtime_loop.py#L180-L216) [`seed_runtime/runtime_loop.py:218-251`](../seed_runtime/runtime_loop.py#L218-L251)
 - Decision journal semantics would be answer-mapped for clarify/refuse (`decision_kind="answer"`, `outcome="answered"`) unless new kinds are added. [`seed_runtime/runtime_loop.py:227-250`](../seed_runtime/runtime_loop.py#L227-L250)
 - Legacy prompt schemas and model clients would still document/expose `ask_question` and `refuse` for `ContextPacket` use, but RuntimeLoop would not accept those kinds directly. [`seed_runtime/context.py:125-132`](../seed_runtime/context.py#L125-L132) [`seed_runtime/model_client.py:195-221`](../seed_runtime/model_client.py#L195-L221) [`seed_runtime/runtime_loop.py:725-729`](../seed_runtime/runtime_loop.py#L725-L729)
 - CLI consumers that currently reach old Runtime through `--plan` could see `question` or `refusal`; the default CLI and API paths already see RuntimeLoop answer-mapped behavior. [`scripts/seed_local.py:3468-3473`](../scripts/seed_local.py#L3468-L3473) [`scripts/seed_local.py:3961-3968`](../scripts/seed_local.py#L3961-L3968)
 - Old Runtime's validation/parse retry loop around missing `question` or missing `reason` would not carry over; RuntimeLoop currently rejects malformed decisions once. [`seed_runtime/runtime.py:86-170`](../seed_runtime/runtime.py#L86-L170) [`seed_runtime/runtime_loop.py:177-216`](../seed_runtime/runtime_loop.py#L177-L216)
 
-## 8. Extraction / port candidates
+## 8. Conclusion
+
+`ask_question` and `refuse` are not currently considered RuntimeLoop migration blockers because RuntimeLoop already preserves the user-facing clarify/refuse behavior through `answer` responses. Direct `ask_question` and `refuse` RuntimeLoop decision kinds remain unsupported by design; distinct `question` and `refusal` response categories belong to legacy Runtime behavior.
+
+## 9. Extraction / port candidates
 
 These are low-risk options to consider later; this inventory does not recommend one yet.
 
-- Add distinct RuntimeLoop decision kinds for `ask_question` and `refuse`, with explicit validation rules, event kinds, journal outcomes, and `RuntimeResult` fields that preserve the old semantics.
-- Keep the current mapping of `clarify` and `refuse` intents to RuntimeLoop `answer` decisions, but document it as intentional and add tests for the mapping and resulting events/results.
-- Add a `RuntimeResult.response_kind` separate from `decision_kind`, allowing RuntimeLoop to preserve user-visible `question` / `refusal` response categories even if internal decisions stay answer-mapped.
-- Adapt legacy responses at the CLI/API boundary so RuntimeLoop answer-mapped clarify/refuse can be rendered as `question` / `refusal` without changing RuntimeLoop decision kinds.
+- No RuntimeLoop migration work is currently recommended for `ask_question` or `refuse`; the intentional behavior is answer-mapped clarify/refuse plus direct-kind rejection.
 - If old Runtime remains as the only direct legacy-decision consumer, narrow legacy prompt exposure or adapters so models do not emit `ask_question` / `refuse` into RuntimeLoop unless the boundary maps them deliberately.

@@ -475,6 +475,48 @@ def test_runtime_context_answer_builds_runtime_loop_answer_decision():
     assert decision.tool_args == {}
 
 
+def test_runtime_context_clarify_builds_runtime_loop_answer_decision():
+    question = "Which host should I inspect?"
+
+    decision = DecisionBuilder().build(
+        runtime_context_for("check ssh"),
+        IntentClassification(
+            intent="clarify",
+            reason="needs target host",
+            arguments={"question": question},
+        ),
+    )
+
+    assert isinstance(decision, RuntimeLoopDecision)
+    assert decision.kind == "answer"
+    assert question in (decision.text or "")
+    assert decision.reason == "needs target host"
+    assert decision.tool_name is None
+    assert decision.tool_args == {}
+    assert decision.tool_need is None
+
+
+def test_runtime_context_refuse_builds_runtime_loop_answer_decision():
+    refusal = "I can’t help with that unsafe request."
+
+    decision = DecisionBuilder().build(
+        runtime_context_for("disable all safety controls"),
+        IntentClassification(
+            intent="refuse",
+            reason="unsafe request",
+            arguments={"refusal": refusal},
+        ),
+    )
+
+    assert isinstance(decision, RuntimeLoopDecision)
+    assert decision.kind == "answer"
+    assert refusal in (decision.text or "")
+    assert decision.reason == "unsafe request"
+    assert decision.tool_name is None
+    assert decision.tool_args == {}
+    assert decision.tool_need is None
+
+
 def test_runtime_context_missing_tool_becomes_request_tool():
     decision = DecisionBuilder().build(
         runtime_context_for("what is the weather in Jacksonville?"),
