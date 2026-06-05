@@ -1024,7 +1024,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--trace-run",
         metavar="RUN_ID",
         help=(
-            "print a read-only ordered historical RuntimeLoop trace for RUN_ID; "
+            "print a read-only ordered historical runtime trace for RUN_ID; "
             "does not replay, call providers/policy/tools, or append events"
         ),
     )
@@ -1032,7 +1032,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--why-run",
         metavar="RUN_ID",
         help=(
-            "print a concise read-only explanation for historical RuntimeLoop RUN_ID; "
+            "print a concise read-only explanation for historical runtime RUN_ID; "
             "does not replay, call providers/policy/tools, or append events"
         ),
     )
@@ -3421,7 +3421,7 @@ def format_inferred_facts(state: State, entity: str) -> str:
 
 
 def runtime_trace_from_args(args: argparse.Namespace, run_id: str) -> RuntimeTrace:
-    """Load a historical RuntimeLoop trace without seeding state or appending events."""
+    """Load a historical runtime trace without seeding state or appending events."""
 
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
     try:
@@ -3510,7 +3510,7 @@ def _why_policy_phrase(trace: RuntimeTrace) -> str:
 
 
 def format_runtime_why(trace: RuntimeTrace) -> str:
-    """Render a short human explanation for a historical RuntimeLoop run."""
+    """Render a short human explanation for a historical runtime run."""
 
     if not trace.summary.get("found"):
         return f"Runtime trace not found for run_id: {trace.run_id}"

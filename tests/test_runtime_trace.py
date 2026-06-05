@@ -1,42 +1,6 @@
+from seed_runtime.decision_journal import DecisionJournal
 from seed_runtime.events import EventLedger
-from seed_runtime.models import PolicyDecision
-from seed_runtime.registry import ToolRegistry
-from seed_runtime.runtime_loop import (
-    Decision,
-    EchoTool,
-    FakeDecisionProvider,
-    RuntimeInput,
-    RuntimeLoop,
-)
 from seed_runtime.runtime_trace import RuntimeTraceReader, load_runtime_trace
-
-
-class DenyPolicy:
-    def __init__(self):
-        self.calls = 0
-
-    def evaluate(self, tool, state, *, scope=None):
-        self.calls += 1
-        return PolicyDecision(
-            outcome="block",
-            action=tool.policy_action,
-            reason="blocked in test",
-            risk_class=tool.risk_class,
-        )
-
-
-class FailingTool:
-    def __init__(self):
-        self.calls = 0
-
-    def execute(self, context, arguments):
-        self.calls += 1
-        raise RuntimeError("boom")
-
-
-class RaisingProvider:
-    def decide(self, context):
-        raise RuntimeError("provider unavailable")
 
 
 class ExplodingLedger(EventLedger):
@@ -44,52 +8,94 @@ class ExplodingLedger(EventLedger):
         raise AssertionError("trace must not append events")
 
 
-class ExplodingProvider:
-    def decide(self, context):  # pragma: no cover - should never be called
-        raise AssertionError("trace must not call provider")
-
-
-class ExplodingPolicy:
-    def evaluate(self, tool, state, *, scope=None):  # pragma: no cover
-        raise AssertionError("trace must not call policy")
-
-
-class ExplodingTool:
-    def execute(self, context, arguments):  # pragma: no cover
-        raise AssertionError("trace must not execute operation implementations")
-
-
-def make_loop(decision, *, policy_engine=None, tool_handlers=None):
-    ledger = EventLedger()
-    registry = ToolRegistry()
-    registry.load_manifest("toolkits/core/echo/toolkit.yaml")
-    runtime = RuntimeLoop(
-        ledger,
-        None,
-        registry,
-        policy_engine,
-        FakeDecisionProvider(decision),
-        tool_handlers or {},
+def record_run(
+    ledger: EventLedger,
+    *,
+    workspace_id: str = "ws",
+    input_text: str = "hi",
+    decision_kind: str = "answer",
+    reason: str = "direct",
+    outcome: str = "answered",
+    selected_tool_name: str | None = None,
+    policy_allowed: bool = True,
+    assistant_text: str | None = "done",
+    tool_event_kind: str | None = None,
+    tool_payload: dict | None = None,
+    policy_denied: bool = False,
+    error_event_kind: str | None = None,
+    error_payload: dict | None = None,
+    error: str | None = None,
+):
+    input_event = ledger.append(
+        "input.user_message",
+        workspace_id,
+        {"text": input_text},
+        actor="user",
     )
-    return runtime, ledger
-
-
-def trace_for(result, ledger):
-    return load_runtime_trace(ledger, result.workspace_id, result.run_id)
+    run_id = input_event.id
+    if assistant_text is not None:
+        ledger.append(
+            "assistant.answer",
+            workspace_id,
+            {"text": assistant_text, "reason": reason},
+            causation_id=input_event.id,
+            correlation_id=run_id,
+        )
+    if policy_denied:
+        ledger.append(
+            "runtime.policy.denied",
+            workspace_id,
+            {"tool_name": selected_tool_name, "error": error},
+            causation_id=input_event.id,
+            correlation_id=run_id,
+        )
+    if tool_event_kind is not None:
+        payload = dict(tool_payload or {})
+        payload.setdefault("tool_name", selected_tool_name)
+        ledger.append(
+            tool_event_kind,
+            workspace_id,
+            payload,
+            causation_id=input_event.id,
+            correlation_id=run_id,
+        )
+    if error_event_kind is not None:
+        ledger.append(
+            error_event_kind,
+            workspace_id,
+            dict(error_payload or {}),
+            causation_id=input_event.id,
+            correlation_id=run_id,
+        )
+    DecisionJournal(ledger).append_record(
+        workspace_id=workspace_id,
+        run_id=run_id,
+        decision_kind=decision_kind,
+        reason=reason,
+        context_hash="ctx123",
+        selected_tool_name=selected_tool_name,
+        selected_tool_args={},
+        policy_allowed=policy_allowed,
+        outcome=outcome,
+        error=error,
+        causation_id=input_event.id,
+        correlation_id=run_id,
+    )
+    return run_id
 
 
 def test_trace_reconstructs_answer_run():
-    runtime, ledger = make_loop(Decision(kind="answer", text="done", reason="direct"))
-    result = runtime.run(RuntimeInput("ws", "hi"))
+    ledger = EventLedger()
+    run_id = record_run(ledger)
 
-    trace = trace_for(result, ledger)
+    trace = load_runtime_trace(ledger, "ws", run_id)
 
     assert trace.user_input_event.event_type == "input.user_message"
     assert trace.assistant_event.event_type == "assistant.answer"
     assert trace.decision_record["outcome"] == "answered"
     assert trace.summary == {
         "found": True,
-        "run_id": result.run_id,
+        "run_id": run_id,
         "input_text": "hi",
         "decision_kind": "answer",
         "decision_reason": "direct",
@@ -103,18 +109,20 @@ def test_trace_reconstructs_answer_run():
 
 
 def test_trace_reconstructs_successful_tool_run():
-    runtime, ledger = make_loop(
-        Decision(
-            kind="call_tool",
-            tool_name="echo",
-            tool_args={"message": "hi"},
-            reason="use echo",
-        ),
-        tool_handlers={"echo": EchoTool()},
+    ledger = EventLedger()
+    run_id = record_run(
+        ledger,
+        input_text="echo hi",
+        decision_kind="call_tool",
+        reason="use echo",
+        outcome="tool_succeeded",
+        selected_tool_name="echo",
+        assistant_text=None,
+        tool_event_kind="tool.result",
+        tool_payload={"output": {"message": "hi"}},
     )
-    result = runtime.run(RuntimeInput("ws", "echo hi"))
 
-    trace = trace_for(result, ledger)
+    trace = load_runtime_trace(ledger, "ws", run_id)
 
     assert trace.tool_event.event_type == "tool.result"
     assert trace.tool_event.payload["output"]["message"] == "hi"
@@ -126,12 +134,19 @@ def test_trace_reconstructs_successful_tool_run():
 
 
 def test_trace_reconstructs_unknown_tool_run():
-    runtime, ledger = make_loop(
-        Decision(kind="call_tool", tool_name="missing", tool_args={}, reason="try missing")
+    ledger = EventLedger()
+    run_id = record_run(
+        ledger,
+        decision_kind="call_tool",
+        outcome="tool_unknown",
+        selected_tool_name="missing",
+        assistant_text=None,
+        tool_event_kind="runtime.tool.unknown",
+        tool_payload={"error": "unknown tool: missing"},
+        error="unknown tool: missing",
     )
-    result = runtime.run(RuntimeInput("ws", "missing"))
 
-    trace = trace_for(result, ledger)
+    trace = load_runtime_trace(ledger, "ws", run_id)
 
     assert trace.tool_event.event_type == "runtime.tool.unknown"
     assert trace.summary["outcome"] == "tool_unknown"
@@ -144,22 +159,22 @@ def test_trace_reconstructs_unknown_tool_run():
 
 
 def test_trace_reconstructs_policy_denied_run():
-    policy = DenyPolicy()
-    runtime, ledger = make_loop(
-        Decision(
-            kind="call_tool",
-            tool_name="echo",
-            tool_args={"message": "hi"},
-            reason="echo",
-        ),
-        policy_engine=policy,
-        tool_handlers={"echo": EchoTool()},
+    ledger = EventLedger()
+    run_id = record_run(
+        ledger,
+        input_text="echo hi",
+        decision_kind="call_tool",
+        reason="echo",
+        outcome="policy_denied",
+        selected_tool_name="echo",
+        policy_allowed=False,
+        assistant_text=None,
+        policy_denied=True,
+        error="policy denied tool echo: block",
     )
-    result = runtime.run(RuntimeInput("ws", "echo hi"))
 
-    trace = trace_for(result, ledger)
+    trace = load_runtime_trace(ledger, "ws", run_id)
 
-    assert policy.calls == 1
     assert trace.policy_event.event_type == "runtime.policy.denied"
     assert trace.tool_event is None
     assert trace.summary["policy_allowed"] is False
@@ -167,35 +182,19 @@ def test_trace_reconstructs_policy_denied_run():
     assert trace.summary["outcome"] == "policy_denied"
 
 
-def test_trace_reconstructs_malformed_decision_run():
-    runtime, ledger = make_loop({"kind": "answer", "text": "not a Decision"})
-    result = runtime.run(RuntimeInput("ws", "hi"))
-
-    trace = trace_for(result, ledger)
-
-    assert trace.summary["outcome"] == "malformed_decision"
-    assert trace.summary["error"] == "decision provider must return a runtime_loop.Decision"
-    assert [event.event_type for event in trace.error_events] == [
-        "runtime.decision.rejected",
-        "decision.recorded",
-    ]
-
-
 def test_trace_can_include_provider_failure_error_event():
     ledger = EventLedger()
-    registry = ToolRegistry()
-    registry.load_manifest("toolkits/core/echo/toolkit.yaml")
-    runtime = RuntimeLoop(
+    run_id = record_run(
         ledger,
-        None,
-        registry,
-        ExplodingPolicy(),
-        RaisingProvider(),
-        {"echo": ExplodingTool()},
+        outcome="provider_failed",
+        policy_allowed=False,
+        assistant_text=None,
+        error_event_kind="runtime.decision.provider_failed",
+        error_payload={"error": "provider unavailable", "exception_type": "RuntimeError"},
+        error="provider unavailable",
     )
-    result = runtime.run(RuntimeInput("ws", "hi"))
 
-    trace = trace_for(result, ledger)
+    trace = load_runtime_trace(ledger, "ws", run_id)
 
     assert trace.summary["outcome"] == "provider_failed"
     assert trace.summary["error"] == "provider unavailable"
@@ -210,33 +209,33 @@ def test_trace_can_include_provider_failure_error_event():
 
 
 def test_trace_reconstructs_tool_failure_run():
-    failing_tool = FailingTool()
-    runtime, ledger = make_loop(
-        Decision(
-            kind="call_tool",
-            tool_name="echo",
-            tool_args={"message": "hi"},
-            reason="echo",
-        ),
-        tool_handlers={"echo": failing_tool},
+    ledger = EventLedger()
+    run_id = record_run(
+        ledger,
+        input_text="echo hi",
+        decision_kind="call_tool",
+        reason="echo",
+        outcome="tool_failed",
+        selected_tool_name="echo",
+        assistant_text=None,
+        tool_event_kind="tool.failure",
+        tool_payload={"error": "tool echo failed: boom"},
+        error="tool echo failed: boom",
     )
-    result = runtime.run(RuntimeInput("ws", "echo hi"))
 
-    trace = trace_for(result, ledger)
+    trace = load_runtime_trace(ledger, "ws", run_id)
 
-    assert failing_tool.calls == 1
     assert trace.tool_event.event_type == "tool.failure"
     assert trace.summary["outcome"] == "tool_failed"
     assert trace.summary["error"] == "tool echo failed: boom"
 
 
 def test_trace_preserves_event_ordering():
-    runtime, ledger = make_loop(Decision(kind="answer", text="done", reason="direct"))
-    result = runtime.run(RuntimeInput("ws", "hi"))
+    ledger = EventLedger()
+    run_id = record_run(ledger)
 
-    trace = trace_for(result, ledger)
+    trace = load_runtime_trace(ledger, "ws", run_id)
 
-    assert [event.event_id for event in trace.events] == result.events_appended
     assert [event.event_type for event in trace.events] == [
         "input.user_message",
         "assistant.answer",
@@ -245,11 +244,11 @@ def test_trace_preserves_event_ordering():
 
 
 def test_trace_is_read_only_and_does_not_append_events():
-    runtime, ledger = make_loop(Decision(kind="answer", text="done", reason="direct"))
-    result = runtime.run(RuntimeInput("ws", "hi"))
+    ledger = EventLedger()
+    run_id = record_run(ledger)
     before = ledger.list_events("ws")
 
-    trace = trace_for(result, ledger)
+    trace = load_runtime_trace(ledger, "ws", run_id)
     trace.events[0].payload["text"] = "mutated snapshot"
 
     after = ledger.list_events("ws")
@@ -257,7 +256,7 @@ def test_trace_is_read_only_and_does_not_append_events():
     assert after[0].payload["text"] == "hi"
 
 
-def test_trace_does_not_call_provider_policy_or_tools():
+def test_trace_does_not_append_events_or_require_runtime_collaborators():
     ledger = ExplodingLedger()
     input_event = EventLedger.append(ledger, "input.user_message", "ws", {"text": "hi"}, actor="user")
     EventLedger.append(
@@ -266,17 +265,10 @@ def test_trace_does_not_call_provider_policy_or_tools():
         "ws",
         {"text": "done", "reason": "direct"},
         causation_id=input_event.id,
-    )
-    runtime = RuntimeLoop(
-        ledger,
-        None,
-        ToolRegistry(),
-        ExplodingPolicy(),
-        ExplodingProvider(),
-        {"echo": ExplodingTool()},
+        correlation_id=input_event.id,
     )
 
-    trace = RuntimeTraceReader(runtime.ledger).trace("ws", input_event.id)
+    trace = RuntimeTraceReader(ledger).trace("ws", input_event.id)
 
     assert trace.summary["input_text"] == "hi"
     assert trace.summary["final_response_text"] == "done"

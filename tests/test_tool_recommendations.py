@@ -10,20 +10,12 @@ from seed_runtime.events import EventLedger
 from seed_runtime.execution import ToolExecutor
 from seed_runtime.models import Decision, Fact, ToolNeed, ToolSpec, Toolkit, utc_now
 from seed_runtime.policy import PolicyGate
-from seed_runtime.projection_store import InMemoryProjectionStore
 from seed_runtime.recommendation_ranker import (
     RankedRecommendation,
     RecommendationRanker,
 )
 from seed_runtime.registry import ToolRegistry
 from seed_runtime.runtime import FakeDecisionModel, Runtime
-from seed_runtime.runtime_loop import (
-    Decision as LoopDecision,
-    EchoTool,
-    FakeDecisionProvider,
-    RuntimeInput,
-    RuntimeLoop,
-)
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import State, StateProjector
 from seed_runtime.tool_needs import ToolNeedService
@@ -455,138 +447,3 @@ class RecordingToolRecommendationService(ToolRecommendationService):
                 reasoning=["+5 catalog default priority"],
             ),
         ]
-
-
-@pytest.mark.experimental_runtime_loop
-def test_runtime_loop_request_tool_result_includes_ranked_recommendations():
-    ledger = EventLedger()
-    projector = StateProjector(ledger)
-    fact = Fact(
-        id="fact_runtime_docker",
-        subject_id="jellyfin",
-        predicate="runtime",
-        value="docker",
-        observed_at=utc_now(),
-    )
-    ledger.append("fact.observed", "ws_loop", {"fact": to_plain(fact)}, actor="system")
-    registry = ToolRegistry()
-    recommendation_service = ToolRecommendationService(_service_management_catalog())
-    runtime = RuntimeLoop(
-        ledger,
-        InMemoryProjectionStore(),
-        registry,
-        PolicyGate(),
-        FakeDecisionProvider(
-            LoopDecision(
-                kind="request_tool",
-                reason="missing service management capability",
-                tool_need={
-                    "name": "Manage Service",
-                    "summary": "Manage the Jellyfin service",
-                    "capability": "service_management",
-                },
-            )
-        ),
-        {},
-        projector=projector,
-        tool_recommendation_service=recommendation_service,
-    )
-
-    result = runtime.run(
-        RuntimeInput(workspace_id="ws_loop", user_text="manage jellyfin")
-    )
-    events = ledger.list_events("ws_loop")
-
-    assert result.decision_kind == "request_tool"
-    assert [
-        recommendation["provider"] for recommendation in result.recommendations
-    ] == [
-        "docker_container_lifecycle",
-        "systemctl_cli",
-    ]
-    assert set(result.recommendations[0]) == {"provider", "score", "reasons"}
-    assert result.recommendations[0]["score"] > result.recommendations[1]["score"]
-    assert [event.kind for event in events] == [
-        "fact.observed",
-        "input.user_message",
-        "tool_need.created",
-        "decision.recorded",
-    ]
-    assert set(events[2].payload) == {"tool_need"}
-
-
-@pytest.mark.experimental_runtime_loop
-def test_runtime_loop_request_tool_uses_injected_recommendation_service_without_events():
-    ledger = EventLedger()
-    registry = ToolRegistry()
-    registry.register_toolkit(
-        Toolkit(
-            id="tk_loop_echo",
-            name="loop echo",
-            summary="RuntimeLoop test operations.",
-            tools=[
-                ToolSpec(
-                    toolkit_id="tk_loop_echo",
-                    name="echo",
-                    summary="Echo a message deterministically.",
-                    input_schema={},
-                    output_schema={},
-                    policy_action="echo.run",
-                    implementation="tests:echo",
-                    risk_class="L1",
-                )
-            ],
-        )
-    )
-    recommendation_service = RecordingToolRecommendationService()
-    runtime = RuntimeLoop(
-        ledger,
-        InMemoryProjectionStore(),
-        registry,
-        PolicyGate(),
-        FakeDecisionProvider(
-            LoopDecision(
-                kind="request_tool",
-                reason="missing capability",
-                tool_need={
-                    "name": "Lookup Service Status",
-                    "summary": "Look up service status from inventory",
-                    "capability": "Service Status Lookup",
-                },
-            )
-        ),
-        {"echo": EchoTool()},
-        tool_recommendation_service=recommendation_service,
-    )
-
-    result = runtime.run(
-        RuntimeInput(workspace_id="ws_loop", user_text="check service")
-    )
-    events = ledger.list_events("ws_loop")
-
-    assert result.decision_kind == "request_tool"
-    assert result.response_text == "Recorded tool need lookup_service_status."
-    assert result.recommendations == [
-        {
-            "provider": "docker_container_lifecycle",
-            "score": 50,
-            "reasons": ["provider matches known runtime: docker"],
-        },
-        {
-            "provider": "systemctl_cli",
-            "score": 15,
-            "reasons": ["catalog default"],
-        },
-    ]
-    assert [event.kind for event in events] == [
-        "input.user_message",
-        "tool_need.created",
-        "decision.recorded",
-    ]
-    assert set(events[1].payload) == {"tool_need"}
-    assert "recommendations" not in events[1].payload
-    assert len(recommendation_service.calls) == 1
-    service_tool_need, service_state = recommendation_service.calls[0]
-    assert service_tool_need.name == "lookup_service_status"
-    assert service_tool_need.capability == "service_status_lookup"
-    assert service_state.open_tool_needs[0].name == "lookup_service_status"

@@ -3,16 +3,8 @@ import sqlite3
 import sys
 from pathlib import Path
 
+from seed_runtime.decision_journal import DecisionJournal
 from seed_runtime.events import SQLiteEventLedger
-from seed_runtime.models import PolicyDecision
-from seed_runtime.registry import ToolRegistry
-from seed_runtime.runtime_loop import (
-    Decision,
-    EchoTool,
-    FakeDecisionProvider,
-    RuntimeInput,
-    RuntimeLoop,
-)
 
 SCRIPT_PATH = Path("scripts/seed_local.py")
 
@@ -26,51 +18,69 @@ def load_seed_local_module():
     return module
 
 
-class DenyPolicy:
-    def __init__(self):
-        self.calls = 0
-
-    def evaluate(self, tool, state, *, scope=None):
-        self.calls += 1
-        return PolicyDecision(
-            outcome="block",
-            action=tool.policy_action,
-            reason="blocked in cli test",
-            risk_class=tool.risk_class,
-        )
-
-
-class ExplodingProvider:
-    def decide(self, context):  # pragma: no cover - must not be called by CLI trace
-        raise AssertionError("trace command must not call provider")
-
-
-class ExplodingPolicy:
-    def evaluate(self, tool, state, *, scope=None):  # pragma: no cover
-        raise AssertionError("trace command must not call policy")
-
-
-class ExplodingTool:
-    def execute(self, context, arguments):  # pragma: no cover
-        raise AssertionError("trace command must not execute tools")
-
-
-def run_loop_into_db(db_path, decision, *, policy_engine=None, tool_handlers=None):
+def record_run_into_db(
+    db_path,
+    *,
+    input_text="hi",
+    decision_kind="answer",
+    reason="direct",
+    outcome="answered",
+    selected_tool_name=None,
+    policy_allowed=True,
+    assistant_text="done",
+    tool_event_kind=None,
+    tool_payload=None,
+    policy_denied=False,
+    error=None,
+):
     ledger = SQLiteEventLedger(str(db_path))
-    registry = ToolRegistry()
-    registry.load_manifest("toolkits/core/echo/toolkit.yaml")
-    runtime = RuntimeLoop(
-        ledger,
-        None,
-        registry,
-        policy_engine,
-        FakeDecisionProvider(decision),
-        tool_handlers or {},
+    input_event = ledger.append(
+        "input.user_message", "local", {"text": input_text}, actor="user"
     )
-    result = runtime.run(RuntimeInput("local", "echo hi" if getattr(decision, "kind", None) == "call_tool" else "hi"))
+    run_id = input_event.id
+    if assistant_text is not None:
+        ledger.append(
+            "assistant.answer",
+            "local",
+            {"text": assistant_text, "reason": reason},
+            causation_id=input_event.id,
+            correlation_id=run_id,
+        )
+    if policy_denied:
+        ledger.append(
+            "runtime.policy.denied",
+            "local",
+            {"tool_name": selected_tool_name, "error": error},
+            causation_id=input_event.id,
+            correlation_id=run_id,
+        )
+    if tool_event_kind is not None:
+        payload = dict(tool_payload or {})
+        payload.setdefault("tool_name", selected_tool_name)
+        ledger.append(
+            tool_event_kind,
+            "local",
+            payload,
+            causation_id=input_event.id,
+            correlation_id=run_id,
+        )
+    DecisionJournal(ledger).append_record(
+        workspace_id="local",
+        run_id=run_id,
+        decision_kind=decision_kind,
+        reason=reason,
+        context_hash="ctx123",
+        selected_tool_name=selected_tool_name,
+        selected_tool_args={},
+        policy_allowed=policy_allowed,
+        outcome=outcome,
+        error=error,
+        causation_id=input_event.id,
+        correlation_id=run_id,
+    )
     before_count = len(ledger.list_events("local"))
     ledger.close()
-    return result, before_count
+    return run_id, before_count
 
 
 def persisted_event_count(db_path):
@@ -84,18 +94,18 @@ def persisted_event_count(db_path):
 def test_trace_run_prints_answer_run(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
-    result, _ = run_loop_into_db(db_path, Decision(kind="answer", text="done", reason="direct"))
+    run_id, _ = record_run_into_db(db_path)
 
-    assert seed_local.main(["--db", str(db_path), "--trace-run", result.run_id]) == 0
+    assert seed_local.main(["--db", str(db_path), "--trace-run", run_id]) == 0
 
     output = capsys.readouterr().out
     assert "Runtime Trace" in output
     assert "workspace: local" in output
-    assert f"run: {result.run_id}" in output
+    assert f"run: {run_id}" in output
     assert "Input: hi" in output
     assert "kind: answer" in output
     assert "reason: direct" in output
-    assert "context_hash: " in output
+    assert "context_hash: ctx123" in output
     assert "allowed: true" in output
     assert "tool: none" in output
     assert "outcome: answered" in output
@@ -109,13 +119,19 @@ def test_trace_run_prints_answer_run(tmp_path, capsys):
 def test_trace_run_prints_successful_tool_run(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
-    result, _ = run_loop_into_db(
+    run_id, _ = record_run_into_db(
         db_path,
-        Decision(kind="call_tool", tool_name="echo", tool_args={"message": "hi"}, reason="use echo"),
-        tool_handlers={"echo": EchoTool()},
+        input_text="echo hi",
+        decision_kind="call_tool",
+        reason="use echo",
+        outcome="tool_succeeded",
+        selected_tool_name="echo",
+        assistant_text=None,
+        tool_event_kind="tool.result",
+        tool_payload={"output": {"message": "hi"}},
     )
 
-    assert seed_local.main(["--db", str(db_path), "--trace-run", result.run_id]) == 0
+    assert seed_local.main(["--db", str(db_path), "--trace-run", run_id]) == 0
 
     output = capsys.readouterr().out
     assert "Input: echo hi" in output
@@ -130,16 +146,20 @@ def test_trace_run_prints_successful_tool_run(tmp_path, capsys):
 def test_trace_run_prints_policy_denied_run(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
-    policy = DenyPolicy()
-    result, _ = run_loop_into_db(
+    run_id, _ = record_run_into_db(
         db_path,
-        Decision(kind="call_tool", tool_name="echo", tool_args={"message": "hi"}, reason="use echo"),
-        policy_engine=policy,
-        tool_handlers={"echo": EchoTool()},
+        input_text="echo hi",
+        decision_kind="call_tool",
+        reason="use echo",
+        outcome="policy_denied",
+        selected_tool_name="echo",
+        policy_allowed=False,
+        assistant_text=None,
+        policy_denied=True,
+        error="policy denied tool echo: block",
     )
-    assert policy.calls == 1
 
-    assert seed_local.main(["--db", str(db_path), "--trace-run", result.run_id]) == 0
+    assert seed_local.main(["--db", str(db_path), "--trace-run", run_id]) == 0
 
     output = capsys.readouterr().out
     assert "allowed: false" in output
@@ -148,26 +168,12 @@ def test_trace_run_prints_policy_denied_run(tmp_path, capsys):
     assert "runtime.policy.denied" in output
 
 
-def test_trace_run_prints_malformed_decision_run(tmp_path, capsys):
-    seed_local = load_seed_local_module()
-    db_path = tmp_path / "seed.sqlite"
-    result, _ = run_loop_into_db(db_path, {"kind": "answer", "text": "not a Decision"})
-
-    assert seed_local.main(["--db", str(db_path), "--trace-run", result.run_id]) == 0
-
-    output = capsys.readouterr().out
-    assert "kind: answer" in output
-    assert "outcome: malformed_decision" in output
-    assert "error: decision provider must return a runtime_loop.Decision" in output
-    assert "runtime.decision.rejected" in output
-
-
 def test_why_run_prints_answer_explanation(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
-    result, _ = run_loop_into_db(db_path, Decision(kind="answer", text="done", reason="direct"))
+    run_id, _ = record_run_into_db(db_path)
 
-    assert seed_local.main(["--db", str(db_path), "--why-run", result.run_id]) == 0
+    assert seed_local.main(["--db", str(db_path), "--why-run", run_id]) == 0
 
     output = capsys.readouterr().out
     assert "User asked: hi." in output
@@ -181,13 +187,19 @@ def test_why_run_prints_answer_explanation(tmp_path, capsys):
 def test_why_run_prints_tool_explanation(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
-    result, _ = run_loop_into_db(
+    run_id, _ = record_run_into_db(
         db_path,
-        Decision(kind="call_tool", tool_name="echo", tool_args={"message": "hi"}, reason="use echo"),
-        tool_handlers={"echo": EchoTool()},
+        input_text="echo hi",
+        decision_kind="call_tool",
+        reason="use echo",
+        outcome="tool_succeeded",
+        selected_tool_name="echo",
+        assistant_text=None,
+        tool_event_kind="tool.result",
+        tool_payload={"output": {"message": "hi"}},
     )
 
-    assert seed_local.main(["--db", str(db_path), "--why-run", result.run_id]) == 0
+    assert seed_local.main(["--db", str(db_path), "--why-run", run_id]) == 0
 
     output = capsys.readouterr().out
     assert "User asked: echo hi." in output
@@ -199,7 +211,7 @@ def test_why_run_prints_tool_explanation(tmp_path, capsys):
 def test_unknown_run_id_prints_not_found(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
-    run_loop_into_db(db_path, Decision(kind="answer", text="done", reason="direct"))
+    record_run_into_db(db_path)
 
     assert seed_local.main(["--db", str(db_path), "--trace-run", "evt_missing"]) == 0
     assert capsys.readouterr().out == "Runtime trace not found for run_id: evt_missing\n"
@@ -211,29 +223,24 @@ def test_unknown_run_id_prints_not_found(tmp_path, capsys):
 def test_trace_and_why_commands_do_not_append_events(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
-    result, before_count = run_loop_into_db(db_path, Decision(kind="answer", text="done", reason="direct"))
+    run_id, before_count = record_run_into_db(db_path)
 
-    assert seed_local.main(["--db", str(db_path), "--trace-run", result.run_id]) == 0
+    assert seed_local.main(["--db", str(db_path), "--trace-run", run_id]) == 0
     assert persisted_event_count(db_path) == before_count
-    assert seed_local.main(["--db", str(db_path), "--why-run", result.run_id]) == 0
+    assert seed_local.main(["--db", str(db_path), "--why-run", run_id]) == 0
     assert persisted_event_count(db_path) == before_count
     capsys.readouterr()
 
 
-def test_trace_and_why_commands_do_not_call_provider_policy_or_tools(monkeypatch, tmp_path, capsys):
+def test_trace_and_why_commands_do_not_build_runtime(monkeypatch, tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
-    result, _ = run_loop_into_db(db_path, Decision(kind="answer", text="done", reason="direct"))
+    run_id, _ = record_run_into_db(db_path)
 
     monkeypatch.setattr(seed_local, "build_local_app", lambda **kwargs: (_ for _ in ()).throw(AssertionError("must not build runtime")))
 
-    # Construct exploding collaborators as a regression guard: trace commands have no path to them.
-    ExplodingProvider()
-    ExplodingPolicy()
-    ExplodingTool()
-
-    assert seed_local.main(["--db", str(db_path), "--trace-run", result.run_id]) == 0
-    assert seed_local.main(["--db", str(db_path), "--why-run", result.run_id]) == 0
+    assert seed_local.main(["--db", str(db_path), "--trace-run", run_id]) == 0
+    assert seed_local.main(["--db", str(db_path), "--why-run", run_id]) == 0
     output = capsys.readouterr().out
     assert "Runtime Trace" in output
     assert "Seed decided to answer" in output

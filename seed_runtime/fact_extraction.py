@@ -28,7 +28,7 @@ class FactExtractionService:
 
     The generic service records tool output as evidence only. It intentionally does
     not infer facts unless a future explicit mapping is added. Deprecated
-    RuntimeLoop emitted ``tool.result`` while canonical ToolExecutor emits
+    Legacy trace events used ``tool.result`` while canonical ToolExecutor emits
     ``tool.call.completed``; both event shapes are accepted so historical traces
     and the canonical runtime reuse the same evidence pipeline.
     """
