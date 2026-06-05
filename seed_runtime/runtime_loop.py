@@ -476,6 +476,7 @@ class RuntimeLoop:
             }
             for tool in self.tool_registry.list_tools(visible_only=True)
         ]
+        decision_context = build_decision_context_view(state)
         return RuntimeContext(
             workspace_id=runtime_input.workspace_id,
             run_id=run_id,
@@ -485,7 +486,7 @@ class RuntimeLoop:
                 "metadata": dict(runtime_input.metadata),
             },
             tools=tools,
-            decision_context=build_decision_context_view(state),
+            decision_context=decision_context,
         )
 
     def _validate_decision(self, proposed: object) -> tuple[Decision | None, str | None]:

@@ -1,11 +1,14 @@
 from seed_runtime.context import ContextComposer
 from seed_runtime.decisions import DecisionValidator
+from seed_runtime.context_views import DecisionContextView
 from seed_runtime.events import EventLedger
+from seed_runtime.evidence import Evidence
 from seed_runtime.execution import ToolExecutor
 from seed_runtime.model_client import DecisionParseError
-from seed_runtime.models import Decision, RuntimeResponse
+from seed_runtime.models import Decision, Fact, RuntimeResponse, utc_now
 from seed_runtime.registry import ToolRegistry
 from seed_runtime.runtime import FakeDecisionModel, Runtime
+from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
 from seed_runtime.tool_needs import ToolNeedService
 
@@ -415,6 +418,77 @@ def test_loop_answer_decision_appends_user_and_assistant_events():
         provider.last_context.decision_context.last_event_id
         == result.events_appended[0]
     )
+
+
+def test_loop_provider_receives_decision_context_without_changing_existing_fields():
+    runtime, _, provider, _ = make_loop(
+        LoopDecision(kind="answer", text="done", reason="context available")
+    )
+
+    runtime_input = RuntimeInput(
+        workspace_id="ws_loop",
+        user_text="hello",
+        metadata={"request_id": "req-1"},
+    )
+
+    runtime.run(runtime_input)
+
+    assert isinstance(provider.last_context.decision_context, DecisionContextView)
+    assert provider.last_context.state.workspace_id == "ws_loop"
+    assert provider.last_context.current_input == {
+        "text": "hello",
+        "metadata": {"request_id": "req-1"},
+    }
+    assert provider.last_context.tools == [
+        {
+            "name": "echo",
+            "summary": "Echo a message deterministically.",
+            "policy_action": "echo.run",
+            "risk_class": "L1",
+        }
+    ]
+
+
+def test_loop_decision_context_is_built_from_projected_state_for_run():
+    ledger = EventLedger()
+    evidence = Evidence(
+        id="evd_runtime_loop",
+        workspace_id="ws_loop",
+        source="test",
+        kind="user_input",
+        observed_at=utc_now(),
+        payload={"summary": "service status"},
+        confidence=1.0,
+    )
+    ledger.append(
+        "evidence.observed",
+        "ws_loop",
+        {"evidence": to_plain(evidence)},
+    )
+    fact = Fact(
+        id="fact_runtime_loop",
+        subject_id="service-a",
+        predicate="status",
+        value="active",
+        evidence_ids=["evd_runtime_loop"],
+        observed_at=utc_now(),
+        confidence=0.95,
+    )
+    ledger.append("fact.observed", "ws_loop", {"fact": to_plain(fact)})
+    runtime, _, provider, _ = make_loop(
+        LoopDecision(kind="answer", text="projected", reason="state view"),
+        ledger=ledger,
+    )
+
+    result = runtime.run(RuntimeInput(workspace_id="ws_loop", user_text="status?"))
+
+    assert result.error is None
+    assert provider.last_context.state.last_event_id == result.events_appended[0]
+    assert provider.last_context.decision_context.last_event_id == result.events_appended[0]
+    assert [fact.fact_id for fact in provider.last_context.decision_context.facts] == [
+        "fact_runtime_loop"
+    ]
+    assert provider.last_context.decision_context.summary.facts_count == 1
 
 
 def test_loop_tool_decision_executes_registered_echo_tool_and_appends_result_event():

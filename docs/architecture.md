@@ -21,7 +21,7 @@ Events -> projected State -> Evidence Graph -> Contradiction Detection -> Confid
 - **Evidence Graph** is a read-only explanation layer derived from projected State. It links Evidence records to Facts so Seed can explain why a fact exists, which projected evidence supports it, and which facts remain unsupported.
 - **Contradiction Detection** is a read-only projection view derived from projected facts and the Evidence Graph. It reports conservative conflicts such as exclusive predicates with multiple values, includes evidence and supporting event IDs for each side, and never decides which fact is correct.
 - **Confidence Aggregation** is a read-only projection view derived from projected State, Evidence Graph, and Contradiction Detection. It estimates support strength for each fact, but confidence is not truth and does not resolve contradictions.
-- **RuntimeLoop** coordinates one execution request.
+- **RuntimeLoop** coordinates one execution request. RuntimeLoop providers may use `context.decision_context` for the canonical provider-facing knowledge view, while `context.state` remains available. RuntimeLoop is not the sole runtime yet, and this change does not remove any legacy runtime path.
 - **DecisionJournal** records why a runtime decision was made and what happened afterward.
 - **RuntimeTrace** reconstructs one runtime run for audit/explanation without replaying execution.
 
