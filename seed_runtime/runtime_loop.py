@@ -25,6 +25,7 @@ from seed_runtime.serialization import to_plain
 from seed_runtime.state import State, StateProjector
 from seed_runtime.tool_needs import slugify
 from seed_runtime.tool_recommendations import ToolRecommendationService
+from seed_runtime.tool_execution_policy import ToolExecutionPolicyService
 from seed_runtime.tool_validation import ToolValidationResult, ToolValidationService
 
 
@@ -147,6 +148,9 @@ class RuntimeLoop:
         )
         self.tool_validation_service = (
             tool_validation_service or ToolValidationService(self.tool_registry)
+        )
+        self.tool_execution_policy = ToolExecutionPolicyService(
+            self.tool_registry, self.tool_validation_service, self.policy_engine
         )
         self.decision_journal = DecisionJournal(ledger)
         self.fact_extraction = FactExtractionService(ledger)
@@ -362,38 +366,20 @@ class RuntimeLoop:
         events_appended: list[str],
     ) -> RuntimeResult:
         tool_name = decision.tool_name or ""
-        existence = self.tool_validation_service.validate_tool_exists(tool_name)
-        if not existence.ok or existence.tool is None:
-            return self._record_unknown_tool(
-                runtime_input,
-                run_id,
-                input_event_id,
-                context_digest,
-                decision,
-                events_appended,
-                tool_name,
-            )
-        tool = existence.tool
-
-        status = self.tool_validation_service.validate_tool_status(tool)
-        if not status.ok:
-            return self._record_invalid_tool_validation(
-                runtime_input,
-                run_id,
-                input_event_id,
-                context_digest,
-                decision,
-                events_appended,
-                tool,
-                status,
-                phase="status",
-                policy_allowed=False,
-            )
-
-        input_validation = self.tool_validation_service.validate_input_schema(
-            tool, decision.tool_args
+        policy_result = self.tool_execution_policy.evaluate(
+            tool_name=tool_name, arguments=decision.tool_args, state=state, scope=None
         )
-        if not input_validation.ok:
+        if not policy_result.validation.ok:
+            if policy_result.tool is None:
+                return self._record_unknown_tool(
+                    runtime_input,
+                    run_id,
+                    input_event_id,
+                    context_digest,
+                    decision,
+                    events_appended,
+                    tool_name,
+                )
             return self._record_invalid_tool_validation(
                 runtime_input,
                 run_id,
@@ -401,13 +387,18 @@ class RuntimeLoop:
                 context_digest,
                 decision,
                 events_appended,
-                tool,
-                input_validation,
-                phase="input",
+                policy_result.tool,
+                policy_result.validation,
+                phase=policy_result.validation_phase or "input",
                 policy_allowed=False,
             )
 
-        policy = self.policy_engine.evaluate(tool, state, scope=None)
+        tool = policy_result.tool
+        policy = policy_result.policy
+        if tool is None or policy is None:
+            raise RuntimeError(
+                "tool execution policy returned no validated tool or policy"
+            )
         if policy.outcome != "allow":
             denied_event = self.ledger.append(
                 "runtime.policy.denied",
