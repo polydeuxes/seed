@@ -211,7 +211,7 @@ python scripts/seed_local.py \
   "restart jellyfin?"
 ```
 
-For canonical local intake, use repeatable `--observe SUBJECT PREDICATE VALUE` flags. `--source-type` and `--confidence` preserve observation provenance, while `--fact-expires-at` or `--fact-ttl-seconds` can make the derived Fact expire for stale-fact checks:
+For canonical local intake, use repeatable `--observe SUBJECT PREDICATE VALUE` flags. `--source-type` and numeric `--confidence VALUE` preserve observation provenance, while `--fact-expires-at` or `--fact-ttl-seconds` can make the derived Fact expire for stale-fact checks:
 
 ```bash
 python scripts/seed_local.py \
@@ -227,6 +227,15 @@ Ask for a deterministic explanation of a projected belief, including observed pr
 python scripts/seed_local.py --db seed.sqlite --why node115 health_status
 python scripts/seed_local.py --db seed.sqlite --why jellyfin runtime
 ```
+
+Ask for read-only confidence aggregation over projected facts. Confidence estimates support strength; it is not truth resolution and does not rewrite facts, delete unsupported facts, resolve contradictions, invoke runtime behavior, call providers/policy/tools, or append events:
+
+```bash
+python scripts/seed_local.py --db seed.sqlite --confidence
+python scripts/seed_local.py --db seed.sqlite --confidence-fact jellyfin runtime docker
+```
+
+Confidence Aggregation v1 is deterministic: one evidence node gives at least weak support, two or more evidence nodes give strong support, explicit projected fact confidence is preserved when higher, contradicted facts receive a small penalty, and unsupported facts without explicit confidence score `0.0`.
 
 Live read-only observation sources can collect practical host and monitoring metadata without execution, credentials, mutation, shell commands, or arbitrary PromQL. `--observe-ansible-inventory PATH` inspects raw file content before parser dispatch, treats `.ini`, `.yml`, and `.yaml` extensions only as fallback hints, and emits authoritative hostname, `ansible_host`, IP-address, alias, and group observations without invoking Ansible or connecting to hosts. `--observe-local-host` uses Python standard-library platform and disk APIs to emit the local hostname's OS, architecture, and `/` disk totals. `--observe-prometheus BASE_URL` performs HTTP `GET` requests to Prometheus's read API with a fixed allowlist of safe metric names: `up`, `node_uname_info`, `node_filesystem_avail_bytes`, and `node_filesystem_size_bytes`. Prometheus `up` samples also emit the metric's `job` label as the endpoint's durable `endpoint_role`. Use `--db` when you want the resulting observations to persist across CLI runs:
 

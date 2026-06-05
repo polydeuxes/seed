@@ -20,6 +20,12 @@ if str(REPO_ROOT) not in sys.path:
 from seed_runtime.action_plans import ActionPlanService, ActionPlanTransitionError
 from seed_runtime.ansible_inventory_source import AnsibleInventoryObservationSource
 from seed_runtime.context import ContextComposer
+from seed_runtime.confidence import (
+    FactConfidence,
+    build_confidence_summary,
+    build_fact_confidences,
+    find_fact_confidence,
+)
 from seed_runtime.contradictions import (
     Contradiction,
     build_contradiction_summary,
@@ -560,6 +566,12 @@ def build_local_app(
     )
 
 
+def _confidence_arg(value: str) -> float | str:
+    if value == "__report__":
+        return value
+    return float(value)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Run Seed locally with Ollama /api/generate intent classification.",
@@ -857,9 +869,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--confidence",
-        type=float,
+        nargs="?",
+        const="__report__",
         default=1.0,
-        help="confidence for --observe entries from 0.0 to 1.0 (default: 1.0)",
+        type=_confidence_arg,
+        help=(
+            "print confidence aggregation when used without a value; with a numeric "
+            "value, set confidence for --observe entries from 0.0 to 1.0 "
+            "(default: 1.0)"
+        ),
     )
     parser.add_argument(
         "--registered-provider",
@@ -987,6 +1005,12 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--confidence-fact",
+        nargs="+",
+        metavar="ARG",
+        help="print confidence for SUBJECT PREDICATE [OBJECT] from projected State",
+    )
+    parser.add_argument(
         "--trace-run",
         metavar="RUN_ID",
         help=(
@@ -1088,9 +1112,29 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def normalize_confidence_args(
+    args: argparse.Namespace, parser: argparse.ArgumentParser
+) -> None:
+    """Disambiguate --confidence report mode from observe confidence values."""
+
+    raw_confidence = args.confidence
+    args.confidence_report = raw_confidence == "__report__"
+    if args.confidence_report:
+        args.observe_confidence = 1.0
+        return
+    try:
+        args.observe_confidence = float(raw_confidence)
+    except (TypeError, ValueError):
+        parser.error(
+            "--confidence must be used without a value or with a number from 0.0 to 1.0"
+        )
+    if args.observe_confidence < 0.0 or args.observe_confidence > 1.0:
+        parser.error("--confidence must be between 0.0 and 1.0")
+
 def validate_lifecycle_args(
     args: argparse.Namespace, parser: argparse.ArgumentParser
 ) -> None:
+    normalize_confidence_args(args, parser)
     lifecycle_flags = [
         bool(args.preconditions),
         bool(args.proposal),
@@ -1107,6 +1151,8 @@ def validate_lifecycle_args(
         bool(args.why_fact),
         bool(args.unsupported_facts),
         bool(args.contradictions),
+        bool(args.confidence_report),
+        bool(args.confidence_fact),
         bool(args.trace_run),
         bool(args.why_run),
         bool(args.fact_support),
@@ -1131,7 +1177,7 @@ def validate_lifecycle_args(
             "--authorize-proposal, --accept-plan, --approve-plan, "
             "--reject-plan, --supersede-plan, --impact, --unhealthy, --why, "
             "--evidence, --why-fact, --unsupported-facts, --contradictions, "
-            "--trace-run, "
+            "--confidence, --confidence-fact, --trace-run, "
             "--why-run, --fact-support, --best-fact, "
             "--current-facts, --current-observations, --current-requirements, "
             "--current-capabilities, --current-issues, --state-summary, "
@@ -1143,6 +1189,8 @@ def validate_lifecycle_args(
         parser.error("--current-facts accepts either no values or SUBJECT PREDICATE")
     if args.why_fact is not None and len(args.why_fact) not in {2, 3}:
         parser.error("--why-fact accepts SUBJECT PREDICATE [OBJECT]")
+    if args.confidence_fact is not None and len(args.confidence_fact) not in {2, 3}:
+        parser.error("--confidence-fact accepts SUBJECT PREDICATE [OBJECT]")
     if args.rebuild_state_cache and not args.db:
         parser.error("--rebuild-state-cache requires --db")
     if (args.rebuild_state_cache or args.state_cache_status) and args.predicate_catalog:
@@ -1193,8 +1241,6 @@ def validate_lifecycle_args(
         parser.error("fact expiry options require at least one --fact or --observe")
     if args.fact_ttl_seconds is not None and args.fact_ttl_seconds < 0:
         parser.error("--fact-ttl-seconds must be non-negative")
-    if args.confidence < 0.0 or args.confidence > 1.0:
-        parser.error("--confidence must be between 0.0 and 1.0")
     if args.observe_timeout <= 0:
         parser.error("--observe-timeout must be positive")
     if args.fact_expires_at:
@@ -1384,7 +1430,7 @@ def seed_dev_state_from_args(args: argparse.Namespace, ledger: EventLedger) -> N
         parse_observation(
             observation,
             source_type=args.source_type,
-            confidence=args.confidence,
+            confidence=args.observe_confidence,
             expires_at=fact_expires_at,
             ttl_seconds=args.fact_ttl_seconds,
         )
@@ -2129,6 +2175,81 @@ def format_contradictions(state: State, contradictions: list[Contradiction]) -> 
     return "\n".join(lines)
 
 
+def format_confidence(state: State, fact_confidences: list[FactConfidence]) -> str:
+    """Format confidence summary and concise fact confidence list."""
+
+    summary = build_confidence_summary(state, fact_confidences)
+    lines = [
+        "Confidence Summary",
+        "",
+        f"Facts: {summary.fact_count}",
+        f"Strongly Supported: {summary.strongly_supported_count}",
+        f"Weakly Supported: {summary.weakly_supported_count}",
+        f"Unsupported: {summary.unsupported_count}",
+        f"Contradicted: {summary.contradicted_count}",
+        f"Average Confidence: {summary.average_confidence:.2f}",
+        "",
+        f"Projection Version: {summary.projection_version}",
+        f"Last Event: {summary.last_event_id or 'none'}",
+        "",
+        "Fact Confidence",
+        "",
+    ]
+    if not fact_confidences:
+        lines.append("(none)")
+        return "\n".join(lines)
+    for item in fact_confidences:
+        lines.append(
+            f"* {item.subject} {item.predicate} {_format_view_value(item.object)} "
+            f"confidence={item.confidence:.2f} support={item.support_count} "
+            f"contradictions={item.contradiction_count} "
+            f"unsupported={_format_bool(item.unsupported)} "
+            f"contradicted={_format_bool(item.contradicted)}"
+        )
+    return "\n".join(lines)
+
+
+def format_confidence_fact(
+    confidences: list[FactConfidence],
+    subject: str,
+    predicate: str,
+    object_value: str | None,
+) -> str:
+    """Format detailed confidence for a fact query."""
+
+    if not confidences:
+        query = f"{subject} {predicate}" + (f" {object_value}" if object_value else "")
+        return "\n".join(["Fact", "", f"No matching fact found for {query}."])
+    item = confidences[0]
+    lines = [
+        "Fact",
+        "",
+        f"{item.subject} {item.predicate} {_format_view_value(item.object)}",
+        f"confidence: {item.confidence:.2f}",
+        f"support count: {item.support_count}",
+        f"contradictions: {item.contradiction_count}",
+        f"unsupported: {_format_bool(item.unsupported)}",
+        f"contradicted: {_format_bool(item.contradicted)}",
+        "",
+        "Reasons",
+        "",
+    ]
+    if item.reasons:
+        lines.extend(f"* {reason}" for reason in item.reasons)
+    else:
+        lines.append("(none)")
+    lines.extend(["", "Supporting Events", ""])
+    if item.supporting_event_ids:
+        lines.extend(f"* {event_id}" for event_id in item.supporting_event_ids)
+    else:
+        lines.append("(none)")
+    return "\n".join(lines)
+
+
+def _format_bool(value: bool) -> str:
+    return "true" if value else "false"
+
+
 def format_state_view_summary(summary: StateSummary) -> str:
     """Format the v1 State View summary."""
 
@@ -2630,7 +2751,7 @@ def ingest_observations_from_args(args: argparse.Namespace) -> list[Fact]:
             parse_observation(
                 observation,
                 source_type=args.source_type,
-                confidence=args.confidence,
+                confidence=args.observe_confidence,
                 expires_at=fact_expires_at,
                 ttl_seconds=args.fact_ttl_seconds,
             )
@@ -3515,13 +3636,45 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.unsupported_facts:
-        print(format_unsupported_facts(unsupported_fact_views(projected_state_from_args(args))))
+        print(
+            format_unsupported_facts(unsupported_fact_views(projected_state_from_args(args)))
+        )
         return 0
 
     if args.contradictions:
         state = projected_state_from_args(args)
         evidence_graph = build_evidence_graph(state)
         print(format_contradictions(state, build_contradictions(state, evidence_graph)))
+        return 0
+
+    if args.confidence_report:
+        state = projected_state_from_args(args)
+        evidence_graph = build_evidence_graph(state)
+        contradictions = build_contradictions(state, evidence_graph)
+        fact_confidences = build_fact_confidences(state, evidence_graph, contradictions)
+        print(format_confidence(state, fact_confidences))
+        return 0
+
+    if args.confidence_fact:
+        subject, predicate, *maybe_object = args.confidence_fact
+        state = projected_state_from_args(args)
+        evidence_graph = build_evidence_graph(state)
+        contradictions = build_contradictions(state, evidence_graph)
+        print(
+            format_confidence_fact(
+                find_fact_confidence(
+                    state,
+                    subject,
+                    predicate,
+                    maybe_object[0] if maybe_object else None,
+                    evidence_graph,
+                    contradictions,
+                ),
+                subject,
+                predicate,
+                maybe_object[0] if maybe_object else None,
+            )
+        )
         return 0
 
     if args.fact_support:

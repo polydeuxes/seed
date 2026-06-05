@@ -1,4 +1,4 @@
-# State, State Views, and Evidence Graph
+# State, State Views, Evidence Graph, and Confidence
 
 Seed's State layer turns append-only EventLedger data into a current world model.
 
@@ -10,6 +10,7 @@ Seed's State layer turns append-only EventLedger data into a current world model
 - **State Views**: read-only projection views over State.
 - **Evidence Graph**: read-only explanation layer over projected State that links evidence to facts.
 - **Contradiction Detection**: read-only projection view over projected facts and evidence that reports conservative conflicts without resolving them.
+- **Confidence Aggregation**: read-only projection view over projected facts, evidence, and contradictions that estimates support strength without deciding truth.
 
 ## State Views v1
 
@@ -74,11 +75,43 @@ Contradiction Detection v1 starts with a conservative built-in exclusive predica
 
 Contradictions include the subject, predicate, conflicting fact IDs, values, severity, reason, evidence by fact ID, supporting event IDs, last event, and projection version. They are not resolutions: Seed does not choose a winner, aggregate confidence, rewrite facts, delete facts, append events, call providers, evaluate policy, execute tools, run shell commands, mutate hosts, make network calls, or call LLMs. The preferred failure mode is a false negative rather than a noisy false positive.
 
-With State Views, Evidence Graph, and Contradiction Detection together, Seed can distinguish:
+## Confidence Aggregation v1
+
+`seed_runtime/confidence.py` exposes read-only builders:
+
+- `build_fact_confidences(state, evidence_graph=None, contradictions=None)`
+- `build_fact_confidence(state, fact_id, evidence_graph=None, contradictions=None)`
+- `build_confidence_summary(state, fact_confidences=None)`
+- `find_fact_confidence(state, subject, predicate, object=None, evidence_graph=None, contradictions=None)`
+
+Confidence Aggregation is derived from projected `State`, the read-only `EvidenceGraph`, and read-only `Contradiction Detection`. The flow is:
+
+```text
+Events -> projected State -> Evidence Graph -> Contradiction Detection -> Confidence Aggregation
+```
+
+Confidence is support estimation, not truth. It does not resolve contradictions, choose winners, rewrite facts, delete unsupported facts, append events, invoke runtime behavior, call providers, evaluate policy, execute tools, run shell commands, mutate hosts, make network calls, call LLMs, or persist a separate confidence database.
+
+Confidence Aggregation v1 models:
+
+- **FactConfidence**: one fact plus confidence, support count, contradiction count, unsupported/contradicted flags, reasons, and supporting event IDs.
+- **ConfidenceSummary**: aggregate fact counts, support buckets, contradicted count, average confidence, projection version, and last event.
+
+Scoring is intentionally simple and deterministic for v1:
+
+- no evidence gives `0.0` unless the fact has explicit projected confidence
+- one evidence node gives at least `0.50`
+- two or more evidence nodes give at least `0.75`
+- explicit projected fact confidence is preserved when higher than evidence-derived confidence
+- contradicted facts are not resolved, but receive a deterministic confidence penalty
+- confidence is clamped to `[0.0, 1.0]`
+
+With State Views, Evidence Graph, Contradiction Detection, and Confidence Aggregation together, Seed can distinguish:
 
 - unsupported facts
-- supported facts
-- conflicting facts
+- weakly supported facts
+- strongly supported facts
+- contradicted facts
 
 ## CLI
 
@@ -94,5 +127,7 @@ The read-only CLI views are:
 - `--why-fact SUBJECT PREDICATE [OBJECT]`
 - `--unsupported-facts`
 - `--contradictions`
+- `--confidence`
+- `--confidence-fact SUBJECT PREDICATE [OBJECT]`
 
 The commands load projected State, use `ProjectionStore` cache when available, and render plain text. They never append events, invoke runtime behavior, call providers, evaluate policy, execute tools, run shell commands, mutate hosts, make network calls, or call LLMs.
