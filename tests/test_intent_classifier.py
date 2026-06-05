@@ -3,6 +3,14 @@ import json
 import pytest
 
 from seed_runtime.context import ContextPacket
+from seed_runtime.context_views import (
+    ContextCapability,
+    ContextFact,
+    ContextIssue,
+    ContextRequirement,
+    ContextSummary,
+    DecisionContextView,
+)
 from seed_runtime.intent_classifier import (
     DecisionBuilder,
     FakeIntentClassifier,
@@ -14,6 +22,9 @@ from seed_runtime.intent_classifier import (
     build_intent_prompt,
 )
 from seed_runtime.model_client import DecisionParseError
+from seed_runtime.runtime_loop import Decision as RuntimeLoopDecision
+from seed_runtime.runtime_loop import RuntimeContext
+from seed_runtime.state import State
 
 
 class FakeTransport:
@@ -368,3 +379,169 @@ def test_text_intent_classifier_uses_strict_json_intent_parser():
 
     with pytest.raises(DecisionParseError, match="unexpected fields: kind"):
         classifier.classify(context_for("hello"))
+
+def runtime_context_for(text: str) -> RuntimeContext:
+    return RuntimeContext(
+        workspace_id="workspace-1",
+        run_id="run-1",
+        state=State(workspace_id="workspace-1"),
+        current_input={"text": text, "metadata": {"source": "test"}},
+        tools=[
+            {
+                "name": "echo",
+                "summary": "Echo a message deterministically.",
+                "policy_action": "echo.run",
+                "risk_class": "L1",
+            }
+        ],
+        decision_context=DecisionContextView(
+            facts=[
+                ContextFact(
+                    fact_id="fact-1",
+                    subject="service-a",
+                    predicate="status",
+                    object="healthy",
+                    confidence=0.95,
+                    contradicted=False,
+                    evidence_count=2,
+                )
+            ],
+            issues=[
+                ContextIssue(
+                    issue_id="issue-1",
+                    summary="graph issue: service-a missing owner",
+                    severity="warning",
+                )
+            ],
+            requirements=[
+                ContextRequirement(
+                    requirement_id="req-1",
+                    requirement_name="owner",
+                    status="missing",
+                )
+            ],
+            capabilities=[
+                ContextCapability(
+                    capability_id="cap-1",
+                    capability_name="echo",
+                    status="available",
+                )
+            ],
+            summary=ContextSummary(
+                facts_count=1,
+                issues_count=1,
+                contradicted_fact_count=0,
+                strongly_supported_count=1,
+                weakly_supported_count=0,
+                unsupported_count=0,
+            ),
+            projection_version="v1",
+            last_event_id="event-1",
+        ),
+    )
+
+
+def test_runtime_context_echo_builds_runtime_loop_call_tool_decision():
+    decision = DecisionBuilder().build(
+        runtime_context_for("echo hello"),
+        IntentClassification(
+            intent="echo",
+            reason="echo requested",
+            arguments={"message": "hello"},
+        ),
+    )
+
+    assert isinstance(decision, RuntimeLoopDecision)
+    assert decision.kind == "call_tool"
+    assert decision.tool_name == "echo"
+    assert decision.tool_args == {"message": "hello"}
+    assert decision.text is None
+
+
+def test_runtime_context_answer_builds_runtime_loop_answer_decision():
+    decision = DecisionBuilder().build(
+        runtime_context_for("hello"),
+        IntentClassification(
+            intent="answer",
+            reason="can answer",
+            arguments={"answer": "done"},
+        ),
+    )
+
+    assert isinstance(decision, RuntimeLoopDecision)
+    assert decision.kind == "answer"
+    assert decision.text == "done"
+    assert decision.tool_name is None
+    assert decision.tool_args == {}
+
+
+def test_runtime_context_missing_tool_becomes_answer_not_request_tool():
+    decision = DecisionBuilder().build(
+        runtime_context_for("what is the weather in Jacksonville?"),
+        IntentClassification(
+            intent="missing_tool",
+            reason="needs weather lookup",
+            arguments={},
+        ),
+    )
+
+    assert isinstance(decision, RuntimeLoopDecision)
+    assert decision.kind == "answer"
+    assert decision.text is not None
+    assert "visible capability" in decision.text
+    assert "weather" in decision.text
+    assert not hasattr(decision, "tool_need")
+
+
+def test_intent_decision_model_accepts_runtime_context():
+    model = IntentDecisionModel()
+
+    decision = model.decide(runtime_context_for("echo hello"))
+
+    assert isinstance(decision, RuntimeLoopDecision)
+    assert decision.kind == "call_tool"
+    assert decision.tool_name == "echo"
+    assert decision.tool_args == {"message": "hello"}
+
+
+def test_runtime_context_prompt_includes_decision_context_fields():
+    prompt = build_intent_prompt(runtime_context_for("summarize service-a"))
+
+    assert '"text":"summarize service-a"' in prompt
+    assert '"name":"echo"' in prompt
+    assert '"decision_context"' in prompt
+    assert '"summary"' in prompt
+    assert '"facts_count":1' in prompt
+    assert '"fact_id":"fact-1"' in prompt
+    assert '"issue_id":"issue-1"' in prompt
+    assert '"capability_name":"echo"' in prompt
+    assert '"requirement_name":"owner"' in prompt
+
+
+def test_text_intent_classifier_accepts_runtime_context():
+    transport = FakeTransport(
+        json.dumps(
+            {
+                "intent": "answer",
+                "reason": "can answer from runtime context",
+                "arguments": {"answer": "done"},
+            },
+            separators=(",", ":"),
+        )
+    )
+    classifier = TextIntentClassifier(IntentPromptModelClient(transport))
+
+    classification = classifier.classify(runtime_context_for("summarize service-a"))
+
+    assert len(transport.prompts) == 1
+    assert '"decision_context"' in transport.prompts[0]
+    assert classification.intent == "answer"
+    assert classification.arguments == {"answer": "done"}
+
+
+def test_context_packet_prompt_still_uses_legacy_context_shape():
+    prompt = build_intent_prompt(context_for("hello"))
+
+    assert '"input":{"text":"hello"}' in prompt
+    assert '"decision_context"' not in prompt
+    assert '"metadata"' not in prompt
