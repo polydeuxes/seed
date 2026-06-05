@@ -25,7 +25,7 @@ Recent Strategy B extractions moved duplicated lookup, validation, recommendatio
 
 ### `ToolExecutionPolicyService`
 
-- **Behavior moved:** both execution paths now share the sequence: resolve tool, validate status, validate input schema, then evaluate policy with scope. The service deliberately returns raw validation/policy details and does not execute tools, emit events, create pending actions, or collapse non-allow outcomes. [`seed_runtime/tool_execution_policy.py:35-42`](../seed_runtime/tool_execution_policy.py#L35-L42) [`seed_runtime/tool_execution_policy.py:88-119`](../seed_runtime/tool_execution_policy.py#L88-L119)
+- **Behavior moved:** both execution paths now share the sequence: resolve tool, validate status, validate input schema, then evaluate policy with scope. The service deliberately returns raw validation/policy details and does not execute operation implementations, emit events, create pending actions, or collapse non-allow outcomes. [`seed_runtime/tool_execution_policy.py:35-42`](../seed_runtime/tool_execution_policy.py#L35-L42) [`seed_runtime/tool_execution_policy.py:88-119`](../seed_runtime/tool_execution_policy.py#L88-L119)
 - **Runtime path using it:** `ToolExecutor.execute()` calls `evaluate_with_state_factory()` so state projection is lazy after validation, then preserves legacy routing for validation failures, allow, block, confirmation/approval pending actions, and resume behavior outside the shared service. [`seed_runtime/execution.py:56-73`](../seed_runtime/execution.py#L56-L73) [`seed_runtime/execution.py:86-128`](../seed_runtime/execution.py#L86-L128) [`seed_runtime/execution.py:263-296`](../seed_runtime/execution.py#L263-L296)
 - **RuntimeLoop path using it:** `RuntimeLoop._run_tool_decision()` calls `evaluate()` using already projected state, then preserves RuntimeLoop-specific handling for invalid tools, non-allow policy denial, handler lookup, handler failures, output validation, successful tool results, and decision journaling. [`seed_runtime/runtime_loop.py:360-410`](../seed_runtime/runtime_loop.py#L360-L410) [`seed_runtime/runtime_loop.py:448-548`](../seed_runtime/runtime_loop.py#L448-L548)
 - **Behavior still different:** confirmation and approval outcomes remain semantic gaps. Runtime turns them into `tool.approval.required` plus `pending_action.created`; RuntimeLoop still emits `runtime.policy.denied`, journals `policy_denied`, and returns an error for every non-allow outcome. Approved-action resume remains Runtime-only. [`seed_runtime/execution.py:121-128`](../seed_runtime/execution.py#L121-L128) [`seed_runtime/execution.py:263-296`](../seed_runtime/execution.py#L263-L296) [`seed_runtime/runtime_loop.py:402-446`](../seed_runtime/runtime_loop.py#L402-L446)
@@ -129,7 +129,7 @@ The old `Runtime` delegates tool calls to `ToolExecutor.execute()` from the `cal
 `ToolExecutor.execute()` now delegates the common pre-execution sequence to `ToolExecutionPolicyService.evaluate_with_state_factory()`, which validates:
 
 1. The tool exists through `ToolValidationService.validate_tool_exists()`.
-2. Tool registration status is valid.
+2. Operation/tool registration status is valid.
 3. Input schema is valid.
 4. Policy is evaluated through the configured policy engine with `scope`.
 
@@ -388,7 +388,7 @@ Policy/action-related events found in the inspected source and tests:
 | `tool.call.failed` | `seed_runtime/execution.py` | Old `ToolExecutor` emits for registration/input/execution/output failures. |
 | `runtime.policy.denied` | `seed_runtime/runtime_loop.py`, `seed_runtime/runtime_trace.py` | RuntimeLoop emits for every non-`allow` policy outcome. Trace code treats it as policy denial. |
 | `decision.recorded` | `seed_runtime/decision_journal.py`, `seed_runtime/runtime_loop.py` | RuntimeLoop appends policy outcome summaries such as `policy_denied`, `tool_succeeded`, `tool_failed`. |
-| `runtime.tool.unknown` | `seed_runtime/runtime_loop.py` | RuntimeLoop emits before policy when selected tool is unknown. |
+| `runtime.tool.unknown` | `seed_runtime/runtime_loop.py` | RuntimeLoop emits before policy when selected operation/tool is unknown. |
 | `runtime.tool.invalid` | `seed_runtime/runtime_loop.py` | RuntimeLoop emits for tool status/input/output validation failure. |
 | `runtime.tool.handler_missing` | `seed_runtime/runtime_loop.py` | RuntimeLoop emits after policy allow when no handler exists. |
 | `tool.failure` | `seed_runtime/runtime_loop.py` | RuntimeLoop emits when a handler raises. |
@@ -412,7 +412,7 @@ Existing tests covering the inventory:
 
 - `tests/test_execution.py::test_successful_echo_tool_execution` covers allowed execution and `tool.call.started` / `tool.call.completed` / evidence events.
 - `tests/test_execution.py::test_invalid_input_schema_fails_before_execution` covers validation failure before execution and `tool.call.failed` with phase `input_validation`.
-- `tests/test_execution.py::test_policy_block_prevents_execution` covers `block`, no tool execution, and `tool.policy.blocked`.
+- `tests/test_execution.py::test_policy_block_prevents_execution` covers `block`, no operation implementation execution, and `tool.policy.blocked`.
 - `tests/test_execution.py::test_output_schema_validation_failure_records_failed_event` covers started call then `tool.call.failed` on output validation / execution phase.
 - `tests/test_execution.py::test_completed_tool_call_appends_tool_call_completed` covers completed event payload.
 - `tests/test_pending_actions.py::test_approval_required_tool_does_not_execute` covers `require_approval`, no implementation call, `tool.approval.required`, `pending_action.created`, and pending-action payload fields.
@@ -425,10 +425,10 @@ Existing tests covering the inventory:
 
 ### RuntimeLoop and trace
 
-- `tests/test_runtime_loop.py::test_loop_tool_decision_executes_registered_echo_tool_and_appends_result_event` covers allowed RuntimeLoop tool execution and `tool.result`.
+- `tests/test_runtime_loop.py::test_loop_tool_decision_executes_registered_echo_tool_and_appends_result_event` covers allowed RuntimeLoop operation implementation execution and `tool.result`.
 - `tests/test_runtime_loop.py::test_loop_policy_denial_prevents_tool_execution` covers RuntimeLoop non-allow branch for `block`, no handler call, `runtime.policy.denied`, and `decision.recorded` outcome `policy_denied`.
 - `tests/test_runtime_loop.py::test_loop_unknown_tool_is_rejected_and_logged_as_event` covers unknown tool before policy.
-- `tests/test_runtime_loop.py::test_loop_malformed_decision_is_rejected_before_policy_and_tool_execution` covers malformed decision before policy/tool execution.
+- `tests/test_runtime_loop.py::test_loop_malformed_decision_is_rejected_before_policy_and_tool_execution` covers malformed decision before policy/operation implementation execution.
 - `tests/test_runtime_loop.py::test_loop_tool_handler_exception_is_caught_and_journaled_as_tool_failed` covers allowed policy path with handler exception.
 - `tests/test_runtime_trace.py::test_trace_reconstructs_policy_denied_run` covers trace reconstruction for `runtime.policy.denied`.
 
@@ -449,7 +449,7 @@ RuntimeLoop currently lacks these old Runtime / ToolExecutor behaviors:
 9. Stored-argument/stored-scope execution from a pending action.
 10. Exactly-once prevention through completed pending-action status.
 11. Failure behavior that leaves a failed resumed action in `approved` status.
-12. Old event vocabulary for tool execution (`tool.call.started`, `tool.call.completed`, `tool.call.failed`) in the primary execution path.
+12. Old event vocabulary for operation implementation execution (`tool.call.started`, `tool.call.completed`, `tool.call.failed`) in the primary execution path.
 13. Test coverage for RuntimeLoop `require_confirmation` and `require_approval` outcomes.
 
 ## 7. Extraction candidates only
@@ -498,7 +498,7 @@ Current source seam:
 
 ### `ToolExecutionPolicyService`
 
-Status: implemented as shared infrastructure. It now validates tool existence/status/input, evaluates policy with scope, and returns a structured execution-policy result before handler/tool execution. [`seed_runtime/tool_execution_policy.py:35-119`](../seed_runtime/tool_execution_policy.py#L35-L119)
+Status: implemented as shared infrastructure. It now validates operation/tool existence/status/input, evaluates policy with scope, and returns a structured execution-policy result before handler/implementation execution. [`seed_runtime/tool_execution_policy.py:35-119`](../seed_runtime/tool_execution_policy.py#L35-L119)
 
 Current source seams that remain:
 
@@ -523,7 +523,7 @@ If RuntimeLoop replaced old Runtime / ToolExecutor for policy and approval flows
 5. Existing approval UIs or APIs based on projected `state.pending_actions` would have no pending action to show.
 6. Existing approval/resume workflows using `PendingActionService.mark_approved()` plus `ToolExecutor.resume_approved_tool_call()` would not have a RuntimeLoop-created pending action to approve or resume.
 7. Approved-action resume would be unavailable through RuntimeLoop.
-8. Existing event consumers expecting `tool.call.started` / `tool.call.completed` / `tool.call.failed` from old tool execution would instead see RuntimeLoop's `tool.result`, `tool.failure`, or RuntimeLoop-specific events.
+8. Existing event consumers expecting `tool.call.started` / `tool.call.completed` / `tool.call.failed` from old operation implementation execution would instead see RuntimeLoop's `tool.result`, `tool.failure`, or RuntimeLoop-specific events.
 9. Correlation/causation semantics for approval resume would be lost because RuntimeLoop has no `_resume_event_context()` equivalent.
 10. Exactly-once resume prevention through pending-action completion would not apply because RuntimeLoop does not create or complete pending actions.
 11. Tests and traces that assume `runtime.policy.denied` means hard denial could become ambiguous if confirmation/approval outcomes were later routed through that same event.

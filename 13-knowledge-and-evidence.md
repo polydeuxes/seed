@@ -35,13 +35,13 @@ The biggest conceptual shift is:
 
 ```text
 Conductor:
-Tools -> Actions
+Operations / Handoffs -> Actions
 
 Seed:
-Evidence -> Facts -> State -> Decisions -> Tools
+Evidence -> Facts -> State -> Decisions -> Operations / Handoffs
 ```
 
-The fact system is more important than the tool system. Tools are how Seed observes and acts; evidence and facts are how Seed knows what is true enough to decide.
+The fact system is more important than the operation/toolkit system. Registered operations and provider handoffs are how Seed observes and acts; evidence and facts are how Seed knows what is true enough to decide. See `02-domain-model.md` for the canonical capability/operation/implementation/provider/toolkit vocabulary.
 
 ## Knowledge Sources
 
@@ -108,14 +108,14 @@ Evidence should preserve the original payload as much as practical, plus source 
 
 ## Parallel Evidence Collection
 
-Seed may use multiple workers, tools, or subagents to investigate the same goal.
+Seed may use multiple workers, operation implementations, or subagents to investigate the same goal.
 
 These branches should not be treated as independent authorities. Their primary output is Evidence, not final truth. Parallel workers and subagents do not merge opinions; they emit Evidence. Seed merges Evidence into Facts.
 
 A worker may return:
 
 - raw observations
-- tool outputs
+- operation outputs
 - cited document excerpts
 - failed attempts
 - uncertainty notes
@@ -228,13 +228,13 @@ Events
 
 A `DecisionContextView` is assembled only from projected State, the Evidence Graph, Contradiction Detection, and Confidence Aggregation. It carries decision-ready facts with confidence, contradiction flags, and evidence counts, plus projected issues, requirements, capabilities, and summary counts. Unsupported facts are excluded by default; contradicted facts are retained and marked so providers can see conflicts without Seed resolving or hiding them.
 
-Context Views are read-only projections. They do not execute runtime behavior, invoke providers, invoke tools, evaluate policy, call LLMs, mutate State, append events, replay the ledger, or create new persistence. Future providers must consume Context Views rather than directly traversing State structures, preserving a clear boundary between the knowledge layer and decision-making.
+Context Views are read-only projections. They do not execute runtime behavior, invoke providers, invoke operation implementations, evaluate policy, call LLMs, mutate State, append events, replay the ledger, or create new persistence. Future providers must consume Context Views rather than directly traversing State structures, preserving a clear boundary between the knowledge layer and decision-making.
 
 ## Recommended Toolkit Roadmap
 
 ### Knowledge Toolkit
 
-Tools:
+Operations:
 
 - `wikipedia_lookup`
 - `wikidata_lookup`
@@ -249,7 +249,7 @@ Knowledge toolkit outputs should be recorded as Evidence. Structured source resu
 
 ### Observation Toolkit
 
-Tools:
+Operations:
 
 - `observe_service_status`
 - `observe_disk_usage`
@@ -260,11 +260,11 @@ Purpose:
 
 Convert operational observations into evidence-backed observed Facts.
 
-Observation tools should prefer direct observations of the current environment and should emit Evidence records suitable for deterministic fact extraction and Fact Support Aggregation. Existing names such as `verify_ssh_access` should be treated as observation surfaces, not as a reason to add a standalone verification subsystem or internal execution lifecycle.
+Observation operations should prefer direct observations of the current environment and should emit Evidence records suitable for deterministic fact extraction and Fact Support Aggregation. Existing names such as `verify_ssh_access` should be treated as observation surfaces, not as a reason to add a standalone verification subsystem or internal execution lifecycle.
 
 ### Computation Toolkit
 
-Tools:
+Operations:
 
 - `sympy_compute`
 - `unit_convert`
@@ -274,7 +274,7 @@ Purpose:
 
 Perform deterministic calculations.
 
-Computation tool outputs should also be recorded as Evidence so any derived answer can cite its inputs and deterministic result.
+Computation operation outputs should also be recorded as Evidence so any derived answer can cite its inputs and deterministic result.
 
 ## Symbolic Computation
 
@@ -294,7 +294,7 @@ Capabilities:
 - matrices
 - statistics
 
-SymPy should be exposed as a toolkit rather than embedded into the runtime.
+SymPy should be exposed through a toolkit rather than embedded into the runtime.
 
 Example:
 
@@ -303,7 +303,7 @@ User:
 Solve x^2 - 5x + 6 = 0
 
 Decision:
-propose_handoff_plan(sympy_compute via MCP/manual backend)
+propose_handoff_plan(sympy_compute via MCP/manual provider backend)
 
 Result:
 x = 2

@@ -1,13 +1,13 @@
 # 05 Policy and Safety
 
-Policy is the boundary between desire and external-provider handoff.
+Policy is the boundary between desire and an operation call or external-provider handoff.
 
 ## Core rule
 
-A user or model can desire an action. Policy metadata determines whether Seed may recommend a non-executable handoff, but actual execution remains outside Seed.
+A user or model can desire an action. Policy metadata determines whether Seed may call an allowed registered operation or recommend a non-executable handoff, but mutating execution remains outside Seed.
 
 ```text
-desire -> decision -> validation -> policy metadata -> HandoffPlan(executable=false) -> external provider
+desire -> decision -> validation -> policy metadata -> registered operation or HandoffPlan(executable=false) -> provider boundary
 ```
 
 Never:
@@ -115,7 +115,7 @@ Policy should evaluate:
 - risk
 - actor
 - workspace
-- tool
+- operation/tool name
 - toolkit
 - scope entity
 - environment
@@ -141,7 +141,7 @@ toolkit.register
 tool.call
 ```
 
-Avoid implementation-specific names in policy. Policy names describe effects.
+Avoid implementation-specific names in policy. Policy names describe effects; `tool.call` remains legacy event/action vocabulary for registered operation calls.
 
 
 ## Plan approval vs external-provider handoff
@@ -159,7 +159,7 @@ The core path after plan acceptance is a non-executable HandoffPlan:
 - `HandoffPlan.requires_external_approval` records whether the external provider/operator still needs approval before execution;
 - `HandoffPlan.executable` is always `false`.
 
-A HandoffPlan is not an approval object. It does not imply user approval, execution authorization, credential availability, provider trust, or tool registration. Those remain separate Seed events or external-provider controls.
+A HandoffPlan is not an approval object. It does not imply user approval, execution authorization, credential availability, provider trust, or operation registration. Those remain separate Seed events or external-provider controls.
 
 ExecutionProposal and ExecutionAuthorization are experimental and not part of the core path yet. They must not be used to build an internal execution lifecycle.
 
@@ -202,7 +202,7 @@ Policy-relevant toolkit metadata:
 - required providers
 - dependency list
 
-Generated mutating capabilities should start as handoff-only and provider-controlled.
+Generated mutating capabilities should start as handoff-only and provider-controlled; generated toolkit operations are not active by default.
 
 ## Sandbox expectations
 
@@ -221,12 +221,12 @@ Generated capability validation should use:
 
 Never allow:
 
-- arbitrary shell as a Seed execution tool
+- arbitrary shell as a Seed-owned operation implementation
 - generated code self-registration
 - generated code editing policy
 - generated code or metadata accessing raw secrets
 - model-supplied implementation references
-- importing unregistered modules as tools
+- importing unregistered modules as operation implementations
 - policy decisions generated solely by the model
 
 ## Handoff safety sequence
@@ -254,7 +254,7 @@ def safe_handoff(action_plan, target):
     )
 ```
 
-## Tool generation safety sequence
+## Toolkit generation safety sequence
 
 ```python
 def safe_tool_generation(tool_need):

@@ -12,8 +12,8 @@ It answers:
 - What goal is active?
 - What facts matter?
 - What is missing?
-- What tools are available?
-- What tools are blocked?
+- What registered operations/tools are available?
+- What capabilities or operations are blocked?
 - What tools do not exist yet?
 - What decisions may the model make?
 
@@ -76,7 +76,7 @@ Context composer pulls from:
 - relevant entities
 - facts about entities
 - available capabilities and handoff backends
-- open tool needs
+- open ToolNeeds / capability gaps
 - approval state
 - toolkit registry
 - policy summaries
@@ -231,9 +231,9 @@ Include:
 - risk/approval summary
 - when to use
 
-### 7. Open Tool Needs
+### 7. Open ToolNeeds / capability gaps
 
-Show existing Tool Needs so the model does not duplicate them.
+Show existing ToolNeeds / capability gaps so the model does not duplicate them.
 
 ### 8. Decision schema
 
@@ -270,7 +270,7 @@ Examples:
 ```text
 Input: "install ssh on node-1"
 Known capability: ssh_access
-Available tools: verify_ssh_access
+Available operations/tools: verify_ssh_access
 Missing tool: install_ssh_server
 ```
 
@@ -327,10 +327,10 @@ Entities:
 Facts:
 {{facts}}
 
-Available tools:
+Available operations/tools:
 {{available_tools}}
 
-Open tool needs:
+Open ToolNeeds / capability gaps:
 {{open_tool_needs}}
 
 Allowed decision schema:

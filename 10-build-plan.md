@@ -95,7 +95,7 @@ tests/test_decisions.py
 
 ## Session 4: Tool registry and manifest loader
 
-Goal: load registered tools from toolkit manifests.
+Goal: load registered operations from toolkit manifests.
 
 Tasks:
 
@@ -144,8 +144,8 @@ Tasks:
 1. Implement ContextComposer.
 2. Select active goal.
 3. Select relevant entities and facts.
-4. Select visible tools.
-5. Include open Tool Needs.
+4. Select visible registered operations/tools.
+5. Include open ToolNeed / capability gaps.
 6. Add deterministic tests for context packet shape.
 
 Deliverable:
@@ -179,7 +179,7 @@ tests/test_execution.py
 
 ## Session 8: Runtime loop without real LLM
 
-Goal: complete the boring MVP loop with a fake model and no generated tools.
+Goal: complete the boring MVP loop with a fake model and no generated toolkit operations.
 
 MVP path:
 
@@ -214,17 +214,17 @@ seed_runtime/runtime.py
 tests/test_runtime_loop.py
 ```
 
-## Session 9: Tool Need service
+## Session 9: ToolNeed / capability gap service
 
-Goal: first-class missing tool requests.
+Goal: first-class ToolNeeds / capability gaps for missing capabilities, operations, or provider handoff targets.
 
 Tasks:
 
 1. Implement ToolNeedService.
-2. Deduplicate similar Tool Needs.
+2. Deduplicate similar ToolNeed / capability gaps.
 3. Add statuses.
 4. Add tests:
-   - creates Tool Need from decision
+   - creates ToolNeed / capability gap from decision
    - does not duplicate open need
    - records event
 
@@ -239,7 +239,7 @@ tests/test_tool_needs.py
 
 Goal: separate observations from facts.
 
-Seed's runtime should make the evidence-to-fact pipeline explicit before generated tools expand what the system can observe. Tools produce observations, Evidence preserves those observations, Facts project validated interpretations, State composes those Facts, and Decisions choose whether to answer, ask, or call tools.
+Seed's runtime should make the evidence-to-fact pipeline explicit before generated toolkit operations expand what the system can observe. Registered operations can produce observations; Evidence preserves those observations, Facts project validated interpretations, State composes those Facts, and Decisions choose whether to answer, ask, or call registered operations/tools.
 
 Tasks:
 
@@ -260,7 +260,7 @@ tests/test_fact_extraction.py
 
 ## Session 11: Builder skeleton
 
-Goal: generate toolkit candidates from Tool Needs only after the Session 8 runtime loop is passing. Do not start here; no builder, real LLM adapter, Ansible toolkit, or generated tools are part of the runtime MVP.
+Goal: generate toolkit candidates from ToolNeed / capability gaps only after the Session 8 runtime loop is passing. Do not start here; no builder, real LLM adapter, Ansible toolkit, or generated toolkit operations are part of the runtime MVP.
 
 
 Tasks:
@@ -401,7 +401,7 @@ Tasks:
 2. Restrict `backend_type` to `ansible`, `mcp`, `temporal`, or `manual`.
 3. Keep actual execution, secrets, retries, scheduling, long-running jobs, and credential prompts outside Seed.
 4. Mark `ExecutionProposal` and `ExecutionAuthorization` experimental and not part of the core path.
-5. Add tests that HandoffPlans reject secrets, cannot be executable, and cannot imply user approval, execution authorization, credential availability, provider trust, or tool registration.
+5. Add tests that HandoffPlans reject secrets, cannot be executable, and cannot imply user approval, execution authorization, credential availability, provider trust, or operation registration.
 
 Deliverable:
 
@@ -412,7 +412,7 @@ tests/test_handoff_plans.py
 
 ## Session 15: SSH access toolkit design
 
-Goal: draft host automation as external-provider handoff only; do not execute mutating host tools inside Seed. Returned provider/manual observations become Evidence and observed Facts that participate in Fact Support Aggregation.
+Goal: draft host automation as external-provider handoff only; do not execute mutating host operation implementations inside Seed. Returned provider/manual observations become Evidence and observed Facts that participate in Fact Support Aggregation.
 
 Handoff surfaces:
 
@@ -456,7 +456,7 @@ Endpoints:
 - `POST /events/user-message`
 - `GET /workspaces/{id}/state`
 - `GET /toolkits`
-- `GET /tools`
+- `GET /tools` (legacy endpoint name for registered operations)
 - `GET /tool-needs`
 - `POST /tool-needs/{id}/generate`
 - `POST /toolkit-candidates/{id}/validate`
@@ -486,7 +486,7 @@ Goal: stop guessing whether the loop works.
 Tasks:
 
 1. Create golden input cases.
-2. Run model decisions against expected kind/tool/args.
+2. Run model decisions against expected kind/tool-field/args.
 3. Track validity and correctness.
 4. Include small model and fake model modes.
 
@@ -509,8 +509,8 @@ Build one coherent demo:
 User: "can you install ssh on node-1?"
 Seed:
   - recognizes host
-  - sees verify tool exists but install tool missing
-  - creates Tool Need install_ssh_server
+  - sees an observation operation exists but an install capability/provider handoff is missing
+  - creates ToolNeed / capability gap install_ssh_server
 Builder:
   - generates non-mutating integration artifacts first: InputInspector if needed, ObservationSource, ObservationNormalizer, PredicateCatalog entries, RelationshipCatalog entries, CapabilityCatalog entries, HandoffProvider metadata, and tests
 Validator:

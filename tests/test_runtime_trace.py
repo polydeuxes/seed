@@ -56,7 +56,7 @@ class ExplodingPolicy:
 
 class ExplodingTool:
     def execute(self, context, arguments):  # pragma: no cover
-        raise AssertionError("trace must not execute tools")
+        raise AssertionError("trace must not execute operation implementations")
 
 
 def make_loop(decision, *, policy_engine=None, tool_handlers=None):

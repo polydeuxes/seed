@@ -272,7 +272,7 @@ def test_runtime_loop_request_tool_uses_injected_recommendation_service_without_
         Toolkit(
             id="tk_loop_echo",
             name="loop echo",
-            summary="RuntimeLoop test tools.",
+            summary="RuntimeLoop test operations.",
             tools=[
                 ToolSpec(
                     toolkit_id="tk_loop_echo",

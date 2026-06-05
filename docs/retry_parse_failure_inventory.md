@@ -18,7 +18,7 @@ Source files inspected: `seed_runtime/runtime.py`, `seed_runtime/model_client.py
 
 - `Runtime.__init__()` accepts `max_decision_retries` with a default of `1` and stores `max(0, max_decision_retries)`, so negative values are coerced to zero retries. [`seed_runtime/runtime.py:37-66`](../seed_runtime/runtime.py#L37-L66)
 - `handle_user_message()` runs `for attempt in range(self.max_decision_retries + 1)`, meaning the configured value is the number of retries after the first attempt, not the total attempt count. With the default, the model can be called twice. [`seed_runtime/runtime.py:86-108`](../seed_runtime/runtime.py#L86-L108)
-- Every retry reuses the original composed `ContextPacket` plus a replacement `retry_prompt`; state and visible tools are not recomposed between attempts. The original input event remains the causation root for parse failures and proposed decisions. [`seed_runtime/runtime.py:71-88`](../seed_runtime/runtime.py#L71-L88)
+- Every retry reuses the original composed `ContextPacket` plus a replacement `retry_prompt`; state and visible operations/tools are not recomposed between attempts. The original input event remains the causation root for parse failures and proposed decisions. [`seed_runtime/runtime.py:71-88`](../seed_runtime/runtime.py#L71-L88)
 
 ### Parse failure handling
 
@@ -100,7 +100,7 @@ Source files inspected: `seed_runtime/runtime_loop.py`, `seed_runtime/decision_j
 ### Malformed-decision journal outcome and final `RuntimeResult`
 
 - Malformed decisions produce a `decision.recorded` event with `policy_allowed=False`, `outcome="malformed_decision"`, `error=validation_error`, `decision_kind`/`reason`/tool fields pulled from the safe payload where possible, and causation id set to the rejection event. [`seed_runtime/runtime_loop.py:217-242`](../seed_runtime/runtime_loop.py#L217-L242)
-- `DecisionJournal.append_record()` writes a `decision.recorded` event containing a `DecisionRecord` with `decision_id`, `run_id`, `workspace_id`, `decision_kind`, `reason`, `context_hash`, selected tool fields, `policy_allowed`, `outcome`, `error`, and `created_at`. [`seed_runtime/decision_journal.py:56-93`](../seed_runtime/decision_journal.py#L56-L93)
+- `DecisionJournal.append_record()` writes a `decision.recorded` event containing a `DecisionRecord` with `decision_id`, `run_id`, `workspace_id`, `decision_kind`, `reason`, `context_hash`, selected operation/tool fields, `policy_allowed`, `outcome`, `error`, and `created_at`. [`seed_runtime/decision_journal.py:56-93`](../seed_runtime/decision_journal.py#L56-L93)
 - The malformed-decision `RuntimeResult` has `decision_kind=None`, `response_text=None`, `policy_allowed=False`, `error=validation_error`, the recorded `decision_id`, the context hash, journal reason, and `decision_outcome="malformed_decision"`. [`seed_runtime/runtime_loop.py:243-256`](../seed_runtime/runtime_loop.py#L243-L256)
 - `runtime_trace` classifies `runtime.decision.rejected` as an error event and can surface the journal error in trace summaries. [`seed_runtime/runtime_trace.py:146-159`](../seed_runtime/runtime_trace.py#L146-L159) [`seed_runtime/runtime_trace.py:179-200`](../seed_runtime/runtime_trace.py#L179-L200)
 

@@ -21,7 +21,7 @@ With good scaffolding, small models can often:
 
 - classify simple requests
 - extract entities from short text
-- choose among a few tools
+- choose among a few operations/tools
 - ask for missing fields
 - summarize recent state
 - request a missing tool from a template
@@ -33,7 +33,7 @@ Small models may struggle with:
 
 - complex multi-step planning
 - writing robust code
-- choosing among many tools
+- choosing among many operations/tools
 - debugging generated toolkits
 - nuanced safety reasoning
 - long context histories
@@ -50,9 +50,9 @@ Small/local model if possible.
 Responsibilities:
 
 - answer simple questions from context
-- choose tool from visible list
+- choose an operation/tool from the visible list
 - ask clarification
-- request Tool Need
+- request a ToolNeed / capability gap
 
 ### Tier B: Context summarizer
 
@@ -103,7 +103,7 @@ Responsibilities:
 Bad:
 
 ```text
-Here are 200 tools. Pick one.
+Here are 200 operations/tools. Pick one.
 ```
 
 Good:
@@ -218,7 +218,7 @@ Track:
 - correct tool choice
 - correct argument extraction
 - refusal correctness
-- duplicate Tool Need rate
+- duplicate ToolNeed / capability-gap rate
 
 ## Local model prompt discipline
 
