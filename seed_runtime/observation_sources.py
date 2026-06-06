@@ -130,6 +130,19 @@ class LocalHostObservationSource:
         }
         return [
             self._observation(
+                observed_at,
+                hostname,
+                "local_observation_status",
+                "observed",
+                metadata={
+                    **metadata,
+                    "meaning": "Seed inspected this host through local read-only APIs",
+                    "network_reachability_asserted": False,
+                    "provider_visibility_asserted": False,
+                    "availability_asserted": False,
+                },
+            ),
+            self._observation(
                 observed_at, hostname, "os", system, metadata={**metadata}
             ),
             self._observation(

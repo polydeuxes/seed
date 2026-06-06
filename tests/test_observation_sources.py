@@ -480,6 +480,7 @@ def test_local_host_source_emits_read_only_host_observations(monkeypatch):
     observations = LocalHostObservationSource().collect()
 
     assert [(obs.subject, obs.predicate, obs.value) for obs in observations] == [
+        ("node-a", "local_observation_status", "observed"),
         ("node-a", "os", "linux"),
         ("node-a", "architecture", "x86_64"),
         ("node-a", "disk_total_bytes", 1000),
@@ -487,6 +488,45 @@ def test_local_host_source_emits_read_only_host_observations(monkeypatch):
     ]
     assert {obs.source_type for obs in observations} == {"discovery"}
     assert all(obs.metadata["shell_execution"] is False for obs in observations)
+    local_status = observations[0]
+    assert local_status.metadata["network_reachability_asserted"] is False
+    assert local_status.metadata["provider_visibility_asserted"] is False
+    assert local_status.metadata["availability_asserted"] is False
+
+
+def test_local_host_observation_fact_does_not_assert_availability_or_network(monkeypatch):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observations import ObservationIngestor
+    from seed_runtime.observation_sources import (
+        LocalHostObservationSource,
+        ObservationCollectionService,
+    )
+    from seed_runtime.state import StateProjector
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    def fail_network(*args, **kwargs):  # pragma: no cover - guard callback
+        raise AssertionError("local host observation must not make network calls")
+
+    monkeypatch.setattr(sources.platform, "node", lambda: "node-a")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(sources, "urlopen", fail_network)
+
+    ledger = EventLedger()
+    facts = ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        LocalHostObservationSource(), "ws_local_observable"
+    )
+    state = StateProjector(ledger).project("ws_local_observable")
+
+    assert ("local_observation_status", "observed") in {
+        (fact.predicate, fact.value) for fact in facts
+    }
+    assert state.get_best_fact("node-a", "local_observation_status").value == "observed"
+    assert state.get_best_fact("node-a", "availability_status") is None
 
 
 def test_prometheus_source_uses_safe_get_queries_and_converts_observations(

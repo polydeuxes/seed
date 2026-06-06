@@ -2800,6 +2800,23 @@ def _persist_impact_facts(seed_local, db_path, facts):
         ledger.close()
 
 
+def test_cli_impact_reports_local_observation_without_availability(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "impact-local-observation.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [("node115", "local_observation_status", "observed"), ("node115", "os", "linux")],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+
+    output = capsys.readouterr().out
+    assert "local_observation_status: observed" in output
+    assert "availability_status: unknown" in output
+    assert "endpoint availability by role:\n- none" in output
+
+
 def test_cli_impact_resolves_host_alias_and_reports_availability(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "impact-alias.sqlite"

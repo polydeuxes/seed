@@ -82,6 +82,15 @@
       "cardinality": "multi"
     },
     {
+      "predicate": "local_observation_status",
+      "kind": "measurement",
+      "value_type": "enum",
+      "allowed_values": [
+        "observed"
+      ],
+      "cardinality": "single"
+    },
+    {
       "predicate": "managed_by",
       "kind": "durable_fact",
       "value_type": "string",
