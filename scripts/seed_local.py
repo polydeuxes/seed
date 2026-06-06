@@ -1803,6 +1803,21 @@ def format_entity_impact(state: State, entity: str) -> str:
         if issue.subject in resolved or issue.object in resolved
     ]
 
+    network_predicates = [
+        "network_interface",
+        "interface_operstate",
+        "interface_mac_address",
+        "interface_mtu",
+        "ip_address",
+        "default_gateway",
+        "dns_resolver",
+    ]
+    network_facts = [
+        fact
+        for predicate in network_predicates
+        for fact in state.get_current_facts(canonical, predicate)
+    ]
+
     lines = [
         f"entity: {canonical}",
         f"entity types: {', '.join(entity_types)}",
@@ -1819,6 +1834,7 @@ def format_entity_impact(state: State, entity: str) -> str:
             if local_observation is not None
             else "unknown"
         ),
+        "local network configuration:",
         "endpoint availability by role:",
         f"groups/member_of: {', '.join(groups) if groups else 'none'}",
         f"dependencies: {', '.join(dependencies) if dependencies else 'none'}",
@@ -1827,6 +1843,22 @@ def format_entity_impact(state: State, entity: str) -> str:
     ]
     alias_lines = [f"- {_format_fact_value(alias)}" for alias in aliases] or ["- none"]
     lines[3:3] = alias_lines
+    network_lines = [
+        f"- {fact.predicate}{_format_fact_dimensions(fact.dimensions)}: "
+        f"{_format_fact_value(fact.value)}"
+        for fact in sorted(
+            network_facts,
+            key=lambda fact: (
+                fact.predicate,
+                json.dumps(fact.dimensions, sort_keys=True),
+                _format_fact_value(fact.value),
+                fact.id,
+            ),
+        )
+    ]
+    network_heading = lines.index("local network configuration:")
+    lines[network_heading + 1:network_heading + 1] = network_lines or ["- none"]
+
     endpoint_lines = []
     for role, statuses in sorted(endpoint_availability.items()):
         values = sorted({status for _, status in statuses})
@@ -1857,6 +1889,15 @@ def format_entity_impact(state: State, entity: str) -> str:
         lines.append("- none")
     return "\n".join(lines)
 
+
+
+def _format_fact_dimensions(dimensions: dict[str, str]) -> str:
+    """Format fact dimensions for compact deterministic CLI output."""
+
+    if not dimensions:
+        return ""
+    values = ", ".join(f"{key}={dimensions[key]}" for key in sorted(dimensions))
+    return f" ({values})"
 
 def _format_graph_issue_summary(issue: Any) -> list[str]:
     """Format one graph issue compactly, including actionable guidance."""

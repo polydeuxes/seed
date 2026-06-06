@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import fcntl
+import ipaddress
 import json
 import os
 import platform
 import shutil
+import socket
+import struct
 from datetime import datetime, timezone
 from importlib.util import find_spec
 from pathlib import Path
@@ -96,13 +100,24 @@ class LocalHostObservationSource:
     """Read-only local host observation source using Python stdlib APIs only.
 
     This source intentionally does not execute shells or subprocesses. It reads
-    process-local platform and disk metadata via Python standard library calls.
+    process-local platform, disk, and local network configuration metadata via
+    Python standard library calls and local read-only files.
     """
 
     source_type: ObservationSourceType = "discovery"
 
-    def __init__(self, *, name: str = "local-host") -> None:
+    def __init__(
+        self,
+        *,
+        name: str = "local-host",
+        proc_root: str | Path = "/proc",
+        sys_class_net: str | Path = "/sys/class/net",
+        resolv_conf: str | Path = "/etc/resolv.conf",
+    ) -> None:
         self.name = name
+        self.proc_root = Path(proc_root)
+        self.sys_class_net = Path(sys_class_net)
+        self.resolv_conf = Path(resolv_conf)
 
     def collect(self) -> list[Observation]:
         """Return local host facts without executing or mutating the host."""
@@ -125,10 +140,15 @@ class LocalHostObservationSource:
         metadata = {
             "collector": "LocalHostObservationSource",
             "read_only": True,
+            "local_only": True,
             "shell_execution": False,
+            "subprocess_execution": False,
+            "privilege_escalation": False,
+            "network_probe": False,
+            "network_connection": False,
             **uname_metadata,
         }
-        return [
+        observations = [
             self._observation(
                 observed_at,
                 hostname,
@@ -167,6 +187,233 @@ class LocalHostObservationSource:
                 metadata={**metadata, "path": "/"},
             ),
         ]
+        observations.extend(
+            self._collect_network_observations(observed_at, hostname, metadata)
+        )
+        return observations
+
+    def _collect_network_observations(
+        self, observed_at: datetime, hostname: str, metadata: dict[str, Any]
+    ) -> list[Observation]:
+        observations: list[Observation] = []
+        interfaces = self._interface_names()
+        ipv4_addresses = self._ipv4_addresses(interfaces)
+        ipv6_addresses = self._ipv6_addresses()
+
+        for interface in interfaces:
+            dimensions = {"interface": interface}
+            observations.append(
+                self._observation(
+                    observed_at,
+                    hostname,
+                    "network_interface",
+                    interface,
+                    metadata={**metadata, "source": "socket.if_nameindex/proc_net_dev"},
+                    dimensions=dimensions,
+                )
+            )
+            operstate = self._read_sys_net_value(interface, "operstate")
+            if operstate:
+                observations.append(
+                    self._observation(
+                        observed_at,
+                        hostname,
+                        "interface_operstate",
+                        operstate,
+                        metadata={
+                            **metadata,
+                            "source": "sysfs",
+                            "interface": interface,
+                        },
+                        dimensions=dimensions,
+                    )
+                )
+            mac_address = self._read_sys_net_value(interface, "address")
+            if mac_address:
+                observations.append(
+                    self._observation(
+                        observed_at,
+                        hostname,
+                        "interface_mac_address",
+                        mac_address.lower(),
+                        metadata={
+                            **metadata,
+                            "source": "sysfs",
+                            "interface": interface,
+                        },
+                        dimensions=dimensions,
+                    )
+                )
+            mtu = self._read_sys_net_value(interface, "mtu")
+            if mtu and mtu.isdigit():
+                observations.append(
+                    self._observation(
+                        observed_at,
+                        hostname,
+                        "interface_mtu",
+                        int(mtu),
+                        metadata={
+                            **metadata,
+                            "source": "sysfs",
+                            "interface": interface,
+                        },
+                        dimensions=dimensions,
+                    )
+                )
+            for address in ipv4_addresses.get(interface, []):
+                observations.append(
+                    self._observation(
+                        observed_at,
+                        hostname,
+                        "ip_address",
+                        address,
+                        metadata={
+                            **metadata,
+                            "source": "SIOCGIFADDR",
+                            "interface": interface,
+                        },
+                        dimensions={**dimensions, "address_family": "ipv4"},
+                    )
+                )
+            for address in ipv6_addresses.get(interface, []):
+                observations.append(
+                    self._observation(
+                        observed_at,
+                        hostname,
+                        "ip_address",
+                        address,
+                        metadata={
+                            **metadata,
+                            "source": "proc_net_if_inet6",
+                            "interface": interface,
+                        },
+                        dimensions={**dimensions, "address_family": "ipv6"},
+                    )
+                )
+
+        for route in self._default_gateways():
+            observations.append(
+                self._observation(
+                    observed_at,
+                    hostname,
+                    "default_gateway",
+                    route["gateway"],
+                    metadata={
+                        **metadata,
+                        "source": "proc_net_route",
+                        "interface": route["interface"],
+                    },
+                    dimensions={
+                        "interface": route["interface"],
+                        "address_family": "ipv4",
+                    },
+                )
+            )
+
+        for resolver in self._dns_resolvers():
+            observations.append(
+                self._observation(
+                    observed_at,
+                    hostname,
+                    "dns_resolver",
+                    resolver,
+                    metadata={**metadata, "source": "resolv_conf"},
+                    dimensions={"source": str(self.resolv_conf)},
+                )
+            )
+
+        return observations
+
+    def _interface_names(self) -> list[str]:
+        names = {name for _, name in socket.if_nameindex()}
+        proc_net_dev = self._read_text(self.proc_root / "net" / "dev")
+        if proc_net_dev:
+            for line in proc_net_dev.splitlines()[2:]:
+                if ":" not in line:
+                    continue
+                names.add(line.split(":", 1)[0].strip())
+        return sorted(name for name in names if name)
+
+    def _ipv4_addresses(self, interfaces: list[str]) -> dict[str, list[str]]:
+        addresses: dict[str, list[str]] = {}
+        for interface in interfaces:
+            address = self._ipv4_address_for_interface(interface)
+            if address:
+                addresses[interface] = [address]
+        return addresses
+
+    def _ipv4_address_for_interface(self, interface: str) -> str | None:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            request = struct.pack("256s", interface.encode("utf-8")[:15])
+            result = fcntl.ioctl(sock.fileno(), 0x8915, request)  # SIOCGIFADDR
+            return socket.inet_ntoa(result[20:24])
+        except OSError:
+            return None
+        finally:
+            sock.close()
+
+    def _ipv6_addresses(self) -> dict[str, list[str]]:
+        addresses: dict[str, list[str]] = {}
+        text = self._read_text(self.proc_root / "net" / "if_inet6")
+        if not text:
+            return addresses
+        for line in text.splitlines():
+            fields = line.split()
+            if len(fields) < 6:
+                continue
+            raw_address, _idx, _prefix, _scope, _flags, interface = fields[:6]
+            if len(raw_address) != 32:
+                continue
+            try:
+                address = str(ipaddress.IPv6Address(int(raw_address, 16)))
+            except ValueError:
+                continue
+            addresses.setdefault(interface, []).append(address)
+        return {interface: sorted(values) for interface, values in addresses.items()}
+
+    def _default_gateways(self) -> list[dict[str, str]]:
+        routes: list[dict[str, str]] = []
+        text = self._read_text(self.proc_root / "net" / "route")
+        if not text:
+            return routes
+        for line in text.splitlines()[1:]:
+            fields = line.split()
+            if len(fields) < 3:
+                continue
+            interface, destination, gateway = fields[:3]
+            if destination != "00000000" or gateway == "00000000":
+                continue
+            try:
+                gateway_address = socket.inet_ntoa(bytes.fromhex(gateway)[::-1])
+            except (OSError, ValueError):
+                continue
+            routes.append({"interface": interface, "gateway": gateway_address})
+        return sorted(routes, key=lambda item: (item["interface"], item["gateway"]))
+
+    def _dns_resolvers(self) -> list[str]:
+        resolvers: list[str] = []
+        text = self._read_text(self.resolv_conf)
+        if not text:
+            return resolvers
+        for line in text.splitlines():
+            stripped = line.split("#", 1)[0].strip()
+            if not stripped:
+                continue
+            fields = stripped.split()
+            if len(fields) >= 2 and fields[0] == "nameserver":
+                resolvers.append(fields[1])
+        return sorted(dict.fromkeys(resolvers))
+
+    def _read_sys_net_value(self, interface: str, filename: str) -> str | None:
+        text = self._read_text(self.sys_class_net / interface / filename)
+        return text.strip() if text is not None else None
+
+    def _read_text(self, path: Path) -> str | None:
+        try:
+            return path.read_text(encoding="utf-8")
+        except OSError:
+            return None
 
     def _observation(
         self,
@@ -176,6 +423,7 @@ class LocalHostObservationSource:
         value: Any,
         *,
         metadata: dict[str, Any],
+        dimensions: dict[str, str] | None = None,
     ) -> Observation:
         return Observation(
             id=new_id("obs_local_host"),
@@ -186,6 +434,7 @@ class LocalHostObservationSource:
             value=value,
             confidence=1.0,
             metadata=metadata,
+            dimensions=dimensions or {},
         )
 
 

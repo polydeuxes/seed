@@ -2187,6 +2187,85 @@ def test_cli_observe_local_host_prints_count_and_summary(monkeypatch, capsys):
     assert "source_type: discovery" in output
 
 
+
+def test_cli_local_network_facts_appear_in_current_facts_and_impact(
+    monkeypatch, tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "seed.sqlite"
+
+    class FakeLocalSource:
+        source_type = "discovery"
+        name = "fake-local-host"
+
+        def collect(self):
+            observed_at = seed_local.utc_now()
+            return [
+                seed_local.Observation(
+                    id="obs_network_interface",
+                    source_type="discovery",
+                    observed_at=observed_at,
+                    subject="node115",
+                    predicate="network_interface",
+                    value="eth0",
+                    dimensions={"interface": "eth0"},
+                ),
+                seed_local.Observation(
+                    id="obs_network_ip",
+                    source_type="discovery",
+                    observed_at=observed_at,
+                    subject="node115",
+                    predicate="ip_address",
+                    value="192.168.2.5",
+                    dimensions={"interface": "eth0", "address_family": "ipv4"},
+                ),
+                seed_local.Observation(
+                    id="obs_network_gateway",
+                    source_type="discovery",
+                    observed_at=observed_at,
+                    subject="node115",
+                    predicate="default_gateway",
+                    value="192.168.2.1",
+                    dimensions={"interface": "eth0", "address_family": "ipv4"},
+                ),
+                seed_local.Observation(
+                    id="obs_network_dns",
+                    source_type="discovery",
+                    observed_at=observed_at,
+                    subject="node115",
+                    predicate="dns_resolver",
+                    value="1.1.1.1",
+                    dimensions={"source": "/etc/resolv.conf"},
+                ),
+            ]
+
+    monkeypatch.setattr(seed_local, "LocalHostObservationSource", FakeLocalSource)
+
+    assert seed_local.main(["--db", str(db_path), "--observe-local-host"]) == 0
+    capsys.readouterr()
+
+    assert seed_local.main(["--db", str(db_path), "--current-facts"]) == 0
+    current_output = capsys.readouterr().out
+    assert "* node115 network_interface eth0" in current_output
+    assert "* node115 ip_address 192.168.2.5" in current_output
+    assert "* node115 default_gateway 192.168.2.1" in current_output
+    assert "* node115 dns_resolver 1.1.1.1" in current_output
+
+    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+    impact_output = capsys.readouterr().out
+    assert "availability_status: unknown" in impact_output
+    assert "local network configuration:" in impact_output
+    assert "- network_interface (interface=eth0): eth0" in impact_output
+    assert (
+        "- ip_address (address_family=ipv4, interface=eth0): 192.168.2.5"
+        in impact_output
+    )
+    assert (
+        "- default_gateway (address_family=ipv4, interface=eth0): 192.168.2.1"
+        in impact_output
+    )
+    assert "- dns_resolver (source=/etc/resolv.conf): 1.1.1.1" in impact_output
+
 def test_cli_events_without_message_lists_persisted_events_and_exits(
     monkeypatch, tmp_path, capsys
 ):

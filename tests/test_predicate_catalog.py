@@ -16,6 +16,12 @@ def test_builtin_catalog_defines_canonical_predicates_and_prometheus_mappings():
     assert catalog.get("alias").cardinality == "multi"
     assert catalog.get("group").cardinality == "multi"
     assert catalog.get("ip_address").cardinality == "multi"
+    assert catalog.get("network_interface").cardinality == "multi"
+    assert catalog.get("interface_operstate").cardinality == "multi"
+    assert catalog.get("interface_mac_address").cardinality == "multi"
+    assert catalog.get("interface_mtu").cardinality == "multi"
+    assert catalog.get("default_gateway").cardinality == "multi"
+    assert catalog.get("dns_resolver").cardinality == "multi"
     assert catalog.get("ansible_host").cardinality == "multi"
     assert catalog.get("prometheus_instance").cardinality == "multi"
     local_observation = catalog.get("local_observation_status")

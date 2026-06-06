@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import datetime, timezone
 
 import pytest
@@ -476,6 +477,11 @@ def test_local_host_source_emits_read_only_host_observations(monkeypatch):
     monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
     monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
     monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_collect_network_observations",
+        lambda self, observed_at, hostname, metadata: [],
+    )
 
     observations = LocalHostObservationSource().collect()
 
@@ -515,6 +521,11 @@ def test_local_host_observation_fact_does_not_assert_availability_or_network(mon
     monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
     monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
     monkeypatch.setattr(sources, "urlopen", fail_network)
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_collect_network_observations",
+        lambda self, observed_at, hostname, metadata: [],
+    )
 
     ledger = EventLedger()
     facts = ObservationCollectionService(ObservationIngestor(ledger)).collect(
@@ -528,6 +539,228 @@ def test_local_host_observation_fact_does_not_assert_availability_or_network(mon
     assert state.get_best_fact("node-a", "local_observation_status").value == "observed"
     assert state.get_best_fact("node-a", "availability_status") is None
 
+
+
+def _write_local_network_fixture(tmp_path):
+    proc = tmp_path / "proc"
+    sys_net = tmp_path / "sys" / "class" / "net"
+    resolv_conf = tmp_path / "resolv.conf"
+    (proc / "net").mkdir(parents=True)
+    (sys_net / "eth0").mkdir(parents=True)
+    (sys_net / "lo").mkdir(parents=True)
+    (proc / "net" / "dev").write_text(
+        "Inter-| Receive\n face |bytes\n"
+        "  lo: 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0\n"
+        "eth0: 2 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0\n",
+        encoding="utf-8",
+    )
+    (proc / "net" / "route").write_text(
+        "Iface\tDestination\tGateway\tFlags\tRefCnt\tUse\tMetric\t"
+        "Mask\tMTU\tWindow\tIRTT\n"
+        "eth0\t00000000\t0102A8C0\t0003\t0\t0\t100\t"
+        "00000000\t0\t0\t0\n",
+        encoding="utf-8",
+    )
+    (proc / "net" / "if_inet6").write_text(
+        "00000000000000000000000000000001 01 80 10 80 lo\n"
+        "20010db8000000000000000000000005 02 40 00 80 eth0\n",
+        encoding="utf-8",
+    )
+    for interface, operstate, address, mtu in [
+        ("eth0", "up", "aa:bb:cc:dd:ee:ff", "1500"),
+        ("lo", "unknown", "00:00:00:00:00:00", "65536"),
+    ]:
+        (sys_net / interface / "operstate").write_text(
+            operstate + "\n", encoding="utf-8"
+        )
+        (sys_net / interface / "address").write_text(
+            address + "\n", encoding="utf-8"
+        )
+        (sys_net / interface / "mtu").write_text(mtu + "\n", encoding="utf-8")
+    resolv_conf.write_text(
+        "# local resolver configuration\n"
+        "nameserver 1.1.1.1\n"
+        "nameserver 2001:4860:4860::8888\n",
+        encoding="utf-8",
+    )
+    return proc, sys_net, resolv_conf
+
+
+def test_local_host_source_emits_local_network_configuration(monkeypatch, tmp_path):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    proc, sys_net, resolv_conf = _write_local_network_fixture(tmp_path)
+    monkeypatch.setattr(sources.platform, "node", lambda: "node-a")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(
+        sources.socket, "if_nameindex", lambda: [(1, "lo"), (2, "eth0")]
+    )
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_ipv4_address_for_interface",
+        lambda self, interface: {
+            "eth0": "192.168.2.5",
+            "lo": "127.0.0.1",
+        }.get(interface),
+    )
+
+    observations = LocalHostObservationSource(
+        proc_root=proc, sys_class_net=sys_net, resolv_conf=resolv_conf
+    ).collect()
+
+    triples = {(obs.subject, obs.predicate, obs.value) for obs in observations}
+    assert ("node-a", "network_interface", "eth0") in triples
+    assert ("node-a", "interface_operstate", "up") in triples
+    assert ("node-a", "interface_mac_address", "aa:bb:cc:dd:ee:ff") in triples
+    assert ("node-a", "interface_mtu", 1500) in triples
+    assert ("node-a", "ip_address", "192.168.2.5") in triples
+    assert ("node-a", "ip_address", "2001:db8::5") in triples
+    assert ("node-a", "default_gateway", "192.168.2.1") in triples
+    assert ("node-a", "dns_resolver", "1.1.1.1") in triples
+    assert ("node-a", "dns_resolver", "2001:4860:4860::8888") in triples
+    eth0_ip = next(
+        obs
+        for obs in observations
+        if obs.predicate == "ip_address" and obs.value == "192.168.2.5"
+    )
+    assert eth0_ip.dimensions == {"interface": "eth0", "address_family": "ipv4"}
+    assert eth0_ip.metadata["local_only"] is True
+    assert eth0_ip.metadata["network_probe"] is False
+    assert eth0_ip.metadata["network_connection"] is False
+    assert eth0_ip.metadata["subprocess_execution"] is False
+    assert eth0_ip.metadata["privilege_escalation"] is False
+
+
+def test_local_network_configuration_projects_without_availability(
+    monkeypatch, tmp_path
+):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observations import ObservationIngestor
+    from seed_runtime.observation_sources import (
+        LocalHostObservationSource,
+        ObservationCollectionService,
+    )
+    from seed_runtime.state import StateProjector
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    proc, sys_net, resolv_conf = _write_local_network_fixture(tmp_path)
+    monkeypatch.setattr(sources.platform, "node", lambda: "node-a")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(sources.socket, "if_nameindex", lambda: [(2, "eth0")])
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_ipv4_address_for_interface",
+        lambda self, interface: "192.168.2.5",
+    )
+
+    ledger = EventLedger()
+    ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        LocalHostObservationSource(
+            proc_root=proc, sys_class_net=sys_net, resolv_conf=resolv_conf
+        ),
+        "ws_local_network",
+    )
+    state = StateProjector(ledger).project("ws_local_network")
+
+    assert state.get_current_facts("node-a", "network_interface")
+    assert state.get_current_facts("node-a", "ip_address")
+    assert state.get_current_facts("node-a", "default_gateway")
+    assert state.get_current_facts("node-a", "dns_resolver")
+    assert state.get_best_fact("node-a", "availability_status") is None
+
+
+def test_local_network_observation_is_deterministic(monkeypatch, tmp_path):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    proc, sys_net, resolv_conf = _write_local_network_fixture(tmp_path)
+    monkeypatch.setattr(sources.platform, "node", lambda: "node-a")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(
+        sources.socket, "if_nameindex", lambda: [(2, "eth0"), (1, "lo")]
+    )
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_ipv4_address_for_interface",
+        lambda self, interface: {
+            "eth0": "192.168.2.5",
+            "lo": "127.0.0.1",
+        }.get(interface),
+    )
+
+    source = LocalHostObservationSource(
+        proc_root=proc, sys_class_net=sys_net, resolv_conf=resolv_conf
+    )
+    first = [
+        (obs.subject, obs.predicate, obs.value, obs.dimensions)
+        for obs in source.collect()
+    ]
+    second = [
+        (obs.subject, obs.predicate, obs.value, obs.dimensions)
+        for obs in source.collect()
+    ]
+
+    assert first == second
+
+
+def test_local_network_observation_does_not_probe_or_escalate(monkeypatch, tmp_path):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    def fail_forbidden(*args, **kwargs):  # pragma: no cover - guard callback
+        raise AssertionError(
+            "local network observation must not probe, execute, or escalate"
+        )
+
+    proc, sys_net, resolv_conf = _write_local_network_fixture(tmp_path)
+    monkeypatch.setattr(sources.platform, "node", lambda: "node-a")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(sources.socket, "if_nameindex", lambda: [(2, "eth0")])
+    monkeypatch.setattr(sources.socket, "create_connection", fail_forbidden)
+    monkeypatch.setattr(sources.socket, "getaddrinfo", fail_forbidden)
+    monkeypatch.setattr(sources.socket, "gethostbyname", fail_forbidden)
+    monkeypatch.setattr(sources, "urlopen", fail_forbidden)
+    monkeypatch.setattr(os, "system", fail_forbidden)
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_ipv4_address_for_interface",
+        lambda self, interface: "192.168.2.5",
+    )
+
+    observations = LocalHostObservationSource(
+        proc_root=proc, sys_class_net=sys_net, resolv_conf=resolv_conf
+    ).collect()
+
+    assert observations
+    assert all(obs.metadata["local_only"] is True for obs in observations)
+    assert all(obs.metadata["shell_execution"] is False for obs in observations)
+    assert all(obs.metadata["subprocess_execution"] is False for obs in observations)
+    assert all(obs.metadata["privilege_escalation"] is False for obs in observations)
+    assert all(obs.metadata["network_probe"] is False for obs in observations)
 
 def test_prometheus_source_uses_safe_get_queries_and_converts_observations(
     monkeypatch,
