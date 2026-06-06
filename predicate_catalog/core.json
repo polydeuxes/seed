@@ -19,6 +19,17 @@
       "cardinality": "single"
     },
     {
+      "predicate": "capability_verified",
+      "kind": "durable_fact",
+      "value_type": "enum",
+      "allowed_values": [
+        "verified",
+        "provider_reported",
+        "unverified"
+      ],
+      "cardinality": "single"
+    },
+    {
       "predicate": "availability_status",
       "kind": "measurement",
       "value_type": "enum",

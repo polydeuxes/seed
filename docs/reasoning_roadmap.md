@@ -237,9 +237,13 @@ Example flow:
 
 ### Missing pieces
 
-- A `CapabilityVerification` model or documented evidence pattern.
-- A clear distinction between verification evidence and recommendation metadata.
-- Auditable confidence changes tied to observations and facts.
+- Capability Verification Inventory v1 is implemented as a read-only inventory
+  over `Fact`, `FactSupport`, `PredicateCatalog`, projected capability surfaces,
+  and supporting evidence.
+- A richer scoped `CapabilityVerification` model remains future work only if
+  callers need target objects beyond fact subjects/dimensions.
+- Further auditable confidence policy changes remain future work; v1 reports
+  existing support confidence without inventing new policy.
 
 ### Explicit non-goals
 
@@ -250,8 +254,12 @@ Example flow:
 
 ### Smallest safe next implementation
 
-Define a `CapabilityVerification` model/roadmap only, or audit current evidence
-that could support capability verification.
+Implemented: Capability Verification Inventory v1. Seed now has a read-only
+`--capability-status` query that derives `verified`, `provider_reported`,
+`unverified`, `stale`, and `unknown` statuses from projected facts and evidence.
+This is inventory only: no verification execution, no verification engine, no
+runtime changes, no orchestration, no provider calls, no host mutation, no shell
+execution, no scheduling, and no retries.
 
 ## 6. Self-observation
 

@@ -7,9 +7,10 @@ audit, and roadmap reconciliation into one design decision: **capability
 verification does not require a new architecture to begin**.
 
 The smallest safe path is to treat capability verification first as vocabulary,
-predicate semantics, and inventory/tests over existing knowledge primitives. A
-new execution subsystem, scheduler, provider-calling layer, or Runtime behavior
-is not required to prove the design.
+predicate semantics, and inventory/tests over existing knowledge primitives.
+Capability Verification Inventory v1 implements that slice. A new execution
+subsystem, scheduler, provider-calling layer, or Runtime behavior is not
+required to prove the design.
 
 ## Decision
 
@@ -20,10 +21,10 @@ semantic layer over the existing knowledge/evidence architecture:
 Observation -> Evidence -> Fact -> FactSupport / FactConflict -> read-only interpretation
 ```
 
-The first implementation should not execute verification checks, call providers,
+The first implementation does not execute verification checks, call providers,
 mutate host state, schedule refreshes, or cause capability resolution to verify
-anything automatically. It should only make verification concepts explicit enough
-that future facts and tests cannot confuse these states:
+anything automatically. It only makes verification concepts explicit enough that
+facts, inventory output, and tests do not confuse these states:
 
 - requested capability;
 - catalog-known capability;
@@ -32,6 +33,36 @@ that future facts and tests cannot confuse these states:
 - provider-reported availability;
 - local observed availability;
 - verified, unverified, stale, failed, or disputed verification.
+
+
+## Capability Verification Inventory v1 implemented
+
+Inventory v1 is implemented as the smallest real read-only capability
+verification slice. It introduces one predicate, `capability_verified`, and a
+helper that interprets projected facts, fact support, predicate metadata, and
+evidence links.
+
+The implementation is intentionally limited:
+
+- inventory only;
+- no verification execution;
+- no verification engine, runtime, workflow, planner, scheduler, or service;
+- no provider calls;
+- no shell execution;
+- no host mutation;
+- no scheduling, retries, automatic verification, or LLM-driven verification
+  logic;
+- no `Runtime` changes;
+- no `ToolExecutor` changes;
+- no `EventLedger` or `ProjectionStore` ownership changes.
+
+The CLI exposes the inventory through `--capability-status`, producing
+deterministic JSON from already-projected state. The command appends no events,
+executes no tools, and mutates no state.
+
+Inventory entries expose supporting fact ids, supporting evidence summaries,
+FactSupport details, and naturally available age information from observed
+timestamps. Stale status is derived only from existing expired-fact semantics.
 
 ## What existing architecture already represents
 
@@ -187,18 +218,15 @@ These should be deferred until Seed explicitly needs execution behavior:
 
 ## Smallest implementation that proves the design
 
-The smallest implementation should prove that verification is representable
-without execution behavior. It should therefore avoid new runtime paths and focus
-on semantic guardrails.
+The smallest implementation now proves that verification is representable
+without execution behavior. It avoids new runtime paths and focuses on semantic
+guardrails.
 
 ### Minimum viable slice
 
-1. **Add canonical vocabulary and predicates.**
-   - Document `capability.verification_status` and adjacent provider/local
-     availability predicates.
-   - Mark status predicates as durable and single-cardinality per exact target
-     dimensions.
-   - Define allowed values and evidence classes.
+1. **Add canonical vocabulary and predicates.** Implemented for v1 with the
+   minimal durable, single-cardinality `capability_verified` predicate and
+   values `verified`, `provider_reported`, and `unverified`.
 
 2. **Define target scoping by convention.**
    - Use either a stable subject-id convention such as
@@ -222,10 +250,9 @@ on semantic guardrails.
    - Conflicting current verification status facts are surfaced as conflicts.
    - Multiple matching evidence items aggregate under `FactSupport`.
 
-5. **Optionally add a tiny read-only helper/view.**
-   - Only after the predicate and inventory tests exist.
-   - The helper should interpret projected facts; it should not execute checks,
-     create pending actions, call providers, or mutate registry/catalog state.
+5. **Add a tiny read-only helper/view.** Implemented as Inventory v1. The
+   helper interprets projected facts; it does not execute checks, create pending
+   actions, call providers, or mutate registry/catalog state.
 
 ### Minimum viable implementation estimate
 
@@ -278,13 +305,14 @@ Proceed in this order:
 
 1. Keep this reconciliation and the existing vocabulary/audits as the design
    baseline.
-2. Add canonical verification predicates and value vocabulary.
-3. Add tests proving existing capability resolution fields are not verification
-   statuses.
-4. Inventory checked-in `verify_*` operations and classify whether each can ever
-   produce positive verification evidence.
-5. Only then consider a read-only `CapabilityVerificationView` derived from
-   facts, support, conflicts, evidence, and expiry.
+2. Done: add canonical verification predicate/value vocabulary.
+3. Done: add tests proving inventory status comes from facts and missing facts,
+   not execution.
+4. Done: add a read-only inventory view derived from facts, support, evidence,
+   and expiry.
+5. Future: inventory checked-in `verify_*` operations only if such operations are
+   introduced, and classify whether each can ever produce positive verification
+   evidence.
 6. Defer execution orchestration until Seed has a concrete use case requiring
    scheduled or automatic checks.
 

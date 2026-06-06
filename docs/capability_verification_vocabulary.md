@@ -2,16 +2,17 @@
 
 ## Scope
 
-This document defines vocabulary and invariants for future capability
-verification reasoning. It is documentation only. It does not implement
+This document defines vocabulary and invariants for capability verification
+reasoning. Capability Verification Inventory v1 is now implemented as an
+inventory-only read model over projected facts and evidence. It does not execute
 verification, change `Runtime`, change `ToolExecutor`, execute operations, add
-host checks, add network checks, or cause capability resolution to produce a
-verified capability.
+host checks, add network checks, schedule work, call providers, mutate hosts, or
+cause capability resolution to produce a verified capability.
 
-Capability verification is a missing reasoning concept identified by the
-capability verification audit and roadmap reconciliation. The terms below make
-that concept explicit so future designs can refer to stable names before any
-runtime behavior exists.
+Capability verification is a reasoning concept identified by the capability
+verification audit and roadmap reconciliation. The terms below keep that concept
+explicit so implemented and future designs can refer to stable names without
+implying runtime behavior.
 
 ## Vocabulary
 
@@ -69,9 +70,10 @@ has reported success, an operation has run, or the capability is verified.
 
 ### Verified capability
 
-A **verified capability** is a future read-model conclusion that a scoped
-capability target satisfies an explicit verification policy at a particular time
-or event boundary.
+A **verified capability** is a read-model conclusion that a capability target
+has current positive verification support at a particular time or event
+boundary. In Capability Verification Inventory v1, this conclusion is derived
+only from an unexpired `capability_verified` fact with value `verified`.
 
 A verified capability must eventually include at least:
 
@@ -83,8 +85,10 @@ A verified capability must eventually include at least:
 - the time, event id, or observation boundary for which the status is current;
 - any expiry, freshness, or staleness policy that limits the status.
 
-Seed does not currently implement this model. Until such a model exists, no
-current object should be described as a verified capability.
+Seed currently implements only the inventory slice of this model. No current
+object other than the read-only inventory entry should be described as a
+verified capability, and the inventory entry is only as strong as the supporting
+Fact/FactSupport/Evidence it exposes.
 
 ### Unverified capability
 
@@ -99,9 +103,11 @@ by Seed's verification model.
 
 ### Stale verification
 
-A **stale verification** is a future status for a capability that previously had
+A **stale verification** is a status for a capability that previously had
 supporting verification evidence, but whose evidence is no longer fresh enough
-for the applicable scope or policy.
+for the applicable scope or policy. In Inventory v1, stale status uses only the
+existing fact `expires_at` / stale-fact semantics; it does not invent a new aging
+policy.
 
 Stale verification should not be treated as current positive verification. It
 may be useful as historical context or as a reason to request re-verification.
@@ -115,6 +121,50 @@ does not satisfy the verification policy.
 Failed verification is not the same as unverified. Failed verification requires
 negative evidence from an accepted evidence class. Unverified means acceptable
 positive evidence is absent.
+
+
+## Implemented predicate vocabulary
+
+Capability Verification Inventory v1 adds one canonical predicate:
+
+| Predicate | Kind | Cardinality | Values | Meaning |
+| --- | --- | --- | --- | --- |
+| `capability_verified` | durable fact | single | `verified`, `provider_reported`, `unverified` | A fact about a capability subject that can be interpreted by the read-only inventory. |
+
+The predicate is intentionally minimal. It is enough to represent current
+positive verification support, provider-reported support, explicit negative
+support, and stale support through existing fact expiry behavior. Scope can be
+represented later with standard fact dimensions if a caller needs host/provider
+scoping; Inventory v1 does not add a separate verification target model.
+
+## Implemented inventory read model
+
+Capability Verification Inventory v1 answers: "What capabilities does Seed
+currently believe are verified?"
+
+The inventory is derived from:
+
+- projected `Fact` records using `capability_verified`;
+- projected `FactSupport`;
+- `PredicateCatalog` membership for the predicate;
+- existing projected capability surfaces (`ToolNeed` capability names, registered
+  tool names, and capability verification fact subjects);
+- existing evidence/explanation structures for supporting fact evidence.
+
+Inventory states are:
+
+- `verified`: current `capability_verified = verified` support exists;
+- `provider_reported`: current `capability_verified = provider_reported` support
+  exists;
+- `unverified`: the capability is in the projected inventory universe but lacks a
+  current verification fact, or has an explicit `unverified` fact;
+- `stale`: only expired verification facts support the capability;
+- `unknown`: a current `capability_verified` value exists but is outside the
+  implemented value vocabulary.
+
+The inventory is read-only. It appends no events, executes no tools, calls no
+providers, mutates no state, and does not route through `Runtime` or
+`ToolExecutor`.
 
 ## What is not a verified capability
 

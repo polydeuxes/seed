@@ -2,6 +2,12 @@
 
 from seed_runtime.ansible_inventory_source import AnsibleInventoryObservationSource
 from seed_runtime.capability_catalog import CapabilityCatalog
+from seed_runtime.capability_inventory import (
+    CapabilityEvidenceSummary,
+    CapabilityInventoryEntry,
+    CapabilitySupportSummary,
+    build_capability_inventory,
+)
 from seed_runtime.entity_type_catalog import EntityTypeCatalog, EntityTypeDefinition
 from seed_runtime.inference_catalog import InferenceCatalog, InferenceRule
 from seed_runtime.predicate_catalog import PredicateCatalog
@@ -46,6 +52,10 @@ from seed_runtime.state import EntityRelationship, EntityTypeAssertion
 __all__ = [
     "AnsibleInventoryObservationSource",
     "CapabilityCatalog",
+    "CapabilityEvidenceSummary",
+    "CapabilityInventoryEntry",
+    "CapabilitySupportSummary",
+    "build_capability_inventory",
     "EndpointAliasNormalizer",
     "EndpointIdentityNormalizer",
     "EntityRelationship",
