@@ -106,6 +106,31 @@
       "cardinality": "multi"
     },
     {
+      "predicate": "interface_role",
+      "kind": "durable_fact",
+      "value_type": "enum",
+      "allowed_values": [
+        "primary",
+        "secondary",
+        "loopback",
+        "virtual",
+        "container",
+        "vpn"
+      ],
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "address_assignment_method",
+      "kind": "durable_fact",
+      "value_type": "enum",
+      "allowed_values": [
+        "dhcp",
+        "static",
+        "unknown"
+      ],
+      "cardinality": "multi"
+    },
+    {
       "predicate": "ip_address",
       "kind": "durable_fact",
       "value_type": "string",

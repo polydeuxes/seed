@@ -334,18 +334,21 @@ python scripts/seed_local.py --db seed.sqlite --state-summary
 The maintained CLI exposes read-only operator queries over projected state. State Views are projections over the current world model rather than a separate persistence layer. These queries do not ingest new observations, append events, execute operation implementations, mutate hosts, call providers/policy, or ask an LLM to reason over projection state:
 
 - `--state-summary` prints a read-only State View summary with counts for facts, observations, requirements, capabilities, issues, projection version, and last projected event.
-- `--impact ENTITY` resolves aliases and summarizes an entity's current types, aliases, availability, endpoints, groups, dependencies, dependents, conflicts, and related graph issues.
+- `--impact ENTITY` resolves aliases and summarizes an entity's current types, aliases, availability, local network configuration, endpoints, groups, dependencies, dependents, conflicts, and related graph issues. Local network impact output prioritizes the primary/default-route interface with its observed local IP and default gateway, collapses virtual/container/VPN interfaces into a count, and explicitly does not infer reachability or availability from interface facts.
 - `--why ENTITY PREDICATE` explains the current belief by traversing FactSupport, provenance, conflicts, aliases, and deterministic inference links.
 - `--unhealthy` and `--down` list currently unhealthy or unavailable entities/endpoints from projected facts.
 - `--graph-issues` reports topology/type validation findings.
 - `--relationships` prints projected relationship edges, optionally filtered by relationship.
 - `--entity-types` prints projected entity classifications.
-- `--current-facts` prints all read-only projected Fact Views; `--current-facts ENTITY PREDICATE` keeps the focused current-fact query for a subject/predicate.
+- `--current-facts` prints all read-only projected Fact Views; `--current-facts ENTITY PREDICATE` keeps the focused current-fact query for a subject/predicate. This remains the complete view for local network facts, including Docker, bridge, veth, virtual, and VPN interfaces that default `--impact` output may collapse.
 - `--current-observations`, `--current-requirements`, `--current-capabilities`, and `--current-issues` print read-only State Views for the rest of the projected world model.
 - `--decision-context` prints the exact read-only Context View that a `DecisionProvider` receives: confidence-bearing facts, contradiction flags, issues, requirements, capabilities, and summary counts.
 - `--evidence` prints the read-only Evidence Graph summary and concise evidence-to-fact links.
 - `--why-fact SUBJECT PREDICATE [OBJECT]` explains a matched projected fact with confidence, evidence, and supporting event IDs.
 - `--unsupported-facts` lists projected facts that currently have no linked supporting evidence.
+
+
+Local host network observation is read-only and local-only: it reads Python standard-library interface data plus safe local files such as `/proc/net/route`, `/proc/net/dev`, `/proc/net/if_inet6`, `/sys/class/net/*`, `/etc/resolv.conf`, and, when present, systemd-networkd lease files under `/run/systemd/netif/leases`. Interface role classification is derived from local names and default-route evidence: the default-route interface is `primary`, `lo` is `loopback`, Docker/bridge/veth interfaces are `container`, `virbr*` is `virtual`, Tailscale/WireGuard-style interfaces are `vpn`, and unknown non-default interfaces remain `secondary`. Address assignment is only emitted when explicit evidence exists; for example, a matching systemd-networkd lease marks an IPv4 address as `dhcp`. Static assignment is not guessed from absence of DHCP evidence because it normally requires manager-specific configuration interpretation, so it remains unknown unless a future explicit read-only evidence source supports it.
 
 ### Inference catalog
 

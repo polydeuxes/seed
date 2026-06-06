@@ -113,11 +113,13 @@ class LocalHostObservationSource:
         proc_root: str | Path = "/proc",
         sys_class_net: str | Path = "/sys/class/net",
         resolv_conf: str | Path = "/etc/resolv.conf",
+        systemd_lease_dir: str | Path = "/run/systemd/netif/leases",
     ) -> None:
         self.name = name
         self.proc_root = Path(proc_root)
         self.sys_class_net = Path(sys_class_net)
         self.resolv_conf = Path(resolv_conf)
+        self.systemd_lease_dir = Path(systemd_lease_dir)
 
     def collect(self) -> list[Observation]:
         """Return local host facts without executing or mutating the host."""
@@ -199,6 +201,9 @@ class LocalHostObservationSource:
         interfaces = self._interface_names()
         ipv4_addresses = self._ipv4_addresses(interfaces)
         ipv6_addresses = self._ipv6_addresses()
+        default_gateways = self._default_gateways()
+        default_route_interfaces = {route["interface"] for route in default_gateways}
+        assignment_methods = self._address_assignment_methods(ipv4_addresses)
 
         for interface in interfaces:
             dimensions = {"interface": interface}
@@ -209,6 +214,24 @@ class LocalHostObservationSource:
                     "network_interface",
                     interface,
                     metadata={**metadata, "source": "socket.if_nameindex/proc_net_dev"},
+                    dimensions=dimensions,
+                )
+            )
+            observations.append(
+                self._observation(
+                    observed_at,
+                    hostname,
+                    "interface_role",
+                    self._interface_role(interface, default_route_interfaces),
+                    metadata={
+                        **metadata,
+                        "source": "interface_name/proc_net_route",
+                        "interface": interface,
+                        "default_route": interface in default_route_interfaces,
+                        "classification_only": True,
+                        "network_reachability_asserted": False,
+                        "availability_asserted": False,
+                    },
                     dimensions=dimensions,
                 )
             )
@@ -275,6 +298,23 @@ class LocalHostObservationSource:
                         dimensions={**dimensions, "address_family": "ipv4"},
                     )
                 )
+            assignment_method = assignment_methods.get(interface)
+            if assignment_method:
+                observations.append(
+                    self._observation(
+                        observed_at,
+                        hostname,
+                        "address_assignment_method",
+                        assignment_method,
+                        metadata={
+                            **metadata,
+                            "source": "systemd_netif_lease",
+                            "interface": interface,
+                            "evidence": "matching systemd-networkd DHCP lease",
+                        },
+                        dimensions={**dimensions, "address_family": "ipv4"},
+                    )
+                )
             for address in ipv6_addresses.get(interface, []):
                 observations.append(
                     self._observation(
@@ -291,7 +331,7 @@ class LocalHostObservationSource:
                     )
                 )
 
-        for route in self._default_gateways():
+        for route in default_gateways:
             observations.append(
                 self._observation(
                     observed_at,
@@ -323,6 +363,63 @@ class LocalHostObservationSource:
             )
 
         return observations
+
+    def _interface_role(
+        self, interface: str, default_route_interfaces: set[str]
+    ) -> str:
+        """Classify a local interface without implying reachability."""
+
+        lowered = interface.lower()
+        if interface in default_route_interfaces:
+            return "primary"
+        if lowered == "lo":
+            return "loopback"
+        if lowered.startswith(("tailscale", "wg")):
+            return "vpn"
+        if lowered.startswith(("docker", "br-", "veth")):
+            return "container"
+        if lowered.startswith("virbr"):
+            return "virtual"
+        return "secondary"
+
+    def _address_assignment_methods(
+        self, ipv4_addresses: dict[str, list[str]]
+    ) -> dict[str, str]:
+        """Return assignment methods only when read-only evidence is explicit.
+
+        DHCP is identified from systemd-networkd lease files under
+        /run/systemd/netif/leases by matching a lease ADDRESS to an observed
+        IPv4 address for the interface with the same sysfs ifindex. Static
+        assignment generally requires manager-specific config interpretation, so
+        it is intentionally left unknown unless a future explicit evidence source
+        is added.
+        """
+
+        methods: dict[str, str] = {}
+        for interface, addresses in ipv4_addresses.items():
+            if not addresses:
+                continue
+            ifindex = self._read_sys_net_value(interface, "ifindex")
+            if not ifindex:
+                continue
+            lease_text = self._read_text(self.systemd_lease_dir / ifindex)
+            if not lease_text:
+                continue
+            lease_values = self._parse_key_value_lines(lease_text)
+            if lease_values.get("ADDRESS") in set(addresses):
+                methods[interface] = "dhcp"
+        return methods
+
+    @staticmethod
+    def _parse_key_value_lines(text: str) -> dict[str, str]:
+        values: dict[str, str] = {}
+        for line in text.splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#") or "=" not in stripped:
+                continue
+            key, value = stripped.split("=", 1)
+            values[key.strip()] = value.strip()
+        return values
 
     def _interface_names(self) -> list[str]:
         names = {name for _, name in socket.if_nameindex()}

@@ -2211,6 +2211,15 @@ def test_cli_local_network_facts_appear_in_current_facts_and_impact(
                     dimensions={"interface": "eth0"},
                 ),
                 seed_local.Observation(
+                    id="obs_network_role",
+                    source_type="discovery",
+                    observed_at=observed_at,
+                    subject="node115",
+                    predicate="interface_role",
+                    value="primary",
+                    dimensions={"interface": "eth0"},
+                ),
+                seed_local.Observation(
                     id="obs_network_ip",
                     source_type="discovery",
                     observed_at=observed_at,
@@ -2218,6 +2227,33 @@ def test_cli_local_network_facts_appear_in_current_facts_and_impact(
                     predicate="ip_address",
                     value="192.168.2.5",
                     dimensions={"interface": "eth0", "address_family": "ipv4"},
+                ),
+                seed_local.Observation(
+                    id="obs_docker_interface",
+                    source_type="discovery",
+                    observed_at=observed_at,
+                    subject="node115",
+                    predicate="network_interface",
+                    value="docker0",
+                    dimensions={"interface": "docker0"},
+                ),
+                seed_local.Observation(
+                    id="obs_docker_role",
+                    source_type="discovery",
+                    observed_at=observed_at,
+                    subject="node115",
+                    predicate="interface_role",
+                    value="container",
+                    dimensions={"interface": "docker0"},
+                ),
+                seed_local.Observation(
+                    id="obs_docker_ip",
+                    source_type="discovery",
+                    observed_at=observed_at,
+                    subject="node115",
+                    predicate="ip_address",
+                    value="172.17.0.1",
+                    dimensions={"interface": "docker0", "address_family": "ipv4"},
                 ),
                 seed_local.Observation(
                     id="obs_network_gateway",
@@ -2248,6 +2284,8 @@ def test_cli_local_network_facts_appear_in_current_facts_and_impact(
     current_output = capsys.readouterr().out
     assert "* node115 network_interface eth0" in current_output
     assert "* node115 ip_address 192.168.2.5" in current_output
+    assert "* node115 network_interface docker0" in current_output
+    assert "* node115 ip_address 172.17.0.1" in current_output
     assert "* node115 default_gateway 192.168.2.1" in current_output
     assert "* node115 dns_resolver 1.1.1.1" in current_output
 
@@ -2255,15 +2293,14 @@ def test_cli_local_network_facts_appear_in_current_facts_and_impact(
     impact_output = capsys.readouterr().out
     assert "availability_status: unknown" in impact_output
     assert "local network configuration:" in impact_output
-    assert "- network_interface (interface=eth0): eth0" in impact_output
     assert (
-        "- ip_address (address_family=ipv4, interface=eth0): 192.168.2.5"
+        "- primary/default-route interface eth0: "
+        "ip=192.168.2.5; default_gateway=192.168.2.1"
         in impact_output
     )
-    assert (
-        "- default_gateway (address_family=ipv4, interface=eth0): 192.168.2.1"
-        in impact_output
-    )
+    assert "- virtual/container/vpn interfaces: 1 collapsed (container=1)" in impact_output
+    assert "docker0: 172.17.0.1" not in impact_output
+    assert "- reachability/availability: not inferred from local network facts" in impact_output
     assert "- dns_resolver (source=/etc/resolv.conf): 1.1.1.1" in impact_output
 
 def test_cli_events_without_message_lists_persisted_events_and_exits(

@@ -18,6 +18,20 @@ def test_builtin_catalog_defines_canonical_predicates_and_prometheus_mappings():
     assert catalog.get("ip_address").cardinality == "multi"
     assert catalog.get("network_interface").cardinality == "multi"
     assert catalog.get("interface_operstate").cardinality == "multi"
+    assert catalog.get("interface_role").cardinality == "multi"
+    assert catalog.get("interface_role").allowed_values == [
+        "primary",
+        "secondary",
+        "loopback",
+        "virtual",
+        "container",
+        "vpn",
+    ]
+    assert catalog.get("address_assignment_method").allowed_values == [
+        "dhcp",
+        "static",
+        "unknown",
+    ]
     assert catalog.get("interface_mac_address").cardinality == "multi"
     assert catalog.get("interface_mtu").cardinality == "multi"
     assert catalog.get("default_gateway").cardinality == "multi"
