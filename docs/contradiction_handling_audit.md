@@ -247,18 +247,18 @@ Partially yes. For single-cardinality durable predicate conflicts, `why()` can a
 
 # Recommended Smallest Next Step
 
-Add **characterization tests and a small cross-reference inventory** for existing contradiction semantics. The tests should assert current behavior without changing it:
+Status: **implemented as characterization coverage** in `tests/test_contradiction_characterization.py`. The tests pin current contradiction behavior without changing projection, runtime, execution, or conflict-resolution semantics:
 
-1. durable single-cardinality conflicts preserve both values and record `FactConflict`;
-2. tie-strength durable conflicts produce ambiguity with no winning value;
-3. multi-cardinality values remain current without conflict;
-4. measurements choose latest current sample without conflict, including debug-history retention;
-5. expired facts are excluded from conflicts by default and visible only with `include_expired=True`;
-6. `ExplanationBuilder.why()` exposes current, competing, ambiguous, and conflict fields as currently designed;
-7. standalone `build_contradictions()` remains read-only and exact-subject/exclusive-predicate based;
-8. graph validation reports issues without removing projected edges.
+1. durable single-cardinality conflicts preserve both values, both facts, separate supports, and projected `FactConflict`;
+2. tie-strength durable conflicts remain ambiguous with no winning value and no truth arbitration;
+3. multi-cardinality values (`alias`, `ip_address`, and `group`) remain current without conflict solely because multiple values exist;
+4. measurements choose the latest current sample without conflict, while `measurement_history_limit` can retain bounded debug history;
+5. expired facts are stale, excluded from default conflicts/current belief, and visible in conflict queries only with `include_expired=True`;
+6. `ExplanationBuilder.why()` exposes active conflict metadata and competing beliefs as currently designed;
+7. projected `State.get_fact_conflicts()` acts as the small read-only conflict inventory over projected state;
+8. graph validation reports `GraphValidationIssue` while leaving invalid projected edges and source facts intact.
 
-This is the smallest safe next step because it pins semantics before any future contradiction-handling work. It avoids new engines, runtime changes, projection changes, truth arbitration, LLM reasoning, or execution behavior.
+The existing standalone `--contradictions` CLI remains the read-only contradiction audit surface for exact-subject/exclusive-predicate scans. No new CLI flag, conflict engine, runtime behavior, fact mutation, competing-evidence deletion, LLM reasoning, ToolExecutor behavior, or automatic truth arbitration was added.
 
 # Files Inspected
 
