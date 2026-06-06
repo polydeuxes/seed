@@ -15,6 +15,15 @@ class ManifestError(ValueError):
 
 
 class ToolRegistry:
+    __seed_arch__ = {
+        "owner": "registered_operation_catalog",
+        "layer": "registry",
+        "summary": "Exposes registered model-visible operations and capability mappings.",
+        "edges": [
+            {"to": "RegisteredOperation", "label": "may expose registered operation"},
+        ],
+    }
+
     def __init__(self) -> None:
         self._tools: dict[str, ToolSpec] = {}
         self._toolkits: dict[str, Toolkit] = {}

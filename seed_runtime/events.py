@@ -14,6 +14,14 @@ from seed_runtime.models import Actor, Event, ExecutionAuthorization
 
 class EventLedger:
     """Process-local append-only ledger for recording Seed runtime events."""
+    __seed_arch__ = {
+        "owner": "event_history",
+        "layer": "events",
+        "summary": "Owns append-only runtime event history read by projection and owner services.",
+        "edges": [
+            {"to": "StateProjector", "label": "feeds projection"},
+        ],
+    }
 
     def __init__(self) -> None:
         self._events: list[Event] = []

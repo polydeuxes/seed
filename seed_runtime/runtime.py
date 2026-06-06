@@ -35,6 +35,29 @@ class FakeDecisionModel:
 
 
 class Runtime:
+    __seed_arch__ = {
+        "owner": "runtime_orchestration",
+        "layer": "runtime",
+        "summary": "Routes validated model decisions to owner services without owning their behavior.",
+        "routes": [
+            {"decision": "request_tool", "target": "ToolNeedService", "label": "request_tool"},
+            {"decision": "call_tool", "target": "ToolExecutor", "label": "call_tool only"},
+        ],
+        "edges": [
+            {"to": "StateProjector", "label": "projects current state"},
+            {"to": "ToolNeedService", "label": "request_tool", "path": "request_tool"},
+            {"to": "ToolRecommendationService", "label": "recommend providers", "path": "request_tool"},
+            {"to": "ToolExecutor", "label": "call_tool only", "path": "call_tool"},
+        ],
+        "events": [
+            "input.user_message",
+            "model.decision.proposed",
+            "response.answer",
+            "response.question",
+            "response.refusal",
+        ],
+    }
+
     def __init__(
         self,
         ledger: EventLedger,

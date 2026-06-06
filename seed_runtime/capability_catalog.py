@@ -33,6 +33,15 @@ class CapabilityCatalogEntry(SeedModel):
 
 class CapabilityCatalog:
     """Read-only catalog of known capability-to-provider recommendations."""
+    __seed_arch__ = {
+        "owner": "capability_metadata",
+        "layer": "catalog",
+        "summary": "Provides capability metadata plus provider and handoff suggestions; it does not execute tools.",
+        "edges": [
+            {"to": "ProviderRecommendation", "label": "may suggest provider"},
+            {"to": "HandoffCandidate", "label": "may suggest handoff"},
+        ],
+    }
 
     def __init__(self, entries: Iterable[CapabilityCatalogEntry] = ()) -> None:
         self._entries = {slugify(entry.capability): entry for entry in entries}

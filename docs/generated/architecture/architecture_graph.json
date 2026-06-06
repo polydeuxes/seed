@@ -1,0 +1,609 @@
+{
+  "banner": "generated; do not edit",
+  "edges": [
+    {
+      "from": "CapabilityCatalog",
+      "label": "may suggest handoff",
+      "to": "HandoffCandidate"
+    },
+    {
+      "from": "CapabilityCatalog",
+      "label": "may suggest provider",
+      "to": "ProviderRecommendation"
+    },
+    {
+      "from": "EventLedger",
+      "label": "feeds projection",
+      "to": "StateProjector"
+    },
+    {
+      "from": "ProjectionStore",
+      "label": "loads/saves projected snapshot",
+      "to": "State"
+    },
+    {
+      "from": "ProjectionStore",
+      "label": "used when snapshot is stale",
+      "to": "StateProjector"
+    },
+    {
+      "from": "Runtime",
+      "label": "projects current state",
+      "to": "StateProjector"
+    },
+    {
+      "from": "Runtime",
+      "label": "call_tool only",
+      "path": "call_tool",
+      "to": "ToolExecutor"
+    },
+    {
+      "from": "Runtime",
+      "label": "request_tool",
+      "path": "request_tool",
+      "to": "ToolNeedService"
+    },
+    {
+      "from": "Runtime",
+      "label": "recommend providers",
+      "path": "request_tool",
+      "to": "ToolRecommendationService"
+    },
+    {
+      "from": "StateProjector",
+      "label": "reads append-only events",
+      "to": "EventLedger"
+    },
+    {
+      "from": "StateProjector",
+      "label": "validates projected graph",
+      "to": "GraphValidator"
+    },
+    {
+      "from": "StateProjector",
+      "label": "produces projected state",
+      "to": "State"
+    },
+    {
+      "from": "ToolExecutor",
+      "label": "records tool call events",
+      "to": "EventLedger"
+    },
+    {
+      "from": "ToolExecutor",
+      "label": "may execute registered operation",
+      "to": "RegisteredOperation"
+    },
+    {
+      "from": "ToolExecutor",
+      "label": "state factory for policy",
+      "to": "StateProjector"
+    },
+    {
+      "from": "ToolExecutor",
+      "label": "requires registered operation",
+      "to": "ToolRegistry"
+    },
+    {
+      "from": "ToolNeedService",
+      "label": "may suggest providers/handoffs",
+      "path": "request_tool",
+      "to": "CapabilityCatalog"
+    },
+    {
+      "from": "ToolNeedService",
+      "label": "records tool_need events",
+      "path": "request_tool",
+      "to": "EventLedger"
+    },
+    {
+      "from": "ToolNeedService",
+      "label": "checks existing needs",
+      "path": "request_tool",
+      "to": "StateProjector"
+    },
+    {
+      "from": "ToolNeedService",
+      "label": "may expose registered operations",
+      "path": "request_tool",
+      "to": "ToolRegistry"
+    },
+    {
+      "from": "ToolRegistry",
+      "label": "may expose registered operation",
+      "to": "RegisteredOperation"
+    }
+  ],
+  "nodes": [
+    {
+      "ast_calls": [
+        {
+          "method": "get",
+          "receiver": ""
+        },
+        {
+          "method": "get",
+          "receiver": "_entries"
+        }
+      ],
+      "events": [],
+      "file": "seed_runtime/capability_catalog.py",
+      "id": "CapabilityCatalog",
+      "kind": "class",
+      "layer": "catalog",
+      "line": 34,
+      "owner": "capability_metadata",
+      "routes": [],
+      "summary": "Provides capability metadata plus provider and handoff suggestions; it does not execute tools."
+    },
+    {
+      "ast_calls": [
+        {
+          "method": "_store",
+          "receiver": ""
+        },
+        {
+          "method": "_store",
+          "receiver": ""
+        },
+        {
+          "method": "list",
+          "receiver": ""
+        },
+        {
+          "method": "get",
+          "receiver": "_by_id"
+        },
+        {
+          "method": "get",
+          "receiver": "_by_workspace"
+        },
+        {
+          "method": "append",
+          "receiver": "_events"
+        }
+      ],
+      "events": [],
+      "file": "seed_runtime/events.py",
+      "id": "EventLedger",
+      "kind": "class",
+      "layer": "events",
+      "line": 15,
+      "owner": "event_history",
+      "routes": [],
+      "summary": "Owns append-only runtime event history read by projection and owner services."
+    },
+    {
+      "ast_calls": [],
+      "events": [],
+      "file": null,
+      "id": "GraphValidator",
+      "kind": "external",
+      "layer": "state",
+      "line": null,
+      "owner": "state_projection_validation",
+      "routes": [],
+      "summary": "Validates projected graph relationships and entity types."
+    },
+    {
+      "ast_calls": [],
+      "events": [],
+      "file": null,
+      "id": "HandoffCandidate",
+      "kind": "external",
+      "layer": "catalog",
+      "line": null,
+      "owner": "capability_metadata",
+      "routes": [],
+      "summary": "A non-executable handoff or backend operation suggestion."
+    },
+    {
+      "ast_calls": [],
+      "events": [],
+      "file": "seed_runtime/projection_store.py",
+      "id": "ProjectionStore",
+      "kind": "class",
+      "layer": "state",
+      "line": 58,
+      "owner": "projection_cache",
+      "routes": [],
+      "summary": "Stores reusable projected-state snapshots derived from the event ledger."
+    },
+    {
+      "ast_calls": [],
+      "events": [],
+      "file": null,
+      "id": "ProviderRecommendation",
+      "kind": "external",
+      "layer": "catalog",
+      "line": null,
+      "owner": "capability_metadata",
+      "routes": [],
+      "summary": "A non-executable provider suggestion from capability metadata."
+    },
+    {
+      "ast_calls": [],
+      "events": [],
+      "file": null,
+      "id": "RegisteredOperation",
+      "kind": "external",
+      "layer": "execution",
+      "line": null,
+      "owner": "registered_tool_implementation",
+      "routes": [],
+      "summary": "A registered toolkit function that ToolExecutor may execute."
+    },
+    {
+      "ast_calls": [
+        {
+          "method": "_decision_intent_retry_context",
+          "receiver": ""
+        },
+        {
+          "method": "_decision_parse_failed_payload",
+          "receiver": ""
+        },
+        {
+          "method": "_decision_parse_retry_context",
+          "receiver": ""
+        },
+        {
+          "method": "_decision_retry_context",
+          "receiver": ""
+        },
+        {
+          "method": "_parse_failure_classification",
+          "receiver": ""
+        },
+        {
+          "method": "_parse_failure_classification",
+          "receiver": ""
+        },
+        {
+          "method": "_route",
+          "receiver": ""
+        },
+        {
+          "method": "compose",
+          "receiver": "context_composer"
+        },
+        {
+          "method": "validate",
+          "receiver": "decision_validator"
+        },
+        {
+          "method": "append",
+          "receiver": "ledger"
+        },
+        {
+          "method": "append",
+          "receiver": "ledger"
+        },
+        {
+          "method": "append",
+          "receiver": "ledger"
+        },
+        {
+          "method": "append",
+          "receiver": "ledger"
+        },
+        {
+          "method": "append",
+          "receiver": "ledger"
+        },
+        {
+          "method": "append",
+          "receiver": "ledger"
+        },
+        {
+          "method": "append",
+          "receiver": "ledger"
+        },
+        {
+          "method": "append",
+          "receiver": "ledger"
+        },
+        {
+          "method": "append",
+          "receiver": "ledger"
+        },
+        {
+          "method": "decide",
+          "receiver": "model"
+        },
+        {
+          "method": "project",
+          "receiver": "projector"
+        },
+        {
+          "method": "project",
+          "receiver": "projector"
+        },
+        {
+          "method": "apply",
+          "receiver": "state_patch_service"
+        },
+        {
+          "method": "execute",
+          "receiver": "tool_executor"
+        },
+        {
+          "method": "validate",
+          "receiver": "tool_intent_guard"
+        },
+        {
+          "method": "create_from_decision",
+          "receiver": "tool_need_service"
+        },
+        {
+          "method": "resolve_capability",
+          "receiver": "tool_need_service"
+        },
+        {
+          "method": "recommend_for",
+          "receiver": "tool_recommendation_service"
+        }
+      ],
+      "events": [
+        "input.user_message",
+        "model.decision.proposed",
+        "response.answer",
+        "response.question",
+        "response.refusal"
+      ],
+      "file": "seed_runtime/runtime.py",
+      "id": "Runtime",
+      "kind": "class",
+      "layer": "runtime",
+      "line": 37,
+      "owner": "runtime_orchestration",
+      "routes": [
+        {
+          "decision": "request_tool",
+          "label": "request_tool",
+          "target": "ToolNeedService"
+        },
+        {
+          "decision": "call_tool",
+          "label": "call_tool only",
+          "target": "ToolExecutor"
+        }
+      ],
+      "summary": "Routes validated model decisions to owner services without owning their behavior."
+    },
+    {
+      "ast_calls": [],
+      "events": [],
+      "file": null,
+      "id": "State",
+      "kind": "external",
+      "layer": "state",
+      "line": null,
+      "owner": "projected_state_model",
+      "routes": [],
+      "summary": "Inspectable current state derived from events."
+    },
+    {
+      "ast_calls": [
+        {
+          "method": "apply",
+          "receiver": ""
+        },
+        {
+          "method": "list_events",
+          "receiver": "ledger"
+        }
+      ],
+      "events": [],
+      "file": "seed_runtime/state.py",
+      "id": "StateProjector",
+      "kind": "class",
+      "layer": "state",
+      "line": 672,
+      "owner": "state_projection",
+      "routes": [],
+      "summary": "Rebuilds inspectable state by applying ledger events and deriving projection indexes."
+    },
+    {
+      "ast_calls": [
+        {
+          "method": "_execute_allowed_tool_call",
+          "receiver": ""
+        },
+        {
+          "method": "_execute_allowed_tool_call",
+          "receiver": ""
+        },
+        {
+          "method": "_failed",
+          "receiver": ""
+        },
+        {
+          "method": "_load_registered",
+          "receiver": ""
+        },
+        {
+          "method": "_policy_denied",
+          "receiver": ""
+        },
+        {
+          "method": "_resume_event_context",
+          "receiver": ""
+        },
+        {
+          "method": "observe_tool_result",
+          "receiver": "fact_extraction"
+        },
+        {
+          "method": "append",
+          "receiver": "ledger"
+        },
+        {
+          "method": "append",
+          "receiver": "ledger"
+        },
+        {
+          "method": "append",
+          "receiver": "ledger"
+        },
+        {
+          "method": "append",
+          "receiver": "ledger"
+        },
+        {
+          "method": "append",
+          "receiver": "ledger"
+        },
+        {
+          "method": "get",
+          "receiver": "ledger"
+        },
+        {
+          "method": "get",
+          "receiver": "ledger"
+        },
+        {
+          "method": "list_events",
+          "receiver": "ledger"
+        },
+        {
+          "method": "create_tool_call",
+          "receiver": "pending_actions"
+        },
+        {
+          "method": "mark_completed",
+          "receiver": "pending_actions"
+        },
+        {
+          "method": "project",
+          "receiver": "projector"
+        },
+        {
+          "method": "project",
+          "receiver": "projector"
+        },
+        {
+          "method": "get",
+          "receiver": "registry"
+        },
+        {
+          "method": "require",
+          "receiver": "registry"
+        },
+        {
+          "method": "require",
+          "receiver": "registry"
+        },
+        {
+          "method": "evaluate_with_state_factory",
+          "receiver": "tool_execution_policy"
+        },
+        {
+          "method": "validate_output_schema",
+          "receiver": "tool_validation"
+        }
+      ],
+      "events": [
+        "tool.call.started",
+        "tool.call.completed",
+        "tool.call.failed"
+      ],
+      "file": "seed_runtime/execution.py",
+      "id": "ToolExecutor",
+      "kind": "class",
+      "layer": "execution",
+      "line": 55,
+      "owner": "registered_tool_execution",
+      "routes": [],
+      "summary": "Executes only registered tool operations after validation and policy checks."
+    },
+    {
+      "ast_calls": [
+        {
+          "method": "append",
+          "receiver": "ledger"
+        },
+        {
+          "method": "append",
+          "receiver": "ledger"
+        },
+        {
+          "method": "project",
+          "receiver": "projector"
+        }
+      ],
+      "events": [
+        "tool_need.created",
+        "tool_need.status_changed"
+      ],
+      "file": "seed_runtime/tool_needs.py",
+      "id": "ToolNeedService",
+      "kind": "class",
+      "layer": "runtime_service",
+      "line": 18,
+      "owner": "tool_need_capability_resolution",
+      "routes": [],
+      "summary": "Owns capability-gap creation and read-only capability resolution for request_tool decisions."
+    },
+    {
+      "ast_calls": [],
+      "events": [],
+      "file": null,
+      "id": "ToolRecommendationService",
+      "kind": "external",
+      "layer": "runtime_service",
+      "line": null,
+      "owner": "provider_recommendation_ranking",
+      "routes": [],
+      "summary": "Ranks capability provider recommendations for tool needs."
+    },
+    {
+      "ast_calls": [
+        {
+          "method": "get",
+          "receiver": ""
+        },
+        {
+          "method": "register_toolkit",
+          "receiver": ""
+        },
+        {
+          "method": "values",
+          "receiver": "_toolkits"
+        },
+        {
+          "method": "get",
+          "receiver": "_tools"
+        },
+        {
+          "method": "values",
+          "receiver": "_tools"
+        },
+        {
+          "method": "values",
+          "receiver": "_tools"
+        }
+      ],
+      "events": [],
+      "file": "seed_runtime/registry.py",
+      "id": "ToolRegistry",
+      "kind": "class",
+      "layer": "registry",
+      "line": 17,
+      "owner": "registered_operation_catalog",
+      "routes": [],
+      "summary": "Exposes registered model-visible operations and capability mappings."
+    }
+  ],
+  "source": "Python AST scan of selected seed_runtime files; runtime modules are not imported.",
+  "sources": [
+    "seed_runtime/runtime.py",
+    "seed_runtime/tool_needs.py",
+    "seed_runtime/execution.py",
+    "seed_runtime/registry.py",
+    "seed_runtime/capability_catalog.py",
+    "seed_runtime/state.py",
+    "seed_runtime/projection_store.py",
+    "seed_runtime/events.py"
+  ]
+}
