@@ -577,6 +577,9 @@ def _write_local_network_fixture(tmp_path):
             address + "\n", encoding="utf-8"
         )
         (sys_net / interface / "mtu").write_text(mtu + "\n", encoding="utf-8")
+        (sys_net / interface / "ifindex").write_text(
+            ("2" if interface == "eth0" else "1") + "\n", encoding="utf-8"
+        )
     resolv_conf.write_text(
         "# local resolver configuration\n"
         "nameserver 1.1.1.1\n"
@@ -623,6 +626,8 @@ def test_local_host_source_emits_local_network_configuration(monkeypatch, tmp_pa
     assert ("node-a", "ip_address", "192.168.2.5") in triples
     assert ("node-a", "ip_address", "2001:db8::5") in triples
     assert ("node-a", "default_gateway", "192.168.2.1") in triples
+    assert ("node-a", "interface_role", "primary") in triples
+    assert ("node-a", "interface_role", "loopback") in triples
     assert ("node-a", "dns_resolver", "1.1.1.1") in triples
     assert ("node-a", "dns_resolver", "2001:4860:4860::8888") in triples
     eth0_ip = next(
@@ -636,6 +641,111 @@ def test_local_host_source_emits_local_network_configuration(monkeypatch, tmp_pa
     assert eth0_ip.metadata["network_connection"] is False
     assert eth0_ip.metadata["subprocess_execution"] is False
     assert eth0_ip.metadata["privilege_escalation"] is False
+
+
+def test_local_host_source_keeps_container_interfaces_as_facts(monkeypatch, tmp_path):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    proc, sys_net, resolv_conf = _write_local_network_fixture(tmp_path)
+    for interface in ("docker0", "vethabc123"):
+        (sys_net / interface).mkdir(parents=True)
+        (sys_net / interface / "operstate").write_text("up\n", encoding="utf-8")
+        (sys_net / interface / "address").write_text(
+            "02:42:ac:11:00:02\n", encoding="utf-8"
+        )
+        (sys_net / interface / "mtu").write_text("1500\n", encoding="utf-8")
+        (sys_net / interface / "ifindex").write_text("10\n", encoding="utf-8")
+    (proc / "net" / "dev").write_text(
+        "Inter-| Receive\n face |bytes\n"
+        "  lo: 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0\n"
+        "eth0: 2 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0\n"
+        "docker0: 3 0 0 0 0 0 0 0 3 0 0 0 0 0 0 0\n"
+        "vethabc123: 4 0 0 0 0 0 0 0 4 0 0 0 0 0 0 0\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(sources.platform, "node", lambda: "node-a")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(
+        sources.socket,
+        "if_nameindex",
+        lambda: [(1, "lo"), (2, "eth0"), (3, "docker0"), (4, "vethabc123")],
+    )
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_ipv4_address_for_interface",
+        lambda self, interface: {
+            "eth0": "192.168.2.5",
+            "lo": "127.0.0.1",
+            "docker0": "172.17.0.1",
+            "vethabc123": "169.254.1.10",
+        }.get(interface),
+    )
+
+    observations = LocalHostObservationSource(
+        proc_root=proc, sys_class_net=sys_net, resolv_conf=resolv_conf
+    ).collect()
+
+    triples = {(obs.subject, obs.predicate, obs.value) for obs in observations}
+    assert ("node-a", "network_interface", "docker0") in triples
+    assert ("node-a", "network_interface", "vethabc123") in triples
+    assert ("node-a", "ip_address", "172.17.0.1") in triples
+    assert ("node-a", "ip_address", "169.254.1.10") in triples
+    assert [
+        obs.value
+        for obs in observations
+        if obs.predicate == "interface_role"
+        and obs.dimensions.get("interface") in {"docker0", "vethabc123"}
+    ] == ["container", "container"]
+
+
+def test_local_host_source_emits_dhcp_only_with_explicit_lease_evidence(
+    monkeypatch, tmp_path
+):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    proc, sys_net, resolv_conf = _write_local_network_fixture(tmp_path)
+    lease_dir = tmp_path / "run" / "systemd" / "netif" / "leases"
+    lease_dir.mkdir(parents=True)
+    (lease_dir / "2").write_text(
+        "# systemd-networkd lease\nADDRESS=192.168.2.5\nROUTER=192.168.2.1\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(sources.platform, "node", lambda: "node-a")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(sources.socket, "if_nameindex", lambda: [(2, "eth0")])
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_ipv4_address_for_interface",
+        lambda self, interface: "192.168.2.5",
+    )
+
+    observations = LocalHostObservationSource(
+        proc_root=proc,
+        sys_class_net=sys_net,
+        resolv_conf=resolv_conf,
+        systemd_lease_dir=lease_dir,
+    ).collect()
+
+    assignment = next(
+        obs for obs in observations if obs.predicate == "address_assignment_method"
+    )
+    assert assignment.value == "dhcp"
+    assert assignment.dimensions == {"interface": "eth0", "address_family": "ipv4"}
+    assert assignment.metadata["source"] == "systemd_netif_lease"
 
 
 def test_local_network_configuration_projects_without_availability(

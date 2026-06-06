@@ -1805,10 +1805,12 @@ def format_entity_impact(state: State, entity: str) -> str:
 
     network_predicates = [
         "network_interface",
+        "interface_role",
         "interface_operstate",
         "interface_mac_address",
         "interface_mtu",
         "ip_address",
+        "address_assignment_method",
         "default_gateway",
         "dns_resolver",
     ]
@@ -1843,19 +1845,7 @@ def format_entity_impact(state: State, entity: str) -> str:
     ]
     alias_lines = [f"- {_format_fact_value(alias)}" for alias in aliases] or ["- none"]
     lines[3:3] = alias_lines
-    network_lines = [
-        f"- {fact.predicate}{_format_fact_dimensions(fact.dimensions)}: "
-        f"{_format_fact_value(fact.value)}"
-        for fact in sorted(
-            network_facts,
-            key=lambda fact: (
-                fact.predicate,
-                json.dumps(fact.dimensions, sort_keys=True),
-                _format_fact_value(fact.value),
-                fact.id,
-            ),
-        )
-    ]
+    network_lines = _format_local_network_impact(network_facts)
     network_heading = lines.index("local network configuration:")
     lines[network_heading + 1:network_heading + 1] = network_lines or ["- none"]
 
@@ -1890,6 +1880,157 @@ def format_entity_impact(state: State, entity: str) -> str:
     return "\n".join(lines)
 
 
+def _fact_interface(fact: Fact) -> str | None:
+    """Return the interface dimension for a fact when present."""
+
+    interface = fact.dimensions.get("interface")
+    if interface is None:
+        return None
+    return str(interface)
+
+
+def _network_interface_role(
+    interface: str,
+    role_facts: dict[str, list[Fact]],
+    default_interfaces: set[str],
+) -> str:
+    """Return a display role without asserting reachability or availability."""
+
+    if interface in default_interfaces:
+        return "primary"
+    roles = [str(fact.value) for fact in role_facts.get(interface, [])]
+    if roles:
+        role_priority = {
+            "primary": 0,
+            "loopback": 1,
+            "secondary": 2,
+            "container": 3,
+            "virtual": 4,
+            "vpn": 5,
+        }
+        return sorted(roles, key=lambda role: (role_priority.get(role, 99), role))[0]
+    if interface == "lo":
+        return "loopback"
+    lowered = interface.lower()
+    if lowered.startswith(("tailscale", "wg")):
+        return "vpn"
+    if lowered.startswith(("docker", "br-", "veth")):
+        return "container"
+    if lowered.startswith("virbr"):
+        return "virtual"
+    return "secondary"
+
+
+def _format_local_network_impact(network_facts: list[Fact]) -> list[str]:
+    """Format local network facts for impact output without hiding stored facts."""
+
+    if not network_facts:
+        return ["- none"]
+
+    by_predicate: dict[str, list[Fact]] = defaultdict(list)
+    for fact in network_facts:
+        by_predicate[fact.predicate].append(fact)
+
+    interfaces = {
+        str(fact.value)
+        for fact in by_predicate.get("network_interface", [])
+        if str(fact.value)
+    }
+    for predicate in (
+        "interface_role",
+        "interface_operstate",
+        "interface_mac_address",
+        "interface_mtu",
+        "ip_address",
+        "address_assignment_method",
+        "default_gateway",
+    ):
+        for fact in by_predicate.get(predicate, []):
+            interface = _fact_interface(fact)
+            if interface:
+                interfaces.add(interface)
+
+    role_facts: dict[str, list[Fact]] = defaultdict(list)
+    gateway_by_interface: dict[str, list[str]] = defaultdict(list)
+    ip_by_interface: dict[str, list[str]] = defaultdict(list)
+    assignment_by_interface: dict[str, list[str]] = defaultdict(list)
+    for fact in by_predicate.get("interface_role", []):
+        interface = _fact_interface(fact)
+        if interface:
+            role_facts[interface].append(fact)
+    for fact in by_predicate.get("default_gateway", []):
+        interface = _fact_interface(fact)
+        if interface:
+            gateway_by_interface[interface].append(_format_fact_value(fact.value))
+    for fact in by_predicate.get("ip_address", []):
+        interface = _fact_interface(fact)
+        if interface:
+            ip_by_interface[interface].append(_format_fact_value(fact.value))
+    for fact in by_predicate.get("address_assignment_method", []):
+        interface = _fact_interface(fact)
+        if interface:
+            assignment_by_interface[interface].append(_format_fact_value(fact.value))
+
+    default_interfaces = set(gateway_by_interface)
+    roles = {
+        interface: _network_interface_role(interface, role_facts, default_interfaces)
+        for interface in interfaces
+    }
+    collapsed_roles = {"container", "virtual", "vpn"}
+    collapsed = sorted(
+        interface for interface, role in roles.items() if role in collapsed_roles
+    )
+    visible = sorted(interface for interface in interfaces if interface not in collapsed)
+    role_priority = {"primary": 0, "loopback": 1, "secondary": 2}
+    visible.sort(
+        key=lambda interface: (role_priority.get(roles[interface], 50), interface)
+    )
+
+    lines: list[str] = []
+    for interface in visible:
+        role = roles[interface]
+        label = (
+            "primary/default-route interface"
+            if role == "primary"
+            else f"{role} interface"
+        )
+        parts = []
+        ips = sorted(dict.fromkeys(ip_by_interface.get(interface, [])))
+        gateways = sorted(dict.fromkeys(gateway_by_interface.get(interface, [])))
+        assignments = sorted(dict.fromkeys(assignment_by_interface.get(interface, [])))
+        if ips:
+            parts.append("ip=" + ", ".join(ips))
+        if gateways:
+            parts.append("default_gateway=" + ", ".join(gateways))
+        if assignments:
+            parts.append("address_assignment_method=" + ", ".join(assignments))
+        detail = ": " + "; ".join(parts) if parts else ""
+        lines.append(f"- {label} {interface}{detail}")
+
+    if collapsed:
+        counts = Counter(roles[interface] for interface in collapsed)
+        count_text = ", ".join(
+            f"{role}={counts[role]}" for role in sorted(counts)
+        )
+        lines.append(
+            f"- virtual/container/vpn interfaces: {len(collapsed)} collapsed ({count_text}); "
+            "use --current-facts for full local facts"
+        )
+
+    for fact in sorted(
+        by_predicate.get("dns_resolver", []),
+        key=lambda fact: (
+            json.dumps(fact.dimensions, sort_keys=True),
+            _format_fact_value(fact.value),
+            fact.id,
+        ),
+    ):
+        lines.append(
+            f"- {fact.predicate}{_format_fact_dimensions(fact.dimensions)}: "
+            f"{_format_fact_value(fact.value)}"
+        )
+    lines.append("- reachability/availability: not inferred from local network facts")
+    return lines or ["- none"]
 
 def _format_fact_dimensions(dimensions: dict[str, str]) -> str:
     """Format fact dimensions for compact deterministic CLI output."""
