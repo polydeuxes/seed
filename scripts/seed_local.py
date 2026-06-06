@@ -1751,6 +1751,7 @@ def format_entity_impact(state: State, entity: str) -> str:
         aliases = sorted(resolved - {canonical})
 
     availability = state.get_best_fact(canonical, "availability_status")
+    local_observation = state.get_best_fact(canonical, "local_observation_status")
     endpoint_availability: dict[str, list[tuple[str, str]]] = {}
     for endpoint in sorted(resolved):
         if "endpoint" not in state.get_current_entity_types(endpoint):
@@ -1810,6 +1811,12 @@ def format_entity_impact(state: State, entity: str) -> str:
         + (
             _format_fact_value(availability.value)
             if availability is not None
+            else "unknown"
+        ),
+        "local_observation_status: "
+        + (
+            _format_fact_value(local_observation.value)
+            if local_observation is not None
             else "unknown"
         ),
         "endpoint availability by role:",
