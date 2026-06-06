@@ -113,12 +113,18 @@ class LocalHostObservationSource:
         proc_root: str | Path = "/proc",
         sys_class_net: str | Path = "/sys/class/net",
         resolv_conf: str | Path = "/etc/resolv.conf",
+        systemd_resolv_conf: str | Path = "/run/systemd/resolve/resolv.conf",
+        systemd_stub_resolv_conf: str | Path = "/run/systemd/resolve/stub-resolv.conf",
+        systemd_resolved_conf: str | Path = "/etc/systemd/resolved.conf",
         systemd_lease_dir: str | Path = "/run/systemd/netif/leases",
     ) -> None:
         self.name = name
         self.proc_root = Path(proc_root)
         self.sys_class_net = Path(sys_class_net)
         self.resolv_conf = Path(resolv_conf)
+        self.systemd_resolv_conf = Path(systemd_resolv_conf)
+        self.systemd_stub_resolv_conf = Path(systemd_stub_resolv_conf)
+        self.systemd_resolved_conf = Path(systemd_resolved_conf)
         self.systemd_lease_dir = Path(systemd_lease_dir)
 
     def collect(self) -> list[Observation]:
@@ -361,6 +367,40 @@ class LocalHostObservationSource:
                     dimensions={"source": str(self.resolv_conf)},
                 )
             )
+        for resolver in self._dns_resolver_stubs():
+            observations.append(
+                self._observation(
+                    observed_at,
+                    hostname,
+                    "dns_resolver_stub",
+                    resolver,
+                    metadata={
+                        **metadata,
+                        "source": "resolv_conf",
+                        "stub_resolver": True,
+                        "upstream_reachability_asserted": False,
+                        "dns_resolution_asserted": False,
+                    },
+                    dimensions={"source": str(self.resolv_conf)},
+                )
+            )
+        for resolver in self._dns_resolver_upstreams():
+            observations.append(
+                self._observation(
+                    observed_at,
+                    hostname,
+                    "dns_resolver_upstream",
+                    resolver,
+                    metadata={
+                        **metadata,
+                        "source": "systemd_resolved_resolv_conf",
+                        "stub_resolver": False,
+                        "upstream_reachability_asserted": False,
+                        "dns_resolution_asserted": False,
+                    },
+                    dimensions={"source": str(self.systemd_resolv_conf)},
+                )
+            )
 
         return observations
 
@@ -489,8 +529,26 @@ class LocalHostObservationSource:
         return sorted(routes, key=lambda item: (item["interface"], item["gateway"]))
 
     def _dns_resolvers(self) -> list[str]:
+        return self._nameservers_from_file(self.resolv_conf)
+
+    def _dns_resolver_stubs(self) -> list[str]:
+        return [
+            resolver
+            for resolver in self._nameservers_from_file(self.resolv_conf)
+            if self._is_loopback_address(resolver)
+        ]
+
+    def _dns_resolver_upstreams(self) -> list[str]:
+        upstreams = [
+            resolver
+            for resolver in self._nameservers_from_file(self.systemd_resolv_conf)
+            if not self._is_loopback_address(resolver)
+        ]
+        return sorted(dict.fromkeys(upstreams))
+
+    def _nameservers_from_file(self, path: Path) -> list[str]:
         resolvers: list[str] = []
-        text = self._read_text(self.resolv_conf)
+        text = self._read_text(path)
         if not text:
             return resolvers
         for line in text.splitlines():
@@ -501,6 +559,13 @@ class LocalHostObservationSource:
             if len(fields) >= 2 and fields[0] == "nameserver":
                 resolvers.append(fields[1])
         return sorted(dict.fromkeys(resolvers))
+
+    @staticmethod
+    def _is_loopback_address(value: str) -> bool:
+        try:
+            return ipaddress.ip_address(value).is_loopback
+        except ValueError:
+            return False
 
     def _read_sys_net_value(self, interface: str, filename: str) -> str | None:
         text = self._read_text(self.sys_class_net / interface / filename)

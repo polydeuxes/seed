@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import ipaddress
 from collections import Counter, defaultdict
 import json
 import sys
@@ -1748,7 +1749,11 @@ def format_entity_impact(state: State, entity: str) -> str:
         ) or ["unknown"]
     aliases = [fact.value for fact in state.get_current_facts(canonical, "alias")]
     if not aliases:
-        aliases = sorted(resolved - {canonical})
+        aliases = [
+            name
+            for name in sorted(resolved - {canonical})
+            if not _looks_like_plain_ip_address(name)
+        ]
 
     availability = state.get_best_fact(canonical, "availability_status")
     local_observation = state.get_best_fact(canonical, "local_observation_status")
@@ -1813,6 +1818,8 @@ def format_entity_impact(state: State, entity: str) -> str:
         "address_assignment_method",
         "default_gateway",
         "dns_resolver",
+        "dns_resolver_stub",
+        "dns_resolver_upstream",
     ]
     network_facts = [
         fact
@@ -1952,7 +1959,7 @@ def _format_local_network_impact(network_facts: list[Fact]) -> list[str]:
 
     role_facts: dict[str, list[Fact]] = defaultdict(list)
     gateway_by_interface: dict[str, list[str]] = defaultdict(list)
-    ip_by_interface: dict[str, list[str]] = defaultdict(list)
+    ip_by_interface: dict[str, list[Fact]] = defaultdict(list)
     assignment_by_interface: dict[str, list[str]] = defaultdict(list)
     for fact in by_predicate.get("interface_role", []):
         interface = _fact_interface(fact)
@@ -1965,7 +1972,7 @@ def _format_local_network_impact(network_facts: list[Fact]) -> list[str]:
     for fact in by_predicate.get("ip_address", []):
         interface = _fact_interface(fact)
         if interface:
-            ip_by_interface[interface].append(_format_fact_value(fact.value))
+            ip_by_interface[interface].append(fact)
     for fact in by_predicate.get("address_assignment_method", []):
         interface = _fact_interface(fact)
         if interface:
@@ -1994,18 +2001,23 @@ def _format_local_network_impact(network_facts: list[Fact]) -> list[str]:
             if role == "primary"
             else f"{role} interface"
         )
-        parts = []
-        ips = sorted(dict.fromkeys(ip_by_interface.get(interface, [])))
+        address_groups = _group_interface_addresses(ip_by_interface.get(interface, []))
         gateways = sorted(dict.fromkeys(gateway_by_interface.get(interface, [])))
         assignments = sorted(dict.fromkeys(assignment_by_interface.get(interface, [])))
-        if ips:
-            parts.append("ip=" + ", ".join(ips))
+        lines.append(f"- {label} {interface}:")
+        for address_label in ("ipv4", "ipv6_global", "ipv6_link_local"):
+            values = address_groups.get(address_label, [])
+            if not values:
+                continue
+            if len(values) == 1:
+                lines.append(f"  {address_label}: {values[0]}")
+            else:
+                lines.append(f"  {address_label}:")
+                lines.extend(f"  - {value}" for value in values)
         if gateways:
-            parts.append("default_gateway=" + ", ".join(gateways))
+            lines.append("  default_gateway_ipv4: " + ", ".join(gateways))
         if assignments:
-            parts.append("address_assignment_method=" + ", ".join(assignments))
-        detail = ": " + "; ".join(parts) if parts else ""
-        lines.append(f"- {label} {interface}{detail}")
+            lines.append("  address_assignment_method: " + ", ".join(assignments))
 
     if collapsed:
         counts = Counter(roles[interface] for interface in collapsed)
@@ -2017,20 +2029,94 @@ def _format_local_network_impact(network_facts: list[Fact]) -> list[str]:
             "use --current-facts for full local facts"
         )
 
-    for fact in sorted(
-        by_predicate.get("dns_resolver", []),
+    dns_resolver_lines = _format_dns_resolver_impact_lines(by_predicate)
+    lines.extend(dns_resolver_lines)
+    lines.append("- reachability/availability: not inferred from local network facts")
+    return lines or ["- none"]
+
+
+def _looks_like_plain_ip_address(value: Any) -> bool:
+    """Return whether a value is a bare IPv4/IPv6 address, not an identity alias."""
+
+    try:
+        ipaddress.ip_address(str(value))
+    except ValueError:
+        return False
+    return True
+
+
+def _address_group_for_fact(fact: Fact) -> str | None:
+    """Classify an interface address for readable impact formatting."""
+
+    value = _format_fact_value(fact.value)
+    family = str(fact.dimensions.get("address_family", "")).lower()
+    try:
+        address = ipaddress.ip_address(value)
+    except ValueError:
+        if family == "ipv4":
+            return "ipv4"
+        if family == "ipv6":
+            return "ipv6_global"
+        return None
+    if address.version == 4:
+        return "ipv4"
+    if address.version == 6 and address.is_link_local:
+        return "ipv6_link_local"
+    if address.version == 6:
+        return "ipv6_global"
+    return None
+
+
+def _group_interface_addresses(facts: list[Fact]) -> dict[str, list[str]]:
+    """Group interface addresses without changing the stored facts."""
+
+    grouped: dict[str, list[str]] = defaultdict(list)
+    for fact in facts:
+        group = _address_group_for_fact(fact)
+        if group is None:
+            continue
+        grouped[group].append(_format_fact_value(fact.value))
+    return {key: sorted(dict.fromkeys(values)) for key, values in grouped.items()}
+
+
+def _sort_facts_for_display(facts: list[Fact]) -> list[Fact]:
+    return sorted(
+        facts,
         key=lambda fact: (
             json.dumps(fact.dimensions, sort_keys=True),
             _format_fact_value(fact.value),
             fact.id,
         ),
-    ):
-        lines.append(
-            f"- {fact.predicate}{_format_fact_dimensions(fact.dimensions)}: "
-            f"{_format_fact_value(fact.value)}"
-        )
-    lines.append("- reachability/availability: not inferred from local network facts")
-    return lines or ["- none"]
+    )
+
+
+def _format_dns_resolver_impact_lines(by_predicate: dict[str, list[Fact]]) -> list[str]:
+    """Format configured DNS facts without implying resolver reachability."""
+
+    lines: list[str] = []
+    stub_facts = _sort_facts_for_display(by_predicate.get("dns_resolver_stub", []))
+    upstream_facts = _sort_facts_for_display(
+        by_predicate.get("dns_resolver_upstream", [])
+    )
+    if stub_facts:
+        for fact in stub_facts:
+            lines.append(f"- dns_resolver_stub: {_format_fact_value(fact.value)}")
+        if not upstream_facts:
+            lines.append("- dns_resolver_upstream: unknown")
+    if upstream_facts:
+        values = [_format_fact_value(fact.value) for fact in upstream_facts]
+        if len(values) == 1:
+            lines.append(f"- dns_resolver_upstream: {values[0]}")
+        else:
+            lines.append("- dns_resolver_upstream:")
+            lines.extend(f"  - {value}" for value in values)
+    if not stub_facts and not upstream_facts:
+        for fact in _sort_facts_for_display(by_predicate.get("dns_resolver", [])):
+            lines.append(
+                f"- {fact.predicate}{_format_fact_dimensions(fact.dimensions)}: "
+                f"{_format_fact_value(fact.value)}"
+            )
+    return lines
 
 def _format_fact_dimensions(dimensions: dict[str, str]) -> str:
     """Format fact dimensions for compact deterministic CLI output."""
