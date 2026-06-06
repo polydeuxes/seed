@@ -213,6 +213,12 @@ default_gateway configured
 dns_resolver configured
 != DNS working
 
+dns_resolver_stub configured
+!= upstream DNS known or reachable
+
+interface ip_address configured
+!= network reachability
+
 local_observation_status observed
 != host available
 

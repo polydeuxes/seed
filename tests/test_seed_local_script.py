@@ -2256,6 +2256,24 @@ def test_cli_local_network_facts_appear_in_current_facts_and_impact(
                     dimensions={"interface": "docker0", "address_family": "ipv4"},
                 ),
                 seed_local.Observation(
+                    id="obs_network_ipv6_global",
+                    source_type="discovery",
+                    observed_at=observed_at,
+                    subject="node115",
+                    predicate="ip_address",
+                    value="2001:db8::5",
+                    dimensions={"interface": "eth0", "address_family": "ipv6"},
+                ),
+                seed_local.Observation(
+                    id="obs_network_ipv6_link_local",
+                    source_type="discovery",
+                    observed_at=observed_at,
+                    subject="node115",
+                    predicate="ip_address",
+                    value="fe80::5",
+                    dimensions={"interface": "eth0", "address_family": "ipv6"},
+                ),
+                seed_local.Observation(
                     id="obs_network_gateway",
                     source_type="discovery",
                     observed_at=observed_at,
@@ -2284,6 +2302,8 @@ def test_cli_local_network_facts_appear_in_current_facts_and_impact(
     current_output = capsys.readouterr().out
     assert "* node115 network_interface eth0" in current_output
     assert "* node115 ip_address 192.168.2.5" in current_output
+    assert "* node115 ip_address 2001:db8::5" in current_output
+    assert "* node115 ip_address fe80::5" in current_output
     assert "* node115 network_interface docker0" in current_output
     assert "* node115 ip_address 172.17.0.1" in current_output
     assert "* node115 default_gateway 192.168.2.1" in current_output
@@ -2293,11 +2313,13 @@ def test_cli_local_network_facts_appear_in_current_facts_and_impact(
     impact_output = capsys.readouterr().out
     assert "availability_status: unknown" in impact_output
     assert "local network configuration:" in impact_output
-    assert (
-        "- primary/default-route interface eth0: "
-        "ip=192.168.2.5; default_gateway=192.168.2.1"
-        in impact_output
-    )
+    assert "aliases:\n- none" in impact_output
+    assert "- primary/default-route interface eth0:" in impact_output
+    assert "  ipv4: 192.168.2.5" in impact_output
+    assert "  ipv6_global: 2001:db8::5" in impact_output
+    assert "  ipv6_link_local: fe80::5" in impact_output
+    assert "  default_gateway_ipv4: 192.168.2.1" in impact_output
+    assert "default_gateway=2001:db8::5" not in impact_output
     assert "- virtual/container/vpn interfaces: 1 collapsed (container=1)" in impact_output
     assert "docker0: 172.17.0.1" not in impact_output
     assert "- reachability/availability: not inferred from local network facts" in impact_output
@@ -3017,6 +3039,79 @@ def test_cli_current_facts_and_impact_keep_all_aliases_without_conflict(
     assert "aliases:\n" + "\n".join(f"- {alias}" for alias in aliases) in output
     assert "- alias:" not in output
 
+
+def test_cli_impact_formats_systemd_resolved_stub_and_upstream(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "impact-dns.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [
+            ("node115", "os", "linux"),
+            ("node115", "dns_resolver", "127.0.0.53"),
+            ("node115", "dns_resolver_stub", "127.0.0.53"),
+            ("node115", "dns_resolver_upstream", "1.1.1.1"),
+            ("node115", "dns_resolver_upstream", "2001:4860:4860::8888"),
+        ],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+
+    output = capsys.readouterr().out
+    assert "- dns_resolver_stub: 127.0.0.53" in output
+    assert "- dns_resolver_upstream:\n  - 1.1.1.1\n  - 2001:4860:4860::8888" in output
+    assert "dns works" not in output
+
+
+def test_cli_impact_formats_unknown_upstream_when_only_stub_known(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "impact-dns-stub-only.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [
+            ("node115", "os", "linux"),
+            ("node115", "dns_resolver", "127.0.0.53"),
+            ("node115", "dns_resolver_stub", "127.0.0.53"),
+        ],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+
+    output = capsys.readouterr().out
+    assert "- dns_resolver_stub: 127.0.0.53" in output
+    assert "- dns_resolver_upstream: unknown" in output
+    assert "availability_status: unknown" in output
+    assert "- reachability/availability: not inferred from local network facts" in output
+
+
+def test_cli_impact_omits_ip_address_aliases_unless_explicit_alias(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "impact-ip-alias-cleanup.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [
+            ("node115", "os", "linux"),
+            ("node115", "ip_address", "192.168.254.115"),
+        ],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+
+    output = capsys.readouterr().out
+    aliases_section = output.split("availability_status:", 1)[0]
+    assert "aliases:\n- none" in aliases_section
+    assert "- 192.168.254.115" not in aliases_section
+
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [("node115", "alias", "192.168.254.115")],
+    )
+    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+    output = capsys.readouterr().out
+    assert "aliases:\n- 192.168.254.115" in output
 
 def test_cli_impact_includes_graph_warnings(tmp_path, capsys):
     seed_local = load_seed_local_module()

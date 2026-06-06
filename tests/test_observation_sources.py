@@ -643,6 +643,77 @@ def test_local_host_source_emits_local_network_configuration(monkeypatch, tmp_pa
     assert eth0_ip.metadata["privilege_escalation"] is False
 
 
+def test_local_host_source_distinguishes_systemd_resolved_stub_and_upstream(monkeypatch, tmp_path):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    proc, sys_net, resolv_conf = _write_local_network_fixture(tmp_path)
+    resolv_conf.write_text("nameserver 127.0.0.53\n", encoding="utf-8")
+    systemd_resolv = tmp_path / "run" / "systemd" / "resolve" / "resolv.conf"
+    systemd_resolv.parent.mkdir(parents=True)
+    systemd_resolv.write_text(
+        "nameserver 1.1.1.1\nnameserver 2001:4860:4860::8888\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(sources.platform, "node", lambda: "node-a")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(sources.socket, "if_nameindex", lambda: [(1, "lo"), (2, "eth0")])
+    monkeypatch.setattr(LocalHostObservationSource, "_ipv4_address_for_interface", lambda self, interface: None)
+
+    observations = LocalHostObservationSource(
+        proc_root=proc,
+        sys_class_net=sys_net,
+        resolv_conf=resolv_conf,
+        systemd_resolv_conf=systemd_resolv,
+    ).collect()
+
+    triples = {(obs.subject, obs.predicate, obs.value) for obs in observations}
+    assert ("node-a", "dns_resolver", "127.0.0.53") in triples
+    assert ("node-a", "dns_resolver_stub", "127.0.0.53") in triples
+    assert ("node-a", "dns_resolver_upstream", "1.1.1.1") in triples
+    assert ("node-a", "dns_resolver_upstream", "2001:4860:4860::8888") in triples
+    for obs in observations:
+        if obs.predicate in {"dns_resolver_stub", "dns_resolver_upstream"}:
+            assert obs.metadata["network_probe"] is False
+            assert obs.metadata["network_connection"] is False
+            assert obs.metadata["subprocess_execution"] is False
+            assert obs.metadata["dns_resolution_asserted"] is False
+
+
+def test_local_host_source_stub_only_has_no_upstream_fact(monkeypatch, tmp_path):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    proc, sys_net, resolv_conf = _write_local_network_fixture(tmp_path)
+    resolv_conf.write_text("nameserver 127.0.0.53\n", encoding="utf-8")
+    monkeypatch.setattr(sources.platform, "node", lambda: "node-a")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(sources.socket, "if_nameindex", lambda: [(1, "lo"), (2, "eth0")])
+    monkeypatch.setattr(LocalHostObservationSource, "_ipv4_address_for_interface", lambda self, interface: None)
+
+    observations = LocalHostObservationSource(
+        proc_root=proc,
+        sys_class_net=sys_net,
+        resolv_conf=resolv_conf,
+        systemd_resolv_conf=tmp_path / "missing-resolv.conf",
+    ).collect()
+
+    triples = {(obs.subject, obs.predicate, obs.value) for obs in observations}
+    assert ("node-a", "dns_resolver_stub", "127.0.0.53") in triples
+    assert not [obs for obs in observations if obs.predicate == "dns_resolver_upstream"]
+
 def test_local_host_source_keeps_container_interfaces_as_facts(monkeypatch, tmp_path):
     from seed_runtime import observation_sources as sources
     from seed_runtime.observation_sources import LocalHostObservationSource

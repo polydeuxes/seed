@@ -296,17 +296,16 @@ The smallest safe predicate additions are:
 - Negative space: does not imply the gateway exists, is reachable, forwards
   traffic, or provides internet access.
 
-### `dns_resolver`
+### `dns_resolver`, `dns_resolver_stub`, `dns_resolver_upstream`
 
 - Kind: durable fact.
 - Value type: string.
 - Cardinality: multi.
 - Subject: local host.
 - Value: resolver IP literal from local resolver configuration.
-- Dimensions/metadata: `source_path=/etc/resolv.conf`, `order=<n>`.
-- Semantics: the host/process resolver configuration names this resolver.
-- Negative space: does not imply the resolver is reachable, answers queries, or
-  provides external DNS.
+- Dimensions/metadata: source path and optional order when supplied by the source.
+- Semantics: `dns_resolver` preserves nameservers configured for the host/process resolver view, `dns_resolver_stub` identifies local loopback stub resolvers such as systemd-resolved's common `127.0.0.53`, and `dns_resolver_upstream` records non-loopback upstream nameservers when they are readable from local systemd-resolved resolver files.
+- Negative space: none of these predicates implies the resolver is reachable, answers queries, forwards to the internet, or that DNS resolution works. Seed must not query DNS, call `resolvectl`, or execute commands to populate these facts.
 
 ### `interface_mac_address`
 
@@ -448,7 +447,8 @@ Specifically:
 - interface `operstate=up` must not become `availability_status=up`;
 - assigned `ip_address` must not become endpoint availability;
 - `default_gateway` must not become gateway reachability or internet access;
-- `dns_resolver` must not become DNS availability;
+- `dns_resolver`, `dns_resolver_stub`, and `dns_resolver_upstream` must not become DNS availability;
+- interface `ip_address` must not become network reachability;
 - `local_network_segment` must not become neighbor existence;
 - lack of any local fact must not become `down`.
 
@@ -517,7 +517,7 @@ Local Network Observation v1 follows the Capability Extension Methodology:
 | --- | --- |
 | Capability Gap | Seed lacked local network configuration facts. |
 | Required Questions | What interfaces, addresses, default gateways, and DNS resolvers are configured locally? |
-| Narrowest Facts | `network_interface`, `interface_operstate`, `interface_mac_address`, `interface_mtu`, `ip_address`, `default_gateway`, `dns_resolver`. |
+| Narrowest Facts | `network_interface`, `interface_operstate`, `interface_mac_address`, `interface_mtu`, `ip_address`, `default_gateway`, `dns_resolver`, `dns_resolver_stub`, `dns_resolver_upstream`. |
 | Least-Privileged Source | Python stdlib plus local read-only files: `socket.if_nameindex()`, `/proc/net/dev`, `/proc/net/route`, `/proc/net/if_inet6`, `/sys/class/net/*/{operstate,address,mtu}`, and `/etc/resolv.conf`. |
 | Read-Only Observation | `LocalHostObservationSource` reads local files/APIs only and marks observations as local-only, read-only, no-probe, no-subprocess, and no-privilege-escalation. |
 | Observation → Evidence → Fact | The existing `ObservationCollectionService` and `ObservationIngestor` convert observations into evidence-backed facts. |
@@ -532,6 +532,8 @@ Local Network Observation v1 follows the Capability Extension Methodology:
 - `interface_mtu`: locally configured interface MTU, dimensioned by interface.
 - `default_gateway`: local IPv4 route table contains a default gateway, dimensioned by interface/family.
 - `dns_resolver`: local resolver configuration names a DNS resolver.
+- `dns_resolver_stub`: local resolver configuration names a loopback stub resolver.
+- `dns_resolver_upstream`: readable local resolver configuration names a non-loopback upstream resolver.
 
 The existing `ip_address` predicate is reused for configured IPv4 and IPv6
 addresses. Address observations are dimensioned by interface and address family.

@@ -53,6 +53,18 @@
       "cardinality": "multi"
     },
     {
+      "predicate": "dns_resolver_stub",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "dns_resolver_upstream",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
       "predicate": "endpoint_role",
       "kind": "durable_fact",
       "value_type": "string",
