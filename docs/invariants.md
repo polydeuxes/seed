@@ -35,6 +35,34 @@ readable documentation today and executable architecture checks over time.
 - `ToolSpec.capabilities` are inert discovery metadata.
 - `ToolRegistry` exposes registered operations by capability.
 - Capability resolution is read-only.
+- Capability resolution never implies verification.
+- ToolNeed creation never implies verification.
+- Known capability catalog metadata never implies verification.
+- Provider recommendation never implies verification.
+- CapabilityRecommendation operation metadata never implies verification.
+- Registered operation candidate discovery never implies verification.
+- A `verify_*` operation name never implies verification.
+- Evidence-like objects are not verified capabilities without a scoped
+  verification status model.
+
+## Capability verification invariants
+
+- Capability verification is not implemented in the current runtime.
+- Requested capability, known capability, candidate capability, and
+  provider-recommended capability are not synonyms for verified capability.
+- Unverified is the default state for requested, known, candidate, and
+  provider-recommended capabilities unless a future scoped verification model
+  proves otherwise.
+- Stale verification must not be treated as current positive verification.
+- Failed verification requires accepted negative evidence; it is not merely the
+  absence of positive evidence.
+- Future verification should be modeled as a separate scoped read model with
+  explicit status, evidence, target, freshness, and boundary semantics.
+- `Runtime` must not add implicit verification behavior during capability
+  resolution.
+- `ToolExecutor` must not interpret capability metadata as verification.
+- `CapabilityCatalog` remains read-only metadata and must not become a
+  verification authority by catalog presence alone.
 
 ## Historical/quarantine invariants
 
