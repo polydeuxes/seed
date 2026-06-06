@@ -161,12 +161,12 @@ The impact view is a read-only projection summary. It currently includes:
 - active conflicts;
 - graph issues.
 
-The impact view should not become a network scanner. The smallest safe
-implementation does not need to add local network fields to impact output.
-Those facts will still be visible through current fact/observation views. A
-future display-only enhancement could add a small local-network section, but it
-must render projected facts only and preserve `availability_status: unknown`
-when no scoped availability evidence exists.
+The impact view must not become a network scanner. Local Network Observation v1
+adds a display-only `local network configuration` section that renders projected
+facts already present in State. It does not collect data, execute tools, probe
+endpoints, or alter projection semantics. The view preserves
+`availability_status: unknown` when no separate scoped availability evidence
+exists.
 
 ## Observation Ingestion Pattern
 
@@ -268,10 +268,11 @@ The smallest safe predicate additions are:
 ### `interface_operstate`
 
 - Kind: measurement.
-- Value type: enum.
-- Cardinality: single per interface measurement series.
-- Suggested values: `up`, `down`, `unknown`, `dormant`, `lowerlayerdown`,
-  `notpresent`, `testing`.
+- Value type: string.
+- Cardinality: multi, dimensioned by interface.
+- Expected local values include `up`, `down`, `unknown`, `dormant`,
+  `lowerlayerdown`, `notpresent`, and `testing`, but the collector preserves
+  local kernel strings rather than treating the list as exhaustive.
 - Subject: local host.
 - Dimensions: `interface=<name>` so each interface has its own measurement
   series.
@@ -306,6 +307,29 @@ The smallest safe predicate additions are:
 - Semantics: the host/process resolver configuration names this resolver.
 - Negative space: does not imply the resolver is reachable, answers queries, or
   provides external DNS.
+
+### `interface_mac_address`
+
+- Kind: durable fact.
+- Value type: string.
+- Cardinality: multi.
+- Subject: local host.
+- Value: MAC address literal from local sysfs.
+- Dimensions: `interface=<name>`.
+- Semantics: the local OS exposes this interface address value.
+- Negative space: does not imply link carrier, neighbor presence, or
+  reachability.
+
+### `interface_mtu`
+
+- Kind: durable fact.
+- Value type: integer.
+- Cardinality: multi.
+- Subject: local host.
+- Value: MTU integer from local sysfs.
+- Dimensions: `interface=<name>`.
+- Semantics: the local OS exposes this configured interface MTU.
+- Negative space: does not imply path MTU, packet delivery, or reachability.
 
 ### Predicate to defer: `local_network_segment`
 
@@ -446,7 +470,8 @@ When implementation begins, keep the change small and scoped:
 6. Add `default_gateway` observations from local route table files only.
 7. Add `dns_resolver` observations from local resolver configuration only.
 8. Add catalog entries only for `network_interface`, `interface_operstate`,
-   `default_gateway`, and `dns_resolver`; reuse existing `ip_address`.
+   `interface_mac_address`, `interface_mtu`, `default_gateway`, and
+   `dns_resolver`; reuse existing `ip_address`.
 9. Do not add new relationships, entity types, `Runtime` behavior,
    `ToolExecutor` behavior, shell execution, Prometheus dependency, or network
    calls.
@@ -482,3 +507,54 @@ configuration-derived topology versus reachability evidence.
 The guiding rule should be: **local configuration is evidence of local
 configuration only**. Reachability, availability, neighbor existence, gateway
 health, DNS success, and internet access require separate scoped evidence.
+
+
+## Local Network Observation v1 Implementation
+
+Local Network Observation v1 follows the Capability Extension Methodology:
+
+| Methodology step | v1 choice |
+| --- | --- |
+| Capability Gap | Seed lacked local network configuration facts. |
+| Required Questions | What interfaces, addresses, default gateways, and DNS resolvers are configured locally? |
+| Narrowest Facts | `network_interface`, `interface_operstate`, `interface_mac_address`, `interface_mtu`, `ip_address`, `default_gateway`, `dns_resolver`. |
+| Least-Privileged Source | Python stdlib plus local read-only files: `socket.if_nameindex()`, `/proc/net/dev`, `/proc/net/route`, `/proc/net/if_inet6`, `/sys/class/net/*/{operstate,address,mtu}`, and `/etc/resolv.conf`. |
+| Read-Only Observation | `LocalHostObservationSource` reads local files/APIs only and marks observations as local-only, read-only, no-probe, no-subprocess, and no-privilege-escalation. |
+| Observation → Evidence → Fact | The existing `ObservationCollectionService` and `ObservationIngestor` convert observations into evidence-backed facts. |
+| Inference | None added. Local network facts do not infer availability or reachability. |
+| User Query | `--current-facts` and `--impact HOST` render projected configuration facts without claiming reachability. |
+
+### Predicates Added in v1
+
+- `network_interface`: local OS exposed an interface name.
+- `interface_operstate`: local kernel-reported operational state, dimensioned by interface.
+- `interface_mac_address`: locally configured interface MAC address, dimensioned by interface.
+- `interface_mtu`: locally configured interface MTU, dimensioned by interface.
+- `default_gateway`: local IPv4 route table contains a default gateway, dimensioned by interface/family.
+- `dns_resolver`: local resolver configuration names a DNS resolver.
+
+The existing `ip_address` predicate is reused for configured IPv4 and IPv6
+addresses. Address observations are dimensioned by interface and address family.
+
+### Negative Space Preserved
+
+These configuration facts do **not** imply any of the following:
+
+- gateway reachability;
+- DNS functionality;
+- internet access;
+- neighbor existence;
+- remote host existence;
+- Prometheus reachability;
+- host availability.
+
+No `availability_status` fact is emitted or inferred by Local Network
+Observation v1. Availability remains a separate concept requiring separate
+scoped evidence.
+
+### Execution Boundary
+
+Local Network Observation v1 does not add Runtime behavior, ToolExecutor
+behavior, scheduling, retries, orchestration, shell commands, subprocess
+execution, privilege escalation, network scans, DNS queries, pings, ARP probes,
+endpoint checks, Prometheus calls, or other network connections.
