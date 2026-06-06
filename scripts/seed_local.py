@@ -19,6 +19,10 @@ if str(REPO_ROOT) not in sys.path:
 
 from seed_runtime.action_plans import ActionPlanService, ActionPlanTransitionError
 from seed_runtime.ansible_inventory_source import AnsibleInventoryObservationSource
+from seed_runtime.capability_inventory import (
+    CapabilityInventoryEntry,
+    build_capability_inventory,
+)
 from seed_runtime.context import ContextComposer
 from seed_runtime.context_views import (
     DecisionContextView,
@@ -1098,6 +1102,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="print read-only projected Capability views and exit",
     )
     parser.add_argument(
+        "--capability-status",
+        action="store_true",
+        help=(
+            "print read-only capability verification inventory as deterministic JSON "
+            "and exit; derives only from projected facts/evidence"
+        ),
+    )
+    parser.add_argument(
         "--current-issues",
         action="store_true",
         help="print read-only projected Issue views and exit",
@@ -1187,6 +1199,7 @@ def validate_lifecycle_args(
         bool(args.current_observations),
         bool(args.current_requirements),
         bool(args.current_capabilities),
+        bool(args.capability_status),
         bool(args.current_issues),
         bool(args.decision_context),
         bool(args.state_summary),
@@ -1207,7 +1220,8 @@ def validate_lifecycle_args(
             "--confidence, --confidence-fact, --trace-run, "
             "--why-run, --fact-support, --best-fact, "
             "--current-facts, --current-observations, --current-requirements, "
-            "--current-capabilities, --current-issues, --decision-context, "
+            "--current-capabilities, --capability-status, --current-issues, "
+            "--decision-context, "
             "--state-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --rebuild-state-cache, --state-cache-status, "
@@ -2334,6 +2348,12 @@ def format_capability_views(views: list[CapabilityView]) -> str:
     if not views:
         lines.append("(none)")
     return "\n".join(lines)
+
+
+def format_capability_inventory(entries: list[CapabilityInventoryEntry]) -> str:
+    """Format capability verification inventory as deterministic JSON."""
+
+    return json.dumps(to_plain(entries), sort_keys=True, indent=2)
 
 
 def format_issue_views(views: list[IssueView]) -> str:
@@ -3775,7 +3795,17 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.current_capabilities:
-        print(format_capability_views(build_capability_view(projected_state_from_args(args))))
+        print(
+            format_capability_views(build_capability_view(projected_state_from_args(args)))
+        )
+        return 0
+
+    if args.capability_status:
+        print(
+            format_capability_inventory(
+                build_capability_inventory(projected_state_from_args(args))
+            )
+        )
         return 0
 
     if args.current_issues:
