@@ -21,6 +21,8 @@ This roadmap captures the next reasoning-system foundation areas without adding
 runtime behavior, planning orchestration, workflow execution, host mutation,
 network calls, shell execution, or LLM-driven projection logic.
 
+Future capability growth should follow the [Capability Extension Methodology](capability_extension_methodology.md): identify the gap, reduce it to the narrowest fact, choose the least-privileged source of truth, prefer read-only observation, and keep observation, inference, verification, and execution separate.
+
 ## 1. Explicit invariants
 
 ### Purpose
