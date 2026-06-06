@@ -1,5 +1,7 @@
 # `ask_question` / `refuse` inventory
 
+> **Stale/quarantined RuntimeLoop-era inventory.** Current architecture treats `Runtime` as canonical and `RuntimeLoop` as deprecated/experimental, not CLI/API/default behavior. Statements about legacy Runtime or default RuntimeLoop routing are historical and must not be used as current-core guidance.
+
 This inventory is source-file based and records current behavior only. It does not propose or implement behavior changes.
 
 ## 1. Models
@@ -17,7 +19,7 @@ This inventory is source-file based and records current behavior only. It does n
 - RuntimeLoop's local `DecisionKind` is only `Literal["answer", "call_tool", "request_tool"]`. [`seed_runtime/runtime_loop.py:32`](../seed_runtime/runtime_loop.py#L32)
 - RuntimeLoop's `Decision` dataclass has `kind`, `text`, `tool_name`, `tool_args`, `tool_need`, and `reason`; it has no `question`, `answer`, or refusal-specific field. [`seed_runtime/runtime_loop.py:60-68`](../seed_runtime/runtime_loop.py#L60-L68)
 - RuntimeLoop validation rejects any kind outside `answer`, `call_tool`, and `request_tool` with `decision kind must be 'answer', 'call_tool', or 'request_tool'`. [`seed_runtime/runtime_loop.py:725-729`](../seed_runtime/runtime_loop.py#L725-L729)
-- Today, clarify/refuse semantics enter RuntimeLoop through intent classification and are intentionally represented as `answer` decisions with `text`, not distinct decision kinds. Distinct Runtime response categories such as `question` and `refusal` are considered legacy Runtime behavior. [`seed_runtime/intent_classifier.py:453-462`](../seed_runtime/intent_classifier.py#L453-L462)
+- Today, clarify/refuse semantics enter RuntimeLoop through intent classification and are intentionally represented as `answer` decisions with `text`, not distinct decision kinds. Distinct Runtime response categories such as `question` and `refusal` are canonical Runtime behavior; the “legacy Runtime” label in this inventory is stale. [`seed_runtime/intent_classifier.py:453-462`](../seed_runtime/intent_classifier.py#L453-L462)
 
 ## 2. Prompt / model-client behavior
 
@@ -54,17 +56,17 @@ This inventory is source-file based and records current behavior only. It does n
 
 ## 4. RuntimeLoop behavior
 
-- RuntimeLoop does not support `ask_question` or `refuse` as decision kinds; validation only accepts `answer`, `call_tool`, and `request_tool`. This is intentional: RuntimeLoop represents clarify/refuse user-facing behavior as answer responses, while distinct Runtime response categories are legacy Runtime behavior. [`seed_runtime/runtime_loop.py:32`](../seed_runtime/runtime_loop.py#L32) [`seed_runtime/runtime_loop.py:725-757`](../seed_runtime/runtime_loop.py#L725-L757)
-- RuntimeLoop receives the same `IntentDecisionModel` object in the local app as old Runtime, but the context type is `RuntimeContext`, so `clarify` and `refuse` are mapped to `RuntimeLoopDecision(kind="answer", text=...)`. [`scripts/seed_local.py:660-685`](../scripts/seed_local.py#L660-L685) [`seed_runtime/intent_classifier.py:453-462`](../seed_runtime/intent_classifier.py#L453-L462)
+- RuntimeLoop does not support `ask_question` or `refuse` as decision kinds; validation only accepts `answer`, `call_tool`, and `request_tool`. This is intentional: RuntimeLoop represents clarify/refuse user-facing behavior as answer responses, while distinct response categories are canonical `Runtime` behavior; the old “legacy Runtime” label in this inventory is stale. [`seed_runtime/runtime_loop.py:32`](../seed_runtime/runtime_loop.py#L32) [`seed_runtime/runtime_loop.py:725-757`](../seed_runtime/runtime_loop.py#L725-L757)
+- RuntimeLoop historically received the same `IntentDecisionModel` object in the local app as canonical Runtime, but the context type is `RuntimeContext`, so `clarify` and `refuse` are mapped to `RuntimeLoopDecision(kind="answer", text=...)`. [`scripts/seed_local.py:660-685`](../scripts/seed_local.py#L660-L685) [`seed_runtime/intent_classifier.py:453-462`](../seed_runtime/intent_classifier.py#L453-L462)
 - A mapped clarify/refuse answer appends `assistant.answer` with payload `{"text": decision.text, "reason": decision.reason}`, appends a decision journal record with `decision_kind="answer"` and `outcome="answered"`, and returns `RuntimeResult(decision_kind="answer", response_text=decision.text, policy_allowed=True, decision_outcome="answered", ...)`. [`seed_runtime/runtime_loop.py:218-251`](../seed_runtime/runtime_loop.py#L218-L251)
 - A provider-returned unsupported kind such as `ask_question` or `refuse` is rejected before routing: RuntimeLoop appends `runtime.decision.rejected`, records a decision journal entry with `outcome="malformed_decision"`, and returns `RuntimeResult(decision_kind=None, response_text=None, policy_allowed=False, error=..., decision_outcome="malformed_decision", ...)`. [`seed_runtime/runtime_loop.py:177-216`](../seed_runtime/runtime_loop.py#L177-L216)
 - RuntimeLoop has no retry loop or parse-failure retry path; a malformed provider return produces a single rejection and a malformed-decision result. [`seed_runtime/runtime_loop.py:177-216`](../seed_runtime/runtime_loop.py#L177-L216)
 
 ## 5. CLI/API behavior
 
-- `build_local_app` constructs both old `Runtime` and `RuntimeLoop`, sharing the same `IntentDecisionModel`; the default `LocalSeedApp.run` path calls `RuntimeLoop.run`, while `LocalSeedApp.run_legacy` calls old `Runtime.handle_user_message`. [`scripts/seed_local.py:641-695`](../scripts/seed_local.py#L641-L695) [`scripts/seed_local.py:236-299`](../scripts/seed_local.py#L236-L299)
-- The CLI uses the RuntimeLoop path by default and switches to `run_legacy` when `--plan` is set. [`scripts/seed_local.py:3468-3473`](../scripts/seed_local.py#L3468-L3473) [`scripts/seed_local.py:3961-3968`](../scripts/seed_local.py#L3961-L3968)
-- Old Runtime `ask_question`, if reached through `run_legacy`, serializes as `{"kind": "question", "message": <question>, "payload": ...}` because `RuntimeResponse(kind="question", message=...)` is converted with `to_plain`. [`seed_runtime/runtime.py:265-274`](../seed_runtime/runtime.py#L265-L274) [`scripts/seed_local.py:290-299`](../scripts/seed_local.py#L290-L299)
+- `build_local_app` was described by this historical inventory as constructing both Runtime and RuntimeLoop and routing the default path to RuntimeLoop. Current architecture treats `Runtime` as canonical and RuntimeLoop as quarantined/deprecated; do not use this note as current default-routing guidance. [`scripts/seed_local.py:641-695`](../scripts/seed_local.py#L641-L695) [`scripts/seed_local.py:236-299`](../scripts/seed_local.py#L236-L299)
+- Historical note: this inventory described the CLI as using RuntimeLoop by default and switching to `run_legacy` for `--plan`; current architecture treats `Runtime` as canonical and RuntimeLoop as quarantined/deprecated. [`scripts/seed_local.py:3468-3473`](../scripts/seed_local.py#L3468-L3473) [`scripts/seed_local.py:3961-3968`](../scripts/seed_local.py#L3961-L3968)
+- Canonical Runtime `ask_question`, if reached through the historical `run_legacy` label, serializes as `{"kind": "question", "message": <question>, "payload": ...}` because `RuntimeResponse(kind="question", message=...)` is converted with `to_plain`. [`seed_runtime/runtime.py:265-274`](../seed_runtime/runtime.py#L265-L274) [`scripts/seed_local.py:290-299`](../scripts/seed_local.py#L290-L299)
 - Old Runtime `refuse`, if reached through `run_legacy`, serializes as `{"kind": "refusal", "message": <reason>, "payload": ...}`. [`seed_runtime/runtime.py:342-351`](../seed_runtime/runtime.py#L342-L351) [`scripts/seed_local.py:290-299`](../scripts/seed_local.py#L290-L299)
 - RuntimeLoop mapped clarify/refuse results pass through `runtime_result_response` as ordinary `{"kind": "answer", "message": result.response_text, "payload": {"decision_kind": "answer", ...}}`; there is no CLI-visible `question` or `refusal` kind on that path. [`scripts/seed_local.py:169-220`](../scripts/seed_local.py#L169-L220)
 - `SeedAPI` wraps RuntimeLoop directly and returns the `RuntimeResult` from `runtime.run`; therefore mapped clarify/refuse API responses have `decision_kind="answer"` and `response_text=<question or refusal text>`, while unsupported ask/refuse provider decisions return a malformed-decision `RuntimeResult`. [`seed_runtime/api.py:15-32`](../seed_runtime/api.py#L15-L32) [`seed_runtime/runtime_loop.py:177-251`](../seed_runtime/runtime_loop.py#L177-L251)
@@ -87,28 +89,28 @@ This inventory is source-file based and records current behavior only. It does n
 
 ### Missing or indirect coverage
 
-- No CLI/API tests specifically cover old Runtime `question`/`refusal` response shape or RuntimeLoop mapped clarify/refuse response shape.
-- No old Runtime test specifically covers missing `refuse.reason` through the retry loop; validation is covered at the validator level, and the retry-loop test uses missing `ask_question.question`.
+- No CLI/API tests in this historical inventory specifically covered canonical Runtime `question`/`refusal` response shape or RuntimeLoop mapped clarify/refuse response shape.
+- No canonical Runtime test in this historical inventory specifically covers missing `refuse.reason` through the retry loop; validation is covered at the validator level, and the retry-loop test uses missing `ask_question.question`.
 - No parser test specifically covers a `refuse` JSON object with an extra refusal payload field and the resulting unexpected-field rejection.
 
 ## 7. Migration risk
 
 RuntimeLoop now has an intentional adaptation decision for clarify/refuse semantics:
 
-- Distinct old Runtime response kinds `question` and `refusal` are legacy Runtime behavior. RuntimeLoop intentionally maps clarify/refuse intent to `answer` responses and rejects direct ask/refuse decision kinds. [`seed_runtime/runtime.py:265-274`](../seed_runtime/runtime.py#L265-L274) [`seed_runtime/runtime.py:342-351`](../seed_runtime/runtime.py#L342-L351) [`seed_runtime/runtime_loop.py:725-757`](../seed_runtime/runtime_loop.py#L725-L757)
-- Event taxonomy would change: old Runtime emits `response.question` / `response.refusal`; RuntimeLoop mapped behavior emits `assistant.answer`, and unsupported ask/refuse emits `runtime.decision.rejected` plus `decision.recorded`. [`seed_runtime/runtime.py:265-274`](../seed_runtime/runtime.py#L265-L274) [`seed_runtime/runtime.py:342-351`](../seed_runtime/runtime.py#L342-L351) [`seed_runtime/runtime_loop.py:180-216`](../seed_runtime/runtime_loop.py#L180-L216) [`seed_runtime/runtime_loop.py:218-251`](../seed_runtime/runtime_loop.py#L218-L251)
+- Distinct canonical Runtime response kinds `question` and `refusal` are Runtime behavior; the old “legacy Runtime” label in this inventory is stale. RuntimeLoop intentionally maps clarify/refuse intent to `answer` responses and rejects direct ask/refuse decision kinds. [`seed_runtime/runtime.py:265-274`](../seed_runtime/runtime.py#L265-L274) [`seed_runtime/runtime.py:342-351`](../seed_runtime/runtime.py#L342-L351) [`seed_runtime/runtime_loop.py:725-757`](../seed_runtime/runtime_loop.py#L725-L757)
+- Event taxonomy would change: canonical Runtime emits `response.question` / `response.refusal`; RuntimeLoop mapped behavior emits `assistant.answer`, and unsupported ask/refuse emits `runtime.decision.rejected` plus `decision.recorded`. [`seed_runtime/runtime.py:265-274`](../seed_runtime/runtime.py#L265-L274) [`seed_runtime/runtime.py:342-351`](../seed_runtime/runtime.py#L342-L351) [`seed_runtime/runtime_loop.py:180-216`](../seed_runtime/runtime_loop.py#L180-L216) [`seed_runtime/runtime_loop.py:218-251`](../seed_runtime/runtime_loop.py#L218-L251)
 - Decision journal semantics would be answer-mapped for clarify/refuse (`decision_kind="answer"`, `outcome="answered"`) unless new kinds are added. [`seed_runtime/runtime_loop.py:227-250`](../seed_runtime/runtime_loop.py#L227-L250)
 - Legacy prompt schemas and model clients would still document/expose `ask_question` and `refuse` for `ContextPacket` use, but RuntimeLoop would not accept those kinds directly. [`seed_runtime/context.py:125-132`](../seed_runtime/context.py#L125-L132) [`seed_runtime/model_client.py:195-221`](../seed_runtime/model_client.py#L195-L221) [`seed_runtime/runtime_loop.py:725-729`](../seed_runtime/runtime_loop.py#L725-L729)
-- CLI consumers that currently reach old Runtime through `--plan` could see `question` or `refusal`; the default CLI and API paths already see RuntimeLoop answer-mapped behavior. [`scripts/seed_local.py:3468-3473`](../scripts/seed_local.py#L3468-L3473) [`scripts/seed_local.py:3961-3968`](../scripts/seed_local.py#L3961-L3968)
-- Old Runtime's validation/parse retry loop around missing `question` or missing `reason` would not carry over; RuntimeLoop currently rejects malformed decisions once. [`seed_runtime/runtime.py:86-170`](../seed_runtime/runtime.py#L86-L170) [`seed_runtime/runtime_loop.py:177-216`](../seed_runtime/runtime_loop.py#L177-L216)
+- CLI consumers that this historical inventory described as reaching Runtime through `--plan` could see `question` or `refusal`; that was the historical audit finding; current architecture treats `Runtime` as canonical and RuntimeLoop as quarantined/deprecated. [`scripts/seed_local.py:3468-3473`](../scripts/seed_local.py#L3468-L3473) [`scripts/seed_local.py:3961-3968`](../scripts/seed_local.py#L3961-L3968)
+- Canonical Runtime's validation/parse retry loop around missing `question` or missing `reason` would not carry over; RuntimeLoop currently rejects malformed decisions once. [`seed_runtime/runtime.py:86-170`](../seed_runtime/runtime.py#L86-L170) [`seed_runtime/runtime_loop.py:177-216`](../seed_runtime/runtime_loop.py#L177-L216)
 
 ## 8. Conclusion
 
-`ask_question` and `refuse` are not currently considered RuntimeLoop migration blockers because RuntimeLoop already preserves the user-facing clarify/refuse behavior through `answer` responses. Direct `ask_question` and `refuse` RuntimeLoop decision kinds remain unsupported by design; distinct `question` and `refusal` response categories belong to legacy Runtime behavior.
+`ask_question` and `refuse` are not currently considered RuntimeLoop migration blockers because RuntimeLoop already preserves the user-facing clarify/refuse behavior through `answer` responses. Direct `ask_question` and `refuse` RuntimeLoop decision kinds remain unsupported by design; distinct `question` and `refusal` response categories belong to canonical Runtime behavior; the “legacy Runtime” label in this inventory is stale.
 
 ## 9. Extraction / port candidates
 
 These are low-risk options to consider later; this inventory does not recommend one yet.
 
 - No RuntimeLoop migration work is currently recommended for `ask_question` or `refuse`; the intentional behavior is answer-mapped clarify/refuse plus direct-kind rejection.
-- If old Runtime remains as the only direct legacy-decision consumer, narrow legacy prompt exposure or adapters so models do not emit `ask_question` / `refuse` into RuntimeLoop unless the boundary maps them deliberately.
+- If canonical Runtime remains the direct legacy-decision consumer, narrow legacy prompt exposure or adapters so models do not emit `ask_question` / `refuse` into RuntimeLoop unless the boundary maps them deliberately.

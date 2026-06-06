@@ -338,7 +338,7 @@ It should remain only a `call_tool` suggestion by default.
 
 Reason:
 
-- `ActionPlanService` is designed around a chosen provider recommendation and creates a non-executable proposal for satisfying a tool need.
+- `ActionPlanService` is designed around a chosen provider recommendation and creates a non-executable proposal for satisfying a ToolNeed / capability gap.
 - Registered operations are already model-visible tools that the runtime can expose in context.
 - Actual tool execution is already isolated under the `call_tool` decision branch in canonical `Runtime`, which invokes `ToolExecutor.execute`.
 
@@ -497,7 +497,7 @@ capability_resolution_selection.superseded
 capability_resolution_selection.cancelled
 ```
 
-This mirrors existing event-projection style for tool needs, action plans, handoff plans, pending actions, and execution proposals.
+This mirrors existing event-projection style for ToolNeeds / capability gaps, action plans, handoff plans, pending actions, and execution proposals.
 
 ### Step 2: Add new service
 

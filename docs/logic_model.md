@@ -26,7 +26,7 @@ The state layer is projected current knowledge. `EventLedger` stores append-only
 
 ### Capability Layer
 
-The capability layer reasons from ToolNeeds to capability resolution. `ToolNeedService` owns capability-gap creation and capability resolution. `ToolRegistry` contributes registered operation candidates. `CapabilityCatalog` contributes capability metadata, provider recommendations, and handoff candidates.
+The capability layer reasons from ToolNeeds / capability gaps to capability resolution; a ToolNeed is not an executable tool. `ToolNeedService` owns capability-gap creation and capability resolution. `ToolRegistry` contributes registered operation candidates. `CapabilityCatalog` contributes capability metadata, provider recommendations, and handoff candidates.
 
 ## Example Rules
 
@@ -54,13 +54,13 @@ IF a fact matches the conditions of an inference rule
 
 THEN derive an inferred fact linked to the source fact and inference rule.
 
-### ToolNeed + Registry Match -> Operation Candidate
+### ToolNeed / capability gap + Registry Match -> Operation Candidate
 
 IF a ToolNeed matches registered operation metadata in `ToolRegistry`
 
 THEN include the matching registered operation as an operation candidate.
 
-### ToolNeed + Capability Recommendation -> Provider Recommendation
+### ToolNeed / capability gap + Capability Recommendation -> Provider Recommendation
 
 IF a ToolNeed matches capability metadata or provider guidance in `CapabilityCatalog`
 

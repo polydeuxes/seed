@@ -1,5 +1,7 @@
 # State Patch Inventory
 
+> **Stale/quarantined RuntimeLoop-era inventory.** Current architecture treats `Runtime` as canonical and `RuntimeLoop` as deprecated/experimental, not CLI/API/default behavior. Statements below about default CLI/API RuntimeLoop routing are historical inventory findings and have been corrected where they risk implying current behavior.
+
 This inventory is source-file based and describes the existing state patch behavior before any RuntimeLoop parity decision. It intentionally does not propose or implement behavior changes.
 
 ## 1. Models
@@ -151,11 +153,11 @@ After replaying events, projection also recomputes alias resolution, measurement
 
 ### CLI
 
-The local CLI builds both old `Runtime` and new `RuntimeLoop`, but `LocalSeedApp.run` uses `RuntimeLoop.run` by default and maps the `RuntimeResult` back to the existing CLI response shape.
+Historical inventory note: at the time of this audit the local CLI built both Runtime and RuntimeLoop. Current wording must not be read to mean CLI/API/default behavior uses RuntimeLoop; canonical behavior is `Runtime`, and RuntimeLoop is quarantined/deprecated.
 [`scripts/seed_local.py:223-245`](../scripts/seed_local.py#L223-L245)
 [`scripts/seed_local.py:650-695`](../scripts/seed_local.py#L650-L695)
 
-The old Runtime path remains reachable through `LocalSeedApp.run_legacy`, which calls `self.runtime.handle_user_message(...)` and returns the serialized response plus all ledger events.
+The canonical Runtime path was described in this historical inventory as `run_legacy`; that label is stale. The referenced path calls `self.runtime.handle_user_message(...)` and returns the serialized response plus all ledger events.
 [`scripts/seed_local.py:290-299`](../scripts/seed_local.py#L290-L299)
 However, current CLI command routing selects `run_legacy` only when `--plan` is used; ordinary one-shot messages and shell messages use `app.run`, and the HTTP local server uses `app.run` unless the request is raw.
 [`scripts/seed_local.py:3394-3418`](../scripts/seed_local.py#L3394-L3418)
@@ -167,7 +169,7 @@ There is no dedicated CLI flag that submits a state patch directly. CLI state-wr
 
 ### API
 
-`SeedAPI` wraps `RuntimeLoop`, not old `Runtime`. `post_user_message` converts `(workspace_id, session_id, text)` into `RuntimeInput(... metadata={"session_id": session_id})` and calls `runtime.run`.
+Historical inventory note: this statement described the API at audit time and is stale for current architecture. Current architecture should be read as API/default behavior using canonical `Runtime`, not RuntimeLoop. `post_user_message` converts `(workspace_id, session_id, text)` into `RuntimeInput(... metadata={"session_id": session_id})` and calls `runtime.run`.
 [`seed_runtime/api.py:15-32`](../seed_runtime/api.py#L15-L32)
 Because RuntimeLoop lacks a state patch decision kind today, the API path does not expose state patch behavior.
 [`seed_runtime/runtime_loop.py:32-68`](../seed_runtime/runtime_loop.py#L32-L68)
@@ -193,7 +195,7 @@ There is no RuntimeLoop branch that routes `propose_state_patch`, and RuntimeLoo
   [`tests/test_state_patches.py:101-123`](../tests/test_state_patches.py#L101-L123)
 - `tests/test_state_patches.py::test_state_patch_service_rejects_unknown_op` covers an unsupported operation error and verifies no events were appended for that single-operation failure.
   [`tests/test_state_patches.py:126-137`](../tests/test_state_patches.py#L126-L137)
-- `tests/test_state_patches.py::test_runtime_routes_propose_state_patch_to_state_updated_response` covers old Runtime routing for a successful `propose_state_patch`, the response kind/message, emitted event sequence, and projected entity/goal state.
+- `tests/test_state_patches.py::test_runtime_routes_propose_state_patch_to_state_updated_response` covers canonical Runtime routing (called old in this historical inventory) for a successful `propose_state_patch`, the response kind/message, emitted event sequence, and projected entity/goal state.
   [`tests/test_state_patches.py:140-179`](../tests/test_state_patches.py#L140-L179)
 - RuntimeLoop tests cover malformed provider outputs and validation rejection generally, but there is no dedicated RuntimeLoop state patch test because RuntimeLoop has no state patch decision kind.
   [`tests/test_runtime_loop.py:738-749`](../tests/test_runtime_loop.py#L738-L749)
@@ -208,7 +210,7 @@ Notable gaps in direct tests:
 
 ## 7. Migration risks
 
-If old `Runtime` were removed before state patch parity exists, these behaviors would be lost from user-message runtime paths:
+If canonical `Runtime` were removed before state patch parity exists, these behaviors would be lost from user-message runtime paths:
 
 - The legacy model decision kind `propose_state_patch` would no longer have a runtime route, even though the shared `Decision` model and legacy prompt schemas still describe it.
   [`seed_runtime/models.py:42-51`](../seed_runtime/models.py#L42-L51)
@@ -220,7 +222,7 @@ If old `Runtime` were removed before state patch parity exists, these behaviors 
   [`seed_runtime/runtime.py:319-340`](../seed_runtime/runtime.py#L319-L340)
 - The `state.patch.rejected` event would no longer be emitted for state patch application errors.
   [`seed_runtime/runtime.py:319-327`](../seed_runtime/runtime.py#L319-L327)
-- CLI `--plan` currently uses `run_legacy`; removing old Runtime would also remove any incidental access to state patch behavior through that legacy path, although the default CLI and API paths already use RuntimeLoop and therefore do not expose state patches.
+- CLI `--plan` currently uses `run_legacy`; removing canonical Runtime would also remove any incidental access to state patch behavior through that legacy path, although this historical audit described default CLI/API RuntimeLoop routing. Current architecture treats `Runtime` as canonical and RuntimeLoop as quarantined/deprecated.
   [`scripts/seed_local.py:290-299`](../scripts/seed_local.py#L290-L299)
   [`scripts/seed_local.py:3961-3975`](../scripts/seed_local.py#L3961-L3975)
   [`seed_runtime/api.py:15-32`](../seed_runtime/api.py#L15-L32)
@@ -238,4 +240,4 @@ A shared route-level boundary could preserve the current separation:
 - The runtime layer remains responsible for decision routing, response shaping, and rejection-event emission.
   [`seed_runtime/runtime.py:311-340`](../seed_runtime/runtime.py#L311-L340)
 
-The main design choice for parity is whether RuntimeLoop should intentionally add a `propose_state_patch` decision kind and call the existing service, adapt state patch semantics into a different RuntimeLoop-specific write path, or leave model-proposed state mutation as old-Runtime-only / unsupported.
+The main design choice for parity is whether RuntimeLoop should intentionally add a `propose_state_patch` decision kind and call the existing service, adapt state patch semantics into a different RuntimeLoop-specific write path, or leave model-proposed state mutation as canonical-Runtime-only / unsupported in RuntimeLoop.

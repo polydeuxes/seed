@@ -304,9 +304,9 @@ A toolkit can be hand-written or generated.
 
 ### Tool Need
 
-A durable request for a missing capability or provider handoff target.
+A durable request for a missing capability or provider handoff target: a ToolNeed / capability gap.
 
-This is one of the most important objects in Seed. It records what capability is missing without inventing internal execution.
+This is one of the most important objects in Seed. It records what capability is missing without inventing internal execution. It is not an executable tool, not a `ToolSpec`, and not a `ToolRegistry` operation.
 
 ```json
 {
@@ -579,7 +579,7 @@ Use:
 Avoid in the new repo:
 
 - gateway
-- provider operation
+- provider/handoff operation metadata when you mean an executable `ToolRegistry` operation
 - chain
 - requirement, unless describing an external business requirement
 - remediation as a core abstraction
@@ -594,7 +594,7 @@ The old system mixed execution implementation, provider metadata, and user inten
 - **Context** is composed.
 - **Decisions** are proposed.
 - **Capabilities** are registered in the CapabilityCatalog.
-- **ToolNeeds** are missing capabilities.
+- **ToolNeeds** are capability gaps / missing capability requests, not executable tools.
 - **ActionPlans** are legacy/experimental non-executable plans retained outside Core MVP routing.
 - **HandoffPlans** are legacy/experimental provider handoff records retained outside Core MVP routing with `executable: false`.
 - **Toolkits** package capability metadata and integration contracts.

@@ -1,5 +1,8 @@
 # RuntimeLoop Thin Runtime Plan
 
+> **Stale/quarantined RuntimeLoop-era inventory.** Current architecture treats `Runtime` as canonical and `RuntimeLoop` as deprecated/experimental, not CLI/API/default behavior. References to legacy/old Runtime or RuntimeLoop migration are historical audit wording, not current-core guidance; current architecture treats Runtime as canonical.
+
+
 This plan keeps `RuntimeLoop` as a thin orchestration boundary and prevents it from
 becoming a second `Runtime` or `ToolExecutor`. It is cleanup-only: no feature
 changes, no event changes, no `RuntimeResult` changes, no decision kind changes,
@@ -71,4 +74,4 @@ step:
 4. RuntimeLoop context service for `_compose_context`.
 
 Each follow-up should include parity tests before and after extraction and should
-avoid changing CLI/API or old `Runtime` behavior.
+avoid changing CLI/API or canonical `Runtime` (called old in this historical audit) behavior.

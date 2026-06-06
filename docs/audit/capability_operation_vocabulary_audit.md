@@ -72,7 +72,7 @@ Current answers:
 A provider/handoff operation is the string in `CapabilityRecommendation.operation`,
 for example `weather.lookup`, `service.manage`, or `docker.install`.
 
-It describes a possible external provider operation or integration target. It is
+It describes a possible external provider/handoff operation or integration target. It is
 metadata unless a separate builder/operator registers a corresponding `ToolSpec`
 in `ToolRegistry`.
 
@@ -185,7 +185,7 @@ A handoff candidate does not imply:
 |---|---|---|
 | `capability` | Correct | Abstract metadata/discovery key, not callable. |
 | `registered operation candidates` | Correct | Separates registered operations from provider/handoff recommendations. |
-| `CapabilityRecommendation.operation` / YAML `operation:` | Should be clarified | Metadata-only provider/handoff operation string; can be confused with executable `ToolSpec.name`. |
+| `CapabilityRecommendation.operation` / YAML `operation:` | Should be clarified | Metadata-only provider/handoff operation string; not executable and not a `ToolSpec.name` unless separately registered. |
 | `tool` as model-visible registered operation | Ambiguous but harmless | Stable code name, but docs should prefer “registered operation” where precision matters. |
 | `ToolNeed` / “tool need” | Should be clarified | Means capability gap, not executable tool. |
 | `execute` in policy-service docs | Correct | Existing wording explicitly says the policy service does not execute. |
@@ -243,8 +243,7 @@ Smallest safe next step:
    terms.
 2. Add short stale-doc warnings to RuntimeLoop-era docs rather than refactoring
    code.
-3. Clarify that `CapabilityRecommendation.operation` is provider/handoff metadata
-   unless separately resolved to a registered `ToolSpec`.
+3. Clarify that `CapabilityRecommendation.operation` is provider/handoff metadata only, not executable and not a registry operation unless separately registered as a `ToolSpec`.
 4. Clarify that ToolNeed means capability gap, not executable tool.
 
 Avoid for now:

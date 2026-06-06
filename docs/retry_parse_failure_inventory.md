@@ -1,5 +1,8 @@
 # Retry and parse-failure behavior inventory
 
+> **Stale/quarantined RuntimeLoop-era inventory.** Current architecture treats `Runtime` as canonical and `RuntimeLoop` as deprecated/experimental, not CLI/API/default behavior. References to legacy/old Runtime or RuntimeLoop migration are historical audit wording, not current-core guidance; current architecture treats Runtime as canonical.
+
+
 This inventory is source-file based and records current behavior only. It does not propose or implement behavior changes.
 
 ## Recent delta
@@ -10,7 +13,7 @@ This inventory is source-file based and records current behavior only. It does n
 - `RuntimeTrace` includes provider failure coverage as an error event: `runtime.decision.provider_failed` is classified with the other trace error events and can contribute provider-failure outcome/error details to trace summaries. [`seed_runtime/runtime_trace.py:146-159`](../seed_runtime/runtime_trace.py#L146-L159) [`seed_runtime/runtime_trace.py:179-200`](../seed_runtime/runtime_trace.py#L179-L200)
 - This delta does not add retry parity. RuntimeLoop still makes a single provider attempt: malformed returned objects continue to use `runtime.decision.rejected` and `outcome="malformed_decision"`, while provider exceptions use `runtime.decision.provider_failed` and `outcome="provider_failed"`. [`seed_runtime/runtime_loop.py:177-256`](../seed_runtime/runtime_loop.py#L177-L256)
 
-## 1. Legacy `Runtime` retry loop
+## 1. Canonical `Runtime` retry loop (called legacy in this historical inventory)
 
 Source files inspected: `seed_runtime/runtime.py`, `seed_runtime/model_client.py`, `seed_runtime/model_clients.py`, `seed_runtime/intent_classifier.py`, `seed_runtime/decisions.py`, and legacy-runtime tests in `tests/test_runtime_loop.py`, `tests/test_tool_validation.py`, `tests/test_tool_intent.py`, and `tests/test_model_client.py`.
 
@@ -59,7 +62,7 @@ The legacy text prompt renderer appends `CORRECTION REQUIRED` when `ContextPacke
 
 - `DecisionParseError` is defined in `seed_runtime.model_client` as a `ValueError` subclass. [`seed_runtime/model_client.py:322-323`](../seed_runtime/model_client.py#L322-L323)
 - `StrictJSONDecisionParser.parse()` raises it for invalid JSON, non-object JSON, missing `kind`/`reason`, and unexpected fields, then constructs the legacy `Decision`. [`seed_runtime/model_client.py:326-355`](../seed_runtime/model_client.py#L326-L355)
-- `ParsedDecisionModel.decide()` calls `client.complete(context)` and then `parser.parse(...)`; parse errors propagate as `DecisionParseError` to legacy `Runtime`, where they are retried. [`seed_runtime/model_client.py:358-368`](../seed_runtime/model_client.py#L358-L368)
+- `ParsedDecisionModel.decide()` calls `client.complete(context)` and then `parser.parse(...)`; parse errors propagate as `DecisionParseError` to canonical `Runtime` (called legacy in this historical audit), where they are retried. [`seed_runtime/model_client.py:358-368`](../seed_runtime/model_client.py#L358-L368)
 
 ### Local model clients
 
@@ -67,7 +70,7 @@ The legacy text prompt renderer appends `CORRECTION REQUIRED` when `ContextPacke
 - `_post_json()` raises `DecisionParseError` when the local HTTP provider response itself is not valid JSON or not an object. Network/HTTP exceptions from `request.urlopen()` are not converted here. [`seed_runtime/model_clients.py:238-254`](../seed_runtime/model_clients.py#L238-L254)
 - `_extract_ollama_text()` raises `DecisionParseError` when an Ollama response lacks decision text. [`seed_runtime/model_clients.py:257-264`](../seed_runtime/model_clients.py#L257-L264)
 - `_extract_openai_chat_text()` raises `DecisionParseError` when an OpenAI-compatible chat response lacks decision text. [`seed_runtime/model_clients.py:267-278`](../seed_runtime/model_clients.py#L267-L278)
-- `OllamaDecisionModel.decide()` and `LlamaCppDecisionModel.decide()` both call `_post_json()`, extract text, and feed `parse_decision_text()`, so their parser/shape failures are retryable by old `Runtime`; in `RuntimeLoop`, equivalent provider exceptions are observable as `provider_failed` but are not retried. [`seed_runtime/model_clients.py:101-110`](../seed_runtime/model_clients.py#L101-L110) [`seed_runtime/model_clients.py:162-168`](../seed_runtime/model_clients.py#L162-L168)
+- `OllamaDecisionModel.decide()` and `LlamaCppDecisionModel.decide()` both call `_post_json()`, extract text, and feed `parse_decision_text()`, so their parser/shape failures are retryable by canonical `Runtime` (called old in this historical audit); in `RuntimeLoop`, equivalent provider exceptions are observable as `provider_failed` but are not retried. [`seed_runtime/model_clients.py:101-110`](../seed_runtime/model_clients.py#L101-L110) [`seed_runtime/model_clients.py:162-168`](../seed_runtime/model_clients.py#L162-L168)
 
 ### Intent parser
 
@@ -118,7 +121,7 @@ Source files inspected: `seed_runtime/runtime_loop.py`, `seed_runtime/decision_j
 - `IntentDecisionModel` supports both legacy `ContextPacket` and RuntimeLoop `RuntimeContext`. The builder returns legacy `Decision` objects for `ContextPacket`, but RuntimeLoop `Decision` objects for `RuntimeContext`. [`seed_runtime/intent_classifier.py:35-37`](../seed_runtime/intent_classifier.py#L35-L37) [`seed_runtime/intent_classifier.py:411-463`](../seed_runtime/intent_classifier.py#L411-L463)
 - Deterministic fallback paths do not parse JSON and therefore do not raise `DecisionParseError`. They can return direct echo, general informational answer, a missing-tool classification, or a default clarify classification when no classifier is configured. [`seed_runtime/intent_classifier.py:477-513`](../seed_runtime/intent_classifier.py#L477-L513)
 - RuntimeContext intent parsing can raise when a configured `TextIntentClassifier` is needed and its transport/parser fails. `TextIntentClassifier.classify()` and `IntentDecisionModel.decide()` do not catch these exceptions. [`seed_runtime/intent_classifier.py:273-274`](../seed_runtime/intent_classifier.py#L273-L274) [`seed_runtime/intent_classifier.py:477-493`](../seed_runtime/intent_classifier.py#L477-L493)
-- In old `Runtime`, a `DecisionParseError` raised by an intent-backed `DecisionModel` is caught by the legacy retry loop. [`seed_runtime/runtime.py:86-108`](../seed_runtime/runtime.py#L86-L108)
+- In canonical `Runtime` (called old in this historical audit), a `DecisionParseError` raised by an intent-backed `DecisionModel` is caught by the canonical Runtime retry loop. [`seed_runtime/runtime.py:86-108`](../seed_runtime/runtime.py#L86-L108)
 - In `RuntimeLoop`, the same `DecisionParseError` is handled as a provider exception: it becomes `runtime.decision.provider_failed`, a `decision.recorded` journal entry with `outcome="provider_failed"`, and a `RuntimeResult` with `decision_outcome="provider_failed"`. [`seed_runtime/runtime_loop.py:177-215`](../seed_runtime/runtime_loop.py#L177-L215)
 - The remaining risk is retry-loop parity, not provider exception observability: parser/model exceptions from the provider path are observed and converted into a deterministic result, but RuntimeLoop still does not create a retry prompt or make a second provider attempt after that failure. [`seed_runtime/runtime_loop.py:177-215`](../seed_runtime/runtime_loop.py#L177-L215) [`seed_runtime/runtime.py:86-108`](../seed_runtime/runtime.py#L86-L108)
 
@@ -143,12 +146,12 @@ Source files inspected: `seed_runtime/runtime_loop.py`, `seed_runtime/decision_j
 
 ### Missing or not directly covered
 
-- No test appears to cover old Runtime intent rejection followed by a successful retry using `_decision_intent_retry_context()`; existing intent tests configure `max_decision_retries=0`. [`tests/test_tool_intent.py:13-29`](../tests/test_tool_intent.py#L13-L29)
+- No test appears to cover canonical Runtime (called old in this historical audit) intent rejection followed by a successful retry using `_decision_intent_retry_context()`; existing intent tests configure `max_decision_retries=0`. [`tests/test_tool_intent.py:13-29`](../tests/test_tool_intent.py#L13-L29)
 - No test appears to cover RuntimeLoop retry after a provider exception; existing provider exception coverage asserts the single-attempt `provider_failed` outcome. [`tests/test_runtime_loop.py:448-508`](../tests/test_runtime_loop.py#L448-L508)
 - No test appears to exercise a RuntimeLoop provider backed by `IntentDecisionModel` with `TextIntentClassifier` raising `DecisionParseError` from `StrictJSONIntentParser`; the generic provider exception path is covered, but this integration shape is not directly covered. [`tests/test_runtime_loop.py:448-508`](../tests/test_runtime_loop.py#L448-L508) [`tests/test_intent_classifier.py:338-381`](../tests/test_intent_classifier.py#L338-L381)
 - RuntimeLoop malformed-decision tests cover unsupported returned objects and unsupported kinds, but not every answer/call-tool field-validation branch in `_validate_decision()`.
 
-## 6. Migration risk if old `Runtime` were removed before retry/parse parity
+## 6. Migration risk if canonical `Runtime` (called old in this historical audit) were removed before retry/parse parity
 
 - The bounded retry loop would be lost for model parse failures. Old Runtime can convert a `DecisionParseError` into `model.decision.parse_failed`, a correction prompt, and a second model attempt; RuntimeLoop currently has no equivalent retry context or retry prompt. [`seed_runtime/runtime.py:86-108`](../seed_runtime/runtime.py#L86-L108) [`seed_runtime/runtime_loop.py:177-215`](../seed_runtime/runtime_loop.py#L177-L215)
 - The bounded retry loop would also be lost for structured validation failures and intent rejections. RuntimeLoop rejects malformed returned objects once and does not ask the provider for a corrected decision. [`seed_runtime/runtime.py:150-171`](../seed_runtime/runtime.py#L150-L171) [`seed_runtime/runtime_loop.py:216-256`](../seed_runtime/runtime_loop.py#L216-L256)
@@ -163,5 +166,5 @@ These are possible future choices only; this inventory does not recommend or imp
 1. Keep RuntimeLoop single-shot for provider exceptions and malformed returned decisions, documenting the difference as intentional now that provider exceptions return a deterministic `provider_failed` result.
 2. Add a bounded retry loop to RuntimeLoop with RuntimeLoop-native retry context and event/journal semantics.
 3. Extend provider exception handling with retry prompts for retryable provider/parser exceptions while preserving the deterministic `provider_failed` outcome after exhaustion.
-4. Add a retry policy service shared by legacy Runtime and RuntimeLoop so retry bounds, retry prompts, and retryable error classes are configured outside either loop.
+4. Add a retry policy service shared by canonical Runtime (called legacy in this historical audit) and RuntimeLoop so retry bounds, retry prompts, and retryable error classes are configured outside either loop.
 5. Adapt intent classification so parser/model failures are converted into RuntimeLoop retry inputs or another RuntimeLoop-native failure shape rather than relying only on the generic provider-failed path.

@@ -1,8 +1,10 @@
 # 03 Runtime Loop
 
+> **Stale/quarantined RuntimeLoop-era document.** Canonical runtime behavior lives in `seed_runtime.runtime.Runtime`: `request_tool` creates `ToolNeed` / `capability_resolution` metadata only, `call_tool` is the only Runtime path into `ToolExecutor`, and `ToolExecutor` executes only registered `ToolRegistry` operations. `RuntimeLoop` is deprecated/experimental, is not the CLI/API/default runtime path, and any RuntimeLoop-specific algorithms below are historical notes unless explicitly labeled as canonical `Runtime` behavior.
+
 Runtime is the canonical runtime orchestration path in Seed. RuntimeLoop v1 is deprecated/experimental and is not wired into CLI, API, or default production paths. It may remain only as quarantined historical/experimental code and must not define canonical runtime behavior.
 
-The runtime loop is the center of Seed. Seed is closer to a state engine / distributed state machine than an agent framework: a provider proposes a structured decision, but the runtime owns validation, policy boundaries, registered operation-handler dispatch, and append-only events.
+The canonical Runtime request flow is the center of Seed. Seed is closer to a state engine / distributed state machine than an agent framework: a provider proposes a structured decision, but the runtime owns validation, policy boundaries, registered operation-handler dispatch, and append-only events.
 
 ## Loop overview
 
@@ -13,8 +15,8 @@ Input
   -> Context Composer
   -> DecisionProvider
   -> Decision Validation
-  -> PolicyEngine
-  -> ToolRegistry operation or Answer
+  -> PolicyEngine for valid `call_tool` decisions
+  -> ToolExecutor for registered ToolRegistry operations, or Answer
   -> New Events
 ```
 
@@ -75,6 +77,8 @@ Use when the system lacks a needed capability or provider handoff target.
   }
 }
 ```
+
+A `request_tool` decision records a `ToolNeed` / capability gap and may return capability-resolution recommendations. It is not an executable tool request, does not identify a `ToolSpec.name`, and never enters `ToolExecutor`; only a later, separate `call_tool` decision for a registered `ToolRegistry` operation can execute.
 
 ### 4. Legacy planning/handoff decisions are quarantined
 
@@ -209,6 +213,8 @@ def handle_input(workspace_id: str, session_id: str, input_payload: dict) -> Res
 
 ## Decision handling algorithm
 
+This is an abridged canonical `Runtime` sketch for non-execution branches. Only a valid `call_tool` decision may enter `ToolExecutor`; `request_tool` stops after creating ToolNeed / capability-gap and capability-resolution metadata.
+
 ```python
 def handle_decision(decision: Decision, state: State, causation_id: str) -> DecisionResult:
     match decision.kind:
@@ -236,7 +242,9 @@ def handle_decision(decision: Decision, state: State, causation_id: str) -> Deci
 
 ## Handoff branch
 
-Seed does not invoke an operation implementation after policy review. It creates a non-executable HandoffPlan that an external provider can consume or that a human can follow manually. The HandoffPlan is not an approval and does not imply user approval, execution authorization, credential availability, provider trust, or operation registration.
+> **Historical/quarantined planning note.** Core MVP Runtime does not route `propose_action_plan` / `propose_handoff_plan`; provider/handoff recommendations are metadata.
+
+Seed does not invoke a provider/handoff operation implementation after policy review. It creates a non-executable HandoffPlan that an external provider can consume or that a human can follow manually. The HandoffPlan is not an approval and does not imply user approval, execution authorization, credential availability, provider trust, or operation registration.
 
 ```python
 def create_handoff_plan(action_plan: ActionPlan, target: str, causation_id: str) -> HandoffPlanResult:
@@ -259,7 +267,7 @@ def create_handoff_plan(action_plan: ActionPlan, target: str, causation_id: str)
         action_plan_id=action_plan.id,
         provider=provider.name,
         backend_type=provider.backend_type,
-        operation=provider.operation,
+        operation=provider.operation,  # provider/handoff metadata only; not executable ToolSpec.name
         target=target,
         policy_summary=policy.summary,
         secret_boundary=provider.secret_boundary_summary,

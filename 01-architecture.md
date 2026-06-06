@@ -76,7 +76,8 @@ The knowledge layer projects current belief from immutable observations rather t
 - `ProjectionStore` = cached current world-model snapshots; it never becomes the source of truth.
 - `State` = current projected world model derived from the EventLedger.
 - `State Views` = read-only representations of projected State for facts, observations, requirements, capabilities, issues, and summary counts. They are projection views, not a second state store.
-- `RuntimeLoop` = coordinator for one request execution.
+- `Runtime` = canonical coordinator for one request execution.
+- `RuntimeLoop` = deprecated/experimental coordinator retained only for historical/quarantined docs and compatibility tests; it is not the CLI/API/default runtime path and must not define canonical behavior.
 - `DecisionProvider` = proposes structured decisions; it may be deterministic code, a model adapter, or another provider. LLMs are optional, not required.
 - `PolicyEngine` = authorization/safety boundary for valid operation-call decisions.
 - `ToolRegistry` = registered operation inventory; only registered operation handlers may run, and Seed does not execute shell commands or arbitrary provider text.
@@ -116,7 +117,7 @@ Preferred execution backends live outside Seed:
 - MCP servers for tool integration
 - Vault, ssh-agent, sudo, and become-aware automation for secrets and privilege boundaries
 
-Seed may record a HandoffPlan and later ingest external provider observations as Evidence, but it must not become the executor of record for host automation. RuntimeLoop v1 may invoke only registered in-process `ToolRegistry` handlers and records their results, unknown-tool rejections, policy denials, malformed decisions, and failures as events.
+Seed may record historical/legacy HandoffPlan events and later ingest external provider observations as Evidence, but it must not become the executor of record for host automation. Canonical `Runtime` routes executable `call_tool` decisions only through `ToolExecutor`, which can execute only separately registered `ToolSpec` operations from `ToolRegistry`. Deprecated RuntimeLoop-era notes about in-process handlers are quarantined and do not describe CLI/API/default behavior.
 
 ## Main components
 
@@ -300,7 +301,7 @@ A catalog entry includes:
 - natural-language summary
 - supported backend types
 - provider/backend references
-- operation names
+- provider/handoff operation metadata strings (for recommendation/handoff identity only, not executable `ToolSpec.name` values unless separately registered)
 - input/target metadata
 - policy action
 - toolkit ID or catalog source
@@ -308,7 +309,7 @@ A catalog entry includes:
 - visibility rules
 - examples
 
-The catalog may load capabilities from hand-written metadata, generated toolkit metadata, MCP server descriptions, and external automation inventory. It describes what Seed can recommend or hand off; it does not imply that Seed can execute the operation itself. For the canonical distinction between requirements, capabilities, operations, implementations, providers, toolkits, and ToolNeeds / capability gaps, see `02-domain-model.md`.
+The catalog may load capabilities from hand-written metadata, generated toolkit metadata, MCP server descriptions, and external automation inventory. It describes what Seed can suggest or hand off; it does not imply that Seed can execute any provider/handoff `operation` string itself. A catalog recommendation may name provider/handoff metadata; only `ToolRegistry` can expose separately registered `ToolSpec` operations, and only `ToolExecutor` can execute them through canonical `call_tool`. For the canonical distinction between requirements, capabilities, operations, implementations, providers, toolkits, and ToolNeeds / capability gaps, see `02-domain-model.md`.
 
 ### 8. Policy Gate
 
@@ -356,7 +357,7 @@ The Handoff Composer does not run tools, ask for credentials, retry operations, 
 
 Tracks desired missing capabilities.
 
-A ToolNeed is a durable object recording a capability gap or missing provider handoff target, for example: “The system needs a capability/operation/provider path that does not currently exist.”
+A ToolNeed is a durable object recording a capability gap / missing capability request or missing provider handoff target, for example: “The system needs a capability/operation/provider path that does not currently exist.” It is not an executable tool, not a `ToolSpec`, and not a `ToolRegistry` operation.
 
 Example:
 
@@ -510,6 +511,6 @@ Seed's catalogs have separate responsibilities:
 - `RelationshipCatalog` defines topology semantics: how entities connect.
 - `EntityTypeCatalog` defines entity classes: what kind of thing an entity is.
 - `InferenceCatalog` defines deterministic reasoning rules: which current facts imply projection artifacts.
-- `CapabilityCatalog` defines capabilities: what can be done.
+- `CapabilityCatalog` defines non-executable capability metadata: what can be suggested or handed off. Catalog recommendations may include provider/handoff operation metadata, but only separately registered `ToolSpec` entries in `ToolRegistry` can be exposed for execution by `ToolExecutor`.
 
 `InferenceCatalog` is not LLM reasoning. The `StateProjector` applies its local, declarative rules only after observed and canonical facts have been projected. Inferred facts are reproducible projection artifacts from unambiguous observed/current facts; they carry their source fact and rule IDs, respect predicate cardinality, cap confidence at the source fact's confidence, and cannot overwrite observed facts. Inference projection performs no command execution, shell invocation, host mutation, network access, or model call.
