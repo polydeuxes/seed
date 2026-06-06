@@ -1,113 +1,148 @@
 # Seed System 
 
-A system that accumulates context, understands missing capabilities, and safely grows a typed operation/toolkit vocabulary.
+Seed receives observations, records evidence, projects explainable state, and answers questions about what it knows and why; capability resolution operates downstream of projected knowledge rather than defining the system itself.
 
 ## One-sentence product definition
 
-Seed receives raw user, file, provider, and system inputs; safely inspects and normalizes them into Evidence-backed Facts; projects a knowledge graph and current state; presents compact context to an LLM; lets the LLM answer, ask, or request ToolNeeds; resolves capabilities to registered operations and provider/handoff recommendations; and records every result back into state.
+Seed receives observations from users, files, providers, local read-only sources, and system inputs; records evidence; projects evidence-backed facts into explainable current state; answers questions about what it knows and why; and only then may resolve capability gaps into registered-operation candidates or provider recommendations without implying execution, verification, or availability.
 
 ## Core thesis
 
-Permissions and flow control are necessary infrastructure, but they are not the architecture. The architecture is the **context engine** plus a **capability-to-toolkit loop**:
+Permissions, flow control, and capability catalogs are necessary infrastructure, but they are not the center of gravity. Seed's architecture is knowledge-first:
 
 ```text
-Input / observations
-  -> evidence / facts
-  -> relationships / entity types
-  -> explanations / current state
-  -> ToolNeed
-  -> capability_resolution
-     -> registered operation candidates
-     -> provider / handoff recommendations
-  -> response
+Observation Sources
+  -> Observations
+  -> Evidence
+  -> Facts
+  -> Relationships
+  -> Entity Types
+  -> Contradictions
+  -> Current-State Projection
+  -> Explanation
+  -> Query / Response
 ```
+
+Capability handling is a consumer of projected knowledge, not the primary architecture:
+
+```text
+Projected State
+  -> ToolNeed
+  -> Capability Resolution
+  -> Registered Operation Candidates
+  -> Provider Recommendations
+  -> Response
+```
+
+A `ToolNeed` records a capability gap. Capability resolution is read-only inventory and recommendation over projected state and catalogs. It does not execute operations, verify capabilities, prove provider availability, or mutate hosts.
+
+## Architectural Principles
+
+- **Observation first.** Seed begins by observing narrow facts about the world, not by choosing operations.
+- **Evidence before conclusions.** Claims should be supported by evidence and `FactSupport` links before they are projected into state.
+- **Inventory before inference.** Seed should first inventory what is observed, known, registered, configured, or recommended before deriving broader conclusions.
+- **Inference before execution.** Deterministic inference can reason over projected facts, but it remains separate from observation and execution.
+- **Execution last.** Registered-operation execution is a later, policy-governed runtime path; it is not implied by knowledge, capability gaps, recommendations, or explanations.
+- **Observe narrowly. Infer broadly.** Observation vocabulary should stay within the selected source boundary so later reasoning can preserve uncertainty, staleness, and contradiction.
+- **Capability resolution does not imply execution.** `request_tool` records and resolves a gap; `call_tool` is the runtime path to `ToolExecutor`.
+- **Capability resolution does not imply verification.** Requested, known, candidate, and provider-recommended capabilities are unverified unless a future scoped verification model proves otherwise.
+- **Provider recommendations do not imply availability.** A recommendation is metadata for a possible provider or handoff, not evidence that the provider is reachable or ready.
+- **Local configuration does not imply reachability.** Local observations may prove configuration, but they do not prove remote access, service health, or network success.
 
 ## What is new
 
-Most automation systems begin with a catalog of hand-written operations or backend adapters and then bolt on an LLM. Seed starts from the opposite direction:
+Most automation systems begin with execution: a workflow engine, provider adapter, shell command, or catalog of hand-written operations. Seed begins with knowledge:
 
-1. Start with a small, constrained model.
-2. Give it durable state and compact context.
-3. Let it discover missing capabilities.
-4. Convert missing capabilities into explicit **ToolNeeds / capability gaps**.
-5. Use a separate builder to generate toolkit candidates.
-6. Validate and register toolkit operations and metadata.
-7. Expose registered capabilities, visible operations, and provider handoff options back to the model.
+```text
+Observation -> Evidence -> Fact -> State -> Explanation
+```
 
-The model does not get unrestricted power to rewrite its runtime. It can request and help specify capabilities. A separate builder and validation pipeline produce toolkit metadata, operation contracts, schemas, and policies. A CapabilityCatalog and policy gate decide what becomes available as registered operations or provider/handoff recommendations.
+Only after projected state exists does Seed reason about downstream capability surfaces:
+
+```text
+Capability -> Operation -> Provider
+```
+
+This means Seed first asks what was observed, what evidence supports it, what facts are currently projected, whether facts conflict or have gone stale, and how the answer can be explained. Capability gaps, registered operations, and provider recommendations remain useful, but they are downstream of the knowledge model rather than the organizing principle.
+
+The growth order is deliberate:
+
+1. Inventory before inference.
+2. Inference before execution.
+3. Execution last.
+
+The model does not get unrestricted power to rewrite its runtime. It can answer from state, ask for missing information, or request a `ToolNeed` that records a capability gap. A separate builder and validation pipeline may produce toolkit metadata, operation contracts, schemas, and policies. A `CapabilityCatalog`, `ToolRegistry`, and policy gate decide what becomes visible as registered-operation candidates or provider/handoff recommendations, and those recommendations still do not imply execution, verification, or availability.
 
 ## Design principles
 
-1. **State before cleverness**  
-   The model should reason over explicit state, not hidden conversational vibes.
+1. **Observation before execution**  
+   Seed should prefer observation and projected knowledge before introducing operations, provider calls, shell access, or host mutation.
 
-2. **Small-model pressure is good**  
-   Design so a small model can succeed: short context, explicit choices, typed actions, deterministic validation.
+2. **Evidence-backed claims**  
+   Facts, explanations, contradictions, and current-state views should be traceable to evidence and `FactSupport`; unsupported claims should remain visible as unsupported rather than silently promoted.
 
-3. **Toolkits are generated products, not prompt tricks**
-   A toolkit is a manifest, capability metadata, operation schemas, policy metadata, integration contracts, tests, documentation, and lifecycle state; operation implementation execution stays with external providers.
+3. **State before cleverness**  
+   The model should reason over explicit projected state, not hidden conversational vibes, implicit provider assumptions, or prompt-only memory.
 
-4. **Desire is not permission**  
-   A model or user can desire an action. Policy decides whether Seed may recommend a non-executable handoff; external providers decide and perform actual execution.
+4. **Explainability by default**  
+   Operator-facing answers should be able to explain what Seed believes, why it believes it, which evidence supports it, and whether projected facts conflict, are stale, or are unsupported.
 
-5. **Generated does not mean trusted**  
-   Generated toolkit candidates must be sandboxed, tested, classified, reviewed when needed, and registered before their operations are visible.
+5. **Small-model pressure is good**  
+   Design so a small model can succeed: compact context, explicit choices, typed actions, deterministic validation, and knowledge surfaces that do not require hidden orchestration.
 
-6. **The runtime does not build itself while running production actions**  
-   Toolkit/capability building is separate from external-provider implementation execution, which Seed does not own.
+6. **Capability resolution is not execution**  
+   `ToolNeed` creation, capability catalog lookup, registered-operation candidate discovery, and provider recommendation are read-only reasoning artifacts until an explicit, policy-governed execution path is invoked.
 
-7. **Every action returns to state**  
-   Answers, questions, ToolNeeds / capability gaps, capability resolution results, external provider evidence, approvals, and generated toolkit artifacts all become durable events. Legacy planning/handoff artifacts may still be projected for historical compatibility, but they are not Core MVP runtime orchestration.
+7. **Least privilege first**  
+   Capability growth should prefer existing projected facts, existing observations, local read-only data, and narrow external read-only sources before considering inference, elevated privilege, or execution.
 
+8. **Every result returns to state**  
+   Answers, questions, observations, evidence, facts, ToolNeeds / capability gaps, capability resolution results, external provider evidence, approvals, and generated toolkit artifacts all become durable events or projected state. Legacy compatibility artifacts may still be projected for historical compatibility, but they are not Core MVP runtime orchestration.
 
 ## Current MVP slice
 
-Seed can now:
+### Seed currently knows how to
 
-- inspect and ingest inputs safely
-- ingest Ansible inventory and Prometheus observations
-- ingest local host observations
+- observe user, file, provider, local host, Ansible inventory, and Prometheus read-api inputs through safe intake paths
 - normalize provider predicates into canonical vocabulary
-- resolve aliases and identity links
 - classify entities through `EntityTypeCatalog`
-- project topology relationships through `RelationshipCatalog`
-- detect graph issues
-- infer deterministic facts through `InferenceCatalog`
-- explain why it believes something
-- summarize current state
-- detect conservative read-only contradictions between projected facts
-- produce ToolNeeds, capability resolution, registered-operation candidates, and provider/handoff recommendations
+- relate topology and dependency facts through `RelationshipCatalog`
+- resolve aliases and identity links
+- project append-only events into current state through `StateProjector` and `ProjectionStore`
+- explain why it believes a projected fact through evidence, provenance, support links, recursive inference, alias resolution, ambiguity, and conflicts
+- inventory current facts, observations, requirements, capabilities, issues, evidence, entity types, relationships, graph issues, unsupported facts, and capability verification status vocabulary
+- surface conservative read-only contradictions between projected facts without resolving them by mutation
+- track temporal state through current projection, latest measurement semantics, timestamps, expiry, stale filtering, and refresh recommendations
+- infer deterministic facts through `InferenceCatalog` while keeping inference separate from observation
+- resolve capabilities into `ToolNeeds`, registered-operation candidates, and provider/handoff recommendations downstream of projected knowledge
 
-Seed still does **not** own:
+### Seed currently does not own
 
-- shell execution
+- execution as a general automation engine
 - host mutation
-- secrets
+- workflow orchestration
 - scheduling
-- retries
-- internal workflow execution
-- RuntimeLoop or any second runtime orchestration path
 - authorization workflows or action-plan orchestration
+- provider implementations
+- shell access or arbitrary shell commands
+- secrets
+- retries
+- RuntimeLoop or any second runtime orchestration path
 - Prometheus history
 - Ansible, Temporal, AWX, MCP, or manual-provider execution
 
 ## Document map
 
-Read in this order:
+Read in this order for the current knowledge-first architecture:
 
-1. [`01-architecture.md`](01-architecture.md) — system overview and component boundaries.
-2. [`02-domain-model.md`](02-domain-model.md) — names and core objects.
-3. [`03-runtime-loop.md`](03-runtime-loop.md) — event-to-context-to-decision handoff loop.
-4. [`04-toolkit-system.md`](04-toolkit-system.md) — generated toolkit format and lifecycle.
-5. [`05-policy-and-safety.md`](05-policy-and-safety.md) — trust boundaries, risk classes, approval model.
-6. [`06-context-engine.md`](06-context-engine.md) — how to build model context packets.
-7. [`07-builder-service.md`](07-builder-service.md) — separate toolkit builder design.
-8. [`08-small-model-strategy.md`](08-small-model-strategy.md) — designing for small local models and model tiers.
-9. [`09-pseudocode.md`](09-pseudocode.md) — implementation sketches.
-10. [`10-build-plan.md`](10-build-plan.md) — multi-day Codex session plan.
-11. [`11-naming.md`](11-naming.md) — better names and terms to avoid.
-12. [`12-open-questions.md`](12-open-questions.md) — decisions to make while building.
-13. [`13-knowledge-and-evidence.md`](13-knowledge-and-evidence.md) — evidence-to-fact pipeline and knowledge source trust classes.
+1. [`docs/architecture.md`](docs/architecture.md) — generated system architecture, ownership, and component boundaries.
+2. [`docs/invariants.md`](docs/invariants.md) — runtime, execution, projection, capability, verification, and quarantine invariants.
+3. [`docs/reasoning_roadmap.md`](docs/reasoning_roadmap.md) — accepted Core MVP reasoning boundaries and next foundation areas.
+4. [`docs/capability_extension_methodology.md`](docs/capability_extension_methodology.md) — how to grow capabilities from narrow observations and evidence.
+5. [`docs/capability_verification_vocabulary.md`](docs/capability_verification_vocabulary.md) — vocabulary for requested, known, candidate, provider-recommended, and verified capabilities.
+6. [`docs/availability_vocabulary_audit.md`](docs/availability_vocabulary_audit.md) — availability, reachability, and local-configuration boundaries.
+7. [`docs/roadmap_reconciliation.md`](docs/roadmap_reconciliation.md) — reconciliation of implemented, partial, and missing reasoning capabilities.
+8. [`docs/contradiction_handling_audit.md`](docs/contradiction_handling_audit.md) and [`docs/temporal_reasoning_audit.md`](docs/temporal_reasoning_audit.md) — current contradiction and temporal semantics.
 
 ## Suggested repo shape
 
@@ -144,13 +179,19 @@ seed/
 
 ## Runtime architecture update
 
-Seed is not primarily an agent framework. It is a state engine / distributed state machine whose core loop is:
+Seed is not primarily an agent framework. Its knowledge architecture is:
+
+```text
+Observation -> Evidence -> Fact -> State -> Explanation
+```
+
+Its runtime architecture consumes projected knowledge:
 
 ```text
 Input -> EventLedger -> State Projection -> Context Composer -> DecisionProvider -> Decision Validation -> PolicyGate / ToolExecutionPolicyService -> ToolExecutor registered operation or Answer -> New Events
 ```
 
-The provider proposes; the runtime validates; `PolicyGate` / `ToolExecutionPolicyService` govern whether execution may proceed; `ToolRegistry` exposes registered operation contracts; and `ToolExecutor` executes registered operations. `CapabilityCatalog` provides non-executable provider/handoff recommendations. Raw provider output is never executed, LLMs are optional, generated toolkit operations are not active by default, and Seed does not run shell commands or arbitrary host mutation. `DecisionJournal` records decision reason, context hash, selected operation/tool, policy status, final outcome, and errors as append-only events so future `--why`, audit, explain, impact, relationship, graph issue, and verification commands can explain both what happened and why.
+The provider proposes; the runtime validates; `PolicyGate` / `ToolExecutionPolicyService` govern whether execution may proceed; `ToolRegistry` exposes registered operation contracts; and `ToolExecutor` executes registered operations. `CapabilityCatalog` provides non-executable provider/handoff recommendations. Runtime decisions are made from projected state and compact context, not from a separate planner or RuntimeLoop. Raw provider output is never executed, LLMs are optional, generated toolkit operations are not active by default, and Seed does not run shell commands or arbitrary host mutation. `DecisionJournal` records decision reason, context hash, selected operation/tool, policy status, final outcome, and errors as append-only events so future `--why`, audit, explain, impact, relationship, graph issue, and verification commands can explain both what happened and why.
 
 ## Mental model
 
@@ -163,22 +204,41 @@ User -> API route -> hardcoded workflow -> provider call
 And more like this:
 
 ```text
-User -> event -> state -> context -> model decision -> validated action -> state
+User -> Observation -> Evidence -> Fact -> State -> Explanation -> Response
 ```
 
-The API is not the center. The context loop is the center, and the context loop depends on a more fundamental knowledge loop:
+The API is not the center. The context loop depends on a more fundamental knowledge loop:
 
 ```text
-Events -> projected State -> Evidence Graph -> Fact explanations
-Events -> projected State -> Evidence Graph -> Contradiction Detection
-Evidence -> Facts -> State -> Decisions -> Operations / Handoffs
+Observations -> Evidence Graph -> Facts -> projected State -> Fact explanations
+Observations -> Evidence Graph -> Facts -> projected State -> Contradiction Detection
+Projected State -> Decisions -> Answers / ToolNeeds / Registered Operation Candidates / Provider Recommendations
 ```
 
-Operations and provider handoffs are how Seed observes and acts. Evidence, facts, state, the read-only Evidence Graph, and read-only Contradiction Detection are how Seed knows what is true enough to decide, why a fact is believed, whether a fact is unsupported, and whether projected facts conflict. Contradictions are not resolutions: Seed reports that facts cannot both be true and shows evidence for each side, but it does not choose a winner or mutate state.
+Registered operations and provider handoffs are downstream capability surfaces. Evidence, facts, state, the read-only Evidence Graph, and read-only Contradiction Detection are how Seed knows what is true enough to answer, why a fact is believed, whether a fact is unsupported, and whether projected facts conflict. Contradictions are not resolutions: Seed reports that facts cannot both be true and shows evidence for each side, but it does not choose a winner or mutate state.
+
+## Capability Growth
+
+New capabilities should follow the [Capability Extension Methodology](docs/capability_extension_methodology.md): start from a knowledge gap, reduce it to the narrowest answerable question, and prefer the least-privileged observation source that can support the narrowest fact.
+
+```text
+Capability Gap
+  -> Required Question
+  -> Narrowest Fact
+  -> Least-Privileged Source
+  -> Read-Only Observation
+  -> Observation
+  -> Evidence
+  -> Fact
+  -> Projection
+  -> Explanation
+```
+
+Capability growth should prefer local observations, read-only sources, narrow facts, and explicit evidence before introducing inference or execution behavior. A new capability should not require write access, provider mutation, shell execution, network probing, runtime changes, or `ToolExecutor` changes unless the extension is explicitly reviewed as execution work rather than observation work.
 
 ## Local model development CLI
 
-Seed includes a maintained local runtime CLI for testing the current runtime loop with local models through Ollama's `/api/generate` endpoint. The CLI builds the same intent-first decision path used by the runtime (`IntentDecisionModel` + `TextIntentClassifier` + `IntentPromptModelClient`) and loads the core echo toolkit, so local testing tracks repository code changes instead of relying on a separate local-only script.
+Seed includes a maintained local runtime CLI for testing the current runtime path with local models through Ollama's `/api/generate` endpoint. The CLI builds the same intent-first decision path used by the runtime (`IntentDecisionModel` + `TextIntentClassifier` + `IntentPromptModelClient`) and loads the core echo toolkit, so local testing tracks repository code changes instead of relying on a separate local-only script.
 
 Start Ollama and pull a small model if needed:
 
@@ -274,7 +334,7 @@ curl -s http://127.0.0.1:8765/message \
   -d '{"message":"echo hello"}'
 ```
 
-Normal CLI and HTTP responses are JSON objects with `response` and `events`. `--raw` prints the raw model completion so you can debug the local model's intent JSON before Seed parses it. The CLI and HTTP paths use `Runtime`, the single canonical runtime orchestration path. Runtime trace support is intentionally read-only: `RuntimeTrace` reconstructs a single recorded run from ledger events. The maintained CLI exposes two plain-text views over that reader for completed runs stored in the event ledger:
+Normal CLI and HTTP responses are JSON objects with `response` and `events`. `--raw` prints the raw model completion so you can debug the local model's intent JSON before Seed parses it. The CLI and HTTP paths use `Runtime`, the single canonical runtime path. Runtime trace support is intentionally read-only: `RuntimeTrace` reconstructs a single recorded run from ledger events. The maintained CLI exposes two plain-text views over that reader for completed runs stored in the event ledger:
 
 ```bash
 python scripts/seed_local.py --db seed.sqlite --trace-run evt_000001
