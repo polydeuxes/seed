@@ -53,6 +53,19 @@ class ToolContext:
 
 
 class ToolExecutor:
+    __seed_arch__ = {
+        "owner": "registered_tool_execution",
+        "layer": "execution",
+        "summary": "Executes only registered tool operations after validation and policy checks.",
+        "edges": [
+            {"to": "ToolRegistry", "label": "requires registered operation"},
+            {"to": "StateProjector", "label": "state factory for policy"},
+            {"to": "EventLedger", "label": "records tool call events"},
+            {"to": "RegisteredOperation", "label": "may execute registered operation"},
+        ],
+        "events": ["tool.call.started", "tool.call.completed", "tool.call.failed"],
+    }
+
     def __init__(
         self,
         ledger: EventLedger,

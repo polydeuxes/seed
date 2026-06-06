@@ -671,6 +671,16 @@ class State:
 
 class StateProjector:
     """Rebuild current inspectable state from ledger events."""
+    __seed_arch__ = {
+        "owner": "state_projection",
+        "layer": "state",
+        "summary": "Rebuilds inspectable state by applying ledger events and deriving projection indexes.",
+        "edges": [
+            {"to": "EventLedger", "label": "reads append-only events"},
+            {"to": "GraphValidator", "label": "validates projected graph"},
+            {"to": "State", "label": "produces projected state"},
+        ],
+    }
 
     def __init__(
         self,

@@ -16,6 +16,19 @@ from seed_runtime.capabilities import slugify
 
 
 class ToolNeedService:
+    __seed_arch__ = {
+        "owner": "tool_need_capability_resolution",
+        "layer": "runtime_service",
+        "summary": "Owns capability-gap creation and read-only capability resolution for request_tool decisions.",
+        "edges": [
+            {"to": "EventLedger", "label": "records tool_need events", "path": "request_tool"},
+            {"to": "StateProjector", "label": "checks existing needs", "path": "request_tool"},
+            {"to": "CapabilityCatalog", "label": "may suggest providers/handoffs", "path": "request_tool"},
+            {"to": "ToolRegistry", "label": "may expose registered operations", "path": "request_tool"},
+        ],
+        "events": ["tool_need.created", "tool_need.status_changed"],
+    }
+
     def __init__(self, ledger: EventLedger, projector: StateProjector) -> None:
         self.ledger = ledger
         self.projector = projector

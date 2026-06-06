@@ -57,6 +57,15 @@ class ProjectionSnapshot:
 
 class ProjectionStore(Protocol):
     """Backend-independent store for projected-state snapshots."""
+    __seed_arch__ = {
+        "owner": "projection_cache",
+        "layer": "state",
+        "summary": "Stores reusable projected-state snapshots derived from the event ledger.",
+        "edges": [
+            {"to": "StateProjector", "label": "used when snapshot is stale"},
+            {"to": "State", "label": "loads/saves projected snapshot"},
+        ],
+    }
 
     def load_snapshot(
         self, workspace_id: str, projection_name: str, projection_version: str
