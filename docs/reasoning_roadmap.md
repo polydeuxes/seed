@@ -309,3 +309,23 @@ Example observations/facts:
 
 Design a read-only `RepositoryObservationSource`, but do not implement it unless
 explicitly requested later.
+
+## Seed Prompting Principles
+
+Seed-generated work requests should follow the Codex Prompt Protocol in
+`docs/codex_prompt_protocol.md`. The protocol preserves the narrative-first
+structure that has kept recent Seed work aligned with the accepted architecture:
+context before implementation, ownership before placement, non-goals before
+expansion, and constraints before tasks.
+
+Future prompt generation should preserve:
+
+- context;
+- ownership;
+- non-goals;
+- constraints;
+- test requirements.
+
+This note is documentation only. It does not implement prompt generation,
+automatic prompt construction, LLM orchestration, runtime behavior, or
+`ToolExecutor` behavior.
