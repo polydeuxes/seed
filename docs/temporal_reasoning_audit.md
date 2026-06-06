@@ -14,6 +14,12 @@ Seed has an explicit but narrow temporal model today:
 
 The main temporal gap is that Seed can answer "what is true now?" and "why now?" from the latest projection, but cannot answer as-of questions such as "what was true at event N?" or "what was true at timestamp T?" through a supported API or CLI. Because projection already replays ordered events deterministically, the smallest safe next step is documentation plus characterization tests that explicitly pin event-order/current-state behavior, out-of-order timestamp behavior, and measurement latest-current semantics before designing any read-only as-of projection helper.
 
+# Characterization Test Status
+
+Temporal characterization tests have been implemented to pin the current behavior described in this audit without adding temporal features. The tests cover event-append-order projection, out-of-order event timestamp behavior, deterministic latest projection, durable fact retention/support/provenance, measurement latest-current and debug-history retention, stale fact filtering/recommendations, and `ProjectionStore` latest-current cache behavior.
+
+These tests are intentionally characterization-only: they do not add temporal behavior, do not add an as-of projection API, and do not change `StateProjector`, `Runtime`, `ToolExecutor`, or CLI semantics. As-of event projection, as-of timestamp projection, belief timelines, why-then explanations, and semantic what-changed timelines remain future work.
+
 # Current Temporal Model
 
 ## Timestamps that exist
