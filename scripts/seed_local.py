@@ -95,6 +95,7 @@ from seed_runtime.observation_sources import (
 )
 from seed_runtime.observations import ObservationIngestor
 from seed_runtime.registry import ToolRegistry
+from seed_runtime.rule_inventory import collect_rule_inventory
 from seed_runtime.runtime import Runtime
 from seed_runtime.runtime_trace import RuntimeTrace, load_runtime_trace
 from seed_runtime.serialization import to_plain
@@ -836,6 +837,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--show-inference-catalog",
         action="store_true",
         help="print deterministic inference rules, then exit",
+    )
+    parser.add_argument(
+        "--rules",
+        "--explain-rules",
+        dest="rules",
+        action="store_true",
+        help=(
+            "print Seed's read-only deterministic rule inventory as JSON, "
+            "then exit; does not project state, append events, or execute tools"
+        ),
     )
     parser.add_argument(
         "--verbose-observations",
@@ -3401,6 +3412,12 @@ def format_inference_catalog(catalog: InferenceCatalog) -> str:
     return "\n".join(lines)
 
 
+def format_rule_inventory(entries: list[Any]) -> str:
+    """Format deterministic rule inventory entries as stable JSON."""
+
+    return json.dumps(to_plain(entries), indent=2, sort_keys=True)
+
+
 def format_inferred_facts(state: State, entity: str) -> str:
     """Format inferred projection artifacts for an entity."""
 
@@ -3545,6 +3562,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.show_inference_catalog:
         print(format_inference_catalog(InferenceCatalog.load()))
+        return 0
+
+    if args.rules:
+        print(format_rule_inventory(collect_rule_inventory()))
         return 0
 
     if args.trace_run:
