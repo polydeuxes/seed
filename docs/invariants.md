@@ -45,6 +45,17 @@ readable documentation today and executable architecture checks over time.
 - Evidence-like objects are not verified capabilities without a scoped
   verification status model.
 
+## Capability extension invariants
+
+- Observation must not imply execution.
+- Observation must not imply availability.
+- Capability resolution must not imply verification.
+- Write access must not be required for observation.
+- Prefer least-privileged observation sources.
+- Observation must not claim more than the selected source directly supports.
+- Read-only observation must remain separate from mutation, provider calls, and
+  registered-operation execution.
+
 ## Capability verification invariants
 
 - Capability verification is not implemented in the current runtime.
