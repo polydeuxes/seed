@@ -326,8 +326,8 @@ These remain primarily to project/read old events or support old traces:
 
 1. **`operation` means two different things**
    - `ToolSpec` is a registered callable operation contract with implementation and schemas.
-   - `CapabilityRecommendation.operation` is provider/handoff metadata.
-   - Risk: provider operation names may be mistaken for executable registered operations. `ToolNeedService.resolve_capability` currently keeps the boundary clear by sourcing registered operations only from `ToolRegistry`.
+   - `CapabilityRecommendation.operation` is provider/handoff metadata only: it is not executable and is not a `ToolRegistry` operation unless separately registered as a `ToolSpec`.
+   - Risk: provider/handoff operation metadata strings may be mistaken for executable registered operations. `ToolNeedService.resolve_capability` currently keeps the boundary clear by sourcing registered operations only from `ToolRegistry`.
 
 2. **`PendingAction` vs `ExecutionAuthorization`**
    - `PendingAction` is part of canonical ToolExecutor policy outcome/resume flow.
@@ -349,7 +349,7 @@ These remain primarily to project/read old events or support old traces:
    - RuntimeLoop has its own `Decision` and `RuntimeLoopDecisionValidator`.
 
 6. **Documentation drift remains in older audit docs**
-   - `docs/runtime_reassessment.md` still says default CLI/HTTP paths use RuntimeLoop, which contradicts current `build_local_app` wiring to `Runtime`.
+   - Historical audit finding: `docs/runtime_reassessment.md` previously said default CLI/HTTP paths use RuntimeLoop, which contradicted current `build_local_app` wiring to `Runtime`; the cleanup now marks that wording stale/quarantined.
    - This appears to be stale audit documentation, not current code behavior.
 
 7. **Tests still exercise quarantined artifacts**
@@ -397,7 +397,7 @@ Do **not** delete now. Candidate status means “appears removable later after m
 Smallest safe next cleanup step:
 
 1. **Documentation cleanup only, no behavior change**
-   - Update stale audit docs that still present RuntimeLoop as default/current. `docs/runtime_reassessment.md` is the clearest example because it says default CLI/HTTP use RuntimeLoop while current `build_local_app` constructs `Runtime`.
+   - Keep stale audit docs quarantined whenever they present RuntimeLoop as default/current. `docs/runtime_reassessment.md` is marked as historical because it previously said default CLI/HTTP use RuntimeLoop while current `build_local_app` constructs `Runtime`.
 
 2. **Then quarantine-by-test-marker cleanup**
    - Ensure all RuntimeLoop tests are consistently marked experimental/quarantined.

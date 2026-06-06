@@ -21,7 +21,7 @@ A toolkit contains:
 - examples
 - validation metadata
 
-A toolkit is not just a Python file. The contract is as important as the implementation, and a provider name such as Prometheus or SSH should not be collapsed into a single tool. Providers expose implementations; operations are the callable surfaces that Seed may register and policy-check.
+A toolkit is not just a Python file. The contract is as important as the implementation, and a provider name such as Prometheus or SSH should not be collapsed into a single tool. Providers expose implementations; operations are the callable surfaces that Seed may register and policy-check. Capability metadata can describe or suggest operations, but only `ToolRegistry` exposure plus `ToolExecutor` dispatch makes a registered operation executable in Seed.
 
 ## Directory layout
 
@@ -49,6 +49,8 @@ toolkits/
 
 ## Toolkit manifest
 
+Current-core manifests attach `capabilities: [...]` to each operation, observation source, or handoff provider as per-tool operation metadata. Do not model a top-level `capabilities:` list as the current executable surface; top-level capability catalogs, when present in historical artifacts, are non-executable catalog metadata only.
+
 Example `toolkit.yaml`:
 
 ```yaml
@@ -63,12 +65,6 @@ generated_by:
   builder: seed-builder
   builder_version: 0.1.0
   tool_need_id: need_install_ssh_server
-
-capabilities:
-  - name: ssh_access
-    summary: Host accepts SSH login with approved credentials.
-    entity_kinds: [host]
-    observation_source: observe_ssh_access
 
 policy_actions:
   - name: ssh.verify
@@ -85,6 +81,7 @@ policy_actions:
 observation_sources:
   - name: observe_ssh_access
     summary: Observe whether SSH daemon appears installed, running, and reachable from reported provider evidence.
+    capabilities: [ssh_access]
     implementation: observation_sources:observe_ssh_access
     input_schema: schemas/observe_ssh_access.input.json
     output_schema: schemas/observe_ssh_access.output.json
@@ -97,6 +94,7 @@ observation_sources:
 handoff_providers:
   - name: install_ssh_server
     summary: Prepare a non-executable external-provider handoff to install and start OpenSSH server on a Linux host.
+    capabilities: [ssh_access]
     backend_types: [ansible, manual]
     target_schema: schemas/install_ssh_server.target.json
     policy_action: ssh.install

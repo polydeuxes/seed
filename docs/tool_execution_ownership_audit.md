@@ -1,5 +1,7 @@
 # Operation Implementation Execution Ownership Audit
 
+> **Stale/quarantined RuntimeLoop-era audit.** Preserve this as historical analysis of a deprecated experimental path. Current architecture treats `Runtime` as canonical: only `call_tool` enters `ToolExecutor`, and `ToolExecutor` executes only registered `ToolRegistry` operations. RuntimeLoop-specific dispatcher recommendations below are not current-core guidance unless revived by a future architecture decision.
+
 ## Scope
 
 This audit compares the registered `ToolExecutor` path with the remaining

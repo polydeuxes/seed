@@ -1,5 +1,8 @@
 # Policy approval and pending-action inventory
 
+> **Stale/quarantined RuntimeLoop-era inventory.** Current architecture treats `Runtime` as canonical and `RuntimeLoop` as deprecated/experimental, not CLI/API/default behavior. References to legacy/old Runtime or RuntimeLoop migration are historical audit wording, not current-core guidance; current architecture treats Runtime as canonical.
+
+
 This is a source-file-based inventory only. It documents current behavior for policy evaluation, approval, pending actions, and approved-action resume. It intentionally proposes no implementation, refactor, runtime behavior change, test change, or event change.
 
 
@@ -10,7 +13,7 @@ Recent Strategy B extractions moved duplicated lookup, validation, recommendatio
 ### `ToolRecommendationService`
 
 - **Behavior moved:** recommendation lookup against `CapabilityCatalog` and ranking through `RecommendationRanker` are now centralized in a read-only service. It does not create providers, register tools, append events, or mutate state. [`seed_runtime/tool_recommendations.py:11-35`](../seed_runtime/tool_recommendations.py#L11-L35)
-- **Runtime path using it:** legacy `Runtime` builds the service from its capability catalog and uses it when `request_tool` creates a `ToolNeed`; it exposes the service ranker through `recommendation_ranker` for compatibility. [`seed_runtime/runtime.py:56-62`](../seed_runtime/runtime.py#L56-L62) [`seed_runtime/runtime.py:275-290`](../seed_runtime/runtime.py#L275-L290)
+- **Runtime path using it:** canonical `Runtime` (called legacy in this historical audit) builds the service from its capability catalog and uses it when `request_tool` creates a `ToolNeed`; it exposes the service ranker through `recommendation_ranker` for compatibility. [`seed_runtime/runtime.py:56-62`](../seed_runtime/runtime.py#L56-L62) [`seed_runtime/runtime.py:275-290`](../seed_runtime/runtime.py#L275-L290)
 - **RuntimeLoop path using it:** `RuntimeLoop` accepts/defaults a recommendation service and uses it after projecting state for a request-tool decision. [`seed_runtime/runtime_loop.py:136-148`](../seed_runtime/runtime_loop.py#L136-L148) [`seed_runtime/runtime_loop.py:294-308`](../seed_runtime/runtime_loop.py#L294-L308)
 - **Behavior still different:** tool-need creation, event/journal vocabulary, result types, and catalog ownership remain runtime-specific; this service does not affect approval or pending-action behavior. [`seed_runtime/tool_needs.py:28-55`](../seed_runtime/tool_needs.py#L28-L55) [`seed_runtime/runtime_loop.py:274-322`](../seed_runtime/runtime_loop.py#L274-L322)
 - **Files involved:** `seed_runtime/tool_recommendations.py`, `seed_runtime/runtime.py`, `seed_runtime/runtime_loop.py`, `seed_runtime/capability_catalog.py`, `seed_runtime/recommendation_ranker.py`, and `tests/test_tool_recommendations.py`.
@@ -122,7 +125,7 @@ Source files:
 - `seed_runtime/policy.py`
 - `seed_runtime/state.py`
 
-The old `Runtime` delegates tool calls to `ToolExecutor.execute()` from the `call_tool` decision route in `seed_runtime/runtime.py`.
+The canonical `Runtime` (called old in this historical audit) delegates tool calls to `ToolExecutor.execute()` from the `call_tool` decision route in `seed_runtime/runtime.py`.
 
 ### Allow behavior
 
@@ -280,7 +283,7 @@ Important behavior: resume does **not** call `PolicyGate.evaluate()` again. The 
 
 ### Runtime emitted events for this flow
 
-The old `Runtime` also emits its regular user/model routing events around the `ToolExecutor` flow, for example:
+The canonical `Runtime` (called old in this historical audit) also emits its regular user/model routing events around the `ToolExecutor` flow, for example:
 
 - `input.user_message`
 - `model.decision.proposed`
@@ -436,7 +439,7 @@ Coverage gap in tests: no RuntimeLoop test explicitly feeds `PolicyDecision.outc
 
 ## 6. Gaps: RuntimeLoop compared to Runtime / ToolExecutor
 
-RuntimeLoop currently lacks these old Runtime / ToolExecutor behaviors:
+RuntimeLoop currently lacks these canonical Runtime (called old in this historical audit) / ToolExecutor behaviors:
 
 1. Separate routing for `block` vs `require_confirmation` vs `require_approval`.
 2. `tool.approval.required` emission for confirmation / approval outcomes.
@@ -462,7 +465,7 @@ Possible responsibility:
 
 - Accept a `PolicyDecision`, tool metadata, arguments, scope, run/session/correlation ids, and caller flavor.
 - Route `allow`, `block`, `require_confirmation`, and `require_approval` distinctly.
-- Normalize result shape and event choices for old Runtime and RuntimeLoop, if parity is desired.
+- Normalize result shape and event choices for canonical Runtime (called old in this historical audit) and RuntimeLoop, if parity is desired.
 
 Current source seams:
 
@@ -508,13 +511,13 @@ Current source seams that remain:
 
 ## 8. Risks if RuntimeLoop replaced Runtime today for policy / approval flows
 
-Shared recommendation lookup/ranking, shared tool validation, and shared validation-plus-policy-evaluation sequencing are no longer gaps by themselves. If RuntimeLoop replaced old Runtime / ToolExecutor for policy and approval flows today, the remaining risks are semantic and contract-level: confirmation/approval pending actions, approved-action resume, retry handling, `ask_question`/`refuse`, `state_patch`, and context budgeting.
+Shared recommendation lookup/ranking, shared tool validation, and shared validation-plus-policy-evaluation sequencing are no longer gaps by themselves. If RuntimeLoop replaced canonical Runtime (called old in this historical audit) / ToolExecutor for policy and approval flows today, the remaining risks are semantic and contract-level: confirmation/approval pending actions, approved-action resume, retry handling, `ask_question`/`refuse`, `state_patch`, and context budgeting.
 
 ### Current recommended next step
 
 Continue Strategy B. Do not delete `Runtime`, do not migrate the CLI yet, and choose next candidates by auditing semantic gaps rather than infrastructure duplication. Possible next candidates are auditing `state_patch` behavior, auditing retry/parse-failure behavior, auditing `ask_question`/`refuse` semantics, and deciding whether approval/resume should remain Runtime-only or become shared.
 
-If RuntimeLoop replaced old Runtime / ToolExecutor for policy and approval flows today, source inspection indicates these risks:
+If RuntimeLoop replaced canonical Runtime (called old in this historical audit) / ToolExecutor for policy and approval flows today, source inspection indicates these risks:
 
 1. L2 confirmation flows would become hard policy denials instead of pending actions awaiting confirmation.
 2. L3 approval flows would become hard policy denials instead of pending actions awaiting approval.

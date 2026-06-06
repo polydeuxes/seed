@@ -1,5 +1,8 @@
 # Pending-action lifecycle and approved-action resume inventory
 
+> **Stale/quarantined RuntimeLoop-era inventory.** Current architecture treats `Runtime` as canonical and `RuntimeLoop` as deprecated/experimental, not CLI/API/default behavior. References to legacy/old Runtime or RuntimeLoop migration are historical audit wording, not current-core guidance; current architecture treats Runtime as canonical.
+
+
 This is a source-file-based inventory only. It documents current behavior for pending confirmation/approval, pending-action status transitions, and approved-action resume. It intentionally proposes no implementation, refactor, runtime behavior change, CLI/API behavior change, test change, or event change.
 
 ## Scope and source files inspected
@@ -259,9 +262,9 @@ Current exactly-once behavior is status-based, not lock-based:
 
 ## 7. Runtime vs RuntimeLoop
 
-### Legacy `Runtime` / `ToolExecutor`
+### Canonical `Runtime` / `ToolExecutor` (called legacy in this historical inventory)
 
-Legacy `Runtime` owns a `ToolExecutor` dependency. [`seed_runtime/runtime.py:37-55`](../seed_runtime/runtime.py#L37-L55) For `call_tool`, `_route()` calls `ToolExecutor.execute()` with workspace, session, tool name, decision arguments, and causation id, then maps the `ToolCallResult` kind/message/payload into `RuntimeResponse`. [`seed_runtime/runtime.py:298-310`](../seed_runtime/runtime.py#L298-L310)
+Canonical `Runtime` owns a `ToolExecutor` dependency (this historical inventory previously called it legacy). [`seed_runtime/runtime.py:37-55`](../seed_runtime/runtime.py#L37-L55) For `call_tool`, `_route()` calls `ToolExecutor.execute()` with workspace, session, tool name, decision arguments, and causation id, then maps the `ToolCallResult` kind/message/payload into `RuntimeResponse`. [`seed_runtime/runtime.py:298-310`](../seed_runtime/runtime.py#L298-L310)
 
 `ToolExecutor` implements the complete current pending-action lifecycle subset:
 
@@ -310,7 +313,7 @@ Current user-facing pending-action capabilities through CLI:
 
 ### API (`seed_runtime/api.py`)
 
-`SeedAPI` wraps RuntimeLoop and exposes only:
+Historical note: this audit described `SeedAPI` as wrapping RuntimeLoop. Current architecture uses canonical Runtime; the historical inventory exposed only:
 
 - `post_user_message()`
 - `get_state()`
@@ -325,7 +328,7 @@ Current user-facing pending-action capabilities through this API shell:
 - Resume pending actions: not exposed.
 - Cancel pending actions: not exposed.
 
-Because the API posts messages through RuntimeLoop, policy-gated RuntimeLoop tool calls currently return policy denial rather than creating pending actions. [`seed_runtime/api.py:23-32`](../seed_runtime/api.py#L23-L32) [`seed_runtime/runtime_loop.py:440-484`](../seed_runtime/runtime_loop.py#L440-L484)
+Historical note: this audit described API messages as going through RuntimeLoop; current architecture uses canonical Runtime. In that historical path, policy-gated RuntimeLoop tool calls currently return policy denial rather than creating pending actions. [`seed_runtime/api.py:23-32`](../seed_runtime/api.py#L23-L32) [`seed_runtime/runtime_loop.py:440-484`](../seed_runtime/runtime_loop.py#L440-L484)
 
 ## 9. Test coverage
 
@@ -359,7 +362,7 @@ Because the API posts messages through RuntimeLoop, policy-gated RuntimeLoop too
 
 ## 10. Migration risk
 
-If legacy `Runtime` / `ToolExecutor` pending-action lifecycle were removed before RuntimeLoop parity exists, current source behavior would lose or change these capabilities:
+If canonical `Runtime` (called legacy in this historical audit) / `ToolExecutor` pending-action lifecycle were removed before RuntimeLoop parity exists, current source behavior would lose or change these capabilities:
 
 - L2 `require_confirmation` and L3 `require_approval` tool calls would no longer create durable `PendingAction` records; RuntimeLoop currently records policy denial instead. [`seed_runtime/execution.py:291-312`](../seed_runtime/execution.py#L291-L312) [`seed_runtime/runtime_loop.py:440-484`](../seed_runtime/runtime_loop.py#L440-L484)
 - Existing `tool.approval.required` and `pending_action.created` event consumers/tests would lose those events on policy-gated calls. [`tests/test_pending_actions.py:23-52`](../tests/test_pending_actions.py#L23-L52)
