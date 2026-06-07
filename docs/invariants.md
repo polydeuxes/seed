@@ -25,8 +25,19 @@ readable documentation today and executable architecture checks over time.
 - `EventLedger` owns append-only events.
 - `ProjectionStore` owns cached projected-state snapshots.
 - `StateProjector` owns projection from events to current state.
+- Projection replays events in ledger append/insertion order, not timestamp order.
+- Event, observation, evidence, fact, support, and projection timestamps are
+  provenance, freshness, expiry, or cache metadata; they must not be treated as a
+  supported projection-ordering or as-of query mechanism.
+- `ProjectionStore` stores latest-current snapshots only and invalidates by latest
+  event ID/projection identity mismatch, not timestamp comparison.
 - `ProjectionStore` must not append events.
 - `EventLedger` must not store projection snapshots.
+- Expiry and stale views must not mutate stored facts, lower stored confidence, or
+  append refresh events.
+- Measurement predicates expose latest-current samples by default; retained
+  measurement history is bounded debug/read-only history, not current truth
+  arbitration.
 
 ## Capability invariants
 
@@ -49,6 +60,8 @@ readable documentation today and executable architecture checks over time.
 
 - Observation must not imply execution.
 - Observation must not imply availability.
+- Local configuration must not imply availability, reachability, health, internet
+  access, or provider visibility.
 - Observing a hostname must not imply DNS validity.
 - Observing a hostname must not imply reachability.
 - Observing a hostname must not imply availability.
@@ -56,6 +69,19 @@ readable documentation today and executable architecture checks over time.
 - Observing a boot ID must not imply availability.
 - Observing a FQDN must not imply DNS success or reachability.
 - Observing a listening port must not imply endpoint availability.
+- Observing a configured network interface must not imply carrier, assigned
+  address, neighbor reachability, gateway reachability, or host availability.
+- Observing an interface `operstate=up` must not imply `availability_status=up`.
+- Observing an assigned `ip_address` must not imply endpoint availability, remote
+  routability, duplicate-address success, or network reachability.
+- Observing a default route or `default_gateway` must not imply gateway existence,
+  gateway reachability, packet forwarding, DNS success, or internet access.
+- Observing a `dns_resolver`, `dns_resolver_stub`, or
+  `dns_resolver_upstream` must not imply resolver reachability, DNS query
+  success, or DNS availability.
+- Observing a local network segment must not imply neighbor existence, subnet
+  occupancy, gateway reachability, or scanning.
+- Observation must not imply management.
 - Observing a package must not imply ownership.
 - Observing a process must not imply management.
 - Observing a container must not imply orchestration.

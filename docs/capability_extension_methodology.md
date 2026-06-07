@@ -199,6 +199,43 @@ A capability extension should stop at the first source that can answer the
 narrowest fact. If a broader source is selected, the design should document why
 narrower and less-privileged sources are insufficient.
 
+
+## Local Observation Negative Space
+
+`docs/capability_extension_methodology.md` is the canonical home for local
+observation negative-space rules. Local observation records local configuration
+or local kernel/process state only. It must not silently promote configuration
+into reachability, availability, management, orchestration, ownership, provider
+visibility, or verification.
+
+The guiding rule is: **local configuration is evidence of local configuration
+only**. Stronger claims require separate scoped evidence from a source that is
+allowed to observe that stronger property.
+
+Local network examples:
+
+| Local observation | Means | Must not imply |
+| --- | --- | --- |
+| `network_interface` | The local OS exposes an interface name. | Carrier, address assignment, remote reachability, host availability, or neighbor existence. |
+| `interface_operstate` | The local kernel reports an operational state for that interface. | Gateway reachability, internet access, endpoint health, or `availability_status=up`. |
+| `ip_address` with interface/address-family metadata | An address is configured locally. | External routability, duplicate-address success, endpoint availability, or packet exchange. |
+| `default_gateway` | The local route table has a default route/gateway entry. | Gateway existence, ARP/NDP/ICMP/TCP/DNS response, forwarding, or internet access. |
+| `dns_resolver`, `dns_resolver_stub`, `dns_resolver_upstream` | Local resolver configuration names a resolver. | Resolver reachability, successful DNS queries, recursion, authority, DNS availability, or internet access. |
+| `local_network_segment` when modeled | A local address and trusted prefix place the address in a CIDR prefix. | Neighbor existence, subnet occupancy, scanning, gateway presence, or broadcast/multicast success. |
+
+Observation absence should not become a negative operational fact. Missing local
+configuration or missing reachability evidence should render as unknown where a
+read model needs display language; it should not emit `down`,
+`availability_status=unknown`, or failure facts for neighbors, gateways, DNS
+resolvers, internet access, or remote hosts unless a scoped observation actually
+supports that status.
+
+Local observation is not management. Observing a process, package, container,
+interface, resolver, route, or address does not mean Seed owns it, can change it,
+can restart it, can orchestrate it, or should execute remediation. Mutation and
+management belong to explicitly modeled and authorized execution paths, not to
+observation sources.
+
 ## Non-Inference Rules
 
 Observation vocabulary must preserve the difference between a direct statement
