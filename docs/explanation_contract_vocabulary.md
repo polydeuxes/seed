@@ -165,11 +165,22 @@ tension.
 
 Current Seed conflict structures include `FactConflict` for disagreements among
 fact supports, `Contradiction` for conservative exact-subject exclusive-predicate
-contradictions, and graph validation issues for relationship/type mismatches.
+contradictions, and `GraphValidationIssue` for relationship/type mismatches.
+
+`FactConflict` belongs to projected State and groups disagreements by
+alias-canonical subject, predicate, and dimensions for non-expired,
+non-measurement, non-multi-cardinality facts. `Contradiction` belongs to the
+standalone read-only contradiction detector and groups exact subject/predicate
+exclusive-predicate disagreements. `GraphValidationIssue` belongs to graph
+validation and reports relationship/type issues without repairing projected
+edges.
 
 A Conflict describes disagreement. It does not resolve the disagreement unless
 existing projected support has already selected a current value and exposes that
-selection.
+selection. Conflict explanations may report attached conflicts, competing
+beliefs, severity, reasons, evidence, and confidence-view penalties, but they
+must not create a hidden lifecycle such as disputed/superseded facts or change
+core confidence.
 
 ## Rule
 
