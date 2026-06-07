@@ -14,6 +14,15 @@ Observation -> Evidence -> Fact -> Projection
 Projected Knowledge -> Context Composition -> Explanation -> Response
 ```
 
+Knowledge Integrity sits between projected knowledge and selection as a
+read-only characterization concern: it surfaces support, conflicts, confidence,
+staleness, verification limits, graph issues, and source limitations so projected
+knowledge can be interpreted safely before it is selected for context,
+explanation, or response. The lifecycle relationship is summarized in
+[Knowledge Lifecycle Reconciliation](knowledge_lifecycle_reconciliation.md), and
+the integrity terminology is grounded in
+[Knowledge Maintenance Reconciliation](knowledge_maintenance_reconciliation.md).
+
 The knowledge explanation and verification flow is:
 
 ```text

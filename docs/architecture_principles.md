@@ -33,6 +33,15 @@ Input / observations
 
 Runtime is canonical. `RuntimeLoop` was accidental architecture drift and has been removed or quarantined from the current core architecture. `ActionPlan`, `HandoffPlan`, `ExecutionProposal`, and `ExecutionAuthorization` are not current-core architecture.
 
+For knowledge-facing work, keep the relationship between
+[Knowledge Acquisition and Selection](knowledge_acquisition_and_selection.md),
+[Knowledge Integrity](knowledge_maintenance_reconciliation.md), and the
+[Knowledge Lifecycle](knowledge_lifecycle_reconciliation.md) explicit.
+Acquisition creates and projects evidence-backed knowledge, Integrity
+characterizes whether projected knowledge is supported or caveated, and
+Selection/Response consume already-projected knowledge without creating facts,
+mutating projections, or executing operations.
+
 ## Core Loop
 
 ```text
