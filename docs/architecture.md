@@ -6,6 +6,14 @@ Seed follows this boundary-oriented flow:
 Input -> Events -> State -> Context -> Decision -> Policy -> Execution -> Events
 ```
 
+The canonical knowledge acquisition and selection relationship is documented in
+[Knowledge Acquisition and Selection](knowledge_acquisition_and_selection.md):
+
+```text
+Observation -> Evidence -> Fact -> Projection
+Projected Knowledge -> Context Composition -> Explanation -> Response
+```
+
 The knowledge explanation and verification flow is:
 
 ```text
