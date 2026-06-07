@@ -509,6 +509,16 @@ configuration only**. Reachability, availability, neighbor existence, gateway
 health, DNS success, and internet access require separate scoped evidence.
 
 
+## Relationship to Hostname / Identity Observation v1
+
+Local Network Observation remains topology/configuration observation, not identity
+management or reachability verification. Hostname / Identity Observation v1 now
+provides first-class local identity facts (`hostname`, `machine_id`, `boot_id`,
+and, only when explicitly configured locally, `fqdn`) before network topology is
+interpreted. Network interface, address, route, and resolver facts should attach
+to the observed local host identity but must not create availability, DNS
+success, endpoint reachability, provider visibility, or ownership claims.
+
 ## Local Network Observation v1 Implementation
 
 Local Network Observation v1 follows the Capability Extension Methodology:

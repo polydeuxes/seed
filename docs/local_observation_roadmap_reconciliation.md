@@ -133,6 +133,32 @@ If implemented, v1 should stay narrow:
 - treat missing or unreadable files as absence of observation, not failure requiring privilege escalation;
 - avoid DNS lookups, reverse lookups, `hostname` subprocesses, `systemd-hostnamed`, cloud metadata, provider IDs, or FQDN reachability claims.
 
+## Hostname / Identity Observation v1 Implementation
+
+Hostname / Identity Observation v1 is the first implementation after this
+reconciliation. It enriches the local knowledge model through the existing
+`Observation -> Evidence -> Fact -> Projection` path only. It does not change
+Runtime behavior, `ToolExecutor`, orchestration, provider integration, network
+probing, shell execution, subprocess execution, privilege requirements, or LLM
+reasoning.
+
+| Identity fact | Question answered | Evidence source | Fact produced | Non-inferences |
+| --- | --- | --- | --- | --- |
+| `hostname` | What hostname is configured locally? | `/etc/hostname`, with `/proc/sys/kernel/hostname` as local fallback when the static file is absent | `hostname` | Hostname does not imply DNS validity, DNS success, reachability, availability, provider visibility, ownership, or uniqueness. |
+| `machine_id` | What machine-id is recorded locally? | `/etc/machine-id` | `machine_id` | Machine ID does not guarantee global uniqueness, host ownership, provider identity, reachability, availability, or stable identity across cloned images. |
+| `boot_id` | What boot-id is recorded for the current local boot? | `/proc/sys/kernel/random/boot_id` | `boot_id` | Boot ID is boot-scoped and does not imply availability, uptime health, reachability, or host uniqueness across boots. |
+| `fqdn` | What fully qualified hostname is explicitly configured locally? | A dotted value from `/etc/hostname` or `/proc/sys/kernel/hostname` only | `fqdn` | FQDN does not imply DNS validity, resolver success, reachability, availability, or provider visibility. Seed does not synthesize or query FQDNs. |
+
+FQDN remains absent unless a bounded local hostname source itself contains a
+qualified name. Seed does not call DNS, reverse DNS, `socket.getfqdn()`,
+`hostname`, `systemd-hostnamed`, cloud metadata, providers, or network services
+to fill this fact.
+
+Impact output renders identity in a dedicated `identity:` section. Identity
+facts are not aliases, are not availability facts, and do not create inferred
+relationships. `--current-facts` continues to expose the raw projected identity
+facts alongside all other facts.
+
 # Observation Tiering
 
 Final tier classification:
@@ -140,20 +166,25 @@ Final tier classification:
 ## Tier 1 — Foundational Host Knowledge
 
 These facts describe the basic local host substrate and should come first.
+Identity now leads this tier because future filesystem, memory, interface,
+provider, and multi-host facts need an explicit local host anchor.
 
-- Mounts
-- Kernel
-- CPU
-- Memory
+- Hostname / Identity Observation
+- Mount Observation
+- Kernel Observation
+- CPU Observation
+- Memory Observation
 
-## Tier 2 — Identity Knowledge
+## Tier 2 — Identity Expansion
 
-These facts identify the observed local machine and boot session without implying provider identity, ownership, availability, DNS correctness, or reachability.
+These facts expand the observed local machine and boot-session identity without
+implying provider identity, ownership, availability, DNS correctness, or
+reachability.
 
-- Hostname from bounded local sources
+- FQDN when explicitly configured in a bounded local source
 - Machine ID
 - Boot ID
-- Local host naming aliases when directly observed from local configuration
+- Identity relationships when directly observed from local configuration
 
 ## Tier 3 — Host Topology
 

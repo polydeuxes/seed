@@ -49,6 +49,16 @@ readable documentation today and executable architecture checks over time.
 
 - Observation must not imply execution.
 - Observation must not imply availability.
+- Observing a hostname must not imply DNS validity.
+- Observing a hostname must not imply reachability.
+- Observing a hostname must not imply availability.
+- Observing a machine ID must not imply a global uniqueness guarantee.
+- Observing a boot ID must not imply availability.
+- Observing a FQDN must not imply DNS success or reachability.
+- Observing a listening port must not imply endpoint availability.
+- Observing a package must not imply ownership.
+- Observing a process must not imply management.
+- Observing a container must not imply orchestration.
 - Capability resolution must not imply verification.
 - Write access must not be required for observation.
 - Prefer least-privileged observation sources.

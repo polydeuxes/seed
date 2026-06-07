@@ -238,6 +238,23 @@ Additional non-equivalences:
 - `operation name begins with verify_` != `verification performed`
 - `read-only provider metadata` != `provider executed`
 
+
+### Hostname / Identity Observation v1 reference
+
+The identity capability is the first post-reconciliation local knowledge
+acquisition slice. It demonstrates the methodology with narrow local facts:
+
+| Fact | Question answered | Evidence source | Non-inferences |
+| --- | --- | --- | --- |
+| `hostname` | What hostname is configured locally? | `/etc/hostname` or `/proc/sys/kernel/hostname` | Not DNS validity, reachability, availability, provider visibility, ownership, or uniqueness. |
+| `machine_id` | What machine-id is recorded locally? | `/etc/machine-id` | Not a uniqueness guarantee, ownership claim, provider identity, reachability, or availability. |
+| `boot_id` | What boot-id is recorded for this boot? | `/proc/sys/kernel/random/boot_id` | Not availability, reachability, health, or identity stability across boots. |
+| `fqdn` | What fully qualified hostname is explicitly configured locally? | Dotted value in a bounded local hostname file only | Not DNS success, reachability, availability, or resolver proof. |
+
+This capability uses only read-only local files and Python standard-library
+file APIs. It must not use DNS queries, network access, shell commands,
+subprocesses, sudo, provider APIs, or LLM-generated host facts.
+
 ## Capability Extension Checklist
 
 Future contributors should use this checklist before implementing a capability
