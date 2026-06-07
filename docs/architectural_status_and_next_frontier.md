@@ -25,6 +25,10 @@ Recommended priority:
 
 # Purpose
 
+See also `docs/architectural_findings_preservation.md`, which preserves the
+completed audit-program findings, negative findings, paused chains, and
+Knowledge Acquisition frontier handoff in one compact document.
+
 This document performs a documentation-only Architectural Status And Next-Frontier Reconciliation.
 
 It answers:
@@ -416,6 +420,6 @@ This document does not:
 
 Seed's architecture documentation has reached a stabilization point for the major lifecycle concerns. Acquisition, Integrity, Selection, Response, and Caveats now have enough characterization, vocabulary, and reconciliation to avoid defaulting to engines, Runtime integration, ToolExecutor integration, or parallel truth systems.
 
-The architectural status is stable enough to pause recursive documentation audits. Caveat work should be preserved but paused. Selection Rationale should remain completed and non-implemented. Response should remain distributed and documentation-guided. Integrity should remain read-only over projected knowledge.
+The architectural status is stable enough to pause recursive documentation audits. The preservation handoff is recorded in `docs/architectural_findings_preservation.md` so future sessions can find completed audit chains, negative findings, and frontier alignment without starting a new audit program. Caveat work should be preserved but paused. Selection Rationale should remain completed and non-implemented. Response should remain distributed and documentation-guided. Integrity should remain read-only over projected knowledge.
 
 The next frontier should be **Knowledge Acquisition expansion**, preferably through a narrow read-only Users or Groups Observation slice, with documentation maintenance as a supporting activity and Runtime implementation explicitly out of scope.
