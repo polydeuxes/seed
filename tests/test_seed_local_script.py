@@ -2416,6 +2416,7 @@ def test_cli_mount_facts_appear_in_current_facts_and_impact(
     assert "availability_status: unknown" in impact_output
     assert "reachability_status" not in impact_output
 
+
 def test_cli_events_without_message_lists_persisted_events_and_exits(
     monkeypatch, tmp_path, capsys
 ):
@@ -3587,3 +3588,104 @@ def test_cli_current_facts_exposes_identity_facts(tmp_path, capsys):
     assert "* node115 hostname node115" in output
     assert "* node115 machine_id 0123456789abcdef0123456789abcdef" in output
     assert "* node115 boot_id 11111111-2222-3333-4444-555555555555" in output
+
+
+def _persist_storage_impact_facts(seed_local, db_path):
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    facts = [
+        ("node115", "block_device", "sda", {"device": "sda"}),
+        ("node115", "block_device", "nvme0n1", {"device": "nvme0n1"}),
+        ("node115", "partition", "sda1", {"device": "sda1", "parent": "sda"}),
+        (
+            "node115",
+            "partition",
+            "nvme0n1p1",
+            {"device": "nvme0n1p1", "parent": "nvme0n1"},
+        ),
+        (
+            "node115",
+            "block_device_parent",
+            "sda",
+            {"device": "sda1", "parent": "sda"},
+        ),
+        (
+            "node115",
+            "block_device_size_bytes",
+            1073741824,
+            {"device": "sda1", "parent": "sda"},
+        ),
+        ("node115", "block_device_rotational", "true", {"device": "sda"}),
+        ("node115", "block_device_removable", "false", {"device": "sda"}),
+        ("node115", "block_device_model", "Fast Disk", {"device": "sda"}),
+        ("node115", "block_device_vendor", "SEED", {"device": "sda"}),
+        ("node115", "mount_point", "/", {"mount_point": "/"}),
+        ("node115", "mounted_device", "/dev/sda1", {"mount_point": "/"}),
+    ]
+    try:
+        for index, (subject, predicate, value, dimensions) in enumerate(facts):
+            fact = seed_local.Fact(
+                id=f"fact_storage_impact_{index}",
+                subject_id=subject,
+                predicate=predicate,
+                value=value,
+                source_type="discovery",
+                confidence=0.9,
+                evidence_ids=[],
+                observed_at=seed_local.utc_now(),
+                dimensions=dimensions,
+            )
+            ledger.append(
+                "fact.observed",
+                seed_local.DEFAULT_WORKSPACE,
+                {"fact": seed_local.to_plain(fact)},
+            )
+    finally:
+        ledger.close()
+
+
+def test_cli_current_facts_exposes_storage_topology_facts(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "current-storage.sqlite"
+    _persist_storage_impact_facts(seed_local, db_path)
+
+    assert seed_local.main(["--db", str(db_path), "--current-facts"]) == 0
+    output = capsys.readouterr().out
+
+    assert "* node115 block_device sda" in output
+    assert "* node115 partition sda1" in output
+    assert "* node115 block_device_size_bytes 1073741824" in output
+    assert "* node115 block_device_rotational true" in output
+    assert "* node115 block_device_removable false" in output
+    assert "* node115 block_device_model Fast Disk" in output
+    assert "* node115 block_device_vendor SEED" in output
+    assert "* node115 block_device_parent sda" in output
+
+
+def test_cli_impact_includes_compact_storage_topology_without_health_inference(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "impact-storage.sqlite"
+    _persist_storage_impact_facts(seed_local, db_path)
+
+    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+    output = capsys.readouterr().out
+
+    assert "storage topology:" in output
+    assert "- devices:" in output
+    assert "  - sda" in output
+    assert "  - nvme0n1" in output
+    assert "- partitions:" in output
+    assert "  - sda1" in output
+    assert "  - nvme0n1p1" in output
+    assert "- parent relationships:" in output
+    assert "  - sda1 -> sda" in output
+    assert "- mount relationships:" in output
+    assert "  - /dev/sda1 -> /" in output
+    assert (
+        "- health/availability/filesystem-health: not inferred from storage facts"
+        in output
+    )
+    assert "availability_status: unknown" in output
+    assert "storage_health" not in output
+    assert "filesystem_health" not in output

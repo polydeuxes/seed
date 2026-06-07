@@ -59,6 +59,28 @@ def test_builtin_catalog_defines_canonical_predicates_and_prometheus_mappings():
         assert definition.cardinality == "single"
     assert catalog.get("cpu_count").value_type == "integer"
     assert catalog.get("memory_total_bytes").value_type == "integer"
+    for predicate in (
+        "block_device",
+        "partition",
+        "block_device_model",
+        "block_device_vendor",
+        "block_device_parent",
+    ):
+        definition = catalog.get(predicate)
+        assert definition is not None
+        assert definition.kind == "durable_fact"
+        assert definition.value_type == "string"
+        assert definition.cardinality == "multi"
+    assert catalog.get("block_device_size_bytes").value_type == "integer"
+    assert catalog.get("block_device_size_bytes").cardinality == "multi"
+    assert catalog.get("block_device_rotational").allowed_values == [
+        "true",
+        "false",
+    ]
+    assert catalog.get("block_device_removable").allowed_values == [
+        "true",
+        "false",
+    ]
     assert catalog.find_mapping("up", source_name="prometheus").canonical_predicate == (
         "availability_status"
     )
@@ -121,7 +143,10 @@ def test_show_predicate_catalog_cli_uses_custom_file(tmp_path, capsys):
         )
     )
 
-    assert seed_local.main(["--predicate-catalog", str(path), "--show-predicate-catalog"]) == 0
+    assert (
+        seed_local.main(["--predicate-catalog", str(path), "--show-predicate-catalog"])
+        == 0
+    )
     output = capsys.readouterr().out
     assert "service_health: measurement/string/single" in output
     assert "*:health -> service_health" in output
