@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 from datetime import datetime, timezone
 
 import pytest
@@ -482,8 +483,11 @@ def test_local_host_source_emits_read_only_host_observations(monkeypatch):
         "_collect_network_observations",
         lambda self, observed_at, hostname, metadata: [],
     )
+    missing = Path("/definitely/missing/seed-local-identity")
 
-    observations = LocalHostObservationSource().collect()
+    observations = LocalHostObservationSource(
+        proc_root=missing, etc_hostname=missing, machine_id=missing
+    ).collect()
 
     assert [(obs.subject, obs.predicate, obs.value) for obs in observations] == [
         ("node-a", "local_observation_status", "observed"),
@@ -500,7 +504,9 @@ def test_local_host_source_emits_read_only_host_observations(monkeypatch):
     assert local_status.metadata["availability_asserted"] is False
 
 
-def test_local_host_observation_fact_does_not_assert_availability_or_network(monkeypatch):
+def test_local_host_observation_fact_does_not_assert_availability_or_network(
+    monkeypatch,
+):
     from seed_runtime import observation_sources as sources
     from seed_runtime.observations import ObservationIngestor
     from seed_runtime.observation_sources import (
@@ -540,7 +546,6 @@ def test_local_host_observation_fact_does_not_assert_availability_or_network(mon
     assert state.get_best_fact("node-a", "availability_status") is None
 
 
-
 def _write_local_network_fixture(tmp_path):
     proc = tmp_path / "proc"
     sys_net = tmp_path / "sys" / "class" / "net"
@@ -573,9 +578,7 @@ def _write_local_network_fixture(tmp_path):
         (sys_net / interface / "operstate").write_text(
             operstate + "\n", encoding="utf-8"
         )
-        (sys_net / interface / "address").write_text(
-            address + "\n", encoding="utf-8"
-        )
+        (sys_net / interface / "address").write_text(address + "\n", encoding="utf-8")
         (sys_net / interface / "mtu").write_text(mtu + "\n", encoding="utf-8")
         (sys_net / interface / "ifindex").write_text(
             ("2" if interface == "eth0" else "1") + "\n", encoding="utf-8"
@@ -643,7 +646,9 @@ def test_local_host_source_emits_local_network_configuration(monkeypatch, tmp_pa
     assert eth0_ip.metadata["privilege_escalation"] is False
 
 
-def test_local_host_source_distinguishes_systemd_resolved_stub_and_upstream(monkeypatch, tmp_path):
+def test_local_host_source_distinguishes_systemd_resolved_stub_and_upstream(
+    monkeypatch, tmp_path
+):
     from seed_runtime import observation_sources as sources
     from seed_runtime.observation_sources import LocalHostObservationSource
 
@@ -663,8 +668,14 @@ def test_local_host_source_distinguishes_systemd_resolved_stub_and_upstream(monk
     monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
     monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
     monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
-    monkeypatch.setattr(sources.socket, "if_nameindex", lambda: [(1, "lo"), (2, "eth0")])
-    monkeypatch.setattr(LocalHostObservationSource, "_ipv4_address_for_interface", lambda self, interface: None)
+    monkeypatch.setattr(
+        sources.socket, "if_nameindex", lambda: [(1, "lo"), (2, "eth0")]
+    )
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_ipv4_address_for_interface",
+        lambda self, interface: None,
+    )
 
     observations = LocalHostObservationSource(
         proc_root=proc,
@@ -700,8 +711,14 @@ def test_local_host_source_stub_only_has_no_upstream_fact(monkeypatch, tmp_path)
     monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
     monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
     monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
-    monkeypatch.setattr(sources.socket, "if_nameindex", lambda: [(1, "lo"), (2, "eth0")])
-    monkeypatch.setattr(LocalHostObservationSource, "_ipv4_address_for_interface", lambda self, interface: None)
+    monkeypatch.setattr(
+        sources.socket, "if_nameindex", lambda: [(1, "lo"), (2, "eth0")]
+    )
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_ipv4_address_for_interface",
+        lambda self, interface: None,
+    )
 
     observations = LocalHostObservationSource(
         proc_root=proc,
@@ -713,6 +730,7 @@ def test_local_host_source_stub_only_has_no_upstream_fact(monkeypatch, tmp_path)
     triples = {(obs.subject, obs.predicate, obs.value) for obs in observations}
     assert ("node-a", "dns_resolver_stub", "127.0.0.53") in triples
     assert not [obs for obs in observations if obs.predicate == "dns_resolver_upstream"]
+
 
 def test_local_host_source_keeps_container_interfaces_as_facts(monkeypatch, tmp_path):
     from seed_runtime import observation_sources as sources
@@ -943,6 +961,7 @@ def test_local_network_observation_does_not_probe_or_escalate(monkeypatch, tmp_p
     assert all(obs.metadata["privilege_escalation"] is False for obs in observations)
     assert all(obs.metadata["network_probe"] is False for obs in observations)
 
+
 def test_prometheus_source_uses_safe_get_queries_and_converts_observations(
     monkeypatch,
 ):
@@ -969,7 +988,12 @@ def test_prometheus_source_uses_safe_get_queries_and_converts_observations(
             "status": "success",
             "data": {
                 "resultType": "vector",
-                "result": [{"metric": {"instance": "node-a:9100", "job": "node-exporter"}, "value": [1, "1"]}],
+                "result": [
+                    {
+                        "metric": {"instance": "node-a:9100", "job": "node-exporter"},
+                        "value": [1, "1"],
+                    }
+                ],
             },
         },
         "node_uname_info": {
@@ -1160,3 +1184,215 @@ def test_prometheus_nodename_creates_prometheus_instance_alias_via_normalizer(
     assert aliases[0].subject_id == "node115"
     assert aliases[0].value == "192.168.254.115:9100"
     assert state.get_best_fact("node115", "up").value == 1
+
+
+def _write_local_identity_fixture(tmp_path, hostname="node115", *, fqdn=False):
+    proc = tmp_path / "proc"
+    etc_hostname = tmp_path / "hostname"
+    machine_id = tmp_path / "machine-id"
+    (proc / "sys" / "kernel" / "random").mkdir(parents=True)
+    if fqdn:
+        hostname = "node115.example.test"
+    etc_hostname.write_text(hostname + "\n", encoding="utf-8")
+    (proc / "sys" / "kernel" / "hostname").write_text(
+        "ignored-proc-host\n", encoding="utf-8"
+    )
+    machine_id.write_text("0123456789abcdef0123456789abcdef\n", encoding="utf-8")
+    (proc / "sys" / "kernel" / "random" / "boot_id").write_text(
+        "11111111-2222-3333-4444-555555555555\n", encoding="utf-8"
+    )
+    return proc, etc_hostname, machine_id
+
+
+def test_local_host_source_emits_identity_observations(monkeypatch, tmp_path):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    proc, etc_hostname, machine_id = _write_local_identity_fixture(tmp_path)
+    monkeypatch.setattr(sources.platform, "node", lambda: "")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_collect_network_observations",
+        lambda self, observed_at, hostname, metadata: [],
+    )
+
+    observations = LocalHostObservationSource(
+        proc_root=proc, etc_hostname=etc_hostname, machine_id=machine_id
+    ).collect()
+
+    triples = {(obs.subject, obs.predicate, obs.value) for obs in observations}
+    assert ("node115", "hostname", "node115") in triples
+    assert ("node115", "machine_id", "0123456789abcdef0123456789abcdef") in triples
+    assert ("node115", "boot_id", "11111111-2222-3333-4444-555555555555") in triples
+    assert not [obs for obs in observations if obs.predicate == "fqdn"]
+    for obs in observations:
+        if obs.predicate in {"hostname", "machine_id", "boot_id"}:
+            assert obs.metadata["local_only"] is True
+            assert obs.metadata["shell_execution"] is False
+            assert obs.metadata["subprocess_execution"] is False
+            assert obs.metadata["privilege_escalation"] is False
+            assert obs.metadata["network_probe"] is False
+            assert obs.metadata["network_connection"] is False
+            assert obs.metadata["dns_resolution_asserted"] is False
+            assert obs.metadata["network_reachability_asserted"] is False
+            assert obs.metadata["availability_asserted"] is False
+
+
+def test_local_host_source_emits_fqdn_only_when_locally_configured(
+    monkeypatch, tmp_path
+):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    proc, etc_hostname, machine_id = _write_local_identity_fixture(tmp_path, fqdn=True)
+    monkeypatch.setattr(sources.platform, "node", lambda: "")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_collect_network_observations",
+        lambda self, observed_at, hostname, metadata: [],
+    )
+
+    observations = LocalHostObservationSource(
+        proc_root=proc, etc_hostname=etc_hostname, machine_id=machine_id
+    ).collect()
+
+    triples = {(obs.subject, obs.predicate, obs.value) for obs in observations}
+    assert ("node115.example.test", "hostname", "node115.example.test") in triples
+    assert ("node115.example.test", "fqdn", "node115.example.test") in triples
+
+
+def test_local_identity_projection_is_deterministic(monkeypatch, tmp_path):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    proc, etc_hostname, machine_id = _write_local_identity_fixture(tmp_path)
+    monkeypatch.setattr(sources.platform, "node", lambda: "")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_collect_network_observations",
+        lambda self, observed_at, hostname, metadata: [],
+    )
+    source = LocalHostObservationSource(
+        proc_root=proc, etc_hostname=etc_hostname, machine_id=machine_id
+    )
+
+    first = [
+        (obs.subject, obs.predicate, obs.value, obs.dimensions)
+        for obs in source.collect()
+    ]
+    second = [
+        (obs.subject, obs.predicate, obs.value, obs.dimensions)
+        for obs in source.collect()
+    ]
+
+    assert first == second
+
+
+def test_local_identity_does_not_infer_availability_or_reachability(
+    monkeypatch, tmp_path
+):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observations import ObservationIngestor
+    from seed_runtime.observation_sources import (
+        LocalHostObservationSource,
+        ObservationCollectionService,
+    )
+    from seed_runtime.state import StateProjector
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    proc, etc_hostname, machine_id = _write_local_identity_fixture(tmp_path)
+    monkeypatch.setattr(sources.platform, "node", lambda: "")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_collect_network_observations",
+        lambda self, observed_at, hostname, metadata: [],
+    )
+    ledger = EventLedger()
+    ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        LocalHostObservationSource(
+            proc_root=proc, etc_hostname=etc_hostname, machine_id=machine_id
+        ),
+        "ws_identity",
+    )
+    state = StateProjector(ledger).project("ws_identity")
+
+    assert state.get_best_fact("node115", "hostname").value == "node115"
+    assert state.get_best_fact("node115", "availability_status") is None
+    assert state.get_best_fact("node115", "reachability_status") is None
+
+
+def test_local_identity_observation_avoids_network_dns_execution_and_escalation(
+    monkeypatch, tmp_path
+):
+    import subprocess
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    def fail_forbidden(*args, **kwargs):  # pragma: no cover - guard callback
+        raise AssertionError(
+            "identity observation must not use network, DNS, shell, subprocess, or sudo"
+        )
+
+    proc, etc_hostname, machine_id = _write_local_identity_fixture(tmp_path)
+    monkeypatch.setattr(sources.platform, "node", lambda: "")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_collect_network_observations",
+        lambda self, observed_at, hostname, metadata: [],
+    )
+    monkeypatch.setattr(sources.socket, "create_connection", fail_forbidden)
+    monkeypatch.setattr(sources.socket, "getaddrinfo", fail_forbidden)
+    monkeypatch.setattr(sources.socket, "getfqdn", fail_forbidden)
+    monkeypatch.setattr(sources.socket, "gethostbyname", fail_forbidden)
+    monkeypatch.setattr(sources, "urlopen", fail_forbidden)
+    monkeypatch.setattr(os, "system", fail_forbidden)
+    monkeypatch.setattr(subprocess, "run", fail_forbidden)
+    monkeypatch.setattr(subprocess, "Popen", fail_forbidden)
+
+    observations = LocalHostObservationSource(
+        proc_root=proc, etc_hostname=etc_hostname, machine_id=machine_id
+    ).collect()
+
+    assert {
+        (obs.predicate, obs.value)
+        for obs in observations
+        if obs.predicate in {"hostname", "machine_id", "boot_id"}
+    } == {
+        ("hostname", "node115"),
+        ("machine_id", "0123456789abcdef0123456789abcdef"),
+        ("boot_id", "11111111-2222-3333-4444-555555555555"),
+    }

@@ -166,7 +166,6 @@ class DevRegisteredProviderSeed:
     provider_name: str
 
 
-
 @dataclass
 class LocalSeedApp:
     """Container for a locally configured Seed runtime and its event ledger."""
@@ -471,10 +470,7 @@ def _matches_prometheus_observation_filters(
     labels = observation.metadata.get("metric_labels")
     if not isinstance(labels, dict):
         labels = {}
-    if (
-        instance is not None
-        and labels.get("instance", observation.subject) != instance
-    ):
+    if instance is not None and labels.get("instance", observation.subject) != instance:
         return False
     if mountpoint is not None and labels.get("mountpoint") != mountpoint:
         return False
@@ -1170,6 +1166,7 @@ def normalize_confidence_args(
     if args.observe_confidence < 0.0 or args.observe_confidence > 1.0:
         parser.error("--confidence must be between 0.0 and 1.0")
 
+
 def validate_lifecycle_args(
     args: argparse.Namespace, parser: argparse.ArgumentParser
 ) -> None:
@@ -1755,6 +1752,12 @@ def format_entity_impact(state: State, entity: str) -> str:
             if not _looks_like_plain_ip_address(name)
         ]
 
+    identity_predicates = ["hostname", "machine_id", "boot_id", "fqdn"]
+    identity_facts = [
+        fact
+        for predicate in identity_predicates
+        for fact in state.get_current_facts(canonical, predicate)
+    ]
     availability = state.get_best_fact(canonical, "availability_status")
     local_observation = state.get_best_fact(canonical, "local_observation_status")
     endpoint_availability: dict[str, list[tuple[str, str]]] = {}
@@ -1831,6 +1834,7 @@ def format_entity_impact(state: State, entity: str) -> str:
         f"entity: {canonical}",
         f"entity types: {', '.join(entity_types)}",
         "aliases:",
+        "identity:",
         "availability_status: "
         + (
             _format_fact_value(availability.value)
@@ -1852,9 +1856,12 @@ def format_entity_impact(state: State, entity: str) -> str:
     ]
     alias_lines = [f"- {_format_fact_value(alias)}" for alias in aliases] or ["- none"]
     lines[3:3] = alias_lines
+    identity_lines = _format_identity_impact(identity_facts)
+    identity_heading = lines.index("identity:")
+    lines[identity_heading + 1 : identity_heading + 1] = identity_lines or ["- none"]
     network_lines = _format_local_network_impact(network_facts)
     network_heading = lines.index("local network configuration:")
-    lines[network_heading + 1:network_heading + 1] = network_lines or ["- none"]
+    lines[network_heading + 1 : network_heading + 1] = network_lines or ["- none"]
 
     endpoint_lines = []
     for role, statuses in sorted(endpoint_availability.items()):
@@ -1862,7 +1869,7 @@ def format_entity_impact(state: State, entity: str) -> str:
         endpoints = ", ".join(endpoint for endpoint, _ in statuses)
         endpoint_lines.append(f"- {role}: {', '.join(values)} ({endpoints})")
     endpoint_heading = lines.index("endpoint availability by role:")
-    lines[endpoint_heading + 1:endpoint_heading + 1] = endpoint_lines or ["- none"]
+    lines[endpoint_heading + 1 : endpoint_heading + 1] = endpoint_lines or ["- none"]
     if conflicts:
         for conflict in conflicts:
             winning = (
@@ -1885,6 +1892,23 @@ def format_entity_impact(state: State, entity: str) -> str:
     else:
         lines.append("- none")
     return "\n".join(lines)
+
+
+def _format_identity_impact(identity_facts: list[Fact]) -> list[str]:
+    """Format host identity facts without implying availability or reachability."""
+
+    if not identity_facts:
+        return ["- none"]
+    by_predicate: dict[str, list[Fact]] = defaultdict(list)
+    for fact in identity_facts:
+        by_predicate[fact.predicate].append(fact)
+    lines: list[str] = []
+    for predicate in ("hostname", "machine_id", "boot_id", "fqdn"):
+        facts = _sort_facts_for_display(by_predicate.get(predicate, []))
+        for fact in facts:
+            lines.append(f"- {predicate}: {_format_fact_value(fact.value)}")
+    lines.append("- availability/reachability: not inferred from identity facts")
+    return lines
 
 
 def _fact_interface(fact: Fact) -> str | None:
@@ -1987,7 +2011,9 @@ def _format_local_network_impact(network_facts: list[Fact]) -> list[str]:
     collapsed = sorted(
         interface for interface, role in roles.items() if role in collapsed_roles
     )
-    visible = sorted(interface for interface in interfaces if interface not in collapsed)
+    visible = sorted(
+        interface for interface in interfaces if interface not in collapsed
+    )
     role_priority = {"primary": 0, "loopback": 1, "secondary": 2}
     visible.sort(
         key=lambda interface: (role_priority.get(roles[interface], 50), interface)
@@ -2021,9 +2047,7 @@ def _format_local_network_impact(network_facts: list[Fact]) -> list[str]:
 
     if collapsed:
         counts = Counter(roles[interface] for interface in collapsed)
-        count_text = ", ".join(
-            f"{role}={counts[role]}" for role in sorted(counts)
-        )
+        count_text = ", ".join(f"{role}={counts[role]}" for role in sorted(counts))
         lines.append(
             f"- virtual/container/vpn interfaces: {len(collapsed)} collapsed ({count_text}); "
             "use --current-facts for full local facts"
@@ -2118,6 +2142,7 @@ def _format_dns_resolver_impact_lines(by_predicate: dict[str, list[Fact]]) -> li
             )
     return lines
 
+
 def _format_fact_dimensions(dimensions: dict[str, str]) -> str:
     """Format fact dimensions for compact deterministic CLI output."""
 
@@ -2125,6 +2150,7 @@ def _format_fact_dimensions(dimensions: dict[str, str]) -> str:
         return ""
     values = ", ".join(f"{key}={dimensions[key]}" for key in sorted(dimensions))
     return f" ({values})"
+
 
 def _format_graph_issue_summary(issue: Any) -> list[str]:
     """Format one graph issue compactly, including actionable guidance."""
@@ -2198,9 +2224,13 @@ def format_relationships(state: State, args: argparse.Namespace) -> str:
         relationship=args.relationship,
         object=args.relationship_object,
     )
-    return "\n".join(
-        f"{edge.subject} {edge.relationship} {edge.object}" for edge in relationships
-    ) or "no relationships"
+    return (
+        "\n".join(
+            f"{edge.subject} {edge.relationship} {edge.object}"
+            for edge in relationships
+        )
+        or "no relationships"
+    )
 
 
 def format_graph_issues(
@@ -2237,9 +2267,7 @@ def format_entity_types(state: State, entity_id: str | None = None) -> str:
     """Format current entity classifications and their supporting assertions."""
 
     entity_ids = (
-        [entity_id]
-        if entity_id is not None
-        else sorted(state.current_entity_types)
+        [entity_id] if entity_id is not None else sorted(state.current_entity_types)
     )
     lines: list[str] = []
     for current_entity_id in entity_ids:
@@ -2264,7 +2292,10 @@ def format_entity_types(state: State, entity_id: str | None = None) -> str:
 
 
 def state_summary(
-    state: State, *, top_entity_limit: int = 10, include_relationship_count: bool = False
+    state: State,
+    *,
+    top_entity_limit: int = 10,
+    include_relationship_count: bool = False,
 ) -> dict[str, Any]:
     """Build a concise operator summary using only the projected State."""
 
@@ -2339,7 +2370,9 @@ def state_summary(
         "graph_issue_warning_count": len(state.get_graph_issues("warning")),
         "graph_issue_error_count": len(state.get_graph_issues("error")),
         "observation_source_counts": dict(
-            sorted(Counter(obs.source_type for obs in state.observations.values()).items())
+            sorted(
+                Counter(obs.source_type for obs in state.observations.values()).items()
+            )
         ),
         "top_entities": top_entities,
         "availability": dict(availability),
@@ -2348,9 +2381,6 @@ def state_summary(
     if include_relationship_count:
         summary["relationship_count"] = len(state.relationships)
     return summary
-
-
-
 
 
 def format_evidence_graph(state: State) -> str:
@@ -2391,7 +2421,10 @@ def format_evidence_graph(state: State) -> str:
 
 
 def format_why_fact(
-    views: list[FactEvidenceView], subject: str, predicate: str, object_value: str | None
+    views: list[FactEvidenceView],
+    subject: str,
+    predicate: str,
+    object_value: str | None,
 ) -> str:
     """Format evidence explanation for a fact query."""
 
@@ -2607,9 +2640,7 @@ def format_observation_views(views: list[ObservationView]) -> str:
 
 def format_requirement_views(views: list[RequirementView]) -> str:
     lines = ["Current Requirements", ""]
-    lines.extend(
-        f"* {view.requirement_name} ({view.status})" for view in views
-    )
+    lines.extend(f"* {view.requirement_name} ({view.status})" for view in views)
     if not views:
         lines.append("(none)")
     return "\n".join(lines)
@@ -2617,9 +2648,7 @@ def format_requirement_views(views: list[RequirementView]) -> str:
 
 def format_capability_views(views: list[CapabilityView]) -> str:
     lines = ["Current Capabilities", ""]
-    lines.extend(
-        f"* {view.capability_name} ({view.status})" for view in views
-    )
+    lines.extend(f"* {view.capability_name} ({view.status})" for view in views)
     if not views:
         lines.append("(none)")
     return "\n".join(lines)
@@ -2652,6 +2681,7 @@ def _format_view_value(value: Any) -> str:
         return json.dumps(value, sort_keys=True, separators=(",", ":"))
     return str(value)
 
+
 def format_state_summary(summary: dict[str, Any]) -> str:
     """Format the projected state summary for concise terminal inspection."""
 
@@ -2674,8 +2704,7 @@ def format_state_summary(summary: dict[str, Any]) -> str:
         lines.insert(3, f"relationships: {summary['relationship_count']}")
     sources = summary["observation_source_counts"]
     lines.extend(
-        [f"  {source}: {count}" for source, count in sources.items()]
-        or ["  (none)"]
+        [f"  {source}: {count}" for source, count in sources.items()] or ["  (none)"]
     )
     lines.append("top entities:")
     for entity in summary["top_entities"]:
@@ -2777,9 +2806,7 @@ def format_fact_supports(
     return output
 
 
-def _fact_support_for_measurement_sample(
-    state: State, fact: Fact
-) -> FactSupport:
+def _fact_support_for_measurement_sample(state: State, fact: Fact) -> FactSupport:
     return FactSupport(
         subject=state.alias_resolver.canonical(fact.subject_id),
         predicate=fact.predicate,
@@ -3046,9 +3073,7 @@ def format_observed_fact_summary(facts: list[Fact]) -> str:
     hosts = sorted({fact.subject_id for fact in facts})
     predicate_counts: dict[str, int] = {}
     for fact in facts:
-        predicate_counts[fact.predicate] = (
-            predicate_counts.get(fact.predicate, 0) + 1
-        )
+        predicate_counts[fact.predicate] = predicate_counts.get(fact.predicate, 0) + 1
 
     sections = [
         f"ingested {len(facts)} observation(s)",
@@ -3685,9 +3710,7 @@ def format_predicate_catalog(catalog: PredicateCatalog) -> str:
     lines.append("mappings:")
     for mapping in catalog.list_mappings():
         source = mapping.source_name or "*"
-        lines.append(
-            f"- {source}:{mapping.predicate} -> {mapping.canonical_predicate}"
-        )
+        lines.append(f"- {source}:{mapping.predicate} -> {mapping.canonical_predicate}")
     return "\n".join(lines)
 
 
@@ -3729,7 +3752,6 @@ def format_inferred_facts(state: State, entity: str) -> str:
         f"inference_rule_id={fact.inference_rule_id})"
         for fact in facts
     )
-
 
 
 def runtime_trace_from_args(args: argparse.Namespace, run_id: str) -> RuntimeTrace:
@@ -3816,7 +3838,9 @@ def _why_decision_phrase(kind: Any, selected_tool: Any) -> str:
 def _why_policy_phrase(trace: RuntimeTrace) -> str:
     if trace.summary.get("policy_allowed") is True:
         return "allowed"
-    if trace.summary.get("policy_allowed") is False or trace.summary.get("policy_denied"):
+    if trace.summary.get("policy_allowed") is False or trace.summary.get(
+        "policy_denied"
+    ):
         return "denied"
     return "had unknown policy status for"
 
@@ -3846,6 +3870,7 @@ def format_runtime_why(trace: RuntimeTrace) -> str:
     if error:
         lines.extend(["", f"Error: {error}"])
     return "\n".join(lines)
+
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
@@ -3976,7 +4001,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.unsupported_facts:
         print(
-            format_unsupported_facts(unsupported_fact_views(projected_state_from_args(args)))
+            format_unsupported_facts(
+                unsupported_fact_views(projected_state_from_args(args))
+            )
         )
         return 0
 
@@ -4062,16 +4089,26 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.current_observations:
-        print(format_observation_views(build_observation_view(projected_state_from_args(args))))
+        print(
+            format_observation_views(
+                build_observation_view(projected_state_from_args(args))
+            )
+        )
         return 0
 
     if args.current_requirements:
-        print(format_requirement_views(build_requirement_view(projected_state_from_args(args))))
+        print(
+            format_requirement_views(
+                build_requirement_view(projected_state_from_args(args))
+            )
+        )
         return 0
 
     if args.current_capabilities:
         print(
-            format_capability_views(build_capability_view(projected_state_from_args(args)))
+            format_capability_views(
+                build_capability_view(projected_state_from_args(args))
+            )
         )
         return 0
 
@@ -4136,14 +4173,18 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if (
-        args.observe
-        or args.fact
-        or args.alias
-        or args.observe_json
-        or args.observe_ansible_inventory
-        or args.observe_local_host
-        or args.observe_prometheus
-    ) and not message and not args.http:
+        (
+            args.observe
+            or args.fact
+            or args.alias
+            or args.observe_json
+            or args.observe_ansible_inventory
+            or args.observe_local_host
+            or args.observe_prometheus
+        )
+        and not message
+        and not args.http
+    ):
         observed_facts = ingest_observations_from_args(args)
         if args.observe_prometheus and not args.verbose_observations:
             print(format_observed_fact_summary(observed_facts))

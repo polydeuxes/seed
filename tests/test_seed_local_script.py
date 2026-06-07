@@ -62,7 +62,9 @@ def test_one_shot_echo_uses_deterministic_fallback_without_ollama():
     assert result["events"][0]["session_id"] == app.session_id
 
 
-def test_normal_cli_missing_tool_records_open_tool_need_and_recommendations(monkeypatch):
+def test_normal_cli_missing_tool_records_open_tool_need_and_recommendations(
+    monkeypatch,
+):
     seed_local = load_seed_local_module()
     app = seed_local.build_local_app()
 
@@ -77,7 +79,9 @@ def test_normal_cli_missing_tool_records_open_tool_need_and_recommendations(monk
     result = app.run("restart jellyfin?")
 
     assert result["response"]["kind"] == "tool_need"
-    assert result["response"]["payload"]["tool_need"]["capability"] == "service_management"
+    assert (
+        result["response"]["payload"]["tool_need"]["capability"] == "service_management"
+    )
     assert isinstance(result["response"]["payload"]["recommendations"], list)
     state = app.projector.project(app.workspace_id)
     assert [need.capability for need in state.open_tool_needs] == ["service_management"]
@@ -319,9 +323,7 @@ def test_fact_seed_ingests_observation_evidence_and_fact_before_user_message():
 def test_cli_fact_creates_observation_fact_through_ingestor(capsys):
     seed_local = load_seed_local_module()
 
-    assert (
-        seed_local.main(["--fact", "jellyfin", "runtime", "docker"]) == 0
-    )
+    assert seed_local.main(["--fact", "jellyfin", "runtime", "docker"]) == 0
 
     output = capsys.readouterr().out
     assert "fact_id: fact_obs_" in output
@@ -1485,18 +1487,22 @@ def test_parser_supports_fact_projection_queries():
     refreshes_args = parser.parse_args(["--stale-fact-refreshes"])
     summary_args = parser.parse_args(["--state-summary"])
 
-    history_args = parser.parse_args([
-        "--fact-support",
-        "node115",
-        "up",
-        "--include-history",
-    ])
-    history_alias_args = parser.parse_args([
-        "--fact-support",
-        "node115",
-        "up",
-        "--history",
-    ])
+    history_args = parser.parse_args(
+        [
+            "--fact-support",
+            "node115",
+            "up",
+            "--include-history",
+        ]
+    )
+    history_alias_args = parser.parse_args(
+        [
+            "--fact-support",
+            "node115",
+            "up",
+            "--history",
+        ]
+    )
 
     assert support_args.fact_support == ["jellyfin", "runtime"]
     assert history_args.include_history is True
@@ -1749,9 +1755,7 @@ def test_cli_availability_status_history_visibility_does_not_change_current(caps
     ]
 
     assert (
-        seed_local.main(
-            [*facts, "--fact-support", "node115", "availability_status"]
-        )
+        seed_local.main([*facts, "--fact-support", "node115", "availability_status"])
         == 0
     )
     default_output = capsys.readouterr().out
@@ -1775,8 +1779,7 @@ def test_cli_availability_status_history_visibility_does_not_change_current(caps
     assert "value: down" in history_output
 
     assert (
-        seed_local.main([*facts, "--best-fact", "node115", "availability_status"])
-        == 0
+        seed_local.main([*facts, "--best-fact", "node115", "availability_status"]) == 0
     )
     best_output = capsys.readouterr().out
     assert "value: down" in best_output
@@ -1810,6 +1813,7 @@ def test_cli_durable_runtime_fact_support_still_shows_all_conflicting_values(cap
     assert "value: systemd" in output
     assert output.count("support_kind: aggregate") == 2
     assert "historical samples hidden" not in output
+
 
 def test_cli_best_fact_prints_projected_current_belief(capsys):
     seed_local = load_seed_local_module()
@@ -2148,9 +2152,7 @@ def test_cli_diff_observations_json_does_not_ingest_inventory(tmp_path, capsys):
     assert "new_facts: 1" in output
     assert "matching_facts: 0" in output
     assert (
-        seed_local.main(
-            ["--db", str(db_path), "--fact-support", "jellyfin", "runtime"]
-        )
+        seed_local.main(["--db", str(db_path), "--fact-support", "jellyfin", "runtime"])
         == 0
     )
     support_output = capsys.readouterr().out
@@ -2185,7 +2187,6 @@ def test_cli_observe_local_host_prints_count_and_summary(monkeypatch, capsys):
     assert "subject: node-a" in output
     assert "predicate: os" in output
     assert "source_type: discovery" in output
-
 
 
 def test_cli_local_network_facts_appear_in_current_facts_and_impact(
@@ -2320,10 +2321,16 @@ def test_cli_local_network_facts_appear_in_current_facts_and_impact(
     assert "  ipv6_link_local: fe80::5" in impact_output
     assert "  default_gateway_ipv4: 192.168.2.1" in impact_output
     assert "default_gateway=2001:db8::5" not in impact_output
-    assert "- virtual/container/vpn interfaces: 1 collapsed (container=1)" in impact_output
+    assert (
+        "- virtual/container/vpn interfaces: 1 collapsed (container=1)" in impact_output
+    )
     assert "docker0: 172.17.0.1" not in impact_output
-    assert "- reachability/availability: not inferred from local network facts" in impact_output
+    assert (
+        "- reachability/availability: not inferred from local network facts"
+        in impact_output
+    )
     assert "- dns_resolver (source=/etc/resolv.conf): 1.1.1.1" in impact_output
+
 
 def test_cli_events_without_message_lists_persisted_events_and_exits(
     monkeypatch, tmp_path, capsys
@@ -2339,7 +2346,9 @@ def test_cli_events_without_message_lists_persisted_events_and_exits(
     capsys.readouterr()
 
     def fail_shell(*args, **kwargs):
-        pytest.fail("--events without a message should list events instead of shell mode")
+        pytest.fail(
+            "--events without a message should list events instead of shell mode"
+        )
 
     monkeypatch.setattr(seed_local, "run_shell", fail_shell)
 
@@ -2454,7 +2463,9 @@ def test_best_fact_accepts_short_hostname_for_persisted_fqdn_observation(tmp_pat
 
     reopened = seed_local.SQLiteEventLedger(str(db_path))
     try:
-        state = seed_local.StateProjector(reopened).project(seed_local.DEFAULT_WORKSPACE)
+        state = seed_local.StateProjector(reopened).project(
+            seed_local.DEFAULT_WORKSPACE
+        )
         assert state.get_best_fact("node115", "architecture").value == "x86_64"
         assert state.get_fact_support("node115", "architecture").value == "x86_64"
     finally:
@@ -2497,7 +2508,7 @@ def _patch_fake_prometheus_source(monkeypatch, seed_local):
                         "metric_labels": {
                             "instance": "node-a:9100",
                             "mountpoint": "/",
-                        }
+                        },
                     },
                 ),
                 seed_local.Observation(
@@ -2512,7 +2523,7 @@ def _patch_fake_prometheus_source(monkeypatch, seed_local):
                         "metric_labels": {
                             "instance": "node-a:9100",
                             "mountpoint": "/data",
-                        }
+                        },
                     },
                 ),
                 seed_local.Observation(
@@ -2536,14 +2547,17 @@ def test_cli_observe_prometheus_prints_summary_by_default(monkeypatch, capsys):
     seed_local = load_seed_local_module()
     _patch_fake_prometheus_source(monkeypatch, seed_local)
 
-    assert seed_local.main(
-        [
-            "--observe-prometheus",
-            "http://prom.example:9090",
-            "--observe-timeout",
-            "3",
-        ]
-    ) == 0
+    assert (
+        seed_local.main(
+            [
+                "--observe-prometheus",
+                "http://prom.example:9090",
+                "--observe-timeout",
+                "3",
+            ]
+        )
+        == 0
+    )
 
     output = capsys.readouterr().out
     assert "ingested 8 observation(s)" in output
@@ -2562,13 +2576,16 @@ def test_cli_observe_prometheus_verbose_prints_every_fact(monkeypatch, capsys):
     seed_local = load_seed_local_module()
     _patch_fake_prometheus_source(monkeypatch, seed_local)
 
-    assert seed_local.main(
-        [
-            "--observe-prometheus",
-            "http://prom.example:9090",
-            "--verbose-observations",
-        ]
-    ) == 0
+    assert (
+        seed_local.main(
+            [
+                "--observe-prometheus",
+                "http://prom.example:9090",
+                "--verbose-observations",
+            ]
+        )
+        == 0
+    )
 
     output = capsys.readouterr().out
     assert "ingested 8 observation(s)" in output
@@ -2592,19 +2609,25 @@ def test_cli_observe_prometheus_supports_canonical_availability_best_fact(
     _patch_fake_prometheus_source(monkeypatch, seed_local)
     db_path = tmp_path / "seed.sqlite"
 
-    assert seed_local.main(
-        [
-            "--db",
-            str(db_path),
-            "--observe-prometheus",
-            "http://prom.example:9090",
-        ]
-    ) == 0
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--observe-prometheus",
+                "http://prom.example:9090",
+            ]
+        )
+        == 0
+    )
     capsys.readouterr()
 
-    assert seed_local.main(
-        ["--db", str(db_path), "--best-fact", instance, "availability_status"]
-    ) == 0
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--best-fact", instance, "availability_status"]
+        )
+        == 0
+    )
     output = capsys.readouterr().out
     assert f"subject: {instance}" in output
     assert "predicate: availability_status" in output
@@ -2618,16 +2641,19 @@ def test_cli_observe_prometheus_instance_filter_limits_ingestion(
     _patch_fake_prometheus_source(monkeypatch, seed_local)
     db_path = tmp_path / "seed.sqlite"
 
-    assert seed_local.main(
-        [
-            "--db",
-            str(db_path),
-            "--observe-prometheus",
-            "http://prom.example:9090",
-            "--prometheus-instance",
-            "node-b:9100",
-        ]
-    ) == 0
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--observe-prometheus",
+                "http://prom.example:9090",
+                "--prometheus-instance",
+                "node-b:9100",
+            ]
+        )
+        == 0
+    )
 
     output = capsys.readouterr().out
     assert "ingested 2 observation(s)" in output
@@ -2652,16 +2678,19 @@ def test_cli_observe_prometheus_mountpoint_filter_limits_ingestion(
     _patch_fake_prometheus_source(monkeypatch, seed_local)
     db_path = tmp_path / "seed.sqlite"
 
-    assert seed_local.main(
-        [
-            "--db",
-            str(db_path),
-            "--observe-prometheus",
-            "http://prom.example:9090",
-            "--prometheus-mountpoint",
-            "/data",
-        ]
-    ) == 0
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--observe-prometheus",
+                "http://prom.example:9090",
+                "--prometheus-mountpoint",
+                "/data",
+            ]
+        )
+        == 0
+    )
 
     output = capsys.readouterr().out
     assert "ingested 2 observation(s)" in output
@@ -2704,10 +2733,7 @@ def test_cli_alias_resolves_best_fact_after_sqlite_reopen(tmp_path, capsys):
     )
     capsys.readouterr()
 
-    assert (
-        seed_local.main(["--db", str(db_path), "--best-fact", "node115", "up"])
-        == 0
-    )
+    assert seed_local.main(["--db", str(db_path), "--best-fact", "node115", "up"]) == 0
     output = capsys.readouterr().out
     assert "subject: 192.168.254.115:9100" in output
     assert "predicate: up" in output
@@ -2715,7 +2741,9 @@ def test_cli_alias_resolves_best_fact_after_sqlite_reopen(tmp_path, capsys):
 
     reopened = seed_local.SQLiteEventLedger(str(db_path))
     try:
-        state = seed_local.StateProjector(reopened).project(seed_local.DEFAULT_WORKSPACE)
+        state = seed_local.StateProjector(reopened).project(
+            seed_local.DEFAULT_WORKSPACE
+        )
         support = state.get_fact_support("node115", "up")
         best = state.get_best_fact("node115", "up")
     finally:
@@ -2731,37 +2759,46 @@ def test_cli_alias_does_not_flatten_endpoint_availability_best_fact(tmp_path, ca
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
 
-    assert seed_local.main(
-        [
-            "--db",
-            str(db_path),
-            "--fact",
-            "192.168.254.115:9100",
-            "availability_status",
-            "down",
-            "--alias",
-            "node115",
-            "192.168.254.115:9100",
-        ]
-    ) == 0
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--fact",
+                "192.168.254.115:9100",
+                "availability_status",
+                "down",
+                "--alias",
+                "node115",
+                "192.168.254.115:9100",
+            ]
+        )
+        == 0
+    )
     capsys.readouterr()
 
-    assert seed_local.main(
-        ["--db", str(db_path), "--best-fact", "node115", "availability_status"]
-    ) == 0
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--best-fact", "node115", "availability_status"]
+        )
+        == 0
+    )
     assert capsys.readouterr().out == (
         "no current belief for node115 availability_status\n"
     )
 
-    assert seed_local.main(
-        [
-            "--db",
-            str(db_path),
-            "--best-fact",
-            "192.168.254.115:9100",
-            "availability_status",
-        ]
-    ) == 0
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--best-fact",
+                "192.168.254.115:9100",
+                "availability_status",
+            ]
+        )
+        == 0
+    )
     output = capsys.readouterr().out
     assert "subject: 192.168.254.115:9100" in output
     assert "predicate: availability_status" in output
@@ -2861,19 +2898,27 @@ def test_cli_ansible_inventory_and_prometheus_support_best_fact(
 
     monkeypatch.setattr(seed_local, "PrometheusObservationSource", FakePrometheusSource)
 
-    assert seed_local.main(
-        ["--db", str(db_path), "--observe-ansible-inventory", str(inventory_path)]
-    ) == 0
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--observe-ansible-inventory", str(inventory_path)]
+        )
+        == 0
+    )
     capsys.readouterr()
 
-    assert seed_local.main(
-        ["--db", str(db_path), "--observe-prometheus", "http://prom.example:9090"]
-    ) == 0
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--observe-prometheus", "http://prom.example:9090"]
+        )
+        == 0
+    )
     capsys.readouterr()
 
     reopened = seed_local.SQLiteEventLedger(str(db_path))
     try:
-        state = seed_local.StateProjector(reopened).project(seed_local.DEFAULT_WORKSPACE)
+        state = seed_local.StateProjector(reopened).project(
+            seed_local.DEFAULT_WORKSPACE
+        )
     finally:
         reopened.close()
     assert any(
@@ -2883,22 +2928,28 @@ def test_cli_ansible_inventory_and_prometheus_support_best_fact(
         for fact in state.facts.values()
     )
 
-    assert seed_local.main(
-        ["--db", str(db_path), "--best-fact", "node115", "availability_status"]
-    ) == 0
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--best-fact", "node115", "availability_status"]
+        )
+        == 0
+    )
     assert capsys.readouterr().out == (
         "no current belief for node115 availability_status\n"
     )
 
-    assert seed_local.main(
-        [
-            "--db",
-            str(db_path),
-            "--best-fact",
-            "192.168.254.115:9100",
-            "availability_status",
-        ]
-    ) == 0
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--best-fact",
+                "192.168.254.115:9100",
+                "availability_status",
+            ]
+        )
+        == 0
+    )
     output = capsys.readouterr().out
     assert "subject: 192.168.254.115:9100" in output
     assert "predicate: availability_status" in output
@@ -2944,7 +2995,10 @@ def test_cli_impact_reports_local_observation_without_availability(tmp_path, cap
     _persist_impact_facts(
         seed_local,
         db_path,
-        [("node115", "local_observation_status", "observed"), ("node115", "os", "linux")],
+        [
+            ("node115", "local_observation_status", "observed"),
+            ("node115", "os", "linux"),
+        ],
     )
 
     assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
@@ -2969,7 +3023,9 @@ def test_cli_impact_resolves_host_alias_and_reports_availability(tmp_path, capsy
         ],
     )
 
-    assert seed_local.main(["--db", str(db_path), "--impact", "192.168.254.115:9100"]) == 0
+    assert (
+        seed_local.main(["--db", str(db_path), "--impact", "192.168.254.115:9100"]) == 0
+    )
 
     output = capsys.readouterr().out
     assert "entity: node115" in output
@@ -3027,9 +3083,7 @@ def test_cli_current_facts_and_impact_keep_all_aliases_without_conflict(
     )
 
     assert (
-        seed_local.main(
-            ["--db", str(db_path), "--current-facts", "node115", "alias"]
-        )
+        seed_local.main(["--db", str(db_path), "--current-facts", "node115", "alias"])
         == 0
     )
     assert capsys.readouterr().out.splitlines() == aliases
@@ -3082,7 +3136,9 @@ def test_cli_impact_formats_unknown_upstream_when_only_stub_known(tmp_path, caps
     assert "- dns_resolver_stub: 127.0.0.53" in output
     assert "- dns_resolver_upstream: unknown" in output
     assert "availability_status: unknown" in output
-    assert "- reachability/availability: not inferred from local network facts" in output
+    assert (
+        "- reachability/availability: not inferred from local network facts" in output
+    )
 
 
 def test_cli_impact_omits_ip_address_aliases_unless_explicit_alias(tmp_path, capsys):
@@ -3112,6 +3168,7 @@ def test_cli_impact_omits_ip_address_aliases_unless_explicit_alias(tmp_path, cap
     assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
     output = capsys.readouterr().out
     assert "aliases:\n- 192.168.254.115" in output
+
 
 def test_cli_impact_includes_graph_warnings(tmp_path, capsys):
     seed_local = load_seed_local_module()
@@ -3154,20 +3211,23 @@ def test_cli_impact_does_not_ingest_or_execute(tmp_path, capsys, monkeypatch):
         lambda **_kwargs: (_ for _ in ()).throw(AssertionError("runtime was built")),
     )
 
-    assert seed_local.main(
-        [
-            "--db",
-            str(db_path),
-            "--fact",
-            "node115",
-            "os",
-            "linux",
-            "--impact",
-            "node115",
-            "restart",
-            "node115",
-        ]
-    ) == 0
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--fact",
+                "node115",
+                "os",
+                "linux",
+                "--impact",
+                "node115",
+                "restart",
+                "node115",
+            ]
+        )
+        == 0
+    )
     assert "entity types: unknown" in capsys.readouterr().out
 
     ledger = seed_local.SQLiteEventLedger(str(db_path))
@@ -3287,7 +3347,10 @@ def test_cli_unhealthy_groups_current_down_endpoint_under_aliased_host_with_role
     assert seed_local.main(["--db", str(db_path), "--unhealthy"]) == 0
 
     output = capsys.readouterr().out
-    assert "unhealthy endpoints:\nnode115:\n  - node-exporter down 192.168.254.115:9100" in output
+    assert (
+        "unhealthy endpoints:\nnode115:\n  - node-exporter down 192.168.254.115:9100"
+        in output
+    )
     assert "node116:9100" not in output
     assert "host-down-is-not-an-endpoint" not in output
     assert "graph errors:" in output
@@ -3332,9 +3395,10 @@ def test_cli_unhealthy_shows_errors_and_optionally_warnings(tmp_path, capsys):
     assert "graph warnings:" not in output
     assert "mystery member_of servers" not in output
 
-    assert seed_local.main(
-        ["--db", str(db_path), "--unhealthy", "--include-warnings"]
-    ) == 0
+    assert (
+        seed_local.main(["--db", str(db_path), "--unhealthy", "--include-warnings"])
+        == 0
+    )
     output = capsys.readouterr().out
     assert "graph warnings:" in output
     assert "- warning: mystery member_of servers" in output
@@ -3352,7 +3416,10 @@ def test_cli_graph_issue_output_prints_hint_when_present(tmp_path, capsys):
     assert seed_local.main(["--db", str(db_path), "--graph-issues"]) == 0
 
     output = capsys.readouterr().out
-    assert "hint: Add inventory or alias evidence if this monitored endpoint should map to a known host." in output
+    assert (
+        "hint: Add inventory or alias evidence if this monitored endpoint should map to a known host."
+        in output
+    )
     assert "source_fact_ids: fact_impact_0" in output
 
 
@@ -3365,19 +3432,22 @@ def test_cli_unhealthy_does_not_ingest_or_execute(tmp_path, capsys, monkeypatch)
         lambda **_kwargs: (_ for _ in ()).throw(AssertionError("runtime was built")),
     )
 
-    assert seed_local.main(
-        [
-            "--db",
-            str(db_path),
-            "--fact",
-            "node115:9100",
-            "availability_status",
-            "down",
-            "--unhealthy",
-            "restart",
-            "node115",
-        ]
-    ) == 0
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--fact",
+                "node115:9100",
+                "availability_status",
+                "down",
+                "--unhealthy",
+                "restart",
+                "node115",
+            ]
+        )
+        == 0
+    )
     assert "unhealthy endpoints:\n- none" in capsys.readouterr().out
 
     ledger = seed_local.SQLiteEventLedger(str(db_path))
@@ -3385,3 +3455,51 @@ def test_cli_unhealthy_does_not_ingest_or_execute(tmp_path, capsys, monkeypatch)
         assert ledger.list_events(seed_local.DEFAULT_WORKSPACE) == []
     finally:
         ledger.close()
+
+
+def test_cli_impact_includes_identity_section_without_availability_or_reachability(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "impact-identity.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [
+            ("node115", "hostname", "node115"),
+            ("node115", "machine_id", "0123456789abcdef0123456789abcdef"),
+            ("node115", "boot_id", "11111111-2222-3333-4444-555555555555"),
+        ],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+    output = capsys.readouterr().out
+
+    assert "identity:\n" in output
+    assert "- hostname: node115" in output
+    assert "- machine_id: 0123456789abcdef0123456789abcdef" in output
+    assert "- boot_id: 11111111-2222-3333-4444-555555555555" in output
+    assert "- availability/reachability: not inferred from identity facts" in output
+    assert "availability_status: unknown" in output
+    assert "reachability_status" not in output
+
+
+def test_cli_current_facts_exposes_identity_facts(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "current-identity.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [
+            ("node115", "hostname", "node115"),
+            ("node115", "machine_id", "0123456789abcdef0123456789abcdef"),
+            ("node115", "boot_id", "11111111-2222-3333-4444-555555555555"),
+        ],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--current-facts"]) == 0
+    output = capsys.readouterr().out
+
+    assert "* node115 hostname node115" in output
+    assert "* node115 machine_id 0123456789abcdef0123456789abcdef" in output
+    assert "* node115 boot_id 11111111-2222-3333-4444-555555555555" in output

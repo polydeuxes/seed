@@ -1,6 +1,17 @@
 {
   "predicates": [
     {
+      "predicate": "address_assignment_method",
+      "kind": "durable_fact",
+      "value_type": "enum",
+      "allowed_values": [
+        "dhcp",
+        "static",
+        "unknown"
+      ],
+      "cardinality": "multi"
+    },
+    {
       "predicate": "alias",
       "kind": "durable_fact",
       "value_type": "string",
@@ -27,6 +38,12 @@
         "down",
         "unknown"
       ],
+      "cardinality": "single"
+    },
+    {
+      "predicate": "boot_id",
+      "kind": "durable_fact",
+      "value_type": "string",
       "cardinality": "single"
     },
     {
@@ -83,6 +100,12 @@
       "cardinality": "single"
     },
     {
+      "predicate": "fqdn",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "single"
+    },
+    {
       "predicate": "group",
       "kind": "durable_fact",
       "value_type": "string",
@@ -97,6 +120,12 @@
         "degraded",
         "unknown"
       ],
+      "cardinality": "single"
+    },
+    {
+      "predicate": "hostname",
+      "kind": "durable_fact",
+      "value_type": "string",
       "cardinality": "single"
     },
     {
@@ -132,17 +161,6 @@
       "cardinality": "multi"
     },
     {
-      "predicate": "address_assignment_method",
-      "kind": "durable_fact",
-      "value_type": "enum",
-      "allowed_values": [
-        "dhcp",
-        "static",
-        "unknown"
-      ],
-      "cardinality": "multi"
-    },
-    {
       "predicate": "ip_address",
       "kind": "durable_fact",
       "value_type": "string",
@@ -155,6 +173,12 @@
       "allowed_values": [
         "observed"
       ],
+      "cardinality": "single"
+    },
+    {
+      "predicate": "machine_id",
+      "kind": "durable_fact",
+      "value_type": "string",
       "cardinality": "single"
     },
     {

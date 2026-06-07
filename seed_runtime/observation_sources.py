@@ -76,6 +76,32 @@ class ObservationSource(Protocol):
         """Return the observations collected by this source."""
 
 
+_IDENTITY_QUESTIONS = {
+    "hostname": "What hostname is configured locally?",
+    "machine_id": "What machine-id is recorded locally?",
+    "boot_id": "What boot-id is recorded for the current local boot?",
+    "fqdn": "What fully qualified hostname is explicitly configured locally?",
+}
+
+
+def _read_bounded_first_line(path: Path, *, max_bytes: int = 4096) -> str | None:
+    try:
+        with path.open("rb") as handle:
+            raw = handle.read(max_bytes)
+    except OSError:
+        return None
+    text = raw.decode("utf-8", errors="replace").splitlines()[0].strip() if raw else ""
+    return text or None
+
+
+def _is_locally_configured_fqdn(value: str) -> bool:
+    candidate = value.strip().rstrip(".")
+    if "." not in candidate or candidate.lower() == "localhost.localdomain":
+        return False
+    labels = candidate.split(".")
+    return all(label and not label.isspace() for label in labels)
+
+
 class FakeObservationSource:
     """Simple in-memory observation source for tests and development."""
 
@@ -112,6 +138,8 @@ class LocalHostObservationSource:
         name: str = "local-host",
         proc_root: str | Path = "/proc",
         sys_class_net: str | Path = "/sys/class/net",
+        etc_hostname: str | Path = "/etc/hostname",
+        machine_id: str | Path = "/etc/machine-id",
         resolv_conf: str | Path = "/etc/resolv.conf",
         systemd_resolv_conf: str | Path = "/run/systemd/resolve/resolv.conf",
         systemd_stub_resolv_conf: str | Path = "/run/systemd/resolve/stub-resolv.conf",
@@ -121,6 +149,8 @@ class LocalHostObservationSource:
         self.name = name
         self.proc_root = Path(proc_root)
         self.sys_class_net = Path(sys_class_net)
+        self.etc_hostname = Path(etc_hostname)
+        self.machine_id = Path(machine_id)
         self.resolv_conf = Path(resolv_conf)
         self.systemd_resolv_conf = Path(systemd_resolv_conf)
         self.systemd_stub_resolv_conf = Path(systemd_stub_resolv_conf)
@@ -131,7 +161,11 @@ class LocalHostObservationSource:
         """Return local host facts without executing or mutating the host."""
 
         observed_at = datetime.now(timezone.utc)
-        hostname = platform.node() or "localhost"
+        identity = self._collect_local_identity()
+        hostname_entry = identity.get("hostname")
+        hostname = platform.node() or (
+            hostname_entry["value"] if isinstance(hostname_entry, dict) else "localhost"
+        )
         system = (platform.system() or "unknown").lower()
         architecture = platform.machine() or "unknown"
         uname_metadata: dict[str, Any] = {}
@@ -156,48 +190,129 @@ class LocalHostObservationSource:
             "network_connection": False,
             **uname_metadata,
         }
-        observations = [
-            self._observation(
-                observed_at,
-                hostname,
-                "local_observation_status",
-                "observed",
-                metadata={
-                    **metadata,
-                    "meaning": "Seed inspected this host through local read-only APIs",
-                    "network_reachability_asserted": False,
-                    "provider_visibility_asserted": False,
-                    "availability_asserted": False,
-                },
-            ),
-            self._observation(
-                observed_at, hostname, "os", system, metadata={**metadata}
-            ),
-            self._observation(
-                observed_at,
-                hostname,
-                "architecture",
-                architecture,
-                metadata={**metadata},
-            ),
-            self._observation(
-                observed_at,
-                hostname,
-                "disk_total_bytes",
-                int(disk_usage.total),
-                metadata={**metadata, "path": "/"},
-            ),
-            self._observation(
-                observed_at,
-                hostname,
-                "disk_free_bytes",
-                int(disk_usage.free),
-                metadata={**metadata, "path": "/"},
-            ),
-        ]
+        observations = self._collect_identity_observations(
+            observed_at, hostname, metadata, identity
+        )
+        observations.extend(
+            [
+                self._observation(
+                    observed_at,
+                    hostname,
+                    "local_observation_status",
+                    "observed",
+                    metadata={
+                        **metadata,
+                        "meaning": "Seed inspected this host through local read-only APIs",
+                        "network_reachability_asserted": False,
+                        "provider_visibility_asserted": False,
+                        "availability_asserted": False,
+                    },
+                ),
+                self._observation(
+                    observed_at, hostname, "os", system, metadata={**metadata}
+                ),
+                self._observation(
+                    observed_at,
+                    hostname,
+                    "architecture",
+                    architecture,
+                    metadata={**metadata},
+                ),
+                self._observation(
+                    observed_at,
+                    hostname,
+                    "disk_total_bytes",
+                    int(disk_usage.total),
+                    metadata={**metadata, "path": "/"},
+                ),
+                self._observation(
+                    observed_at,
+                    hostname,
+                    "disk_free_bytes",
+                    int(disk_usage.free),
+                    metadata={**metadata, "path": "/"},
+                ),
+            ]
+        )
         observations.extend(
             self._collect_network_observations(observed_at, hostname, metadata)
         )
+        return observations
+
+    def _collect_local_identity(self) -> dict[str, dict[str, str]]:
+        """Read bounded local identity files without DNS, network, or execution."""
+
+        identity: dict[str, dict[str, str]] = {}
+        hostname = self._first_local_value(
+            (
+                ("/etc/hostname", self.etc_hostname),
+                ("/proc/sys/kernel/hostname", self.proc_root / "sys/kernel/hostname"),
+            )
+        )
+        if hostname is not None:
+            identity["hostname"] = hostname
+        machine_id = self._first_local_value((("/etc/machine-id", self.machine_id),))
+        if machine_id is not None:
+            identity["machine_id"] = machine_id
+        boot_id = self._first_local_value(
+            (
+                (
+                    "/proc/sys/kernel/random/boot_id",
+                    self.proc_root / "sys/kernel/random/boot_id",
+                ),
+            )
+        )
+        if boot_id is not None:
+            identity["boot_id"] = boot_id
+        if hostname is not None and _is_locally_configured_fqdn(hostname["value"]):
+            identity["fqdn"] = {
+                "value": hostname["value"],
+                "source": hostname["source"],
+            }
+        return identity
+
+    def _first_local_value(
+        self, candidates: tuple[tuple[str, Path], ...]
+    ) -> dict[str, str] | None:
+        for source_name, path in candidates:
+            value = _read_bounded_first_line(path)
+            if value:
+                return {"value": value, "source": source_name}
+        return None
+
+    def _collect_identity_observations(
+        self,
+        observed_at: datetime,
+        subject: str,
+        metadata: dict[str, Any],
+        identity: dict[str, dict[str, str]],
+    ) -> list[Observation]:
+        observations: list[Observation] = []
+        for predicate in ("hostname", "machine_id", "boot_id", "fqdn"):
+            entry = identity.get(predicate)
+            if not isinstance(entry, dict):
+                continue
+            observations.append(
+                self._observation(
+                    observed_at,
+                    subject,
+                    predicate,
+                    entry["value"],
+                    metadata={
+                        **metadata,
+                        "source": entry["source"],
+                        "question_answered": _IDENTITY_QUESTIONS[predicate],
+                        "fact_produced": predicate,
+                        "dns_validity_asserted": False,
+                        "dns_resolution_asserted": False,
+                        "network_reachability_asserted": False,
+                        "availability_asserted": False,
+                        "provider_visibility_asserted": False,
+                        "host_ownership_asserted": False,
+                        "host_uniqueness_asserted": False,
+                    },
+                )
+            )
         return observations
 
     def _collect_network_observations(
