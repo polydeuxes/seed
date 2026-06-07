@@ -452,3 +452,23 @@ This reconciliation does not propose or implement:
 - scheduler management;
 - certificate renewal or trust validation;
 - LLM reasoning.
+
+# Mount Observation v1 Completion Note
+
+Mount Observation v1 is now implemented after Hostname / Identity Observation v1.
+It follows the Capability Extension Methodology with a narrow question/evidence
+/fact/projection path:
+
+- Question: what filesystems are currently mounted, what mount points exist,
+  what devices are mounted, and what filesystem types/options are present?
+- Evidence: `/proc/mounts`, read as a local read-only procfs file through Python
+  standard-library file APIs.
+- Facts: `mount_point`, `filesystem_type`, `mounted_device`, and `mount_option`.
+- Projection: ordinary observation ingestion and current-fact projection; no
+  `Runtime`, `ToolExecutor`, `EventLedger`, or `ProjectionStore` ownership
+  changes.
+
+Non-inferences are explicit: mount facts do not imply filesystem health,
+writability, availability, reachability, device health, or device accessibility.
+The slice does not use network access, DNS queries, shell execution,
+subprocesses, sudo, provider APIs, Prometheus, or LLM reasoning.

@@ -1,5 +1,6 @@
 import json
 import os
+import subprocess
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -961,6 +962,202 @@ def test_local_network_observation_does_not_probe_or_escalate(monkeypatch, tmp_p
     assert all(obs.metadata["privilege_escalation"] is False for obs in observations)
     assert all(obs.metadata["network_probe"] is False for obs in observations)
 
+
+def _write_mount_fixture(proc: Path) -> Path:
+    proc.mkdir(parents=True, exist_ok=True)
+    (proc / "mounts").write_text(
+        "/dev/sda1 / ext4 rw,relatime 0 0\n"
+        "tmpfs /run tmpfs rw,nosuid,nodev,mode=755 0 0\n"
+        "/dev/disk/by-label/My\\040Data /mnt/My\\040Data xfs ro,relatime 0 0\n",
+        encoding="utf-8",
+    )
+    return proc
+
+
+def test_local_host_source_emits_mount_observations(monkeypatch, tmp_path):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    proc = _write_mount_fixture(tmp_path / "proc")
+    missing = tmp_path / "missing"
+    monkeypatch.setattr(sources.platform, "node", lambda: "node-a")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_collect_network_observations",
+        lambda self, observed_at, hostname, metadata: [],
+    )
+
+    observations = LocalHostObservationSource(
+        proc_root=proc, sys_class_net=missing, resolv_conf=missing
+    ).collect()
+
+    triples = {(obs.subject, obs.predicate, obs.value) for obs in observations}
+    assert ("node-a", "mount_point", "/") in triples
+    assert ("node-a", "mount_point", "/mnt/My Data") in triples
+    assert ("node-a", "filesystem_type", "ext4") in triples
+    assert ("node-a", "filesystem_type", "xfs") in triples
+    assert ("node-a", "mounted_device", "/dev/sda1") in triples
+    assert ("node-a", "mounted_device", "/dev/disk/by-label/My Data") in triples
+    assert ("node-a", "mount_option", "ro") in triples
+    mount_point = next(
+        obs for obs in observations if obs.predicate == "mount_point" and obs.value == "/"
+    )
+    assert mount_point.dimensions == {"mount_point": "/"}
+    assert mount_point.metadata["source"] == "/proc/mounts"
+    assert (
+        mount_point.metadata["question_answered"]
+        == "What mount points currently exist?"
+    )
+    assert mount_point.metadata["availability_asserted"] is False
+    assert mount_point.metadata["reachability_asserted"] is False
+    assert mount_point.metadata["network_reachability_asserted"] is False
+    assert mount_point.metadata["health_asserted"] is False
+    assert mount_point.metadata["writability_asserted"] is False
+
+
+def test_mount_observation_projection_is_deterministic(monkeypatch, tmp_path):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    proc = _write_mount_fixture(tmp_path / "proc")
+    missing = tmp_path / "missing"
+    monkeypatch.setattr(sources.platform, "node", lambda: "node-a")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_collect_network_observations",
+        lambda self, observed_at, hostname, metadata: [],
+    )
+    source = LocalHostObservationSource(
+        proc_root=proc, sys_class_net=missing, resolv_conf=missing
+    )
+
+    first = [
+        (obs.subject, obs.predicate, obs.value, obs.dimensions)
+        for obs in source.collect()
+        if obs.predicate
+        in {"mount_point", "filesystem_type", "mounted_device", "mount_option"}
+    ]
+    second = [
+        (obs.subject, obs.predicate, obs.value, obs.dimensions)
+        for obs in source.collect()
+        if obs.predicate
+        in {"mount_point", "filesystem_type", "mounted_device", "mount_option"}
+    ]
+
+    assert first == second
+
+
+def test_mount_observation_projects_without_availability_or_reachability(
+    monkeypatch, tmp_path
+):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observations import ObservationIngestor
+    from seed_runtime.observation_sources import (
+        LocalHostObservationSource,
+        ObservationCollectionService,
+    )
+    from seed_runtime.state import StateProjector
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    proc = _write_mount_fixture(tmp_path / "proc")
+    missing = tmp_path / "missing"
+    monkeypatch.setattr(sources.platform, "node", lambda: "node-a")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_collect_network_observations",
+        lambda self, observed_at, hostname, metadata: [],
+    )
+
+    ledger = EventLedger()
+    ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        LocalHostObservationSource(
+            proc_root=proc, sys_class_net=missing, resolv_conf=missing
+        ),
+        "ws_mount",
+    )
+    state = StateProjector(ledger).project("ws_mount")
+
+    assert state.get_current_facts("node-a", "mount_point")
+    assert state.get_current_facts("node-a", "filesystem_type")
+    assert state.get_current_facts("node-a", "mounted_device")
+    assert state.get_current_facts("node-a", "mount_option")
+    assert state.get_best_fact("node-a", "availability_status") is None
+    assert state.get_best_fact("node-a", "reachability_status") is None
+
+
+def test_mount_observation_does_not_probe_execute_or_escalate(
+    monkeypatch, tmp_path
+):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    def fail_forbidden(*args, **kwargs):  # pragma: no cover - guard callback
+        raise AssertionError("mount observation must not probe, execute, or escalate")
+
+    proc = _write_mount_fixture(tmp_path / "proc")
+    missing = tmp_path / "missing"
+    monkeypatch.setattr(sources.platform, "node", lambda: "node-a")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(sources.socket, "create_connection", fail_forbidden)
+    monkeypatch.setattr(sources.socket, "getaddrinfo", fail_forbidden)
+    monkeypatch.setattr(sources.socket, "gethostbyname", fail_forbidden)
+    monkeypatch.setattr(sources, "urlopen", fail_forbidden)
+    monkeypatch.setattr(os, "system", fail_forbidden)
+    monkeypatch.setattr(subprocess, "Popen", fail_forbidden)
+    monkeypatch.setattr(subprocess, "run", fail_forbidden)
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_collect_network_observations",
+        lambda self, observed_at, hostname, metadata: [],
+    )
+
+    observations = LocalHostObservationSource(
+        proc_root=proc, sys_class_net=missing, resolv_conf=missing
+    ).collect()
+    mount_observations = [
+        obs
+        for obs in observations
+        if obs.predicate
+        in {"mount_point", "filesystem_type", "mounted_device", "mount_option"}
+    ]
+
+    assert mount_observations
+    assert all(obs.metadata["local_only"] is True for obs in mount_observations)
+    assert all(obs.metadata["shell_execution"] is False for obs in mount_observations)
+    assert all(
+        obs.metadata["subprocess_execution"] is False for obs in mount_observations
+    )
+    assert all(
+        obs.metadata["privilege_escalation"] is False for obs in mount_observations
+    )
+    assert all(obs.metadata["network_probe"] is False for obs in mount_observations)
+    assert all(obs.metadata["network_connection"] is False for obs in mount_observations)
 
 def test_prometheus_source_uses_safe_get_queries_and_converts_observations(
     monkeypatch,

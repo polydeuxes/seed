@@ -6,6 +6,7 @@ import fcntl
 import ipaddress
 import json
 import os
+import re
 import platform
 import shutil
 import socket
@@ -83,6 +84,15 @@ _IDENTITY_QUESTIONS = {
     "fqdn": "What fully qualified hostname is explicitly configured locally?",
 }
 
+_MOUNT_QUESTIONS = {
+    "mount_point": "What mount points currently exist?",
+    "filesystem_type": "What filesystem type is mounted?",
+    "mounted_device": "Which device backs the mount?",
+    "mount_option": "What mount options are recorded for the mount?",
+}
+
+_PROC_MOUNT_ESCAPE_RE = re.compile(r"\\([0-7]{3})")
+
 
 def _read_bounded_first_line(path: Path, *, max_bytes: int = 4096) -> str | None:
     try:
@@ -126,7 +136,7 @@ class LocalHostObservationSource:
     """Read-only local host observation source using Python stdlib APIs only.
 
     This source intentionally does not execute shells or subprocesses. It reads
-    process-local platform, disk, and local network configuration metadata via
+    process-local platform, disk, local network, and mount metadata via
     Python standard library calls and local read-only files.
     """
 
@@ -236,6 +246,9 @@ class LocalHostObservationSource:
         )
         observations.extend(
             self._collect_network_observations(observed_at, hostname, metadata)
+        )
+        observations.extend(
+            self._collect_mount_observations(observed_at, hostname, metadata)
         )
         return observations
 
@@ -518,6 +531,114 @@ class LocalHostObservationSource:
             )
 
         return observations
+
+
+    def _collect_mount_observations(
+        self, observed_at: datetime, hostname: str, metadata: dict[str, Any]
+    ) -> list[Observation]:
+        """Collect mounted filesystem facts from /proc/mounts only.
+
+        Mount facts describe local kernel mount-table entries. They do not
+        assert health, writability, reachability, storage availability, or
+        device accessibility.
+        """
+
+        observations: list[Observation] = []
+        for mount in self._mount_entries():
+            mount_point = mount["mount_point"]
+            dimensions = {"mount_point": mount_point}
+            mount_metadata = {
+                **metadata,
+                "source": mount["source"],
+                "mount_point": mount_point,
+                "health_asserted": False,
+                "writability_asserted": False,
+                "reachability_asserted": False,
+                "network_reachability_asserted": False,
+                "availability_asserted": False,
+                "device_health_asserted": False,
+                "device_accessibility_asserted": False,
+            }
+            for predicate, value in (
+                ("mount_point", mount_point),
+                ("filesystem_type", mount["filesystem_type"]),
+                ("mounted_device", mount["mounted_device"]),
+            ):
+                observations.append(
+                    self._observation(
+                        observed_at,
+                        hostname,
+                        predicate,
+                        value,
+                        metadata={
+                            **mount_metadata,
+                            "question_answered": _MOUNT_QUESTIONS[predicate],
+                            "fact_produced": predicate,
+                        },
+                        dimensions=dimensions,
+                    )
+                )
+            for option in mount["mount_options"]:
+                observations.append(
+                    self._observation(
+                        observed_at,
+                        hostname,
+                        "mount_option",
+                        option,
+                        metadata={
+                            **mount_metadata,
+                            "question_answered": _MOUNT_QUESTIONS["mount_option"],
+                            "fact_produced": "mount_option",
+                        },
+                        dimensions={**dimensions, "mount_option": option},
+                    )
+                )
+        return observations
+
+    def _mount_entries(self) -> list[dict[str, Any]]:
+        """Parse /proc/mounts without invoking mount/findmnt or other commands."""
+
+        text = self._read_text(self.proc_root / "mounts")
+        if not text:
+            return []
+        entries: list[dict[str, Any]] = []
+        for line in text.splitlines():
+            fields = line.split()
+            if len(fields) < 4:
+                continue
+            device, mount_point, filesystem_type, options = fields[:4]
+            decoded_options = sorted(
+                dict.fromkeys(
+                    self._decode_proc_mount_field(option)
+                    for option in options.split(",")
+                    if option
+                )
+            )
+            entries.append(
+                {
+                    "mounted_device": self._decode_proc_mount_field(device),
+                    "mount_point": self._decode_proc_mount_field(mount_point),
+                    "filesystem_type": self._decode_proc_mount_field(filesystem_type),
+                    "mount_options": decoded_options,
+                    "source": "/proc/mounts",
+                }
+            )
+        return sorted(
+            entries,
+            key=lambda item: (
+                item["mount_point"],
+                item["mounted_device"],
+                item["filesystem_type"],
+            ),
+        )
+
+    @staticmethod
+    def _decode_proc_mount_field(value: str) -> str:
+        """Decode procfs octal escapes such as \040 for spaces."""
+
+        return _PROC_MOUNT_ESCAPE_RE.sub(
+            lambda match: chr(int(match.group(1), 8)), value
+        )
 
     def _interface_role(
         self, interface: str, default_route_interfaces: set[str]
