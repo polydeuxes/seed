@@ -13,8 +13,9 @@ reasoning.
 | --- | --- | --- | --- | --- | --- |
 | Identity Observation | Implemented | Identity | Foundation | Low | Track local identity disagreements without DNS or ownership claims. |
 | Mount Observation | Implemented | Topology; Configuration | Local observation v1 | Low | Consider `/proc/self/mountinfo` only if a later slice needs richer relationships. |
+| Kernel / CPU / Memory Observation | Implemented | Description | Local observation v1 | Low | Keep memory available/free out until volatile state semantics need it. |
 | Local Network Observation | Implemented | Configuration; Topology; State | Local observation v1 | Low | Add listening-port observation from `/proc/net/*` without connection attempts. |
-| Local Host Observation | Implemented | Description; State | Foundation | Low | Add kernel, CPU, and memory facts from bounded local files/APIs. |
+| Local Host Observation | Implemented | Description; State | Foundation | Low | Continue keeping local descriptive facts separate from health, reachability, and supportability inference. |
 | Availability Vocabulary | Implemented | Cross-cutting vocabulary | Vocabulary | Low | Keep availability separate from local observation facts. |
 | Explainability Foundation | Implemented | Cross-cutting explanation | Foundation | Low | Continue exposing evidence and non-inference boundaries in new slices. |
 | Capability Verification Foundation | Implemented | Cross-cutting verification | Foundation | Low | Keep verification facts distinct from provider reports and observations. |
@@ -29,9 +30,6 @@ reasoning.
 
 | Item | Status | Class | Tier | Risk | Next Slice |
 | --- | --- | --- | --- | --- | --- |
-| Kernel Observation | Planned | Description | Local observation v1 | Low | Read bounded `/proc/sys/kernel/*` values only. |
-| CPU Observation | Planned | Description | Local observation v1 | Low | Start with `os.cpu_count()` and conservative `/proc/cpuinfo` fields. |
-| Memory Observation | Planned | Description; State | Local observation v1 | Low | Read `/proc/meminfo`; avoid health or pressure inference. |
 | Storage Topology Observation | Planned | Topology; Description | Local observation v1 | Medium | Read `/sys/block` and `/proc/partitions`; do not run `lsblk`. |
 | Users Observation | Planned | Configuration; Identity | Local observation v1 | Medium | Prefer `/etc/passwd`; avoid NSS/network-backed lookups. |
 | Groups Observation | Planned | Configuration; Identity | Local observation v1 | Medium | Prefer `/etc/group`; avoid NSS/network-backed lookups. |

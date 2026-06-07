@@ -58,6 +58,18 @@
       "cardinality": "single"
     },
     {
+      "predicate": "cpu_count",
+      "kind": "durable_fact",
+      "value_type": "integer",
+      "cardinality": "single"
+    },
+    {
+      "predicate": "cpu_model",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "single"
+    },
+    {
       "predicate": "default_gateway",
       "kind": "durable_fact",
       "value_type": "string",
@@ -173,6 +185,18 @@
       "cardinality": "multi"
     },
     {
+      "predicate": "kernel_release",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "single"
+    },
+    {
+      "predicate": "kernel_version",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "single"
+    },
+    {
       "predicate": "local_observation_status",
       "kind": "measurement",
       "value_type": "enum",
@@ -191,6 +215,12 @@
       "predicate": "managed_by",
       "kind": "durable_fact",
       "value_type": "string",
+      "cardinality": "single"
+    },
+    {
+      "predicate": "memory_total_bytes",
+      "kind": "durable_fact",
+      "value_type": "integer",
       "cardinality": "single"
     },
     {

@@ -142,9 +142,11 @@ Examples:
 | --- | --- | --- |
 | `os` | Description | Local platform description. |
 | `architecture` | Description | Machine architecture description. |
-| `kernel_version` | Description | Planned descriptive kernel fact. |
-| `cpu_model` | Description | Planned descriptive hardware fact. |
-| `memory_total` | Description | Planned descriptive capacity fact. |
+| `kernel_release` | Description | Kernel release from local kernel evidence. |
+| `kernel_version` | Description | Kernel version string from local kernel evidence. |
+| `cpu_model` | Description | CPU model reported by local CPU evidence. |
+| `cpu_count` | Description | CPU count visible in local CPU evidence. |
+| `memory_total_bytes` | Description | Total memory reported by local memory evidence; not free or available memory. |
 
 ## State
 
@@ -189,6 +191,11 @@ Implemented observations are not always one class per observation source. A sing
 | `architecture` | Description | Describes machine architecture. |
 | `disk_total_bytes` | Description | Describes local root filesystem capacity shape. |
 | `disk_free_bytes` | State | Current free-space measurement; more volatile than total capacity. |
+| `kernel_release` | Description | Kernel release from `/proc/sys/kernel/osrelease`. |
+| `kernel_version` | Description | Kernel version string from `/proc/version`. |
+| `cpu_model` | Description | CPU model from `/proc/cpuinfo` when reported. |
+| `cpu_count` | Description | CPU count from `/proc/cpuinfo` processor entries, or `os.cpu_count()` when procfs CPU evidence is absent. |
+| `memory_total_bytes` | Description | Total memory from `/proc/meminfo` `MemTotal`; no volatile available/free memory fact is emitted. |
 | `network_interface` | Topology | Structural local interface presence. |
 | `interface_role` | Topology | Local classification of interface role relative to default route; not reachability. |
 | `interface_operstate` | State | Live interface state marker. |
@@ -215,9 +222,9 @@ Roadmap items should be classified by the primary fact class they are expected t
 | Mount Observation | Topology | Configuration | Mount points/devices/filesystem types are topology; mount options are configuration. |
 | Local Network Observation | Configuration | Topology, State, Identity | Addresses/routes/resolvers dominate; interfaces are topology; operstate is state; MAC address is interface identity. |
 | Local Host Observation | Description | Identity, State | OS/architecture/capacity description dominates; status and free bytes are more volatile. |
-| Kernel Observation | Description | None | Kernel release/version/configured kernel values describe the host substrate. |
-| CPU Observation | Description | None | CPU count/model describe the host substrate. |
-| Memory Observation | Description | State | Total memory is description; free/available memory would be state if added later. |
+| Kernel Observation | Description | None | Implemented kernel release/version describe the host substrate. |
+| CPU Observation | Description | None | Implemented CPU count/model describe the host substrate. |
+| Memory Observation | Description | State | Implemented total memory is description; free/available memory remains state if added later. |
 | Storage Topology Observation | Topology | Description, Configuration | Block devices and partitions are topology; size/media details may be description; options/policies may be configuration. |
 | Listening Port Observation | State | Topology | Socket tables are live state; endpoints can also describe exposure topology. |
 | Users Observation | Configuration | Identity | `/etc/passwd` entries are configured accounts; usernames/UIDs can serve as local identities. |
@@ -236,7 +243,7 @@ Roadmap items should be classified by the primary fact class they are expected t
 | Identity | Very high | Best anchor class. Usually changes only through deliberate reconfiguration, cloning, reboot for boot-scoped identity, or host replacement. | `hostname`, `machine_id`, `boot_id`, `fqdn` |
 | Configuration | High | Usually stable until operator, DHCP, package, policy, or configuration-management changes occur. | `ip_address`, `default_gateway`, `dns_resolver`, `mount_option` |
 | Topology | Medium-high | Often stable across a boot or host configuration, but can change when devices, mounts, interfaces, services, or containers appear/disappear. | `network_interface`, `mount_point`, `mounted_device`, `filesystem_type` |
-| Description | Medium | Changes occasionally through upgrades, hardware/VM resize, image replacement, package changes, or kernel changes. | `os`, `architecture`, `kernel_version`, `cpu_model`, `memory_total` |
+| Description | Medium | Changes occasionally through upgrades, hardware/VM resize, image replacement, package changes, or kernel changes. | `os`, `architecture`, `kernel_release`, `kernel_version`, `cpu_model`, `cpu_count`, `memory_total_bytes` |
 | State | Low | Can change frequently as processes, ports, containers, operational markers, interface state, or free capacity change. | `process_marker`, `container_marker`, `listening_port`, `interface_operstate` |
 
 This is a vocabulary characterization only. It does not implement freshness behavior, staleness markers, cache invalidation, resampling policy, context weighting, or scheduling.

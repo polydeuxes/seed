@@ -137,7 +137,11 @@ facts are conflicting and the winning fields remain empty.
 Multi-cardinality predicates intentionally preserve multiple values and do not
 report those values as conflicts solely because multiple values exist.
 Measurement predicates use latest-current sample semantics and treat prior
-retained samples as history rather than durable disagreement.
+retained samples as history rather than durable disagreement. Descriptive local
+substrate facts such as `kernel_release`, `kernel_version`, `cpu_model`,
+`cpu_count`, and `memory_total_bytes` are durable facts: they can change after
+upgrades or resizing, but they are not volatile availability, health,
+performance, or memory-pressure measurements.
 
 ### Standalone `Contradiction` view
 

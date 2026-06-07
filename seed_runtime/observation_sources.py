@@ -91,6 +91,14 @@ _MOUNT_QUESTIONS = {
     "mount_option": "What mount options are recorded for the mount?",
 }
 
+_HOST_DESCRIPTION_QUESTIONS = {
+    "kernel_release": "What kernel release is this host running?",
+    "kernel_version": "What kernel version string is reported locally?",
+    "cpu_model": "What CPU model is reported locally?",
+    "cpu_count": "How many CPUs are visible locally?",
+    "memory_total_bytes": "How much total memory is reported locally?",
+}
+
 _PROC_MOUNT_ESCAPE_RE = re.compile(r"\\([0-7]{3})")
 
 
@@ -245,6 +253,9 @@ class LocalHostObservationSource:
             ]
         )
         observations.extend(
+            self._collect_host_description_observations(observed_at, hostname, metadata)
+        )
+        observations.extend(
             self._collect_network_observations(observed_at, hostname, metadata)
         )
         observations.extend(
@@ -327,6 +338,118 @@ class LocalHostObservationSource:
                 )
             )
         return observations
+
+    def _collect_host_description_observations(
+        self, observed_at: datetime, hostname: str, metadata: dict[str, Any]
+    ) -> list[Observation]:
+        """Collect kernel, CPU, and memory description facts from local evidence.
+
+        These observations describe locally reported host substrate values only.
+        They do not infer host health, performance adequacy, workload status,
+        availability, reachability, supportability, or provider visibility.
+        """
+
+        observations: list[Observation] = []
+        description_metadata = {
+            **metadata,
+            "health_asserted": False,
+            "performance_asserted": False,
+            "performance_adequacy_asserted": False,
+            "memory_pressure_asserted": False,
+            "workload_status_asserted": False,
+            "availability_asserted": False,
+            "reachability_asserted": False,
+            "network_reachability_asserted": False,
+            "supportability_asserted": False,
+            "provider_visibility_asserted": False,
+        }
+        for predicate, value, source_name in self._host_description_values():
+            observations.append(
+                self._observation(
+                    observed_at,
+                    hostname,
+                    predicate,
+                    value,
+                    metadata={
+                        **description_metadata,
+                        "source": source_name,
+                        "question_answered": _HOST_DESCRIPTION_QUESTIONS[predicate],
+                        "fact_produced": predicate,
+                    },
+                )
+            )
+        return observations
+
+    def _host_description_values(self) -> list[tuple[str, Any, str]]:
+        """Return directly evidenced kernel, CPU, and memory values."""
+
+        values: list[tuple[str, Any, str]] = []
+        kernel_release = _read_bounded_first_line(
+            self.proc_root / "sys" / "kernel" / "osrelease"
+        )
+        if kernel_release is not None:
+            values.append(
+                ("kernel_release", kernel_release, "/proc/sys/kernel/osrelease")
+            )
+
+        kernel_version = _read_bounded_first_line(self.proc_root / "version")
+        if kernel_version is not None:
+            values.append(("kernel_version", kernel_version, "/proc/version"))
+
+        cpuinfo = self._read_text(self.proc_root / "cpuinfo")
+        if cpuinfo:
+            cpu_model = self._cpu_model_from_cpuinfo(cpuinfo)
+            if cpu_model is not None:
+                values.append(("cpu_model", cpu_model, "/proc/cpuinfo"))
+            cpu_count = self._cpu_count_from_cpuinfo(cpuinfo)
+            if cpu_count is not None:
+                values.append(("cpu_count", cpu_count, "/proc/cpuinfo"))
+        elif (cpu_count := os.cpu_count()) is not None and cpu_count > 0:
+            values.append(("cpu_count", int(cpu_count), "os.cpu_count"))
+
+        meminfo = self._read_text(self.proc_root / "meminfo")
+        if meminfo:
+            memory_total = self._memory_total_bytes_from_meminfo(meminfo)
+            if memory_total is not None:
+                values.append(("memory_total_bytes", memory_total, "/proc/meminfo"))
+        return values
+
+    @staticmethod
+    def _cpu_model_from_cpuinfo(text: str) -> str | None:
+        for key in ("model name", "Hardware", "Processor"):
+            for line in text.splitlines():
+                if ":" not in line:
+                    continue
+                name, value = line.split(":", 1)
+                if name.strip() == key and value.strip():
+                    return value.strip()
+        return None
+
+    @staticmethod
+    def _cpu_count_from_cpuinfo(text: str) -> int | None:
+        processor_ids = {
+            line.split(":", 1)[1].strip()
+            for line in text.splitlines()
+            if ":" in line and line.split(":", 1)[0].strip() == "processor"
+        }
+        if processor_ids:
+            return len(processor_ids)
+        return None
+
+    @staticmethod
+    def _memory_total_bytes_from_meminfo(text: str) -> int | None:
+        for line in text.splitlines():
+            if not line.startswith("MemTotal:"):
+                continue
+            fields = line.split()
+            if len(fields) < 2 or not fields[1].isdigit():
+                return None
+            unit = fields[2].lower() if len(fields) > 2 else "kb"
+            multiplier = {"kb": 1024, "b": 1}.get(unit)
+            if multiplier is None:
+                return None
+            return int(fields[1]) * multiplier
+        return None
 
     def _collect_network_observations(
         self, observed_at: datetime, hostname: str, metadata: dict[str, Any]
