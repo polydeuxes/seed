@@ -6,7 +6,7 @@ The key reconciled finding is that a Selection Rationale Summary implementation 
 
 Backlog/status documentation mostly reflects the broader acquisition/integrity/selection roadmap, but some roadmap-style references still list `selection rationale`, `rationale`, or `selection rationale support from integrity metadata` as future work without recording that the Selection Rationale audit sequence is complete. Those references should be interpreted or updated as documentation maintenance only: completed audit, characterized surfaces, no implementation currently warranted, deferred pending new evidence.
 
-Response is now the least-audited top-level lifecycle concern. Acquisition has a concrete status board, Integrity has multiple characterization and drilldown documents, and Selection now has Context Composition and Selection Rationale audits. Response is represented as a downstream concern, but it has not received the same top-level reconciliation depth.
+Later Response and Response Caveat work has now closed the earlier least-audited concern. Response characterization, vocabulary, and reconciliation establish Response as distributed and documentation-guided; Response Caveat characterization and vocabulary establish caveat language and pause additional caveat-specific audits. The follow-on preservation handoff is recorded in `docs/architectural_findings_preservation.md`, and the active frontier is Knowledge Acquisition expansion.
 
 # Purpose
 
@@ -193,12 +193,13 @@ Recommended destinations:
 - any future architecture-status or handoff document;
 - optional cross-link from `docs/architecture.md` only if it gains a status/handoff section.
 
-Response should be called out as the least-audited top-level concern:
+Later Response work should be called out as a completed follow-on sequence, not as the least-audited top-level concern:
 
 - Acquisition has `docs/knowledge_acquisition_status.md` and multiple observation-slice reconciliations.
 - Integrity has projection integrity summary/drilldown characterizations, Why-Not vocabulary/characterization, contradiction handling, confidence/evidence surfaces, and lifecycle reconciliation.
 - Selection has Context Composition and Selection Rationale audit sequences.
-- Response is present as a downstream lifecycle stage but lacks a comparable top-level audit/reconciliation.
+- Response now has characterization, vocabulary, and reconciliation documents; Response Caveats have characterization and vocabulary documents.
+- The active frontier is Knowledge Acquisition expansion, with completed audit-program findings preserved in `docs/architectural_findings_preservation.md`.
 
 # Backlog Organization Recommendations
 
@@ -261,7 +262,7 @@ Examples:
 - answer-boundary documentation;
 - response non-goals that prevent hidden observation, verification, execution, or truth arbitration.
 
-Response is the least-audited top-level concern and is the best candidate for a future documentation-only audit if the roadmap needs a new top-level focus.
+Response is no longer the best candidate for a new top-level audit by default. Later Response and Response Caveat documents make the current status **complete enough for current architecture / documentation maintenance only / paused pending new evidence**.
 
 ## Capability Growth
 
@@ -297,7 +298,7 @@ Low-risk documentation-only cleanup opportunities:
 2. Add a cross-link from roadmap/status documents to `docs/selection_rationale_summary_characterization.md` when mentioning selection rationale.
 3. Add a compact status table listing `Selection Rationale Characterization`, `Vocabulary v1`, `Reconciliation`, and `Summary Characterization` as complete.
 4. Replace open-ended `selection rationale` future-work bullets with `Selection Rationale audit/status maintenance` or `deferred pending new evidence`.
-5. Add a note that Response is the least-audited top-level concern.
+5. Preserve the later finding that Response and Response Caveats are complete enough for current architecture and paused pending new evidence.
 6. If a future reconciliation index exists, include the Selection Rationale audit sequence in order.
 7. Keep future Selection Rationale work framed as documentation-only maps/cross-links unless a concrete unanswered operator question appears.
 
@@ -342,14 +343,15 @@ Recommended updates, from smallest to largest:
 2. When next editing `docs/roadmap_and_methodology_reconciliation.md`, replace generic `selection rationale` future-work language with completed-audit/deferred-pending-evidence wording.
 3. When next editing `docs/explainability_reconciliation.md`, add a note that Selection Rationale was later characterized and reconciled, and a dedicated rationale object/summary implementation was not justified.
 4. When next editing `docs/promotion_backlog_review.md`, cross-link Selection Rationale mentions to the completed audit sequence.
-5. Add Response as a recommended documentation-only audit candidate if a new top-level architectural concern is needed.
+5. Cross-link the later Response, Response Caveat, Architectural Status, and Architectural Findings Preservation documents instead of starting a new Response audit by default.
 6. Consider a future documentation index that lists audit sequences and their final status:
    - Context Composition: characterized/vocabulary complete;
    - Why-Not: vocabulary/characterization present;
    - Projection Integrity: summary/drilldown characterized;
    - Knowledge Lifecycle: reconciliation complete;
    - Selection Rationale: characterization/vocabulary/reconciliation/summary characterization complete; implementation not justified;
-   - Response: not yet equivalently audited.
+   - Response: characterization/vocabulary/reconciliation complete enough for current architecture; implementation not justified;
+   - Response Caveats: characterization/vocabulary complete enough for now; paused pending new evidence.
 
 # Conclusion
 
@@ -357,4 +359,4 @@ The repository now has enough Selection Rationale documentation to avoid redisco
 
 Backlog/status material should stop presenting Selection Rationale as generic future implementation work. The accurate status is **completed audit / documentation-only maintenance / deferred pending new evidence**.
 
-The safest next documentation direction is to update roadmap handoff language, cross-link the completed Selection Rationale sequence, and treat Response as the least-audited top-level lifecycle concern. No runtime behavior, ToolExecutor behavior, EventLedger ownership, ProjectionStore ownership, observations, inventories, read models, routes, adapters, engines, schemas, provider behavior, projection mutation, event appends, LLM ranking, or parallel truth systems are warranted by this reconciliation.
+The safest next documentation direction is to preserve completed audit-program findings, cross-link the completed Selection Rationale, Response, and Response Caveat sequences, and align future work with Knowledge Acquisition expansion. No runtime behavior, ToolExecutor behavior, EventLedger ownership, ProjectionStore ownership, observations, inventories, read models, routes, adapters, engines, schemas, provider behavior, projection mutation, event appends, LLM ranking, or parallel truth systems are warranted by this reconciliation.
