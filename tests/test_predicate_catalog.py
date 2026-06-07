@@ -38,6 +38,18 @@ def test_builtin_catalog_defines_canonical_predicates_and_prometheus_mappings():
     assert catalog.get("dns_resolver").cardinality == "multi"
     assert catalog.get("dns_resolver_stub").cardinality == "multi"
     assert catalog.get("dns_resolver_upstream").cardinality == "multi"
+    for predicate in (
+        "listening_address",
+        "listening_endpoint",
+        "listening_port",
+        "listening_protocol",
+    ):
+        definition = catalog.get(predicate)
+        assert definition is not None
+        assert definition.kind == "durable_fact"
+        assert definition.cardinality == "multi"
+    assert catalog.get("listening_port").value_type == "integer"
+    assert catalog.get("listening_protocol").allowed_values == ["tcp", "udp"]
     assert catalog.get("ansible_host").cardinality == "multi"
     assert catalog.get("prometheus_instance").cardinality == "multi"
     local_observation = catalog.get("local_observation_status")

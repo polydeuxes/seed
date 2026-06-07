@@ -14,8 +14,9 @@ reasoning.
 | Identity Observation | Implemented | Identity | Foundation | Low | Track local identity disagreements without DNS or ownership claims. |
 | Mount Observation | Implemented | Topology; Configuration | Local observation v1 | Low | Consider `/proc/self/mountinfo` only if a later slice needs richer relationships. |
 | Kernel / CPU / Memory Observation | Implemented | Description | Local observation v1 | Low | Keep memory available/free out until volatile state semantics need it. |
-| Local Network Observation | Implemented | Configuration; Topology; State | Local observation v1 | Low | Add listening-port observation from `/proc/net/*` without connection attempts. |
+| Local Network Observation | Implemented | Configuration; Topology; State | Local observation v1 | Low | Preserve configuration facts as non-reachability evidence. |
 | Storage Topology Observation | Implemented | Topology; Description | Tier 3 host topology | Medium | Keep storage topology before packages/systemd; do not infer health or manage devices. |
+| Listening Port Observation | Implemented | Topology | Tier 3 host topology | Medium | Keep listener topology distinct from service/process ownership and endpoint health. |
 | Local Host Observation | Implemented | Description; State | Foundation | Low | Continue keeping local descriptive facts separate from health, reachability, and supportability inference. |
 | Availability Vocabulary | Implemented | Cross-cutting vocabulary | Vocabulary | Low | Keep availability separate from local observation facts. |
 | Explainability Foundation | Implemented | Cross-cutting explanation | Foundation | Low | Continue exposing evidence and non-inference boundaries in new slices. |
@@ -33,7 +34,6 @@ reasoning.
 | --- | --- | --- | --- | --- | --- |
 | Users Observation | Planned | Configuration; Identity | Local observation v1 | Medium | Prefer `/etc/passwd`; avoid NSS/network-backed lookups. |
 | Groups Observation | Planned | Configuration; Identity | Local observation v1 | Medium | Prefer `/etc/group`; avoid NSS/network-backed lookups. |
-| Listening Port Observation | Planned | State; Topology | Local observation v1 | Medium | Read `/proc/net/tcp*`, `/proc/net/udp*`, and `/proc/net/unix`; never connect. |
 | Package Observation | Planned | Description; Configuration | Local observation v1 | Medium | Parse readable package databases only; do not call package managers. |
 | Systemd Observation | Planned | Configuration; State | Local observation v1 | Medium | Inventory unit definitions/read-only state only; no unit actions. |
 | Schedule Observation | Planned | Configuration | Local observation v1 | Medium | Read cron/system timer configuration; do not infer job success. |
@@ -51,6 +51,12 @@ reasoning.
 | Provider-backed local inventory enrichment | Deferred | Provider integration | High | Must remain separate from local read-only observation. |
 | Prometheus-backed mount/storage health | Deferred | Provider integration | High | Keep Prometheus mappings separate from local mount observation. |
 | Remediation, repair, or management actions | Deferred | Execution | High | Requires execution planning and policy; not knowledge acquisition. |
+
+## Listening Port Observation v1
+
+Listening Port Observation v1 is implemented as Tier 3 host topology knowledge. It reads bounded local procfs evidence from `/proc/net/tcp`, `/proc/net/tcp6`, `/proc/net/udp`, and `/proc/net/udp6` to emit `listening_endpoint`, `listening_protocol`, `listening_address`, and `listening_port` facts. TCP rows are projected only for `LISTEN` state; UDP rows describe locally bound UDP endpoints with non-zero local ports. The chosen representation is host-scoped with protocol/address/port/address-family dimensions and compact endpoint values such as `tcp 0.0.0.0:22`, `tcp [::1]:8080`, or `udp 0.0.0.0:53`.
+
+This slice preserves observation != management. It does not run `ss`, `netstat`, `lsof`, `fuser`, shell commands, subprocesses, sudo, network probes, DNS queries, socket opens, provider APIs, Prometheus calls, or LLM reasoning. Listener facts do not infer availability, reachability, external accessibility, endpoint health, service health, process ownership, service ownership, application ownership, responsiveness, active traffic, monitoring status, or management authority. Oversized or possibly truncated procfs socket-table inputs are skipped rather than partially projected. `--current-facts` exposes all listener facts, and `--impact HOST` includes a compact `listening endpoints` section without overloading aliases, availability, local network, mounts, or storage topology. See [Listening Port Observation v1](listening_port_observation.md).
 
 ## Storage Topology Observation v1
 

@@ -247,6 +247,34 @@
       "cardinality": "single"
     },
     {
+      "predicate": "listening_address",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "listening_endpoint",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "listening_port",
+      "kind": "durable_fact",
+      "value_type": "integer",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "listening_protocol",
+      "kind": "durable_fact",
+      "value_type": "enum",
+      "allowed_values": [
+        "tcp",
+        "udp"
+      ],
+      "cardinality": "multi"
+    },
+    {
       "predicate": "local_observation_status",
       "kind": "measurement",
       "value_type": "enum",
