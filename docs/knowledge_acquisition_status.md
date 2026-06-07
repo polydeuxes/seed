@@ -7,6 +7,14 @@ runtime behavior, execution behavior, provider integration, network access, DNS
 queries, shell execution, subprocess execution, sudo requirements, or LLM
 reasoning.
 
+Scope note: Knowledge Acquisition answers "What do we know?" by recording
+bounded observations, evidence, facts, and projections. It is only one of Seed's
+major knowledge concerns. Knowledge Integrity asks whether projected knowledge is
+supported, conflicted, stale, verification-limited, or otherwise caveated;
+Knowledge Selection asks which already-projected knowledge matters for a current
+context, explanation, or response. This status board preserves the acquisition
+roadmap rather than replacing those adjacent concerns.
+
 ## Implemented
 
 | Item | Status | Class | Tier | Risk | Next Slice |

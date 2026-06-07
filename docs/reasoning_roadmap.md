@@ -23,6 +23,90 @@ network calls, shell execution, or LLM-driven projection logic.
 
 Future capability growth should follow the [Capability Extension Methodology](capability_extension_methodology.md): identify the gap, reduce it to the narrowest fact, choose the least-privileged source of truth, prefer read-only observation, and keep observation, inference, verification, and execution separate.
 
+## Roadmap triage
+
+Recent acquisition, integrity, lifecycle, context-composition, explanation,
+verification, classification, and repository-observation reconciliations point to
+a simple triage view for future work. This triage does not create a new process,
+planner, governance model, or runtime subsystem; it only groups already-described
+future work by the knowledge concern it primarily serves.
+
+### Knowledge Acquisition
+
+Acquisition answers: "What do we know?" The existing acquisition roadmap remains
+valid and should continue through narrow read-only observation slices such as:
+
+- Users;
+- Groups;
+- Packages;
+- Systemd Units;
+- Schedules;
+- Certificates;
+- Process Markers;
+- Container Markers.
+
+Acquisition is now less of an architectural uncertainty than it was earlier in
+Seed's development. The current pressure is not simply adding more observation
+sources; it is preserving the boundary between observed facts and later
+interpretation as additional slices arrive.
+
+### Knowledge Integrity
+
+Integrity answers: "Can this projected knowledge be safely interpreted?" Future
+work in this area should remain read-only characterization over projected
+knowledge, not repair, mutation, hidden truth selection, or execution. Existing
+reconciliations identify examples such as:
+
+- why-not explanations and missing-knowledge visibility;
+- projection integrity summaries;
+- conflict surfacing;
+- verification visibility;
+- staleness visibility.
+
+Integrity is the main place where support, contradiction, staleness,
+verification limits, graph issues, confidence, and source limitations should be
+surfaced before selected knowledge reaches context or response.
+
+### Knowledge Selection
+
+Selection answers: "What projected knowledge matters now, and why?" Future work
+in this area should consume projected knowledge and integrity signals without
+creating facts or mutating projections. Existing reconciliation work identifies
+examples such as:
+
+- selection rationale;
+- context source precedence;
+- context metadata;
+- context explanation;
+- response contract;
+- operator-facing explanation improvements.
+
+Selection is where the repository's current architectural pressure is most
+visible: Seed increasingly needs to explain why particular projected knowledge,
+limitations, and caveats were selected for a context or response without turning
+relevance, priority, or explanation into truth.
+
+### Response
+
+Response is the operator-facing consumer of selected projected knowledge. It is
+not a knowledge-creation stage, but some response-facing improvements may be
+useful when they make selected support, conflicts, staleness, absence, or
+verification limits clearer to operators. Response work should remain downstream
+of Acquisition, Integrity, and Selection.
+
+### Methodology observation
+
+The pattern documented in the roadmap/methodology reconciliation is promoted here
+only as an observed repository behavior:
+
+```text
+Implementation -> Discovery -> Audit -> Reconciliation -> Vocabulary -> Improved Implementation
+```
+
+This observation explains why several roadmap items were clarified before later
+implementation slices. It is not governance, a required lifecycle, a review gate,
+an approval workflow, or a process requirement.
+
 ## 1. Explicit invariants
 
 ### Purpose
