@@ -269,3 +269,83 @@ def test_integrity_summary_cli_output_is_read_only_and_concise(tmp_path, capsys,
     assert "Capabilities" in output
     assert "Refresh recommendations: 0" in output
     assert _event_count(db_path) == before_count
+
+
+def test_integrity_summary_navigation_hints_reference_existing_inventory_commands():
+    seed_local = load_seed_local_module()
+    parser = seed_local.build_parser()
+    existing_options = {
+        option
+        for action in parser._actions
+        for option in action.option_strings
+    }
+    summary = ProjectionIntegritySummary(
+        unsupported_fact_count=12,
+        fact_conflict_count=3,
+        contradiction_count=1,
+        graph_issue_count=4,
+        stale_fact_count=8,
+        refresh_recommendation_count=5,
+        verified_capability_count=14,
+        unverified_capability_count=6,
+        stale_capability_count=2,
+        unknown_capability_count=1,
+        provider_reported_capability_count=7,
+        caveats=[],
+        projection_version="v1",
+        last_event_id="evt-last",
+    )
+
+    output = seed_local.format_projection_integrity_summary(summary)
+    navigation_commands = [
+        "--unsupported-facts",
+        "--fact-conflicts",
+        "--contradictions",
+        "--graph-issues",
+        "--stale-facts",
+        "--stale-fact-refreshes",
+        "--capability-status",
+    ]
+
+    for command in navigation_commands:
+        assert command in existing_options
+        assert f"See: {command}" in output
+
+
+def test_integrity_summary_navigation_output_is_deterministic():
+    seed_local = load_seed_local_module()
+    summary = build_projection_integrity_summary(State(workspace_id="ws"))
+
+    first = seed_local.format_projection_integrity_summary(summary)
+    second = seed_local.format_projection_integrity_summary(summary)
+
+    assert first == second
+
+
+def test_integrity_summary_navigation_hints_are_shown_for_empty_state():
+    seed_local = load_seed_local_module()
+    output = seed_local.format_projection_integrity_summary(
+        build_projection_integrity_summary(State(workspace_id="ws"))
+    )
+
+    assert "Unsupported facts: 0\nSee: --unsupported-facts" in output
+    assert "Fact conflicts: 0\nSee: --fact-conflicts" in output
+    assert "Contradictions: 0\nSee: --contradictions" in output
+    assert "Graph issues: 0\nSee: --graph-issues" in output
+    assert "Stale facts: 0\nSee: --stale-facts" in output
+    assert "Refresh recommendations: 0\nSee: --stale-fact-refreshes" in output
+    assert "See: --capability-status" in output
+
+
+def test_integrity_summary_navigation_does_not_change_summary_semantics():
+    seed_local = load_seed_local_module()
+    state = State(workspace_id="ws")
+    fact_a = _fact("a", "svc", "status", "healthy")
+    fact_b = _fact("b", "svc", "status", "degraded")
+    state.facts = {fact_a.id: fact_a, fact_b.id: fact_b}
+
+    before = build_projection_integrity_summary(state)
+    seed_local.format_projection_integrity_summary(before)
+    after = build_projection_integrity_summary(state)
+
+    assert after == before

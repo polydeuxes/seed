@@ -46,6 +46,11 @@ A Projection Integrity Summary is in scope only if it remains:
 - **inventory-backed**: capability verification status comes from the existing
   capability inventory interpretation of projected facts.
 
+Projection Integrity Summary output may include navigation hints from aggregate
+counts to existing inventory CLI surfaces. These hints are read-only pointers
+only: they reuse existing inventories and do not imply resolution, repair,
+verification execution, refresh execution, fact mutation, or projection mutation.
+
 It is out of scope for a Projection Integrity Summary to become any of the
 following:
 
