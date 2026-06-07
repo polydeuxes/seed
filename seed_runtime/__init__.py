@@ -10,6 +10,10 @@ from seed_runtime.capability_inventory import (
 )
 from seed_runtime.entity_type_catalog import EntityTypeCatalog, EntityTypeDefinition
 from seed_runtime.inference_catalog import InferenceCatalog, InferenceRule
+from seed_runtime.integrity_summary import (
+    ProjectionIntegritySummary,
+    build_projection_integrity_summary,
+)
 from seed_runtime.predicate_catalog import PredicateCatalog
 from seed_runtime.runtime_trace import (
     RuntimeTrace,
@@ -92,6 +96,8 @@ __all__ = [
     "InputArtifact",
     "InferenceCatalog",
     "InferenceRule",
+    "ProjectionIntegritySummary",
+    "build_projection_integrity_summary",
     "InputInspector",
     "PendingAction",
     "ToolNeed",

@@ -72,6 +72,10 @@ from seed_runtime.handoff_plans import (
 )
 from seed_runtime.ids import new_id
 from seed_runtime.inference_catalog import InferenceCatalog
+from seed_runtime.integrity_summary import (
+    ProjectionIntegritySummary,
+    build_projection_integrity_summary,
+)
 from seed_runtime.intent_classifier import (
     IntentDecisionModel,
     IntentPromptModelClient,
@@ -984,6 +988,14 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--integrity-summary",
+        action="store_true",
+        help=(
+            "print a concise read-only Projection Integrity Summary; "
+            "aggregates existing projected integrity signals only"
+        ),
+    )
+    parser.add_argument(
         "--rebuild-state-cache",
         action="store_true",
         help="clear and rebuild the persisted projected State cache for --db",
@@ -1201,6 +1213,7 @@ def validate_lifecycle_args(
         bool(args.current_issues),
         bool(args.decision_context),
         bool(args.state_summary),
+        bool(args.integrity_summary),
         bool(args.inferred_facts),
         bool(args.fact_conflicts),
         bool(args.stale_facts),
@@ -1220,7 +1233,7 @@ def validate_lifecycle_args(
             "--current-facts, --current-observations, --current-requirements, "
             "--current-capabilities, --capability-status, --current-issues, "
             "--decision-context, "
-            "--state-summary, "
+            "--state-summary, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --rebuild-state-cache, --state-cache-status, "
             "or --events-only"
@@ -2885,6 +2898,41 @@ def format_capability_inventory(entries: list[CapabilityInventoryEntry]) -> str:
     return json.dumps(to_plain(entries), sort_keys=True, indent=2)
 
 
+def format_projection_integrity_summary(summary: ProjectionIntegritySummary) -> str:
+    """Format the read-only Projection Integrity Summary."""
+
+    lines = [
+        "Integrity Summary",
+        "",
+        f"Unsupported facts: {summary.unsupported_fact_count}",
+        f"Fact conflicts: {summary.fact_conflict_count}",
+        f"Contradictions: {summary.contradiction_count}",
+        f"Graph issues: {summary.graph_issue_count}",
+        f"Stale facts: {summary.stale_fact_count}",
+        f"Refresh recommendations: {summary.refresh_recommendation_count}",
+        "",
+        "Capabilities",
+        "",
+        f"Verified: {summary.verified_capability_count}",
+        f"Unverified: {summary.unverified_capability_count}",
+        f"Stale: {summary.stale_capability_count}",
+        f"Unknown: {summary.unknown_capability_count}",
+        f"Provider reported: {summary.provider_reported_capability_count}",
+        "",
+        "Caveats",
+        "",
+    ]
+    lines.extend(f"* {caveat}" for caveat in summary.caveats)
+    lines.extend(
+        [
+            "",
+            f"Projection Version: {summary.projection_version}",
+            f"Last Event: {summary.last_event_id or 'none'}",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def format_issue_views(views: list[IssueView]) -> str:
     lines = ["Current Issues", ""]
     lines.extend(f"* {view.summary} ({view.severity})" for view in views)
@@ -4155,6 +4203,14 @@ def main(argv: list[str] | None = None) -> int:
             format_state_view_summary(build_state_summary(state))
             + "\n\n"
             + format_state_summary(state_summary(state))
+        )
+        return 0
+
+    if args.integrity_summary:
+        print(
+            format_projection_integrity_summary(
+                build_projection_integrity_summary(projected_state_from_args(args))
+            )
         )
         return 0
 
