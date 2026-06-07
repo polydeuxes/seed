@@ -351,3 +351,40 @@ not imply verification, write access must not be required for observation, and
 least-privileged observation sources should be preferred. These rules prevent
 new capabilities from drifting into Runtime behavior, ToolExecutor behavior,
 prompt generation, or unreviewed execution capabilities.
+
+## Mount Observation v1 Example
+
+Mount Observation v1 is a concrete application of the capability extension
+pattern.
+
+### `mount_point`
+
+- Question: What mount points currently exist?
+- Evidence: `/proc/mounts`.
+- Fact: `mount_point`.
+- Non-inferences: mounted does not mean healthy, writable, reachable, or
+  available.
+
+### `filesystem_type`
+
+- Question: What filesystem type is mounted?
+- Evidence: `/proc/mounts`.
+- Fact: `filesystem_type`.
+- Non-inferences: filesystem type does not mean supported, healthy, writable,
+  reachable, or available.
+
+### `mounted_device`
+
+- Question: Which device backs the mount?
+- Evidence: `/proc/mounts`.
+- Fact: `mounted_device`.
+- Non-inferences: device does not mean healthy, accessible, reachable, or
+  available.
+
+### `mount_option`
+
+- Question: What mount options are recorded for the mount?
+- Evidence: `/proc/mounts`.
+- Fact: `mount_option`.
+- Non-inferences: options do not mean a write attempt will succeed, a device is
+  healthy, or a filesystem is reachable or available.

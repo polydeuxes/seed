@@ -1811,6 +1811,18 @@ def format_entity_impact(state: State, entity: str) -> str:
         if issue.subject in resolved or issue.object in resolved
     ]
 
+    mount_predicates = [
+        "mount_point",
+        "filesystem_type",
+        "mounted_device",
+        "mount_option",
+    ]
+    mount_facts = [
+        fact
+        for predicate in mount_predicates
+        for fact in state.get_current_facts(canonical, predicate)
+    ]
+
     network_predicates = [
         "network_interface",
         "interface_role",
@@ -1848,6 +1860,7 @@ def format_entity_impact(state: State, entity: str) -> str:
             else "unknown"
         ),
         "local network configuration:",
+        "mounts:",
         "endpoint availability by role:",
         f"groups/member_of: {', '.join(groups) if groups else 'none'}",
         f"dependencies: {', '.join(dependencies) if dependencies else 'none'}",
@@ -1862,6 +1875,9 @@ def format_entity_impact(state: State, entity: str) -> str:
     network_lines = _format_local_network_impact(network_facts)
     network_heading = lines.index("local network configuration:")
     lines[network_heading + 1 : network_heading + 1] = network_lines or ["- none"]
+    mount_lines = _format_mount_impact(mount_facts)
+    mount_heading = lines.index("mounts:")
+    lines[mount_heading + 1 : mount_heading + 1] = mount_lines or ["- none"]
 
     endpoint_lines = []
     for role, statuses in sorted(endpoint_availability.items()):
@@ -1892,6 +1908,57 @@ def format_entity_impact(state: State, entity: str) -> str:
     else:
         lines.append("- none")
     return "\n".join(lines)
+
+
+def _fact_mount_point(fact: Fact) -> str | None:
+    """Return the mount_point dimension for mount facts when present."""
+
+    mount_point = fact.dimensions.get("mount_point")
+    if mount_point is None:
+        return None
+    return str(mount_point)
+
+
+def _format_mount_impact(mount_facts: list[Fact]) -> list[str]:
+    """Format mount facts without asserting storage health or availability."""
+
+    if not mount_facts:
+        return ["- none"]
+
+    by_mount: dict[str, dict[str, list[Fact]]] = defaultdict(lambda: defaultdict(list))
+    for fact in mount_facts:
+        mount_point = _fact_mount_point(fact)
+        if mount_point is None and fact.predicate == "mount_point":
+            mount_point = _format_fact_value(fact.value)
+        if mount_point is None:
+            continue
+        by_mount[mount_point][fact.predicate].append(fact)
+
+    lines: list[str] = []
+    for mount_point in sorted(by_mount):
+        predicates = by_mount[mount_point]
+        devices = [
+            _format_fact_value(fact.value)
+            for fact in _sort_facts_for_display(predicates.get("mounted_device", []))
+        ]
+        fs_types = [
+            _format_fact_value(fact.value)
+            for fact in _sort_facts_for_display(predicates.get("filesystem_type", []))
+        ]
+        options = [
+            _format_fact_value(fact.value)
+            for fact in _sort_facts_for_display(predicates.get("mount_option", []))
+        ]
+        summary = f"- {mount_point}:"
+        if devices:
+            summary += f" device={', '.join(dict.fromkeys(devices))}"
+        if fs_types:
+            summary += f" type={', '.join(dict.fromkeys(fs_types))}"
+        lines.append(summary)
+        if options:
+            lines.append("  options: " + ", ".join(dict.fromkeys(options)))
+    lines.append("- health/availability/reachability: not inferred from mount facts")
+    return lines
 
 
 def _format_identity_impact(identity_facts: list[Fact]) -> list[str]:

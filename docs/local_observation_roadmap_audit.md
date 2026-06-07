@@ -410,3 +410,13 @@ This roadmap audit does not:
 - Add DNS lookups, ping, HTTP checks, reachability checks, or availability checks.
 - Add LLM reasoning to observation or projection.
 - Treat local configuration as availability, health, reachability, or verification.
+
+# Mount Observation v1 Status
+
+Mount Observation v1 has been completed as the next roadmap slice after local
+identity observation. The implementation observes `/proc/mounts` only and emits
+narrow `mount_point`, `filesystem_type`, `mounted_device`, and `mount_option`
+facts. It intentionally does not infer mount health, storage health,
+writability, reachability, or availability, and it does not call `mount`,
+`findmnt`, shells, subprocesses, network APIs, DNS, sudo, Prometheus, or provider
+integrations.

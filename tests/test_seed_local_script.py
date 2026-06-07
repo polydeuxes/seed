@@ -2332,6 +2332,90 @@ def test_cli_local_network_facts_appear_in_current_facts_and_impact(
     assert "- dns_resolver (source=/etc/resolv.conf): 1.1.1.1" in impact_output
 
 
+def test_cli_mount_facts_appear_in_current_facts_and_impact(
+    monkeypatch, tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "mounts.sqlite"
+
+    class FakeLocalSource:
+        source_type = "discovery"
+        name = "fake-local-host"
+
+        def collect(self):
+            observed_at = seed_local.utc_now()
+            return [
+                seed_local.Observation(
+                    id="obs_mount_point",
+                    source_type="discovery",
+                    observed_at=observed_at,
+                    subject="node115",
+                    predicate="mount_point",
+                    value="/",
+                    dimensions={"mount_point": "/"},
+                ),
+                seed_local.Observation(
+                    id="obs_filesystem_type",
+                    source_type="discovery",
+                    observed_at=observed_at,
+                    subject="node115",
+                    predicate="filesystem_type",
+                    value="ext4",
+                    dimensions={"mount_point": "/"},
+                ),
+                seed_local.Observation(
+                    id="obs_mounted_device",
+                    source_type="discovery",
+                    observed_at=observed_at,
+                    subject="node115",
+                    predicate="mounted_device",
+                    value="/dev/sda1",
+                    dimensions={"mount_point": "/"},
+                ),
+                seed_local.Observation(
+                    id="obs_mount_option_rw",
+                    source_type="discovery",
+                    observed_at=observed_at,
+                    subject="node115",
+                    predicate="mount_option",
+                    value="rw",
+                    dimensions={"mount_point": "/", "mount_option": "rw"},
+                ),
+                seed_local.Observation(
+                    id="obs_mount_option_relatime",
+                    source_type="discovery",
+                    observed_at=observed_at,
+                    subject="node115",
+                    predicate="mount_option",
+                    value="relatime",
+                    dimensions={"mount_point": "/", "mount_option": "relatime"},
+                ),
+            ]
+
+    monkeypatch.setattr(seed_local, "LocalHostObservationSource", FakeLocalSource)
+
+    assert seed_local.main(["--db", str(db_path), "--observe-local-host"]) == 0
+    capsys.readouterr()
+
+    assert seed_local.main(["--db", str(db_path), "--current-facts"]) == 0
+    current_output = capsys.readouterr().out
+    assert "* node115 mount_point /" in current_output
+    assert "* node115 filesystem_type ext4" in current_output
+    assert "* node115 mounted_device /dev/sda1" in current_output
+    assert "* node115 mount_option rw" in current_output
+
+    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+    impact_output = capsys.readouterr().out
+    assert "mounts:" in impact_output
+    assert "- /: device=/dev/sda1 type=ext4" in impact_output
+    assert "  options: relatime, rw" in impact_output
+    assert (
+        "- health/availability/reachability: not inferred from mount facts"
+        in impact_output
+    )
+    assert "availability_status: unknown" in impact_output
+    assert "reachability_status" not in impact_output
+
 def test_cli_events_without_message_lists_persisted_events_and_exits(
     monkeypatch, tmp_path, capsys
 ):
