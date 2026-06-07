@@ -125,6 +125,8 @@ The runtime records these as Events and Evidence.
 
 Fact extraction and deterministic support aggregation then condense the collected evidence into Facts and current-belief projections. Conflicting evidence should remain visible through provenance rather than being silently averaged away.
 
+Projection Integrity Summary is a read-only composition over those projected structures. It aggregates existing Evidence Graph unsupported-fact counts, FactConflict records, Contradiction views, GraphValidationIssue records, stale fact helpers, refresh recommendations, and capability verification inventory states. It does not add a parallel truth system, execute verification or refreshes, resolve contradictions, call providers, mutate facts, or mutate projections. Integrity signals are not truth judgments: unsupported, unverified, stale, contradicted, missing evidence, and missing observations do not mean false.
+
 This allows Seed to accumulate experience from multiple attempts or viewpoints without turning subagent text into unverified state.
 
 Pattern:

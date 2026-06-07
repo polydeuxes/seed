@@ -112,6 +112,7 @@ The model does not get unrestricted power to rewrite its runtime. It can answer 
 - explain why it believes a projected fact through evidence, provenance, support links, recursive inference, alias resolution, ambiguity, and conflicts
 - inventory current facts, observations, requirements, capabilities, issues, evidence, entity types, relationships, graph issues, unsupported facts, and capability verification status vocabulary
 - surface conservative read-only contradictions between projected facts without resolving them by mutation
+- compose a read-only Projection Integrity Summary from existing evidence, conflict, contradiction, graph issue, stale fact, refresh recommendation, and capability inventory signals
 - track temporal state through current projection, latest measurement semantics, timestamps, expiry, stale filtering, and refresh recommendations
 - infer deterministic facts through `InferenceCatalog` while keeping inference separate from observation
 - resolve capabilities into `ToolNeeds`, registered-operation candidates, and provider/handoff recommendations downstream of projected knowledge
@@ -387,7 +388,10 @@ unhealthy in the same way as errors.
 ```bash
 python scripts/seed_local.py --db seed.sqlite --graph-issues --severity warning
 python scripts/seed_local.py --db seed.sqlite --state-summary
+python scripts/seed_local.py --db seed.sqlite --integrity-summary
 ```
+
+`--integrity-summary` is a small read-only integrity surface over existing projected structures. It aggregates unsupported fact count, active fact conflict count, contradiction count, graph issue count, stale fact count, stale-fact refresh recommendation count, and capability verification inventory counts. It does not create new truth semantics, verify facts or capabilities, execute refreshes, resolve contradictions, call providers, enter `Runtime`, or execute tools.
 
 ### Operator query surfaces
 
