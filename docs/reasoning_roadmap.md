@@ -26,10 +26,13 @@ Future capability growth should follow the [Capability Extension Methodology](ca
 ## Roadmap triage
 
 Recent acquisition, integrity, lifecycle, context-composition, explanation,
-verification, classification, and repository-observation reconciliations point to
-a simple triage view for future work. This triage does not create a new process,
-planner, governance model, or runtime subsystem; it only groups already-described
-future work by the knowledge concern it primarily serves.
+verification, classification, response, response-caveat, selection-rationale,
+and repository-observation reconciliations point to a simple triage view for
+future work. The completed audit-program findings are preserved in
+[Architectural Findings Preservation](architectural_findings_preservation.md).
+This triage does not create a new process, planner, governance model, or runtime
+subsystem; it only groups already-described future work by the knowledge concern
+it primarily serves.
 
 ### Knowledge Acquisition
 
@@ -103,11 +106,13 @@ useful when they make selected support, conflicts, staleness, absence, or
 verification limits clearer to operators. Response work should remain downstream
 of Acquisition, Integrity, and Selection.
 
-Response is now the least-audited top-level concern in this triage: Acquisition
-has a concrete status board, Integrity has summary/drilldown and Why-Not
-characterizations, and Selection has Context Composition and Selection Rationale
-audit sequences. A future Response audit should remain documentation-only unless
-separately justified.
+The Response audit sequence is now complete enough for current architecture:
+characterization, vocabulary, and reconciliation documents establish Response as
+a distributed downstream consumer of selected projected knowledge. Response
+Caveat characterization and vocabulary also establish caveat language and pause
+additional caveat-specific audit work unless new evidence identifies a concrete
+unanswered operator question. Future Response work should be documentation-only
+maintenance unless separately justified by new evidence.
 
 ### Methodology observation
 
