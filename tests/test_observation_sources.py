@@ -987,6 +987,56 @@ def _write_host_description_fixture(proc: Path) -> Path:
     return proc
 
 
+
+def test_local_host_read_text_reads_no_more_than_configured_bound():
+    import stat
+
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class FakeStat:
+        st_mode = stat.S_IFCHR
+        st_size = 0
+
+    class FakeHandle:
+        def __init__(self) -> None:
+            self.read_sizes: list[int] = []
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self, size: int) -> bytes:
+            self.read_sizes.append(size)
+            return b"bounded"
+
+    class FakePath:
+        def __init__(self) -> None:
+            self.handle = FakeHandle()
+
+        def stat(self) -> FakeStat:
+            return FakeStat()
+
+        def open(self, mode: str):
+            assert mode == "rb"
+            return self.handle
+
+    path = FakePath()
+
+    assert LocalHostObservationSource()._read_text(path, max_bytes=8) == "bounded"
+    assert path.handle.read_sizes == [8]
+
+
+def test_local_host_read_text_skips_oversized_regular_file(tmp_path):
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    oversized = tmp_path / "oversized-proc-file"
+    oversized.write_text("x" * 17, encoding="utf-8")
+
+    assert LocalHostObservationSource()._read_text(oversized, max_bytes=16) is None
+
+
 def test_local_host_source_emits_kernel_cpu_memory_observations(monkeypatch, tmp_path):
     from seed_runtime import observation_sources as sources
     from seed_runtime.observation_sources import LocalHostObservationSource
@@ -1040,6 +1090,98 @@ def test_local_host_source_emits_kernel_cpu_memory_observations(monkeypatch, tmp
     assert cpu_count.metadata["performance_adequacy_asserted"] is False
     assert cpu_count.metadata["memory_pressure_asserted"] is False
     assert cpu_count.metadata["supportability_asserted"] is False
+
+
+
+def test_kernel_cpu_memory_observation_skips_oversized_procfs_without_crashing(
+    monkeypatch, tmp_path
+):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    proc = tmp_path / "proc"
+    (proc / "sys" / "kernel").mkdir(parents=True, exist_ok=True)
+    (proc / "sys" / "kernel" / "osrelease").write_text(
+        "6.8.0-seed-test\n", encoding="utf-8"
+    )
+    (proc / "version").write_text("Linux version 6.8.0-seed-test\n", encoding="utf-8")
+    (proc / "cpuinfo").write_text(
+        "processor\t: 0\nmodel name\t: Misleading Partial CPU\n"
+        + ("padding\n" * 140_000),
+        encoding="utf-8",
+    )
+    (proc / "meminfo").write_text(
+        "MemTotal:       999999 kB\n" + ("padding\n" * 140_000),
+        encoding="utf-8",
+    )
+    missing = tmp_path / "missing"
+    monkeypatch.setattr(sources.platform, "node", lambda: "node-a")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.os, "cpu_count", lambda: 8)
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_collect_network_observations",
+        lambda self, observed_at, hostname, metadata: [],
+    )
+
+    observations = LocalHostObservationSource(
+        proc_root=proc, sys_class_net=missing, resolv_conf=missing
+    ).collect()
+
+    triples = {(obs.subject, obs.predicate, obs.value) for obs in observations}
+    assert ("node-a", "kernel_release", "6.8.0-seed-test") in triples
+    assert ("node-a", "cpu_model", "Misleading Partial CPU") not in triples
+    assert ("node-a", "memory_total_bytes", 1_023_998_976) not in triples
+    assert ("node-a", "cpu_count", 8) in triples
+
+
+def test_kernel_cpu_memory_observation_skips_truncated_oversized_partial_input(
+    monkeypatch, tmp_path
+):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    proc = tmp_path / "proc"
+    proc.mkdir(parents=True, exist_ok=True)
+    (proc / "cpuinfo").write_text(
+        "model name\t: Truncated CPU Without Complete Bounded Evidence"
+        + ("x" * (1024 * 1024 + 1)),
+        encoding="utf-8",
+    )
+    (proc / "meminfo").write_text(
+        "MemTotal:       424242 kB" + ("x" * (1024 * 1024 + 1)),
+        encoding="utf-8",
+    )
+    missing = tmp_path / "missing"
+    monkeypatch.setattr(sources.platform, "node", lambda: "node-a")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.os, "cpu_count", lambda: None)
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_collect_network_observations",
+        lambda self, observed_at, hostname, metadata: [],
+    )
+
+    observations = LocalHostObservationSource(
+        proc_root=proc, sys_class_net=missing, resolv_conf=missing
+    ).collect()
+
+    predicates = {obs.predicate for obs in observations}
+    assert "cpu_model" not in predicates
+    assert "cpu_count" not in predicates
+    assert "memory_total_bytes" not in predicates
 
 
 def test_kernel_cpu_memory_observation_projects_only_direct_facts(monkeypatch, tmp_path):

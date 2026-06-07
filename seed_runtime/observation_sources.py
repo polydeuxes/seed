@@ -10,6 +10,7 @@ import re
 import platform
 import shutil
 import socket
+import stat
 import struct
 from datetime import datetime, timezone
 from importlib.util import find_spec
@@ -100,6 +101,7 @@ _HOST_DESCRIPTION_QUESTIONS = {
 }
 
 _PROC_MOUNT_ESCAPE_RE = re.compile(r"\\([0-7]{3})")
+_LOCAL_READ_MAX_BYTES = 1024 * 1024
 
 
 def _read_bounded_first_line(path: Path, *, max_bytes: int = 4096) -> str | None:
@@ -930,11 +932,31 @@ class LocalHostObservationSource:
         text = self._read_text(self.sys_class_net / interface / filename)
         return text.strip() if text is not None else None
 
-    def _read_text(self, path: Path) -> str | None:
+    def _read_text(
+        self, path: Path, *, max_bytes: int = _LOCAL_READ_MAX_BYTES
+    ) -> str | None:
+        if max_bytes <= 0:
+            return None
         try:
-            return path.read_text(encoding="utf-8")
+            path_stat = path.stat()
+        except OSError:
+            stat_size_known = False
+            stat_size = 0
+        else:
+            stat_size_known = stat.S_ISREG(path_stat.st_mode)
+            stat_size = path_stat.st_size
+            if stat_size_known and stat_size > max_bytes:
+                return None
+        try:
+            with path.open("rb") as handle:
+                raw = handle.read(max_bytes)
         except OSError:
             return None
+        if not raw:
+            return None
+        if not stat_size_known and len(raw) == max_bytes:
+            return None
+        return raw.decode("utf-8", errors="replace")
 
     def _observation(
         self,
