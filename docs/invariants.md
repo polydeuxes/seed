@@ -81,6 +81,11 @@ readable documentation today and executable architecture checks over time.
   success, or DNS availability.
 - Observing a local network segment must not imply neighbor existence, subnet
   occupancy, gateway reachability, or scanning.
+- Observing kernel, CPU, or memory description facts must not imply host health,
+  performance adequacy, workload status, availability, reachability,
+  supportability, or provider visibility.
+- Observing `memory_total_bytes` must not imply memory pressure, free memory, or
+  currently available memory.
 - Observation must not imply management.
 - Observing a package must not imply ownership.
 - Observing a process must not imply management.

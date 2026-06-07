@@ -46,6 +46,19 @@ def test_builtin_catalog_defines_canonical_predicates_and_prometheus_mappings():
     assert local_observation.allowed_values == ["observed"]
     assert catalog.get("endpoint_role").kind == "durable_fact"
     assert catalog.get("endpoint_role").cardinality == "multi"
+    for predicate in (
+        "kernel_release",
+        "kernel_version",
+        "cpu_model",
+        "cpu_count",
+        "memory_total_bytes",
+    ):
+        definition = catalog.get(predicate)
+        assert definition is not None
+        assert definition.kind == "durable_fact"
+        assert definition.cardinality == "single"
+    assert catalog.get("cpu_count").value_type == "integer"
+    assert catalog.get("memory_total_bytes").value_type == "integer"
     assert catalog.find_mapping("up", source_name="prometheus").canonical_predicate == (
         "availability_status"
     )

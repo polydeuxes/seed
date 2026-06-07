@@ -292,6 +292,21 @@ This capability uses only read-only local files and Python standard-library
 file APIs. It must not use DNS queries, network access, shell commands,
 subprocesses, sudo, provider APIs, or LLM-generated host facts.
 
+Kernel / CPU / Memory Observation v1 extends the same local-only pattern for
+descriptive host substrate facts:
+
+| Fact | Question answered | Evidence source | Non-inferences |
+| --- | --- | --- | --- |
+| `kernel_release` | What kernel release is this host running? | `/proc/sys/kernel/osrelease` | Not health, supportability, workload status, reachability, availability, or provider visibility. |
+| `kernel_version` | What kernel version string is reported locally? | `/proc/version` | Not vendor support, patch compliance, health, reachability, or availability. |
+| `cpu_model` | What CPU model is reported locally? | `/proc/cpuinfo` | Not performance adequacy, workload fit, health, availability, or supportability. |
+| `cpu_count` | How many CPUs are visible locally? | `/proc/cpuinfo` processor entries, or `os.cpu_count()` when procfs CPU evidence is absent | Not performance adequacy, CPU health, capacity sufficiency, workload fit, or availability. |
+| `memory_total_bytes` | How much total memory is reported locally? | `/proc/meminfo` `MemTotal` | Not available/free memory, memory pressure, performance adequacy, workload fit, health, or availability. |
+
+This slice intentionally does not emit `memory_available_bytes`; available/free
+memory is volatile state and should only be added with explicit measurement
+semantics.
+
 ## Capability Extension Checklist
 
 Future contributors should use this checklist before implementing a capability
@@ -388,6 +403,48 @@ not imply verification, write access must not be required for observation, and
 least-privileged observation sources should be preferred. These rules prevent
 new capabilities from drifting into Runtime behavior, ToolExecutor behavior,
 prompt generation, or unreviewed execution capabilities.
+
+
+## Kernel / CPU / Memory Observation v1 Example
+
+Kernel / CPU / Memory Observation v1 records descriptive substrate facts only.
+It uses bounded procfs reads and Python standard-library CPU-count evidence,
+without shell commands, subprocesses, sudo/root requirements, network probes, or
+provider calls.
+
+### `kernel_release`
+
+- Question: What kernel release is this host running?
+- Evidence: `/proc/sys/kernel/osrelease`.
+- Fact: `kernel_release`.
+- Non-inferences: release does not mean healthy, reachable, available,
+  provider-visible, supported, or suitable for a workload.
+
+### `kernel_version`
+
+- Question: What kernel version string is reported locally?
+- Evidence: `/proc/version`.
+- Fact: `kernel_version`.
+- Non-inferences: version string does not mean patch compliance, vendor support,
+  health, reachability, or availability.
+
+### `cpu_model` and `cpu_count`
+
+- Question: What CPU model and CPU count are visible locally?
+- Evidence: `/proc/cpuinfo`, with `os.cpu_count()` only when procfs CPU evidence
+  is absent for CPU count.
+- Facts: `cpu_model`, `cpu_count`.
+- Non-inferences: CPU description does not mean performance adequacy, capacity
+  sufficiency, CPU health, supportability, workload fit, or availability.
+
+### `memory_total_bytes`
+
+- Question: How much total memory is reported locally?
+- Evidence: `/proc/meminfo` `MemTotal`.
+- Fact: `memory_total_bytes`.
+- Non-inferences: total memory does not mean available/free memory, memory
+  pressure, performance adequacy, workload fit, health, or availability.
+- Volatile available/free memory is intentionally not emitted in this slice.
 
 ## Mount Observation v1 Example
 
