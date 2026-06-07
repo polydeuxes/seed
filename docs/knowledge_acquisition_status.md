@@ -15,6 +15,7 @@ reasoning.
 | Mount Observation | Implemented | Topology; Configuration | Local observation v1 | Low | Consider `/proc/self/mountinfo` only if a later slice needs richer relationships. |
 | Kernel / CPU / Memory Observation | Implemented | Description | Local observation v1 | Low | Keep memory available/free out until volatile state semantics need it. |
 | Local Network Observation | Implemented | Configuration; Topology; State | Local observation v1 | Low | Add listening-port observation from `/proc/net/*` without connection attempts. |
+| Storage Topology Observation | Implemented | Topology; Description | Tier 3 host topology | Medium | Keep storage topology before packages/systemd; do not infer health or manage devices. |
 | Local Host Observation | Implemented | Description; State | Foundation | Low | Continue keeping local descriptive facts separate from health, reachability, and supportability inference. |
 | Availability Vocabulary | Implemented | Cross-cutting vocabulary | Vocabulary | Low | Keep availability separate from local observation facts. |
 | Explainability Foundation | Implemented | Cross-cutting explanation | Foundation | Low | Continue exposing evidence and non-inference boundaries in new slices. |
@@ -30,7 +31,6 @@ reasoning.
 
 | Item | Status | Class | Tier | Risk | Next Slice |
 | --- | --- | --- | --- | --- | --- |
-| Storage Topology Observation | Planned | Topology; Description | Local observation v1 | Medium | Read `/sys/block` and `/proc/partitions`; do not run `lsblk`. |
 | Users Observation | Planned | Configuration; Identity | Local observation v1 | Medium | Prefer `/etc/passwd`; avoid NSS/network-backed lookups. |
 | Groups Observation | Planned | Configuration; Identity | Local observation v1 | Medium | Prefer `/etc/group`; avoid NSS/network-backed lookups. |
 | Listening Port Observation | Planned | State; Topology | Local observation v1 | Medium | Read `/proc/net/tcp*`, `/proc/net/udp*`, and `/proc/net/unix`; never connect. |
@@ -52,6 +52,11 @@ reasoning.
 | Prometheus-backed mount/storage health | Deferred | Provider integration | High | Keep Prometheus mappings separate from local mount observation. |
 | Remediation, repair, or management actions | Deferred | Execution | High | Requires execution planning and policy; not knowledge acquisition. |
 
+## Storage Topology Observation v1
+
+Storage Topology Observation v1 is implemented as Tier 3 host topology knowledge. It reads bounded local evidence from `/sys/block/*`, `/sys/class/block/*`, and `/proc/partitions` to emit `block_device`, `partition`, `block_device_size_bytes`, `block_device_rotational`, `block_device_removable`, `block_device_model`, `block_device_vendor`, and `block_device_parent` facts. The representation is host-scoped: device names are fact values and dimensions identify the device or child/parent pair. Existing mount facts are correlated only in impact output when `/dev/<observed-storage-name>` matches a mounted device.
+
+This slice preserves observation != management. It does not run `lsblk`, `blkid`, `findmnt`, `udevadm`, `smartctl`, `dmsetup`, `mdadm`, `zpool`, `btrfs`, shell commands, subprocesses, sudo, network probes, DNS, provider APIs, Prometheus calls, or LLM reasoning. Storage facts do not infer availability, reachability, filesystem health, storage health, backup status, redundancy, data safety, safe removal, or performance adequacy. See [Storage Topology Observation v1](storage_topology_observation.md).
 
 ## Knowledge Classification Notes
 

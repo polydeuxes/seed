@@ -485,6 +485,11 @@ def test_local_host_source_emits_read_only_host_observations(monkeypatch):
         "_collect_network_observations",
         lambda self, observed_at, hostname, metadata: [],
     )
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_collect_storage_observations",
+        lambda self, observed_at, hostname, metadata: [],
+    )
     missing = Path("/definitely/missing/seed-local-identity")
 
     observations = LocalHostObservationSource(
@@ -965,7 +970,6 @@ def test_local_network_observation_does_not_probe_or_escalate(monkeypatch, tmp_p
     assert all(obs.metadata["network_probe"] is False for obs in observations)
 
 
-
 def _write_host_description_fixture(proc: Path) -> Path:
     (proc / "sys" / "kernel").mkdir(parents=True, exist_ok=True)
     (proc / "sys" / "kernel" / "osrelease").write_text(
@@ -985,7 +989,6 @@ def _write_host_description_fixture(proc: Path) -> Path:
     )
     (proc / "meminfo").write_text("MemTotal:       16384 kB\n", encoding="utf-8")
     return proc
-
 
 
 def test_local_host_read_text_reads_no_more_than_configured_bound():
@@ -1078,7 +1081,9 @@ def test_local_host_source_emits_kernel_cpu_memory_observations(monkeypatch, tmp
 
     cpu_count = next(obs for obs in observations if obs.predicate == "cpu_count")
     assert cpu_count.metadata["source"] == "/proc/cpuinfo"
-    assert cpu_count.metadata["question_answered"] == "How many CPUs are visible locally?"
+    assert (
+        cpu_count.metadata["question_answered"] == "How many CPUs are visible locally?"
+    )
     assert cpu_count.metadata["local_only"] is True
     assert cpu_count.metadata["shell_execution"] is False
     assert cpu_count.metadata["subprocess_execution"] is False
@@ -1090,7 +1095,6 @@ def test_local_host_source_emits_kernel_cpu_memory_observations(monkeypatch, tmp
     assert cpu_count.metadata["performance_adequacy_asserted"] is False
     assert cpu_count.metadata["memory_pressure_asserted"] is False
     assert cpu_count.metadata["supportability_asserted"] is False
-
 
 
 def test_kernel_cpu_memory_observation_skips_oversized_procfs_without_crashing(
@@ -1184,7 +1188,9 @@ def test_kernel_cpu_memory_observation_skips_truncated_oversized_partial_input(
     assert "memory_total_bytes" not in predicates
 
 
-def test_kernel_cpu_memory_observation_projects_only_direct_facts(monkeypatch, tmp_path):
+def test_kernel_cpu_memory_observation_projects_only_direct_facts(
+    monkeypatch, tmp_path
+):
     from seed_runtime import observation_sources as sources
     from seed_runtime.observations import ObservationIngestor
     from seed_runtime.observation_sources import (
@@ -1218,9 +1224,7 @@ def test_kernel_cpu_memory_observation_projects_only_direct_facts(monkeypatch, t
     )
     state = StateProjector(ledger).project("ws_host_description")
 
-    assert (
-        state.get_best_fact("node-a", "kernel_release").value == "6.8.0-seed-test"
-    )
+    assert state.get_best_fact("node-a", "kernel_release").value == "6.8.0-seed-test"
     assert state.get_best_fact("node-a", "cpu_model").value == "Seed Test CPU 9000"
     assert state.get_best_fact("node-a", "cpu_count").value == 2
     assert state.get_best_fact("node-a", "memory_total_bytes").value == 16_777_216
@@ -1293,6 +1297,7 @@ def test_kernel_cpu_memory_observation_avoids_execution_root_network_and_provide
     assert all(obs.metadata["network_probe"] is False for obs in host_description)
     assert all(obs.metadata["network_connection"] is False for obs in host_description)
 
+
 def _write_mount_fixture(proc: Path) -> Path:
     proc.mkdir(parents=True, exist_ok=True)
     (proc / "mounts").write_text(
@@ -1337,7 +1342,9 @@ def test_local_host_source_emits_mount_observations(monkeypatch, tmp_path):
     assert ("node-a", "mounted_device", "/dev/disk/by-label/My Data") in triples
     assert ("node-a", "mount_option", "ro") in triples
     mount_point = next(
-        obs for obs in observations if obs.predicate == "mount_point" and obs.value == "/"
+        obs
+        for obs in observations
+        if obs.predicate == "mount_point" and obs.value == "/"
     )
     assert mount_point.dimensions == {"mount_point": "/"}
     assert mount_point.metadata["source"] == "/proc/mounts"
@@ -1435,9 +1442,7 @@ def test_mount_observation_projects_without_availability_or_reachability(
     assert state.get_best_fact("node-a", "reachability_status") is None
 
 
-def test_mount_observation_does_not_probe_execute_or_escalate(
-    monkeypatch, tmp_path
-):
+def test_mount_observation_does_not_probe_execute_or_escalate(monkeypatch, tmp_path):
     from seed_runtime import observation_sources as sources
     from seed_runtime.observation_sources import LocalHostObservationSource
 
@@ -1487,7 +1492,10 @@ def test_mount_observation_does_not_probe_execute_or_escalate(
         obs.metadata["privilege_escalation"] is False for obs in mount_observations
     )
     assert all(obs.metadata["network_probe"] is False for obs in mount_observations)
-    assert all(obs.metadata["network_connection"] is False for obs in mount_observations)
+    assert all(
+        obs.metadata["network_connection"] is False for obs in mount_observations
+    )
+
 
 def test_prometheus_source_uses_safe_get_queries_and_converts_observations(
     monkeypatch,
@@ -1923,3 +1931,206 @@ def test_local_identity_observation_avoids_network_dns_execution_and_escalation(
         ("machine_id", "0123456789abcdef0123456789abcdef"),
         ("boot_id", "11111111-2222-3333-4444-555555555555"),
     }
+
+
+def _write_storage_fixture(tmp_path):
+    proc = tmp_path / "proc"
+    sys_block = tmp_path / "sys" / "block"
+    sys_class_block = tmp_path / "sys" / "class" / "block"
+    proc.mkdir(parents=True)
+    sys_block.mkdir(parents=True)
+    sys_class_block.mkdir(parents=True)
+    (proc / "partitions").write_text(
+        "major minor  #blocks  name\n\n   8        0   20971520 sda\n   8        1    1048576 sda1\n 259        0   41943040 nvme0n1\n 259        1    2097152 nvme0n1p1\n"
+    )
+    for device, sectors, rotational, removable, model, vendor in (
+        ("sda", "41943040\n", "1\n", "0\n", "Fast Disk\n", "SEED\n"),
+        ("nvme0n1", "83886080\n", "0\n", "0\n", "NVMe Disk\n", "NVMECO\n"),
+    ):
+        root = sys_block / device
+        (root / "queue").mkdir(parents=True)
+        (root / "device").mkdir()
+        (root / "size").write_text(sectors)
+        (root / "queue" / "rotational").write_text(rotational)
+        (root / "removable").write_text(removable)
+        (root / "device" / "model").write_text(model)
+        (root / "device" / "vendor").write_text(vendor)
+    for parent, partition, sectors in (
+        ("sda", "sda1", "2097152\n"),
+        ("nvme0n1", "nvme0n1p1", "4194304\n"),
+    ):
+        part_root = sys_block / parent / partition
+        part_root.mkdir()
+        (part_root / "partition").write_text("1\n")
+        class_root = sys_class_block / partition
+        class_root.mkdir()
+        (class_root / "size").write_text(sectors)
+    return proc, sys_block, sys_class_block
+
+
+def test_local_host_source_observes_storage_topology_block_devices_and_partitions(
+    tmp_path,
+):
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    proc, sys_block, sys_class_block = _write_storage_fixture(tmp_path)
+    source = LocalHostObservationSource(
+        proc_root=proc, sys_block=sys_block, sys_class_block=sys_class_block
+    )
+
+    observations = source._collect_storage_observations(BASE_TIME, "node115", {})
+    triples = {(obs.predicate, obs.value) for obs in observations}
+
+    assert ("block_device", "sda") in triples
+    assert ("block_device", "nvme0n1") in triples
+    assert ("partition", "sda1") in triples
+    assert ("partition", "nvme0n1p1") in triples
+
+
+def test_local_host_source_observes_storage_size_markers_model_vendor_and_parent(
+    tmp_path,
+):
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    proc, sys_block, sys_class_block = _write_storage_fixture(tmp_path)
+    source = LocalHostObservationSource(
+        proc_root=proc, sys_block=sys_block, sys_class_block=sys_class_block
+    )
+
+    observations = source._collect_storage_observations(BASE_TIME, "node115", {})
+    by_predicate = {}
+    for obs in observations:
+        by_predicate.setdefault(obs.predicate, []).append(obs)
+
+    assert any(
+        obs.value == 41943040 * 512 and obs.dimensions == {"device": "sda"}
+        for obs in by_predicate["block_device_size_bytes"]
+    )
+    assert any(
+        obs.value == 2097152 * 512
+        and obs.dimensions == {"device": "sda1", "parent": "sda"}
+        for obs in by_predicate["block_device_size_bytes"]
+    )
+    assert ("block_device_rotational", "true") in {
+        (obs.predicate, obs.value) for obs in observations
+    }
+    assert ("block_device_removable", "false") in {
+        (obs.predicate, obs.value) for obs in observations
+    }
+    assert ("block_device_model", "Fast Disk") in {
+        (obs.predicate, obs.value) for obs in observations
+    }
+    assert ("block_device_vendor", "SEED") in {
+        (obs.predicate, obs.value) for obs in observations
+    }
+    assert any(
+        obs.predicate == "block_device_parent"
+        and obs.value == "sda"
+        and obs.dimensions == {"device": "sda1", "parent": "sda"}
+        for obs in observations
+    )
+
+
+def test_local_storage_projection_is_deterministic(tmp_path):
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    proc, sys_block, sys_class_block = _write_storage_fixture(tmp_path)
+    source = LocalHostObservationSource(
+        proc_root=proc, sys_block=sys_block, sys_class_block=sys_class_block
+    )
+
+    first = [
+        (obs.subject, obs.predicate, obs.value, obs.dimensions)
+        for obs in source._collect_storage_observations(BASE_TIME, "node115", {})
+    ]
+    second = [
+        (obs.subject, obs.predicate, obs.value, obs.dimensions)
+        for obs in source._collect_storage_observations(BASE_TIME, "node115", {})
+    ]
+
+    assert first == second
+
+
+def test_local_storage_current_facts_and_no_health_or_availability_inference(tmp_path):
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    proc, sys_block, sys_class_block = _write_storage_fixture(tmp_path)
+    ledger = EventLedger()
+    source = LocalHostObservationSource(
+        proc_root=proc, sys_block=sys_block, sys_class_block=sys_class_block
+    )
+    observations = source._collect_storage_observations(BASE_TIME, "node115", {})
+
+    ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        FakeObservationSource(observations, source_type="discovery"), "ws_storage"
+    )
+    state = StateProjector(ledger).project("ws_storage")
+
+    assert state.get_current_facts("node115", "block_device")
+    assert state.get_current_facts("node115", "partition")
+    assert state.get_current_facts("node115", "block_device_size_bytes")
+    assert state.get_best_fact("node115", "availability_status") is None
+    assert state.get_best_fact("node115", "health_status") is None
+    assert state.get_best_fact("node115", "filesystem_health") is None
+    assert state.get_best_fact("node115", "storage_health") is None
+
+
+def test_local_storage_observation_avoids_shell_subprocess_sudo_network_and_dns(
+    monkeypatch, tmp_path
+):
+    import subprocess
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    def fail_forbidden(*args, **kwargs):  # pragma: no cover - guard callback
+        raise AssertionError(
+            "storage observation must not use shell, subprocess, sudo, network, or DNS"
+        )
+
+    proc, sys_block, sys_class_block = _write_storage_fixture(tmp_path)
+    monkeypatch.setattr(sources.socket, "create_connection", fail_forbidden)
+    monkeypatch.setattr(sources.socket, "getaddrinfo", fail_forbidden)
+    monkeypatch.setattr(sources.socket, "getfqdn", fail_forbidden)
+    monkeypatch.setattr(sources.socket, "gethostbyname", fail_forbidden)
+    monkeypatch.setattr(sources, "urlopen", fail_forbidden)
+    monkeypatch.setattr(os, "system", fail_forbidden)
+    monkeypatch.setattr(subprocess, "run", fail_forbidden)
+    monkeypatch.setattr(subprocess, "Popen", fail_forbidden)
+
+    observations = LocalHostObservationSource(
+        proc_root=proc, sys_block=sys_block, sys_class_block=sys_class_block
+    )._collect_storage_observations(BASE_TIME, "node115", {})
+
+    assert any(obs.predicate == "block_device" for obs in observations)
+
+
+def test_local_bounded_first_line_skips_possibly_truncated_stream():
+    from io import BytesIO
+
+    from seed_runtime.observation_sources import _read_bounded_first_line
+
+    class FullBoundStreamPath:
+        def stat(self):
+            raise OSError("unknown pseudo-file size")
+
+        def open(self, mode):
+            return BytesIO(b"x" * 8)
+
+    assert _read_bounded_first_line(FullBoundStreamPath(), max_bytes=8) is None
+
+
+def test_local_storage_bounded_reads_skip_oversized_or_truncated_inputs(tmp_path):
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    proc, sys_block, sys_class_block = _write_storage_fixture(tmp_path)
+    (sys_block / "sda" / "device" / "model").write_text("x" * (1024 * 1024 + 1))
+    source = LocalHostObservationSource(
+        proc_root=proc, sys_block=sys_block, sys_class_block=sys_class_block
+    )
+
+    observations = source._collect_storage_observations(BASE_TIME, "node115", {})
+
+    assert ("block_device_model", "Fast Disk") not in {
+        (obs.predicate, obs.value) for obs in observations
+    }
+    assert any(obs.predicate == "block_device_vendor" for obs in observations)

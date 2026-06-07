@@ -1823,6 +1823,22 @@ def format_entity_impact(state: State, entity: str) -> str:
         for fact in state.get_current_facts(canonical, predicate)
     ]
 
+    storage_predicates = [
+        "block_device",
+        "partition",
+        "block_device_size_bytes",
+        "block_device_rotational",
+        "block_device_removable",
+        "block_device_model",
+        "block_device_vendor",
+        "block_device_parent",
+    ]
+    storage_facts = [
+        fact
+        for predicate in storage_predicates
+        for fact in state.get_current_facts(canonical, predicate)
+    ]
+
     network_predicates = [
         "network_interface",
         "interface_role",
@@ -1861,6 +1877,7 @@ def format_entity_impact(state: State, entity: str) -> str:
         ),
         "local network configuration:",
         "mounts:",
+        "storage topology:",
         "endpoint availability by role:",
         f"groups/member_of: {', '.join(groups) if groups else 'none'}",
         f"dependencies: {', '.join(dependencies) if dependencies else 'none'}",
@@ -1878,6 +1895,9 @@ def format_entity_impact(state: State, entity: str) -> str:
     mount_lines = _format_mount_impact(mount_facts)
     mount_heading = lines.index("mounts:")
     lines[mount_heading + 1 : mount_heading + 1] = mount_lines or ["- none"]
+    storage_lines = _format_storage_topology_impact(storage_facts, mount_facts)
+    storage_heading = lines.index("storage topology:")
+    lines[storage_heading + 1 : storage_heading + 1] = storage_lines or ["- none"]
 
     endpoint_lines = []
     for role, statuses in sorted(endpoint_availability.items()):
@@ -1958,6 +1978,95 @@ def _format_mount_impact(mount_facts: list[Fact]) -> list[str]:
         if options:
             lines.append("  options: " + ", ".join(dict.fromkeys(options)))
     lines.append("- health/availability/reachability: not inferred from mount facts")
+    return lines
+
+
+def _fact_storage_device(fact: Fact) -> str | None:
+    """Return the storage device dimension for a fact when present."""
+
+    device = fact.dimensions.get("device")
+    if device is None:
+        return None
+    return str(device)
+
+
+def _format_storage_topology_impact(
+    storage_facts: list[Fact], mount_facts: list[Fact]
+) -> list[str]:
+    """Format storage topology without asserting health or availability."""
+
+    if not storage_facts:
+        return ["- none"]
+
+    by_predicate: dict[str, list[Fact]] = defaultdict(list)
+    for fact in storage_facts:
+        by_predicate[fact.predicate].append(fact)
+
+    devices = sorted(
+        dict.fromkeys(
+            _format_fact_value(fact.value)
+            for fact in _sort_facts_for_display(by_predicate.get("block_device", []))
+        )
+    )
+    partitions = sorted(
+        dict.fromkeys(
+            _format_fact_value(fact.value)
+            for fact in _sort_facts_for_display(by_predicate.get("partition", []))
+        )
+    )
+
+    mounted_devices: dict[str, list[str]] = defaultdict(list)
+    for fact in mount_facts:
+        if fact.predicate != "mounted_device":
+            continue
+        mount_point = _fact_mount_point(fact)
+        if mount_point is None:
+            continue
+        mounted_devices[_format_fact_value(fact.value)].append(mount_point)
+
+    lines: list[str] = ["- devices:"]
+    (
+        lines.extend(f"  - {device}" for device in devices)
+        if devices
+        else lines.append("  - none")
+    )
+    lines.append("- partitions:")
+    (
+        lines.extend(f"  - {partition}" for partition in partitions)
+        if partitions
+        else lines.append("  - none")
+    )
+    relationships = []
+    for fact in _sort_facts_for_display(by_predicate.get("block_device_parent", [])):
+        child = _fact_storage_device(fact)
+        if child is None:
+            continue
+        relationships.append(f"{child} -> {_format_fact_value(fact.value)}")
+    if relationships:
+        lines.append("- parent relationships:")
+        lines.extend(
+            f"  - {relationship}"
+            for relationship in sorted(dict.fromkeys(relationships))
+        )
+
+    mount_relationships = []
+    known_storage_paths = {f"/dev/{name}" for name in devices + partitions}
+    for mounted_device, mount_points in mounted_devices.items():
+        if mounted_device not in known_storage_paths:
+            continue
+        for mount_point in sorted(dict.fromkeys(mount_points)):
+            mount_relationships.append(f"{mounted_device} -> {mount_point}")
+    lines.append("- mount relationships:")
+    if mount_relationships:
+        lines.extend(
+            f"  - {relationship}"
+            for relationship in sorted(dict.fromkeys(mount_relationships))
+        )
+    else:
+        lines.append("  - none")
+    lines.append(
+        "- health/availability/filesystem-health: not inferred from storage facts"
+    )
     return lines
 
 

@@ -92,6 +92,17 @@ _MOUNT_QUESTIONS = {
     "mount_option": "What mount options are recorded for the mount?",
 }
 
+_STORAGE_QUESTIONS = {
+    "block_device": "What block devices are visible locally?",
+    "partition": "What partitions are visible locally?",
+    "block_device_size_bytes": "How large is this observed block device or partition?",
+    "block_device_rotational": "Does local sysfs mark this storage device as rotational?",
+    "block_device_removable": "Does local sysfs mark this storage device as removable?",
+    "block_device_model": "What model string is exposed locally for this block device?",
+    "block_device_vendor": "What vendor string is exposed locally for this block device?",
+    "block_device_parent": "What parent block device is exposed locally for this partition?",
+}
+
 _HOST_DESCRIPTION_QUESTIONS = {
     "kernel_release": "What kernel release is this host running?",
     "kernel_version": "What kernel version string is reported locally?",
@@ -105,12 +116,26 @@ _LOCAL_READ_MAX_BYTES = 1024 * 1024
 
 
 def _read_bounded_first_line(path: Path, *, max_bytes: int = 4096) -> str | None:
+    if max_bytes <= 0:
+        return None
+    try:
+        path_stat = path.stat()
+    except OSError:
+        stat_size_known = False
+        stat_size = 0
+    else:
+        stat_size_known = stat.S_ISREG(path_stat.st_mode)
+        stat_size = path_stat.st_size
+        if stat_size_known and stat_size > max_bytes:
+            return None
     try:
         with path.open("rb") as handle:
             raw = handle.read(max_bytes)
     except OSError:
         return None
-    text = raw.decode("utf-8", errors="replace").splitlines()[0].strip() if raw else ""
+    if not raw or (not stat_size_known and len(raw) == max_bytes):
+        return None
+    text = raw.decode("utf-8", errors="replace").splitlines()[0].strip()
     return text or None
 
 
@@ -158,6 +183,8 @@ class LocalHostObservationSource:
         name: str = "local-host",
         proc_root: str | Path = "/proc",
         sys_class_net: str | Path = "/sys/class/net",
+        sys_block: str | Path = "/sys/block",
+        sys_class_block: str | Path = "/sys/class/block",
         etc_hostname: str | Path = "/etc/hostname",
         machine_id: str | Path = "/etc/machine-id",
         resolv_conf: str | Path = "/etc/resolv.conf",
@@ -169,6 +196,8 @@ class LocalHostObservationSource:
         self.name = name
         self.proc_root = Path(proc_root)
         self.sys_class_net = Path(sys_class_net)
+        self.sys_block = Path(sys_block)
+        self.sys_class_block = Path(sys_class_block)
         self.etc_hostname = Path(etc_hostname)
         self.machine_id = Path(machine_id)
         self.resolv_conf = Path(resolv_conf)
@@ -262,6 +291,9 @@ class LocalHostObservationSource:
         )
         observations.extend(
             self._collect_mount_observations(observed_at, hostname, metadata)
+        )
+        observations.extend(
+            self._collect_storage_observations(observed_at, hostname, metadata)
         )
         return observations
 
@@ -657,6 +689,270 @@ class LocalHostObservationSource:
 
         return observations
 
+    def _collect_storage_observations(
+        self, observed_at: datetime, hostname: str, metadata: dict[str, Any]
+    ) -> list[Observation]:
+        """Collect local block storage topology without managing storage.
+
+        Storage topology facts describe names, parent-child shape, and sysfs
+        attributes visible through read-only local files. They do not assert
+        device availability, filesystem health, storage health, repairability,
+        data safety, redundancy, backup status, or performance adequacy.
+        """
+
+        observations: list[Observation] = []
+        storage_metadata = {
+            **metadata,
+            "source": "sysfs_proc_partitions",
+            "management_asserted": False,
+            "storage_management_asserted": False,
+            "filesystem_management_asserted": False,
+            "availability_asserted": False,
+            "reachability_asserted": False,
+            "health_asserted": False,
+            "storage_health_asserted": False,
+            "filesystem_health_asserted": False,
+            "repairability_asserted": False,
+            "backup_status_asserted": False,
+            "redundancy_asserted": False,
+            "data_safety_asserted": False,
+            "performance_asserted": False,
+            "performance_adequacy_asserted": False,
+        }
+        for device in self._storage_topology_entries():
+            name = device["name"]
+            dimensions = {"device": name}
+            observations.append(
+                self._observation(
+                    observed_at,
+                    hostname,
+                    "block_device",
+                    name,
+                    metadata={
+                        **storage_metadata,
+                        "source": device["source"],
+                        "question_answered": _STORAGE_QUESTIONS["block_device"],
+                        "fact_produced": "block_device",
+                    },
+                    dimensions=dimensions,
+                )
+            )
+            for predicate in (
+                "block_device_size_bytes",
+                "block_device_rotational",
+                "block_device_removable",
+                "block_device_model",
+                "block_device_vendor",
+            ):
+                if predicate not in device:
+                    continue
+                observations.append(
+                    self._observation(
+                        observed_at,
+                        hostname,
+                        predicate,
+                        device[predicate],
+                        metadata={
+                            **storage_metadata,
+                            "source": device.get(
+                                f"{predicate}_source", device["source"]
+                            ),
+                            "question_answered": _STORAGE_QUESTIONS[predicate],
+                            "fact_produced": predicate,
+                        },
+                        dimensions=dimensions,
+                    )
+                )
+            for partition in device["partitions"]:
+                partition_name = partition["name"]
+                partition_dimensions = {"device": partition_name, "parent": name}
+                observations.append(
+                    self._observation(
+                        observed_at,
+                        hostname,
+                        "partition",
+                        partition_name,
+                        metadata={
+                            **storage_metadata,
+                            "source": partition["source"],
+                            "question_answered": _STORAGE_QUESTIONS["partition"],
+                            "fact_produced": "partition",
+                        },
+                        dimensions=partition_dimensions,
+                    )
+                )
+                observations.append(
+                    self._observation(
+                        observed_at,
+                        hostname,
+                        "block_device_parent",
+                        name,
+                        metadata={
+                            **storage_metadata,
+                            "source": partition["source"],
+                            "question_answered": _STORAGE_QUESTIONS[
+                                "block_device_parent"
+                            ],
+                            "fact_produced": "block_device_parent",
+                            "child_device": partition_name,
+                        },
+                        dimensions=partition_dimensions,
+                    )
+                )
+                if "block_device_size_bytes" in partition:
+                    observations.append(
+                        self._observation(
+                            observed_at,
+                            hostname,
+                            "block_device_size_bytes",
+                            partition["block_device_size_bytes"],
+                            metadata={
+                                **storage_metadata,
+                                "source": partition.get(
+                                    "block_device_size_bytes_source",
+                                    partition["source"],
+                                ),
+                                "question_answered": _STORAGE_QUESTIONS[
+                                    "block_device_size_bytes"
+                                ],
+                                "fact_produced": "block_device_size_bytes",
+                            },
+                            dimensions=partition_dimensions,
+                        )
+                    )
+        return observations
+
+    def _storage_topology_entries(self) -> list[dict[str, Any]]:
+        """Return deterministic block-device topology from sysfs/procfs only."""
+
+        proc_partitions = self._proc_partition_names()
+        device_names: set[str] = set()
+        try:
+            for entry in self.sys_block.iterdir():
+                if entry.name:
+                    device_names.add(entry.name)
+        except OSError:
+            device_names.update(self._top_level_proc_partition_names(proc_partitions))
+
+        entries: list[dict[str, Any]] = []
+        for name in sorted(device_names):
+            sys_path = self.sys_block / name
+            entry: dict[str, Any] = {
+                "name": name,
+                "source": f"/sys/block/{name}",
+                "partitions": [],
+            }
+            self._add_storage_attributes(entry, sys_path, name)
+            partitions = self._storage_partitions_for_device(name, sys_path)
+            entry["partitions"] = partitions
+            entries.append(entry)
+        return entries
+
+    def _add_storage_attributes(
+        self, entry: dict[str, Any], sys_path: Path, name: str
+    ) -> None:
+        size_bytes = self._sector_size_bytes(sys_path / "size")
+        if size_bytes is not None:
+            entry["block_device_size_bytes"] = size_bytes
+            entry["block_device_size_bytes_source"] = f"/sys/block/{name}/size"
+        rotational = self._sysfs_bool_marker(sys_path / "queue" / "rotational")
+        if rotational is not None:
+            entry["block_device_rotational"] = rotational
+            entry["block_device_rotational_source"] = (
+                f"/sys/block/{name}/queue/rotational"
+            )
+        removable = self._sysfs_bool_marker(sys_path / "removable")
+        if removable is not None:
+            entry["block_device_removable"] = removable
+            entry["block_device_removable_source"] = f"/sys/block/{name}/removable"
+        for predicate, filename in (
+            ("block_device_model", "model"),
+            ("block_device_vendor", "vendor"),
+        ):
+            value = _read_bounded_first_line(sys_path / "device" / filename)
+            if value is not None:
+                entry[predicate] = value
+                entry[f"{predicate}_source"] = f"/sys/block/{name}/device/{filename}"
+
+    def _storage_partitions_for_device(
+        self, device: str, sys_path: Path
+    ) -> list[dict[str, Any]]:
+        partitions: dict[str, dict[str, Any]] = {}
+        try:
+            children = list(sys_path.iterdir())
+        except OSError:
+            children = []
+        for child in children:
+            if not (child / "partition").exists():
+                continue
+            partitions[child.name] = {
+                "name": child.name,
+                "source": f"/sys/block/{device}/{child.name}/partition",
+            }
+        for name in self._proc_partition_names():
+            if self._partition_parent_from_name(name, device) == device:
+                partitions.setdefault(
+                    name,
+                    {"name": name, "source": "/proc/partitions"},
+                )
+        for name, partition in partitions.items():
+            size_bytes = self._sector_size_bytes(self.sys_class_block / name / "size")
+            if size_bytes is not None:
+                partition["block_device_size_bytes"] = size_bytes
+                partition["block_device_size_bytes_source"] = (
+                    f"/sys/class/block/{name}/size"
+                )
+        return [partitions[name] for name in sorted(partitions)]
+
+    def _proc_partition_names(self) -> list[str]:
+        text = self._read_text(self.proc_root / "partitions")
+        if not text:
+            return []
+        names: list[str] = []
+        for line in text.splitlines():
+            fields = line.split()
+            if len(fields) != 4 or not all(field.isdigit() for field in fields[:3]):
+                continue
+            names.append(fields[3])
+        return sorted(dict.fromkeys(names))
+
+    def _top_level_proc_partition_names(self, names: list[str]) -> list[str]:
+        """Best-effort top-level block device names when sysfs is unavailable."""
+
+        top_level: list[str] = []
+        for candidate in names:
+            if any(
+                self._partition_parent_from_name(candidate, other) == other
+                for other in names
+                if other != candidate
+            ):
+                continue
+            top_level.append(candidate)
+        return sorted(top_level)
+
+    @staticmethod
+    def _partition_parent_from_name(name: str, parent: str) -> str | None:
+        if name == parent:
+            return None
+        if parent.startswith("nvme") or parent.startswith("mmcblk"):
+            return parent if name.startswith(parent + "p") else None
+        return parent if name.startswith(parent) else None
+
+    @staticmethod
+    def _sector_size_bytes(path: Path) -> int | None:
+        value = _read_bounded_first_line(path)
+        if value is None or not value.isdigit():
+            return None
+        return int(value) * 512
+
+    @staticmethod
+    def _sysfs_bool_marker(path: Path) -> str | None:
+        value = _read_bounded_first_line(path)
+        if value == "0":
+            return "false"
+        if value == "1":
+            return "true"
+        return None
 
     def _collect_mount_observations(
         self, observed_at: datetime, hostname: str, metadata: dict[str, Any]

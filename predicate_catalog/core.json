@@ -41,6 +41,56 @@
       "cardinality": "single"
     },
     {
+      "predicate": "block_device",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "block_device_model",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "block_device_parent",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "block_device_removable",
+      "kind": "durable_fact",
+      "value_type": "enum",
+      "allowed_values": [
+        "true",
+        "false"
+      ],
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "block_device_rotational",
+      "kind": "durable_fact",
+      "value_type": "enum",
+      "allowed_values": [
+        "true",
+        "false"
+      ],
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "block_device_size_bytes",
+      "kind": "durable_fact",
+      "value_type": "integer",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "block_device_vendor",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
       "predicate": "boot_id",
       "kind": "durable_fact",
       "value_type": "string",
@@ -252,6 +302,12 @@
       "kind": "durable_fact",
       "value_type": "string",
       "cardinality": "single"
+    },
+    {
+      "predicate": "partition",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
     },
     {
       "predicate": "prometheus_instance",
