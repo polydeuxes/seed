@@ -74,17 +74,26 @@ in this area should consume projected knowledge and integrity signals without
 creating facts or mutating projections. Existing reconciliation work identifies
 examples such as:
 
-- selection rationale;
+- completed Selection Rationale audit/status maintenance;
 - context source precedence;
 - context metadata;
 - context explanation;
 - response contract;
 - operator-facing explanation improvements.
 
-Selection is where the repository's current architectural pressure is most
-visible: Seed increasingly needs to explain why particular projected knowledge,
-limitations, and caveats were selected for a context or response without turning
-relevance, priority, or explanation into truth.
+The Selection Rationale audit sequence is complete: characterization, vocabulary,
+reconciliation, and summary characterization now establish that Selection
+Rationale exists, rationale information is distributed and partially unified,
+existing rationale surfaces are sufficient for current concrete questions, and a
+Selection Rationale Summary implementation is not currently justified. Future
+Selection Rationale work should remain documentation-only unless new evidence
+identifies a concrete operator question not answered by existing context, state,
+integrity, capability, or explanation surfaces.
+
+Selection remains an important architectural pressure: Seed increasingly needs to
+explain why particular projected knowledge, limitations, and caveats were
+selected for a context or response without turning relevance, priority, or
+explanation into truth.
 
 ### Response
 
@@ -93,6 +102,12 @@ not a knowledge-creation stage, but some response-facing improvements may be
 useful when they make selected support, conflicts, staleness, absence, or
 verification limits clearer to operators. Response work should remain downstream
 of Acquisition, Integrity, and Selection.
+
+Response is now the least-audited top-level concern in this triage: Acquisition
+has a concrete status board, Integrity has summary/drilldown and Why-Not
+characterizations, and Selection has Context Composition and Selection Rationale
+audit sequences. A future Response audit should remain documentation-only unless
+separately justified.
 
 ### Methodology observation
 
