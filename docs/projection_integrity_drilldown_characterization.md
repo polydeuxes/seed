@@ -393,9 +393,13 @@ inventory surfaces:
 | Refresh recommendations | `--stale-fact-refreshes` | `--stale-facts`, `--capability-status` for recommended capability verification state |
 | Verified/unverified/stale/provider-reported/unknown capabilities | `--capability-status` | `--why-fact CAPABILITY capability_verified`, `--current-capabilities` |
 
-The main navigation gap is not missing inventory. It is that `--integrity-summary`
-prints counts without naming the corresponding drilldown command or exposing a
-structured map from count field to inventory query.
+The main navigation gap was not missing inventory. Integrity Navigation v0 keeps
+that finding intact by having `--integrity-summary` print small `See:` hints for
+the existing inventory CLI surfaces (`--unsupported-facts`, `--fact-conflicts`,
+`--contradictions`, `--graph-issues`, `--stale-facts`,
+`--stale-fact-refreshes`, and `--capability-status`). It does not add new
+inventories, read models, integrity signals, execution paths, repair paths, or
+resolution semantics.
 
 ## Current read models and views
 
