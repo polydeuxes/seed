@@ -1298,6 +1298,217 @@ def test_kernel_cpu_memory_observation_avoids_execution_root_network_and_provide
     assert all(obs.metadata["network_connection"] is False for obs in host_description)
 
 
+def _write_listener_fixture(proc: Path) -> Path:
+    net = proc / "net"
+    net.mkdir(parents=True, exist_ok=True)
+    (net / "tcp").write_text(
+        "  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n"
+        "   0: 00000000:0016 00000000:0000 0A 00000000:00000000 00:00000000 00000000 0 0 1\n"
+        "   1: 0100007F:2386 00000000:0000 0A 00000000:00000000 00:00000000 00000000 0 0 2\n"
+        "   2: 0100007F:0050 00000000:0000 01 00000000:00000000 00:00000000 00000000 0 0 3\n",
+        encoding="utf-8",
+    )
+    (net / "udp").write_text(
+        "  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n"
+        "   0: 00000000:0035 00000000:0000 07 00000000:00000000 00:00000000 00000000 0 0 4\n",
+        encoding="utf-8",
+    )
+    (net / "tcp6").write_text(
+        "  sl  local_address                         remote_address                        st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n"
+        "   0: 00000000000000000000000000000000:01BB 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000 0 0 5\n"
+        "   1: 00000000000000000000000001000000:1F90 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000 0 0 6\n",
+        encoding="utf-8",
+    )
+    (net / "udp6").write_text(
+        "  sl  local_address                         remote_address                        st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n"
+        "   0: 00000000000000000000000000000000:04D2 00000000000000000000000000000000:0000 07 00000000:00000000 00:00000000 00000000 0 0 7\n",
+        encoding="utf-8",
+    )
+    return proc
+
+
+def _patch_listener_host(monkeypatch):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    monkeypatch.setattr(sources.platform, "node", lambda: "node-a")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_collect_network_observations",
+        lambda self, observed_at, hostname, metadata: [],
+    )
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_collect_mount_observations",
+        lambda self, observed_at, hostname, metadata: [],
+    )
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_collect_storage_observations",
+        lambda self, observed_at, hostname, metadata: [],
+    )
+
+
+def test_local_host_source_emits_tcp_udp_listener_observations(monkeypatch, tmp_path):
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    proc = _write_listener_fixture(tmp_path / "proc")
+    _patch_listener_host(monkeypatch)
+
+    observations = LocalHostObservationSource(proc_root=proc).collect()
+
+    triples = {(obs.subject, obs.predicate, obs.value) for obs in observations}
+    assert ("node-a", "listening_endpoint", "tcp 0.0.0.0:22") in triples
+    assert ("node-a", "listening_endpoint", "tcp 127.0.0.1:9094") in triples
+    assert ("node-a", "listening_endpoint", "udp 0.0.0.0:53") in triples
+    assert ("node-a", "listening_endpoint", "tcp [::]:443") in triples
+    assert ("node-a", "listening_endpoint", "tcp [::1]:8080") in triples
+    assert ("node-a", "listening_endpoint", "udp [::]:1234") in triples
+    assert ("node-a", "listening_protocol", "tcp") in triples
+    assert ("node-a", "listening_protocol", "udp") in triples
+    assert ("node-a", "listening_address", "0.0.0.0") in triples
+    assert ("node-a", "listening_address", "::1") in triples
+    assert ("node-a", "listening_port", 22) in triples
+    assert ("node-a", "listening_port", 53) in triples
+    assert ("node-a", "listening_endpoint", "tcp 127.0.0.1:80") not in triples
+    endpoint = next(obs for obs in observations if obs.value == "tcp 0.0.0.0:22")
+    assert endpoint.dimensions == {
+        "protocol": "tcp",
+        "address": "0.0.0.0",
+        "port": "22",
+        "address_family": "ipv4",
+    }
+    assert endpoint.metadata["source"] == "/proc/net/tcp"
+    assert endpoint.metadata["question_answered"] == (
+        "What protocol/address/port endpoints are bound locally?"
+    )
+
+
+def test_listening_port_observation_is_deterministic(monkeypatch, tmp_path):
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    proc = _write_listener_fixture(tmp_path / "proc")
+    _patch_listener_host(monkeypatch)
+    source = LocalHostObservationSource(proc_root=proc)
+
+    first = [
+        (obs.subject, obs.predicate, obs.value, obs.dimensions)
+        for obs in source.collect()
+        if obs.predicate.startswith("listening_")
+    ]
+    second = [
+        (obs.subject, obs.predicate, obs.value, obs.dimensions)
+        for obs in source.collect()
+        if obs.predicate.startswith("listening_")
+    ]
+
+    assert first == second
+
+
+def test_listening_port_observation_projects_without_availability_reachability_health_or_ownership(
+    monkeypatch, tmp_path
+):
+    from seed_runtime.observations import ObservationIngestor
+    from seed_runtime.observation_sources import (
+        LocalHostObservationSource,
+        ObservationCollectionService,
+    )
+    from seed_runtime.state import StateProjector
+
+    proc = _write_listener_fixture(tmp_path / "proc")
+    _patch_listener_host(monkeypatch)
+    ledger = EventLedger()
+    ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        LocalHostObservationSource(proc_root=proc), "ws_listeners"
+    )
+    state = StateProjector(ledger).project("ws_listeners")
+
+    assert state.get_current_facts("node-a", "listening_endpoint")
+    assert state.get_current_facts("node-a", "listening_port")
+    assert state.get_current_facts("node-a", "listening_protocol")
+    assert state.get_current_facts("node-a", "listening_address")
+    for forbidden in (
+        "availability_status",
+        "reachability_status",
+        "endpoint_health",
+        "listener_health",
+        "process_owner",
+        "service_owner",
+        "application_owner",
+        "service_status",
+    ):
+        assert state.get_best_fact("node-a", forbidden) is None
+
+
+def test_listening_port_observation_avoids_execution_root_network_dns_and_providers(
+    monkeypatch, tmp_path
+):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    def fail_forbidden(*args, **kwargs):  # pragma: no cover - guard callback
+        raise AssertionError(
+            "listener observation must not execute, escalate, network, DNS, or call providers"
+        )
+
+    proc = _write_listener_fixture(tmp_path / "proc")
+    _patch_listener_host(monkeypatch)
+    monkeypatch.setattr(sources.socket, "create_connection", fail_forbidden)
+    monkeypatch.setattr(sources.socket, "getaddrinfo", fail_forbidden)
+    monkeypatch.setattr(sources.socket, "gethostbyname", fail_forbidden)
+    monkeypatch.setattr(sources, "urlopen", fail_forbidden)
+    monkeypatch.setattr(os, "system", fail_forbidden)
+    monkeypatch.setattr(subprocess, "Popen", fail_forbidden)
+    monkeypatch.setattr(subprocess, "run", fail_forbidden)
+
+    observations = LocalHostObservationSource(proc_root=proc).collect()
+    listeners = [obs for obs in observations if obs.predicate.startswith("listening_")]
+
+    assert listeners
+    assert all(obs.metadata["local_only"] is True for obs in listeners)
+    assert all(obs.metadata["shell_execution"] is False for obs in listeners)
+    assert all(obs.metadata["subprocess_execution"] is False for obs in listeners)
+    assert all(obs.metadata["privilege_escalation"] is False for obs in listeners)
+    assert all(obs.metadata["network_probe"] is False for obs in listeners)
+    assert all(obs.metadata["network_connection"] is False for obs in listeners)
+    assert all(obs.metadata["availability_asserted"] is False for obs in listeners)
+    assert all(obs.metadata["reachability_asserted"] is False for obs in listeners)
+    assert all(obs.metadata["endpoint_health_asserted"] is False for obs in listeners)
+    assert all(obs.metadata["process_owner_asserted"] is False for obs in listeners)
+    assert all(obs.metadata["service_owner_asserted"] is False for obs in listeners)
+
+
+def test_listening_port_observation_uses_bounded_reads_and_skips_truncated_inputs(
+    monkeypatch, tmp_path
+):
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    proc = _write_listener_fixture(tmp_path / "proc")
+    (proc / "net" / "tcp").write_text(
+        "  sl  local_address rem_address   st\n" "   0: 00000000:0016 00000000:0000\n",
+        encoding="utf-8",
+    )
+    (proc / "net" / "udp").write_text("x" * (1024 * 1024 + 1), encoding="utf-8")
+    _patch_listener_host(monkeypatch)
+
+    observations = LocalHostObservationSource(proc_root=proc).collect()
+    endpoints = [
+        obs.value for obs in observations if obs.predicate == "listening_endpoint"
+    ]
+
+    assert "tcp 0.0.0.0:22" not in endpoints
+    assert "udp 0.0.0.0:53" not in endpoints
+    assert "tcp [::]:443" in endpoints
+    assert "udp [::]:1234" in endpoints
+
+
 def _write_mount_fixture(proc: Path) -> Path:
     proc.mkdir(parents=True, exist_ok=True)
     (proc / "mounts").write_text(

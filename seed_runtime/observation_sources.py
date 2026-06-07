@@ -103,6 +103,13 @@ _STORAGE_QUESTIONS = {
     "block_device_parent": "What parent block device is exposed locally for this partition?",
 }
 
+_LISTENER_QUESTIONS = {
+    "listening_port": "What TCP/UDP ports are bound locally?",
+    "listening_protocol": "What local listener protocol is exposed by kernel state?",
+    "listening_address": "What local addresses are bound by listeners?",
+    "listening_endpoint": "What protocol/address/port endpoints are bound locally?",
+}
+
 _HOST_DESCRIPTION_QUESTIONS = {
     "kernel_release": "What kernel release is this host running?",
     "kernel_version": "What kernel version string is reported locally?",
@@ -294,6 +301,9 @@ class LocalHostObservationSource:
         )
         observations.extend(
             self._collect_storage_observations(observed_at, hostname, metadata)
+        )
+        observations.extend(
+            self._collect_listener_observations(observed_at, hostname, metadata)
         )
         return observations
 
@@ -952,6 +962,161 @@ class LocalHostObservationSource:
             return "false"
         if value == "1":
             return "true"
+        return None
+
+    def _collect_listener_observations(
+        self, observed_at: datetime, hostname: str, metadata: dict[str, Any]
+    ) -> list[Observation]:
+        """Collect locally bound TCP/UDP endpoints from procfs only.
+
+        Listener observations describe host topology visible from local kernel
+        socket tables. They do not infer reachability, availability,
+        responsiveness, endpoint health, process ownership, service ownership,
+        application ownership, or external accessibility.
+        """
+
+        observations: list[Observation] = []
+        listener_metadata = {
+            **metadata,
+            "source": "/proc/net/{tcp,tcp6,udp,udp6}",
+            "availability_asserted": False,
+            "reachability_asserted": False,
+            "network_reachability_asserted": False,
+            "external_accessibility_asserted": False,
+            "health_asserted": False,
+            "endpoint_health_asserted": False,
+            "service_health_asserted": False,
+            "responsiveness_asserted": False,
+            "traffic_asserted": False,
+            "managed_asserted": False,
+            "application_owner_asserted": False,
+            "process_owner_asserted": False,
+            "service_owner_asserted": False,
+        }
+        for listener in self._listening_socket_entries():
+            protocol = listener["protocol"]
+            address = listener["address"]
+            port = listener["port"]
+            endpoint = f"{protocol} {self._format_listener_address(address)}:{port}"
+            dimensions = {
+                "protocol": protocol,
+                "address": address,
+                "port": str(port),
+                "address_family": listener["address_family"],
+            }
+            per_listener_metadata = {
+                **listener_metadata,
+                "source": listener["source"],
+                "kernel_state": listener["state"],
+                "protocol": protocol,
+                "address": address,
+                "port": str(port),
+            }
+            for predicate, value in (
+                ("listening_endpoint", endpoint),
+                ("listening_protocol", protocol),
+                ("listening_address", address),
+                ("listening_port", port),
+            ):
+                observations.append(
+                    self._observation(
+                        observed_at,
+                        hostname,
+                        predicate,
+                        value,
+                        metadata={
+                            **per_listener_metadata,
+                            "question_answered": _LISTENER_QUESTIONS[predicate],
+                            "fact_produced": predicate,
+                        },
+                        dimensions=dimensions,
+                    )
+                )
+        return observations
+
+    @staticmethod
+    def _format_listener_address(address: str) -> str:
+        return f"[{address}]" if ":" in address else address
+
+    def _listening_socket_entries(self) -> list[dict[str, Any]]:
+        entries: list[dict[str, Any]] = []
+        sources = (
+            ("tcp", "ipv4", self.proc_root / "net" / "tcp", "/proc/net/tcp"),
+            ("tcp", "ipv6", self.proc_root / "net" / "tcp6", "/proc/net/tcp6"),
+            ("udp", "ipv4", self.proc_root / "net" / "udp", "/proc/net/udp"),
+            ("udp", "ipv6", self.proc_root / "net" / "udp6", "/proc/net/udp6"),
+        )
+        for protocol, family, path, source_name in sources:
+            entries.extend(
+                self._parse_proc_net_socket_table(protocol, family, path, source_name)
+            )
+        return sorted(
+            entries,
+            key=lambda item: (
+                item["protocol"],
+                item["address_family"],
+                ipaddress.ip_address(item["address"]),
+                item["port"],
+                item["source"],
+            ),
+        )
+
+    def _parse_proc_net_socket_table(
+        self, protocol: str, family: str, path: Path, source_name: str
+    ) -> list[dict[str, Any]]:
+        text = self._read_text(path)
+        if not text:
+            return []
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        if not lines or "local_address" not in lines[0]:
+            return []
+        entries: list[dict[str, Any]] = []
+        for line in lines[1:]:
+            fields = line.split()
+            if len(fields) < 4 or ":" not in fields[1]:
+                return []
+            local_address, local_port = fields[1].split(":", 1)
+            state = fields[3].upper()
+            if protocol == "tcp" and state != "0A":
+                continue
+            try:
+                port = int(local_port, 16)
+            except ValueError:
+                return []
+            if port <= 0:
+                continue
+            address = self._decode_proc_net_address(local_address, family)
+            if address is None:
+                return []
+            entries.append(
+                {
+                    "protocol": protocol,
+                    "address_family": family,
+                    "address": address,
+                    "port": port,
+                    "state": state,
+                    "source": source_name,
+                }
+            )
+        return entries
+
+    @staticmethod
+    def _decode_proc_net_address(value: str, family: str) -> str | None:
+        try:
+            raw = bytes.fromhex(value)
+        except ValueError:
+            return None
+        if family == "ipv4":
+            if len(raw) != 4:
+                return None
+            return str(ipaddress.IPv4Address(raw[::-1]))
+        if family == "ipv6":
+            if len(raw) != 16:
+                return None
+            network_order = b"".join(
+                raw[index : index + 4][::-1] for index in range(0, 16, 4)
+            )
+            return str(ipaddress.IPv6Address(network_order))
         return None
 
     def _collect_mount_observations(

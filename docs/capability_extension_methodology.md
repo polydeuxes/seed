@@ -222,6 +222,8 @@ Local network examples:
 | `default_gateway` | The local route table has a default route/gateway entry. | Gateway existence, ARP/NDP/ICMP/TCP/DNS response, forwarding, or internet access. |
 | `dns_resolver`, `dns_resolver_stub`, `dns_resolver_upstream` | Local resolver configuration names a resolver. | Resolver reachability, successful DNS queries, recursion, authority, DNS availability, or internet access. |
 | `local_network_segment` when modeled | A local address and trusted prefix place the address in a CIDR prefix. | Neighbor existence, subnet occupancy, scanning, gateway presence, or broadcast/multicast success. |
+| `listening_endpoint` | Local kernel socket-table state exposes a bound TCP/UDP protocol/address/port endpoint. | Reachability, external accessibility, responsiveness, endpoint health, service health, active traffic, process ownership, service ownership, application ownership, monitoring status, or management authority. |
+| `listening_port` | Local kernel socket-table state exposes a bound TCP/UDP port. | Reachability, availability, health, responding service, external access, process owner, service owner, application owner, or a managed service. |
 
 Observation absence should not become a negative operational fact. Missing local
 configuration or missing reachability evidence should render as unknown where a

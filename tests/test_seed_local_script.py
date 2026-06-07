@@ -3643,6 +3643,126 @@ def _persist_storage_impact_facts(seed_local, db_path):
         ledger.close()
 
 
+def _persist_listener_impact_facts(seed_local, db_path):
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    facts = [
+        (
+            "node115",
+            "listening_endpoint",
+            "tcp 0.0.0.0:22",
+            {
+                "protocol": "tcp",
+                "address": "0.0.0.0",
+                "port": "22",
+                "address_family": "ipv4",
+            },
+        ),
+        (
+            "node115",
+            "listening_protocol",
+            "tcp",
+            {
+                "protocol": "tcp",
+                "address": "0.0.0.0",
+                "port": "22",
+                "address_family": "ipv4",
+            },
+        ),
+        (
+            "node115",
+            "listening_address",
+            "0.0.0.0",
+            {
+                "protocol": "tcp",
+                "address": "0.0.0.0",
+                "port": "22",
+                "address_family": "ipv4",
+            },
+        ),
+        (
+            "node115",
+            "listening_port",
+            22,
+            {
+                "protocol": "tcp",
+                "address": "0.0.0.0",
+                "port": "22",
+                "address_family": "ipv4",
+            },
+        ),
+        (
+            "node115",
+            "listening_endpoint",
+            "udp 127.0.0.1:53",
+            {
+                "protocol": "udp",
+                "address": "127.0.0.1",
+                "port": "53",
+                "address_family": "ipv4",
+            },
+        ),
+    ]
+    try:
+        for index, (subject, predicate, value, dimensions) in enumerate(facts):
+            fact = seed_local.Fact(
+                id=f"fact_listener_impact_{index}",
+                subject_id=subject,
+                predicate=predicate,
+                value=value,
+                source_type="discovery",
+                confidence=0.9,
+                evidence_ids=[],
+                observed_at=seed_local.utc_now(),
+                dimensions=dimensions,
+            )
+            ledger.append(
+                "fact.observed",
+                seed_local.DEFAULT_WORKSPACE,
+                {"fact": seed_local.to_plain(fact)},
+            )
+    finally:
+        ledger.close()
+
+
+def test_cli_current_facts_exposes_listener_facts(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "current-listeners.sqlite"
+    _persist_listener_impact_facts(seed_local, db_path)
+
+    assert seed_local.main(["--db", str(db_path), "--current-facts"]) == 0
+    output = capsys.readouterr().out
+
+    assert "* node115 listening_endpoint tcp 0.0.0.0:22" in output
+    assert "* node115 listening_protocol tcp" in output
+    assert "* node115 listening_address 0.0.0.0" in output
+    assert "* node115 listening_port 22" in output
+    assert "* node115 listening_endpoint udp 127.0.0.1:53" in output
+
+
+def test_cli_impact_includes_compact_listener_endpoints_without_inference(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "impact-listeners.sqlite"
+    _persist_listener_impact_facts(seed_local, db_path)
+
+    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+    output = capsys.readouterr().out
+
+    assert "listening endpoints:" in output
+    assert "- tcp 0.0.0.0:22" in output
+    assert "- udp 127.0.0.1:53" in output
+    assert (
+        "- availability/reachability/health/ownership: not inferred from listener facts"
+        in output
+    )
+    assert "availability_status: unknown" in output
+    assert "reachability_status" not in output
+    assert "endpoint_health" not in output
+    assert "process_owner" not in output
+    assert "service_owner" not in output
+
+
 def test_cli_current_facts_exposes_storage_topology_facts(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "current-storage.sqlite"

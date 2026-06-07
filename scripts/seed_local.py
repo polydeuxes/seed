@@ -1839,6 +1839,18 @@ def format_entity_impact(state: State, entity: str) -> str:
         for fact in state.get_current_facts(canonical, predicate)
     ]
 
+    listener_predicates = [
+        "listening_endpoint",
+        "listening_protocol",
+        "listening_address",
+        "listening_port",
+    ]
+    listener_facts = [
+        fact
+        for predicate in listener_predicates
+        for fact in state.get_current_facts(canonical, predicate)
+    ]
+
     network_predicates = [
         "network_interface",
         "interface_role",
@@ -1878,6 +1890,7 @@ def format_entity_impact(state: State, entity: str) -> str:
         "local network configuration:",
         "mounts:",
         "storage topology:",
+        "listening endpoints:",
         "endpoint availability by role:",
         f"groups/member_of: {', '.join(groups) if groups else 'none'}",
         f"dependencies: {', '.join(dependencies) if dependencies else 'none'}",
@@ -1898,6 +1911,9 @@ def format_entity_impact(state: State, entity: str) -> str:
     storage_lines = _format_storage_topology_impact(storage_facts, mount_facts)
     storage_heading = lines.index("storage topology:")
     lines[storage_heading + 1 : storage_heading + 1] = storage_lines or ["- none"]
+    listener_lines = _format_listening_endpoint_impact(listener_facts)
+    listener_heading = lines.index("listening endpoints:")
+    lines[listener_heading + 1 : listener_heading + 1] = listener_lines or ["- none"]
 
     endpoint_lines = []
     for role, statuses in sorted(endpoint_availability.items()):
@@ -1928,6 +1944,39 @@ def format_entity_impact(state: State, entity: str) -> str:
     else:
         lines.append("- none")
     return "\n".join(lines)
+
+
+def _fact_listener_endpoint(fact: Fact) -> str | None:
+    if fact.predicate == "listening_endpoint":
+        return _format_fact_value(fact.value)
+    protocol = fact.dimensions.get("protocol")
+    address = fact.dimensions.get("address")
+    port = fact.dimensions.get("port")
+    if protocol is None or address is None or port is None:
+        return None
+    formatted_address = str(address)
+    if ":" in formatted_address and not formatted_address.startswith("["):
+        formatted_address = f"[{formatted_address}]"
+    return f"{protocol} {formatted_address}:{port}"
+
+
+def _format_listening_endpoint_impact(listener_facts: list[Fact]) -> list[str]:
+    """Format listener topology without asserting service health or ownership."""
+
+    if not listener_facts:
+        return ["- none"]
+    endpoints = sorted(
+        dict.fromkeys(
+            endpoint
+            for fact in _sort_facts_for_display(listener_facts)
+            if (endpoint := _fact_listener_endpoint(fact)) is not None
+        )
+    )
+    lines = [f"- {endpoint}" for endpoint in endpoints]
+    lines.append(
+        "- availability/reachability/health/ownership: not inferred from listener facts"
+    )
+    return lines or ["- none"]
 
 
 def _fact_mount_point(fact: Fact) -> str | None:
