@@ -21,6 +21,7 @@ OWNERSHIP = "ownership"
 REJECTED_CONCEPT = "rejected_concept"
 FRONTIER = "frontier"
 EXISTENCE = "existence"
+STRUCTURE = "structure"
 
 _PROJECTION_STORE_SYMBOLS = frozenset(
     {"ProjectionStore", "SQLiteProjectionStore", "InMemoryProjectionStore"}
@@ -61,8 +62,8 @@ def reconcile_claims(
     """Reconcile supplied fixture claims against supplied fixture artifact facts.
 
     The helper applies only tiny, explicit rules for ownership, rejected concept,
-    frontier, and existence claims. Unknown claim families and unsupported text
-    patterns are returned as ``not_evaluable``.
+    frontier, existence, and structure claims. Unknown claim families and
+    unsupported text patterns are returned as ``not_evaluable``.
     """
 
     artifact_fact_tuple = tuple(artifact_facts)
@@ -84,6 +85,8 @@ def _reconcile_claim(
         return _reconcile_frontier_claim(claim, artifact_facts)
     if claim.claim_family == EXISTENCE:
         return _reconcile_existence_claim(claim, artifact_facts)
+    if claim.claim_family == STRUCTURE:
+        return _reconcile_structure_claim(claim, artifact_facts)
     return AlignmentRecord(
         claim=claim,
         artifact_facts=(),
@@ -278,6 +281,57 @@ def _reconcile_existence_claim(
     )
 
 
+def _reconcile_structure_claim(
+    claim: DocumentationClaim,
+    artifact_facts: tuple[RepositoryArtifactFact, ...],
+) -> AlignmentRecord:
+    defines_method_symbols = _defines_method_symbols(claim.claim)
+    if defines_method_symbols is None:
+        return AlignmentRecord(
+            claim=claim,
+            artifact_facts=(),
+            outcome=NOT_EVALUABLE,
+            rule_id="structure.not_evaluable",
+            reason="Structure claim does not match the v1 'X defines method Y.' rule.",
+        )
+
+    owner_symbol, method_symbol = defines_method_symbols
+    class_matches = tuple(
+        artifact_fact
+        for artifact_fact in artifact_facts
+        if artifact_fact.artifact_kind == "class"
+        and artifact_fact.symbol == owner_symbol
+    )
+    method_matches = tuple(
+        artifact_fact
+        for artifact_fact in artifact_facts
+        if artifact_fact.artifact_kind == "method"
+        and artifact_fact.symbol == method_symbol
+        and artifact_fact.parent_symbol == owner_symbol
+    )
+    if class_matches and method_matches:
+        return AlignmentRecord(
+            claim=claim,
+            artifact_facts=(class_matches[0], method_matches[0]),
+            outcome=SUPPORTED,
+            rule_id="structure.defines_method.supported",
+            reason=(
+                f"Artifact facts contain class {owner_symbol!r} and method "
+                f"{method_symbol!r} contained by {owner_symbol!r}."
+            ),
+        )
+    return AlignmentRecord(
+        claim=claim,
+        artifact_facts=(),
+        outcome=MISSING_SUPPORT,
+        rule_id="structure.defines_method.missing_support",
+        reason=(
+            f"Artifact facts do not contain class {owner_symbol!r} and method "
+            f"{method_symbol!r} contained by {owner_symbol!r}."
+        ),
+    )
+
+
 def _artifact_facts_with_symbol(
     artifact_facts: tuple[RepositoryArtifactFact, ...], symbol: str
 ) -> tuple[RepositoryArtifactFact, ...]:
@@ -339,6 +393,17 @@ def _defines_symbols(claim_text: str) -> tuple[str, str] | None:
     if match is None:
         return None
     return match.group("owner"), match.group("defined")
+
+
+def _defines_method_symbols(claim_text: str) -> tuple[str, str] | None:
+    match = re.fullmatch(
+        r"\s*(?P<owner>[A-Za-z_][A-Za-z0-9_]*)\s+defines\s+method\s+"
+        r"(?P<method>[A-Za-z_][A-Za-z0-9_]*)\.\s*",
+        claim_text,
+    )
+    if match is None:
+        return None
+    return match.group("owner"), match.group("method")
 
 
 def _rejected_concept(claim_text: str) -> str | None:
