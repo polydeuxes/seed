@@ -87,12 +87,11 @@ ToolExecutor defines execute.
 
 Expected evidence:
 
-- an artifact fact for `X`; and
-- an artifact fact for `Y` within the same supplied acquisition scope.
+- an artifact fact for `X`;
+- an artifact fact for `Y`; and
+- both artifact facts originate from the same supplied source path.
 
-The first implementation may treat same-source fixture text as enough scope when both facts are supplied from the same source path.
-
-Do not infer behavior from this form. It only says the named definition exists within the supplied artifact context.
+Same path is the complete support boundary for this existence rule. Do not infer AST containment, method ownership, class-member relationships, behavior, or structure from this form. It only says both named definitions exist within the same supplied artifact path.
 
 ## Outcome Semantics
 
@@ -121,7 +120,7 @@ Examples:
 | Claim | Supplied artifact facts | Outcome |
 | --- | --- | --- |
 | `ToolExecutor exists.` | class fact with `symbol="ToolExecutor"` | `supported` |
-| `Runtime defines handle_user_message.` | class fact `Runtime` and function fact `handle_user_message` from the same source fixture | `supported` |
+| `Runtime defines handle_user_message.` | class fact `Runtime` and function fact `handle_user_message` from the same source path | `supported` |
 
 ### `missing_support`
 
@@ -138,6 +137,7 @@ Examples:
 | --- | --- | --- |
 | `MagicExecutor exists.` | class fact `ToolExecutor` only | `missing_support` |
 | `Runtime defines handle_user_message.` | class fact `Runtime` only | `missing_support` |
+| `Runtime defines handle_user_message.` | class fact `Runtime` and function fact `handle_user_message` from different source paths | `missing_support` |
 
 This means only that support is missing from the supplied artifact facts. It does not prove repository-wide absence unless repository-wide acquisition is explicitly in scope.
 
@@ -262,11 +262,12 @@ Suggested tests:
 
 1. `ToolExecutor exists.` plus class `ToolExecutor` produces `supported`.
 2. `MagicExecutor exists.` plus class `ToolExecutor` produces `missing_support`.
-3. `Runtime defines handle_user_message.` plus class `Runtime` and function `handle_user_message` produces `supported`.
-4. `Runtime defines handle_user_message.` plus only class `Runtime` produces `missing_support`.
-5. Vague existence-like prose is either not extracted or becomes `not_evaluable`, depending on extractor boundary.
-6. Existing ownership claims still use ownership semantics and are not reclassified as existence claims.
-7. No runtime, tool execution, event ledger, projection store, repository scanning, file reads, or LLM behavior is introduced.
+3. `Runtime defines handle_user_message.` plus class `Runtime` and function `handle_user_message` from the same source path produces `supported`.
+4. `Runtime defines handle_user_message.` plus class `Runtime` and function `handle_user_message` from different source paths produces `missing_support`.
+5. `Runtime defines handle_user_message.` plus only class `Runtime` produces `missing_support`.
+6. Vague existence-like prose is either not extracted or becomes `not_evaluable`, depending on extractor boundary.
+7. Existing ownership claims still use ownership semantics and are not reclassified as existence claims.
+8. No runtime, tool execution, event ledger, projection store, repository scanning, file reads, or LLM behavior is introduced.
 
 ## Non-Goals
 

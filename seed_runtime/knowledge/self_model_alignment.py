@@ -245,15 +245,16 @@ def _reconcile_existence_claim(
         owner_symbol, defined_symbol = defines_symbols
         owner_matches = _artifact_facts_with_symbol(artifact_facts, owner_symbol)
         defined_matches = _artifact_facts_with_symbol(artifact_facts, defined_symbol)
-        if owner_matches and defined_matches:
+        same_path_matches = _same_path_symbol_matches(owner_matches, defined_matches)
+        if same_path_matches:
             return AlignmentRecord(
                 claim=claim,
-                artifact_facts=owner_matches + defined_matches,
+                artifact_facts=same_path_matches,
                 outcome=SUPPORTED,
                 rule_id="existence.defines.supported",
                 reason=(
                     f"Artifact facts contain symbols {owner_symbol!r} "
-                    f"and {defined_symbol!r}."
+                    f"and {defined_symbol!r} from the same path."
                 ),
             )
         return AlignmentRecord(
@@ -263,7 +264,7 @@ def _reconcile_existence_claim(
             rule_id="existence.defines.missing_support",
             reason=(
                 f"Artifact facts do not contain both symbols {owner_symbol!r} "
-                f"and {defined_symbol!r}."
+                f"and {defined_symbol!r} from the same path."
             ),
         )
 
@@ -284,6 +285,17 @@ def _artifact_facts_with_symbol(
         for artifact_fact in artifact_facts
         if artifact_fact.symbol == symbol
     )
+
+
+def _same_path_symbol_matches(
+    owner_matches: tuple[RepositoryArtifactFact, ...],
+    defined_matches: tuple[RepositoryArtifactFact, ...],
+) -> tuple[RepositoryArtifactFact, ...]:
+    for owner_match in owner_matches:
+        for defined_match in defined_matches:
+            if owner_match.path == defined_match.path:
+                return (owner_match, defined_match)
+    return ()
 
 
 def _artifact_facts_matching_symbols(
