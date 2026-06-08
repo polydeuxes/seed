@@ -19,11 +19,15 @@ def _claim(claim: str, family: str = "existence") -> DocumentationClaim:
     )
 
 
-def _fact(symbol: str, artifact_kind: str = "class") -> RepositoryArtifactFact:
+def _fact(
+    symbol: str,
+    artifact_kind: str = "class",
+    path: str = "seed_runtime/fixture.py",
+) -> RepositoryArtifactFact:
     return RepositoryArtifactFact(
-        fact=f"{artifact_kind.title()} {symbol} exists in seed_runtime/fixture.py.",
+        fact=f"{artifact_kind.title()} {symbol} exists in {path}.",
         artifact_kind=artifact_kind,
-        path="seed_runtime/fixture.py",
+        path=path,
         symbol=symbol,
     )
 
@@ -57,7 +61,7 @@ def test_magic_executor_exists_without_magic_executor_class_is_missing_support()
     assert record.artifact_facts == ()
 
 
-def test_runtime_defines_handle_user_message_with_both_symbols_is_supported():
+def test_runtime_defines_handle_user_message_with_same_path_symbols_is_supported():
     record = _single_record(
         _claim("Runtime defines handle_user_message."),
         [_fact("Runtime"), _fact("handle_user_message", artifact_kind="function")],
@@ -69,6 +73,24 @@ def test_runtime_defines_handle_user_message_with_both_symbols_is_supported():
         "Runtime",
         "handle_user_message",
     }
+
+
+def test_runtime_defines_handle_user_message_with_different_path_symbols_is_missing_support():
+    record = _single_record(
+        _claim("Runtime defines handle_user_message."),
+        [
+            _fact("Runtime", path="seed_runtime/runtime.py"),
+            _fact(
+                "handle_user_message",
+                artifact_kind="function",
+                path="seed_runtime/helpers.py",
+            ),
+        ],
+    )
+
+    assert record.outcome == "missing_support"
+    assert record.rule_id == "existence.defines.missing_support"
+    assert record.artifact_facts == ()
 
 
 def test_runtime_defines_handle_user_message_with_only_runtime_is_missing_support():
