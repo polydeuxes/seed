@@ -237,6 +237,10 @@ This audit does not recommend or introduce:
 
 These would duplicate or bypass existing surfaces rather than addressing the smallest documented gap.
 
+## Follow-up
+
+See `docs/input_act_vocabulary.md` for the documentation-only first-class vocabulary that distinguishes user input acts from downstream `DecisionKind` routing decisions.
+
 ## Recommended Next Step
 
 Add a small, explicit input-inspection vocabulary only if a future behavior change is approved. The likely next design task is to define how current compact intent labels should relate to user input acts such as operator query, task request, user-provided observation, documentation claim, correction, and casual answer.
