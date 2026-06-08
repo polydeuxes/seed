@@ -42,6 +42,7 @@ class RepositoryArtifactFact:
     artifact_kind: str
     path: str
     symbol: str | None = None
+    parent_symbol: str | None = None
 
 
 @dataclass(frozen=True)

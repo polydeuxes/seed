@@ -20,8 +20,9 @@ def extract_repository_artifact_facts(
 
     Extraction is intentionally tiny and deterministic. It always emits a module
     fact for ``source_path`` and, when the text parses as Python, emits facts for
-    observed class definitions, function definitions, async function definitions,
-    and imports. It does not read from disk or infer architecture/ownership.
+    observed top-level class definitions, top-level function definitions,
+    top-level async function definitions, direct class methods, and top-level
+    imports. It does not read from disk or infer architecture/ownership.
     """
 
     facts = [_module_fact(source_path)]
@@ -31,9 +32,10 @@ def extract_repository_artifact_facts(
     except SyntaxError:
         return [_module_fact(source_path, parse_failed=True)]
 
-    for node in ast.walk(tree):
+    for node in tree.body:
         if isinstance(node, ast.ClassDef):
             facts.append(_class_fact(source_path, node.name))
+            facts.extend(_method_facts(source_path, node))
         elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             facts.append(_function_fact(source_path, node.name))
         elif isinstance(node, ast.Import):
@@ -78,6 +80,21 @@ def _function_fact(source_path: str, symbol: str) -> RepositoryArtifactFact:
     )
 
 
+def _method_fact(
+    source_path: str,
+    *,
+    class_symbol: str,
+    method_symbol: str,
+) -> RepositoryArtifactFact:
+    return RepositoryArtifactFact(
+        fact=f"Class {class_symbol} defines method {method_symbol} in {source_path}.",
+        artifact_kind="method",
+        path=source_path,
+        symbol=method_symbol,
+        parent_symbol=class_symbol,
+    )
+
+
 def _import_fact(source_path: str, symbol: str) -> RepositoryArtifactFact:
     return RepositoryArtifactFact(
         fact=f"Import {symbol} exists in {source_path}.",
@@ -85,6 +102,21 @@ def _import_fact(source_path: str, symbol: str) -> RepositoryArtifactFact:
         path=source_path,
         symbol=symbol,
     )
+
+
+def _method_facts(
+    source_path: str,
+    node: ast.ClassDef,
+) -> list[RepositoryArtifactFact]:
+    return [
+        _method_fact(
+            source_path,
+            class_symbol=node.name,
+            method_symbol=child.name,
+        )
+        for child in node.body
+        if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef))
+    ]
 
 
 def _import_facts(
