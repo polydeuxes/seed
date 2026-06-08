@@ -2,217 +2,46 @@
 
 This directory contains the architectural knowledge, audits, vocabularies, reconciliations, status reviews, roadmaps, and observation designs that describe how Seed works and why it works that way.
 
-The repository has accumulated significant architectural knowledge over time. New readers should begin with the navigation documents below before diving into individual audit chains.
+The README is the documentation entry point. It owns navigation and orientation only; it does not own current status, active frontier, rejected-concept rationale, preserved findings, roadmap sequencing, lifecycle roles, or canonical architecture definitions.
+
+For authority boundaries, see `documentation_authority_reconciliation.md` and `documentation_boundary_enforcement_reconciliation.md`.
 
 ---
 
-# Recommended Reading Order
+# Start Here
 
-## 1. Architectural Knowledge Map
-
-Start here:
-
-`architectural_knowledge_map.md`
-
-Provides:
-
-* architectural overview
-* concern map
-* canonical documents
-* major findings
-* rejected concepts
-* current frontiers
-* reading order
+1. `architectural_knowledge_map.md` — concern map and routing to the documents that own each answer.
+2. `architectural_status_and_next_frontier.md` — current architectural status, active frontier, and current priorities.
+3. `architectural_findings_preservation.md` — completed findings, negative findings, rejected concepts, and historical conclusions.
+4. `reasoning_roadmap.md` — roadmap sequencing, backlog context, and concern evolution.
 
 ---
 
-## 2. Architectural Findings Preservation
+# Common Questions
 
-`architectural_findings_preservation.md`
-
-Provides:
-
-* completed audit findings
-* negative findings
-* rejected concepts
-* deferred concepts
-* preservation of major architectural conclusions
-
----
-
-## 3. Architectural Status And Next Frontier
-
-`architectural_status_and_next_frontier.md`
-
-Provides:
-
-* current repository status
-* completed audit chains
-* active architectural frontier
-* capability-growth priorities
+| Question | Read |
+| --- | --- |
+| Where do I start? | `architectural_knowledge_map.md` |
+| What is current? | `architectural_status_and_next_frontier.md` |
+| What is the active frontier? | `architectural_status_and_next_frontier.md` |
+| What was learned? | `architectural_findings_preservation.md` and the scoped `*_reconciliation.md` / `*_characterization.md` documents |
+| What was rejected? | `architectural_findings_preservation.md` for the consolidated list; scoped reconciliations for rationale |
+| What comes next? | `reasoning_roadmap.md`, with currentness checked against `architectural_status_and_next_frontier.md` |
+| Which document owns which answer? | `documentation_authority_reconciliation.md` |
+| How should boundaries be enforced? | `documentation_boundary_enforcement_reconciliation.md` |
 
 ---
 
-## 4. Reasoning Roadmap
+# Concern Navigation
 
-`reasoning_roadmap.md`
+Seed's top-level lifecycle concerns are mapped in `architectural_knowledge_map.md` and governed by scoped documents.
 
-Provides:
+| Concern | Primary starting points |
+| --- | --- |
+| Knowledge Acquisition | `knowledge_acquisition_status.md`, `knowledge_acquisition_and_selection.md`, `knowledge_classification_vocabulary.md` |
+| Knowledge Integrity | `knowledge_maintenance_reconciliation.md`, `projection_integrity_summary_characterization.md`, `projection_integrity_drilldown_characterization.md` |
+| Knowledge Selection | `context_composition_reconciliation.md`, `context_composition_vocabulary.md`, `selection_rationale_reconciliation.md`, `selection_rationale_vocabulary.md` |
+| Response | `response_characterization.md`, `response_vocabulary.md`, `response_reconciliation.md`, `response_caveat_characterization.md`, `response_caveat_vocabulary.md` |
+| Architectural Findings | `architectural_findings_characterization.md`, `architectural_findings_vocabulary.md`, `architectural_findings_reconciliation.md`, `architectural_findings_preservation.md` |
 
-* historical roadmap
-* concern evolution
-* future work
-* backlog context
-
----
-
-# Architectural Concerns
-
-Seed currently organizes architectural thinking around four primary concerns:
-
-```text
-Knowledge Acquisition
-        ↓
-Knowledge Integrity
-        ↓
-Knowledge Selection
-        ↓
-Response
-```
-
-Additional documentation concern:
-
-```text
-Architectural Findings
-```
-
----
-
-# Concern Reading Order
-
-## Knowledge Acquisition
-
-Primary documents:
-
-* knowledge_acquisition_status.md
-* knowledge_acquisition_and_selection.md
-* knowledge_classification_vocabulary.md
-* repository_observation_source_design.md
-* self_observation_reconciliation.md
-
-Current frontier:
-
-* Users Observation
-* Groups Observation
-* Package Observation
-* Systemd Observation
-
----
-
-## Knowledge Integrity
-
-Primary documents:
-
-* knowledge_maintenance_reconciliation.md
-* projection_integrity_summary_characterization.md
-* projection_integrity_drilldown_characterization.md
-
-Implemented composition:
-
-* Projection Integrity Summary v0
-* Projection Integrity Navigation v0
-
----
-
-## Knowledge Selection
-
-Primary documents:
-
-* context_composition_reconciliation.md
-* context_composition_vocabulary.md
-* selection_rationale_characterization.md
-* selection_rationale_vocabulary.md
-* selection_rationale_reconciliation.md
-* selection_rationale_summary_characterization.md
-
-Important finding:
-
-Selection Rationale Summary implementation is not currently justified.
-
----
-
-## Response
-
-Primary documents:
-
-* response_characterization.md
-* response_vocabulary.md
-* response_reconciliation.md
-* response_caveat_characterization.md
-* response_caveat_vocabulary.md
-
-Important finding:
-
-Response exists primarily as communication of selected and characterized knowledge.
-
----
-
-## Architectural Findings
-
-Primary documents:
-
-* architectural_findings_characterization.md
-* architectural_findings_vocabulary.md
-* architectural_findings_reconciliation.md
-
-Important finding:
-
-Architectural memory already exists; discoverability remains weaker than preservation.
-
----
-
-# Rejected Concepts
-
-The following concepts have been repeatedly evaluated and rejected unless future evidence identifies a concrete unmet need:
-
-* ExplainabilityEngine
-* IntegrityEngine
-* SelectionEngine
-* ResponseEngine
-* CaveatEngine
-* ContextEngine
-* ReasoningEngine
-* Planner
-* WorkflowEngine
-* Universal Formatter
-* Architectural Registry
-* Decision Database
-* Architectural Runtime
-* Parallel truth systems
-* Parallel response systems
-
----
-
-# Recurring Architectural Lessons
-
-```text
-Audit before inventing.
-
-Ownership before implementation.
-
-Composition before new subsystems.
-```
-
-Additional recurring findings:
-
-```text
-Behavior often already exists.
-
-Vocabulary is often missing.
-
-Composition is often missing.
-
-Ownership is often unclear.
-
-Implementation not justified is a valid outcome.
-```
+Use the map for routing. Use the status/frontier document for currentness. Use preservation for durable findings and rejected concepts.
