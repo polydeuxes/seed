@@ -134,6 +134,87 @@ class ProjectionStore:
     assert {record.outcome for record in alignment_records} == {"supported"}
 
 
+def test_structure_claim_supported_from_documentation_and_repository_observation():
+    claims = extract_documentation_claims(
+        "fixtures/self_model.md",
+        """## Structure
+
+Runtime defines method handle_user_message.
+""",
+    )
+    artifact_facts = extract_repository_artifact_facts(
+        "fixtures/self_model_source.py",
+        """class Runtime:
+    def handle_user_message(self):
+        pass
+""",
+    )
+    alignment_records = reconcile_claims(claims, artifact_facts)
+
+    method_facts = [
+        fact
+        for fact in artifact_facts
+        if fact.artifact_kind == "method"
+        and fact.symbol == "handle_user_message"
+    ]
+
+    assert len(claims) == 1
+    assert claims[0].claim_family == "structure"
+    assert any(
+        fact.artifact_kind == "class" and fact.symbol == "Runtime"
+        for fact in artifact_facts
+    )
+    assert len(method_facts) == 1
+    assert method_facts[0].artifact_kind == "method"
+    assert method_facts[0].symbol == "handle_user_message"
+    assert method_facts[0].parent_symbol == "Runtime"
+    assert len(alignment_records) == 1
+    assert alignment_records[0].outcome == "supported"
+    assert alignment_records[0].rule_id == "structure.defines_method.supported"
+
+
+def test_structure_claim_missing_support_for_top_level_function():
+    claims = extract_documentation_claims(
+        "fixtures/self_model.md",
+        """## Structure
+
+Runtime defines method handle_user_message.
+""",
+    )
+    artifact_facts = extract_repository_artifact_facts(
+        "fixtures/self_model_source.py",
+        """class Runtime:
+    pass
+
+def handle_user_message():
+    pass
+""",
+    )
+    alignment_records = reconcile_claims(claims, artifact_facts)
+
+    assert len(claims) == 1
+    assert claims[0].claim_family == "structure"
+    assert any(
+        fact.artifact_kind == "class" and fact.symbol == "Runtime"
+        for fact in artifact_facts
+    )
+    assert any(
+        fact.artifact_kind == "function"
+        and fact.symbol == "handle_user_message"
+        and fact.parent_symbol is None
+        for fact in artifact_facts
+    )
+    assert not any(
+        fact.artifact_kind == "method"
+        and fact.symbol == "handle_user_message"
+        and fact.parent_symbol == "Runtime"
+        for fact in artifact_facts
+    )
+    assert len(alignment_records) == 1
+    assert alignment_records[0].outcome == "missing_support"
+    assert alignment_records[0].rule_id == "structure.defines_method.missing_support"
+
+
 def test_documentation_observation_does_not_emit_repository_facts():
     claims = extract_documentation_claims(
         "fixtures/self_model.md",
