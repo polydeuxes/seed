@@ -22,10 +22,14 @@ See also:
 * `docs/architectural_status_and_next_frontier.md`
 * `docs/architectural_findings_preservation.md`
 * `docs/reasoning_roadmap.md`
+* `docs/knowledge_representation_map.md`
+* `docs/knowledge_representation_reconciliation.md`
 
 ---
 
 # Current Architectural Frame
+
+Process layer:
 
 ```text
 Knowledge Acquisition
@@ -35,6 +39,28 @@ Knowledge Integrity
 Knowledge Selection
         ↓
 Response
+```
+
+Representation layer:
+
+```text
+Observation
+        ↓
+Evidence
+        ↓
+Fact
+        ↓
+Projected Knowledge Structures
+```
+
+Claim-justification branch:
+
+```text
+Fact
+        ↓
+Support Relationship
+        ↓
+Claim
 ```
 
 Additional documentation concern:
@@ -49,14 +75,63 @@ Architectural Findings preserves what Seed has learned about itself.
 
 # Status Overview
 
-| Concern                | Status                   | Current Finding                                                                                              |
-| ---------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| Knowledge Acquisition  | Active frontier          | Architecturally stable; capability growth remains valuable.                                                  |
-| Knowledge Integrity    | Stable                   | Characterized, reconciled, summary/navigation implemented where justified.                                   |
-| Knowledge Selection    | Stable                   | Characterized, vocabulary established, reconciled; Selection Rationale Summary not justified.                |
-| Response               | Complete enough          | Characterized, vocabulary established, reconciled; implementation not justified.                             |
-| Response Caveats       | Complete enough / paused | Characterized and vocabulary established; further caveat audits paused unless new operator questions emerge. |
-| Architectural Findings | Partially reconciled     | Preservation exists; discoverability, authority, and supersession remain weaker than preservation.           |
+| Concern                  | Status                   | Current Finding                                                                                              |
+| ------------------------ | ------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| Knowledge Acquisition    | Active frontier          | Architecturally stable; capability growth remains valuable.                                                  |
+| Knowledge Integrity      | Stable                   | Characterized, reconciled, summary/navigation implemented where justified.                                   |
+| Knowledge Selection      | Stable                   | Characterized, vocabulary established, reconciled; Selection Rationale Summary not justified.                |
+| Response                 | Complete enough          | Characterized, vocabulary established, reconciled; implementation not justified.                             |
+| Response Caveats         | Complete enough / paused | Characterized and vocabulary established; further caveat audits paused unless new operator questions emerge. |
+| Knowledge Representation | Emerging / reconciled    | Existing projected structures remain valid; Claim Support adds a claim-justification branch.                 |
+| Architectural Findings   | Partially reconciled     | Preservation exists; discoverability, authority, and supersession remain weaker than preservation.           |
+
+---
+
+# Knowledge Representation
+
+## Canonical Documents
+
+* `docs/knowledge_representation_map.md`
+* `docs/knowledge_representation_reconciliation.md`
+* `docs/claim_support_frontier.md`
+* `docs/claim_support_characterization.md`
+* `docs/claim_support_design.md`
+
+## Related Frontier Documents
+
+* `docs/documentation_observation_frontier.md`
+* `docs/documentation_observation_characterization.md`
+* `docs/documentation_observation_design.md`
+* `docs/repository_observation_frontier.md`
+* `docs/repository_observation_characterization.md`
+* `docs/repository_observation_design.md`
+* `docs/repository_reconciliation_frontier.md`
+* `docs/repository_reconciliation_characterization.md`
+
+## Major Findings
+
+* The process layer describes how knowledge moves.
+* The representation layer describes what knowledge is.
+* Existing projected knowledge structures remain valid.
+* Claim Support adds a claim-justification branch.
+* `FactSupport` and Claim Support should not be collapsed.
+
+Canonical distinction:
+
+```text
+Evidence supports facts.
+
+Facts support claims.
+```
+
+## Rejected Concepts
+
+* `ReasoningEngine`
+* `InferenceEngine` as claim support
+* `TruthEngine`
+* `ClaimStore`
+* `SupportStore`
+* automatic claim-to-claim reasoning chains
 
 ---
 
@@ -296,6 +371,9 @@ The following concepts have been repeatedly rejected unless future evidence iden
 * parallel truth systems
 * parallel response systems
 * parallel caveat systems
+* `ClaimStore`
+* `SupportStore`
+* claim-to-claim reasoning chains
 
 ---
 
@@ -309,6 +387,13 @@ Priority:
 2. Groups Observation v1
 3. Package Observation v1
 4. Systemd Observation v1
+
+Additional emerging acquisition / reconciliation frontiers:
+
+* Documentation Observation
+* Repository Observation
+* Repository Reconciliation
+* Claim Support projection semantics
 
 These should remain:
 
@@ -373,10 +458,12 @@ ToolExecutor is not the default integration point.
 For new sessions:
 
 1. `docs/architectural_knowledge_map.md`
-2. `docs/architectural_findings_preservation.md`
-3. `docs/architectural_status_and_next_frontier.md`
-4. `docs/reasoning_roadmap.md`
-5. `docs/knowledge_acquisition_status.md`
-6. concern-specific characterization/vocabulary/reconciliation docs only as needed
+2. `docs/knowledge_representation_map.md`
+3. `docs/knowledge_representation_reconciliation.md`
+4. `docs/architectural_findings_preservation.md`
+5. `docs/architectural_status_and_next_frontier.md`
+6. `docs/reasoning_roadmap.md`
+7. `docs/knowledge_acquisition_status.md`
+8. concern-specific characterization/vocabulary/reconciliation docs only as needed
 
 This order is meant to reduce context cost before deeper audit work.
