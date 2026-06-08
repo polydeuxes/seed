@@ -20,6 +20,7 @@ NOT_EVALUABLE = "not_evaluable"
 OWNERSHIP = "ownership"
 REJECTED_CONCEPT = "rejected_concept"
 FRONTIER = "frontier"
+EXISTENCE = "existence"
 
 _PROJECTION_STORE_SYMBOLS = frozenset(
     {"ProjectionStore", "SQLiteProjectionStore", "InMemoryProjectionStore"}
@@ -59,8 +60,8 @@ def reconcile_claims(
     """Reconcile supplied fixture claims against supplied fixture artifact facts.
 
     The helper applies only tiny, explicit rules for ownership, rejected concept,
-    and frontier claims. Unknown claim families and unsupported text patterns are
-    returned as ``not_evaluable``.
+    frontier, and existence claims. Unknown claim families and unsupported text
+    patterns are returned as ``not_evaluable``.
     """
 
     artifact_fact_tuple = tuple(artifact_facts)
@@ -80,6 +81,8 @@ def _reconcile_claim(
         return _reconcile_rejected_concept_claim(claim, artifact_facts)
     if claim.claim_family == FRONTIER:
         return _reconcile_frontier_claim(claim, artifact_facts)
+    if claim.claim_family == EXISTENCE:
+        return _reconcile_existence_claim(claim, artifact_facts)
     return AlignmentRecord(
         claim=claim,
         artifact_facts=(),
@@ -214,6 +217,75 @@ def _reconcile_frontier_claim(
     )
 
 
+def _reconcile_existence_claim(
+    claim: DocumentationClaim,
+    artifact_facts: tuple[RepositoryArtifactFact, ...],
+) -> AlignmentRecord:
+    exists_symbol = _exists_symbol(claim.claim)
+    if exists_symbol is not None:
+        matches = _artifact_facts_with_symbol(artifact_facts, exists_symbol)
+        if matches:
+            return AlignmentRecord(
+                claim=claim,
+                artifact_facts=matches,
+                outcome=SUPPORTED,
+                rule_id="existence.exists.supported",
+                reason=f"Artifact facts contain symbol {exists_symbol!r}.",
+            )
+        return AlignmentRecord(
+            claim=claim,
+            artifact_facts=(),
+            outcome=MISSING_SUPPORT,
+            rule_id="existence.exists.missing_support",
+            reason=f"No artifact fact contains symbol {exists_symbol!r}.",
+        )
+
+    defines_symbols = _defines_symbols(claim.claim)
+    if defines_symbols is not None:
+        owner_symbol, defined_symbol = defines_symbols
+        owner_matches = _artifact_facts_with_symbol(artifact_facts, owner_symbol)
+        defined_matches = _artifact_facts_with_symbol(artifact_facts, defined_symbol)
+        if owner_matches and defined_matches:
+            return AlignmentRecord(
+                claim=claim,
+                artifact_facts=owner_matches + defined_matches,
+                outcome=SUPPORTED,
+                rule_id="existence.defines.supported",
+                reason=(
+                    f"Artifact facts contain symbols {owner_symbol!r} "
+                    f"and {defined_symbol!r}."
+                ),
+            )
+        return AlignmentRecord(
+            claim=claim,
+            artifact_facts=(),
+            outcome=MISSING_SUPPORT,
+            rule_id="existence.defines.missing_support",
+            reason=(
+                f"Artifact facts do not contain both symbols {owner_symbol!r} "
+                f"and {defined_symbol!r}."
+            ),
+        )
+
+    return AlignmentRecord(
+        claim=claim,
+        artifact_facts=(),
+        outcome=NOT_EVALUABLE,
+        rule_id="existence.not_evaluable",
+        reason="Existence claim does not match a v1 existence rule.",
+    )
+
+
+def _artifact_facts_with_symbol(
+    artifact_facts: tuple[RepositoryArtifactFact, ...], symbol: str
+) -> tuple[RepositoryArtifactFact, ...]:
+    return tuple(
+        artifact_fact
+        for artifact_fact in artifact_facts
+        if artifact_fact.symbol == symbol
+    )
+
+
 def _artifact_facts_matching_symbols(
     artifact_facts: tuple[RepositoryArtifactFact, ...], symbols: frozenset[str]
 ) -> tuple[RepositoryArtifactFact, ...]:
@@ -233,6 +305,27 @@ def _artifact_fact_contains_any(
 def _artifact_fact_contains(artifact_fact: RepositoryArtifactFact, needle: str) -> bool:
     values = (artifact_fact.symbol, artifact_fact.fact, artifact_fact.path)
     return any(value is not None and needle in value for value in values)
+
+
+def _exists_symbol(claim_text: str) -> str | None:
+    match = re.fullmatch(
+        r"\s*(?P<symbol>[A-Za-z_][A-Za-z0-9_]*)\s+exists\.\s*",
+        claim_text,
+    )
+    if match is None:
+        return None
+    return match.group("symbol")
+
+
+def _defines_symbols(claim_text: str) -> tuple[str, str] | None:
+    match = re.fullmatch(
+        r"\s*(?P<owner>[A-Za-z_][A-Za-z0-9_]*)\s+defines\s+"
+        r"(?P<defined>[A-Za-z_][A-Za-z0-9_]*)\.\s*",
+        claim_text,
+    )
+    if match is None:
+        return None
+    return match.group("owner"), match.group("defined")
 
 
 def _rejected_concept(claim_text: str) -> str | None:
