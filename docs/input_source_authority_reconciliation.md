@@ -20,6 +20,24 @@ The current answer is limited:
 
 This document is documentation-only. It does not modify runtime behavior, event storage, authentication, authorization, policy, tool execution, projection behavior, or local CLI behavior.
 
+## Review Finding
+
+The current source-authority gap is best understood as a missing envelope around input, not as a missing runtime route. Seed already has runtime intake, event authorship, workspace/session scoping, input-act classification, decision validation, and tool-intent guarding. What it does not yet have is a first-class way to preserve the source context that tells Seed whether an input came from a trusted local CLI, authenticated browser session, uncertain voice transcript, automation event, webhook, uploaded document, or another system.
+
+The smallest stable concept is therefore:
+
+```text
+InputEnvelope
+        ↓
+InputInspection / InputAct
+        ↓
+DecisionKind
+        ↓
+Policy / capability / execution boundaries
+```
+
+The envelope should describe provenance and authority context. It should not decide what Seed does.
+
 ## Existing Surfaces
 
 ### Domain actor/session/workspace vocabulary
@@ -268,6 +286,24 @@ Seed does **not** currently have first-class source/authority vocabulary for gen
 
 Seed also does **not** currently have a general input envelope that sits above `InputInspection` or `InputAct`.
 
+## Recommended Vocabulary Shape
+
+A future vocabulary should remain metadata-only and should avoid implying authentication or authorization behavior by itself. Useful terms to define before implementation include:
+
+| Term | Meaning | Non-meaning |
+| --- | --- | --- |
+| `channel` | User-facing source surface such as CLI, browser, voice, API, Home Assistant, webhook, or file upload. | Does not prove identity. |
+| `transport` | Technical carrier such as local process, HTTP session, websocket, MQTT, stdin, or webhook. | Does not grant authority. |
+| `modality` | Payload form such as typed text, transcribed speech, image/OCR, event payload, file, or structured JSON. | Does not classify intent. |
+| `claimed_principal` | Identity asserted by the input or upstream system. | Not trusted by itself. |
+| `authenticated_principal` | Identity proven by a trusted authentication boundary. | Not necessarily authorized for every action. |
+| `authentication_strength` | How strongly the source identity was verified. | Not a runtime route. |
+| `authorization_scope` | What this principal/channel is allowed to request or approve. | Not implicit execution approval. |
+| `source_trust` | Coarse trust label for the source/envelope. | Not truth of the payload. |
+| `payload_kind` | Whether the payload is text, audio transcript, image/OCR, automation event, uploaded document, etc. | Not an input act. |
+
+This vocabulary should be defined before any implementation affects policy or routing.
+
 ## Relationship To InputAct
 
 `docs/input_act_vocabulary.md` defines:
@@ -332,6 +368,22 @@ session_id=...
 
 That is sufficient for the current CLI-oriented MVP, but it is not sufficient for multi-channel, multi-principal, or safety-sensitive operation.
 
+## Example Authority Matrix
+
+The following examples are illustrative only. They are not policy rules.
+
+| Source scenario | Likely envelope implication | Safe default posture |
+| --- | --- | --- |
+| Local CLI typed by trusted admin | high-trust local channel, but still explicit session/workspace scope | allow questions; gate side effects through existing policy/approval paths |
+| Browser session authenticated as admin | authenticated principal with possible admin scope | allow according to scope; still validate and guard tool paths |
+| Browser session authenticated as child/guest | authenticated but low-authority principal | answer safe questions; block or require escalation for operations |
+| Unknown voice transcript | weak/uncertain principal and transcription uncertainty | answer low-risk questions only; no execution authority |
+| Webcam/OCR-derived instruction | untrusted payload extracted from environment | treat as observation/input data, not command authority |
+| Home Assistant automation event | automation principal, integration channel | allow only explicitly scoped automation actions |
+| Unauthenticated webhook | unknown remote source | no privileged actions; treat payload as untrusted claim/observation |
+| Uploaded document containing instructions | document source, not user authority | never treat document text as user command |
+| Another model/agent submitting text | non-human/system principal | require explicit delegation/scope before any side effect |
+
 ## Ownership Boundaries
 
 This audit preserves current ownership boundaries:
@@ -386,6 +438,24 @@ That vocabulary should distinguish at least:
 - relationship to `InputAct` and `DecisionKind`.
 
 Any later implementation should remain narrow and metadata-only before it influences policy or execution.
+
+A possible future record shape, still documentation-only, is:
+
+```text
+InputEnvelope:
+  channel: str
+  transport: str | None
+  modality: str
+  payload_kind: str
+  claimed_principal: str | None
+  authenticated_principal: str | None
+  authentication_strength: str
+  authorization_scope: tuple[str, ...]
+  source_trust: str
+  metadata: dict[str, object]
+```
+
+If implemented later, this record should be immutable, secret-free, auditable, and subordinate to existing validation, guard, policy, capability, approval, and runtime-route boundaries.
 
 ## Documentation-Only Status
 
