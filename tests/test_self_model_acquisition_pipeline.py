@@ -4,6 +4,10 @@ import sys
 
 from seed_runtime.knowledge.documentation_observation import extract_documentation_claims
 from seed_runtime.knowledge.repository_observation import extract_repository_artifact_facts
+from seed_runtime.knowledge.relationship_observation import (
+    RelationshipFact,
+    extract_python_import_relationship_facts,
+)
 from seed_runtime.knowledge.self_model_alignment import (
     AlignmentRecord,
     DocumentationClaim,
@@ -213,6 +217,83 @@ def handle_user_message():
     assert len(alignment_records) == 1
     assert alignment_records[0].outcome == "missing_support"
     assert alignment_records[0].rule_id == "structure.defines_method.missing_support"
+
+
+def test_import_relationship_observation_pipeline():
+    source_text = "from seed_runtime.execution import ToolExecutor\n"
+
+    relationship_facts = extract_python_import_relationship_facts(
+        "seed_runtime/runtime.py",
+        source_text,
+    )
+
+    assert len(relationship_facts) == 1
+    assert relationship_facts[0].relationship_kind == "imports"
+    assert relationship_facts[0].subject == "seed_runtime.runtime"
+    assert relationship_facts[0].object == "ToolExecutor"
+    assert relationship_facts[0].path == "seed_runtime/runtime.py"
+
+
+def test_multiple_import_relationship_observation_pipeline():
+    source_text = """import seed_runtime.events
+from seed_runtime.execution import ToolExecutor
+"""
+
+    relationship_facts = extract_python_import_relationship_facts(
+        "seed_runtime/runtime.py",
+        source_text,
+    )
+
+    assert len(relationship_facts) == 2
+    assert [fact.relationship_kind for fact in relationship_facts] == [
+        "imports",
+        "imports",
+    ]
+    assert [fact.subject for fact in relationship_facts] == [
+        "seed_runtime.runtime",
+        "seed_runtime.runtime",
+    ]
+    assert [fact.object for fact in relationship_facts] == [
+        "seed_runtime.events",
+        "ToolExecutor",
+    ]
+    assert [fact.path for fact in relationship_facts] == [
+        "seed_runtime/runtime.py",
+        "seed_runtime/runtime.py",
+    ]
+
+
+def test_relationship_observation_isolation():
+    relationship_facts = extract_python_import_relationship_facts(
+        "seed_runtime/runtime.py",
+        "from seed_runtime.execution import ToolExecutor\n",
+    )
+
+    assert relationship_facts
+    assert all(isinstance(fact, RelationshipFact) for fact in relationship_facts)
+    assert all(not isinstance(fact, DocumentationClaim) for fact in relationship_facts)
+    assert all(
+        not isinstance(fact, RepositoryArtifactFact)
+        for fact in relationship_facts
+    )
+    assert all(not isinstance(fact, AlignmentRecord) for fact in relationship_facts)
+
+
+def test_relationship_observation_no_runtime_dependencies():
+    runtime_modules_before = {name: sys.modules.get(name) for name in _RUNTIME_MODULES}
+
+    relationship_facts = extract_python_import_relationship_facts(
+        "seed_runtime/runtime.py",
+        """import seed_runtime.events
+from seed_runtime.execution import ToolExecutor
+""",
+    )
+
+    assert relationship_facts
+    assert (
+        {name: sys.modules.get(name) for name in _RUNTIME_MODULES}
+        == runtime_modules_before
+    )
 
 
 def test_documentation_observation_does_not_emit_repository_facts():
