@@ -49,7 +49,13 @@ from seed_runtime.observation_normalizers import (
     ObservationNormalizer,
 )
 from seed_runtime.observations import Observation, ObservationIngestor
-from seed_runtime.input_inspector import InputArtifact, InputInspector
+from seed_runtime.input_inspector import (
+    InputAct,
+    InputArtifact,
+    InputInspection,
+    InputInspector,
+    classify_input_act,
+)
 from seed_runtime.models import Event, PendingAction, ToolNeed, ToolSpec, Toolkit
 from seed_runtime.state import EntityRelationship, EntityTypeAssertion
 
@@ -93,12 +99,15 @@ __all__ = [
     "ObservationNormalizer",
     "ObservationNormalizationPipeline",
     "export_observations_json",
+    "InputAct",
     "InputArtifact",
+    "InputInspection",
     "InferenceCatalog",
     "InferenceRule",
     "ProjectionIntegritySummary",
     "build_projection_integrity_summary",
     "InputInspector",
+    "classify_input_act",
     "PendingAction",
     "ToolNeed",
     "ToolSpec",
