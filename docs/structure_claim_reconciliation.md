@@ -4,7 +4,7 @@
 
 This document reconciles the next evidence boundary after explicit existence-claim reconciliation.
 
-It is documentation-only. It does not modify production code, tests, runtime behavior, repository observation, documentation observation, reconciliation behavior, tool execution, event storage, projection behavior, or package exports.
+The first implementation slice is intentionally tiny and fixture-only. It does not modify runtime behavior, repository scanning, file reading, LLM extraction, tool execution, event storage, projection behavior, or package exports.
 
 The motivating question is:
 
@@ -94,9 +94,11 @@ They are weaker than behavior or ownership claims because they do not prove runt
 
 ## Candidate Structure Claim Forms
 
-Future implementation should support only explicit forms.
+Implemented v1 supports only one explicit form. Other forms remain future work.
 
 ### `X defines method Y.`
+
+Status: implemented as the only v1 `structure` claim form.
 
 Meaning:
 
@@ -118,7 +120,26 @@ Likely evidence:
 
 Same-path alone is insufficient for this claim.
 
+V1 reconciliation reports `supported` only when the supplied fixture artifact facts contain both:
+
+```text
+artifact_kind="class"
+symbol=X
+```
+
+and:
+
+```text
+artifact_kind="method"
+symbol=Y
+parent_symbol=X
+```
+
+If the `X defines method Y.` pattern is recognized but those facts are not present, v1 reports `missing_support`. Structure prose that does not match this exact pattern is `not_evaluable` if manually supplied and is not extracted by documentation observation.
+
 ### `X defines function Y.`
+
+Status: future work.
 
 Meaning:
 
@@ -140,6 +161,8 @@ Likely evidence:
 
 ### `X has field Y.`
 
+Status: future work.
+
 Meaning:
 
 ```text
@@ -160,6 +183,8 @@ Likely evidence:
 
 ### `X imports Y.`
 
+Status: future work.
+
 Meaning:
 
 ```text
@@ -178,6 +203,8 @@ Likely evidence:
 - import artifact for `ToolExecutor` from that same path.
 
 ### `X implements Y.`
+
+Status: future work.
 
 Meaning:
 

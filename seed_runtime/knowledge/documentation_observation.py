@@ -12,6 +12,7 @@ import re
 from seed_runtime.knowledge.self_model_alignment import (
     EXISTENCE,
     FRONTIER,
+    STRUCTURE,
     OWNERSHIP,
     REJECTED_CONCEPT,
     DocumentationClaim,
@@ -25,6 +26,9 @@ _OWNERSHIP_RE = re.compile(r"\b(?:owns?|owner)\b", re.IGNORECASE)
 _EXISTENCE_EXISTS_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*\s+exists\.$")
 _EXISTENCE_DEFINES_RE = re.compile(
     r"^[A-Za-z_][A-Za-z0-9_]*\s+defines\s+[A-Za-z_][A-Za-z0-9_]*\.$"
+)
+_STRUCTURE_DEFINES_METHOD_RE = re.compile(
+    r"^[A-Za-z_][A-Za-z0-9_]*\s+defines\s+method\s+[A-Za-z_][A-Za-z0-9_]*\.$"
 )
 _REJECTED_RE = re.compile(r"\bis rejected\.?$", re.IGNORECASE)
 _DO_NOT_ADD_RE = re.compile(r"^do not add\s+(?P<concepts>.+?)\.?$", re.IGNORECASE)
@@ -50,7 +54,7 @@ def extract_documentation_claims(
 
     Extraction is intentionally tiny and deterministic. It tracks simple markdown
     headings, skips fenced code blocks, and recognizes only explicit ownership,
-    rejected-concept, frontier, and existence claim families.
+    rejected-concept, frontier, existence, and the explicit structure claim family.
     """
 
     claims: list[DocumentationClaim] = []
@@ -108,6 +112,9 @@ def _claims_from_line(
     if frontier_claim is not None:
         return [frontier_claim]
 
+    if _is_structure_claim(line):
+        return [_claim(source_path, source_heading, line, STRUCTURE)]
+
     if _is_existence_claim(line):
         return [_claim(source_path, source_heading, line, EXISTENCE)]
 
@@ -116,6 +123,10 @@ def _claims_from_line(
 
 def _is_ownership_claim(line: str) -> bool:
     return _OWNERSHIP_RE.search(line) is not None
+
+
+def _is_structure_claim(line: str) -> bool:
+    return _STRUCTURE_DEFINES_METHOD_RE.fullmatch(line) is not None
 
 
 def _is_existence_claim(line: str) -> bool:
