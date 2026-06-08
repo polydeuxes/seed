@@ -1,6 +1,6 @@
 import hashlib
 
-from seed_runtime.input_inspector import InputInspector
+from seed_runtime.input_inspector import InputAct, InputInspector, classify_input_act
 
 
 def test_ini_extension_containing_yaml_is_detected_from_content(tmp_path):
@@ -69,3 +69,33 @@ def test_unknown_text_is_unknown_with_warning(tmp_path):
 
     assert artifact.detected_format == "unknown"
     assert "unknown_format" in artifact.warnings
+
+
+def test_classify_input_act_fixture_examples():
+    examples = (
+        ("What does Seed know about ProjectionStore?", InputAct.OPERATOR_QUERY),
+        ("Install Docker on node116.", InputAct.COMMAND_REQUEST),
+        ("Jellyfin is running on node116.", InputAct.USER_OBSERVATION),
+        ("README says ToolExecutor owns execution.", InputAct.DOCUMENTATION_CLAIM),
+        ("No, node116 is not the Jellyfin host anymore.", InputAct.CORRECTION),
+        ("Thanks, that makes sense.", InputAct.CASUAL_ANSWER),
+    )
+
+    for raw_text, input_act in examples:
+        inspection = classify_input_act(raw_text)
+
+        assert inspection.raw_text == raw_text
+        assert inspection.input_act == input_act
+        assert inspection.input_act.value == input_act.value
+        assert inspection.reason.startswith("deterministic_")
+
+
+def test_input_inspection_record_is_immutable():
+    inspection = classify_input_act("What does Seed know about ProjectionStore?")
+
+    try:
+        inspection.input_act = InputAct.CASUAL_ANSWER
+    except (TypeError, ValueError):
+        pass
+    else:  # pragma: no cover - defensive across pydantic implementations
+        raise AssertionError("InputInspection should be immutable")
