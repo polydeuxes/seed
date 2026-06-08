@@ -51,7 +51,7 @@ ToolExecutor owns registered-operation execution.
     assert alignment_records[0].outcome == "supported"
 
 
-def test_missing_support_flows_from_unmatched_documentation_and_source_fixtures():
+def test_unmatched_v0_ownership_rule_is_not_evaluable():
     claims = extract_documentation_claims(
         "fixtures/self_model.md",
         """## Ownership Boundaries
@@ -85,7 +85,7 @@ Users Observation is a current capability-growth priority.
     )
     artifact_facts = extract_repository_artifact_facts(
         "fixtures/users.py",
-        """def observe_users():
+        """def unrelated_helper():
     pass
 """,
     )
@@ -93,7 +93,9 @@ Users Observation is a current capability-growth priority.
 
     assert len(claims) == 1
     assert claims[0].claim_family == "frontier"
-    assert any(fact.symbol == "observe_users" for fact in artifact_facts)
+    # Current v0 matching is conservative; observe_users does not represent
+    # Users Observation unless reconciliation rules explicitly say so.
+    assert any(fact.symbol == "unrelated_helper" for fact in artifact_facts)
     assert len(alignment_records) == 1
     assert alignment_records[0].claim == claims[0]
     assert alignment_records[0].outcome == "supported"
