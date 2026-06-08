@@ -2,6 +2,89 @@
 
 Seed receives observations, records evidence, projects explainable state, and answers questions about what it knows and why; capability resolution operates downstream of projected knowledge rather than defining the system itself.
 
+## What Is Seed?
+
+Seed is a knowledge-oriented runtime.
+
+Its primary purpose is to transform observations into evidence-backed projected knowledge and use that knowledge to support decisions, recommendations, explanations, capability resolution, and operator understanding.
+
+Seed is organized around four primary concerns:
+
+```text
+Knowledge Acquisition
+        ↓
+Knowledge Integrity
+        ↓
+Knowledge Selection
+        ↓
+Response
+```
+
+Additional documentation concern:
+
+```text
+Architectural Findings
+```
+
+Seed emphasizes:
+
+* evidence-backed knowledge
+* explicit ownership boundaries
+* deterministic projection
+* read-only explanation and integrity surfaces
+* small-context decision making
+* audit-before-implementation architecture
+
+Seed is not:
+
+* a planner
+* a workflow engine
+* a reasoning engine
+* an orchestration framework
+* an autonomous execution platform
+
+For architectural navigation start with:
+
+* `docs/architectural_knowledge_map.md`
+* `docs/README.md`
+* `docs/architectural_status_and_next_frontier.md`
+
+## Current Status
+
+Current architectural status:
+
+* Knowledge Acquisition — active capability frontier
+* Knowledge Integrity — stable
+* Knowledge Selection — stable
+* Response — stable
+* Architectural Findings — partially reconciled
+
+Current capability-growth priorities:
+
+1. Users Observation
+2. Groups Observation
+3. Package Observation
+4. Systemd Observation
+
+For detailed status see:
+
+* `docs/architectural_status_and_next_frontier.md`
+* `docs/reasoning_roadmap.md`
+
+## Documentation
+
+Seed contains a substantial amount of architectural documentation.
+
+Recommended reading order:
+
+1. `docs/architectural_knowledge_map.md`
+2. `docs/README.md`
+3. `docs/architectural_findings_preservation.md`
+4. `docs/architectural_status_and_next_frontier.md`
+5. `docs/reasoning_roadmap.md`
+
+These documents provide the highest-level understanding of the repository before diving into individual audit chains.
+
 ## One-sentence product definition
 
 Seed receives observations from users, files, providers, local read-only sources, and system inputs; records evidence; projects evidence-backed facts into explainable current state; answers questions about what it knows and why; and only then may resolve capability gaps into registered-operation candidates or provider recommendations without implying execution, verification, or availability.
@@ -427,7 +510,3 @@ Inferred facts are projection artifacts rather than observations. They are marke
 ### Performance and projection cache
 
 Seed uses an event-sourced performance model. `EventLedger` owns append-only events and audit history; deterministic projectors derive current state; `ProjectionStore` owns cached projected state for fast operator queries and context composition. The Evidence Graph is another read-only projection over State, not a separate persistence layer or evidence database. The current implementation is SQLite-backed for local portability, with schema boundaries kept narrow enough to move to Postgres later. Use `--rebuild-state-cache` to rebuild cached projections from the ledger and `--state-cache-status` to inspect cache freshness and coverage.
-
-## Next comparison task
-
-After this documentation refresh, create a branch at the earlier prototype point and compare the original proto/control-loop approach with the current knowledge/handoff runtime. The comparison should identify what improved, what became overbuilt, and what should be simplified before the next implementation push.
