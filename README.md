@@ -85,6 +85,59 @@ Recommended reading order:
 
 These documents provide the highest-level understanding of the repository before diving into individual audit chains.
 
+## Knowledge Representation
+
+Seed's process lifecycle operates on a knowledge representation model.
+
+Core representation flow:
+
+```text
+Observation
+        ↓
+Evidence
+        ↓
+Fact
+```
+
+Projected knowledge structures may include:
+
+```text
+Relationships
+Entity Types
+Contradictions
+Integrity Signals
+State Views
+Explanations
+```
+
+Seed also contains a claim-justification branch:
+
+```text
+Fact
+        ↓
+Support Relationship
+        ↓
+Claim
+```
+
+Canonical distinction:
+
+```text
+Evidence supports facts.
+
+Facts support claims.
+```
+
+Claim Support is a deterministic, inspectable relationship model. It is not a reasoning engine, inference engine, truth system, or architecture engine.
+
+For representation architecture see:
+
+* `docs/knowledge_representation_map.md`
+* `docs/knowledge_representation_reconciliation.md`
+* `docs/claim_support_frontier.md`
+* `docs/claim_support_characterization.md`
+* `docs/claim_support_design.md`
+
 ## One-sentence product definition
 
 Seed receives observations from users, files, providers, local read-only sources, and system inputs; records evidence; projects evidence-backed facts into explainable current state; answers questions about what it knows and why; and only then may resolve capability gaps into registered-operation candidates or provider recommendations without implying execution, verification, or availability.
