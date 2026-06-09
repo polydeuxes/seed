@@ -25,6 +25,10 @@ from seed_runtime.base import SeedModel
 from seed_runtime.facts import Fact, FactConflict, is_fact_expired
 from seed_runtime.ids import new_id
 from seed_runtime.models import Actor
+from seed_runtime.local_packages import (
+    package_records_to_observations,
+    parse_dpkg_status,
+)
 from seed_runtime.serialization import to_plain
 from seed_runtime.observation_normalizers import (
     DEFAULT_OBSERVATION_NORMALIZATION_PIPELINE,
@@ -212,6 +216,7 @@ class LocalHostObservationSource:
         systemd_lease_dir: str | Path = "/run/systemd/netif/leases",
         etc_passwd: str | Path = "/etc/passwd",
         etc_group: str | Path = "/etc/group",
+        dpkg_status: str | Path = "/var/lib/dpkg/status",
     ) -> None:
         self.name = name
         self.proc_root = Path(proc_root)
@@ -227,6 +232,7 @@ class LocalHostObservationSource:
         self.systemd_lease_dir = Path(systemd_lease_dir)
         self.etc_passwd = Path(etc_passwd)
         self.etc_group = Path(etc_group)
+        self.dpkg_status = Path(dpkg_status)
 
     def collect(self) -> list[Observation]:
         """Return local host facts without executing or mutating the host."""
@@ -323,7 +329,29 @@ class LocalHostObservationSource:
         observations.extend(
             self._collect_local_user_observations(observed_at, hostname, metadata)
         )
+        observations.extend(
+            self._collect_local_package_observations(observed_at, hostname)
+        )
         return observations
+
+    def _collect_local_package_observations(
+        self, observed_at: datetime, hostname: str
+    ) -> list[Observation]:
+        """Collect installed package facts from the local dpkg status database.
+
+        LocalHostObservationSource only orchestrates the read-only collection.
+        Dpkg parsing and generic package observation emission live in
+        seed_runtime.local_packages so dpkg remains the first adapter rather
+        than the package observation architecture.
+        """
+
+        status_text = self._read_text(self.dpkg_status, max_bytes=16 * 1024 * 1024)
+        if status_text is None:
+            return []
+        records = parse_dpkg_status(status_text)
+        return package_records_to_observations(
+            hostname, records, observed_at, self.source_type
+        )
 
     def _collect_local_identity(self) -> dict[str, dict[str, str]]:
         """Read bounded local identity files without DNS, network, or execution."""

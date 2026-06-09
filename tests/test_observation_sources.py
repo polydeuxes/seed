@@ -498,6 +498,7 @@ def test_local_host_source_emits_read_only_host_observations(monkeypatch):
         machine_id=missing,
         etc_passwd=missing,
         etc_group=missing,
+        dpkg_status=missing,
     ).collect()
 
     assert [(obs.subject, obs.predicate, obs.value) for obs in observations] == [
