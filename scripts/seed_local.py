@@ -2588,7 +2588,7 @@ def state_summary(
     top_entities = [
         {
             "name": canonical,
-            "aliases": sorted(entity_aliases[canonical] - {canonical}),
+            "alias_count": len(entity_aliases[canonical] - {canonical}),
             "fact_count": entity_fact_counts[canonical],
         }
         for canonical in sorted(
@@ -2597,10 +2597,17 @@ def state_summary(
     ]
 
     availability = Counter({"up": 0, "down": 0, "unknown": 0})
-    for fact in current_measurements:
-        if fact.predicate == "availability_status":
-            status = fact.value if fact.value in availability else "unknown"
-            availability[status] += 1
+    for canonical in sorted(entity_aliases):
+        availability_fact = state.get_best_fact(
+            canonical, "availability_status", resolve_aliases=False
+        )
+        status = (
+            availability_fact.value
+            if availability_fact is not None
+            and availability_fact.value in availability
+            else "unknown"
+        )
+        availability[status] += 1
 
     filesystems: dict[tuple[str, str, str], dict[str, Any]] = defaultdict(dict)
     for fact in current_measurements:
@@ -3030,9 +3037,9 @@ def format_state_summary(summary: dict[str, Any]) -> str:
     )
     lines.append("top entities:")
     for entity in summary["top_entities"]:
-        aliases = ", ".join(entity["aliases"]) or "none"
         lines.append(
-            f"  {entity['name']} (aliases: {aliases}; facts: {entity['fact_count']})"
+            f"  {entity['name']} "
+            f"(aliases: {entity['alias_count']} total; facts: {entity['fact_count']})"
         )
     if not summary["top_entities"]:
         lines.append("  (none)")

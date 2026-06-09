@@ -1634,12 +1634,127 @@ def test_cli_state_summary_reports_projected_world_model_without_ingestion(
     assert "  discovery: 4" in output
     assert "  imported: 1" in output
     assert "  user: 3" in output
-    assert "host-up (aliases: 10.0.0.10; facts: 6)" in output
+    assert "host-up (aliases: 1 total; facts: 6)" in output
+    assert "10.0.0.10; facts" not in output
     assert "  up: 1" in output
     assert "  down: 1" in output
-    assert "  unknown: 0" in output
+    assert "  unknown: 1" in output
     assert "host-up /: 40/100 bytes free/total" in output
 
+
+def test_cli_state_summary_counts_local_observation_without_availability_as_unknown(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "state-summary-local-observation.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [("node115", "local_observation_status", "observed")],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+
+    output = capsys.readouterr().out
+    assert "entities: 1" in output
+    assert "availability:\n  up: 0\n  down: 0\n  unknown: 1" in output
+
+
+def test_cli_state_summary_counts_host_availability_up(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "state-summary-up.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [("node115", "availability_status", "up")],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+
+    output = capsys.readouterr().out
+    assert "entities: 1" in output
+    assert "availability:\n  up: 1\n  down: 0\n  unknown: 0" in output
+
+
+def test_cli_state_summary_counts_host_availability_down(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "state-summary-down.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [("node115", "availability_status", "down")],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+
+    output = capsys.readouterr().out
+    assert "entities: 1" in output
+    assert "availability:\n  up: 0\n  down: 1\n  unknown: 0" in output
+
+
+def test_cli_state_summary_keeps_endpoint_availability_separate_from_host(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "state-summary-endpoint-availability.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [
+            ("node115", "alias", "192.168.254.115"),
+            ("node115", "local_observation_status", "observed"),
+            ("192.168.254.115:9100", "availability_status", "up"),
+        ],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+
+    output = capsys.readouterr().out
+    assert "entities: 2" in output
+    assert "availability:\n  up: 1\n  down: 0\n  unknown: 1" in output
+
+
+def test_cli_state_summary_top_entities_summarizes_alias_count(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "state-summary-many-aliases.sqlite"
+    aliases = [f"172.17.0.{index}" for index in range(1, 6)]
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [("node115", "alias", alias) for alias in aliases],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+
+    output = capsys.readouterr().out
+    assert "node115 (aliases: 5 total; facts: 5)" in output
+    for alias in aliases:
+        assert alias not in output
+
+
+def test_cli_current_facts_and_fact_support_keep_raw_alias_evidence(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "state-summary-raw-alias-evidence.sqlite"
+    aliases = ["192.168.254.115", "192.168.254.116"]
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [("node115", "alias", alias) for alias in aliases],
+    )
+
+    assert (
+        seed_local.main(["--db", str(db_path), "--current-facts", "node115", "alias"])
+        == 0
+    )
+    assert capsys.readouterr().out.splitlines() == aliases
+
+    assert (
+        seed_local.main(["--db", str(db_path), "--fact-support", "node115", "alias"])
+        == 0
+    )
+    support_output = capsys.readouterr().out
+    assert "value: 192.168.254.115" in support_output
+    assert "value: 192.168.254.116" in support_output
 
 def test_cli_fact_support_prints_projected_grouped_values(capsys):
     seed_local = load_seed_local_module()
