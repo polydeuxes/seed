@@ -93,10 +93,16 @@ Core representation flow:
 
 ```text
 Observation
-        ↓
+    ↓
 Evidence
-        ↓
+    ↓
 Fact
+    ↓
+FactSupport
+    ↓
+Current/Best Fact
+    ↓
+Read Views / Explanation
 ```
 
 Projected knowledge structures may include:
