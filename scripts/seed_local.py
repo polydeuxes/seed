@@ -2861,6 +2861,7 @@ def format_fact_views(views: list[FactView]) -> str:
     lines = ["Current Facts", ""]
     lines.extend(
         f"* {view.subject} {view.predicate} {_format_view_value(view.object)}"
+        f"{_format_view_dimensions(view.dimensions)}"
         for view in views
     )
     if not views:
@@ -2966,6 +2967,15 @@ def _format_view_value(value: Any) -> str:
     if isinstance(value, (dict, list)):
         return json.dumps(value, sort_keys=True, separators=(",", ":"))
     return str(value)
+
+
+def _format_view_dimensions(dimensions: dict[str, str]) -> str:
+    if not dimensions:
+        return ""
+    values = ", ".join(
+        f"{key}={_format_view_value(dimensions[key])}" for key in sorted(dimensions)
+    )
+    return f" ({values})"
 
 
 def format_state_summary(summary: dict[str, Any]) -> str:
