@@ -2408,13 +2408,18 @@ def _format_dns_resolver_impact_lines(by_predicate: dict[str, list[Fact]]) -> li
     return lines
 
 
+def _format_fact_dimension_pairs(dimensions: dict[str, str]) -> str:
+    """Format fact dimensions as deterministic key=value pairs."""
+
+    return ", ".join(f"{key}={dimensions[key]}" for key in sorted(dimensions))
+
+
 def _format_fact_dimensions(dimensions: dict[str, str]) -> str:
     """Format fact dimensions for compact deterministic CLI output."""
 
     if not dimensions:
         return ""
-    values = ", ".join(f"{key}={dimensions[key]}" for key in sorted(dimensions))
-    return f" ({values})"
+    return f" ({_format_fact_dimension_pairs(dimensions)})"
 
 
 def _format_graph_issue_summary(issue: Any) -> list[str]:
@@ -3019,6 +3024,13 @@ def format_fact_supports(
             "\n".join(
                 [
                     f"value: {_format_fact_value(support.value)}",
+                    *(
+                        [
+                            f"dimensions: {_format_fact_dimension_pairs(support.dimensions)}"
+                        ]
+                        if support.dimensions
+                        else []
+                    ),
                     f"semantics: {support.predicate_semantics}",
                     f"support_kind: {support.support_kind}",
                     f"aggregate_confidence: {support.confidence}",
@@ -3135,7 +3147,10 @@ def format_current_facts(
     facts = state.get_current_facts(subject, predicate, include_expired=include_expired)
     if not facts:
         return f"no current facts for {subject} {predicate}"
-    return "\n".join(_format_fact_value(fact.value) for fact in facts)
+    return "\n".join(
+        f"{_format_fact_value(fact.value)}{_format_fact_dimensions(fact.dimensions)}"
+        for fact in _sort_facts_for_display(facts)
+    )
 
 
 def _format_fact_expiry_statuses(fact_ids: list[str], facts: dict[str, Fact]) -> str:
