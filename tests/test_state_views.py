@@ -114,9 +114,156 @@ def test_fact_view_builds_correctly_from_projected_state():
             predicate="runs_on",
             object="node214",
             confidence=0.91,
+            dimensions={},
             supporting_event_ids=["evd_runtime"],
         )
     ]
+
+
+def test_fact_view_includes_sorted_dimensions_from_projected_state():
+    state = State(workspace_id="ws")
+    observed_at = utc_now()
+    state.facts["fact_root_rw"] = Fact(
+        id="fact_root_rw",
+        subject_id="node115",
+        predicate="mount_option",
+        value="rw",
+        dimensions={"mount_point": "/", "mount_option": "rw"},
+        evidence_ids=[],
+        observed_at=observed_at,
+    )
+
+    views = build_fact_view(state)
+
+    assert list(views[0].dimensions) == ["mount_option", "mount_point"]
+    assert views == [
+        FactView(
+            fact_id="fact_root_rw",
+            subject="node115",
+            predicate="mount_option",
+            object="rw",
+            confidence=0.9,
+            dimensions={"mount_option": "rw", "mount_point": "/"},
+            supporting_event_ids=[],
+        )
+    ]
+
+
+def test_fact_view_ordering_uses_dimensions_deterministically():
+    state = State(workspace_id="ws")
+    observed_at = utc_now()
+    facts = [
+        Fact(
+            id="fact_eth1",
+            subject_id="node115",
+            predicate="interface_mtu",
+            value=1500,
+            dimensions={"interface": "eth1"},
+            evidence_ids=[],
+            observed_at=observed_at,
+        ),
+        Fact(
+            id="fact_eth0",
+            subject_id="node115",
+            predicate="interface_mtu",
+            value=1500,
+            dimensions={"interface": "eth0"},
+            evidence_ids=[],
+            observed_at=observed_at,
+        ),
+    ]
+    for fact in facts:
+        state.facts[fact.id] = fact
+
+    views = build_fact_view(state)
+
+    assert [(view.object, view.dimensions) for view in views] == [
+        (1500, {"interface": "eth0"}),
+        (1500, {"interface": "eth1"}),
+    ]
+
+
+def test_format_fact_views_prints_dimensions_compactly_when_present():
+    seed_local = load_seed_local_module()
+    output = seed_local.format_fact_views(
+        [
+            FactView(
+                fact_id="fact_root_rw",
+                subject="node115",
+                predicate="mount_option",
+                object="rw",
+                confidence=1.0,
+                dimensions={"mount_point": "/"},
+            ),
+            FactView(
+                fact_id="fact_eth0_mtu",
+                subject="node115",
+                predicate="interface_mtu",
+                object=1500,
+                confidence=1.0,
+                dimensions={"interface": "eth0"},
+            ),
+            FactView(
+                fact_id="fact_listener_tcp",
+                subject="node115",
+                predicate="listening_protocol",
+                object="tcp",
+                confidence=1.0,
+                dimensions={"protocol": "tcp", "address": "0.0.0.0", "port": "9100"},
+            ),
+        ]
+    )
+
+    assert output.splitlines() == [
+        "Current Facts",
+        "",
+        "* node115 mount_option rw (mount_point=/)",
+        "* node115 interface_mtu 1500 (interface=eth0)",
+        "* node115 listening_protocol tcp (address=0.0.0.0, port=9100, protocol=tcp)",
+    ]
+
+
+def test_format_fact_views_omits_parentheses_for_dimensionless_facts():
+    seed_local = load_seed_local_module()
+
+    assert seed_local.format_fact_views(
+        [
+            FactView(
+                fact_id="fact_alias",
+                subject="node115",
+                predicate="alias",
+                object="node115.local",
+                confidence=1.0,
+            )
+        ]
+    ) == "Current Facts\n\n* node115 alias node115.local"
+
+
+def test_format_fact_views_keeps_same_value_facts_with_different_dimensions_distinguishable():
+    seed_local = load_seed_local_module()
+    output = seed_local.format_fact_views(
+        [
+            FactView(
+                fact_id="fact_eth0",
+                subject="node115",
+                predicate="interface_mtu",
+                object=1500,
+                confidence=1.0,
+                dimensions={"interface": "eth0"},
+            ),
+            FactView(
+                fact_id="fact_eth1",
+                subject="node115",
+                predicate="interface_mtu",
+                object=1500,
+                confidence=1.0,
+                dimensions={"interface": "eth1"},
+            ),
+        ]
+    )
+
+    assert "* node115 interface_mtu 1500 (interface=eth0)" in output
+    assert "* node115 interface_mtu 1500 (interface=eth1)" in output
 
 
 def test_observation_view_builds_correctly_from_projected_state():

@@ -20,6 +20,7 @@ class FactView:
     predicate: str
     object: Any
     confidence: float
+    dimensions: dict[str, str] = field(default_factory=dict)
     supporting_event_ids: list[str] = field(default_factory=list)
 
 
@@ -76,13 +77,20 @@ def build_fact_view(state: State) -> list[FactView]:
             predicate=fact.predicate,
             object=fact.value,
             confidence=fact.confidence,
+            dimensions=_sorted_dimensions(fact.dimensions),
             supporting_event_ids=_dedupe_sorted(
                 [*fact.evidence_ids, *([fact.source_fact_id] if fact.source_fact_id else [])]
             ),
         )
         for fact in sorted(
             state.facts.values(),
-            key=lambda item: (item.subject_id, item.predicate, _stable_value(item.value), item.id),
+            key=lambda item: (
+                item.subject_id,
+                item.predicate,
+                _stable_value(item.value),
+                _stable_value(item.dimensions),
+                item.id,
+            ),
         )
     ]
 
@@ -210,6 +218,10 @@ def _view_severity(severity: str) -> str:
 
 def _dedupe_sorted(values: list[str | None]) -> list[str]:
     return sorted({value for value in values if value})
+
+
+def _sorted_dimensions(dimensions: dict[str, str]) -> dict[str, str]:
+    return {key: dimensions[key] for key in sorted(dimensions)}
 
 
 def _stable_value(value: Any) -> str:
