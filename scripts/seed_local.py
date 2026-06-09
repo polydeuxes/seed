@@ -72,6 +72,11 @@ from seed_runtime.handoff_plans import (
 )
 from seed_runtime.ids import new_id
 from seed_runtime.inference_catalog import InferenceCatalog
+from seed_runtime.local_host_mounts import (
+    MOUNT_COLLAPSE_GROUP_ORDER,
+    classify_mount_collapse_group,
+    mount_display_priority,
+)
 from seed_runtime.integrity_summary import (
     ProjectionIntegritySummary,
     build_projection_integrity_summary,
@@ -2001,8 +2006,21 @@ def _fact_mount_point(fact: Fact) -> str | None:
     return str(mount_point)
 
 
+def _unique_mount_values(
+    predicates: dict[str, list[Fact]], predicate: str
+) -> list[str]:
+    """Return deterministic unique mount fact values for CLI rendering."""
+
+    return list(
+        dict.fromkeys(
+            _format_fact_value(fact.value)
+            for fact in _sort_facts_for_display(predicates.get(predicate, []))
+        )
+    )
+
+
 def _format_mount_impact(mount_facts: list[Fact]) -> list[str]:
-    """Format mount facts without asserting storage health or availability."""
+    """Format mount facts for operators without asserting health or availability."""
 
     if not mount_facts:
         return ["- none"]
@@ -2016,29 +2034,37 @@ def _format_mount_impact(mount_facts: list[Fact]) -> list[str]:
             continue
         by_mount[mount_point][fact.predicate].append(fact)
 
+    visible_mounts: list[
+        tuple[str, dict[str, list[Fact]], list[str], list[str], list[str]]
+    ] = []
+    collapsed_counts: Counter[str] = Counter()
+    for mount_point, predicates in sorted(by_mount.items()):
+        devices = _unique_mount_values(predicates, "mounted_device")
+        fs_types = _unique_mount_values(predicates, "filesystem_type")
+        options = _unique_mount_values(predicates, "mount_option")
+        collapse_group = classify_mount_collapse_group(mount_point, devices, fs_types)
+        if collapse_group is None:
+            visible_mounts.append((mount_point, predicates, devices, fs_types, options))
+        else:
+            collapsed_counts[collapse_group] += 1
+
     lines: list[str] = []
-    for mount_point in sorted(by_mount):
-        predicates = by_mount[mount_point]
-        devices = [
-            _format_fact_value(fact.value)
-            for fact in _sort_facts_for_display(predicates.get("mounted_device", []))
-        ]
-        fs_types = [
-            _format_fact_value(fact.value)
-            for fact in _sort_facts_for_display(predicates.get("filesystem_type", []))
-        ]
-        options = [
-            _format_fact_value(fact.value)
-            for fact in _sort_facts_for_display(predicates.get("mount_option", []))
-        ]
+    for mount_point, _predicates, devices, fs_types, options in sorted(
+        visible_mounts, key=lambda item: mount_display_priority(item[0], item[3])
+    ):
         summary = f"- {mount_point}:"
         if devices:
-            summary += f" device={', '.join(dict.fromkeys(devices))}"
+            summary += f" device={', '.join(devices)}"
         if fs_types:
-            summary += f" type={', '.join(dict.fromkeys(fs_types))}"
+            summary += f" type={', '.join(fs_types)}"
         lines.append(summary)
         if options:
-            lines.append("  options: " + ", ".join(dict.fromkeys(options)))
+            lines.append("  options: " + ", ".join(options))
+
+    for group in MOUNT_COLLAPSE_GROUP_ORDER:
+        if collapsed_counts[group]:
+            lines.append(f"- {group}: {collapsed_counts[group]} collapsed")
+    lines.append("- full mount evidence: use --current-facts")
     lines.append("- health/availability/reachability: not inferred from mount facts")
     return lines
 

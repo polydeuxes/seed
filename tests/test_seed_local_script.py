@@ -2417,6 +2417,83 @@ def test_cli_mount_facts_appear_in_current_facts_and_impact(
     assert "reachability_status" not in impact_output
 
 
+def test_format_mount_impact_renders_runtime_mount_groups():
+    seed_local = load_seed_local_module()
+    observed_at = seed_local.utc_now()
+
+    def mount_facts(index, mount_point, device, fs_type, options=("rw",)):
+        return [
+            seed_local.Fact(
+                id=f"fact_mount_point_{index}",
+                subject_id="node115",
+                predicate="mount_point",
+                value=mount_point,
+                dimensions={"mount_point": mount_point},
+                source_type="discovery",
+                observed_at=observed_at,
+            ),
+            seed_local.Fact(
+                id=f"fact_mount_device_{index}",
+                subject_id="node115",
+                predicate="mounted_device",
+                value=device,
+                dimensions={"mount_point": mount_point},
+                source_type="discovery",
+                observed_at=observed_at,
+            ),
+            seed_local.Fact(
+                id=f"fact_mount_type_{index}",
+                subject_id="node115",
+                predicate="filesystem_type",
+                value=fs_type,
+                dimensions={"mount_point": mount_point},
+                source_type="discovery",
+                observed_at=observed_at,
+            ),
+            *(
+                seed_local.Fact(
+                    id=f"fact_mount_option_{index}_{option}",
+                    subject_id="node115",
+                    predicate="mount_option",
+                    value=option,
+                    dimensions={"mount_point": mount_point, "mount_option": option},
+                    source_type="discovery",
+                    observed_at=observed_at,
+                )
+                for option in options
+            ),
+        ]
+
+    facts = []
+    for index, mount in enumerate(
+        [
+            ("/var/lib/docker/overlay2/a/merged", "overlay", "overlay"),
+            ("/var/lib/docker/overlay2/b/merged", "overlay", "overlay"),
+            ("/run/docker/netns/abc", "nsfs", "nsfs"),
+            ("/proc", "proc", "proc"),
+            ("/run/credentials/systemd-sysusers.service", "ramfs", "ramfs"),
+            ("/", "/dev/mapper/root", "ext4"),
+            ("/mnt/merged", "mergerfs", "fuse.mergerfs"),
+        ]
+    ):
+        facts.extend(mount_facts(index, *mount))
+
+    output = "\n".join(seed_local._format_mount_impact(facts))
+
+    assert output.index("- /: device=/dev/mapper/root type=ext4") < output.index(
+        "- /mnt/merged: device=mergerfs type=fuse.mergerfs"
+    )
+    assert "- docker overlay mounts: 2 collapsed" in output
+    assert "- docker netns mounts: 1 collapsed" in output
+    assert "- system/pseudo mounts: 1 collapsed" in output
+    assert "- systemd credential mounts: 1 collapsed" in output
+    assert "- full mount evidence: use --current-facts" in output
+    assert "- health/availability/reachability: not inferred from mount facts" in output
+    assert "/var/lib/docker/overlay2/a/merged" not in output
+    assert "/run/docker/netns/abc" not in output
+    assert "- /proc:" not in output
+
+
 def test_cli_events_without_message_lists_persisted_events_and_exits(
     monkeypatch, tmp_path, capsys
 ):
