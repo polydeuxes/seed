@@ -493,7 +493,11 @@ def test_local_host_source_emits_read_only_host_observations(monkeypatch):
     missing = Path("/definitely/missing/seed-local-identity")
 
     observations = LocalHostObservationSource(
-        proc_root=missing, etc_hostname=missing, machine_id=missing
+        proc_root=missing,
+        etc_hostname=missing,
+        machine_id=missing,
+        etc_passwd=missing,
+        etc_group=missing,
     ).collect()
 
     assert [(obs.subject, obs.predicate, obs.value) for obs in observations] == [
@@ -2345,3 +2349,165 @@ def test_local_storage_bounded_reads_skip_oversized_or_truncated_inputs(tmp_path
         (obs.predicate, obs.value) for obs in observations
     }
     assert any(obs.predicate == "block_device_vendor" for obs in observations)
+
+
+def _write_local_users_fixture(tmp_path: Path) -> tuple[Path, Path]:
+    passwd = tmp_path / "passwd"
+    group = tmp_path / "group"
+    passwd.write_text(
+        "root:x:0:0:root:/root:/bin/bash\n"
+        "john:x:1000:1000:John:/home/john:/bin/bash\n"
+        "nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin\n",
+        encoding="utf-8",
+    )
+    group.write_text(
+        "sudo:x:27:john\n" "docker:x:999:john\n" "john:x:1000:\n",
+        encoding="utf-8",
+    )
+    return passwd, group
+
+
+def test_local_users_observation_emits_fixture_passwd_and_group_facts(tmp_path):
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    passwd, group = _write_local_users_fixture(tmp_path)
+    source = LocalHostObservationSource(etc_passwd=passwd, etc_group=group)
+
+    observations = source._collect_local_user_observations(BASE_TIME, "node115", {})
+    triples = {(obs.subject, obs.predicate, obs.value) for obs in observations}
+
+    assert ("node115", "user_account", "john") in triples
+    assert ("node115", "user_uid", 1000) in triples
+    assert ("node115", "user_primary_gid", 1000) in triples
+    assert ("node115", "user_home_directory", "/home/john") in triples
+    assert ("node115", "user_shell", "/bin/bash") in triples
+    assert ("node115", "group_account", "sudo") in triples
+    assert ("node115", "group_gid", 27) in triples
+    assert ("node115", "group_member", "john") in triples
+
+    user_account = next(
+        obs
+        for obs in observations
+        if obs.predicate == "user_account" and obs.value == "john"
+    )
+    assert user_account.dimensions == {"username": "john", "uid": "1000"}
+    assert user_account.metadata["source"] == "/etc/passwd"
+    assert user_account.metadata["source_file"] == "/etc/passwd"
+    assert user_account.metadata["read_only"] is True
+    assert user_account.metadata["question_answered"] == (
+        "Which local user accounts are declared on this host?"
+    )
+
+    group_member = next(obs for obs in observations if obs.predicate == "group_member")
+    assert group_member.dimensions == {
+        "groupname": "docker",
+        "gid": "999",
+        "username": "john",
+    }
+    assert group_member.metadata["source"] == "/etc/group"
+    assert group_member.metadata["source_file"] == "/etc/group"
+    assert group_member.metadata["sudo_access_asserted"] is False
+    assert group_member.metadata["privilege_asserted"] is False
+
+
+def test_local_users_current_facts_fact_support_and_no_boundary_inference(tmp_path):
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    passwd, group = _write_local_users_fixture(tmp_path)
+    ledger = EventLedger()
+    source = LocalHostObservationSource(etc_passwd=passwd, etc_group=group)
+    observations = source._collect_local_user_observations(
+        BASE_TIME, "node115", {"read_only": True, "local_only": True}
+    )
+
+    ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        FakeObservationSource(observations, source_type="discovery"), "ws_local_users"
+    )
+    state = StateProjector(ledger).project("ws_local_users")
+
+    assert state.get_current_facts("node115", "user_account")
+    assert state.get_current_facts("node115", "user_uid")
+    assert state.get_current_facts("node115", "user_primary_gid")
+    assert state.get_current_facts("node115", "user_home_directory")
+    assert state.get_current_facts("node115", "user_shell")
+    assert state.get_current_facts("node115", "group_account")
+    assert state.get_current_facts("node115", "group_gid")
+    assert state.get_current_facts("node115", "group_member")
+
+    support = state.get_fact_support(
+        "node115",
+        "group_member",
+        dimensions={"groupname": "sudo", "gid": "27", "username": "john"},
+    )
+    assert support is not None
+    assert support.value == "john"
+    assert support.source_types == ["discovery"]
+
+    forbidden_predicates = {
+        "active_login_session",
+        "ssh_access",
+        "sudo_access",
+        "sudoers_rule",
+        "user_privileged",
+        "account_safe",
+        "account_enabled",
+        "password_status",
+        "availability_status",
+    }
+    emitted_predicates = {obs.predicate for obs in observations}
+    assert emitted_predicates.isdisjoint(forbidden_predicates)
+    for predicate in forbidden_predicates:
+        assert state.get_best_fact("node115", predicate) is None
+
+
+def test_local_users_observation_avoids_forbidden_activity_privilege_sources(
+    monkeypatch, tmp_path
+):
+    import subprocess
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    def fail_forbidden(*args, **kwargs):  # pragma: no cover - guard callback
+        raise AssertionError(
+            "local user observation must not execute, network, inspect login state, or inspect privilege sources"
+        )
+
+    passwd, group = _write_local_users_fixture(tmp_path)
+    forbidden_paths = {
+        "/etc/shadow",
+        "/etc/sudoers",
+        "/etc/sudoers.d",
+        "authorized_keys",
+        "pam.d",
+        "utmp",
+        "wtmp",
+    }
+    original_read_text = LocalHostObservationSource._read_text
+
+    def guarded_read_text(self, path, *args, **kwargs):
+        path_text = str(path)
+        assert not any(forbidden in path_text for forbidden in forbidden_paths)
+        return original_read_text(self, path, *args, **kwargs)
+
+    monkeypatch.setattr(LocalHostObservationSource, "_read_text", guarded_read_text)
+    monkeypatch.setattr(sources.socket, "create_connection", fail_forbidden)
+    monkeypatch.setattr(sources.socket, "getaddrinfo", fail_forbidden)
+    monkeypatch.setattr(sources, "urlopen", fail_forbidden)
+    monkeypatch.setattr(os, "system", fail_forbidden)
+    monkeypatch.setattr(subprocess, "run", fail_forbidden)
+    monkeypatch.setattr(subprocess, "Popen", fail_forbidden)
+
+    observations = LocalHostObservationSource(
+        etc_passwd=passwd, etc_group=group
+    )._collect_local_user_observations(BASE_TIME, "node115", {})
+
+    assert any(obs.predicate == "user_account" for obs in observations)
+    assert any(obs.predicate == "group_member" for obs in observations)
+    assert all(obs.metadata["shadow_inspected"] is False for obs in observations)
+    assert all(obs.metadata["sudoers_inspected"] is False for obs in observations)
+    assert all(
+        obs.metadata["authorized_keys_inspected"] is False for obs in observations
+    )
+    assert all(obs.metadata["pam_inspected"] is False for obs in observations)
+    assert all(obs.metadata["utmp_wtmp_inspected"] is False for obs in observations)
+    assert all(obs.metadata["loginctl_inspected"] is False for obs in observations)

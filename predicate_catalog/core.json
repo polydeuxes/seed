@@ -180,6 +180,24 @@
       "cardinality": "multi"
     },
     {
+      "predicate": "group_account",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "group_gid",
+      "kind": "durable_fact",
+      "value_type": "integer",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "group_member",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
       "predicate": "health_status",
       "kind": "measurement",
       "value_type": "enum",
@@ -355,6 +373,36 @@
         "unknown"
       ],
       "cardinality": "single"
+    },
+    {
+      "predicate": "user_account",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "user_home_directory",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "user_primary_gid",
+      "kind": "durable_fact",
+      "value_type": "integer",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "user_shell",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "user_uid",
+      "kind": "durable_fact",
+      "value_type": "integer",
+      "cardinality": "multi"
     }
   ],
   "mappings": [
