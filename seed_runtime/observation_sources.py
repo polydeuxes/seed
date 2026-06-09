@@ -110,6 +110,17 @@ _LISTENER_QUESTIONS = {
     "listening_endpoint": "What protocol/address/port endpoints are bound locally?",
 }
 
+_LOCAL_USER_QUESTIONS = {
+    "user_account": "Which local user accounts are declared on this host?",
+    "user_uid": "What UID is declared for this local user account?",
+    "user_primary_gid": "What primary GID is declared for this local user account?",
+    "user_home_directory": "What home directory is declared for this local user account?",
+    "user_shell": "What shell is declared for this local user account?",
+    "group_account": "Which local group accounts are declared on this host?",
+    "group_gid": "What GID is declared for this local group account?",
+    "group_member": "Which supplementary group members are declared locally?",
+}
+
 _HOST_DESCRIPTION_QUESTIONS = {
     "kernel_release": "What kernel release is this host running?",
     "kernel_version": "What kernel version string is reported locally?",
@@ -199,6 +210,8 @@ class LocalHostObservationSource:
         systemd_stub_resolv_conf: str | Path = "/run/systemd/resolve/stub-resolv.conf",
         systemd_resolved_conf: str | Path = "/etc/systemd/resolved.conf",
         systemd_lease_dir: str | Path = "/run/systemd/netif/leases",
+        etc_passwd: str | Path = "/etc/passwd",
+        etc_group: str | Path = "/etc/group",
     ) -> None:
         self.name = name
         self.proc_root = Path(proc_root)
@@ -212,6 +225,8 @@ class LocalHostObservationSource:
         self.systemd_stub_resolv_conf = Path(systemd_stub_resolv_conf)
         self.systemd_resolved_conf = Path(systemd_resolved_conf)
         self.systemd_lease_dir = Path(systemd_lease_dir)
+        self.etc_passwd = Path(etc_passwd)
+        self.etc_group = Path(etc_group)
 
     def collect(self) -> list[Observation]:
         """Return local host facts without executing or mutating the host."""
@@ -304,6 +319,9 @@ class LocalHostObservationSource:
         )
         observations.extend(
             self._collect_listener_observations(observed_at, hostname, metadata)
+        )
+        observations.extend(
+            self._collect_local_user_observations(observed_at, hostname, metadata)
         )
         return observations
 
@@ -1118,6 +1136,202 @@ class LocalHostObservationSource:
             )
             return str(ipaddress.IPv6Address(network_order))
         return None
+
+    def _collect_local_user_observations(
+        self, observed_at: datetime, hostname: str, metadata: dict[str, Any]
+    ) -> list[Observation]:
+        """Collect declared local user and group records from passwd/group only.
+
+        These observations describe local account and group configuration records.
+        They do not infer login activity, SSH access, sudo authorization, account
+        safety, password status, account enablement, human/system classification,
+        service ownership, privilege, reachability, or availability.
+        """
+
+        observations: list[Observation] = []
+        boundary_metadata = {
+            **metadata,
+            "read_only": True,
+            "local_only": True,
+            "shell_execution": False,
+            "subprocess_execution": False,
+            "privilege_escalation": False,
+            "network_probe": False,
+            "network_connection": False,
+            "login_activity_asserted": False,
+            "active_session_asserted": False,
+            "ssh_access_asserted": False,
+            "sudo_access_asserted": False,
+            "sudoers_policy_asserted": False,
+            "privilege_asserted": False,
+            "account_safety_asserted": False,
+            "account_enabled_asserted": False,
+            "password_status_asserted": False,
+            "availability_asserted": False,
+            "human_user_asserted": False,
+            "system_user_asserted": False,
+            "service_account_asserted": False,
+            "shadow_inspected": False,
+            "sudoers_inspected": False,
+            "authorized_keys_inspected": False,
+            "pam_inspected": False,
+            "utmp_wtmp_inspected": False,
+            "loginctl_inspected": False,
+        }
+        for user in self._local_passwd_entries():
+            username = user["username"]
+            uid = user["uid"]
+            gid = user["gid"]
+            dimensions = {"username": username, "uid": str(uid)}
+            user_metadata = {
+                **boundary_metadata,
+                "source": user["source"],
+                "source_file": "/etc/passwd",
+                "username": username,
+                "uid": str(uid),
+                "gid": str(gid),
+            }
+            for predicate, value in (
+                ("user_account", username),
+                ("user_uid", uid),
+                ("user_primary_gid", gid),
+                ("user_home_directory", user["home_directory"]),
+                ("user_shell", user["shell"]),
+            ):
+                observations.append(
+                    self._observation(
+                        observed_at,
+                        hostname,
+                        predicate,
+                        value,
+                        metadata={
+                            **user_metadata,
+                            "question_answered": _LOCAL_USER_QUESTIONS[predicate],
+                            "fact_produced": predicate,
+                        },
+                        dimensions=dimensions,
+                    )
+                )
+        for group in self._local_group_entries():
+            groupname = group["groupname"]
+            gid = group["gid"]
+            dimensions = {"groupname": groupname, "gid": str(gid)}
+            group_metadata = {
+                **boundary_metadata,
+                "source": group["source"],
+                "source_file": "/etc/group",
+                "groupname": groupname,
+                "gid": str(gid),
+            }
+            for predicate, value in (
+                ("group_account", groupname),
+                ("group_gid", gid),
+            ):
+                observations.append(
+                    self._observation(
+                        observed_at,
+                        hostname,
+                        predicate,
+                        value,
+                        metadata={
+                            **group_metadata,
+                            "question_answered": _LOCAL_USER_QUESTIONS[predicate],
+                            "fact_produced": predicate,
+                        },
+                        dimensions=dimensions,
+                    )
+                )
+            for username in group["members"]:
+                observations.append(
+                    self._observation(
+                        observed_at,
+                        hostname,
+                        "group_member",
+                        username,
+                        metadata={
+                            **group_metadata,
+                            "username": username,
+                            "question_answered": _LOCAL_USER_QUESTIONS["group_member"],
+                            "fact_produced": "group_member",
+                        },
+                        dimensions={**dimensions, "username": username},
+                    )
+                )
+        return observations
+
+    def _local_passwd_entries(self) -> list[dict[str, Any]]:
+        return self._parse_passwd_text(self._read_text(self.etc_passwd), "/etc/passwd")
+
+    def _local_group_entries(self) -> list[dict[str, Any]]:
+        return self._parse_group_text(self._read_text(self.etc_group), "/etc/group")
+
+    @staticmethod
+    def _parse_passwd_text(text: str | None, source_name: str) -> list[dict[str, Any]]:
+        if not text:
+            return []
+        entries: list[dict[str, Any]] = []
+        for line in text.splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            fields = stripped.split(":")
+            if len(fields) < 7:
+                continue
+            username, _password, uid_text, gid_text, _gecos, home_directory, shell = (
+                fields[:7]
+            )
+            if not username:
+                continue
+            try:
+                uid = int(uid_text)
+                gid = int(gid_text)
+            except ValueError:
+                continue
+            entries.append(
+                {
+                    "username": username,
+                    "uid": uid,
+                    "gid": gid,
+                    "home_directory": home_directory,
+                    "shell": shell,
+                    "source": source_name,
+                }
+            )
+        return sorted(
+            entries, key=lambda item: (item["username"], item["uid"], item["gid"])
+        )
+
+    @staticmethod
+    def _parse_group_text(text: str | None, source_name: str) -> list[dict[str, Any]]:
+        if not text:
+            return []
+        entries: list[dict[str, Any]] = []
+        for line in text.splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            fields = stripped.split(":")
+            if len(fields) < 4:
+                continue
+            groupname, _password, gid_text, members_text = fields[:4]
+            if not groupname:
+                continue
+            try:
+                gid = int(gid_text)
+            except ValueError:
+                continue
+            members = sorted(
+                member.strip() for member in members_text.split(",") if member.strip()
+            )
+            entries.append(
+                {
+                    "groupname": groupname,
+                    "gid": gid,
+                    "members": members,
+                    "source": source_name,
+                }
+            )
+        return sorted(entries, key=lambda item: (item["groupname"], item["gid"]))
 
     def _collect_mount_observations(
         self, observed_at: datetime, hostname: str, metadata: dict[str, Any]
