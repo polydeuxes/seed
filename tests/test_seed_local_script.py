@@ -1756,6 +1756,7 @@ def test_cli_current_facts_and_fact_support_keep_raw_alias_evidence(tmp_path, ca
     assert "value: 192.168.254.115" in support_output
     assert "value: 192.168.254.116" in support_output
 
+
 def test_cli_fact_support_prints_projected_grouped_values(capsys):
     seed_local = load_seed_local_module()
 
@@ -3091,6 +3092,130 @@ def test_cli_alias_records_alias_observation_fact(capsys):
     assert "subject: node115" in output
     assert "predicate: alias" in output
     assert "value: 192.168.254.115:9100" in output
+
+
+def _group_member_fact(seed_local, fact_id, value, dimensions):
+    return seed_local.Fact(
+        id=fact_id,
+        subject_id="node115",
+        predicate="group_member",
+        value=value,
+        dimensions=dimensions,
+        source_type="discovery",
+        observed_at=seed_local.utc_now(),
+    )
+
+
+def test_cli_current_facts_render_dimensions_for_group_member_facts():
+    seed_local = load_seed_local_module()
+    state = seed_local.State(workspace_id="ws")
+    state.facts = {
+        "fact_sudo": _group_member_fact(
+            seed_local,
+            "fact_sudo",
+            "user",
+            {"username": "user", "groupname": "sudo", "gid": "27"},
+        ),
+        "fact_docker": _group_member_fact(
+            seed_local,
+            "fact_docker",
+            "user",
+            {"username": "user", "gid": "999", "groupname": "docker"},
+        ),
+    }
+
+    output = seed_local.format_current_facts(state, "node115", "group_member")
+
+    assert output.splitlines() == [
+        "user (gid=27, groupname=sudo, username=user)",
+        "user (gid=999, groupname=docker, username=user)",
+    ]
+
+
+def test_cli_current_facts_dimensionless_output_is_unchanged():
+    seed_local = load_seed_local_module()
+    state = seed_local.State(workspace_id="ws")
+    observed_at = seed_local.utc_now()
+    state.facts = {
+        "fact_alias_1": seed_local.Fact(
+            id="fact_alias_1",
+            subject_id="node115",
+            predicate="alias",
+            value="node115.local",
+            source_type="imported",
+            observed_at=observed_at,
+        ),
+        "fact_alias_2": seed_local.Fact(
+            id="fact_alias_2",
+            subject_id="node115",
+            predicate="alias",
+            value="192.168.1.115",
+            source_type="imported",
+            observed_at=observed_at,
+        ),
+    }
+
+    assert seed_local.format_current_facts(state, "node115", "alias") == (
+        "192.168.1.115\nnode115.local"
+    )
+
+
+def test_cli_fact_support_renders_dimensions_for_group_member_facts():
+    seed_local = load_seed_local_module()
+    observed_at = seed_local.utc_now()
+    supports = [
+        seed_local.FactSupport(
+            subject="node115",
+            predicate="group_member",
+            value="user",
+            dimensions={"username": "user", "groupname": "sudo", "gid": "27"},
+            supporting_fact_ids=["fact_sudo"],
+            source_types=["discovery"],
+            confidence=0.95,
+            observed_at=observed_at,
+            latest_observed_at=observed_at,
+        ),
+        seed_local.FactSupport(
+            subject="node115",
+            predicate="group_member",
+            value="user",
+            dimensions={"username": "user", "gid": "999", "groupname": "docker"},
+            supporting_fact_ids=["fact_docker"],
+            source_types=["discovery"],
+            confidence=0.95,
+            observed_at=observed_at,
+            latest_observed_at=observed_at,
+        ),
+    ]
+
+    output = seed_local.format_fact_supports(supports, "node115", "group_member")
+
+    assert "value: user\ndimensions: gid=27, groupname=sudo, username=user" in output
+    assert "value: user\ndimensions: gid=999, groupname=docker, username=user" in output
+
+
+def test_cli_fact_support_dimensionless_output_has_no_dimensions_line():
+    seed_local = load_seed_local_module()
+    observed_at = seed_local.utc_now()
+    supports = [
+        seed_local.FactSupport(
+            subject="node",
+            predicate="up",
+            value=1,
+            supporting_fact_ids=["fact_up_new"],
+            source_types=["provider"],
+            confidence=0.85,
+            observed_at=observed_at,
+            latest_observed_at=observed_at,
+            predicate_semantics="measurement",
+            support_kind="current_sample",
+        )
+    ]
+
+    output = seed_local.format_fact_supports(supports, "node", "up")
+
+    assert "value: 1\nsemantics: measurement" in output
+    assert "dimensions:" not in output
 
 
 def test_cli_fact_support_marks_measurement_current_sample():
