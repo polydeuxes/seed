@@ -93,6 +93,17 @@ def test_builtin_catalog_defines_canonical_predicates_and_prometheus_mappings():
         "true",
         "false",
     ]
+    for predicate in (
+        "package_installed",
+        "package_version",
+        "package_architecture",
+        "package_manager",
+    ):
+        definition = catalog.get(predicate)
+        assert definition is not None
+        assert definition.kind == "durable_fact"
+        assert definition.value_type == "string"
+        assert definition.cardinality == "multi"
     assert catalog.find_mapping("up", source_name="prometheus").canonical_predicate == (
         "availability_status"
     )
