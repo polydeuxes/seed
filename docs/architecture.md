@@ -10,7 +10,7 @@ The canonical knowledge acquisition and selection relationship is documented in
 [Knowledge Acquisition and Selection](knowledge_acquisition_and_selection.md):
 
 ```text
-Observation -> Evidence -> Fact -> Projection
+Observation -> Evidence -> Claim (Fact as normalized claim form) -> Projection
 Projected Knowledge -> Context Composition -> Explanation -> Response
 ```
 
@@ -31,7 +31,7 @@ Events -> projected State -> Evidence Graph -> Contradiction Detection
 Events -> projected State -> Evidence Graph -> Contradiction Detection -> Confidence Aggregation
 ```
 
-- **EventLedger** is the historical source of truth. It is append-only and records what happened.
+- **EventLedger** is the authoritative historical event record. It is append-only and records what happened within Seed, without becoming a truth oracle about the world.
 - **ProjectionStore** caches projection snapshots derived from EventLedger data. It is an optimization, not source-of-truth persistence.
 - **State** is the current projected world model: facts, observations, relationships, entity types, requirements/goals, capabilities, ToolNeeds / capability gaps, registered operations, and graph issues.
 - **State Views** are read-only representations of projected State. They answer what Seed currently knows without reading raw events directly.

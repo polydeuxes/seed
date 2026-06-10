@@ -6,7 +6,7 @@ For Seed's concise architectural thesis and constitutional statement, read [`doc
 
 ## What Is Seed?
 
-Seed transforms bounded observations into evidence-backed projected knowledge.
+Seed transforms bounded observations into evidence-backed projected knowledge claims.
 
 Its architectural shape is:
 
@@ -15,7 +15,7 @@ Observation
     ↓
 Evidence
     ↓
-Fact
+Claim
     ↓
 Relationship
     ↓
@@ -24,7 +24,7 @@ Projection
 Explanation / Response
 ```
 
-Seed does not begin with truth. It begins with observation, records provenance, normalizes justified claims, connects justified relationships, and selects explainable projections.
+Seed does not begin with truth. It begins with observation, records provenance, normalizes justified claims, treats facts as normalized claim forms, connects justified relationships, and selects explainable projections.
 
 ## What Does Seed Own?
 
@@ -32,7 +32,7 @@ Seed currently owns the knowledge path around:
 
 * observation intake from scoped sources;
 * evidence preservation and provenance;
-* fact normalization and support aggregation;
+* claim normalization, fact support, and support aggregation;
 * relationship and entity-type projection;
 * contradiction, confidence, staleness, and graph-issue characterization;
 * read-only state, impact, support, and explanation surfaces;

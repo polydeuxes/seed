@@ -37,6 +37,7 @@ Related boundary case law:
 Use these papers for alignment-sensitive work, handoffs, and broad architecture boundary preservation. They are not all required for basic repository orientation.
 
 * [`documentation_authority_and_seed_thesis_reconciliation.md`](documentation_authority_and_seed_thesis_reconciliation.md) — authority model for README, `seed.md`, this documentation map, and reconciliation documents.
+* [`architectural_documentation_alignment_reconciliation.md`](architectural_documentation_alignment_reconciliation.md) — audit of authoritative documentation alignment after the claim, operator, projection, temporal, explanation, and causality reconciliations.
 * [`documentation_authority_reconciliation.md`](documentation_authority_reconciliation.md) — documentation ownership boundaries.
 * [`documentation_boundary_enforcement_reconciliation.md`](documentation_boundary_enforcement_reconciliation.md) — enforcement of documentation boundaries.
 * [`boundary_preservation_as_architectural_principle.md`](boundary_preservation_as_architectural_principle.md) — boundary preservation as an architectural principle.

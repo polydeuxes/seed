@@ -17,14 +17,14 @@ Observation
         ↓
 Evidence
         ↓
-Fact
+Claim
         ↓
 Relationship
         ↓
 Projection
 ```
 
-This is not a rigid runtime pipeline for every feature. It is the architectural shape that keeps Seed's claims explainable.
+This is not a rigid runtime pipeline for every feature. It is the architectural shape that keeps Seed's claims explainable. Facts remain important as normalized claim forms.
 
 ---
 
