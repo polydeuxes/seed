@@ -139,7 +139,7 @@ def test_duplicate_source_observations_create_one_alias_with_provenance():
     assert alias.confidence == 0.8
 
 
-def test_alias_derivation_ingests_originals_and_enables_alias_aware_query():
+def test_alias_derivation_ingests_originals_without_endpoint_identity_resolution():
     original = _observation(
         "obs_alias_query",
         metadata={"hostname": "node115", "instance": ENDPOINT},
@@ -152,7 +152,7 @@ def test_alias_derivation_ingests_originals_and_enables_alias_aware_query():
 
     assert len(facts) == 2
     assert state.observations[original.id].predicate == "up"
-    assert state.get_best_fact("node115", "up").value == 1
+    assert state.get_best_fact("node115", "up") is None
     assert state.get_best_fact(ENDPOINT, "up").value == 1
 
 
@@ -290,7 +290,7 @@ def test_endpoint_identity_avoids_duplicate_aliases_for_multiple_identity_facts(
     assert endpoint_aliases[0].metadata["matched_identity_predicate"] == "ip_address"
 
 
-def test_endpoint_identity_alias_enables_alias_aware_query():
+def test_endpoint_identity_alias_preserves_endpoint_scoped_query():
     observations = [
         _observation(
             "obs_ip_address",
@@ -306,7 +306,8 @@ def test_endpoint_identity_alias_enables_alias_aware_query():
     service.collect(FakeObservationSource(observations), "ws_endpoint_alias")
     state = StateProjector(ledger).project("ws_endpoint_alias")
 
-    assert state.get_best_fact("node115", "up").value == 1
+    assert state.get_best_fact("node115", "up") is None
+    assert state.get_best_fact(ENDPOINT, "up").value == 1
 
 
 def test_sqlite_reopen_uses_persisted_identity_to_alias_later_endpoint(tmp_path):
@@ -451,7 +452,8 @@ def test_endpoint_identity_matches_alias_from_projected_state():
     )
     state = StateProjector(ledger).project("ws_endpoint_state_alias")
 
-    assert state.get_best_fact("node115", "up").value == 1
+    assert state.get_best_fact("node115", "up") is None
+    assert state.get_best_fact(ENDPOINT, "up").value == 1
     assert any(
         observation.subject == "node115"
         and observation.predicate == "alias"
@@ -483,7 +485,8 @@ def test_endpoint_identity_matches_ansible_host_from_projected_state():
     )
     state = StateProjector(ledger).project("ws_endpoint_state_ansible")
 
-    assert state.get_best_fact("node115", "up").value == 1
+    assert state.get_best_fact("node115", "up") is None
+    assert state.get_best_fact(ENDPOINT, "up").value == 1
 
 
 def test_sqlite_same_batch_preserves_endpoint_identity_alias_behavior(tmp_path):
@@ -506,7 +509,8 @@ def test_sqlite_same_batch_preserves_endpoint_identity_alias_behavior(tmp_path):
     reopened = SQLiteEventLedger(str(db))
     state = StateProjector(reopened).project("ws_endpoint_reopen")
 
-    assert state.get_best_fact("node115", "up").value == 1
+    assert state.get_best_fact("node115", "up") is None
+    assert state.get_best_fact(ENDPOINT, "up").value == 1
     assert any(
         observation.subject == "node115"
         and observation.predicate == "alias"

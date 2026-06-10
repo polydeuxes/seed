@@ -12,7 +12,7 @@
       "relationship_kind": "identity",
       "subject_type": "entity",
       "object_type": "entity",
-      "derived_from_predicates": ["alias", "hostname", "ip_address", "ansible_host", "prometheus_instance"]
+      "derived_from_predicates": ["alias", "hostname", "ip_address", "ansible_host"]
     },
     {
       "relationship": "monitored_by",

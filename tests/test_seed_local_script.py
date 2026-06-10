@@ -2989,7 +2989,7 @@ def test_cli_observe_prometheus_mountpoint_filter_limits_ingestion(
     }
 
 
-def test_cli_alias_resolves_best_fact_after_sqlite_reopen(tmp_path, capsys):
+def test_cli_alias_to_endpoint_does_not_resolve_host_best_fact_after_sqlite_reopen(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
 
@@ -3012,6 +3012,14 @@ def test_cli_alias_resolves_best_fact_after_sqlite_reopen(tmp_path, capsys):
     capsys.readouterr()
 
     assert seed_local.main(["--db", str(db_path), "--best-fact", "node115", "up"]) == 0
+    assert capsys.readouterr().out == "no current belief for node115 up\n"
+
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--best-fact", "192.168.254.115:9100", "up"]
+        )
+        == 0
+    )
     output = capsys.readouterr().out
     assert "subject: 192.168.254.115:9100" in output
     assert "predicate: up" in output
@@ -3022,11 +3030,13 @@ def test_cli_alias_resolves_best_fact_after_sqlite_reopen(tmp_path, capsys):
         state = seed_local.StateProjector(reopened).project(
             seed_local.DEFAULT_WORKSPACE
         )
-        support = state.get_fact_support("node115", "up")
-        best = state.get_best_fact("node115", "up")
+        support = state.get_fact_support("192.168.254.115:9100", "up")
+        best = state.get_best_fact("192.168.254.115:9100", "up")
+        host_best = state.get_best_fact("node115", "up")
     finally:
         reopened.close()
 
+    assert host_best is None
     assert best is not None
     assert best.subject_id == "192.168.254.115:9100"
     assert support is not None
@@ -3411,7 +3421,7 @@ def test_cli_impact_reports_local_observation_without_availability(tmp_path, cap
     assert "endpoint availability by role:\n- none" in output
 
 
-def test_cli_impact_resolves_host_alias_and_reports_availability(tmp_path, capsys):
+def test_cli_impact_keeps_endpoint_alias_availability_on_endpoint(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "impact-alias.sqlite"
     _persist_impact_facts(
@@ -3430,12 +3440,11 @@ def test_cli_impact_resolves_host_alias_and_reports_availability(tmp_path, capsy
     )
 
     output = capsys.readouterr().out
-    assert "entity: node115" in output
-    assert "entity types: host" in output
-    assert "aliases:\n- 192.168.254.115:9100" in output
-    assert "availability_status: unknown" in output
-    assert "endpoint availability by role:\n- 192.168.254.115:9100: up" in output
-    assert "groups/member_of: servers" in output
+    assert "entity: 192.168.254.115:9100" in output
+    assert "entity types: endpoint" in output
+    assert "aliases:\n- none" in output
+    assert "availability_status: up" in output
+    assert "groups/member_of: none" in output
 
 
 def test_cli_impact_reports_service_running_on_host_as_dependent(tmp_path, capsys):
@@ -3721,12 +3730,10 @@ def test_cli_impact_groups_endpoint_availability_by_role(tmp_path, capsys):
 
     output = capsys.readouterr().out
     assert "availability_status: unknown" in output
-    assert "endpoint availability by role:" in output
-    assert "- node-exporter: down (192.168.254.115:9100)" in output
-    assert "- cadvisor: up (192.168.254.115:9200)" in output
+    assert "endpoint availability by role:\n- none" in output
 
 
-def test_cli_unhealthy_groups_current_down_endpoint_under_aliased_host_with_role(
+def test_cli_unhealthy_keeps_current_down_endpoint_under_endpoint_identity(
     tmp_path, capsys
 ):
     seed_local = load_seed_local_module()
@@ -3750,7 +3757,7 @@ def test_cli_unhealthy_groups_current_down_endpoint_under_aliased_host_with_role
 
     output = capsys.readouterr().out
     assert (
-        "unhealthy endpoints:\nnode115:\n  - node-exporter down 192.168.254.115:9100"
+        "unhealthy endpoints:\n192.168.254.115:9100:\n  - node-exporter down 192.168.254.115:9100"
         in output
     )
     assert "node116:9100" not in output

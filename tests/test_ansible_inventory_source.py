@@ -165,7 +165,7 @@ def test_secret_inventory_vars_are_ignored(tmp_path):
     }
 
 
-def test_inventory_and_prometheus_observations_resolve_by_inventory_hostname(tmp_path):
+def test_inventory_and_prometheus_observations_keep_endpoint_availability_scoped(tmp_path):
     inventory_path = tmp_path / "inventory.ini"
     inventory_path.write_text(
         "[nodegroup]\nnode115 ansible_host=192.168.254.115\n", encoding="utf-8"
@@ -199,8 +199,9 @@ def test_inventory_and_prometheus_observations_resolve_by_inventory_hostname(tmp
     state = StateProjector(ledger).project("ws_ansible")
 
     assert state.alias_resolver.canonical("192.168.254.115") == "node115"
-    assert state.alias_resolver.canonical("192.168.254.115:9100") == "node115"
-    assert state.get_best_fact("node115", "up").value == 1
+    assert state.alias_resolver.canonical("192.168.254.115:9100") == "192.168.254.115:9100"
+    assert state.get_best_fact("node115", "up") is None
+    assert state.get_best_fact("192.168.254.115:9100", "up").value == 1
     assert any(
         fact.subject_id == "node115"
         and fact.predicate == "prometheus_instance"
