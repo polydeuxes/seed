@@ -12,6 +12,10 @@ They are not a compressed ontology.
 
 They are the minimum assumptions required to interpret the architecture correctly.
 
+They help activation, but they do not guarantee activation. A future participant
+may possess or even read bootstrap invariants without making them active working
+state or complying with the validated continuation boundary.
+
 ## Motivation
 
 A handoff should primarily contain references.
@@ -31,7 +35,9 @@ Bootstrap invariants exist to reduce that risk.
 
 Bootstrap invariants are context-dependent.
 
-Different continuation paths may require different bootstrap assumptions.
+Different continuation contexts and paths may require different bootstrap
+assumptions. The invariant set should fit the participant, task, authority
+surface, risk, and handoff boundary rather than becoming a universal checklist.
 
 Examples:
 
@@ -50,12 +56,14 @@ A bootstrap invariant should:
 - be stable;
 - prevent major misinterpretation;
 - help decode authoritative documents;
+- help activate the continuation boundary in working state;
 - not require reproducing architecture.
 
 A bootstrap invariant should not:
 
 - become authority;
 - replace documentation;
+- be treated as proof of activation or compliance;
 - summarize entire reconciliations.
 
 ## Example Human-Oriented Bootstrap Invariants
@@ -71,7 +79,8 @@ A bootstrap invariant should not:
 
 A handoff should primarily contain references.
 
-Bootstrap invariants exist only to help a future reader interpret those references correctly.
+Bootstrap invariants exist only to help a future reader interpret those references
+correctly and activate the relevant boundary before full reference validation.
 
 The handoff remains a continuation-alignment artifact.
 
@@ -81,6 +90,11 @@ The architecture remains authoritative elsewhere.
 
 Bootstrap invariants are continuity aids.
 
-Their purpose is to prevent immediate architectural drift before authoritative references are available and validated.
+Their purpose is to reduce immediate architectural drift before authoritative
+references are available and validated. They do not guarantee that the handoff was
+consumed, that the bootstrap was activated, or that the continuation remains
+compliant with validated references, repository state, operator intent, frontier,
+boundaries, and risks.
 
-Different participants may require different bootstrap invariant sets depending on the continuation context.
+Different participants may require different bootstrap invariant sets depending on
+the continuation context.

@@ -53,6 +53,10 @@ Use these completed reconciliations as stable boundary references when returning
 * [`natural_language_observation_and_intent_derivation_reconciliation.md`](natural_language_observation_and_intent_derivation_reconciliation.md) — natural language as observation of communicative acts and interpretation as candidate meaning.
 * [`handoff_document_boundary_reconciliation.md`](handoff_document_boundary_reconciliation.md) — handoff document boundaries and authority limits.
 * [`handoff_template_and_continuation_protocol_reconciliation.md`](handoff_template_and_continuation_protocol_reconciliation.md) — handoff template and continuation protocol boundaries.
+* [`handoff_consumption_activation_reconciliation.md`](handoff_consumption_activation_reconciliation.md) — availability, consumption, activation, and compliance distinctions.
+* [`handoff_bootstrap_and_summary_reconciliation.md`](handoff_bootstrap_and_summary_reconciliation.md) — required bootstrap versus optional summary boundaries.
+* [`continuation_context_and_working_state_reconciliation.md`](continuation_context_and_working_state_reconciliation.md) — activity context and working-state momentum boundaries.
+* [`bootstrap_invariants.md`](bootstrap_invariants.md) — context-dependent bootstrap invariants and authority limits.
 
 ## Language / Operator Interface
 
@@ -68,6 +72,10 @@ Use these documents when preserving continuation alignment across sessions or ar
 
 * [`handoff_document_boundary_reconciliation.md`](handoff_document_boundary_reconciliation.md) — handoff document boundaries and authority limits.
 * [`handoff_template_and_continuation_protocol_reconciliation.md`](handoff_template_and_continuation_protocol_reconciliation.md) — handoff template and continuation protocol boundary reasoning.
+* [`handoff_consumption_activation_reconciliation.md`](handoff_consumption_activation_reconciliation.md) — handoff availability, consumption, bootstrap activation, and continuation compliance.
+* [`handoff_bootstrap_and_summary_reconciliation.md`](handoff_bootstrap_and_summary_reconciliation.md) — required bootstrap content, optional summary content, and authority boundaries.
+* [`continuation_context_and_working_state_reconciliation.md`](continuation_context_and_working_state_reconciliation.md) — activity context, working state, and momentum preservation.
+* [`bootstrap_invariants.md`](bootstrap_invariants.md) — minimal context-dependent invariants that help but do not guarantee activation.
 
 ## Reasoning / Explanation
 

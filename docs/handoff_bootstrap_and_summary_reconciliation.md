@@ -43,9 +43,13 @@ Out of scope:
 
 ## 2. Central finding
 
-A handoff may usefully distinguish two layers:
+A handoff may usefully distinguish three layers:
 
 ```text
+Continuation activation
+        = required instruction to treat the artifact as live continuation
+          guidance rather than as the task itself
+
 Continuation bootstrap
         = required, minimal, alignment-preserving context for safe continuation
 
@@ -63,12 +67,24 @@ optional and explanatory.
 The safe rule is:
 
 ```text
-A future session should be able to continue using the bootstrap alone,
-then validate authoritative references before acting.
+A future session should activate the handoff as continuation guidance,
+continue using the bootstrap, and then validate authoritative references before
+acting.
 
 A future session may read the summary to understand history,
 but the summary must not become required consumption or authority.
 ```
+
+The consumption boundary therefore has stages:
+
+```text
+availability -> consumption -> activation -> compliance
+```
+
+Availability means the handoff can be accessed. Consumption means the required
+bootstrap is read and references are identified. Activation means the bootstrap
+content enters active working state. Compliance means behavior follows validated
+references, repository state, operator intent, frontier, boundaries, and risks.
 
 This resolves the tension between small handoffs and useful history. Required
 handoff consumption remains compact. Historical value is preserved without
@@ -83,14 +99,30 @@ operator, or work-boundary transition.
 
 Its job is to preserve enough alignment for a future participant to resume safely
 without replaying the full transcript, re-litigating settled boundary reasoning,
-or inventing authority. A handoff may contain a continuation bootstrap and may
-also contain an optional summary, but it does not become architecture, ontology,
-status, roadmap, transcript, proof, knowledge store, or authority.
+or inventing authority. A handoff may contain a continuation activation section,
+a continuation bootstrap, and an optional summary, but it does not become
+architecture, ontology, status, roadmap, transcript, proof, knowledge store, or
+authority.
 
 A handoff is the container or transition artifact. The bootstrap and summary are
 roles that content inside or near the handoff may play.
 
-### 3.2 Continuation bootstrap
+### 3.2 Continuation activation
+
+Continuation activation is the small required instruction that tells a consumer
+how to use the handoff before reading the bootstrap as ordinary prose.
+
+A local wording may vary, but it should establish that the consumer is the
+continuation participant, should not review, summarize, or critique the handoff
+as the task unless explicitly asked, should use the handoff to establish working
+state, should validate authoritative references and repository state, and should
+continue from the next safe move.
+
+Activation is not authority. It makes the bootstrap live in working state so the
+consumer knows to consult authority, preserve boundaries, and continue rather
+than misroute the handoff into optional review.
+
+### 3.3 Continuation bootstrap
 
 A continuation bootstrap is the minimal required working set that a future
 participant needs before safely continuing bounded work.
@@ -114,7 +146,7 @@ cost. If bootstrap content grows until it contains broad historical explanation,
 exhaustive rejected paths, or full rationale, it stops functioning as a
 bootstrap and becomes a summary or duplicate reconciliation.
 
-### 3.3 Bootstrap invariant
+### 3.4 Bootstrap invariant
 
 A bootstrap invariant is a small, stable, context-dependent architectural
 constraint that should remain active during continuation even before all
@@ -146,7 +178,7 @@ stronger source-boundary invariants. The invariant is chosen because it prevents
 drift in this continuation path, not because every handoff must carry the same
 list.
 
-### 3.4 Handoff summary
+### 3.5 Handoff summary
 
 A handoff summary is an optional explanatory condensation of historical,
 architectural, or conversational context that may help a future participant
@@ -176,7 +208,7 @@ A summary may preserve useful history. It must not be treated as the source of
 truth for that history when authoritative documents, commits, transcripts,
 issues, reconciliations, or status documents own the underlying evidence.
 
-### 3.5 Historical context
+### 3.6 Historical context
 
 Historical context is optional background about how the present state came to be.
 It may include discoveries, rejected alternatives, prior discussions, evolution
@@ -191,39 +223,46 @@ the relevant fragment should be promoted into the bootstrap as a boundary,
 invariant, risk, active tension, or authoritative reference pointer; the larger
 history should remain optional.
 
-### 3.6 Authority
+### 3.7 Authority
 
 Authority is the right of a source to establish, revise, approve, or constrain a
 claim, decision, definition, status, roadmap item, implementation action, or
 runtime behavior.
 
-A handoff may reference authority. A bootstrap may activate the need to consult
-authority. A summary may explain how an authority emerged or why it matters. None
-of those roles makes the handoff, bootstrap, or summary authoritative by itself.
+A handoff may reference authority. Activation and bootstrap content may activate
+the need to consult authority. A summary may explain how an authority emerged or
+why it matters. None of those roles makes the handoff, activation section,
+bootstrap, or summary authoritative by itself.
 
-### 3.7 Continuation protocol
+### 3.8 Continuation protocol
 
 A continuation protocol is the safe-consumption procedure a future participant
 uses when receiving a handoff.
 
 For this reconciliation, the protocol implication is conceptual:
 
-1. consume the bootstrap because it preserves required alignment;
-2. validate the authoritative references named by the bootstrap before acting;
-3. use the summary only when historical orientation is useful;
-4. do not treat summary prose as authority, proof, status, roadmap, or
+1. recognize the handoff as available but not yet safely used;
+2. consume the activation section and bootstrap because they preserve required
+   alignment;
+3. activate the bootstrap by making it part of active working state;
+4. validate the authoritative references named by the bootstrap before acting;
+5. use the summary only when historical orientation is useful;
+6. do not treat summary prose as authority, proof, status, roadmap, or
    architecture;
-5. if the bootstrap and summary appear to conflict, inspect the authoritative
-   references and repository state rather than resolving the conflict from
-   handoff prose alone.
+7. if the activation section, bootstrap, and summary appear to conflict, inspect
+   the authoritative references and repository state rather than resolving the
+   conflict from handoff prose alone.
 
 ## 4. Required continuation content
 
-The continuation bootstrap should contain information that is required to safely
-continue the bounded work.
+The required handoff content should contain information that is required to safely
+continue the bounded work. Activation should appear before the bootstrap, while
+authoritative references and repository validation remain distinct from handoff
+prose.
 
-| Information | Belongs in bootstrap? | Reason |
+| Information | Belongs in required content? | Reason |
 | --- | --- | --- |
+| Continuation activation | Yes. | It prevents the handoff from being mistaken for a review, summary, or critique task and makes continuation use explicit. |
 | Operator intent | Yes. | It preserves the goal and constraints the future participant must optimize for. |
 | Current frontier | Yes. | It identifies the active edge and prevents restarting from the wrong layer. |
 | Bootstrap invariants | Yes, when applicable. | They keep critical guardrails active before references are fully loaded. |
@@ -261,10 +300,11 @@ authoritative source.
 The distinction between bootstrap and summary is primarily a consumption
 boundary.
 
-Required consumption:
+Required consumption and activation:
 
 ```text
-Continuation bootstrap
+Continuation activation
+        + continuation bootstrap
         + authoritative references needed for the intended action
         + repository state validation when relevant
 ```
@@ -278,10 +318,10 @@ Handoff summary
         + prior rejected alternatives not active in the current boundary
 ```
 
-A future session should be able to continue with the bootstrap alone if it then
-validates the referenced sources before acting. The summary may make the session
-wiser, faster, or less likely to repeat old exploration, but it should not be a
-precondition for safe continuation.
+A future session should be able to continue with the activation section and
+bootstrap alone if it then validates the referenced sources before acting. The
+summary may make the session wiser, faster, or less likely to repeat old
+exploration, but it should not be a precondition for safe continuation.
 
 If a piece of historical context is necessary for safe continuation, it is no
 longer merely summary content. It should be represented in the bootstrap as one
@@ -306,15 +346,17 @@ The preferred conceptual structure is:
 
 ```text
 Handoff
+├── Continuation activation (required consumption)
 ├── Continuation bootstrap (required consumption)
 │   ├── operator intent
 │   ├── current frontier
 │   ├── bootstrap invariants
-│   ├── authoritative references
 │   ├── active tensions / risks
 │   ├── next safe move
 │   └── non-goals / unsafe moves
-└── Optional summary / historical context (optional consumption)
+├── Authoritative references
+├── Activity context / working state
+└── Optional summary / historical context (optional consumption; physically last)
     ├── architectural evolution
     ├── major discoveries
     ├── rejected paths
@@ -332,8 +374,10 @@ The architectural requirement is not file separation. The requirement is role
 separation:
 
 ```text
-Required bootstrap content must not be buried inside optional history.
-Optional history must not inflate required bootstrap consumption.
+Required activation and bootstrap content must not be buried inside optional
+history.
+Optional history must not inflate required bootstrap consumption and should
+remain physically last and removable.
 ```
 
 ## 8. Information that should never be required consumption
@@ -359,8 +403,9 @@ architecture, and historical context into required context.
 The boundary test is:
 
 ```text
-If a future participant can safely continue by reading the bootstrap and
-validating the references, the broader material should remain optional.
+If a future participant can safely continue by activating the handoff, reading
+the bootstrap, and validating the references, the broader material should remain
+optional.
 
 If the participant cannot safely continue without a specific historical fact,
 that fact should be promoted into the bootstrap in minimal form and tied to its
@@ -390,9 +435,10 @@ to the operator instruction, architecture document, ontology, reconciliation,
 status document, roadmap, repository state, commit, issue, test, or evidence
 surface that owns the relevant claim.
 
-If a summary and an authoritative reference diverge, the summary loses. If two
+If a summary, bootstrap, activation section, or other handoff prose diverges from
+an authoritative reference, the authoritative reference wins. If two
 authoritative references appear to diverge, the divergence should be resolved by
-the appropriate reconciliation or authority process, not by summary prose.
+the appropriate reconciliation or authority process, not by handoff prose.
 
 ## 10. What should not be collapsed together
 
@@ -400,6 +446,8 @@ The following distinctions should remain active:
 
 | Distinction | Why it matters |
 | --- | --- |
+| Availability != Consumption != Activation != Compliance | Accessing a handoff, reading it, making it active working state, and behaving within validated constraints are separate stages. |
+| Activation != Authority | Activation makes continuation guidance live; it does not make handoff prose authoritative. |
 | Bootstrap != Summary | The bootstrap is required for safe continuation; the summary is optional orientation. |
 | Summary != Architecture | A summary explains architectural history; architecture owns accepted structural truth. |
 | Summary != Authority | A summary points to and explains authority; it does not grant or revise authority. |
@@ -421,18 +469,25 @@ moves authority away from its owners.
 
 A future handoff consumer should treat sections differently.
 
-### 11.1 Bootstrap consumption
+### 11.1 Activation and bootstrap consumption
 
-The bootstrap should be read before continuing. The consumer should:
+The activation section and bootstrap should be read before continuing. The
+consumer should:
 
-1. preserve operator intent;
-2. identify the current frontier;
-3. activate the listed bootstrap invariants;
-4. inspect the authoritative references needed for the next action;
-5. preserve active tensions, risks, and non-goals;
-6. validate repository state when action depends on it;
-7. choose only a next move consistent with the validated references and
+1. recognize that availability alone is not successful continuation;
+2. activate the handoff as live continuation guidance, not as the review task;
+3. preserve operator intent;
+4. identify the current frontier;
+5. activate the listed bootstrap invariants;
+6. inspect the authoritative references needed for the next action;
+7. preserve active tensions, risks, and non-goals;
+8. validate repository state when action depends on it;
+9. choose only a next move consistent with the validated references and
    boundaries.
+
+A concise failure mode is: handoff available, bootstrap partially consumed,
+references not validated, bootstrap not activated, optional summary or prose
+interpreted, continuation misrouted.
 
 ### 11.2 Summary consumption
 
@@ -477,13 +532,16 @@ No implementation work is directly required by these findings.
 
 The immediate implication is documentation practice only:
 
+- future handoffs should place a required continuation activation section before
+  the bootstrap;
 - future handoffs should label required continuation bootstrap content clearly;
 - future handoffs may include optional summary or historical context when useful;
 - optional history should not be placed where required bootstrap readers must
   consume it to discover the current frontier;
 - required historical fragments should be promoted into the bootstrap in minimal
   form and tied to authoritative references;
-- summaries should consistently state that references remain authoritative.
+- summaries should consistently state that references remain authoritative;
+- optional summaries should remain physically last and removable.
 
 If a future effort proposes schema, runtime, projection, or tool support for
 handoff bootstraps or summaries, that effort should begin with a separate
@@ -494,6 +552,9 @@ documentation boundary.
 
 This reconciliation supports the following architectural invariants:
 
+- Handoff availability, consumption, bootstrap activation, and continuation
+  compliance are distinct stages.
+- Continuation activation should precede continuation bootstrap in handoff shape.
 - A continuation bootstrap preserves continuation alignment.
 - A continuation bootstrap should remain small.
 - A continuation bootstrap should preserve operator intent, current frontier,
@@ -505,8 +566,9 @@ This reconciliation supports the following architectural invariants:
   supports.
 - Optional summary content should be physically removable without invalidating continuation safety.
 - Bootstrap content may require explicit size constraints to remain usable in constrained contexts.
-- Future sessions should be able to continue using the bootstrap alone, provided
-  they validate the authoritative references needed for action.
+- Future sessions should be able to continue using the activation section and
+  bootstrap alone, provided they validate the authoritative references needed for
+  action.
 - A handoff summary preserves optional historical context.
 - Summary consumption should be optional.
 - Historical context may be useful without being required.

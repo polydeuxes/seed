@@ -44,6 +44,22 @@ A handoff does not become the source of architectural truth. It points to the
 sources that carry authority. Its usefulness depends on being smaller, more
 situated, and more disposable than the documents it references.
 
+The current handoff model must also make activation explicit. Safe continuation
+is not established by possession of a handoff artifact alone:
+
+```text
+Handoff availability
+        -> handoff consumption
+        -> bootstrap activation
+        -> continuation compliance
+```
+
+A handoff can be available without being consumed, consumed without being
+activated, and activated without full compliance. Successful continuation
+therefore requires reading the required bootstrap, making it active working
+state, validating references and repository state, and behaving within the
+validated continuation constraints.
+
 ## 3. Definitions
 
 ### 3.1 Handoff
@@ -93,8 +109,8 @@ canonical store of durable architecture.
 
 ### 3.4 Continuation protocol
 
-A continuation protocol is the safe-consumption procedure a future session
-follows when receiving a handoff.
+A continuation protocol is the safe-consumption and activation procedure a future
+session follows when receiving a handoff.
 
 It answers:
 
@@ -103,8 +119,32 @@ What should a consumer validate, read, preserve, and avoid before continuing?
 ```
 
 A protocol is procedural rather than structural. It does not define the handoff's
-section order; it defines the minimum review and validation behavior necessary to
-avoid unsafe continuation.
+section order; it defines the minimum review, activation, and validation behavior
+necessary to avoid unsafe continuation.
+
+### 3.5 Handoff availability
+
+Handoff availability means the continuation artifact exists and can be accessed.
+Availability does not imply that the artifact was read, understood, activated, or
+used compliantly.
+
+### 3.6 Handoff consumption
+
+Handoff consumption means the required bootstrap is read and the references
+required by the continuation protocol are identified. Consumption does not imply
+that the consumed content becomes active working state.
+
+### 3.7 Bootstrap activation
+
+Bootstrap activation means the consumed bootstrap content enters the consumer's
+active working state and affects continuation behavior. Activation is not
+authority; it activates the need to consult authority.
+
+### 3.8 Continuation compliance
+
+Continuation compliance means behavior follows validated references, validated
+repository state, operator intent, current frontier, preserved boundaries, and
+known risks. Compliance is not blind obedience to handoff prose.
 
 ## 4. Required continuation information
 
@@ -122,6 +162,7 @@ The following information should survive continuation when applicable.
 | Preserved boundaries | Required | Protects category separation, authority boundaries, and non-goals. |
 | Authoritative references | Required | Keeps the handoff subordinate to source documents, repository state, and evidence surfaces. |
 | Repository state | Required as a reference or validation instruction | Continuation must know what state was assumed or that state must be rechecked. |
+| Continuation activation | Required | Tells the consumer to use the handoff as live continuation guidance rather than as a review, summary, or critique task. |
 | Next safe moves | Required for operational handoffs | Constrains continuation to actions consistent with intent and boundaries. |
 | Explicit non-goals / do-not-collapse notes | Required when category confusion is likely | Prevents handoff content from absorbing architecture, status, roadmap, transcript, or evidence roles. |
 
@@ -166,7 +207,12 @@ This keeps the handoff useful without turning it into a duplicate authority.
 
 ## 6. Relationship to authoritative documents
 
-A handoff references authority; it does not replace authority.
+A handoff references authority; it does not replace authority. Activation also
+is not authority: activating a bootstrap makes its constraints live in working
+state, but the handoff still loses when it diverges from authoritative
+references. Compliance means validating and following the appropriate authority
+process, not obeying handoff prose blindly. If authoritative references diverge,
+the consumer should use the appropriate reconciliation or authority process.
 
 ### 6.1 Architecture
 
@@ -215,29 +261,35 @@ architecture-sensitive decisions.
 
 When a future session receives a handoff, it should proceed in this order:
 
-1. **Identify the handoff type and scope.** Determine whether the handoff is an
+1. **Recognize the consumption stages.** Treat safe continuation as
+   availability -> consumption -> activation -> compliance, not as artifact
+   possession alone.
+2. **Read and activate the continuation activation section.** Establish that the
+   handoff is live continuation guidance for working state, not the task to
+   review, summarize, or critique unless explicitly asked.
+3. **Identify the handoff type and scope.** Determine whether the handoff is an
    architectural, implementation, review, operator, incident, or exploratory
    handoff. Do not assume that one type grants authority belonging to another.
-2. **Validate authoritative references.** Open the referenced architecture,
+4. **Validate authoritative references.** Open the referenced architecture,
    ontology, reconciliation, status, roadmap, and repository files needed for the
    task. Confirm that the files still exist and appear relevant.
-3. **Confirm repository state.** Check branch, working tree, relevant files, and
+5. **Confirm repository state.** Check branch, working tree, relevant files, and
    task-specific tests or generated artifacts before relying on recorded state.
-4. **Review operator intent.** Preserve the active goal before selecting next
+6. **Review operator intent.** Preserve the active goal before selecting next
    actions.
-5. **Review active questions and current frontier.** Continue from the frontier;
+7. **Review active questions and current frontier.** Continue from the frontier;
    do not widen the task merely because adjacent work is visible.
-6. **Review established claims and accepted decisions.** Treat them as preserved
+8. **Review established claims and accepted decisions.** Treat them as preserved
    alignment cues, then verify against authority when they materially constrain
    action.
-7. **Review important boundaries and non-goals.** Identify what must not be
+9. **Review important boundaries and non-goals.** Identify what must not be
    collapsed, implemented, modified, or reinterpreted.
-8. **Review open risks and contradictions.** Carry them forward explicitly or
-   resolve them through the appropriate authoritative process.
-9. **Select next safe moves.** Choose actions that are consistent with the
-   validated references, repository state, operator intent, and preserved
-   boundaries.
-10. **Record deviations.** If continuation diverges from the handoff, explain
+10. **Review open risks and contradictions.** Carry them forward explicitly or
+    resolve them through the appropriate authoritative process.
+11. **Select next safe moves.** Choose actions that are consistent with the
+    validated references, repository state, operator intent, and preserved
+    boundaries.
+12. **Record deviations.** If continuation diverges from the handoff, explain
     why and point to the newer authority, newer repository state, or operator
     instruction that justifies the divergence.
 
@@ -251,6 +303,8 @@ A handoff consumer should not:
 - treat the handoff as ontology;
 - treat the handoff as authority;
 - treat the handoff as proof;
+- treat the handoff itself as the task to review, summarize, or critique unless
+  explicitly asked;
 - treat a summarized claim as evidence;
 - ignore referenced documents;
 - ignore repository state;
@@ -276,14 +330,11 @@ to determine what is true or permitted now.
 The smallest handoff capable of preserving alignment is:
 
 ```text
-Handoff Type
-Operator Intent
-Current Frontier
-Active Questions
-Important Boundaries
+Continuation Activation
+Continuation Bootstrap
 Authoritative References
-Repository State / Revalidation Instruction
-Next Safe Move
+Activity Context / Working State
+Optional Historical Summary
 ```
 
 This minimum is safe only when established claims, accepted decisions,
@@ -292,7 +343,8 @@ referenced authority. If any of those items materially constrain continuation,
 they must be added explicitly.
 
 The minimum safe handoff should remain short. Its purpose is to prevent immediate
-misalignment, not to preserve all context.
+misalignment, not to preserve all context. The optional historical summary should
+remain physically last and removable without invalidating continuation safety.
 
 ## 10. Ideal handoff for long-running architectural work
 
@@ -301,31 +353,53 @@ For long-running architectural work, the preferred template is:
 ```text
 # Handoff: <short name>
 
-## Handoff Type
+## Continuation Activation
 
-## Operator Intent
+You are the continuation participant.
 
-## Current Frontier
+Do not review this handoff as the task unless explicitly asked.
 
-## Active Questions
+Do not summarize this handoff as the task unless explicitly asked.
 
-## Established Claims
+Do not critique this handoff as the task unless explicitly asked.
 
-## Accepted Decisions
+Use this handoff to establish working state.
 
-## Important Boundaries
+Validate authoritative references.
+
+Validate repository state.
+
+Continue from the Next Safe Move.
+
+## Continuation Bootstrap
+
+### Handoff Type
+
+### Operator Intent
+
+### Current Frontier
+
+### Active Questions
+
+### Established Claims
+
+### Accepted Decisions
+
+### Important Boundaries
+
+### Open Risks / Unresolved Contradictions
+
+### Next Safe Moves
+
+### Do Not Collapse
 
 ## Authoritative References
 
-## Repository State
+### Repository State / Revalidation Instruction
 
-## Open Risks / Unresolved Contradictions
+## Activity Context / Working State
 
-## Next Safe Moves
-
-## Do Not Collapse
-
-## Omitted Context
+## Optional Historical Summary
 ```
 
 ### 10.1 Evaluation of the potential template
@@ -356,6 +430,11 @@ The reconciliation adds two refinements:
 2. **Omitted context should be explicit.** A handoff benefits from naming what it
    intentionally excludes, especially when full transcripts, duplicated
    reconciliations, or roadmap detail are available elsewhere.
+3. **Activation should precede bootstrap.** A small required activation section
+   tells the consumer to use the handoff to establish working state and continue,
+   not to treat the handoff itself as the task.
+4. **Optional summary should remain physically last.** Historical context stays
+   removable and cannot bury required bootstrap content.
 
 The template should remain a documentation convention unless a future, separate
 reconciliation establishes a need for schema or runtime representation. This
@@ -398,8 +477,22 @@ continuation-critical subset of context.
 
 ### 12.2 Consumption
 
-A handoff is consumed through the continuation protocol. Consumption should
-validate references and repository state before action.
+A handoff is consumed through the continuation protocol. Consumption should read
+the required bootstrap and identify references, then activation should make the
+bootstrap part of active working state. Compliance should validate references and
+repository state before action and continue within operator intent, frontier,
+boundaries, and risks.
+
+A concise failure mode to preserve is:
+
+```text
+handoff available
+bootstrap partially consumed
+references not validated
+bootstrap not activated
+optional summary or prose interpreted
+continuation misrouted
+```
 
 ### 12.3 Supersession
 
@@ -459,6 +552,11 @@ This reconciliation supports the following architectural invariants:
 - A handoff should not duplicate transcripts, architecture, status, roadmaps, or
   reconciliation arguments.
 - A handoff should enable safe continuation.
+- Handoff availability, consumption, bootstrap activation, and continuation
+  compliance are distinct stages.
+- Bootstrap activation is necessary for safe continuation but does not create
+  authority.
+- Continuation compliance is not blind obedience to handoff prose.
 - A continuation protocol validates references before relying on handoff
   summaries.
 - A continuation protocol validates repository state before acting on recorded

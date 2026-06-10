@@ -41,7 +41,13 @@ of the current working state:
 - what the next safe move appeared to be;
 - which risks or constraints were immediately relevant.
 
-This category preserves momentum. It helps a future participant answer:
+This category preserves momentum. Activation is what makes the future participant
+treat the handoff and its activity context as live continuation guidance rather
+than review material. Activity context can preserve the work-position, but it does
+not guarantee that the consumer will use that work-position unless the bootstrap
+is activated.
+
+This category helps a future participant answer:
 
 ```text
 What was I doing, and where should continuation resume?
@@ -63,6 +69,7 @@ The resulting boundary is:
 ```text
 Authority preserves correctness.
 Bootstrap preserves alignment.
+Activation makes bootstrap content live in working state.
 Activity context preserves momentum.
 Summary preserves history.
 Transcript preserves interaction provenance.
@@ -163,6 +170,7 @@ open questions at that edge, and the next safe move.
 | --- | --- | --- | --- |
 | Authority | Correctness, acceptance, binding constraints, source of truth. | What may be relied on as correct or accepted? | Momentum, narrative history, transcript chronology. |
 | Continuation bootstrap | Initial alignment and safe orientation. | What must be loaded first to avoid immediate misalignment? | Full working state, full history, architecture itself. |
+| Bootstrap activation | Live continuation use of consumed bootstrap content. | Has the bootstrap entered active working state? | Authority, proof, compliance by itself. |
 | Continuation context | Resumption-relevant context. | What must remain available to continue safely and efficiently? | Independent truth, proof, ontology ownership. |
 | Working state | Current work-position. | Where does the active work stand right now? | Durable architecture, durable status, complete history. |
 | Activity context | Continuation-facing active work slice. | What was being done, just done, and about to be done? | Authority, comprehensive summary, transcript. |
@@ -283,6 +291,7 @@ Consumption expectations should match artifact role and task risk.
 
 | Artifact | Consumption expectation | Reason |
 | --- | --- | --- |
+| Activation section | Required when a handoff is used for continuation. | Prevents treating the artifact as review material and directs use as live working state. |
 | Bootstrap | Usually required for continuation. | Preserves initial alignment, non-goals, and immediate guardrails. |
 | Authoritative references | Required when acting on claims, boundaries, code, tests, or architecture. | Continuation context points to authority; it does not replace it. |
 | Activity context | Required when resuming interrupted active work. | Preserves momentum and current work-position. |
@@ -294,7 +303,8 @@ Consumption expectations should match artifact role and task risk.
 The minimum safe continuation pattern is:
 
 ```text
-bootstrap for alignment
+activation to make the handoff live continuation guidance
++ bootstrap for alignment
 + activity context for momentum
 + authoritative references for correctness
 + repository or evidence validation before acting
@@ -306,7 +316,17 @@ undermine the compactness that continuation artifacts are meant to preserve.
 
 ## 10. Distinctions that should not be collapsed
 
-### 10.1 Bootstrap is not activity context
+### 10.1 Availability is not activation
+
+A handoff can be accessible without being read, read without affecting working
+state, and activated without full compliance. Safe continuation therefore requires
+more than possession of the artifact.
+
+If these are collapsed, an available handoff may be mistaken for successful
+continuation while references remain unvalidated and optional prose drives the
+next move.
+
+### 10.2 Bootstrap is not activity context
 
 Bootstrap preserves initial alignment: scope, non-goals, guardrails, and where to
 look. Activity context preserves the active work-position: what was being done,
@@ -315,7 +335,7 @@ what was just completed, and what was next.
 If these are collapsed, bootstrap grows too large and loses its ability to orient
 quickly.
 
-### 10.2 Activity context is not summary
+### 10.3 Activity context is not summary
 
 Activity context preserves momentum. Summary preserves history.
 
@@ -323,7 +343,7 @@ If these are collapsed, a historical summary may be mistaken for current
 guidance, or a compact activity note may be expected to carry all historical
 rationale.
 
-### 10.3 Summary is not authority
+### 10.4 Summary is not authority
 
 Summary may compress findings, but it does not own correctness. Authority
 remains with canonical architecture, accepted decisions, evidence, repository
@@ -332,7 +352,7 @@ state, tests, and other designated sources.
 If these are collapsed, convenient restatements can outrank the sources they
 summarize.
 
-### 10.4 Status is not working state
+### 10.5 Status is not working state
 
 Status describes condition. Working state describes process position.
 
@@ -340,7 +360,7 @@ A document can say that a reconciliation is complete without saying what was
 being investigated next. Conversely, activity context can say that a participant
 was investigating a status gap without changing the status itself.
 
-### 10.5 Roadmap is not current activity
+### 10.6 Roadmap is not current activity
 
 Roadmap describes possible or intended direction. Current activity describes the
 work presently active.
@@ -348,7 +368,7 @@ work presently active.
 If these are collapsed, every future possibility can look like current work, and
 every current task can look like a durable plan.
 
-### 10.6 Transcript is not continuation context
+### 10.7 Transcript is not continuation context
 
 Transcript preserves sequence. Continuation context preserves selected
 resumption relevance.
@@ -356,7 +376,7 @@ resumption relevance.
 If these are collapsed, continuation requires replaying conversation order and
 may revive superseded speculation instead of carrying forward the current edge.
 
-### 10.7 Momentum is not history
+### 10.8 Momentum is not history
 
 Momentum depends on current relevance and next-step readiness. History depends
 on provenance and narrative path.
@@ -364,7 +384,7 @@ on provenance and narrative path.
 If these are collapsed, preserving momentum becomes unnecessarily expensive and
 historical completeness is mistaken for continuation quality.
 
-### 10.8 Working state is not architecture
+### 10.9 Working state is not architecture
 
 Working state may reference architecture, but it remains situated and temporary.
 Architecture defines durable concepts and boundaries.
@@ -402,6 +422,7 @@ No implementation work is directly required by these findings.
 If future documentation or handoff templates are revised, they should preserve
 these boundaries:
 
+- make activation explicit before bootstrap content;
 - keep bootstrap small and alignment-oriented;
 - keep activity context compact and momentum-oriented;
 - cite authoritative references rather than duplicating architecture;
@@ -419,6 +440,7 @@ The reconciliation supports the following architectural invariants:
 ```text
 Authority preserves correctness.
 Bootstrap preserves alignment.
+Activation makes bootstrap content live in working state.
 Activity context preserves momentum.
 Summary preserves history.
 Transcript preserves interaction provenance.
@@ -429,6 +451,10 @@ Working state preserves current work-position.
 
 Additional supported invariants:
 
+- Availability, consumption, activation, and compliance should remain
+  distinguishable.
+- Activity context preserves momentum, but activation is what makes the consumer
+  treat the handoff as live continuation rather than review material.
 - Working state should remain distinguishable from architecture.
 - Continuation should not require transcript preservation.
 - Momentum should not become authority.
@@ -442,8 +468,9 @@ Additional supported invariants:
 
 ## 14. Final conclusion
 
-Continuation requires a small amount of activity-aware working state in addition
-to alignment and references when work is interrupted before a natural boundary.
+Continuation requires activation and a small amount of activity-aware working
+state in addition to alignment and references when work is interrupted before a
+natural boundary.
 
 That addition should be understood as momentum preservation, not as authority,
 architecture, summary, status, roadmap, ontology, transcript, or execution
@@ -454,6 +481,7 @@ The safe model is:
 ```text
 Correctness comes from authority.
 Alignment comes from bootstrap.
+Activation makes alignment live in working state.
 Momentum comes from activity context.
 History comes from summary.
 Provenance comes from transcript.
