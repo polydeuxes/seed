@@ -28,6 +28,106 @@ This is not a rigid runtime pipeline for every feature. It is the architectural 
 
 ---
 
+## Architecture Shape
+
+These are conceptual architecture paths, not rigid runtime pipelines. They summarize how Seed's major concepts relate while preserving the boundaries established by the reconciliation documents.
+
+### Knowledge Plane
+
+```text
+Observation
+        ↓
+Evidence
+        ↓
+Claim
+        ↓
+Fact / Relationship
+        ↓
+Projection
+```
+
+Claims are the center. Facts are normalized claim forms. Relationships are normalized connection claims. Projections select and communicate preserved knowledge.
+
+### Claim Forms
+
+```text
+Claim
+├── Fact
+├── Relationship
+├── Assessment
+├── Recommendation
+├── Decision
+├── Causal Claim
+└── Historical Claim
+```
+
+Not every claim is a fact. A fact is one normalized claim form. Relationships, assessments, recommendations, decisions, causal claims, and historical claims have their own boundaries.
+
+### Temporal Plane
+
+```text
+Event
+        ↓
+Change
+        ↓
+State
+        ↓
+Projection
+```
+
+Events describe occurrences. Changes describe transitions. State describes selected conditions. History survives current-state change.
+
+### Operator / Purpose Plane
+
+```text
+Operator Intent
+        ↓
+Question
+        ↓
+Goal
+        ↓
+Consequence
+        ↓
+Recommendation
+        ↓
+Decision
+```
+
+Operators are intent-centric. Questions bridge operator intent and Seed's claim-centric knowledge. Goals are operator-owned. Recommendations explain both evidence path and goal relevance path.
+
+### Capability / Execution Plane
+
+```text
+Capability
+        ↓
+Command
+        ↓
+Execution
+        ↓
+Action
+```
+
+Capabilities describe possible work. Commands request work. Execution performs work. Actions mutate reality. Capability availability does not imply authorization or execution.
+
+### Cross-Cutting Evaluation Axes
+
+```text
+Trust
+Authority
+Corroboration
+Verification
+Freshness
+Contradiction
+Causality
+Explanation
+```
+
+These are not replacement centers. They qualify, constrain, support, or explain claims, events, recommendations, and projections.
+
+These paths do not imply that all claims become facts, that projections create recommendations or decisions, that recommendations authorize commands, that capabilities imply execution, that events are current state, that sequence implies causality, or that LLM interpretation is authoritative.
+
+---
+
 ## Observation
 
 An observation is something reported by a source.
