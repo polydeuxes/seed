@@ -10,21 +10,13 @@ Seed begins with observation.
 
 ---
 
-## Core Model
+## Core Thesis
 
-```text
-Observation
-        ↓
-Evidence
-        ↓
-Claim
-        ↓
-Relationship
-        ↓
-Projection
-```
+Seed is claim-centric.
 
-This is not a rigid runtime pipeline for every feature. It is the architectural shape that keeps Seed's claims explainable. Facts remain important as normalized claim forms.
+It preserves observations, accumulates evidence, normalizes justified claims, connects justified relationships, selects explainable projections, and escalates to the operator when authority is required.
+
+The detailed conceptual paths are shown below
 
 ---
 
