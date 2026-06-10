@@ -1594,9 +1594,15 @@ def _suppresses_catalog_relationship(
     definition: RelationshipDefinition,
     evidence: dict[str, Evidence],
 ) -> bool:
-    if fact.predicate != "endpoint_role" or definition.relationship != "provides":
-        return False
-    return _has_prometheus_source_evidence(fact, evidence)
+    if (
+        fact.predicate == "endpoint_role"
+        and definition.relationship == "provides"
+    ) or (
+        fact.predicate == "prometheus_instance"
+        and definition.relationship == "monitored_by"
+    ):
+        return _has_prometheus_source_evidence(fact, evidence)
+    return False
 
 
 def _has_prometheus_source_evidence(

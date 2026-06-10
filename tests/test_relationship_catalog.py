@@ -250,6 +250,37 @@ def test_endpoint_role_projects_provides_relationship_for_non_prometheus_observa
     assert state.get_graph_issues() == []
 
 
+def test_prometheus_instance_does_not_project_monitored_by_for_prometheus_observations():
+    state = _project_observation(
+        Observation(
+            id="obs_prometheus_instance",
+            source_type="provider",
+            observed_at=NOW,
+            subject="node115",
+            predicate="prometheus_instance",
+            value="192.168.254.115:9100",
+            metadata={"source_name": "prometheus"},
+        )
+    )
+
+    assert [
+        (fact.subject_id, fact.predicate, fact.value) for fact in state.facts.values()
+    ] == [("node115", "prometheus_instance", "192.168.254.115:9100")]
+    assert state.get_relationships() == []
+    assert state.get_graph_issues() == []
+
+
+def test_non_prometheus_instance_facts_still_project_existing_monitored_by_relationship():
+    state = _project(
+        _fact("fact_prom", "node115", "prometheus_instance", "node115:9100")
+    )
+
+    assert [
+        (edge.subject, edge.relationship, edge.object)
+        for edge in state.get_relationships()
+    ] == [("node115", "monitored_by", "prometheus")]
+
+
 def test_prometheus_endpoint_role_does_not_project_provides_relationship():
     state = _project_observation(
         Observation(

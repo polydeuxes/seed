@@ -1937,6 +1937,10 @@ def test_prometheus_nodename_preserves_prometheus_instance_without_aliasing_endp
     assert aliases[0].value == "192.168.254.115:9100"
     assert state.get_best_fact("node115", "up") is None
     assert state.get_best_fact("192.168.254.115:9100", "up").value == 1
+    assert not any(
+        relationship.relationship == "monitored_by"
+        for relationship in state.get_relationships()
+    )
 
 
 def _write_local_identity_fixture(tmp_path, hostname="node115", *, fqdn=False):
