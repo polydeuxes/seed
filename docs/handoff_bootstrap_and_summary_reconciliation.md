@@ -503,6 +503,8 @@ This reconciliation supports the following architectural invariants:
 - Bootstrap invariants should remain minimal.
 - Bootstrap consumption should be required for the bounded continuation it
   supports.
+- Optional summary content should be physically removable without invalidating continuation safety.
+- Bootstrap content may require explicit size constraints to remain usable in constrained contexts.
 - Future sessions should be able to continue using the bootstrap alone, provided
   they validate the authoritative references needed for action.
 - A handoff summary preserves optional historical context.
@@ -518,8 +520,52 @@ This reconciliation supports the following architectural invariants:
   optional consumption boundaries are explicit.
 - Required bootstrap content should not be buried inside optional history.
 - Optional historical context should not inflate required bootstrap consumption.
+- Consumers should be able to remove summary content without damaging bootstrap validity.
+- Continuation safety should not depend on summary consumption.
 
-## 15. Conclusion
+15. Bootstrap Consumption Boundary
+
+Required bootstrap content should appear before optional summary content.
+
+Optional summary content should be physically separable from the bootstrap.
+
+Consumers operating under context, token, size, transport, or implementation constraints should be able to remove summary content without invalidating continuation safety.
+
+One possible structure is:
+
+```text
+Continuation Bootstrap
+Authoritative References
+Next Safe Move
+
+--- OPTIONAL SUMMARY BELOW ---
+
+Historical Summary
+Discovery Timeline
+Rejected Paths
+```
+
+The exact format is not prescribed by this reconciliation.
+
+The architectural requirement is that optional content remain
+removable.
+
+16. Bootstrap Size Guidance
+
+A continuation bootstrap should remain intentionally small.
+
+Implementations may choose explicit limits such as:
+
+- character budgets;
+- word budgets;
+- token budgets;
+- transport-size budgets.
+
+The purpose of these limits is not compression for its own sake.
+
+The purpose is ensuring that continuation-critical alignment survives when operating in constrained environments.
+
+## 17. Conclusion
 
 A handoff should distinguish continuation bootstrap content from optional
 historical summary content at the role and consumption-boundary level.
