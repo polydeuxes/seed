@@ -10,7 +10,7 @@ It may reference completed findings as context, but preservation belongs in `arc
 
 # Executive Summary
 
-Seed's major conceptual reconciliation pass is complete enough to return active attention from recursive architecture audits to bounded implementation work. Foundational ontology, handoff boundaries and template/protocol, agency and attribution, natural-language observation and intent derivation, cross-Seed provenance and federation, learning and knowledge change, contradiction discovery and visibility, and prediction/future-claim boundaries have now been reconciled and routed through the documentation map.
+Seed's major conceptual reconciliation pass is complete enough to return active attention from recursive architecture audits to bounded implementation work. Foundational ontology, handoff boundaries and template/protocol, handoff consumption/activation/compliance, agency and attribution, natural-language observation and intent derivation, cross-Seed provenance and federation, learning and knowledge change, contradiction discovery and visibility, and prediction/future-claim boundaries have now been reconciled and routed through the documentation map.
 
 Current recommended priority:
 
@@ -26,7 +26,7 @@ Current recommended priority:
 | Concern | Current classification | Current finding |
 | --- | --- | --- |
 | Foundational Ontology | **Reconciled / Vocabulary Established / Architecturally Stable** | Seed is claim-centric. `ontology.md` is the concise vocabulary reference; `foundational_ontology_reconciliation.md` owns the detailed audit. The ontology is not a schema. |
-| Handoff / Continuation | **Reconciled / Architecturally Stable** | Handoffs preserve continuation alignment and authority boundaries. They are not architecture authority. |
+| Handoff / Continuation | **Reconciled / Architecturally Stable** | Handoffs preserve continuation alignment and authority boundaries. Safe continuation distinguishes availability, consumption, activation, and compliance; handoffs and activation are not architecture authority. |
 | Language / Attribution | **Reconciled / Architecturally Stable** | Natural language is observation of communicative acts; interpretation derives candidate meaning; attribution is a supportable claim, not consciousness, desire, or agency. |
 | Federation / Foreign Testimony | **Reconciled / Architecturally Stable** | Federation transfers evidence, provenance, and scoped testimony. It does not transfer truth, and import is not verification. |
 | Learning / Knowledge Change | **Reconciled / Architecturally Stable** | Learning is cross-layer knowledge change that preserves support and history rather than replacing or erasing them. |
