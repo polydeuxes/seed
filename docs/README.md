@@ -9,15 +9,24 @@ This file is the documentation navigation authority. It is a map, not an encyclo
 ## Start Here
 
 1. [`../README.md`](../README.md) — repository orientation: what Seed is, what it owns, what it does not own, and where a new contributor should begin.
-2. [`seed.md`](seed.md) — concise architectural thesis / constitutional statement for Seed's observation, evidence, fact, relationship, projection, authority, and operator invariants.
-3. [`architectural_status_and_next_frontier.md`](architectural_status_and_next_frontier.md) — current architectural status, active frontier, and current priorities.
-4. [`architectural_knowledge_map.md`](architectural_knowledge_map.md) — concern map and routing to owning documents across acquisition, integrity, selection, response, and architectural findings.
+2. [`seed.md`](seed.md) — concise architectural thesis / constitutional statement for Seed's claim-centric knowledge, projection, authority, operator, capability, and handoff invariants.
+3. [`ontology.md`](ontology.md) — concise architectural vocabulary and boundary reference.
+4. [`architectural_status_and_next_frontier.md`](architectural_status_and_next_frontier.md) — current architectural status, active frontier, and current priorities.
+5. [`architectural_knowledge_map.md`](architectural_knowledge_map.md) — concern map and routing to owning documents across foundational vocabulary, acquisition, integrity, selection, response, language, handoff, and architectural findings.
 
 ---
 
-## Foundational Reconciliation Chain
+## Foundational / Thesis
 
-Use this chain when changing architecture, projection semantics, identity handling, fact promotion, or relationship promotion.
+Use these documents for Seed's claim-centric thesis and stable architectural vocabulary.
+
+* [`seed.md`](seed.md) — concise architectural thesis and constitutional invariants.
+* [`ontology.md`](ontology.md) — concise vocabulary reference for foundational concepts and boundaries.
+* [`foundational_ontology_reconciliation.md`](foundational_ontology_reconciliation.md) — ontology audit and boundary reasoning.
+
+## Core Knowledge Reconciliation Chain
+
+Use this chain when changing projection semantics, identity handling, fact promotion, relationship promotion, or source authority.
 
 1. [`entity_identity_derivation_reconciliation.md`](entity_identity_derivation_reconciliation.md) — entity identity derivation and the boundary between resemblance, relationship, alias, and equivalence.
 2. [`evidence_trust_and_source_authority_reconciliation.md`](evidence_trust_and_source_authority_reconciliation.md) — evidence trust and source authority distinctions.
@@ -29,6 +38,29 @@ Related boundary case law:
 * [`fact_confidence_and_corroboration_reconciliation.md`](fact_confidence_and_corroboration_reconciliation.md) — fact confidence, support strength, and corroboration details.
 * [`relationship_fact_reconciliation.md`](relationship_fact_reconciliation.md) — fact/relationship boundary preservation.
 * [`principal_identity_reconciliation.md`](principal_identity_reconciliation.md) — principal identity boundary reasoning.
+
+## Language / Operator Interface
+
+Use these documents when operator language, intent, questions, or attribution are in scope.
+
+* [`natural_language_observation_and_intent_derivation_reconciliation.md`](natural_language_observation_and_intent_derivation_reconciliation.md) — natural language as observation of communicative acts and interpretation as candidate meaning.
+* [`operator_intent_question_and_claim_interface_reconciliation.md`](operator_intent_question_and_claim_interface_reconciliation.md) — operator intent, questions, and claim interface boundaries.
+* [`agency_and_attribution_reconciliation.md`](agency_and_attribution_reconciliation.md) — attribution as a supportable claim without collapsing into consciousness, desire, or agency.
+
+## Continuation / Handoff
+
+Use these documents when preserving continuation alignment across sessions or artifacts.
+
+* [`handoff_document_boundary_reconciliation.md`](handoff_document_boundary_reconciliation.md) — handoff document boundaries and authority limits.
+* [`handoff_template_and_continuation_protocol_reconciliation.md`](handoff_template_and_continuation_protocol_reconciliation.md) — handoff template and continuation protocol boundary reasoning.
+
+## Reasoning / Explanation
+
+Use these documents when explaining support, assertion strength, causality, goals, or recommendations.
+
+* [`causality_and_explanation_reconciliation.md`](causality_and_explanation_reconciliation.md) — causality and explanation boundaries.
+* [`claim_strength_and_assertion_semantics_reconciliation.md`](claim_strength_and_assertion_semantics_reconciliation.md) — claim strength and assertion semantics.
+* [`goal_relevance_and_recommendation_generation_reconciliation.md`](goal_relevance_and_recommendation_generation_reconciliation.md) — goal relevance and recommendation generation boundaries.
 
 ---
 

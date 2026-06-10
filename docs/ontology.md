@@ -1,22 +1,20 @@
-# Foundational Ontology Reconciliation
+# Seed Ontology
 
 ## Purpose
 
-This document reconciles the foundational architectural vocabulary that emerged across the reconciliation chain.
+This document is Seed's concise reference for stable architectural vocabulary and boundaries. It is not a schema, storage model, runtime design, or reconciliation argument.
 
-It does not create new architecture.
-
-It identifies concepts that repeatedly appeared as stable architectural primitives and records the boundaries between them.
+For the full ontology audit and boundary reasoning, see [`foundational_ontology_reconciliation.md`](foundational_ontology_reconciliation.md).
 
 ## Central Finding
 
 Seed is claim-centric.
 
-Claims are the central knowledge primitive around which observations, evidence, facts, relationships, projections, assessments, recommendations, decisions, events, and explanations are organized.
+Claims are the central knowledge primitive around which observations, evidence, facts, relationships, projections, assessments, recommendations, decisions, events, explanations, attribution, and handoffs are organized.
 
 Facts remain important, but facts are normalized claim forms rather than the universal center of the architecture.
 
-## Foundational Ontology
+## Foundational Vocabulary
 
 ### Knowledge Plane
 
@@ -26,19 +24,31 @@ Facts remain important, but facts are normalized claim forms rather than the uni
 - Fact
 - Relationship
 
+### Language / Interpretation Plane
+
+- Language Observation
+- Interpretation
+- Attribution
+
 ### Temporal Plane
 
 - Event
 - Change
 - State
 
-### Interpretation Plane
+### Projection / Reasoning Plane
 
 - Projection
 - Assessment
 - Consequence
 - Recommendation
 - Decision
+- Trust
+- Corroboration
+- Verification
+- Contradiction
+- Causality
+- Explanation
 
 ### Operator Plane
 
@@ -55,72 +65,42 @@ Facts remain important, but facts are normalized claim forms rather than the uni
 - Execution
 - Action
 
-### Reasoning Plane
-
-- Trust
-- Corroboration
-- Verification
-- Contradiction
-- Causality
-- Explanation
-
 ### Continuation Plane
 
 - Handoff
 
 ## Core Boundaries
 
-Claim != Fact
-
-Fact != Truth
-
-Relationship != Identity
-
-Event != State
-
-Change != Contradiction
-
-Projection != Authority
-
-Assessment != Recommendation
-
-Recommendation != Decision
-
-Decision != Command
-
-Capability != Execution
-
-Explanation != Causality
-
-Handoff != Architecture
-
-## Architectural Planes
-
-The planes are conceptual groupings rather than runtime pipelines.
-
-They exist to organize vocabulary and preserve boundaries.
-
-A concept may participate in multiple planes without collapsing those planes together.
-
-## Relationship To Implementation
-
-The ontology is not a schema.
-
-The ontology is not a storage model.
-
-The ontology is not a runtime design.
-
-The ontology is architectural vocabulary.
-
-Implementation may evolve.
-
-The ontology provides the language used to reason about that implementation.
+- Claim != Fact
+- Fact != Truth
+- Language Observation != Environmental Verification
+- Interpretation != Authority
+- Attribution != Consciousness
+- Relationship != Identity
+- Event != State
+- Change != Contradiction
+- Projection != Authority
+- Assessment != Recommendation
+- Recommendation != Decision
+- Recommendation != Desire
+- Decision != Intent
+- Decision != Command
+- Capability != Agency
+- Capability != Execution
+- Execution != Autonomy
+- Explanation != Causality
+- Handoff != Architecture
+- Ontology != Schema
 
 ## Architectural Invariants
 
 - Claims are the central knowledge primitive.
 - Facts are normalized claim forms.
 - Relationships are normalized connection claims.
+- Natural language observes a communicative act.
+- Interpretation derives candidate meaning.
+- Language-derived claims remain supportable and inspectable.
+- Attribution is a supportable claim.
 - Events preserve history.
 - Changes preserve transitions.
 - Projections communicate selected knowledge.
@@ -132,10 +112,6 @@ The ontology provides the language used to reason about that implementation.
 - Explanations communicate understanding.
 - Handoffs preserve continuation alignment.
 
-## Conclusion
+## Relationship To Implementation
 
-The foundational ontology should remain implementation-independent.
-
-Future reconciliations may refine individual concepts, but new concepts should not be introduced lightly.
-
-The ontology exists to provide stable architectural vocabulary for reasoning about Seed.
+The ontology provides implementation-independent architectural vocabulary. Implementation may realize, serialize, cache, expose, or test these concepts, but implementation vocabulary does not define the ontology exhaustively.

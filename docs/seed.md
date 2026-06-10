@@ -38,7 +38,7 @@ Fact / Relationship
 Projection
 ```
 
-Claims are the center. Facts are normalized claim forms. Relationships are normalized connection claims. Projections select and communicate preserved knowledge.
+Claims are the center. Facts are normalized claim forms. Relationships are normalized connection claims. Projections select and communicate preserved knowledge; they do not become authority.
 
 ### Claim Forms
 
@@ -119,6 +119,12 @@ Explanation
 These are not replacement centers. They qualify, constrain, support, or explain claims, events, recommendations, and projections.
 
 These paths do not imply that all claims become facts, that projections create recommendations or decisions, that recommendations authorize commands, that capabilities imply execution, that events are current state, that sequence implies causality, or that LLM interpretation is authoritative.
+
+---
+
+## Language Observation And Interpretation
+
+Natural language observes a communicative act. Language may be highly authoritative about what a speaker requested, asserted, forbade, or prioritized while remaining weak or irrelevant as direct support for what is true in the environment. Interpretation derives candidate meaning; language-derived claims remain supportable and inspectable, and LLMs or other interpreters are not architecture authority.
 
 ---
 
@@ -228,6 +234,8 @@ Current state is a projection.
 
 Current state is not the only preserved interpretation.
 
+Projection is communication of selected knowledge, not authority over what is true or what should be done.
+
 ---
 
 ## Trust, Authority, And Corroboration
@@ -324,7 +332,7 @@ Seed should escalate when authority is required.
 
 Seed should continue observing when authority is not required.
 
-An operator may be authoritative for intent, approval, ownership, or policy without being automatically correct about live runtime state.
+An operator may be authoritative for intent, approval, ownership, or policy without being automatically correct about live runtime state. Goals remain operator-owned; recommendations do not become desire, and decisions do not become intent.
 
 ---
 
@@ -352,7 +360,7 @@ operator wording
 shell-only interpretation
 ```
 
-This preserves the operator's intent while allowing the system to use the authority and tools it actually has.
+This preserves the operator's intent while allowing the system to use the authority and tools it actually has. A handoff preserves continuation alignment across that boundary; it is not itself architecture authority.
 
 ---
 
@@ -389,6 +397,7 @@ Claims are justified.
 Facts normalize.
 Relationships connect.
 Projections select preserved knowledge.
+Handoffs preserve continuation alignment.
 ```
 
 ```text
@@ -412,6 +421,8 @@ None independently determines truth.
 ```text
 Current state is a view.
 Current state is not the only preserved interpretation.
+
+Projection is communication of selected knowledge, not authority over what is true or what should be done.
 ```
 
 ---
