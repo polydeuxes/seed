@@ -1845,7 +1845,7 @@ def test_prometheus_source_unreachable_fails_gracefully(monkeypatch):
     assert "network unreachable" in (source.last_error or "")
 
 
-def test_collection_normalized_alias_resolves_best_fact_by_stable_name():
+def test_collection_normalized_endpoint_instance_keeps_best_fact_endpoint_scoped():
     ledger = EventLedger()
     source = FakeObservationSource(
         [
@@ -1870,7 +1870,8 @@ def test_collection_normalized_alias_resolves_best_fact_by_stable_name():
     state = StateProjector(ledger).project("ws_generic_alias")
 
     assert len(facts) == 2
-    assert state.get_best_fact("node115", "up").value == 1
+    assert state.get_best_fact("node115", "up") is None
+    assert state.get_best_fact("192.168.254.115:9100", "up").value == 1
     assert any(
         fact.subject_id == "node115"
         and fact.predicate == "generic_instance"
@@ -1879,7 +1880,7 @@ def test_collection_normalized_alias_resolves_best_fact_by_stable_name():
     )
 
 
-def test_prometheus_nodename_creates_prometheus_instance_alias_via_normalizer(
+def test_prometheus_nodename_preserves_prometheus_instance_without_aliasing_endpoint(
     monkeypatch,
 ):
     from seed_runtime import observation_sources as sources
@@ -1934,7 +1935,8 @@ def test_prometheus_nodename_creates_prometheus_instance_alias_via_normalizer(
     assert len(aliases) == 1
     assert aliases[0].subject_id == "node115"
     assert aliases[0].value == "192.168.254.115:9100"
-    assert state.get_best_fact("node115", "up").value == 1
+    assert state.get_best_fact("node115", "up") is None
+    assert state.get_best_fact("192.168.254.115:9100", "up").value == 1
 
 
 def _write_local_identity_fixture(tmp_path, hostname="node115", *, fqdn=False):

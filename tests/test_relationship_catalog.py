@@ -52,13 +52,19 @@ def test_core_catalog_contains_initial_relationship_vocabulary():
         "runs_on": "hosting",
     }
     assert catalog.get("member_of").derived_from_predicates == ["group"]
+    assert catalog.get("alias_of").derived_from_predicates == [
+        "alias",
+        "hostname",
+        "ip_address",
+        "ansible_host",
+    ]
     assert catalog.get("provides").derived_from_predicates == [
         "provides",
         "endpoint_role",
     ]
 
 
-def test_group_alias_prometheus_and_host_facts_create_relationships():
+def test_group_alias_prometheus_and_host_facts_do_not_alias_endpoint_instances():
     state = _project(
         _fact("fact_group", "node115", "group", "servers"),
         _fact("fact_alias", "node115", "alias", "192.168.254.115"),
@@ -73,7 +79,6 @@ def test_group_alias_prometheus_and_host_facts_create_relationships():
         ("node115", "alias_of", "192.168.254.115"),
         ("node115", "member_of", "servers"),
         ("jellyfin", "runs_on", "node115"),
-        ("node115", "alias_of", "192.168.254.115:9100"),
         ("node115", "monitored_by", "prometheus"),
     ]
 

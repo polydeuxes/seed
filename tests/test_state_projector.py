@@ -654,7 +654,7 @@ def test_fact_conflicts_preserves_provenance():
     assert conflict.conflicting_fact_ids == ["fact_runtime_systemd"]
 
 
-def test_alias_observation_resolves_best_fact_and_preserves_original_subject():
+def test_alias_observation_does_not_resolve_endpoint_fact_to_host_subject():
     observed_at = utc_now()
     state = _projected_state(
         [
@@ -678,14 +678,14 @@ def test_alias_observation_resolves_best_fact_and_preserves_original_subject():
         workspace_id="ws_alias_best_fact",
     )
 
-    best = state.get_best_fact("node115", "up")
+    assert state.get_best_fact("node115", "up") is None
+    best = state.get_best_fact("192.168.254.115:9100", "up")
     assert best is not None
     assert best.id == "fact_prometheus_up"
-    assert best.subject_id == "192.168.254.115:9100"
-    assert state.entity_aliases[0].canonical == "node115"
+    assert state.entity_aliases == []
 
 
-def test_prometheus_instance_observation_resolves_best_fact():
+def test_prometheus_instance_observation_does_not_resolve_endpoint_fact_to_host():
     observed_at = utc_now()
     state = _projected_state(
         [
@@ -709,7 +709,8 @@ def test_prometheus_instance_observation_resolves_best_fact():
         workspace_id="ws_prometheus_instance_best_fact",
     )
 
-    assert state.get_best_fact("node115", "up").id == "fact_prometheus_up"
+    assert state.get_best_fact("node115", "up") is None
+    assert state.get_best_fact("192.168.254.115:9100", "up").id == "fact_prometheus_up"
 
 
 def test_exact_subject_query_can_disable_alias_resolution():
@@ -763,7 +764,7 @@ def test_unrelated_ip_does_not_merge_without_explicit_alias():
     assert state.get_best_fact("node115", "up") is None
 
 
-def test_fact_conflicts_group_aliases_under_canonical_entity():
+def test_endpoint_and_host_measurements_remain_separate_without_identity_alias():
     observed_at = utc_now()
     state = _projected_state(
         [
@@ -797,8 +798,12 @@ def test_fact_conflicts_group_aliases_under_canonical_entity():
     )
 
     assert not any(conflict.predicate == "up" for conflict in state.fact_conflicts)
-    assert "fact_node_up" not in state.facts
-    assert state.get_best_fact("node115", "up").id == "fact_prometheus_up"
+    assert "fact_node_up" in state.facts
+    assert state.get_best_fact("node115", "up").id == "fact_node_up"
+    assert (
+        state.get_best_fact("192.168.254.115:9100", "up").id
+        == "fact_prometheus_up"
+    )
 
 
 def test_projector_derives_entity_types_from_facts_and_relationships():

@@ -351,7 +351,7 @@ def test_endpoint_availability_keeps_current_sample_per_endpoint():
     assert endpoint_up.id in state.facts
 
 
-def test_alias_resolution_still_works_for_measurements():
+def test_endpoint_alias_does_not_resolve_measurements_to_host_subject():
     alias = _fact(
         "fact_alias",
         "node.example.com:9100",
@@ -374,11 +374,12 @@ def test_alias_resolution_still_works_for_measurements():
 
     state = _project(alias, old_down, new_up)
 
-    best = state.get_best_fact("node", "up")
-    support = state.get_fact_support("node", "up")
+    assert state.get_best_fact("node", "up") is None
+    best = state.get_best_fact("node.example.com:9100", "up")
+    support = state.get_fact_support("node.example.com:9100", "up")
     assert best == new_up
     assert support is not None
-    assert support.subject == "node"
+    assert support.subject == "node.example.com:9100"
     assert support.value == 1
     assert support.support_kind == "current_sample"
 
@@ -515,7 +516,7 @@ def test_measurement_retention_does_not_suppress_durable_runtime_conflict():
     assert set(conflicts[0].values) == {"docker", "systemd"}
 
 
-def test_measurement_retention_is_per_alias_component_predicate_and_dimensions():
+def test_measurement_retention_keeps_host_and_endpoint_measurements_separate():
     alias = _fact("fact_alias", "node:9100", predicate="alias", subject_id="node")
     root_old = _fact(
         "fact_root_old",
@@ -542,15 +543,22 @@ def test_measurement_retention_is_per_alias_component_predicate_and_dimensions()
 
     state = _project(alias, root_old, root_new, data)
 
-    assert set(state.facts) == {alias.id, root_new.id, data.id}
-    root = state.get_fact_support(
+    assert set(state.facts) == {alias.id, root_old.id, root_new.id, data.id}
+    host_root = state.get_fact_support(
         "node",
         "filesystem_avail_bytes",
         dimensions={"mountpoint": "/", "device": "/dev/sda1", "fstype": "ext4"},
     )
-    assert root is not None
-    assert root.value == 20
-    assert len(state.get_fact_supports("node", "filesystem_avail_bytes")) == 2
+    endpoint_root = state.get_fact_support(
+        "node:9100",
+        "filesystem_avail_bytes",
+        dimensions={"mountpoint": "/", "device": "/dev/sda1", "fstype": "ext4"},
+    )
+    assert host_root is not None
+    assert host_root.value == 10
+    assert endpoint_root is not None
+    assert endpoint_root.value == 20
+    assert len(state.get_fact_supports("node:9100", "filesystem_avail_bytes")) == 2
 
 
 def test_durable_fact_history_still_aggregates_after_projection():

@@ -129,7 +129,15 @@ ALIAS_PREDICATES = {"alias", "ip_address", "hostname"}
 def _is_alias_predicate(predicate: str) -> bool:
     """Return whether a predicate explicitly links two entity identifiers."""
 
-    return predicate in ALIAS_PREDICATES or predicate.endswith("_instance")
+    return predicate in ALIAS_PREDICATES or (
+        predicate.endswith("_instance") and predicate != "prometheus_instance"
+    )
+
+
+def _crosses_endpoint_identity_boundary(subject: str, alias: str) -> bool:
+    """Return whether an alias would equate an endpoint with a non-endpoint."""
+
+    return _looks_like_endpoint(subject) != _looks_like_endpoint(alias)
 
 
 class AliasResolver:
@@ -176,6 +184,8 @@ class AliasResolver:
                 continue
             alias = _relationship_object(fact.value)
             if alias is None:
+                continue
+            if _crosses_endpoint_identity_boundary(fact.subject_id, alias):
                 continue
             edges.append((fact.subject_id, alias, fact))
             names.add(fact.subject_id)
@@ -1585,7 +1595,10 @@ def _project_catalog_relationships(
             continue
         for definition in catalog.for_predicate(fact.predicate):
             object_value = definition.object or fact_object
-            if definition.relationship == "alias_of" and fact.subject_id == object_value:
+            if definition.relationship == "alias_of" and (
+                fact.subject_id == object_value
+                or _crosses_endpoint_identity_boundary(fact.subject_id, object_value)
+            ):
                 continue
             identity = "\0".join(
                 [fact.id, fact.subject_id, definition.relationship, object_value]
@@ -1655,6 +1668,8 @@ def _looks_like_ip_address(name: str) -> bool:
 def _subject_alias_matches(requested: str, stored: str) -> bool:
     if requested == stored:
         return True
+    if _crosses_endpoint_identity_boundary(requested, stored):
+        return False
     requested_short = requested.split(".", 1)[0]
     stored_short = stored.split(".", 1)[0]
     return requested == stored_short or requested_short == stored
