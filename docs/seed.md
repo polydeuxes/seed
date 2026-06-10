@@ -78,6 +78,8 @@ Question
         ↓
 Goal
         ↓
+Assessment
+        ↓
 Consequence
         ↓
 Recommendation
@@ -85,12 +87,12 @@ Recommendation
 Decision
 ```
 
-Operators are intent-centric. Questions bridge operator intent and Seed's claim-centric knowledge. Goals are operator-owned. Recommendations explain both evidence path and goal relevance path.
+Operators are intent-centric. Questions bridge operator intent and Seed's claim-centric knowledge. Goals are operator-owned. Assessments interpret evidence against goals. Consequences describe expected or possible outcomes relevant to goals; goals do not themselves cause consequences. Recommendations explain both evidence path and goal relevance path.
 
 ### Capability / Execution Plane
 
 ```text
-Capability
+Decision
         ↓
 Command
         ↓
@@ -99,7 +101,7 @@ Execution
 Action
 ```
 
-Capabilities describe possible work. Commands request work. Execution performs work. Actions mutate reality. Capability availability does not imply authorization or execution.
+Capabilities describe possible work. Commands request work. Execution performs work. Actions mutate reality. Capabilities enable or constrain possible execution but do not imply authorization, command issuance, or execution.
 
 ### Cross-Cutting Evaluation Axes
 
@@ -213,7 +215,7 @@ Promote only what the evidence supports.
 
 ## Projection
 
-A projection is a selected interpretation of available evidence, facts, and relationships.
+A projection is a selected interpretation of available preserved knowledge, including evidence and justified claims such as facts and relationships.
 
 Projections answer:
 
@@ -383,9 +385,10 @@ The goal is for Seed to explain which claims about itself are supported, contrad
 
 ```text
 Evidence accumulates.
+Claims are justified.
 Facts normalize.
 Relationships connect.
-Projections select.
+Projections select preserved knowledge.
 ```
 
 ```text
