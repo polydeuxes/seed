@@ -41,11 +41,11 @@ Observation
         ↓
 Evidence
         ↓
-Fact
+Claim
         ↓
 Support Relationship
         ↓
-Claim
+Higher-order Claim
 ```
 
 ## Observation
@@ -72,17 +72,17 @@ Evidence supports facts.
 
 ## Fact
 
-Facts are projected knowledge derived from evidence.
+Facts are normalized claims derived from evidence.
 
 Facts answer:
 
 ```text
-What is currently known?
+What proposition has Seed represented in normalized form?
 ```
 
-Facts are not claims.
+Facts are not raw observations, evidence payloads, selected current state, verified live reality, or universal truth.
 
-Facts may support claims.
+Facts may support higher-order claims.
 
 ## Support Relationship
 
@@ -109,7 +109,7 @@ Support Relationships are not reasoning.
 
 ## Claim
 
-A claim is a statement capable of receiving support.
+A claim is a proposition capable of receiving support. Facts are normalized claim forms; higher-order claims may also receive support from facts and relationships.
 
 Examples:
 
@@ -126,7 +126,7 @@ Claims may be supported, partially supported, unsupported, or in tension with ob
 ```text
 Evidence supports facts.
 
-Facts support claims.
+Facts may support higher-order claims.
 ```
 
 These relationships should remain separate.
