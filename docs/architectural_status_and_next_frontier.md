@@ -10,14 +10,14 @@ It may reference completed findings as context, but preservation belongs in `arc
 
 # Executive Summary
 
-Seed's major lifecycle documentation is stable enough to shift active architecture attention away from recursive audits and toward bounded Knowledge Acquisition expansion. Foundational ontology, attribution, natural-language observation, and handoff continuation boundaries have now been reconciled and routed through the documentation map.
+Seed's major conceptual reconciliation pass is complete enough to return active attention from recursive architecture audits to bounded implementation work. Foundational ontology, handoff boundaries and template/protocol, agency and attribution, natural-language observation and intent derivation, cross-Seed provenance and federation, learning and knowledge change, contradiction discovery and visibility, and prediction/future-claim boundaries have now been reconciled and routed through the documentation map.
 
 Current recommended priority:
 
-1. **Knowledge Acquisition expansion** through narrow, read-only observation slices.
-2. **Documentation maintenance** only where it keeps completed findings discoverable and authority boundaries clear.
-3. **Future investigation** only where a concrete unanswered operator question exists.
-4. **No Runtime implementation** from the completed audit chains.
+1. **Bounded implementation work** over concrete observation/projection problems, starting with the Prometheus boundary issues already documented.
+2. **Prometheus observation and projection cleanup** while preserving provenance and avoiding over-promotion.
+3. **Documentation maintenance** only where it keeps completed findings discoverable and authority boundaries clear.
+4. **Future investigation** only where a concrete unanswered operator question exists.
 
 ---
 
@@ -25,11 +25,17 @@ Current recommended priority:
 
 | Concern | Current classification | Current finding |
 | --- | --- | --- |
-| Knowledge Acquisition | **Implemented / Partially Complete / Architecturally Stable** | The claim-centric Observation → Evidence → Claim → Fact / Relationship → Projection frame is established. Remaining value is concrete capability growth through bounded local observation slices. |
+| Foundational Ontology | **Reconciled / Vocabulary Established / Architecturally Stable** | Seed is claim-centric. `ontology.md` is the concise vocabulary reference; `foundational_ontology_reconciliation.md` owns the detailed audit. The ontology is not a schema. |
+| Handoff / Continuation | **Reconciled / Architecturally Stable** | Handoffs preserve continuation alignment and authority boundaries. They are not architecture authority. |
+| Language / Attribution | **Reconciled / Architecturally Stable** | Natural language is observation of communicative acts; interpretation derives candidate meaning; attribution is a supportable claim, not consciousness, desire, or agency. |
+| Federation / Foreign Testimony | **Reconciled / Architecturally Stable** | Federation transfers evidence, provenance, and scoped testimony. It does not transfer truth, and import is not verification. |
+| Learning / Knowledge Change | **Reconciled / Architecturally Stable** | Learning is cross-layer knowledge change that preserves support and history rather than replacing or erasing them. |
+| Contradiction Discovery / Visibility | **Reconciled / Architecturally Stable** | Contradiction existence, discovery, projection, visibility, explanation, and resolution are distinct. Discovery does not create contradiction; visibility is not existence. |
+| Prediction / Future Claims | **Reconciled / Architecturally Stable** | Predictions, forecasts, expectations, scenarios, consequences, and plans are future-oriented claims with support, uncertainty, scope, and authority boundaries. They are not observations or future facts. |
+| Knowledge Acquisition | **Implemented / Partially Complete / Active Implementation Frontier** | The claim-centric Observation → Evidence → Claim → Fact / Relationship → Projection frame is established. Current value is concrete cleanup and bounded observation work, especially Prometheus observation/projection boundaries. |
 | Knowledge Integrity | **Reconciled / Implemented / Architecturally Stable** | Integrity is a read-only projected-knowledge concern covering support, conflicts, contradictions, staleness, graph issues, confidence, verification limits, and disclosure. |
 | Knowledge Selection | **Reconciled / Vocabulary Established / Architecturally Stable** | Context Composition and Selection Rationale are covered by characterization, vocabulary, and reconciliation. New summary/runtime implementation is not currently justified. |
 | Response | **Reconciled / Vocabulary Established / Partially Complete / Architecturally Stable** | Response is a distributed communication concern across existing response, context, explanation, integrity, capability, evidence, contradiction, confidence, and issue surfaces. |
-| Response Caveats | **Characterized / Vocabulary Established / Stable For Now** | Caveat signals are real and distributed. Vocabulary exists. Additional caveat work should pause unless a concrete operator question appears. |
 
 For preserved audit-chain outcomes and rejected concepts, see `architectural_findings_preservation.md`.
 
@@ -37,40 +43,50 @@ For preserved audit-chain outcomes and rejected concepts, see `architectural_fin
 
 # Active Frontier
 
-Recommended next frontier: **Knowledge Acquisition expansion**.
+Recommended next frontier: **bounded implementation cleanup**, beginning with the concrete Prometheus problems already identified by `prometheus_observation_boundary_reconciliation.md` and `prometheus_endpoint_identity_boundary_audit.md`.
 
-The strongest current candidates are bounded, read-only observation slices that add new evidence-backed claims without changing Runtime, ToolExecutor, EventLedger ownership, ProjectionStore ownership, providers, response behavior, selection behavior, integrity semantics, or policy behavior.
+Current Prometheus cleanup candidates:
 
-Highest-value near-term candidates:
+1. separate `up` scrape-target semantics from host, service, and application availability;
+2. preserve endpoint identity instead of collapsing endpoint identity into host identity;
+3. split overloaded `provides` usage across endpoint role, service/application exposure, capability, and monitoring-system relationships;
+4. reduce state-summary noise from filesystem measurements without dropping evidence;
+5. distinguish mounted/shared storage identity from mount observations;
+6. clean relationship and entity-type projections that expose unknown hosts because alias, endpoint, and host boundaries are blurred.
 
-1. **Users Observation**
-2. **Groups Observation**
-3. **Package Observation**
-4. **Systemd Observation**
-
-Use `knowledge_acquisition_status.md` and `local_observation_roadmap_reconciliation.md` for acquisition-slice details and constraints.
+Implementation should preserve source scope, evidence support, relationship semantics, and projection humility. It should not over-promote endpoint evidence into host truth, service truth, storage identity, or capability ownership.
 
 ---
 
 # Current Priorities
 
-## 1. Knowledge Acquisition expansion
+## 1. Prometheus observation/projection cleanup
 
-Proceed through narrow observation slices that:
+Proceed through narrow changes that:
 
-- use read-only local evidence;
+- keep Prometheus data scoped to its source vantage point;
+- treat scrape success as endpoint-scoped evidence unless additional support exists;
+- separate endpoint, host, service/component, monitoring system, capability, mount, and storage identities;
+- preserve observations and evidence even when projections become less noisy;
+- route unresolved relationship vocabulary questions through the existing Prometheus boundary documents rather than inventing broad new architecture.
+
+## 2. Bounded Knowledge Acquisition work
+
+Additional observation slices remain appropriate when they:
+
+- use read-only evidence;
 - record observations through the established observation path;
-- emit bounded evidence-backed claims, including normalized facts where supported;
-- avoid execution, network probing, provider calls, Runtime routing, ToolExecutor integration, health inference, ownership inference, and mutation;
+- emit bounded evidence-backed claims, including normalized facts or relationships where supported;
+- avoid execution, provider calls, Runtime routing, ToolExecutor integration, health inference, ownership inference, and mutation;
 - preserve caveats and limitations through existing Integrity, Selection, and Response surfaces.
 
-## 2. Documentation maintenance
+## 3. Documentation maintenance
 
 Maintenance should reduce duplicate authority and keep completed findings discoverable. It should not create new document categories, registries, inventories, or additional architecture systems.
 
-Current maintenance should follow `documentation_authority_reconciliation.md` and `documentation_boundary_enforcement_reconciliation.md`. Supported maintenance frontiers include turning the handoff template into a concrete artifact, applying natural-language observation boundaries to implementation, clarifying automatic observation refresh boundaries, and generated wiki/projection documentation only where existing reconciliation documents already support that work.
+Supported later documentation frontiers include turning the handoff template into a concrete artifact, generated documentation/wiki projection, automatic observation refresh boundaries, and natural-language/prose intake implementation notes where existing reconciliation documents already support that work.
 
-## 3. Future investigation
+## 4. Future investigation
 
 Start future investigations only when a concrete operator question is important, recurring, and not answered by existing documents or surfaces.
 
@@ -80,12 +96,12 @@ Start future investigations only when a concrete operator question is important,
 
 The following are not active frontiers unless new evidence appears:
 
-- recursive Response Caveat audits without a concrete operator question;
+- recursive conceptual audits without a concrete operator or implementation question;
 - Selection Rationale Summary implementation;
 - Response engine or universal formatter work;
 - Integrity, Selection, Context, Explainability, Caveat, Planner, Workflow, or Reasoning engines;
 - Runtime or ToolExecutor integration as a default fix;
-- projection mutation, event appends, truth arbitration, provider calls, execution, verification, refresh, repair, planning, workflow orchestration, language-as-environmental-truth, attribution-as-consciousness, capability-as-agency, or handoff-as-architecture from this documentation work.
+- projection mutation, event appends, truth arbitration, provider calls, execution, verification, refresh, repair, planning, workflow orchestration, language-as-environmental-truth, interpretation-as-verification, attribution-as-consciousness, federation-as-truth-transfer, import-as-verification, learning-as-history-erasure, contradiction-discovery-as-contradiction-creation, visibility-as-existence, prediction-as-observation, plan-as-future-fact, projection-as-authority, capability-as-agency, or handoff-as-architecture from this documentation work.
 
 Detailed preservation and rejection rationale belongs in `architectural_findings_preservation.md` and scoped reconciliation documents.
 
@@ -99,7 +115,7 @@ This document does not:
 - implement caveats, summaries, inventories, navigation, routes, adapters, schema classes, read models, or engines;
 - modify Runtime, ToolExecutor, EventLedger, ProjectionStore, providers, projections, acquisition logic, selection behavior, response behavior, policy behavior, or tests;
 - mutate projections or append events;
-- create parallel truth, response, caveat, selection, explanation, integrity, or context systems;
+- create parallel truth, response, caveat, selection, explanation, integrity, ontology, handoff, or context systems;
 - start a new audit chain;
 - preserve the full rejected-concept list or completed finding rationale.
 
@@ -107,4 +123,4 @@ This document does not:
 
 # Conclusion
 
-Current architectural status points to bounded Knowledge Acquisition expansion as the active frontier. Preservation, roadmap sequencing, and concern mapping remain available through their owning documents rather than being restated here.
+Current architectural status points back to bounded implementation cleanup. The most concrete next work is Prometheus observation/projection cleanup under the already reconciled observation, endpoint identity, provenance, claim-promotion, and projection-authority boundaries.

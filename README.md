@@ -57,11 +57,11 @@ For a new contributor, use this short path:
 5. [`docs/architectural_status_and_next_frontier.md`](docs/architectural_status_and_next_frontier.md) — current status and active frontier.
 6. [`docs/architectural_knowledge_map.md`](docs/architectural_knowledge_map.md) — concern map and routing to owning documents.
 
-If you are doing boundary-sensitive architecture work, follow the foundational reconciliation chain from [`docs/README.md`](docs/README.md) and the ontology audit in [`docs/foundational_ontology_reconciliation.md`](docs/foundational_ontology_reconciliation.md) rather than rediscovering or duplicating those findings. Handoff boundaries and continuation alignment are routed from the documentation map and knowledge map.
+If you are doing boundary-sensitive architecture work, follow the foundational reconciliation chain from [`docs/README.md`](docs/README.md) and the ontology audit in [`docs/foundational_ontology_reconciliation.md`](docs/foundational_ontology_reconciliation.md) rather than rediscovering or duplicating those findings. Handoff boundaries and continuation alignment are routed from the documentation map and knowledge map. Natural language, attribution, federation, learning, contradiction discovery, and future-claim boundaries have been reconciled and should be treated as stable references for bounded implementation work.
 
 ## Current Status
 
-The current active frontier is bounded Knowledge Acquisition expansion through narrow, read-only observation slices. Current status and priority ownership live in [`docs/architectural_status_and_next_frontier.md`](docs/architectural_status_and_next_frontier.md), not in this README.
+The current active frontier is a return from conceptual reconciliation to bounded implementation work, especially concrete Prometheus observation and projection cleanup. Current status and priority ownership live in [`docs/architectural_status_and_next_frontier.md`](docs/architectural_status_and_next_frontier.md), not in this README.
 
 Documentation maintenance should keep authority boundaries clear and reduce duplication. The authority model for this repository is:
 
