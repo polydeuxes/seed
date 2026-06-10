@@ -4,7 +4,7 @@
 
 This document is Seed's concise reference for stable architectural vocabulary and boundaries. It is not a schema, storage model, runtime design, or reconciliation argument.
 
-For the full ontology audit and boundary reasoning, see [`foundational_ontology_reconciliation.md`](foundational_ontology_reconciliation.md).
+For the full ontology audit and boundary reasoning, see [`foundational_ontology_reconciliation.md`](foundational_ontology_reconciliation.md). Detailed language, attribution, federation, learning, contradiction, future-claim, and handoff arguments belong in their scoped reconciliations, not in this concise vocabulary reference.
 
 ## Central Finding
 
@@ -30,6 +30,11 @@ Facts remain important, but facts are normalized claim forms rather than the uni
 - Interpretation
 - Attribution
 
+### Federation Plane
+
+- Federation
+- Foreign Testimony
+
 ### Temporal Plane
 
 - Event
@@ -46,7 +51,15 @@ Facts remain important, but facts are normalized claim forms rather than the uni
 - Trust
 - Corroboration
 - Verification
+- Learning
+- Knowledge Change
 - Contradiction
+- Contradiction Discovery
+- Contradiction Visibility
+- Future Claim
+- Prediction
+- Forecast
+- Scenario
 - Causality
 - Explanation
 
@@ -74,8 +87,17 @@ Facts remain important, but facts are normalized claim forms rather than the uni
 - Claim != Fact
 - Fact != Truth
 - Language Observation != Environmental Verification
+- Interpretation != Verification
 - Interpretation != Authority
 - Attribution != Consciousness
+- Federation != Truth Transfer
+- Foreign Testimony != Local Verification
+- Learning != History Erasure
+- Contradiction Discovery != Contradiction Creation
+- Contradiction Visibility != Contradiction Existence
+- Future Claim != Observation
+- Prediction != Future Fact
+- Plan != Future Fact
 - Relationship != Identity
 - Event != State
 - Change != Contradiction
@@ -101,6 +123,10 @@ Facts remain important, but facts are normalized claim forms rather than the uni
 - Interpretation derives candidate meaning.
 - Language-derived claims remain supportable and inspectable.
 - Attribution is a supportable claim.
+- Federation preserves transferred evidence boundaries.
+- Learning preserves support across knowledge change.
+- Contradiction discovery and visibility remain distinct from contradiction existence.
+- Future claims, predictions, forecasts, and scenarios preserve support and uncertainty.
 - Events preserve history.
 - Changes preserve transitions.
 - Projections communicate selected knowledge.

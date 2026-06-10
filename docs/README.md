@@ -39,6 +39,21 @@ Related boundary case law:
 * [`relationship_fact_reconciliation.md`](relationship_fact_reconciliation.md) — fact/relationship boundary preservation.
 * [`principal_identity_reconciliation.md`](principal_identity_reconciliation.md) — principal identity boundary reasoning.
 
+## Recent Conceptual Reconciliations
+
+Use these completed reconciliations as stable boundary references when returning to implementation. This section routes to the owning arguments without duplicating them.
+
+* [`foundational_ontology_reconciliation.md`](foundational_ontology_reconciliation.md) — claim-centric ontology audit and stable vocabulary boundary.
+* [`ontology.md`](ontology.md) — concise vocabulary reference; not a schema.
+* [`cross_seed_provenance_and_federation_reconciliation.md`](cross_seed_provenance_and_federation_reconciliation.md) — federation as evidence transfer with local provenance and authority, not truth transfer.
+* [`learning_and_knowledge_change_reconciliation.md`](learning_and_knowledge_change_reconciliation.md) — learning as cross-layer knowledge change that preserves history.
+* [`contradiction_discovery_and_visibility_reconciliation.md`](contradiction_discovery_and_visibility_reconciliation.md) — contradiction existence, discovery, projection, visibility, explanation, and resolution boundaries.
+* [`prediction_forecasting_and_future_claims_reconciliation.md`](prediction_forecasting_and_future_claims_reconciliation.md) — predictions, forecasts, scenarios, expectations, and plans as future-oriented claims with support and uncertainty.
+* [`agency_and_attribution_reconciliation.md`](agency_and_attribution_reconciliation.md) — attribution as a supportable claim without consciousness, desire, or agency overclaims.
+* [`natural_language_observation_and_intent_derivation_reconciliation.md`](natural_language_observation_and_intent_derivation_reconciliation.md) — natural language as observation of communicative acts and interpretation as candidate meaning.
+* [`handoff_document_boundary_reconciliation.md`](handoff_document_boundary_reconciliation.md) — handoff document boundaries and authority limits.
+* [`handoff_template_and_continuation_protocol_reconciliation.md`](handoff_template_and_continuation_protocol_reconciliation.md) — handoff template and continuation protocol boundaries.
+
 ## Language / Operator Interface
 
 Use these documents when operator language, intent, questions, or attribution are in scope.
@@ -98,6 +113,9 @@ Use these for acquisition-focused work. Observation documents should preserve so
 * [`storage_topology_observation.md`](storage_topology_observation.md) — storage topology observation.
 * [`prometheus_observation_boundary_reconciliation.md`](prometheus_observation_boundary_reconciliation.md) — Prometheus observation boundary.
 * [`prometheus_endpoint_identity_boundary_audit.md`](prometheus_endpoint_identity_boundary_audit.md) — Prometheus endpoint identity boundary.
+
+Prometheus cleanup should route here before implementation when dealing with `up` scope, endpoint-vs-host identity, overloaded `provides`, filesystem-summary noise, mounted/shared storage identity, or unknown-host projections caused by alias/endpoint boundary issues.
+
 * [`repository_observation_frontier.md`](repository_observation_frontier.md) — repository observation frontier.
 * [`repository_observation_source_design.md`](repository_observation_source_design.md) — repository observation source design.
 * [`documentation_observation_frontier.md`](documentation_observation_frontier.md) — documentation observation frontier.

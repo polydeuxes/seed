@@ -36,6 +36,8 @@ Claim
 Fact / Relationship
         ↓
 Projected Knowledge Structures
+        ↓
+Learning / Contradiction / Future-Claim Assessment
 ```
 
 Language and continuation boundary layer:
@@ -81,6 +83,11 @@ For the current status of these concerns and the active frontier, see `architect
 | How should natural-language requests be treated? | `natural_language_observation_and_intent_derivation_reconciliation.md`, `operator_intent_question_and_claim_interface_reconciliation.md` |
 | How should agency or attribution be handled? | `agency_and_attribution_reconciliation.md` |
 | How should continuation across handoffs be preserved? | `handoff_document_boundary_reconciliation.md`, `handoff_template_and_continuation_protocol_reconciliation.md` |
+| How should cross-Seed imports or federation be treated? | `cross_seed_provenance_and_federation_reconciliation.md` |
+| How should learning or knowledge change be represented? | `learning_and_knowledge_change_reconciliation.md` |
+| How should contradictions be discovered or exposed? | `contradiction_discovery_and_visibility_reconciliation.md` |
+| How should predictions and future claims be handled? | `prediction_forecasting_and_future_claims_reconciliation.md` |
+| Where are Prometheus observation and endpoint identity boundaries? | `prometheus_observation_boundary_reconciliation.md`, `prometheus_endpoint_identity_boundary_audit.md` |
 
 ---
 
@@ -109,7 +116,17 @@ Start with:
 * `self_observation_reconciliation.md`
 * `local_observation_roadmap_reconciliation.md`
 
-Currentness and frontier ownership remain in `architectural_status_and_next_frontier.md`.
+Currentness and frontier ownership remain in `architectural_status_and_next_frontier.md`. Prometheus implementation return work should route through `prometheus_observation_boundary_reconciliation.md` and `prometheus_endpoint_identity_boundary_audit.md` for `up` semantics, endpoint/host/service separation, `provides` overload, filesystem summary noise, mounted/shared storage identity, and alias/endpoint projection issues.
+
+## Cross-Seed Provenance / Federation
+
+Concern: how Seed imports, preserves, scopes, and explains foreign evidence without turning federation into truth transfer or import into verification.
+
+Start with:
+
+* `cross_seed_provenance_and_federation_reconciliation.md`
+* `evidence_trust_and_source_authority_reconciliation.md`
+* `corroboration_and_fact_promotion_reconciliation.md`
 
 ## Knowledge Integrity
 
@@ -122,10 +139,13 @@ Start with:
 * `projection_integrity_drilldown_characterization.md`
 * `knowledge_representation_map.md`
 * `knowledge_representation_reconciliation.md`
+* `learning_and_knowledge_change_reconciliation.md`
+* `contradiction_discovery_and_visibility_reconciliation.md`
+* `prediction_forecasting_and_future_claims_reconciliation.md`
 
 ## Language / Operator Interface
 
-Concern: how Seed treats natural language, operator intent, questions, and attribution without making interpretation, agency, or environmental truth overclaims.
+Concern: how Seed treats natural language, intake semantics, operator intent, questions, and attribution without making interpretation, agency, or environmental truth overclaims.
 
 Start with:
 

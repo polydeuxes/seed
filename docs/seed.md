@@ -50,7 +50,8 @@ Claim
 ├── Recommendation
 ├── Decision
 ├── Causal Claim
-└── Historical Claim
+├── Historical Claim
+└── Future Claim
 ```
 
 Not every claim is a fact. A fact is one normalized claim form. Relationships, assessments, recommendations, decisions, causal claims, and historical claims have their own boundaries.
@@ -111,6 +112,7 @@ Authority
 Corroboration
 Verification
 Freshness
+Learning
 Contradiction
 Causality
 Explanation
@@ -125,6 +127,8 @@ These paths do not imply that all claims become facts, that projections create r
 ## Language Observation And Interpretation
 
 Natural language observes a communicative act. Language may be highly authoritative about what a speaker requested, asserted, forbade, or prioritized while remaining weak or irrelevant as direct support for what is true in the environment. Interpretation derives candidate meaning; language-derived claims remain supportable and inspectable, and LLMs or other interpreters are not architecture authority.
+
+Attribution is also a supportable claim. Seed may represent that a speaker, system, source, or foreign Seed said, intended, selected, or reported something when evidence supports that attribution; it must not treat attribution as consciousness, desire, or agency.
 
 ---
 
@@ -163,7 +167,7 @@ What source, payload, time, scope, and context support it?
 
 Evidence accumulates.
 
-Evidence does not independently determine truth.
+Evidence does not independently determine truth. Federation and foreign testimony transfer evidence with provenance, scope, and authority limits; they do not transfer truth or make import verification.
 
 ---
 
@@ -235,6 +239,16 @@ Current state is a projection.
 Current state is not the only preserved interpretation.
 
 Projection is communication of selected knowledge, not authority over what is true or what should be done.
+
+---
+
+## Learning, Contradiction, And Future Claims
+
+Learning is cross-layer knowledge change: new evidence, revised interpretation, correction, supersession, retraction, replacement, forgetting, and projection changes must preserve support and history rather than erase it.
+
+A contradiction may exist before Seed discovers it. Discovery recognizes incompatible preserved claims; visibility decides whether a surface exposes that tension. Visibility is not existence, and discovery does not create the contradiction.
+
+Predictions, forecasts, expectations, scenarios, and plans are future-oriented claims with support, uncertainty, scope, and authority boundaries. They are not observations or future facts merely because Seed represents them.
 
 ---
 
