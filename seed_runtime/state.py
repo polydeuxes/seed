@@ -21,7 +21,11 @@ from seed_runtime.facts import (
 )
 from seed_runtime.entity_type_catalog import EntityTypeCatalog
 from seed_runtime.predicate_catalog import PredicateCatalog
-from seed_runtime.relationship_catalog import RelationshipCatalog, RelationshipKind
+from seed_runtime.relationship_catalog import (
+    RelationshipCatalog,
+    RelationshipDefinition,
+    RelationshipKind,
+)
 from seed_runtime.models import (
     ActionPlan,
     Approval,
@@ -751,7 +755,7 @@ class StateProjector:
         state.fact_supports = _project_fact_supports(state.facts.values())
         state.entity_relationships = _project_entity_relationships(state.facts.values())
         state.relationships = _project_catalog_relationships(
-            state.facts.values(), self.relationship_catalog
+            state.facts.values(), self.relationship_catalog, state.evidence
         )
         state.entity_type_assertions = _project_entity_type_assertions(
             state, self.entity_type_catalog
@@ -794,7 +798,7 @@ class StateProjector:
                 state.facts.values()
             )
             state.relationships = _project_catalog_relationships(
-                state.facts.values(), self.relationship_catalog
+                state.facts.values(), self.relationship_catalog, state.evidence
             )
         elif event.kind == "goal.created":
             data = payload.get("goal", payload)
@@ -1585,15 +1589,47 @@ def _project_entity_relationships(facts: Iterable[Fact]) -> list[LegacyEntityRel
     return relationships
 
 
+def _suppresses_catalog_relationship(
+    fact: Fact,
+    definition: RelationshipDefinition,
+    evidence: dict[str, Evidence],
+) -> bool:
+    if fact.predicate != "endpoint_role" or definition.relationship != "provides":
+        return False
+    return _has_prometheus_source_evidence(fact, evidence)
+
+
+def _has_prometheus_source_evidence(
+    fact: Fact, evidence: dict[str, Evidence]
+) -> bool:
+    for evidence_id in fact.evidence_ids:
+        item = evidence.get(evidence_id)
+        if item is None:
+            continue
+        payload = item.payload
+        metadata = payload.get("metadata")
+        if not isinstance(metadata, dict):
+            continue
+        source_name = metadata.get("source_name") or metadata.get("source")
+        if isinstance(source_name, str) and source_name.strip().lower() == "prometheus":
+            return True
+    return False
+
+
 def _project_catalog_relationships(
-    facts: Iterable[Fact], catalog: RelationshipCatalog
+    facts: Iterable[Fact],
+    catalog: RelationshipCatalog,
+    evidence: dict[str, Evidence] | None = None,
 ) -> list[EntityRelationship]:
     relationships: list[EntityRelationship] = []
+    evidence_by_id = evidence or {}
     for fact in sorted(facts, key=lambda item: item.id):
         fact_object = _relationship_object(fact.value)
         if fact_object is None:
             continue
         for definition in catalog.for_predicate(fact.predicate):
+            if _suppresses_catalog_relationship(fact, definition, evidence_by_id):
+                continue
             object_value = definition.object or fact_object
             if definition.relationship == "alias_of" and (
                 fact.subject_id == object_value

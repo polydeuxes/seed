@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.facts import Fact
+from seed_runtime.observations import Observation, ObservationIngestor
 from seed_runtime.relationship_catalog import RelationshipCatalog
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
@@ -15,6 +16,12 @@ def _project(*facts: Fact):
     ledger = EventLedger()
     for fact in facts:
         ledger.append("fact.observed", "ws", {"fact": to_plain(fact)})
+    return StateProjector(ledger).project("ws")
+
+
+def _project_observation(observation: Observation):
+    ledger = EventLedger()
+    ObservationIngestor(ledger).ingest(observation, "ws")
     return StateProjector(ledger).project("ws")
 
 
@@ -202,7 +209,7 @@ def test_cli_relationship_filters_print_projected_edges(tmp_path, capsys):
     assert capsys.readouterr().out == "node115 member_of servers\n"
 
 
-def test_endpoint_role_projects_provides_relationship():
+def test_endpoint_role_projects_provides_relationship_for_non_prometheus_facts():
     state = _project(
         _fact(
             "fact_endpoint_role",
@@ -218,4 +225,48 @@ def test_endpoint_role_projects_provides_relationship():
     ] == [("192.168.254.115:9100", "provides", "node-exporter")]
     assert state.get_current_entity_types("192.168.254.115:9100") == ["endpoint"]
     assert state.get_current_entity_types("node-exporter") == ["capability"]
+    assert state.get_graph_issues() == []
+
+
+def test_endpoint_role_projects_provides_relationship_for_non_prometheus_observations():
+    state = _project_observation(
+        Observation(
+            id="obs_custom_endpoint_role",
+            source_type="provider",
+            observed_at=NOW,
+            subject="192.168.254.115:9100",
+            predicate="endpoint_role",
+            value="node-exporter",
+            metadata={"source_name": "custom_inventory"},
+        )
+    )
+
+    assert [
+        (edge.subject, edge.relationship, edge.object)
+        for edge in state.get_relationships()
+    ] == [("192.168.254.115:9100", "provides", "node-exporter")]
+    assert state.get_current_entity_types("192.168.254.115:9100") == ["endpoint"]
+    assert state.get_current_entity_types("node-exporter") == ["capability"]
+    assert state.get_graph_issues() == []
+
+
+def test_prometheus_endpoint_role_does_not_project_provides_relationship():
+    state = _project_observation(
+        Observation(
+            id="obs_prometheus_endpoint_role",
+            source_type="provider",
+            observed_at=NOW,
+            subject="192.168.254.115:9100",
+            predicate="endpoint_role",
+            value="node-exporter",
+            metadata={"source_name": "prometheus"},
+        )
+    )
+
+    assert [
+        (fact.subject_id, fact.predicate, fact.value) for fact in state.facts.values()
+    ] == [("192.168.254.115:9100", "endpoint_role", "node-exporter")]
+    assert state.get_relationships() == []
+    assert state.get_current_entity_types("192.168.254.115:9100") == ["endpoint"]
+    assert state.get_entity_type_assertions("node-exporter") == []
     assert state.get_graph_issues() == []
