@@ -1,30 +1,16 @@
 # Seed System
 
-Seed is a knowledge-oriented runtime: it receives observations, preserves evidence, projects explainable state, and answers questions about what it knows and why.
+Seed is a claim-centric, knowledge-oriented runtime: it receives observations, preserves evidence, normalizes supportable claims, projects explainable state, and answers questions about what it knows and why.
 
-For Seed's concise architectural thesis and constitutional statement, read [`docs/seed.md`](docs/seed.md). This README is only the repository orientation surface; the documentation map lives in [`docs/README.md`](docs/README.md).
+For Seed's concise architectural thesis and constitutional statement, read [`docs/seed.md`](docs/seed.md). For concise vocabulary, read [`docs/ontology.md`](docs/ontology.md). This README is only the repository orientation surface; the documentation map lives in [`docs/README.md`](docs/README.md).
 
 ## What Is Seed?
 
-Seed transforms bounded observations into evidence-backed projected knowledge claims.
+Seed transforms bounded observations into evidence-backed projected knowledge claims. Its center is the supportable claim: facts are normalized claim forms, relationships are normalized connection claims, and projections communicate selected knowledge rather than becoming authority.
 
-Its architectural shape is:
+Natural language can be treated as observation of communicative acts. It may strongly support claims about what a speaker requested, asserted, forbade, or prioritized while remaining weak or irrelevant as direct support for what is true in the environment. LLMs and other interpreters may derive candidate meaning from language, but they are not architectural authority.
 
-```text
-Observation
-    ↓
-Evidence
-    ↓
-Claim
-    ↓
-Relationship
-    ↓
-Projection
-    ↓
-Explanation / Response
-```
-
-Seed does not begin with truth. It begins with observation, records provenance, normalizes justified claims, treats facts as normalized claim forms, connects justified relationships, and selects explainable projections.
+Seed does not begin with truth. It begins with observation, records provenance, normalizes justified claims, connects justified relationships, and selects explainable projections.
 
 ## What Does Seed Own?
 
@@ -66,11 +52,12 @@ For a new contributor, use this short path:
 
 1. [`README.md`](README.md) — repository orientation and current scope.
 2. [`docs/seed.md`](docs/seed.md) — concise architectural thesis / constitutional statement.
-3. [`docs/README.md`](docs/README.md) — documentation navigation map.
-4. [`docs/architectural_status_and_next_frontier.md`](docs/architectural_status_and_next_frontier.md) — current status and active frontier.
-5. [`docs/architectural_knowledge_map.md`](docs/architectural_knowledge_map.md) — concern map and routing to owning documents.
+3. [`docs/ontology.md`](docs/ontology.md) — concise architectural vocabulary and boundaries.
+4. [`docs/README.md`](docs/README.md) — documentation navigation map.
+5. [`docs/architectural_status_and_next_frontier.md`](docs/architectural_status_and_next_frontier.md) — current status and active frontier.
+6. [`docs/architectural_knowledge_map.md`](docs/architectural_knowledge_map.md) — concern map and routing to owning documents.
 
-If you are doing boundary-sensitive architecture work, follow the foundational reconciliation chain from [`docs/README.md`](docs/README.md) rather than rediscovering or duplicating those findings.
+If you are doing boundary-sensitive architecture work, follow the foundational reconciliation chain from [`docs/README.md`](docs/README.md) and the ontology audit in [`docs/foundational_ontology_reconciliation.md`](docs/foundational_ontology_reconciliation.md) rather than rediscovering or duplicating those findings. Handoff boundaries and continuation alignment are routed from the documentation map and knowledge map.
 
 ## Current Status
 
@@ -87,6 +74,9 @@ docs/seed.md
 
 docs/README.md
     documentation navigation authority
+
+docs/ontology.md
+    concise architectural vocabulary
 
 reconciliation documents
     architectural case law / boundary reasoning

@@ -31,24 +31,31 @@ Observation
         ↓
 Evidence
         ↓
-Fact
+Claim
+        ↓
+Fact / Relationship
         ↓
 Projected Knowledge Structures
 ```
 
-Claim-justification branch:
+Language and continuation boundary layer:
 
 ```text
-Fact
+Language Observation
         ↓
-Support Relationship
+Interpretation
         ↓
-Claim
+Attribution Claim
+
+Handoff
+        ↓
+Continuation Alignment
 ```
 
 Additional documentation concern:
 
 ```text
+Foundational Ontology
 Architectural Findings
 ```
 
@@ -68,12 +75,26 @@ For the current status of these concerns and the active frontier, see `architect
 | What is planned or sequenced? | `reasoning_roadmap.md` |
 | What is canonical architecture? | `architecture.md` plus scoped canonical documents |
 | What are lifecycle/documentation roles? | `documentation_lifecycle_reconciliation.md`, `documentation_authority_reconciliation.md`, and `documentation_boundary_enforcement_reconciliation.md` |
-| What do terms mean? | Scoped `*_vocabulary.md` documents |
+| What do foundational terms mean? | `ontology.md` for concise vocabulary; `foundational_ontology_reconciliation.md` for the audit |
+| What do scoped terms mean? | Scoped `*_vocabulary.md` documents |
 | Why was a scoped decision made? | Scoped `*_reconciliation.md` documents |
+| How should natural-language requests be treated? | `natural_language_observation_and_intent_derivation_reconciliation.md`, `operator_intent_question_and_claim_interface_reconciliation.md` |
+| How should agency or attribution be handled? | `agency_and_attribution_reconciliation.md` |
+| How should continuation across handoffs be preserved? | `handoff_document_boundary_reconciliation.md`, `handoff_template_and_continuation_protocol_reconciliation.md` |
 
 ---
 
 # Concern Map
+
+## Foundational Ontology
+
+Concern: Seed's stable architectural vocabulary and the boundaries between concepts.
+
+Start with:
+
+* `seed.md`
+* `ontology.md`
+* `foundational_ontology_reconciliation.md`
 
 ## Knowledge Acquisition
 
@@ -101,6 +122,16 @@ Start with:
 * `projection_integrity_drilldown_characterization.md`
 * `knowledge_representation_map.md`
 * `knowledge_representation_reconciliation.md`
+
+## Language / Operator Interface
+
+Concern: how Seed treats natural language, operator intent, questions, and attribution without making interpretation, agency, or environmental truth overclaims.
+
+Start with:
+
+* `natural_language_observation_and_intent_derivation_reconciliation.md`
+* `operator_intent_question_and_claim_interface_reconciliation.md`
+* `agency_and_attribution_reconciliation.md`
 
 ## Knowledge Selection
 
@@ -131,6 +162,17 @@ Start with:
 
 Rejected response-engine and caveat-layer conclusions are preserved in `architectural_findings_preservation.md` and scoped response documents.
 
+## Continuation / Handoff
+
+Concern: how Seed preserves continuation alignment across handoff documents and protocols without treating handoffs as architecture authority.
+
+Start with:
+
+* `handoff_document_boundary_reconciliation.md`
+* `handoff_template_and_continuation_protocol_reconciliation.md`
+* `handoff_alignment_guardrails_reconciliation.md`
+* `typed_projection_handoff_reconciliation.md`
+
 ## Architectural Findings
 
 Concern: how Seed preserves completed audit outcomes, negative findings, rejected concepts, and historical conclusions.
@@ -150,6 +192,8 @@ The consolidated rejected-concept summary belongs in `architectural_findings_pre
 
 Use these for current architecture content, not this map:
 
+* `seed.md`
+* `ontology.md`
 * `architecture.md`
 * `architecture_principles.md`
 * `state.md`
