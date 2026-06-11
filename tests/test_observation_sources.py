@@ -2085,6 +2085,178 @@ def test_non_prometheus_os_observation_still_promotes_to_fact():
     assert state.get_best_fact("192.168.254.115:9100", "os").value == "linux"
 
 
+class _PrometheusResponse:
+    def __init__(self, payload):
+        self.payload = payload
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+    def read(self):
+        return json.dumps(self.payload).encode("utf-8")
+
+
+def _prometheus_vector_payload(result):
+    return {"status": "success", "data": {"resultType": "vector", "result": result}}
+
+
+def _patch_prometheus_payloads(monkeypatch, payloads_by_query):
+    from seed_runtime import observation_sources as sources
+
+    def fake_urlopen(request, timeout):
+        query = request.full_url.rsplit("query=", 1)[1]
+        return _PrometheusResponse(
+            payloads_by_query.get(query, _prometheus_vector_payload([]))
+        )
+
+    monkeypatch.setattr(sources, "urlopen", fake_urlopen)
+
+
+def test_prometheus_vector_sample_timestamp_and_value_are_preserved(monkeypatch):
+    from seed_runtime.observation_sources import PrometheusObservationSource
+
+    _patch_prometheus_payloads(
+        monkeypatch,
+        {
+            "up": _prometheus_vector_payload(
+                [
+                    {
+                        "metric": {"instance": "node-a:9100"},
+                        "value": ["1718123456.789", "1"],
+                    }
+                ]
+            )
+        },
+    )
+    before = datetime.now(timezone.utc)
+
+    observations = PrometheusObservationSource("http://prom.example:9090").collect()
+
+    after = datetime.now(timezone.utc)
+    assert len(observations) == 1
+    observation = observations[0]
+    sample_time = datetime.fromisoformat("2024-06-11T16:30:56.789000+00:00")
+    assert observation.observed_at == sample_time
+    assert observation.value == 1
+    assert (
+        observation.metadata["prometheus_sample_timestamp"]
+        == sample_time.isoformat()
+    )
+    assert observation.metadata["prometheus_sample_timestamp_raw"] == "1718123456.789"
+    assert observation.metadata["source_observed_at"] == sample_time.isoformat()
+    assert observation.metadata["source_time_kind"] == "sample_time"
+    assert observation.metadata["source_time_authority"] == "prometheus"
+    assert observation.metadata["seed_collection_time_authority"] == "seed_local_clock"
+    assert observation.metadata["query_temporal_intent"] == "current_instant"
+    seed_collected_at = datetime.fromisoformat(observation.metadata["seed_collected_at"])
+    assert before <= seed_collected_at <= after
+    assert seed_collected_at != observation.observed_at
+
+
+def test_prometheus_malformed_sample_timestamp_is_skipped(monkeypatch):
+    from seed_runtime.observation_sources import PrometheusObservationSource
+
+    _patch_prometheus_payloads(
+        monkeypatch,
+        {
+            "up": _prometheus_vector_payload(
+                [
+                    {
+                        "metric": {"instance": "bad-node:9100"},
+                        "value": ["not-a-unix-timestamp", "1"],
+                    },
+                    {
+                        "metric": {"instance": "good-node:9100"},
+                        "value": [1718123456, "0"],
+                    },
+                ]
+            )
+        },
+    )
+
+    observations = PrometheusObservationSource("http://prom.example:9090").collect()
+
+    assert [(obs.subject, obs.value) for obs in observations] == [("good-node:9100", 0)]
+    assert observations[0].observed_at == datetime.fromtimestamp(
+        1718123456, timezone.utc
+    )
+
+
+def test_prometheus_event_timestamp_remains_independent_from_sample_time(monkeypatch):
+    from seed_runtime.observation_sources import PrometheusObservationSource
+
+    _patch_prometheus_payloads(
+        monkeypatch,
+        {
+            "up": _prometheus_vector_payload(
+                [
+                    {
+                        "metric": {"instance": "node-a:9100"},
+                        "value": [1718123456, "1"],
+                    }
+                ]
+            )
+        },
+    )
+    source = PrometheusObservationSource("http://prom.example:9090")
+    ledger = EventLedger()
+
+    ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        source, "ws_prom_time"
+    )
+
+    observed_event = ledger.list("ws_prom_time")[0]
+    sample_time = datetime.fromtimestamp(1718123456, timezone.utc)
+    assert observed_event.kind == "observation.observed"
+    assert observed_event.timestamp != sample_time
+    assert (
+        observed_event.payload["observation"]["observed_at"]
+        == sample_time.isoformat()
+    )
+    assert (
+        observed_event.payload["observation"]["metadata"]["seed_collected_at"]
+        != sample_time.isoformat()
+    )
+
+
+def test_prometheus_measurement_latest_current_uses_sample_time(monkeypatch):
+    from seed_runtime.observation_sources import PrometheusObservationSource
+
+    older_time = 1718123456
+    newer_time = 1718124456
+    _patch_prometheus_payloads(
+        monkeypatch,
+        {
+            "up": _prometheus_vector_payload(
+                [
+                    {
+                        "metric": {"instance": "node-a:9100"},
+                        "value": [newer_time, "1"],
+                    },
+                    {
+                        "metric": {"instance": "node-a:9100"},
+                        "value": [older_time, "0"],
+                    },
+                ]
+            )
+        },
+    )
+    ledger = EventLedger()
+
+    ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        PrometheusObservationSource("http://prom.example:9090"), "ws_prom_latest"
+    )
+    state = StateProjector(ledger).project("ws_prom_latest")
+
+    best = state.get_best_fact("node-a:9100", "up")
+    assert best is not None
+    assert best.value == 1
+    assert best.observed_at == datetime.fromtimestamp(newer_time, timezone.utc)
+
+
 def test_prometheus_source_unreachable_fails_gracefully(monkeypatch):
     from seed_runtime import observation_sources as sources
     from seed_runtime.observation_sources import PrometheusObservationSource
