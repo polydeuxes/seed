@@ -2987,6 +2987,18 @@ def format_state_summary(summary: dict[str, Any]) -> str:
                 f"confidence: {candidate['confidence']}; evidence: {evidence}; "
                 f"boundary: {candidate['boundary']}"
             )
+    storage_topology_ambiguities = summary.get("storage_topology_ambiguities", [])
+    if storage_topology_ambiguities:
+        lines.append("storage topology ambiguities:")
+        for ambiguity in storage_topology_ambiguities:
+            reasons = ", ".join(ambiguity["reasons"])
+            interpretations = ", ".join(ambiguity["candidate_interpretations"])
+            lines.append(
+                f"  {ambiguity['subject']}: materiality: "
+                f"{ambiguity['materiality']}; reasons: {reasons}; "
+                f"candidate interpretations: {interpretations}; "
+                f"boundary: {ambiguity['boundary']}"
+            )
     return "\n".join(lines)
 
 

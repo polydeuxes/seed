@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 import json
+import re
 from typing import Any
 
 from seed_runtime.facts import is_fact_expired, is_measurement_predicate
@@ -23,6 +24,15 @@ _SHARED_STORAGE_CANDIDATE_BOUNDARY = (
     "candidate shared storage != ownership; "
     "candidate shared storage != topology authority"
 )
+
+_STORAGE_TOPOLOGY_AMBIGUITY_BOUNDARY = (
+    "ambiguity != fact; "
+    "ambiguity != ownership; "
+    "ambiguity != storage identity; "
+    "ambiguity != resolved topology"
+)
+
+_HISTORICAL_NODE_STYLE_MOUNTPATH = re.compile(r"(?:^|/)node\d+(?:/|$)")
 
 
 def _shared_storage_candidates(
@@ -91,6 +101,122 @@ def _shared_storage_candidates(
             candidate["mountpaths"],
             candidate["evidence"],
             candidate["visible_endpoints"],
+        ),
+    )
+
+
+def _storage_topology_ambiguities(
+    filesystems: list[dict[str, Any]],
+    cluster_mount_groups: list[dict[str, Any]],
+    shared_storage_candidates: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Return projection-only unresolved storage interpretation pressure.
+
+    Ambiguities are assembled only from already-projected filesystem
+    measurements, mount visibility groups, and shared-storage candidates.  They
+    intentionally do not create facts, ownership, storage identity, topology
+    truth, issues, or operator clarification requests.
+    """
+
+    ambiguity_by_subject: dict[str, dict[str, Any]] = {}
+
+    def ambiguity_for(subject: str) -> dict[str, Any]:
+        return ambiguity_by_subject.setdefault(
+            subject,
+            {
+                "subject": subject,
+                "reasons": [],
+                "candidate_interpretations": [],
+                "observable_evidence": [],
+                "materiality": "low",
+                "materiality_basis": (
+                    "smallest safe heuristic from projected visibility and "
+                    "candidate evidence; not certainty"
+                ),
+                "boundary": _STORAGE_TOPOLOGY_AMBIGUITY_BOUNDARY,
+            },
+        )
+
+    def add_unique(items: list[str], value: str) -> None:
+        if value not in items:
+            items.append(value)
+
+    endpoint_counts = {
+        group["mountpoint"]: group["visible_endpoint_count"]
+        for group in cluster_mount_groups
+    }
+    endpoint_lists = {
+        group["mountpoint"]: group["visible_endpoints"]
+        for group in cluster_mount_groups
+    }
+
+    for group in cluster_mount_groups:
+        subject = group["mountpoint"]
+        ambiguity = ambiguity_for(subject)
+        add_unique(
+            ambiguity["reasons"],
+            f"mountpath visible on {group['visible_endpoint_count']} endpoints",
+        )
+        add_unique(
+            ambiguity["candidate_interpretations"],
+            "multi-endpoint mount visibility",
+        )
+        add_unique(
+            ambiguity["observable_evidence"],
+            "cluster_mount_groups.visible_endpoint_count",
+        )
+        ambiguity["visible_endpoint_count"] = group["visible_endpoint_count"]
+        ambiguity["visible_endpoints"] = group["visible_endpoints"]
+        ambiguity["materiality"] = "medium"
+
+    for filesystem in filesystems:
+        mountpoint = str(filesystem["mountpoint"])
+        if not _HISTORICAL_NODE_STYLE_MOUNTPATH.search(mountpoint):
+            continue
+        ambiguity = ambiguity_for(mountpoint)
+        add_unique(ambiguity["reasons"], "mountpath contains node-number path segment")
+        add_unique(
+            ambiguity["candidate_interpretations"],
+            "historical-node-style naming",
+        )
+        add_unique(
+            ambiguity["candidate_interpretations"],
+            "possible compatibility path",
+        )
+        add_unique(ambiguity["observable_evidence"], "filesystem.mountpoint")
+        if endpoint_counts.get(mountpoint, 1) > 1:
+            ambiguity["materiality"] = "medium"
+
+    for candidate in shared_storage_candidates:
+        for mountpath in candidate["mountpaths"]:
+            ambiguity = ambiguity_for(mountpath)
+            add_unique(
+                ambiguity["reasons"],
+                "shared-storage candidate exists from matching observable filesystem fields",
+            )
+            add_unique(
+                ambiguity["candidate_interpretations"],
+                "possible shared backing",
+            )
+            add_unique(
+                ambiguity["observable_evidence"],
+                "shared_storage_candidates.evidence",
+            )
+            ambiguity.setdefault("shared_storage_candidate_evidence", [])
+            for evidence in candidate["evidence"]:
+                add_unique(ambiguity["shared_storage_candidate_evidence"], evidence)
+            ambiguity["shared_storage_candidate_confidence"] = candidate["confidence"]
+            if mountpath in endpoint_counts:
+                ambiguity.setdefault("visible_endpoint_count", endpoint_counts[mountpath])
+                ambiguity.setdefault("visible_endpoints", endpoint_lists[mountpath])
+            if candidate["confidence"] != "low" or mountpath in endpoint_counts:
+                ambiguity["materiality"] = "medium"
+
+    return sorted(
+        ambiguity_by_subject.values(),
+        key=lambda ambiguity: (
+            {"medium": 0, "low": 1}.get(ambiguity["materiality"], 2),
+            ambiguity["subject"],
         ),
     )
 
@@ -225,6 +351,11 @@ def state_summary(
     # It must not be interpreted as shared storage identity or ownership.
 
     shared_storage_candidates = _shared_storage_candidates(operator_relevant_filesystems)
+    storage_topology_ambiguities = _storage_topology_ambiguities(
+        operator_relevant_filesystems,
+        cluster_mount_groups,
+        shared_storage_candidates,
+    )
 
     summary = {
         "entity_count": len(entity_aliases),
@@ -246,6 +377,7 @@ def state_summary(
         "filesystems": filesystem_summary,
         "cluster_mount_groups": cluster_mount_groups,
         "shared_storage_candidates": shared_storage_candidates,
+        "storage_topology_ambiguities": storage_topology_ambiguities,
     }
     if include_relationship_count:
         summary["relationship_count"] = len(state.relationships)

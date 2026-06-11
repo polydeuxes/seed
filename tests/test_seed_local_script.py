@@ -69,6 +69,23 @@ def test_cli_state_summary_formats_cluster_mount_groups():
                     ),
                 }
             ],
+            "storage_topology_ambiguities": [
+                {
+                    "subject": "/mnt/node205/sda1",
+                    "materiality": "medium",
+                    "reasons": ["mountpath visible on 2 endpoints"],
+                    "candidate_interpretations": [
+                        "multi-endpoint mount visibility",
+                        "historical-node-style naming",
+                    ],
+                    "boundary": (
+                        "ambiguity != fact; "
+                        "ambiguity != ownership; "
+                        "ambiguity != storage identity; "
+                        "ambiguity != resolved topology"
+                    ),
+                }
+            ],
         }
     )
 
@@ -82,6 +99,10 @@ def test_cli_state_summary_formats_cluster_mount_groups():
     assert "shared storage candidates:" in output
     assert "confidence: medium; evidence: matching total bytes, matching device" in output
     assert "candidate shared storage != shared storage fact" in output
+    assert "storage topology ambiguities:" in output
+    assert "materiality: medium; reasons: mountpath visible on 2 endpoints" in output
+    assert "candidate interpretations: multi-endpoint mount visibility" in output
+    assert "ambiguity != storage identity" in output
 
 
 def test_build_local_app_uses_intent_classifier_path_and_loads_echo_toolkit():
