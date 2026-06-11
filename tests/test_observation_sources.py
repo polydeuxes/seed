@@ -496,6 +496,7 @@ def test_local_host_source_emits_read_only_host_observations(monkeypatch):
         proc_root=missing,
         etc_hostname=missing,
         machine_id=missing,
+        etc_hosts=missing,
         etc_passwd=missing,
         etc_group=missing,
         dpkg_status=missing,
@@ -515,6 +516,106 @@ def test_local_host_source_emits_read_only_host_observations(monkeypatch):
     assert local_status.metadata["network_reachability_asserted"] is False
     assert local_status.metadata["provider_visibility_asserted"] is False
     assert local_status.metadata["availability_asserted"] is False
+
+
+def test_local_host_source_emits_hosts_file_mapping_observations(tmp_path):
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    hosts = tmp_path / "hosts"
+    hosts.write_text(
+        "\n"
+        "# comment-only line\n"
+        "127.0.0.1 localhost localhost.localdomain # inline comment\n"
+        "2001:db8::10 node-v6 node-v6-alias\n"
+        "# another comment\n",
+        encoding="utf-8",
+    )
+
+    observations = LocalHostObservationSource(
+        etc_hosts=hosts
+    )._collect_hosts_file_observations(
+        BASE_TIME, "node-a", {"collector": "LocalHostObservationSource"}
+    )
+
+    triples = {(obs.subject, obs.predicate, obs.value) for obs in observations}
+    assert ("node-a", "hosts_file_address_mapping", "127.0.0.1") in triples
+    assert ("node-a", "hosts_file_name", "localhost") in triples
+    assert ("node-a", "hosts_file_alias", "localhost.localdomain") in triples
+    assert ("node-a", "hosts_file_address_mapping", "2001:db8::10") in triples
+    assert ("node-a", "hosts_file_name", "node-v6") in triples
+    assert ("node-a", "hosts_file_alias", "node-v6-alias") in triples
+    assert len(observations) == 6
+
+    ipv4_alias = next(
+        obs for obs in observations if obs.value == "localhost.localdomain"
+    )
+    assert ipv4_alias.dimensions == {
+        "source": "/etc/hosts",
+        "line_number": "3",
+        "address": "127.0.0.1",
+        "canonical_name": "localhost",
+        "name_index": "1",
+        "name_role": "alias",
+    }
+
+    ipv6_mapping = next(
+        obs
+        for obs in observations
+        if obs.predicate == "hosts_file_address_mapping" and obs.value == "2001:db8::10"
+    )
+    assert ipv6_mapping.dimensions["line_number"] == "4"
+    assert ipv6_mapping.dimensions["canonical_name"] == "node-v6"
+    assert ipv6_mapping.dimensions["names"] == "node-v6 node-v6-alias"
+
+
+def test_local_host_hosts_file_metadata_preserves_observation_boundaries(tmp_path):
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    hosts = tmp_path / "hosts"
+    hosts.write_text("192.0.2.10 node-a node-a-alias\n", encoding="utf-8")
+
+    observations = LocalHostObservationSource(
+        etc_hosts=hosts
+    )._collect_hosts_file_observations(
+        BASE_TIME, "observer-node", {"collector": "LocalHostObservationSource"}
+    )
+
+    assert observations
+    for obs in observations:
+        assert obs.metadata["source"] == "/etc/hosts"
+        assert obs.metadata["source_path"] == str(hosts)
+        assert obs.metadata["question_answered"] == (
+            "What local hosts-file name/address mappings are configured?"
+        )
+        assert obs.metadata["dns_validity_asserted"] is False
+        assert obs.metadata["dns_resolution_asserted"] is False
+        assert obs.metadata["network_reachability_asserted"] is False
+        assert obs.metadata["availability_asserted"] is False
+        assert obs.metadata["host_ownership_asserted"] is False
+        assert obs.metadata["host_uniqueness_asserted"] is False
+        assert obs.metadata["alias_equivalence_asserted"] is False
+        assert obs.metadata["endpoint_identity_asserted"] is False
+        assert obs.metadata["host_identity_asserted"] is False
+
+    emitted_predicates = {obs.predicate for obs in observations}
+    assert "alias" not in emitted_predicates
+    assert "hostname" not in emitted_predicates
+    assert "fqdn" not in emitted_predicates
+
+
+def test_local_host_hosts_file_oversized_input_is_skipped(tmp_path):
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    hosts = tmp_path / "hosts"
+    hosts.write_text("x" * (1024 * 1024 + 1), encoding="utf-8")
+    source = LocalHostObservationSource(etc_hosts=hosts)
+
+    assert (
+        source._collect_hosts_file_observations(
+            BASE_TIME, "node-a", {"collector": "LocalHostObservationSource"}
+        )
+        == []
+    )
 
 
 def test_local_host_observation_fact_does_not_assert_availability_or_network(
