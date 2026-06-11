@@ -48,9 +48,18 @@ def test_operator_state_summary_can_be_built_without_cli_parsing():
     assert summary["entity_count"] == 1
     assert summary["fact_count"] == 1
     assert summary["availability"] == {"up": 0, "down": 0, "unknown": 1}
+    assert summary["availability_by_scope"] == {
+        "endpoint_scrape_availability": {"up": 0, "down": 0, "unknown": 0},
+        "host_availability": {"up": 0, "down": 0, "unknown": 1},
+        "service_availability": {"up": 0, "down": 0, "unknown": 0},
+    }
     assert summary["top_entities"] == [
         {"name": "node115", "alias_count": 0, "fact_count": 1}
     ]
+    assert summary["top_entities_by_kind"]["hosts"] == [
+        {"name": "node115", "alias_count": 0, "fact_count": 1}
+    ]
+    assert summary["top_entities_by_kind"]["endpoints"] == []
 
 
 def test_operator_state_summary_preserves_availability_and_alias_semantics():
@@ -74,12 +83,20 @@ def test_operator_state_summary_preserves_availability_and_alias_semantics():
 
     assert summary["entity_count"] == 2
     assert summary["availability"] == {"up": 1, "down": 0, "unknown": 1}
-    assert {
-        entity["name"]: entity["alias_count"] for entity in summary["top_entities"]
-    } == {
-        "node115": 1,
-        "192.168.254.115:9100": 0,
+    assert summary["availability_by_scope"] == {
+        "endpoint_scrape_availability": {"up": 1, "down": 0, "unknown": 0},
+        "host_availability": {"up": 0, "down": 0, "unknown": 1},
+        "service_availability": {"up": 0, "down": 0, "unknown": 0},
     }
+    assert summary["top_entities_by_kind"]["hosts"] == [
+        {"name": "node115", "alias_count": 1, "fact_count": 1}
+    ]
+    assert summary["top_entities_by_kind"]["endpoints"] == [
+        {"name": "192.168.254.115:9100", "alias_count": 0, "fact_count": 0}
+    ]
+    assert summary["top_entities"] == [
+        {"name": "node115", "alias_count": 1, "fact_count": 1}
+    ]
 
 
 def test_operator_state_summary_ranks_top_entities_by_durable_facts_only():
@@ -114,8 +131,18 @@ def test_operator_state_summary_ranks_top_entities_by_durable_facts_only():
     assert summary["durable_fact_count"] == 1
     assert summary["measurement_current_sample_count"] == 10
     assert summary["availability"] == {"up": 1, "down": 0, "unknown": 1}
-    assert summary["top_entities"][:2] == [
+    assert summary["availability_by_scope"] == {
+        "endpoint_scrape_availability": {"up": 1, "down": 0, "unknown": 0},
+        "host_availability": {"up": 0, "down": 0, "unknown": 1},
+        "service_availability": {"up": 0, "down": 0, "unknown": 0},
+    }
+    assert summary["top_entities"] == [
         {"name": "node115", "alias_count": 0, "fact_count": 1},
+    ]
+    assert summary["top_entities_by_kind"]["hosts"] == [
+        {"name": "node115", "alias_count": 0, "fact_count": 1},
+    ]
+    assert summary["top_entities_by_kind"]["endpoints"] == [
         {"name": "192.168.254.116:9100", "alias_count": 0, "fact_count": 0},
     ]
     assert (
@@ -134,6 +161,45 @@ def test_operator_state_summary_ranks_top_entities_by_durable_facts_only():
         state.get_best_fact("192.168.254.116:9100", "availability_status").value
         == "up"
     )
+
+
+def test_operator_state_summary_keeps_endpoint_visibility_scoped():
+    state = _project(
+        _fact(
+            "fact_endpoint_down",
+            "10.0.0.1:9100",
+            "availability_status",
+            "down",
+        ),
+        _fact("fact_host_os", "node115", "os", "linux"),
+        _fact("fact_host_availability", "node115", "availability_status", "up"),
+    )
+
+    summary = build_operator_state_summary(state)
+
+    assert state.get_best_fact("10.0.0.1:9100", "availability_status").value == "down"
+    assert summary["top_entities_by_kind"]["endpoints"] == [
+        {"name": "10.0.0.1:9100", "alias_count": 0, "fact_count": 0}
+    ]
+    assert summary["top_entities_by_kind"]["hosts"] == [
+        {"name": "node115", "alias_count": 0, "fact_count": 1}
+    ]
+    assert {entity["name"] for entity in summary["top_entities"]} == {"node115"}
+    assert summary["availability_by_scope"]["endpoint_scrape_availability"] == {
+        "up": 0,
+        "down": 1,
+        "unknown": 0,
+    }
+    assert summary["availability_by_scope"]["host_availability"] == {
+        "up": 1,
+        "down": 0,
+        "unknown": 0,
+    }
+    assert summary["availability_by_scope"]["service_availability"] == {
+        "up": 0,
+        "down": 0,
+        "unknown": 0,
+    }
 
 
 def test_operator_state_summary_excludes_storage_detail_projection_keys():
