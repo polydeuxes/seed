@@ -4,7 +4,10 @@ from seed_runtime.events import EventLedger
 from seed_runtime.facts import Fact
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
-from seed_runtime.state_summary_views import build_operator_state_summary
+from seed_runtime.state_summary_views import (
+    build_operator_state_summary,
+    storage_state_projection,
+)
 
 NOW = datetime(2026, 6, 4, 12, 0, tzinfo=timezone.utc)
 
@@ -79,6 +82,39 @@ def test_operator_state_summary_preserves_availability_and_alias_semantics():
     }
 
 
+def test_operator_state_summary_excludes_storage_detail_projection_keys():
+    state = _project(
+        _fact(
+            "fact_root_free",
+            "node115:9100",
+            "filesystem_free_bytes",
+            40,
+            dimensions={"mountpoint": "/", "device": "/dev/sda1", "fstype": "ext4"},
+        ),
+        _fact(
+            "fact_root_total",
+            "node115:9100",
+            "filesystem_total_bytes",
+            100,
+            dimensions={"mountpoint": "/", "device": "/dev/sda1", "fstype": "ext4"},
+        ),
+    )
+
+    summary = build_operator_state_summary(state)
+
+    assert summary["fact_count"] == 2
+    assert summary["measurement_current_sample_count"] == 2
+    for key in (
+        "filesystems",
+        "filesystem_shape_summary",
+        "cluster_mount_groups",
+        "shared_storage_candidates",
+        "storage_topology_ambiguities",
+        "storage_topology_summary",
+    ):
+        assert key not in summary
+
+
 def test_operator_state_summary_filters_runtime_pseudo_filesystems_only_from_summary():
     state = _project(
         _fact(
@@ -111,7 +147,7 @@ def test_operator_state_summary_filters_runtime_pseudo_filesystems_only_from_sum
         ),
     )
 
-    summary = build_operator_state_summary(state)
+    summary = storage_state_projection(state)
 
     assert summary["measurement_current_sample_count"] == 4
     assert summary["fact_count"] == 4
@@ -204,7 +240,7 @@ def test_operator_state_summary_prioritizes_operator_relevant_filesystem_order()
         ),
     )
 
-    summary = build_operator_state_summary(state)
+    summary = storage_state_projection(state)
 
     assert [filesystem["mountpoint"] for filesystem in summary["filesystems"]] == [
         "/",
@@ -302,7 +338,7 @@ def test_operator_state_summary_adds_filesystem_shape_without_changing_filesyste
     )
     state = _project(*facts)
 
-    summary = build_operator_state_summary(state)
+    summary = storage_state_projection(state)
 
     assert summary["fact_count"] == len(facts)
     assert summary["measurement_current_sample_count"] == len(facts)
@@ -382,7 +418,7 @@ def test_operator_state_summary_groups_repeated_mount_visibility_by_mountpoint()
         ),
     )
 
-    summary = build_operator_state_summary(state)
+    summary = storage_state_projection(state)
 
     assert summary["cluster_mount_groups"] == [
         {
@@ -411,7 +447,7 @@ def test_operator_state_summary_mount_grouping_preserves_filesystem_facts_and_me
         ),
     )
 
-    summary = build_operator_state_summary(state)
+    summary = storage_state_projection(state)
 
     assert summary["fact_count"] == 4
     assert summary["measurement_current_sample_count"] == 4
@@ -457,7 +493,7 @@ def test_operator_state_summary_mount_grouping_does_not_imply_ownership_or_ident
         ),
     )
 
-    summary = build_operator_state_summary(state)
+    summary = storage_state_projection(state)
 
     assert summary["cluster_mount_groups"] == [
         {
@@ -505,7 +541,7 @@ def test_operator_state_summary_distinct_mountpaths_remain_distinct_groups():
         ),
     )
 
-    summary = build_operator_state_summary(state)
+    summary = storage_state_projection(state)
 
     assert summary["cluster_mount_groups"] == [
         {
@@ -549,7 +585,7 @@ def test_shared_storage_candidates_are_projection_only_not_facts_ownership_or_id
         ),
     )
 
-    summary = build_operator_state_summary(state)
+    summary = storage_state_projection(state)
 
     assert summary["fact_count"] == 4
     assert state.relationships == []
@@ -585,7 +621,7 @@ def test_shared_storage_candidates_preserve_filesystem_facts_and_measurements():
         ),
     )
 
-    summary = build_operator_state_summary(state)
+    summary = storage_state_projection(state)
 
     assert summary["fact_count"] == 4
     assert summary["measurement_current_sample_count"] == 4
@@ -647,7 +683,7 @@ def test_shared_storage_candidates_allow_multiple_plausible_interpretations():
         ),
     )
 
-    summary = build_operator_state_summary(state)
+    summary = storage_state_projection(state)
 
     candidates = summary["shared_storage_candidates"]
     assert len(candidates) >= 3
@@ -706,7 +742,7 @@ def test_shared_storage_candidates_keep_distinct_evidence_groups_distinct():
         ),
     )
 
-    summary = build_operator_state_summary(state)
+    summary = storage_state_projection(state)
 
     high_candidates = [
         candidate
@@ -740,7 +776,7 @@ def test_shared_storage_candidates_use_observable_filesystem_evidence_only():
         ),
     )
 
-    summary = build_operator_state_summary(state)
+    summary = storage_state_projection(state)
 
     candidate = summary["shared_storage_candidates"][0]
     assert set(candidate["observed_values"]).issubset(
@@ -787,7 +823,7 @@ def test_storage_topology_ambiguities_are_projection_only_not_facts_ownership_or
         ),
     )
 
-    summary = build_operator_state_summary(state)
+    summary = storage_state_projection(state)
 
     assert summary["storage_topology_ambiguities"]
     ambiguity = _ambiguity_by_subject(summary, "/mnt/node210/sda1")
@@ -822,7 +858,7 @@ def test_storage_topology_ambiguities_use_shared_storage_candidates_as_pressure(
         ),
     )
 
-    summary = build_operator_state_summary(state)
+    summary = storage_state_projection(state)
 
     subjects = {
         ambiguity["subject"] for ambiguity in summary["storage_topology_ambiguities"]
@@ -849,7 +885,7 @@ def test_storage_topology_ambiguities_surface_historical_node_style_without_topo
         )
     )
 
-    summary = build_operator_state_summary(state)
+    summary = storage_state_projection(state)
 
     ambiguity = _ambiguity_by_subject(summary, "/mnt/node210/sda1")
     assert "historical-node-style naming" in ambiguity["candidate_interpretations"]
@@ -879,7 +915,7 @@ def test_storage_topology_ambiguities_preserve_filesystem_facts_and_measurements
         ),
     )
 
-    summary = build_operator_state_summary(state)
+    summary = storage_state_projection(state)
 
     assert summary["fact_count"] == 4
     assert summary["measurement_current_sample_count"] == 4
@@ -930,7 +966,7 @@ def test_storage_topology_ambiguities_allow_multiple_ambiguities_to_coexist():
         ),
     )
 
-    summary = build_operator_state_summary(state)
+    summary = storage_state_projection(state)
 
     subjects = [
         ambiguity["subject"] for ambiguity in summary["storage_topology_ambiguities"]
@@ -961,7 +997,7 @@ def test_storage_topology_ambiguities_use_observable_projection_evidence_only():
         ),
     )
 
-    summary = build_operator_state_summary(state)
+    summary = storage_state_projection(state)
 
     ambiguity = _ambiguity_by_subject(summary, "/mnt/node205/sda1")
     assert set(ambiguity["observable_evidence"]).issubset(
@@ -1005,7 +1041,7 @@ def test_storage_topology_projection_data_survives_bounded_operator_summary():
         )
 
     state = _project(*facts)
-    summary = build_operator_state_summary(state)
+    summary = storage_state_projection(state)
 
     assert summary["fact_count"] == 24
     assert summary["measurement_current_sample_count"] == 24
