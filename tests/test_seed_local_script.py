@@ -1863,7 +1863,7 @@ def test_cli_state_summary_reports_projected_world_model_without_ingestion(
     assert "  discovery: 4" in output
     assert "  imported: 1" in output
     assert "  user: 3" in output
-    assert "host-up (aliases: 1 total; facts: 6)" in output
+    assert "host-up (aliases: 1 total; facts: 3)" in output
     assert "10.0.0.10; facts" not in output
     assert "  up: 1" in output
     assert "  down: 1" in output

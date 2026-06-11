@@ -82,6 +82,60 @@ def test_operator_state_summary_preserves_availability_and_alias_semantics():
     }
 
 
+def test_operator_state_summary_ranks_top_entities_by_durable_facts_only():
+    endpoint_measurements = [
+        _fact(
+            f"fact_endpoint_filesystem_free_{index}",
+            "192.168.254.116:9100",
+            "filesystem_free_bytes",
+            1000 + index,
+            dimensions={
+                "mountpoint": f"/mnt/volume{index}",
+                "device": f"/dev/sd{index}",
+                "fstype": "ext4",
+            },
+        )
+        for index in range(8)
+    ]
+    state = _project(
+        *endpoint_measurements,
+        _fact(
+            "fact_endpoint_up",
+            "192.168.254.116:9100",
+            "availability_status",
+            "up",
+        ),
+        _fact("fact_host_os", "node115", "os", "linux"),
+    )
+
+    summary = build_operator_state_summary(state)
+
+    assert summary["fact_count"] == 11
+    assert summary["durable_fact_count"] == 1
+    assert summary["measurement_current_sample_count"] == 10
+    assert summary["availability"] == {"up": 1, "down": 0, "unknown": 1}
+    assert summary["top_entities"][:2] == [
+        {"name": "node115", "alias_count": 0, "fact_count": 1},
+        {"name": "192.168.254.116:9100", "alias_count": 0, "fact_count": 0},
+    ]
+    assert (
+        state.get_best_fact(
+            "192.168.254.116:9100",
+            "filesystem_free_bytes",
+            dimensions={
+                "mountpoint": "/mnt/volume0",
+                "device": "/dev/sd0",
+                "fstype": "ext4",
+            },
+        ).value
+        == 1000
+    )
+    assert (
+        state.get_best_fact("192.168.254.116:9100", "availability_status").value
+        == "up"
+    )
+
+
 def test_operator_state_summary_excludes_storage_detail_projection_keys():
     state = _project(
         _fact(

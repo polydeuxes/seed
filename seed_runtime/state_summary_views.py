@@ -470,6 +470,11 @@ def state_summary(
     for fact in state.facts.values():
         canonical = state.alias_resolver.canonical(fact.subject_id)
         entity_aliases[canonical].update(state.alias_resolver.resolve(fact.subject_id))
+    # Default top-entity prominence is based on durable facts only.
+    # Current measurement volume must remain queryable and counted elsewhere,
+    # but should not make scrape-target endpoints look operator-prominent.
+    for fact in durable_facts:
+        canonical = state.alias_resolver.canonical(fact.subject_id)
         entity_fact_counts[canonical] += 1
     for entity in state.entities.values():
         canonical = state.alias_resolver.canonical(entity.name)
