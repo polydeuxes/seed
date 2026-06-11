@@ -153,6 +153,58 @@ def test_cli_state_summary_bounds_storage_topology_details_and_counts_materialit
     assert "reasons:" not in output
 
 
+def test_cli_state_summary_prefers_bounded_storage_topology_summary_counts():
+    seed_local = load_seed_local_module()
+
+    output = seed_local.format_state_summary(
+        {
+            "entity_count": 0,
+            "fact_count": 0,
+            "durable_fact_count": 0,
+            "measurement_current_sample_count": 0,
+            "conflict_count": 0,
+            "stale_fact_count": 0,
+            "graph_issue_warning_count": 0,
+            "graph_issue_error_count": 0,
+            "observation_source_counts": {},
+            "top_entities": [],
+            "availability": {"up": 0, "down": 0, "unknown": 0},
+            "filesystems": [],
+            "cluster_mount_groups": [
+                {"mountpoint": f"/mnt/node{index}/sda1"}
+                for index in range(31)
+            ],
+            "shared_storage_candidates": [
+                {"mountpaths": [f"/mnt/node{index}/sda1"], "confidence": "low"}
+                for index in range(42)
+            ],
+            "storage_topology_ambiguities": [
+                {"subject": f"/mnt/node{index}/sda1", "materiality": "low"}
+                for index in range(187)
+            ],
+            "storage_topology_summary": {
+                "cluster_mount_group_count": 31,
+                "shared_storage_candidate_count": 42,
+                "shared_storage_candidate_confidence_counts": {"low": 42},
+                "storage_topology_ambiguity_count": 187,
+                "storage_topology_ambiguity_materiality_counts": {
+                    "medium": 12,
+                    "low": 175,
+                },
+            },
+        }
+    )
+
+    assert "cluster mount groups: 31" in output
+    assert "shared storage candidates: 42" in output
+    assert "storage topology ambiguities: 187 total" in output
+    assert "medium: 12" in output
+    assert "low: 175" in output
+    assert "/mnt/node0/sda1" not in output
+    assert "materiality" not in output
+    assert "subject" not in output
+
+
 def test_build_local_app_uses_intent_classifier_path_and_loads_echo_toolkit():
     seed_local = load_seed_local_module()
 
