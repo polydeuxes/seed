@@ -5,9 +5,10 @@ from __future__ import annotations
 import fcntl
 import ipaddress
 import json
+import math
 import os
-import re
 import platform
+import re
 import shutil
 import socket
 import stat
@@ -1844,7 +1845,7 @@ class PrometheusObservationSource:
     def collect(self) -> list[Observation]:
         """Collect safe Prometheus metrics, returning [] if unreachable."""
 
-        observed_at = datetime.now(timezone.utc)
+        seed_collected_at = datetime.now(timezone.utc)
         observations: list[Observation] = []
         self.last_error = None
         for query in self.SAFE_QUERIES:
@@ -1854,7 +1855,7 @@ class PrometheusObservationSource:
                 self.last_error = f"{type(exc).__name__}: {exc}"
                 return []
             observations.extend(
-                self._observations_from_query(query, payload, observed_at)
+                self._observations_from_query(query, payload, seed_collected_at)
             )
         return observations
 
@@ -1878,7 +1879,7 @@ class PrometheusObservationSource:
         return payload
 
     def _observations_from_query(
-        self, query: str, payload: dict[str, Any], observed_at: datetime
+        self, query: str, payload: dict[str, Any], seed_collected_at: datetime
     ) -> list[Observation]:
         result = payload["data"]["result"]
         observations: list[Observation] = []
@@ -1896,6 +1897,10 @@ class PrometheusObservationSource:
             instance = metric.get("instance")
             if not isinstance(instance, str) or not instance:
                 continue
+            sample_timestamp_raw = value[0]
+            sample_timestamp = _prometheus_sample_timestamp(sample_timestamp_raw)
+            if sample_timestamp is None:
+                continue
             sample_value = value[1]
             metadata = {
                 "collector": "PrometheusObservationSource",
@@ -1905,6 +1910,14 @@ class PrometheusObservationSource:
                 "metric_labels": dict(metric),
                 "read_only": True,
                 "http_method": "GET",
+                "prometheus_sample_timestamp": sample_timestamp.isoformat(),
+                "prometheus_sample_timestamp_raw": sample_timestamp_raw,
+                "source_observed_at": sample_timestamp.isoformat(),
+                "source_time_kind": "sample_time",
+                "source_time_authority": "prometheus",
+                "seed_collected_at": seed_collected_at.isoformat(),
+                "seed_collection_time_authority": "seed_local_clock",
+                "query_temporal_intent": "current_instant",
             }
             # Only node_uname_info is authoritative for stable host identity.
             # Other metrics remain endpoint-scoped and do not participate in
@@ -1919,7 +1932,7 @@ class PrometheusObservationSource:
                 if isinstance(job, str) and job.strip():
                     observations.append(
                         self._observation(
-                            observed_at,
+                            sample_timestamp,
                             instance,
                             "endpoint_role",
                             job.strip(),
@@ -1928,7 +1941,7 @@ class PrometheusObservationSource:
                     )
                 observations.append(
                     self._observation(
-                        observed_at,
+                        sample_timestamp,
                         instance,
                         "up",
                         _prometheus_int(sample_value),
@@ -1950,13 +1963,13 @@ class PrometheusObservationSource:
                         )
                     observations.append(
                         self._observation(
-                            observed_at, instance, "os", os_value, os_metadata
+                            sample_timestamp, instance, "os", os_value, os_metadata
                         )
                     )
             elif query == "node_filesystem_avail_bytes":
                 observations.append(
                     self._observation(
-                        observed_at,
+                        sample_timestamp,
                         instance,
                         "filesystem_avail_bytes",
                         _prometheus_int(sample_value),
@@ -1966,7 +1979,7 @@ class PrometheusObservationSource:
             elif query == "node_filesystem_size_bytes":
                 observations.append(
                     self._observation(
-                        observed_at,
+                        sample_timestamp,
                         instance,
                         "filesystem_size_bytes",
                         _prometheus_int(sample_value),
@@ -2009,6 +2022,21 @@ def _filesystem_dimensions(predicate: str, metadata: dict[str, Any]) -> dict[str
         for key in ("mountpoint", "device", "fstype")
         if isinstance((value := labels.get(key)), str) and value
     }
+
+
+def _prometheus_sample_timestamp(value: Any) -> datetime | None:
+    """Parse a Prometheus vector sample timestamp as UTC, or skip if malformed."""
+
+    try:
+        timestamp = float(str(value))
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(timestamp):
+        return None
+    try:
+        return datetime.fromtimestamp(timestamp, timezone.utc)
+    except (OverflowError, OSError, ValueError):
+        return None
 
 
 def _prometheus_int(value: Any) -> int:
