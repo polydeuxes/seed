@@ -34,6 +34,74 @@ _STORAGE_TOPOLOGY_AMBIGUITY_BOUNDARY = (
 
 _HISTORICAL_NODE_STYLE_MOUNTPATH = re.compile(r"(?:^|/)node\d+(?:/|$)")
 
+_FILESYSTEM_CATEGORY_ORDER = ("root", "boot", "cluster mounts", "other")
+_CLUSTER_MOUNTPOINT_PATTERN = re.compile(r"^/mnt/(?:node|rpi)[^/]*(?:/|$)")
+_FILESYSTEM_DETAIL_LIMIT = 10
+
+
+def _filesystem_category(filesystem: dict[str, Any]) -> str:
+    """Classify filesystem rows for bounded summary rendering only.
+
+    This is intentionally presentation taxonomy.  It does not assert ownership,
+    storage identity, or topology truth.
+    """
+
+    mountpoint = str(filesystem.get("mountpoint", ""))
+    normalized = mountpoint.rstrip("/") or "/"
+    if normalized == "/":
+        return "root"
+    if (
+        normalized == "/media/boot"
+        or normalized.startswith("/boot/")
+        or normalized == "/boot"
+        or normalized.startswith("/System/Volumes/iSCPreboot")
+        or "preboot" in normalized.lower()
+    ):
+        return "boot"
+    if _CLUSTER_MOUNTPOINT_PATTERN.search(normalized):
+        return "cluster mounts"
+    return "other"
+
+
+def _filesystem_shape_summary(
+    filesystems: list[dict[str, Any]],
+    *,
+    detail_limit: int = _FILESYSTEM_DETAIL_LIMIT,
+) -> dict[str, Any]:
+    """Return counts and bounded default detail rows for filesystem rendering.
+
+    The full ``filesystems`` list remains available to callers.  This helper
+    only chooses what the default top-level State Summary should render.
+    """
+
+    counts = {category: 0 for category in _FILESYSTEM_CATEGORY_ORDER}
+    categorized: dict[str, list[dict[str, Any]]] = {
+        category: [] for category in _FILESYSTEM_CATEGORY_ORDER
+    }
+    for filesystem in filesystems:
+        category = _filesystem_category(filesystem)
+        counts[category] += 1
+        categorized[category].append(filesystem)
+
+    detail_category = "root"
+    detail_rows = categorized["root"][:detail_limit]
+    return {
+        "counts": {
+            category: count
+            for category, count in counts.items()
+            if count or category in _FILESYSTEM_CATEGORY_ORDER
+        },
+        "detail_category": detail_category,
+        "detail_limit": detail_limit,
+        "detail_rows": [dict(row) for row in detail_rows],
+        "detail_row_count": len(detail_rows),
+        "total_row_count": len(filesystems),
+        "classification_basis": (
+            "presentation-only mountpoint classification; does not infer "
+            "ownership, shared storage identity, or topology truth"
+        ),
+    }
+
 
 def _counts_by_field(
     items: list[dict[str, Any]],
@@ -423,6 +491,7 @@ def state_summary(
         "top_entities": top_entities,
         "availability": dict(availability),
         "filesystems": filesystem_summary,
+        "filesystem_shape_summary": _filesystem_shape_summary(filesystem_summary),
         "cluster_mount_groups": cluster_mount_groups,
         "shared_storage_candidates": shared_storage_candidates,
         "storage_topology_ambiguities": storage_topology_ambiguities,

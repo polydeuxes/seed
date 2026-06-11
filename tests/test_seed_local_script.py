@@ -90,7 +90,8 @@ def test_cli_state_summary_formats_cluster_mount_groups():
     )
 
     assert "filesystems:" in output
-    assert "node100:9100 /mnt/node205/sda1: 10/100 bytes free/total" in output
+    assert "cluster mounts: 1" in output
+    assert "node100:9100 /mnt/node205/sda1: 10/100 bytes free/total" not in output
     assert "storage topology:" in output
     assert "cluster mount groups: 1" in output
     assert "shared storage candidates: 1" in output
@@ -104,6 +105,81 @@ def test_cli_state_summary_formats_cluster_mount_groups():
     assert "candidate visible on" not in output
     assert "materiality: medium; reasons:" not in output
     assert "ambiguity != storage identity" not in output
+
+
+def test_cli_state_summary_filesystems_show_shape_not_inventory_by_default():
+    seed_local = load_seed_local_module()
+    filesystems = []
+    for index in range(12):
+        filesystems.append(
+            {
+                "host": f"node{index:03d}:9100",
+                "mountpoint": "/",
+                "free": index,
+                "total": 100 + index,
+            }
+        )
+    for index in range(3):
+        filesystems.append(
+            {
+                "host": f"node{index:03d}:9100",
+                "mountpoint": f"/boot/firmware{index}",
+                "free": 10 + index,
+                "total": 200 + index,
+            }
+        )
+    for index in range(4):
+        filesystems.append(
+            {
+                "host": f"node{index:03d}:9100",
+                "mountpoint": f"/mnt/node20{index}/sda1",
+                "free": 20 + index,
+                "total": 300 + index,
+            }
+        )
+    for index in range(2):
+        filesystems.append(
+            {
+                "host": f"node{index:03d}:9100",
+                "mountpoint": f"/srv/data{index}",
+                "free": 30 + index,
+                "total": 400 + index,
+            }
+        )
+
+    output = seed_local.format_state_summary(
+        {
+            "entity_count": 0,
+            "fact_count": 0,
+            "durable_fact_count": 0,
+            "measurement_current_sample_count": 0,
+            "conflict_count": 0,
+            "stale_fact_count": 0,
+            "graph_issue_warning_count": 0,
+            "graph_issue_error_count": 0,
+            "observation_source_counts": {},
+            "top_entities": [],
+            "availability": {"up": 0, "down": 0, "unknown": 0},
+            "filesystems": filesystems,
+            "cluster_mount_groups": [],
+            "shared_storage_candidates": [],
+            "storage_topology_ambiguities": [],
+        }
+    )
+
+    assert "filesystems:" in output
+    assert "  root: 12" in output
+    assert "  boot: 3" in output
+    assert "  cluster mounts: 4" in output
+    assert "  other: 2" in output
+    assert "showing root filesystems only" in output
+    assert "node000:9100 /: 0/100 bytes free/total" in output
+    assert "node009:9100 /: 9/109 bytes free/total" in output
+    assert "node010:9100 /: 10/110 bytes free/total" not in output
+    assert "/mnt/node200/sda1" not in output
+    assert "/boot/firmware0" not in output
+    assert "/srv/data0" not in output
+    assert "detail bounded: showing 10 of 21 filesystem rows" in output
 
 
 def test_cli_state_summary_bounds_storage_topology_details_and_counts_materiality():
