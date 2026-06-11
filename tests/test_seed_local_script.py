@@ -24,6 +24,48 @@ def load_seed_local_module():
     return module
 
 
+def test_cli_state_summary_formats_cluster_mount_groups():
+    seed_local = load_seed_local_module()
+
+    output = seed_local.format_state_summary(
+        {
+            "entity_count": 0,
+            "fact_count": 0,
+            "durable_fact_count": 0,
+            "measurement_current_sample_count": 0,
+            "conflict_count": 0,
+            "stale_fact_count": 0,
+            "graph_issue_warning_count": 0,
+            "graph_issue_error_count": 0,
+            "observation_source_counts": {},
+            "top_entities": [],
+            "availability": {"up": 0, "down": 0, "unknown": 0},
+            "filesystems": [
+                {
+                    "host": "node100:9100",
+                    "mountpoint": "/mnt/node205/sda1",
+                    "free": 10,
+                    "total": 100,
+                }
+            ],
+            "cluster_mount_groups": [
+                {
+                    "mountpoint": "/mnt/node205/sda1",
+                    "visible_endpoint_count": 2,
+                    "visible_endpoints": ["node100:9100", "node101:9100"],
+                }
+            ],
+        }
+    )
+
+    assert "filesystems:" in output
+    assert "node100:9100 /mnt/node205/sda1: 10/100 bytes free/total" in output
+    assert "cluster mount groups:" in output
+    assert (
+        "/mnt/node205/sda1: visible on 2 endpoints (node100:9100, node101:9100)"
+        in output
+    )
+
 def test_build_local_app_uses_intent_classifier_path_and_loads_echo_toolkit():
     seed_local = load_seed_local_module()
 

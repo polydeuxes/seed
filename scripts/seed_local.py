@@ -2965,6 +2965,15 @@ def format_state_summary(summary: dict[str, Any]) -> str:
                 f"  {filesystem['host']} {filesystem['mountpoint']}: "
                 f"{filesystem['free']}/{filesystem['total']} bytes free/total"
             )
+    cluster_mount_groups = summary.get("cluster_mount_groups", [])
+    if cluster_mount_groups:
+        lines.append("cluster mount groups:")
+        for group in cluster_mount_groups:
+            endpoints = ", ".join(group["visible_endpoints"])
+            lines.append(
+                f"  {group['mountpoint']}: visible on "
+                f"{group['visible_endpoint_count']} endpoints ({endpoints})"
+            )
     return "\n".join(lines)
 
 
