@@ -215,6 +215,24 @@
       "cardinality": "single"
     },
     {
+      "predicate": "hosts_file_address_mapping",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "hosts_file_name",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "hosts_file_alias",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
       "predicate": "interface_mac_address",
       "kind": "durable_fact",
       "value_type": "string",

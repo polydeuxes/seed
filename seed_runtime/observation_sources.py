@@ -90,6 +90,9 @@ _IDENTITY_QUESTIONS = {
     "fqdn": "What fully qualified hostname is explicitly configured locally?",
 }
 
+_HOSTS_FILE_QUESTION = "What local hosts-file name/address mappings are configured?"
+_HOSTS_FILE_SOURCE = "/etc/hosts"
+
 _MOUNT_QUESTIONS = {
     "mount_point": "What mount points currently exist?",
     "filesystem_type": "What filesystem type is mounted?",
@@ -210,6 +213,7 @@ class LocalHostObservationSource:
         sys_class_block: str | Path = "/sys/class/block",
         etc_hostname: str | Path = "/etc/hostname",
         machine_id: str | Path = "/etc/machine-id",
+        etc_hosts: str | Path = "/etc/hosts",
         resolv_conf: str | Path = "/etc/resolv.conf",
         systemd_resolv_conf: str | Path = "/run/systemd/resolve/resolv.conf",
         systemd_stub_resolv_conf: str | Path = "/run/systemd/resolve/stub-resolv.conf",
@@ -226,6 +230,7 @@ class LocalHostObservationSource:
         self.sys_class_block = Path(sys_class_block)
         self.etc_hostname = Path(etc_hostname)
         self.machine_id = Path(machine_id)
+        self.etc_hosts = Path(etc_hosts)
         self.resolv_conf = Path(resolv_conf)
         self.systemd_resolv_conf = Path(systemd_resolv_conf)
         self.systemd_stub_resolv_conf = Path(systemd_stub_resolv_conf)
@@ -270,6 +275,9 @@ class LocalHostObservationSource:
         }
         observations = self._collect_identity_observations(
             observed_at, hostname, metadata, identity
+        )
+        observations.extend(
+            self._collect_hosts_file_observations(observed_at, hostname, metadata)
         )
         observations.extend(
             [
@@ -429,6 +437,122 @@ class LocalHostObservationSource:
                 )
             )
         return observations
+
+    def _collect_hosts_file_observations(
+        self, observed_at: datetime, subject: str, metadata: dict[str, Any]
+    ) -> list[Observation]:
+        """Collect local /etc/hosts configured mapping evidence only.
+
+        Hosts-file lines are source-scoped local configuration evidence. They do
+        not assert DNS truth, resolution, reachability, host uniqueness, alias
+        equivalence, ownership, endpoint identity, or host identity.
+        """
+
+        entries = self._hosts_file_entries()
+        observations: list[Observation] = []
+        hosts_metadata = {
+            **metadata,
+            "source": _HOSTS_FILE_SOURCE,
+            "source_path": str(self.etc_hosts),
+            "question_answered": _HOSTS_FILE_QUESTION,
+            "dns_validity_asserted": False,
+            "dns_resolution_asserted": False,
+            "network_reachability_asserted": False,
+            "availability_asserted": False,
+            "host_ownership_asserted": False,
+            "host_uniqueness_asserted": False,
+            "alias_equivalence_asserted": False,
+            "endpoint_identity_asserted": False,
+            "host_identity_asserted": False,
+        }
+        for entry in entries:
+            line_number = str(entry["line_number"])
+            address = entry["address"]
+            canonical_name = entry["names"][0]
+            names = entry["names"]
+            observations.append(
+                self._observation(
+                    observed_at,
+                    subject,
+                    "hosts_file_address_mapping",
+                    address,
+                    metadata={
+                        **hosts_metadata,
+                        "fact_produced": "hosts_file_address_mapping",
+                    },
+                    dimensions={
+                        "source": _HOSTS_FILE_SOURCE,
+                        "line_number": line_number,
+                        "address": address,
+                        "canonical_name": canonical_name,
+                        "names": " ".join(names),
+                    },
+                )
+            )
+            observations.append(
+                self._observation(
+                    observed_at,
+                    subject,
+                    "hosts_file_name",
+                    canonical_name,
+                    metadata={**hosts_metadata, "fact_produced": "hosts_file_name"},
+                    dimensions={
+                        "source": _HOSTS_FILE_SOURCE,
+                        "line_number": line_number,
+                        "address": address,
+                        "name_index": "0",
+                        "name_role": "canonical",
+                    },
+                )
+            )
+            for index, alias in enumerate(names[1:], start=1):
+                observations.append(
+                    self._observation(
+                        observed_at,
+                        subject,
+                        "hosts_file_alias",
+                        alias,
+                        metadata={
+                            **hosts_metadata,
+                            "fact_produced": "hosts_file_alias",
+                        },
+                        dimensions={
+                            "source": _HOSTS_FILE_SOURCE,
+                            "line_number": line_number,
+                            "address": address,
+                            "canonical_name": canonical_name,
+                            "name_index": str(index),
+                            "name_role": "alias",
+                        },
+                    )
+                )
+        return observations
+
+    def _hosts_file_entries(self) -> list[dict[str, Any]]:
+        text = self._read_text(self.etc_hosts)
+        if text is None:
+            return []
+        entries: list[dict[str, Any]] = []
+        for line_number, line in enumerate(text.splitlines(), start=1):
+            content = line.split("#", 1)[0].strip()
+            if not content:
+                continue
+            fields = content.split()
+            if len(fields) < 2:
+                continue
+            address = fields[0]
+            try:
+                ipaddress.ip_address(address)
+            except ValueError:
+                continue
+            entries.append(
+                {
+                    "line_number": line_number,
+                    "address": address,
+                    "names": fields[1:],
+                }
+            )
+        return entries
 
     def _collect_host_description_observations(
         self, observed_at: datetime, hostname: str, metadata: dict[str, Any]

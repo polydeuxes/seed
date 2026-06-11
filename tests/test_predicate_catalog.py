@@ -39,6 +39,16 @@ def test_builtin_catalog_defines_canonical_predicates_and_prometheus_mappings():
     assert catalog.get("dns_resolver_stub").cardinality == "multi"
     assert catalog.get("dns_resolver_upstream").cardinality == "multi"
     for predicate in (
+        "hosts_file_address_mapping",
+        "hosts_file_name",
+        "hosts_file_alias",
+    ):
+        definition = catalog.get(predicate)
+        assert definition is not None
+        assert definition.kind == "durable_fact"
+        assert definition.value_type == "string"
+        assert definition.cardinality == "multi"
+    for predicate in (
         "listening_address",
         "listening_endpoint",
         "listening_port",
