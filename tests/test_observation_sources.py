@@ -1830,6 +1830,160 @@ def test_prometheus_source_uses_safe_get_queries_and_converts_observations(
     )
 
 
+def test_prometheus_node_uname_os_endpoint_evidence_is_preserved_without_fact_promotion(
+    monkeypatch,
+):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import PrometheusObservationSource
+
+    class Response:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self):
+            return json.dumps(self.payload).encode("utf-8")
+
+    def fake_urlopen(request, timeout):
+        query = request.full_url.rsplit("query=", 1)[1]
+        metric = {"instance": "192.168.254.115:9100"}
+        if query == "up":
+            metric["job"] = "node-exporter"
+        if query == "node_uname_info":
+            metric.update({"nodename": "node115", "sysname": "Linux"})
+        if query.startswith("node_filesystem_"):
+            metric.update({"mountpoint": "/", "device": "/dev/sda1", "fstype": "ext4"})
+        return Response(
+            {
+                "status": "success",
+                "data": {
+                    "resultType": "vector",
+                    "result": [{"metric": metric, "value": [1, "1"]}],
+                },
+            }
+        )
+
+    monkeypatch.setattr(sources, "urlopen", fake_urlopen)
+    source = PrometheusObservationSource("http://prom.example:9090", name="prometheus")
+
+    raw = source.collect()
+    raw_os = [obs for obs in raw if obs.predicate == "os"]
+    assert len(raw_os) == 1
+    assert raw_os[0].subject == "192.168.254.115:9100"
+    assert raw_os[0].value == "linux"
+    assert raw_os[0].metadata["source_name"] == "prometheus"
+    assert raw_os[0].metadata["prometheus_metric"] == "node_uname_info"
+    assert raw_os[0].metadata["metric_labels"] == {
+        "instance": "192.168.254.115:9100",
+        "nodename": "node115",
+        "sysname": "Linux",
+    }
+    assert raw_os[0].metadata["instance"] == "192.168.254.115:9100"
+    assert raw_os[0].metadata["nodename"] == "node115"
+    assert raw_os[0].metadata["fact_promotion_suppressed"] is True
+
+    ledger = EventLedger()
+    facts = ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        source, "ws_prometheus_os_endpoint"
+    )
+    state = StateProjector(ledger).project("ws_prometheus_os_endpoint")
+
+    assert state.get_best_fact("192.168.254.115:9100", "os") is None
+    assert state.get_best_fact("node115", "os") is None
+    assert state.get_best_fact("node115", "prometheus_instance").value == (
+        "192.168.254.115:9100"
+    )
+    assert state.get_best_fact("192.168.254.115:9100", "up").value == 1
+    assert (
+        state.get_best_fact("192.168.254.115:9100", "availability_status").value == "up"
+    )
+    assert (
+        state.get_best_fact("192.168.254.115:9100", "filesystem_avail_bytes").value == 1
+    )
+    assert (
+        state.get_best_fact("192.168.254.115:9100", "filesystem_free_bytes").value == 1
+    )
+    assert (
+        state.get_best_fact("192.168.254.115:9100", "filesystem_size_bytes").value == 1
+    )
+    assert (
+        state.get_best_fact("192.168.254.115:9100", "filesystem_total_bytes").value == 1
+    )
+    assert not any(
+        fact.subject_id == "192.168.254.115:9100" and fact.predicate == "os"
+        for fact in facts
+    )
+
+    observation_events = [
+        event
+        for event in ledger.list("ws_prometheus_os_endpoint")
+        if event.kind == "observation.observed"
+    ]
+    evidence_events = [
+        event
+        for event in ledger.list("ws_prometheus_os_endpoint")
+        if event.kind == "evidence.observed"
+    ]
+    fact_events = [
+        event
+        for event in ledger.list("ws_prometheus_os_endpoint")
+        if event.kind == "fact.observed"
+    ]
+    observed_os_payloads = [
+        event.payload["observation"]
+        for event in observation_events
+        if event.payload["observation"]["predicate"] == "os"
+    ]
+    evidence_os_payloads = [
+        event.payload["evidence"]["payload"]
+        for event in evidence_events
+        if event.payload["evidence"]["payload"]["predicate"] == "os"
+    ]
+    fact_os_payloads = [
+        event.payload["fact"]
+        for event in fact_events
+        if event.payload["fact"]["predicate"] == "os"
+    ]
+    assert len(observed_os_payloads) == 1
+    assert observed_os_payloads[0]["metadata"]["prometheus_metric"] == "node_uname_info"
+    assert observed_os_payloads[0]["metadata"]["nodename"] == "node115"
+    assert len(evidence_os_payloads) == 1
+    assert evidence_os_payloads[0]["metadata"]["prometheus_metric"] == "node_uname_info"
+    assert evidence_os_payloads[0]["metadata"]["nodename"] == "node115"
+    assert fact_os_payloads == []
+
+
+def test_non_prometheus_os_observation_still_promotes_to_fact():
+    ledger = EventLedger()
+    source = FakeObservationSource(
+        [
+            _observation(
+                "obs_local_os",
+                subject="192.168.254.115:9100",
+                predicate="os",
+                value="linux",
+                metadata={"source_name": "local_inventory"},
+            )
+        ],
+        name="local_inventory",
+    )
+
+    facts = ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        source, "ws_non_prometheus_os"
+    )
+    state = StateProjector(ledger).project("ws_non_prometheus_os")
+
+    assert [(fact.subject_id, fact.predicate, fact.value) for fact in facts] == [
+        ("192.168.254.115:9100", "os", "linux")
+    ]
+    assert state.get_best_fact("192.168.254.115:9100", "os").value == "linux"
+
+
 def test_prometheus_source_unreachable_fails_gracefully(monkeypatch):
     from seed_runtime import observation_sources as sources
     from seed_runtime.observation_sources import PrometheusObservationSource
