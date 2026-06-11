@@ -243,6 +243,117 @@ def _filesystem_facts(
     )
 
 
+def test_operator_state_summary_adds_filesystem_shape_without_changing_filesystem_rows():
+    facts = []
+    for index in range(12):
+        facts.extend(
+            _filesystem_facts(
+                f"node{index:03d}:9100",
+                "/",
+                free=1000 + index,
+                total=2000 + index,
+                prefix=f"shape_root_{index}",
+            )
+        )
+    facts.extend(
+        _filesystem_facts(
+            "node100:9100",
+            "/boot/firmware",
+            free=10,
+            total=20,
+            prefix="shape_boot_firmware",
+        )
+    )
+    facts.extend(
+        _filesystem_facts(
+            "node101:9100",
+            "/System/Volumes/iSCPreboot",
+            free=11,
+            total=21,
+            prefix="shape_preboot",
+        )
+    )
+    facts.extend(
+        _filesystem_facts(
+            "node102:9100",
+            "/mnt/node205/sda1",
+            free=12,
+            total=22,
+            prefix="shape_cluster_node",
+        )
+    )
+    facts.extend(
+        _filesystem_facts(
+            "node103:9100",
+            "/mnt/rpi4/data",
+            free=13,
+            total=23,
+            prefix="shape_cluster_rpi",
+        )
+    )
+    facts.extend(
+        _filesystem_facts(
+            "node104:9100",
+            "/srv/data",
+            free=14,
+            total=24,
+            prefix="shape_other",
+        )
+    )
+    state = _project(*facts)
+
+    summary = build_operator_state_summary(state)
+
+    assert summary["fact_count"] == len(facts)
+    assert summary["measurement_current_sample_count"] == len(facts)
+    assert len(summary["filesystems"]) == len(facts) // 2
+    assert summary["filesystem_shape_summary"]["counts"] == {
+        "root": 12,
+        "boot": 2,
+        "cluster mounts": 2,
+        "other": 1,
+    }
+    assert summary["filesystem_shape_summary"]["detail_category"] == "root"
+    assert summary["filesystem_shape_summary"]["detail_row_count"] == 10
+    assert summary["filesystem_shape_summary"]["total_row_count"] == 17
+    assert [
+        filesystem["mountpoint"]
+        for filesystem in summary["filesystem_shape_summary"]["detail_rows"]
+    ] == ["/"] * 10
+    assert {
+        (filesystem["host"], filesystem["mountpoint"], filesystem["free"])
+        for filesystem in summary["filesystems"]
+    } >= {
+        ("node102:9100", "/mnt/node205/sda1", 12),
+        ("node103:9100", "/mnt/rpi4/data", 13),
+        ("node104:9100", "/srv/data", 14),
+    }
+    assert (
+        state.get_best_fact(
+            "node102:9100",
+            "filesystem_free_bytes",
+            dimensions={
+                "mountpoint": "/mnt/node205/sda1",
+                "device": "/dev/sda1",
+                "fstype": "ext4",
+            },
+        ).value
+        == 12
+    )
+    assert (
+        state.get_fact_support(
+            "node103:9100",
+            "filesystem_total_bytes",
+            dimensions={
+                "mountpoint": "/mnt/rpi4/data",
+                "device": "/dev/sda1",
+                "fstype": "ext4",
+            },
+        ).value
+        == 23
+    )
+
+
 def test_operator_state_summary_groups_repeated_mount_visibility_by_mountpoint():
     state = _project(
         *_filesystem_facts(

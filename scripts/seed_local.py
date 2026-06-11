@@ -2917,6 +2917,50 @@ def _format_view_dimensions(dimensions: dict[str, str]) -> str:
     )
     return f" ({values})"
 
+_FILESYSTEM_CATEGORY_ORDER = ("root", "boot", "cluster mounts", "other")
+_FILESYSTEM_DETAIL_LIMIT = 10
+
+
+def _filesystem_category(filesystem: dict[str, Any]) -> str:
+    mountpoint = str(filesystem.get("mountpoint", ""))
+    normalized = mountpoint.rstrip("/") or "/"
+    if normalized == "/":
+        return "root"
+    if (
+        normalized == "/media/boot"
+        or normalized == "/boot"
+        or normalized.startswith("/boot/")
+        or normalized.startswith("/System/Volumes/iSCPreboot")
+        or "preboot" in normalized.lower()
+    ):
+        return "boot"
+    if normalized.startswith("/mnt/node") or normalized.startswith("/mnt/rpi"):
+        return "cluster mounts"
+    return "other"
+
+
+def _filesystem_shape_summary(
+    filesystems: list[dict[str, Any]],
+    *,
+    detail_limit: int = _FILESYSTEM_DETAIL_LIMIT,
+) -> dict[str, Any]:
+    counts = {category: 0 for category in _FILESYSTEM_CATEGORY_ORDER}
+    categorized = {category: [] for category in _FILESYSTEM_CATEGORY_ORDER}
+    for filesystem in filesystems:
+        category = _filesystem_category(filesystem)
+        counts[category] += 1
+        categorized[category].append(filesystem)
+    detail_category = "root"
+    detail_rows = categorized["root"][:detail_limit]
+    return {
+        "counts": counts,
+        "detail_category": detail_category,
+        "detail_limit": detail_limit,
+        "detail_rows": [dict(row) for row in detail_rows],
+        "detail_row_count": len(detail_rows),
+        "total_row_count": len(filesystems),
+    }
+
 
 def _counts_by(
     items: list[dict[str, Any]],
@@ -2978,11 +3022,35 @@ def format_state_summary(summary: dict[str, Any]) -> str:
         ]
     )
     if summary["filesystems"]:
+        filesystem_shape_summary = summary.get("filesystem_shape_summary") or (
+            _filesystem_shape_summary(summary["filesystems"])
+        )
         lines.append("filesystems:")
-        for filesystem in summary["filesystems"]:
+        for category in _FILESYSTEM_CATEGORY_ORDER:
             lines.append(
-                f"  {filesystem['host']} {filesystem['mountpoint']}: "
-                f"{filesystem['free']}/{filesystem['total']} bytes free/total"
+                f"  {category}: "
+                f"{filesystem_shape_summary['counts'].get(category, 0)}"
+            )
+        detail_category = filesystem_shape_summary.get("detail_category", "root")
+        detail_rows = filesystem_shape_summary.get("detail_rows", [])
+        if detail_rows:
+            label = detail_category
+            lines.append(f"  showing {label} filesystems only")
+            for filesystem in detail_rows:
+                lines.append(
+                    f"  {filesystem['host']} {filesystem['mountpoint']}: "
+                    f"{filesystem['free']}/{filesystem['total']} bytes free/total"
+                )
+        total_row_count = filesystem_shape_summary.get(
+            "total_row_count", len(summary["filesystems"])
+        )
+        detail_row_count = filesystem_shape_summary.get(
+            "detail_row_count", len(detail_rows)
+        )
+        if total_row_count > detail_row_count:
+            lines.append(
+                f"  detail bounded: showing {detail_row_count} of "
+                f"{total_row_count} filesystem rows"
             )
     cluster_mount_groups = summary.get("cluster_mount_groups", [])
     shared_storage_candidates = summary.get("shared_storage_candidates", [])
