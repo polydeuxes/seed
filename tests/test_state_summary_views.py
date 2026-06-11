@@ -902,6 +902,17 @@ def test_storage_topology_projection_data_survives_bounded_operator_summary():
     assert len(summary["cluster_mount_groups"]) == 6
     assert len(summary["shared_storage_candidates"]) >= 6
     assert len(summary["storage_topology_ambiguities"]) == 6
+    assert summary["storage_topology_summary"] == {
+        "cluster_mount_group_count": 6,
+        "shared_storage_candidate_count": len(summary["shared_storage_candidates"]),
+        "shared_storage_candidate_confidence_counts": {
+            "high": 6,
+            "medium": 12,
+            "low": 6,
+        },
+        "storage_topology_ambiguity_count": 6,
+        "storage_topology_ambiguity_materiality_counts": {"medium": 6},
+    }
     assert {
         ambiguity["subject"]
         for ambiguity in summary["storage_topology_ambiguities"]

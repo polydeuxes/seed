@@ -2987,34 +2987,57 @@ def format_state_summary(summary: dict[str, Any]) -> str:
     cluster_mount_groups = summary.get("cluster_mount_groups", [])
     shared_storage_candidates = summary.get("shared_storage_candidates", [])
     storage_topology_ambiguities = summary.get("storage_topology_ambiguities", [])
-    if (
-        cluster_mount_groups
-        or shared_storage_candidates
-        or storage_topology_ambiguities
+    storage_topology_summary = summary.get("storage_topology_summary") or {
+        "cluster_mount_group_count": len(cluster_mount_groups),
+        "shared_storage_candidate_count": len(shared_storage_candidates),
+        "shared_storage_candidate_confidence_counts": _counts_by(
+            shared_storage_candidates,
+            "confidence",
+            order=("high", "medium", "low"),
+        ),
+        "storage_topology_ambiguity_count": len(storage_topology_ambiguities),
+        "storage_topology_ambiguity_materiality_counts": _counts_by(
+            storage_topology_ambiguities,
+            "materiality",
+            order=("high", "medium", "low"),
+        ),
+    }
+    if any(
+        storage_topology_summary[key]
+        for key in (
+            "cluster_mount_group_count",
+            "shared_storage_candidate_count",
+            "storage_topology_ambiguity_count",
+        )
     ):
         lines.append("storage topology:")
-        if cluster_mount_groups:
-            lines.append(f"  cluster mount groups: {len(cluster_mount_groups)}")
-        if shared_storage_candidates:
+        cluster_mount_group_count = storage_topology_summary[
+            "cluster_mount_group_count"
+        ]
+        if cluster_mount_group_count:
+            lines.append(f"  cluster mount groups: {cluster_mount_group_count}")
+        shared_storage_candidate_count = storage_topology_summary[
+            "shared_storage_candidate_count"
+        ]
+        if shared_storage_candidate_count:
             lines.append(
-                f"  shared storage candidates: {len(shared_storage_candidates)}"
+                f"  shared storage candidates: {shared_storage_candidate_count}"
             )
-            for confidence, count in _counts_by(
-                shared_storage_candidates,
-                "confidence",
-                order=("high", "medium", "low"),
-            ).items():
+            for confidence, count in storage_topology_summary[
+                "shared_storage_candidate_confidence_counts"
+            ].items():
                 lines.append(f"    {confidence}: {count}")
-        if storage_topology_ambiguities:
+        storage_topology_ambiguity_count = storage_topology_summary[
+            "storage_topology_ambiguity_count"
+        ]
+        if storage_topology_ambiguity_count:
             lines.append(
                 f"  storage topology ambiguities: "
-                f"{len(storage_topology_ambiguities)} total"
+                f"{storage_topology_ambiguity_count} total"
             )
-            for materiality, count in _counts_by(
-                storage_topology_ambiguities,
-                "materiality",
-                order=("high", "medium", "low"),
-            ).items():
+            for materiality, count in storage_topology_summary[
+                "storage_topology_ambiguity_materiality_counts"
+            ].items():
                 lines.append(f"    {materiality}: {count}")
             lines.append(
                 "    detail: projected ambiguity records remain in "

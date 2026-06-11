@@ -35,6 +35,49 @@ _STORAGE_TOPOLOGY_AMBIGUITY_BOUNDARY = (
 _HISTORICAL_NODE_STYLE_MOUNTPATH = re.compile(r"(?:^|/)node\d+(?:/|$)")
 
 
+def _counts_by_field(
+    items: list[dict[str, Any]],
+    field: str,
+    *,
+    order: tuple[str, ...] = (),
+) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in items:
+        value = str(item.get(field, "unknown"))
+        counts[value] = counts.get(value, 0) + 1
+    order_index = {value: index for index, value in enumerate(order)}
+    return dict(
+        sorted(
+            counts.items(),
+            key=lambda item: (order_index.get(item[0], len(order_index)), item[0]),
+        )
+    )
+
+
+def _storage_topology_summary(
+    cluster_mount_groups: list[dict[str, Any]],
+    shared_storage_candidates: list[dict[str, Any]],
+    storage_topology_ambiguities: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Return bounded operator-facing counts for storage topology projections."""
+
+    return {
+        "cluster_mount_group_count": len(cluster_mount_groups),
+        "shared_storage_candidate_count": len(shared_storage_candidates),
+        "shared_storage_candidate_confidence_counts": _counts_by_field(
+            shared_storage_candidates,
+            "confidence",
+            order=("high", "medium", "low"),
+        ),
+        "storage_topology_ambiguity_count": len(storage_topology_ambiguities),
+        "storage_topology_ambiguity_materiality_counts": _counts_by_field(
+            storage_topology_ambiguities,
+            "materiality",
+            order=("high", "medium", "low"),
+        ),
+    }
+
+
 def _shared_storage_candidates(
     filesystems: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
@@ -356,6 +399,11 @@ def state_summary(
         cluster_mount_groups,
         shared_storage_candidates,
     )
+    storage_topology_summary = _storage_topology_summary(
+        cluster_mount_groups,
+        shared_storage_candidates,
+        storage_topology_ambiguities,
+    )
 
     summary = {
         "entity_count": len(entity_aliases),
@@ -378,6 +426,7 @@ def state_summary(
         "cluster_mount_groups": cluster_mount_groups,
         "shared_storage_candidates": shared_storage_candidates,
         "storage_topology_ambiguities": storage_topology_ambiguities,
+        "storage_topology_summary": storage_topology_summary,
     }
     if include_relationship_count:
         summary["relationship_count"] = len(state.relationships)
