@@ -18,6 +18,83 @@ from seed_runtime.local_host_mounts import (
 from seed_runtime.state import State
 
 
+_SHARED_STORAGE_CANDIDATE_BOUNDARY = (
+    "candidate shared storage != shared storage fact; "
+    "candidate shared storage != ownership; "
+    "candidate shared storage != topology authority"
+)
+
+
+def _shared_storage_candidates(
+    filesystems: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Return projection-only shared-storage interpretations.
+
+    Candidates are deliberately rendered from observed filesystem measurement
+    fields only.  They are not facts, ownership assertions, storage identities,
+    relationships, or topology authority.
+    """
+
+    signature_specs = [
+        (("mountpoint", "device", "fstype", "total", "free"), "high"),
+        (("device", "fstype", "total"), "medium"),
+        (("mountpoint", "fstype", "total"), "medium"),
+        (("total",), "low"),
+    ]
+    evidence_labels = {
+        "mountpoint": "matching mountpath",
+        "device": "matching device",
+        "fstype": "matching filesystem type",
+        "total": "matching total bytes",
+        "free": "matching free bytes",
+    }
+
+    candidates_by_key: dict[tuple[tuple[str, object], ...], dict[str, Any]] = {}
+    for fields, confidence in signature_specs:
+        groups: dict[tuple[object, ...], list[dict[str, Any]]] = defaultdict(list)
+        for filesystem in filesystems:
+            values = tuple(filesystem.get(field) for field in fields)
+            if any(value is None for value in values):
+                continue
+            groups[values].append(filesystem)
+
+        for values, members in groups.items():
+            endpoints = sorted({str(member["host"]) for member in members})
+            if len(endpoints) < 2:
+                continue
+            mountpaths = sorted({str(member["mountpoint"]) for member in members})
+            evidence = [evidence_labels[field] for field in fields]
+            observed_values = dict(zip(fields, values, strict=True))
+            candidate_key = tuple(sorted(observed_values.items()))
+            candidates_by_key.setdefault(
+                candidate_key,
+                {
+                    "candidate_kind": "candidate_shared_storage",
+                    "mountpaths": mountpaths,
+                    "visible_endpoint_count": len(endpoints),
+                    "visible_endpoints": endpoints,
+                    "evidence": evidence,
+                    "observed_values": observed_values,
+                    "confidence": confidence,
+                    "confidence_basis": (
+                        "derived only from matching observable filesystem "
+                        "measurement fields; confidence is not certainty"
+                    ),
+                    "boundary": _SHARED_STORAGE_CANDIDATE_BOUNDARY,
+                },
+            )
+
+    return sorted(
+        candidates_by_key.values(),
+        key=lambda candidate: (
+            {"high": 0, "medium": 1, "low": 2}[candidate["confidence"]],
+            candidate["mountpaths"],
+            candidate["evidence"],
+            candidate["visible_endpoints"],
+        ),
+    )
+
+
 def state_summary(
     state: State,
     *,
@@ -85,6 +162,7 @@ def state_summary(
         key = (canonical, mountpoint, dimensions_key)
         field = "free" if fact.predicate == "filesystem_free_bytes" else "total"
         filesystems[key][field] = fact.value
+        filesystems[key].setdefault("device", fact.dimensions.get("device"))
         filesystems[key].setdefault("fstype", fact.dimensions.get("fstype"))
 
     complete_filesystems = [
@@ -97,10 +175,22 @@ def state_summary(
         for (host, mountpoint, dimensions_key), values in filesystems.items()
         if "free" in values and "total" in values
     ]
+    operator_relevant_filesystems = [
+        filesystem
+        for filesystem in complete_filesystems
+        if is_operator_relevant_mount(
+            filesystem["mountpoint"],
+            [filesystem["fstype"]] if filesystem.get("fstype") else (),
+        )
+    ]
     filesystem_summary = [
-        {key: value for key, value in filesystem.items() if key != "dimensions_key"}
+        {
+            key: value
+            for key, value in filesystem.items()
+            if key not in {"device", "dimensions_key"}
+        }
         for filesystem in sorted(
-            complete_filesystems,
+            operator_relevant_filesystems,
             key=lambda filesystem: (
                 mount_display_priority(
                     filesystem["mountpoint"],
@@ -109,10 +199,6 @@ def state_summary(
                 filesystem["host"],
                 filesystem["dimensions_key"],
             ),
-        )
-        if is_operator_relevant_mount(
-            filesystem["mountpoint"],
-            [filesystem["fstype"]] if filesystem.get("fstype") else (),
         )
     ]
 
@@ -138,6 +224,8 @@ def state_summary(
     # mountpoint path because the slice answers "where is this path visible?"
     # It must not be interpreted as shared storage identity or ownership.
 
+    shared_storage_candidates = _shared_storage_candidates(operator_relevant_filesystems)
+
     summary = {
         "entity_count": len(entity_aliases),
         "fact_count": len(state.facts),
@@ -157,6 +245,7 @@ def state_summary(
         "availability": dict(availability),
         "filesystems": filesystem_summary,
         "cluster_mount_groups": cluster_mount_groups,
+        "shared_storage_candidates": shared_storage_candidates,
     }
     if include_relationship_count:
         summary["relationship_count"] = len(state.relationships)

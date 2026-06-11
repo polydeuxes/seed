@@ -408,3 +408,241 @@ def test_operator_state_summary_distinct_mountpaths_remain_distinct_groups():
             "visible_endpoints": ["node100:9100", "node101:9100"],
         },
     ]
+
+
+def _candidate_by_evidence(summary: dict, evidence: list[str]) -> list[dict]:
+    return [
+        candidate
+        for candidate in summary["shared_storage_candidates"]
+        if candidate["evidence"] == evidence
+    ]
+
+
+def test_shared_storage_candidates_are_projection_only_not_facts_ownership_or_identity():
+    state = _project(
+        *_filesystem_facts(
+            "node100:9100",
+            "/mnt/node205/sda1",
+            free=10,
+            total=100,
+            device="node205:/exports/sda1",
+            prefix="node100_candidate_only",
+        ),
+        *_filesystem_facts(
+            "node101:9100",
+            "/mnt/node205/sda1",
+            free=10,
+            total=100,
+            device="node205:/exports/sda1",
+            prefix="node101_candidate_only",
+        ),
+    )
+
+    summary = build_operator_state_summary(state)
+
+    assert summary["fact_count"] == 4
+    assert state.relationships == []
+    assert summary["shared_storage_candidates"]
+    candidate = summary["shared_storage_candidates"][0]
+    assert candidate["candidate_kind"] == "candidate_shared_storage"
+    assert "shared storage fact" in candidate["boundary"]
+    assert "ownership" in candidate["boundary"]
+    assert "topology authority" in candidate["boundary"]
+    assert "owner" not in candidate
+    assert "ownership" not in candidate
+    assert "storage_identity" not in candidate
+    assert all("ownership" not in fact.predicate for fact in state.facts.values())
+    assert all("storage_identity" not in fact.predicate for fact in state.facts.values())
+    assert all("shared_storage" not in fact.predicate for fact in state.facts.values())
+
+
+def test_shared_storage_candidates_preserve_filesystem_facts_and_measurements():
+    state = _project(
+        *_filesystem_facts(
+            "node100:9100",
+            "/mnt/node205/sda1",
+            free=10,
+            total=100,
+            prefix="node100_candidate_preserved",
+        ),
+        *_filesystem_facts(
+            "node101:9100",
+            "/mnt/node205/sda1",
+            free=10,
+            total=100,
+            prefix="node101_candidate_preserved",
+        ),
+    )
+
+    summary = build_operator_state_summary(state)
+
+    assert summary["fact_count"] == 4
+    assert summary["measurement_current_sample_count"] == 4
+    assert {fact.predicate for fact in state.facts.values()} == {
+        "filesystem_free_bytes",
+        "filesystem_total_bytes",
+    }
+    assert (
+        state.get_best_fact(
+            "node100:9100",
+            "filesystem_free_bytes",
+            dimensions={
+                "mountpoint": "/mnt/node205/sda1",
+                "device": "/dev/sda1",
+                "fstype": "ext4",
+            },
+        ).value
+        == 10
+    )
+    assert (
+        state.get_best_fact(
+            "node101:9100",
+            "filesystem_total_bytes",
+            dimensions={
+                "mountpoint": "/mnt/node205/sda1",
+                "device": "/dev/sda1",
+                "fstype": "ext4",
+            },
+        ).value
+        == 100
+    )
+
+
+def test_shared_storage_candidates_allow_multiple_plausible_interpretations():
+    state = _project(
+        *_filesystem_facts(
+            "node100:9100",
+            "/mnt/node205/sda1",
+            free=10,
+            total=100,
+            device="node205:/exports/sda1",
+            prefix="node100_multi",
+        ),
+        *_filesystem_facts(
+            "node101:9100",
+            "/srv/compat/node205",
+            free=10,
+            total=100,
+            device="node205:/exports/sda1",
+            prefix="node101_multi",
+        ),
+        *_filesystem_facts(
+            "node102:9100",
+            "/mnt/node205/sda1",
+            free=30,
+            total=100,
+            device="/dev/mapper/compat205",
+            prefix="node102_multi",
+        ),
+    )
+
+    summary = build_operator_state_summary(state)
+
+    candidates = summary["shared_storage_candidates"]
+    assert len(candidates) >= 3
+    assert _candidate_by_evidence(
+        summary,
+        [
+            "matching device",
+            "matching filesystem type",
+            "matching total bytes",
+        ],
+    )
+    assert _candidate_by_evidence(
+        summary,
+        [
+            "matching mountpath",
+            "matching filesystem type",
+            "matching total bytes",
+        ],
+    )
+    assert _candidate_by_evidence(summary, ["matching total bytes"])
+
+
+def test_shared_storage_candidates_keep_distinct_evidence_groups_distinct():
+    state = _project(
+        *_filesystem_facts(
+            "node100:9100",
+            "/mnt/node205/sda1",
+            free=10,
+            total=100,
+            device="node205:/exports/sda1",
+            prefix="node100_distinct",
+        ),
+        *_filesystem_facts(
+            "node101:9100",
+            "/mnt/node205/sda1",
+            free=10,
+            total=100,
+            device="node205:/exports/sda1",
+            prefix="node101_distinct",
+        ),
+        *_filesystem_facts(
+            "node200:9100",
+            "/mnt/node200/sda1",
+            free=40,
+            total=200,
+            device="node200:/exports/sda1",
+            prefix="node200_distinct",
+        ),
+        *_filesystem_facts(
+            "node201:9100",
+            "/mnt/node200/sda1",
+            free=40,
+            total=200,
+            device="node200:/exports/sda1",
+            prefix="node201_distinct",
+        ),
+    )
+
+    summary = build_operator_state_summary(state)
+
+    high_candidates = [
+        candidate
+        for candidate in summary["shared_storage_candidates"]
+        if candidate["confidence"] == "high"
+    ]
+    assert [candidate["mountpaths"] for candidate in high_candidates] == [
+        ["/mnt/node200/sda1"],
+        ["/mnt/node205/sda1"],
+    ]
+    assert high_candidates[0]["observed_values"] != high_candidates[1]["observed_values"]
+
+
+def test_shared_storage_candidates_use_observable_filesystem_evidence_only():
+    state = _project(
+        *_filesystem_facts(
+            "node100:9100",
+            "/mnt/node205/sda1",
+            free=10,
+            total=100,
+            device="node205:/exports/sda1",
+            prefix="node100_observable",
+        ),
+        *_filesystem_facts(
+            "node101:9100",
+            "/mnt/node205/sda1",
+            free=10,
+            total=100,
+            device="node205:/exports/sda1",
+            prefix="node101_observable",
+        ),
+    )
+
+    summary = build_operator_state_summary(state)
+
+    candidate = summary["shared_storage_candidates"][0]
+    assert set(candidate["observed_values"]).issubset(
+        {"mountpoint", "device", "fstype", "total", "free"}
+    )
+    assert candidate["evidence"] == [
+        "matching mountpath",
+        "matching device",
+        "matching filesystem type",
+        "matching total bytes",
+        "matching free bytes",
+    ]
+    assert "evidence_ids" not in candidate
+    assert "source_type" not in candidate
+    assert "operator" not in candidate
+    assert "confidence is not certainty" in candidate["confidence_basis"]
