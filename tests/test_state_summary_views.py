@@ -864,3 +864,62 @@ def test_storage_topology_ambiguities_use_observable_projection_evidence_only():
     assert "source_type" not in ambiguity
     assert "operator" not in ambiguity
     assert "certainty" in ambiguity["materiality_basis"]
+
+
+def test_storage_topology_projection_data_survives_bounded_operator_summary():
+    facts = []
+    for index in range(6):
+        mountpoint = f"/mnt/node20{index}/sda1"
+        total = 1000 + index
+        device = f"node20{index}:/exports/sda1"
+        facts.extend(
+            _filesystem_facts(
+                "node100:9100",
+                mountpoint,
+                free=100 + index,
+                total=total,
+                device=device,
+                prefix=f"node100_projection_boundary_{index}",
+            )
+        )
+        facts.extend(
+            _filesystem_facts(
+                "node101:9100",
+                mountpoint,
+                free=100 + index,
+                total=total,
+                device=device,
+                prefix=f"node101_projection_boundary_{index}",
+            )
+        )
+
+    state = _project(*facts)
+    summary = build_operator_state_summary(state)
+
+    assert summary["fact_count"] == 24
+    assert summary["measurement_current_sample_count"] == 24
+    assert len(summary["filesystems"]) == 12
+    assert len(summary["cluster_mount_groups"]) == 6
+    assert len(summary["shared_storage_candidates"]) >= 6
+    assert len(summary["storage_topology_ambiguities"]) == 6
+    assert {
+        ambiguity["subject"]
+        for ambiguity in summary["storage_topology_ambiguities"]
+    } == {f"/mnt/node20{index}/sda1" for index in range(6)}
+    assert all(
+        ambiguity["materiality"] == "medium"
+        for ambiguity in summary["storage_topology_ambiguities"]
+    )
+    assert {fact.predicate for fact in state.facts.values()} == {
+        "filesystem_free_bytes",
+        "filesystem_total_bytes",
+    }
+    assert state.get_best_fact(
+        "node101:9100",
+        "filesystem_total_bytes",
+        dimensions={
+            "mountpoint": "/mnt/node205/sda1",
+            "device": "node205:/exports/sda1",
+            "fstype": "ext4",
+        },
+    ).value == 1005

@@ -91,18 +91,66 @@ def test_cli_state_summary_formats_cluster_mount_groups():
 
     assert "filesystems:" in output
     assert "node100:9100 /mnt/node205/sda1: 10/100 bytes free/total" in output
-    assert "cluster mount groups:" in output
+    assert "storage topology:" in output
+    assert "cluster mount groups: 1" in output
+    assert "shared storage candidates: 1" in output
+    assert "medium: 1" in output
+    assert "storage topology ambiguities: 1 total" in output
     assert (
-        "/mnt/node205/sda1: visible on 2 endpoints (node100:9100, node101:9100)"
+        "detail: projected ambiguity records remain in storage_topology_ambiguities"
         in output
     )
-    assert "shared storage candidates:" in output
-    assert "confidence: medium; evidence: matching total bytes, matching device" in output
-    assert "candidate shared storage != shared storage fact" in output
-    assert "storage topology ambiguities:" in output
-    assert "materiality: medium; reasons: mountpath visible on 2 endpoints" in output
-    assert "candidate interpretations: multi-endpoint mount visibility" in output
-    assert "ambiguity != storage identity" in output
+    assert "/mnt/node205/sda1: visible on 2 endpoints" not in output
+    assert "candidate visible on" not in output
+    assert "materiality: medium; reasons:" not in output
+    assert "ambiguity != storage identity" not in output
+
+
+def test_cli_state_summary_bounds_storage_topology_details_and_counts_materiality():
+    seed_local = load_seed_local_module()
+
+    summary = {
+        "entity_count": 0,
+        "fact_count": 0,
+        "durable_fact_count": 0,
+        "measurement_current_sample_count": 0,
+        "conflict_count": 0,
+        "stale_fact_count": 0,
+        "graph_issue_warning_count": 0,
+        "graph_issue_error_count": 0,
+        "observation_source_counts": {},
+        "top_entities": [],
+        "availability": {"up": 0, "down": 0, "unknown": 0},
+        "filesystems": [],
+        "cluster_mount_groups": [
+            {"mountpoint": f"/mnt/node20{index}/sda1"} for index in range(3)
+        ],
+        "shared_storage_candidates": [
+            {"mountpaths": ["/srv/high"], "confidence": "high"},
+            {"mountpaths": ["/srv/medium-a"], "confidence": "medium"},
+            {"mountpaths": ["/srv/medium-b"], "confidence": "medium"},
+            {"mountpaths": ["/srv/low"], "confidence": "low"},
+        ],
+        "storage_topology_ambiguities": [
+            {"subject": "/srv/high", "materiality": "high"},
+            {"subject": "/srv/medium-a", "materiality": "medium"},
+            {"subject": "/srv/medium-b", "materiality": "medium"},
+            {"subject": "/srv/low", "materiality": "low"},
+        ],
+    }
+
+    output = seed_local.format_state_summary(summary)
+
+    assert "storage topology:" in output
+    assert "cluster mount groups: 3" in output
+    assert "shared storage candidates: 4" in output
+    assert "high: 1" in output
+    assert "medium: 2" in output
+    assert "low: 1" in output
+    assert "storage topology ambiguities: 4 total" in output
+    assert "/srv/high:" not in output
+    assert "candidate visible on" not in output
+    assert "reasons:" not in output
 
 
 def test_build_local_app_uses_intent_classifier_path_and_loads_echo_toolkit():
