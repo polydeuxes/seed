@@ -646,3 +646,221 @@ def test_shared_storage_candidates_use_observable_filesystem_evidence_only():
     assert "source_type" not in candidate
     assert "operator" not in candidate
     assert "confidence is not certainty" in candidate["confidence_basis"]
+
+
+def _ambiguity_by_subject(summary: dict, subject: str) -> dict:
+    return next(
+        ambiguity
+        for ambiguity in summary["storage_topology_ambiguities"]
+        if ambiguity["subject"] == subject
+    )
+
+
+def test_storage_topology_ambiguities_are_projection_only_not_facts_ownership_or_identity():
+    state = _project(
+        *_filesystem_facts(
+            "node100:9100",
+            "/mnt/node210/sda1",
+            free=10,
+            total=100,
+            device="node210:/exports/sda1",
+            prefix="node100_ambiguity_only",
+        ),
+        *_filesystem_facts(
+            "node101:9100",
+            "/mnt/node210/sda1",
+            free=10,
+            total=100,
+            device="node210:/exports/sda1",
+            prefix="node101_ambiguity_only",
+        ),
+    )
+
+    summary = build_operator_state_summary(state)
+
+    assert summary["storage_topology_ambiguities"]
+    ambiguity = _ambiguity_by_subject(summary, "/mnt/node210/sda1")
+    assert "ambiguity != fact" in ambiguity["boundary"]
+    assert "ownership" in ambiguity["boundary"]
+    assert "storage identity" in ambiguity["boundary"]
+    assert "owner" not in ambiguity
+    assert "storage_identity" not in ambiguity
+    assert state.relationships == []
+    assert all("ambigu" not in fact.predicate for fact in state.facts.values())
+    assert all("ownership" not in fact.predicate for fact in state.facts.values())
+    assert all("storage_identity" not in fact.predicate for fact in state.facts.values())
+
+
+def test_storage_topology_ambiguities_use_shared_storage_candidates_as_pressure():
+    state = _project(
+        *_filesystem_facts(
+            "node100:9100",
+            "/srv/data",
+            free=10,
+            total=100,
+            device="shared:/exports/data",
+            prefix="node100_shared_ambiguity",
+        ),
+        *_filesystem_facts(
+            "node101:9100",
+            "/srv/data-alias",
+            free=10,
+            total=100,
+            device="shared:/exports/data",
+            prefix="node101_shared_ambiguity",
+        ),
+    )
+
+    summary = build_operator_state_summary(state)
+
+    subjects = {
+        ambiguity["subject"] for ambiguity in summary["storage_topology_ambiguities"]
+    }
+    assert {"/srv/data", "/srv/data-alias"}.issubset(subjects)
+    ambiguity = _ambiguity_by_subject(summary, "/srv/data")
+    assert "possible shared backing" in ambiguity["candidate_interpretations"]
+    assert (
+        "shared-storage candidate exists from matching observable filesystem fields"
+        in ambiguity["reasons"]
+    )
+    assert "shared_storage_candidates.evidence" in ambiguity["observable_evidence"]
+    assert ambiguity["materiality"] == "medium"
+
+
+def test_storage_topology_ambiguities_surface_historical_node_style_without_topology_facts():
+    state = _project(
+        *_filesystem_facts(
+            "node115:9100",
+            "/mnt/node210/sda1",
+            free=10,
+            total=100,
+            prefix="node115_historical_path",
+        )
+    )
+
+    summary = build_operator_state_summary(state)
+
+    ambiguity = _ambiguity_by_subject(summary, "/mnt/node210/sda1")
+    assert "historical-node-style naming" in ambiguity["candidate_interpretations"]
+    assert "possible compatibility path" in ambiguity["candidate_interpretations"]
+    assert "mountpath contains node-number path segment" in ambiguity["reasons"]
+    assert "filesystem.mountpoint" in ambiguity["observable_evidence"]
+    assert "node210 owns" not in str(ambiguity)
+    assert "retired" not in str(ambiguity)
+    assert all("topology" not in fact.predicate for fact in state.facts.values())
+
+
+def test_storage_topology_ambiguities_preserve_filesystem_facts_and_measurements():
+    state = _project(
+        *_filesystem_facts(
+            "node100:9100",
+            "/mnt/node205/sda1",
+            free=10,
+            total=100,
+            prefix="node100_ambiguity_preserved",
+        ),
+        *_filesystem_facts(
+            "node101:9100",
+            "/mnt/node205/sda1",
+            free=20,
+            total=100,
+            prefix="node101_ambiguity_preserved",
+        ),
+    )
+
+    summary = build_operator_state_summary(state)
+
+    assert summary["fact_count"] == 4
+    assert summary["measurement_current_sample_count"] == 4
+    assert {fact.predicate for fact in state.facts.values()} == {
+        "filesystem_free_bytes",
+        "filesystem_total_bytes",
+    }
+    assert {
+        (filesystem["host"], filesystem["mountpoint"], filesystem["free"])
+        for filesystem in summary["filesystems"]
+    } == {
+        ("node100:9100", "/mnt/node205/sda1", 10),
+        ("node101:9100", "/mnt/node205/sda1", 20),
+    }
+
+
+def test_storage_topology_ambiguities_allow_multiple_ambiguities_to_coexist():
+    state = _project(
+        *_filesystem_facts(
+            "node100:9100",
+            "/mnt/node205/sda1",
+            free=10,
+            total=100,
+            prefix="node100_multi_ambiguity_205",
+        ),
+        *_filesystem_facts(
+            "node101:9100",
+            "/mnt/node205/sda1",
+            free=20,
+            total=100,
+            prefix="node101_multi_ambiguity_205",
+        ),
+        *_filesystem_facts(
+            "node200:9100",
+            "/srv/shared",
+            free=30,
+            total=200,
+            device="shared:/exports/data",
+            prefix="node200_multi_ambiguity_shared",
+        ),
+        *_filesystem_facts(
+            "node201:9100",
+            "/srv/shared-copy",
+            free=30,
+            total=200,
+            device="shared:/exports/data",
+            prefix="node201_multi_ambiguity_shared",
+        ),
+    )
+
+    summary = build_operator_state_summary(state)
+
+    subjects = [
+        ambiguity["subject"] for ambiguity in summary["storage_topology_ambiguities"]
+    ]
+    assert "/mnt/node205/sda1" in subjects
+    assert "/srv/shared" in subjects
+    assert "/srv/shared-copy" in subjects
+    assert len(subjects) >= 3
+
+
+def test_storage_topology_ambiguities_use_observable_projection_evidence_only():
+    state = _project(
+        *_filesystem_facts(
+            "node100:9100",
+            "/mnt/node205/sda1",
+            free=10,
+            total=100,
+            device="node205:/exports/sda1",
+            prefix="node100_ambiguity_observable",
+        ),
+        *_filesystem_facts(
+            "node101:9100",
+            "/mnt/node205/sda1",
+            free=10,
+            total=100,
+            device="node205:/exports/sda1",
+            prefix="node101_ambiguity_observable",
+        ),
+    )
+
+    summary = build_operator_state_summary(state)
+
+    ambiguity = _ambiguity_by_subject(summary, "/mnt/node205/sda1")
+    assert set(ambiguity["observable_evidence"]).issubset(
+        {
+            "filesystem.mountpoint",
+            "cluster_mount_groups.visible_endpoint_count",
+            "shared_storage_candidates.evidence",
+        }
+    )
+    assert "evidence_ids" not in ambiguity
+    assert "source_type" not in ambiguity
+    assert "operator" not in ambiguity
+    assert "certainty" in ambiguity["materiality_basis"]
