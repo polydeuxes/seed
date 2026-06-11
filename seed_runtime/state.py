@@ -1480,6 +1480,17 @@ def _project_entity_type_assertions(
 
     assertions: list[EntityTypeAssertion] = []
     entities = {entity.id for entity in state.entities.values()}
+    for entity in sorted(state.entities.values(), key=lambda item: item.id):
+        if entity.kind != "unknown" and catalog.get(entity.kind) is not None:
+            assertions.append(
+                EntityTypeAssertion(
+                    entity_id=entity.id,
+                    entity_type=entity.kind,
+                    source="entity_projection",
+                    confidence=entity.confidence,
+                    reason="entity kind",
+                )
+            )
     endpoint_facts: dict[str, Fact] = {}
     for fact in sorted(state.facts.values(), key=lambda item: item.id):
         entities.add(fact.subject_id)
