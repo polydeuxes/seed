@@ -2918,6 +2918,25 @@ def _format_view_dimensions(dimensions: dict[str, str]) -> str:
     return f" ({values})"
 
 
+def _counts_by(
+    items: list[dict[str, Any]],
+    field: str,
+    *,
+    order: tuple[str, ...] = (),
+) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in items:
+        value = str(item.get(field, "unknown"))
+        counts[value] = counts.get(value, 0) + 1
+    order_index = {value: index for index, value in enumerate(order)}
+    return dict(
+        sorted(
+            counts.items(),
+            key=lambda item: (order_index.get(item[0], len(order_index)), item[0]),
+        )
+    )
+
+
 def format_state_summary(summary: dict[str, Any]) -> str:
     """Format the projected state summary for concise terminal inspection."""
 
@@ -2966,38 +2985,40 @@ def format_state_summary(summary: dict[str, Any]) -> str:
                 f"{filesystem['free']}/{filesystem['total']} bytes free/total"
             )
     cluster_mount_groups = summary.get("cluster_mount_groups", [])
-    if cluster_mount_groups:
-        lines.append("cluster mount groups:")
-        for group in cluster_mount_groups:
-            endpoints = ", ".join(group["visible_endpoints"])
-            lines.append(
-                f"  {group['mountpoint']}: visible on "
-                f"{group['visible_endpoint_count']} endpoints ({endpoints})"
-            )
     shared_storage_candidates = summary.get("shared_storage_candidates", [])
-    if shared_storage_candidates:
-        lines.append("shared storage candidates:")
-        for candidate in shared_storage_candidates:
-            endpoints = ", ".join(candidate["visible_endpoints"])
-            mountpaths = ", ".join(candidate["mountpaths"])
-            evidence = ", ".join(candidate["evidence"])
-            lines.append(
-                f"  {mountpaths}: candidate visible on "
-                f"{candidate['visible_endpoint_count']} endpoints ({endpoints}); "
-                f"confidence: {candidate['confidence']}; evidence: {evidence}; "
-                f"boundary: {candidate['boundary']}"
-            )
     storage_topology_ambiguities = summary.get("storage_topology_ambiguities", [])
-    if storage_topology_ambiguities:
-        lines.append("storage topology ambiguities:")
-        for ambiguity in storage_topology_ambiguities:
-            reasons = ", ".join(ambiguity["reasons"])
-            interpretations = ", ".join(ambiguity["candidate_interpretations"])
+    if (
+        cluster_mount_groups
+        or shared_storage_candidates
+        or storage_topology_ambiguities
+    ):
+        lines.append("storage topology:")
+        if cluster_mount_groups:
+            lines.append(f"  cluster mount groups: {len(cluster_mount_groups)}")
+        if shared_storage_candidates:
             lines.append(
-                f"  {ambiguity['subject']}: materiality: "
-                f"{ambiguity['materiality']}; reasons: {reasons}; "
-                f"candidate interpretations: {interpretations}; "
-                f"boundary: {ambiguity['boundary']}"
+                f"  shared storage candidates: {len(shared_storage_candidates)}"
+            )
+            for confidence, count in _counts_by(
+                shared_storage_candidates,
+                "confidence",
+                order=("high", "medium", "low"),
+            ).items():
+                lines.append(f"    {confidence}: {count}")
+        if storage_topology_ambiguities:
+            lines.append(
+                f"  storage topology ambiguities: "
+                f"{len(storage_topology_ambiguities)} total"
+            )
+            for materiality, count in _counts_by(
+                storage_topology_ambiguities,
+                "materiality",
+                order=("high", "medium", "low"),
+            ).items():
+                lines.append(f"    {materiality}: {count}")
+            lines.append(
+                "    detail: projected ambiguity records remain in "
+                "storage_topology_ambiguities"
             )
     return "\n".join(lines)
 
