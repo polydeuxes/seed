@@ -2974,6 +2974,19 @@ def format_state_summary(summary: dict[str, Any]) -> str:
                 f"  {group['mountpoint']}: visible on "
                 f"{group['visible_endpoint_count']} endpoints ({endpoints})"
             )
+    shared_storage_candidates = summary.get("shared_storage_candidates", [])
+    if shared_storage_candidates:
+        lines.append("shared storage candidates:")
+        for candidate in shared_storage_candidates:
+            endpoints = ", ".join(candidate["visible_endpoints"])
+            mountpaths = ", ".join(candidate["mountpaths"])
+            evidence = ", ".join(candidate["evidence"])
+            lines.append(
+                f"  {mountpaths}: candidate visible on "
+                f"{candidate['visible_endpoint_count']} endpoints ({endpoints}); "
+                f"confidence: {candidate['confidence']}; evidence: {evidence}; "
+                f"boundary: {candidate['boundary']}"
+            )
     return "\n".join(lines)
 
 

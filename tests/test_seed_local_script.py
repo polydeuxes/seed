@@ -55,6 +55,20 @@ def test_cli_state_summary_formats_cluster_mount_groups():
                     "visible_endpoints": ["node100:9100", "node101:9100"],
                 }
             ],
+            "shared_storage_candidates": [
+                {
+                    "mountpaths": ["/mnt/node205/sda1"],
+                    "visible_endpoint_count": 2,
+                    "visible_endpoints": ["node100:9100", "node101:9100"],
+                    "evidence": ["matching total bytes", "matching device"],
+                    "confidence": "medium",
+                    "boundary": (
+                        "candidate shared storage != shared storage fact; "
+                        "candidate shared storage != ownership; "
+                        "candidate shared storage != topology authority"
+                    ),
+                }
+            ],
         }
     )
 
@@ -65,6 +79,10 @@ def test_cli_state_summary_formats_cluster_mount_groups():
         "/mnt/node205/sda1: visible on 2 endpoints (node100:9100, node101:9100)"
         in output
     )
+    assert "shared storage candidates:" in output
+    assert "confidence: medium; evidence: matching total bytes, matching device" in output
+    assert "candidate shared storage != shared storage fact" in output
+
 
 def test_build_local_app_uses_intent_classifier_path_and_loads_echo_toolkit():
     seed_local = load_seed_local_module()
