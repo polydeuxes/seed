@@ -11,6 +11,10 @@ import json
 from typing import Any
 
 from seed_runtime.facts import is_fact_expired, is_measurement_predicate
+from seed_runtime.local_host_mounts import (
+    is_operator_relevant_mount,
+    mount_display_priority,
+)
 from seed_runtime.state import State
 
 
@@ -62,8 +66,7 @@ def state_summary(
         )
         status = (
             availability_fact.value
-            if availability_fact is not None
-            and availability_fact.value in availability
+            if availability_fact is not None and availability_fact.value in availability
             else "unknown"
         )
         availability[status] += 1
@@ -82,11 +85,35 @@ def state_summary(
         key = (canonical, mountpoint, dimensions_key)
         field = "free" if fact.predicate == "filesystem_free_bytes" else "total"
         filesystems[key][field] = fact.value
+        filesystems[key].setdefault("fstype", fact.dimensions.get("fstype"))
 
-    filesystem_summary = [
-        {"host": host, "mountpoint": mountpoint, **values}
-        for (host, mountpoint, _dimensions), values in sorted(filesystems.items())
+    complete_filesystems = [
+        {
+            "host": host,
+            "mountpoint": mountpoint,
+            "dimensions_key": dimensions_key,
+            **values,
+        }
+        for (host, mountpoint, dimensions_key), values in filesystems.items()
         if "free" in values and "total" in values
+    ]
+    filesystem_summary = [
+        {key: value for key, value in filesystem.items() if key != "dimensions_key"}
+        for filesystem in sorted(
+            complete_filesystems,
+            key=lambda filesystem: (
+                mount_display_priority(
+                    filesystem["mountpoint"],
+                    [filesystem["fstype"]] if filesystem.get("fstype") else (),
+                ),
+                filesystem["host"],
+                filesystem["dimensions_key"],
+            ),
+        )
+        if is_operator_relevant_mount(
+            filesystem["mountpoint"],
+            [filesystem["fstype"]] if filesystem.get("fstype") else (),
+        )
     ]
 
     summary = {
