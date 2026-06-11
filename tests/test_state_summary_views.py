@@ -211,3 +211,200 @@ def test_operator_state_summary_prioritizes_operator_relevant_filesystem_order()
         "/mnt/merged",
         "/boot",
     ]
+
+
+def _filesystem_facts(
+    subject: str,
+    mountpoint: str,
+    *,
+    free: int,
+    total: int,
+    device: str = "/dev/sda1",
+    fstype: str = "ext4",
+    prefix: str | None = None,
+) -> tuple[Fact, Fact]:
+    fact_prefix = prefix or f"{subject}_{mountpoint}".replace(":", "_").replace("/", "_")
+    dimensions = {"mountpoint": mountpoint, "device": device, "fstype": fstype}
+    return (
+        _fact(
+            f"{fact_prefix}_free",
+            subject,
+            "filesystem_free_bytes",
+            free,
+            dimensions=dimensions,
+        ),
+        _fact(
+            f"{fact_prefix}_total",
+            subject,
+            "filesystem_total_bytes",
+            total,
+            dimensions=dimensions,
+        ),
+    )
+
+
+def test_operator_state_summary_groups_repeated_mount_visibility_by_mountpoint():
+    state = _project(
+        *_filesystem_facts(
+            "node100:9100",
+            "/mnt/node205/sda1",
+            free=10,
+            total=100,
+            device="node205:/exports/sda1",
+            prefix="node100_shared",
+        ),
+        *_filesystem_facts(
+            "node101:9100",
+            "/mnt/node205/sda1",
+            free=20,
+            total=100,
+            device="/dev/mapper/compat205",
+            prefix="node101_shared",
+        ),
+        *_filesystem_facts(
+            "node200:9100",
+            "/mnt/node205/sda1",
+            free=30,
+            total=100,
+            device="server:/legacy/node205/sda1",
+            prefix="node200_shared",
+        ),
+    )
+
+    summary = build_operator_state_summary(state)
+
+    assert summary["cluster_mount_groups"] == [
+        {
+            "mountpoint": "/mnt/node205/sda1",
+            "visible_endpoint_count": 3,
+            "visible_endpoints": ["node100:9100", "node101:9100", "node200:9100"],
+        }
+    ]
+
+
+def test_operator_state_summary_mount_grouping_preserves_filesystem_facts_and_measurements():
+    state = _project(
+        *_filesystem_facts(
+            "node100:9100",
+            "/mnt/node205/sda1",
+            free=10,
+            total=100,
+            prefix="node100_shared_preserved",
+        ),
+        *_filesystem_facts(
+            "node101:9100",
+            "/mnt/node205/sda1",
+            free=20,
+            total=100,
+            prefix="node101_shared_preserved",
+        ),
+    )
+
+    summary = build_operator_state_summary(state)
+
+    assert summary["fact_count"] == 4
+    assert summary["measurement_current_sample_count"] == 4
+    assert len(summary["filesystems"]) == 2
+    assert {
+        (filesystem["host"], filesystem["mountpoint"], filesystem["free"])
+        for filesystem in summary["filesystems"]
+    } == {
+        ("node100:9100", "/mnt/node205/sda1", 10),
+        ("node101:9100", "/mnt/node205/sda1", 20),
+    }
+    assert (
+        state.get_best_fact(
+            "node101:9100",
+            "filesystem_free_bytes",
+            dimensions={
+                "mountpoint": "/mnt/node205/sda1",
+                "device": "/dev/sda1",
+                "fstype": "ext4",
+            },
+        ).value
+        == 20
+    )
+
+
+def test_operator_state_summary_mount_grouping_does_not_imply_ownership_or_identity():
+    state = _project(
+        *_filesystem_facts(
+            "node100:9100",
+            "/mnt/node205/sda1",
+            free=10,
+            total=100,
+            device="node205:/exports/sda1",
+            prefix="node100_no_ownership",
+        ),
+        *_filesystem_facts(
+            "node101:9100",
+            "/mnt/node205/sda1",
+            free=20,
+            total=100,
+            device="/dev/sdb1",
+            prefix="node101_no_ownership",
+        ),
+    )
+
+    summary = build_operator_state_summary(state)
+
+    assert summary["cluster_mount_groups"] == [
+        {
+            "mountpoint": "/mnt/node205/sda1",
+            "visible_endpoint_count": 2,
+            "visible_endpoints": ["node100:9100", "node101:9100"],
+        }
+    ]
+    # Grouped mount visibility is not shared storage identity and not ownership.
+    assert "owner" not in summary["cluster_mount_groups"][0]
+    assert "storage_identity" not in summary["cluster_mount_groups"][0]
+    assert all("ownership" not in fact.predicate for fact in state.facts.values())
+    assert all("storage_identity" not in fact.predicate for fact in state.facts.values())
+
+
+def test_operator_state_summary_distinct_mountpaths_remain_distinct_groups():
+    state = _project(
+        *_filesystem_facts(
+            "node100:9100",
+            "/mnt/node205/sda1",
+            free=10,
+            total=100,
+            prefix="node100_node205",
+        ),
+        *_filesystem_facts(
+            "node101:9100",
+            "/mnt/node205/sda1",
+            free=20,
+            total=100,
+            prefix="node101_node205",
+        ),
+        *_filesystem_facts(
+            "node100:9100",
+            "/mnt/node200/sda1",
+            free=30,
+            total=200,
+            prefix="node100_node200",
+        ),
+        *_filesystem_facts(
+            "node200:9100",
+            "/mnt/node200/sda1",
+            free=40,
+            total=200,
+            prefix="node200_node200",
+        ),
+    )
+
+    summary = build_operator_state_summary(state)
+
+    assert summary["cluster_mount_groups"] == [
+        {
+            "mountpoint": "/mnt/node200/sda1",
+            "visible_endpoint_count": 2,
+            "visible_endpoints": ["node100:9100", "node200:9100"],
+        },
+        {
+            "mountpoint": "/mnt/node205/sda1",
+            "visible_endpoint_count": 2,
+            "visible_endpoints": ["node100:9100", "node101:9100"],
+        },
+    ]

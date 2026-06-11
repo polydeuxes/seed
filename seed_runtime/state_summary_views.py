@@ -116,6 +116,28 @@ def state_summary(
         )
     ]
 
+    mount_visibility: dict[str, set[str]] = defaultdict(set)
+    for filesystem in filesystem_summary:
+        mount_visibility[filesystem["mountpoint"]].add(filesystem["host"])
+    cluster_mount_groups = [
+        {
+            "mountpoint": mountpoint,
+            "visible_endpoint_count": len(endpoints),
+            "visible_endpoints": sorted(endpoints),
+        }
+        for mountpoint, endpoints in mount_visibility.items()
+        if len(endpoints) > 1
+    ]
+    cluster_mount_groups.sort(
+        key=lambda group: (
+            mount_display_priority(group["mountpoint"]),
+            group["mountpoint"],
+        )
+    )
+    # This projection groups only mount visibility.  The grouping key is the
+    # mountpoint path because the slice answers "where is this path visible?"
+    # It must not be interpreted as shared storage identity or ownership.
+
     summary = {
         "entity_count": len(entity_aliases),
         "fact_count": len(state.facts),
@@ -134,6 +156,7 @@ def state_summary(
         "top_entities": top_entities,
         "availability": dict(availability),
         "filesystems": filesystem_summary,
+        "cluster_mount_groups": cluster_mount_groups,
     }
     if include_relationship_count:
         summary["relationship_count"] = len(state.relationships)
