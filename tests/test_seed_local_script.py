@@ -1863,11 +1863,11 @@ def test_cli_state_summary_reports_projected_world_model_without_ingestion(
     assert "  discovery: 4" in output
     assert "  imported: 1" in output
     assert "  user: 3" in output
-    assert "host-up (aliases: 1 total; facts: 3)" in output
+    assert "top entities by kind:" in output
+    assert "    host-up (aliases: 1 total; facts: 3)" in output
     assert "10.0.0.10; facts" not in output
-    assert "  up: 1" in output
-    assert "  down: 1" in output
-    assert "  unknown: 1" in output
+    assert "availability by scope:" in output
+    assert "  host_availability:\n    up: 1\n    down: 1\n    unknown: 1" in output
     _assert_default_state_summary_has_no_storage_detail(output)
 
 
@@ -1886,7 +1886,8 @@ def test_cli_state_summary_counts_local_observation_without_availability_as_unkn
 
     output = capsys.readouterr().out
     assert "entities: 1" in output
-    assert "availability:\n  up: 0\n  down: 0\n  unknown: 1" in output
+    assert "availability by scope:" in output
+    assert "  host_availability:\n    up: 0\n    down: 0\n    unknown: 1" in output
 
 
 def test_cli_state_summary_counts_host_availability_up(tmp_path, capsys):
@@ -1902,7 +1903,8 @@ def test_cli_state_summary_counts_host_availability_up(tmp_path, capsys):
 
     output = capsys.readouterr().out
     assert "entities: 1" in output
-    assert "availability:\n  up: 1\n  down: 0\n  unknown: 0" in output
+    assert "availability by scope:" in output
+    assert "  host_availability:\n    up: 1\n    down: 0\n    unknown: 0" in output
 
 
 def test_cli_state_summary_counts_host_availability_down(tmp_path, capsys):
@@ -1918,7 +1920,8 @@ def test_cli_state_summary_counts_host_availability_down(tmp_path, capsys):
 
     output = capsys.readouterr().out
     assert "entities: 1" in output
-    assert "availability:\n  up: 0\n  down: 1\n  unknown: 0" in output
+    assert "availability by scope:" in output
+    assert "  host_availability:\n    up: 0\n    down: 1\n    unknown: 0" in output
 
 
 def test_cli_state_summary_keeps_endpoint_availability_separate_from_host(
@@ -1940,7 +1943,9 @@ def test_cli_state_summary_keeps_endpoint_availability_separate_from_host(
 
     output = capsys.readouterr().out
     assert "entities: 2" in output
-    assert "availability:\n  up: 1\n  down: 0\n  unknown: 1" in output
+    assert "availability by scope:" in output
+    assert "  endpoint_scrape_availability:\n    up: 1\n    down: 0\n    unknown: 0" in output
+    assert "  host_availability:\n    up: 0\n    down: 0\n    unknown: 1" in output
 
 
 def test_cli_state_summary_top_entities_summarizes_alias_count(tmp_path, capsys):

@@ -3005,22 +3005,53 @@ def format_state_summary(summary: dict[str, Any]) -> str:
     lines.extend(
         [f"  {source}: {count}" for source, count in sources.items()] or ["  (none)"]
     )
-    lines.append("top entities:")
-    for entity in summary["top_entities"]:
-        lines.append(
-            f"  {entity['name']} "
-            f"(aliases: {entity['alias_count']} total; facts: {entity['fact_count']})"
+    if "top_entities_by_kind" in summary:
+        lines.append("top entities by kind:")
+        for kind in ("hosts", "services", "endpoints", "storage"):
+            lines.append(f"  {kind}:")
+            entities = summary["top_entities_by_kind"].get(kind, [])
+            for entity in entities:
+                lines.append(
+                    f"    {entity['name']} "
+                    f"(aliases: {entity['alias_count']} total; "
+                    f"facts: {entity['fact_count']})"
+                )
+            if not entities:
+                lines.append("    (none)")
+    else:
+        lines.append("top entities:")
+        for entity in summary["top_entities"]:
+            lines.append(
+                f"  {entity['name']} "
+                f"(aliases: {entity['alias_count']} total; facts: {entity['fact_count']})"
+            )
+        if not summary["top_entities"]:
+            lines.append("  (none)")
+    if "availability_by_scope" in summary:
+        lines.append("availability by scope:")
+        for scope in (
+            "endpoint_scrape_availability",
+            "host_availability",
+            "service_availability",
+        ):
+            counts = summary["availability_by_scope"].get(scope, {})
+            lines.extend(
+                [
+                    f"  {scope}:",
+                    f"    up: {counts.get('up', 0)}",
+                    f"    down: {counts.get('down', 0)}",
+                    f"    unknown: {counts.get('unknown', 0)}",
+                ]
+            )
+    else:
+        lines.extend(
+            [
+                "availability:",
+                f"  up: {summary['availability']['up']}",
+                f"  down: {summary['availability']['down']}",
+                f"  unknown: {summary['availability']['unknown']}",
+            ]
         )
-    if not summary["top_entities"]:
-        lines.append("  (none)")
-    lines.extend(
-        [
-            "availability:",
-            f"  up: {summary['availability']['up']}",
-            f"  down: {summary['availability']['down']}",
-            f"  unknown: {summary['availability']['unknown']}",
-        ]
-    )
     # Default State Summary is intentionally not a storage/filesystem detail
     # surface. Storage projection data may exist on explicit storage-focused
     # surfaces, but bounded storage detail is still detail and must not leak here.
