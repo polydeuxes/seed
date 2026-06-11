@@ -66,11 +66,15 @@ class ObservationIngestor:
         session_id: str | None = None,
         causation_id: str | None = None,
         correlation_id: str | None = None,
-    ) -> Fact:
+    ) -> Fact | None:
         """Record an observation, evidence, and the derived observed Fact."""
 
         evidence = self.observation_to_evidence(observation, workspace_id)
-        fact = self.observation_to_fact(observation, evidence)
+        fact = (
+            None
+            if _should_suppress_fact_promotion(observation)
+            else self.observation_to_fact(observation, evidence)
+        )
         event_metadata = {
             "observation_id": observation.id,
             "source_type": observation.source_type,
@@ -93,6 +97,8 @@ class ObservationIngestor:
             causation_id=causation_id or observation.id,
             correlation_id=correlation_id,
         )
+        if fact is None:
+            return None
         fact_event_kind = "fact.inferred" if fact.inferred else "fact.observed"
         self.ledger.append(
             fact_event_kind,
@@ -150,3 +156,12 @@ class ObservationIngestor:
             expires_at=observation.expires_at,
             inferred=observation.source_type == "inferred",
         )
+
+
+def _should_suppress_fact_promotion(observation: Observation) -> bool:
+    return (
+        observation.metadata.get("fact_promotion_suppressed") is True
+        and observation.metadata.get("source_name") == "prometheus"
+        and observation.metadata.get("prometheus_metric") == "node_uname_info"
+        and observation.predicate == "os"
+    )

@@ -33,6 +33,7 @@ from seed_runtime.serialization import to_plain
 from seed_runtime.observation_normalizers import (
     DEFAULT_OBSERVATION_NORMALIZATION_PIPELINE,
     ObservationNormalizationPipeline,
+    is_endpoint_subject,
 )
 from seed_runtime.observations import (
     Observation,
@@ -1813,9 +1814,19 @@ class PrometheusObservationSource:
             elif query == "node_uname_info":
                 os_value = _prometheus_os_from_uname(metric)
                 if os_value is not None:
+                    os_metadata = dict(metadata)
+                    if is_endpoint_subject(instance):
+                        os_metadata.update(
+                            {
+                                "fact_promotion_suppressed": True,
+                                "fact_promotion_suppressed_reason": (
+                                    "prometheus_node_uname_os_endpoint_subject"
+                                ),
+                            }
+                        )
                     observations.append(
                         self._observation(
-                            observed_at, instance, "os", os_value, metadata
+                            observed_at, instance, "os", os_value, os_metadata
                         )
                     )
             elif query == "node_filesystem_avail_bytes":
@@ -2217,8 +2228,9 @@ class ObservationCollectionService:
             state = StateProjector(self.ingestor.ledger).project(workspace_id)
             normalized = self.normalization_pipeline.normalize(normalized, state=state)
 
-        return [
-            self.ingestor.ingest(
+        facts: list[Fact] = []
+        for observation in normalized:
+            fact = self.ingestor.ingest(
                 observation,
                 workspace_id,
                 actor=actor,
@@ -2226,8 +2238,9 @@ class ObservationCollectionService:
                 causation_id=causation_id,
                 correlation_id=correlation_id,
             )
-            for observation in normalized
-        ]
+            if fact is not None:
+                facts.append(fact)
+        return facts
 
     @staticmethod
     def _normalize_observation(

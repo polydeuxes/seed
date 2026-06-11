@@ -293,6 +293,12 @@ def _normalize_with_state(
     return normalizer.normalize(observations)  # type: ignore[call-arg]
 
 
+def is_endpoint_subject(subject: str) -> bool:
+    """Return True when a subject has the existing host:port endpoint shape."""
+
+    return _endpoint_base_identity(subject) is not None
+
+
 def _endpoint_base_identity(subject: str) -> str | None:
     base, separator, port = subject.rpartition(":")
     if not separator or not base or not port.isdigit():
