@@ -92,6 +92,9 @@ def _canonical_entity_types(state: State, canonical: str, aliases: set[str]) -> 
             for entity_type in state.get_current_entity_types(entity_id)
             if entity_type != "unknown"
         )
+        entity = state.entities.get(entity_id)
+        if entity is not None and entity.kind != "unknown":
+            types.add(entity.kind)
     return types
 
 
@@ -597,7 +600,7 @@ def state_summary(
     # Legacy compatibility field: keep the historical name for callers that have
     # not migrated yet, but make it operator-prominence scoped by excluding
     # scrape-target endpoints from the undifferentiated list. Endpoint visibility
-    # is preserved explicitly in top_entities_by_kind["endpoints"].
+    # is preserved through endpoint summary counts in top_entities_by_kind["endpoints"].
     top_entities = [
         _entity_summary_row(canonical, entity_aliases, entity_fact_counts)
         for canonical in ranked_entities
@@ -644,6 +647,12 @@ def state_summary(
             else "unknown"
         )
         availability[status] += 1
+
+    endpoint_availability = availability_by_scope["endpoint_scrape_availability"]
+    top_entities_by_kind["endpoints"] = {
+        "total": sum(endpoint_availability.values()),
+        **endpoint_availability,
+    }
 
     summary = {
         "entity_count": len(entity_aliases),

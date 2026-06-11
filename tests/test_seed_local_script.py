@@ -1870,6 +1870,40 @@ def test_cli_state_summary_reports_projected_world_model_without_ingestion(
     assert "  host_availability:\n    up: 1\n    down: 1\n    unknown: 1" in output
     _assert_default_state_summary_has_no_storage_detail(output)
 
+def test_format_state_summary_renders_endpoint_counts_without_endpoint_names():
+    seed_local = load_seed_local_module()
+
+    output = seed_local.format_state_summary(
+        {
+            "entity_count": 3,
+            "fact_count": 2,
+            "durable_fact_count": 2,
+            "measurement_current_sample_count": 0,
+            "conflict_count": 0,
+            "stale_fact_count": 0,
+            "graph_issue_warning_count": 0,
+            "graph_issue_error_count": 0,
+            "observation_source_counts": {},
+            "top_entities_by_kind": {
+                "hosts": [{"name": "node115", "alias_count": 0, "fact_count": 1}],
+                "services": [{"name": "api", "alias_count": 0, "fact_count": 1}],
+                "endpoints": {"total": 1, "up": 0, "down": 1, "unknown": 0},
+                "storage": [{"name": "pool-a", "alias_count": 0, "fact_count": 1}],
+            },
+            "availability_by_scope": {
+                "endpoint_scrape_availability": {"up": 0, "down": 1, "unknown": 0},
+                "host_availability": {"up": 0, "down": 0, "unknown": 1},
+                "service_availability": {"up": 1, "down": 0, "unknown": 0},
+            },
+        }
+    )
+
+    assert "  endpoints:\n    total: 1\n    up: 0\n    down: 1\n    unknown: 0" in output
+    assert "10.0.0.1:9100" not in output
+    assert "    node115 (aliases: 0 total; facts: 1)" in output
+    assert "    api (aliases: 0 total; facts: 1)" in output
+    assert "    pool-a (aliases: 0 total; facts: 1)" in output
+
 
 def test_cli_state_summary_counts_local_observation_without_availability_as_unknown(
     tmp_path, capsys

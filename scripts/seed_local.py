@@ -3010,6 +3010,16 @@ def format_state_summary(summary: dict[str, Any]) -> str:
         for kind in ("hosts", "services", "endpoints", "storage"):
             lines.append(f"  {kind}:")
             entities = summary["top_entities_by_kind"].get(kind, [])
+            if kind == "endpoints" and isinstance(entities, dict):
+                lines.extend(
+                    [
+                        f"    total: {entities.get('total', 0)}",
+                        f"    up: {entities.get('up', 0)}",
+                        f"    down: {entities.get('down', 0)}",
+                        f"    unknown: {entities.get('unknown', 0)}",
+                    ]
+                )
+                continue
             for entity in entities:
                 lines.append(
                     f"    {entity['name']} "
