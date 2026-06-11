@@ -3021,96 +3021,9 @@ def format_state_summary(summary: dict[str, Any]) -> str:
             f"  unknown: {summary['availability']['unknown']}",
         ]
     )
-    if summary["filesystems"]:
-        filesystem_shape_summary = summary.get("filesystem_shape_summary") or (
-            _filesystem_shape_summary(summary["filesystems"])
-        )
-        lines.append("filesystems:")
-        for category in _FILESYSTEM_CATEGORY_ORDER:
-            lines.append(
-                f"  {category}: "
-                f"{filesystem_shape_summary['counts'].get(category, 0)}"
-            )
-        detail_category = filesystem_shape_summary.get("detail_category", "root")
-        detail_rows = filesystem_shape_summary.get("detail_rows", [])
-        if detail_rows:
-            label = detail_category
-            lines.append(f"  showing {label} filesystems only")
-            for filesystem in detail_rows:
-                lines.append(
-                    f"  {filesystem['host']} {filesystem['mountpoint']}: "
-                    f"{filesystem['free']}/{filesystem['total']} bytes free/total"
-                )
-        total_row_count = filesystem_shape_summary.get(
-            "total_row_count", len(summary["filesystems"])
-        )
-        detail_row_count = filesystem_shape_summary.get(
-            "detail_row_count", len(detail_rows)
-        )
-        if total_row_count > detail_row_count:
-            lines.append(
-                f"  detail bounded: showing {detail_row_count} of "
-                f"{total_row_count} filesystem rows"
-            )
-    cluster_mount_groups = summary.get("cluster_mount_groups", [])
-    shared_storage_candidates = summary.get("shared_storage_candidates", [])
-    storage_topology_ambiguities = summary.get("storage_topology_ambiguities", [])
-    storage_topology_summary = summary.get("storage_topology_summary") or {
-        "cluster_mount_group_count": len(cluster_mount_groups),
-        "shared_storage_candidate_count": len(shared_storage_candidates),
-        "shared_storage_candidate_confidence_counts": _counts_by(
-            shared_storage_candidates,
-            "confidence",
-            order=("high", "medium", "low"),
-        ),
-        "storage_topology_ambiguity_count": len(storage_topology_ambiguities),
-        "storage_topology_ambiguity_materiality_counts": _counts_by(
-            storage_topology_ambiguities,
-            "materiality",
-            order=("high", "medium", "low"),
-        ),
-    }
-    if any(
-        storage_topology_summary[key]
-        for key in (
-            "cluster_mount_group_count",
-            "shared_storage_candidate_count",
-            "storage_topology_ambiguity_count",
-        )
-    ):
-        lines.append("storage topology:")
-        cluster_mount_group_count = storage_topology_summary[
-            "cluster_mount_group_count"
-        ]
-        if cluster_mount_group_count:
-            lines.append(f"  cluster mount groups: {cluster_mount_group_count}")
-        shared_storage_candidate_count = storage_topology_summary[
-            "shared_storage_candidate_count"
-        ]
-        if shared_storage_candidate_count:
-            lines.append(
-                f"  shared storage candidates: {shared_storage_candidate_count}"
-            )
-            for confidence, count in storage_topology_summary[
-                "shared_storage_candidate_confidence_counts"
-            ].items():
-                lines.append(f"    {confidence}: {count}")
-        storage_topology_ambiguity_count = storage_topology_summary[
-            "storage_topology_ambiguity_count"
-        ]
-        if storage_topology_ambiguity_count:
-            lines.append(
-                f"  storage topology ambiguities: "
-                f"{storage_topology_ambiguity_count} total"
-            )
-            for materiality, count in storage_topology_summary[
-                "storage_topology_ambiguity_materiality_counts"
-            ].items():
-                lines.append(f"    {materiality}: {count}")
-            lines.append(
-                "    detail: projected ambiguity records remain in "
-                "storage_topology_ambiguities"
-            )
+    # Default State Summary is intentionally not a storage/filesystem detail
+    # surface. Storage projection data may exist on explicit storage-focused
+    # surfaces, but bounded storage detail is still detail and must not leak here.
     return "\n".join(lines)
 
 

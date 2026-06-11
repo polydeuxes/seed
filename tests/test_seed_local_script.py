@@ -24,7 +24,22 @@ def load_seed_local_module():
     return module
 
 
-def test_cli_state_summary_formats_cluster_mount_groups():
+def _assert_default_state_summary_has_no_storage_detail(output: str) -> None:
+    forbidden = [
+        "filesystems:",
+        "bytes free/total",
+        "showing root filesystems only",
+        "detail bounded",
+        "storage topology:",
+        "cluster mount groups",
+        "shared storage candidates",
+        "storage topology ambiguities",
+    ]
+    for text in forbidden:
+        assert text not in output
+
+
+def test_cli_state_summary_rejects_storage_projection_sections():
     seed_local = load_seed_local_module()
 
     output = seed_local.format_state_summary(
@@ -89,25 +104,10 @@ def test_cli_state_summary_formats_cluster_mount_groups():
         }
     )
 
-    assert "filesystems:" in output
-    assert "cluster mounts: 1" in output
-    assert "node100:9100 /mnt/node205/sda1: 10/100 bytes free/total" not in output
-    assert "storage topology:" in output
-    assert "cluster mount groups: 1" in output
-    assert "shared storage candidates: 1" in output
-    assert "medium: 1" in output
-    assert "storage topology ambiguities: 1 total" in output
-    assert (
-        "detail: projected ambiguity records remain in storage_topology_ambiguities"
-        in output
-    )
-    assert "/mnt/node205/sda1: visible on 2 endpoints" not in output
-    assert "candidate visible on" not in output
-    assert "materiality: medium; reasons:" not in output
-    assert "ambiguity != storage identity" not in output
+    _assert_default_state_summary_has_no_storage_detail(output)
 
 
-def test_cli_state_summary_filesystems_show_shape_not_inventory_by_default():
+def test_cli_state_summary_rejects_bounded_filesystem_detail():
     seed_local = load_seed_local_module()
     filesystems = []
     for index in range(12):
@@ -167,22 +167,10 @@ def test_cli_state_summary_filesystems_show_shape_not_inventory_by_default():
         }
     )
 
-    assert "filesystems:" in output
-    assert "  root: 12" in output
-    assert "  boot: 3" in output
-    assert "  cluster mounts: 4" in output
-    assert "  other: 2" in output
-    assert "showing root filesystems only" in output
-    assert "node000:9100 /: 0/100 bytes free/total" in output
-    assert "node009:9100 /: 9/109 bytes free/total" in output
-    assert "node010:9100 /: 10/110 bytes free/total" not in output
-    assert "/mnt/node200/sda1" not in output
-    assert "/boot/firmware0" not in output
-    assert "/srv/data0" not in output
-    assert "detail bounded: showing 10 of 21 filesystem rows" in output
+    _assert_default_state_summary_has_no_storage_detail(output)
 
 
-def test_cli_state_summary_bounds_storage_topology_details_and_counts_materiality():
+def test_cli_state_summary_rejects_storage_topology_counts():
     seed_local = load_seed_local_module()
 
     summary = {
@@ -217,19 +205,10 @@ def test_cli_state_summary_bounds_storage_topology_details_and_counts_materialit
 
     output = seed_local.format_state_summary(summary)
 
-    assert "storage topology:" in output
-    assert "cluster mount groups: 3" in output
-    assert "shared storage candidates: 4" in output
-    assert "high: 1" in output
-    assert "medium: 2" in output
-    assert "low: 1" in output
-    assert "storage topology ambiguities: 4 total" in output
-    assert "/srv/high:" not in output
-    assert "candidate visible on" not in output
-    assert "reasons:" not in output
+    _assert_default_state_summary_has_no_storage_detail(output)
 
 
-def test_cli_state_summary_prefers_bounded_storage_topology_summary_counts():
+def test_cli_state_summary_rejects_precomputed_storage_topology_counts():
     seed_local = load_seed_local_module()
 
     output = seed_local.format_state_summary(
@@ -271,14 +250,7 @@ def test_cli_state_summary_prefers_bounded_storage_topology_summary_counts():
         }
     )
 
-    assert "cluster mount groups: 31" in output
-    assert "shared storage candidates: 42" in output
-    assert "storage topology ambiguities: 187 total" in output
-    assert "medium: 12" in output
-    assert "low: 175" in output
-    assert "/mnt/node0/sda1" not in output
-    assert "materiality" not in output
-    assert "subject" not in output
+    _assert_default_state_summary_has_no_storage_detail(output)
 
 
 def test_build_local_app_uses_intent_classifier_path_and_loads_echo_toolkit():
@@ -1896,7 +1868,7 @@ def test_cli_state_summary_reports_projected_world_model_without_ingestion(
     assert "  up: 1" in output
     assert "  down: 1" in output
     assert "  unknown: 1" in output
-    assert "host-up /: 40/100 bytes free/total" in output
+    _assert_default_state_summary_has_no_storage_detail(output)
 
 
 def test_cli_state_summary_counts_local_observation_without_availability_as_unknown(
