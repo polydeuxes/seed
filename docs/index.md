@@ -18,6 +18,12 @@ related:
   - relationship_frontier.md
   - handoff_and_continuation_lineage_frontier.md
   - inquiry_frontier.md
+  - selection_and_attention_frontier.md
+  - attention_trigger_frontier.md
+  - attention_target_frontier.md
+  - object_role_and_operation_frontier.md
+  - persistence_frontier.md
+  - continuity_frontier.md
   - future_frontiers.md
   - knowledge_representation_map.md
   - navigation_hygiene_audit.md
@@ -81,6 +87,7 @@ Use this file to find the right document family before reading specific document
 - `ownership_claim_reconciliation.md`
 - `relationship_fact_reconciliation.md`
 - `relationship_promotion_reconciliation.md`
+- `relationship_observation_v0_reconciliation.md`
 - `repository_artifact_ontology_reconciliation.md`
 
 ## Observation, Interpretation, And Reality
@@ -281,6 +288,10 @@ These documents route emerging work without promoting it to canonical architectu
 - `relationship_frontier.md` — exploratory relationship ontology and edge-semantics pressure signal.
 - `handoff_and_continuation_lineage_frontier.md` — continuation and investigation lineage across handoffs.
 - `inquiry_frontier.md` — possible inquiry object, lifecycle, and lineage boundaries.
+- `selection_and_attention_frontier.md` — selection, priority, relevance, and active attention questions.
+- `attention_trigger_frontier.md` and `attention_target_frontier.md` — companion routing for what activates attention and what receives attention.
+- `object_role_and_operation_frontier.md` — object, contextual role, and operation boundary questions, with pressure-test follow-up in `object_role_operation_consistency_audit.md` and `object_role_operation_pressure_test.md`.
+- `persistence_frontier.md` and `continuity_frontier.md` — what survives revision, role change, inquiry movement, and handoff continuation without collapsing persistence into storage or identity.
 - `future_frontiers.md` — bounty-style inventory of optional future frontier candidates.
 
 ## Roadmap, Backlog, And Methodology
