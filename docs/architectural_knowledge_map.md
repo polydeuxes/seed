@@ -68,6 +68,9 @@ Knowledge Navigation
 Operations
 Operation Attribution
 Inquiry
+Selection / Attention
+Object / Role / Operation
+Persistence / Continuity
 Handoff / Continuation Lineage
 ```
 
@@ -102,7 +105,7 @@ For the current status of these concerns and the active frontier, see `architect
 | Where are Prometheus observation and endpoint identity boundaries? | `prometheus_observation_boundary_reconciliation.md`, `prometheus_endpoint_identity_boundary_audit.md` |
 | How do I move from a question to concepts, architecture, documentation, repository structure, and implementation artifacts? | `knowledge_navigation_layers_frontier.md` |
 | Where are current documentation navigation hygiene findings? | `navigation_hygiene_audit.md` |
-| Where are emerging operation, attribution, inquiry, derivation, and handoff-lineage frontiers routed? | `operations_frontier.md`, `operation_attribution_frontier.md`, `inquiry_frontier.md`, `derivation_frontier.md`, `handoff_and_continuation_lineage_frontier.md`, and `future_frontiers.md` |
+| Where are emerging operation, attribution, inquiry, attention, object/role/operation, persistence, continuity, derivation, and handoff-lineage frontiers routed? | `operations_frontier.md`, `operation_attribution_frontier.md`, `inquiry_frontier.md`, `selection_and_attention_frontier.md`, `attention_trigger_frontier.md`, `attention_target_frontier.md`, `object_role_and_operation_frontier.md`, `persistence_frontier.md`, `continuity_frontier.md`, `derivation_frontier.md`, `handoff_and_continuation_lineage_frontier.md`, and `future_frontiers.md` |
 
 ---
 
@@ -168,6 +171,17 @@ Start with:
 * `operator_intent_question_and_claim_interface_reconciliation.md`
 * `agency_and_attribution_reconciliation.md`
 
+## Relationship Semantics
+
+Concern: how connection claims become represented relationships without turning observation, projection, or source vocabulary into unrestricted graph truth.
+
+Start with:
+
+* `relationship_fact_reconciliation.md`
+* `relationship_promotion_reconciliation.md`
+* `relationship_observation_v0_reconciliation.md`
+
+
 ## Knowledge Navigation
 
 Concern: how Seed, contributors, and operators navigate from questions to concepts, architectural boundaries, documentation, repository structure, and implementation artifacts.
@@ -185,7 +199,7 @@ This is currently a frontier characterization, not a reconciliation or implement
 
 ## Emerging Meta-Architecture Frontiers
 
-Concern: recently characterized or emerging questions about navigation, operations, operation attribution, inquiry, derivation, and handoff/continuation lineage.
+Concern: recently characterized or emerging questions about navigation, operations, operation attribution, inquiry, attention, object/role/operation boundaries, persistence, continuity, derivation, and handoff/continuation lineage.
 
 Start with:
 
@@ -195,9 +209,15 @@ Start with:
 * `operation_attribution_frontier.md`
 * `handoff_and_continuation_lineage_frontier.md`
 * `inquiry_frontier.md`
+* `selection_and_attention_frontier.md`
+* `attention_trigger_frontier.md`
+* `attention_target_frontier.md`
+* `object_role_and_operation_frontier.md`
+* `persistence_frontier.md`
+* `continuity_frontier.md`
 * `future_frontiers.md`
 
-These documents should be read as frontier/status/map routing, not as canonical architecture. Do not use this cluster to promote operations, inquiry, derivation, or lineage concepts into the foundational ontology without a later reconciliation.
+Read these as a connected investigation cluster: inquiry exposes why work begins, attention asks why one unresolved possibility becomes active and what receives attention, object/role/operation asks whether candidate concepts are durable things or contextual participation, and persistence/continuity asks what survives change without collapsing into storage or identity. These documents should be read as frontier/status/map routing, not as canonical architecture. Do not use this cluster to promote operations, inquiry, attention, object, role, persistence, continuity, derivation, or lineage concepts into the foundational ontology without a later reconciliation.
 
 ## Knowledge Selection
 

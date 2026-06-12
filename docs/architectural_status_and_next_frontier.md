@@ -10,7 +10,7 @@ It may reference completed findings as context, but preservation belongs in `arc
 
 # Executive Summary
 
-Seed's major conceptual reconciliation pass is complete enough to return active attention from recursive architecture audits to bounded implementation work. Foundational ontology, handoff boundaries and template/protocol, handoff consumption/activation/compliance, agency and attribution, natural-language observation and intent derivation, cross-Seed provenance and federation, learning and knowledge change, contradiction discovery and visibility, and prediction/future-claim boundaries have now been reconciled and routed through the documentation map.
+Seed's major conceptual reconciliation pass is complete enough to keep active implementation attention on bounded cleanup rather than recursive architecture audits. Foundational ontology, handoff boundaries and template/protocol, handoff consumption/activation/compliance, agency and attribution, natural-language observation and intent derivation, cross-Seed provenance and federation, learning and knowledge change, contradiction discovery and visibility, and prediction/future-claim boundaries have been reconciled and routed through the documentation map. Since that reconciliation pass, additional exploratory frontier work has characterized inquiry, selection/attention, attention triggers and targets, object/role/operation boundaries, persistence, continuity, derivation, operation attribution, and handoff/continuation lineage. Those documents improve orientation for unresolved ontology questions, but they remain exploratory unless a later reconciliation promotes specific findings.
 
 Current recommended priority:
 
@@ -41,6 +41,10 @@ Current recommended priority:
 | Operation Attribution | **Frontier Characterized / Not Reconciled / Not Implementation-Ready** | `operation_attribution_frontier.md` separates actor participation, authority, responsibility, ownership, approval, adoption, execution, provenance, and explanation questions without settling a runtime model. |
 | Handoff / Continuation Lineage | **Frontier Characterized / Not Reconciled / Not Implementation-Ready** | `handoff_and_continuation_lineage_frontier.md` characterizes working-knowledge and investigation-lineage preservation across handoffs while preserving that handoffs are not architecture authority. |
 | Inquiry | **Exploratory Frontier / Not Reconciled / Not Implementation-Ready** | `inquiry_frontier.md` asks whether inquiry has objects, lifecycle, lineage, branches, and tensions distinct from claim-centered knowledge. It records evidence and questions without introducing an inquiry runtime or canonical ontology. |
+| Selection / Attention | **Exploratory Frontier / Not Reconciled / Not Implementation-Ready** | `selection_and_attention_frontier.md`, `attention_trigger_frontier.md`, and `attention_target_frontier.md` separate selection, priority, relevance, active attention, attention triggers, and attention targets without designing planners, schedulers, prioritizers, or attention systems. |
+| Object / Role / Operation | **Exploratory Frontier With Audit Follow-Up / Not Reconciled / Not Implementation-Ready** | `object_role_and_operation_frontier.md` and its consistency/pressure-test audits investigate whether recent frontiers confuse durable objects, contextual roles, and operations. They do not establish a role system, object taxonomy, or operation runtime. |
+| Persistence / Continuity | **Exploratory Frontier / Not Reconciled / Not Implementation-Ready** | `persistence_frontier.md` and `continuity_frontier.md` ask what survives revision, inquiry movement, role change, and handoff continuation while preserving that persistence is not storage and continuity is not strict identity. |
+| Relationship Semantics | **Reconciled In Core Areas / Still Scoped By Source And Projection Boundaries** | Relationship facts, promotion, and observation remain routed through `relationship_fact_reconciliation.md`, `relationship_promotion_reconciliation.md`, and `relationship_observation_v0_reconciliation.md`; there is no separate relationship frontier document in the current repository snapshot. |
 | Response | **Reconciled / Vocabulary Established / Partially Complete / Architecturally Stable** | Response is a distributed communication concern across existing response, context, explanation, integrity, capability, evidence, contradiction, confidence, and issue surfaces. |
 
 For preserved audit-chain outcomes and rejected concepts, see `architectural_findings_preservation.md`.
@@ -90,7 +94,7 @@ Additional observation slices remain appropriate when they:
 
 Maintenance should reduce duplicate authority and keep completed findings discoverable. `navigation_hygiene_audit.md` records current documentation navigation hygiene findings without replacing authoritative reconciliations. Maintenance should not create new document categories, registries, inventories, or additional architecture systems.
 
-Supported later documentation frontiers include turning the handoff template into a concrete artifact, generated documentation/wiki projection, automatic observation refresh boundaries, natural-language/prose intake implementation notes where existing reconciliation documents already support that work, and careful follow-up on the characterized navigation, derivation, operations, operation-attribution, inquiry, and handoff-lineage frontiers. Follow-up should remain investigation unless a later reconciliation promotes specific conclusions.
+Supported later documentation frontiers include turning the handoff template into a concrete artifact, generated documentation/wiki projection, automatic observation refresh boundaries, natural-language/prose intake implementation notes where existing reconciliation documents already support that work, and careful follow-up on the characterized navigation, derivation, operations, operation-attribution, inquiry, selection/attention, attention trigger/target, object/role/operation, persistence, continuity, and handoff-lineage frontiers. Follow-up should remain investigation unless a later reconciliation promotes specific conclusions.
 
 ## 4. Future investigation
 
@@ -104,7 +108,7 @@ The following are not active frontiers unless new evidence appears:
 
 - recursive conceptual audits without a concrete operator or implementation question;
 - implementation of repository, architecture, or knowledge graph unification before the knowledge-navigation frontier is reconciled;
-- implementation of operation, inquiry, derivation, attribution, or continuation-lineage runtimes/schemas before those frontiers are reconciled;
+- implementation of operation, inquiry, selection/attention, attention trigger/target, object/role/operation, persistence, continuity, derivation, attribution, or continuation-lineage runtimes/schemas before those frontiers are reconciled;
 - Selection Rationale Summary implementation;
 - Response engine or universal formatter work;
 - Integrity, Selection, Context, Explainability, Caveat, Planner, Workflow, or Reasoning engines;
@@ -131,4 +135,4 @@ This document does not:
 
 # Conclusion
 
-Current architectural status points back to bounded implementation cleanup. The most concrete next work is Prometheus observation/projection cleanup under the already reconciled observation, endpoint identity, provenance, claim-promotion, and projection-authority boundaries.
+Current architectural status points back to bounded implementation cleanup. The most concrete next work is Prometheus observation/projection cleanup under the already reconciled observation, endpoint identity, provenance, claim-promotion, and projection-authority boundaries. Recent inquiry, attention, object/role/operation, persistence, and continuity documents are important orientation for future ontology investigation, but they do not supersede the active implementation frontier.
