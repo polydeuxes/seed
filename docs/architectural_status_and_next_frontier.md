@@ -89,7 +89,7 @@ Additional observation slices remain appropriate when they:
 
 ## 3. Documentation maintenance
 
-Maintenance should reduce duplicate authority and keep completed findings discoverable. It should not create new document categories, registries, inventories, or additional architecture systems.
+Maintenance should reduce duplicate authority and keep completed findings discoverable. `navigation_hygiene_audit.md` records current documentation navigation hygiene findings without replacing authoritative reconciliations. Maintenance should not create new document categories, registries, inventories, or additional architecture systems.
 
 Supported later documentation frontiers include turning the handoff template into a concrete artifact, generated documentation/wiki projection, automatic observation refresh boundaries, natural-language/prose intake implementation notes where existing reconciliation documents already support that work, and careful follow-up on the characterized navigation, derivation, operations, operation-attribution, inquiry, and handoff-lineage frontiers. Follow-up should remain investigation unless a later reconciliation promotes specific conclusions.
 

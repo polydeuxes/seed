@@ -20,6 +20,7 @@ related:
   - inquiry_frontier.md
   - future_frontiers.md
   - knowledge_representation_map.md
+  - navigation_hygiene_audit.md
 ---
 
 # Seed Documentation Index
@@ -60,6 +61,7 @@ Use this file to find the right document family before reading specific document
 - `architectural_findings_vocabulary.md`
 - `audit_chain_findings_preservation.md`
 - `finding_applicability_index.md`
+- `navigation_hygiene_audit.md`
 
 ## Foundational Ontology And Claim Semantics
 
