@@ -203,7 +203,7 @@ This is currently a frontier characterization, not a reconciliation or implement
 
 ## Emerging Meta-Architecture Frontiers
 
-Concern: recently characterized or emerging questions about navigation, operations, operation attribution, relationship ontology, inquiry, attention, active-edge pressure, object/role/operation boundaries, concept stability, persistence, continuity, current work position, derivation, handoff/continuation lineage, and observed documentation lineage.
+Concern: recently characterized or emerging questions about navigation, operations, operation attribution, relationship ontology, inquiry, attention, active-edge pressure, object/role/operation boundaries, concept stability, persistence, continuity, current work position, derivation, handoff/continuation lineage, observed documentation lineage, and discovery-path preservation.
 
 Start with:
 
@@ -221,12 +221,13 @@ Start with:
 * `object_role_and_operation_frontier.md`
 * `concept_stability_audit.md`
 * `documentation_lineage_observation.md`
+* `discovery_path_preservation_observation.md`
 * `persistence_frontier.md`
 * `continuity_frontier.md`
 * `current_work_position_frontier.md`
 * `future_frontiers.md`
 
-Read these as a connected investigation cluster: inquiry exposes why work begins, attention asks why one unresolved possibility becomes active and what receives attention, active edge asks what currently pulls work forward among preserved concerns, object/role/operation asks whether candidate concepts are durable things or contextual participation, persistence/continuity/current-work-position asks what survives change and what orientation must survive for active work to resume without collapsing into storage, identity, or implementation machinery, and documentation lineage observes how these investigations generated follow-on documents without defining lineage as architecture. These documents should be read as frontier/status/map routing, not as canonical architecture. Do not use this cluster to promote operations, inquiry, attention, active-edge, object, role, persistence, continuity, current work position, derivation, or lineage concepts into the foundational ontology without a later reconciliation.
+Read these as a connected investigation cluster: inquiry exposes why work begins, attention asks why one unresolved possibility becomes active and what receives attention, active edge asks what currently pulls work forward among preserved concerns, object/role/operation asks whether candidate concepts are durable things or contextual participation, persistence/continuity/current-work-position asks what survives change and what orientation must survive for active work to resume without collapsing into storage, identity, or implementation machinery, documentation lineage observes how these investigations generated follow-on documents without defining lineage as architecture, and discovery-path preservation observes the gap between preserving conclusions and preserving understanding transitions. These documents should be read as frontier/status/map routing, not as canonical architecture. Do not use this cluster to promote operations, inquiry, attention, active-edge, object, role, persistence, continuity, current work position, derivation, lineage, critique, or discovery-retrospective concepts into the foundational ontology without a later reconciliation.
 
 ## Knowledge Selection
 
