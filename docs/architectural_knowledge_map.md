@@ -88,6 +88,7 @@ For the current status of these concerns and the active frontier, see `architect
 | How should contradictions be discovered or exposed? | `contradiction_discovery_and_visibility_reconciliation.md` |
 | How should predictions and future claims be handled? | `prediction_forecasting_and_future_claims_reconciliation.md` |
 | Where are Prometheus observation and endpoint identity boundaries? | `prometheus_observation_boundary_reconciliation.md`, `prometheus_endpoint_identity_boundary_audit.md` |
+| How do I move from a question to concepts, architecture, documentation, repository structure, and implementation artifacts? | `knowledge_navigation_layers_frontier.md` |
 
 ---
 
@@ -152,6 +153,19 @@ Start with:
 * `natural_language_observation_and_intent_derivation_reconciliation.md`
 * `operator_intent_question_and_claim_interface_reconciliation.md`
 * `agency_and_attribution_reconciliation.md`
+
+## Knowledge Navigation
+
+Concern: how Seed, contributors, and operators navigate from questions to concepts, architectural boundaries, documentation, repository structure, and implementation artifacts.
+
+Start with:
+
+* `knowledge_navigation_layers_frontier.md`
+* `documentation_observation_frontier.md`
+* `repository_observation_frontier.md`
+* `architectural_knowledge_map.md`
+
+This is currently a frontier characterization, not a reconciliation or implementation plan. It records structural navigation, architectural navigation, and knowledge navigation as related but non-identical layers.
 
 ## Knowledge Selection
 

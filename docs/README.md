@@ -12,7 +12,7 @@ This file is the documentation navigation authority. It is a map, not an encyclo
 2. [`seed.md`](seed.md) — concise architectural thesis / constitutional statement for Seed's claim-centric knowledge, projection, authority, operator, capability, and handoff invariants.
 3. [`ontology.md`](ontology.md) — concise architectural vocabulary and boundary reference.
 4. [`architectural_status_and_next_frontier.md`](architectural_status_and_next_frontier.md) — current architectural status, active frontier, and current priorities.
-5. [`architectural_knowledge_map.md`](architectural_knowledge_map.md) — concern map and routing to owning documents across foundational vocabulary, acquisition, integrity, selection, response, language, handoff, and architectural findings.
+5. [`architectural_knowledge_map.md`](architectural_knowledge_map.md) — concern map and routing to owning documents across foundational vocabulary, acquisition, integrity, selection, response, language, handoff, navigation, and architectural findings.
 
 ---
 
@@ -57,6 +57,12 @@ Use these completed reconciliations as stable boundary references when returning
 * [`handoff_bootstrap_and_summary_reconciliation.md`](handoff_bootstrap_and_summary_reconciliation.md) — required bootstrap versus optional summary boundaries.
 * [`continuation_context_and_working_state_reconciliation.md`](continuation_context_and_working_state_reconciliation.md) — activity context and working-state momentum boundaries.
 * [`bootstrap_invariants.md`](bootstrap_invariants.md) — context-dependent bootstrap invariants and authority limits.
+
+## Knowledge Navigation Frontier
+
+Use this frontier characterization when the question is not only what Seed knows, but how contributors and operators move from a question to concepts, architecture, documentation, repository structure, and implementation artifacts.
+
+* [`knowledge_navigation_layers_frontier.md`](knowledge_navigation_layers_frontier.md) — frontier characterization for structural navigation, architectural navigation, and knowledge navigation as related but non-identical graph layers.
 
 ## Language / Operator Interface
 
@@ -127,6 +133,7 @@ Prometheus cleanup should route here before implementation when dealing with `up
 * [`repository_observation_frontier.md`](repository_observation_frontier.md) — repository observation frontier.
 * [`repository_observation_source_design.md`](repository_observation_source_design.md) — repository observation source design.
 * [`documentation_observation_frontier.md`](documentation_observation_frontier.md) — documentation observation frontier.
+* [`knowledge_navigation_layers_frontier.md`](knowledge_navigation_layers_frontier.md) — navigation-layer frontier connecting repository, architecture, and knowledge navigation questions.
 * [`self_observation_reconciliation.md`](self_observation_reconciliation.md) — self-observation boundary reasoning.
 
 ---
@@ -153,6 +160,7 @@ Use these for operator-facing views and read-only projections. These surfaces ex
 * Canonical architecture overview: [`architecture.md`](architecture.md)
 * Architecture principles: [`architecture_principles.md`](architecture_principles.md)
 * Knowledge representation: [`knowledge_representation_map.md`](knowledge_representation_map.md), [`knowledge_representation_reconciliation.md`](knowledge_representation_reconciliation.md)
+* Knowledge navigation: [`knowledge_navigation_layers_frontier.md`](knowledge_navigation_layers_frontier.md)
 * Selection and context: [`context_composition_reconciliation.md`](context_composition_reconciliation.md), [`selection_rationale_reconciliation.md`](selection_rationale_reconciliation.md)
 * Response: [`response_reconciliation.md`](response_reconciliation.md), [`response_characterization.md`](response_characterization.md), [`response_vocabulary.md`](response_vocabulary.md)
 * Capability boundaries: [`capability_gap_and_operator_bridge_reconciliation.md`](capability_gap_and_operator_bridge_reconciliation.md), [`capability_acquisition_reconciliation.md`](capability_acquisition_reconciliation.md), [`capability_verification_reconciliation.md`](capability_verification_reconciliation.md)
