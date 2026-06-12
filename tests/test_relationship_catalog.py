@@ -43,9 +43,13 @@ def test_core_catalog_contains_initial_relationship_vocabulary():
 
     assert [entry.relationship for entry in catalog.list_relationships()] == [
         "alias_of",
+        "belongs_to_domain",
+        "defines",
+        "depends_on",
         "member_of",
         "monitored_by",
         "provides",
+        "related_to",
         "runs_on",
     ]
     assert {
@@ -53,12 +57,21 @@ def test_core_catalog_contains_initial_relationship_vocabulary():
         for entry in catalog.list_relationships()
     } == {
         "alias_of": "identity",
+        "belongs_to_domain": "grouping",
+        "defines": "topology",
+        "depends_on": "dependency",
         "member_of": "grouping",
         "monitored_by": "dependency",
         "provides": "dependency",
+        "related_to": "topology",
         "runs_on": "hosting",
     }
     assert catalog.get("member_of").derived_from_predicates == ["group"]
+    assert catalog.get("depends_on").subject_type == "document"
+    assert catalog.get("depends_on").object_type == "document"
+    assert catalog.get("related_to").derived_from_predicates == ["related"]
+    assert catalog.get("belongs_to_domain").object_type == "domain"
+    assert catalog.get("defines").object_type == "concept"
     assert catalog.get("alias_of").derived_from_predicates == [
         "alias",
         "hostname",

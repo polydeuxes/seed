@@ -35,6 +35,34 @@
       "subject_type": "service",
       "object_type": "host",
       "derived_from_predicates": ["host", "runs_on"]
+    },
+    {
+      "relationship": "depends_on",
+      "relationship_kind": "dependency",
+      "subject_type": "document",
+      "object_type": "document",
+      "derived_from_predicates": ["depends_on"]
+    },
+    {
+      "relationship": "related_to",
+      "relationship_kind": "topology",
+      "subject_type": "document",
+      "object_type": "document",
+      "derived_from_predicates": ["related"]
+    },
+    {
+      "relationship": "belongs_to_domain",
+      "relationship_kind": "grouping",
+      "subject_type": "document",
+      "object_type": "domain",
+      "derived_from_predicates": ["domain"]
+    },
+    {
+      "relationship": "defines",
+      "relationship_kind": "topology",
+      "subject_type": "document",
+      "object_type": "concept",
+      "derived_from_predicates": ["defines"]
     }
   ]
 }

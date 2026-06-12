@@ -1,13 +1,20 @@
 """Deterministic documentation claim extraction helpers.
 
 This module intentionally works only on caller-provided text. It does not read
-files, inspect the repository, parse markdown beyond simple headings/lines, use
-LLMs, or integrate with runtime/tool execution.
+files, inspect the repository, use LLMs, or integrate with runtime/tool
+execution. Claim extraction parses only simple markdown headings/lines;
+navigation metadata observation parses only YAML front matter.
 """
 
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
+
+from seed_runtime.knowledge.relationship_observation import (
+    RelationshipFact,
+    documentation_navigation_relationship_facts,
+)
 
 from seed_runtime.knowledge.self_model_alignment import (
     EXISTENCE,
@@ -203,3 +210,160 @@ def _claim(
         source_path=source_path,
         source_heading=source_heading,
     )
+
+
+_FRONT_MATTER_DELIMITER = "---"
+_METADATA_KEYS = frozenset(
+    {"doc_type", "status", "domain", "defines", "depends_on", "related"}
+)
+_LIST_METADATA_KEYS = frozenset({"defines", "depends_on", "related"})
+
+
+@dataclass(frozen=True)
+class DocumentationMetadataObservation:
+    """Authored documentation navigation metadata observed from front matter only."""
+
+    source_path: str
+    has_front_matter: bool
+    doc_type: str | None = None
+    status: str | None = None
+    domain: str | None = None
+    defines: tuple[str, ...] = ()
+    depends_on: tuple[str, ...] = ()
+    related: tuple[str, ...] = ()
+
+
+def observe_documentation_metadata(
+    source_path: str,
+    text: str,
+) -> DocumentationMetadataObservation:
+    """Observe authored YAML front matter without inspecting document prose."""
+
+    front_matter = _front_matter_text(text)
+    if front_matter is None:
+        return DocumentationMetadataObservation(
+            source_path=source_path,
+            has_front_matter=False,
+        )
+
+    metadata = _parse_supported_front_matter(front_matter)
+    return DocumentationMetadataObservation(
+        source_path=source_path,
+        has_front_matter=True,
+        doc_type=_optional_scalar(metadata, "doc_type"),
+        status=_optional_scalar(metadata, "status"),
+        domain=_optional_scalar(metadata, "domain"),
+        defines=_metadata_list(metadata, "defines"),
+        depends_on=_metadata_list(metadata, "depends_on"),
+        related=_metadata_list(metadata, "related"),
+    )
+
+
+def extract_documentation_navigation_relationship_facts(
+    source_path: str,
+    text: str,
+) -> list[RelationshipFact]:
+    """Extract navigation relationship facts from documentation front matter only."""
+
+    observation = observe_documentation_metadata(source_path, text)
+    if not observation.has_front_matter:
+        return []
+    return documentation_navigation_relationship_facts(
+        observation.source_path,
+        domain=observation.domain,
+        defines=observation.defines,
+        depends_on=observation.depends_on,
+        related=observation.related,
+    )
+
+
+def _front_matter_text(text: str) -> str | None:
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != _FRONT_MATTER_DELIMITER:
+        return None
+
+    for index, line in enumerate(lines[1:], start=1):
+        if line.strip() == _FRONT_MATTER_DELIMITER:
+            return "\n".join(lines[1:index])
+    return None
+
+
+def _parse_supported_front_matter(front_matter: str) -> dict[str, str | tuple[str, ...]]:
+    parsed: dict[str, str | tuple[str, ...]] = {}
+    current_list_key: str | None = None
+    list_items: dict[str, list[str]] = {}
+
+    for raw_line in front_matter.splitlines():
+        stripped = raw_line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+
+        if current_list_key is not None and stripped.startswith("-"):
+            item = _clean_yaml_scalar(stripped[1:].strip())
+            if item:
+                list_items.setdefault(current_list_key, []).append(item)
+            continue
+
+        current_list_key = None
+        if ":" not in stripped:
+            continue
+
+        key, raw_value = stripped.split(":", 1)
+        key = key.strip()
+        if key not in _METADATA_KEYS:
+            continue
+
+        value = raw_value.strip()
+        if key in _LIST_METADATA_KEYS:
+            if value:
+                parsed[key] = _inline_or_singleton_list(value)
+            else:
+                current_list_key = key
+                list_items.setdefault(key, [])
+        elif value:
+            parsed[key] = _clean_yaml_scalar(value)
+
+    for key, items in list_items.items():
+        parsed[key] = tuple(items)
+    return parsed
+
+
+def _optional_scalar(
+    metadata: dict[str, str | tuple[str, ...]], key: str
+) -> str | None:
+    value = metadata.get(key)
+    if isinstance(value, str) and value:
+        return value
+    return None
+
+
+def _metadata_list(
+    metadata: dict[str, str | tuple[str, ...]], key: str
+) -> tuple[str, ...]:
+    value = metadata.get(key)
+    if isinstance(value, tuple):
+        return value
+    if isinstance(value, str) and value:
+        return (value,)
+    return ()
+
+
+def _inline_or_singleton_list(value: str) -> tuple[str, ...]:
+    value = value.strip()
+    if value.startswith("[") and value.endswith("]"):
+        return tuple(
+            item
+            for item in (
+                _clean_yaml_scalar(part.strip()) for part in value[1:-1].split(",")
+            )
+            if item
+        )
+    cleaned = _clean_yaml_scalar(value)
+    return (cleaned,) if cleaned else ()
+
+
+def _clean_yaml_scalar(value: str) -> str:
+    value = value.split(" #", 1)[0].strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        value = value[1:-1]
+    return value.strip()
