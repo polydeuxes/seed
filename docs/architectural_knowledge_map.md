@@ -67,6 +67,7 @@ Emerging meta-architecture frontiers:
 Knowledge Navigation
 Operations
 Operation Attribution
+Relationship
 Inquiry
 Selection / Attention
 Object / Role / Operation
@@ -104,6 +105,7 @@ For the current status of these concerns and the active frontier, see `architect
 | How should predictions and future claims be handled? | `prediction_forecasting_and_future_claims_reconciliation.md` |
 | Where are Prometheus observation and endpoint identity boundaries? | `prometheus_observation_boundary_reconciliation.md`, `prometheus_endpoint_identity_boundary_audit.md` |
 | How do I move from a question to concepts, architecture, documentation, repository structure, and implementation artifacts? | `knowledge_navigation_layers_frontier.md` |
+| Where are emerging operation, attribution, relationship, inquiry, derivation, and handoff-lineage frontiers routed? | `operations_frontier.md`, `operation_attribution_frontier.md`, `relationship_frontier.md`, `inquiry_frontier.md`, `derivation_frontier.md`, `handoff_and_continuation_lineage_frontier.md`, and `future_frontiers.md` |
 | Where are current documentation navigation hygiene findings? | `navigation_hygiene_audit.md` |
 | Where are emerging operation, attribution, inquiry, attention, object/role/operation, persistence, continuity, derivation, and handoff-lineage frontiers routed? | `operations_frontier.md`, `operation_attribution_frontier.md`, `inquiry_frontier.md`, `selection_and_attention_frontier.md`, `attention_trigger_frontier.md`, `attention_target_frontier.md`, `object_role_and_operation_frontier.md`, `persistence_frontier.md`, `continuity_frontier.md`, `derivation_frontier.md`, `handoff_and_continuation_lineage_frontier.md`, and `future_frontiers.md` |
 
@@ -199,7 +201,7 @@ This is currently a frontier characterization, not a reconciliation or implement
 
 ## Emerging Meta-Architecture Frontiers
 
-Concern: recently characterized or emerging questions about navigation, operations, operation attribution, inquiry, attention, object/role/operation boundaries, persistence, continuity, derivation, and handoff/continuation lineage.
+Concern: recently characterized or emerging questions about navigation, operations, operation attribution, relationship ontology, inquiry, attention, object/role/operation boundaries, persistence, continuity, derivation, and handoff/continuation lineage.
 
 Start with:
 
@@ -207,6 +209,7 @@ Start with:
 * `derivation_frontier.md`
 * `operations_frontier.md`
 * `operation_attribution_frontier.md`
+* `relationship_frontier.md`
 * `handoff_and_continuation_lineage_frontier.md`
 * `inquiry_frontier.md`
 * `selection_and_attention_frontier.md`
