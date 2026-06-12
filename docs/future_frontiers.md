@@ -294,6 +294,187 @@ Questions:
 
 ---
 
+### Role Lineage Frontier
+
+Question:
+
+Can roles persist?
+
+Examples:
+
+active
+selected
+attention target
+inquiry target
+working-state content
+
+Interesting tension:
+
+Objects persist.
+
+Roles change.
+
+But do role histories matter?
+Operation Lineage Frontier
+
+Question:
+
+Does an inquiry persist?
+
+Or only its artifacts?
+
+Examples:
+
+Inquiry
+Selection
+Attention
+Revision
+
+Could be huge for continuation.
+
+---
+
+### Relationship Lineage Frontier
+
+Question:
+
+Can relationships evolve?
+
+Example:
+
+Claim A supports Claim B
+
+later
+
+Claim A weakly supports Claim B
+
+later
+
+Claim A contradicts Claim B
+
+What persisted?
+
+Investigation Cluster
+Continuity Frontier
+
+Neighbor to persistence.
+
+Question:
+
+How do we recognize sameness over time?
+
+Different from identity.
+
+Different from persistence.
+
+Could become foundational.
+
+---
+
+### State Frontier
+
+Question:
+
+What is state?
+
+Seed uses:
+
+state
+working state
+knowledge state
+repository state
+investigation state
+
+We've never actually reconciled state.
+
+Context Frontier
+
+Question:
+
+What is context?
+
+We've discussed:
+
+active context
+working state
+selection rationale
+handoff context
+
+but never attacked context directly.
+
+## Wildcard Frontiers
+
+### Constraint Frontier
+
+Question:
+
+What constrains operations?
+
+Candidates:
+
+authority
+policy
+trust
+scope
+capability
+
+Could explain a lot of execution behavior.
+
+---
+
+### Boundary Frontier
+
+Question:
+
+What is a boundary?
+
+The word appears everywhere:
+
+authority boundary
+observation boundary
+provider boundary
+execution boundary
+identity boundary
+
+Yet we have never treated it as a first-class investigation.
+
+### Relationship vs Role Pressure Test
+
+This one may become necessary after Relationship Frontier.
+
+Question:
+
+When does a connection become a role?
+
+When does a role become a connection?
+
+Examples:
+
+supports
+evidence-for
+attention-target
+selected
+depends_on
+Dark Horse Candidate
+
+### Grammar Frontier
+
+Question:
+
+What are the primitive kinds of things
+in Seed's ontology?
+
+Current pressure-generated candidates:
+
+Object
+Relationship
+Role
+Operation
+
+Potential outcome:
+
+Not all represented things are objects.
+
 ## Notes
 
 A frontier appearing on this board means:
