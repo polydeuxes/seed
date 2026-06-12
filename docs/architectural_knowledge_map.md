@@ -101,6 +101,7 @@ For the current status of these concerns and the active frontier, see `architect
 | How should predictions and future claims be handled? | `prediction_forecasting_and_future_claims_reconciliation.md` |
 | Where are Prometheus observation and endpoint identity boundaries? | `prometheus_observation_boundary_reconciliation.md`, `prometheus_endpoint_identity_boundary_audit.md` |
 | How do I move from a question to concepts, architecture, documentation, repository structure, and implementation artifacts? | `knowledge_navigation_layers_frontier.md` |
+| Where are current documentation navigation hygiene findings? | `navigation_hygiene_audit.md` |
 | Where are emerging operation, attribution, inquiry, derivation, and handoff-lineage frontiers routed? | `operations_frontier.md`, `operation_attribution_frontier.md`, `inquiry_frontier.md`, `derivation_frontier.md`, `handoff_and_continuation_lineage_frontier.md`, and `future_frontiers.md` |
 
 ---
@@ -177,6 +178,7 @@ Start with:
 * `documentation_observation_frontier.md`
 * `repository_observation_frontier.md`
 * `architectural_knowledge_map.md`
+* `navigation_hygiene_audit.md`
 
 This is currently a frontier characterization, not a reconciliation or implementation plan. It records structural navigation, architectural navigation, and knowledge navigation as related but non-identical layers.
 
