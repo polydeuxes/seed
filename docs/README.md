@@ -63,6 +63,7 @@ Use these completed reconciliations as stable boundary references when returning
 Use this frontier characterization when the question is not only what Seed knows, but how contributors and operators move from a question to concepts, architecture, documentation, repository structure, and implementation artifacts.
 
 * [`knowledge_navigation_layers_frontier.md`](knowledge_navigation_layers_frontier.md) — frontier characterization for structural navigation, architectural navigation, and knowledge navigation as related but non-identical graph layers.
+* [`discovery_path_preservation_observation.md`](discovery_path_preservation_observation.md) — observation of critique-driven discovery paths, compression removal, and the gap between preserving conclusions and preserving understanding transitions.
 
 ## Language / Operator Interface
 
