@@ -16,8 +16,8 @@ Current recommended priority:
 
 1. **Bounded implementation work** over concrete observation/projection problems, starting with the Prometheus boundary issues already documented.
 2. **Prometheus observation and projection cleanup** while preserving provenance and avoiding over-promotion.
-3. **Documentation maintenance** only where it keeps completed findings discoverable and authority boundaries clear.
-4. **Future investigation** only where a concrete unanswered operator question exists.
+3. **Documentation maintenance** only where it keeps completed findings and frontier routing discoverable while keeping authority boundaries clear.
+4. **Future investigation** only where a concrete unanswered operator question exists. Characterized and emerging frontiers are inputs to future inquiry, not canonical architecture and not implementation-ready by default.
 
 ---
 
@@ -35,7 +35,12 @@ Current recommended priority:
 | Knowledge Acquisition | **Implemented / Partially Complete / Active Implementation Frontier** | The claim-centric Observation → Evidence → Claim → Fact / Relationship → Projection frame is established. Current value is concrete cleanup and bounded observation work, especially Prometheus observation/projection boundaries. |
 | Knowledge Integrity | **Reconciled / Implemented / Architecturally Stable** | Integrity is a read-only projected-knowledge concern covering support, conflicts, contradictions, staleness, graph issues, confidence, verification limits, and disclosure. |
 | Knowledge Selection | **Reconciled / Vocabulary Established / Architecturally Stable** | Context Composition and Selection Rationale are covered by characterization, vocabulary, and reconciliation. New summary/runtime implementation is not currently justified. |
-| Knowledge Navigation | **Frontier Characterized / Not Reconciled / Not Implementation-Ready** | `knowledge_navigation_layers_frontier.md` records structural, architectural, and knowledge navigation as related but non-identical graph layers. The open question is whether repository, architecture, and knowledge graphs are independent or projections of a larger graph. |
+| Knowledge Navigation | **Frontier Characterized / Not Reconciled / Not Implementation-Ready** | `knowledge_navigation_layers_frontier.md` records structural, architectural, and knowledge navigation as related but non-identical graph layers. Navigation is not authority, and the open question is whether repository, architecture, and knowledge graphs are independent or projections of a larger graph. |
+| Derivation | **Frontier Characterized / Not Reconciled / Not Implementation-Ready** | `derivation_frontier.md` characterizes when represented support may justify newly represented propositions or relationships. It does not create a reasoning engine, schema, runtime, or canonical derivation ontology. |
+| Operations | **Frontier Characterized / Not Reconciled / Not Implementation-Ready** | `operations_frontier.md` characterizes a possible operation layer and object/operation boundary. It must not be treated as canonical ontology or implementation direction. |
+| Operation Attribution | **Frontier Characterized / Not Reconciled / Not Implementation-Ready** | `operation_attribution_frontier.md` separates actor participation, authority, responsibility, ownership, approval, adoption, execution, provenance, and explanation questions without settling a runtime model. |
+| Handoff / Continuation Lineage | **Frontier Characterized / Not Reconciled / Not Implementation-Ready** | `handoff_and_continuation_lineage_frontier.md` characterizes working-knowledge and investigation-lineage preservation across handoffs while preserving that handoffs are not architecture authority. |
+| Inquiry | **Exploratory Frontier / Not Reconciled / Not Implementation-Ready** | `inquiry_frontier.md` asks whether inquiry has objects, lifecycle, lineage, branches, and tensions distinct from claim-centered knowledge. It records evidence and questions without introducing an inquiry runtime or canonical ontology. |
 | Response | **Reconciled / Vocabulary Established / Partially Complete / Architecturally Stable** | Response is a distributed communication concern across existing response, context, explanation, integrity, capability, evidence, contradiction, confidence, and issue surfaces. |
 
 For preserved audit-chain outcomes and rejected concepts, see `architectural_findings_preservation.md`.
@@ -85,7 +90,7 @@ Additional observation slices remain appropriate when they:
 
 Maintenance should reduce duplicate authority and keep completed findings discoverable. It should not create new document categories, registries, inventories, or additional architecture systems.
 
-Supported later documentation frontiers include turning the handoff template into a concrete artifact, generated documentation/wiki projection, automatic observation refresh boundaries, natural-language/prose intake implementation notes where existing reconciliation documents already support that work, and knowledge-navigation investigation as characterized in `knowledge_navigation_layers_frontier.md`.
+Supported later documentation frontiers include turning the handoff template into a concrete artifact, generated documentation/wiki projection, automatic observation refresh boundaries, natural-language/prose intake implementation notes where existing reconciliation documents already support that work, and careful follow-up on the characterized navigation, derivation, operations, operation-attribution, inquiry, and handoff-lineage frontiers. Follow-up should remain investigation unless a later reconciliation promotes specific conclusions.
 
 ## 4. Future investigation
 
@@ -99,6 +104,7 @@ The following are not active frontiers unless new evidence appears:
 
 - recursive conceptual audits without a concrete operator or implementation question;
 - implementation of repository, architecture, or knowledge graph unification before the knowledge-navigation frontier is reconciled;
+- implementation of operation, inquiry, derivation, attribution, or continuation-lineage runtimes/schemas before those frontiers are reconciled;
 - Selection Rationale Summary implementation;
 - Response engine or universal formatter work;
 - Integrity, Selection, Context, Explainability, Caveat, Planner, Workflow, or Reasoning engines;

@@ -61,6 +61,18 @@ Foundational Ontology
 Architectural Findings
 ```
 
+Emerging meta-architecture frontiers:
+
+```text
+Knowledge Navigation
+Operations
+Operation Attribution
+Inquiry
+Handoff / Continuation Lineage
+```
+
+These frontiers are routed here for discovery only. They are characterized or emerging; they are not reconciled architecture, canonical ontology, roadmap authority, or implementation direction.
+
 For the current status of these concerns and the active frontier, see `architectural_status_and_next_frontier.md`.
 
 ---
@@ -89,6 +101,7 @@ For the current status of these concerns and the active frontier, see `architect
 | How should predictions and future claims be handled? | `prediction_forecasting_and_future_claims_reconciliation.md` |
 | Where are Prometheus observation and endpoint identity boundaries? | `prometheus_observation_boundary_reconciliation.md`, `prometheus_endpoint_identity_boundary_audit.md` |
 | How do I move from a question to concepts, architecture, documentation, repository structure, and implementation artifacts? | `knowledge_navigation_layers_frontier.md` |
+| Where are emerging operation, attribution, inquiry, derivation, and handoff-lineage frontiers routed? | `operations_frontier.md`, `operation_attribution_frontier.md`, `inquiry_frontier.md`, `derivation_frontier.md`, `handoff_and_continuation_lineage_frontier.md`, and `future_frontiers.md` |
 
 ---
 
@@ -166,6 +179,23 @@ Start with:
 * `architectural_knowledge_map.md`
 
 This is currently a frontier characterization, not a reconciliation or implementation plan. It records structural navigation, architectural navigation, and knowledge navigation as related but non-identical layers.
+
+
+## Emerging Meta-Architecture Frontiers
+
+Concern: recently characterized or emerging questions about navigation, operations, operation attribution, inquiry, derivation, and handoff/continuation lineage.
+
+Start with:
+
+* `knowledge_navigation_layers_frontier.md`
+* `derivation_frontier.md`
+* `operations_frontier.md`
+* `operation_attribution_frontier.md`
+* `handoff_and_continuation_lineage_frontier.md`
+* `inquiry_frontier.md`
+* `future_frontiers.md`
+
+These documents should be read as frontier/status/map routing, not as canonical architecture. Do not use this cluster to promote operations, inquiry, derivation, or lineage concepts into the foundational ontology without a later reconciliation.
 
 ## Knowledge Selection
 
