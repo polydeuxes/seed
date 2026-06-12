@@ -1,3 +1,24 @@
+---
+doc_type: reconciliation
+status: active
+domain: foundational ontology
+defines:
+  - observation
+  - evidence
+  - claim
+  - fact
+  - relationship
+depends_on:
+  - ontology.md
+  - architectural_documentation_alignment_reconciliation.md
+  - claim_strength_and_assertion_semantics_reconciliation.md
+  - relationship_fact_reconciliation.md
+related:
+  - knowledge_representation_reconciliation.md
+  - boundary_preservation_as_architectural_principle.md
+  - evidence_trust_and_source_authority_reconciliation.md
+---
+
 # Foundational Ontology Reconciliation
 
 ## Purpose

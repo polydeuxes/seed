@@ -1,3 +1,25 @@
+---
+doc_type: reconciliation
+status: active
+domain: temporal claims
+defines:
+  - occurrence time
+  - observation time
+  - source sample time
+  - temporal claim
+  - temporal claim revision
+depends_on:
+  - time_provenance_and_temporal_authority_audit.md
+  - temporal_reasoning_audit.md
+  - event_and_change_reconciliation.md
+  - observation_evidence_change_event_reconciliation.md
+  - prometheus_observation_boundary_reconciliation.md
+related:
+  - learning_and_knowledge_change_reconciliation.md
+  - contradiction_discovery_and_visibility_reconciliation.md
+  - prediction_forecasting_and_future_claims_reconciliation.md
+---
+
 # Occurrence Time And Temporal Claim Reconciliation
 
 ## Purpose

@@ -1,3 +1,21 @@
+---
+doc_type: reconciliation
+status: active
+domain: host observation
+defines:
+  - host observation capability area
+  - host observation domains
+  - reader transport boundary
+depends_on:
+  - host_observation_composability_audit.md
+  - observation_interpretation_and_reality_reconciliation.md
+  - foundational_ontology_reconciliation.md
+related:
+  - local_observation_roadmap_reconciliation.md
+  - local_host_observation_entity_boundary_reconciliation.md
+  - prometheus_observation_boundary_reconciliation.md
+---
+
 # Host Observation Reconciliation
 
 ## Purpose
