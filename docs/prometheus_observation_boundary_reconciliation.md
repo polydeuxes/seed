@@ -1,3 +1,22 @@
+---
+doc_type: reconciliation
+status: active
+domain: prometheus observation
+defines:
+  - prometheus instance label
+  - scrape target identity
+  - endpoint scoped observation
+  - prometheus observation boundary
+depends_on:
+  - entity_identity_derivation_reconciliation.md
+  - prometheus_endpoint_identity_boundary_audit.md
+  - host_observation_reconciliation.md
+related:
+  - prometheus_acquisition_interpretation_routing_promotion_audit.md
+  - prometheus_boundary_cleanup_status_reconciliation.md
+  - prometheus_target_and_filesystem_identity_reconciliation.md
+---
+
 # Prometheus Observation Boundary Reconciliation
 
 ## Purpose

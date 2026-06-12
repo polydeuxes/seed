@@ -1,3 +1,20 @@
+---
+doc_type: index
+status: active
+domain: documentation navigation
+defines:
+  - documentation entry points
+  - document family navigation
+depends_on:
+  - canonical_documentation_reconciliation.md
+  - documentation_authority_reconciliation.md
+  - architectural_knowledge_map.md
+  - architectural_status_and_next_frontier.md
+related:
+  - knowledge_navigation_layers_frontier.md
+  - knowledge_representation_map.md
+---
+
 # Seed Documentation Index
 
 ## Purpose

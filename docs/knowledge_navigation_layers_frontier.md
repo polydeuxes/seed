@@ -1,3 +1,22 @@
+---
+doc_type: frontier
+status: active
+domain: knowledge navigation
+defines:
+  - structural navigation
+  - architectural navigation
+  - knowledge navigation
+depends_on:
+  - index.md
+  - architectural_knowledge_map.md
+  - documentation_observation_frontier.md
+  - repository_observation_frontier.md
+related:
+  - documentation_observation_design.md
+  - repository_observation_design.md
+  - knowledge_representation_map.md
+---
+
 # Knowledge Navigation Layers Frontier
 
 ## Purpose

@@ -1,3 +1,23 @@
+---
+doc_type: audit
+status: active
+domain: temporal authority
+defines:
+  - temporal provenance
+  - temporal authority
+  - time kinds
+depends_on:
+  - temporal_reasoning_audit.md
+  - event_and_change_reconciliation.md
+  - observation_evidence_change_event_reconciliation.md
+  - current_observation_evidence_change_event_implementation_findings.md
+  - prometheus_observation_boundary_reconciliation.md
+related:
+  - occurrence_time_and_temporal_claim_reconciliation.md
+  - learning_and_knowledge_change_reconciliation.md
+  - contradiction_discovery_and_visibility_reconciliation.md
+---
+
 # Time Provenance And Temporal Authority Audit
 
 ## Purpose
