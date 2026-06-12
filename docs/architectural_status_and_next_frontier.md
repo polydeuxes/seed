@@ -35,6 +35,7 @@ Current recommended priority:
 | Knowledge Acquisition | **Implemented / Partially Complete / Active Implementation Frontier** | The claim-centric Observation → Evidence → Claim → Fact / Relationship → Projection frame is established. Current value is concrete cleanup and bounded observation work, especially Prometheus observation/projection boundaries. |
 | Knowledge Integrity | **Reconciled / Implemented / Architecturally Stable** | Integrity is a read-only projected-knowledge concern covering support, conflicts, contradictions, staleness, graph issues, confidence, verification limits, and disclosure. |
 | Knowledge Selection | **Reconciled / Vocabulary Established / Architecturally Stable** | Context Composition and Selection Rationale are covered by characterization, vocabulary, and reconciliation. New summary/runtime implementation is not currently justified. |
+| Knowledge Navigation | **Frontier Characterized / Not Reconciled / Not Implementation-Ready** | `knowledge_navigation_layers_frontier.md` records structural, architectural, and knowledge navigation as related but non-identical graph layers. The open question is whether repository, architecture, and knowledge graphs are independent or projections of a larger graph. |
 | Response | **Reconciled / Vocabulary Established / Partially Complete / Architecturally Stable** | Response is a distributed communication concern across existing response, context, explanation, integrity, capability, evidence, contradiction, confidence, and issue surfaces. |
 
 For preserved audit-chain outcomes and rejected concepts, see `architectural_findings_preservation.md`.
@@ -84,7 +85,7 @@ Additional observation slices remain appropriate when they:
 
 Maintenance should reduce duplicate authority and keep completed findings discoverable. It should not create new document categories, registries, inventories, or additional architecture systems.
 
-Supported later documentation frontiers include turning the handoff template into a concrete artifact, generated documentation/wiki projection, automatic observation refresh boundaries, and natural-language/prose intake implementation notes where existing reconciliation documents already support that work.
+Supported later documentation frontiers include turning the handoff template into a concrete artifact, generated documentation/wiki projection, automatic observation refresh boundaries, natural-language/prose intake implementation notes where existing reconciliation documents already support that work, and knowledge-navigation investigation as characterized in `knowledge_navigation_layers_frontier.md`.
 
 ## 4. Future investigation
 
@@ -97,6 +98,7 @@ Start future investigations only when a concrete operator question is important,
 The following are not active frontiers unless new evidence appears:
 
 - recursive conceptual audits without a concrete operator or implementation question;
+- implementation of repository, architecture, or knowledge graph unification before the knowledge-navigation frontier is reconciled;
 - Selection Rationale Summary implementation;
 - Response engine or universal formatter work;
 - Integrity, Selection, Context, Explainability, Caveat, Planner, Workflow, or Reasoning engines;
