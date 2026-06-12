@@ -12,6 +12,12 @@ depends_on:
   - architectural_status_and_next_frontier.md
 related:
   - knowledge_navigation_layers_frontier.md
+  - derivation_frontier.md
+  - operations_frontier.md
+  - operation_attribution_frontier.md
+  - handoff_and_continuation_lineage_frontier.md
+  - inquiry_frontier.md
+  - future_frontiers.md
   - knowledge_representation_map.md
 ---
 
@@ -259,6 +265,19 @@ Use this file to find the right document family before reading specific document
 - `repository_reconciliation_seed_characterization.md`
 - `repository_reconciliation_v0_implementation_characterization.md`
 - `repository_reconciliation_v1_frontier.md`
+
+
+## Frontier Characterizations And Bounty Board
+
+These documents route emerging work without promoting it to canonical architecture. Frontier characterizations are not reconciliations; characterized frontiers are not implementation-ready unless a scoped authoritative document says otherwise. The bounty board is optional candidate inventory, not roadmap authority.
+
+- `knowledge_navigation_layers_frontier.md` — navigation layers frontier.
+- `derivation_frontier.md` — represented knowledge producing additional represented knowledge.
+- `operations_frontier.md` — candidate operation ontology and object/operation boundary.
+- `operation_attribution_frontier.md` — actor, authority, responsibility, and provenance questions around operations.
+- `handoff_and_continuation_lineage_frontier.md` — continuation and investigation lineage across handoffs.
+- `inquiry_frontier.md` — possible inquiry object, lifecycle, and lineage boundaries.
+- `future_frontiers.md` — bounty-style inventory of optional future frontier candidates.
 
 ## Roadmap, Backlog, And Methodology
 

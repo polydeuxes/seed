@@ -48,6 +48,8 @@ Support Relationship
 Higher-order Claim
 ```
 
+This map remains claim-centric. It is not an exhaustive meta-architecture and does not imply that Seed's unsettled frontier questions are only object-centric. Recent frontier work on operations, derivation, inquiry, operation attribution, and handoff/continuation lineage is routed below as frontier context, not canonical representation architecture.
+
 ## Observation
 
 Observations are records of something seen.
@@ -154,6 +156,17 @@ It does not arbitrate truth.
 * docs/documentation_observation_frontier.md
 * docs/repository_observation_frontier.md
 * docs/repository_reconciliation_frontier.md
+
+## Frontier Context
+
+These documents may affect future representation vocabulary, but they are not canonical ontology and should not be duplicated into this map:
+
+* docs/derivation_frontier.md
+* docs/operations_frontier.md
+* docs/operation_attribution_frontier.md
+* docs/handoff_and_continuation_lineage_frontier.md
+* docs/inquiry_frontier.md
+* docs/knowledge_navigation_layers_frontier.md
 
 ## Conclusion
 

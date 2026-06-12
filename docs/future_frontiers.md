@@ -4,6 +4,8 @@ Purpose
 
 This document is not a roadmap.
 
+This document is not roadmap authority.
+
 This document is not a commitment.
 
 This document preserves candidate architectural frontiers that emerged from
@@ -17,7 +19,7 @@ Items may be:
 * rejected;
 * resolved.
 
-Presence on this list does not imply priority.
+Presence on this list does not imply priority, sequencing, implementation readiness, or canonical ontology.
 
 ---
 
@@ -63,7 +65,28 @@ Related:
 
 ---
 
-### Knowledge Lineage Frontier
+### Operation Composition Frontier
+
+Status:
+
+Emerging.
+
+Questions:
+
+* Can primitive operations compose into larger investigation or knowledge-change operations?
+* Where is the boundary between operation, process, workflow, and runtime execution?
+* How should composed operations preserve provenance, attribution, scope, and explanation?
+
+Related:
+
+* operations_frontier.md
+* operation_attribution_frontier.md
+* derivation_frontier.md
+* handoff_and_continuation_lineage_frontier.md
+
+---
+
+### Knowledge Lineage / Provenance Frontier
 
 Status:
 
@@ -72,13 +95,14 @@ Emerging.
 Questions:
 
 * How does represented knowledge arise?
-* What lineage information is required for explainability?
-* How much lineage must be preserved?
+* What lineage or provenance information is required for explainability?
+* How much lineage and provenance must be preserved?
 
 Related:
 
 * operation_attribution_frontier.md
 * derivation_frontier.md
+* handoff_and_continuation_lineage_frontier.md
 
 ---
 
