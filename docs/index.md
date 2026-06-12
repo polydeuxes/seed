@@ -30,6 +30,7 @@ related:
   - knowledge_representation_map.md
   - navigation_hygiene_audit.md
   - documentation_lineage_observation.md
+  - observation_surface_and_blind_spot_audit.md
   - concept_stability_audit.md
 ---
 
@@ -73,6 +74,7 @@ Use this file to find the right document family before reading specific document
 - `finding_applicability_index.md`
 - `navigation_hygiene_audit.md`
 - `documentation_lineage_observation.md` — observation of how recent documentation generated follow-on investigations, clusters, bridges, consolidations, and inquiry redirects.
+- `observation_surface_and_blind_spot_audit.md` — audit of what that lineage observation could see, what it could not see, and where metadata, observer context, and pre-metadata history shape visibility.
 
 ## Foundational Ontology And Claim Semantics
 
@@ -112,6 +114,7 @@ Use this file to find the right document family before reading specific document
 - `repository_observation_design.md`
 - `repository_observation_frontier.md`
 - `repository_observation_characterization.md`
+- `observation_surface_and_blind_spot_audit.md`
 
 ## Language, Meaning, Intent, And Attribution
 
