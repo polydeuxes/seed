@@ -455,7 +455,8 @@ evidence-for
 attention-target
 selected
 depends_on
-Dark Horse Candidate
+
+## Dark Horse Candidate
 
 ### Grammar Frontier
 
@@ -474,6 +475,25 @@ Operation
 Potential outcome:
 
 Not all represented things are objects.
+
+---
+
+### Continuity Frontier
+
+Question:
+
+What survives change?
+
+Not:
+
+What persists?
+
+The Persistence Frontier already attacked that.
+
+The deeper question may be:
+
+How does Seed recognize continuity
+without requiring strict sameness?
 
 ## Notes
 
