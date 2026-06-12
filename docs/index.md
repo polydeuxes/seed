@@ -15,6 +15,7 @@ related:
   - derivation_frontier.md
   - operations_frontier.md
   - operation_attribution_frontier.md
+  - relationship_frontier.md
   - handoff_and_continuation_lineage_frontier.md
   - inquiry_frontier.md
   - future_frontiers.md
@@ -275,6 +276,7 @@ These documents route emerging work without promoting it to canonical architectu
 - `derivation_frontier.md` — represented knowledge producing additional represented knowledge.
 - `operations_frontier.md` — candidate operation ontology and object/operation boundary.
 - `operation_attribution_frontier.md` — actor, authority, responsibility, and provenance questions around operations.
+- `relationship_frontier.md` — exploratory relationship ontology and edge-semantics pressure signal.
 - `handoff_and_continuation_lineage_frontier.md` — continuation and investigation lineage across handoffs.
 - `inquiry_frontier.md` — possible inquiry object, lifecycle, and lineage boundaries.
 - `future_frontiers.md` — bounty-style inventory of optional future frontier candidates.
