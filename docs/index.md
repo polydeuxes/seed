@@ -88,6 +88,7 @@ Use this file to find the right document family before reading specific document
 - `documentation_compression_observation.md` — observation of where repository documentation compressed distinctions, what pressures exposed hidden meanings, and where compressed language remained useful.
 - `compression_candidate_observation.md` — observation of candidate compressed concepts, pressure survivors, decompression evidence, and stable concepts without defining compression canonically.
 - `explanatory_load_observation.md` — observation of where repository concepts appear to accumulate explanatory responsibility, where responsibility shifted, and where bounded concepts survived pressure without defining explanatory load canonically.
+- `support_change_and_learning_observation.md` — observation of support-change evidence, understanding-change overlap, derivation-related changes, and learning-language divergence without defining support change or learning canonically.
 - `bounty_board_and_investigation_selection_observation.md` — observation of how investigations appear to have become active, how inquiry historically moved, and how the bounty board preserves deferred inquiry without acting as roadmap authority.
 
 ## Foundational Ontology And Claim Semantics
