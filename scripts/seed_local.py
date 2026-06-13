@@ -9,7 +9,7 @@ from collections import Counter, defaultdict
 import json
 import sys
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Literal
@@ -96,6 +96,10 @@ from seed_runtime.predicate_catalog import PredicateCatalog
 from seed_runtime.predicate_normalizers import PredicateNormalizer
 from seed_runtime.projection_store import (
     SQLiteProjectionStore,
+    STATE_PROJECTION_VERSION,
+    STATE_SUMMARY_PROJECTION_NAME,
+    STATE_SUMMARY_PROJECTION_VERSION,
+    SummaryProjectionSnapshot,
     project_state_with_cache,
     rebuild_state_cache,
 )
@@ -1708,6 +1712,61 @@ def projected_state_from_args(args: argparse.Namespace) -> State:
             if close is not None:
                 close()
 
+
+def projected_state_summary_from_args(
+    args: argparse.Namespace,
+) -> tuple[StateSummary, dict[str, Any]]:
+    """Return the state-summary views, using a dependent summary read-model cache."""
+
+    ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
+    store = SQLiteProjectionStore(args.db) if args.db else None
+    try:
+        latest_events = ledger.list_events(args.workspace)
+        current_last_event_id = latest_events[-1].id if latest_events else None
+        if store is not None and _can_use_state_cache(args):
+            snapshot = store.load_summary_snapshot(
+                args.workspace,
+                STATE_SUMMARY_PROJECTION_NAME,
+                STATE_SUMMARY_PROJECTION_VERSION,
+                state_projection_version=STATE_PROJECTION_VERSION,
+                state_last_event_id=current_last_event_id,
+            )
+            if snapshot is not None:
+                payload = snapshot.summary_payload
+                view_summary = StateSummary(**payload["state_view_summary"])
+                return view_summary, payload["operator_summary"]
+
+        projector = _state_projector_from_args(args, ledger)
+        if store is not None and _can_use_state_cache(args):
+            state, _status = project_state_with_cache(
+                ledger, args.workspace, store, projector=projector
+            )
+        else:
+            state = projector.project(args.workspace)
+        view_summary = build_state_summary(state)
+        operator_summary = state_summary(state)
+        if store is not None and _can_use_state_cache(args):
+            store.save_summary_snapshot(
+                SummaryProjectionSnapshot(
+                    workspace_id=args.workspace,
+                    projection_name=STATE_SUMMARY_PROJECTION_NAME,
+                    projection_version=STATE_SUMMARY_PROJECTION_VERSION,
+                    last_event_id=state.last_event_id,
+                    state_projection_version=STATE_PROJECTION_VERSION,
+                    state_last_event_id=state.last_event_id,
+                    summary_payload={
+                        "state_view_summary": to_plain(view_summary),
+                        "operator_summary": operator_summary,
+                    },
+                    created_at=datetime.now(timezone.utc),
+                )
+            )
+        return view_summary, operator_summary
+    finally:
+        for resource in (store, ledger):
+            close = getattr(resource, "close", None)
+            if close is not None:
+                close()
 
 def rebuild_state_cache_from_args(args: argparse.Namespace) -> str:
     """Clear and rebuild the persisted State projection cache."""
@@ -4289,11 +4348,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.state_summary:
-        state = projected_state_from_args(args)
+        view_summary, operator_summary = projected_state_summary_from_args(args)
         print(
-            format_state_view_summary(build_state_summary(state))
+            format_state_view_summary(view_summary)
             + "\n\n"
-            + format_state_summary(state_summary(state))
+            + format_state_summary(operator_summary)
         )
         return 0
 

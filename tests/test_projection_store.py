@@ -215,3 +215,200 @@ def test_cli_rebuild_state_cache_clears_and_rebuilds(tmp_path, capsys):
         ) is not None
     finally:
         store.close()
+
+
+def test_summary_cache_hit_matches_summary_rebuilt_from_full_state_projection():
+    from seed_runtime.projection_store import (
+        STATE_SUMMARY_PROJECTION_NAME,
+        STATE_SUMMARY_PROJECTION_VERSION,
+        SummaryProjectionSnapshot,
+    )
+    from seed_runtime.state_summary_views import state_summary
+    from seed_runtime.state_views import build_state_summary
+
+    ledger = EventLedger()
+    event = _append_fact(ledger, "ws", "fact_one", "docker")
+    store = InMemoryProjectionStore()
+    state, _status = project_state_with_cache(ledger, "ws", store)
+    expected_view = build_state_summary(state)
+    expected_operator = state_summary(state)
+    store.save_summary_snapshot(
+        SummaryProjectionSnapshot(
+            workspace_id="ws",
+            projection_name=STATE_SUMMARY_PROJECTION_NAME,
+            projection_version=STATE_SUMMARY_PROJECTION_VERSION,
+            last_event_id=event.id,
+            state_projection_version=STATE_PROJECTION_VERSION,
+            state_last_event_id=event.id,
+            summary_payload={
+                "state_view_summary": to_plain(expected_view),
+                "operator_summary": expected_operator,
+            },
+            created_at=datetime.now(timezone.utc),
+        )
+    )
+
+    snapshot = store.load_summary_snapshot(
+        "ws",
+        STATE_SUMMARY_PROJECTION_NAME,
+        STATE_SUMMARY_PROJECTION_VERSION,
+        state_projection_version=STATE_PROJECTION_VERSION,
+        state_last_event_id=event.id,
+    )
+
+    assert snapshot is not None
+    assert snapshot.summary_payload["state_view_summary"] == to_plain(expected_view)
+    assert snapshot.summary_payload["operator_summary"] == expected_operator
+
+
+def test_summary_cache_invalidates_when_projection_last_event_changes():
+    from seed_runtime.projection_store import (
+        STATE_SUMMARY_PROJECTION_NAME,
+        STATE_SUMMARY_PROJECTION_VERSION,
+        SummaryProjectionSnapshot,
+    )
+
+    ledger = EventLedger()
+    first_event = _append_fact(ledger, "ws", "fact_one", "docker")
+    store = InMemoryProjectionStore()
+    project_state_with_cache(ledger, "ws", store)
+    store.save_summary_snapshot(
+        SummaryProjectionSnapshot(
+            workspace_id="ws",
+            projection_name=STATE_SUMMARY_PROJECTION_NAME,
+            projection_version=STATE_SUMMARY_PROJECTION_VERSION,
+            last_event_id=first_event.id,
+            state_projection_version=STATE_PROJECTION_VERSION,
+            state_last_event_id=first_event.id,
+            summary_payload={"state_view_summary": {}, "operator_summary": {}},
+            created_at=datetime.now(timezone.utc),
+        )
+    )
+
+    second_event = _append_fact(ledger, "ws", "fact_two", "podman")
+    project_state_with_cache(ledger, "ws", store)
+
+    assert (
+        store.load_summary_snapshot(
+            "ws",
+            STATE_SUMMARY_PROJECTION_NAME,
+            STATE_SUMMARY_PROJECTION_VERSION,
+            state_projection_version=STATE_PROJECTION_VERSION,
+            state_last_event_id=second_event.id,
+        )
+        is None
+    )
+
+
+def test_summary_cache_invalidates_on_projection_version_change():
+    from seed_runtime.projection_store import (
+        STATE_SUMMARY_PROJECTION_NAME,
+        STATE_SUMMARY_PROJECTION_VERSION,
+        SummaryProjectionSnapshot,
+    )
+
+    ledger = EventLedger()
+    event = _append_fact(ledger, "ws", "fact_one", "docker")
+    store = InMemoryProjectionStore()
+    project_state_with_cache(ledger, "ws", store)
+    store.save_summary_snapshot(
+        SummaryProjectionSnapshot(
+            workspace_id="ws",
+            projection_name=STATE_SUMMARY_PROJECTION_NAME,
+            projection_version=STATE_SUMMARY_PROJECTION_VERSION,
+            last_event_id=event.id,
+            state_projection_version="old-state-version",
+            state_last_event_id=event.id,
+            summary_payload={"state_view_summary": {}, "operator_summary": {}},
+            created_at=datetime.now(timezone.utc),
+        )
+    )
+
+    assert (
+        store.load_summary_snapshot(
+            "ws",
+            STATE_SUMMARY_PROJECTION_NAME,
+            STATE_SUMMARY_PROJECTION_VERSION,
+            state_projection_version=STATE_PROJECTION_VERSION,
+            state_last_event_id=event.id,
+        )
+        is None
+    )
+
+
+def test_sqlite_summary_cache_depends_on_full_state_projection_snapshot(tmp_path):
+    from seed_runtime.projection_store import (
+        STATE_SUMMARY_PROJECTION_NAME,
+        STATE_SUMMARY_PROJECTION_VERSION,
+        SummaryProjectionSnapshot,
+    )
+
+    db_path = tmp_path / "summary-cache.sqlite"
+    ledger = SQLiteEventLedger(str(db_path))
+    store = SQLiteProjectionStore(str(db_path))
+    try:
+        event = _append_fact(ledger, "ws", "fact_one", "docker")
+        store.save_summary_snapshot(
+            SummaryProjectionSnapshot(
+                workspace_id="ws",
+                projection_name=STATE_SUMMARY_PROJECTION_NAME,
+                projection_version=STATE_SUMMARY_PROJECTION_VERSION,
+                last_event_id=event.id,
+                state_projection_version=STATE_PROJECTION_VERSION,
+                state_last_event_id=event.id,
+                summary_payload={"state_view_summary": {}, "operator_summary": {}},
+                created_at=datetime.now(timezone.utc),
+            )
+        )
+
+        assert (
+            store.load_summary_snapshot(
+                "ws",
+                STATE_SUMMARY_PROJECTION_NAME,
+                STATE_SUMMARY_PROJECTION_VERSION,
+                state_projection_version=STATE_PROJECTION_VERSION,
+                state_last_event_id=event.id,
+            )
+            is None
+        )
+
+        project_state_with_cache(ledger, "ws", store)
+        assert store.load_summary_snapshot(
+            "ws",
+            STATE_SUMMARY_PROJECTION_NAME,
+            STATE_SUMMARY_PROJECTION_VERSION,
+            state_projection_version=STATE_PROJECTION_VERSION,
+            state_last_event_id=event.id,
+        ) is not None
+    finally:
+        store.close()
+        ledger.close()
+
+
+def test_cli_state_summary_reuses_summary_read_model_without_deserializing_state(monkeypatch, tmp_path, capsys):
+    import importlib.util
+    import sys
+    from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location(
+        "seed_local_summary_cache", Path("scripts/seed_local.py")
+    )
+    seed_local = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = seed_local
+    assert spec.loader is not None
+    spec.loader.exec_module(seed_local)
+
+    db_path = tmp_path / "cli-summary-cache.sqlite"
+    assert seed_local.main(["--db", str(db_path), "--fact", "svc", "runtime", "docker"]) == 0
+    capsys.readouterr()
+    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+    first_output = capsys.readouterr().out
+
+    def fail_state_load(_payload):
+        raise AssertionError("full State snapshot should not be loaded on summary cache hit")
+
+    monkeypatch.setattr(seed_local, "project_state_with_cache", fail_state_load)
+    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+    second_output = capsys.readouterr().out
+
+    assert second_output == first_output
