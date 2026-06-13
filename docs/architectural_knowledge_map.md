@@ -73,6 +73,7 @@ Selection / Attention
 Active Edge
 Object / Role / Operation
 Concept Stability
+Explanatory Load
 Observation Surface / Blind Spots
 Persistence / Continuity / Current Work Position
 Handoff / Continuation Lineage
@@ -113,6 +114,7 @@ For the current status of these concerns and the active frontier, see `architect
 | What could the documentation lineage observation see, and what remained blind? | `observation_surface_and_blind_spot_audit.md` |
 | What appears to continue when artifact, inquiry, observation, and discovery-path lineage are discussed? | `lineage_distinction_observation.md` |
 | What kinds of things do recent investigations appear to preserve? | `preservation_surface_observation.md` |
+| Where do concepts appear to accumulate explanatory responsibility, shift load, or survive by remaining bounded? | `explanatory_load_observation.md` |
 | Where are emerging operation, attribution, inquiry, attention, object/role/operation, persistence, continuity, current work position, active edge, derivation, and handoff-lineage frontiers routed? | `operations_frontier.md`, `operation_attribution_frontier.md`, `inquiry_frontier.md`, `selection_and_attention_frontier.md`, `attention_trigger_frontier.md`, `attention_target_frontier.md`, `object_role_and_operation_frontier.md`, `persistence_frontier.md`, `continuity_frontier.md`, `current_work_position_frontier.md`, `active_edge_frontier.md`, `concept_stability_audit.md`, `derivation_frontier.md`, `handoff_and_continuation_lineage_frontier.md`, and `future_frontiers.md` |
 
 ---
@@ -208,7 +210,7 @@ This is currently a frontier characterization, not a reconciliation or implement
 
 ## Emerging Meta-Architecture Frontiers
 
-Concern: recently characterized or emerging questions about navigation, operations, operation attribution, relationship ontology, inquiry, attention, active-edge pressure, object/role/operation boundaries, concept stability, persistence, continuity, current work position, derivation, handoff/continuation lineage, observed documentation lineage, discovery-path preservation, lineage distinction, documentation compression, understanding-as-claim pressure, knowledge-and-understanding distinction pressure, decompression-shaped learning, and observation-surface limits.
+Concern: recently characterized or emerging questions about navigation, operations, operation attribution, relationship ontology, inquiry, attention, active-edge pressure, object/role/operation boundaries, concept stability, persistence, continuity, current work position, derivation, handoff/continuation lineage, observed documentation lineage, discovery-path preservation, lineage distinction, documentation compression, explanatory-load pressure, understanding-as-claim pressure, knowledge-and-understanding distinction pressure, decompression-shaped learning, and observation-surface limits.
 
 Start with:
 
