@@ -2380,19 +2380,15 @@ class ObservationCollectionService:
             state = StateProjector(self.ingestor.ledger).project(workspace_id)
             normalized = self.normalization_pipeline.normalize(normalized, state=state)
 
-        facts: list[Fact] = []
-        for observation in normalized:
-            fact = self.ingestor.ingest(
-                observation,
-                workspace_id,
-                actor=actor,
-                session_id=session_id,
-                causation_id=causation_id,
-                correlation_id=correlation_id,
-            )
-            if fact is not None:
-                facts.append(fact)
-        return facts
+        facts = self.ingestor.ingest_many(
+            normalized,
+            workspace_id,
+            actor=actor,
+            session_id=session_id,
+            causation_id=causation_id,
+            correlation_id=correlation_id,
+        )
+        return [fact for fact in facts if fact is not None]
 
     @staticmethod
     def _normalize_observation(
