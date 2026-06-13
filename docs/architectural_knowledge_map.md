@@ -112,6 +112,7 @@ For the current status of these concerns and the active frontier, see `architect
 | Where are current documentation navigation hygiene findings? | `navigation_hygiene_audit.md` |
 | What could the documentation lineage observation see, and what remained blind? | `observation_surface_and_blind_spot_audit.md` |
 | What appears to continue when artifact, inquiry, observation, and discovery-path lineage are discussed? | `lineage_distinction_observation.md` |
+| What kinds of things do recent investigations appear to preserve? | `preservation_surface_observation.md` |
 | Where are emerging operation, attribution, inquiry, attention, object/role/operation, persistence, continuity, current work position, active edge, derivation, and handoff-lineage frontiers routed? | `operations_frontier.md`, `operation_attribution_frontier.md`, `inquiry_frontier.md`, `selection_and_attention_frontier.md`, `attention_trigger_frontier.md`, `attention_target_frontier.md`, `object_role_and_operation_frontier.md`, `persistence_frontier.md`, `continuity_frontier.md`, `current_work_position_frontier.md`, `active_edge_frontier.md`, `concept_stability_audit.md`, `derivation_frontier.md`, `handoff_and_continuation_lineage_frontier.md`, and `future_frontiers.md` |
 
 ---
@@ -227,6 +228,7 @@ Start with:
 * `observation_surface_and_blind_spot_audit.md`
 * `discovery_path_preservation_observation.md`
 * `lineage_distinction_observation.md`
+* `preservation_surface_observation.md`
 * `persistence_frontier.md`
 * `continuity_frontier.md`
 * `current_work_position_frontier.md`
