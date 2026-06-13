@@ -6,9 +6,12 @@ adapter supports only static Python ``import`` and ``from ... import ...``
 syntax from caller-provided source text.
 
 Import relationships are dependency/name-availability evidence only. They do
-not prove behavior, calls, routes, boundaries, or ownership. This module never
-reads files, scans repositories, imports repository modules, uses LLMs,
-reconciles claims, builds graphs, or integrates with runtime/tool execution.
+not prove behavior, calls, routes, boundaries, or ownership. Definition
+relationships are syntactic declaration evidence only. They do not prove
+invocation, behavior, reachability, capability authority, or runtime ownership.
+This module never reads files, scans repositories, imports repository modules,
+uses LLMs, reconciles claims, builds graphs, or integrates with runtime/tool
+execution.
 """
 
 from __future__ import annotations
@@ -153,6 +156,32 @@ def extract_python_import_relationship_facts(
     return facts
 
 
+def extract_python_definition_relationship_facts(
+    source_path: str,
+    text: str,
+) -> list[RelationshipFact]:
+    """Extract static Python definition relationships from supplied source text.
+
+    This bounded source-observation adapter emits only ``defines``
+    relationships for top-level Python function, async function, and class
+    declarations. Invalid Python returns an empty relationship list. Definition
+    relationships are declaration evidence only; they are not call, behavior,
+    ownership-of-capability, or runtime reachability claims.
+    """
+
+    try:
+        tree = ast.parse(text, filename=source_path)
+    except SyntaxError:
+        return []
+
+    subject = _subject_from_path(source_path)
+    facts: list[RelationshipFact] = []
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            facts.append(_definition_relationship(source_path, subject, node))
+    return facts
+
+
 def extract_relationship_facts(source_path: str, text: str) -> list[RelationshipFact]:
     """Compatibility wrapper for the v0 Python import relationship adapter.
 
@@ -162,6 +191,43 @@ def extract_relationship_facts(source_path: str, text: str) -> list[Relationship
     """
 
     return extract_python_import_relationship_facts(source_path, text)
+
+
+def _definition_relationship(
+    source_path: str,
+    subject: str,
+    node: ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef,
+) -> RelationshipFact:
+    symbol_kind = _definition_kind(node)
+    line_range = _line_range(node)
+    symbol = f"{subject}.{node.name}"
+    return RelationshipFact(
+        relationship_kind=DEFINES,
+        subject=subject,
+        object=symbol,
+        path=source_path,
+        evidence=(
+            f"{subject} defines {symbol_kind} {node.name} "
+            f"at {source_path}:{line_range}."
+        ),
+    )
+
+
+def _definition_kind(
+    node: ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef,
+) -> str:
+    if isinstance(node, ast.AsyncFunctionDef):
+        return "async function"
+    if isinstance(node, ast.FunctionDef):
+        return "function"
+    return "class"
+
+
+def _line_range(node: ast.AST) -> str:
+    end_lineno = getattr(node, "end_lineno", None) or node.lineno
+    if end_lineno == node.lineno:
+        return str(node.lineno)
+    return f"{node.lineno}-{end_lineno}"
 
 
 def _import_relationships(

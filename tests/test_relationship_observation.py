@@ -140,3 +140,93 @@ def test_relationship_observation_uses_inline_text_without_file_reads(monkeypatc
 
     assert len(facts) == 1
     assert facts[0].relationship_kind == "imports"
+
+
+def test_function_definition_extracts_definition_relationship():
+    relationship_observation = _load_relationship_observation_module()
+
+    facts = relationship_observation.extract_python_definition_relationship_facts(
+        "fixtures/source.py",
+        "def build_state_summary(state):\n    return state\n",
+    )
+
+    assert len(facts) == 1
+    assert facts[0].relationship_kind == "defines"
+    assert facts[0].subject == "fixtures.source"
+    assert facts[0].object == "fixtures.source.build_state_summary"
+    assert facts[0].path == "fixtures/source.py"
+    assert "function build_state_summary" in facts[0].evidence
+    assert "fixtures/source.py:1-2" in facts[0].evidence
+
+
+def test_class_definition_extracts_definition_relationship():
+    relationship_observation = _load_relationship_observation_module()
+
+    facts = relationship_observation.extract_python_definition_relationship_facts(
+        "fixtures/source.py",
+        "class StateSummaryRenderer:\n    pass\n",
+    )
+
+    assert len(facts) == 1
+    assert facts[0].relationship_kind == "defines"
+    assert facts[0].object == "fixtures.source.StateSummaryRenderer"
+    assert "class StateSummaryRenderer" in facts[0].evidence
+    assert "fixtures/source.py:1-2" in facts[0].evidence
+
+
+def test_definition_observation_does_not_change_import_relationships():
+    relationship_observation = _load_relationship_observation_module()
+    text = "import seed_runtime.events\nfrom seed_runtime.execution import ToolExecutor\n"
+
+    facts = relationship_observation.extract_python_import_relationship_facts(
+        "fixtures/source.py",
+        text,
+    )
+
+    assert [fact.relationship_kind for fact in facts] == ["imports", "imports"]
+    assert [fact.object for fact in facts] == ["seed_runtime.events", "ToolExecutor"]
+
+
+def test_definition_observation_does_not_emit_call_relationships():
+    relationship_observation = _load_relationship_observation_module()
+
+    facts = relationship_observation.extract_python_definition_relationship_facts(
+        "fixtures/source.py",
+        "def caller():\n    project_state_with_cache()\n",
+    )
+
+    assert {fact.relationship_kind for fact in facts} == {"defines"}
+    assert all("calls" not in fact.evidence for fact in facts)
+    assert all("project_state_with_cache" not in fact.object for fact in facts)
+
+
+def test_definition_observation_does_not_emit_ownership_claims():
+    relationship_observation = _load_relationship_observation_module()
+
+    facts = relationship_observation.extract_python_definition_relationship_facts(
+        "fixtures/source.py",
+        "class ProjectionCapability:\n    pass\n",
+    )
+
+    assert {fact.relationship_kind for fact in facts} == {"defines"}
+    assert all("owns" not in fact.evidence for fact in facts)
+    assert all("capability authority" not in fact.evidence.lower() for fact in facts)
+    assert all("implemented_by" not in fact.evidence for fact in facts)
+
+
+def test_definition_observation_remains_source_observation_only(monkeypatch):
+    relationship_observation = _load_relationship_observation_module()
+
+    def fail_open(*args, **kwargs):
+        raise AssertionError("definition observation must not read files")
+
+    monkeypatch.setattr(builtins, "open", fail_open)
+    monkeypatch.setattr(Path, "open", fail_open)
+
+    facts = relationship_observation.extract_python_definition_relationship_facts(
+        "fixtures/source.py",
+        "def source_only():\n    return 1\n",
+    )
+
+    assert len(facts) == 1
+    assert facts[0].relationship_kind == "defines"
