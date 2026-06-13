@@ -149,6 +149,21 @@ Observed in:
 
 ---
 
+### Pressure Signal
+
+The repository increasingly appears to move through
+pressure-sensitive emergence rather than priority-driven planning.
+
+Multiple observations now independently distinguish:
+
+    selection
+    priority
+    planning
+    attention
+    active inquiry
+
+The distinction remains observational and unreconciled.
+
 ## Federation Frontiers
 
 ### Cross-Seed Challenge And Reevaluation Frontier

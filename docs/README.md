@@ -65,6 +65,7 @@ Use this frontier characterization when the question is not only what Seed knows
 * [`knowledge_navigation_layers_frontier.md`](knowledge_navigation_layers_frontier.md) — frontier characterization for structural navigation, architectural navigation, and knowledge navigation as related but non-identical graph layers.
 * [`discovery_path_preservation_observation.md`](discovery_path_preservation_observation.md) — observation of critique-driven discovery paths, compression removal, and the gap between preserving conclusions and preserving understanding transitions.
 * [`preservation_surface_observation.md`](preservation_surface_observation.md) — observation of artifact, inquiry, observation, discovery, and continuation preservation surfaces and whether preservation behavior explains recent concepts better than category membership.
+* [`bounty_board_and_investigation_selection_observation.md`](bounty_board_and_investigation_selection_observation.md) — observation of how investigations appear to have become active, how inquiry historically moved, and how the bounty board preserves deferred inquiry without acting as roadmap authority.
 
 ## Language / Operator Interface
 
