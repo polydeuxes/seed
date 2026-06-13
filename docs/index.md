@@ -34,6 +34,7 @@ related:
   - discovery_path_preservation_observation.md
   - lineage_distinction_observation.md
   - preservation_surface_observation.md
+  - documentation_compression_observation.md
   - bounty_board_and_investigation_selection_observation.md
   - concept_stability_audit.md
 ---
@@ -82,6 +83,7 @@ Use this file to find the right document family before reading specific document
 - `discovery_path_preservation_observation.md` — observation of critique-driven discovery paths, compression removal, and understanding-transition preservation.
 - `lineage_distinction_observation.md` — observation of artifact, inquiry, observation, and discovery-path lineage surfaces and what each appears to preserve.
 - `preservation_surface_observation.md` — observation of artifact, inquiry, observation, discovery, and continuation preservation surfaces without reconciling preservation ontology.
+- `documentation_compression_observation.md` — observation of where repository documentation compressed distinctions, what pressures exposed hidden meanings, and where compressed language remained useful.
 - `bounty_board_and_investigation_selection_observation.md` — observation of how investigations appear to have become active, how inquiry historically moved, and how the bounty board preserves deferred inquiry without acting as roadmap authority.
 
 ## Foundational Ontology And Claim Semantics
