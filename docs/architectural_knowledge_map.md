@@ -207,7 +207,7 @@ This is currently a frontier characterization, not a reconciliation or implement
 
 ## Emerging Meta-Architecture Frontiers
 
-Concern: recently characterized or emerging questions about navigation, operations, operation attribution, relationship ontology, inquiry, attention, active-edge pressure, object/role/operation boundaries, concept stability, persistence, continuity, current work position, derivation, handoff/continuation lineage, observed documentation lineage, discovery-path preservation, lineage distinction, documentation compression, and observation-surface limits.
+Concern: recently characterized or emerging questions about navigation, operations, operation attribution, relationship ontology, inquiry, attention, active-edge pressure, object/role/operation boundaries, concept stability, persistence, continuity, current work position, derivation, handoff/continuation lineage, observed documentation lineage, discovery-path preservation, lineage distinction, documentation compression, understanding-as-claim pressure, decompression-shaped learning, and observation-surface limits.
 
 Start with:
 
@@ -230,6 +230,7 @@ Start with:
 * `lineage_distinction_observation.md`
 * `preservation_surface_observation.md`
 * `documentation_compression_observation.md`
+* `understanding_claim_and_decompression_observation.md`
 * `bounty_board_and_investigation_selection_observation.md`
 * `persistence_frontier.md`
 * `continuity_frontier.md`
