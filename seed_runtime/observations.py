@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from importlib.util import find_spec
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Iterable, Literal
 
 from seed_runtime.base import SeedModel
 from seed_runtime.evidence import Evidence
@@ -21,9 +21,7 @@ if find_spec("pydantic") is not None:
 else:
     from seed_runtime._pydantic_compat import Field
 
-ObservationSourceType = Literal[
-    "user", "discovery", "provider", "imported", "inferred"
-]
+ObservationSourceType = Literal["user", "discovery", "provider", "imported", "inferred"]
 
 
 class Observation(SeedModel):
@@ -50,7 +48,6 @@ class Observation(SeedModel):
     expires_at: datetime | None = None
 
 
-
 class ObservationIngestor:
     """Append observations and derived facts while preserving provenance."""
 
@@ -67,59 +64,91 @@ class ObservationIngestor:
         causation_id: str | None = None,
         correlation_id: str | None = None,
     ) -> Fact | None:
-        """Record an observation, evidence, and the derived observed Fact."""
+        """Record one observation through the batch ingestion path."""
 
-        evidence = self.observation_to_evidence(observation, workspace_id)
-        fact = (
-            None
-            if _should_suppress_fact_promotion(observation)
-            else self.observation_to_fact(observation, evidence)
-        )
-        event_metadata = {
-            "observation_id": observation.id,
-            "source_type": observation.source_type,
-        }
-        from seed_runtime.models import Event
-
-        observation_event = Event(
-            id=new_id("evt"),
-            kind="observation.observed",
-            workspace_id=workspace_id,
-            payload={"observation": to_plain(observation)},
-            actor=actor,  # type: ignore[arg-type]
+        facts = self.ingest_many(
+            [observation],
+            workspace_id,
+            actor=actor,
             session_id=session_id,
             causation_id=causation_id,
             correlation_id=correlation_id,
         )
-        evidence_event = Event(
-            id=new_id("evt"),
-            kind="evidence.observed",
-            workspace_id=workspace_id,
-            payload={"evidence": to_plain(evidence), **event_metadata},
-            actor=actor,  # type: ignore[arg-type]
-            session_id=session_id,
-            causation_id=causation_id or observation.id,
-            correlation_id=correlation_id,
-        )
-        events = [observation_event, evidence_event]
-        if fact is None:
-            self.ledger.append_many(events)
-            return None
-        fact_event_kind = "fact.inferred" if fact.inferred else "fact.observed"
-        events.append(
-            Event(
+        return facts[0] if facts else None
+
+    def ingest_many(
+        self,
+        observations: Iterable[Observation],
+        workspace_id: str = "default",
+        *,
+        actor: str = "system",
+        session_id: str | None = None,
+        causation_id: str | None = None,
+        correlation_id: str | None = None,
+    ) -> list[Fact | None]:
+        """Record observations and derived events in one ledger batch.
+
+        This batches only the persistence transaction: each observation still
+        produces its own observation event, evidence event, and optional fact
+        event in the same order as repeated :meth:`ingest` calls.
+        """
+
+        from seed_runtime.models import Event
+
+        events: list[Event] = []
+        facts: list[Fact | None] = []
+        for observation in observations:
+            evidence = self.observation_to_evidence(observation, workspace_id)
+            fact = (
+                None
+                if _should_suppress_fact_promotion(observation)
+                else self.observation_to_fact(observation, evidence)
+            )
+            facts.append(fact)
+            event_metadata = {
+                "observation_id": observation.id,
+                "source_type": observation.source_type,
+            }
+
+            observation_event = Event(
                 id=new_id("evt"),
-                kind=fact_event_kind,
+                kind="observation.observed",
                 workspace_id=workspace_id,
-                payload={"fact": to_plain(fact), **event_metadata},
+                payload={"observation": to_plain(observation)},
                 actor=actor,  # type: ignore[arg-type]
                 session_id=session_id,
-                causation_id=causation_id or evidence_event.id,
+                causation_id=causation_id,
                 correlation_id=correlation_id,
             )
-        )
-        self.ledger.append_many(events)
-        return fact
+            evidence_event = Event(
+                id=new_id("evt"),
+                kind="evidence.observed",
+                workspace_id=workspace_id,
+                payload={"evidence": to_plain(evidence), **event_metadata},
+                actor=actor,  # type: ignore[arg-type]
+                session_id=session_id,
+                causation_id=causation_id or observation.id,
+                correlation_id=correlation_id,
+            )
+            events.extend([observation_event, evidence_event])
+            if fact is None:
+                continue
+            fact_event_kind = "fact.inferred" if fact.inferred else "fact.observed"
+            events.append(
+                Event(
+                    id=new_id("evt"),
+                    kind=fact_event_kind,
+                    workspace_id=workspace_id,
+                    payload={"fact": to_plain(fact), **event_metadata},
+                    actor=actor,  # type: ignore[arg-type]
+                    session_id=session_id,
+                    causation_id=causation_id or evidence_event.id,
+                    correlation_id=correlation_id,
+                )
+            )
+        if events:
+            self.ledger.append_many(events)
+        return facts
 
     @staticmethod
     def observation_to_evidence(
@@ -141,9 +170,11 @@ class ObservationIngestor:
                 "value": observation.value,
                 "metadata": dict(observation.metadata),
                 "dimensions": dict(observation.dimensions),
-                "expires_at": observation.expires_at.isoformat()
-                if observation.expires_at is not None
-                else None,
+                "expires_at": (
+                    observation.expires_at.isoformat()
+                    if observation.expires_at is not None
+                    else None
+                ),
             },
             confidence=observation.confidence,
         )
