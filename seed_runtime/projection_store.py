@@ -71,6 +71,7 @@ class ProjectionSnapshot:
 
 class ProjectionStore(Protocol):
     """Backend-independent store for projected-state snapshots."""
+
     __seed_arch__ = {
         "owner": "projection_cache",
         "layer": "state",
@@ -162,7 +163,9 @@ class InMemoryProjectionStore:
         return snapshot
 
     def save_summary_snapshot(self, snapshot: SummaryProjectionSnapshot) -> None:
-        self._summary_snapshots[(snapshot.workspace_id, snapshot.projection_name)] = snapshot
+        self._summary_snapshots[(snapshot.workspace_id, snapshot.projection_name)] = (
+            snapshot
+        )
 
 
 class SQLiteProjectionStore:
@@ -172,8 +175,7 @@ class SQLiteProjectionStore:
         self.database_path = database_path
         self._connection = sqlite3.connect(database_path)
         self._connection.row_factory = sqlite3.Row
-        self._connection.execute(
-            """
+        self._connection.execute("""
             CREATE TABLE IF NOT EXISTS projection_snapshots (
                 workspace_id TEXT NOT NULL,
                 projection_name TEXT NOT NULL,
@@ -184,10 +186,8 @@ class SQLiteProjectionStore:
                 created_at TEXT NOT NULL,
                 PRIMARY KEY (workspace_id, projection_name)
             )
-            """
-        )
-        self._connection.execute(
-            """
+            """)
+        self._connection.execute("""
             CREATE TABLE IF NOT EXISTS state_summary_snapshots (
                 workspace_id TEXT NOT NULL,
                 projection_name TEXT NOT NULL,
@@ -199,8 +199,7 @@ class SQLiteProjectionStore:
                 created_at TEXT NOT NULL,
                 PRIMARY KEY (workspace_id, projection_name)
             )
-            """
-        )
+            """)
         self._connection.commit()
 
     def load_snapshot(
@@ -356,6 +355,8 @@ class StateCacheStatus:
     projection_version: str
     snapshot_last_event_id: str | None
     current_last_event_id: str | None
+    incremental_replay: bool = False
+    events_applied: int | None = None
 
 
 def project_state_with_cache(
@@ -370,40 +371,113 @@ def project_state_with_cache(
     """Return projected State, reusing a valid ProjectionStore snapshot when possible."""
 
     projector = projector or StateProjector(ledger)
-    latest_event = _latest_event(ledger, workspace_id)
+    events = ledger.list_events(workspace_id)
+    latest_event = events[-1] if events else None
     current_last_event_id = latest_event.id if latest_event is not None else None
     snapshot_last_event_id: str | None = None
     if store is not None:
-        snapshot = store.load_snapshot(workspace_id, projection_name, projection_version)
+        try:
+            snapshot = store.load_snapshot(
+                workspace_id, projection_name, projection_version
+            )
+        except Exception:
+            snapshot = None
         if snapshot is not None:
             snapshot_last_event_id = snapshot.last_event_id
-            if snapshot.last_event_id == current_last_event_id:
-                return state_from_payload(snapshot.state_payload), StateCacheStatus(
+            try:
+                snapshot_state = state_from_payload(snapshot.state_payload)
+            except Exception:
+                snapshot_state = None
+            if (
+                snapshot_state is not None
+                and snapshot.last_event_id == current_last_event_id
+            ):
+                return snapshot_state, StateCacheStatus(
                     cache_hit=True,
                     projection_version=projection_version,
                     snapshot_last_event_id=snapshot.last_event_id,
                     current_last_event_id=current_last_event_id,
+                    events_applied=0,
                 )
+            if snapshot_state is not None and not snapshot_state.inferred_facts:
+                remaining_events = _events_after_snapshot(
+                    events, snapshot.last_event_id
+                )
+                if remaining_events is not None and hasattr(
+                    projector, "project_from_state"
+                ):
+                    state = projector.project_from_state(
+                        snapshot_state, remaining_events
+                    )
+                    _save_state_snapshot(
+                        store,
+                        state,
+                        workspace_id,
+                        projection_name,
+                        projection_version,
+                        latest_event,
+                        current_last_event_id,
+                    )
+                    return state, StateCacheStatus(
+                        cache_hit=False,
+                        projection_version=projection_version,
+                        snapshot_last_event_id=snapshot.last_event_id,
+                        current_last_event_id=current_last_event_id,
+                        incremental_replay=True,
+                        events_applied=len(remaining_events),
+                    )
 
     state = projector.project(workspace_id)
     if store is not None:
-        store.save_snapshot(
-            ProjectionSnapshot(
-                workspace_id=workspace_id,
-                projection_name=projection_name,
-                projection_version=projection_version,
-                last_event_id=current_last_event_id,
-                last_event_created_at=(latest_event.timestamp if latest_event else None),
-                state_payload=state_to_payload(state),
-                created_at=_utc_now(),
-            )
+        _save_state_snapshot(
+            store,
+            state,
+            workspace_id,
+            projection_name,
+            projection_version,
+            latest_event,
+            current_last_event_id,
         )
     return state, StateCacheStatus(
         cache_hit=False,
         projection_version=projection_version,
         snapshot_last_event_id=snapshot_last_event_id,
         current_last_event_id=current_last_event_id,
+        events_applied=len(events),
     )
+
+
+def _save_state_snapshot(
+    store: ProjectionStore,
+    state: State,
+    workspace_id: str,
+    projection_name: str,
+    projection_version: str,
+    latest_event: Any,
+    current_last_event_id: str | None,
+) -> None:
+    store.save_snapshot(
+        ProjectionSnapshot(
+            workspace_id=workspace_id,
+            projection_name=projection_name,
+            projection_version=projection_version,
+            last_event_id=current_last_event_id,
+            last_event_created_at=(latest_event.timestamp if latest_event else None),
+            state_payload=state_to_payload(state),
+            created_at=_utc_now(),
+        )
+    )
+
+
+def _events_after_snapshot(
+    events: list[Any], snapshot_last_event_id: str | None
+) -> list[Any] | None:
+    if snapshot_last_event_id is None:
+        return events
+    for index, event in enumerate(events):
+        if event.id == snapshot_last_event_id:
+            return events[index + 1 :]
+    return None
 
 
 def rebuild_state_cache(
@@ -512,8 +586,7 @@ def _latest_event(ledger: EventLedger, workspace_id: str):
 
 def _model_dict(payload: dict[str, Any], key: str, model_type: type) -> dict[str, Any]:
     return {
-        item_key: model_type(**item)
-        for item_key, item in payload.get(key, {}).items()
+        item_key: model_type(**item) for item_key, item in payload.get(key, {}).items()
     }
 
 
@@ -521,9 +594,7 @@ def _model_list(payload: dict[str, Any], key: str, model_type: type) -> list[Any
     return [model_type(**item) for item in payload.get(key, [])]
 
 
-def _dataclass_list(
-    payload: dict[str, Any], key: str, model_type: type
-) -> list[Any]:
+def _dataclass_list(payload: dict[str, Any], key: str, model_type: type) -> list[Any]:
     return [model_type(**item) for item in payload.get(key, [])]
 
 
