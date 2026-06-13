@@ -4227,6 +4227,49 @@ def test_cli_current_facts_exposes_identity_facts(tmp_path, capsys):
     assert "* node115 boot_id 11111111-2222-3333-4444-555555555555" in output
 
 
+def test_cli_observe_repository_source_ingests_queryable_relationships(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "repository-source.sqlite"
+    repo_path = tmp_path / "repo"
+    source_dir = repo_path / "seed_runtime"
+    source_dir.mkdir(parents=True)
+    (source_dir / "state.py").write_text(
+        "from seed_runtime.projection_store import project_state_with_cache\n"
+        "class StateProjector:\n"
+        "    pass\n",
+        encoding="utf-8",
+    )
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--observe-repository-source",
+                str(repo_path),
+            ]
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "predicate: imports" in output
+    assert "predicate: defines" in output
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--current-facts",
+                "seed_runtime.state",
+                "defines",
+            ]
+        )
+        == 0
+    )
+    assert "seed_runtime.state.StateProjector" in capsys.readouterr().out
+
+
 def _persist_storage_impact_facts(seed_local, db_path):
     ledger = seed_local.SQLiteEventLedger(str(db_path))
     facts = [

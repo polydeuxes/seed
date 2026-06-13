@@ -21,10 +21,13 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urljoin
 from urllib.request import Request, urlopen
 
-from seed_runtime.ansible_inventory_source import AnsibleInventoryObservationSource
 from seed_runtime.base import SeedModel
 from seed_runtime.facts import Fact, FactConflict, is_fact_expired
 from seed_runtime.ids import new_id
+from seed_runtime.knowledge.relationship_observation import (
+    extract_python_definition_relationship_facts,
+    extract_python_import_relationship_facts,
+)
 from seed_runtime.models import Actor
 from seed_runtime.local_packages import (
     package_records_to_observations,
@@ -83,6 +86,78 @@ class ObservationSource(Protocol):
 
     def collect(self) -> list[Observation]:
         """Return the observations collected by this source."""
+
+
+class RepositorySourceObservationSource:
+    """Read-only repository source adapter for imports/defines observations."""
+
+    name = "repository_source"
+    source_type: ObservationSourceType = "discovery"
+
+    def __init__(
+        self,
+        repository_root: str | Path,
+        *,
+        observed_at: datetime | None = None,
+        include_roots: tuple[str, ...] = ("seed_runtime", "tests"),
+    ) -> None:
+        self.repository_root = Path(repository_root).resolve()
+        self.observed_at = observed_at or datetime.now(timezone.utc)
+        self.include_roots = include_roots
+
+    def collect(self) -> list[Observation]:
+        observations: list[Observation] = []
+        for source_path in self.discover_source_files():
+            text = (self.repository_root / source_path).read_text(encoding="utf-8")
+            relationship_facts = [
+                *extract_python_import_relationship_facts(source_path, text),
+                *extract_python_definition_relationship_facts(source_path, text),
+            ]
+            observations.extend(
+                self._relationship_observation(relationship)
+                for relationship in relationship_facts
+            )
+        return observations
+
+    def discover_source_files(self) -> list[str]:
+        """Return allowlisted Python source paths without shelling out to grep."""
+
+        source_paths: list[str] = []
+        for include_root in self.include_roots:
+            root = (self.repository_root / include_root).resolve()
+            if not root.exists():
+                continue
+            if not root.is_dir() or not root.is_relative_to(self.repository_root):
+                raise ValueError(f"repository observation root is not allowed: {root}")
+            source_paths.extend(
+                path.relative_to(self.repository_root).as_posix()
+                for path in root.rglob("*.py")
+                if _is_observable_repository_source(path)
+            )
+        return sorted(source_paths)
+
+    def _relationship_observation(self, relationship: Any) -> Observation:
+        return Observation(
+            id=new_id("obs_repo"),
+            source_type=self.source_type,
+            observed_at=self.observed_at,
+            subject=relationship.subject,
+            predicate=relationship.relationship_kind,
+            value=relationship.object,
+            confidence=1.0,
+            metadata={
+                "source_name": self.name,
+                "source_path": relationship.path,
+                "evidence": relationship.evidence,
+                "relationship_family": relationship.relationship_kind,
+                "repository_root": str(self.repository_root),
+            },
+            dimensions={"path": relationship.path},
+        )
+
+
+def _is_observable_repository_source(path: Path) -> bool:
+    return "__pycache__" not in path.parts
 
 
 _IDENTITY_QUESTIONS = {

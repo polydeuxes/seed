@@ -11,6 +11,7 @@ from seed_runtime.observation_sources import (
     FakeObservationSource,
     JsonObservationSource,
     ObservationCollectionService,
+    RepositorySourceObservationSource,
 )
 from seed_runtime.observations import Observation, ObservationIngestor
 from seed_runtime.state import StateProjector
@@ -62,6 +63,85 @@ def test_collection_ingests_facts():
     assert fact.subject_id == "service-a"
     assert fact.predicate == "runtime"
     assert fact.value == "docker"
+
+
+def test_repository_source_discovers_and_observes_python_files(tmp_path):
+    source_file = tmp_path / "seed_runtime" / "projection_store.py"
+    source_file.parent.mkdir()
+    source_file.write_text(
+        "from seed_runtime.state import StateProjector\n"
+        "class SQLiteProjectionStore:\n"
+        "    pass\n"
+        "def project_state_with_cache():\n"
+        "    pass\n",
+        encoding="utf-8",
+    )
+    ignored = tmp_path / "docs" / "ignored.py"
+    ignored.parent.mkdir()
+    ignored.write_text("import os\n", encoding="utf-8")
+
+    source = RepositorySourceObservationSource(tmp_path, observed_at=BASE_TIME)
+    observations = source.collect()
+
+    assert source.discover_source_files() == ["seed_runtime/projection_store.py"]
+    assert {(obs.subject, obs.predicate, obs.value) for obs in observations} == {
+        ("seed_runtime.projection_store", "imports", "StateProjector"),
+        (
+            "seed_runtime.projection_store",
+            "defines",
+            "seed_runtime.projection_store.SQLiteProjectionStore",
+        ),
+        (
+            "seed_runtime.projection_store",
+            "defines",
+            "seed_runtime.projection_store.project_state_with_cache",
+        ),
+    }
+    assert all(obs.source_type == "discovery" for obs in observations)
+    assert all(obs.metadata["source_name"] == "repository_source" for obs in observations)
+    assert all("calls" not in obs.predicate for obs in observations)
+
+
+def test_repository_source_ingests_through_projection_without_grep_or_behavior(tmp_path):
+    source_file = tmp_path / "seed_runtime" / "state.py"
+    source_file.parent.mkdir()
+    source_file.write_text(
+        "from seed_runtime.projection_store import project_state_with_cache\n"
+        "class StateProjector:\n"
+        "    def project(self):\n"
+        "        pass\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "tests" / "test_state.py").write_text(
+        "from seed_runtime.state import StateProjector\n",
+        encoding="utf-8",
+    )
+    ledger = EventLedger()
+
+    facts = ObservationCollectionService(
+        ObservationIngestor(ledger), normalization_pipeline=None
+    ).collect(
+        RepositorySourceObservationSource(tmp_path, observed_at=BASE_TIME),
+        "ws_repository",
+    )
+    state = StateProjector(ledger).project("ws_repository")
+
+    assert facts
+    assert [
+        fact.value
+        for fact in state.get_current_facts("seed_runtime.state", "imports")
+    ] == ["project_state_with_cache"]
+    assert [
+        fact.value
+        for fact in state.get_current_facts("seed_runtime.state", "defines")
+    ] == ["seed_runtime.state.StateProjector"]
+    assert [
+        fact.value for fact in state.get_current_facts("tests.test_state", "imports")
+    ] == ["StateProjector"]
+    assert not state.get_current_facts("seed_runtime.state", "calls")
+    assert not state.get_current_facts("seed_runtime.state", "entrypoints")
+    assert all(fact.predicate in {"imports", "defines"} for fact in facts)
 
 
 def test_collection_preserves_provenance():
