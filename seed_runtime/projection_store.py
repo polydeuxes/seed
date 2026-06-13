@@ -13,6 +13,7 @@ import sqlite3
 from typing import Any, Protocol
 
 from seed_runtime.events import EventLedger
+from seed_runtime.execution_status import ExecutionStatusConsumer, emit_status
 from seed_runtime.evidence import Evidence
 from seed_runtime.facts import Fact, FactConflict, FactSupport
 from seed_runtime.models import (
@@ -367,6 +368,7 @@ def project_state_with_cache(
     projector: StateProjector | None = None,
     projection_name: str = STATE_PROJECTION_NAME,
     projection_version: str = STATE_PROJECTION_VERSION,
+    status_consumer: ExecutionStatusConsumer | None = None,
 ) -> tuple[State, StateCacheStatus]:
     """Return projected State, reusing a valid ProjectionStore snapshot when possible."""
 
@@ -376,6 +378,9 @@ def project_state_with_cache(
     current_last_event_id = latest_event.id if latest_event is not None else None
     snapshot_last_event_id: str | None = None
     if store is not None:
+        emit_status(
+            status_consumer, "projection_cache_load", "Loading projection cache..."
+        )
         try:
             snapshot = store.load_snapshot(
                 workspace_id, projection_name, projection_version
@@ -392,6 +397,12 @@ def project_state_with_cache(
                 snapshot_state is not None
                 and snapshot.last_event_id == current_last_event_id
             ):
+                emit_status(
+                    status_consumer,
+                    "projection_cache_load",
+                    "Using projection cache.",
+                    completed=True,
+                )
                 return snapshot_state, StateCacheStatus(
                     cache_hit=True,
                     projection_version=projection_version,
@@ -406,8 +417,23 @@ def project_state_with_cache(
                 if remaining_events is not None and hasattr(
                     projector, "project_from_state"
                 ):
+                    emit_status(
+                        status_consumer,
+                        "incremental_projection_replay",
+                        "Applying events",
+                        current=0,
+                        total=len(remaining_events),
+                    )
                     state = projector.project_from_state(
                         snapshot_state, remaining_events
+                    )
+                    emit_status(
+                        status_consumer,
+                        "incremental_projection_replay",
+                        "Applying events",
+                        current=len(remaining_events),
+                        total=len(remaining_events),
+                        completed=True,
                     )
                     _save_state_snapshot(
                         store,
@@ -417,6 +443,7 @@ def project_state_with_cache(
                         projection_version,
                         latest_event,
                         current_last_event_id,
+                        status_consumer,
                     )
                     return state, StateCacheStatus(
                         cache_hit=False,
@@ -427,7 +454,22 @@ def project_state_with_cache(
                         events_applied=len(remaining_events),
                     )
 
+    emit_status(
+        status_consumer,
+        "projection_replay",
+        "Applying events",
+        current=0,
+        total=len(events),
+    )
     state = projector.project(workspace_id)
+    emit_status(
+        status_consumer,
+        "projection_replay",
+        "Applying events",
+        current=len(events),
+        total=len(events),
+        completed=True,
+    )
     if store is not None:
         _save_state_snapshot(
             store,
@@ -437,6 +479,7 @@ def project_state_with_cache(
             projection_version,
             latest_event,
             current_last_event_id,
+            status_consumer,
         )
     return state, StateCacheStatus(
         cache_hit=False,
@@ -455,7 +498,11 @@ def _save_state_snapshot(
     projection_version: str,
     latest_event: Any,
     current_last_event_id: str | None,
+    status_consumer: ExecutionStatusConsumer | None = None,
 ) -> None:
+    emit_status(
+        status_consumer, "projection_cache_save", "Saving projection snapshot..."
+    )
     store.save_snapshot(
         ProjectionSnapshot(
             workspace_id=workspace_id,
@@ -488,9 +535,13 @@ def rebuild_state_cache(
     projector: StateProjector | None = None,
     projection_name: str = STATE_PROJECTION_NAME,
     projection_version: str = STATE_PROJECTION_VERSION,
+    status_consumer: ExecutionStatusConsumer | None = None,
 ) -> tuple[State, StateCacheStatus]:
     """Clear and rebuild the cached state projection snapshot."""
 
+    emit_status(
+        status_consumer, "projection_cache_clear", "Clearing projection cache..."
+    )
     store.clear_snapshot(workspace_id, projection_name)
     return project_state_with_cache(
         ledger,
@@ -499,6 +550,7 @@ def rebuild_state_cache(
         projector=projector,
         projection_name=projection_name,
         projection_version=projection_version,
+        status_consumer=status_consumer,
     )
 
 

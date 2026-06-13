@@ -6,6 +6,8 @@ from datetime import datetime
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any, Iterable, Literal
 
+from seed_runtime.execution_status import ExecutionStatusConsumer, emit_status
+
 from seed_runtime.base import SeedModel
 from seed_runtime.evidence import Evidence
 from seed_runtime.facts import Fact, FactSourceType
@@ -85,6 +87,7 @@ class ObservationIngestor:
         session_id: str | None = None,
         causation_id: str | None = None,
         correlation_id: str | None = None,
+        status_consumer: ExecutionStatusConsumer | None = None,
     ) -> list[Fact | None]:
         """Record observations and derived events in one ledger batch.
 
@@ -95,9 +98,18 @@ class ObservationIngestor:
 
         from seed_runtime.models import Event
 
+        observation_list = list(observations)
+        total = len(observation_list)
+        emit_status(
+            status_consumer,
+            "observation_ingestion",
+            "Writing events",
+            current=0,
+            total=total,
+        )
         events: list[Event] = []
         facts: list[Fact | None] = []
-        for observation in observations:
+        for index, observation in enumerate(observation_list, start=1):
             evidence = self.observation_to_evidence(observation, workspace_id)
             fact = (
                 None
@@ -131,6 +143,13 @@ class ObservationIngestor:
                 correlation_id=correlation_id,
             )
             events.extend([observation_event, evidence_event])
+            emit_status(
+                status_consumer,
+                "observation_ingestion",
+                "Writing events",
+                current=index,
+                total=total,
+            )
             if fact is None:
                 continue
             fact_event_kind = "fact.inferred" if fact.inferred else "fact.observed"
@@ -148,6 +167,14 @@ class ObservationIngestor:
             )
         if events:
             self.ledger.append_many(events)
+        emit_status(
+            status_consumer,
+            "observation_ingestion",
+            "Wrote events",
+            current=total,
+            total=total,
+            completed=True,
+        )
         return facts
 
     @staticmethod
