@@ -33,6 +33,7 @@ related:
   - observation_surface_and_blind_spot_audit.md
   - discovery_path_preservation_observation.md
   - lineage_distinction_observation.md
+  - preservation_surface_observation.md
   - concept_stability_audit.md
 ---
 
@@ -79,6 +80,7 @@ Use this file to find the right document family before reading specific document
 - `observation_surface_and_blind_spot_audit.md` — audit of what that lineage observation could see, what it could not see, and where metadata, observer context, and pre-metadata history shape visibility.
 - `discovery_path_preservation_observation.md` — observation of critique-driven discovery paths, compression removal, and understanding-transition preservation.
 - `lineage_distinction_observation.md` — observation of artifact, inquiry, observation, and discovery-path lineage surfaces and what each appears to preserve.
+- `preservation_surface_observation.md` — observation of artifact, inquiry, observation, discovery, and continuation preservation surfaces without reconciling preservation ontology.
 
 ## Foundational Ontology And Claim Semantics
 
@@ -309,6 +311,7 @@ These documents route emerging work without promoting it to canonical architectu
 - `documentation_lineage_observation.md` — observation of recent documentation lineage, investigation clusters, generative documents, bridge documents, consolidating documents, and the difference between documentation lineage and inquiry lineage.
 - `discovery_path_preservation_observation.md` — observation of critique-driven discovery paths, compression removal, and the gap between conclusion preservation and understanding-transition preservation.
 - `lineage_distinction_observation.md` — observation of artifact, inquiry, observation, and discovery-path lineage surfaces and what each appears to preserve without reconciling lineage ontology.
+- `preservation_surface_observation.md` — observation of what recent investigations appear to preserve and where preservation behavior helps more than category membership without defining a preservation taxonomy.
 - `persistence_frontier.md`, `continuity_frontier.md`, and `current_work_position_frontier.md` — what survives revision, role change, inquiry movement, handoff continuation, and active work resumption without collapsing persistence into storage, identity, or implementation machinery.
 - `future_frontiers.md` — bounty-style inventory of optional future frontier candidates.
 
