@@ -197,6 +197,7 @@ Concern: how Seed, contributors, and operators navigate from questions to concep
 Start with:
 
 * `knowledge_navigation_layers_frontier.md`
+* `knowledge_and_understanding_distinction_observation.md`
 * `documentation_observation_frontier.md`
 * `repository_observation_frontier.md`
 * `architectural_knowledge_map.md`
@@ -207,7 +208,7 @@ This is currently a frontier characterization, not a reconciliation or implement
 
 ## Emerging Meta-Architecture Frontiers
 
-Concern: recently characterized or emerging questions about navigation, operations, operation attribution, relationship ontology, inquiry, attention, active-edge pressure, object/role/operation boundaries, concept stability, persistence, continuity, current work position, derivation, handoff/continuation lineage, observed documentation lineage, discovery-path preservation, lineage distinction, documentation compression, understanding-as-claim pressure, decompression-shaped learning, and observation-surface limits.
+Concern: recently characterized or emerging questions about navigation, operations, operation attribution, relationship ontology, inquiry, attention, active-edge pressure, object/role/operation boundaries, concept stability, persistence, continuity, current work position, derivation, handoff/continuation lineage, observed documentation lineage, discovery-path preservation, lineage distinction, documentation compression, understanding-as-claim pressure, knowledge-and-understanding distinction pressure, decompression-shaped learning, and observation-surface limits.
 
 Start with:
 
