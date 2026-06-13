@@ -42,6 +42,20 @@ from seed_runtime.state import (
 
 STATE_PROJECTION_NAME = "state"
 STATE_PROJECTION_VERSION = "state-v1"
+STATE_SUMMARY_PROJECTION_NAME = "state-summary"
+STATE_SUMMARY_PROJECTION_VERSION = "state-summary-v1"
+
+
+@dataclass(frozen=True)
+class SummaryProjectionSnapshot:
+    workspace_id: str
+    projection_name: str
+    projection_version: str
+    last_event_id: str | None
+    state_projection_version: str
+    state_last_event_id: str | None
+    summary_payload: dict[str, Any]
+    created_at: datetime
 
 
 @dataclass(frozen=True)
@@ -80,12 +94,27 @@ class ProjectionStore(Protocol):
     ) -> None:
         """Remove snapshots for a workspace, optionally scoped to one projection."""
 
+    def load_summary_snapshot(
+        self,
+        workspace_id: str,
+        projection_name: str,
+        projection_version: str,
+        *,
+        state_projection_version: str,
+        state_last_event_id: str | None,
+    ) -> SummaryProjectionSnapshot | None:
+        """Return a summary read-model snapshot derived from a valid State snapshot."""
+
+    def save_summary_snapshot(self, snapshot: SummaryProjectionSnapshot) -> None:
+        """Persist or replace a dependent summary read-model snapshot."""
+
 
 class InMemoryProjectionStore:
     """Process-local ProjectionStore useful for tests and non-SQLite callers."""
 
     def __init__(self) -> None:
         self._snapshots: dict[tuple[str, str], ProjectionSnapshot] = {}
+        self._summary_snapshots: dict[tuple[str, str], SummaryProjectionSnapshot] = {}
 
     def load_snapshot(
         self, workspace_id: str, projection_name: str, projection_version: str
@@ -103,10 +132,37 @@ class InMemoryProjectionStore:
     ) -> None:
         if projection_name is not None:
             self._snapshots.pop((workspace_id, projection_name), None)
+            for key in list(self._summary_snapshots):
+                if key[0] == workspace_id:
+                    self._summary_snapshots.pop(key, None)
             return
         for key in list(self._snapshots):
             if key[0] == workspace_id:
                 self._snapshots.pop(key, None)
+        for key in list(self._summary_snapshots):
+            if key[0] == workspace_id:
+                self._summary_snapshots.pop(key, None)
+
+    def load_summary_snapshot(
+        self,
+        workspace_id: str,
+        projection_name: str,
+        projection_version: str,
+        *,
+        state_projection_version: str,
+        state_last_event_id: str | None,
+    ) -> SummaryProjectionSnapshot | None:
+        snapshot = self._summary_snapshots.get((workspace_id, projection_name))
+        if snapshot is None or snapshot.projection_version != projection_version:
+            return None
+        if snapshot.state_projection_version != state_projection_version:
+            return None
+        if snapshot.state_last_event_id != state_last_event_id:
+            return None
+        return snapshot
+
+    def save_summary_snapshot(self, snapshot: SummaryProjectionSnapshot) -> None:
+        self._summary_snapshots[(snapshot.workspace_id, snapshot.projection_name)] = snapshot
 
 
 class SQLiteProjectionStore:
@@ -125,6 +181,21 @@ class SQLiteProjectionStore:
                 last_event_id TEXT,
                 last_event_created_at TEXT,
                 state_json TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                PRIMARY KEY (workspace_id, projection_name)
+            )
+            """
+        )
+        self._connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS state_summary_snapshots (
+                workspace_id TEXT NOT NULL,
+                projection_name TEXT NOT NULL,
+                projection_version TEXT NOT NULL,
+                last_event_id TEXT,
+                state_projection_version TEXT NOT NULL,
+                state_last_event_id TEXT,
+                summary_json TEXT NOT NULL,
                 created_at TEXT NOT NULL,
                 PRIMARY KEY (workspace_id, projection_name)
             )
@@ -196,6 +267,83 @@ class SQLiteProjectionStore:
                 """,
                 (workspace_id, projection_name),
             )
+        self._connection.execute(
+            "DELETE FROM state_summary_snapshots WHERE workspace_id = ?",
+            (workspace_id,),
+        )
+        self._connection.commit()
+
+    def load_summary_snapshot(
+        self,
+        workspace_id: str,
+        projection_name: str,
+        projection_version: str,
+        *,
+        state_projection_version: str,
+        state_last_event_id: str | None,
+    ) -> SummaryProjectionSnapshot | None:
+        row = self._connection.execute(
+            """
+            SELECT summary.* FROM state_summary_snapshots AS summary
+            JOIN projection_snapshots AS state
+              ON state.workspace_id = summary.workspace_id
+             AND state.projection_name = ?
+            WHERE summary.workspace_id = ?
+              AND summary.projection_name = ?
+              AND summary.projection_version = ?
+              AND summary.state_projection_version = ?
+              AND summary.state_last_event_id IS ?
+              AND state.projection_version = summary.state_projection_version
+              AND state.last_event_id IS summary.state_last_event_id
+            """,
+            (
+                STATE_PROJECTION_NAME,
+                workspace_id,
+                projection_name,
+                projection_version,
+                state_projection_version,
+                state_last_event_id,
+            ),
+        ).fetchone()
+        if row is None:
+            return None
+        return SummaryProjectionSnapshot(
+            workspace_id=row["workspace_id"],
+            projection_name=row["projection_name"],
+            projection_version=row["projection_version"],
+            last_event_id=row["last_event_id"],
+            state_projection_version=row["state_projection_version"],
+            state_last_event_id=row["state_last_event_id"],
+            summary_payload=json.loads(row["summary_json"]),
+            created_at=_parse_datetime(row["created_at"]) or _utc_now(),
+        )
+
+    def save_summary_snapshot(self, snapshot: SummaryProjectionSnapshot) -> None:
+        self._connection.execute(
+            """
+            INSERT INTO state_summary_snapshots (
+                workspace_id, projection_name, projection_version, last_event_id,
+                state_projection_version, state_last_event_id, summary_json, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(workspace_id, projection_name) DO UPDATE SET
+                projection_version = excluded.projection_version,
+                last_event_id = excluded.last_event_id,
+                state_projection_version = excluded.state_projection_version,
+                state_last_event_id = excluded.state_last_event_id,
+                summary_json = excluded.summary_json,
+                created_at = excluded.created_at
+            """,
+            (
+                snapshot.workspace_id,
+                snapshot.projection_name,
+                snapshot.projection_version,
+                snapshot.last_event_id,
+                snapshot.state_projection_version,
+                snapshot.state_last_event_id,
+                json.dumps(snapshot.summary_payload, sort_keys=True),
+                _format_datetime(snapshot.created_at),
+            ),
+        )
         self._connection.commit()
 
     def close(self) -> None:
