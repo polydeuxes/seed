@@ -136,6 +136,8 @@ Use this file to find the right document family before reading specific document
 ## Language, Meaning, Intent, And Attribution
 
 - `natural_language_observation_and_intent_derivation_reconciliation.md`
+- `natural_language_request_routing_audit.md`
+- `natural_language_execution_path_inventory_audit.md`
 - `language_candidate_routing_and_promotion_reconciliation.md`
 - `candidate_meaning_and_ambiguity_reconciliation.md`
 - `operator_intent_question_and_claim_interface_reconciliation.md`
