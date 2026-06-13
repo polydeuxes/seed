@@ -23,10 +23,18 @@ class CountingProjector:
     def __init__(self, ledger):
         self._projector = StateProjector(ledger)
         self.calls = 0
+        self.incremental_calls = 0
+        self.incremental_event_ids: list[str] = []
 
     def project(self, workspace_id: str) -> State:
         self.calls += 1
         return self._projector.project(workspace_id)
+
+    def project_from_state(self, state: State, events):
+        event_list = list(events)
+        self.incremental_calls += 1
+        self.incremental_event_ids.extend(event.id for event in event_list)
+        return self._projector.project_from_state(state, event_list)
 
 
 def _append_fact(ledger: EventLedger, workspace_id: str, fact_id: str, value: str):
@@ -55,7 +63,9 @@ def test_first_read_only_projection_builds_snapshot():
     assert status.cache_hit is False
     assert projector.calls == 1
     assert state.get_best_fact("svc", "runtime").value == "docker"
-    snapshot = store.load_snapshot("ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION)
+    snapshot = store.load_snapshot(
+        "ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION
+    )
     assert snapshot is not None
     assert snapshot.last_event_id == event.id
 
@@ -88,6 +98,8 @@ def test_appending_new_event_invalidates_snapshot():
     assert status.snapshot_last_event_id != event.id
     assert status.current_last_event_id == event.id
     assert projector.calls == 2
+    assert projector.incremental_calls == 0
+    assert status.incremental_replay is False
     assert set(state.facts) == {"fact_one", "fact_two"}
 
 
@@ -124,13 +136,20 @@ def test_sqlite_projection_store_clear_and_rebuild(tmp_path):
     try:
         _append_fact(ledger, "ws", "fact_one", "docker")
         project_state_with_cache(ledger, "ws", store)
-        assert store.load_snapshot("ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION)
+        assert store.load_snapshot(
+            "ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION
+        )
 
         store.clear_snapshot("ws", STATE_PROJECTION_NAME)
-        assert store.load_snapshot("ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION) is None
+        assert (
+            store.load_snapshot("ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION)
+            is None
+        )
 
         project_state_with_cache(ledger, "ws", store)
-        assert store.load_snapshot("ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION)
+        assert store.load_snapshot(
+            "ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION
+        )
         with sqlite3.connect(db_path) as connection:
             columns = {
                 row[1]
@@ -210,9 +229,12 @@ def test_cli_rebuild_state_cache_clears_and_rebuilds(tmp_path, capsys):
     assert "rebuilt state cache for workspace 'local'" in output
     store = SQLiteProjectionStore(str(db_path))
     try:
-        assert store.load_snapshot(
-            "local", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION
-        ) is not None
+        assert (
+            store.load_snapshot(
+                "local", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION
+            )
+            is not None
+        )
     finally:
         store.close()
 
@@ -373,19 +395,24 @@ def test_sqlite_summary_cache_depends_on_full_state_projection_snapshot(tmp_path
         )
 
         project_state_with_cache(ledger, "ws", store)
-        assert store.load_summary_snapshot(
-            "ws",
-            STATE_SUMMARY_PROJECTION_NAME,
-            STATE_SUMMARY_PROJECTION_VERSION,
-            state_projection_version=STATE_PROJECTION_VERSION,
-            state_last_event_id=event.id,
-        ) is not None
+        assert (
+            store.load_summary_snapshot(
+                "ws",
+                STATE_SUMMARY_PROJECTION_NAME,
+                STATE_SUMMARY_PROJECTION_VERSION,
+                state_projection_version=STATE_PROJECTION_VERSION,
+                state_last_event_id=event.id,
+            )
+            is not None
+        )
     finally:
         store.close()
         ledger.close()
 
 
-def test_cli_state_summary_reuses_summary_read_model_without_deserializing_state(monkeypatch, tmp_path, capsys):
+def test_cli_state_summary_reuses_summary_read_model_without_deserializing_state(
+    monkeypatch, tmp_path, capsys
+):
     import importlib.util
     import sys
     from pathlib import Path
@@ -399,16 +426,147 @@ def test_cli_state_summary_reuses_summary_read_model_without_deserializing_state
     spec.loader.exec_module(seed_local)
 
     db_path = tmp_path / "cli-summary-cache.sqlite"
-    assert seed_local.main(["--db", str(db_path), "--fact", "svc", "runtime", "docker"]) == 0
+    assert (
+        seed_local.main(["--db", str(db_path), "--fact", "svc", "runtime", "docker"])
+        == 0
+    )
     capsys.readouterr()
     assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
     first_output = capsys.readouterr().out
 
     def fail_state_load(_payload):
-        raise AssertionError("full State snapshot should not be loaded on summary cache hit")
+        raise AssertionError(
+            "full State snapshot should not be loaded on summary cache hit"
+        )
 
     monkeypatch.setattr(seed_local, "project_state_with_cache", fail_state_load)
     assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
     second_output = capsys.readouterr().out
 
     assert second_output == first_output
+
+
+def test_incremental_replay_matches_full_replay_and_preserves_order():
+    ledger = EventLedger()
+    _append_fact(ledger, "ws", "fact_one", "python")
+    store = InMemoryProjectionStore()
+    projector = CountingProjector(ledger)
+    project_state_with_cache(ledger, "ws", store, projector=projector)
+
+    second = _append_fact(ledger, "ws", "fact_two", "ruby")
+    third = _append_fact(ledger, "ws", "fact_three", "go")
+    incremental_state, status = project_state_with_cache(
+        ledger, "ws", store, projector=projector
+    )
+    full_state = StateProjector(ledger).project("ws")
+
+    assert state_to_payload(incremental_state) == state_to_payload(full_state)
+    assert status.incremental_replay is True
+    assert status.events_applied == 2
+    assert projector.calls == 1
+    assert projector.incremental_calls == 1
+    assert projector.incremental_event_ids == [second.id, third.id]
+
+
+def test_incremental_replay_never_skips_events_after_snapshot():
+    ledger = EventLedger()
+    first = _append_fact(ledger, "ws", "fact_one", "docker")
+    second = _append_fact(ledger, "ws", "fact_two", "podman")
+    store = InMemoryProjectionStore()
+    snapshot_state = StateProjector(ledger).project("ws")
+    store.save_snapshot(
+        ProjectionSnapshot(
+            workspace_id="ws",
+            projection_name=STATE_PROJECTION_NAME,
+            projection_version=STATE_PROJECTION_VERSION,
+            last_event_id=second.id,
+            last_event_created_at=second.timestamp,
+            state_payload=state_to_payload(snapshot_state),
+            created_at=datetime.now(timezone.utc),
+        )
+    )
+    third = _append_fact(ledger, "ws", "fact_three", "containerd")
+    fourth = _append_fact(ledger, "ws", "fact_four", "runc")
+    projector = CountingProjector(ledger)
+
+    state, status = project_state_with_cache(ledger, "ws", store, projector=projector)
+
+    assert first.id not in projector.incremental_event_ids
+    assert second.id not in projector.incremental_event_ids
+    assert projector.incremental_event_ids == [third.id, fourth.id]
+    assert status.events_applied == 2
+    assert set(state.facts) == {"fact_one", "fact_two", "fact_three", "fact_four"}
+
+
+def test_snapshot_with_unknown_last_event_falls_back_to_full_projection():
+    ledger = EventLedger()
+    _append_fact(ledger, "ws", "fact_one", "docker")
+    store = InMemoryProjectionStore()
+    store.save_snapshot(
+        ProjectionSnapshot(
+            workspace_id="ws",
+            projection_name=STATE_PROJECTION_NAME,
+            projection_version=STATE_PROJECTION_VERSION,
+            last_event_id="evt_missing",
+            last_event_created_at=None,
+            state_payload=state_to_payload(State(workspace_id="ws")),
+            created_at=datetime.now(timezone.utc),
+        )
+    )
+    projector = CountingProjector(ledger)
+
+    state, status = project_state_with_cache(ledger, "ws", store, projector=projector)
+
+    assert status.incremental_replay is False
+    assert projector.incremental_calls == 0
+    assert projector.calls == 1
+    assert state.get_best_fact("svc", "runtime").value == "docker"
+
+
+def test_corrupted_snapshot_falls_back_to_safe_full_projection():
+    ledger = EventLedger()
+    event = _append_fact(ledger, "ws", "fact_one", "docker")
+    store = InMemoryProjectionStore()
+    store.save_snapshot(
+        ProjectionSnapshot(
+            workspace_id="ws",
+            projection_name=STATE_PROJECTION_NAME,
+            projection_version=STATE_PROJECTION_VERSION,
+            last_event_id=event.id,
+            last_event_created_at=event.timestamp,
+            state_payload={"workspace_id": "ws", "facts": "not-a-dict"},
+            created_at=datetime.now(timezone.utc),
+        )
+    )
+    projector = CountingProjector(ledger)
+
+    state, status = project_state_with_cache(ledger, "ws", store, projector=projector)
+
+    assert status.cache_hit is False
+    assert status.incremental_replay is False
+    assert projector.calls == 1
+    assert state.get_best_fact("svc", "runtime").value == "docker"
+
+
+def test_incremental_projection_version_mismatch_uses_full_replay_not_snapshot():
+    ledger = EventLedger()
+    event = _append_fact(ledger, "ws", "fact_one", "docker")
+    store = InMemoryProjectionStore()
+    store.save_snapshot(
+        ProjectionSnapshot(
+            workspace_id="ws",
+            projection_name=STATE_PROJECTION_NAME,
+            projection_version="old-version",
+            last_event_id=event.id,
+            last_event_created_at=event.timestamp,
+            state_payload=state_to_payload(StateProjector(ledger).project("ws")),
+            created_at=datetime.now(timezone.utc),
+        )
+    )
+    projector = CountingProjector(ledger)
+
+    _state, status = project_state_with_cache(ledger, "ws", store, projector=projector)
+
+    assert status.incremental_replay is False
+    assert projector.incremental_calls == 0
+    assert projector.calls == 1

@@ -355,8 +355,7 @@ class State:
             and (relationship is None or edge.relationship == relationship)
             and (object is None or edge.object == object)
             and (
-                relationship_kind is None
-                or edge.relationship_kind == relationship_kind
+                relationship_kind is None or edge.relationship_kind == relationship_kind
             )
         ]
 
@@ -685,6 +684,7 @@ class State:
 
 class StateProjector:
     """Rebuild current inspectable state from ledger events."""
+
     __seed_arch__ = {
         "owner": "state_projection",
         "layer": "state",
@@ -716,10 +716,29 @@ class StateProjector:
         self.inference_catalog = inference_catalog or InferenceCatalog.load()
 
     def project(self, workspace_id: str) -> State:
-        state = State(workspace_id=workspace_id, predicate_catalog=self.predicate_catalog)
-        for event in self.ledger.list_events(workspace_id):
+        state = State(
+            workspace_id=workspace_id, predicate_catalog=self.predicate_catalog
+        )
+        return self.project_from_state(state, self.ledger.list_events(workspace_id))
+
+    def project_from_state(self, state: State, events: Iterable[Event]) -> State:
+        """Apply ledger events to a projected State, then rebuild derived indexes.
+
+        This supports safe incremental projection from a previously validated
+        snapshot. The supplied events must be the ledger events that follow the
+        snapshot's ``last_event_id`` in ledger order; event history remains the
+        authority and this method only reuses derived state as an optimization.
+        """
+
+        state.predicate_catalog = self.predicate_catalog
+        for event in events:
             state.last_event_id = event.id
             self.apply(state, event)
+        return self.finalize(state)
+
+    def finalize(self, state: State) -> State:
+        """Rebuild derived projection indexes after event application."""
+
         state.alias_resolver = AliasResolver(state.facts.values())
         all_measurement_evidence_ids = {
             evidence_id
@@ -734,9 +753,7 @@ class StateProjector:
             ),
             limit=self.measurement_history_limit,
         )
-        _project_inferred_facts(
-            state, self.inference_catalog, self.predicate_catalog
-        )
+        _project_inferred_facts(state, self.inference_catalog, self.predicate_catalog)
         state.alias_resolver = AliasResolver(state.facts.values())
         state.facts = _retain_projected_measurement_history(
             state.facts.values(),
@@ -1319,9 +1336,7 @@ class GraphValidator:
     def validate(self, state: State) -> list[GraphValidationIssue]:
         """Return deterministic issues for suspicious or invalid graph edges."""
 
-        issues_by_key: dict[
-            tuple[str, str, str, str, str], GraphValidationIssue
-        ] = {}
+        issues_by_key: dict[tuple[str, str, str, str, str], GraphValidationIssue] = {}
         for edge in state.relationships:
             definition = self.relationship_catalog.get(edge.relationship)
             if definition is None:
@@ -1343,9 +1358,7 @@ class GraphValidator:
             if not failures:
                 continue
             severity: Literal["warning", "error"] = (
-                "error"
-                if any(item[0] == "error" for item in failures)
-                else "warning"
+                "error" if any(item[0] == "error" for item in failures) else "warning"
             )
             reason = "; ".join(item[1] for item in failures)
             key = (edge.subject, edge.relationship, edge.object, severity, reason)
@@ -1573,7 +1586,9 @@ def _looks_like_endpoint(subject: str) -> bool:
     return 0 < port <= 65535
 
 
-def _project_entity_relationships(facts: Iterable[Fact]) -> list[LegacyEntityRelationship]:
+def _project_entity_relationships(
+    facts: Iterable[Fact],
+) -> list[LegacyEntityRelationship]:
     relationships: list[LegacyEntityRelationship] = []
     seen: set[tuple[str, str, str]] = set()
     for fact in facts:
@@ -1606,8 +1621,7 @@ def _suppresses_catalog_relationship(
     evidence: dict[str, Evidence],
 ) -> bool:
     if (
-        fact.predicate == "endpoint_role"
-        and definition.relationship == "provides"
+        fact.predicate == "endpoint_role" and definition.relationship == "provides"
     ) or (
         fact.predicate == "prometheus_instance"
         and definition.relationship == "monitored_by"
@@ -1616,9 +1630,7 @@ def _suppresses_catalog_relationship(
     return False
 
 
-def _has_prometheus_source_evidence(
-    fact: Fact, evidence: dict[str, Evidence]
-) -> bool:
+def _has_prometheus_source_evidence(fact: Fact, evidence: dict[str, Evidence]) -> bool:
     for evidence_id in fact.evidence_ids:
         item = evidence.get(evidence_id)
         if item is None:
@@ -1656,7 +1668,9 @@ def _project_catalog_relationships(
             identity = "\0".join(
                 [fact.id, fact.subject_id, definition.relationship, object_value]
             )
-            relationship_id = "rel_" + hashlib.sha256(identity.encode()).hexdigest()[:24]
+            relationship_id = (
+                "rel_" + hashlib.sha256(identity.encode()).hexdigest()[:24]
+            )
             relationships.append(
                 EntityRelationship(
                     id=relationship_id,
