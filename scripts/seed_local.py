@@ -351,7 +351,25 @@ def ingest_observations(
     """Ingest CLI observations through the canonical observation pipeline."""
 
     ingestor = ObservationIngestor(ledger)
-    facts: list[Fact] = []
+    pending_observations: list[Observation] = []
+    pending_actor: Literal["system", "user"] | None = None
+    facts: list[Fact | None] = []
+
+    def flush_pending() -> None:
+        nonlocal pending_observations, pending_actor
+        if not pending_observations or pending_actor is None:
+            return
+        facts.extend(
+            ingestor.ingest_many(
+                pending_observations,
+                workspace_id,
+                actor=pending_actor,
+                session_id=session_id,
+            )
+        )
+        pending_observations = []
+        pending_actor = None
+
     for seed in observations:
         observed_at = utc_now()
         expires_at = seed.expires_at
@@ -371,15 +389,15 @@ def ingest_observations(
             metadata=metadata,
             expires_at=expires_at,
         )
-        facts.append(
-            ingestor.ingest(
-                observation,
-                workspace_id,
-                actor="user" if seed.source_type == "user" else "system",
-                session_id=session_id,
-            )
+        actor: Literal["system", "user"] = (
+            "user" if seed.source_type == "user" else "system"
         )
-    return facts
+        if pending_actor is not None and actor != pending_actor:
+            flush_pending()
+        pending_actor = actor
+        pending_observations.append(observation)
+    flush_pending()
+    return [fact for fact in facts if fact is not None]
 
 
 def build_observation_normalization_pipeline(

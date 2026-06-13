@@ -3018,6 +3018,51 @@ def test_best_fact_accepts_short_hostname_for_persisted_fqdn_observation(tmp_pat
         reopened.close()
 
 
+def test_ingest_observations_batches_consecutive_cli_observations():
+    seed_local = load_seed_local_module()
+
+    class CountingLedger(seed_local.EventLedger):
+        def __init__(self):
+            super().__init__()
+            self.append_many_calls = 0
+
+        def append_many(self, events):
+            self.append_many_calls += 1
+            return super().append_many(events)
+
+    ledger = CountingLedger()
+
+    facts = seed_local.ingest_observations(
+        ledger,
+        seed_local.DEFAULT_WORKSPACE,
+        [
+            seed_local.DevObservationSeed(
+                "node115",
+                "architecture",
+                "x86_64",
+                source_type="discovery",
+            ),
+            seed_local.DevObservationSeed(
+                "node115",
+                "runtime",
+                "docker",
+                source_type="discovery",
+            ),
+        ],
+    )
+
+    assert len(facts) == 2
+    assert ledger.append_many_calls == 1
+    assert [event.kind for event in ledger.list_events(seed_local.DEFAULT_WORKSPACE)] == [
+        "observation.observed",
+        "evidence.observed",
+        "fact.observed",
+        "observation.observed",
+        "evidence.observed",
+        "fact.observed",
+    ]
+
+
 def _patch_fake_prometheus_source(monkeypatch, seed_local):
     class FakePrometheusSource:
         source_type = "provider"
