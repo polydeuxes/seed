@@ -147,6 +147,14 @@
           "receiver": ""
         },
         {
+          "method": "_validate_batch",
+          "receiver": ""
+        },
+        {
+          "method": "append_many",
+          "receiver": ""
+        },
+        {
           "method": "list",
           "receiver": ""
         },
