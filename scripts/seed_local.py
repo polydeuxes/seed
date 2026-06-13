@@ -113,6 +113,7 @@ from seed_runtime.observation_sources import (
     LocalHostObservationSource,
     ObservationCollectionService,
     PrometheusObservationSource,
+    RepositorySourceObservationSource,
     diff_observations_json,
     export_observations_json,
 )
@@ -866,6 +867,14 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--observe-repository-source",
+        metavar="PATH",
+        help=(
+            "read-only repository source intake for allowlisted Python files; "
+            "emits only imports and defines observations"
+        ),
+    )
+    parser.add_argument(
         "--predicate-catalog",
         metavar="PATH",
         help="load canonical predicates and provider mappings from a JSON file",
@@ -1564,6 +1573,14 @@ def seed_dev_state_from_args(args: argparse.Namespace, ledger: EventLedger) -> N
             ledger,
             args.workspace,
             build_prometheus_observation_source(args),
+            session_id=args.session,
+        )
+
+    if args.observe_repository_source:
+        ingest_observation_source(
+            ledger,
+            args.workspace,
+            RepositorySourceObservationSource(args.observe_repository_source),
             session_id=args.session,
         )
 
@@ -3604,6 +3621,17 @@ def ingest_observations_from_args(
                     status_consumer=status_consumer,
                 )
             )
+        if args.observe_repository_source:
+            facts.extend(
+                ingest_observation_source(
+                    ledger,
+                    args.workspace,
+                    RepositorySourceObservationSource(args.observe_repository_source),
+                    session_id=args.session,
+                    predicate_catalog_path=args.predicate_catalog,
+                    status_consumer=status_consumer,
+                )
+            )
         return facts
     finally:
         close = getattr(ledger, "close", None)
@@ -4630,6 +4658,7 @@ def main(argv: list[str] | None = None) -> int:
             or args.observe_ansible_inventory
             or args.observe_local_host
             or args.observe_prometheus
+            or args.observe_repository_source
         )
         and not message
         and not args.http
