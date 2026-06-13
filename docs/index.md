@@ -34,6 +34,7 @@ related:
   - discovery_path_preservation_observation.md
   - lineage_distinction_observation.md
   - preservation_surface_observation.md
+  - bounty_board_and_investigation_selection_observation.md
   - concept_stability_audit.md
 ---
 
@@ -81,6 +82,7 @@ Use this file to find the right document family before reading specific document
 - `discovery_path_preservation_observation.md` — observation of critique-driven discovery paths, compression removal, and understanding-transition preservation.
 - `lineage_distinction_observation.md` — observation of artifact, inquiry, observation, and discovery-path lineage surfaces and what each appears to preserve.
 - `preservation_surface_observation.md` — observation of artifact, inquiry, observation, discovery, and continuation preservation surfaces without reconciling preservation ontology.
+- `bounty_board_and_investigation_selection_observation.md` — observation of how investigations appear to have become active, how inquiry historically moved, and how the bounty board preserves deferred inquiry without acting as roadmap authority.
 
 ## Foundational Ontology And Claim Semantics
 
@@ -312,6 +314,7 @@ These documents route emerging work without promoting it to canonical architectu
 - `discovery_path_preservation_observation.md` — observation of critique-driven discovery paths, compression removal, and the gap between conclusion preservation and understanding-transition preservation.
 - `lineage_distinction_observation.md` — observation of artifact, inquiry, observation, and discovery-path lineage surfaces and what each appears to preserve without reconciling lineage ontology.
 - `preservation_surface_observation.md` — observation of what recent investigations appear to preserve and where preservation behavior helps more than category membership without defining a preservation taxonomy.
+- `bounty_board_and_investigation_selection_observation.md` — observation of investigation-selection patterns, branching, bridge, redirection, dead-end, and bounty-board preservation signals without ranking or recommending future work.
 - `persistence_frontier.md`, `continuity_frontier.md`, and `current_work_position_frontier.md` — what survives revision, role change, inquiry movement, handoff continuation, and active work resumption without collapsing persistence into storage, identity, or implementation machinery.
 - `future_frontiers.md` — bounty-style inventory of optional future frontier candidates.
 
