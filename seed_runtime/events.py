@@ -53,6 +53,19 @@ class EventLedger:
         self._store(event)
         return event
 
+    def append_many(self, events: Iterable[Event]) -> list[Event]:
+        """Record pre-built events in order and return the stored events.
+
+        Event granularity remains unchanged: each supplied Event is stored as its
+        own ledger event. Implementations may batch the underlying persistence
+        transaction for storage efficiency.
+        """
+        stored_events = [event.model_copy(deep=True) for event in events]
+        self._validate_batch(stored_events)
+        for event in stored_events:
+            self._store(event)
+        return stored_events
+
     def get(self, event_id: str) -> Event | None:
         """Return an event by id, if it exists."""
         return self._by_id.get(event_id)
@@ -69,8 +82,7 @@ class EventLedger:
 
     def extend(self, events: Iterable[Event]) -> None:
         """Append externally constructed events while preserving order and IDs."""
-        for event in events:
-            self._store(event.model_copy(deep=True))
+        self.append_many(events)
 
     def _store(self, event: Event) -> None:
         _validate_execution_authorization_event(event)
@@ -79,6 +91,14 @@ class EventLedger:
         self._events.append(event)
         self._by_id[event.id] = event
         self._by_workspace[event.workspace_id].append(event)
+
+    def _validate_batch(self, events: list[Event]) -> None:
+        seen: set[str] = set()
+        for event in events:
+            _validate_execution_authorization_event(event)
+            if event.id in self._by_id or event.id in seen:
+                raise ValueError(f"event id already exists: {event.id}")
+            seen.add(event.id)
 
 
 # Compatibility for older tests and callers; EventLedger itself remains in-memory.
@@ -145,6 +165,18 @@ class SQLiteEventLedger(EventLedger):
         self._insert(event)
         return event
 
+    def append_many(self, events: Iterable[Event]) -> list[Event]:
+        """Persist pre-built events in order using a single SQLite transaction."""
+        stored_events = [event.model_copy(deep=True) for event in events]
+        self._validate_sqlite_batch(stored_events)
+        with self._connection:
+            for event in stored_events:
+                self._insert_without_commit(event)
+        for event in stored_events:
+            self._advance_event_counter(event.id)
+            self._reserve_payload_ids(event.payload)
+        return stored_events
+
     def get(self, event_id: str) -> Event | None:
         row = self._connection.execute(
             "SELECT * FROM events WHERE id = ?",
@@ -168,13 +200,18 @@ class SQLiteEventLedger(EventLedger):
         return self.list(workspace_id)
 
     def extend(self, events: Iterable[Event]) -> None:
-        for event in events:
-            self._insert(event)
+        self.append_many(events)
 
     def close(self) -> None:
         self._connection.close()
 
     def _insert(self, event: Event) -> None:
+        self._insert_without_commit(event)
+        self._connection.commit()
+        self._advance_event_counter(event.id)
+        self._reserve_payload_ids(event.payload)
+
+    def _insert_without_commit(self, event: Event) -> None:
         _validate_execution_authorization_event(event)
         self._connection.execute(
             """
@@ -193,9 +230,14 @@ class SQLiteEventLedger(EventLedger):
                 event.correlation_id,
             ),
         )
-        self._connection.commit()
-        self._advance_event_counter(event.id)
-        self._reserve_payload_ids(event.payload)
+
+    def _validate_sqlite_batch(self, events: list[Event]) -> None:
+        seen: set[str] = set()
+        for event in events:
+            _validate_execution_authorization_event(event)
+            if event.id in seen:
+                raise ValueError(f"event id already exists: {event.id}")
+            seen.add(event.id)
 
     def _row_to_event(self, row: sqlite3.Row) -> Event:
         return Event(

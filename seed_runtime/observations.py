@@ -79,36 +79,46 @@ class ObservationIngestor:
             "observation_id": observation.id,
             "source_type": observation.source_type,
         }
-        self.ledger.append(
-            "observation.observed",
-            workspace_id,
-            {"observation": to_plain(observation)},
+        from seed_runtime.models import Event
+
+        observation_event = Event(
+            id=new_id("evt"),
+            kind="observation.observed",
+            workspace_id=workspace_id,
+            payload={"observation": to_plain(observation)},
             actor=actor,  # type: ignore[arg-type]
             session_id=session_id,
             causation_id=causation_id,
             correlation_id=correlation_id,
         )
-        evidence_event = self.ledger.append(
-            "evidence.observed",
-            workspace_id,
-            {"evidence": to_plain(evidence), **event_metadata},
+        evidence_event = Event(
+            id=new_id("evt"),
+            kind="evidence.observed",
+            workspace_id=workspace_id,
+            payload={"evidence": to_plain(evidence), **event_metadata},
             actor=actor,  # type: ignore[arg-type]
             session_id=session_id,
             causation_id=causation_id or observation.id,
             correlation_id=correlation_id,
         )
+        events = [observation_event, evidence_event]
         if fact is None:
+            self.ledger.append_many(events)
             return None
         fact_event_kind = "fact.inferred" if fact.inferred else "fact.observed"
-        self.ledger.append(
-            fact_event_kind,
-            workspace_id,
-            {"fact": to_plain(fact), **event_metadata},
-            actor=actor,  # type: ignore[arg-type]
-            session_id=session_id,
-            causation_id=causation_id or evidence_event.id,
-            correlation_id=correlation_id,
+        events.append(
+            Event(
+                id=new_id("evt"),
+                kind=fact_event_kind,
+                workspace_id=workspace_id,
+                payload={"fact": to_plain(fact), **event_metadata},
+                actor=actor,  # type: ignore[arg-type]
+                session_id=session_id,
+                causation_id=causation_id or evidence_event.id,
+                correlation_id=correlation_id,
+            )
         )
+        self.ledger.append_many(events)
         return fact
 
     @staticmethod
