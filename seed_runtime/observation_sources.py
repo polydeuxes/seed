@@ -30,6 +30,7 @@ from seed_runtime.local_packages import (
     package_records_to_observations,
     parse_dpkg_status,
 )
+from seed_runtime.execution_status import ExecutionStatusConsumer, emit_status
 from seed_runtime.serialization import to_plain
 from seed_runtime.observation_normalizers import (
     DEFAULT_OBSERVATION_NORMALIZATION_PIPELINE,
@@ -2364,6 +2365,7 @@ class ObservationCollectionService:
         session_id: str | None = None,
         causation_id: str | None = None,
         correlation_id: str | None = None,
+        status_consumer: ExecutionStatusConsumer | None = None,
     ) -> list[Fact]:
         """Collect and ingest all observations from a source.
 
@@ -2371,7 +2373,20 @@ class ObservationCollectionService:
         failing or malformed source cannot partially modify runtime state.
         """
 
+        emit_status(
+            status_consumer,
+            "observation_collection",
+            f"Collecting {source.name} observations...",
+        )
         observations = list(source.collect())
+        emit_status(
+            status_consumer,
+            "observation_collection",
+            f"Collected {len(observations)} observations.",
+            current=len(observations),
+            total=len(observations),
+            completed=True,
+        )
         normalized = [
             self._normalize_observation(source, observation)
             for observation in observations
@@ -2387,6 +2402,7 @@ class ObservationCollectionService:
             session_id=session_id,
             causation_id=causation_id,
             correlation_id=correlation_id,
+            status_consumer=status_consumer,
         )
         return [fact for fact in facts if fact is not None]
 

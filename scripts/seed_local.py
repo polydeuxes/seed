@@ -51,6 +51,11 @@ from seed_runtime.facts import (
     is_measurement_predicate,
 )
 from seed_runtime.execution import ToolExecutor
+from seed_runtime.execution_status import (
+    CliExecutionStatusConsumer,
+    ExecutionStatusConsumer,
+    emit_status,
+)
 from seed_runtime.evidence_graph import (
     FactEvidenceView,
     build_evidence_graph,
@@ -425,6 +430,7 @@ def ingest_json_observations(
     *,
     session_id: str | None = None,
     predicate_catalog_path: str | Path | None = None,
+    status_consumer: ExecutionStatusConsumer | None = None,
 ) -> list[Fact]:
     """Ingest observations from a local JSON file through source collection."""
 
@@ -438,6 +444,7 @@ def ingest_json_observations(
         workspace_id,
         actor="system",
         session_id=session_id,
+        status_consumer=status_consumer,
     )
 
 
@@ -448,6 +455,7 @@ def ingest_observation_source(
     *,
     session_id: str | None = None,
     predicate_catalog_path: str | Path | None = None,
+    status_consumer: ExecutionStatusConsumer | None = None,
 ) -> list[Fact]:
     """Collect a live read-only source through ObservationCollectionService."""
 
@@ -461,6 +469,7 @@ def ingest_observation_source(
         workspace_id,
         actor="system",
         session_id=session_id,
+        status_consumer=status_consumer,
     )
 
 
@@ -1768,6 +1777,7 @@ def projected_state_summary_from_args(
             if close is not None:
                 close()
 
+
 def rebuild_state_cache_from_args(args: argparse.Namespace) -> str:
     """Clear and rebuild the persisted State projection cache."""
 
@@ -2994,6 +3004,7 @@ def _format_view_dimensions(dimensions: dict[str, str]) -> str:
     )
     return f" ({values})"
 
+
 _FILESYSTEM_CATEGORY_ORDER = ("root", "boot", "cluster mounts", "other")
 _FILESYSTEM_DETAIL_LIMIT = 10
 
@@ -3510,7 +3521,10 @@ def format_observed_fact_summary(facts: list[Fact]) -> str:
     return "\n".join(sections)
 
 
-def ingest_observations_from_args(args: argparse.Namespace) -> list[Fact]:
+def ingest_observations_from_args(
+    args: argparse.Namespace,
+    status_consumer: ExecutionStatusConsumer | None = None,
+) -> list[Fact]:
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
     try:
         fact_expires_at = (
@@ -3554,6 +3568,7 @@ def ingest_observations_from_args(args: argparse.Namespace) -> list[Fact]:
                     args.observe_json,
                     session_id=args.session,
                     predicate_catalog_path=args.predicate_catalog,
+                    status_consumer=status_consumer,
                 )
             )
         if args.observe_ansible_inventory:
@@ -3564,6 +3579,7 @@ def ingest_observations_from_args(args: argparse.Namespace) -> list[Fact]:
                     AnsibleInventoryObservationSource(args.observe_ansible_inventory),
                     session_id=args.session,
                     predicate_catalog_path=args.predicate_catalog,
+                    status_consumer=status_consumer,
                 )
             )
         if args.observe_local_host:
@@ -3574,6 +3590,7 @@ def ingest_observations_from_args(args: argparse.Namespace) -> list[Fact]:
                     LocalHostObservationSource(),
                     session_id=args.session,
                     predicate_catalog_path=args.predicate_catalog,
+                    status_consumer=status_consumer,
                 )
             )
         if args.observe_prometheus:
@@ -3584,6 +3601,7 @@ def ingest_observations_from_args(args: argparse.Namespace) -> list[Fact]:
                     build_prometheus_observation_source(args),
                     session_id=args.session,
                     predicate_catalog_path=args.predicate_catalog,
+                    status_consumer=status_consumer,
                 )
             )
         return facts
@@ -4616,7 +4634,11 @@ def main(argv: list[str] | None = None) -> int:
         and not message
         and not args.http
     ):
-        observed_facts = ingest_observations_from_args(args)
+        status_consumer = CliExecutionStatusConsumer()
+        observed_facts = ingest_observations_from_args(
+            args, status_consumer=status_consumer
+        )
+        emit_status(status_consumer, "done", "Done.", completed=True)
         if args.observe_prometheus and not args.verbose_observations:
             print(format_observed_fact_summary(observed_facts))
         else:
