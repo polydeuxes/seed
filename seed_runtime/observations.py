@@ -103,7 +103,7 @@ class ObservationIngestor:
         emit_status(
             status_consumer,
             "observation_ingestion",
-            "Writing events",
+            "Generating events...",
             current=0,
             total=total,
         )
@@ -146,7 +146,7 @@ class ObservationIngestor:
             emit_status(
                 status_consumer,
                 "observation_ingestion",
-                "Writing events",
+                "Generating events",
                 current=index,
                 total=total,
             )
@@ -165,12 +165,14 @@ class ObservationIngestor:
                     correlation_id=correlation_id,
                 )
             )
-        if events:
+        if events and status_consumer is not None:
+            self.ledger.append_many(events, status_consumer=status_consumer)
+        elif events:
             self.ledger.append_many(events)
         emit_status(
             status_consumer,
             "observation_ingestion",
-            "Wrote events",
+            "Generated events",
             current=total,
             total=total,
             completed=True,

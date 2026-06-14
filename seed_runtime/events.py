@@ -8,12 +8,14 @@ import json
 import sqlite3
 from typing import Any, Iterable
 
+from seed_runtime.execution_status import ExecutionStatusConsumer, emit_status
 from seed_runtime.ids import new_id, reserve_id_prefix
 from seed_runtime.models import Actor, Event, ExecutionAuthorization
 
 
 class EventLedger:
     """Process-local append-only ledger for recording Seed runtime events."""
+
     __seed_arch__ = {
         "owner": "event_history",
         "layer": "events",
@@ -53,7 +55,12 @@ class EventLedger:
         self._store(event)
         return event
 
-    def append_many(self, events: Iterable[Event]) -> list[Event]:
+    def append_many(
+        self,
+        events: Iterable[Event],
+        *,
+        status_consumer: ExecutionStatusConsumer | None = None,
+    ) -> list[Event]:
         """Record pre-built events in order and return the stored events.
 
         Event granularity remains unchanged: each supplied Event is stored as its
@@ -62,8 +69,24 @@ class EventLedger:
         """
         stored_events = [event.model_copy(deep=True) for event in events]
         self._validate_batch(stored_events)
-        for event in stored_events:
+        total = len(stored_events)
+        emit_status(
+            status_consumer,
+            "event_persistence",
+            "Writing events",
+            current=0,
+            total=total,
+        )
+        for index, event in enumerate(stored_events, start=1):
             self._store(event)
+            emit_status(
+                status_consumer,
+                "event_persistence",
+                "Writing events",
+                current=index,
+                total=total,
+                completed=index == total,
+            )
         return stored_events
 
     def get(self, event_id: str) -> Event | None:
@@ -165,13 +188,34 @@ class SQLiteEventLedger(EventLedger):
         self._insert(event)
         return event
 
-    def append_many(self, events: Iterable[Event]) -> list[Event]:
+    def append_many(
+        self,
+        events: Iterable[Event],
+        *,
+        status_consumer: ExecutionStatusConsumer | None = None,
+    ) -> list[Event]:
         """Persist pre-built events in order using a single SQLite transaction."""
         stored_events = [event.model_copy(deep=True) for event in events]
         self._validate_sqlite_batch(stored_events)
+        total = len(stored_events)
+        emit_status(
+            status_consumer,
+            "event_persistence",
+            "Writing events",
+            current=0,
+            total=total,
+        )
         with self._connection:
-            for event in stored_events:
+            for index, event in enumerate(stored_events, start=1):
                 self._insert_without_commit(event)
+                emit_status(
+                    status_consumer,
+                    "event_persistence",
+                    "Writing events",
+                    current=index,
+                    total=total,
+                    completed=index == total,
+                )
         for event in stored_events:
             self._advance_event_counter(event.id)
             self._reserve_payload_ids(event.payload)
@@ -266,15 +310,13 @@ class SQLiteEventLedger(EventLedger):
         reserve_id_prefix("evt", suffix)
 
     def _max_event_id_suffix(self) -> int:
-        row = self._connection.execute(
-            """
+        row = self._connection.execute("""
             SELECT MAX(CAST(SUBSTR(id, 5) AS INTEGER)) AS max_suffix
             FROM events
             WHERE id LIKE 'evt_%'
               AND SUBSTR(id, 5) GLOB '[0-9]*'
               AND SUBSTR(id, 5) NOT GLOB '*[^0-9]*'
-            """
-        ).fetchone()
+            """).fetchone()
         return int(row["max_suffix"] or 0)
 
     def _reserve_persisted_payload_ids(self) -> None:
