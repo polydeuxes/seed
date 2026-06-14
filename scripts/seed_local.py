@@ -101,6 +101,7 @@ from seed_runtime.predicate_catalog import PredicateCatalog
 from seed_runtime.predicate_normalizers import PredicateNormalizer
 from seed_runtime.projection_store import (
     SQLiteProjectionStore,
+    STATE_PROJECTION_NAME,
     STATE_PROJECTION_VERSION,
     STATE_SUMMARY_PROJECTION_NAME,
     STATE_SUMMARY_PROJECTION_VERSION,
@@ -1826,18 +1827,24 @@ def format_state_cache_status_from_args(args: argparse.Namespace) -> str:
     ledger = SQLiteEventLedger(args.db)
     store = SQLiteProjectionStore(args.db)
     try:
-        _state, status = project_state_with_cache(
-            ledger,
-            args.workspace,
-            store,
-            projector=_state_projector_from_args(args, ledger),
+        events = ledger.list_events(args.workspace)
+        latest_event = events[-1] if events else None
+        current_last_event_id = latest_event.id if latest_event is not None else None
+        snapshot = store.load_snapshot(
+            args.workspace, STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION
+        )
+        snapshot_last_event_id = (
+            snapshot.last_event_id if snapshot is not None else None
+        )
+        cache_hit = (
+            snapshot is not None and snapshot.last_event_id == current_last_event_id
         )
         return "\n".join(
             [
-                f"cache: {'hit' if status.cache_hit else 'miss'}",
-                f"projection_version: {status.projection_version}",
-                f"snapshot last_event_id: {status.snapshot_last_event_id or 'none'}",
-                f"current last_event_id: {status.current_last_event_id or 'none'}",
+                f"cache: {'hit' if cache_hit else 'miss'}",
+                f"projection_version: {STATE_PROJECTION_VERSION}",
+                f"snapshot last_event_id: {snapshot_last_event_id or 'none'}",
+                f"current last_event_id: {current_last_event_id or 'none'}",
             ]
         )
     finally:

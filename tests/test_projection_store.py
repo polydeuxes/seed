@@ -570,3 +570,178 @@ def test_incremental_projection_version_mismatch_uses_full_replay_not_snapshot()
     assert status.incremental_replay is False
     assert projector.incremental_calls == 0
     assert projector.calls == 1
+
+
+def _load_seed_local_module():
+    import importlib.util
+    import sys
+    from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location(
+        "seed_local_cache_status", Path("scripts/seed_local.py")
+    )
+    seed_local = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = seed_local
+    assert spec.loader is not None
+    spec.loader.exec_module(seed_local)
+    return seed_local
+
+
+def _state_cache_status_args(db_path, workspace="ws"):
+    import argparse
+
+    return argparse.Namespace(db=str(db_path), workspace=workspace)
+
+
+def _save_sqlite_snapshot(db_path, ledger, workspace, last_event_id):
+    store = SQLiteProjectionStore(str(db_path))
+    try:
+        state = StateProjector(ledger).project(workspace)
+        store.save_snapshot(
+            ProjectionSnapshot(
+                workspace_id=workspace,
+                projection_name=STATE_PROJECTION_NAME,
+                projection_version=STATE_PROJECTION_VERSION,
+                last_event_id=last_event_id,
+                last_event_created_at=None,
+                state_payload=state_to_payload(state),
+                created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            )
+        )
+    finally:
+        store.close()
+
+
+def test_cli_state_cache_status_does_not_call_project_state_with_cache(
+    monkeypatch, tmp_path
+):
+    seed_local = _load_seed_local_module()
+    db_path = tmp_path / "cache-status-no-project-with-cache.sqlite"
+    ledger = SQLiteEventLedger(str(db_path))
+    event = _append_fact(ledger, "ws", "fact_one", "docker")
+    ledger.close()
+
+    def fail_project_state_with_cache(*_args, **_kwargs):
+        raise AssertionError("cache status must not demand projected state")
+
+    def fail_project(*_args, **_kwargs):
+        raise AssertionError("cache status must not replay projection state")
+
+    monkeypatch.setattr(
+        seed_local, "project_state_with_cache", fail_project_state_with_cache
+    )
+    monkeypatch.setattr(seed_local.StateProjector, "project", fail_project)
+
+    output = seed_local.format_state_cache_status_from_args(
+        _state_cache_status_args(db_path)
+    )
+
+    assert output == "\n".join(
+        [
+            "cache: miss",
+            f"projection_version: {STATE_PROJECTION_VERSION}",
+            "snapshot last_event_id: none",
+            f"current last_event_id: {event.id}",
+        ]
+    )
+
+
+def test_cli_state_cache_status_does_not_rebuild_cache_on_miss(tmp_path):
+    seed_local = _load_seed_local_module()
+    db_path = tmp_path / "cache-status-miss-no-rebuild.sqlite"
+    ledger = SQLiteEventLedger(str(db_path))
+    event = _append_fact(ledger, "ws", "fact_one", "docker")
+    ledger.close()
+
+    output = seed_local.format_state_cache_status_from_args(
+        _state_cache_status_args(db_path)
+    )
+
+    store = SQLiteProjectionStore(str(db_path))
+    try:
+        snapshot = store.load_snapshot(
+            "ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION
+        )
+    finally:
+        store.close()
+    assert snapshot is None
+    assert "cache: miss" in output
+    assert "snapshot last_event_id: none" in output
+    assert f"current last_event_id: {event.id}" in output
+
+
+def test_cli_state_cache_status_miss_reports_no_snapshot(tmp_path):
+    seed_local = _load_seed_local_module()
+    db_path = tmp_path / "cache-status-miss-report.sqlite"
+    ledger = SQLiteEventLedger(str(db_path))
+    event = _append_fact(ledger, "ws", "fact_one", "docker")
+    ledger.close()
+
+    output = seed_local.format_state_cache_status_from_args(
+        _state_cache_status_args(db_path)
+    )
+
+    assert output == "\n".join(
+        [
+            "cache: miss",
+            f"projection_version: {STATE_PROJECTION_VERSION}",
+            "snapshot last_event_id: none",
+            f"current last_event_id: {event.id}",
+        ]
+    )
+
+
+def test_cli_state_cache_status_hit_reports_matching_snapshot(tmp_path):
+    seed_local = _load_seed_local_module()
+    db_path = tmp_path / "cache-status-hit.sqlite"
+    ledger = SQLiteEventLedger(str(db_path))
+    event = _append_fact(ledger, "ws", "fact_one", "docker")
+    _save_sqlite_snapshot(db_path, ledger, "ws", event.id)
+    ledger.close()
+
+    output = seed_local.format_state_cache_status_from_args(
+        _state_cache_status_args(db_path)
+    )
+
+    assert output == "\n".join(
+        [
+            "cache: hit",
+            f"projection_version: {STATE_PROJECTION_VERSION}",
+            f"snapshot last_event_id: {event.id}",
+            f"current last_event_id: {event.id}",
+        ]
+    )
+
+
+def test_cli_state_cache_status_stale_snapshot_reports_miss_without_modifying_snapshot(
+    tmp_path,
+):
+    seed_local = _load_seed_local_module()
+    db_path = tmp_path / "cache-status-stale.sqlite"
+    ledger = SQLiteEventLedger(str(db_path))
+    first = _append_fact(ledger, "ws", "fact_one", "docker")
+    _save_sqlite_snapshot(db_path, ledger, "ws", first.id)
+    second = _append_fact(ledger, "ws", "fact_two", "podman")
+    ledger.close()
+
+    output = seed_local.format_state_cache_status_from_args(
+        _state_cache_status_args(db_path)
+    )
+
+    store = SQLiteProjectionStore(str(db_path))
+    try:
+        snapshot = store.load_snapshot(
+            "ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION
+        )
+    finally:
+        store.close()
+    assert snapshot is not None
+    assert snapshot.last_event_id == first.id
+    assert output == "\n".join(
+        [
+            "cache: miss",
+            f"projection_version: {STATE_PROJECTION_VERSION}",
+            f"snapshot last_event_id: {first.id}",
+            f"current last_event_id: {second.id}",
+        ]
+    )
