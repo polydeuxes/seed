@@ -400,7 +400,7 @@ def project_state_with_cache(
                 emit_status(
                     status_consumer,
                     "projection_cache_load",
-                    "Using projection cache.",
+                    "State cache: hit",
                     completed=True,
                 )
                 return snapshot_state, StateCacheStatus(
@@ -419,8 +419,14 @@ def project_state_with_cache(
                 ):
                     emit_status(
                         status_consumer,
+                        "projection_cache_load",
+                        "State cache: miss",
+                        completed=True,
+                    )
+                    emit_status(
+                        status_consumer,
                         "incremental_projection_replay",
-                        "Applying events",
+                        "Incremental replay",
                         current=0,
                         total=len(remaining_events),
                     )
@@ -430,7 +436,7 @@ def project_state_with_cache(
                     emit_status(
                         status_consumer,
                         "incremental_projection_replay",
-                        "Applying events",
+                        "Incremental replay",
                         current=len(remaining_events),
                         total=len(remaining_events),
                         completed=True,
@@ -454,10 +460,17 @@ def project_state_with_cache(
                         events_applied=len(remaining_events),
                     )
 
+    if store is not None:
+        emit_status(
+            status_consumer,
+            "projection_cache_load",
+            "State cache: miss",
+            completed=True,
+        )
     emit_status(
         status_consumer,
         "projection_replay",
-        "Applying events",
+        "Projection replay",
         current=0,
         total=len(events),
     )
@@ -465,7 +478,7 @@ def project_state_with_cache(
     emit_status(
         status_consumer,
         "projection_replay",
-        "Applying events",
+        "Projection replay",
         current=len(events),
         total=len(events),
         completed=True,
