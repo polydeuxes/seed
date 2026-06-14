@@ -64,6 +64,11 @@ from seed_runtime.input_inspector import (
 )
 from seed_runtime.models import Event, PendingAction, ToolNeed, ToolSpec, Toolkit
 from seed_runtime.state import EntityRelationship, EntityTypeAssertion
+from seed_runtime.verification_evidence import (
+    VerificationEvidence,
+    VerificationEvidenceInspection,
+    build_verification_evidence,
+)
 
 __all__ = [
     "AnsibleInventoryObservationSource",
@@ -76,6 +81,9 @@ __all__ = [
     "CapabilityInventoryEntry",
     "CapabilitySupportSummary",
     "build_capability_inventory",
+    "VerificationEvidence",
+    "VerificationEvidenceInspection",
+    "build_verification_evidence",
     "EndpointAliasNormalizer",
     "EndpointIdentityNormalizer",
     "EntityRelationship",

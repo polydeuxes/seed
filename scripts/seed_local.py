@@ -30,6 +30,7 @@ from seed_runtime.capability_inventory import (
     build_capability_inventory,
 )
 from seed_runtime.capability_verification import build_capability_verification_inspection
+from seed_runtime.verification_evidence import build_verification_evidence
 from seed_runtime.context import ContextComposer
 from seed_runtime.context_views import (
     DecisionContextView,
@@ -1199,6 +1200,18 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--verification-evidence",
+        nargs="?",
+        const="__all__",
+        metavar="FILTER",
+        help=(
+            "print read-only locally acquired verification evidence as deterministic JSON; "
+            "optional FILTER such as ssh, python, docker, git, or curl; inspects PATH "
+            "without invoking tools, selecting capabilities, evaluating policy, planning, "
+            "authorizing, or executing"
+        ),
+    )
+    parser.add_argument(
         "--capability-verification",
         nargs="?",
         const="__all__",
@@ -1302,6 +1315,7 @@ def validate_lifecycle_args(
         bool(args.current_capabilities),
         bool(args.capability_status),
         bool(args.capability_candidates),
+        bool(args.verification_evidence),
         bool(args.capability_verification),
         bool(args.current_issues),
         bool(args.decision_context),
@@ -1327,7 +1341,7 @@ def validate_lifecycle_args(
             "--why-run, --fact-support, --best-fact, "
             "--current-facts, --current-observations, --current-requirements, "
             "--current-capabilities, --capability-status, --capability-candidates, "
-            "--capability-verification, --current-issues, "
+            "--verification-evidence, --capability-verification, --current-issues, "
             "--decision-context, --candidate-requests, --candidate-routes, "
             "--state-summary, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
@@ -4683,6 +4697,25 @@ def main(argv: list[str] | None = None) -> int:
             json.dumps(
                 to_plain(
                     build_capability_candidates(
+                        projected_state_from_args(args), filter_text=filter_text
+                    )
+                ),
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        return 0
+
+    if args.verification_evidence:
+        filter_text = (
+            None
+            if args.verification_evidence == "__all__"
+            else args.verification_evidence
+        )
+        print(
+            json.dumps(
+                to_plain(
+                    build_verification_evidence(
                         projected_state_from_args(args), filter_text=filter_text
                     )
                 ),
