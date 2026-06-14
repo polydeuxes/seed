@@ -140,6 +140,10 @@ from seed_runtime.secrets import (
     reject_secret_fields,
 )
 from seed_runtime.state import State, StateProjector
+from seed_runtime.source_navigation import (
+    build_source_navigation,
+    format_source_navigation,
+)
 from seed_runtime.state_summary_views import state_summary
 from seed_runtime.state_views import (
     CapabilityView,
@@ -1160,6 +1164,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="print the projected current belief for a subject/predicate",
     )
     parser.add_argument(
+        "--source-navigation",
+        metavar="QUERY",
+        help=(
+            "print read-only source navigation from preserved imports/defines facts; "
+            "does not inspect repository files, parse source, or append events"
+        ),
+    )
+    parser.add_argument(
         "--current-facts",
         nargs="*",
         metavar=("SUBJECT", "PREDICATE"),
@@ -1324,6 +1336,7 @@ def validate_lifecycle_args(
         bool(args.fact_support),
         bool(args.best_fact),
         bool(args.current_facts is not None),
+        bool(args.source_navigation),
         bool(args.current_observations),
         bool(args.current_requirements),
         bool(args.current_capabilities),
@@ -4694,6 +4707,15 @@ def main(argv: list[str] | None = None) -> int:
         print(
             format_best_fact(
                 state, subject, predicate, include_expired=args.include_expired
+            )
+        )
+        return 0
+
+    if args.source_navigation:
+        state = fact_query_state(args, status_consumer=CliExecutionStatusConsumer())
+        print(
+            format_source_navigation(
+                build_source_navigation(state, args.source_navigation)
             )
         )
         return 0
