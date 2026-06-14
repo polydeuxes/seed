@@ -176,7 +176,7 @@
       "id": "EventLedger",
       "kind": "class",
       "layer": "events",
-      "line": 15,
+      "line": 16,
       "owner": "event_history",
       "routes": [],
       "summary": "Owns append-only runtime event history read by projection and owner services."

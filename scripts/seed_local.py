@@ -24,6 +24,7 @@ from seed_runtime.candidate_requests import (
     inspect_candidate_requests,
     inspect_candidate_routes,
 )
+from seed_runtime.capability_candidates import build_capability_candidates
 from seed_runtime.capability_inventory import (
     CapabilityInventoryEntry,
     build_capability_inventory,
@@ -1186,6 +1187,17 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--capability-candidates",
+        nargs="?",
+        const="__all__",
+        metavar="FILTER",
+        help=(
+            "print read-only evidence-derived capability candidates as deterministic JSON; "
+            "optional FILTER such as ssh, python, docker, git, or curl; does not select, "
+            "evaluate policy, plan, or execute tools"
+        ),
+    )
+    parser.add_argument(
         "--current-issues",
         action="store_true",
         help="print read-only projected Issue views and exit",
@@ -1277,6 +1289,7 @@ def validate_lifecycle_args(
         bool(args.current_requirements),
         bool(args.current_capabilities),
         bool(args.capability_status),
+        bool(args.capability_candidates),
         bool(args.current_issues),
         bool(args.decision_context),
         bool(args.candidate_requests),
@@ -4642,6 +4655,25 @@ def main(argv: list[str] | None = None) -> int:
         print(
             format_capability_inventory(
                 build_capability_inventory(projected_state_from_args(args))
+            )
+        )
+        return 0
+
+    if args.capability_candidates:
+        filter_text = (
+            None
+            if args.capability_candidates == "__all__"
+            else args.capability_candidates
+        )
+        print(
+            json.dumps(
+                to_plain(
+                    build_capability_candidates(
+                        projected_state_from_args(args), filter_text=filter_text
+                    )
+                ),
+                indent=2,
+                sort_keys=True,
             )
         )
         return 0
