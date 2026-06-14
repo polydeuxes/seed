@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from seed_runtime.capability_candidates import CapabilityCandidate, build_capability_candidates
 from seed_runtime.capability_inventory import CapabilityInventoryEntry, build_capability_inventory
 from seed_runtime.state import State
+from seed_runtime.verification_evidence import VerificationEvidence, build_verification_evidence
 
 _VERIFICATION_BOUNDARY_NOTES = (
     "capability_candidate_not_verified_capability",
@@ -38,6 +39,7 @@ class CapabilityVerification:
     supporting_evidence: list[object] = field(default_factory=list)
     verification_supporting_facts: list[str] = field(default_factory=list)
     verification_supporting_evidence: list[object] = field(default_factory=list)
+    acquired_verification_evidence: list[VerificationEvidence] = field(default_factory=list)
     rationale: str = ""
     boundary_notes: list[str] = field(default_factory=lambda: list(_VERIFICATION_BOUNDARY_NOTES))
 
@@ -65,6 +67,10 @@ def build_capability_verification_inspection(
     """
 
     candidate_inspection = build_capability_candidates(state, filter_text=filter_text)
+    verification_evidence_by_candidate: dict[str, list[VerificationEvidence]] = {}
+    for evidence in build_verification_evidence(state, filter_text=filter_text).evidence:
+        verification_evidence_by_candidate.setdefault(evidence.candidate, []).append(evidence)
+
     inventory_by_capability: dict[str, CapabilityInventoryEntry] = {
         entry.capability: entry
         for entry in build_capability_inventory(
@@ -72,7 +78,11 @@ def build_capability_verification_inspection(
         )
     }
     verifications = [
-        _verification_for_candidate(candidate, inventory_by_capability.get(candidate.candidate))
+        _verification_for_candidate(
+            candidate,
+            inventory_by_capability.get(candidate.candidate),
+            verification_evidence_by_candidate.get(candidate.candidate, []),
+        )
         for candidate in candidate_inspection.candidates
     ]
     return CapabilityVerificationInspection(
@@ -82,13 +92,16 @@ def build_capability_verification_inspection(
 
 
 def _verification_for_candidate(
-    candidate: CapabilityCandidate, inventory_entry: CapabilityInventoryEntry | None
+    candidate: CapabilityCandidate,
+    inventory_entry: CapabilityInventoryEntry | None,
+    acquired_evidence: list[VerificationEvidence],
 ) -> CapabilityVerification:
     if inventory_entry is None:
         return CapabilityVerification(
             candidate=candidate.candidate,
             verification_status="unverified",
             supporting_evidence=list(candidate.supporting_evidence),
+            acquired_verification_evidence=list(acquired_evidence),
             rationale=(
                 "candidate evidence is preserved, but no projected capability_verified "
                 "fact exists for this candidate; verification remains separate from "
@@ -101,6 +114,7 @@ def _verification_for_candidate(
         supporting_evidence=list(candidate.supporting_evidence),
         verification_supporting_facts=list(inventory_entry.supporting_facts),
         verification_supporting_evidence=list(inventory_entry.supporting_evidence),
+        acquired_verification_evidence=list(acquired_evidence),
         rationale=(
             f"candidate evidence is preserved and verification status is derived from "
             f"existing capability inventory: {inventory_entry.reason}; this does not "
