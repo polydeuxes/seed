@@ -68,31 +68,65 @@ class StateSummary:
 
 
 def build_fact_view(state: State) -> list[FactView]:
-    """Return deterministic read-only Fact views from projected State facts."""
+    """Return deterministic read-only Fact views from current projected claims.
+
+    The append-only ledger can contain many fact records for the same durable
+    claim when a source is observed repeatedly.  Current fact views render the
+    support projection instead of raw fact rows so identical durable claims are
+    shown once while their supporting provenance remains attached.
+    """
 
     return [
         FactView(
-            fact_id=fact.id,
-            subject=fact.subject_id,
-            predicate=fact.predicate,
-            object=fact.value,
-            confidence=fact.confidence,
-            dimensions=_sorted_dimensions(fact.dimensions),
-            supporting_event_ids=_dedupe_sorted(
-                [*fact.evidence_ids, *([fact.source_fact_id] if fact.source_fact_id else [])]
+            fact_id=_representative_fact_id(state, support.supporting_fact_ids),
+            subject=support.subject,
+            predicate=support.predicate,
+            object=support.value,
+            confidence=support.confidence,
+            dimensions=_sorted_dimensions(support.dimensions),
+            supporting_event_ids=_supporting_ids_for_facts(
+                state, support.supporting_fact_ids
             ),
         )
-        for fact in sorted(
-            state.facts.values(),
+        for support in sorted(
+            state.fact_supports,
             key=lambda item: (
-                item.subject_id,
+                item.subject,
                 item.predicate,
                 _stable_value(item.value),
                 _stable_value(item.dimensions),
-                item.id,
+                _stable_value(item.supporting_fact_ids),
             ),
         )
     ]
+
+
+def _representative_fact_id(state: State, fact_ids: list[str]) -> str:
+    facts = [state.facts[fact_id] for fact_id in fact_ids if fact_id in state.facts]
+    if not facts:
+        return fact_ids[-1] if fact_ids else ""
+    return max(
+        facts,
+        key=lambda fact: (
+            fact.confidence,
+            not fact.inferred,
+            fact.observed_at,
+            fact.id,
+        ),
+    ).id
+
+
+def _supporting_ids_for_facts(state: State, fact_ids: list[str]) -> list[str]:
+    supporting_ids: list[str] = []
+    for fact_id in fact_ids:
+        fact = state.facts.get(fact_id)
+        if fact is None:
+            supporting_ids.append(fact_id)
+            continue
+        supporting_ids.extend(fact.evidence_ids)
+        if fact.source_fact_id:
+            supporting_ids.append(fact.source_fact_id)
+    return _dedupe_sorted(supporting_ids)
 
 
 def build_observation_view(state: State) -> list[ObservationView]:
