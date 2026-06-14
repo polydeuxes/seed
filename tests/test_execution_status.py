@@ -46,7 +46,81 @@ def test_execution_status_emitted_during_observation_collection_and_ingestion():
     phases = [status.phase for status in consumer.statuses]
     assert "observation_collection" in phases
     assert "observation_ingestion" in phases
+    assert "event_persistence" in phases
+    assert any(status.message == "Generating events..." for status in consumer.statuses)
     assert any(status.message == "Writing events" for status in consumer.statuses)
+
+
+def test_repository_observation_emits_collection_status():
+    ledger = EventLedger()
+    consumer = RecordingExecutionStatusConsumer()
+
+    ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        FakeObservationSource(
+            [_observation("repo")],
+            name="repository_source",
+            source_type="discovery",
+        ),
+        "ws",
+        status_consumer=consumer,
+    )
+
+    assert (
+        consumer.statuses[0].message == "Collecting repository_source observations..."
+    )
+    assert any(
+        status.message == "Collected 1 observations." and status.completed
+        for status in consumer.statuses
+    )
+
+
+def test_repository_observation_emits_ingestion_and_event_writing_after_collection():
+    ledger = EventLedger()
+    consumer = RecordingExecutionStatusConsumer()
+
+    ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        FakeObservationSource(
+            [_observation("repo")],
+            name="repository_source",
+            source_type="discovery",
+        ),
+        "ws",
+        status_consumer=consumer,
+    )
+
+    messages = [status.message for status in consumer.statuses]
+    assert messages.index("Collected 1 observations.") < messages.index(
+        "Generating events..."
+    )
+    assert any(
+        status.phase == "event_persistence"
+        and status.message == "Writing events"
+        and status.current == 3
+        and status.total == 3
+        for status in consumer.statuses
+    )
+
+
+def test_local_host_observation_uses_shared_ingestion_status_path():
+    ledger = EventLedger()
+    consumer = RecordingExecutionStatusConsumer()
+
+    ObservationCollectionService(ObservationIngestor(ledger)).collect(
+        FakeObservationSource(
+            [_observation("local")],
+            name="local-host",
+            source_type="discovery",
+        ),
+        "ws",
+        status_consumer=consumer,
+    )
+
+    assert any(
+        status.message == "Collecting local-host observations..."
+        for status in consumer.statuses
+    )
+    assert any(status.phase == "observation_ingestion" for status in consumer.statuses)
+    assert any(status.phase == "event_persistence" for status in consumer.statuses)
 
 
 def test_cli_consumes_execution_status_as_operator_feedback():
@@ -114,7 +188,16 @@ def test_progress_and_phase_only_statuses_are_supported():
     )
 
     assert any(
-        status.message == "Writing events" and status.current == 2 and status.total == 2
+        status.message == "Generating events"
+        and status.current == 2
+        and status.total == 2
+        for status in consumer.statuses
+    )
+    assert any(
+        status.phase == "event_persistence"
+        and status.message == "Writing events"
+        and status.current == 6
+        and status.total == 6
         for status in consumer.statuses
     )
     assert ExecutionStatus("cache", "Loading projection cache...").total is None
