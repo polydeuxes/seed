@@ -100,7 +100,7 @@ For the current status of these concerns and the active frontier, see `architect
 | What do foundational terms mean? | `ontology.md` for concise vocabulary; `foundational_ontology_reconciliation.md` for the audit |
 | What do scoped terms mean? | Scoped `*_vocabulary.md` documents |
 | Why was a scoped decision made? | Scoped `*_reconciliation.md` documents |
-| How should natural-language requests be treated? | `natural_language_observation_and_intent_derivation_reconciliation.md`, `operator_intent_question_and_claim_interface_reconciliation.md` |
+| How should natural-language requests be treated? | `natural_language_observation_and_intent_derivation_reconciliation.md`, `operator_intent_question_and_claim_interface_reconciliation.md`, `input_inspection_boundary_reconciliation.md` |
 | How should agency or attribution be handled? | `agency_and_attribution_reconciliation.md` |
 | How should continuation across handoffs be preserved? | `handoff_document_boundary_reconciliation.md`, `handoff_template_and_continuation_protocol_reconciliation.md`, `handoff_consumption_activation_reconciliation.md`, `handoff_bootstrap_and_summary_reconciliation.md`, `continuation_context_and_working_state_reconciliation.md`, `bootstrap_invariants.md` |
 | How should cross-Seed imports or federation be treated? | `cross_seed_provenance_and_federation_reconciliation.md` |
