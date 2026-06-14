@@ -15,6 +15,7 @@ from seed_runtime.observation_sources import (
 )
 from seed_runtime.observations import Observation, ObservationIngestor
 from seed_runtime.state import StateProjector
+from seed_runtime.state_views import build_fact_view
 
 BASE_TIME = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
@@ -142,6 +143,86 @@ def test_repository_source_ingests_through_projection_without_grep_or_behavior(t
     assert not state.get_current_facts("seed_runtime.state", "calls")
     assert not state.get_current_facts("seed_runtime.state", "entrypoints")
     assert all(fact.predicate in {"imports", "defines"} for fact in facts)
+
+
+def test_repeated_repository_observation_preserves_history_but_stabilizes_current_claims(tmp_path):
+    source_file = tmp_path / "seed_runtime" / "state.py"
+    source_file.parent.mkdir()
+    source_file.write_text(
+        "import os\n"
+        "from seed_runtime.projection_store import project_state_with_cache\n"
+        "class StateProjector:\n"
+        "    pass\n"
+        "def entrypoints():\n"
+        "    pass\n",
+        encoding="utf-8",
+    )
+    tests_dir = tmp_path / "tests"
+    tests_dir.mkdir()
+    (tests_dir / "test_state.py").write_text(
+        "from seed_runtime.state import StateProjector\n"
+        "def test_state_projector():\n"
+        "    pass\n",
+        encoding="utf-8",
+    )
+    ledger = EventLedger()
+    service = ObservationCollectionService(
+        ObservationIngestor(ledger), normalization_pipeline=None
+    )
+    source = RepositorySourceObservationSource(tmp_path, observed_at=BASE_TIME)
+
+    first_facts = service.collect(source, "ws_repository")
+    first_state = StateProjector(ledger).project("ws_repository")
+    first_views = build_fact_view(first_state)
+    first_durable_count = len(first_views)
+    first_observation_count = len(first_state.observations)
+    first_evidence_count = len(first_state.evidence)
+    first_ledger_fact_count = len(first_state.facts)
+
+    second_facts = service.collect(source, "ws_repository")
+    second_state = StateProjector(ledger).project("ws_repository")
+    second_views = build_fact_view(second_state)
+
+    assert len(first_facts) == len(second_facts)
+    assert len(second_views) == first_durable_count
+    assert len(second_state.observations) == first_observation_count * 2
+    assert len(second_state.evidence) == first_evidence_count * 2
+    assert len(second_state.facts) == first_ledger_fact_count * 2
+
+    for predicate in ("imports", "defines", "entrypoints"):
+        values = [
+            view.object
+            for view in second_views
+            if view.subject == "seed_runtime.state" and view.predicate == predicate
+        ]
+        assert values == sorted(set(values))
+
+    support = next(
+        support
+        for support in second_state.get_fact_supports(
+            "seed_runtime.state",
+            "defines",
+            dimensions={"path": "seed_runtime/state.py"},
+        )
+        if support.value == "seed_runtime.state.StateProjector"
+    )
+    assert len(support.supporting_fact_ids) == 2
+
+    import_support = next(
+        support
+        for support in second_state.get_fact_supports(
+            "seed_runtime.state",
+            "imports",
+            dimensions={"path": "seed_runtime/state.py"},
+        )
+        if support.value == "os"
+    )
+    assert len(import_support.supporting_fact_ids) == 2
+
+    assert all(
+        view.predicate not in {"filesystem_free_bytes", "availability_status", "up"}
+        for view in second_views
+    )
 
 
 def test_collection_preserves_provenance():
