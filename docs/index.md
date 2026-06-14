@@ -126,6 +126,7 @@ Use this file to find the right document family before reading specific document
 - `input_source_authority_reconciliation.md`
 - `documentation_observation_design.md`
 - `documentation_observation_frontier.md`
+- `documentation_prose_as_language_bearing_source_reconciliation.md`
 - `documentation_observation_characterization.md`
 - `repository_observation_design.md`
 - `repository_observation_frontier.md`
