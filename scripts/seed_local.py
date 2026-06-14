@@ -20,7 +20,10 @@ if str(REPO_ROOT) not in sys.path:
 
 from seed_runtime.action_plans import ActionPlanService, ActionPlanTransitionError
 from seed_runtime.ansible_inventory_source import AnsibleInventoryObservationSource
-from seed_runtime.candidate_requests import inspect_candidate_requests
+from seed_runtime.candidate_requests import (
+    inspect_candidate_requests,
+    inspect_candidate_routes,
+)
 from seed_runtime.capability_inventory import (
     CapabilityInventoryEntry,
     build_capability_inventory,
@@ -1036,6 +1039,14 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--candidate-routes",
+        metavar="TEXT",
+        help=(
+            "inspect language-derived candidate routes as read-only JSON; "
+            "does not select capabilities, evaluate policy, or execute tools"
+        ),
+    )
+    parser.add_argument(
         "--state-summary",
         action="store_true",
         help=(
@@ -1269,6 +1280,7 @@ def validate_lifecycle_args(
         bool(args.current_issues),
         bool(args.decision_context),
         bool(args.candidate_requests),
+        bool(args.candidate_routes),
         bool(args.state_summary),
         bool(args.integrity_summary),
         bool(args.inferred_facts),
@@ -1289,7 +1301,7 @@ def validate_lifecycle_args(
             "--why-run, --fact-support, --best-fact, "
             "--current-facts, --current-observations, --current-requirements, "
             "--current-capabilities, --capability-status, --current-issues, "
-            "--decision-context, --candidate-requests, "
+            "--decision-context, --candidate-requests, --candidate-routes, "
             "--state-summary, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --rebuild-state-cache, --state-cache-status, "
@@ -4414,6 +4426,16 @@ def main(argv: list[str] | None = None) -> int:
         print(
             json.dumps(
                 to_plain(inspect_candidate_requests(args.candidate_requests)),
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        return 0
+
+    if args.candidate_routes:
+        print(
+            json.dumps(
+                to_plain(inspect_candidate_routes(args.candidate_routes)),
                 indent=2,
                 sort_keys=True,
             )
