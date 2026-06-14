@@ -123,6 +123,7 @@ Use this file to find the right document family before reading specific document
 - `current_observation_evidence_change_event_implementation_audit.md`
 - `current_observation_evidence_change_event_implementation_findings.md`
 - `source_definitions_and_entrypoint_observation_reconciliation.md`
+- `source_navigation_surface_reconciliation.md`
 - `input_source_authority_reconciliation.md`
 - `documentation_observation_design.md`
 - `documentation_observation_frontier.md`

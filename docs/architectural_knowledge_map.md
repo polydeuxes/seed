@@ -204,6 +204,7 @@ Start with:
 * `repository_observation_frontier.md`
 * `architectural_knowledge_map.md`
 * `navigation_hygiene_audit.md`
+* `source_navigation_surface_reconciliation.md`
 
 This is currently a frontier characterization, not a reconciliation or implementation plan. It records structural navigation, architectural navigation, and knowledge navigation as related but non-identical layers.
 
