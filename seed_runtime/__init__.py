@@ -14,6 +14,11 @@ from seed_runtime.capability_inventory import (
     CapabilitySupportSummary,
     build_capability_inventory,
 )
+from seed_runtime.capability_promotion_readiness import (
+    CapabilityPromotionReadiness,
+    CapabilityPromotionReadinessInspection,
+    build_capability_promotion_readiness_inspection,
+)
 from seed_runtime.entity_type_catalog import EntityTypeCatalog, EntityTypeDefinition
 from seed_runtime.inference_catalog import InferenceCatalog, InferenceRule
 from seed_runtime.integrity_summary import (
@@ -81,6 +86,9 @@ __all__ = [
     "CapabilityInventoryEntry",
     "CapabilitySupportSummary",
     "build_capability_inventory",
+    "CapabilityPromotionReadiness",
+    "CapabilityPromotionReadinessInspection",
+    "build_capability_promotion_readiness_inspection",
     "VerificationEvidence",
     "VerificationEvidenceInspection",
     "build_verification_evidence",

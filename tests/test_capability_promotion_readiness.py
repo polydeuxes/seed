@@ -67,6 +67,22 @@ def test_promotion_readiness_can_be_inspected_and_preserves_support(tmp_path):
     assert "promotion_readiness_not_promotion" in readiness.boundary_notes
 
 
+def test_promotion_readiness_is_available_from_runtime_public_api(tmp_path):
+    from seed_runtime import build_capability_promotion_readiness_inspection as public_builder
+
+    ssh = tmp_path / "ssh"
+    ssh.write_text("stub", encoding="utf-8")
+    ssh.chmod(0o755)
+    ledger = EventLedger()
+    ledger.append("fact.observed", "ws", {"fact": to_plain(_package_fact("openssh-client"))})
+
+    inspection = public_builder(_project(ledger), filter_text="ssh", path_env=str(tmp_path))
+
+    assert inspection.readiness[0].candidate == "ssh_client"
+    assert inspection.readiness[0].promotion_readiness == "supported"
+    assert "no_capability_verified_fact_creation" in inspection.notes
+
+
 def test_promotion_readiness_reports_missing_verification_support(tmp_path):
     ledger = EventLedger()
     ledger.append("fact.observed", "ws", {"fact": to_plain(_package_fact("openssh-client"))})
