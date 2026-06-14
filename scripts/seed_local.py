@@ -29,6 +29,9 @@ from seed_runtime.capability_inventory import (
     CapabilityInventoryEntry,
     build_capability_inventory,
 )
+from seed_runtime.capability_promotion_readiness import (
+    build_capability_promotion_readiness_inspection,
+)
 from seed_runtime.capability_verification import build_capability_verification_inspection
 from seed_runtime.verification_evidence import build_verification_evidence
 from seed_runtime.context import ContextComposer
@@ -1212,6 +1215,17 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--capability-promotion-readiness",
+        nargs="?",
+        const="__all__",
+        metavar="FILTER",
+        help=(
+            "print read-only capability verification promotion-readiness as deterministic JSON; "
+            "optional FILTER such as ssh, python, docker, git, or curl; does not promote, "
+            "create capability_verified facts, select, evaluate policy, authorize, or execute"
+        ),
+    )
+    parser.add_argument(
         "--capability-verification",
         nargs="?",
         const="__all__",
@@ -1317,6 +1331,7 @@ def validate_lifecycle_args(
         bool(args.capability_candidates),
         bool(args.verification_evidence),
         bool(args.capability_verification),
+        bool(args.capability_promotion_readiness),
         bool(args.current_issues),
         bool(args.decision_context),
         bool(args.candidate_requests),
@@ -1341,7 +1356,8 @@ def validate_lifecycle_args(
             "--why-run, --fact-support, --best-fact, "
             "--current-facts, --current-observations, --current-requirements, "
             "--current-capabilities, --capability-status, --capability-candidates, "
-            "--verification-evidence, --capability-verification, --current-issues, "
+            "--verification-evidence, --capability-verification, "
+            "--capability-promotion-readiness, --current-issues, "
             "--decision-context, --candidate-requests, --candidate-routes, "
             "--state-summary, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
@@ -4716,6 +4732,25 @@ def main(argv: list[str] | None = None) -> int:
             json.dumps(
                 to_plain(
                     build_verification_evidence(
+                        projected_state_from_args(args), filter_text=filter_text
+                    )
+                ),
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        return 0
+
+    if args.capability_promotion_readiness:
+        filter_text = (
+            None
+            if args.capability_promotion_readiness == "__all__"
+            else args.capability_promotion_readiness
+        )
+        print(
+            json.dumps(
+                to_plain(
+                    build_capability_promotion_readiness_inspection(
                         projected_state_from_args(args), filter_text=filter_text
                     )
                 ),
