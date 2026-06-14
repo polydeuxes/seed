@@ -20,6 +20,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from seed_runtime.action_plans import ActionPlanService, ActionPlanTransitionError
 from seed_runtime.ansible_inventory_source import AnsibleInventoryObservationSource
+from seed_runtime.candidate_requests import inspect_candidate_requests
 from seed_runtime.capability_inventory import (
     CapabilityInventoryEntry,
     build_capability_inventory,
@@ -1027,6 +1028,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="print projected type assertions for one entity and exit",
     )
     parser.add_argument(
+        "--candidate-requests",
+        metavar="TEXT",
+        help=(
+            "inspect language-derived candidate requests as read-only JSON; "
+            "does not select capabilities, evaluate policy, or execute tools"
+        ),
+    )
+    parser.add_argument(
         "--state-summary",
         action="store_true",
         help=(
@@ -1259,6 +1268,7 @@ def validate_lifecycle_args(
         bool(args.capability_status),
         bool(args.current_issues),
         bool(args.decision_context),
+        bool(args.candidate_requests),
         bool(args.state_summary),
         bool(args.integrity_summary),
         bool(args.inferred_facts),
@@ -1279,7 +1289,7 @@ def validate_lifecycle_args(
             "--why-run, --fact-support, --best-fact, "
             "--current-facts, --current-observations, --current-requirements, "
             "--current-capabilities, --capability-status, --current-issues, "
-            "--decision-context, "
+            "--decision-context, --candidate-requests, "
             "--state-summary, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --rebuild-state-cache, --state-cache-status, "
@@ -4398,6 +4408,16 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.entity_types or args.entity_type:
         print(format_entity_types(projected_state_from_args(args), args.entity_type))
+        return 0
+
+    if args.candidate_requests:
+        print(
+            json.dumps(
+                to_plain(inspect_candidate_requests(args.candidate_requests)),
+                indent=2,
+                sort_keys=True,
+            )
+        )
         return 0
 
     if args.state_summary:
