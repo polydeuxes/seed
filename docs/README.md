@@ -143,6 +143,7 @@ Prometheus cleanup should route here before implementation when dealing with `up
 
 * [`repository_observation_frontier.md`](repository_observation_frontier.md) — repository observation frontier.
 * [`repository_observation_source_design.md`](repository_observation_source_design.md) — repository observation source design.
+* [`input_inspection_boundary_reconciliation.md`](input_inspection_boundary_reconciliation.md) — reconciliation of source/repository observation inspection and language candidate inspection as a shared preservation pattern but not yet one shared boundary.
 * [`documentation_observation_frontier.md`](documentation_observation_frontier.md) — documentation observation frontier.
 * [`knowledge_navigation_layers_frontier.md`](knowledge_navigation_layers_frontier.md) — navigation-layer frontier connecting repository, architecture, and knowledge navigation questions.
 * [`self_observation_reconciliation.md`](self_observation_reconciliation.md) — self-observation boundary reasoning.
