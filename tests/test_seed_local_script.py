@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -4268,6 +4269,123 @@ def test_cli_observe_repository_source_ingests_queryable_relationships(tmp_path,
         == 0
     )
     assert "seed_runtime.state.StateProjector" in capsys.readouterr().out
+
+
+def test_cli_repository_current_facts_filter_matches_broad_relationship_facts(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "repository-current-facts.sqlite"
+    repo_path = tmp_path / "repo"
+    source_dir = repo_path / "tests"
+    source_dir.mkdir(parents=True)
+    (source_dir / "test_toolkit_validator.py").write_text(
+        "from seed_runtime.toolkit import CandidateStore, ToolNeed\n"
+        "from seed_runtime.validator import ToolkitValidator\n"
+        "\n"
+        "def test_validator_accepts_generated_stub_candidate():\n"
+        "    pass\n"
+        "\n"
+        "def test_validator_fails_candidate_tests_that_exceed_timeout():\n"
+        "    pass\n",
+        encoding="utf-8",
+    )
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--observe-repository-source",
+                str(repo_path),
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    assert seed_local.main(["--db", str(db_path), "--current-facts"]) == 0
+    broad_output = capsys.readouterr().out
+    expected_defines = [
+        line
+        for line in broad_output.splitlines()
+        if line.startswith("* tests.test_toolkit_validator defines ")
+    ]
+    expected_imports = [
+        line
+        for line in broad_output.splitlines()
+        if line.startswith("* tests.test_toolkit_validator imports ")
+    ]
+
+    assert expected_defines == [
+        "* tests.test_toolkit_validator defines "
+        "tests.test_toolkit_validator.test_validator_accepts_generated_stub_candidate "
+        "(path=tests/test_toolkit_validator.py)",
+        "* tests.test_toolkit_validator defines "
+        "tests.test_toolkit_validator.test_validator_fails_candidate_tests_that_exceed_timeout "
+        "(path=tests/test_toolkit_validator.py)",
+    ]
+    assert expected_imports == [
+        "* tests.test_toolkit_validator imports CandidateStore "
+        "(path=tests/test_toolkit_validator.py)",
+        "* tests.test_toolkit_validator imports ToolNeed "
+        "(path=tests/test_toolkit_validator.py)",
+        "* tests.test_toolkit_validator imports ToolkitValidator "
+        "(path=tests/test_toolkit_validator.py)",
+    ]
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--current-facts",
+                "tests.test_toolkit_validator",
+                "defines",
+            ]
+        )
+        == 0
+    )
+    filtered_defines = capsys.readouterr().out.splitlines()
+    assert filtered_defines == [
+        line.removeprefix("* tests.test_toolkit_validator defines ")
+        for line in expected_defines
+    ]
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--current-facts",
+                "tests.test_toolkit_validator",
+                "imports",
+            ]
+        )
+        == 0
+    )
+    filtered_imports = capsys.readouterr().out.splitlines()
+    assert filtered_imports == [
+        line.removeprefix("* tests.test_toolkit_validator imports ")
+        for line in expected_imports
+    ]
+
+
+def test_cli_current_facts_broken_pipe_exits_without_traceback(tmp_path):
+    db_path = tmp_path / "broken-pipe.sqlite"
+    process = subprocess.run(
+        f"{sys.executable} {SCRIPT_PATH} --db {db_path} "
+        "--fact node115 alias node115.local --current-facts | head -1",
+        shell=True,
+        cwd=Path.cwd(),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert process.returncode == 0
+    assert "BrokenPipeError" not in process.stderr
+    assert "Traceback" not in process.stderr
 
 
 def _persist_storage_impact_facts(seed_local, db_path):

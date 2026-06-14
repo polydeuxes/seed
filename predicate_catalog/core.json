@@ -126,6 +126,12 @@
       "cardinality": "multi"
     },
     {
+      "predicate": "defines",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
       "predicate": "dns_resolver",
       "kind": "durable_fact",
       "value_type": "string",
@@ -228,6 +234,12 @@
     },
     {
       "predicate": "hosts_file_alias",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "imports",
       "kind": "durable_fact",
       "value_type": "string",
       "cardinality": "multi"
