@@ -4720,4 +4720,10 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except BrokenPipeError:
+        try:
+            sys.stdout.close()
+        finally:
+            raise SystemExit(0)
