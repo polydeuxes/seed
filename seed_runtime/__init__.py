@@ -2,6 +2,12 @@
 
 from seed_runtime.ansible_inventory_source import AnsibleInventoryObservationSource
 from seed_runtime.capability_catalog import CapabilityCatalog
+from seed_runtime.capability_candidates import (
+    CapabilityCandidate,
+    CapabilityCandidateEvidence,
+    CapabilityCandidateInspection,
+    build_capability_candidates,
+)
 from seed_runtime.capability_inventory import (
     CapabilityEvidenceSummary,
     CapabilityInventoryEntry,
@@ -62,6 +68,10 @@ from seed_runtime.state import EntityRelationship, EntityTypeAssertion
 __all__ = [
     "AnsibleInventoryObservationSource",
     "CapabilityCatalog",
+    "CapabilityCandidate",
+    "CapabilityCandidateEvidence",
+    "CapabilityCandidateInspection",
+    "build_capability_candidates",
     "CapabilityEvidenceSummary",
     "CapabilityInventoryEntry",
     "CapabilitySupportSummary",
