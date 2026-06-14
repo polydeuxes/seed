@@ -1769,7 +1769,11 @@ def _can_use_state_cache(
     )
 
 
-def fact_query_state(args: argparse.Namespace) -> State:
+def fact_query_state(
+    args: argparse.Namespace,
+    *,
+    status_consumer: ExecutionStatusConsumer | None = None,
+) -> State:
     """Seed requested dev state and return the projected State for fact queries."""
 
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
@@ -1788,7 +1792,11 @@ def fact_query_state(args: argparse.Namespace) -> State:
             args, measurement_history_limit=history_limit
         ):
             state, _status = project_state_with_cache(
-                ledger, args.workspace, store, projector=projector
+                ledger,
+                args.workspace,
+                store,
+                projector=projector,
+                status_consumer=status_consumer,
             )
             return state
         return projector.project(args.workspace)
@@ -1799,7 +1807,11 @@ def fact_query_state(args: argparse.Namespace) -> State:
                 close()
 
 
-def projected_state_from_args(args: argparse.Namespace) -> State:
+def projected_state_from_args(
+    args: argparse.Namespace,
+    *,
+    status_consumer: ExecutionStatusConsumer | None = None,
+) -> State:
     """Return persisted projected State without ingesting or executing anything."""
 
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
@@ -1808,7 +1820,11 @@ def projected_state_from_args(args: argparse.Namespace) -> State:
         projector = _state_projector_from_args(args, ledger)
         if store is not None and _can_use_state_cache(args):
             state, _status = project_state_with_cache(
-                ledger, args.workspace, store, projector=projector
+                ledger,
+                args.workspace,
+                store,
+                projector=projector,
+                status_consumer=status_consumer,
             )
             return state
         return projector.project(args.workspace)
@@ -1821,6 +1837,8 @@ def projected_state_from_args(args: argparse.Namespace) -> State:
 
 def projected_state_summary_from_args(
     args: argparse.Namespace,
+    *,
+    status_consumer: ExecutionStatusConsumer | None = None,
 ) -> tuple[StateSummary, dict[str, Any]]:
     """Return the state-summary views, using a dependent summary read-model cache."""
 
@@ -1830,6 +1848,11 @@ def projected_state_summary_from_args(
         latest_events = ledger.list_events(args.workspace)
         current_last_event_id = latest_events[-1].id if latest_events else None
         if store is not None and _can_use_state_cache(args):
+            emit_status(
+                status_consumer,
+                "state_summary_cache_load",
+                "Loading state-summary cache...",
+            )
             snapshot = store.load_summary_snapshot(
                 args.workspace,
                 STATE_SUMMARY_PROJECTION_NAME,
@@ -1838,14 +1861,31 @@ def projected_state_summary_from_args(
                 state_last_event_id=current_last_event_id,
             )
             if snapshot is not None:
+                emit_status(
+                    status_consumer,
+                    "state_summary_cache_load",
+                    "State-summary cache: hit",
+                    completed=True,
+                )
                 payload = snapshot.summary_payload
                 view_summary = StateSummary(**payload["state_view_summary"])
                 return view_summary, payload["operator_summary"]
 
+        if store is not None and _can_use_state_cache(args):
+            emit_status(
+                status_consumer,
+                "state_summary_cache_load",
+                "State-summary cache: miss",
+                completed=True,
+            )
         projector = _state_projector_from_args(args, ledger)
         if store is not None and _can_use_state_cache(args):
             state, _status = project_state_with_cache(
-                ledger, args.workspace, store, projector=projector
+                ledger,
+                args.workspace,
+                store,
+                projector=projector,
+                status_consumer=status_consumer,
             )
         else:
             state = projector.project(args.workspace)
@@ -4500,7 +4540,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.state_summary:
-        view_summary, operator_summary = projected_state_summary_from_args(args)
+        view_summary, operator_summary = projected_state_summary_from_args(
+            args, status_consumer=CliExecutionStatusConsumer()
+        )
         print(
             format_state_view_summary(view_summary)
             + "\n\n"
@@ -4658,12 +4700,20 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.current_facts is not None:
         if len(args.current_facts) == 0:
-            print(format_fact_views(build_fact_view(projected_state_from_args(args))))
+            print(
+                format_fact_views(
+                    build_fact_view(
+                        projected_state_from_args(
+                            args, status_consumer=CliExecutionStatusConsumer()
+                        )
+                    )
+                )
+            )
             return 0
         subject, predicate = args.current_facts
         print(
             format_current_facts(
-                fact_query_state(args),
+                fact_query_state(args, status_consumer=CliExecutionStatusConsumer()),
                 subject,
                 predicate,
                 include_expired=args.include_expired,
@@ -4713,7 +4763,10 @@ def main(argv: list[str] | None = None) -> int:
             json.dumps(
                 to_plain(
                     build_capability_candidates(
-                        projected_state_from_args(args), filter_text=filter_text
+                        projected_state_from_args(
+                            args, status_consumer=CliExecutionStatusConsumer()
+                        ),
+                        filter_text=filter_text,
                     )
                 ),
                 indent=2,
@@ -4732,7 +4785,10 @@ def main(argv: list[str] | None = None) -> int:
             json.dumps(
                 to_plain(
                     build_verification_evidence(
-                        projected_state_from_args(args), filter_text=filter_text
+                        projected_state_from_args(
+                            args, status_consumer=CliExecutionStatusConsumer()
+                        ),
+                        filter_text=filter_text,
                     )
                 ),
                 indent=2,
@@ -4751,7 +4807,10 @@ def main(argv: list[str] | None = None) -> int:
             json.dumps(
                 to_plain(
                     build_capability_promotion_readiness_inspection(
-                        projected_state_from_args(args), filter_text=filter_text
+                        projected_state_from_args(
+                            args, status_consumer=CliExecutionStatusConsumer()
+                        ),
+                        filter_text=filter_text,
                     )
                 ),
                 indent=2,
@@ -4770,7 +4829,10 @@ def main(argv: list[str] | None = None) -> int:
             json.dumps(
                 to_plain(
                     build_capability_verification_inspection(
-                        projected_state_from_args(args), filter_text=filter_text
+                        projected_state_from_args(
+                            args, status_consumer=CliExecutionStatusConsumer()
+                        ),
+                        filter_text=filter_text,
                     )
                 ),
                 indent=2,

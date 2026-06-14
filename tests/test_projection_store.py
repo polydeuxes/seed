@@ -4,6 +4,7 @@ import sqlite3
 from datetime import datetime, timezone
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
+from seed_runtime.execution_status import RecordingExecutionStatusConsumer
 from seed_runtime.facts import Fact
 from seed_runtime.projection_store import (
     InMemoryProjectionStore,
@@ -470,7 +471,7 @@ def test_incremental_replay_matches_full_replay_and_preserves_order():
 
 def test_incremental_replay_never_skips_events_after_snapshot():
     ledger = EventLedger()
-    first = _append_fact(ledger, "ws", "fact_one", "docker")
+    first = _append_fact(ledger, "ws", "fact_one", "python")
     second = _append_fact(ledger, "ws", "fact_two", "podman")
     store = InMemoryProjectionStore()
     snapshot_state = StateProjector(ledger).project("ws")
@@ -745,3 +746,100 @@ def test_cli_state_cache_status_stale_snapshot_reports_miss_without_modifying_sn
             f"current last_event_id: {second.id}",
         ]
     )
+
+
+def test_projection_cache_status_surfaces_hit_and_miss_without_changing_state():
+    ledger = EventLedger()
+    _append_fact(ledger, "ws", "fact_one", "docker")
+    store = InMemoryProjectionStore()
+    miss_consumer = RecordingExecutionStatusConsumer()
+    hit_consumer = RecordingExecutionStatusConsumer()
+
+    missed_state, miss_status = project_state_with_cache(
+        ledger, "ws", store, status_consumer=miss_consumer
+    )
+    hit_state, hit_status = project_state_with_cache(
+        ledger, "ws", store, status_consumer=hit_consumer
+    )
+
+    assert miss_status.cache_hit is False
+    assert hit_status.cache_hit is True
+    assert state_to_payload(missed_state) == state_to_payload(hit_state)
+    assert any(
+        status.message == "State cache: miss" for status in miss_consumer.statuses
+    )
+    assert any(
+        status.message == "Projection replay" for status in miss_consumer.statuses
+    )
+    assert any(status.message == "State cache: hit" for status in hit_consumer.statuses)
+
+
+def test_projection_cache_status_surfaces_incremental_replay_without_changing_validity():
+    ledger = EventLedger()
+    first = _append_fact(ledger, "ws", "fact_one", "python")
+    store = InMemoryProjectionStore()
+    projector = CountingProjector(ledger)
+    project_state_with_cache(ledger, "ws", store, projector=projector)
+    _append_fact(ledger, "ws", "fact_two", "ruby")
+    consumer = RecordingExecutionStatusConsumer()
+
+    state, status = project_state_with_cache(
+        ledger, "ws", store, projector=projector, status_consumer=consumer
+    )
+    snapshot = store.load_snapshot(
+        "ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION
+    )
+
+    assert status.incremental_replay is True
+    assert status.events_applied == 1
+    assert status.snapshot_last_event_id == first.id
+    assert snapshot is not None
+    assert snapshot.last_event_id == state.last_event_id
+    assert any(
+        status.message == "Incremental replay" for status in consumer.statuses
+    )
+
+
+def test_inspection_cli_emits_projection_status_to_stderr_and_preserves_json_stdout(
+    tmp_path, capsys
+):
+    seed_local = _load_seed_local_module()
+    db_path = tmp_path / "inspection-status.sqlite"
+    ledger = SQLiteEventLedger(str(db_path))
+    _append_fact(ledger, "local", "fact_one", "openssh-client")
+    ledger.close()
+
+    assert (
+        seed_local.main(["--db", str(db_path), "--capability-candidates", "ssh"])
+        == 0
+    )
+    captured = capsys.readouterr()
+
+    assert captured.err.splitlines()[:3] == [
+        "Loading projection cache...",
+        "State cache: miss",
+        "Projection replay: 0 / 1",
+    ]
+    assert '"boundary": "capability_candidate_preservation_only"' in captured.out
+    assert "Loading projection cache" not in captured.out
+
+
+def test_state_summary_cli_surfaces_summary_cache_hit_and_state_cache_miss(
+    tmp_path, capsys
+):
+    seed_local = _load_seed_local_module()
+    db_path = tmp_path / "summary-status.sqlite"
+    ledger = SQLiteEventLedger(str(db_path))
+    _append_fact(ledger, "local", "fact_one", "docker")
+    ledger.close()
+
+    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+    first = capsys.readouterr()
+    assert "State-summary cache: miss" in first.err
+    assert "State cache: miss" in first.err
+
+    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+    second = capsys.readouterr()
+    assert "State-summary cache: hit" in second.err
+    assert "State cache:" not in second.err
+    assert first.out == second.out
