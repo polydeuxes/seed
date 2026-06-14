@@ -52,6 +52,7 @@ Use these completed reconciliations as stable boundary references when returning
 * [`agency_and_attribution_reconciliation.md`](agency_and_attribution_reconciliation.md) — attribution as a supportable claim without consciousness, desire, or agency overclaims.
 * [`natural_language_observation_and_intent_derivation_reconciliation.md`](natural_language_observation_and_intent_derivation_reconciliation.md) — natural language as observation of communicative acts and interpretation as candidate meaning.
 * [`natural_language_request_routing_audit.md`](natural_language_request_routing_audit.md) — audit rejecting silent language-to-nearest-capability execution collapse.
+* [`documentation_prose_as_language_bearing_source_reconciliation.md`](documentation_prose_as_language_bearing_source_reconciliation.md) — reconciliation distinguishing documentation prose as language-bearing source from operator communicative acts and executable authority.
 * [`natural_language_execution_path_inventory_audit.md`](natural_language_execution_path_inventory_audit.md) — inventory of existing implementation surfaces for language processing, capability selection, execution decisions, ambiguity, and boundary gaps.
 * [`handoff_document_boundary_reconciliation.md`](handoff_document_boundary_reconciliation.md) — handoff document boundaries and authority limits.
 * [`handoff_template_and_continuation_protocol_reconciliation.md`](handoff_template_and_continuation_protocol_reconciliation.md) — handoff template and continuation protocol boundaries.
