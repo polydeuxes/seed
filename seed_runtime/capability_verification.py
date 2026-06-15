@@ -11,10 +11,20 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
-from seed_runtime.capability_candidates import CapabilityCandidate, build_capability_candidates
-from seed_runtime.capability_inventory import CapabilityInventoryEntry, build_capability_inventory
+from seed_runtime.capability_candidates import (
+    CapabilityCandidate,
+    build_capability_candidates,
+)
+from seed_runtime.capability_inventory import (
+    CapabilityInventoryEntry,
+    build_capability_inventory,
+)
+from seed_runtime.fact_index import DerivedFactIndex
 from seed_runtime.state import State
-from seed_runtime.verification_evidence import VerificationEvidence, build_verification_evidence
+from seed_runtime.verification_evidence import (
+    VerificationEvidence,
+    build_verification_evidence,
+)
 
 _VERIFICATION_BOUNDARY_NOTES = (
     "capability_candidate_not_verified_capability",
@@ -39,9 +49,13 @@ class CapabilityVerification:
     supporting_evidence: list[object] = field(default_factory=list)
     verification_supporting_facts: list[str] = field(default_factory=list)
     verification_supporting_evidence: list[object] = field(default_factory=list)
-    acquired_verification_evidence: list[VerificationEvidence] = field(default_factory=list)
+    acquired_verification_evidence: list[VerificationEvidence] = field(
+        default_factory=list
+    )
     rationale: str = ""
-    boundary_notes: list[str] = field(default_factory=lambda: list(_VERIFICATION_BOUNDARY_NOTES))
+    boundary_notes: list[str] = field(
+        default_factory=lambda: list(_VERIFICATION_BOUNDARY_NOTES)
+    )
 
 
 @dataclass(frozen=True)
@@ -55,7 +69,11 @@ class CapabilityVerificationInspection:
 
 
 def build_capability_verification_inspection(
-    state: State, *, filter_text: str | None = None, now: datetime | None = None
+    state: State,
+    *,
+    filter_text: str | None = None,
+    now: datetime | None = None,
+    fact_index: DerivedFactIndex | None = None,
 ) -> CapabilityVerificationInspection:
     """Inspect candidate verification status from projected State only.
 
@@ -66,10 +84,18 @@ def build_capability_verification_inspection(
     unverified because candidate evidence is not verification authority.
     """
 
-    candidate_inspection = build_capability_candidates(state, filter_text=filter_text)
+    candidate_inspection = build_capability_candidates(
+        state, filter_text=filter_text, fact_index=fact_index
+    )
     verification_evidence_by_candidate: dict[str, list[VerificationEvidence]] = {}
-    for evidence in build_verification_evidence(state, filter_text=filter_text).evidence:
-        verification_evidence_by_candidate.setdefault(evidence.candidate, []).append(evidence)
+    for evidence in build_verification_evidence(
+        state,
+        filter_text=filter_text,
+        candidate_inspection=candidate_inspection,
+    ).evidence:
+        verification_evidence_by_candidate.setdefault(evidence.candidate, []).append(
+            evidence
+        )
 
     inventory_by_capability: dict[str, CapabilityInventoryEntry] = {
         entry.capability: entry
