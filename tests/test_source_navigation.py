@@ -120,3 +120,103 @@ def test_navigation_query_is_read_only(tmp_path):
         len(state.facts),
         list(state.fact_supports),
     ) == before
+
+
+def _project_dense_repository(tmp_path):
+    runtime_dir = tmp_path / "seed_runtime"
+    runtime_dir.mkdir(exist_ok=True)
+    import_lines = "\n".join(f"from pkg.mod{i} import Import{i}" for i in range(12))
+    define_lines = "\n".join(
+        f"def function_{i}():\n    return Import{i % 12}\n" for i in range(12)
+    )
+    (runtime_dir / "dense.py").write_text(
+        f"{import_lines}\n\n{define_lines}",
+        encoding="utf-8",
+    )
+    ledger = EventLedger()
+    service = ObservationCollectionService(
+        ObservationIngestor(ledger), normalization_pipeline=None
+    )
+    source = RepositorySourceObservationSource(
+        tmp_path,
+        observed_at=BASE_TIME,
+        include_roots=("seed_runtime",),
+    )
+    service.collect(source, "ws")
+    return StateProjector(ledger).project("ws")
+
+
+def test_symbol_lookup_rendering_remains_fully_expanded(tmp_path):
+    rendered = format_source_navigation(
+        build_source_navigation(_project_repository(tmp_path), "state_summary")
+    )
+
+    assert "Definitions:" in rendered
+    assert "Definitions: 1 total" not in rendered
+    assert "module: seed_runtime.state_summary_views" in rendered
+    assert "path: seed_runtime/state_summary_views.py" in rendered
+    assert "support facts: 1" in rendered
+    assert "representative fact:" in rendered
+    assert "representative support:" in rendered
+
+
+def test_path_lookup_rendering_is_bounded(tmp_path):
+    rendered = format_source_navigation(
+        build_source_navigation(
+            _project_dense_repository(tmp_path), "seed_runtime/dense.py"
+        )
+    )
+
+    assert "Definitions: 12 total, showing 10" in rendered
+    assert "Imports: 12 total, showing 10" in rendered
+    assert "  seed_runtime.dense.function_7" in rendered
+    assert "  seed_runtime.dense.function_8" not in rendered
+    assert "  Import7" in rendered
+    assert "  Import8" not in rendered
+    assert rendered.count("representative fact:") == 0
+    assert rendered.count("representative support:") == 0
+
+
+def test_module_lookup_rendering_is_bounded(tmp_path):
+    rendered = format_source_navigation(
+        build_source_navigation(
+            _project_dense_repository(tmp_path), "seed_runtime.dense"
+        )
+    )
+
+    assert "Definitions: 12 total, showing 10" in rendered
+    assert "Imports: 12 total, showing 10" in rendered
+    assert "  seed_runtime.dense.function_7" in rendered
+    assert "  seed_runtime.dense.function_8" not in rendered
+    assert "  Import7" in rendered
+    assert "  Import8" not in rendered
+
+
+def test_support_metadata_remains_available_from_bounded_and_exact_views(tmp_path):
+    state = _project_dense_repository(tmp_path)
+    bounded = format_source_navigation(
+        build_source_navigation(state, "seed_runtime/dense.py")
+    )
+    exact = format_source_navigation(build_source_navigation(state, "function_11"))
+
+    assert "Support:" in bounded
+    assert "support facts: 24" in bounded
+    assert "representative fact/support: available in exact symbol lookup" in bounded
+    assert "representative fact:" in exact
+    assert "representative support:" in exact
+
+
+def test_repeated_observation_rendering_stays_stable(tmp_path):
+    first = format_source_navigation(
+        build_source_navigation(_project_repository(tmp_path), "state_summary")
+    )
+    second = format_source_navigation(
+        build_source_navigation(
+            _project_repository(tmp_path, twice=True), "state_summary"
+        )
+    )
+
+    assert "support facts: 1" in first
+    assert "support facts: 2" in second
+    assert "seed_runtime.state_summary_views.state_summary" in second
+    assert "representative fact:" in second
