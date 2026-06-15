@@ -2574,6 +2574,116 @@ def test_cli_observe_local_host_prints_count_and_summary(monkeypatch, capsys):
     assert "source_type: discovery" in output
 
 
+def test_cli_observe_local_host_quiet_output_suppresses_rendering_only(
+    monkeypatch, tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "quiet-local.sqlite"
+    collected = {"count": 0}
+
+    class FakeLocalSource:
+        source_type = "discovery"
+        name = "fake-local-host"
+
+        def collect(self):
+            collected["count"] += 1
+            return [
+                seed_local.Observation(
+                    id="obs_cli_local_quiet",
+                    source_type="discovery",
+                    observed_at=seed_local.utc_now(),
+                    subject="node-a",
+                    predicate="os",
+                    value="linux",
+                )
+            ]
+
+    monkeypatch.setattr(seed_local, "LocalHostObservationSource", FakeLocalSource)
+
+    assert (
+        seed_local.main(["--db", str(db_path), "--observe-local-host", "--quiet-output"])
+        == 0
+    )
+    captured = capsys.readouterr()
+
+    assert collected["count"] == 1
+    assert captured.out == ""
+    assert "Collecting fake-local-host observations" in captured.err
+    assert "Collected 1 observations." in captured.err
+    assert "Normalizing fake-local-host observations" in captured.err
+    assert "Normalized 1 observations." in captured.err
+    assert "Ingesting fake-local-host observations" in captured.err
+    assert "Writing events" in captured.err
+    assert "Done." in captured.err
+
+    assert seed_local.main(["--db", str(db_path), "--current-facts", "node-a", "os"]) == 0
+    facts_output = capsys.readouterr().out
+    assert "linux" in facts_output
+
+    assert seed_local.main(["--db", str(db_path), "--events"]) == 0
+    events_output = capsys.readouterr().out
+    assert "observation.observed" in events_output
+    assert "evidence.observed" in events_output
+    assert "fact.observed" in events_output
+
+
+def test_cli_observe_repository_source_quiet_output_suppresses_rendering_only(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "quiet-repository-source.sqlite"
+    repo_path = tmp_path / "repo"
+    source_dir = repo_path / "seed_runtime"
+    source_dir.mkdir(parents=True)
+    (source_dir / "state.py").write_text(
+        "from seed_runtime.projection_store import project_state_with_cache\n"
+        "class StateProjector:\n"
+        "    pass\n",
+        encoding="utf-8",
+    )
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--observe-repository-source",
+                str(repo_path),
+                "--quiet-output",
+            ]
+        )
+        == 0
+    )
+    captured = capsys.readouterr()
+
+    assert captured.out == ""
+    assert "Collecting repository_source observations" in captured.err
+    assert "Normalizing repository_source observations" in captured.err
+    assert "Ingesting repository_source observations" in captured.err
+    assert "Writing events" in captured.err
+    assert "Done." in captured.err
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--current-facts",
+                "seed_runtime.state",
+                "defines",
+            ]
+        )
+        == 0
+    )
+    facts_output = capsys.readouterr().out
+    assert "seed_runtime.state.StateProjector" in facts_output
+
+    assert seed_local.main(["--db", str(db_path), "--events"]) == 0
+    events_output = capsys.readouterr().out
+    assert "observation.observed" in events_output
+    assert "evidence.observed" in events_output
+    assert "fact.observed" in events_output
+
 def test_cli_local_network_facts_appear_in_current_facts_and_impact(
     monkeypatch, tmp_path, capsys
 ):
