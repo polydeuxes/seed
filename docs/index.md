@@ -99,6 +99,7 @@ Use this file to find the right document family before reading specific document
 - `working_state_activation_failure_observation.md` — observation of activation-failure shapes, partial activation states, success signals, duplicate-work risks, and unresolved questions when available, found, read, or understood content still does not govern the current move.
 - `support_change_and_learning_observation.md` — observation of support-change evidence, understanding-change overlap, derivation-related changes, and learning-language divergence without defining support change or learning canonically.
 - `learning_as_lens_observation.md` — observation of learning language as a useful lens over support change, understanding change, derivation, distinction emergence, contradiction discovery, interpretation change, and responsibility routing without promoting learning into ontology.
+- `lens_as_observation_and_compression_pattern.md` — observation of broad concepts functioning as bounded lenses before decomposition into more precise support structures without defining lens canonically.
 - `bounty_board_and_investigation_selection_observation.md` — observation of how investigations appear to have become active, how inquiry historically moved, and how the bounty board preserves deferred inquiry without acting as roadmap authority.
 
 ## Foundational Ontology And Claim Semantics
