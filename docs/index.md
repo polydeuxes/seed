@@ -239,6 +239,7 @@ Use this file to find the right document family before reading specific document
 
 - `execution_status_and_operator_feedback_reconciliation.md`
 - `execution_status_emission_and_consumption_reconciliation.md`
+- `execution_status_producer_contract_reconciliation.md`
 - `execution_boundary_inventory_and_status_emission_audit.md`
 - `operator_investigation_workflow_reconciliation.md`
 - `operator_navigation_reconciliation.md`
