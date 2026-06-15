@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 from seed_runtime.evidence_graph import build_fact_evidence_view
+from seed_runtime.fact_index import DerivedFactIndex
 from seed_runtime.facts import Fact
 from seed_runtime.state import State
 
@@ -78,15 +79,16 @@ class CapabilityCandidateInspection:
 
 
 def build_capability_candidates(
-    state: State, *, filter_text: str | None = None
+    state: State,
+    *,
+    filter_text: str | None = None,
+    fact_index: DerivedFactIndex | None = None,
 ) -> CapabilityCandidateInspection:
     """Build capability candidates from projected State without side effects."""
 
     wanted = _normalize_filter(filter_text)
     support_by_candidate: dict[str, list[CapabilityCandidateEvidence]] = {}
-    for fact in state.facts.values():
-        if fact.predicate != "package_installed":
-            continue
+    for fact in _package_installed_facts(state, fact_index=fact_index):
         package_name = str(fact.value).strip().lower()
         for candidate in _PACKAGE_CAPABILITY_CANDIDATES.get(package_name, ()):
             if wanted and wanted not in {candidate, package_name}:
@@ -111,6 +113,20 @@ def build_capability_candidates(
         for candidate, evidence in sorted(support_by_candidate.items())
     ]
     return CapabilityCandidateInspection(candidates=candidates, filter=filter_text)
+
+
+def _package_installed_facts(
+    state: State, *, fact_index: DerivedFactIndex | None
+) -> list[Fact]:
+    if fact_index is None:
+        return [
+            fact for fact in state.facts.values() if fact.predicate == "package_installed"
+        ]
+
+    facts: list[Fact] = []
+    for subject in sorted(fact_index.fact_ids_by_subject_predicate):
+        facts.extend(fact_index.current_facts(state, subject, "package_installed"))
+    return facts
 
 
 def _candidate_evidence(state: State, fact: Fact) -> CapabilityCandidateEvidence:
