@@ -10,6 +10,11 @@ from datetime import datetime, timezone
 from typing import Any, Callable, Iterable, Literal
 
 from seed_runtime.events import EventLedger
+from seed_runtime.execution_status import (
+    ExecutionStatusConsumer,
+    ProgressCadence,
+    emit_progress_if_due,
+)
 from seed_runtime.evidence import Evidence
 from seed_runtime.inference_catalog import InferenceCatalog
 from seed_runtime.inference_rules import infer_facts
@@ -715,13 +720,32 @@ class StateProjector:
         self.predicate_catalog = predicate_catalog or PredicateCatalog.load()
         self.inference_catalog = inference_catalog or InferenceCatalog.load()
 
-    def project(self, workspace_id: str) -> State:
+    def project(
+        self,
+        workspace_id: str,
+        *,
+        status_consumer: ExecutionStatusConsumer | None = None,
+    ) -> State:
         state = State(
             workspace_id=workspace_id, predicate_catalog=self.predicate_catalog
         )
-        return self.project_from_state(state, self.ledger.list_events(workspace_id))
+        return self.project_from_state(
+            state,
+            self.ledger.list_events(workspace_id),
+            status_consumer=status_consumer,
+            status_phase="projection_replay",
+            status_message="Projection replay",
+        )
 
-    def project_from_state(self, state: State, events: Iterable[Event]) -> State:
+    def project_from_state(
+        self,
+        state: State,
+        events: Iterable[Event],
+        *,
+        status_consumer: ExecutionStatusConsumer | None = None,
+        status_phase: str | None = None,
+        status_message: str | None = None,
+    ) -> State:
         """Apply ledger events to a projected State, then rebuild derived indexes.
 
         This supports safe incremental projection from a previously validated
@@ -730,10 +754,22 @@ class StateProjector:
         authority and this method only reuses derived state as an optimization.
         """
 
+        event_list = list(events)
+        total = len(event_list)
+        cadence = ProgressCadence()
         state.predicate_catalog = self.predicate_catalog
-        for event in events:
+        for index, event in enumerate(event_list, start=1):
             state.last_event_id = event.id
             self.apply(state, event)
+            if status_phase is not None and status_message is not None:
+                emit_progress_if_due(
+                    status_consumer,
+                    cadence,
+                    status_phase,
+                    status_message,
+                    current=index,
+                    total=total,
+                )
         return self.finalize(state)
 
     def finalize(self, state: State) -> State:

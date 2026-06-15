@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.execution_status import RecordingExecutionStatusConsumer
 from seed_runtime.facts import Fact
+from seed_runtime.models import Event
 from seed_runtime.projection_store import (
     InMemoryProjectionStore,
     ProjectionSnapshot,
@@ -843,3 +844,50 @@ def test_state_summary_cli_surfaces_summary_cache_hit_and_state_cache_miss(
     assert "State-summary cache: hit" in second.err
     assert "State cache:" not in second.err
     assert first.out == second.out
+
+def test_long_projection_replay_emits_bounded_intermediate_progress():
+    ledger = EventLedger()
+    events = [
+        Event(id=f"evt_progress_{index}", kind="progress.noop", workspace_id="ws")
+        for index in range(1001)
+    ]
+    ledger.append_many(events)
+    consumer = RecordingExecutionStatusConsumer()
+
+    with_status, status = project_state_with_cache(
+        ledger, "ws", None, status_consumer=consumer
+    )
+    without_status, _ = project_state_with_cache(ledger, "ws", None)
+
+    progress = [
+        item
+        for item in consumer.statuses
+        if item.phase == "projection_replay"
+        and item.current is not None
+        and item.total is not None
+    ]
+    assert [item.current for item in progress] == [0, 1, 501, 1001]
+    assert progress[-1].completed is True
+    assert status.events_applied == 1001
+    assert with_status.last_event_id == without_status.last_event_id
+    assert ledger.list_events("ws") == events
+
+
+def test_short_projection_replay_does_not_spam_progress():
+    ledger = EventLedger()
+    ledger.append_many(
+        [Event(id="evt_short_1", kind="progress.noop", workspace_id="ws")]
+    )
+    consumer = RecordingExecutionStatusConsumer()
+
+    project_state_with_cache(ledger, "ws", None, status_consumer=consumer)
+
+    progress = [
+        item
+        for item in consumer.statuses
+        if item.phase == "projection_replay"
+        and item.current is not None
+        and item.total is not None
+    ]
+    assert [item.current for item in progress] == [0, 1]
+    assert progress[-1].completed is True

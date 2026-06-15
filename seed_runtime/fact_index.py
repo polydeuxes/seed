@@ -10,7 +10,12 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
-from seed_runtime.execution_status import ExecutionStatusConsumer, emit_status
+from seed_runtime.execution_status import (
+    ExecutionStatusConsumer,
+    ProgressCadence,
+    emit_progress_if_due,
+    emit_status,
+)
 from seed_runtime.facts import Fact, is_fact_expired
 from seed_runtime.projection_store import (
     FACT_INDEX_NAME,
@@ -58,11 +63,15 @@ def build_fact_index(
     state_projection_version: str = STATE_PROJECTION_VERSION,
     index_name: str = FACT_INDEX_NAME,
     index_version: str = FACT_INDEX_VERSION,
+    status_consumer: ExecutionStatusConsumer | None = None,
 ) -> DerivedFactIndex:
     """Build the smallest reusable fact index from an already-projected State."""
 
     by_subject_predicate: dict[str, dict[str, list[str]]] = {}
-    for subject in sorted({support.subject for support in state.fact_supports}):
+    subjects = sorted({support.subject for support in state.fact_supports})
+    total = len(subjects)
+    cadence = ProgressCadence()
+    for index, subject in enumerate(subjects, start=1):
         predicates = sorted(
             {support.predicate for support in state.fact_supports if support.subject == subject}
         )
@@ -72,6 +81,14 @@ def build_fact_index(
                 by_subject_predicate.setdefault(subject, {})[predicate] = [
                     fact.id for fact in facts
                 ]
+        emit_progress_if_due(
+            status_consumer,
+            cadence,
+            "fact_index_build",
+            "Building fact index",
+            current=index,
+            total=total,
+        )
     return DerivedFactIndex(
         workspace_id=workspace_id,
         index_name=index_name,
@@ -118,7 +135,10 @@ def load_or_build_fact_index(
         )
     emit_status(status_consumer, "fact_index_build", "Building fact index...")
     index = build_fact_index(
-        state, workspace_id=workspace_id, state_projection_version=state_projection_version
+        state,
+        workspace_id=workspace_id,
+        state_projection_version=state_projection_version,
+        status_consumer=status_consumer,
     )
     emit_status(status_consumer, "fact_index_build", "Building fact index...", completed=True)
     if store is not None:

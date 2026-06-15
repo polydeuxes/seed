@@ -6,6 +6,7 @@ from seed_runtime.events import EventLedger
 from seed_runtime.execution_status import RecordingExecutionStatusConsumer
 from seed_runtime.fact_index import build_fact_index, load_or_build_fact_index
 from seed_runtime.facts import Fact
+from seed_runtime.models import Event
 from seed_runtime.projection_store import (
     FACT_INDEX_NAME,
     FACT_INDEX_VERSION,
@@ -167,3 +168,43 @@ def test_fact_index_does_not_change_projection_cache_semantics():
 
     assert before == after
     assert len(ledger.list_events("ws")) == 2
+
+
+def test_long_fact_index_build_emits_intermediate_progress_without_mutating_state():
+    ledger = EventLedger()
+    events = [
+        Event(
+            id=f"evt_fact_index_{index}",
+            kind="fact.observed",
+            workspace_id="ws",
+            payload={
+                "fact": to_plain(
+                    _fact(f"fact_index_{index}", f"svc_{index}", "runtime", "docker")
+                )
+            },
+        )
+        for index in range(1001)
+    ]
+    ledger.append_many(events)
+    state, _status = project_state_with_cache(ledger, "ws", None)
+    fact_count = len(state.facts)
+    observation_count = len(state.observations)
+    consumer = RecordingExecutionStatusConsumer()
+
+    index = load_or_build_fact_index(
+        state, workspace_id="ws", store=None, status_consumer=consumer
+    )
+
+    progress = [
+        status
+        for status in consumer.statuses
+        if status.phase == "fact_index_build"
+        and status.current is not None
+        and status.total is not None
+    ]
+    assert [status.current for status in progress] == [1, 501, 1001]
+    assert progress[-1].completed is True
+    assert len(index.fact_ids_by_subject_predicate) == 1001
+    assert len(state.facts) == fact_count
+    assert len(state.observations) == observation_count
+    assert len(ledger.list_events("ws")) == 1001

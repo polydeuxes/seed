@@ -13,7 +13,12 @@ import sqlite3
 from typing import Any, Protocol
 
 from seed_runtime.events import EventLedger
-from seed_runtime.execution_status import ExecutionStatusConsumer, emit_status
+from seed_runtime.execution_status import (
+    ExecutionStatusConsumer,
+    ProgressCadence,
+    emit_progress_if_due,
+    emit_status,
+)
 from seed_runtime.evidence import Evidence
 from seed_runtime.facts import Fact, FactConflict, FactSupport
 from seed_runtime.models import (
@@ -501,6 +506,27 @@ class StateCacheStatus:
     events_applied: int | None = None
 
 
+def _events_with_progress(
+    events: list[Any],
+    *,
+    status_consumer: ExecutionStatusConsumer | None,
+    phase: str,
+    message: str,
+):
+    cadence = ProgressCadence()
+    total = len(events)
+    for index, event in enumerate(events, start=1):
+        yield event
+        emit_progress_if_due(
+            status_consumer,
+            cadence,
+            phase,
+            message,
+            current=index,
+            total=total,
+        )
+
+
 def project_state_with_cache(
     ledger: EventLedger,
     workspace_id: str,
@@ -572,16 +598,23 @@ def project_state_with_cache(
                         total=len(remaining_events),
                     )
                     state = projector.project_from_state(
-                        snapshot_state, remaining_events
+                        snapshot_state,
+                        _events_with_progress(
+                            remaining_events,
+                            status_consumer=status_consumer,
+                            phase="incremental_projection_replay",
+                            message="Incremental replay",
+                        ),
                     )
-                    emit_status(
-                        status_consumer,
-                        "incremental_projection_replay",
-                        "Incremental replay",
-                        current=len(remaining_events),
-                        total=len(remaining_events),
-                        completed=True,
-                    )
+                    if not remaining_events:
+                        emit_status(
+                            status_consumer,
+                            "incremental_projection_replay",
+                            "Incremental replay",
+                            current=0,
+                            total=0,
+                            completed=True,
+                        )
                     _save_state_snapshot(
                         store,
                         state,
@@ -615,15 +648,18 @@ def project_state_with_cache(
         current=0,
         total=len(events),
     )
-    state = projector.project(workspace_id)
-    emit_status(
-        status_consumer,
-        "projection_replay",
-        "Projection replay",
-        current=len(events),
-        total=len(events),
-        completed=True,
-    )
+    if isinstance(projector, StateProjector):
+        state = projector.project(workspace_id, status_consumer=status_consumer)
+    else:
+        state = projector.project(workspace_id)
+        emit_status(
+            status_consumer,
+            "projection_replay",
+            "Projection replay",
+            current=len(events),
+            total=len(events),
+            completed=True,
+        )
     if store is not None:
         _save_state_snapshot(
             store,

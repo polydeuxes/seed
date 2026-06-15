@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol, TextIO
+from time import monotonic
+from typing import Callable, Protocol, TextIO
 import sys
 
 
@@ -67,6 +68,62 @@ class CliExecutionStatusConsumer:
         if status.current in (0, status.total):
             return True
         return status.current % self.progress_interval == 0
+
+
+class ProgressCadence:
+    """Bound transient progress updates for long-running item loops."""
+
+    def __init__(
+        self,
+        *,
+        item_interval: int = 500,
+        time_interval_seconds: float = 1.0,
+        clock: Callable[[], float] = monotonic,
+    ) -> None:
+        self.item_interval = max(1, item_interval)
+        self.time_interval_seconds = max(0.0, time_interval_seconds)
+        self.clock = clock
+        self._last_current = 0
+        self._last_emit_at = clock()
+
+    def should_emit(self, current: int, total: int) -> bool:
+        """Return True for first, final, item-interval, or elapsed-time progress."""
+
+        if current <= 0:
+            return False
+        if current == 1 or current >= total:
+            return True
+        if current - self._last_current >= self.item_interval:
+            return True
+        return self.clock() - self._last_emit_at >= self.time_interval_seconds
+
+    def mark_emitted(self, current: int) -> None:
+        self._last_current = current
+        self._last_emit_at = self.clock()
+
+
+def emit_progress_if_due(
+    consumer: ExecutionStatusConsumer | None,
+    cadence: ProgressCadence,
+    phase: str,
+    message: str,
+    *,
+    current: int,
+    total: int,
+) -> None:
+    """Emit loop progress only when bounded cadence says it is useful."""
+
+    if consumer is None or not cadence.should_emit(current, total):
+        return
+    emit_status(
+        consumer,
+        phase,
+        message,
+        current=current,
+        total=total,
+        completed=current >= total,
+    )
+    cadence.mark_emitted(current)
 
 
 def emit_status(
