@@ -34,6 +34,7 @@ related:
   - discovery_path_preservation_observation.md
   - lineage_distinction_observation.md
   - preservation_surface_observation.md
+  - non_selected_remainder_preservation_observation.md
   - documentation_compression_observation.md
   - compression_candidate_observation.md
   - explanatory_load_observation.md
@@ -88,6 +89,7 @@ Use this file to find the right document family before reading specific document
 - `discovery_path_preservation_observation.md` — observation of critique-driven discovery paths, compression removal, and understanding-transition preservation.
 - `lineage_distinction_observation.md` — observation of artifact, inquiry, observation, and discovery-path lineage surfaces and what each appears to preserve.
 - `preservation_surface_observation.md` — observation of artifact, inquiry, observation, discovery, and continuation preservation surfaces without reconciling preservation ontology.
+- `non_selected_remainder_preservation_observation.md` — observation of how repository work treats non-selected, inactive, deferred, rejected, unrouted, and non-promoted remainder artifacts without defining selection or archival policy.
 - `documentation_compression_observation.md` — observation of where repository documentation compressed distinctions, what pressures exposed hidden meanings, and where compressed language remained useful.
 - `compression_candidate_observation.md` — observation of candidate compressed concepts, pressure survivors, decompression evidence, and stable concepts without defining compression canonically.
 - `explanatory_load_observation.md` — observation of where repository concepts appear to accumulate explanatory responsibility, where responsibility shifted, and where bounded concepts survived pressure without defining explanatory load canonically.
