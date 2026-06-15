@@ -8,7 +8,12 @@ import json
 import sqlite3
 from typing import Any, Iterable
 
-from seed_runtime.execution_status import ExecutionStatusConsumer, emit_status
+from seed_runtime.execution_status import (
+    ExecutionStatusConsumer,
+    ProgressCadence,
+    emit_progress_if_due,
+    emit_status,
+)
 from seed_runtime.ids import new_id, reserve_id_prefix
 from seed_runtime.models import Actor, Event, ExecutionAuthorization
 
@@ -77,15 +82,16 @@ class EventLedger:
             current=0,
             total=total,
         )
+        cadence = ProgressCadence()
         for index, event in enumerate(stored_events, start=1):
             self._store(event)
-            emit_status(
+            emit_progress_if_due(
                 status_consumer,
+                cadence,
                 "event_persistence",
                 "Writing events",
                 current=index,
                 total=total,
-                completed=index == total,
             )
         return stored_events
 
@@ -205,16 +211,17 @@ class SQLiteEventLedger(EventLedger):
             current=0,
             total=total,
         )
+        cadence = ProgressCadence()
         with self._connection:
             for index, event in enumerate(stored_events, start=1):
                 self._insert_without_commit(event)
-                emit_status(
+                emit_progress_if_due(
                     status_consumer,
+                    cadence,
                     "event_persistence",
                     "Writing events",
                     current=index,
                     total=total,
-                    completed=index == total,
                 )
         for event in stored_events:
             self._advance_event_counter(event.id)

@@ -318,3 +318,29 @@ def test_observation_ingest_many_uses_fewer_sqlite_transactions_than_repeated_in
     assert batch_commits == 1
     assert repeated_commits == len(observations)
     assert batch_commits < repeated_commits
+
+
+def test_append_many_progress_is_bounded_and_transient():
+    from seed_runtime.execution_status import RecordingExecutionStatusConsumer
+
+    ledger = EventLedger()
+    events = [
+        Event(id=f"evt_write_{index}", kind="batch.progress", workspace_id="ws")
+        for index in range(1001)
+    ]
+    consumer = RecordingExecutionStatusConsumer()
+
+    ledger.append_many(events, status_consumer=consumer)
+
+    progress = [
+        status
+        for status in consumer.statuses
+        if status.phase == "event_persistence"
+        and status.current is not None
+        and status.total is not None
+    ]
+    assert [status.current for status in progress] == [0, 1, 501, 1001]
+    assert progress[-1].completed is True
+    assert [event.id for event in ledger.list_events("ws")] == [
+        event.id for event in events
+    ]

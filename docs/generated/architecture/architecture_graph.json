@@ -176,7 +176,7 @@
       "id": "EventLedger",
       "kind": "class",
       "layer": "events",
-      "line": 16,
+      "line": 21,
       "owner": "event_history",
       "routes": [],
       "summary": "Owns append-only runtime event history read by projection and owner services."
@@ -212,7 +212,7 @@
       "id": "ProjectionStore",
       "kind": "class",
       "layer": "state",
-      "line": 86,
+      "line": 91,
       "owner": "projection_cache",
       "routes": [],
       "summary": "Stores reusable projected-state snapshots derived from the event ledger."
@@ -415,7 +415,7 @@
       "id": "StateProjector",
       "kind": "class",
       "layer": "state",
-      "line": 685,
+      "line": 690,
       "owner": "state_projection",
       "routes": [],
       "summary": "Rebuilds inspectable state by applying ledger events and deriving projection indexes."
