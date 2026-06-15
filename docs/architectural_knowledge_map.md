@@ -114,6 +114,7 @@ For the current status of these concerns and the active frontier, see `architect
 | What could the documentation lineage observation see, and what remained blind? | `observation_surface_and_blind_spot_audit.md` |
 | What appears to continue when artifact, inquiry, observation, and discovery-path lineage are discussed? | `lineage_distinction_observation.md` |
 | What kinds of things do recent investigations appear to preserve? | `preservation_surface_observation.md` |
+| Where is understanding visible to operators today? | `understanding_visibility_existing_surface_audit.md`, `operator_surface_family_observation.md`, `operator_understanding_surface_observation.md`, `operator_surface_activation_against_knowledge_and_understanding_audit.md` |
 | Where do concepts appear to accumulate explanatory responsibility, shift load, or survive by remaining bounded? | `explanatory_load_observation.md` |
 | Where are emerging operation, attribution, inquiry, attention, object/role/operation, persistence, continuity, current work position, active edge, derivation, and handoff-lineage frontiers routed? | `operations_frontier.md`, `operation_attribution_frontier.md`, `inquiry_frontier.md`, `selection_and_attention_frontier.md`, `attention_trigger_frontier.md`, `attention_target_frontier.md`, `object_role_and_operation_frontier.md`, `persistence_frontier.md`, `continuity_frontier.md`, `current_work_position_frontier.md`, `active_edge_frontier.md`, `concept_stability_audit.md`, `derivation_frontier.md`, `handoff_and_continuation_lineage_frontier.md`, and `future_frontiers.md` |
 
@@ -205,6 +206,7 @@ Start with:
 * `architectural_knowledge_map.md`
 * `navigation_hygiene_audit.md`
 * `source_navigation_surface_reconciliation.md`
+* `understanding_visibility_existing_surface_audit.md`
 
 This is currently a frontier characterization, not a reconciliation or implementation plan. It records structural navigation, architectural navigation, and knowledge navigation as related but non-identical layers.
 
