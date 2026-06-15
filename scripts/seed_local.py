@@ -66,6 +66,7 @@ from seed_runtime.execution_status import (
     ExecutionStatusConsumer,
     emit_status,
 )
+from seed_runtime.fact_index import load_or_build_fact_index
 from seed_runtime.evidence_graph import (
     FactEvidenceView,
     build_evidence_graph,
@@ -3484,11 +3485,21 @@ def format_best_fact(
 
 
 def format_current_facts(
-    state: State, subject: str, predicate: str, *, include_expired: bool = False
+    state: State,
+    subject: str,
+    predicate: str,
+    *,
+    include_expired: bool = False,
+    fact_index: object | None = None,
 ) -> str:
     """Format every current supported value, one per line."""
 
-    facts = state.get_current_facts(subject, predicate, include_expired=include_expired)
+    if fact_index is not None:
+        facts = fact_index.current_facts(
+            state, subject, predicate, include_expired=include_expired
+        )
+    else:
+        facts = state.get_current_facts(subject, predicate, include_expired=include_expired)
     if not facts:
         return f"no current facts for {subject} {predicate}"
     return "\n".join(
@@ -4733,12 +4744,23 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 0
         subject, predicate = args.current_facts
+        status_consumer = CliExecutionStatusConsumer()
+        state = fact_query_state(args, status_consumer=status_consumer)
+        fact_index = None
+        if args.db and _can_use_state_cache(args):
+            fact_index = load_or_build_fact_index(
+                state,
+                workspace_id=args.workspace,
+                store=SQLiteProjectionStore(args.db),
+                status_consumer=status_consumer,
+            )
         print(
             format_current_facts(
-                fact_query_state(args, status_consumer=CliExecutionStatusConsumer()),
+                state,
                 subject,
                 predicate,
                 include_expired=args.include_expired,
+                fact_index=fact_index,
             )
         )
         return 0

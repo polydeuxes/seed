@@ -45,6 +45,19 @@ STATE_PROJECTION_NAME = "state"
 STATE_PROJECTION_VERSION = "state-v1"
 STATE_SUMMARY_PROJECTION_NAME = "state-summary"
 STATE_SUMMARY_PROJECTION_VERSION = "state-summary-v1"
+FACT_INDEX_NAME = "fact-index-by-subject-predicate"
+FACT_INDEX_VERSION = "fact-index-by-subject-predicate-v1"
+
+
+@dataclass(frozen=True)
+class DerivedIndexSnapshot:
+    workspace_id: str
+    index_name: str
+    index_version: str
+    state_projection_version: str
+    state_last_event_id: str | None
+    index_payload: dict[str, Any]
+    created_at: datetime
 
 
 @dataclass(frozen=True)
@@ -110,6 +123,20 @@ class ProjectionStore(Protocol):
     def save_summary_snapshot(self, snapshot: SummaryProjectionSnapshot) -> None:
         """Persist or replace a dependent summary read-model snapshot."""
 
+    def load_derived_index_snapshot(
+        self,
+        workspace_id: str,
+        index_name: str,
+        index_version: str,
+        *,
+        state_projection_version: str,
+        state_last_event_id: str | None,
+    ) -> DerivedIndexSnapshot | None:
+        """Return a derived index snapshot for a matching State projection."""
+
+    def save_derived_index_snapshot(self, snapshot: DerivedIndexSnapshot) -> None:
+        """Persist or replace a derived index snapshot."""
+
 
 class InMemoryProjectionStore:
     """Process-local ProjectionStore useful for tests and non-SQLite callers."""
@@ -117,6 +144,7 @@ class InMemoryProjectionStore:
     def __init__(self) -> None:
         self._snapshots: dict[tuple[str, str], ProjectionSnapshot] = {}
         self._summary_snapshots: dict[tuple[str, str], SummaryProjectionSnapshot] = {}
+        self._derived_index_snapshots: dict[tuple[str, str], DerivedIndexSnapshot] = {}
 
     def load_snapshot(
         self, workspace_id: str, projection_name: str, projection_version: str
@@ -137,6 +165,9 @@ class InMemoryProjectionStore:
             for key in list(self._summary_snapshots):
                 if key[0] == workspace_id:
                     self._summary_snapshots.pop(key, None)
+            for key in list(self._derived_index_snapshots):
+                if key[0] == workspace_id:
+                    self._derived_index_snapshots.pop(key, None)
             return
         for key in list(self._snapshots):
             if key[0] == workspace_id:
@@ -144,6 +175,9 @@ class InMemoryProjectionStore:
         for key in list(self._summary_snapshots):
             if key[0] == workspace_id:
                 self._summary_snapshots.pop(key, None)
+        for key in list(self._derived_index_snapshots):
+            if key[0] == workspace_id:
+                self._derived_index_snapshots.pop(key, None)
 
     def load_summary_snapshot(
         self,
@@ -168,6 +202,27 @@ class InMemoryProjectionStore:
             snapshot
         )
 
+    def load_derived_index_snapshot(
+        self,
+        workspace_id: str,
+        index_name: str,
+        index_version: str,
+        *,
+        state_projection_version: str,
+        state_last_event_id: str | None,
+    ) -> DerivedIndexSnapshot | None:
+        snapshot = self._derived_index_snapshots.get((workspace_id, index_name))
+        if snapshot is None or snapshot.index_version != index_version:
+            return None
+        if snapshot.state_projection_version != state_projection_version:
+            return None
+        if snapshot.state_last_event_id != state_last_event_id:
+            return None
+        return snapshot
+
+    def save_derived_index_snapshot(self, snapshot: DerivedIndexSnapshot) -> None:
+        self._derived_index_snapshots[(snapshot.workspace_id, snapshot.index_name)] = snapshot
+
 
 class SQLiteProjectionStore:
     """SQLite-backed ProjectionStore for local CLI state projection caching."""
@@ -186,6 +241,18 @@ class SQLiteProjectionStore:
                 state_json TEXT NOT NULL,
                 created_at TEXT NOT NULL,
                 PRIMARY KEY (workspace_id, projection_name)
+            )
+            """)
+        self._connection.execute("""
+            CREATE TABLE IF NOT EXISTS derived_index_snapshots (
+                workspace_id TEXT NOT NULL,
+                index_name TEXT NOT NULL,
+                index_version TEXT NOT NULL,
+                state_projection_version TEXT NOT NULL,
+                state_last_event_id TEXT,
+                index_json TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                PRIMARY KEY (workspace_id, index_name)
             )
             """)
         self._connection.execute("""
@@ -271,6 +338,10 @@ class SQLiteProjectionStore:
             "DELETE FROM state_summary_snapshots WHERE workspace_id = ?",
             (workspace_id,),
         )
+        self._connection.execute(
+            "DELETE FROM derived_index_snapshots WHERE workspace_id = ?",
+            (workspace_id,),
+        )
         self._connection.commit()
 
     def load_summary_snapshot(
@@ -341,6 +412,76 @@ class SQLiteProjectionStore:
                 snapshot.state_projection_version,
                 snapshot.state_last_event_id,
                 json.dumps(snapshot.summary_payload, sort_keys=True),
+                _format_datetime(snapshot.created_at),
+            ),
+        )
+        self._connection.commit()
+
+    def load_derived_index_snapshot(
+        self,
+        workspace_id: str,
+        index_name: str,
+        index_version: str,
+        *,
+        state_projection_version: str,
+        state_last_event_id: str | None,
+    ) -> DerivedIndexSnapshot | None:
+        row = self._connection.execute(
+            """
+            SELECT derived.* FROM derived_index_snapshots AS derived
+            JOIN projection_snapshots AS state
+              ON state.workspace_id = derived.workspace_id
+             AND state.projection_name = ?
+            WHERE derived.workspace_id = ?
+              AND derived.index_name = ?
+              AND derived.index_version = ?
+              AND derived.state_projection_version = ?
+              AND derived.state_last_event_id IS ?
+              AND state.projection_version = derived.state_projection_version
+              AND state.last_event_id IS derived.state_last_event_id
+            """,
+            (
+                STATE_PROJECTION_NAME,
+                workspace_id,
+                index_name,
+                index_version,
+                state_projection_version,
+                state_last_event_id,
+            ),
+        ).fetchone()
+        if row is None:
+            return None
+        return DerivedIndexSnapshot(
+            workspace_id=row["workspace_id"],
+            index_name=row["index_name"],
+            index_version=row["index_version"],
+            state_projection_version=row["state_projection_version"],
+            state_last_event_id=row["state_last_event_id"],
+            index_payload=json.loads(row["index_json"]),
+            created_at=_parse_datetime(row["created_at"]) or _utc_now(),
+        )
+
+    def save_derived_index_snapshot(self, snapshot: DerivedIndexSnapshot) -> None:
+        self._connection.execute(
+            """
+            INSERT INTO derived_index_snapshots (
+                workspace_id, index_name, index_version, state_projection_version,
+                state_last_event_id, index_json, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(workspace_id, index_name) DO UPDATE SET
+                index_version = excluded.index_version,
+                state_projection_version = excluded.state_projection_version,
+                state_last_event_id = excluded.state_last_event_id,
+                index_json = excluded.index_json,
+                created_at = excluded.created_at
+            """,
+            (
+                snapshot.workspace_id,
+                snapshot.index_name,
+                snapshot.index_version,
+                snapshot.state_projection_version,
+                snapshot.state_last_event_id,
+                json.dumps(snapshot.index_payload, sort_keys=True),
                 _format_datetime(snapshot.created_at),
             ),
         )

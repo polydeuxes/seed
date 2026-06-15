@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from seed_runtime.facts import FactSupport
 from seed_runtime.state import GraphValidationIssue, State
 
 
@@ -76,6 +77,7 @@ def build_fact_view(state: State) -> list[FactView]:
     shown once while their supporting provenance remains attached.
     """
 
+    fact_supports = state.fact_supports or _fact_supports_from_raw_facts(state)
     return [
         FactView(
             fact_id=_representative_fact_id(state, support.supporting_fact_ids),
@@ -89,7 +91,7 @@ def build_fact_view(state: State) -> list[FactView]:
             ),
         )
         for support in sorted(
-            state.fact_supports,
+            fact_supports,
             key=lambda item: (
                 item.subject,
                 item.predicate,
@@ -100,6 +102,27 @@ def build_fact_view(state: State) -> list[FactView]:
         )
     ]
 
+
+
+def _fact_supports_from_raw_facts(state: State) -> list[FactSupport]:
+    """Fallback for tests and callers that construct State facts directly."""
+
+    return [
+        FactSupport(
+            subject=fact.subject_id,
+            predicate=fact.predicate,
+            value=fact.value,
+            dimensions=dict(fact.dimensions),
+            supporting_fact_ids=[fact.id],
+            source_types=[fact.source_type],
+            confidence=fact.confidence,
+            observed_at=fact.observed_at,
+            latest_observed_at=fact.observed_at,
+            expired=False,
+            expires_at=fact.expires_at,
+        )
+        for fact in state.facts.values()
+    ]
 
 def _representative_fact_id(state: State, fact_ids: list[str]) -> str:
     facts = [state.facts[fact_id] for fact_id in fact_ids if fact_id in state.facts]
