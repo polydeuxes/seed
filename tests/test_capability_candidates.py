@@ -3,8 +3,15 @@ import json
 
 from seed_runtime.capability_candidates import build_capability_candidates
 from seed_runtime.evidence import Evidence
-from seed_runtime.events import EventLedger
+from seed_runtime.events import EventLedger, SQLiteEventLedger
+from seed_runtime.fact_index import build_fact_index
 from seed_runtime.facts import Fact
+from seed_runtime.projection_store import (
+    FACT_INDEX_NAME,
+    FACT_INDEX_VERSION,
+    STATE_PROJECTION_VERSION,
+    SQLiteProjectionStore,
+)
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
 
@@ -147,6 +154,60 @@ def test_capability_candidates_are_read_only():
     assert state.facts == before_facts
 
 
+def test_capability_candidate_output_is_identical_with_fact_index():
+    ledger = EventLedger()
+    ledger.append("fact.observed", "ws", {"fact": to_plain(_package_fact("git"))})
+    ledger.append("fact.observed", "ws", {"fact": to_plain(_package_fact("docker.io"))})
+    state = _project(ledger)
+    fact_index = build_fact_index(state, workspace_id="ws")
+
+    without_index = build_capability_candidates(state)
+    with_index = build_capability_candidates(state, fact_index=fact_index)
+
+    assert with_index == without_index
+
+
+def test_capability_candidate_inspection_consumes_fact_index():
+    package_fact = _package_fact("openssh-client")
+
+    class PackageFactIndex:
+        fact_ids_by_subject_predicate = {
+            "localhost": {"package_installed": [package_fact.id]}
+        }
+
+        def __init__(self):
+            self.lookups: list[tuple[str, str]] = []
+
+        def current_facts(self, state, subject, predicate, *, include_expired=False):
+            self.lookups.append((subject, predicate))
+            return [package_fact]
+
+    fact_index = PackageFactIndex()
+
+    inspection = build_capability_candidates(
+        _project(EventLedger()), filter_text="ssh", fact_index=fact_index
+    )
+
+    assert [candidate.candidate for candidate in inspection.candidates] == ["ssh_client"]
+    assert fact_index.lookups == [("localhost", "package_installed")]
+
+
+def test_capability_candidate_index_path_is_read_only():
+    ledger = EventLedger()
+    ledger.append("fact.observed", "ws", {"fact": to_plain(_package_fact("curl"))})
+    state = _project(ledger)
+    fact_index = build_fact_index(state, workspace_id="ws")
+    before_events = [event.id for event in ledger.list_events("ws")]
+    before_observations = dict(state.observations)
+    before_facts = dict(state.facts)
+
+    build_capability_candidates(state, fact_index=fact_index)
+
+    assert [event.id for event in ledger.list_events("ws")] == before_events
+    assert state.observations == before_observations
+    assert state.facts == before_facts
+
+
 def test_capability_observation_survives_absent_execution_systems(monkeypatch):
     import seed_runtime.runtime as runtime_module
     import seed_runtime.execution as execution_module
@@ -212,3 +273,75 @@ def test_capability_candidates_cli_is_read_only_json_and_avoids_runtime(
         assert len(reopened.list_events("local")) == before
     finally:
         reopened.close()
+
+
+def test_capability_candidates_cli_builds_fact_index_cache_on_miss(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "candidate-index-miss.sqlite"
+    ledger = SQLiteEventLedger(str(db_path))
+    try:
+        event = ledger.append(
+            "fact.observed",
+            "local",
+            {"fact": to_plain(_package_fact("openssh-client"))},
+        )
+    finally:
+        ledger.close()
+
+    assert (
+        seed_local.main(["--db", str(db_path), "--capability-candidates", "ssh"])
+        == 0
+    )
+
+    captured = capsys.readouterr()
+    output = json.loads(captured.out)
+    assert output["candidates"][0]["candidate"] == "ssh_client"
+    assert "Fact index cache: miss" in captured.err
+    assert "Building fact index..." in captured.err
+
+    store = SQLiteProjectionStore(str(db_path))
+    try:
+        snapshot = store.load_derived_index_snapshot(
+            "local",
+            FACT_INDEX_NAME,
+            FACT_INDEX_VERSION,
+            state_projection_version=STATE_PROJECTION_VERSION,
+            state_last_event_id=event.id,
+        )
+    finally:
+        store.close()
+    assert snapshot is not None
+
+
+def test_capability_candidates_cli_uses_fact_index_cache_hit(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "candidate-index-hit.sqlite"
+    ledger = SQLiteEventLedger(str(db_path))
+    try:
+        ledger.append(
+            "fact.observed",
+            "local",
+            {"fact": to_plain(_package_fact("openssh-client"))},
+        )
+    finally:
+        ledger.close()
+
+    assert (
+        seed_local.main(["--db", str(db_path), "--capability-candidates", "ssh"])
+        == 0
+    )
+    first = capsys.readouterr()
+    assert "Fact index cache: miss" in first.err
+
+    assert (
+        seed_local.main(["--db", str(db_path), "--capability-candidates", "ssh"])
+        == 0
+    )
+    second = capsys.readouterr()
+
+    assert "Fact index cache: hit" in second.err
+    assert json.loads(second.out)["candidates"][0]["candidate"] == "ssh_client"

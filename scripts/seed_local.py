@@ -4803,14 +4803,23 @@ def main(argv: list[str] | None = None) -> int:
             if args.capability_candidates == "__all__"
             else args.capability_candidates
         )
+        status_consumer = CliExecutionStatusConsumer()
+        state = projected_state_from_args(args, status_consumer=status_consumer)
+        fact_index = None
+        if args.db and _can_use_state_cache(args):
+            fact_index = load_or_build_fact_index(
+                state,
+                workspace_id=args.workspace,
+                store=SQLiteProjectionStore(args.db),
+                status_consumer=status_consumer,
+            )
         print(
             json.dumps(
                 to_plain(
                     build_capability_candidates(
-                        projected_state_from_args(
-                            args, status_consumer=CliExecutionStatusConsumer()
-                        ),
+                        state,
                         filter_text=filter_text,
+                        fact_index=fact_index,
                     )
                 ),
                 indent=2,
