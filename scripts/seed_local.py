@@ -923,6 +923,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="print every ingested observation-derived fact instead of a summary",
     )
     parser.add_argument(
+        "--quiet-output",
+        action="store_true",
+        help=(
+            "for observation workflows, suppress normal stdout knowledge rendering "
+            "while preserving execution-status output and ingestion"
+        ),
+    )
+    parser.add_argument(
         "--prometheus-instance",
         metavar="INSTANCE",
         help="only ingest Prometheus observations for INSTANCE",
@@ -4987,10 +4995,14 @@ def main(argv: list[str] | None = None) -> int:
             args, status_consumer=status_consumer
         )
         emit_status(status_consumer, "done", "Done.", completed=True)
-        if args.observe_prometheus and not args.verbose_observations:
-            print(format_observed_fact_summary(observed_facts))
-        else:
-            print(format_observed_facts(observed_facts))
+        suppress_observation_rendering = args.quiet_output and (
+            args.observe_local_host or bool(args.observe_repository_source)
+        )
+        if not suppress_observation_rendering:
+            if args.observe_prometheus and not args.verbose_observations:
+                print(format_observed_fact_summary(observed_facts))
+            else:
+                print(format_observed_facts(observed_facts))
         return 0
 
     app = build_local_app(
