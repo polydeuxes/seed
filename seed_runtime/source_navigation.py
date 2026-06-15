@@ -14,6 +14,7 @@ from seed_runtime.facts import FactSupport
 from seed_runtime.state import State
 
 SOURCE_PREDICATES = frozenset({"defines", "imports"})
+BOUNDED_ROW_LIMIT = 10
 
 
 @dataclass(frozen=True)
@@ -66,14 +67,19 @@ def format_source_navigation(view: SourceNavigationView) -> str:
     """Render a deterministic operator-facing source navigation view."""
 
     lines = ["Source Navigation", "", f"query: {view.query}", ""]
+    bounded = _is_path_or_module_lookup(view)
     if view.definitions:
-        lines.append("Definitions:")
-        lines.extend(_format_rows(view.definitions, include_module=True))
+        lines.append(_section_heading("Definitions", view.definitions, bounded=bounded))
+        lines.extend(
+            _format_rows(view.definitions, include_module=True, bounded=bounded)
+        )
         lines.append("")
     if view.imports:
-        lines.append("Imports:")
-        lines.extend(_format_rows(view.imports, include_module=False))
+        lines.append(_section_heading("Imports", view.imports, bounded=bounded))
+        lines.extend(_format_rows(view.imports, include_module=False, bounded=bounded))
         lines.append("")
+    if bounded and (view.definitions or view.imports):
+        lines.extend(_format_support_summary(view.definitions + view.imports))
     if not view.definitions and not view.imports:
         lines.append("No source facts matched.")
     return "\n".join(lines).rstrip()
@@ -122,10 +128,38 @@ def _row_sort_key(row: SourceNavigationRow) -> tuple[Any, ...]:
     return (row.path or "", row.subject, row.value, row.representative_support_id)
 
 
-def _format_rows(rows: list[SourceNavigationRow], *, include_module: bool) -> list[str]:
+def _is_path_or_module_lookup(view: SourceNavigationView) -> bool:
+    rows = view.definitions + view.imports
+    return any(view.query == row.subject or view.query == row.path for row in rows)
+
+
+def _section_heading(
+    label: str, rows: list[SourceNavigationRow], *, bounded: bool
+) -> str:
+    if not bounded:
+        return f"{label}:"
+    shown = min(len(rows), BOUNDED_ROW_LIMIT)
+    return f"{label}: {len(rows)} total, showing {shown}"
+
+
+def _format_support_summary(rows: list[SourceNavigationRow]) -> list[str]:
+    support_facts = sum(row.support_count for row in rows)
+    return [
+        "Support:",
+        f"  support facts: {support_facts}",
+        "  representative fact/support: available in exact symbol lookup",
+    ]
+
+
+def _format_rows(
+    rows: list[SourceNavigationRow], *, include_module: bool, bounded: bool
+) -> list[str]:
     lines: list[str] = []
-    for row in rows:
+    visible_rows = rows[:BOUNDED_ROW_LIMIT] if bounded else rows
+    for row in visible_rows:
         lines.append(f"  {row.value}")
+        if bounded:
+            continue
         if include_module:
             lines.append(f"    module: {row.subject}")
         lines.append(f"    path: {row.path or '(none)'}")
