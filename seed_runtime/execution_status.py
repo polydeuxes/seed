@@ -102,6 +102,77 @@ class ProgressCadence:
         self._last_emit_at = self.clock()
 
 
+class ObservationProducerLifecycle:
+    """Shared transient lifecycle vocabulary for observation producers.
+
+    The lifecycle standardizes operator-visible work phases around existing
+    observation collection, normalization, ingestion, and event writing paths.
+    It does not define observation semantics, create observations, append events,
+    or derive facts.
+    """
+
+    def __init__(
+        self, consumer: ExecutionStatusConsumer | None, source_name: str
+    ) -> None:
+        self.consumer = consumer
+        self.source_name = source_name
+
+    def collecting(self) -> None:
+        emit_status(
+            self.consumer,
+            "observation_collection",
+            f"Collecting {self.source_name} observations...",
+        )
+
+    def collected(self, count: int) -> None:
+        emit_status(
+            self.consumer,
+            "observation_collection",
+            f"Collected {count} observations.",
+            current=count,
+            total=count,
+            completed=True,
+        )
+
+    def normalizing(self, count: int) -> None:
+        emit_status(
+            self.consumer,
+            "observation_normalization",
+            f"Normalizing {self.source_name} observations...",
+            current=0,
+            total=count,
+        )
+
+    def normalized(self, count: int) -> None:
+        emit_status(
+            self.consumer,
+            "observation_normalization",
+            f"Normalized {count} observations.",
+            current=count,
+            total=count,
+            completed=True,
+        )
+
+    def ingesting(self, count: int) -> None:
+        emit_status(
+            self.consumer,
+            "observation_ingestion",
+            f"Ingesting {self.source_name} observations...",
+            current=0,
+            total=count,
+        )
+
+    def completed(self, count: int) -> None:
+        emit_status(
+            self.consumer,
+            "observation_lifecycle",
+            f"Completed {self.source_name} observation lifecycle.",
+            current=count,
+            total=count,
+            completed=True,
+        )
+
+
 def emit_progress_if_due(
     consumer: ExecutionStatusConsumer | None,
     cadence: ProgressCadence,
