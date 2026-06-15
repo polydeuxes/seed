@@ -33,7 +33,10 @@ from seed_runtime.local_packages import (
     package_records_to_observations,
     parse_dpkg_status,
 )
-from seed_runtime.execution_status import ExecutionStatusConsumer, emit_status
+from seed_runtime.execution_status import (
+    ExecutionStatusConsumer,
+    ObservationProducerLifecycle,
+)
 from seed_runtime.serialization import to_plain
 from seed_runtime.observation_normalizers import (
     DEFAULT_OBSERVATION_NORMALIZATION_PIPELINE,
@@ -2448,20 +2451,11 @@ class ObservationCollectionService:
         failing or malformed source cannot partially modify runtime state.
         """
 
-        emit_status(
-            status_consumer,
-            "observation_collection",
-            f"Collecting {source.name} observations...",
-        )
+        lifecycle = ObservationProducerLifecycle(status_consumer, source.name)
+        lifecycle.collecting()
         observations = list(source.collect())
-        emit_status(
-            status_consumer,
-            "observation_collection",
-            f"Collected {len(observations)} observations.",
-            current=len(observations),
-            total=len(observations),
-            completed=True,
-        )
+        lifecycle.collected(len(observations))
+        lifecycle.normalizing(len(observations))
         normalized = [
             self._normalize_observation(source, observation)
             for observation in observations
@@ -2469,7 +2463,9 @@ class ObservationCollectionService:
         if self.normalization_pipeline is not None:
             state = StateProjector(self.ingestor.ledger).project(workspace_id)
             normalized = self.normalization_pipeline.normalize(normalized, state=state)
+        lifecycle.normalized(len(normalized))
 
+        lifecycle.ingesting(len(normalized))
         facts = self.ingestor.ingest_many(
             normalized,
             workspace_id,
@@ -2479,6 +2475,7 @@ class ObservationCollectionService:
             correlation_id=correlation_id,
             status_consumer=status_consumer,
         )
+        lifecycle.completed(len(normalized))
         return [fact for fact in facts if fact is not None]
 
     @staticmethod
