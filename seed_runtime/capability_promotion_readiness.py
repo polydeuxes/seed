@@ -15,8 +15,12 @@ from seed_runtime.capability_candidates import (
     CapabilityCandidateEvidence,
     build_capability_candidates,
 )
+from seed_runtime.fact_index import DerivedFactIndex
 from seed_runtime.state import State
-from seed_runtime.verification_evidence import VerificationEvidence, build_verification_evidence
+from seed_runtime.verification_evidence import (
+    VerificationEvidence,
+    build_verification_evidence,
+)
 
 _PROMOTION_READINESS_BOUNDARY_NOTES = (
     "promotion_readiness_not_promotion",
@@ -58,7 +62,9 @@ class CapabilityPromotionReadinessInspection:
     readiness: list[CapabilityPromotionReadiness] = field(default_factory=list)
     filter: str | None = None
     boundary: str = "capability_promotion_readiness_inspection_only"
-    notes: list[str] = field(default_factory=lambda: list(_PROMOTION_READINESS_BOUNDARY_NOTES))
+    notes: list[str] = field(
+        default_factory=lambda: list(_PROMOTION_READINESS_BOUNDARY_NOTES)
+    )
 
 
 def build_capability_promotion_readiness_inspection(
@@ -66,6 +72,7 @@ def build_capability_promotion_readiness_inspection(
     *,
     filter_text: str | None = None,
     path_env: str | None = None,
+    fact_index: DerivedFactIndex | None = None,
 ) -> CapabilityPromotionReadinessInspection:
     """Inspect whether candidates have support for future verification promotion.
 
@@ -76,10 +83,15 @@ def build_capability_promotion_readiness_inspection(
     promotes readiness into ``capability_verified``.
     """
 
-    candidate_inspection = build_capability_candidates(state, filter_text=filter_text)
+    candidate_inspection = build_capability_candidates(
+        state, filter_text=filter_text, fact_index=fact_index
+    )
     verification_by_candidate: dict[str, list[VerificationEvidence]] = {}
     for evidence in build_verification_evidence(
-        state, filter_text=filter_text, path_env=path_env
+        state,
+        filter_text=filter_text,
+        path_env=path_env,
+        candidate_inspection=candidate_inspection,
     ).evidence:
         verification_by_candidate.setdefault(evidence.candidate, []).append(evidence)
 
@@ -90,7 +102,9 @@ def build_capability_promotion_readiness_inspection(
         )
         for candidate in candidate_inspection.candidates
     ]
-    return CapabilityPromotionReadinessInspection(readiness=readiness, filter=filter_text)
+    return CapabilityPromotionReadinessInspection(
+        readiness=readiness, filter=filter_text
+    )
 
 
 def _readiness_for_candidate(

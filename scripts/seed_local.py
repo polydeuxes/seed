@@ -32,7 +32,9 @@ from seed_runtime.capability_inventory import (
 from seed_runtime.capability_promotion_readiness import (
     build_capability_promotion_readiness_inspection,
 )
-from seed_runtime.capability_verification import build_capability_verification_inspection
+from seed_runtime.capability_verification import (
+    build_capability_verification_inspection,
+)
 from seed_runtime.verification_evidence import build_verification_evidence
 from seed_runtime.context import ContextComposer
 from seed_runtime.context_views import (
@@ -3499,7 +3501,9 @@ def format_current_facts(
             state, subject, predicate, include_expired=include_expired
         )
     else:
-        facts = state.get_current_facts(subject, predicate, include_expired=include_expired)
+        facts = state.get_current_facts(
+            subject, predicate, include_expired=include_expired
+        )
     if not facts:
         return f"no current facts for {subject} {predicate}"
     return "\n".join(
@@ -4856,14 +4860,23 @@ def main(argv: list[str] | None = None) -> int:
             if args.capability_promotion_readiness == "__all__"
             else args.capability_promotion_readiness
         )
+        status_consumer = CliExecutionStatusConsumer()
+        state = projected_state_from_args(args, status_consumer=status_consumer)
+        fact_index = None
+        if args.db and _can_use_state_cache(args):
+            fact_index = load_or_build_fact_index(
+                state,
+                workspace_id=args.workspace,
+                store=SQLiteProjectionStore(args.db),
+                status_consumer=status_consumer,
+            )
         print(
             json.dumps(
                 to_plain(
                     build_capability_promotion_readiness_inspection(
-                        projected_state_from_args(
-                            args, status_consumer=CliExecutionStatusConsumer()
-                        ),
+                        state,
                         filter_text=filter_text,
+                        fact_index=fact_index,
                     )
                 ),
                 indent=2,
@@ -4878,14 +4891,23 @@ def main(argv: list[str] | None = None) -> int:
             if args.capability_verification == "__all__"
             else args.capability_verification
         )
+        status_consumer = CliExecutionStatusConsumer()
+        state = projected_state_from_args(args, status_consumer=status_consumer)
+        fact_index = None
+        if args.db and _can_use_state_cache(args):
+            fact_index = load_or_build_fact_index(
+                state,
+                workspace_id=args.workspace,
+                store=SQLiteProjectionStore(args.db),
+                status_consumer=status_consumer,
+            )
         print(
             json.dumps(
                 to_plain(
                     build_capability_verification_inspection(
-                        projected_state_from_args(
-                            args, status_consumer=CliExecutionStatusConsumer()
-                        ),
+                        state,
                         filter_text=filter_text,
+                        fact_index=fact_index,
                     )
                 ),
                 indent=2,

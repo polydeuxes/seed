@@ -11,7 +11,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import os
 
-from seed_runtime.capability_candidates import build_capability_candidates
+from seed_runtime.capability_candidates import (
+    CapabilityCandidateInspection,
+    build_capability_candidates,
+)
 from seed_runtime.state import State
 
 _VERIFICATION_EVIDENCE_BOUNDARY_NOTES = (
@@ -58,7 +61,9 @@ class VerificationEvidenceInspection:
     evidence: list[VerificationEvidence] = field(default_factory=list)
     filter: str | None = None
     boundary: str = "verification_evidence_acquisition_only"
-    notes: list[str] = field(default_factory=lambda: list(_VERIFICATION_EVIDENCE_BOUNDARY_NOTES))
+    notes: list[str] = field(
+        default_factory=lambda: list(_VERIFICATION_EVIDENCE_BOUNDARY_NOTES)
+    )
 
 
 def build_verification_evidence(
@@ -66,6 +71,7 @@ def build_verification_evidence(
     *,
     filter_text: str | None = None,
     path_env: str | None = None,
+    candidate_inspection: CapabilityCandidateInspection | None = None,
 ) -> VerificationEvidenceInspection:
     """Acquire local read-only verification evidence for observed candidates.
 
@@ -75,11 +81,18 @@ def build_verification_evidence(
     never promotes evidence into ``capability_verified`` facts.
     """
 
-    candidate_inspection = build_capability_candidates(state, filter_text=filter_text)
-    path_entries = _path_entries(os.environ.get("PATH", "") if path_env is None else path_env)
+    if candidate_inspection is None:
+        candidate_inspection = build_capability_candidates(
+            state, filter_text=filter_text
+        )
+    path_entries = _path_entries(
+        os.environ.get("PATH", "") if path_env is None else path_env
+    )
     evidence: list[VerificationEvidence] = []
     for candidate in candidate_inspection.candidates:
-        for binary in _CAPABILITY_BINARY_CANDIDATES.get(candidate.candidate, ()):  # noqa: SIM118
+        for binary in _CAPABILITY_BINARY_CANDIDATES.get(
+            candidate.candidate, ()
+        ):  # noqa: SIM118
             binary_path = _find_binary(binary, path_entries)
             if binary_path is None:
                 continue
@@ -105,7 +118,11 @@ def build_verification_evidence(
 
 
 def _path_entries(path_env: str) -> list[Path]:
-    return [Path(entry or ".") for entry in path_env.split(os.pathsep) if entry or entry == ""]
+    return [
+        Path(entry or ".")
+        for entry in path_env.split(os.pathsep)
+        if entry or entry == ""
+    ]
 
 
 def _find_binary(binary: str, path_entries: list[Path]) -> Path | None:

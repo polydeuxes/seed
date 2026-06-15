@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
 import json
 
-from seed_runtime.capability_verification import build_capability_verification_inspection
+from seed_runtime.capability_verification import (
+    build_capability_verification_inspection,
+)
 from seed_runtime.evidence import Evidence
 from seed_runtime.events import EventLedger
 from seed_runtime.facts import Fact
@@ -69,9 +71,13 @@ def _project(ledger: EventLedger):
 
 def test_capability_candidates_can_be_inspected_for_verification_status():
     ledger = EventLedger()
-    ledger.append("fact.observed", "ws", {"fact": to_plain(_package_fact("openssh-client"))})
+    ledger.append(
+        "fact.observed", "ws", {"fact": to_plain(_package_fact("openssh-client"))}
+    )
 
-    inspection = build_capability_verification_inspection(_project(ledger), filter_text="ssh")
+    inspection = build_capability_verification_inspection(
+        _project(ledger), filter_text="ssh"
+    )
 
     assert inspection.boundary == "capability_verification_inspection_only"
     assert inspection.verifications[0].candidate == "ssh_client"
@@ -80,24 +86,43 @@ def test_capability_candidates_can_be_inspected_for_verification_status():
 
 def test_capability_verification_preserves_candidate_and_verification_evidence():
     ledger = EventLedger()
-    ledger.append("evidence.observed", "ws", {"evidence": to_plain(_package_evidence("python3"))})
+    ledger.append(
+        "evidence.observed", "ws", {"evidence": to_plain(_package_evidence("python3"))}
+    )
     ledger.append("fact.observed", "ws", {"fact": to_plain(_package_fact("python3"))})
-    ledger.append("evidence.observed", "ws", {"evidence": to_plain(_verification_evidence("python_runtime"))})
-    ledger.append("fact.observed", "ws", {"fact": to_plain(_verification_fact("python_runtime"))})
+    ledger.append(
+        "evidence.observed",
+        "ws",
+        {"evidence": to_plain(_verification_evidence("python_runtime"))},
+    )
+    ledger.append(
+        "fact.observed", "ws", {"fact": to_plain(_verification_fact("python_runtime"))}
+    )
 
-    verification = build_capability_verification_inspection(_project(ledger)).verifications[0]
+    verification = build_capability_verification_inspection(
+        _project(ledger)
+    ).verifications[0]
 
     assert verification.candidate == "python_runtime"
     assert verification.verification_status == "verified"
     assert verification.supporting_evidence[0].value == "python3"
-    assert verification.verification_supporting_facts == ["fact_python_runtime_verified"]
-    assert verification.verification_supporting_evidence[0].evidence_id == "evd_python_runtime_verified"
+    assert verification.verification_supporting_facts == [
+        "fact_python_runtime_verified"
+    ]
+    assert (
+        verification.verification_supporting_evidence[0].evidence_id
+        == "evd_python_runtime_verified"
+    )
 
 
 def test_verification_does_not_become_selection_permission_or_execution_authority():
     ledger = EventLedger()
-    ledger.append("fact.observed", "ws", {"fact": to_plain(_package_fact("openssh-client"))})
-    ledger.append("fact.observed", "ws", {"fact": to_plain(_verification_fact("ssh_client"))})
+    ledger.append(
+        "fact.observed", "ws", {"fact": to_plain(_package_fact("openssh-client"))}
+    )
+    ledger.append(
+        "fact.observed", "ws", {"fact": to_plain(_verification_fact("ssh_client"))}
+    )
     state = _project(ledger)
 
     inspection = build_capability_verification_inspection(state)
@@ -118,12 +143,16 @@ def test_verification_invokes_no_tool_executor_or_policy(monkeypatch):
     monkeypatch.setattr(
         execution_module.ToolExecutor,
         "__init__",
-        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("ToolExecutor used")),
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("ToolExecutor used")
+        ),
     )
     monkeypatch.setattr(
         policy_module.PolicyGate,
         "evaluate",
-        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("policy evaluated")),
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("policy evaluated")
+        ),
     )
     ledger = EventLedger()
     ledger.append("fact.observed", "ws", {"fact": to_plain(_package_fact("git"))})
@@ -154,13 +183,23 @@ def test_verification_is_read_only_and_survives_absent_execution_systems(monkeyp
     assert state.facts == before_facts
 
 
-def test_capability_verification_cli_is_read_only_json_and_avoids_runtime(monkeypatch, tmp_path, capsys):
+def test_capability_verification_cli_is_read_only_json_and_avoids_runtime(
+    monkeypatch, tmp_path, capsys
+):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed-local.sqlite"
     ledger = seed_local.SQLiteEventLedger(db_path)
     try:
-        ledger.append("fact.observed", "local", {"fact": to_plain(_package_fact("openssh-client"))})
-        ledger.append("fact.observed", "local", {"fact": to_plain(_verification_fact("ssh_client"))})
+        ledger.append(
+            "fact.observed",
+            "local",
+            {"fact": to_plain(_package_fact("openssh-client"))},
+        )
+        ledger.append(
+            "fact.observed",
+            "local",
+            {"fact": to_plain(_verification_fact("ssh_client"))},
+        )
         before = len(ledger.list_events("local"))
     finally:
         ledger.close()
@@ -168,15 +207,21 @@ def test_capability_verification_cli_is_read_only_json_and_avoids_runtime(monkey
     monkeypatch.setattr(
         seed_local,
         "build_local_app",
-        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("Runtime path used")),
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("Runtime path used")
+        ),
     )
     monkeypatch.setattr(
         seed_local,
         "ToolExecutor",
-        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("ToolExecutor used")),
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("ToolExecutor used")
+        ),
     )
 
-    assert seed_local.main(["--db", str(db_path), "--capability-verification", "ssh"]) == 0
+    assert (
+        seed_local.main(["--db", str(db_path), "--capability-verification", "ssh"]) == 0
+    )
 
     output = json.loads(capsys.readouterr().out)
     assert output["boundary"] == "capability_verification_inspection_only"
@@ -189,3 +234,131 @@ def test_capability_verification_cli_is_read_only_json_and_avoids_runtime(monkey
         assert len(reopened.list_events("local")) == before
     finally:
         reopened.close()
+
+
+def test_capability_verification_output_is_identical_with_fact_index():
+    from seed_runtime.fact_index import build_fact_index
+
+    ledger = EventLedger()
+    ledger.append(
+        "fact.observed", "ws", {"fact": to_plain(_package_fact("openssh-client"))}
+    )
+    ledger.append(
+        "fact.observed", "ws", {"fact": to_plain(_verification_fact("ssh_client"))}
+    )
+    state = _project(ledger)
+    fact_index = build_fact_index(state, workspace_id="ws")
+
+    without_index = build_capability_verification_inspection(state, filter_text="ssh")
+    with_index = build_capability_verification_inspection(
+        state, filter_text="ssh", fact_index=fact_index
+    )
+
+    assert with_index == without_index
+
+
+def test_capability_verification_consumes_candidates_from_fact_index_without_writes():
+    package_fact = _package_fact("git")
+
+    class PackageFactIndex:
+        fact_ids_by_subject_predicate = {
+            "localhost": {"package_installed": [package_fact.id]}
+        }
+
+        def __init__(self):
+            self.lookups = []
+
+        def current_facts(self, state, subject, predicate, *, include_expired=False):
+            self.lookups.append((subject, predicate))
+            return [package_fact]
+
+    ledger = EventLedger()
+    state = _project(ledger)
+    before_events = [event.id for event in ledger.list_events("ws")]
+    before_observations = dict(state.observations)
+    before_facts = dict(state.facts)
+    fact_index = PackageFactIndex()
+
+    inspection = build_capability_verification_inspection(state, fact_index=fact_index)
+
+    assert inspection.verifications[0].candidate == "git_client"
+    assert inspection.verifications[0].verification_status == "unverified"
+    assert fact_index.lookups == [("localhost", "package_installed")]
+    assert [event.id for event in ledger.list_events("ws")] == before_events
+    assert state.observations == before_observations
+    assert state.facts == before_facts
+    assert "capability_candidate_not_verified_capability" in inspection.notes
+    assert "verified_capability_not_execution_authority" in inspection.notes
+
+
+def test_capability_verification_cli_builds_fact_index_cache_on_miss(tmp_path, capsys):
+    from seed_runtime.events import SQLiteEventLedger
+    from seed_runtime.projection_store import (
+        FACT_INDEX_NAME,
+        FACT_INDEX_VERSION,
+        STATE_PROJECTION_VERSION,
+        SQLiteProjectionStore,
+    )
+
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "verification-index-miss.sqlite"
+    ledger = SQLiteEventLedger(str(db_path))
+    try:
+        event = ledger.append(
+            "fact.observed",
+            "local",
+            {"fact": to_plain(_package_fact("openssh-client"))},
+        )
+    finally:
+        ledger.close()
+
+    assert (
+        seed_local.main(["--db", str(db_path), "--capability-verification", "ssh"]) == 0
+    )
+
+    captured = capsys.readouterr()
+    assert json.loads(captured.out)["verifications"][0]["candidate"] == "ssh_client"
+    assert "Fact index cache: miss" in captured.err
+    assert "Building fact index..." in captured.err
+
+    store = SQLiteProjectionStore(str(db_path))
+    try:
+        snapshot = store.load_derived_index_snapshot(
+            "local",
+            FACT_INDEX_NAME,
+            FACT_INDEX_VERSION,
+            state_projection_version=STATE_PROJECTION_VERSION,
+            state_last_event_id=event.id,
+        )
+    finally:
+        store.close()
+    assert snapshot is not None
+
+
+def test_capability_verification_cli_uses_fact_index_cache_hit(tmp_path, capsys):
+    from seed_runtime.events import SQLiteEventLedger
+
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "verification-index-hit.sqlite"
+    ledger = SQLiteEventLedger(str(db_path))
+    try:
+        ledger.append(
+            "fact.observed",
+            "local",
+            {"fact": to_plain(_package_fact("openssh-client"))},
+        )
+    finally:
+        ledger.close()
+
+    assert (
+        seed_local.main(["--db", str(db_path), "--capability-verification", "ssh"]) == 0
+    )
+    assert "Fact index cache: miss" in capsys.readouterr().err
+
+    assert (
+        seed_local.main(["--db", str(db_path), "--capability-verification", "ssh"]) == 0
+    )
+    captured = capsys.readouterr()
+
+    assert "Fact index cache: hit" in captured.err
+    assert json.loads(captured.out)["verifications"][0]["candidate"] == "ssh_client"
