@@ -84,6 +84,7 @@ Use this frontier characterization when the question is not only what Seed knows
 * [`relation_of_use_observation.md`](relation_of_use_observation.md) — observation of whether useful knowledge preserves a relation to current concern, continuation, pressure, significance, or safe use beyond preserved facts and support.
 * [`relation_cluster_observation.md`](relation_cluster_observation.md) — observation of whether decomposed relation-of-use families appear independent or recur as clusters across current work, active edge, pressure, continuation, boundary, significance, activation, and preservation failure.
 * [`interaction_as_evidence_observation.md`](interaction_as_evidence_observation.md) — observation of whether some current-work, operator-facing, and activation questions make interaction or participation evidential without proposing runtime, UI, workflow, or response-system changes.
+* [`interaction_temporalness_observation.md`](interaction_temporalness_observation.md) — observation of whether interaction itself carries temporal structure through activation, selection shift, abandonment, redirection, and continuation without proposing runtime or event-model changes.
 
 ## Language / Operator Interface
 

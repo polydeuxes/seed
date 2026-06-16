@@ -44,6 +44,7 @@ related:
   - working_state_activation_failure_observation.md
   - concept_stability_audit.md
   - interaction_as_evidence_observation.md
+  - interaction_temporalness_observation.md
 ---
 
 # Seed Documentation Index
@@ -104,6 +105,7 @@ Use this file to find the right document family before reading specific document
 - `surviving_pressure_after_decomposition_observation.md` — observation of which motivating pressures remain visible after candidate lenses are decomposed, weakened, renamed, or rejected without defining pressure canonically.
 - `situatedness_and_pressure_observation.md` — observation of how reference point, current concern, continuity concern, Active Edge, and Current Work Position appear to mediate why the same fact or pressure source matters differently without defining situatedness ontology.
 - `interaction_as_evidence_observation.md` — observation of whether interaction itself becomes evidence when repository questions concern participation, activation, operator interpretation, current concern, active edge, or safe continuation rather than preserved artifacts alone.
+- `interaction_temporalness_observation.md` — observation of whether interaction carries temporal structure through activation, selection shift, abandoned paths, redirection, and continuation without proposing runtime, conversation, or event-model changes.
 - `bounty_board_and_investigation_selection_observation.md` — observation of how investigations appear to have become active, how inquiry historically moved, and how the bounty board preserves deferred inquiry without acting as roadmap authority.
 
 ## Foundational Ontology And Claim Semantics
