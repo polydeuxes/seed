@@ -81,6 +81,7 @@ Use this frontier characterization when the question is not only what Seed knows
 * [`operator_understanding_surface_observation.md`](operator_understanding_surface_observation.md) — observation of whether operator-facing and operator-adjacent surfaces communicate inventory, understanding, explanation, or mixed concerns.
 * [`derived_consequence_and_relevance_observation.md`](derived_consequence_and_relevance_observation.md) — observation of how derived future states become significant through consequence, impact, goal relevance, current concern, active edge, activation, and reference-point pressure without defining a relevance ontology.
 * [`bounty_board_and_investigation_selection_observation.md`](bounty_board_and_investigation_selection_observation.md) — observation of how investigations appear to have become active, how inquiry historically moved, and how the bounty board preserves deferred inquiry without acting as roadmap authority.
+* [`relation_of_use_observation.md`](relation_of_use_observation.md) — observation of whether useful knowledge preserves a relation to current concern, continuation, pressure, significance, or safe use beyond preserved facts and support.
 
 ## Language / Operator Interface
 
