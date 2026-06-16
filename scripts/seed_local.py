@@ -119,6 +119,7 @@ from seed_runtime.observation_normalizers import (
 from seed_runtime.predicate_catalog import PredicateCatalog
 from seed_runtime.predicate_normalizers import PredicateNormalizer
 from seed_runtime.projection_store import (
+    ProjectionStore,
     SQLiteProjectionStore,
     STATE_PROJECTION_NAME,
     STATE_PROJECTION_VERSION,
@@ -1811,6 +1812,40 @@ def _can_use_state_cache(
     )
 
 
+def _projection_store_from_args(args: argparse.Namespace) -> ProjectionStore | None:
+    """Return the configured projection cache store for CLI read-only paths."""
+
+    if not args.db:
+        return None
+    return SQLiteProjectionStore(args.db)
+
+
+def _load_or_build_fact_index_from_args(
+    args: argparse.Namespace,
+    state: State,
+    *,
+    status_consumer: ExecutionStatusConsumer | None = None,
+) -> Any | None:
+    """Return the shared fact index cache when the State cache is eligible."""
+
+    if not _can_use_state_cache(args):
+        return None
+    store = _projection_store_from_args(args)
+    if store is None:
+        return None
+    try:
+        return load_or_build_fact_index(
+            state,
+            workspace_id=args.workspace,
+            store=store,
+            status_consumer=status_consumer,
+        )
+    finally:
+        close = getattr(store, "close", None)
+        if close is not None:
+            close()
+
+
 def fact_query_state(
     args: argparse.Namespace,
     *,
@@ -1819,7 +1854,7 @@ def fact_query_state(
     """Seed requested dev state and return the projected State for fact queries."""
 
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
-    store = SQLiteProjectionStore(args.db) if args.db else None
+    store = _projection_store_from_args(args)
     try:
         seed_dev_state_from_args(args, ledger)
         history_limit = (
@@ -1857,7 +1892,7 @@ def projected_state_from_args(
     """Return persisted projected State without ingesting or executing anything."""
 
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
-    store = SQLiteProjectionStore(args.db) if args.db else None
+    store = _projection_store_from_args(args)
     try:
         projector = _state_projector_from_args(args, ledger)
         if store is not None and _can_use_state_cache(args):
@@ -1885,7 +1920,7 @@ def projected_state_summary_from_args(
     """Return the state-summary views, using a dependent summary read-model cache."""
 
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
-    store = SQLiteProjectionStore(args.db) if args.db else None
+    store = _projection_store_from_args(args)
     try:
         latest_events = ledger.list_events(args.workspace)
         current_last_event_id = latest_events[-1].id if latest_events else None
@@ -1963,7 +1998,9 @@ def rebuild_state_cache_from_args(args: argparse.Namespace) -> str:
     if not args.db:
         raise ValueError("--rebuild-state-cache requires --db")
     ledger = SQLiteEventLedger(args.db)
-    store = SQLiteProjectionStore(args.db)
+    store = _projection_store_from_args(args)
+    if store is None:
+        raise ValueError("--rebuild-state-cache requires --db")
     try:
         state, status = rebuild_state_cache(
             ledger,
@@ -1986,7 +2023,9 @@ def format_state_cache_status_from_args(args: argparse.Namespace) -> str:
     if not args.db:
         return "state cache unavailable: --db is required"
     ledger = SQLiteEventLedger(args.db)
-    store = SQLiteProjectionStore(args.db)
+    store = _projection_store_from_args(args)
+    if store is None:
+        return "state cache unavailable: --db is required"
     try:
         events = ledger.list_events(args.workspace)
         latest_event = events[-1] if events else None
@@ -4819,14 +4858,9 @@ def main(argv: list[str] | None = None) -> int:
         subject, predicate = args.current_facts
         status_consumer = CliExecutionStatusConsumer()
         state = fact_query_state(args, status_consumer=status_consumer)
-        fact_index = None
-        if args.db and _can_use_state_cache(args):
-            fact_index = load_or_build_fact_index(
-                state,
-                workspace_id=args.workspace,
-                store=SQLiteProjectionStore(args.db),
-                status_consumer=status_consumer,
-            )
+        fact_index = _load_or_build_fact_index_from_args(
+            args, state, status_consumer=status_consumer
+        )
         print(
             format_current_facts(
                 state,
@@ -4878,14 +4912,9 @@ def main(argv: list[str] | None = None) -> int:
         )
         status_consumer = CliExecutionStatusConsumer()
         state = projected_state_from_args(args, status_consumer=status_consumer)
-        fact_index = None
-        if args.db and _can_use_state_cache(args):
-            fact_index = load_or_build_fact_index(
-                state,
-                workspace_id=args.workspace,
-                store=SQLiteProjectionStore(args.db),
-                status_consumer=status_consumer,
-            )
+        fact_index = _load_or_build_fact_index_from_args(
+            args, state, status_consumer=status_consumer
+        )
         print(
             json.dumps(
                 to_plain(
@@ -4931,14 +4960,9 @@ def main(argv: list[str] | None = None) -> int:
         )
         status_consumer = CliExecutionStatusConsumer()
         state = projected_state_from_args(args, status_consumer=status_consumer)
-        fact_index = None
-        if args.db and _can_use_state_cache(args):
-            fact_index = load_or_build_fact_index(
-                state,
-                workspace_id=args.workspace,
-                store=SQLiteProjectionStore(args.db),
-                status_consumer=status_consumer,
-            )
+        fact_index = _load_or_build_fact_index_from_args(
+            args, state, status_consumer=status_consumer
+        )
         print(
             json.dumps(
                 to_plain(
@@ -4962,14 +4986,9 @@ def main(argv: list[str] | None = None) -> int:
         )
         status_consumer = CliExecutionStatusConsumer()
         state = projected_state_from_args(args, status_consumer=status_consumer)
-        fact_index = None
-        if args.db and _can_use_state_cache(args):
-            fact_index = load_or_build_fact_index(
-                state,
-                workspace_id=args.workspace,
-                store=SQLiteProjectionStore(args.db),
-                status_consumer=status_consumer,
-            )
+        fact_index = _load_or_build_fact_index_from_args(
+            args, state, status_consumer=status_consumer
+        )
         print(
             json.dumps(
                 to_plain(
