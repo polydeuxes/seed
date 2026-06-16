@@ -95,6 +95,12 @@ from seed_runtime.local_host_mounts import (
     classify_mount_collapse_group,
     mount_display_priority,
 )
+from seed_runtime.inquiry_orientation import (
+    build_inquiry_orientation,
+    format_inquiry_orientation,
+    record_inquiry_note,
+    select_inquiry_note,
+)
 from seed_runtime.integrity_summary import (
     ProjectionIntegritySummary,
     build_projection_integrity_summary,
@@ -1066,6 +1072,18 @@ def build_parser() -> argparse.ArgumentParser:
             "inspect language-derived candidate routes as read-only JSON; "
             "does not select capabilities, evaluate policy, or execute tools"
         ),
+    )
+    parser.add_argument(
+        "--record-inquiry-note",
+        metavar="TEXT",
+        help="append raw operator prose to the isolated inquiry-note probe store",
+    )
+    parser.add_argument(
+        "--inquiry-orientation",
+        nargs="?",
+        const="__latest__",
+        metavar="NOTE_ID",
+        help="render a bounded read-only orientation view for an inquiry note",
     )
     parser.add_argument(
         "--state-summary",
@@ -4503,6 +4521,14 @@ def format_runtime_why(trace: RuntimeTrace) -> str:
     return "\n".join(lines)
 
 
+def inquiry_note_store_path_from_args(args: argparse.Namespace) -> Path:
+    """Return the isolated JSONL probe store path for inquiry notes."""
+
+    if args.db:
+        return Path(args.db).with_suffix(Path(args.db).suffix + ".inquiry_notes.jsonl")
+    return REPO_ROOT / ".seed" / "inquiry_notes.jsonl"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -4571,6 +4597,41 @@ def main(argv: list[str] | None = None) -> int:
                 to_plain(inspect_candidate_routes(args.candidate_routes)),
                 indent=2,
                 sort_keys=True,
+            )
+        )
+        return 0
+
+    if args.record_inquiry_note is not None:
+        note = record_inquiry_note(
+            inquiry_note_store_path_from_args(args),
+            args.record_inquiry_note,
+            workspace_id=args.workspace,
+            session_id=args.session,
+        )
+        print(f"recorded inquiry note: {note.note_id}")
+        if args.inquiry_orientation is None:
+            return 0
+
+    if args.inquiry_orientation is not None:
+        requested_note_id = (
+            None
+            if args.inquiry_orientation == "__latest__"
+            else args.inquiry_orientation
+        )
+        note = select_inquiry_note(
+            inquiry_note_store_path_from_args(args), requested_note_id
+        )
+        if note is None:
+            message = (
+                "No inquiry note found."
+                if requested_note_id is None
+                else f"Inquiry note not found: {requested_note_id}"
+            )
+            print(message, file=sys.stderr)
+            return 1
+        print(
+            format_inquiry_orientation(
+                build_inquiry_orientation(projected_state_from_args(args), note)
             )
         )
         return 0
