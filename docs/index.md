@@ -101,6 +101,7 @@ Use this file to find the right document family before reading specific document
 - `learning_as_lens_observation.md` — observation of learning language as a useful lens over support change, understanding change, derivation, distinction emergence, contradiction discovery, interpretation change, and responsibility routing without promoting learning into ontology.
 - `lens_as_observation_and_compression_pattern.md` — observation of broad concepts functioning as bounded lenses before decomposition into more precise support structures without defining lens canonically.
 - `surviving_pressure_after_decomposition_observation.md` — observation of which motivating pressures remain visible after candidate lenses are decomposed, weakened, renamed, or rejected without defining pressure canonically.
+- `situatedness_and_pressure_observation.md` — observation of how reference point, current concern, continuity concern, Active Edge, and Current Work Position appear to mediate why the same fact or pressure source matters differently without defining situatedness ontology.
 - `bounty_board_and_investigation_selection_observation.md` — observation of how investigations appear to have become active, how inquiry historically moved, and how the bounty board preserves deferred inquiry without acting as roadmap authority.
 
 ## Foundational Ontology And Claim Semantics
@@ -335,6 +336,7 @@ These documents route emerging work without promoting it to canonical architectu
 - `object_role_and_operation_frontier.md` — object, contextual role, and operation boundary questions, with pressure-test follow-up in `object_role_operation_consistency_audit.md` and `object_role_operation_pressure_test.md`.
 - `concept_stability_audit.md` — documentation-only audit of which recent ontology concepts appear stable, unstable, recurring, load-bearing, transformed, or still under pressure.
 - `surviving_pressure_after_decomposition_observation.md` — cross-document observation of pressure stability across lens decomposition, vocabulary change, support visibility, continuity, preservation, and current concern.
+- `situatedness_and_pressure_observation.md` — cross-document observation of situated pressure patterns across reference point, current concern, continuity concern, Active Edge, and Current Work Position without proposing runtime representation.
 - `documentation_lineage_observation.md` — observation of recent documentation lineage, investigation clusters, generative documents, bridge documents, consolidating documents, and the difference between documentation lineage and inquiry lineage.
 - `discovery_path_preservation_observation.md` — observation of critique-driven discovery paths, compression removal, and the gap between conclusion preservation and understanding-transition preservation.
 - `lineage_distinction_observation.md` — observation of artifact, inquiry, observation, and discovery-path lineage surfaces and what each appears to preserve without reconciling lineage ontology.
