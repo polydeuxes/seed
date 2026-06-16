@@ -82,6 +82,7 @@ Use this frontier characterization when the question is not only what Seed knows
 * [`derived_consequence_and_relevance_observation.md`](derived_consequence_and_relevance_observation.md) — observation of how derived future states become significant through consequence, impact, goal relevance, current concern, active edge, activation, and reference-point pressure without defining a relevance ontology.
 * [`bounty_board_and_investigation_selection_observation.md`](bounty_board_and_investigation_selection_observation.md) — observation of how investigations appear to have become active, how inquiry historically moved, and how the bounty board preserves deferred inquiry without acting as roadmap authority.
 * [`relation_of_use_observation.md`](relation_of_use_observation.md) — observation of whether useful knowledge preserves a relation to current concern, continuation, pressure, significance, or safe use beyond preserved facts and support.
+* [`relation_cluster_observation.md`](relation_cluster_observation.md) — observation of whether decomposed relation-of-use families appear independent or recur as clusters across current work, active edge, pressure, continuation, boundary, significance, activation, and preservation failure.
 
 ## Language / Operator Interface
 
