@@ -4,7 +4,8 @@ from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
 from seed_runtime.serialization import to_plain
 from seed_runtime.models import Approval, Entity, Fact, Goal, ToolNeed, utc_now
-from seed_runtime.state import StateProjector
+from seed_runtime.state import ProjectionBuildDiagnostics, StateProjector
+import seed_runtime.state as state_module
 
 
 def test_projector_rebuilds_state_deterministically():
@@ -47,6 +48,86 @@ def test_projector_rebuilds_state_deterministically():
     assert first.goals["goal_1"].status == "active"
     assert first.open_tool_needs[0].name == "install_ssh_server"
     assert first.has_approval("ssh.install", "ent_1") is not None
+
+
+def test_fact_replay_defers_relationship_projection_until_finalization(monkeypatch):
+    ledger = EventLedger()
+    workspace_id = "ws_deferred_relationship_projection"
+    observed_at = utc_now()
+    facts = [
+        Fact(
+            id="fact_group",
+            subject_id="node115",
+            predicate="group",
+            value="servers",
+            evidence_ids=["evt_source"],
+            observed_at=observed_at,
+        ),
+        Fact(
+            id="fact_alias",
+            subject_id="node115",
+            predicate="alias",
+            value="192.168.254.115",
+            evidence_ids=["evt_source"],
+            observed_at=observed_at,
+        ),
+        Fact(
+            id="fact_host",
+            subject_id="jellyfin",
+            predicate="host",
+            value="node115",
+            evidence_ids=["evt_source"],
+            observed_at=observed_at,
+        ),
+    ]
+    for fact in facts:
+        ledger.append("fact.observed", workspace_id, {"fact": to_plain(fact)})
+
+    legacy_calls = 0
+    catalog_calls = 0
+    original_legacy = state_module._project_entity_relationships
+    original_catalog = state_module._project_catalog_relationships
+
+    def count_legacy(*args, **kwargs):
+        nonlocal legacy_calls
+        legacy_calls += 1
+        return original_legacy(*args, **kwargs)
+
+    def count_catalog(*args, **kwargs):
+        nonlocal catalog_calls
+        catalog_calls += 1
+        return original_catalog(*args, **kwargs)
+
+    monkeypatch.setattr(state_module, "_project_entity_relationships", count_legacy)
+    monkeypatch.setattr(state_module, "_project_catalog_relationships", count_catalog)
+    diagnostics = ProjectionBuildDiagnostics()
+
+    state = StateProjector(ledger).project(workspace_id, diagnostics=diagnostics)
+
+    assert legacy_calls == 1
+    assert catalog_calls == 1
+    assert [
+        (relationship.subject, relationship.predicate, relationship.object)
+        for relationship in state.entity_relationships
+    ] == [
+        ("node115", "group", "servers"),
+        ("node115", "alias", "192.168.254.115"),
+        ("jellyfin", "host", "node115"),
+    ]
+    assert [
+        (relationship.subject, relationship.relationship, relationship.object)
+        for relationship in state.relationships
+    ] == [
+        ("node115", "alias_of", "192.168.254.115"),
+        ("node115", "member_of", "servers"),
+        ("jellyfin", "runs_on", "node115"),
+    ]
+    timing_names = [name for name, _elapsed in diagnostics.timings]
+    assert "event replay" in timing_names
+    assert "finalization: legacy relationship projection" in timing_names
+    assert "finalization: catalog relationship projection" in timing_names
+    assert "event replay: legacy relationship refresh after fact" not in timing_names
+    assert "event replay: catalog relationship refresh after fact" not in timing_names
 
 
 def test_has_approval_compares_expiration_against_utc_now():
