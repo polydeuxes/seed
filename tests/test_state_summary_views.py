@@ -357,6 +357,9 @@ def test_operator_state_summary_filters_runtime_pseudo_filesystems_only_from_sum
             "free": 40,
             "fstype": "ext4",
             "total": 100,
+            "used_bytes": 60,
+            "free_percent": 0.4,
+            "used_percent": 0.6,
         }
     ]
     assert (
@@ -1280,3 +1283,106 @@ def test_storage_topology_projection_data_survives_bounded_operator_summary():
             "fstype": "ext4",
         },
     ).value == 1005
+
+
+def test_storage_projection_adds_filesystem_arithmetic_only_to_complete_valid_rows():
+    state = _project(
+        *_filesystem_facts(
+            "node100:9100",
+            "/",
+            free=40,
+            total=100,
+            prefix="arithmetic_root",
+        ),
+        _fact(
+            "arithmetic_missing_free",
+            "node100:9100",
+            "filesystem_free_bytes",
+            5,
+            dimensions={"mountpoint": "/missing-total", "device": "/dev/sdb1", "fstype": "ext4"},
+        ),
+        _fact(
+            "arithmetic_missing_total",
+            "node100:9100",
+            "filesystem_total_bytes",
+            10,
+            dimensions={"mountpoint": "/missing-free", "device": "/dev/sdc1", "fstype": "ext4"},
+        ),
+    )
+
+    summary = storage_state_projection(state)
+    filesystems = {
+        filesystem["mountpoint"]: filesystem for filesystem in summary["filesystems"]
+    }
+
+    assert set(filesystems) == {"/"}
+    assert filesystems["/"]["used_bytes"] == 60
+    assert filesystems["/"]["free_percent"] == 0.4
+    assert filesystems["/"]["used_percent"] == 0.6
+
+
+def test_storage_projection_omits_filesystem_arithmetic_for_zero_sized_filesystems():
+    state = _project(
+        *_filesystem_facts(
+            "node100:9100",
+            "/zero",
+            free=0,
+            total=0,
+            prefix="arithmetic_zero",
+        )
+    )
+
+    summary = storage_state_projection(state)
+    filesystem = summary["filesystems"][0]
+
+    assert filesystem["mountpoint"] == "/zero"
+    assert filesystem["free"] == 0
+    assert filesystem["total"] == 0
+    assert "used_bytes" not in filesystem
+    assert "free_percent" not in filesystem
+    assert "used_percent" not in filesystem
+
+
+def test_storage_projection_arithmetic_does_not_forecast_or_create_state_records():
+    ledger = EventLedger()
+    for fact in _filesystem_facts(
+        "node100:9100",
+        "/",
+        free=25,
+        total=100,
+        prefix="arithmetic_boundary",
+    ):
+        ledger.append("fact.observed", "ws", {"fact": to_plain(fact)})
+    state = StateProjector(ledger).project("ws")
+    before = (
+        len(ledger.list_events("ws")),
+        len(state.facts),
+        len(state.observed_facts),
+        len(state.inferred_facts),
+        len(state.observations),
+    )
+
+    summary = storage_state_projection(state)
+
+    assert before == (
+        len(ledger.list_events("ws")),
+        len(state.facts),
+        len(state.observed_facts),
+        len(state.inferred_facts),
+        len(state.observations),
+    )
+    filesystem = summary["filesystems"][0]
+    assert filesystem["used_bytes"] == 75
+    assert filesystem["free_percent"] == 0.25
+    assert filesystem["used_percent"] == 0.75
+    assert not any(
+        key in filesystem
+        for key in (
+            "time_to_full",
+            "predicted_exhaustion",
+            "capacity_warning",
+            "critical_pressure",
+            "attention_priority",
+        )
+    )
+    assert {event.kind for event in ledger.list_events("ws")} == {"fact.observed"}
