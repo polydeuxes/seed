@@ -680,6 +680,15 @@ def test_parser_accepts_json_observation_ingestion_option():
     assert args.observe_json == "inventory.json"
 
 
+def test_parser_accepts_observe_timings_flag():
+    seed_local = load_seed_local_module()
+    args = seed_local.build_parser().parse_args(
+        ["--observe-local-host", "--observe-timings"]
+    )
+
+    assert args.observe_timings is True
+
+
 def test_cli_observe_json_ingests_imported_observations(tmp_path, capsys):
     seed_local = load_seed_local_module()
     json_path = tmp_path / "observations.json"
@@ -2718,6 +2727,54 @@ def test_cli_observe_local_host_prints_count_and_summary(monkeypatch, capsys):
     assert "source_type: discovery" in output
 
 
+def test_cli_observe_local_host_timings_are_comparable_and_non_semantic(
+    monkeypatch, tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+
+    class FakeLocalSource:
+        source_type = "discovery"
+        name = "fake-local-host"
+
+        def collect(self):
+            return [
+                seed_local.Observation(
+                    id="obs_cli_local_timing",
+                    source_type="discovery",
+                    observed_at=seed_local.utc_now(),
+                    subject="node-a",
+                    predicate="os",
+                    value="linux",
+                )
+            ]
+
+    monkeypatch.setattr(seed_local, "LocalHostObservationSource", FakeLocalSource)
+    plain_db = tmp_path / "plain.sqlite"
+    timing_db = tmp_path / "timing.sqlite"
+
+    assert seed_local.main(["--db", str(plain_db), "--observe-local-host"]) == 0
+    plain_output = capsys.readouterr().out
+    assert "Observation ingestion timings:" not in plain_output
+
+    assert (
+        seed_local.main(
+            ["--db", str(timing_db), "--observe-local-host", "--observe-timings"]
+        )
+        == 0
+    )
+    timing_output = capsys.readouterr().out
+    assert "Observation ingestion timings:" in timing_output
+    assert "source collection:" in timing_output
+    assert "normalization:" in timing_output
+    assert "event generation + ledger write:" in timing_output
+    assert "total observations: 1" in timing_output
+    assert "total events: 3" in timing_output
+
+    plain_events = seed_local.SQLiteEventLedger(str(plain_db)).list_events()
+    timing_events = seed_local.SQLiteEventLedger(str(timing_db)).list_events()
+    assert [event.kind for event in timing_events] == [event.kind for event in plain_events]
+
+
 def test_cli_observe_local_host_quiet_output_suppresses_rendering_only(
     monkeypatch, tmp_path, capsys
 ):
@@ -4491,6 +4548,29 @@ def test_cli_current_facts_exposes_identity_facts(tmp_path, capsys):
     assert "* node115 boot_id 11111111-2222-3333-4444-555555555555" in output
 
 
+def test_cli_observe_prometheus_timings_use_test_double(monkeypatch, capsys):
+    seed_local = load_seed_local_module()
+    _patch_fake_prometheus_source(monkeypatch, seed_local)
+
+    assert (
+        seed_local.main(
+            [
+                "--observe-prometheus",
+                "http://prom.example:9090",
+                "--observe-timings",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "Observation ingestion timings:" in output
+    assert "source collection:" in output
+    assert "normalization:" in output
+    assert "event generation + ledger write:" in output
+    assert "total observations: 8" in output
+
+
 def test_cli_observe_repository_source_ingests_queryable_relationships(
     tmp_path, capsys
 ):
@@ -4534,6 +4614,44 @@ def test_cli_observe_repository_source_ingests_queryable_relationships(
         == 0
     )
     assert "seed_runtime.state.StateProjector" in capsys.readouterr().out
+
+
+def test_cli_observe_repository_source_timings_include_source_counters(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "repository-source-timings.sqlite"
+    repo_path = tmp_path / "repo"
+    source_dir = repo_path / "seed_runtime"
+    source_dir.mkdir(parents=True)
+    (source_dir / "state.py").write_text(
+        "import json\n"
+        "def project():\n"
+        "    return json.dumps({})\n",
+        encoding="utf-8",
+    )
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--observe-repository-source",
+                str(repo_path),
+                "--observe-timings",
+                "--quiet-output",
+            ]
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "Observation ingestion timings:" in output
+    assert "files_scanned: 1" in output
+    assert "files_skipped: 0" in output
+    assert "definitions_imports_extracted:" in output
+    assert "source collection:" in output
+    assert "normalization:" in output
+    assert "event generation + ledger write:" in output
 
 
 def test_cli_repository_current_facts_filter_matches_broad_relationship_facts(
