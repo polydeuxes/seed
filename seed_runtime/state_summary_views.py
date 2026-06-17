@@ -430,6 +430,30 @@ def _storage_topology_ambiguities(
     )
 
 
+def _add_filesystem_arithmetic(filesystem: dict[str, Any]) -> dict[str, Any]:
+    """Return a filesystem row with deterministic projection-only arithmetic.
+
+    Arithmetic is added only when canonical complete measurements are usable.
+    Missing, zero-sized, or internally inconsistent measurements remain visible
+    as measurements, but do not receive invented derived values.
+    """
+
+    free = filesystem.get("free")
+    total = filesystem.get("total")
+    if not isinstance(free, int) or not isinstance(total, int):
+        return filesystem
+    if total <= 0 or free < 0 or free > total:
+        return filesystem
+
+    used = total - free
+    return {
+        **filesystem,
+        "used_bytes": used,
+        "free_percent": free / total,
+        "used_percent": used / total,
+    }
+
+
 def _storage_projection(state: State) -> dict[str, Any]:
     """Build the explicit storage-focused projection surface from State."""
 
@@ -457,12 +481,14 @@ def _storage_projection(state: State) -> dict[str, Any]:
         filesystems[key].setdefault("fstype", fact.dimensions.get("fstype"))
 
     complete_filesystems = [
-        {
-            "host": host,
-            "mountpoint": mountpoint,
-            "dimensions_key": dimensions_key,
-            **values,
-        }
+        _add_filesystem_arithmetic(
+            {
+                "host": host,
+                "mountpoint": mountpoint,
+                "dimensions_key": dimensions_key,
+                **values,
+            }
+        )
         for (host, mountpoint, dimensions_key), values in filesystems.items()
         if "free" in values and "total" in values
     ]
