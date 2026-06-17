@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import time
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from typing import Any, Callable, Iterable, Literal
@@ -47,6 +48,30 @@ from seed_runtime.models import (
     ToolNeed,
     ToolSpec,
 )
+
+
+@dataclass
+class ProjectionBuildDiagnostics:
+    """Optional, non-authoritative timings for projected-State construction."""
+
+    timings: list[tuple[str, float]] = field(default_factory=list)
+    counters: dict[str, int] = field(default_factory=dict)
+
+    def timed(self, name: str, func: Callable[[], Any]) -> Any:
+        started = time.perf_counter()
+        try:
+            return func()
+        finally:
+            elapsed = time.perf_counter() - started
+            for index, (existing_name, existing_elapsed) in enumerate(self.timings):
+                if existing_name == name:
+                    self.timings[index] = (existing_name, existing_elapsed + elapsed)
+                    break
+            else:
+                self.timings.append((name, elapsed))
+
+    def add_count(self, name: str, amount: int = 1) -> None:
+        self.counters[name] = self.counters.get(name, 0) + amount
 
 
 def _parse_dt(value: str | None) -> datetime | None:
@@ -725,6 +750,7 @@ class StateProjector:
         workspace_id: str,
         *,
         status_consumer: ExecutionStatusConsumer | None = None,
+        diagnostics: ProjectionBuildDiagnostics | None = None,
     ) -> State:
         state = State(
             workspace_id=workspace_id, predicate_catalog=self.predicate_catalog
@@ -735,6 +761,7 @@ class StateProjector:
             status_consumer=status_consumer,
             status_phase="projection_replay",
             status_message="Projection replay",
+            diagnostics=diagnostics,
         )
 
     def project_from_state(
@@ -745,6 +772,7 @@ class StateProjector:
         status_consumer: ExecutionStatusConsumer | None = None,
         status_phase: str | None = None,
         status_message: str | None = None,
+        diagnostics: ProjectionBuildDiagnostics | None = None,
     ) -> State:
         """Apply ledger events to a projected State, then rebuild derived indexes.
 
@@ -754,73 +782,175 @@ class StateProjector:
         authority and this method only reuses derived state as an optimization.
         """
 
-        event_list = list(events)
+        event_list = (
+            diagnostics.timed(
+                "projection input event materialization", lambda: list(events)
+            )
+            if diagnostics is not None
+            else list(events)
+        )
         total = len(event_list)
+        if diagnostics is not None:
+            diagnostics.add_count("projection events", total)
         cadence = ProgressCadence()
         state.predicate_catalog = self.predicate_catalog
-        for index, event in enumerate(event_list, start=1):
-            state.last_event_id = event.id
-            self.apply(state, event)
-            if status_phase is not None and status_message is not None:
-                emit_progress_if_due(
-                    status_consumer,
-                    cadence,
-                    status_phase,
-                    status_message,
-                    current=index,
-                    total=total,
-                )
-        return self.finalize(state)
 
-    def finalize(self, state: State) -> State:
+        def replay_events() -> None:
+            for index, event in enumerate(event_list, start=1):
+                state.last_event_id = event.id
+                if diagnostics is not None:
+                    diagnostics.add_count(f"projection event kind: {event.kind}")
+                self.apply(state, event, diagnostics=diagnostics)
+                if status_phase is not None and status_message is not None:
+                    emit_progress_if_due(
+                        status_consumer,
+                        cadence,
+                        status_phase,
+                        status_message,
+                        current=index,
+                        total=total,
+                    )
+
+        if diagnostics is not None:
+            diagnostics.timed("event replay", replay_events)
+        else:
+            replay_events()
+        return self.finalize(state, diagnostics=diagnostics)
+
+    def finalize(
+        self, state: State, *, diagnostics: ProjectionBuildDiagnostics | None = None
+    ) -> State:
         """Rebuild derived projection indexes after event application."""
 
-        state.alias_resolver = AliasResolver(state.facts.values())
-        all_measurement_evidence_ids = {
-            evidence_id
-            for fact in state.facts.values()
-            if is_measurement_predicate(fact.predicate)
-            for evidence_id in fact.evidence_ids
-        }
-        state.facts = _retain_projected_measurement_history(
-            state.facts.values(),
-            subject_key=lambda fact: _projection_subject(
-                fact, state.alias_resolver.canonical
+        timed = (
+            diagnostics.timed if diagnostics is not None else lambda _name, func: func()
+        )
+        timed(
+            "finalization: initial alias projection",
+            lambda: setattr(
+                state, "alias_resolver", AliasResolver(state.facts.values())
             ),
-            limit=self.measurement_history_limit,
         )
-        _project_inferred_facts(state, self.inference_catalog, self.predicate_catalog)
-        state.alias_resolver = AliasResolver(state.facts.values())
-        state.facts = _retain_projected_measurement_history(
-            state.facts.values(),
-            subject_key=lambda fact: _projection_subject(
-                fact, state.alias_resolver.canonical
+        all_measurement_evidence_ids = timed(
+            "finalization: measurement evidence scan",
+            lambda: {
+                evidence_id
+                for fact in state.facts.values()
+                if is_measurement_predicate(fact.predicate)
+                for evidence_id in fact.evidence_ids
+            },
+        )
+        state.facts = timed(
+            "finalization: measurement history retention before inference",
+            lambda: _retain_projected_measurement_history(
+                state.facts.values(),
+                subject_key=lambda fact: _projection_subject(
+                    fact, state.alias_resolver.canonical
+                ),
+                limit=self.measurement_history_limit,
             ),
-            limit=self.measurement_history_limit,
         )
-        state.observed_facts = {
-            fact_id: fact for fact_id, fact in state.facts.items() if not fact.inferred
-        }
-        state.inferred_facts = {
-            fact_id: fact for fact_id, fact in state.facts.items() if fact.inferred
-        }
-        _prune_projected_measurement_provenance(state, all_measurement_evidence_ids)
-        state.fact_supports = _project_fact_supports(state.facts.values())
-        state.entity_relationships = _project_entity_relationships(state.facts.values())
-        state.relationships = _project_catalog_relationships(
-            state.facts.values(), self.relationship_catalog, state.evidence
+        timed(
+            "finalization: inferred fact projection",
+            lambda: _project_inferred_facts(
+                state, self.inference_catalog, self.predicate_catalog
+            ),
         )
-        state.entity_type_assertions = _project_entity_type_assertions(
-            state, self.entity_type_catalog
+        timed(
+            "finalization: post-inference alias projection",
+            lambda: setattr(
+                state, "alias_resolver", AliasResolver(state.facts.values())
+            ),
         )
-        state.graph_issues = GraphValidator(
-            self.relationship_catalog, self.entity_type_catalog
-        ).validate(state)
-        state.entity_aliases = state.alias_resolver.aliases
-        state.fact_conflicts = _project_fact_conflicts(state)
+        state.facts = timed(
+            "finalization: measurement history retention after inference",
+            lambda: _retain_projected_measurement_history(
+                state.facts.values(),
+                subject_key=lambda fact: _projection_subject(
+                    fact, state.alias_resolver.canonical
+                ),
+                limit=self.measurement_history_limit,
+            ),
+        )
+        state.observed_facts = timed(
+            "finalization: observed/inferred fact partition",
+            lambda: {
+                fact_id: fact
+                for fact_id, fact in state.facts.items()
+                if not fact.inferred
+            },
+        )
+        state.inferred_facts = timed(
+            "finalization: inferred fact partition",
+            lambda: {
+                fact_id: fact for fact_id, fact in state.facts.items() if fact.inferred
+            },
+        )
+        timed(
+            "finalization: measurement provenance pruning",
+            lambda: _prune_projected_measurement_provenance(
+                state, all_measurement_evidence_ids
+            ),
+        )
+        state.fact_supports = timed(
+            "finalization: fact support construction",
+            lambda: _project_fact_supports(state.facts.values()),
+        )
+        state.entity_relationships = timed(
+            "finalization: legacy relationship projection",
+            lambda: _project_entity_relationships(state.facts.values()),
+        )
+        state.relationships = timed(
+            "finalization: catalog relationship projection",
+            lambda: _project_catalog_relationships(
+                state.facts.values(), self.relationship_catalog, state.evidence
+            ),
+        )
+        state.entity_type_assertions = timed(
+            "finalization: entity type assertion projection",
+            lambda: _project_entity_type_assertions(state, self.entity_type_catalog),
+        )
+        state.graph_issues = timed(
+            "finalization: graph issue construction",
+            lambda: GraphValidator(
+                self.relationship_catalog, self.entity_type_catalog
+            ).validate(state),
+        )
+        state.entity_aliases = timed(
+            "finalization: alias list materialization",
+            lambda: state.alias_resolver.aliases,
+        )
+        state.fact_conflicts = timed(
+            "finalization: fact conflict handling",
+            lambda: _project_fact_conflicts(state),
+        )
+        if diagnostics is not None:
+            diagnostics.counters.update(
+                {
+                    "entities": len(state.entities),
+                    "facts": len(state.facts),
+                    "observed facts": len(state.observed_facts),
+                    "inferred facts": len(state.inferred_facts),
+                    "fact supports": len(state.fact_supports),
+                    "catalog relationships": len(state.relationships),
+                    "legacy relationships": len(state.entity_relationships),
+                    "entity aliases": len(state.entity_aliases),
+                    "entity type assertions": len(state.entity_type_assertions),
+                    "graph issues": len(state.graph_issues),
+                    "fact conflicts": len(state.fact_conflicts),
+                    "evidence": len(state.evidence),
+                    "observations": len(state.observations),
+                }
+            )
         return state
 
-    def apply(self, state: State, event: Event) -> None:
+    def apply(
+        self,
+        state: State,
+        event: Event,
+        *,
+        diagnostics: ProjectionBuildDiagnostics | None = None,
+    ) -> None:
         payload = event.payload
         if event.kind == "entity.upserted":
             data = payload.get("entity", payload)
@@ -837,21 +967,34 @@ class StateProjector:
             evidence = Evidence(**data)
             state.evidence[evidence.id] = evidence
         elif event.kind in {"fact.observed", "fact.inferred"}:
-            data = _normalize_fact_event_payload(payload, event)
-            if event.kind == "fact.inferred":
-                data["inferred"] = True
-                data["source_type"] = "inferred"
-            else:
-                data["inferred"] = False
-                if data.get("source_type") == "inferred":
-                    data.pop("source_type")
-            fact = Fact(**data)
-            state.facts[fact.id] = fact
-            state.entity_relationships = _project_entity_relationships(
-                state.facts.values()
+            timed = (
+                diagnostics.timed
+                if diagnostics is not None
+                else lambda _name, func: func()
             )
-            state.relationships = _project_catalog_relationships(
-                state.facts.values(), self.relationship_catalog, state.evidence
+
+            def decode_fact() -> Fact:
+                data = _normalize_fact_event_payload(payload, event)
+                if event.kind == "fact.inferred":
+                    data["inferred"] = True
+                    data["source_type"] = "inferred"
+                else:
+                    data["inferred"] = False
+                    if data.get("source_type") == "inferred":
+                        data.pop("source_type")
+                return Fact(**data)
+
+            fact = timed("event replay: fact event decoding", decode_fact)
+            state.facts[fact.id] = fact
+            state.entity_relationships = timed(
+                "event replay: legacy relationship refresh after fact",
+                lambda: _project_entity_relationships(state.facts.values()),
+            )
+            state.relationships = timed(
+                "event replay: catalog relationship refresh after fact",
+                lambda: _project_catalog_relationships(
+                    state.facts.values(), self.relationship_catalog, state.evidence
+                ),
             )
         elif event.kind == "goal.created":
             data = payload.get("goal", payload)

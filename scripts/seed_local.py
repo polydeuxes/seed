@@ -151,7 +151,7 @@ from seed_runtime.secrets import (
     normalize_field_name,
     reject_secret_fields,
 )
-from seed_runtime.state import State, StateProjector
+from seed_runtime.state import ProjectionBuildDiagnostics, State, StateProjector
 from seed_runtime.source_navigation import (
     build_source_navigation,
     format_source_navigation,
@@ -2013,6 +2013,8 @@ class StateSummaryCacheDebugReport:
     cached_summary_last_event_id: str | None
     cached_state_last_event_id: str | None
     timings: list[tuple[str, float]]
+    projection_timings: list[tuple[str, float]]
+    projection_counters: dict[str, int]
     notes: list[str]
 
 
@@ -2095,6 +2097,8 @@ def state_summary_cache_debug_from_args(
                     cached_summary_last_event_id,
                     cached_state_last_event_id,
                     timings + [("total runtime", time.perf_counter() - started)],
+                    [],
+                    {},
                     notes,
                 )
             state_snapshot = timed(
@@ -2124,6 +2128,7 @@ def state_summary_cache_debug_from_args(
             "state projector construction",
             lambda: _state_projector_from_args(args, ledger),
         )
+        projection_diagnostics = ProjectionBuildDiagnostics()
         if store is not None and cache_eligible:
             state, _status = timed(
                 "projection replay / build",
@@ -2133,11 +2138,15 @@ def state_summary_cache_debug_from_args(
                     store,
                     projector=projector,
                     status_consumer=None,
+                    diagnostics=projection_diagnostics,
                 ),
             )
         else:
             state = timed(
-                "projection replay / build", lambda: projector.project(args.workspace)
+                "projection replay / build",
+                lambda: projector.project(
+                    args.workspace, diagnostics=projection_diagnostics
+                ),
             )
         timed(
             "fact_support construction if separable", lambda: len(state.fact_supports)
@@ -2179,6 +2188,8 @@ def state_summary_cache_debug_from_args(
             cached_summary_last_event_id,
             cached_state_last_event_id,
             timings + [("total runtime", time.perf_counter() - started)],
+            projection_diagnostics.timings,
+            projection_diagnostics.counters,
             notes,
         )
     finally:
@@ -2220,8 +2231,17 @@ def format_state_summary_cache_debug_report(
     )
     if report.notes:
         lines.extend(["", "Notes:", *[f"- {note}" for note in report.notes]])
+    if report.projection_counters:
+        lines.extend(["", "Projection/build structure counts:"])
+        for name in sorted(report.projection_counters):
+            lines.append(f"- {name}: {report.projection_counters[name]}")
     lines.extend(["", "Timings:"])
     lines.extend(f"- {name}: {elapsed:.6f}s" for name, elapsed in report.timings)
+    if report.projection_timings:
+        lines.extend(["", "Projection replay / build subphase timings:"])
+        lines.extend(
+            f"- {name}: {elapsed:.6f}s" for name, elapsed in report.projection_timings
+        )
     return "\n".join(lines)
 
 
