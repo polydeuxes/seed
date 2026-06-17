@@ -44,6 +44,7 @@ from seed_runtime.state import (
     LegacyEntityRelationship,
     State,
     StateProjector,
+    ProjectionBuildDiagnostics,
 )
 
 STATE_PROJECTION_NAME = "state"
@@ -226,7 +227,9 @@ class InMemoryProjectionStore:
         return snapshot
 
     def save_derived_index_snapshot(self, snapshot: DerivedIndexSnapshot) -> None:
-        self._derived_index_snapshots[(snapshot.workspace_id, snapshot.index_name)] = snapshot
+        self._derived_index_snapshots[(snapshot.workspace_id, snapshot.index_name)] = (
+            snapshot
+        )
 
 
 class SQLiteProjectionStore:
@@ -536,6 +539,7 @@ def project_state_with_cache(
     projection_name: str = STATE_PROJECTION_NAME,
     projection_version: str = STATE_PROJECTION_VERSION,
     status_consumer: ExecutionStatusConsumer | None = None,
+    diagnostics: ProjectionBuildDiagnostics | None = None,
 ) -> tuple[State, StateCacheStatus]:
     """Return projected State, reusing a valid ProjectionStore snapshot when possible."""
 
@@ -597,15 +601,24 @@ def project_state_with_cache(
                         current=0,
                         total=len(remaining_events),
                     )
-                    state = projector.project_from_state(
-                        snapshot_state,
-                        _events_with_progress(
-                            remaining_events,
-                            status_consumer=status_consumer,
-                            phase="incremental_projection_replay",
-                            message="Incremental replay",
-                        ),
+                    replay_events = _events_with_progress(
+                        remaining_events,
+                        status_consumer=status_consumer,
+                        phase="incremental_projection_replay",
+                        message="Incremental replay",
                     )
+                    if diagnostics is not None and isinstance(
+                        projector, StateProjector
+                    ):
+                        state = projector.project_from_state(
+                            snapshot_state,
+                            replay_events,
+                            diagnostics=diagnostics,
+                        )
+                    else:
+                        state = projector.project_from_state(
+                            snapshot_state, replay_events
+                        )
                     if not remaining_events:
                         emit_status(
                             status_consumer,
@@ -649,7 +662,9 @@ def project_state_with_cache(
         total=len(events),
     )
     if isinstance(projector, StateProjector):
-        state = projector.project(workspace_id, status_consumer=status_consumer)
+        state = projector.project(
+            workspace_id, status_consumer=status_consumer, diagnostics=diagnostics
+        )
     else:
         state = projector.project(workspace_id)
         emit_status(
@@ -726,6 +741,7 @@ def rebuild_state_cache(
     projection_name: str = STATE_PROJECTION_NAME,
     projection_version: str = STATE_PROJECTION_VERSION,
     status_consumer: ExecutionStatusConsumer | None = None,
+    diagnostics: ProjectionBuildDiagnostics | None = None,
 ) -> tuple[State, StateCacheStatus]:
     """Clear and rebuild the cached state projection snapshot."""
 
@@ -741,6 +757,7 @@ def rebuild_state_cache(
         projection_name=projection_name,
         projection_version=projection_version,
         status_consumer=status_consumer,
+        diagnostics=diagnostics,
     )
 
 

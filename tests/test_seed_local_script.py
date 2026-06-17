@@ -1809,6 +1809,11 @@ def test_cli_state_summary_cache_debug_does_not_ingest_or_execute(
 
     output = capsys.readouterr().out
     assert "Summary cache:\n- status: miss" in output
+    assert "Projection replay / build subphase timings:" in output
+    assert "- event replay:" in output
+    assert "- finalization: fact support construction:" in output
+    assert "Projection/build structure counts:" in output
+    assert "- facts:" in output
     ledger = seed_local.SQLiteEventLedger(str(db_path))
     try:
         assert len(ledger.list_events("local")) == before
@@ -1843,6 +1848,7 @@ def test_cli_state_summary_cache_debug_reports_warm_summary_hit(tmp_path, capsys
     warm_output = capsys.readouterr().out
     assert "Summary cache:\n- status: hit" in warm_output
     assert "State cache:\n- status: skipped" in warm_output
+    assert "Projection replay / build subphase timings:" not in warm_output
 
 
 def test_cli_state_summary_cache_debug_does_not_change_normal_summary_output(

@@ -212,7 +212,7 @@
       "id": "ProjectionStore",
       "kind": "class",
       "layer": "state",
-      "line": 91,
+      "line": 92,
       "owner": "projection_cache",
       "routes": [],
       "summary": "Stores reusable projected-state snapshots derived from the event ledger."
@@ -415,7 +415,7 @@
       "id": "StateProjector",
       "kind": "class",
       "layer": "state",
-      "line": 690,
+      "line": 715,
       "owner": "state_projection",
       "routes": [],
       "summary": "Rebuilds inspectable state by applying ledger events and deriving projection indexes."
