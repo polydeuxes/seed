@@ -240,14 +240,20 @@ def build_state_summary(state: State) -> StateSummary:
     """Return a compact read-only summary of the projected world model."""
 
     return StateSummary(
-        facts_count=len(build_fact_view(state)),
-        observations_count=len(build_observation_view(state)),
-        requirements_count=len(build_requirement_view(state)),
-        capabilities_count=len(build_capability_view(state)),
-        issues_count=len(build_issue_view(state)),
+        facts_count=_fact_view_count(state),
+        observations_count=len(state.observations),
+        requirements_count=len(state.goals),
+        capabilities_count=len(state.tool_needs) + len(state.tools),
+        issues_count=len(state.graph_issues),
         last_event_id=state.last_event_id,
         projection_version=state.projection_version,
     )
+
+
+def _fact_view_count(state: State) -> int:
+    if state.fact_supports:
+        return len(state.fact_supports)
+    return len(state.facts)
 
 
 def _supporting_ids_for_observation(state: State, observation_id: str) -> list[str]:

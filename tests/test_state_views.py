@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from seed_runtime.events import SQLiteEventLedger
+from seed_runtime.facts import FactSupport
 from seed_runtime.models import Entity, Fact, Goal, ToolNeed, ToolSpec, utc_now
 from seed_runtime.observations import Observation
 from seed_runtime.serialization import to_plain
@@ -320,6 +321,69 @@ def test_issue_view_builds_correctly_from_projected_state():
 
 def test_state_summary_reports_correct_counts():
     assert build_state_summary(_state()) == StateSummary(
+        facts_count=1,
+        observations_count=1,
+        requirements_count=1,
+        capabilities_count=2,
+        issues_count=1,
+        last_event_id="evt_last",
+        projection_version="v1",
+    )
+
+
+def test_state_summary_counts_match_materialized_views_with_fact_supports():
+    state = _state()
+    observed_at = utc_now()
+    state.facts["fact_runtime_repeat"] = Fact(
+        id="fact_runtime_repeat",
+        subject_id="jellyfin",
+        predicate="runs_on",
+        value="node214",
+        evidence_ids=["evd_runtime_repeat"],
+        confidence=0.95,
+        observed_at=observed_at,
+    )
+    state.fact_supports = [
+        FactSupport(
+            subject="jellyfin",
+            predicate="runs_on",
+            value="node214",
+            supporting_fact_ids=["fact_runtime", "fact_runtime_repeat"],
+            source_types=["discovery"],
+            confidence=0.95,
+            observed_at=observed_at,
+            latest_observed_at=observed_at,
+        )
+    ]
+
+    summary = build_state_summary(state)
+
+    assert summary == StateSummary(
+        facts_count=len(build_fact_view(state)),
+        observations_count=len(build_observation_view(state)),
+        requirements_count=len(build_requirement_view(state)),
+        capabilities_count=len(build_capability_view(state)),
+        issues_count=len(build_issue_view(state)),
+        last_event_id="evt_last",
+        projection_version="v1",
+    )
+
+
+def test_state_summary_counts_directly_without_materializing_views(monkeypatch):
+    import seed_runtime.state_views as state_views
+
+    state = _state()
+
+    def fail_builder(*_args, **_kwargs):
+        raise AssertionError("build_state_summary should count directly")
+
+    monkeypatch.setattr(state_views, "build_fact_view", fail_builder)
+    monkeypatch.setattr(state_views, "build_observation_view", fail_builder)
+    monkeypatch.setattr(state_views, "build_requirement_view", fail_builder)
+    monkeypatch.setattr(state_views, "build_capability_view", fail_builder)
+    monkeypatch.setattr(state_views, "build_issue_view", fail_builder)
+
+    assert state_views.build_state_summary(state) == StateSummary(
         facts_count=1,
         observations_count=1,
         requirements_count=1,
