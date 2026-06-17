@@ -227,8 +227,7 @@ def test_cli_state_summary_rejects_precomputed_storage_topology_counts():
             "availability": {"up": 0, "down": 0, "unknown": 0},
             "filesystems": [],
             "cluster_mount_groups": [
-                {"mountpoint": f"/mnt/node{index}/sda1"}
-                for index in range(31)
+                {"mountpoint": f"/mnt/node{index}/sda1"} for index in range(31)
             ],
             "shared_storage_candidates": [
                 {"mountpaths": [f"/mnt/node{index}/sda1"], "confidence": "low"}
@@ -1716,6 +1715,7 @@ def test_parser_supports_fact_projection_queries():
     conflicts_args = parser.parse_args(["--fact-conflicts"])
     refreshes_args = parser.parse_args(["--stale-fact-refreshes"])
     summary_args = parser.parse_args(["--state-summary"])
+    summary_debug_args = parser.parse_args(["--state-summary-cache-debug"])
 
     history_args = parser.parse_args(
         [
@@ -1741,6 +1741,138 @@ def test_parser_supports_fact_projection_queries():
     assert conflicts_args.fact_conflicts is True
     assert refreshes_args.stale_fact_refreshes is True
     assert summary_args.state_summary is True
+    assert summary_debug_args.state_summary_cache_debug is True
+
+
+def test_cli_state_summary_cache_debug_without_db_reports_unavailable(capsys):
+    seed_local = load_seed_local_module()
+
+    assert seed_local.main(["--state-summary-cache-debug"]) == 0
+
+    output = capsys.readouterr().out
+    assert "State Summary Cache Debug" in output
+    assert "- status: ineligible" in output
+    assert "- reason: --db is required for persisted read-model caches" in output
+    assert "Summary cache:\n- status: unavailable" in output
+    assert "State cache:\n- status: unavailable" in output
+
+
+def test_cli_state_summary_cache_debug_does_not_ingest_or_execute(
+    tmp_path, monkeypatch, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "state-summary-debug.sqlite"
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        seed_local.ObservationIngestor(ledger).ingest(
+            seed_local.Observation(
+                id="obs_debug_host",
+                source_type="user",
+                observed_at=seed_local.utc_now(),
+                subject="debug-host",
+                predicate="os",
+                value="linux",
+            ),
+            "local",
+        )
+        before = len(ledger.list_events("local"))
+    finally:
+        ledger.close()
+
+    monkeypatch.setattr(
+        seed_local,
+        "seed_dev_state_from_args",
+        lambda args, ledger: pytest.fail("state-summary cache debug must not ingest"),
+    )
+    monkeypatch.setattr(
+        seed_local,
+        "build_local_app",
+        lambda *args, **kwargs: pytest.fail(
+            "state-summary cache debug must not execute"
+        ),
+    )
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--state-summary-cache-debug",
+                "--fact",
+                "ignored",
+                "os",
+                "x",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "Summary cache:\n- status: miss" in output
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        assert len(ledger.list_events("local")) == before
+    finally:
+        ledger.close()
+
+
+def test_cli_state_summary_cache_debug_reports_warm_summary_hit(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "state-summary-debug-warm.sqlite"
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        seed_local.ObservationIngestor(ledger).ingest(
+            seed_local.Observation(
+                id="obs_debug_warm",
+                source_type="user",
+                observed_at=seed_local.utc_now(),
+                subject="warm-host",
+                predicate="os",
+                value="linux",
+            ),
+            "local",
+        )
+    finally:
+        ledger.close()
+
+    assert seed_local.main(["--db", str(db_path), "--state-summary-cache-debug"]) == 0
+    cold_output = capsys.readouterr().out
+    assert "Summary cache:\n- status: miss" in cold_output
+
+    assert seed_local.main(["--db", str(db_path), "--state-summary-cache-debug"]) == 0
+    warm_output = capsys.readouterr().out
+    assert "Summary cache:\n- status: hit" in warm_output
+    assert "State cache:\n- status: skipped" in warm_output
+
+
+def test_cli_state_summary_cache_debug_does_not_change_normal_summary_output(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "state-summary-debug-normal.sqlite"
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        seed_local.ObservationIngestor(ledger).ingest(
+            seed_local.Observation(
+                id="obs_normal_summary",
+                source_type="user",
+                observed_at=seed_local.utc_now(),
+                subject="normal-host",
+                predicate="os",
+                value="linux",
+            ),
+            "local",
+        )
+    finally:
+        ledger.close()
+
+    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+    before = capsys.readouterr().out
+    assert seed_local.main(["--db", str(db_path), "--state-summary-cache-debug"]) == 0
+    capsys.readouterr()
+    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+    after = capsys.readouterr().out
+    assert before == after
 
 
 def test_cli_state_summary_reports_projected_world_model_without_ingestion(
@@ -1871,6 +2003,7 @@ def test_cli_state_summary_reports_projected_world_model_without_ingestion(
     assert "  host_availability:\n    up: 1\n    down: 1\n    unknown: 1" in output
     _assert_default_state_summary_has_no_storage_detail(output)
 
+
 def test_format_state_summary_renders_endpoint_counts_without_endpoint_names():
     seed_local = load_seed_local_module()
 
@@ -1899,7 +2032,9 @@ def test_format_state_summary_renders_endpoint_counts_without_endpoint_names():
         }
     )
 
-    assert "  endpoints:\n    total: 1\n    up: 0\n    down: 1\n    unknown: 0" in output
+    assert (
+        "  endpoints:\n    total: 1\n    up: 0\n    down: 1\n    unknown: 0" in output
+    )
     assert "10.0.0.1:9100" not in output
     assert "    node115 (aliases: 0 total; facts: 1)" in output
     assert "    api (aliases: 0 total; facts: 1)" in output
@@ -1979,7 +2114,10 @@ def test_cli_state_summary_keeps_endpoint_availability_separate_from_host(
     output = capsys.readouterr().out
     assert "entities: 2" in output
     assert "availability by scope:" in output
-    assert "  endpoint_scrape_availability:\n    up: 1\n    down: 0\n    unknown: 0" in output
+    assert (
+        "  endpoint_scrape_availability:\n    up: 1\n    down: 0\n    unknown: 0"
+        in output
+    )
     assert "  host_availability:\n    up: 0\n    down: 0\n    unknown: 1" in output
 
 
@@ -2601,7 +2739,9 @@ def test_cli_observe_local_host_quiet_output_suppresses_rendering_only(
     monkeypatch.setattr(seed_local, "LocalHostObservationSource", FakeLocalSource)
 
     assert (
-        seed_local.main(["--db", str(db_path), "--observe-local-host", "--quiet-output"])
+        seed_local.main(
+            ["--db", str(db_path), "--observe-local-host", "--quiet-output"]
+        )
         == 0
     )
     captured = capsys.readouterr()
@@ -2616,7 +2756,9 @@ def test_cli_observe_local_host_quiet_output_suppresses_rendering_only(
     assert "Writing events" in captured.err
     assert "Done." in captured.err
 
-    assert seed_local.main(["--db", str(db_path), "--current-facts", "node-a", "os"]) == 0
+    assert (
+        seed_local.main(["--db", str(db_path), "--current-facts", "node-a", "os"]) == 0
+    )
     facts_output = capsys.readouterr().out
     assert "linux" in facts_output
 
@@ -2683,6 +2825,7 @@ def test_cli_observe_repository_source_quiet_output_suppresses_rendering_only(
     assert "observation.observed" in events_output
     assert "evidence.observed" in events_output
     assert "fact.observed" in events_output
+
 
 def test_cli_local_network_facts_appear_in_current_facts_and_impact(
     monkeypatch, tmp_path, capsys
@@ -3164,7 +3307,9 @@ def test_ingest_observations_batches_consecutive_cli_observations():
 
     assert len(facts) == 2
     assert ledger.append_many_calls == 1
-    assert [event.kind for event in ledger.list_events(seed_local.DEFAULT_WORKSPACE)] == [
+    assert [
+        event.kind for event in ledger.list_events(seed_local.DEFAULT_WORKSPACE)
+    ] == [
         "observation.observed",
         "evidence.observed",
         "fact.observed",
@@ -3413,7 +3558,9 @@ def test_cli_observe_prometheus_mountpoint_filter_limits_ingestion(
     }
 
 
-def test_cli_alias_to_endpoint_does_not_resolve_host_best_fact_after_sqlite_reopen(tmp_path, capsys):
+def test_cli_alias_to_endpoint_does_not_resolve_host_best_fact_after_sqlite_reopen(
+    tmp_path, capsys
+):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
 
@@ -4338,7 +4485,9 @@ def test_cli_current_facts_exposes_identity_facts(tmp_path, capsys):
     assert "* node115 boot_id 11111111-2222-3333-4444-555555555555" in output
 
 
-def test_cli_observe_repository_source_ingests_queryable_relationships(tmp_path, capsys):
+def test_cli_observe_repository_source_ingests_queryable_relationships(
+    tmp_path, capsys
+):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "repository-source.sqlite"
     repo_path = tmp_path / "repo"
