@@ -8,6 +8,7 @@ import ipaddress
 from collections import Counter, defaultdict
 import json
 import sys
+import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -127,6 +128,7 @@ from seed_runtime.projection_store import (
     STATE_SUMMARY_PROJECTION_VERSION,
     SummaryProjectionSnapshot,
     project_state_with_cache,
+    state_from_payload,
     rebuild_state_cache,
 )
 from seed_runtime.observation_sources import (
@@ -1095,6 +1097,14 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--state-summary-cache-debug",
+        action="store_true",
+        help=(
+            "print read-only state-summary cache eligibility, hit/miss status, "
+            "last-event ids, and phase timings; does not ingest observations or execute tools"
+        ),
+    )
+    parser.add_argument(
         "--integrity-summary",
         action="store_true",
         help=(
@@ -1380,6 +1390,7 @@ def validate_lifecycle_args(
         bool(args.candidate_requests),
         bool(args.candidate_routes),
         bool(args.state_summary),
+        bool(args.state_summary_cache_debug),
         bool(args.integrity_summary),
         bool(args.inferred_facts),
         bool(args.fact_conflicts),
@@ -1402,7 +1413,7 @@ def validate_lifecycle_args(
             "--verification-evidence, --capability-verification, "
             "--capability-promotion-readiness, --current-issues, "
             "--decision-context, --candidate-requests, --candidate-routes, "
-            "--state-summary, --integrity-summary, "
+            "--state-summary, --state-summary-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --rebuild-state-cache, --state-cache-status, "
             "or --events-only"
@@ -1990,6 +2001,228 @@ def projected_state_summary_from_args(
             close = getattr(resource, "close", None)
             if close is not None:
                 close()
+
+
+@dataclass(frozen=True)
+class StateSummaryCacheDebugReport:
+    cache_eligible: bool
+    cache_ineligible_reason: str | None
+    summary_cache_status: str
+    state_cache_status: str
+    current_last_event_id: str | None
+    cached_summary_last_event_id: str | None
+    cached_state_last_event_id: str | None
+    timings: list[tuple[str, float]]
+    notes: list[str]
+
+
+def _format_cache_status_id(value: str | None) -> str:
+    return value if value is not None else "none"
+
+
+def state_summary_cache_debug_from_args(
+    args: argparse.Namespace,
+) -> StateSummaryCacheDebugReport:
+    """Measure the state-summary cache boundary without ingesting or executing tools."""
+
+    timings: list[tuple[str, float]] = []
+    notes: list[str] = []
+    started = time.perf_counter()
+
+    def timed(name: str, func):
+        phase_started = time.perf_counter()
+        try:
+            return func()
+        finally:
+            timings.append((name, time.perf_counter() - phase_started))
+
+    store = timed("projection store open", lambda: _projection_store_from_args(args))
+    ledger: EventLedger = timed(
+        "ledger open", lambda: SQLiteEventLedger(args.db) if args.db else EventLedger()
+    )
+    current_last_event_id: str | None = None
+    cached_summary_last_event_id: str | None = None
+    cached_state_last_event_id: str | None = None
+    summary_cache_status = "unavailable"
+    state_cache_status = "unavailable"
+    cache_eligible = _can_use_state_cache(args)
+    cache_ineligible_reason = None
+    if not args.db:
+        cache_ineligible_reason = "--db is required for persisted read-model caches"
+    elif args.predicate_catalog is not None:
+        cache_ineligible_reason = (
+            "custom predicate catalog disables the default state cache"
+        )
+
+    try:
+        latest_events = timed(
+            "event listing / current last event lookup",
+            lambda: ledger.list_events(args.workspace),
+        )
+        current_last_event_id = latest_events[-1].id if latest_events else None
+        summary_snapshot = None
+        state_snapshot = None
+        if store is not None and cache_eligible:
+            summary_snapshot = timed(
+                "state summary snapshot lookup",
+                lambda: store.load_summary_snapshot(
+                    args.workspace,
+                    STATE_SUMMARY_PROJECTION_NAME,
+                    STATE_SUMMARY_PROJECTION_VERSION,
+                    state_projection_version=STATE_PROJECTION_VERSION,
+                    state_last_event_id=current_last_event_id,
+                ),
+            )
+            summary_cache_status = "hit" if summary_snapshot is not None else "miss"
+            if summary_snapshot is not None:
+                cached_summary_last_event_id = summary_snapshot.last_event_id
+                timed(
+                    "state summary snapshot decode / payload reconstruction",
+                    lambda: StateSummary(
+                        **summary_snapshot.summary_payload["state_view_summary"]
+                    ),
+                )
+                state_cache_status = "skipped"
+                notes.append(
+                    "state cache lookup skipped because the summary cache satisfied the request"
+                )
+                return StateSummaryCacheDebugReport(
+                    cache_eligible,
+                    cache_ineligible_reason,
+                    summary_cache_status,
+                    state_cache_status,
+                    current_last_event_id,
+                    cached_summary_last_event_id,
+                    cached_state_last_event_id,
+                    timings + [("total runtime", time.perf_counter() - started)],
+                    notes,
+                )
+            state_snapshot = timed(
+                "state cache lookup",
+                lambda: store.load_snapshot(
+                    args.workspace, STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION
+                ),
+            )
+            state_cache_status = (
+                "hit"
+                if state_snapshot is not None
+                and state_snapshot.last_event_id == current_last_event_id
+                else "miss"
+            )
+            if state_snapshot is not None:
+                cached_state_last_event_id = state_snapshot.last_event_id
+                timed(
+                    "state snapshot decode / State reconstruction",
+                    lambda: state_from_payload(state_snapshot.state_payload),
+                )
+        elif store is None:
+            notes.append(
+                "state and summary caches unavailable because no projection store was configured"
+            )
+
+        projector = timed(
+            "state projector construction",
+            lambda: _state_projector_from_args(args, ledger),
+        )
+        if store is not None and cache_eligible:
+            state, _status = timed(
+                "projection replay / build",
+                lambda: project_state_with_cache(
+                    ledger,
+                    args.workspace,
+                    store,
+                    projector=projector,
+                    status_consumer=None,
+                ),
+            )
+        else:
+            state = timed(
+                "projection replay / build", lambda: projector.project(args.workspace)
+            )
+        timed(
+            "fact_support construction if separable", lambda: len(state.fact_supports)
+        )
+        view_summary = timed(
+            "compact StateSummary derivation", lambda: build_state_summary(state)
+        )
+        operator_summary = timed(
+            "operator state_summary derivation", lambda: state_summary(state)
+        )
+        if store is not None and cache_eligible:
+            timed(
+                "state summary snapshot save",
+                lambda: store.save_summary_snapshot(
+                    SummaryProjectionSnapshot(
+                        workspace_id=args.workspace,
+                        projection_name=STATE_SUMMARY_PROJECTION_NAME,
+                        projection_version=STATE_SUMMARY_PROJECTION_VERSION,
+                        last_event_id=state.last_event_id,
+                        state_projection_version=STATE_PROJECTION_VERSION,
+                        state_last_event_id=state.last_event_id,
+                        summary_payload={
+                            "state_view_summary": to_plain(view_summary),
+                            "operator_summary": operator_summary,
+                        },
+                        created_at=datetime.now(timezone.utc),
+                    )
+                ),
+            )
+        timed(
+            "rendering", lambda: format_state_summary_cache_debug_report_placeholder()
+        )
+        return StateSummaryCacheDebugReport(
+            cache_eligible,
+            cache_ineligible_reason,
+            summary_cache_status,
+            state_cache_status,
+            current_last_event_id,
+            cached_summary_last_event_id,
+            cached_state_last_event_id,
+            timings + [("total runtime", time.perf_counter() - started)],
+            notes,
+        )
+    finally:
+        for resource in (store, ledger):
+            close = getattr(resource, "close", None)
+            if close is not None:
+                close()
+
+
+def format_state_summary_cache_debug_report_placeholder() -> str:
+    return ""
+
+
+def format_state_summary_cache_debug_report(
+    report: StateSummaryCacheDebugReport,
+) -> str:
+    lines = [
+        "State Summary Cache Debug",
+        "",
+        "Cache eligibility:",
+        f"- status: {'eligible' if report.cache_eligible else 'ineligible'}",
+    ]
+    if report.cache_ineligible_reason:
+        lines.append(f"- reason: {report.cache_ineligible_reason}")
+    lines.extend(
+        [
+            "",
+            "Summary cache:",
+            f"- status: {report.summary_cache_status}",
+            "",
+            "State cache:",
+            f"- status: {report.state_cache_status}",
+            "",
+            "Last event ids:",
+            f"- current last event id: {_format_cache_status_id(report.current_last_event_id)}",
+            f"- cached summary last event id: {_format_cache_status_id(report.cached_summary_last_event_id)}",
+            f"- cached state last event id: {_format_cache_status_id(report.cached_state_last_event_id)}",
+        ]
+    )
+    if report.notes:
+        lines.extend(["", "Notes:", *[f"- {note}" for note in report.notes]])
+    lines.extend(["", "Timings:"])
+    lines.extend(f"- {name}: {elapsed:.6f}s" for name, elapsed in report.timings)
+    return "\n".join(lines)
 
 
 def rebuild_state_cache_from_args(args: argparse.Namespace) -> str:
@@ -4683,6 +4916,14 @@ def main(argv: list[str] | None = None) -> int:
             format_state_view_summary(view_summary)
             + "\n\n"
             + format_state_summary(operator_summary)
+        )
+        return 0
+
+    if args.state_summary_cache_debug:
+        print(
+            format_state_summary_cache_debug_report(
+                state_summary_cache_debug_from_args(args)
+            )
         )
         return 0
 
