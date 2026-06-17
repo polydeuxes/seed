@@ -135,6 +135,7 @@ from seed_runtime.observation_sources import (
     JsonObservationSource,
     LocalHostObservationSource,
     ObservationCollectionService,
+    ObservationIngestionDiagnostics,
     PrometheusObservationSource,
     RepositorySourceObservationSource,
     diff_observations_json,
@@ -459,6 +460,7 @@ def ingest_json_observations(
     session_id: str | None = None,
     predicate_catalog_path: str | Path | None = None,
     status_consumer: ExecutionStatusConsumer | None = None,
+    diagnostics: list[ObservationIngestionDiagnostics] | None = None,
 ) -> list[Fact]:
     """Ingest observations from a local JSON file through source collection."""
 
@@ -473,7 +475,35 @@ def ingest_json_observations(
         actor="system",
         session_id=session_id,
         status_consumer=status_consumer,
+        diagnostics=diagnostics,
     )
+
+
+def format_observation_ingestion_diagnostics(
+    diagnostics: list[ObservationIngestionDiagnostics],
+) -> str:
+    """Format ingestion timing diagnostics for comparable source inspection."""
+
+    lines = ["Observation ingestion timings:"]
+    for diagnostic in diagnostics:
+        lines.extend(
+            [
+                f"- source: {diagnostic.source_name}",
+                f"  source collection: {diagnostic.source_collection_seconds:.6f}s",
+                f"  normalization: {diagnostic.normalization_seconds:.6f}s",
+                "  event generation + ledger write: "
+                f"{diagnostic.event_generation_and_ledger_write_seconds:.6f}s",
+                f"  total: {diagnostic.total_seconds:.6f}s",
+                f"  total observations: {diagnostic.total_observations}",
+                f"  total events: {diagnostic.total_events}",
+                f"  facts promoted: {diagnostic.facts_promoted}",
+                f"  observations/sec: {diagnostic.observations_per_second:.2f}",
+                f"  events/sec: {diagnostic.events_per_second:.2f}",
+            ]
+        )
+        for key in sorted(diagnostic.source_counters):
+            lines.append(f"  {key}: {diagnostic.source_counters[key]}")
+    return "\n".join(lines)
 
 
 def ingest_observation_source(
@@ -484,6 +514,7 @@ def ingest_observation_source(
     session_id: str | None = None,
     predicate_catalog_path: str | Path | None = None,
     status_consumer: ExecutionStatusConsumer | None = None,
+    diagnostics: list[ObservationIngestionDiagnostics] | None = None,
 ) -> list[Fact]:
     """Collect a live read-only source through ObservationCollectionService."""
 
@@ -498,6 +529,7 @@ def ingest_observation_source(
         actor="system",
         session_id=session_id,
         status_consumer=status_consumer,
+        diagnostics=diagnostics,
     )
 
 
@@ -938,6 +970,11 @@ def build_parser() -> argparse.ArgumentParser:
             "for observation workflows, suppress normal stdout knowledge rendering "
             "while preserving execution-status output and ingestion"
         ),
+    )
+    parser.add_argument(
+        "--observe-timings",
+        action="store_true",
+        help="print comparable observation ingestion timing diagnostics",
     )
     parser.add_argument(
         "--prometheus-instance",
@@ -4013,6 +4050,7 @@ def format_observed_fact_summary(facts: list[Fact]) -> str:
 def ingest_observations_from_args(
     args: argparse.Namespace,
     status_consumer: ExecutionStatusConsumer | None = None,
+    diagnostics: list[ObservationIngestionDiagnostics] | None = None,
 ) -> list[Fact]:
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
     try:
@@ -4069,6 +4107,7 @@ def ingest_observations_from_args(
                     session_id=args.session,
                     predicate_catalog_path=args.predicate_catalog,
                     status_consumer=status_consumer,
+                    diagnostics=diagnostics,
                 )
             )
         if args.observe_local_host:
@@ -4080,6 +4119,7 @@ def ingest_observations_from_args(
                     session_id=args.session,
                     predicate_catalog_path=args.predicate_catalog,
                     status_consumer=status_consumer,
+                    diagnostics=diagnostics,
                 )
             )
         if args.observe_prometheus:
@@ -4091,6 +4131,7 @@ def ingest_observations_from_args(
                     session_id=args.session,
                     predicate_catalog_path=args.predicate_catalog,
                     status_consumer=status_consumer,
+                    diagnostics=diagnostics,
                 )
             )
         if args.observe_repository_source:
@@ -4102,6 +4143,7 @@ def ingest_observations_from_args(
                     session_id=args.session,
                     predicate_catalog_path=args.predicate_catalog,
                     status_consumer=status_consumer,
+                    diagnostics=diagnostics,
                 )
             )
         return facts
@@ -5332,8 +5374,11 @@ def main(argv: list[str] | None = None) -> int:
         and not args.http
     ):
         status_consumer = CliExecutionStatusConsumer()
+        diagnostics: list[ObservationIngestionDiagnostics] = []
         observed_facts = ingest_observations_from_args(
-            args, status_consumer=status_consumer
+            args,
+            status_consumer=status_consumer,
+            diagnostics=diagnostics if args.observe_timings else None,
         )
         emit_status(status_consumer, "done", "Done.", completed=True)
         suppress_observation_rendering = args.quiet_output and (
@@ -5344,6 +5389,8 @@ def main(argv: list[str] | None = None) -> int:
                 print(format_observed_fact_summary(observed_facts))
             else:
                 print(format_observed_facts(observed_facts))
+        if args.observe_timings:
+            print(format_observation_ingestion_diagnostics(diagnostics))
         return 0
 
     app = build_local_app(

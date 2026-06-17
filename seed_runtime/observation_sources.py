@@ -13,6 +13,8 @@ import shutil
 import socket
 import stat
 import struct
+import time
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from importlib.util import find_spec
 from pathlib import Path
@@ -91,6 +93,33 @@ class ObservationSource(Protocol):
         """Return the observations collected by this source."""
 
 
+@dataclass
+class ObservationIngestionDiagnostics:
+    """Comparable timing counters for observation collection and ingestion."""
+
+    source_name: str
+    source_collection_seconds: float = 0.0
+    normalization_seconds: float = 0.0
+    event_generation_and_ledger_write_seconds: float = 0.0
+    total_seconds: float = 0.0
+    total_observations: int = 0
+    total_events: int = 0
+    facts_promoted: int = 0
+    source_counters: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def observations_per_second(self) -> float:
+        if not self.total_seconds:
+            return 0.0
+        return self.total_observations / self.total_seconds
+
+    @property
+    def events_per_second(self) -> float:
+        if not self.event_generation_and_ledger_write_seconds:
+            return 0.0
+        return self.total_events / self.event_generation_and_ledger_write_seconds
+
+
 class RepositorySourceObservationSource:
     """Read-only repository source adapter for imports/defines observations."""
 
@@ -107,19 +136,29 @@ class RepositorySourceObservationSource:
         self.repository_root = Path(repository_root).resolve()
         self.observed_at = observed_at or datetime.now(timezone.utc)
         self.include_roots = include_roots
+        self.last_collection_counters: dict[str, Any] = {}
 
     def collect(self) -> list[Observation]:
         observations: list[Observation] = []
+        files_scanned = 0
+        definitions_imports_extracted = 0
         for source_path in self.discover_source_files():
+            files_scanned += 1
             text = (self.repository_root / source_path).read_text(encoding="utf-8")
             relationship_facts = [
                 *extract_python_import_relationship_facts(source_path, text),
                 *extract_python_definition_relationship_facts(source_path, text),
             ]
+            definitions_imports_extracted += len(relationship_facts)
             observations.extend(
                 self._relationship_observation(relationship)
                 for relationship in relationship_facts
             )
+        self.last_collection_counters = {
+            "files_scanned": files_scanned,
+            "files_skipped": 0,
+            "definitions_imports_extracted": definitions_imports_extracted,
+        }
         return observations
 
     def discover_source_files(self) -> list[str]:
@@ -1920,6 +1959,7 @@ class PrometheusObservationSource:
         self.source_type = source_type
         self.timeout_seconds = timeout_seconds
         self.last_error: str | None = None
+        self.last_collection_counters: dict[str, Any] = {}
 
     def collect(self) -> list[Observation]:
         """Collect safe Prometheus metrics, returning [] if unreachable."""
@@ -1927,15 +1967,29 @@ class PrometheusObservationSource:
         seed_collected_at = datetime.now(timezone.utc)
         observations: list[Observation] = []
         self.last_error = None
+        api_fetch_seconds = 0.0
+        metric_families = 0
+        samples_processed = 0
         for query in self.SAFE_QUERIES:
             try:
+                query_started = time.perf_counter()
                 payload = self._query(query)
+                api_fetch_seconds += time.perf_counter() - query_started
             except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
                 self.last_error = f"{type(exc).__name__}: {exc}"
                 return []
+            metric_families += 1
+            result = payload["data"]["result"]
+            samples_processed += len(result) if isinstance(result, list) else 0
             observations.extend(
                 self._observations_from_query(query, payload, seed_collected_at)
             )
+        self.last_collection_counters = {
+            "http_api_fetch_seconds": api_fetch_seconds,
+            "metric_families_processed": metric_families,
+            "samples_processed": samples_processed,
+            "observations_generated": len(observations),
+        }
         return observations
 
     def _query(self, query: str) -> dict[str, Any]:
@@ -2444,6 +2498,7 @@ class ObservationCollectionService:
         causation_id: str | None = None,
         correlation_id: str | None = None,
         status_consumer: ExecutionStatusConsumer | None = None,
+        diagnostics: list[ObservationIngestionDiagnostics] | None = None,
     ) -> list[Fact]:
         """Collect and ingest all observations from a source.
 
@@ -2452,10 +2507,14 @@ class ObservationCollectionService:
         """
 
         lifecycle = ObservationProducerLifecycle(status_consumer, source.name)
+        total_started = time.perf_counter()
         lifecycle.collecting()
+        collect_started = time.perf_counter()
         observations = list(source.collect())
+        collect_seconds = time.perf_counter() - collect_started
         lifecycle.collected(len(observations))
         lifecycle.normalizing(len(observations))
+        normalize_started = time.perf_counter()
         normalized = [
             self._normalize_observation(source, observation)
             for observation in observations
@@ -2463,9 +2522,11 @@ class ObservationCollectionService:
         if self.normalization_pipeline is not None:
             state = StateProjector(self.ingestor.ledger).project(workspace_id)
             normalized = self.normalization_pipeline.normalize(normalized, state=state)
+        normalize_seconds = time.perf_counter() - normalize_started
         lifecycle.normalized(len(normalized))
 
         lifecycle.ingesting(len(normalized))
+        ingest_started = time.perf_counter()
         facts = self.ingestor.ingest_many(
             normalized,
             workspace_id,
@@ -2475,7 +2536,23 @@ class ObservationCollectionService:
             correlation_id=correlation_id,
             status_consumer=status_consumer,
         )
+        ingest_seconds = time.perf_counter() - ingest_started
         lifecycle.completed(len(normalized))
+        promoted_count = sum(1 for fact in facts if fact is not None)
+        if diagnostics is not None:
+            diagnostics.append(
+                ObservationIngestionDiagnostics(
+                    source_name=source.name,
+                    source_collection_seconds=collect_seconds,
+                    normalization_seconds=normalize_seconds,
+                    event_generation_and_ledger_write_seconds=ingest_seconds,
+                    total_seconds=time.perf_counter() - total_started,
+                    total_observations=len(normalized),
+                    total_events=(2 * len(normalized)) + promoted_count,
+                    facts_promoted=promoted_count,
+                    source_counters=dict(getattr(source, "last_collection_counters", {})),
+                )
+            )
         return [fact for fact in facts if fact is not None]
 
     @staticmethod
