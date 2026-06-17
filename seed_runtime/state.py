@@ -986,16 +986,6 @@ class StateProjector:
 
             fact = timed("event replay: fact event decoding", decode_fact)
             state.facts[fact.id] = fact
-            state.entity_relationships = timed(
-                "event replay: legacy relationship refresh after fact",
-                lambda: _project_entity_relationships(state.facts.values()),
-            )
-            state.relationships = timed(
-                "event replay: catalog relationship refresh after fact",
-                lambda: _project_catalog_relationships(
-                    state.facts.values(), self.relationship_catalog, state.evidence
-                ),
-            )
         elif event.kind == "goal.created":
             data = payload.get("goal", payload)
             goal = Goal(**data)
