@@ -61,13 +61,13 @@ def _executable_state() -> State:
     ledger.append(
         "entity.upserted",
         workspace_id,
-        {"entity": to_plain(Entity(id="ent_1", kind="host", name="node-1"))},
+        {"entity": to_plain(Entity(id="ent_1", kind="host", name="example_host"))},
     )
     ledger.append("tool.registered", workspace_id, {"tool": to_plain(_tool())})
     ledger.append(
         "fact.observed",
         workspace_id,
-        {"fact": to_plain(_fact("fact_host", "service.host", "node-1"))},
+        {"fact": to_plain(_fact("fact_host", "service.host", "example_host"))},
     )
     ledger.append(
         "fact.observed",
@@ -99,7 +99,7 @@ def test_docker_service_plan_creates_proposal_from_facts():
     assert proposal.provider == "docker_container_lifecycle"
     assert proposal.tool_name == "docker_container_lifecycle"
     assert proposal.tool_arguments == {
-        "host": "node-1",
+        "host": "example_host",
         "container": "web",
         "action": "restart",
     }
@@ -118,7 +118,7 @@ def test_proposal_stores_fingerprint():
     assert proposal is not None
     assert proposal.arguments_fingerprint == fingerprint_tool_call(
         "docker_container_lifecycle",
-        {"host": "node-1", "container": "web", "action": "restart"},
+        {"host": "example_host", "container": "web", "action": "restart"},
     )
     assert proposal.arguments_fingerprint.startswith("sha256:")
 
@@ -130,7 +130,7 @@ def test_secrets_rejected():
             action_plan_id="plan_1",
             provider="docker_container_lifecycle",
             tool_name="docker_container_lifecycle",
-            tool_arguments={"host": "node-1", "container": "web", "token": "raw"},
+            tool_arguments={"host": "example_host", "container": "web", "token": "raw"},
             arguments_fingerprint="sha256:placeholder",
             risk_class="L3",
             executable=False,
@@ -139,7 +139,7 @@ def test_secrets_rejected():
     state = replace(
         _executable_state(),
         facts={
-            "fact_host": _fact("fact_host", "service.host", "node-1"),
+            "fact_host": _fact("fact_host", "service.host", "example_host"),
             "fact_container": _fact(
                 "fact_container",
                 "service.container",
@@ -189,7 +189,7 @@ def test_diagnose_failure_reports_service_host_missing_when_plan_ready():
 def test_diagnose_failure_reports_container_name_missing_when_plan_ready():
     state = replace(
         _executable_state(),
-        facts={"fact_host": _fact("fact_host", "service.host", "node-1")},
+        facts={"fact_host": _fact("fact_host", "service.host", "example_host")},
     )
 
     failure = ExecutionProposalService().diagnose_failure(_plan(), state)

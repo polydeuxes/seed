@@ -187,10 +187,10 @@ If present, that value becomes the `Observation.subject` for emitted Prometheus 
 This means values such as:
 
 ```text
-192.168.254.115:9100
+192.0.2.115:9100
 localhost:9090
-node115:9100
-node115
+example_host:9100
+example_host
 ```
 
 all enter Seed through the same subject slot.
@@ -251,7 +251,7 @@ subject = instance
 predicate = os
 ```
 
-Therefore, if `instance` is `192.168.254.115:9100`, the OS fact attaches to the endpoint-shaped subject rather than to the nodename or a routed host subject.
+Therefore, if `instance` is `192.0.2.115:9100`, the OS fact attaches to the endpoint-shaped subject rather than to the nodename or a routed host subject.
 
 The presence of `nodename` metadata does not by itself reroute the host-scoped fact.
 
@@ -425,7 +425,7 @@ subject = instance
 If `instance` has host:port shape, the result is:
 
 ```text
-192.168.254.115:9100 os linux
+192.0.2.115:9100 os linux
 ```
 
 That fact shape conflicts with the earlier boundary that host facts should attach to host subjects and endpoint facts should attach to endpoint subjects.

@@ -132,12 +132,12 @@ Examples:
 | User text | InputAct | Plausible DecisionKind | Why |
 | --- | --- | --- | --- |
 | `What does Seed know about ProjectionStore?` | `operator_query` | `answer` | The user wants an explanation/report. |
-| `Which host runs Jellyfin?` | `operator_query` | `ask_question` | Clarification may be needed if multiple workspaces or sources exist. |
-| `Can you check whether Jellyfin is listening?` | `command_request` | `request_tool` | The request asks for external/current inspection and may require missing capability. |
-| `Install Docker on node116.` | `command_request` | `propose_action_plan`, `request_tool`, `call_tool`, or `refuse` | The route depends on capability, policy, and guard checks. |
-| `Jellyfin is running on node116.` | `user_observation` | `answer` | Seed can acknowledge or explain evidence requirements. |
+| `Which host runs web_service?` | `operator_query` | `ask_question` | Clarification may be needed if multiple workspaces or sources exist. |
+| `Can you check whether web_service is listening?` | `command_request` | `request_tool` | The request asks for external/current inspection and may require missing capability. |
+| `Install Docker on example_host_b.` | `command_request` | `propose_action_plan`, `request_tool`, `call_tool`, or `refuse` | The route depends on capability, policy, and guard checks. |
+| `web_service is running on example_host_b.` | `user_observation` | `answer` | Seed can acknowledge or explain evidence requirements. |
 | `README says ToolExecutor owns execution.` | `documentation_claim` | `answer` | Seed can discuss or evaluate the claim. |
-| `No, node116 is not the Jellyfin host anymore.` | `correction` | `ask_question` | Seed may need to know what replaced it or what record is being corrected. |
+| `No, example_host_b is not the web_service host anymore.` | `correction` | `ask_question` | Seed may need to know what replaced it or what record is being corrected. |
 | `Thanks, that makes sense.` | `casual_answer` | `answer` | A brief acknowledgment is sufficient. |
 
 ## Relationship To Existing Input Inspection

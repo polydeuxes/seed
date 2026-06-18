@@ -157,7 +157,7 @@ Seed has sufficient evidence that an SSH client is available locally.
 It does not mean:
 
 ```text
-Seed may SSH into node116.
+Seed may SSH into example_host_b.
 ```
 
 It does not mean:

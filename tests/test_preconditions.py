@@ -51,7 +51,7 @@ def _seed_concrete_proposal(ledger: EventLedger, workspace_id: str, plan: Action
     ledger.append(
         "fact.observed",
         workspace_id,
-        {"fact": to_plain(_fact("fact_host", "service.host", "node-1"))},
+        {"fact": to_plain(_fact("fact_host", "service.host", "example_host"))},
     )
     ledger.append(
         "fact.observed",
@@ -94,7 +94,7 @@ def test_legacy_approval_no_longer_satisfies_mutating_preconditions():
     ledger.append(
         "entity.upserted",
         workspace_id,
-        {"entity": to_plain(Entity(id="ent_1", kind="host", name="node-1"))},
+        {"entity": to_plain(Entity(id="ent_1", kind="host", name="example_host"))},
     )
     ledger.append("tool.registered", workspace_id, {"tool": to_plain(_tool())})
     ledger.append(
@@ -170,7 +170,7 @@ def test_executable_becomes_true_only_when_all_preconditions_are_true():
     ledger.append(
         "entity.upserted",
         workspace_id,
-        {"entity": to_plain(Entity(id="ent_1", kind="host", name="node-1"))},
+        {"entity": to_plain(Entity(id="ent_1", kind="host", name="example_host"))},
     )
     plan = _plan().model_copy(update={"status": "accepted"})
     ledger.append(
@@ -262,7 +262,7 @@ def test_sqlite_execution_authorization_survives_reopen_for_preconditions(tmp_pa
         ledger.append(
             "entity.upserted",
             workspace_id,
-            {"entity": to_plain(Entity(id="ent_1", kind="host", name="node-1"))},
+            {"entity": to_plain(Entity(id="ent_1", kind="host", name="example_host"))},
         )
         ledger.append("tool.registered", workspace_id, {"tool": to_plain(_tool())})
         proposal = _seed_concrete_proposal(ledger, workspace_id, plan)
@@ -304,7 +304,7 @@ def test_expired_execution_authorization_does_not_satisfy_precondition():
     ledger.append(
         "entity.upserted",
         workspace_id,
-        {"entity": to_plain(Entity(id="ent_1", kind="host", name="node-1"))},
+        {"entity": to_plain(Entity(id="ent_1", kind="host", name="example_host"))},
     )
     ledger.append("tool.registered", workspace_id, {"tool": to_plain(_tool())})
     ledger.append(
@@ -316,7 +316,7 @@ def test_expired_execution_authorization_does_not_satisfy_precondition():
                 "action_plan_id": "plan_1",
                 "provider": "docker_container_lifecycle",
                 "tool_name": "docker_container_lifecycle",
-                "tool_arguments": {"host": "node-1", "container": "web", "action": "restart"},
+                "tool_arguments": {"host": "example_host", "container": "web", "action": "restart"},
                 "arguments_fingerprint": "sha256:expired",
                 "risk_class": "L3",
                 "authorized": False,
@@ -370,7 +370,7 @@ def test_execution_authorization_satisfies_mutating_plan_without_storing_argumen
     ledger.append(
         "entity.upserted",
         workspace_id,
-        {"entity": to_plain(Entity(id="ent_1", kind="host", name="node-1"))},
+        {"entity": to_plain(Entity(id="ent_1", kind="host", name="example_host"))},
     )
     ledger.append("tool.registered", workspace_id, {"tool": to_plain(_tool())})
 
@@ -425,7 +425,7 @@ def test_wrong_proposal_authorization_does_not_satisfy():
     ledger.append(
         "entity.upserted",
         workspace_id,
-        {"entity": to_plain(Entity(id="ent_1", kind="host", name="node-1"))},
+        {"entity": to_plain(Entity(id="ent_1", kind="host", name="example_host"))},
     )
     ledger.append("tool.registered", workspace_id, {"tool": to_plain(_tool())})
     proposal = _seed_concrete_proposal(ledger, workspace_id, other_plan)

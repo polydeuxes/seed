@@ -164,8 +164,8 @@ Why was this value selected?
 Why not another value?
 ```
 
-A question is not a claim. The question `Why is node115 unavailable?` does not
-assert that node115 is unavailable unless separately represented as a claim or
+A question is not a claim. The question `Why is example_host unavailable?` does not
+assert that example_host is unavailable unless separately represented as a claim or
 assumption. A question can contain a presupposition, but that presupposition
 should be inspectable rather than silently promoted into knowledge.
 
@@ -243,7 +243,7 @@ A question should not create a factual claim simply because it asks about a
 condition. For example:
 
 ```text
-Question: Why is node115 unavailable?
+Question: Why is example_host unavailable?
 Potential claim support:
 - observation that endpoint probe failed
 - fact that endpoint is unreachable

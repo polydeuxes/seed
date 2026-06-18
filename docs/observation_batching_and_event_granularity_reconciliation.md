@@ -101,7 +101,7 @@ Examples:
 
 ```text
 package nginx is installed
-/etc/hosts line 4 maps 192.168.1.10 to node115
+/etc/hosts line 4 maps 192.168.1.10 to example_host
 mount /mnt/merged exists
 listener tcp/22 is present
 ```

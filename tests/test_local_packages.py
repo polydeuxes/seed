@@ -102,7 +102,7 @@ Version: 1:1.3.dfsg-3.1ubuntu2
 
 def test_package_records_emit_generic_host_subject_package_predicates_only():
     observations = package_records_to_observations(
-        "node115",
+        "example_host",
         [
             PackageRecord(
                 name="curl",
@@ -117,12 +117,12 @@ def test_package_records_emit_generic_host_subject_package_predicates_only():
 
     triples = {(obs.subject, obs.predicate, obs.value) for obs in observations}
     assert triples == {
-        ("node115", "package_installed", "curl"),
-        ("node115", "package_version", "8.5.0-2ubuntu10.6"),
-        ("node115", "package_architecture", "amd64"),
-        ("node115", "package_manager", "dpkg"),
+        ("example_host", "package_installed", "curl"),
+        ("example_host", "package_version", "8.5.0-2ubuntu10.6"),
+        ("example_host", "package_architecture", "amd64"),
+        ("example_host", "package_manager", "dpkg"),
     }
-    assert all(obs.subject == "node115" for obs in observations)
+    assert all(obs.subject == "example_host" for obs in observations)
     assert all(
         obs.dimensions == {"package_name": "curl", "package_manager": "dpkg"}
         for obs in observations
@@ -132,7 +132,7 @@ def test_package_records_emit_generic_host_subject_package_predicates_only():
 
 def test_package_observations_do_not_introduce_entities_relationships_or_inferences():
     observations = package_records_to_observations(
-        "node115",
+        "example_host",
         [PackageRecord(name="curl", manager="dpkg", version="8.5.0", architecture="amd64")],
         BASE_TIME,
         "discovery",
@@ -188,7 +188,7 @@ def test_local_package_collection_reads_only_dpkg_status_without_cli_network_or_
     monkeypatch.setattr(sources, "urlopen", fail_forbidden)
 
     source = LocalHostObservationSource(dpkg_status=status)
-    observations = source._collect_local_package_observations(BASE_TIME, "node115")
+    observations = source._collect_local_package_observations(BASE_TIME, "example_host")
 
     assert {(obs.predicate, obs.value) for obs in observations} == {
         ("package_installed", "curl"),
@@ -203,7 +203,7 @@ def test_local_package_collection_reads_only_dpkg_status_without_cli_network_or_
 
 def test_package_current_facts_and_fact_support_expose_dimensioned_package_facts():
     observations = package_records_to_observations(
-        "node115",
+        "example_host",
         [
             PackageRecord(
                 name="curl",
@@ -223,12 +223,12 @@ def test_package_current_facts_and_fact_support_expose_dimensioned_package_facts
     state = StateProjector(ledger).project("ws_package_facts")
 
     dimensions = {"package_name": "curl", "package_manager": "dpkg"}
-    assert state.get_current_facts("node115", "package_installed")
-    assert state.get_current_facts("node115", "package_version")
-    assert state.get_current_facts("node115", "package_architecture")
-    assert state.get_current_facts("node115", "package_manager")
+    assert state.get_current_facts("example_host", "package_installed")
+    assert state.get_current_facts("example_host", "package_version")
+    assert state.get_current_facts("example_host", "package_architecture")
+    assert state.get_current_facts("example_host", "package_manager")
     support = state.get_fact_support(
-        "node115", "package_version", dimensions=dimensions
+        "example_host", "package_version", dimensions=dimensions
     )
     assert support is not None
     assert support.value == "8.5.0-2ubuntu10.6"

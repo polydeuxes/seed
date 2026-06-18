@@ -129,7 +129,7 @@ Do not introduce Package entities in v1.
 Example:
 
 ```text
-subject: node115
+subject: example_host
 predicate: package_installed
 value: curl
 dimensions:
@@ -140,7 +140,7 @@ dimensions:
 Version example:
 
 ```text
-subject: node115
+subject: example_host
 predicate: package_version
 value: 8.5.0-2ubuntu10.6
 dimensions:
@@ -151,7 +151,7 @@ dimensions:
 Architecture example:
 
 ```text
-subject: node115
+subject: example_host
 predicate: package_architecture
 value: amd64
 dimensions:

@@ -44,7 +44,7 @@ def _project(*facts: Fact, entities: list[Entity] | None = None):
 
 
 def test_operator_state_summary_can_be_built_without_cli_parsing():
-    state = _project(_fact("fact_os", "node115", "os", "linux"))
+    state = _project(_fact("fact_os", "example_host", "os", "linux"))
 
     summary = build_operator_state_summary(state)
 
@@ -57,10 +57,10 @@ def test_operator_state_summary_can_be_built_without_cli_parsing():
         "service_availability": {"up": 0, "down": 0, "unknown": 0},
     }
     assert summary["top_entities"] == [
-        {"name": "node115", "alias_count": 0, "fact_count": 1}
+        {"name": "example_host", "alias_count": 0, "fact_count": 1}
     ]
     assert summary["top_entities_by_kind"]["hosts"] == [
-        {"name": "node115", "alias_count": 0, "fact_count": 1}
+        {"name": "example_host", "alias_count": 0, "fact_count": 1}
     ]
     assert summary["top_entities_by_kind"]["endpoints"] == {
         "total": 0,
@@ -72,16 +72,16 @@ def test_operator_state_summary_can_be_built_without_cli_parsing():
 
 def test_operator_state_summary_preserves_availability_and_alias_semantics():
     state = _project(
-        _fact("fact_host_alias", "node115", "alias", "192.168.254.115"),
+        _fact("fact_host_alias", "example_host", "alias", "192.0.2.115"),
         _fact(
             "fact_host_observed",
-            "node115",
+            "example_host",
             "local_observation_status",
             "observed",
         ),
         _fact(
             "fact_endpoint_up",
-            "192.168.254.115:9100",
+            "192.0.2.115:9100",
             "availability_status",
             "up",
         ),
@@ -97,12 +97,12 @@ def test_operator_state_summary_preserves_availability_and_alias_semantics():
         "service_availability": {"up": 0, "down": 0, "unknown": 0},
     }
     assert summary["top_entities_by_kind"]["hosts"] == [
-        {"name": "node115", "alias_count": 1, "fact_count": 1}
+        {"name": "example_host", "alias_count": 1, "fact_count": 1}
     ]
-    assert "192.168.254.115:9100" in state.current_entity_types
-    assert state.get_current_entity_types("192.168.254.115:9100") == ["endpoint"]
+    assert "192.0.2.115:9100" in state.current_entity_types
+    assert state.get_current_entity_types("192.0.2.115:9100") == ["endpoint"]
     assert (
-        state.get_best_fact("192.168.254.115:9100", "availability_status").value
+        state.get_best_fact("192.0.2.115:9100", "availability_status").value
         == "up"
     )
     assert summary["top_entities_by_kind"]["endpoints"] == {
@@ -112,7 +112,7 @@ def test_operator_state_summary_preserves_availability_and_alias_semantics():
         "unknown": 0,
     }
     assert summary["top_entities"] == [
-        {"name": "node115", "alias_count": 1, "fact_count": 1}
+        {"name": "example_host", "alias_count": 1, "fact_count": 1}
     ]
 
 
@@ -139,7 +139,7 @@ def test_operator_state_summary_ranks_top_entities_by_durable_facts_only():
             "availability_status",
             "up",
         ),
-        _fact("fact_host_os", "node115", "os", "linux"),
+        _fact("fact_host_os", "example_host", "os", "linux"),
     )
 
     summary = build_operator_state_summary(state)
@@ -154,10 +154,10 @@ def test_operator_state_summary_ranks_top_entities_by_durable_facts_only():
         "service_availability": {"up": 0, "down": 0, "unknown": 0},
     }
     assert summary["top_entities"] == [
-        {"name": "node115", "alias_count": 0, "fact_count": 1},
+        {"name": "example_host", "alias_count": 0, "fact_count": 1},
     ]
     assert summary["top_entities_by_kind"]["hosts"] == [
-        {"name": "node115", "alias_count": 0, "fact_count": 1},
+        {"name": "example_host", "alias_count": 0, "fact_count": 1},
     ]
     assert summary["top_entities_by_kind"]["endpoints"] == {
         "total": 1,
@@ -191,8 +191,8 @@ def test_operator_state_summary_keeps_endpoint_visibility_scoped():
             "availability_status",
             "down",
         ),
-        _fact("fact_host_os", "node115", "os", "linux"),
-        _fact("fact_host_availability", "node115", "availability_status", "up"),
+        _fact("fact_host_os", "example_host", "os", "linux"),
+        _fact("fact_host_availability", "example_host", "availability_status", "up"),
     )
 
     summary = build_operator_state_summary(state)
@@ -205,9 +205,9 @@ def test_operator_state_summary_keeps_endpoint_visibility_scoped():
         "unknown": 0,
     }
     assert summary["top_entities_by_kind"]["hosts"] == [
-        {"name": "node115", "alias_count": 0, "fact_count": 1}
+        {"name": "example_host", "alias_count": 0, "fact_count": 1}
     ]
-    assert {entity["name"] for entity in summary["top_entities"]} == {"node115"}
+    assert {entity["name"] for entity in summary["top_entities"]} == {"example_host"}
     assert summary["availability_by_scope"]["endpoint_scrape_availability"] == {
         "up": 0,
         "down": 1,
@@ -254,7 +254,7 @@ def test_operator_state_summary_summarizes_endpoint_counts_without_names():
 
 def test_operator_state_summary_keeps_named_non_endpoint_top_entities():
     state = _project(
-        _fact("fact_host_os", "node115", "os", "linux"),
+        _fact("fact_host_os", "example_host", "os", "linux"),
         _fact("fact_service_note", "api-service", "service_note", "primary"),
         _fact("fact_storage_note", "pool-a", "capacity_note", "primary"),
         entities=[
@@ -266,7 +266,7 @@ def test_operator_state_summary_keeps_named_non_endpoint_top_entities():
     summary = build_operator_state_summary(state)
 
     assert summary["top_entities_by_kind"]["hosts"] == [
-        {"name": "node115", "alias_count": 0, "fact_count": 1}
+        {"name": "example_host", "alias_count": 0, "fact_count": 1}
     ]
     assert summary["top_entities_by_kind"]["services"] == [
         {"name": "api-service", "alias_count": 0, "fact_count": 1}
@@ -285,14 +285,14 @@ def test_operator_state_summary_excludes_storage_detail_projection_keys():
     state = _project(
         _fact(
             "fact_root_free",
-            "node115:9100",
+            "example_host:9100",
             "filesystem_free_bytes",
             40,
             dimensions={"mountpoint": "/", "device": "/dev/sda1", "fstype": "ext4"},
         ),
         _fact(
             "fact_root_total",
-            "node115:9100",
+            "example_host:9100",
             "filesystem_total_bytes",
             100,
             dimensions={"mountpoint": "/", "device": "/dev/sda1", "fstype": "ext4"},
@@ -318,28 +318,28 @@ def test_operator_state_summary_filters_runtime_pseudo_filesystems_only_from_sum
     state = _project(
         _fact(
             "fact_root_free",
-            "node115:9100",
+            "example_host:9100",
             "filesystem_free_bytes",
             40,
             dimensions={"mountpoint": "/", "device": "/dev/sda1", "fstype": "ext4"},
         ),
         _fact(
             "fact_root_total",
-            "node115:9100",
+            "example_host:9100",
             "filesystem_total_bytes",
             100,
             dimensions={"mountpoint": "/", "device": "/dev/sda1", "fstype": "ext4"},
         ),
         _fact(
             "fact_runtime_free",
-            "node115:9100",
+            "example_host:9100",
             "filesystem_free_bytes",
             4,
             dimensions={"mountpoint": "/run", "device": "tmpfs", "fstype": "tmpfs"},
         ),
         _fact(
             "fact_runtime_total",
-            "node115:9100",
+            "example_host:9100",
             "filesystem_total_bytes",
             10,
             dimensions={"mountpoint": "/run", "device": "tmpfs", "fstype": "tmpfs"},
@@ -352,7 +352,7 @@ def test_operator_state_summary_filters_runtime_pseudo_filesystems_only_from_sum
     assert summary["fact_count"] == 4
     assert summary["filesystems"] == [
         {
-            "host": "node115:9100",
+            "host": "example_host:9100",
             "mountpoint": "/",
             "free": 40,
             "fstype": "ext4",
@@ -364,7 +364,7 @@ def test_operator_state_summary_filters_runtime_pseudo_filesystems_only_from_sum
     ]
     assert (
         state.get_best_fact(
-            "node115:9100",
+            "example_host:9100",
             "filesystem_free_bytes",
             dimensions={"mountpoint": "/run", "device": "tmpfs", "fstype": "tmpfs"},
         ).value
@@ -372,14 +372,14 @@ def test_operator_state_summary_filters_runtime_pseudo_filesystems_only_from_sum
     )
     assert (
         state.get_best_fact(
-            "node115:9100",
+            "example_host:9100",
             "filesystem_total_bytes",
             dimensions={"mountpoint": "/run", "device": "tmpfs", "fstype": "tmpfs"},
         ).value
         == 10
     )
     support = state.get_fact_support(
-        "node115:9100",
+        "example_host:9100",
         "filesystem_free_bytes",
         dimensions={"mountpoint": "/run", "device": "tmpfs", "fstype": "tmpfs"},
     )
@@ -392,7 +392,7 @@ def test_operator_state_summary_prioritizes_operator_relevant_filesystem_order()
     state = _project(
         _fact(
             "fact_mnt_free",
-            "node115:9100",
+            "example_host:9100",
             "filesystem_free_bytes",
             200,
             dimensions={
@@ -403,7 +403,7 @@ def test_operator_state_summary_prioritizes_operator_relevant_filesystem_order()
         ),
         _fact(
             "fact_mnt_total",
-            "node115:9100",
+            "example_host:9100",
             "filesystem_total_bytes",
             400,
             dimensions={
@@ -414,28 +414,28 @@ def test_operator_state_summary_prioritizes_operator_relevant_filesystem_order()
         ),
         _fact(
             "fact_boot_free",
-            "node115:9100",
+            "example_host:9100",
             "filesystem_free_bytes",
             20,
             dimensions={"mountpoint": "/boot", "device": "/dev/sda2", "fstype": "ext4"},
         ),
         _fact(
             "fact_boot_total",
-            "node115:9100",
+            "example_host:9100",
             "filesystem_total_bytes",
             50,
             dimensions={"mountpoint": "/boot", "device": "/dev/sda2", "fstype": "ext4"},
         ),
         _fact(
             "fact_root_free",
-            "node115:9100",
+            "example_host:9100",
             "filesystem_free_bytes",
             40,
             dimensions={"mountpoint": "/", "device": "/dev/sda1", "fstype": "ext4"},
         ),
         _fact(
             "fact_root_total",
-            "node115:9100",
+            "example_host:9100",
             "filesystem_total_bytes",
             100,
             dimensions={"mountpoint": "/", "device": "/dev/sda1", "fstype": "ext4"},
@@ -1079,11 +1079,11 @@ def test_storage_topology_ambiguities_use_shared_storage_candidates_as_pressure(
 def test_storage_topology_ambiguities_surface_historical_node_style_without_topology_facts():
     state = _project(
         *_filesystem_facts(
-            "node115:9100",
+            "example_host:9100",
             "/mnt/node210/sda1",
             free=10,
             total=100,
-            prefix="node115_historical_path",
+            prefix="example_host_historical_path",
         )
     )
 

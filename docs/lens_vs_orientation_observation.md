@@ -337,7 +337,7 @@ Examples that appear supported:
    cleanup. That changes why the view matters now.
 3. The same projected filesystem facts can be viewed through a Storage Lens for
    endpoint-visible mounts or cluster-mount ambiguity. Under a Current Work
-   Position orientation, only the node116 mount-loss question may be live.
+   Position orientation, only the example_host_b mount-loss question may be live.
 4. Entity Navigation can expose many routes through State. Active Edge may name
    which unresolved pressure makes one route the current pull.
 

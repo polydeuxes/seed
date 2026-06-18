@@ -88,7 +88,7 @@ def test_context_composer_uses_budget_for_priority_and_recency_selection():
     ledger.append(
         "entity.upserted",
         workspace_id,
-        {"entity": to_plain(Entity(id="ent_1", kind="host", name="node-1"))},
+        {"entity": to_plain(Entity(id="ent_1", kind="host", name="example_host"))},
     )
     for index in range(3):
         observed_at = base_time + timedelta(minutes=index)

@@ -57,23 +57,23 @@ Prometheus `up` should not be treated as host availability directly.
 The raw Prometheus `up` metric is scoped to a scrape target from Prometheus's vantage point. For example:
 
 ```text
-192.168.254.115:9100 up
+192.0.2.115:9100 up
 ```
 
 means:
 
 ```text
-Prometheus successfully scraped the target 192.168.254.115:9100.
+Prometheus successfully scraped the target 192.0.2.115:9100.
 ```
 
 It does not directly prove:
 
 ```text
-node115 is available
-node115 is healthy
+example_host is available
+example_host is healthy
 node_exporter is globally available
 ssh is reachable
-all services on node115 are up
+all services on example_host are up
 ```
 
 Prometheus target success is availability evidence, but the scope is endpoint/scrape-target availability.
@@ -119,15 +119,15 @@ Prometheus scrape target up
 Prometheus target `up` can support a scoped endpoint claim, such as:
 
 ```text
-Prometheus scraped node_exporter at 192.168.254.115:9100.
+Prometheus scraped node_exporter at 192.0.2.115:9100.
 ```
 
 It should not automatically emit:
 
 ```text
 service_up=node_exporter
-host_up=node115
-ssh_up=node115
+host_up=example_host
+ssh_up=example_host
 ```
 
 unless a later projection explicitly owns that derivation and cites the supporting evidence.
@@ -141,7 +141,7 @@ Prometheus filesystem metrics commonly include labels such as host/instance, mou
 Those labels primarily support a host-scoped mount or filesystem measurement:
 
 ```text
-host=node115
+host=example_host
 mountpoint=/mnt/sda1
 filesystem_free_bytes=...
 ```
@@ -199,8 +199,8 @@ Attachment status
 A future model may eventually say:
 
 ```text
-storage X appears mounted on node200, node201, node202
-storage X is missing from node214
+storage X appears mounted on example_host_f, example_host_201, example_host_202
+storage X is missing from example_host_d
 ```
 
 But that requires explicit storage identity evidence and a host-specific attachment model.

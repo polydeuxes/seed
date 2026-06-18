@@ -360,13 +360,13 @@ Rename/render top entity facts field as durable facts or ranking facts.
 For example:
 
 ```text
-node115 (aliases: 0 total; durable facts: 3)
+example_host (aliases: 0 total; durable facts: 3)
 ```
 
 or:
 
 ```text
-node115 (aliases: 0 total; ranking facts: 3)
+example_host (aliases: 0 total; ranking facts: 3)
 ```
 
 Smallest repair B:

@@ -281,7 +281,7 @@ def test_json_source_valid_file_ingests_observations(tmp_path):
           "observations": [
             {
               "id": "obs_json_fixture",
-              "subject": "jellyfin",
+              "subject": "web_service",
               "predicate": "runtime",
               "value": "docker",
               "confidence": 0.95,
@@ -304,7 +304,7 @@ def test_json_source_valid_file_ingests_observations(tmp_path):
     assert len(facts) == 1
     fact = facts[0]
     assert fact.id in state.facts
-    assert fact.subject_id == "jellyfin"
+    assert fact.subject_id == "web_service"
     assert fact.predicate == "runtime"
     assert fact.value == "docker"
     assert fact.source_type == "imported"
@@ -319,7 +319,7 @@ def test_json_source_malformed_file_fails_without_partial_ingest(tmp_path):
           "observations": [
             {
               "id": "obs_valid_before_bad",
-              "subject": "jellyfin",
+              "subject": "web_service",
               "predicate": "runtime",
               "value": "docker"
             },
@@ -355,7 +355,7 @@ def test_json_source_provenance_and_source_metadata_preserved(tmp_path):
           "observations": [
             {
               "id": "obs_json_provenance",
-              "subject": "jellyfin",
+              "subject": "web_service",
               "predicate": "runtime",
               "value": "docker",
               "metadata": {"scanner": "inventory-export"}
@@ -393,7 +393,7 @@ def test_export_observations_json_round_trip_preserves_facts_and_support(tmp_pat
     ledger = EventLedger()
     first = _observation(
         "obs_roundtrip_provider",
-        subject="jellyfin",
+        subject="web_service",
         predicate="runtime",
         value="docker",
     )
@@ -401,7 +401,7 @@ def test_export_observations_json_round_trip_preserves_facts_and_support(tmp_pat
         id="obs_roundtrip_discovery",
         source_type="discovery",
         observed_at=BASE_TIME,
-        subject="jellyfin",
+        subject="web_service",
         predicate="runtime",
         value="docker",
         confidence=0.74,
@@ -423,7 +423,7 @@ def test_export_observations_json_round_trip_preserves_facts_and_support(tmp_pat
     )
     imported_state = StateProjector(imported_ledger).project("ws_imported")
 
-    support = imported_state.get_fact_support("jellyfin", "runtime")
+    support = imported_state.get_fact_support("web_service", "runtime")
     assert support is not None
     assert support.value == "docker"
     assert len(support.supporting_fact_ids) == 2
@@ -432,8 +432,8 @@ def test_export_observations_json_round_trip_preserves_facts_and_support(tmp_pat
         (fact.subject_id, fact.predicate, fact.value, fact.source_type, fact.confidence)
         for fact in imported_state.observed_facts.values()
     ) == [
-        ("jellyfin", "runtime", "docker", "discovery", 0.74),
-        ("jellyfin", "runtime", "docker", "provider", 0.86),
+        ("web_service", "runtime", "docker", "discovery", 0.74),
+        ("web_service", "runtime", "docker", "provider", 0.86),
     ]
 
 
@@ -444,7 +444,7 @@ def test_export_observations_json_includes_expired_fact_expires_at():
         id="obs_expired_export",
         source_type="provider",
         observed_at=BASE_TIME,
-        subject="jellyfin",
+        subject="web_service",
         predicate="runtime",
         value="docker",
         confidence=0.86,
@@ -465,7 +465,7 @@ def test_export_observations_json_excludes_inferred_facts_by_default(tmp_path):
     ObservationIngestor(ledger).ingest(
         _observation(
             "obs_runtime_for_inference",
-            subject="jellyfin",
+            subject="web_service",
             predicate="runtime",
             value="docker",
         ),
@@ -495,7 +495,7 @@ def test_export_observations_json_excludes_inferred_facts_by_default(tmp_path):
     )
     imported_state = StateProjector(imported_ledger).project("ws_imported_inferred")
 
-    assert "fact_inferred_jellyfin_managed_by_docker_container_lifecycle" in (
+    assert "fact_inferred_web_service_managed_by_docker_container_lifecycle" in (
         imported_state.inferred_facts
     )
 
@@ -2113,11 +2113,11 @@ def test_prometheus_node_uname_os_endpoint_evidence_is_preserved_without_fact_pr
 
     def fake_urlopen(request, timeout):
         query = request.full_url.rsplit("query=", 1)[1]
-        metric = {"instance": "192.168.254.115:9100"}
+        metric = {"instance": "192.0.2.115:9100"}
         if query == "up":
             metric["job"] = "node-exporter"
         if query == "node_uname_info":
-            metric.update({"nodename": "node115", "sysname": "Linux"})
+            metric.update({"nodename": "example_host", "sysname": "Linux"})
         if query.startswith("node_filesystem_"):
             metric.update({"mountpoint": "/", "device": "/dev/sda1", "fstype": "ext4"})
         return Response(
@@ -2136,17 +2136,17 @@ def test_prometheus_node_uname_os_endpoint_evidence_is_preserved_without_fact_pr
     raw = source.collect()
     raw_os = [obs for obs in raw if obs.predicate == "os"]
     assert len(raw_os) == 1
-    assert raw_os[0].subject == "192.168.254.115:9100"
+    assert raw_os[0].subject == "192.0.2.115:9100"
     assert raw_os[0].value == "linux"
     assert raw_os[0].metadata["source_name"] == "prometheus"
     assert raw_os[0].metadata["prometheus_metric"] == "node_uname_info"
     assert raw_os[0].metadata["metric_labels"] == {
-        "instance": "192.168.254.115:9100",
-        "nodename": "node115",
+        "instance": "192.0.2.115:9100",
+        "nodename": "example_host",
         "sysname": "Linux",
     }
-    assert raw_os[0].metadata["instance"] == "192.168.254.115:9100"
-    assert raw_os[0].metadata["nodename"] == "node115"
+    assert raw_os[0].metadata["instance"] == "192.0.2.115:9100"
+    assert raw_os[0].metadata["nodename"] == "example_host"
     assert raw_os[0].metadata["fact_promotion_suppressed"] is True
 
     ledger = EventLedger()
@@ -2155,29 +2155,29 @@ def test_prometheus_node_uname_os_endpoint_evidence_is_preserved_without_fact_pr
     )
     state = StateProjector(ledger).project("ws_prometheus_os_endpoint")
 
-    assert state.get_best_fact("192.168.254.115:9100", "os") is None
-    assert state.get_best_fact("node115", "os") is None
-    assert state.get_best_fact("node115", "prometheus_instance").value == (
-        "192.168.254.115:9100"
+    assert state.get_best_fact("192.0.2.115:9100", "os") is None
+    assert state.get_best_fact("example_host", "os") is None
+    assert state.get_best_fact("example_host", "prometheus_instance").value == (
+        "192.0.2.115:9100"
     )
-    assert state.get_best_fact("192.168.254.115:9100", "up").value == 1
+    assert state.get_best_fact("192.0.2.115:9100", "up").value == 1
     assert (
-        state.get_best_fact("192.168.254.115:9100", "availability_status").value == "up"
-    )
-    assert (
-        state.get_best_fact("192.168.254.115:9100", "filesystem_avail_bytes").value == 1
+        state.get_best_fact("192.0.2.115:9100", "availability_status").value == "up"
     )
     assert (
-        state.get_best_fact("192.168.254.115:9100", "filesystem_free_bytes").value == 1
+        state.get_best_fact("192.0.2.115:9100", "filesystem_avail_bytes").value == 1
     )
     assert (
-        state.get_best_fact("192.168.254.115:9100", "filesystem_size_bytes").value == 1
+        state.get_best_fact("192.0.2.115:9100", "filesystem_free_bytes").value == 1
     )
     assert (
-        state.get_best_fact("192.168.254.115:9100", "filesystem_total_bytes").value == 1
+        state.get_best_fact("192.0.2.115:9100", "filesystem_size_bytes").value == 1
+    )
+    assert (
+        state.get_best_fact("192.0.2.115:9100", "filesystem_total_bytes").value == 1
     )
     assert not any(
-        fact.subject_id == "192.168.254.115:9100" and fact.predicate == "os"
+        fact.subject_id == "192.0.2.115:9100" and fact.predicate == "os"
         for fact in facts
     )
 
@@ -2213,10 +2213,10 @@ def test_prometheus_node_uname_os_endpoint_evidence_is_preserved_without_fact_pr
     ]
     assert len(observed_os_payloads) == 1
     assert observed_os_payloads[0]["metadata"]["prometheus_metric"] == "node_uname_info"
-    assert observed_os_payloads[0]["metadata"]["nodename"] == "node115"
+    assert observed_os_payloads[0]["metadata"]["nodename"] == "example_host"
     assert len(evidence_os_payloads) == 1
     assert evidence_os_payloads[0]["metadata"]["prometheus_metric"] == "node_uname_info"
-    assert evidence_os_payloads[0]["metadata"]["nodename"] == "node115"
+    assert evidence_os_payloads[0]["metadata"]["nodename"] == "example_host"
     assert fact_os_payloads == []
 
 
@@ -2226,7 +2226,7 @@ def test_non_prometheus_os_observation_still_promotes_to_fact():
         [
             _observation(
                 "obs_local_os",
-                subject="192.168.254.115:9100",
+                subject="192.0.2.115:9100",
                 predicate="os",
                 value="linux",
                 metadata={"source_name": "local_inventory"},
@@ -2241,9 +2241,9 @@ def test_non_prometheus_os_observation_still_promotes_to_fact():
     state = StateProjector(ledger).project("ws_non_prometheus_os")
 
     assert [(fact.subject_id, fact.predicate, fact.value) for fact in facts] == [
-        ("192.168.254.115:9100", "os", "linux")
+        ("192.0.2.115:9100", "os", "linux")
     ]
-    assert state.get_best_fact("192.168.254.115:9100", "os").value == "linux"
+    assert state.get_best_fact("192.0.2.115:9100", "os").value == "linux"
 
 
 class _PrometheusResponse:
@@ -2439,12 +2439,12 @@ def test_collection_normalized_endpoint_instance_keeps_best_fact_endpoint_scoped
         [
             _observation(
                 "obs_generic_up",
-                subject="192.168.254.115:9100",
+                subject="192.0.2.115:9100",
                 predicate="up",
                 value=1,
                 metadata={
-                    "hostname": "node115",
-                    "instance": "192.168.254.115:9100",
+                    "hostname": "example_host",
+                    "instance": "192.0.2.115:9100",
                     "source": "generic",
                 },
             )
@@ -2458,12 +2458,12 @@ def test_collection_normalized_endpoint_instance_keeps_best_fact_endpoint_scoped
     state = StateProjector(ledger).project("ws_generic_alias")
 
     assert len(facts) == 2
-    assert state.get_best_fact("node115", "up") is None
-    assert state.get_best_fact("192.168.254.115:9100", "up").value == 1
+    assert state.get_best_fact("example_host", "up") is None
+    assert state.get_best_fact("192.0.2.115:9100", "up").value == 1
     assert any(
-        fact.subject_id == "node115"
+        fact.subject_id == "example_host"
         and fact.predicate == "generic_instance"
-        and fact.value == "192.168.254.115:9100"
+        and fact.value == "192.0.2.115:9100"
         for fact in state.facts.values()
     )
 
@@ -2489,9 +2489,9 @@ def test_prometheus_nodename_preserves_prometheus_instance_without_aliasing_endp
 
     def fake_urlopen(request, timeout):
         query = request.full_url.rsplit("query=", 1)[1]
-        metric = {"instance": "192.168.254.115:9100"}
+        metric = {"instance": "192.0.2.115:9100"}
         if query == "node_uname_info":
-            metric.update({"nodename": "node115", "sysname": "Linux"})
+            metric.update({"nodename": "example_host", "sysname": "Linux"})
         return Response(
             {
                 "status": "success",
@@ -2521,23 +2521,23 @@ def test_prometheus_nodename_preserves_prometheus_instance_without_aliasing_endp
     assert ("filesystem_total_bytes", 1) in canonical
     aliases = [fact for fact in facts if fact.predicate == "prometheus_instance"]
     assert len(aliases) == 1
-    assert aliases[0].subject_id == "node115"
-    assert aliases[0].value == "192.168.254.115:9100"
-    assert state.get_best_fact("node115", "up") is None
-    assert state.get_best_fact("192.168.254.115:9100", "up").value == 1
+    assert aliases[0].subject_id == "example_host"
+    assert aliases[0].value == "192.0.2.115:9100"
+    assert state.get_best_fact("example_host", "up") is None
+    assert state.get_best_fact("192.0.2.115:9100", "up").value == 1
     assert not any(
         relationship.relationship == "monitored_by"
         for relationship in state.get_relationships()
     )
 
 
-def _write_local_identity_fixture(tmp_path, hostname="node115", *, fqdn=False):
+def _write_local_identity_fixture(tmp_path, hostname="example_host", *, fqdn=False):
     proc = tmp_path / "proc"
     etc_hostname = tmp_path / "hostname"
     machine_id = tmp_path / "machine-id"
     (proc / "sys" / "kernel" / "random").mkdir(parents=True)
     if fqdn:
-        hostname = "node115.example.test"
+        hostname = "example_host.example.test"
     etc_hostname.write_text(hostname + "\n", encoding="utf-8")
     (proc / "sys" / "kernel" / "hostname").write_text(
         "ignored-proc-host\n", encoding="utf-8"
@@ -2573,9 +2573,9 @@ def test_local_host_source_emits_identity_observations(monkeypatch, tmp_path):
     ).collect()
 
     triples = {(obs.subject, obs.predicate, obs.value) for obs in observations}
-    assert ("node115", "hostname", "node115") in triples
-    assert ("node115", "machine_id", "0123456789abcdef0123456789abcdef") in triples
-    assert ("node115", "boot_id", "11111111-2222-3333-4444-555555555555") in triples
+    assert ("example_host", "hostname", "example_host") in triples
+    assert ("example_host", "machine_id", "0123456789abcdef0123456789abcdef") in triples
+    assert ("example_host", "boot_id", "11111111-2222-3333-4444-555555555555") in triples
     assert not [obs for obs in observations if obs.predicate == "fqdn"]
     for obs in observations:
         if obs.predicate in {"hostname", "machine_id", "boot_id"}:
@@ -2616,8 +2616,8 @@ def test_local_host_source_emits_fqdn_only_when_locally_configured(
     ).collect()
 
     triples = {(obs.subject, obs.predicate, obs.value) for obs in observations}
-    assert ("node115.example.test", "hostname", "node115.example.test") in triples
-    assert ("node115.example.test", "fqdn", "node115.example.test") in triples
+    assert ("example_host.example.test", "hostname", "example_host.example.test") in triples
+    assert ("example_host.example.test", "fqdn", "example_host.example.test") in triples
 
 
 def test_local_identity_projection_is_deterministic(monkeypatch, tmp_path):
@@ -2688,9 +2688,9 @@ def test_local_identity_does_not_infer_availability_or_reachability(
     )
     state = StateProjector(ledger).project("ws_identity")
 
-    assert state.get_best_fact("node115", "hostname").value == "node115"
-    assert state.get_best_fact("node115", "availability_status") is None
-    assert state.get_best_fact("node115", "reachability_status") is None
+    assert state.get_best_fact("example_host", "hostname").value == "example_host"
+    assert state.get_best_fact("example_host", "availability_status") is None
+    assert state.get_best_fact("example_host", "reachability_status") is None
 
 
 def test_local_identity_observation_avoids_network_dns_execution_and_escalation(
@@ -2737,7 +2737,7 @@ def test_local_identity_observation_avoids_network_dns_execution_and_escalation(
         for obs in observations
         if obs.predicate in {"hostname", "machine_id", "boot_id"}
     } == {
-        ("hostname", "node115"),
+        ("hostname", "example_host"),
         ("machine_id", "0123456789abcdef0123456789abcdef"),
         ("boot_id", "11111111-2222-3333-4444-555555555555"),
     }
@@ -2788,7 +2788,7 @@ def test_local_host_source_observes_storage_topology_block_devices_and_partition
         proc_root=proc, sys_block=sys_block, sys_class_block=sys_class_block
     )
 
-    observations = source._collect_storage_observations(BASE_TIME, "node115", {})
+    observations = source._collect_storage_observations(BASE_TIME, "example_host", {})
     triples = {(obs.predicate, obs.value) for obs in observations}
 
     assert ("block_device", "sda") in triples
@@ -2807,7 +2807,7 @@ def test_local_host_source_observes_storage_size_markers_model_vendor_and_parent
         proc_root=proc, sys_block=sys_block, sys_class_block=sys_class_block
     )
 
-    observations = source._collect_storage_observations(BASE_TIME, "node115", {})
+    observations = source._collect_storage_observations(BASE_TIME, "example_host", {})
     by_predicate = {}
     for obs in observations:
         by_predicate.setdefault(obs.predicate, []).append(obs)
@@ -2851,11 +2851,11 @@ def test_local_storage_projection_is_deterministic(tmp_path):
 
     first = [
         (obs.subject, obs.predicate, obs.value, obs.dimensions)
-        for obs in source._collect_storage_observations(BASE_TIME, "node115", {})
+        for obs in source._collect_storage_observations(BASE_TIME, "example_host", {})
     ]
     second = [
         (obs.subject, obs.predicate, obs.value, obs.dimensions)
-        for obs in source._collect_storage_observations(BASE_TIME, "node115", {})
+        for obs in source._collect_storage_observations(BASE_TIME, "example_host", {})
     ]
 
     assert first == second
@@ -2869,20 +2869,20 @@ def test_local_storage_current_facts_and_no_health_or_availability_inference(tmp
     source = LocalHostObservationSource(
         proc_root=proc, sys_block=sys_block, sys_class_block=sys_class_block
     )
-    observations = source._collect_storage_observations(BASE_TIME, "node115", {})
+    observations = source._collect_storage_observations(BASE_TIME, "example_host", {})
 
     ObservationCollectionService(ObservationIngestor(ledger)).collect(
         FakeObservationSource(observations, source_type="discovery"), "ws_storage"
     )
     state = StateProjector(ledger).project("ws_storage")
 
-    assert state.get_current_facts("node115", "block_device")
-    assert state.get_current_facts("node115", "partition")
-    assert state.get_current_facts("node115", "block_device_size_bytes")
-    assert state.get_best_fact("node115", "availability_status") is None
-    assert state.get_best_fact("node115", "health_status") is None
-    assert state.get_best_fact("node115", "filesystem_health") is None
-    assert state.get_best_fact("node115", "storage_health") is None
+    assert state.get_current_facts("example_host", "block_device")
+    assert state.get_current_facts("example_host", "partition")
+    assert state.get_current_facts("example_host", "block_device_size_bytes")
+    assert state.get_best_fact("example_host", "availability_status") is None
+    assert state.get_best_fact("example_host", "health_status") is None
+    assert state.get_best_fact("example_host", "filesystem_health") is None
+    assert state.get_best_fact("example_host", "storage_health") is None
 
 
 def test_local_storage_observation_avoids_shell_subprocess_sudo_network_and_dns(
@@ -2909,7 +2909,7 @@ def test_local_storage_observation_avoids_shell_subprocess_sudo_network_and_dns(
 
     observations = LocalHostObservationSource(
         proc_root=proc, sys_block=sys_block, sys_class_block=sys_class_block
-    )._collect_storage_observations(BASE_TIME, "node115", {})
+    )._collect_storage_observations(BASE_TIME, "example_host", {})
 
     assert any(obs.predicate == "block_device" for obs in observations)
 
@@ -2938,7 +2938,7 @@ def test_local_storage_bounded_reads_skip_oversized_or_truncated_inputs(tmp_path
         proc_root=proc, sys_block=sys_block, sys_class_block=sys_class_block
     )
 
-    observations = source._collect_storage_observations(BASE_TIME, "node115", {})
+    observations = source._collect_storage_observations(BASE_TIME, "example_host", {})
 
     assert ("block_device_model", "Fast Disk") not in {
         (obs.predicate, obs.value) for obs in observations
@@ -2968,17 +2968,17 @@ def test_local_users_observation_emits_fixture_passwd_and_group_facts(tmp_path):
     passwd, group = _write_local_users_fixture(tmp_path)
     source = LocalHostObservationSource(etc_passwd=passwd, etc_group=group)
 
-    observations = source._collect_local_user_observations(BASE_TIME, "node115", {})
+    observations = source._collect_local_user_observations(BASE_TIME, "example_host", {})
     triples = {(obs.subject, obs.predicate, obs.value) for obs in observations}
 
-    assert ("node115", "user_account", "john") in triples
-    assert ("node115", "user_uid", 1000) in triples
-    assert ("node115", "user_primary_gid", 1000) in triples
-    assert ("node115", "user_home_directory", "/home/john") in triples
-    assert ("node115", "user_shell", "/bin/bash") in triples
-    assert ("node115", "group_account", "sudo") in triples
-    assert ("node115", "group_gid", 27) in triples
-    assert ("node115", "group_member", "john") in triples
+    assert ("example_host", "user_account", "john") in triples
+    assert ("example_host", "user_uid", 1000) in triples
+    assert ("example_host", "user_primary_gid", 1000) in triples
+    assert ("example_host", "user_home_directory", "/home/john") in triples
+    assert ("example_host", "user_shell", "/bin/bash") in triples
+    assert ("example_host", "group_account", "sudo") in triples
+    assert ("example_host", "group_gid", 27) in triples
+    assert ("example_host", "group_member", "john") in triples
 
     user_account = next(
         obs
@@ -3012,7 +3012,7 @@ def test_local_users_current_facts_fact_support_and_no_boundary_inference(tmp_pa
     ledger = EventLedger()
     source = LocalHostObservationSource(etc_passwd=passwd, etc_group=group)
     observations = source._collect_local_user_observations(
-        BASE_TIME, "node115", {"read_only": True, "local_only": True}
+        BASE_TIME, "example_host", {"read_only": True, "local_only": True}
     )
 
     ObservationCollectionService(ObservationIngestor(ledger)).collect(
@@ -3020,17 +3020,17 @@ def test_local_users_current_facts_fact_support_and_no_boundary_inference(tmp_pa
     )
     state = StateProjector(ledger).project("ws_local_users")
 
-    assert state.get_current_facts("node115", "user_account")
-    assert state.get_current_facts("node115", "user_uid")
-    assert state.get_current_facts("node115", "user_primary_gid")
-    assert state.get_current_facts("node115", "user_home_directory")
-    assert state.get_current_facts("node115", "user_shell")
-    assert state.get_current_facts("node115", "group_account")
-    assert state.get_current_facts("node115", "group_gid")
-    assert state.get_current_facts("node115", "group_member")
+    assert state.get_current_facts("example_host", "user_account")
+    assert state.get_current_facts("example_host", "user_uid")
+    assert state.get_current_facts("example_host", "user_primary_gid")
+    assert state.get_current_facts("example_host", "user_home_directory")
+    assert state.get_current_facts("example_host", "user_shell")
+    assert state.get_current_facts("example_host", "group_account")
+    assert state.get_current_facts("example_host", "group_gid")
+    assert state.get_current_facts("example_host", "group_member")
 
     support = state.get_fact_support(
-        "node115",
+        "example_host",
         "group_member",
         dimensions={"groupname": "sudo", "gid": "27", "username": "john"},
     )
@@ -3052,7 +3052,7 @@ def test_local_users_current_facts_fact_support_and_no_boundary_inference(tmp_pa
     emitted_predicates = {obs.predicate for obs in observations}
     assert emitted_predicates.isdisjoint(forbidden_predicates)
     for predicate in forbidden_predicates:
-        assert state.get_best_fact("node115", predicate) is None
+        assert state.get_best_fact("example_host", predicate) is None
 
 
 def test_local_users_observation_avoids_forbidden_activity_privilege_sources(
@@ -3094,7 +3094,7 @@ def test_local_users_observation_avoids_forbidden_activity_privilege_sources(
 
     observations = LocalHostObservationSource(
         etc_passwd=passwd, etc_group=group
-    )._collect_local_user_observations(BASE_TIME, "node115", {})
+    )._collect_local_user_observations(BASE_TIME, "example_host", {})
 
     assert any(obs.predicate == "user_account" for obs in observations)
     assert any(obs.predicate == "group_member" for obs in observations)

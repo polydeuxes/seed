@@ -266,7 +266,7 @@ Language alone does not verify external-world claims:
 
 ```text
 nginx is down
-node115 is unhealthy
+example_host is unhealthy
 disk is full
 Prometheus target is unavailable
 ```
@@ -583,7 +583,7 @@ Examples:
 ```text
 restart nginx
 delete logs
-install docker on node116
+install docker on example_host_b
 run the migration
 scale the service to three replicas
 ```

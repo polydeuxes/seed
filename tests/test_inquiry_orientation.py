@@ -16,22 +16,22 @@ from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
 
 
-def _state_with_node115_fact():
+def _state_with_example_host_fact():
     ledger = EventLedger()
     fact = Fact(
-        id="fact_node115_runtime",
-        subject_id="node115",
+        id="fact_example_host_runtime",
+        subject_id="example_host",
         predicate="runtime",
         value="prometheus-node-exporter",
         observed_at=utc_now(),
-        evidence_ids=["evd_node115"],
+        evidence_ids=["evd_example_host"],
     )
     ledger.append("fact.observed", "ws", {"fact": to_plain(fact)})
     return ledger, StateProjector(ledger).project("ws")
 
 
 def test_record_inquiry_note_preserves_raw_note_and_minimal_provenance(tmp_path):
-    raw_note = "node115 keeps showing up first and that feels wrong"
+    raw_note = "example_host keeps showing up first and that feels wrong"
     recorded_at = datetime(2026, 6, 16, 1, 2, 3, tzinfo=timezone.utc)
 
     record = record_inquiry_note(
@@ -53,9 +53,9 @@ def test_record_inquiry_note_preserves_raw_note_and_minimal_provenance(tmp_path)
 
 
 def test_inquiry_note_is_not_projected_into_runtime_state(tmp_path):
-    ledger, before = _state_with_node115_fact()
+    ledger, before = _state_with_example_host_fact()
 
-    record_inquiry_note(tmp_path / "probe.jsonl", "node115 feels wrong")
+    record_inquiry_note(tmp_path / "probe.jsonl", "example_host feels wrong")
     after = StateProjector(ledger).project("ws")
 
     assert set(after.facts) == set(before.facts)
@@ -72,20 +72,20 @@ def test_inquiry_note_is_not_projected_into_runtime_state(tmp_path):
 
 
 def test_orientation_output_includes_required_sections_and_supported_match(tmp_path):
-    _ledger, state = _state_with_node115_fact()
+    _ledger, state = _state_with_example_host_fact()
     note = record_inquiry_note(
         tmp_path / "probe.jsonl",
-        "node115 keeps showing up first and that feels wrong",
+        "example_host keeps showing up first and that feels wrong",
         recorded_at=datetime(2026, 6, 16, tzinfo=timezone.utc),
     )
 
     output = format_inquiry_orientation(build_inquiry_orientation(state, note))
 
-    assert "Inquiry note:\n  node115 keeps showing up first and that feels wrong" in output
+    assert "Inquiry note:\n  example_host keeps showing up first and that feels wrong" in output
     assert "Potentially related material:" in output
-    assert "node115 runtime prometheus-node-exporter" in output
+    assert "example_host runtime prometheus-node-exporter" in output
     assert "Support / why related:" in output
-    assert "case-normalized token overlap: node115" in output
+    assert "case-normalized token overlap: example_host" in output
     assert "Uncertainty:" in output
     assert "Authority boundary:" in output
     assert AUTHORITY_BOUNDARY in output
@@ -93,7 +93,7 @@ def test_orientation_output_includes_required_sections_and_supported_match(tmp_p
 
 
 def test_orientation_explicitly_renders_absent_related_material(tmp_path):
-    _ledger, state = _state_with_node115_fact()
+    _ledger, state = _state_with_example_host_fact()
     note = record_inquiry_note(
         tmp_path / "probe.jsonl",
         "unmatched prose only",
@@ -109,7 +109,7 @@ def test_orientation_explicitly_renders_absent_related_material(tmp_path):
 
 
 def test_orientation_helper_does_not_mutate_state_or_create_actions(tmp_path):
-    _ledger, state = _state_with_node115_fact()
+    _ledger, state = _state_with_example_host_fact()
     before = (
         dict(state.facts),
         dict(state.goals),
@@ -120,7 +120,7 @@ def test_orientation_helper_does_not_mutate_state_or_create_actions(tmp_path):
     )
     note = record_inquiry_note(
         tmp_path / "probe.jsonl",
-        "node115 wrong",
+        "example_host wrong",
         recorded_at=datetime(2026, 6, 16, tzinfo=timezone.utc),
     )
 
@@ -142,10 +142,10 @@ def test_orientation_helper_does_not_mutate_state_or_create_actions(tmp_path):
 
 
 def test_state_summary_and_source_navigation_matches_do_not_assert_importance_or_ownership(tmp_path):
-    _ledger, state = _state_with_node115_fact()
+    _ledger, state = _state_with_example_host_fact()
     note = record_inquiry_note(
         tmp_path / "probe.jsonl",
-        "node115 first owner",
+        "example_host first owner",
         recorded_at=datetime(2026, 6, 16, tzinfo=timezone.utc),
     )
 

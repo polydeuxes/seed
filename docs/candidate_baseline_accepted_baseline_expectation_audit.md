@@ -67,9 +67,9 @@ to accepted baseline?
 Operational example used throughout:
 
 ```text
-node116 historically observes mount M
+example_host_b historically observes mount M
 current visibility of M disappears
-historical evidence suggests node116-sees-M is a useful comparison reference
+historical evidence suggests example_host_b-sees-M is a useful comparison reference
 operator is investigating whether the change matters
 ```
 
@@ -154,13 +154,13 @@ accepted reference or expectation.
 Continuity evidence says:
 
 ```text
-node116 has repeatedly or historically observed mount M
+example_host_b has repeatedly or historically observed mount M
 ```
 
 A candidate baseline says:
 
 ```text
-node116-sees-M may be a useful comparison reference for this investigation
+example_host_b-sees-M may be a useful comparison reference for this investigation
 ```
 
 The difference is selection and purpose. Continuity evidence may exist in large
@@ -178,8 +178,8 @@ A candidate baseline requires at least:
 3. a reason the historical pattern might be relevant to that question;
 4. caveats that it is not yet normative.
 
-For node116, the raw continuity evidence is `node116 historically observed mount
-M`. The candidate baseline is `use historical node116-sees-M as the reference
+For example_host_b, the raw continuity evidence is `example_host_b historically observed mount
+M`. The candidate baseline is `use historical example_host_b-sees-M as the reference
 against which current disappearance is compared`.
 
 ### Required question 2: Can a candidate baseline exist without human involvement?
@@ -191,9 +191,9 @@ or execution authority. By analogy, history-derived candidate baselines may be
 machine-surfaced as possible comparison references, provided they retain their
 candidate status and do not become accepted references or expectations.
 
-For node116, a read-only inspection could notice that `node116-sees-M` has strong
+For example_host_b, a read-only inspection could notice that `example_host_b-sees-M` has strong
 historical support and current visibility is absent. That would justify a
-candidate comparison reference, not an accepted baseline and not `node116 should
+candidate comparison reference, not an accepted baseline and not `example_host_b should
 see M`.
 
 ## Accepted baseline analysis
@@ -257,9 +257,9 @@ whether it is non-normative or expectation-bearing
 
 Yes, if acceptance is scoped to comparison rather than normativity.
 
-For node116, an operator might accept `node116-sees-M` as the investigation
+For example_host_b, an operator might accept `example_host_b-sees-M` as the investigation
 baseline because historical evidence makes it useful for comparing the current
-disappearance. That does not assert that node116 is required or intended to see
+disappearance. That does not assert that example_host_b is required or intended to see
 M. It only says the historical state is the reference for evaluating the change.
 
 ### Required question 5: Does accepting a baseline implicitly say `should continue` or merely `compare against this reference`?
@@ -278,7 +278,7 @@ repository authority has several should-like concepts, but no general
 operational topology expectation that can say:
 
 ```text
-node116 should see mount M
+example_host_b should see mount M
 ```
 
 An expectation requires a source capable of taking an anticipatory or normative
@@ -288,10 +288,10 @@ or inference path with caveats. Expectation must retain provenance,
 uncertainty, and scope. It should not be treated as truth merely because it is
 represented.
 
-For node116, expectation would be a separate claim such as:
+For example_host_b, expectation would be a separate claim such as:
 
 ```text
-Under requirement R or policy P, node116 should continue seeing mount M while
+Under requirement R or policy P, example_host_b should continue seeing mount M while
 service S is active.
 ```
 
@@ -327,12 +327,12 @@ If accepted baseline and expectation remain distinct, transformation requires a
 separate should-bearing source, for example:
 
 ```text
-accepted baseline: compare current node116 visibility against historical
-node116-sees-M
+accepted baseline: compare current example_host_b visibility against historical
+example_host_b-sees-M
 
-plus authority: requirement R says node116 must see M for service S
+plus authority: requirement R says example_host_b must see M for service S
 
-therefore expectation: node116 should see M while R applies
+therefore expectation: example_host_b should see M while R applies
 ```
 
 Acceptable authority paths could include:
@@ -345,14 +345,14 @@ Acceptable authority paths could include:
 - formal decision that records the baseline as normative and names the authority
   for doing so.
 
-## Node116 example analysis
+## Example host example analysis
 
 Scenario:
 
 ```text
-node116 historically observes mount M
+example_host_b historically observes mount M
 current visibility of M disappears
-historical evidence suggests node116-sees-M is a useful comparison reference
+historical evidence suggests example_host_b-sees-M is a useful comparison reference
 operator is investigating whether the change matters
 ```
 
@@ -361,7 +361,7 @@ operator is investigating whether the change matters
 Continuity participates as historical survival or recurrence:
 
 ```text
-node116-sees-M was observed across prior time or observations
+example_host_b-sees-M was observed across prior time or observations
 ```
 
 It supports comparison but does not itself say whether disappearance is wrong.
@@ -371,7 +371,7 @@ It supports comparison but does not itself say whether disappearance is wrong.
 Candidate baseline participates as a proposed reference:
 
 ```text
-Use node116's historical visibility of M as the reference for evaluating current
+Use example_host_b's historical visibility of M as the reference for evaluating current
 loss of visibility.
 ```
 
@@ -384,8 +384,8 @@ Accepted baseline would participate if an operator, decision, policy,
 requirement, or workflow selects the candidate reference:
 
 ```text
-For this investigation, compare current node116 mount visibility against the
-historical node116-sees-M reference.
+For this investigation, compare current example_host_b mount visibility against the
+historical example_host_b-sees-M reference.
 ```
 
 This could help the operator investigate significance before any expectation is
@@ -396,13 +396,13 @@ asserted.
 Expectation would require extra authority:
 
 ```text
-node116 should see M
+example_host_b should see M
 ```
 
 or more safely:
 
 ```text
-node116 should see M while service S or requirement R applies.
+example_host_b should see M while service S or requirement R applies.
 ```
 
 The repository evidence inspected does not provide that authority for the
@@ -420,12 +420,12 @@ operator is investigating whether the change matters
 This is a concern because it is a potentially significant deviation, ambiguity,
 or evidence-quality pressure. It need not claim that a requirement was violated.
 
-### Required question 6: Would the node116 example benefit from accepted baseline semantics before expectation semantics?
+### Required question 6: Would the example_host_b example benefit from accepted baseline semantics before expectation semantics?
 
 Yes, conceptually. Accepted baseline semantics would let the system and operator
 share a comparison reference without prematurely asserting a topology
 expectation. This preserves the distinction between `historically normal for
-node116` and `required for node116`.
+example_host_b` and `required for example_host_b`.
 
 ### Required question 8: Can concern arise from deviation from an accepted baseline without asserting expectation?
 
@@ -455,7 +455,7 @@ and avoids inventing acceptance or expectation. Its weakness is that all
 consumers must interpret candidate baselines directly, which risks inconsistent
 handling of scope, purpose, authority, and caveats.
 
-For node116, this model says `node116-sees-M` is merely a candidate comparison
+For example_host_b, this model says `example_host_b-sees-M` is merely a candidate comparison
 reference. Concern may be surfaced as candidate-baseline deviation, but no
 accepted reference exists.
 
@@ -468,8 +468,8 @@ operator -> accepted baseline
 
 Repository-compatible as an architectural possibility. It resembles existing
 operator-owned goals and decision/acceptance boundaries. It best explains how an
-operator investigating node116 could say, without creating expectation, `yes,
-compare against the historical node116-sees-M reference`.
+operator investigating example_host_b could say, without creating expectation, `yes,
+compare against the historical example_host_b-sees-M reference`.
 
 Risk: operator acceptance must be scoped and caveated so it does not silently
 become policy, requirement, command, or truth.
@@ -486,8 +486,8 @@ acceptance to existing governance authority. It may be appropriate for regulated
 or repeatable contexts, but the repository does not currently show a general
 policy/requirement shape for operational mount baselines.
 
-For node116, this model would need a rule such as `use the last accepted
-storage-visibility reference for ingestion nodes` or `node116 must see M while S
+For example_host_b, this model would need a rule such as `use the last accepted
+storage-visibility reference for ingestion nodes` or `example_host_b must see M while S
 is active`.
 
 ### Model D: Accepted Baseline Equals Expectation
@@ -516,7 +516,7 @@ that a candidate comparison reference has been selected for a scope. Consumers
 would either keep treating all baselines as advisory candidates or drift toward
 implicit acceptance.
 
-For node116, this model can still support investigation, but the operator's
+For example_host_b, this model can still support investigation, but the operator's
 chosen comparison reference may not be preserved as a distinct authority event.
 
 ## Boundary preservation analysis
@@ -577,7 +577,7 @@ This audit does not conclude that:
 - expectations should be implemented;
 - baselines should become topology monitoring;
 - HomeOps or SeedOps surfaces should be created;
-- node116 should see mount M;
+- example_host_b should see mount M;
 - historical visibility is authoritative desired state;
 - baseline acceptance is currently implemented;
 - accepted baseline equals expectation;

@@ -15,7 +15,7 @@ from seed_runtime.state import StateProjector
 
 
 OBSERVED_AT = datetime(2026, 1, 1, tzinfo=timezone.utc)
-ENDPOINT = "192.168.254.115:9100"
+ENDPOINT = "192.0.2.115:9100"
 
 
 def _observation(
@@ -52,7 +52,7 @@ def _identity_pipeline() -> ObservationNormalizationPipeline:
 def test_generic_hostname_and_instance_create_alias_observation():
     original = _observation(
         "obs_generic",
-        metadata={"hostname": "node115", "instance": ENDPOINT},
+        metadata={"hostname": "example_host", "instance": ENDPOINT},
     )
 
     normalized = _default_pipeline().normalize([original])
@@ -61,12 +61,12 @@ def test_generic_hostname_and_instance_create_alias_observation():
     assert len(normalized) == 2
     alias = normalized[1]
     assert (alias.subject, alias.predicate, alias.value) == (
-        "node115",
+        "example_host",
         "alias",
         ENDPOINT,
     )
     assert alias.metadata == {
-        "hostname": "node115",
+        "hostname": "example_host",
         "instance": ENDPOINT,
         "derived": True,
         "derived_from_observation_id": original.id,
@@ -82,7 +82,7 @@ def test_prometheus_nodename_and_instance_create_source_specific_alias():
         value="linux",
         metadata={
             "source_name": "prometheus",
-            "nodename": "node115",
+            "nodename": "example_host",
             "instance": ENDPOINT,
         },
     )
@@ -90,7 +90,7 @@ def test_prometheus_nodename_and_instance_create_source_specific_alias():
     alias = _default_pipeline().normalize([original])[1]
 
     assert (alias.subject, alias.predicate, alias.value) == (
-        "node115",
+        "example_host",
         "prometheus_instance",
         ENDPOINT,
     )
@@ -103,7 +103,7 @@ def test_missing_hostname_or_nodename_creates_no_alias():
 
 
 def test_pipeline_avoids_duplicate_derived_observations():
-    alias = _observation("obs_derived_alias", subject="node115", predicate="alias", value=ENDPOINT)
+    alias = _observation("obs_derived_alias", subject="example_host", predicate="alias", value=ENDPOINT)
 
     class DuplicateNormalizer:
         name = "duplicate"
@@ -119,14 +119,14 @@ def test_pipeline_avoids_duplicate_derived_observations():
 def test_duplicate_source_observations_create_one_alias_with_provenance():
     first = _observation(
         "obs_up",
-        metadata={"hostname": "node115", "instance": ENDPOINT},
+        metadata={"hostname": "example_host", "instance": ENDPOINT},
     )
     second = _observation(
         "obs_os",
         predicate="os",
         value="linux",
         confidence=0.8,
-        metadata={"hostname": "node115", "instance": ENDPOINT},
+        metadata={"hostname": "example_host", "instance": ENDPOINT},
     )
 
     normalized = _default_pipeline().normalize([first, second])
@@ -142,7 +142,7 @@ def test_duplicate_source_observations_create_one_alias_with_provenance():
 def test_alias_derivation_ingests_originals_without_endpoint_identity_resolution():
     original = _observation(
         "obs_alias_query",
-        metadata={"hostname": "node115", "instance": ENDPOINT},
+        metadata={"hostname": "example_host", "instance": ENDPOINT},
     )
     ledger = EventLedger()
     service = ObservationCollectionService(ObservationIngestor(ledger))
@@ -152,14 +152,14 @@ def test_alias_derivation_ingests_originals_without_endpoint_identity_resolution
 
     assert len(facts) == 2
     assert state.observations[original.id].predicate == "up"
-    assert state.get_best_fact("node115", "up") is None
+    assert state.get_best_fact("example_host", "up") is None
     assert state.get_best_fact(ENDPOINT, "up").value == 1
 
 
 def test_collection_can_skip_optional_normalization_pipeline():
     original = _observation(
         "obs_without_pipeline",
-        metadata={"hostname": "node115", "instance": ENDPOINT},
+        metadata={"hostname": "example_host", "instance": ENDPOINT},
     )
     ledger = EventLedger()
     service = ObservationCollectionService(
@@ -176,7 +176,7 @@ def test_derived_alias_preserves_source_type_and_bounded_confidence():
     original = _observation(
         "obs_provenance",
         confidence=0.73,
-        metadata={"hostname": "node115", "endpoint": ENDPOINT},
+        metadata={"hostname": "example_host", "endpoint": ENDPOINT},
     )
 
     alias = _default_pipeline().normalize([original])[1]
@@ -190,9 +190,9 @@ def test_derived_alias_preserves_source_type_and_bounded_confidence():
 def test_endpoint_identity_matches_ip_address_in_same_batch():
     identity = _observation(
         "obs_ip_address",
-        subject="node115",
+        subject="example_host",
         predicate="ip_address",
-        value="192.168.254.115",
+        value="192.0.2.115",
     )
     endpoint_fact = _observation("obs_endpoint_up")
 
@@ -202,29 +202,29 @@ def test_endpoint_identity_matches_ip_address_in_same_batch():
     assert len(normalized) == 3
     alias = normalized[2]
     assert (alias.subject, alias.predicate, alias.value) == (
-        "node115",
+        "example_host",
         "alias",
         ENDPOINT,
     )
     assert alias.metadata["derived"] is True
     assert alias.metadata["normalizer"] == "endpoint_identity"
     assert alias.metadata["original_endpoint_subject"] == ENDPOINT
-    assert alias.metadata["matched_identity_subject"] == "node115"
+    assert alias.metadata["matched_identity_subject"] == "example_host"
     assert alias.metadata["matched_identity_predicate"] == "ip_address"
 
 
 def test_endpoint_identity_matches_ansible_host():
     identity = _observation(
         "obs_ansible_host",
-        subject="node115",
+        subject="example_host",
         predicate="ansible_host",
-        value="192.168.254.115",
+        value="192.0.2.115",
     )
 
     alias = _identity_pipeline().normalize([identity, _observation("obs_up")])[2]
 
     assert (alias.subject, alias.predicate, alias.value) == (
-        "node115",
+        "example_host",
         "alias",
         ENDPOINT,
     )
@@ -234,7 +234,7 @@ def test_endpoint_identity_matches_ansible_host():
 def test_endpoint_identity_does_not_match_unrelated_ip_or_guess_node_number():
     identity = _observation(
         "obs_other_ip",
-        subject="node115",
+        subject="example_host",
         predicate="ip_address",
         value="192.168.254.114",
     )
@@ -248,7 +248,7 @@ def test_endpoint_identity_does_not_match_unrelated_ip_or_guess_node_number():
 def test_endpoint_identity_matches_hostname_endpoint_from_explicit_alias():
     identity = _observation(
         "obs_hostname_alias",
-        subject="node115",
+        subject="example_host",
         predicate="alias",
         value="metrics.internal",
     )
@@ -259,7 +259,7 @@ def test_endpoint_identity_matches_hostname_endpoint_from_explicit_alias():
     alias = _identity_pipeline().normalize([identity, endpoint_fact])[2]
 
     assert (alias.subject, alias.predicate, alias.value) == (
-        "node115",
+        "example_host",
         "alias",
         "metrics.internal:9100",
     )
@@ -267,10 +267,10 @@ def test_endpoint_identity_matches_hostname_endpoint_from_explicit_alias():
 
 def test_endpoint_identity_avoids_duplicate_aliases_for_multiple_identity_facts():
     ip_address = _observation(
-        "obs_ip", subject="node115", predicate="ip_address", value="192.168.254.115"
+        "obs_ip", subject="example_host", predicate="ip_address", value="192.0.2.115"
     )
     alias_identity = _observation(
-        "obs_base_alias", subject="node115", predicate="alias", value="192.168.254.115"
+        "obs_base_alias", subject="example_host", predicate="alias", value="192.0.2.115"
     )
     endpoint_up = _observation("obs_up")
     endpoint_os = _observation("obs_os", predicate="os", value="linux")
@@ -282,7 +282,7 @@ def test_endpoint_identity_avoids_duplicate_aliases_for_multiple_identity_facts(
     endpoint_aliases = [
         observation
         for observation in normalized
-        if observation.subject == "node115"
+        if observation.subject == "example_host"
         and observation.predicate == "alias"
         and observation.value == ENDPOINT
     ]
@@ -294,9 +294,9 @@ def test_endpoint_identity_alias_preserves_endpoint_scoped_query():
     observations = [
         _observation(
             "obs_ip_address",
-            subject="node115",
+            subject="example_host",
             predicate="ip_address",
-            value="192.168.254.115",
+            value="192.0.2.115",
         ),
         _observation("obs_endpoint_up"),
     ]
@@ -306,7 +306,7 @@ def test_endpoint_identity_alias_preserves_endpoint_scoped_query():
     service.collect(FakeObservationSource(observations), "ws_endpoint_alias")
     state = StateProjector(ledger).project("ws_endpoint_alias")
 
-    assert state.get_best_fact("node115", "up") is None
+    assert state.get_best_fact("example_host", "up") is None
     assert state.get_best_fact(ENDPOINT, "up").value == 1
 
 
@@ -319,9 +319,9 @@ def test_sqlite_reopen_uses_persisted_identity_to_alias_later_endpoint(tmp_path)
             [
                 _observation(
                     "obs_ip_address",
-                    subject="node115",
+                    subject="example_host",
                     predicate="ip_address",
-                    value="192.168.254.115",
+                    value="192.0.2.115",
                 )
             ]
         ),
@@ -346,10 +346,10 @@ def test_sqlite_reopen_uses_persisted_identity_to_alias_later_endpoint(tmp_path)
 
     state = StateProjector(reopened).project("ws_endpoint_reopen")
 
-    assert state.get_best_fact("node115", "availability_status") is None
+    assert state.get_best_fact("example_host", "availability_status") is None
     assert state.get_best_fact(ENDPOINT, "availability_status").value == "down"
     assert any(
-        observation.subject == "node115"
+        observation.subject == "example_host"
         and observation.predicate == "alias"
         and observation.value == ENDPOINT
         and observation.metadata["normalizer"] == "endpoint_identity"
@@ -366,9 +366,9 @@ def test_endpoint_identity_ignores_expired_identity_from_projected_state():
             [
                 _observation(
                     "obs_expired_ip_address",
-                    subject="node115",
+                    subject="example_host",
                     predicate="ip_address",
-                    value="192.168.254.115",
+                    value="192.0.2.115",
                 ).model_copy(update={"expires_at": OBSERVED_AT})
             ]
         ),
@@ -382,7 +382,7 @@ def test_endpoint_identity_ignores_expired_identity_from_projected_state():
     state = StateProjector(ledger).project("ws_endpoint_expired_identity")
 
     assert not any(
-        observation.subject == "node115"
+        observation.subject == "example_host"
         and observation.predicate == "alias"
         and observation.value == ENDPOINT
         for observation in state.observations.values()
@@ -394,7 +394,7 @@ def test_endpoint_identity_avoids_alias_already_in_projected_state():
     service = ObservationCollectionService(ObservationIngestor(ledger))
     existing_alias = _observation(
         "obs_existing_endpoint_alias",
-        subject="node115",
+        subject="example_host",
         predicate="alias",
         value=ENDPOINT,
     )
@@ -403,9 +403,9 @@ def test_endpoint_identity_avoids_alias_already_in_projected_state():
             [
                 _observation(
                     "obs_base_ip_address",
-                    subject="node115",
+                    subject="example_host",
                     predicate="ip_address",
-                    value="192.168.254.115",
+                    value="192.0.2.115",
                 ),
                 existing_alias,
             ]
@@ -422,7 +422,7 @@ def test_endpoint_identity_avoids_alias_already_in_projected_state():
     endpoint_aliases = [
         observation
         for observation in state.observations.values()
-        if observation.subject == "node115"
+        if observation.subject == "example_host"
         and observation.predicate == "alias"
         and observation.value == ENDPOINT
     ]
@@ -437,9 +437,9 @@ def test_endpoint_identity_matches_alias_from_projected_state():
             [
                 _observation(
                     "obs_base_alias",
-                    subject="node115",
+                    subject="example_host",
                     predicate="alias",
-                    value="192.168.254.115",
+                    value="192.0.2.115",
                 )
             ]
         ),
@@ -452,10 +452,10 @@ def test_endpoint_identity_matches_alias_from_projected_state():
     )
     state = StateProjector(ledger).project("ws_endpoint_state_alias")
 
-    assert state.get_best_fact("node115", "up") is None
+    assert state.get_best_fact("example_host", "up") is None
     assert state.get_best_fact(ENDPOINT, "up").value == 1
     assert any(
-        observation.subject == "node115"
+        observation.subject == "example_host"
         and observation.predicate == "alias"
         and observation.value == ENDPOINT
         for observation in state.observations.values()
@@ -470,9 +470,9 @@ def test_endpoint_identity_matches_ansible_host_from_projected_state():
             [
                 _observation(
                     "obs_ansible_host_state",
-                    subject="node115",
+                    subject="example_host",
                     predicate="ansible_host",
-                    value="192.168.254.115",
+                    value="192.0.2.115",
                 )
             ]
         ),
@@ -485,7 +485,7 @@ def test_endpoint_identity_matches_ansible_host_from_projected_state():
     )
     state = StateProjector(ledger).project("ws_endpoint_state_ansible")
 
-    assert state.get_best_fact("node115", "up") is None
+    assert state.get_best_fact("example_host", "up") is None
     assert state.get_best_fact(ENDPOINT, "up").value == 1
 
 
@@ -496,9 +496,9 @@ def test_sqlite_same_batch_preserves_endpoint_identity_alias_behavior(tmp_path):
     observations = [
         _observation(
             "obs_ip_address",
-            subject="node115",
+            subject="example_host",
             predicate="ip_address",
-            value="192.168.254.115",
+            value="192.0.2.115",
         ),
         _observation("obs_endpoint_up"),
     ]
@@ -509,10 +509,10 @@ def test_sqlite_same_batch_preserves_endpoint_identity_alias_behavior(tmp_path):
     reopened = SQLiteEventLedger(str(db))
     state = StateProjector(reopened).project("ws_endpoint_reopen")
 
-    assert state.get_best_fact("node115", "up") is None
+    assert state.get_best_fact("example_host", "up") is None
     assert state.get_best_fact(ENDPOINT, "up").value == 1
     assert any(
-        observation.subject == "node115"
+        observation.subject == "example_host"
         and observation.predicate == "alias"
         and observation.value == ENDPOINT
         and observation.metadata["normalizer"] == "endpoint_identity"

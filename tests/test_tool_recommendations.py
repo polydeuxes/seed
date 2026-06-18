@@ -55,7 +55,7 @@ def _request_tool_decision() -> Decision:
         reason="missing service management capability",
         tool_need={
             "name": "manage_service",
-            "summary": "Manage the Jellyfin service",
+            "summary": "Manage the web_service service",
             "capability": "service_management",
         },
     )
@@ -74,7 +74,7 @@ def _docker_state() -> State:
         facts={
             "fact_runtime_docker": Fact(
                 id="fact_runtime_docker",
-                subject_id="jellyfin",
+                subject_id="web_service",
                 predicate="runtime",
                 value="docker",
                 observed_at=utc_now(),
@@ -133,7 +133,7 @@ def test_runtime_request_tool_recommendation_payload_stays_unchanged():
     projector = StateProjector(ledger)
     fact = Fact(
         id="fact_runtime_docker",
-        subject_id="jellyfin",
+        subject_id="web_service",
         predicate="runtime",
         value="docker",
         observed_at=utc_now(),
@@ -141,7 +141,7 @@ def test_runtime_request_tool_recommendation_payload_stays_unchanged():
     ledger.append("fact.recorded", "ws", {"fact": to_plain(fact)}, actor="system")
     runtime = _runtime_with_decision(_request_tool_decision(), ledger, projector)
 
-    response = runtime.handle_user_message("ws", "ses", "manage jellyfin")
+    response = runtime.handle_user_message("ws", "ses", "manage web_service")
     projected_state = projector.project("ws")
     tool_need = projected_state.open_tool_needs[0]
     expected_recommendations = [

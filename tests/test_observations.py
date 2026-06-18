@@ -14,7 +14,7 @@ def test_observation_becomes_fact():
         id="obs_cpu",
         source_type="provider",
         observed_at=BASE_TIME,
-        subject="node115",
+        subject="example_host",
         predicate="cpu.count",
         value=8,
         confidence=0.82,
@@ -25,7 +25,7 @@ def test_observation_becomes_fact():
 
     assert fact.id in state.facts
     projected = state.facts[fact.id]
-    assert projected.subject_id == "node115"
+    assert projected.subject_id == "example_host"
     assert projected.predicate == "cpu.count"
     assert projected.value == 8
     assert projected.observed_at == BASE_TIME
@@ -37,7 +37,7 @@ def test_observation_provenance_preserved():
         id="obs_runtime",
         source_type="discovery",
         observed_at=BASE_TIME,
-        subject="jellyfin",
+        subject="web_service",
         predicate="runtime",
         value="docker",
         confidence=0.91,

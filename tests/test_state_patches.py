@@ -42,7 +42,7 @@ def test_state_patch_service_applies_minimum_supported_ops():
                     "entity": {
                         "id": "ent_node_1",
                         "kind": "host",
-                        "name": "node-1",
+                        "name": "example_host",
                         "attributes": {"os": "linux"},
                     },
                 },
@@ -71,7 +71,7 @@ def test_state_patch_service_applies_minimum_supported_ops():
                     "op": "create_goal",
                     "goal": {
                         "id": "goal_fix_ssh",
-                        "summary": "Restore SSH access to node-1",
+                        "summary": "Restore SSH access to example_host",
                         "related_entities": ["ent_node_1"],
                     },
                 },
@@ -107,7 +107,7 @@ def test_state_patch_service_accepts_legacy_collection_shape():
     service.apply(
         "ws",
         {
-            "entities": [{"id": "ent_1", "kind": "host", "name": "node-1"}],
+            "entities": [{"id": "ent_1", "kind": "host", "name": "example_host"}],
             "facts": [
                 {
                     "id": "fact_1",
@@ -151,14 +151,14 @@ def test_runtime_routes_propose_state_patch_to_state_updated_response():
                         "entity": {
                             "id": "ent_node_1",
                             "kind": "host",
-                            "name": "node-1",
+                            "name": "example_host",
                         },
                     },
                     {
                         "op": "create_goal",
                         "goal": {
                             "id": "goal_check_ssh",
-                            "summary": "Check SSH status on node-1",
+                            "summary": "Check SSH status on example_host",
                         },
                     },
                 ]
@@ -166,7 +166,7 @@ def test_runtime_routes_propose_state_patch_to_state_updated_response():
         )
     )
 
-    response = runtime.handle_user_message("ws", "ses", "remember node-1")
+    response = runtime.handle_user_message("ws", "ses", "remember example_host")
 
     assert response.kind == "state_updated"
     assert response.message == "Applied 2 state patch operation(s)."
@@ -177,8 +177,8 @@ def test_runtime_routes_propose_state_patch_to_state_updated_response():
         "goal.created",
     ]
     state = runtime.projector.project("ws")
-    assert state.entities["ent_node_1"].name == "node-1"
-    assert state.goals["goal_check_ssh"].summary == "Check SSH status on node-1"
+    assert state.entities["ent_node_1"].name == "example_host"
+    assert state.goals["goal_check_ssh"].summary == "Check SSH status on example_host"
 
 
 def test_runtime_routes_state_patch_service_rejection_to_invalid_response():
@@ -191,7 +191,7 @@ def test_runtime_routes_state_patch_service_rejection_to_invalid_response():
         )
     )
 
-    response = runtime.handle_user_message("ws", "ses", "remember node-1")
+    response = runtime.handle_user_message("ws", "ses", "remember example_host")
 
     assert response.kind == "invalid_state_patch"
     assert response.message == "State patch failed validation."
@@ -231,7 +231,7 @@ def test_state_patch_service_rejects_non_object_operation():
     ("operation", "expected_error"),
     [
         (
-            {"op": "upsert_entity", "name": "jellyfin"},
+            {"op": "upsert_entity", "name": "web_service"},
             "entity missing required field\\(s\\): kind",
         ),
         (
@@ -286,7 +286,7 @@ def test_state_patch_service_accepts_inline_operation_payloads():
                 {
                     "op": "upsert_entity",
                     "kind": "service",
-                    "name": "jellyfin",
+                    "name": "web_service",
                 }
             ]
         },
@@ -296,7 +296,7 @@ def test_state_patch_service_accepts_inline_operation_payloads():
     assert [event.kind for event in ledger.list_events("ws")] == ["entity.upserted"]
     entity = result.events[0].payload["entity"]
     assert entity["kind"] == "service"
-    assert entity["name"] == "jellyfin"
+    assert entity["name"] == "web_service"
     assert entity["id"].startswith("ent_")
 
 
@@ -309,7 +309,7 @@ def test_state_patch_service_partial_application_is_not_rolled_back():
             "ws",
             {
                 "ops": [
-                    {"op": "upsert_entity", "kind": "service", "name": "jellyfin"},
+                    {"op": "upsert_entity", "kind": "service", "name": "web_service"},
                     {"op": "unknown_op"},
                 ]
             },
@@ -317,4 +317,4 @@ def test_state_patch_service_partial_application_is_not_rolled_back():
 
     events = ledger.list_events("ws")
     assert [event.kind for event in events] == ["entity.upserted"]
-    assert events[0].payload["entity"]["name"] == "jellyfin"
+    assert events[0].payload["entity"]["name"] == "web_service"

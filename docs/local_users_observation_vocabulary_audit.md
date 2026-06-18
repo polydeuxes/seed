@@ -98,7 +98,7 @@ A conservative first shape is host-subject facts with dimensions identifying the
 Example:
 
 ```text
-subject: node115
+subject: example_host
 predicate: user_account
 value: john
 dimensions:

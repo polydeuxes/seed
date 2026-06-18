@@ -11,8 +11,8 @@ def test_host_notes_records_and_lists_notes_in_seed_ledger():
     projector = StateProjector(ledger)
     executor = ToolExecutor(ledger, registry, projector)
 
-    added = executor.execute("ws", "ses", "add_host_note", {"host": "node-1", "note": "SSH pending review"})
-    listed = executor.execute("ws", "ses", "list_host_notes", {"host": "node-1"})
+    added = executor.execute("ws", "ses", "add_host_note", {"host": "example_host", "note": "SSH pending review"})
+    listed = executor.execute("ws", "ses", "list_host_notes", {"host": "example_host"})
 
     assert added.kind == "tool_result"
     assert listed.payload["output"]["notes"] == [

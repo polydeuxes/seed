@@ -72,8 +72,8 @@ def _evidence(evidence_id: str, event_id: str, fact: Fact) -> Evidence:
 
 def _contradictory_state() -> State:
     state = State(workspace_id="ws", last_event_id="evt-2")
-    fact_1 = _fact("fact-1", "node214", "status", "healthy", evidence_ids=["evd-1"])
-    fact_2 = _fact("fact-2", "node214", "status", "degraded", evidence_ids=["evd-2"])
+    fact_1 = _fact("fact-1", "example_host_d", "status", "healthy", evidence_ids=["evd-1"])
+    fact_2 = _fact("fact-2", "example_host_d", "status", "degraded", evidence_ids=["evd-2"])
     state.facts = {fact_2.id: fact_2, fact_1.id: fact_1}
     state.evidence = {
         "evd-1": _evidence("evd-1", "evt-1", fact_1),
@@ -92,7 +92,7 @@ def test_detects_contradiction_for_exclusive_predicate_with_different_values():
 
     assert len(contradictions) == 1
     contradiction = contradictions[0]
-    assert contradiction.subject == "node214"
+    assert contradiction.subject == "example_host_d"
     assert contradiction.predicate == "status"
     assert contradiction.fact_ids == ["fact-2", "fact-1"]
     assert contradiction.values == ["degraded", "healthy"]
@@ -103,8 +103,8 @@ def test_detects_contradiction_for_exclusive_predicate_with_different_values():
 def test_does_not_flag_duplicate_identical_facts():
     state = State(workspace_id="ws")
     state.facts = {
-        "fact-a": _fact("fact-a", "node214", "status", "healthy"),
-        "fact-b": _fact("fact-b", "node214", "status", "healthy"),
+        "fact-a": _fact("fact-a", "example_host_d", "status", "healthy"),
+        "fact-b": _fact("fact-b", "example_host_d", "status", "healthy"),
     }
 
     assert build_contradictions(state) == []
@@ -113,8 +113,8 @@ def test_does_not_flag_duplicate_identical_facts():
 def test_does_not_flag_non_exclusive_predicates_by_default():
     state = State(workspace_id="ws")
     state.facts = {
-        "fact-a": _fact("fact-a", "node214", "tag", "blue"),
-        "fact-b": _fact("fact-b", "node214", "tag", "green"),
+        "fact-a": _fact("fact-a", "example_host_d", "tag", "blue"),
+        "fact-b": _fact("fact-b", "example_host_d", "tag", "green"),
     }
 
     assert build_contradictions(state) == []
@@ -151,14 +151,14 @@ def test_summary_counts_contradictions_and_severity_buckets_correctly():
 def test_find_contradictions_for_fact_returns_relevant_contradictions():
     state = _contradictory_state()
 
-    assert [item.subject for item in find_contradictions_for_fact(state, "fact-1")] == ["node214"]
+    assert [item.subject for item in find_contradictions_for_fact(state, "fact-1")] == ["example_host_d"]
     assert find_contradictions_for_fact(state, "missing") == []
 
 
 def test_output_ordering_is_deterministic():
     state = _contradictory_state()
-    service_a = _fact("fact-a", "service", "runs_on", "node1")
-    service_b = _fact("fact-b", "service", "runs_on", "node2")
+    service_a = _fact("fact-a", "service", "runs_on", "example_host_1")
+    service_b = _fact("fact-b", "service", "runs_on", "example_host_2")
     state.facts[service_b.id] = service_b
     state.facts[service_a.id] = service_a
 
@@ -167,7 +167,7 @@ def test_output_ordering_is_deterministic():
 
     assert first == second
     assert [(item.subject, item.predicate) for item in first] == [
-        ("node214", "status"),
+        ("example_host_d", "status"),
         ("service", "runs_on"),
     ]
 
@@ -197,8 +197,8 @@ def test_contradiction_detection_uses_projected_state_and_evidence_graph_not_raw
 def test_cli_contradictions_prints_summary_and_conflict_details(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
-    assert seed_local.main(["--db", str(db_path), "--observe", "node214", "status", "healthy"]) == 0
-    assert seed_local.main(["--db", str(db_path), "--observe", "node214", "status", "degraded"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--observe", "example_host_d", "status", "healthy"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--observe", "example_host_d", "status", "degraded"]) == 0
     capsys.readouterr()
 
     assert seed_local.main(["--db", str(db_path), "--contradictions"]) == 0
@@ -208,7 +208,7 @@ def test_cli_contradictions_prints_summary_and_conflict_details(tmp_path, capsys
     assert "Count: 1" in output
     assert "Affected Facts: 2" in output
     assert "High Severity: 1" in output
-    assert "* node214 status" in output
+    assert "* example_host_d status" in output
     assert "severity: high" in output
     assert "reason: exclusive predicate has multiple values" in output
     assert "values: degraded, healthy" in output
@@ -219,8 +219,8 @@ def test_cli_contradictions_prints_summary_and_conflict_details(tmp_path, capsys
 def test_cli_contradiction_command_does_not_append_events(tmp_path, capsys, monkeypatch):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
-    assert seed_local.main(["--db", str(db_path), "--observe", "node214", "status", "healthy"]) == 0
-    assert seed_local.main(["--db", str(db_path), "--observe", "node214", "status", "degraded"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--observe", "example_host_d", "status", "healthy"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--observe", "example_host_d", "status", "degraded"]) == 0
     capsys.readouterr()
     before_count = _event_count(db_path)
 
@@ -239,8 +239,8 @@ def test_cli_contradiction_command_does_not_invoke_runtime_provider_policy_or_to
 ):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
-    assert seed_local.main(["--db", str(db_path), "--observe", "node214", "status", "healthy"]) == 0
-    assert seed_local.main(["--db", str(db_path), "--observe", "node214", "status", "degraded"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--observe", "example_host_d", "status", "healthy"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--observe", "example_host_d", "status", "degraded"]) == 0
     capsys.readouterr()
 
     def fail_execution(*args, **kwargs):  # pragma: no cover - should never be called

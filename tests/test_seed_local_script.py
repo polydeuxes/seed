@@ -58,24 +58,24 @@ def test_cli_state_summary_rejects_storage_projection_sections():
             "availability": {"up": 0, "down": 0, "unknown": 0},
             "filesystems": [
                 {
-                    "host": "node100:9100",
-                    "mountpoint": "/mnt/node205/sda1",
+                    "host": "example_host_100:9100",
+                    "mountpoint": "/mnt/example_host_205/sda1",
                     "free": 10,
                     "total": 100,
                 }
             ],
             "cluster_mount_groups": [
                 {
-                    "mountpoint": "/mnt/node205/sda1",
+                    "mountpoint": "/mnt/example_host_205/sda1",
                     "visible_endpoint_count": 2,
-                    "visible_endpoints": ["node100:9100", "node101:9100"],
+                    "visible_endpoints": ["example_host_100:9100", "example_host_101:9100"],
                 }
             ],
             "shared_storage_candidates": [
                 {
-                    "mountpaths": ["/mnt/node205/sda1"],
+                    "mountpaths": ["/mnt/example_host_205/sda1"],
                     "visible_endpoint_count": 2,
-                    "visible_endpoints": ["node100:9100", "node101:9100"],
+                    "visible_endpoints": ["example_host_100:9100", "example_host_101:9100"],
                     "evidence": ["matching total bytes", "matching device"],
                     "confidence": "medium",
                     "boundary": (
@@ -87,7 +87,7 @@ def test_cli_state_summary_rejects_storage_projection_sections():
             ],
             "storage_topology_ambiguities": [
                 {
-                    "subject": "/mnt/node205/sda1",
+                    "subject": "/mnt/example_host_205/sda1",
                     "materiality": "medium",
                     "reasons": ["mountpath visible on 2 endpoints"],
                     "candidate_interpretations": [
@@ -133,7 +133,7 @@ def test_cli_state_summary_rejects_bounded_filesystem_detail():
         filesystems.append(
             {
                 "host": f"node{index:03d}:9100",
-                "mountpoint": f"/mnt/node20{index}/sda1",
+                "mountpoint": f"/mnt/example_host_20{index}/sda1",
                 "free": 20 + index,
                 "total": 300 + index,
             }
@@ -188,7 +188,7 @@ def test_cli_state_summary_rejects_storage_topology_counts():
         "availability": {"up": 0, "down": 0, "unknown": 0},
         "filesystems": [],
         "cluster_mount_groups": [
-            {"mountpoint": f"/mnt/node20{index}/sda1"} for index in range(3)
+            {"mountpoint": f"/mnt/example_host_20{index}/sda1"} for index in range(3)
         ],
         "shared_storage_candidates": [
             {"mountpaths": ["/srv/high"], "confidence": "high"},
@@ -305,7 +305,7 @@ def test_normal_cli_missing_tool_records_open_tool_need_and_recommendations(
         ),
     )
 
-    result = app.run("restart jellyfin?")
+    result = app.run("restart web_service?")
 
     assert result["response"]["kind"] == "tool_need"
     assert (
@@ -515,7 +515,7 @@ def test_fact_seed_ingests_observation_evidence_and_fact_before_user_message():
     seed_local = load_seed_local_module()
     app = seed_local.build_local_app()
 
-    app.seed_facts([seed_local.DevFactSeed("jellyfin", "runtime", "docker")])
+    app.seed_facts([seed_local.DevFactSeed("web_service", "runtime", "docker")])
     result = app.run("echo hello")
 
     event_kinds = [event["kind"] for event in result["events"]]
@@ -530,7 +530,7 @@ def test_fact_seed_ingests_observation_evidence_and_fact_before_user_message():
     observation = next(iter(state.observations.values()))
     fact = next(iter(state.facts.values()))
     evidence = next(iter(state.evidence.values()))
-    assert fact.subject_id == "jellyfin"
+    assert fact.subject_id == "web_service"
     assert fact.predicate == "runtime"
     assert fact.value == "docker"
     assert fact.evidence_ids == [evidence.id]
@@ -540,7 +540,7 @@ def test_fact_seed_ingests_observation_evidence_and_fact_before_user_message():
     assert evidence.payload == {
         "observation_id": observation.id,
         "source_type": "user",
-        "subject": "jellyfin",
+        "subject": "web_service",
         "predicate": "runtime",
         "value": "docker",
         "metadata": {"ingested_by": "scripts.seed_local --fact"},
@@ -552,11 +552,11 @@ def test_fact_seed_ingests_observation_evidence_and_fact_before_user_message():
 def test_cli_fact_creates_observation_fact_through_ingestor(capsys):
     seed_local = load_seed_local_module()
 
-    assert seed_local.main(["--fact", "jellyfin", "runtime", "docker"]) == 0
+    assert seed_local.main(["--fact", "web_service", "runtime", "docker"]) == 0
 
     output = capsys.readouterr().out
     assert "fact_id: fact_obs_" in output
-    assert "subject: jellyfin" in output
+    assert "subject: web_service" in output
     assert "predicate: runtime" in output
     assert "value: docker" in output
     assert "source_type: user" in output
@@ -569,21 +569,21 @@ def test_observe_and_fact_produce_equivalent_projected_facts():
     fact_app = seed_local.build_local_app()
     observe_app = seed_local.build_local_app()
 
-    fact_app.seed_facts([seed_local.DevFactSeed("jellyfin", "runtime", "docker")])
+    fact_app.seed_facts([seed_local.DevFactSeed("web_service", "runtime", "docker")])
     observe_app.observe(
-        [seed_local.DevObservationSeed("jellyfin", "runtime", "docker")]
+        [seed_local.DevObservationSeed("web_service", "runtime", "docker")]
     )
 
     fact_state = fact_app.projector.project(fact_app.workspace_id)
     observe_state = observe_app.projector.project(observe_app.workspace_id)
-    fact_best = fact_state.get_best_fact("jellyfin", "runtime")
-    observe_best = observe_state.get_best_fact("jellyfin", "runtime")
-    fact_support = fact_state.get_fact_support("jellyfin", "runtime")
-    observe_support = observe_state.get_fact_support("jellyfin", "runtime")
+    fact_best = fact_state.get_best_fact("web_service", "runtime")
+    observe_best = observe_state.get_best_fact("web_service", "runtime")
+    fact_support = fact_state.get_fact_support("web_service", "runtime")
+    observe_support = observe_state.get_fact_support("web_service", "runtime")
 
     assert fact_best is not None
     assert observe_best is not None
-    assert fact_best.subject_id == observe_best.subject_id == "jellyfin"
+    assert fact_best.subject_id == observe_best.subject_id == "web_service"
     assert fact_best.predicate == observe_best.predicate == "runtime"
     assert fact_best.value == observe_best.value == "docker"
     assert fact_best.source_type == observe_best.source_type == "user"
@@ -608,7 +608,7 @@ def test_cli_fact_seed_influences_service_recommendation_ranking(monkeypatch, ca
 
     assert (
         seed_local.main(
-            ["--fact", "jellyfin", "runtime", "docker", "restart jellyfin?"]
+            ["--fact", "web_service", "runtime", "docker", "restart web_service?"]
         )
         == 0
     )
@@ -635,7 +635,7 @@ def test_cli_plan_prints_non_executable_top_recommendation_plan(monkeypatch, cap
 
     assert (
         seed_local.main(
-            ["--fact", "jellyfin", "runtime", "docker", "--plan", "restart jellyfin?"]
+            ["--fact", "web_service", "runtime", "docker", "--plan", "restart web_service?"]
         )
         == 0
     )
@@ -658,7 +658,7 @@ def test_parser_accepts_observation_ingestion_options():
     args = seed_local.build_parser().parse_args(
         [
             "--observe",
-            "jellyfin",
+            "web_service",
             "runtime",
             "docker",
             "--source-type",
@@ -668,7 +668,7 @@ def test_parser_accepts_observation_ingestion_options():
         ]
     )
 
-    assert args.observe == [["jellyfin", "runtime", "docker"]]
+    assert args.observe == [["web_service", "runtime", "docker"]]
     assert args.source_type == "discovery"
     assert args.confidence == 0.81
 
@@ -693,7 +693,7 @@ def test_cli_observe_json_ingests_imported_observations(tmp_path, capsys):
     seed_local = load_seed_local_module()
     json_path = tmp_path / "observations.json"
     json_path.write_text(
-        '{"observations":[{"subject":"jellyfin","predicate":"runtime",'
+        '{"observations":[{"subject":"web_service","predicate":"runtime",'
         '"value":"docker","confidence":0.95}]}',
         encoding="utf-8",
     )
@@ -702,7 +702,7 @@ def test_cli_observe_json_ingests_imported_observations(tmp_path, capsys):
 
     output = capsys.readouterr().out
     assert "fact_id: fact_obs_" in output
-    assert "subject: jellyfin" in output
+    assert "subject: web_service" in output
     assert "predicate: runtime" in output
     assert "value: docker" in output
     assert "source_type: imported" in output
@@ -726,7 +726,7 @@ def test_cli_export_observations_json_writes_inventory(tmp_path, capsys):
         seed_local.main(
             [
                 "--observe",
-                "jellyfin",
+                "web_service",
                 "runtime",
                 "docker",
                 "--source-type",
@@ -750,7 +750,7 @@ def test_cli_export_observations_json_writes_inventory(tmp_path, capsys):
                 "observed_at": payload["observations"][0]["observed_at"],
                 "predicate": "runtime",
                 "source_type": "discovery",
-                "subject": "jellyfin",
+                "subject": "web_service",
                 "value": "docker",
             }
         ]
@@ -762,7 +762,7 @@ def test_parser_accepts_repeatable_fact_seed_options():
     args = seed_local.build_parser().parse_args(
         [
             "--fact",
-            "jellyfin",
+            "web_service",
             "runtime",
             "docker",
             "--fact",
@@ -770,15 +770,15 @@ def test_parser_accepts_repeatable_fact_seed_options():
             "runtime",
             "systemd",
             "restart",
-            "jellyfin?",
+            "web_service?",
         ]
     )
 
     assert args.fact == [
-        ["jellyfin", "runtime", "docker"],
+        ["web_service", "runtime", "docker"],
         ["plex", "runtime", "systemd"],
     ]
-    assert args.message == ["restart", "jellyfin?"]
+    assert args.message == ["restart", "web_service?"]
 
 
 def seed_cli_action_plan(
@@ -858,13 +858,13 @@ def test_cli_authorize_execution_grants_for_accepted_plan_without_executing(
                 "--registered-provider",
                 "docker_container_lifecycle",
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "host",
-                "node115",
+                "example_host",
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "container",
-                "jellyfin",
+                "web_service",
                 "--proposal",
                 "plan_cli",
             ]
@@ -940,13 +940,13 @@ def test_cli_authorize_proposal_requires_accepted_plan(tmp_path, capsys):
                 "--registered-provider",
                 "docker_container_lifecycle",
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "host",
-                "node115",
+                "example_host",
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "container",
-                "jellyfin",
+                "web_service",
                 "--proposal",
                 "plan_cli",
             ]
@@ -1106,7 +1106,7 @@ def test_cli_proposal_reports_service_host_missing(tmp_path, capsys):
         ledger.append(
             "entity.upserted",
             "local",
-            {"entity": {"id": "host_1", "kind": "host", "name": "node-1"}},
+            {"entity": {"id": "host_1", "kind": "host", "name": "example_host"}},
         )
     finally:
         ledger.close()
@@ -1156,7 +1156,7 @@ def test_cli_proposal_reports_unsupported_provider(tmp_path, capsys):
                 "--fact",
                 "svc",
                 "host",
-                "node-1",
+                "example_host",
                 "--fact",
                 "svc",
                 "container",
@@ -1195,7 +1195,7 @@ def test_cli_proposal_reports_container_name_missing(tmp_path, capsys):
                 "--fact",
                 "svc",
                 "host",
-                "node-1",
+                "example_host",
                 "--proposal",
                 "plan_cli",
             ]
@@ -1236,7 +1236,7 @@ def test_cli_proposal_reports_builder_returned_none(monkeypatch, tmp_path, capsy
                 "--fact",
                 "svc",
                 "host",
-                "node-1",
+                "example_host",
                 "--fact",
                 "svc",
                 "container",
@@ -1321,13 +1321,13 @@ def test_cli_proposal_creates_concrete_non_executable_proposal_without_executing
                 "--registered-provider",
                 "docker_container_lifecycle",
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "host",
-                "node115",
+                "example_host",
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "container",
-                "jellyfin",
+                "web_service",
                 "--proposal",
                 "plan_cli",
             ]
@@ -1341,7 +1341,7 @@ def test_cli_proposal_creates_concrete_non_executable_proposal_without_executing
     assert "provider: docker_container_lifecycle" in output
     assert "tool_name: docker_container_lifecycle" in output
     assert (
-        'tool_arguments: {"action": "restart", "container": "jellyfin", "host": "node115"}'
+        'tool_arguments: {"action": "restart", "container": "web_service", "host": "example_host"}'
         in output
     )
     assert "arguments_fingerprint: sha256:" in output
@@ -1493,16 +1493,16 @@ def test_parser_accepts_registered_provider_and_fact_examples():
             "--registered-provider",
             "docker_container_lifecycle",
             "--fact",
-            "jellyfin",
+            "web_service",
             "host",
-            "node115",
+            "example_host",
             "--preconditions",
             "plan_000001",
         ]
     )
 
     assert args.registered_provider == ["docker_container_lifecycle"]
-    assert args.fact == [["jellyfin", "host", "node115"]]
+    assert args.fact == [["web_service", "host", "example_host"]]
     assert args.preconditions == "plan_000001"
 
 
@@ -1526,9 +1526,9 @@ def test_cli_preconditions_satisfy_provider_and_host_but_not_approval(tmp_path, 
                 "--registered-provider",
                 "docker_container_lifecycle",
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "host",
-                "node115",
+                "example_host",
                 "--preconditions",
                 "plan_cli",
             ]
@@ -1569,9 +1569,9 @@ def test_cli_preconditions_target_host_fact_satisfies_host_requirement(
                 "--db",
                 str(db_path),
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "target_host",
-                "node115",
+                "example_host",
                 "--preconditions",
                 "plan_cli",
             ]
@@ -1636,14 +1636,14 @@ def test_dev_fact_cli_rejects_secret_field_names():
 
     for field in ("password", "passphrase", "token", "private_key"):
         with pytest.raises(ValueError, match="secret field"):
-            seed_local.parse_dev_fact(["node-1", field, "not-accepted"])
+            seed_local.parse_dev_fact(["example_host", field, "not-accepted"])
 
 
 def test_dev_fact_cli_rejects_json_values_with_secret_fields():
     seed_local = load_seed_local_module()
 
     with pytest.raises(ValueError, match="secret field"):
-        seed_local.parse_dev_fact(["node-1", "auth", '{"token": "not-accepted"}'])
+        seed_local.parse_dev_fact(["example_host", "auth", '{"token": "not-accepted"}'])
 
 
 def test_parser_supports_handoff_generation():
@@ -1680,9 +1680,9 @@ def test_handoff_cli_function_prints_non_executable_plan_for_accepted_action_pla
             ToolNeed(
                 id="need_service",
                 workspace_id="ws",
-                name="restart_jellyfin",
+                name="restart_web_service",
                 capability="service_management",
-                summary="Restart Jellyfin",
+                summary="Restart web_service",
                 reason="User asked",
             ),
             RankedRecommendation(
@@ -1719,8 +1719,8 @@ def test_parser_supports_fact_projection_queries():
     seed_local = load_seed_local_module()
     parser = seed_local.build_parser()
 
-    support_args = parser.parse_args(["--fact-support", "jellyfin", "runtime"])
-    best_args = parser.parse_args(["--best-fact", "jellyfin", "runtime"])
+    support_args = parser.parse_args(["--fact-support", "web_service", "runtime"])
+    best_args = parser.parse_args(["--best-fact", "web_service", "runtime"])
     conflicts_args = parser.parse_args(["--fact-conflicts"])
     refreshes_args = parser.parse_args(["--stale-fact-refreshes"])
     summary_args = parser.parse_args(["--state-summary"])
@@ -1729,7 +1729,7 @@ def test_parser_supports_fact_projection_queries():
     history_args = parser.parse_args(
         [
             "--fact-support",
-            "node115",
+            "example_host",
             "up",
             "--include-history",
         ]
@@ -1737,16 +1737,16 @@ def test_parser_supports_fact_projection_queries():
     history_alias_args = parser.parse_args(
         [
             "--fact-support",
-            "node115",
+            "example_host",
             "up",
             "--history",
         ]
     )
 
-    assert support_args.fact_support == ["jellyfin", "runtime"]
+    assert support_args.fact_support == ["web_service", "runtime"]
     assert history_args.include_history is True
     assert history_alias_args.include_history is True
-    assert best_args.best_fact == ["jellyfin", "runtime"]
+    assert best_args.best_fact == ["web_service", "runtime"]
     assert conflicts_args.fact_conflicts is True
     assert refreshes_args.stale_fact_refreshes is True
     assert summary_args.state_summary is True
@@ -2034,7 +2034,7 @@ def test_format_state_summary_renders_endpoint_counts_without_endpoint_names():
             "graph_issue_error_count": 0,
             "observation_source_counts": {},
             "top_entities_by_kind": {
-                "hosts": [{"name": "node115", "alias_count": 0, "fact_count": 1}],
+                "hosts": [{"name": "example_host", "alias_count": 0, "fact_count": 1}],
                 "services": [{"name": "api", "alias_count": 0, "fact_count": 1}],
                 "endpoints": {"total": 1, "up": 0, "down": 1, "unknown": 0},
                 "storage": [{"name": "pool-a", "alias_count": 0, "fact_count": 1}],
@@ -2051,7 +2051,7 @@ def test_format_state_summary_renders_endpoint_counts_without_endpoint_names():
         "  endpoints:\n    total: 1\n    up: 0\n    down: 1\n    unknown: 0" in output
     )
     assert "10.0.0.1:9100" not in output
-    assert "    node115 (aliases: 0 total; facts: 1)" in output
+    assert "    example_host (aliases: 0 total; facts: 1)" in output
     assert "    api (aliases: 0 total; facts: 1)" in output
     assert "    pool-a (aliases: 0 total; facts: 1)" in output
 
@@ -2064,7 +2064,7 @@ def test_cli_state_summary_counts_local_observation_without_availability_as_unkn
     _persist_impact_facts(
         seed_local,
         db_path,
-        [("node115", "local_observation_status", "observed")],
+        [("example_host", "local_observation_status", "observed")],
     )
 
     assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
@@ -2081,7 +2081,7 @@ def test_cli_state_summary_counts_host_availability_up(tmp_path, capsys):
     _persist_impact_facts(
         seed_local,
         db_path,
-        [("node115", "availability_status", "up")],
+        [("example_host", "availability_status", "up")],
     )
 
     assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
@@ -2098,7 +2098,7 @@ def test_cli_state_summary_counts_host_availability_down(tmp_path, capsys):
     _persist_impact_facts(
         seed_local,
         db_path,
-        [("node115", "availability_status", "down")],
+        [("example_host", "availability_status", "down")],
     )
 
     assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
@@ -2118,9 +2118,9 @@ def test_cli_state_summary_keeps_endpoint_availability_separate_from_host(
         seed_local,
         db_path,
         [
-            ("node115", "alias", "192.168.254.115"),
-            ("node115", "local_observation_status", "observed"),
-            ("192.168.254.115:9100", "availability_status", "up"),
+            ("example_host", "alias", "192.0.2.115"),
+            ("example_host", "local_observation_status", "observed"),
+            ("192.0.2.115:9100", "availability_status", "up"),
         ],
     )
 
@@ -2143,13 +2143,13 @@ def test_cli_state_summary_top_entities_summarizes_alias_count(tmp_path, capsys)
     _persist_impact_facts(
         seed_local,
         db_path,
-        [("node115", "alias", alias) for alias in aliases],
+        [("example_host", "alias", alias) for alias in aliases],
     )
 
     assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
 
     output = capsys.readouterr().out
-    assert "node115 (aliases: 5 total; facts: 5)" in output
+    assert "example_host (aliases: 5 total; facts: 5)" in output
     for alias in aliases:
         assert alias not in output
 
@@ -2157,25 +2157,25 @@ def test_cli_state_summary_top_entities_summarizes_alias_count(tmp_path, capsys)
 def test_cli_current_facts_and_fact_support_keep_raw_alias_evidence(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "state-summary-raw-alias-evidence.sqlite"
-    aliases = ["192.168.254.115", "192.168.254.116"]
+    aliases = ["192.0.2.115", "192.168.254.116"]
     _persist_impact_facts(
         seed_local,
         db_path,
-        [("node115", "alias", alias) for alias in aliases],
+        [("example_host", "alias", alias) for alias in aliases],
     )
 
     assert (
-        seed_local.main(["--db", str(db_path), "--current-facts", "node115", "alias"])
+        seed_local.main(["--db", str(db_path), "--current-facts", "example_host", "alias"])
         == 0
     )
     assert capsys.readouterr().out.splitlines() == aliases
 
     assert (
-        seed_local.main(["--db", str(db_path), "--fact-support", "node115", "alias"])
+        seed_local.main(["--db", str(db_path), "--fact-support", "example_host", "alias"])
         == 0
     )
     support_output = capsys.readouterr().out
-    assert "value: 192.168.254.115" in support_output
+    assert "value: 192.0.2.115" in support_output
     assert "value: 192.168.254.116" in support_output
 
 
@@ -2186,19 +2186,19 @@ def test_cli_fact_support_prints_projected_grouped_values(capsys):
         seed_local.main(
             [
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "runtime",
                 "docker",
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "runtime",
                 "docker",
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "runtime",
                 "systemd",
                 "--fact-support",
-                "jellyfin",
+                "web_service",
                 "runtime",
             ]
         )
@@ -2223,15 +2223,15 @@ def test_cli_measurement_fact_support_hides_old_samples_by_default(capsys):
         seed_local.main(
             [
                 "--fact",
-                "node115",
+                "example_host",
                 "up",
                 "0",
                 "--fact",
-                "node115",
+                "example_host",
                 "up",
                 "1",
                 "--fact-support",
-                "node115",
+                "example_host",
                 "up",
             ]
         )
@@ -2252,19 +2252,19 @@ def test_cli_measurement_fact_support_include_history_shows_all_samples(capsys):
         seed_local.main(
             [
                 "--fact",
-                "node115",
+                "example_host",
                 "up",
                 "0",
                 "--fact",
-                "node115",
+                "example_host",
                 "up",
                 "1",
                 "--fact",
-                "node115",
+                "example_host",
                 "up",
                 "1",
                 "--fact-support",
-                "node115",
+                "example_host",
                 "up",
                 "--include-history",
             ]
@@ -2283,17 +2283,17 @@ def test_cli_availability_status_history_visibility_does_not_change_current(caps
     seed_local = load_seed_local_module()
     facts = [
         "--fact",
-        "node115",
+        "example_host",
         "availability_status",
         "up",
         "--fact",
-        "node115",
+        "example_host",
         "availability_status",
         "down",
     ]
 
     assert (
-        seed_local.main([*facts, "--fact-support", "node115", "availability_status"])
+        seed_local.main([*facts, "--fact-support", "example_host", "availability_status"])
         == 0
     )
     default_output = capsys.readouterr().out
@@ -2305,7 +2305,7 @@ def test_cli_availability_status_history_visibility_does_not_change_current(caps
             [
                 *facts,
                 "--fact-support",
-                "node115",
+                "example_host",
                 "availability_status",
                 "--include-history",
             ]
@@ -2317,7 +2317,7 @@ def test_cli_availability_status_history_visibility_does_not_change_current(caps
     assert "value: down" in history_output
 
     assert (
-        seed_local.main([*facts, "--best-fact", "node115", "availability_status"]) == 0
+        seed_local.main([*facts, "--best-fact", "example_host", "availability_status"]) == 0
     )
     best_output = capsys.readouterr().out
     assert "value: down" in best_output
@@ -2331,15 +2331,15 @@ def test_cli_durable_runtime_fact_support_still_shows_all_conflicting_values(cap
         seed_local.main(
             [
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "runtime",
                 "docker",
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "runtime",
                 "systemd",
                 "--fact-support",
-                "jellyfin",
+                "web_service",
                 "runtime",
             ]
         )
@@ -2360,19 +2360,19 @@ def test_cli_best_fact_prints_projected_current_belief(capsys):
         seed_local.main(
             [
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "runtime",
                 "docker",
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "runtime",
                 "docker",
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "runtime",
                 "systemd",
                 "--best-fact",
-                "jellyfin",
+                "web_service",
                 "runtime",
             ]
         )
@@ -2380,7 +2380,7 @@ def test_cli_best_fact_prints_projected_current_belief(capsys):
     )
 
     output = capsys.readouterr().out
-    assert "subject: jellyfin" in output
+    assert "subject: web_service" in output
     assert "predicate: runtime" in output
     assert "value: docker" in output
     assert "confidence: 0.9775" in output
@@ -2395,15 +2395,15 @@ def test_cli_fact_conflicts_prints_projected_active_conflicts_and_winner(capsys)
         seed_local.main(
             [
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "runtime",
                 "docker",
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "runtime",
                 "docker",
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "runtime",
                 "systemd",
                 "--fact-conflicts",
@@ -2413,13 +2413,13 @@ def test_cli_fact_conflicts_prints_projected_active_conflicts_and_winner(capsys)
     )
 
     output = capsys.readouterr().out
-    assert "subject: jellyfin" in output
+    assert "subject: web_service" in output
     assert "predicate: runtime" in output
     assert "values: docker, systemd" in output
     assert "winning_value: docker" in output
     assert "winning_fact_id: fact_obs_" in output
     assert "conflicting_fact_ids: fact_obs_" in output
-    assert "reason: multiple values for jellyfin/runtime" in output
+    assert "reason: multiple values for web_service/runtime" in output
 
 
 def test_parser_supports_fact_expiry_options():
@@ -2429,7 +2429,7 @@ def test_parser_supports_fact_expiry_options():
     expires_args = parser.parse_args(
         [
             "--fact",
-            "jellyfin",
+            "web_service",
             "runtime",
             "docker",
             "--fact-expires-at",
@@ -2439,7 +2439,7 @@ def test_parser_supports_fact_expiry_options():
     ttl_args = parser.parse_args(
         [
             "--fact",
-            "jellyfin",
+            "web_service",
             "runtime",
             "docker",
             "--fact-ttl-seconds",
@@ -2458,20 +2458,20 @@ def test_cli_fact_ttl_can_expire_seeded_fact(capsys):
         seed_local.main(
             [
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "runtime",
                 "docker",
                 "--fact-ttl-seconds",
                 "0",
                 "--best-fact",
-                "jellyfin",
+                "web_service",
                 "runtime",
             ]
         )
         == 0
     )
 
-    assert capsys.readouterr().out.strip() == "no current belief for jellyfin runtime"
+    assert capsys.readouterr().out.strip() == "no current belief for web_service runtime"
 
 
 def test_cli_fact_expires_at_keeps_unexpired_seeded_fact(capsys):
@@ -2481,13 +2481,13 @@ def test_cli_fact_expires_at_keeps_unexpired_seeded_fact(capsys):
         seed_local.main(
             [
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "runtime",
                 "docker",
                 "--fact-expires-at",
                 "2999-01-01T00:00:00+00:00",
                 "--best-fact",
-                "jellyfin",
+                "web_service",
                 "runtime",
             ]
         )
@@ -2495,7 +2495,7 @@ def test_cli_fact_expires_at_keeps_unexpired_seeded_fact(capsys):
     )
 
     output = capsys.readouterr().out
-    assert "subject: jellyfin" in output
+    assert "subject: web_service" in output
     assert "predicate: runtime" in output
     assert "value: docker" in output
 
@@ -2507,20 +2507,20 @@ def test_cli_expired_fact_hidden_by_default(capsys):
         seed_local.main(
             [
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "runtime",
                 "docker",
                 "--fact-ttl-seconds",
                 "0",
                 "--fact-support",
-                "jellyfin",
+                "web_service",
                 "runtime",
             ]
         )
         == 0
     )
 
-    assert capsys.readouterr().out.strip() == "no fact support for jellyfin runtime"
+    assert capsys.readouterr().out.strip() == "no fact support for web_service runtime"
 
 
 def test_cli_expired_fact_visible_with_include_expired(capsys):
@@ -2530,13 +2530,13 @@ def test_cli_expired_fact_visible_with_include_expired(capsys):
         seed_local.main(
             [
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "runtime",
                 "docker",
                 "--fact-ttl-seconds",
                 "0",
                 "--fact-support",
-                "jellyfin",
+                "web_service",
                 "runtime",
                 "--include-expired",
             ]
@@ -2557,7 +2557,7 @@ def test_cli_stale_facts_prints_expired_facts(capsys):
         seed_local.main(
             [
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "runtime",
                 "docker",
                 "--fact-ttl-seconds",
@@ -2569,7 +2569,7 @@ def test_cli_stale_facts_prints_expired_facts(capsys):
     )
 
     output = capsys.readouterr().out
-    assert "subject: jellyfin" in output
+    assert "subject: web_service" in output
     assert "predicate: runtime" in output
     assert "value: docker" in output
     assert "source_type: user" in output
@@ -2585,7 +2585,7 @@ def test_cli_stale_fact_refreshes_recommend_service_inspection_for_runtime(capsy
         seed_local.main(
             [
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "runtime",
                 "docker",
                 "--fact-ttl-seconds",
@@ -2597,7 +2597,7 @@ def test_cli_stale_fact_refreshes_recommend_service_inspection_for_runtime(capsy
     )
 
     output = capsys.readouterr().out
-    assert "subject: jellyfin" in output
+    assert "subject: web_service" in output
     assert "predicate: runtime" in output
     assert "value: docker" in output
     assert "recommended_capability: service_inspection" in output
@@ -2611,9 +2611,9 @@ def test_cli_stale_fact_refreshes_recommend_environment_inventory_for_host(capsy
         seed_local.main(
             [
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "host",
-                "node115",
+                "example_host",
                 "--fact-ttl-seconds",
                 "0",
                 "--stale-fact-refreshes",
@@ -2623,9 +2623,9 @@ def test_cli_stale_fact_refreshes_recommend_environment_inventory_for_host(capsy
     )
 
     output = capsys.readouterr().out
-    assert "subject: jellyfin" in output
+    assert "subject: web_service" in output
     assert "predicate: host" in output
-    assert "value: node115" in output
+    assert "value: example_host" in output
     assert "recommended_capability: environment_inventory" in output
     assert "reason: predicate 'host' maps to 'environment_inventory'" in output
 
@@ -2637,7 +2637,7 @@ def test_cli_stale_fact_refreshes_fall_back_to_knowledge_lookup(capsys):
         seed_local.main(
             [
                 "--fact",
-                "jellyfin",
+                "web_service",
                 "unknown_predicate",
                 "mystery",
                 "--fact-ttl-seconds",
@@ -2669,7 +2669,7 @@ def test_cli_diff_observations_json_does_not_ingest_inventory(tmp_path, capsys):
     db_path = tmp_path / "seed.db"
     json_path = tmp_path / "observations.json"
     json_path.write_text(
-        '{"observations":[{"subject":"jellyfin","predicate":"runtime",'
+        '{"observations":[{"subject":"web_service","predicate":"runtime",'
         '"value":"docker"}]}',
         encoding="utf-8",
     )
@@ -2690,11 +2690,11 @@ def test_cli_diff_observations_json_does_not_ingest_inventory(tmp_path, capsys):
     assert "new_facts: 1" in output
     assert "matching_facts: 0" in output
     assert (
-        seed_local.main(["--db", str(db_path), "--fact-support", "jellyfin", "runtime"])
+        seed_local.main(["--db", str(db_path), "--fact-support", "web_service", "runtime"])
         == 0
     )
     support_output = capsys.readouterr().out
-    assert "no fact support for jellyfin runtime" in support_output
+    assert "no fact support for web_service runtime" in support_output
 
 
 def test_cli_observe_local_host_prints_count_and_summary(monkeypatch, capsys):
@@ -2907,7 +2907,7 @@ def test_cli_local_network_facts_appear_in_current_facts_and_impact(
                     id="obs_network_interface",
                     source_type="discovery",
                     observed_at=observed_at,
-                    subject="node115",
+                    subject="example_host",
                     predicate="network_interface",
                     value="eth0",
                     dimensions={"interface": "eth0"},
@@ -2916,7 +2916,7 @@ def test_cli_local_network_facts_appear_in_current_facts_and_impact(
                     id="obs_network_role",
                     source_type="discovery",
                     observed_at=observed_at,
-                    subject="node115",
+                    subject="example_host",
                     predicate="interface_role",
                     value="primary",
                     dimensions={"interface": "eth0"},
@@ -2925,7 +2925,7 @@ def test_cli_local_network_facts_appear_in_current_facts_and_impact(
                     id="obs_network_ip",
                     source_type="discovery",
                     observed_at=observed_at,
-                    subject="node115",
+                    subject="example_host",
                     predicate="ip_address",
                     value="192.168.2.5",
                     dimensions={"interface": "eth0", "address_family": "ipv4"},
@@ -2934,7 +2934,7 @@ def test_cli_local_network_facts_appear_in_current_facts_and_impact(
                     id="obs_docker_interface",
                     source_type="discovery",
                     observed_at=observed_at,
-                    subject="node115",
+                    subject="example_host",
                     predicate="network_interface",
                     value="docker0",
                     dimensions={"interface": "docker0"},
@@ -2943,7 +2943,7 @@ def test_cli_local_network_facts_appear_in_current_facts_and_impact(
                     id="obs_docker_role",
                     source_type="discovery",
                     observed_at=observed_at,
-                    subject="node115",
+                    subject="example_host",
                     predicate="interface_role",
                     value="container",
                     dimensions={"interface": "docker0"},
@@ -2952,7 +2952,7 @@ def test_cli_local_network_facts_appear_in_current_facts_and_impact(
                     id="obs_docker_ip",
                     source_type="discovery",
                     observed_at=observed_at,
-                    subject="node115",
+                    subject="example_host",
                     predicate="ip_address",
                     value="172.17.0.1",
                     dimensions={"interface": "docker0", "address_family": "ipv4"},
@@ -2961,7 +2961,7 @@ def test_cli_local_network_facts_appear_in_current_facts_and_impact(
                     id="obs_network_ipv6_global",
                     source_type="discovery",
                     observed_at=observed_at,
-                    subject="node115",
+                    subject="example_host",
                     predicate="ip_address",
                     value="2001:db8::5",
                     dimensions={"interface": "eth0", "address_family": "ipv6"},
@@ -2970,7 +2970,7 @@ def test_cli_local_network_facts_appear_in_current_facts_and_impact(
                     id="obs_network_ipv6_link_local",
                     source_type="discovery",
                     observed_at=observed_at,
-                    subject="node115",
+                    subject="example_host",
                     predicate="ip_address",
                     value="fe80::5",
                     dimensions={"interface": "eth0", "address_family": "ipv6"},
@@ -2979,7 +2979,7 @@ def test_cli_local_network_facts_appear_in_current_facts_and_impact(
                     id="obs_network_gateway",
                     source_type="discovery",
                     observed_at=observed_at,
-                    subject="node115",
+                    subject="example_host",
                     predicate="default_gateway",
                     value="192.168.2.1",
                     dimensions={"interface": "eth0", "address_family": "ipv4"},
@@ -2988,7 +2988,7 @@ def test_cli_local_network_facts_appear_in_current_facts_and_impact(
                     id="obs_network_dns",
                     source_type="discovery",
                     observed_at=observed_at,
-                    subject="node115",
+                    subject="example_host",
                     predicate="dns_resolver",
                     value="1.1.1.1",
                     dimensions={"source": "/etc/resolv.conf"},
@@ -3002,16 +3002,16 @@ def test_cli_local_network_facts_appear_in_current_facts_and_impact(
 
     assert seed_local.main(["--db", str(db_path), "--current-facts"]) == 0
     current_output = capsys.readouterr().out
-    assert "* node115 network_interface eth0" in current_output
-    assert "* node115 ip_address 192.168.2.5" in current_output
-    assert "* node115 ip_address 2001:db8::5" in current_output
-    assert "* node115 ip_address fe80::5" in current_output
-    assert "* node115 network_interface docker0" in current_output
-    assert "* node115 ip_address 172.17.0.1" in current_output
-    assert "* node115 default_gateway 192.168.2.1" in current_output
-    assert "* node115 dns_resolver 1.1.1.1" in current_output
+    assert "* example_host network_interface eth0" in current_output
+    assert "* example_host ip_address 192.168.2.5" in current_output
+    assert "* example_host ip_address 2001:db8::5" in current_output
+    assert "* example_host ip_address fe80::5" in current_output
+    assert "* example_host network_interface docker0" in current_output
+    assert "* example_host ip_address 172.17.0.1" in current_output
+    assert "* example_host default_gateway 192.168.2.1" in current_output
+    assert "* example_host dns_resolver 1.1.1.1" in current_output
 
-    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--impact", "example_host"]) == 0
     impact_output = capsys.readouterr().out
     assert "availability_status: unknown" in impact_output
     assert "local network configuration:" in impact_output
@@ -3050,7 +3050,7 @@ def test_cli_mount_facts_appear_in_current_facts_and_impact(
                     id="obs_mount_point",
                     source_type="discovery",
                     observed_at=observed_at,
-                    subject="node115",
+                    subject="example_host",
                     predicate="mount_point",
                     value="/",
                     dimensions={"mount_point": "/"},
@@ -3059,7 +3059,7 @@ def test_cli_mount_facts_appear_in_current_facts_and_impact(
                     id="obs_filesystem_type",
                     source_type="discovery",
                     observed_at=observed_at,
-                    subject="node115",
+                    subject="example_host",
                     predicate="filesystem_type",
                     value="ext4",
                     dimensions={"mount_point": "/"},
@@ -3068,7 +3068,7 @@ def test_cli_mount_facts_appear_in_current_facts_and_impact(
                     id="obs_mounted_device",
                     source_type="discovery",
                     observed_at=observed_at,
-                    subject="node115",
+                    subject="example_host",
                     predicate="mounted_device",
                     value="/dev/sda1",
                     dimensions={"mount_point": "/"},
@@ -3077,7 +3077,7 @@ def test_cli_mount_facts_appear_in_current_facts_and_impact(
                     id="obs_mount_option_rw",
                     source_type="discovery",
                     observed_at=observed_at,
-                    subject="node115",
+                    subject="example_host",
                     predicate="mount_option",
                     value="rw",
                     dimensions={"mount_point": "/", "mount_option": "rw"},
@@ -3086,7 +3086,7 @@ def test_cli_mount_facts_appear_in_current_facts_and_impact(
                     id="obs_mount_option_relatime",
                     source_type="discovery",
                     observed_at=observed_at,
-                    subject="node115",
+                    subject="example_host",
                     predicate="mount_option",
                     value="relatime",
                     dimensions={"mount_point": "/", "mount_option": "relatime"},
@@ -3100,12 +3100,12 @@ def test_cli_mount_facts_appear_in_current_facts_and_impact(
 
     assert seed_local.main(["--db", str(db_path), "--current-facts"]) == 0
     current_output = capsys.readouterr().out
-    assert "* node115 mount_point /" in current_output
-    assert "* node115 filesystem_type ext4" in current_output
-    assert "* node115 mounted_device /dev/sda1" in current_output
-    assert "* node115 mount_option rw" in current_output
+    assert "* example_host mount_point /" in current_output
+    assert "* example_host filesystem_type ext4" in current_output
+    assert "* example_host mounted_device /dev/sda1" in current_output
+    assert "* example_host mount_option rw" in current_output
 
-    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--impact", "example_host"]) == 0
     impact_output = capsys.readouterr().out
     assert "mounts:" in impact_output
     assert "- /: device=/dev/sda1 type=ext4" in impact_output
@@ -3126,7 +3126,7 @@ def test_format_mount_impact_renders_runtime_mount_groups():
         return [
             seed_local.Fact(
                 id=f"fact_mount_point_{index}",
-                subject_id="node115",
+                subject_id="example_host",
                 predicate="mount_point",
                 value=mount_point,
                 dimensions={"mount_point": mount_point},
@@ -3135,7 +3135,7 @@ def test_format_mount_impact_renders_runtime_mount_groups():
             ),
             seed_local.Fact(
                 id=f"fact_mount_device_{index}",
-                subject_id="node115",
+                subject_id="example_host",
                 predicate="mounted_device",
                 value=device,
                 dimensions={"mount_point": mount_point},
@@ -3144,7 +3144,7 @@ def test_format_mount_impact_renders_runtime_mount_groups():
             ),
             seed_local.Fact(
                 id=f"fact_mount_type_{index}",
-                subject_id="node115",
+                subject_id="example_host",
                 predicate="filesystem_type",
                 value=fs_type,
                 dimensions={"mount_point": mount_point},
@@ -3154,7 +3154,7 @@ def test_format_mount_impact_renders_runtime_mount_groups():
             *(
                 seed_local.Fact(
                     id=f"fact_mount_option_{index}_{option}",
-                    subject_id="node115",
+                    subject_id="example_host",
                     predicate="mount_option",
                     value=option,
                     dimensions={"mount_point": mount_point, "mount_option": option},
@@ -3202,7 +3202,7 @@ def test_cli_events_without_message_lists_persisted_events_and_exits(
     db_path = tmp_path / "seed.sqlite"
     assert (
         seed_local.main(
-            ["--db", str(db_path), "--observe", "node115", "architecture", "x86_64"]
+            ["--db", str(db_path), "--observe", "example_host", "architecture", "x86_64"]
         )
         == 0
     )
@@ -3223,7 +3223,7 @@ def test_cli_events_without_message_lists_persisted_events_and_exits(
     assert "kind=evidence.observed" in output
     assert "evidence_id=evd_obs_" in output
     assert "kind=fact.observed" in output
-    assert output.count("subject=node115 predicate=architecture") == 2
+    assert output.count("subject=example_host predicate=architecture") == 2
 
 
 def test_sqlite_observation_reopen_projects_best_fact_and_fact_support(
@@ -3242,7 +3242,7 @@ def test_sqlite_observation_reopen_projects_best_fact_and_fact_support(
                     id="obs_cli_local_architecture",
                     source_type="discovery",
                     observed_at=seed_local.utc_now(),
-                    subject="node115",
+                    subject="example_host",
                     predicate="architecture",
                     value="x86_64",
                 )
@@ -3252,7 +3252,7 @@ def test_sqlite_observation_reopen_projects_best_fact_and_fact_support(
 
     assert seed_local.main(["--db", str(db_path), "--observe-local-host"]) == 0
     ingest_output = capsys.readouterr().out
-    assert "subject: node115" in ingest_output
+    assert "subject: example_host" in ingest_output
     assert "predicate: architecture" in ingest_output
     assert "value: x86_64" in ingest_output
 
@@ -3265,15 +3265,15 @@ def test_sqlite_observation_reopen_projects_best_fact_and_fact_support(
             "fact.observed",
         ]
         persisted_fact_payload = events[-1].payload["fact"]
-        assert persisted_fact_payload["subject_id"] == "node115"
+        assert persisted_fact_payload["subject_id"] == "example_host"
         assert persisted_fact_payload["predicate"] == "architecture"
         assert persisted_fact_payload["value"] == "x86_64"
 
         state = seed_local.StateProjector(ledger).project(seed_local.DEFAULT_WORKSPACE)
-        projected_best = state.get_best_fact("node115", "architecture")
+        projected_best = state.get_best_fact("example_host", "architecture")
         assert projected_best is not None
         assert projected_best.value == "x86_64"
-        projected_support = state.get_fact_support("node115", "architecture")
+        projected_support = state.get_fact_support("example_host", "architecture")
         assert projected_support is not None
         assert projected_support.value == "x86_64"
         assert projected_support.supporting_fact_ids == [projected_best.id]
@@ -3282,19 +3282,19 @@ def test_sqlite_observation_reopen_projects_best_fact_and_fact_support(
 
     assert (
         seed_local.main(
-            ["--db", str(db_path), "--best-fact", "node115", "architecture"]
+            ["--db", str(db_path), "--best-fact", "example_host", "architecture"]
         )
         == 0
     )
     best_output = capsys.readouterr().out
-    assert "subject: node115" in best_output
+    assert "subject: example_host" in best_output
     assert "predicate: architecture" in best_output
     assert "value: x86_64" in best_output
     assert "no current belief" not in best_output
 
     assert (
         seed_local.main(
-            ["--db", str(db_path), "--fact-support", "node115", "architecture"]
+            ["--db", str(db_path), "--fact-support", "example_host", "architecture"]
         )
         == 0
     )
@@ -3314,7 +3314,7 @@ def test_best_fact_accepts_short_hostname_for_persisted_fqdn_observation(tmp_pat
             seed_local.DEFAULT_WORKSPACE,
             [
                 seed_local.DevObservationSeed(
-                    "node115.example.test",
+                    "example_host.example.test",
                     "architecture",
                     "x86_64",
                     source_type="discovery",
@@ -3329,8 +3329,8 @@ def test_best_fact_accepts_short_hostname_for_persisted_fqdn_observation(tmp_pat
         state = seed_local.StateProjector(reopened).project(
             seed_local.DEFAULT_WORKSPACE
         )
-        assert state.get_best_fact("node115", "architecture").value == "x86_64"
-        assert state.get_fact_support("node115", "architecture").value == "x86_64"
+        assert state.get_best_fact("example_host", "architecture").value == "x86_64"
+        assert state.get_fact_support("example_host", "architecture").value == "x86_64"
     finally:
         reopened.close()
 
@@ -3354,13 +3354,13 @@ def test_ingest_observations_batches_consecutive_cli_observations():
         seed_local.DEFAULT_WORKSPACE,
         [
             seed_local.DevObservationSeed(
-                "node115",
+                "example_host",
                 "architecture",
                 "x86_64",
                 source_type="discovery",
             ),
             seed_local.DevObservationSeed(
-                "node115",
+                "example_host",
                 "runtime",
                 "docker",
                 source_type="discovery",
@@ -3633,29 +3633,29 @@ def test_cli_alias_to_endpoint_does_not_resolve_host_best_fact_after_sqlite_reop
                 "--db",
                 str(db_path),
                 "--fact",
-                "192.168.254.115:9100",
+                "192.0.2.115:9100",
                 "up",
                 "1",
                 "--alias",
-                "node115",
-                "192.168.254.115:9100",
+                "example_host",
+                "192.0.2.115:9100",
             ]
         )
         == 0
     )
     capsys.readouterr()
 
-    assert seed_local.main(["--db", str(db_path), "--best-fact", "node115", "up"]) == 0
-    assert capsys.readouterr().out == "no current belief for node115 up\n"
+    assert seed_local.main(["--db", str(db_path), "--best-fact", "example_host", "up"]) == 0
+    assert capsys.readouterr().out == "no current belief for example_host up\n"
 
     assert (
         seed_local.main(
-            ["--db", str(db_path), "--best-fact", "192.168.254.115:9100", "up"]
+            ["--db", str(db_path), "--best-fact", "192.0.2.115:9100", "up"]
         )
         == 0
     )
     output = capsys.readouterr().out
-    assert "subject: 192.168.254.115:9100" in output
+    assert "subject: 192.0.2.115:9100" in output
     assert "predicate: up" in output
     assert "value: 1" in output
 
@@ -3664,15 +3664,15 @@ def test_cli_alias_to_endpoint_does_not_resolve_host_best_fact_after_sqlite_reop
         state = seed_local.StateProjector(reopened).project(
             seed_local.DEFAULT_WORKSPACE
         )
-        support = state.get_fact_support("192.168.254.115:9100", "up")
-        best = state.get_best_fact("192.168.254.115:9100", "up")
-        host_best = state.get_best_fact("node115", "up")
+        support = state.get_fact_support("192.0.2.115:9100", "up")
+        best = state.get_best_fact("192.0.2.115:9100", "up")
+        host_best = state.get_best_fact("example_host", "up")
     finally:
         reopened.close()
 
     assert host_best is None
     assert best is not None
-    assert best.subject_id == "192.168.254.115:9100"
+    assert best.subject_id == "192.0.2.115:9100"
     assert support is not None
     assert support.supporting_fact_ids == [best.id]
 
@@ -3687,12 +3687,12 @@ def test_cli_alias_does_not_flatten_endpoint_availability_best_fact(tmp_path, ca
                 "--db",
                 str(db_path),
                 "--fact",
-                "192.168.254.115:9100",
+                "192.0.2.115:9100",
                 "availability_status",
                 "down",
                 "--alias",
-                "node115",
-                "192.168.254.115:9100",
+                "example_host",
+                "192.0.2.115:9100",
             ]
         )
         == 0
@@ -3701,12 +3701,12 @@ def test_cli_alias_does_not_flatten_endpoint_availability_best_fact(tmp_path, ca
 
     assert (
         seed_local.main(
-            ["--db", str(db_path), "--best-fact", "node115", "availability_status"]
+            ["--db", str(db_path), "--best-fact", "example_host", "availability_status"]
         )
         == 0
     )
     assert capsys.readouterr().out == (
-        "no current belief for node115 availability_status\n"
+        "no current belief for example_host availability_status\n"
     )
 
     assert (
@@ -3715,14 +3715,14 @@ def test_cli_alias_does_not_flatten_endpoint_availability_best_fact(tmp_path, ca
                 "--db",
                 str(db_path),
                 "--best-fact",
-                "192.168.254.115:9100",
+                "192.0.2.115:9100",
                 "availability_status",
             ]
         )
         == 0
     )
     output = capsys.readouterr().out
-    assert "subject: 192.168.254.115:9100" in output
+    assert "subject: 192.0.2.115:9100" in output
     assert "predicate: availability_status" in output
     assert "value: down" in output
 
@@ -3730,18 +3730,18 @@ def test_cli_alias_does_not_flatten_endpoint_availability_best_fact(tmp_path, ca
 def test_cli_alias_records_alias_observation_fact(capsys):
     seed_local = load_seed_local_module()
 
-    assert seed_local.main(["--alias", "node115", "192.168.254.115:9100"]) == 0
+    assert seed_local.main(["--alias", "example_host", "192.0.2.115:9100"]) == 0
 
     output = capsys.readouterr().out
-    assert "subject: node115" in output
+    assert "subject: example_host" in output
     assert "predicate: alias" in output
-    assert "value: 192.168.254.115:9100" in output
+    assert "value: 192.0.2.115:9100" in output
 
 
 def _group_member_fact(seed_local, fact_id, value, dimensions):
     return seed_local.Fact(
         id=fact_id,
-        subject_id="node115",
+        subject_id="example_host",
         predicate="group_member",
         value=value,
         dimensions=dimensions,
@@ -3768,7 +3768,7 @@ def test_cli_current_facts_render_dimensions_for_group_member_facts():
         ),
     }
 
-    output = seed_local.format_current_facts(state, "node115", "group_member")
+    output = seed_local.format_current_facts(state, "example_host", "group_member")
 
     assert output.splitlines() == [
         "user (gid=27, groupname=sudo, username=user)",
@@ -3783,15 +3783,15 @@ def test_cli_current_facts_dimensionless_output_is_unchanged():
     state.facts = {
         "fact_alias_1": seed_local.Fact(
             id="fact_alias_1",
-            subject_id="node115",
+            subject_id="example_host",
             predicate="alias",
-            value="node115.local",
+            value="example_host.local",
             source_type="imported",
             observed_at=observed_at,
         ),
         "fact_alias_2": seed_local.Fact(
             id="fact_alias_2",
-            subject_id="node115",
+            subject_id="example_host",
             predicate="alias",
             value="192.168.1.115",
             source_type="imported",
@@ -3799,8 +3799,8 @@ def test_cli_current_facts_dimensionless_output_is_unchanged():
         ),
     }
 
-    assert seed_local.format_current_facts(state, "node115", "alias") == (
-        "192.168.1.115\nnode115.local"
+    assert seed_local.format_current_facts(state, "example_host", "alias") == (
+        "192.168.1.115\nexample_host.local"
     )
 
 
@@ -3809,7 +3809,7 @@ def test_cli_fact_support_renders_dimensions_for_group_member_facts():
     observed_at = seed_local.utc_now()
     supports = [
         seed_local.FactSupport(
-            subject="node115",
+            subject="example_host",
             predicate="group_member",
             value="user",
             dimensions={"username": "user", "groupname": "sudo", "gid": "27"},
@@ -3820,7 +3820,7 @@ def test_cli_fact_support_renders_dimensions_for_group_member_facts():
             latest_observed_at=observed_at,
         ),
         seed_local.FactSupport(
-            subject="node115",
+            subject="example_host",
             predicate="group_member",
             value="user",
             dimensions={"username": "user", "gid": "999", "groupname": "docker"},
@@ -3832,7 +3832,7 @@ def test_cli_fact_support_renders_dimensions_for_group_member_facts():
         ),
     ]
 
-    output = seed_local.format_fact_supports(supports, "node115", "group_member")
+    output = seed_local.format_fact_supports(supports, "example_host", "group_member")
 
     assert "value: user\ndimensions: gid=27, groupname=sudo, username=user" in output
     assert "value: user\ndimensions: gid=999, groupname=docker, username=user" in output
@@ -3889,13 +3889,13 @@ def test_cli_observe_ansible_inventory_ingests_identity_observations(tmp_path, c
     seed_local = load_seed_local_module()
     inventory_path = tmp_path / "inventory.ini"
     inventory_path.write_text(
-        "[nodegroup]\nnode115 ansible_host=192.168.254.115\n", encoding="utf-8"
+        "[nodegroup]\nexample_host ansible_host=192.0.2.115\n", encoding="utf-8"
     )
 
     assert seed_local.main(["--observe-ansible-inventory", str(inventory_path)]) == 0
 
     output = capsys.readouterr().out
-    assert "subject: node115" in output
+    assert "subject: example_host" in output
     assert "predicate: hostname" in output
     assert "predicate: ip_address" in output
     assert "predicate: alias" in output
@@ -3911,8 +3911,8 @@ def test_cli_ansible_inventory_and_prometheus_support_best_fact(
     inventory_path.write_text(
         """all:
   hosts:
-    node115:
-      ansible_host: 192.168.254.115
+    example_host:
+      ansible_host: 192.0.2.115
 """,
         encoding="utf-8",
     )
@@ -3934,7 +3934,7 @@ def test_cli_ansible_inventory_and_prometheus_support_best_fact(
                     id="obs_cli_ansible_prometheus",
                     source_type="provider",
                     observed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
-                    subject="192.168.254.115:9100",
+                    subject="192.0.2.115:9100",
                     predicate="up",
                     value=0,
                     confidence=0.95,
@@ -3968,20 +3968,20 @@ def test_cli_ansible_inventory_and_prometheus_support_best_fact(
     finally:
         reopened.close()
     assert any(
-        fact.subject_id == "node115"
+        fact.subject_id == "example_host"
         and fact.predicate == "alias"
-        and fact.value == "192.168.254.115:9100"
+        and fact.value == "192.0.2.115:9100"
         for fact in state.facts.values()
     )
 
     assert (
         seed_local.main(
-            ["--db", str(db_path), "--best-fact", "node115", "availability_status"]
+            ["--db", str(db_path), "--best-fact", "example_host", "availability_status"]
         )
         == 0
     )
     assert capsys.readouterr().out == (
-        "no current belief for node115 availability_status\n"
+        "no current belief for example_host availability_status\n"
     )
 
     assert (
@@ -3990,14 +3990,14 @@ def test_cli_ansible_inventory_and_prometheus_support_best_fact(
                 "--db",
                 str(db_path),
                 "--best-fact",
-                "192.168.254.115:9100",
+                "192.0.2.115:9100",
                 "availability_status",
             ]
         )
         == 0
     )
     output = capsys.readouterr().out
-    assert "subject: 192.168.254.115:9100" in output
+    assert "subject: 192.0.2.115:9100" in output
     assert "predicate: availability_status" in output
     assert "value: down" in output
 
@@ -4007,9 +4007,9 @@ def test_cli_entity_type_projection_queries():
     parser = seed_local.build_parser()
 
     assert parser.parse_args(["--entity-types"]).entity_types is True
-    assert parser.parse_args(["--entity-type", "node115"]).entity_type == "node115"
+    assert parser.parse_args(["--entity-type", "example_host"]).entity_type == "example_host"
     state = seed_local.State(workspace_id="ws")
-    assert seed_local.format_entity_types(state, "node115") == "node115: unknown"
+    assert seed_local.format_entity_types(state, "example_host") == "example_host: unknown"
 
 
 def _persist_impact_facts(seed_local, db_path, facts):
@@ -4042,12 +4042,12 @@ def test_cli_impact_reports_local_observation_without_availability(tmp_path, cap
         seed_local,
         db_path,
         [
-            ("node115", "local_observation_status", "observed"),
-            ("node115", "os", "linux"),
+            ("example_host", "local_observation_status", "observed"),
+            ("example_host", "os", "linux"),
         ],
     )
 
-    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--impact", "example_host"]) == 0
 
     output = capsys.readouterr().out
     assert "local_observation_status: observed" in output
@@ -4062,19 +4062,19 @@ def test_cli_impact_keeps_endpoint_alias_availability_on_endpoint(tmp_path, caps
         seed_local,
         db_path,
         [
-            ("node115", "os", "linux"),
-            ("node115", "alias", "192.168.254.115:9100"),
-            ("192.168.254.115:9100", "availability_status", "up"),
-            ("node115", "group", "servers"),
+            ("example_host", "os", "linux"),
+            ("example_host", "alias", "192.0.2.115:9100"),
+            ("192.0.2.115:9100", "availability_status", "up"),
+            ("example_host", "group", "servers"),
         ],
     )
 
     assert (
-        seed_local.main(["--db", str(db_path), "--impact", "192.168.254.115:9100"]) == 0
+        seed_local.main(["--db", str(db_path), "--impact", "192.0.2.115:9100"]) == 0
     )
 
     output = capsys.readouterr().out
-    assert "entity: 192.168.254.115:9100" in output
+    assert "entity: 192.0.2.115:9100" in output
     assert "entity types: endpoint" in output
     assert "aliases:\n- none" in output
     assert "availability_status: up" in output
@@ -4087,12 +4087,12 @@ def test_cli_impact_reports_service_running_on_host_as_dependent(tmp_path, capsy
     _persist_impact_facts(
         seed_local,
         db_path,
-        [("node115", "os", "linux"), ("jellyfin", "runs_on", "node115")],
+        [("example_host", "os", "linux"), ("web_service", "runs_on", "example_host")],
     )
 
-    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--impact", "example_host"]) == 0
 
-    assert "dependents: jellyfin" in capsys.readouterr().out
+    assert "dependents: web_service" in capsys.readouterr().out
 
 
 def test_cli_impact_includes_active_conflicts(tmp_path, capsys):
@@ -4101,10 +4101,10 @@ def test_cli_impact_includes_active_conflicts(tmp_path, capsys):
     _persist_impact_facts(
         seed_local,
         db_path,
-        [("jellyfin", "runtime", "docker"), ("jellyfin", "runtime", "systemd")],
+        [("web_service", "runtime", "docker"), ("web_service", "runtime", "systemd")],
     )
 
-    assert seed_local.main(["--db", str(db_path), "--impact", "jellyfin"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--impact", "web_service"]) == 0
 
     output = capsys.readouterr().out
     assert "active conflicts:" in output
@@ -4117,23 +4117,23 @@ def test_cli_current_facts_and_impact_keep_all_aliases_without_conflict(
     seed_local = load_seed_local_module()
     db_path = tmp_path / "multi-alias.sqlite"
     aliases = [
-        "192.168.254.115",
-        "192.168.254.115:9100",
-        "192.168.254.115:9200",
+        "192.0.2.115",
+        "192.0.2.115:9100",
+        "192.0.2.115:9200",
     ]
     _persist_impact_facts(
         seed_local,
         db_path,
-        [("node115", "alias", alias) for alias in aliases],
+        [("example_host", "alias", alias) for alias in aliases],
     )
 
     assert (
-        seed_local.main(["--db", str(db_path), "--current-facts", "node115", "alias"])
+        seed_local.main(["--db", str(db_path), "--current-facts", "example_host", "alias"])
         == 0
     )
     assert capsys.readouterr().out.splitlines() == aliases
 
-    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--impact", "example_host"]) == 0
     output = capsys.readouterr().out
     assert "aliases:\n" + "\n".join(f"- {alias}" for alias in aliases) in output
     assert "- alias:" not in output
@@ -4146,15 +4146,15 @@ def test_cli_impact_formats_systemd_resolved_stub_and_upstream(tmp_path, capsys)
         seed_local,
         db_path,
         [
-            ("node115", "os", "linux"),
-            ("node115", "dns_resolver", "127.0.0.53"),
-            ("node115", "dns_resolver_stub", "127.0.0.53"),
-            ("node115", "dns_resolver_upstream", "1.1.1.1"),
-            ("node115", "dns_resolver_upstream", "2001:4860:4860::8888"),
+            ("example_host", "os", "linux"),
+            ("example_host", "dns_resolver", "127.0.0.53"),
+            ("example_host", "dns_resolver_stub", "127.0.0.53"),
+            ("example_host", "dns_resolver_upstream", "1.1.1.1"),
+            ("example_host", "dns_resolver_upstream", "2001:4860:4860::8888"),
         ],
     )
 
-    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--impact", "example_host"]) == 0
 
     output = capsys.readouterr().out
     assert "- dns_resolver_stub: 127.0.0.53" in output
@@ -4169,13 +4169,13 @@ def test_cli_impact_formats_unknown_upstream_when_only_stub_known(tmp_path, caps
         seed_local,
         db_path,
         [
-            ("node115", "os", "linux"),
-            ("node115", "dns_resolver", "127.0.0.53"),
-            ("node115", "dns_resolver_stub", "127.0.0.53"),
+            ("example_host", "os", "linux"),
+            ("example_host", "dns_resolver", "127.0.0.53"),
+            ("example_host", "dns_resolver_stub", "127.0.0.53"),
         ],
     )
 
-    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--impact", "example_host"]) == 0
 
     output = capsys.readouterr().out
     assert "- dns_resolver_stub: 127.0.0.53" in output
@@ -4193,26 +4193,26 @@ def test_cli_impact_omits_ip_address_aliases_unless_explicit_alias(tmp_path, cap
         seed_local,
         db_path,
         [
-            ("node115", "os", "linux"),
-            ("node115", "ip_address", "192.168.254.115"),
+            ("example_host", "os", "linux"),
+            ("example_host", "ip_address", "192.0.2.115"),
         ],
     )
 
-    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--impact", "example_host"]) == 0
 
     output = capsys.readouterr().out
     aliases_section = output.split("availability_status:", 1)[0]
     assert "aliases:\n- none" in aliases_section
-    assert "- 192.168.254.115" not in aliases_section
+    assert "- 192.0.2.115" not in aliases_section
 
     _persist_impact_facts(
         seed_local,
         db_path,
-        [("node115", "alias", "192.168.254.115")],
+        [("example_host", "alias", "192.0.2.115")],
     )
-    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--impact", "example_host"]) == 0
     output = capsys.readouterr().out
-    assert "aliases:\n- 192.168.254.115" in output
+    assert "aliases:\n- 192.0.2.115" in output
 
 
 def test_cli_impact_includes_graph_warnings(tmp_path, capsys):
@@ -4235,15 +4235,15 @@ def test_cli_impact_collapses_duplicate_monitored_by_warnings(tmp_path, capsys):
         seed_local,
         db_path,
         [
-            ("node115", "prometheus_instance", "node115:9100"),
-            ("node115", "prometheus_instance", "node115:8080"),
+            ("example_host", "prometheus_instance", "example_host:9100"),
+            ("example_host", "prometheus_instance", "example_host:8080"),
         ],
     )
 
-    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--impact", "example_host"]) == 0
 
     output = capsys.readouterr().out
-    warning = "- warning: node115 monitored_by prometheus"
+    warning = "- warning: example_host monitored_by prometheus"
     assert output.count(warning) == 1
 
 
@@ -4262,13 +4262,13 @@ def test_cli_impact_does_not_ingest_or_execute(tmp_path, capsys, monkeypatch):
                 "--db",
                 str(db_path),
                 "--fact",
-                "node115",
+                "example_host",
                 "os",
                 "linux",
                 "--impact",
-                "node115",
+                "example_host",
                 "restart",
-                "node115",
+                "example_host",
             ]
         )
         == 0
@@ -4299,7 +4299,7 @@ def test_cli_inferred_facts_displays_projection_provenance(capsys):
 
     assert (
         seed_local.main(
-            ["--fact", "jellyfin", "runtime", "docker", "--inferred-facts", "jellyfin"]
+            ["--fact", "web_service", "runtime", "docker", "--inferred-facts", "web_service"]
         )
         == 0
     )
@@ -4317,19 +4317,19 @@ def test_cli_why_displays_recursive_endpoint_health_inference(capsys):
         seed_local.main(
             [
                 "--fact",
-                "node115",
+                "example_host",
                 "alias",
-                "192.168.254.115",
+                "192.0.2.115",
                 "--fact",
-                "192.168.254.115",
+                "192.0.2.115",
                 "alias",
-                "192.168.254.115:9100",
+                "192.0.2.115:9100",
                 "--fact",
-                "192.168.254.115:9100",
+                "192.0.2.115:9100",
                 "availability_status",
                 "down",
                 "--why",
-                "192.168.254.115:9100",
+                "192.0.2.115:9100",
                 "health_status",
             ]
         )
@@ -4350,17 +4350,17 @@ def test_cli_impact_groups_endpoint_availability_by_role(tmp_path, capsys):
         seed_local,
         db_path,
         [
-            ("node115", "os", "linux"),
-            ("node115", "alias", "192.168.254.115:9100"),
-            ("node115", "alias", "192.168.254.115:9200"),
-            ("192.168.254.115:9100", "endpoint_role", "node-exporter"),
-            ("192.168.254.115:9100", "availability_status", "down"),
-            ("192.168.254.115:9200", "endpoint_role", "cadvisor"),
-            ("192.168.254.115:9200", "availability_status", "up"),
+            ("example_host", "os", "linux"),
+            ("example_host", "alias", "192.0.2.115:9100"),
+            ("example_host", "alias", "192.0.2.115:9200"),
+            ("192.0.2.115:9100", "endpoint_role", "node-exporter"),
+            ("192.0.2.115:9100", "availability_status", "down"),
+            ("192.0.2.115:9200", "endpoint_role", "cadvisor"),
+            ("192.0.2.115:9200", "availability_status", "up"),
         ],
     )
 
-    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--impact", "example_host"]) == 0
 
     output = capsys.readouterr().out
     assert "availability_status: unknown" in output
@@ -4376,12 +4376,12 @@ def test_cli_unhealthy_keeps_current_down_endpoint_under_endpoint_identity(
         seed_local,
         db_path,
         [
-            ("node115", "os", "linux"),
-            ("node115", "alias", "192.168.254.115:9100"),
-            ("192.168.254.115:9100", "endpoint_role", "node-exporter"),
-            ("192.168.254.115:9100", "availability_status", "down"),
-            ("node116:9100", "endpoint_role", "node-exporter"),
-            ("node116:9100", "availability_status", "up"),
+            ("example_host", "os", "linux"),
+            ("example_host", "alias", "192.0.2.115:9100"),
+            ("192.0.2.115:9100", "endpoint_role", "node-exporter"),
+            ("192.0.2.115:9100", "availability_status", "down"),
+            ("example_host_b:9100", "endpoint_role", "node-exporter"),
+            ("example_host_b:9100", "availability_status", "up"),
             ("host-down-is-not-an-endpoint", "os", "linux"),
             ("host-down-is-not-an-endpoint", "availability_status", "down"),
         ],
@@ -4391,10 +4391,10 @@ def test_cli_unhealthy_keeps_current_down_endpoint_under_endpoint_identity(
 
     output = capsys.readouterr().out
     assert (
-        "unhealthy endpoints:\n192.168.254.115:9100:\n  - node-exporter down 192.168.254.115:9100"
+        "unhealthy endpoints:\n192.0.2.115:9100:\n  - node-exporter down 192.0.2.115:9100"
         in output
     )
-    assert "node116:9100" not in output
+    assert "example_host_b:9100" not in output
     assert "host-down-is-not-an-endpoint" not in output
     assert "graph errors:" in output
     assert "graph warnings:" not in output
@@ -4407,14 +4407,14 @@ def test_cli_down_alias_uses_current_measurement_sample(tmp_path, capsys):
         seed_local,
         db_path,
         [
-            ("node115:9100", "availability_status", "down"),
-            ("node115:9100", "availability_status", "up"),
+            ("example_host:9100", "availability_status", "down"),
+            ("example_host:9100", "availability_status", "up"),
         ],
     )
 
     assert seed_local.main(["--db", str(db_path), "--down"]) == 0
 
-    assert "node115:9100" not in capsys.readouterr().out
+    assert "example_host:9100" not in capsys.readouterr().out
 
 
 def test_cli_unhealthy_shows_errors_and_optionally_warnings(tmp_path, capsys):
@@ -4424,9 +4424,9 @@ def test_cli_unhealthy_shows_errors_and_optionally_warnings(tmp_path, capsys):
         seed_local,
         db_path,
         [
-            ("node115", "os", "linux"),
+            ("example_host", "os", "linux"),
             ("workers", "group", "team"),
-            ("workers", "runs_on", "node115"),
+            ("workers", "runs_on", "example_host"),
             ("mystery", "group", "servers"),
         ],
     )
@@ -4481,12 +4481,12 @@ def test_cli_unhealthy_does_not_ingest_or_execute(tmp_path, capsys, monkeypatch)
                 "--db",
                 str(db_path),
                 "--fact",
-                "node115:9100",
+                "example_host:9100",
                 "availability_status",
                 "down",
                 "--unhealthy",
                 "restart",
-                "node115",
+                "example_host",
             ]
         )
         == 0
@@ -4509,17 +4509,17 @@ def test_cli_impact_includes_identity_section_without_availability_or_reachabili
         seed_local,
         db_path,
         [
-            ("node115", "hostname", "node115"),
-            ("node115", "machine_id", "0123456789abcdef0123456789abcdef"),
-            ("node115", "boot_id", "11111111-2222-3333-4444-555555555555"),
+            ("example_host", "hostname", "example_host"),
+            ("example_host", "machine_id", "0123456789abcdef0123456789abcdef"),
+            ("example_host", "boot_id", "11111111-2222-3333-4444-555555555555"),
         ],
     )
 
-    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--impact", "example_host"]) == 0
     output = capsys.readouterr().out
 
     assert "identity:\n" in output
-    assert "- hostname: node115" in output
+    assert "- hostname: example_host" in output
     assert "- machine_id: 0123456789abcdef0123456789abcdef" in output
     assert "- boot_id: 11111111-2222-3333-4444-555555555555" in output
     assert "- availability/reachability: not inferred from identity facts" in output
@@ -4534,18 +4534,18 @@ def test_cli_current_facts_exposes_identity_facts(tmp_path, capsys):
         seed_local,
         db_path,
         [
-            ("node115", "hostname", "node115"),
-            ("node115", "machine_id", "0123456789abcdef0123456789abcdef"),
-            ("node115", "boot_id", "11111111-2222-3333-4444-555555555555"),
+            ("example_host", "hostname", "example_host"),
+            ("example_host", "machine_id", "0123456789abcdef0123456789abcdef"),
+            ("example_host", "boot_id", "11111111-2222-3333-4444-555555555555"),
         ],
     )
 
     assert seed_local.main(["--db", str(db_path), "--current-facts"]) == 0
     output = capsys.readouterr().out
 
-    assert "* node115 hostname node115" in output
-    assert "* node115 machine_id 0123456789abcdef0123456789abcdef" in output
-    assert "* node115 boot_id 11111111-2222-3333-4444-555555555555" in output
+    assert "* example_host hostname example_host" in output
+    assert "* example_host machine_id 0123456789abcdef0123456789abcdef" in output
+    assert "* example_host boot_id 11111111-2222-3333-4444-555555555555" in output
 
 
 def test_cli_observe_prometheus_timings_use_test_double(monkeypatch, capsys):
@@ -4758,7 +4758,7 @@ def test_cli_current_facts_broken_pipe_exits_without_traceback(tmp_path):
     db_path = tmp_path / "broken-pipe.sqlite"
     process = subprocess.run(
         f"{sys.executable} {SCRIPT_PATH} --db {db_path} "
-        "--fact node115 alias node115.local --current-facts | head -1",
+        "--fact example_host alias example_host.local --current-facts | head -1",
         shell=True,
         cwd=Path.cwd(),
         text=True,
@@ -4774,33 +4774,33 @@ def test_cli_current_facts_broken_pipe_exits_without_traceback(tmp_path):
 def _persist_storage_impact_facts(seed_local, db_path):
     ledger = seed_local.SQLiteEventLedger(str(db_path))
     facts = [
-        ("node115", "block_device", "sda", {"device": "sda"}),
-        ("node115", "block_device", "nvme0n1", {"device": "nvme0n1"}),
-        ("node115", "partition", "sda1", {"device": "sda1", "parent": "sda"}),
+        ("example_host", "block_device", "sda", {"device": "sda"}),
+        ("example_host", "block_device", "nvme0n1", {"device": "nvme0n1"}),
+        ("example_host", "partition", "sda1", {"device": "sda1", "parent": "sda"}),
         (
-            "node115",
+            "example_host",
             "partition",
             "nvme0n1p1",
             {"device": "nvme0n1p1", "parent": "nvme0n1"},
         ),
         (
-            "node115",
+            "example_host",
             "block_device_parent",
             "sda",
             {"device": "sda1", "parent": "sda"},
         ),
         (
-            "node115",
+            "example_host",
             "block_device_size_bytes",
             1073741824,
             {"device": "sda1", "parent": "sda"},
         ),
-        ("node115", "block_device_rotational", "true", {"device": "sda"}),
-        ("node115", "block_device_removable", "false", {"device": "sda"}),
-        ("node115", "block_device_model", "Fast Disk", {"device": "sda"}),
-        ("node115", "block_device_vendor", "SEED", {"device": "sda"}),
-        ("node115", "mount_point", "/", {"mount_point": "/"}),
-        ("node115", "mounted_device", "/dev/sda1", {"mount_point": "/"}),
+        ("example_host", "block_device_rotational", "true", {"device": "sda"}),
+        ("example_host", "block_device_removable", "false", {"device": "sda"}),
+        ("example_host", "block_device_model", "Fast Disk", {"device": "sda"}),
+        ("example_host", "block_device_vendor", "SEED", {"device": "sda"}),
+        ("example_host", "mount_point", "/", {"mount_point": "/"}),
+        ("example_host", "mounted_device", "/dev/sda1", {"mount_point": "/"}),
     ]
     try:
         for index, (subject, predicate, value, dimensions) in enumerate(facts):
@@ -4828,7 +4828,7 @@ def _persist_listener_impact_facts(seed_local, db_path):
     ledger = seed_local.SQLiteEventLedger(str(db_path))
     facts = [
         (
-            "node115",
+            "example_host",
             "listening_endpoint",
             "tcp 0.0.0.0:22",
             {
@@ -4839,7 +4839,7 @@ def _persist_listener_impact_facts(seed_local, db_path):
             },
         ),
         (
-            "node115",
+            "example_host",
             "listening_protocol",
             "tcp",
             {
@@ -4850,7 +4850,7 @@ def _persist_listener_impact_facts(seed_local, db_path):
             },
         ),
         (
-            "node115",
+            "example_host",
             "listening_address",
             "0.0.0.0",
             {
@@ -4861,7 +4861,7 @@ def _persist_listener_impact_facts(seed_local, db_path):
             },
         ),
         (
-            "node115",
+            "example_host",
             "listening_port",
             22,
             {
@@ -4872,7 +4872,7 @@ def _persist_listener_impact_facts(seed_local, db_path):
             },
         ),
         (
-            "node115",
+            "example_host",
             "listening_endpoint",
             "udp 127.0.0.1:53",
             {
@@ -4913,11 +4913,11 @@ def test_cli_current_facts_exposes_listener_facts(tmp_path, capsys):
     assert seed_local.main(["--db", str(db_path), "--current-facts"]) == 0
     output = capsys.readouterr().out
 
-    assert "* node115 listening_endpoint tcp 0.0.0.0:22" in output
-    assert "* node115 listening_protocol tcp" in output
-    assert "* node115 listening_address 0.0.0.0" in output
-    assert "* node115 listening_port 22" in output
-    assert "* node115 listening_endpoint udp 127.0.0.1:53" in output
+    assert "* example_host listening_endpoint tcp 0.0.0.0:22" in output
+    assert "* example_host listening_protocol tcp" in output
+    assert "* example_host listening_address 0.0.0.0" in output
+    assert "* example_host listening_port 22" in output
+    assert "* example_host listening_endpoint udp 127.0.0.1:53" in output
 
 
 def test_cli_impact_includes_compact_listener_endpoints_without_inference(
@@ -4927,7 +4927,7 @@ def test_cli_impact_includes_compact_listener_endpoints_without_inference(
     db_path = tmp_path / "impact-listeners.sqlite"
     _persist_listener_impact_facts(seed_local, db_path)
 
-    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--impact", "example_host"]) == 0
     output = capsys.readouterr().out
 
     assert "listening endpoints:" in output
@@ -4952,14 +4952,14 @@ def test_cli_current_facts_exposes_storage_topology_facts(tmp_path, capsys):
     assert seed_local.main(["--db", str(db_path), "--current-facts"]) == 0
     output = capsys.readouterr().out
 
-    assert "* node115 block_device sda" in output
-    assert "* node115 partition sda1" in output
-    assert "* node115 block_device_size_bytes 1073741824" in output
-    assert "* node115 block_device_rotational true" in output
-    assert "* node115 block_device_removable false" in output
-    assert "* node115 block_device_model Fast Disk" in output
-    assert "* node115 block_device_vendor SEED" in output
-    assert "* node115 block_device_parent sda" in output
+    assert "* example_host block_device sda" in output
+    assert "* example_host partition sda1" in output
+    assert "* example_host block_device_size_bytes 1073741824" in output
+    assert "* example_host block_device_rotational true" in output
+    assert "* example_host block_device_removable false" in output
+    assert "* example_host block_device_model Fast Disk" in output
+    assert "* example_host block_device_vendor SEED" in output
+    assert "* example_host block_device_parent sda" in output
 
 
 def test_cli_impact_includes_compact_storage_topology_without_health_inference(
@@ -4969,7 +4969,7 @@ def test_cli_impact_includes_compact_storage_topology_without_health_inference(
     db_path = tmp_path / "impact-storage.sqlite"
     _persist_storage_impact_facts(seed_local, db_path)
 
-    assert seed_local.main(["--db", str(db_path), "--impact", "node115"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--impact", "example_host"]) == 0
     output = capsys.readouterr().out
 
     assert "storage topology:" in output

@@ -23,7 +23,7 @@ def test_ini_extension_containing_yaml_is_detected_from_content(tmp_path):
 def test_real_ini_is_detected_from_section(tmp_path):
     path = tmp_path / "inventory.ini"
     path.write_text(
-        "[servers]\nnode115 ansible_host=192.168.254.115\n", encoding="utf-8"
+        "[servers]\nexample_host ansible_host=192.0.2.115\n", encoding="utf-8"
     )
 
     artifact = InputInspector.inspect_file(path)
@@ -53,7 +53,7 @@ def test_empty_file_is_unknown_with_warning(tmp_path):
 
 def test_null_byte_file_is_unknown_with_binary_warning(tmp_path):
     path = tmp_path / "inventory.ini"
-    path.write_bytes(b"[servers]\x00node115")
+    path.write_bytes(b"[servers]\x00example_host")
 
     artifact = InputInspector.inspect_file(path)
 
@@ -74,10 +74,10 @@ def test_unknown_text_is_unknown_with_warning(tmp_path):
 def test_classify_input_act_fixture_examples():
     examples = (
         ("What does Seed know about ProjectionStore?", InputAct.OPERATOR_QUERY),
-        ("Install Docker on node116.", InputAct.COMMAND_REQUEST),
-        ("Jellyfin is running on node116.", InputAct.USER_OBSERVATION),
+        ("Install Docker on example_host_b.", InputAct.COMMAND_REQUEST),
+        ("web_service is running on example_host_b.", InputAct.USER_OBSERVATION),
         ("README says ToolExecutor owns execution.", InputAct.DOCUMENTATION_CLAIM),
-        ("No, node116 is not the Jellyfin host anymore.", InputAct.CORRECTION),
+        ("No, example_host_b is not the web_service host anymore.", InputAct.CORRECTION),
         ("Thanks, that makes sense.", InputAct.CASUAL_ANSWER),
     )
 

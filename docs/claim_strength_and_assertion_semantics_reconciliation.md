@@ -445,7 +445,7 @@ Examples:
 
 ```text
 George Washington was President.
-Node115 rebooted yesterday.
+Example host rebooted yesterday.
 Port 80 was open at observation time.
 Filesystem usage exceeded 90% last week.
 ```
@@ -463,7 +463,7 @@ Current truth concerns whether a claim is true now, or as of a stated `now`.
 Examples:
 
 ```text
-Node115 is reachable now.
+Example host is reachable now.
 service S is running now.
 user U exists now.
 filesystem F is attached now.
@@ -604,19 +604,19 @@ Current despite, without, or because of which contradictions?
 For example:
 
 ```text
-Node115 was observed up.
+Example host was observed up.
 ```
 
 means a source reported an up state at an observation time.
 
 ```text
-Node115 is currently projected up.
+Example host is currently projected up.
 ```
 
 means a current-state projection selected `up` under its rules.
 
 ```text
-Node115 is verified reachable.
+Example host is verified reachable.
 ```
 
 means a verification method confirmed reachability from a scoped vantage point at
@@ -754,21 +754,21 @@ This is a historical claim.
 It is not a current-state claim. It should not be contradicted by a current
 claim that someone else is President, because the time scope differs.
 
-### Node115 was observed up
+### Example host was observed up
 
 This is an observation/fact claim.
 
-It means Seed preserved a source report. It does not necessarily mean Node115 is
+It means Seed preserved a source report. It does not necessarily mean Example host is
 up now.
 
-### Node115 is currently projected up
+### Example host is currently projected up
 
 This is a projection claim.
 
 It means current-state selection chose `up` according to projection rules,
 freshness, and available evidence.
 
-### Node115 is verified reachable
+### Example host is verified reachable
 
 This is a verification claim.
 

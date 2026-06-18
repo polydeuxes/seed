@@ -15,16 +15,16 @@ def make_executor():
 def test_verify_ssh_access_is_stubbed_and_does_not_mutate_or_network():
     executor, ledger, registry = make_executor()
 
-    result = executor.execute("ws", "ses", "verify_ssh_access", {"host": "node-1"})
+    result = executor.execute("ws", "ses", "verify_ssh_access", {"host": "example_host"})
 
     assert result.kind == "tool_result"
     assert result.status == "completed"
     assert result.payload["output"] == {
         "ok": True,
-        "host": "node-1",
+        "host": "example_host",
         "access_status": "not_checked",
         "method": "stub_no_network",
-        "summary": "SSH access for node-1 was not checked because network SSH is not enabled in this prototype.",
+        "summary": "SSH access for example_host was not checked because network SSH is not enabled in this prototype.",
     }
     assert registry.require("verify_ssh_access").risk_class == "L1"
     assert [event.kind for event in ledger.list_events("ws")] == [
@@ -37,12 +37,12 @@ def test_verify_ssh_access_is_stubbed_and_does_not_mutate_or_network():
 def test_plan_ssh_install_returns_non_mutating_steps_only():
     executor, ledger, registry = make_executor()
 
-    result = executor.execute("ws", "ses", "plan_ssh_install", {"host": "node-1"})
+    result = executor.execute("ws", "ses", "plan_ssh_install", {"host": "example_host"})
 
     assert result.kind == "tool_result"
     assert result.status == "completed"
     output = result.payload["output"]
-    assert output["host"] == "node-1"
+    assert output["host"] == "example_host"
     assert output["plan_only"] is True
     assert output["mutation_allowed"] is False
     assert len(output["steps"]) >= 4

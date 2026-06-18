@@ -66,7 +66,7 @@ def _state() -> State:
         "fact_high",
         "service-a",
         "runs_on",
-        "node-1",
+        "example_host",
         ["evd_a", "evd_b"],
         confidence=0.96,
     )

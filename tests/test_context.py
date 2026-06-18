@@ -10,7 +10,7 @@ def test_context_packet_shape_is_deterministic():
     ledger = EventLedger()
     registry = ToolRegistry()
     registry.load_manifest("toolkits/core/echo/toolkit.yaml")
-    ledger.append("entity.upserted", "ws", {"entity": to_plain(Entity(id="ent_1", kind="host", name="node-1"))})
+    ledger.append("entity.upserted", "ws", {"entity": to_plain(Entity(id="ent_1", kind="host", name="example_host"))})
     ledger.append("goal.created", "ws", {"goal": to_plain(Goal(id="goal_1", workspace_id="ws", summary="Make SSH work"))})
     ledger.append("tool_need.created", "ws", {"tool_need": to_plain(ToolNeed(id="need_1", workspace_id="ws", name="install_ssh_server", summary="Install SSH", capability="ssh_access", reason="missing"))})
     input_event = ledger.append("input.user_message", "ws", {"text": "hello"}, actor="user", session_id="ses")

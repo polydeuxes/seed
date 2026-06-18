@@ -29,7 +29,7 @@ prohibitive, or goal-shaped:
 
 ```text
 Check why nginx is down.
-I think node115 is unhealthy.
+I think example_host is unhealthy.
 Investigate storage usage.
 Do not restart anything.
 We should prioritize reliability over speed.
@@ -63,9 +63,9 @@ Interpretation may produce claims, but interpretation is not verification.
 Language-derived claims may be supported by the language that produced them, but
 that support is support for the claim that the speaker said, implied, requested,
 or appeared to believe something. It is not, by itself, support that the external
-world matches the statement. For example, `I think node115 is unhealthy` can
-support a claim that the operator stated a concern about node115 health. It does
-not verify node115 health.
+world matches the statement. For example, `I think example_host is unhealthy` can
+support a claim that the operator stated a concern about example_host health. It does
+not verify example_host health.
 
 The safest architecture treats language understanding as decomposable,
 inspectable, and caveated:
@@ -133,7 +133,7 @@ Examples include:
 operator typed: Check why nginx is down.
 operator typed: Do not restart anything.
 voice transcript: investigate storage usage
-uploaded incident note: node115 looked unhealthy at 02:10Z
+uploaded incident note: example_host looked unhealthy at 02:10Z
 chat handoff: reliability matters more than speed for this task
 ```
 
@@ -205,7 +205,7 @@ Examples:
 | Language | Possible extracted claim | Safer framing |
 | --- | --- | --- |
 | `nginx is down` | `nginx is down` | Speaker asserted nginx is down; operational verification remains separate. |
-| `I think node115 is unhealthy` | `node115 is unhealthy` | Speaker expressed belief or concern that node115 is unhealthy. |
+| `I think example_host is unhealthy` | `example_host is unhealthy` | Speaker expressed belief or concern that example_host is unhealthy. |
 | `storage utilization is high` | `storage utilization high` | Speaker asserted or reported high storage utilization. |
 | `the deployment probably caused this` | `deployment caused incident` | Speaker hypothesized causation; causality remains unverified. |
 
@@ -219,7 +219,7 @@ Language-derived claims differ from observed, verified, and corroborated claims:
 | Corroborated claim | Supported by multiple independent or complementary sources. |
 
 A single claim may have multiple support relationships. For example,
-`node115 unhealthy` may begin as language-derived, later receive telemetry
+`example_host unhealthy` may begin as language-derived, later receive telemetry
 support, and eventually become corroborated. Those transitions should remain
 visible rather than overwriting the original language-derived origin.
 
@@ -269,7 +269,7 @@ Examples:
 | Language | Possible derived question |
 | --- | --- |
 | `Check why nginx is down.` | Why is nginx unavailable, if it is unavailable? |
-| `I think node115 is unhealthy.` | What evidence supports or conflicts with node115 being unhealthy? |
+| `I think example_host is unhealthy.` | What evidence supports or conflicts with example_host being unhealthy? |
 | `Investigate storage usage.` | Which storage resources have notable utilization, change, or risk? |
 | `Do not restart anything.` | What read-only diagnostic paths are available? |
 
@@ -333,7 +333,7 @@ avoid downtime
 use local providers only
 read-only investigation
 no network calls
-only inspect node115
+only inspect example_host
 wait for approval before changing anything
 ```
 

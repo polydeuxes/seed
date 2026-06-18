@@ -54,9 +54,9 @@ def test_core_catalog_loads_initial_deterministic_rules():
 
 
 def test_runtime_docker_infers_managed_by_with_provenance():
-    state = _project(_fact("fact_runtime", "jellyfin", "runtime", "docker"))
+    state = _project(_fact("fact_runtime", "web_service", "runtime", "docker"))
 
-    inferred = state.get_best_fact("jellyfin", "managed_by")
+    inferred = state.get_best_fact("web_service", "managed_by")
     assert inferred is not None
     assert inferred.value == "docker_container_lifecycle"
     assert inferred.source_type == "inferred"
@@ -96,42 +96,42 @@ def test_alias_resolved_ambiguous_source_infers_nothing():
 
 def test_availability_down_infers_health_degraded():
     state = _project(
-        _fact("fact_availability", "node115:9100", "availability_status", "down")
+        _fact("fact_availability", "example_host:9100", "availability_status", "down")
     )
 
-    assert state.get_best_fact("node115:9100", "health_status").value == "degraded"
+    assert state.get_best_fact("example_host:9100", "health_status").value == "degraded"
 
 
 def test_availability_up_infers_health_ok():
     state = _project(
-        _fact("fact_availability", "node115:9100", "availability_status", "up")
+        _fact("fact_availability", "example_host:9100", "availability_status", "up")
     )
 
-    assert state.get_best_fact("node115:9100", "health_status").value == "ok"
+    assert state.get_best_fact("example_host:9100", "health_status").value == "ok"
 
 
 def test_alias_resolved_endpoint_availability_drives_endpoint_health_inference():
     state = _project(
-        _fact("fact_alias_9100", "node115", "alias", "192.168.254.115:9100"),
-        _fact("fact_alias_9200", "node115", "alias", "192.168.254.115:9200"),
+        _fact("fact_alias_9100", "example_host", "alias", "192.0.2.115:9100"),
+        _fact("fact_alias_9200", "example_host", "alias", "192.0.2.115:9200"),
         _fact(
             "fact_endpoint_up",
-            "192.168.254.115:9200",
+            "192.0.2.115:9200",
             "availability_status",
             "up",
         ),
         _fact(
             "fact_endpoint_z_down",
-            "192.168.254.115:9100",
+            "192.0.2.115:9100",
             "availability_status",
             "down",
         ),
     )
 
-    assert state.get_best_fact("node115", "availability_status") is None
-    assert state.get_best_fact("node115", "health_status") is None
-    down_health = state.get_best_fact("192.168.254.115:9100", "health_status")
-    up_health = state.get_best_fact("192.168.254.115:9200", "health_status")
+    assert state.get_best_fact("example_host", "availability_status") is None
+    assert state.get_best_fact("example_host", "health_status") is None
+    down_health = state.get_best_fact("192.0.2.115:9100", "health_status")
+    up_health = state.get_best_fact("192.0.2.115:9200", "health_status")
     assert (down_health.value, down_health.source_fact_id) == (
         "degraded",
         "fact_endpoint_z_down",
@@ -139,7 +139,7 @@ def test_alias_resolved_endpoint_availability_drives_endpoint_health_inference()
     assert (up_health.value, up_health.source_fact_id) == ("ok", "fact_endpoint_up")
 
     explanation = ExplanationBuilder(state).why(
-        "192.168.254.115:9100", "health_status"
+        "192.0.2.115:9100", "health_status"
     )
     explained_health = explanation.current_beliefs[0].facts[0]
     assert explained_health.source_fact_id == "fact_endpoint_z_down"
@@ -151,24 +151,24 @@ def test_inferred_confidence_is_capped_by_source_confidence():
     state = _project(
         _fact(
             "fact_availability",
-            "node115:9100",
+            "example_host:9100",
             "availability_status",
             "down",
             confidence=0.31,
         )
     )
 
-    inferred = state.get_best_fact("node115:9100", "health_status")
+    inferred = state.get_best_fact("example_host:9100", "health_status")
     assert inferred.confidence == 0.31
 
 
 def test_observed_managed_by_beats_inferred_managed_by():
     state = _project(
-        _fact("fact_runtime", "jellyfin", "runtime", "docker"),
-        _fact("fact_manager", "jellyfin", "managed_by", "custom_cli"),
+        _fact("fact_runtime", "web_service", "runtime", "docker"),
+        _fact("fact_manager", "web_service", "managed_by", "custom_cli"),
     )
 
-    manager = state.get_best_fact("jellyfin", "managed_by")
+    manager = state.get_best_fact("web_service", "managed_by")
     assert manager.id == "fact_manager"
     assert manager.value == "custom_cli"
     assert manager.inferred is False
@@ -218,16 +218,16 @@ def test_single_cardinality_target_suppresses_conflicting_rule_outputs():
 def test_sqlite_reopen_preserves_inferred_projection(tmp_path):
     db = tmp_path / "events.db"
     ledger = SQLiteEventLedger(str(db))
-    source = _fact("fact_runtime", "jellyfin", "runtime", "docker")
+    source = _fact("fact_runtime", "web_service", "runtime", "docker")
     ledger.append("fact.observed", "ws", {"fact": to_plain(source)})
     first = StateProjector(ledger).project("ws").get_best_fact(
-        "jellyfin", "managed_by"
+        "web_service", "managed_by"
     )
     ledger.close()
 
     reopened = SQLiteEventLedger(str(db))
     second = StateProjector(reopened).project("ws").get_best_fact(
-        "jellyfin", "managed_by"
+        "web_service", "managed_by"
     )
     reopened.close()
 

@@ -51,8 +51,8 @@ def _project(facts: list[Fact], *, measurement_history_limit: int = 1):
 def test_durable_single_cardinality_conflict_preserves_competing_facts_and_supports():
     state = _project(
         [
-            _fact("fact_runtime_docker", "jellyfin", "runtime", "docker"),
-            _fact("fact_runtime_systemd", "jellyfin", "runtime", "systemd"),
+            _fact("fact_runtime_docker", "web_service", "runtime", "docker"),
+            _fact("fact_runtime_systemd", "web_service", "runtime", "systemd"),
         ]
     )
 
@@ -60,7 +60,7 @@ def test_durable_single_cardinality_conflict_preserves_competing_facts_and_suppo
 
     assert len(conflicts) == 1
     conflict = conflicts[0]
-    assert conflict.subject == "jellyfin"
+    assert conflict.subject == "web_service"
     assert conflict.predicate == "runtime"
     assert conflict.values == ["docker", "systemd"]
     assert conflict.winning_value is None
@@ -72,7 +72,7 @@ def test_durable_single_cardinality_conflict_preserves_competing_facts_and_suppo
     assert set(state.facts) == {"fact_runtime_docker", "fact_runtime_systemd"}
     assert {
         (support.value, tuple(support.supporting_fact_ids))
-        for support in state.get_fact_supports("jellyfin", "runtime")
+        for support in state.get_fact_supports("web_service", "runtime")
     } == {
         ("docker", ("fact_runtime_docker",)),
         ("systemd", ("fact_runtime_systemd",)),
@@ -82,30 +82,30 @@ def test_durable_single_cardinality_conflict_preserves_competing_facts_and_suppo
 def test_multi_cardinality_predicates_do_not_conflict_solely_due_to_multiple_values():
     state = _project(
         [
-            _fact("fact_alias", "node1", "alias", "node1.example"),
-            _fact("fact_ip", "node1", "ip_address", "10.0.0.1"),
-            _fact("fact_ip_2", "node1", "ip_address", "10.0.0.2"),
-            _fact("fact_group_a", "node1", "group", "web"),
-            _fact("fact_group_b", "node1", "group", "blue"),
+            _fact("fact_alias", "example_host_1", "alias", "host1.example"),
+            _fact("fact_ip", "example_host_1", "ip_address", "10.0.0.1"),
+            _fact("fact_ip_2", "example_host_1", "ip_address", "10.0.0.2"),
+            _fact("fact_group_a", "example_host_1", "group", "web"),
+            _fact("fact_group_b", "example_host_1", "group", "blue"),
         ]
     )
 
     assert state.get_fact_conflicts() == []
-    assert [fact.value for fact in state.get_current_facts("node1", "ip_address")] == [
+    assert [fact.value for fact in state.get_current_facts("example_host_1", "ip_address")] == [
         "10.0.0.1",
         "10.0.0.2",
     ]
-    assert {fact.value for fact in state.get_current_facts("node1", "group")} == {
+    assert {fact.value for fact in state.get_current_facts("example_host_1", "group")} == {
         "web",
         "blue",
     }
-    assert state.get_current_facts("node1", "alias")[0].value == "node1.example"
+    assert state.get_current_facts("example_host_1", "alias")[0].value == "host1.example"
 
 
 def test_measurements_use_latest_current_sample_without_fact_conflict_and_keep_debug_history_when_configured():
     older = _fact(
         "fact_fs_old",
-        "node1",
+        "example_host_1",
         "filesystem_free_bytes",
         100,
         observed_at=datetime(2026, 6, 6, 10, 0, tzinfo=timezone.utc),
@@ -113,7 +113,7 @@ def test_measurements_use_latest_current_sample_without_fact_conflict_and_keep_d
     )
     newer = _fact(
         "fact_fs_new",
-        "node1",
+        "example_host_1",
         "filesystem_free_bytes",
         50,
         observed_at=datetime(2026, 6, 6, 11, 0, tzinfo=timezone.utc),
@@ -126,13 +126,13 @@ def test_measurements_use_latest_current_sample_without_fact_conflict_and_keep_d
     assert list(default_state.facts) == ["fact_fs_new"]
     assert set(debug_state.facts) == {"fact_fs_old", "fact_fs_new"}
     assert debug_state.get_fact_conflicts() == []
-    support = debug_state.get_fact_support("node1", "filesystem_free_bytes")
+    support = debug_state.get_fact_support("example_host_1", "filesystem_free_bytes")
     assert support is not None
     assert support.value == 50
     assert support.supporting_fact_ids == ["fact_fs_new"]
     assert support.predicate_semantics == "measurement"
     assert support.support_kind == "current_sample"
-    assert debug_state.get_best_fact("node1", "filesystem_free_bytes").id == "fact_fs_new"
+    assert debug_state.get_best_fact("example_host_1", "filesystem_free_bytes").id == "fact_fs_new"
 
 
 def test_expired_facts_are_stale_excluded_from_default_conflicts_and_visible_with_include_expired():
@@ -140,14 +140,14 @@ def test_expired_facts_are_stale_excluded_from_default_conflicts_and_visible_wit
         [
             _fact(
                 "fact_runtime_expired",
-                "jellyfin",
+                "web_service",
                 "runtime",
                 "docker",
                 expires_at=PAST,
             ),
             _fact(
                 "fact_runtime_current",
-                "jellyfin",
+                "web_service",
                 "runtime",
                 "systemd",
                 expires_at=FUTURE,
@@ -156,7 +156,7 @@ def test_expired_facts_are_stale_excluded_from_default_conflicts_and_visible_wit
     )
 
     assert state.get_fact_conflicts() == []
-    assert state.get_best_fact("jellyfin", "runtime").id == "fact_runtime_current"
+    assert state.get_best_fact("web_service", "runtime").id == "fact_runtime_current"
     assert [fact.id for fact in state.get_stale_facts()] == ["fact_runtime_expired"]
     recommendations = state.get_stale_fact_refresh_recommendations()
     assert [item.fact_id for item in recommendations] == ["fact_runtime_expired"]
@@ -170,12 +170,12 @@ def test_expired_facts_are_stale_excluded_from_default_conflicts_and_visible_wit
 def test_why_explanation_exposes_active_fact_conflict_without_truth_arbitration():
     state = _project(
         [
-            _fact("fact_runtime_docker", "jellyfin", "runtime", "docker"),
-            _fact("fact_runtime_systemd", "jellyfin", "runtime", "systemd"),
+            _fact("fact_runtime_docker", "web_service", "runtime", "docker"),
+            _fact("fact_runtime_systemd", "web_service", "runtime", "systemd"),
         ]
     )
 
-    explanation = ExplanationBuilder(state).why("jellyfin", "runtime")
+    explanation = ExplanationBuilder(state).why("web_service", "runtime")
 
     assert explanation.status == "ambiguous"
     assert explanation.current_beliefs == []
@@ -195,9 +195,9 @@ def test_why_explanation_exposes_active_fact_conflict_without_truth_arbitration(
 def test_graph_validation_reports_invalid_topology_without_mutating_projected_graph_or_facts():
     state = _project(
         [
-            _fact("host_type", "node1", "os", "linux"),
+            _fact("host_type", "example_host_1", "os", "linux"),
             _fact("group_type", "member1", "group", "workers"),
-            _fact("bad_hosting", "workers", "runs_on", "node1"),
+            _fact("bad_hosting", "workers", "runs_on", "example_host_1"),
         ]
     )
 
@@ -216,8 +216,8 @@ def test_graph_validation_reports_invalid_topology_without_mutating_projected_gr
 def test_projected_fact_conflict_inventory_is_read_only():
     state = _project(
         [
-            _fact("fact_runtime_docker", "jellyfin", "runtime", "docker"),
-            _fact("fact_runtime_systemd", "jellyfin", "runtime", "systemd"),
+            _fact("fact_runtime_docker", "web_service", "runtime", "docker"),
+            _fact("fact_runtime_systemd", "web_service", "runtime", "systemd"),
         ]
     )
     before = copy.deepcopy(state)

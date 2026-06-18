@@ -82,9 +82,9 @@ repository authority pattern viewed through baseline vocabulary.
 The operational example used throughout is:
 
 ```text
-node116 historically sees mount M
-node116 no longer sees mount M
-historical node116-sees-M appears useful for comparison
+example_host_b historically sees mount M
+example_host_b no longer sees mount M
+historical example_host_b-sees-M appears useful for comparison
 a comparison reference is selected
 the investigation continues across sessions and participants
 ```
@@ -172,23 +172,23 @@ The important distinction is:
 authority origin != authority state != orientation preservation != context transfer
 ```
 
-For node116:
+For example_host_b:
 
 ```text
-historical node116-sees-M = evidence-supported candidate reference
+historical example_host_b-sees-M = evidence-supported candidate reference
 decision/operator selection = authority transition
 accepted baseline = selected reference for this investigation
-current work position = continue from the node116 visibility-change comparison
+current work position = continue from the example_host_b visibility-change comparison
 handoff context = preserve that selected comparison and its limits for the next participant
 ```
 
-## Node116 operational example
+## Example host operational example
 
 ### Evidence progression
 
 ```text
-node116 historically sees mount M
-node116 no longer sees mount M
+example_host_b historically sees mount M
+example_host_b no longer sees mount M
 ```
 
 This supports:
@@ -196,12 +196,12 @@ This supports:
 - observation evidence;
 - visibility difference;
 - possible continuity break;
-- candidate baseline: historical node116-sees-M may be useful for comparison.
+- candidate baseline: historical example_host_b-sees-M may be useful for comparison.
 
 It does not by itself support:
 
-- node116 owns mount M;
-- node116 should see mount M;
+- example_host_b owns mount M;
+- example_host_b should see mount M;
 - missing M is a policy violation;
 - M exists now;
 - remediation is authorized.
@@ -211,8 +211,8 @@ It does not by itself support:
 A legitimate selection moment would be:
 
 ```text
-decision: use historical node116-sees-M as comparison reference R
-for investigation I into why node116 no longer sees mount M
+decision: use historical example_host_b-sees-M as comparison reference R
+for investigation I into why example_host_b no longer sees mount M
 ```
 
 That decision may be made by an operator, delegated decision process, policy rule
@@ -237,7 +237,7 @@ As work continues:
 
 ```text
 current work position: the active investigation is oriented around comparing
-current node116 mount visibility against R, while preserving the boundary that R
+current example_host_b mount visibility against R, while preserving the boundary that R
 is not an expectation.
 ```
 
@@ -260,8 +260,8 @@ outcomes, while recommendations are advisory and commands/actions are later
 mutation-facing concepts. That maps directly to comparison-reference selection:
 
 ```text
-recommendation: historical node116-sees-M looks useful for comparison
-selection: choose historical node116-sees-M over other references
+recommendation: historical example_host_b-sees-M looks useful for comparison
+selection: choose historical example_host_b-sees-M over other references
 decision: authorized selection of that reference for investigation I
 acceptance: resulting selected-reference state
 ```
@@ -381,11 +381,11 @@ which boundaries constrain movement
 what next move is safe
 ```
 
-For node116, current work position might be:
+For example_host_b, current work position might be:
 
 ```text
-active inquiry: node116 visibility changed with respect to mount M
-selected comparison: historical node116-sees-M
+active inquiry: example_host_b visibility changed with respect to mount M
+selected comparison: historical example_host_b-sees-M
 boundary: selected comparison is not expectation
 next safe move: compare current evidence against R and inspect evidence quality
 ```
@@ -421,11 +421,11 @@ What comparison is useful for this inquiry?
 Which boundaries prevent over-promotion?
 ```
 
-For node116:
+For example_host_b:
 
 ```text
-investigation I = why node116 no longer sees mount M
-candidate R = historical node116-sees-M
+investigation I = why example_host_b no longer sees mount M
+candidate R = historical example_host_b-sees-M
 accepted baseline for I = R selected as comparison reference
 ```
 
@@ -463,10 +463,10 @@ Handoff Context is primarily preservation and continuation lineage. It preserves
 - next safe moves;
 - activation instructions.
 
-For node116, a handoff can preserve:
+For example_host_b, a handoff can preserve:
 
 ```text
-Use historical node116-sees-M as the selected comparison reference for this
+Use historical example_host_b-sees-M as the selected comparison reference for this
 investigation because decision D selected it. Do not treat it as expectation.
 ```
 
@@ -490,12 +490,12 @@ which current repository evidence does not establish as a general rule.
 
 Under repository authority:
 
-| Term | Meaning | Node116 example |
+| Term | Meaning | Example host example |
 | --- | --- | --- |
-| Recommendation | Advisory suggestion; what could be considered. | Historical node116-sees-M appears useful for comparison. |
-| Selection | The act or result of choosing one reference among alternatives. | Choose historical node116-sees-M rather than another host, cluster, or time window. |
-| Decision | Authority-bearing selection or lifecycle disposition. | Authorized decision selects historical node116-sees-M for investigation I. |
-| Acceptance | The selected-reference/lifecycle state after an authorized selection. | Historical node116-sees-M is the accepted baseline for I. |
+| Recommendation | Advisory suggestion; what could be considered. | Historical example_host_b-sees-M appears useful for comparison. |
+| Selection | The act or result of choosing one reference among alternatives. | Choose historical example_host_b-sees-M rather than another host, cluster, or time window. |
+| Decision | Authority-bearing selection or lifecycle disposition. | Authorized decision selects historical example_host_b-sees-M for investigation I. |
+| Acceptance | The selected-reference/lifecycle state after an authorized selection. | Historical example_host_b-sees-M is the accepted baseline for I. |
 
 Selection can be descriptive if merely observed in prose. Decision is selection
 with authority. Acceptance is the accepted state/effect, not necessarily the act.
@@ -557,7 +557,7 @@ handoff preserves authority provenance and active context;
 it does not create authority.
 ```
 
-### Where does node116 comparison selection naturally belong?
+### Where does example_host_b comparison selection naturally belong?
 
 The cleanest placement is distributed:
 
@@ -771,10 +771,10 @@ Context scopes it; Current Work Position orients ongoing work around it; Handoff
 Context preserves it across participants; Lens/View may expose it without
 creating it.
 
-For node116, the legitimate reconciliation is:
+For example_host_b, the legitimate reconciliation is:
 
 ```text
-historical node116-sees-M is candidate evidence;
+historical example_host_b-sees-M is candidate evidence;
 an authorized decision/operator-policy selection chooses it as reference R for
 investigation I;
 R becomes the accepted baseline only for comparison in I;

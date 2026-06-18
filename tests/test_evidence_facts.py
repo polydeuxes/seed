@@ -19,7 +19,7 @@ def test_evidence_backed_fact_projects_with_provenance():
         source="host_notes",
         kind="host.note",
         observed_at=observed_at,
-        payload={"host": "node-1", "ssh_running": False},
+        payload={"host": "example_host", "ssh_running": False},
         confidence=0.9,
     )
     fact = Fact(
@@ -57,7 +57,7 @@ def test_context_includes_evidence_backed_facts():
         source="host_notes",
         kind="host.note",
         observed_at=observed_at,
-        payload={"host": "node-1", "ssh_running": False},
+        payload={"host": "example_host", "ssh_running": False},
     )
     fact = Fact(
         id="fact_1",
@@ -97,7 +97,7 @@ def test_context_includes_evidence_backed_facts():
                     "source": "host_notes",
                     "kind": "host.note",
                     "observed_at": observed_at,
-                    "payload": {"host": "node-1", "ssh_running": False},
+                    "payload": {"host": "example_host", "ssh_running": False},
                     "confidence": 1.0,
                 }
             ],

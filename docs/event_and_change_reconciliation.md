@@ -115,7 +115,7 @@ Examples:
 package nginx was installed on host H at time T
 package nginx was removed from host H at time T2
 service nginx stopped on host H at time T3
-host node115 rebooted at time T4
+host example_host rebooted at time T4
 filesystem /data detached from host H at time T5
 configuration file C changed from version A to version B at time T6
 ```
@@ -138,7 +138,7 @@ Events are something else conceptually: they are occurrences.
 They may be expressed through claims:
 
 ```text
-Claim: host node115 rebooted at 2026-06-09T12:00:00Z
+Claim: host example_host rebooted at 2026-06-09T12:00:00Z
 ```
 
 They may be reported by observations:
@@ -150,7 +150,7 @@ Observation: system log source reported reboot marker at T
 They may be normalized as facts:
 
 ```text
-Fact: node115 had reboot occurrence at T, supported by log evidence
+Fact: example_host had reboot occurrence at T, supported by log evidence
 ```
 
 They may participate in relationships:
@@ -311,7 +311,7 @@ History can remain true while current state changes:
 
 ```text
 George Washington was President of the United States.
-node115 rebooted yesterday.
+example_host rebooted yesterday.
 package nginx was installed last year.
 filesystem /data detached at 10:00 and reattached at 10:15.
 ```
@@ -418,7 +418,7 @@ current-state knowledge.
 An event can be historical but not stale when the question is historical:
 
 ```text
-Question: Did node115 reboot yesterday?
+Question: Did example_host reboot yesterday?
 Event evidence: reboot marker from yesterday with stable log provenance
 Freshness interpretation: not stale for that historical question
 ```
@@ -426,7 +426,7 @@ Freshness interpretation: not stale for that historical question
 The same event may be stale or insufficient for a current-state question:
 
 ```text
-Question: Is node115 healthy now?
+Question: Is example_host healthy now?
 Event evidence: reboot marker from yesterday
 Freshness interpretation: insufficient for current health without newer support
 ```
