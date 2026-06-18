@@ -56,18 +56,8 @@ def test_operator_state_summary_can_be_built_without_cli_parsing():
         "host_availability": {"up": 0, "down": 0, "unknown": 1},
         "service_availability": {"up": 0, "down": 0, "unknown": 0},
     }
-    assert summary["top_entities"] == [
-        {"name": "example_host", "alias_count": 0, "fact_count": 1}
-    ]
-    assert summary["top_entities_by_kind"]["hosts"] == [
-        {"name": "example_host", "alias_count": 0, "fact_count": 1}
-    ]
-    assert summary["top_entities_by_kind"]["endpoints"] == {
-        "total": 0,
-        "up": 0,
-        "down": 0,
-        "unknown": 0,
-    }
+    assert "top_entities" not in summary
+    assert "top_entities_by_kind" not in summary
 
 
 def test_operator_state_summary_preserves_availability_and_alias_semantics():
@@ -96,27 +86,17 @@ def test_operator_state_summary_preserves_availability_and_alias_semantics():
         "host_availability": {"up": 0, "down": 0, "unknown": 1},
         "service_availability": {"up": 0, "down": 0, "unknown": 0},
     }
-    assert summary["top_entities_by_kind"]["hosts"] == [
-        {"name": "example_host", "alias_count": 1, "fact_count": 1}
-    ]
+    assert "top_entities" not in summary
+    assert "top_entities_by_kind" not in summary
     assert "192.0.2.115:9100" in state.current_entity_types
     assert state.get_current_entity_types("192.0.2.115:9100") == ["endpoint"]
     assert (
         state.get_best_fact("192.0.2.115:9100", "availability_status").value
         == "up"
     )
-    assert summary["top_entities_by_kind"]["endpoints"] == {
-        "total": 1,
-        "up": 1,
-        "down": 0,
-        "unknown": 0,
-    }
-    assert summary["top_entities"] == [
-        {"name": "example_host", "alias_count": 1, "fact_count": 1}
-    ]
 
 
-def test_operator_state_summary_ranks_top_entities_by_durable_facts_only():
+def test_operator_state_summary_counts_durable_and_measurement_facts_without_top_entities():
     endpoint_measurements = [
         _fact(
             f"fact_endpoint_filesystem_free_{index}",
@@ -153,18 +133,8 @@ def test_operator_state_summary_ranks_top_entities_by_durable_facts_only():
         "host_availability": {"up": 0, "down": 0, "unknown": 1},
         "service_availability": {"up": 0, "down": 0, "unknown": 0},
     }
-    assert summary["top_entities"] == [
-        {"name": "example_host", "alias_count": 0, "fact_count": 1},
-    ]
-    assert summary["top_entities_by_kind"]["hosts"] == [
-        {"name": "example_host", "alias_count": 0, "fact_count": 1},
-    ]
-    assert summary["top_entities_by_kind"]["endpoints"] == {
-        "total": 1,
-        "up": 1,
-        "down": 0,
-        "unknown": 0,
-    }
+    assert "top_entities" not in summary
+    assert "top_entities_by_kind" not in summary
     assert (
         state.get_best_fact(
             "192.168.254.116:9100",
@@ -198,16 +168,8 @@ def test_operator_state_summary_keeps_endpoint_visibility_scoped():
     summary = build_operator_state_summary(state)
 
     assert state.get_best_fact("10.0.0.1:9100", "availability_status").value == "down"
-    assert summary["top_entities_by_kind"]["endpoints"] == {
-        "total": 1,
-        "up": 0,
-        "down": 1,
-        "unknown": 0,
-    }
-    assert summary["top_entities_by_kind"]["hosts"] == [
-        {"name": "example_host", "alias_count": 0, "fact_count": 1}
-    ]
-    assert {entity["name"] for entity in summary["top_entities"]} == {"example_host"}
+    assert "top_entities" not in summary
+    assert "top_entities_by_kind" not in summary
     assert summary["availability_by_scope"]["endpoint_scrape_availability"] == {
         "up": 0,
         "down": 1,
@@ -238,13 +200,8 @@ def test_operator_state_summary_summarizes_endpoint_counts_without_names():
     assert state.get_current_entity_types("10.0.0.3:9100") == ["endpoint"]
     assert state.get_best_fact("10.0.0.1:9100", "availability_status").value == "up"
     assert state.get_best_fact("10.0.0.2:9100", "availability_status").value == "down"
-    assert summary["top_entities_by_kind"]["endpoints"] == {
-        "total": 3,
-        "up": 1,
-        "down": 1,
-        "unknown": 1,
-    }
-    assert "10.0.0.1:9100" not in str(summary["top_entities_by_kind"]["endpoints"])
+    assert "top_entities" not in summary
+    assert "top_entities_by_kind" not in summary
     assert summary["availability_by_scope"]["endpoint_scrape_availability"] == {
         "up": 1,
         "down": 1,
@@ -252,7 +209,7 @@ def test_operator_state_summary_summarizes_endpoint_counts_without_names():
     }
 
 
-def test_operator_state_summary_keeps_named_non_endpoint_top_entities():
+def test_operator_state_summary_keeps_named_non_endpoint_availability():
     state = _project(
         _fact("fact_host_os", "example_host", "os", "linux"),
         _fact("fact_service_note", "api-service", "service_note", "primary"),
@@ -265,15 +222,8 @@ def test_operator_state_summary_keeps_named_non_endpoint_top_entities():
 
     summary = build_operator_state_summary(state)
 
-    assert summary["top_entities_by_kind"]["hosts"] == [
-        {"name": "example_host", "alias_count": 0, "fact_count": 1}
-    ]
-    assert summary["top_entities_by_kind"]["services"] == [
-        {"name": "api-service", "alias_count": 0, "fact_count": 1}
-    ]
-    assert summary["top_entities_by_kind"]["storage"] == [
-        {"name": "pool-a", "alias_count": 0, "fact_count": 1}
-    ]
+    assert "top_entities" not in summary
+    assert "top_entities_by_kind" not in summary
     assert summary["availability_by_scope"] == {
         "endpoint_scrape_availability": {"up": 0, "down": 0, "unknown": 0},
         "host_availability": {"up": 0, "down": 0, "unknown": 1},

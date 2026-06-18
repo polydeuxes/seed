@@ -54,7 +54,6 @@ def test_cli_state_summary_rejects_storage_projection_sections():
             "graph_issue_warning_count": 0,
             "graph_issue_error_count": 0,
             "observation_source_counts": {},
-            "top_entities": [],
             "availability": {"up": 0, "down": 0, "unknown": 0},
             "filesystems": [
                 {
@@ -159,7 +158,6 @@ def test_cli_state_summary_rejects_bounded_filesystem_detail():
             "graph_issue_warning_count": 0,
             "graph_issue_error_count": 0,
             "observation_source_counts": {},
-            "top_entities": [],
             "availability": {"up": 0, "down": 0, "unknown": 0},
             "filesystems": filesystems,
             "cluster_mount_groups": [],
@@ -184,7 +182,6 @@ def test_cli_state_summary_rejects_storage_topology_counts():
         "graph_issue_warning_count": 0,
         "graph_issue_error_count": 0,
         "observation_source_counts": {},
-        "top_entities": [],
         "availability": {"up": 0, "down": 0, "unknown": 0},
         "filesystems": [],
         "cluster_mount_groups": [
@@ -223,7 +220,6 @@ def test_cli_state_summary_rejects_precomputed_storage_topology_counts():
             "graph_issue_warning_count": 0,
             "graph_issue_error_count": 0,
             "observation_source_counts": {},
-            "top_entities": [],
             "availability": {"up": 0, "down": 0, "unknown": 0},
             "filesystems": [],
             "cluster_mount_groups": [
@@ -2011,15 +2007,16 @@ def test_cli_state_summary_reports_projected_world_model_without_ingestion(
     assert "  discovery: 4" in output
     assert "  imported: 1" in output
     assert "  user: 3" in output
-    assert "top entities by kind:" in output
-    assert "    host-up (aliases: 1 total; facts: 3)" in output
+    assert "top entities by kind:" not in output
+    assert "top entities:" not in output
+    assert "    host-up (aliases: 1 total; facts: 3)" not in output
     assert "10.0.0.10; facts" not in output
     assert "availability by scope:" in output
     assert "  host_availability:\n    up: 1\n    down: 1\n    unknown: 1" in output
     _assert_default_state_summary_has_no_storage_detail(output)
 
 
-def test_format_state_summary_renders_endpoint_counts_without_endpoint_names():
+def test_format_state_summary_does_not_render_top_entity_compatibility_fields():
     seed_local = load_seed_local_module()
 
     output = seed_local.format_state_summary(
@@ -2039,6 +2036,9 @@ def test_format_state_summary_renders_endpoint_counts_without_endpoint_names():
                 "endpoints": {"total": 1, "up": 0, "down": 1, "unknown": 0},
                 "storage": [{"name": "pool-a", "alias_count": 0, "fact_count": 1}],
             },
+            "top_entities": [
+                {"name": "legacy-host", "alias_count": 0, "fact_count": 1}
+            ],
             "availability_by_scope": {
                 "endpoint_scrape_availability": {"up": 0, "down": 1, "unknown": 0},
                 "host_availability": {"up": 0, "down": 0, "unknown": 1},
@@ -2047,13 +2047,13 @@ def test_format_state_summary_renders_endpoint_counts_without_endpoint_names():
         }
     )
 
-    assert (
-        "  endpoints:\n    total: 1\n    up: 0\n    down: 1\n    unknown: 0" in output
-    )
-    assert "10.0.0.1:9100" not in output
-    assert "    example_host (aliases: 0 total; facts: 1)" in output
-    assert "    api (aliases: 0 total; facts: 1)" in output
-    assert "    pool-a (aliases: 0 total; facts: 1)" in output
+    assert "top entities by kind:" not in output
+    assert "top entities:" not in output
+    assert "example_host" not in output
+    assert "api" not in output
+    assert "pool-a" not in output
+    assert "legacy-host" not in output
+    assert "availability by scope:" in output
 
 
 def test_cli_state_summary_counts_local_observation_without_availability_as_unknown(
@@ -2136,7 +2136,7 @@ def test_cli_state_summary_keeps_endpoint_availability_separate_from_host(
     assert "  host_availability:\n    up: 0\n    down: 0\n    unknown: 1" in output
 
 
-def test_cli_state_summary_top_entities_summarizes_alias_count(tmp_path, capsys):
+def test_cli_state_summary_no_longer_renders_legacy_top_entities(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "state-summary-many-aliases.sqlite"
     aliases = [f"172.17.0.{index}" for index in range(1, 6)]
@@ -2149,7 +2149,9 @@ def test_cli_state_summary_top_entities_summarizes_alias_count(tmp_path, capsys)
     assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
 
     output = capsys.readouterr().out
-    assert "example_host (aliases: 5 total; facts: 5)" in output
+    assert "top entities by kind:" not in output
+    assert "top entities:" not in output
+    assert "example_host (aliases: 5 total; facts: 5)" not in output
     for alias in aliases:
         assert alias not in output
 

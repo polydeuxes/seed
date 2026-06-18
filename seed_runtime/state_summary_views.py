@@ -39,7 +39,6 @@ _CLUSTER_MOUNTPOINT_PATTERN = re.compile(r"^/mnt/(?:node|rpi)[^/]*(?:/|$)")
 _FILESYSTEM_DETAIL_LIMIT = 10
 
 _ENDPOINT_SUBJECT = re.compile(r"^(?:\[[^]]+\]|[^:]+):[0-9]{1,5}$")
-_ENTITY_KIND_ORDER = ("hosts", "services", "endpoints", "storage")
 _AVAILABILITY_STATUSES = ("up", "down", "unknown")
 _HOST_SCOPED_SUMMARY_PREDICATES = {
     "alias",
@@ -68,18 +67,6 @@ def _looks_like_endpoint_subject(subject: str) -> bool:
 
 def _empty_availability_counts() -> dict[str, int]:
     return {status: 0 for status in _AVAILABILITY_STATUSES}
-
-
-def _entity_summary_row(
-    canonical: str,
-    entity_aliases: dict[str, set[str]],
-    entity_fact_counts: Counter[str],
-) -> dict[str, Any]:
-    return {
-        "name": canonical,
-        "alias_count": len(entity_aliases[canonical] - {canonical}),
-        "fact_count": entity_fact_counts[canonical],
-    }
 
 
 def _canonical_entity_types(state: State, canonical: str, aliases: set[str]) -> set[str]:
@@ -573,7 +560,6 @@ def storage_state_projection(state: State) -> dict[str, Any]:
 def state_summary(
     state: State,
     *,
-    top_entity_limit: int = 10,
     include_relationship_count: bool = False,
 ) -> dict[str, Any]:
     """Build a concise operator summary using only the projected State."""
@@ -590,20 +576,12 @@ def state_summary(
     ]
 
     entity_aliases: dict[str, set[str]] = defaultdict(set)
-    entity_fact_counts: Counter[str] = Counter()
     for fact in state.facts.values():
         canonical = state.alias_resolver.canonical(fact.subject_id)
         entity_aliases[canonical].update(state.alias_resolver.resolve(fact.subject_id))
-    # Default top-entity prominence is based on durable facts only.
-    # Current measurement volume must remain queryable and counted elsewhere,
-    # but should not make scrape-target endpoints look operator-prominent.
-    for fact in durable_facts:
-        canonical = state.alias_resolver.canonical(fact.subject_id)
-        entity_fact_counts[canonical] += 1
     for entity in state.entities.values():
         canonical = state.alias_resolver.canonical(entity.name)
         entity_aliases[canonical].update({entity.name, *entity.aliases})
-        entity_fact_counts.setdefault(canonical, 0)
 
     entity_kinds = {
         canonical: _classify_state_summary_entity(
@@ -611,28 +589,6 @@ def state_summary(
         )
         for canonical in entity_aliases
     }
-    ranked_entities = sorted(
-        entity_aliases, key=lambda name: (-entity_fact_counts[name], name)
-    )
-    top_entities_by_kind = {kind: [] for kind in _ENTITY_KIND_ORDER}
-    for canonical in ranked_entities:
-        kind = entity_kinds[canonical]
-        if kind is None or len(top_entities_by_kind[kind]) >= top_entity_limit:
-            continue
-        top_entities_by_kind[kind].append(
-            _entity_summary_row(canonical, entity_aliases, entity_fact_counts)
-        )
-
-    # Legacy compatibility field: keep the historical name for callers that have
-    # not migrated yet, but make it operator-prominence scoped by excluding
-    # scrape-target endpoints from the undifferentiated list. Endpoint visibility
-    # is preserved through endpoint summary counts in top_entities_by_kind["endpoints"].
-    top_entities = [
-        _entity_summary_row(canonical, entity_aliases, entity_fact_counts)
-        for canonical in ranked_entities
-        if entity_kinds[canonical] in {"hosts", "services", "storage"}
-    ][:top_entity_limit]
-
     availability_by_scope = {
         "endpoint_scrape_availability": _empty_availability_counts(),
         "host_availability": _empty_availability_counts(),
@@ -674,12 +630,6 @@ def state_summary(
         )
         availability[status] += 1
 
-    endpoint_availability = availability_by_scope["endpoint_scrape_availability"]
-    top_entities_by_kind["endpoints"] = {
-        "total": sum(endpoint_availability.values()),
-        **endpoint_availability,
-    }
-
     summary = {
         "entity_count": len(entity_aliases),
         "fact_count": len(state.facts),
@@ -695,9 +645,7 @@ def state_summary(
                 Counter(obs.source_type for obs in state.observations.values()).items()
             )
         ),
-        "top_entities_by_kind": top_entities_by_kind,
         "availability_by_scope": availability_by_scope,
-        "top_entities": top_entities,
         "availability": dict(availability),
     }
     if include_relationship_count:
