@@ -1,10 +1,19 @@
 from datetime import datetime, timezone
 
 from scripts import seed_local
+from seed_runtime.entity_type_catalog import EntityTypeCatalog, EntityTypeDefinition
 from seed_runtime.events import EventLedger, SQLiteEventLedger
+from seed_runtime.projection_store import (
+    ProjectionSnapshot,
+    SQLiteProjectionStore,
+    STATE_PROJECTION_NAME,
+    STATE_PROJECTION_VERSION,
+    state_to_payload,
+)
+from seed_runtime.relationship_catalog import RelationshipCatalog
 from seed_runtime.models import Fact
 from seed_runtime.serialization import to_plain
-from seed_runtime.state import GraphValidationIssue, State, StateProjector
+from seed_runtime.state import GraphValidationIssue, GraphValidator, State, StateProjector
 
 NOW = datetime(2026, 6, 4, 12, 0, tzinfo=timezone.utc)
 
@@ -27,6 +36,63 @@ def _project(*facts: Fact):
     for fact in facts:
         ledger.append("fact.observed", "ws", {"fact": to_plain(fact)})
     return StateProjector(ledger).project("ws")
+
+
+def test_relationship_catalog_expected_types_exist_in_entity_type_catalog():
+    relationship_catalog = RelationshipCatalog.load()
+    entity_type_catalog = EntityTypeCatalog.load()
+
+    missing = sorted(
+        {
+            expected_type
+            for relationship in relationship_catalog.list_relationships()
+            for expected_type in (relationship.subject_type, relationship.object_type)
+            if expected_type != "entity" and entity_type_catalog.get(expected_type) is None
+        }
+    )
+
+    assert missing == []
+
+
+def test_document_concept_domain_are_loaded_entity_types():
+    entity_type_catalog = EntityTypeCatalog.load()
+
+    assert entity_type_catalog.get("document") is not None
+    assert entity_type_catalog.get("concept") is not None
+    assert entity_type_catalog.get("domain") is not None
+
+
+def test_defines_no_longer_emits_unknown_catalog_type_when_catalog_types_exist():
+    state = _project(_fact("defines_fact", "module.py", "defines", "BaseModel"))
+
+    assert len(state.graph_issues) == 1
+    issue = state.graph_issues[0]
+    assert issue.relationship == "defines"
+    assert "unknown catalog type" not in issue.reason
+    assert issue.reason == (
+        "subject type is unknown; expected document; "
+        "object type is unknown; expected concept"
+    )
+    assert issue.expected_subject_types == ["document"]
+    assert issue.expected_object_types == ["concept"]
+    assert issue.actual_subject_types == ["unknown"]
+    assert issue.actual_object_types == ["unknown"]
+
+
+def test_unknown_catalog_type_warning_still_emits_for_true_missing_expected_type():
+    relationship_catalog = RelationshipCatalog.load()
+    entity_type_catalog = EntityTypeCatalog(
+        EntityTypeDefinition(entity_type=name) for name in ["unknown", "concept"]
+    )
+    state = _project(_fact("defines_fact", "module.py", "defines", "BaseModel"))
+
+    issues = GraphValidator(relationship_catalog, entity_type_catalog).validate(state)
+
+    assert len(issues) == 1
+    assert issues[0].reason == (
+        "subject expects unknown catalog type document; "
+        "object type is unknown; expected concept"
+    )
 
 
 def test_valid_host_member_of_group_has_no_issue():
@@ -386,3 +452,53 @@ def test_existing_graph_issues_cli_output_remains_unchanged(tmp_path, capsys):
     output = capsys.readouterr().out
     assert output.startswith("warning: mystery member_of servers\n")
     assert "Graph Issue Summary" not in output
+
+
+def test_graph_issue_summary_cli_uses_cached_projected_state_until_rebuilt(
+    tmp_path, capsys
+):
+    path = tmp_path / "graph-issue-summary-cache.sqlite"
+    ledger = SQLiteEventLedger(str(path))
+    event = ledger.append(
+        "fact.observed",
+        seed_local.DEFAULT_WORKSPACE,
+        {"fact": to_plain(_fact("defines_fact", "module.py", "defines", "BaseModel"))},
+    )
+    stale_state = StateProjector(ledger).project(seed_local.DEFAULT_WORKSPACE)
+    stale_state.graph_issues[0] = GraphValidationIssue(
+        **{
+            **to_plain(stale_state.graph_issues[0]),
+            "reason": (
+                "subject expects unknown catalog type document; "
+                "object expects unknown catalog type concept"
+            ),
+        }
+    )
+    store = SQLiteProjectionStore(str(path))
+    try:
+        store.save_snapshot(
+            ProjectionSnapshot(
+                workspace_id=seed_local.DEFAULT_WORKSPACE,
+                projection_name=STATE_PROJECTION_NAME,
+                projection_version=STATE_PROJECTION_VERSION,
+                last_event_id=event.id,
+                last_event_created_at=event.timestamp,
+                state_payload=state_to_payload(stale_state),
+                created_at=NOW,
+            )
+        )
+    finally:
+        store.close()
+        ledger.close()
+
+    assert seed_local.main(["--db", str(path), "--graph-issue-summary"]) == 0
+    output = capsys.readouterr().out
+    assert "unknown catalog type document" in output
+
+    assert seed_local.main(["--db", str(path), "--rebuild-state-cache"]) == 0
+    capsys.readouterr()
+
+    assert seed_local.main(["--db", str(path), "--graph-issue-summary"]) == 0
+    output = capsys.readouterr().out
+    assert "unknown catalog type" not in output
+    assert "subject type is unknown; expected document" in output

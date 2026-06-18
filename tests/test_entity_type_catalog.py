@@ -15,6 +15,9 @@ def test_builtin_entity_type_catalog_contains_initial_types():
         "endpoint",
         "monitoring_system",
         "capability",
+        "document",
+        "concept",
+        "domain",
         "unknown",
     }
 

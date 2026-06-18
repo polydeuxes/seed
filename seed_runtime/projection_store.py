@@ -48,7 +48,7 @@ from seed_runtime.state import (
 )
 
 STATE_PROJECTION_NAME = "state"
-STATE_PROJECTION_VERSION = "state-v1"
+STATE_PROJECTION_VERSION = "state-v2"
 STATE_SUMMARY_PROJECTION_NAME = "state-summary"
 STATE_SUMMARY_PROJECTION_VERSION = "state-summary-v1"
 FACT_INDEX_NAME = "fact-index-by-subject-predicate"

@@ -1,11 +1,44 @@
 {
   "entity_types": [
-    {"entity_type": "host", "description": "A machine or compute node."},
-    {"entity_type": "service", "description": "A service or workload hosted by another entity."},
-    {"entity_type": "group", "description": "A collection of entities."},
-    {"entity_type": "endpoint", "description": "A network endpoint identified by host and port."},
-    {"entity_type": "monitoring_system", "description": "A system that monitors other entities."},
-    {"entity_type": "capability", "description": "A capability provided by an entity."},
-    {"entity_type": "unknown", "description": "An entity without a supported classification."}
+    {
+      "entity_type": "host",
+      "description": "A machine or compute node."
+    },
+    {
+      "entity_type": "service",
+      "description": "A service or workload hosted by another entity."
+    },
+    {
+      "entity_type": "group",
+      "description": "A collection of entities."
+    },
+    {
+      "entity_type": "endpoint",
+      "description": "A network endpoint identified by host and port."
+    },
+    {
+      "entity_type": "monitoring_system",
+      "description": "A system that monitors other entities."
+    },
+    {
+      "entity_type": "capability",
+      "description": "A capability provided by an entity."
+    },
+    {
+      "entity_type": "document",
+      "description": "A source or knowledge document."
+    },
+    {
+      "entity_type": "concept",
+      "description": "A named concept defined by a document."
+    },
+    {
+      "entity_type": "domain",
+      "description": "A knowledge domain that groups documents."
+    },
+    {
+      "entity_type": "unknown",
+      "description": "An entity without a supported classification."
+    }
   ]
 }
