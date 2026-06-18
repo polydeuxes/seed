@@ -3607,38 +3607,6 @@ def format_state_summary(summary: dict[str, Any]) -> str:
     lines.extend(
         [f"  {source}: {count}" for source, count in sources.items()] or ["  (none)"]
     )
-    if "top_entities_by_kind" in summary:
-        lines.append("top entities by kind:")
-        for kind in ("hosts", "services", "endpoints", "storage"):
-            lines.append(f"  {kind}:")
-            entities = summary["top_entities_by_kind"].get(kind, [])
-            if kind == "endpoints" and isinstance(entities, dict):
-                lines.extend(
-                    [
-                        f"    total: {entities.get('total', 0)}",
-                        f"    up: {entities.get('up', 0)}",
-                        f"    down: {entities.get('down', 0)}",
-                        f"    unknown: {entities.get('unknown', 0)}",
-                    ]
-                )
-                continue
-            for entity in entities:
-                lines.append(
-                    f"    {entity['name']} "
-                    f"(aliases: {entity['alias_count']} total; "
-                    f"facts: {entity['fact_count']})"
-                )
-            if not entities:
-                lines.append("    (none)")
-    else:
-        lines.append("top entities:")
-        for entity in summary["top_entities"]:
-            lines.append(
-                f"  {entity['name']} "
-                f"(aliases: {entity['alias_count']} total; facts: {entity['fact_count']})"
-            )
-        if not summary["top_entities"]:
-            lines.append("  (none)")
     if "availability_by_scope" in summary:
         lines.append("availability by scope:")
         for scope in (
