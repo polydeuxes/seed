@@ -3607,31 +3607,6 @@ def format_state_summary(summary: dict[str, Any]) -> str:
     lines.extend(
         [f"  {source}: {count}" for source, count in sources.items()] or ["  (none)"]
     )
-    if "availability_by_scope" in summary:
-        lines.append("availability by scope:")
-        for scope in (
-            "endpoint_scrape_availability",
-            "host_availability",
-            "service_availability",
-        ):
-            counts = summary["availability_by_scope"].get(scope, {})
-            lines.extend(
-                [
-                    f"  {scope}:",
-                    f"    up: {counts.get('up', 0)}",
-                    f"    down: {counts.get('down', 0)}",
-                    f"    unknown: {counts.get('unknown', 0)}",
-                ]
-            )
-    else:
-        lines.extend(
-            [
-                "availability:",
-                f"  up: {summary['availability']['up']}",
-                f"  down: {summary['availability']['down']}",
-                f"  unknown: {summary['availability']['unknown']}",
-            ]
-        )
     # Default State Summary is intentionally not a storage/filesystem detail
     # surface. Storage projection data may exist on explicit storage-focused
     # surfaces, but bounded storage detail is still detail and must not leak here.

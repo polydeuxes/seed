@@ -38,92 +38,6 @@ _FILESYSTEM_CATEGORY_ORDER = ("root", "boot", "cluster mounts", "other")
 _CLUSTER_MOUNTPOINT_PATTERN = re.compile(r"^/mnt/(?:node|rpi)[^/]*(?:/|$)")
 _FILESYSTEM_DETAIL_LIMIT = 10
 
-_ENDPOINT_SUBJECT = re.compile(r"^(?:\[[^]]+\]|[^:]+):[0-9]{1,5}$")
-_AVAILABILITY_STATUSES = ("up", "down", "unknown")
-_HOST_SCOPED_SUMMARY_PREDICATES = {
-    "alias",
-    "ansible_host",
-    "architecture",
-    "availability_status",
-    "hostname",
-    "ip_address",
-    "local_observation_status",
-    "os",
-    "runtime",
-}
-
-
-def _looks_like_endpoint_subject(subject: str) -> bool:
-    """Return whether a subject is safely shaped as a host:port endpoint."""
-
-    if not _ENDPOINT_SUBJECT.fullmatch(subject):
-        return False
-    try:
-        port = int(subject.rsplit(":", 1)[1])
-    except ValueError:
-        return False
-    return 0 < port <= 65535
-
-
-def _empty_availability_counts() -> dict[str, int]:
-    return {status: 0 for status in _AVAILABILITY_STATUSES}
-
-
-def _canonical_entity_types(state: State, canonical: str, aliases: set[str]) -> set[str]:
-    """Return current entity types for a canonical entity and explicit aliases."""
-
-    types: set[str] = set()
-    for entity_id in {canonical, *aliases}:
-        types.update(
-            entity_type
-            for entity_type in state.get_current_entity_types(entity_id)
-            if entity_type != "unknown"
-        )
-        entity = state.entities.get(entity_id)
-        if entity is not None and entity.kind != "unknown":
-            types.add(entity.kind)
-    return types
-
-
-def _has_host_scoped_summary_evidence(
-    state: State, canonical: str, aliases: set[str]
-) -> bool:
-    """Return whether non-endpoint facts safely support host summary grouping."""
-
-    names = {canonical, *aliases}
-    for fact in state.facts.values():
-        fact_canonical = state.alias_resolver.canonical(fact.subject_id)
-        if fact.subject_id not in names and fact_canonical != canonical:
-            continue
-        if _looks_like_endpoint_subject(fact.subject_id):
-            continue
-        if fact.predicate in _HOST_SCOPED_SUMMARY_PREDICATES:
-            return True
-    return False
-
-
-def _classify_state_summary_entity(
-    state: State, canonical: str, aliases: set[str]
-) -> str | None:
-    """Classify State Summary rows without crossing endpoint identity boundaries."""
-
-    if _looks_like_endpoint_subject(canonical) or any(
-        _looks_like_endpoint_subject(alias) for alias in aliases
-    ):
-        return "endpoints"
-
-    entity_types = _canonical_entity_types(state, canonical, aliases)
-    if "service" in entity_types:
-        return "services"
-    if "storage" in entity_types:
-        return "storage"
-    if "host" in entity_types or _has_host_scoped_summary_evidence(
-        state, canonical, aliases
-    ):
-        return "hosts"
-    return None
-
-
 def _filesystem_category(filesystem: dict[str, Any]) -> str:
     """Classify filesystem rows for bounded summary rendering only.
 
@@ -583,53 +497,6 @@ def state_summary(
         canonical = state.alias_resolver.canonical(entity.name)
         entity_aliases[canonical].update({entity.name, *entity.aliases})
 
-    entity_kinds = {
-        canonical: _classify_state_summary_entity(
-            state, canonical, entity_aliases[canonical]
-        )
-        for canonical in entity_aliases
-    }
-    availability_by_scope = {
-        "endpoint_scrape_availability": _empty_availability_counts(),
-        "host_availability": _empty_availability_counts(),
-        "service_availability": _empty_availability_counts(),
-    }
-    scope_by_kind = {
-        "endpoints": "endpoint_scrape_availability",
-        "hosts": "host_availability",
-        "services": "service_availability",
-    }
-    for canonical in sorted(entity_aliases):
-        scope = scope_by_kind.get(entity_kinds[canonical])
-        if scope is None:
-            continue
-        availability_fact = state.get_best_fact(
-            canonical, "availability_status", resolve_aliases=False
-        )
-        status = (
-            availability_fact.value
-            if availability_fact is not None
-            and availability_fact.value in availability_by_scope[scope]
-            else "unknown"
-        )
-        availability_by_scope[scope][status] += 1
-
-    # Legacy compatibility field: retained with the historical all-entity
-    # semantics for older callers. New code should read availability_by_scope so
-    # endpoint scrape availability is not presented as host or service
-    # availability.
-    availability = Counter(_empty_availability_counts())
-    for canonical in sorted(entity_aliases):
-        availability_fact = state.get_best_fact(
-            canonical, "availability_status", resolve_aliases=False
-        )
-        status = (
-            availability_fact.value
-            if availability_fact is not None and availability_fact.value in availability
-            else "unknown"
-        )
-        availability[status] += 1
-
     summary = {
         "entity_count": len(entity_aliases),
         "fact_count": len(state.facts),
@@ -645,8 +512,6 @@ def state_summary(
                 Counter(obs.source_type for obs in state.observations.values()).items()
             )
         ),
-        "availability_by_scope": availability_by_scope,
-        "availability": dict(availability),
     }
     if include_relationship_count:
         summary["relationship_count"] = len(state.relationships)
