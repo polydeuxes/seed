@@ -506,7 +506,7 @@ Tasks:
 Build one coherent demo:
 
 ```text
-User: "can you install ssh on node-1?"
+User: "can you install ssh on example_host?"
 Seed:
   - recognizes host
   - sees an observation operation exists but an install capability/provider handoff is missing

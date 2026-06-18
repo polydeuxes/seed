@@ -127,7 +127,7 @@ related material from existing read models.
 Candidate user-facing shape, with names still to be evaluated:
 
 ```bash
-seed --inquiry-note "node115 keeps showing up first and that feels wrong"
+seed --inquiry-note "example_host keeps showing up first and that feels wrong"
 seed --orient
 ```
 
@@ -340,7 +340,7 @@ Minimum safe persistence shape:
 ```json
 {
   "note_id": "inq_...",
-  "raw_note": "node115 keeps showing up first and that feels wrong",
+  "raw_note": "example_host keeps showing up first and that feels wrong",
   "recorded_at": "2026-06-16T00:00:00Z",
   "workspace_id": "local",
   "session_id": "local",
@@ -365,9 +365,9 @@ Minimum safe persistence shape:
      provider context.
 
 The first probe should use deterministic lexical matching and explicit support,
-not LLM interpretation. For example, if the raw note contains `node115`, the
+not LLM interpretation. For example, if the raw note contains `example_host`, the
 orientation view may show State Summary rows, current facts, fact support, and
-availability/source rows for `node115`. If the note says "showing up first," the
+availability/source rows for `example_host`. If the note says "showing up first," the
 view may mention State Summary top-entity ranking only if State Summary is one of
 the rendered or inspected surfaces and the support explains that the relation is
 based on wording overlap plus top-entity ordering, not on known intent.
@@ -441,16 +441,16 @@ The following is illustrative and non-binding. It is not a required final UI.
 
 ```text
 Inquiry note:
-  "node115 keeps showing up first and that feels wrong"
+  "example_host keeps showing up first and that feels wrong"
 
 Potentially related:
   - State Summary top entity ranking
   - Durable fact prominence
-  - Fact support for node115
+  - Fact support for example_host
   - State Summary authority boundary
 
 Support / why related:
-  - The note mentions "node115" and "showing up first".
+  - The note mentions "example_host" and "showing up first".
   - State Summary has a top-entity surface where ordering can be visible.
   - Existing State Summary authority work says State Summary is a knowledge
     inventory surface, not impact or importance.
@@ -459,7 +459,7 @@ Candidate active concern:
   State Summary prominence may be read as significance.
 
 Uncertainty:
-  Seed cannot determine whether node115 is actually important to the operator.
+  Seed cannot determine whether example_host is actually important to the operator.
   Seed also cannot determine whether the concern is ordering, fact support,
   aliasing, endpoint grouping, documentation wording, or something else.
 

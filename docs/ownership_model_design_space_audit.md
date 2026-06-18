@@ -58,7 +58,7 @@ observation/self-model boundary documents.
 The required documents are mutually consistent with the implementation evidence:
 
 1. **Endpoint visibility is not host ownership.** Prometheus `instance` subjects
-   such as `192.168.254.115:9100` remain endpoint-shaped measurement subjects.
+   such as `192.0.2.115:9100` remain endpoint-shaped measurement subjects.
 2. **Measurement subject is not entity identity.** A fact subject can be a scrape
    endpoint without collapsing into the stable host identity.
 3. **Alias is not ownership transfer.** Alias-like evidence is constrained, and
@@ -280,7 +280,7 @@ and what it might describe.
 **Strengths**
 
 - More neutral than ownership.
-- Better fit for Prometheus and filesystem examples: `192.168.254.115:9100`
+- Better fit for Prometheus and filesystem examples: `192.0.2.115:9100`
   observed a filesystem metric; a future target concept could say the target is
   a host, mount, filesystem series, service, endpoint, repository artifact, or
   claim, depending on evidence.
@@ -391,7 +391,7 @@ about visibility/provenance and avoid ownership claims.
 Example:
 
 ```text
-192.168.254.115:9100 filesystem_free_bytes
+192.0.2.115:9100 filesystem_free_bytes
 ```
 
 Current repository authority says this is an endpoint-subject measurement with

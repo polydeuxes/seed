@@ -35,9 +35,9 @@ Expectation
 For the operational example:
 
 ```text
-node116 historically sees mount M
-node116 no longer sees mount M
-historical node116-sees-M appears useful as a comparison reference
+example_host_b historically sees mount M
+example_host_b no longer sees mount M
+historical example_host_b-sees-M appears useful as a comparison reference
 someone or something accepts that reference for investigation
 ```
 
@@ -274,7 +274,7 @@ while the downstream artifact still must not claim unrelated authority.
 ```
 
 For baselines, an accepted comparison reference could legitimate a downstream
-view, investigation, or handoff context saying `compare current node116 mount
+view, investigation, or handoff context saying `compare current example_host_b mount
 visibility to this selected historical reference`. It would not legitimate the
 view or handoff to claim that the mount is required.
 
@@ -386,7 +386,7 @@ not global baseline truth.
 ### Goal authority
 
 Goals are operator-owned desired outcomes represented for relevance,
-explanation, and decision context. A goal can make node116 losing mount M
+explanation, and decision context. A goal can make example_host_b losing mount M
 relevant, for example under `investigate ingestion reliability` or `preserve
 storage visibility evidence`.
 
@@ -395,7 +395,7 @@ question that needs a comparison reference:
 
 ```text
 goal: investigate ingestion regression
-candidate: historical node116-sees-M
+candidate: historical example_host_b-sees-M
 selection: use it as comparison reference for this investigation
 ```
 
@@ -417,7 +417,7 @@ all long-lived historical visibility automatically becomes accepted baseline
 ```
 
 Such a rule would also risk collapsing continuity into expectation. Therefore
-policy authority is possible but not currently sufficient for the node116
+policy authority is possible but not currently sufficient for the example_host_b
 baseline acceptance unless future or external policy explicitly says to select
 that comparison reference.
 
@@ -426,12 +426,12 @@ that comparison reference.
 Requirement-like concepts are real inside validation boundaries, such as graph
 or view rules that expect certain subject/object types. They are scoped shoulds.
 They do not currently express operational topology requirements such as
-`node116 must see mount M`.
+`example_host_b must see mount M`.
 
 A requirement could accept or establish a baseline if it explicitly says a
 reference condition is the required comparison reference for a validation or
 investigation. Without that, current requirement authority does not accept the
-node116 baseline.
+example_host_b baseline.
 
 ### Operator authority
 
@@ -443,14 +443,14 @@ path, and can select among alternatives.
 Operator acceptance should remain scoped:
 
 ```text
-operator accepts historical node116-sees-M
+operator accepts historical example_host_b-sees-M
 as comparison reference
-for investigating why node116 no longer sees mount M
+for investigating why example_host_b no longer sees mount M
 ```
 
 That creates comparison authority for the investigation. It does not create
-truth that M exists, ownership of M, a requirement that node116 must see M, or a
-policy violation when node116 does not see M.
+truth that M exists, ownership of M, a requirement that example_host_b must see M, or a
+policy violation when example_host_b does not see M.
 
 ### Decision authority
 
@@ -528,8 +528,8 @@ Baseline acceptance may be part of current-work-position when the selected
 orientation is:
 
 ```text
-continue investigating node116 by comparing current mount visibility to the
-historical node116-sees-M reference
+continue investigating example_host_b by comparing current mount visibility to the
+historical example_host_b-sees-M reference
 ```
 
 This is a scoped continuation authority. It does not become global baseline
@@ -557,14 +557,14 @@ reference for use, not approving a reality state.
 ```text
 operator selects:
 
-use historical node116-sees-M
+use historical example_host_b-sees-M
 as the comparison reference
 ```
 
 #### Support
 
 Strong. Operators own intent, goals are operator-owned, and decisions require
-authority. In the node116 case, the operator can legitimately choose a
+authority. In the example_host_b case, the operator can legitimately choose a
 historical visibility pattern as the reference for investigation.
 
 #### Boundary-preserving interpretation
@@ -646,7 +646,7 @@ policy: for storage-regression investigations, compare current visibility to
 requirement: validation V uses reference R as its comparison baseline
 
 goal-linked decision: to investigate ingestion reliability, accept historical
-                      node116-sees-M as the comparison reference
+                      example_host_b-sees-M as the comparison reference
 ```
 
 #### Risks
@@ -658,7 +658,7 @@ baseline and possibly into expectation.
 #### Finding
 
 Model C is valid only when explicit. Current repository authority does not
-support implicit goal/policy/requirement acceptance of node116-sees-M.
+support implicit goal/policy/requirement acceptance of example_host_b-sees-M.
 
 ### Model D: View-Scoped Acceptance
 
@@ -719,7 +719,7 @@ cannot preserve that selection without overloading candidate.
 #### Finding
 
 Model E is safe for current implementation and may be sufficient for simple
-node116 inspection. It is less sufficient when the selected comparison reference
+example_host_b inspection. It is less sufficient when the selected comparison reference
 must survive across handoff, continuation, or audit.
 
 ## Required questions
@@ -792,8 +792,8 @@ operational baseline: compare current service posture to operator-selected
 storage baseline: compare mount visibility to a storage-specific investigation
                   reference
 
-investigation baseline: compare node116 current visibility to historical
-                        node116-sees-M for this investigation only
+investigation baseline: compare example_host_b current visibility to historical
+                        example_host_b-sees-M for this investigation only
 ```
 
 They may conflict or overlap, so each needs scope and provenance. Coexistence is
@@ -814,27 +814,27 @@ Only comparison authority.
 
 Accepted baseline does not create truth that:
 
-- node116 currently sees M;
+- example_host_b currently sees M;
 - M still exists;
-- node116 owns M;
-- node116 must see M;
+- example_host_b owns M;
+- example_host_b must see M;
 - absence of M is a violation;
 - remediation is authorized.
 
 It authorizes a comparison such as:
 
 ```text
-for this investigation, compare current node116 mount visibility against the
-historical node116-sees-M reference
+for this investigation, compare current example_host_b mount visibility against the
+historical example_host_b-sees-M reference
 ```
 
-### 7. Would the node116 example benefit from accepted baseline authority? Or is candidate baseline sufficient?
+### 7. Would the example_host_b example benefit from accepted baseline authority? Or is candidate baseline sufficient?
 
 Candidate baseline is sufficient for first-pass visibility investigation:
 
 ```text
-historical node116-sees-M is a plausible reference candidate
-current node116-does-not-see-M differs from that candidate
+historical example_host_b-sees-M is a plausible reference candidate
+current example_host_b-does-not-see-M differs from that candidate
 ```
 
 Accepted baseline authority becomes useful when the selected reference must
@@ -847,10 +847,10 @@ survive across:
 - audit of why a deviation was discussed;
 - separation of selected comparison reference from rejected alternatives.
 
-For node116, acceptance would help if the investigation needs to preserve:
+For example_host_b, acceptance would help if the investigation needs to preserve:
 
 ```text
-we selected historical node116-sees-M, not some cluster-wide or storage-wide
+we selected historical example_host_b-sees-M, not some cluster-wide or storage-wide
 reference, as the comparison point for this question
 ```
 
@@ -869,7 +869,7 @@ Operator/authorized decision acceptance
 
 In candidate-model terms:
 
-1. Model A is the most direct authority source for the node116 example.
+1. Model A is the most direct authority source for the example_host_b example.
 2. Model B is the best preservation/recording mechanism when the acceptance must
    be auditable or durable.
 3. Model D is the best scoping discipline for views and questions.
@@ -877,32 +877,32 @@ In candidate-model terms:
 5. Model E remains safe for current implementation when no durable selected
    reference is needed.
 
-## Node116 example analysis
+## Example host example analysis
 
 ### Evidence chain
 
 ```text
 Observation:
-    node116 reported mount M at earlier times
+    example_host_b reported mount M at earlier times
 
 Visibility:
-    M was visible from node116 in those observations
+    M was visible from example_host_b in those observations
 
 Continuity:
-    node116-sees-M persisted or recurred across observations
+    example_host_b-sees-M persisted or recurred across observations
 
 Candidate baseline:
-    historical node116-sees-M is a plausible comparison reference
+    historical example_host_b-sees-M is a plausible comparison reference
 
 Current observation/visibility:
-    node116 no longer sees M
+    example_host_b no longer sees M
 ```
 
 None of those steps says:
 
 ```text
-node116 owns M
-node116 should see M
+example_host_b owns M
+example_host_b should see M
 M is required for ingestion
 missing M is a policy violation
 remediation is authorized
@@ -913,8 +913,8 @@ remediation is authorized
 #### Operator-scoped acceptance
 
 ```text
-operator: For this investigation, compare node116's current mount visibility to
-          the historical node116-sees-M reference.
+operator: For this investigation, compare example_host_b's current mount visibility to
+          the historical example_host_b-sees-M reference.
 ```
 
 Legitimate because the operator owns the question and selects the reference for
@@ -932,7 +932,7 @@ Legitimate if the decision is authorized and scoped. It records the selection.
 
 ```text
 goal: investigate ingestion reliability
-decision: accept historical node116-sees-M as comparison reference for that goal
+decision: accept historical example_host_b-sees-M as comparison reference for that goal
 ```
 
 Legitimate because the goal supplies relevance and the decision supplies
@@ -946,7 +946,7 @@ this class of investigation
 ```
 
 Legitimate if such policy or requirement exists. No current inspected evidence
-provides this general node116 rule.
+provides this general example_host_b rule.
 
 #### View-scoped acceptance
 
@@ -1048,7 +1048,7 @@ continuity collapses into acceptance
 Unsafe interpretation:
 
 ```text
-accepted baseline means node116 should see M
+accepted baseline means example_host_b should see M
 ```
 
 Boundary violation:
@@ -1114,7 +1114,7 @@ approval collapses into truth authority
 7. Multiple accepted baselines can coexist if their scopes are preserved.
 8. Baseline acceptance creates comparison authority, not truth authority,
    expectation authority, approval authority, or execution authority.
-9. The node116 example benefits from accepted baseline authority only when the
+9. The example_host_b example benefits from accepted baseline authority only when the
    selected comparison reference must be durable, auditable, handed off, reused,
    or distinguished from alternatives. Candidate baseline is enough for a local
    first-pass comparison.
@@ -1153,9 +1153,9 @@ This audit does not conclude that:
 - baseline acceptance workflows should be implemented;
 - expectations should be implemented;
 - HomeOps or SeedOps should be implemented;
-- node116 should see mount M;
+- example_host_b should see mount M;
 - mount M exists now;
-- mount M is owned by node116;
+- mount M is owned by example_host_b;
 - missing mount M is an alert;
 - historical continuity automatically creates baseline acceptance;
 - any view can create global baseline authority;

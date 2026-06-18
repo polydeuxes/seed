@@ -72,8 +72,8 @@ It also classifies concepts as:
 The required operational example used throughout is:
 
 ```text
-node116 historically observes mount M
-node116 stops observing mount M
+example_host_b historically observes mount M
+example_host_b stops observing mount M
 ingestion becomes uneven
 operator investigates
 ```
@@ -168,16 +168,16 @@ Observation answers:
 What was observed?
 ```
 
-Observation is pure evidence. In the node116 example, observation includes
-records that node116 or a node116-scoped endpoint reported filesystem evidence
+Observation is pure evidence. In the example_host_b example, observation includes
+records that example_host_b or a example_host_b-scoped endpoint reported filesystem evidence
 for mount M at particular times, and later records that do not include that
 visible mount.
 
 Observation does not say:
 
 ```text
-node116 owns M
-node116 should see M
+example_host_b owns M
+example_host_b should see M
 M is operationally required
 missing M is an alert
 ```
@@ -195,11 +195,11 @@ It can become lightly interpretive when read projections group visible endpoints
 mount paths, or dimensions to answer a bounded question, but the authority still
 comes from observation and projection evidence.
 
-For node116:
+For example_host_b:
 
 ```text
-historical visibility: node116 saw mount M
-current visibility: node116 no longer sees mount M
+historical visibility: example_host_b saw mount M
+current visibility: example_host_b no longer sees mount M
 ```
 
 Visibility does not require ownership. The same mount-like evidence may be
@@ -220,16 +220,16 @@ Continuity is interpretation over evidence. It recognizes that a pattern has
 survived across time or repeated observations. It is stronger than a single
 observation and weaker than a baseline or expectation.
 
-For node116:
+For example_host_b:
 
 ```text
-node116 historically observed mount M repeatedly or over an extended interval
+example_host_b historically observed mount M repeatedly or over an extended interval
 ```
 
 Continuity does not say:
 
 ```text
-therefore node116 should keep seeing M
+therefore example_host_b should keep seeing M
 therefore loss of M is a violation
 therefore M is the accepted comparison reference
 ```
@@ -247,10 +247,10 @@ A candidate baseline is interpretation over evidence. It takes continuity or
 historical evidence and frames it as potentially useful for comparison in a
 bounded question.
 
-For node116:
+For example_host_b:
 
 ```text
-historical node116-sees-M appears useful as the reference condition
+historical example_host_b-sees-M appears useful as the reference condition
 when investigating the current disappearance of M
 ```
 
@@ -272,17 +272,17 @@ Accepted baseline is authority-bearing, but not necessarily normative. It means
 an authority has selected a comparison reference for a named scope, purpose,
 view, assessment, or investigation.
 
-For node116:
+For example_host_b:
 
 ```text
-for this investigation, compare current node116 mount visibility
-against the historical node116-sees-M reference
+for this investigation, compare current example_host_b mount visibility
+against the historical example_host_b-sees-M reference
 ```
 
 That statement selects a comparison reference. It still does not necessarily say:
 
 ```text
-node116 should see M
+example_host_b should see M
 ```
 
 The accepted baseline boundary is important because comparison authority and
@@ -306,12 +306,12 @@ recommendations, and capability verification boundaries, but it does not contain
 a general operational topology expectation that can currently say:
 
 ```text
-node116 should see mount M
+example_host_b should see mount M
 ```
 
-For node116, expectation would require a named authority path, such as an
+For example_host_b, expectation would require a named authority path, such as an
 operator-owned declared expectation, requirement, policy, accepted design
-invariant, or other explicit authority record that connects node116 and M.
+invariant, or other explicit authority record that connects example_host_b and M.
 
 ### Concern
 
@@ -329,10 +329,10 @@ Concern is operator-significant interpretation. It may arise from evidence,
 continuity, baseline comparison, expectation violation, ambiguity, degraded
 knowledge quality, or operational context such as uneven ingestion.
 
-For node116:
+For example_host_b:
 
 ```text
-node116 stopped seeing M
+example_host_b stopped seeing M
 historical continuity made that disappearance notable
 ingestion became uneven
 operator investigation made the change significant
@@ -382,13 +382,13 @@ It does not by itself create a should-claim.
 Expectation requires should-bearing authority. Crossing this boundary changes:
 
 ```text
-compare against historical node116-sees-M
+compare against historical example_host_b-sees-M
 ```
 
 into something like:
 
 ```text
-node116 should see M while condition C holds
+example_host_b should see M while condition C holds
 ```
 
 Repository evidence requires this authority to be explicit and scoped. History,
@@ -413,17 +413,17 @@ into:
 this difference matters to an operator or investigation
 ```
 
-## Node116 operational example
+## Example host operational example
 
 ### Observation
 
-Historical observations report that node116 observed mount M. Later observations
-or current projected evidence no longer show node116 observing mount M.
+Historical observations report that example_host_b observed mount M. Later observations
+or current projected evidence no longer show example_host_b observing mount M.
 
 Evidence-level statement:
 
 ```text
-node116 observed M before; current evidence does not show node116 observing M
+example_host_b observed M before; current evidence does not show example_host_b observing M
 ```
 
 ### Visibility
@@ -431,8 +431,8 @@ node116 observed M before; current evidence does not show node116 observing M
 Visibility describes current seen/not-seen status.
 
 ```text
-M was visible from node116 historically
-M is not currently visible from node116
+M was visible from example_host_b historically
+M is not currently visible from example_host_b
 ```
 
 This remains compatible with other possibilities:
@@ -451,7 +451,7 @@ Visibility alone does not choose among those explanations.
 Continuity interprets historical evidence:
 
 ```text
-node116-sees-M persisted or recurred enough to be recognized as a historical
+example_host_b-sees-M persisted or recurred enough to be recognized as a historical
 pattern
 ```
 
@@ -464,8 +464,8 @@ Candidate baseline frames the historical pattern as a possible comparison
 reference:
 
 ```text
-historical node116-sees-M may be a useful baseline candidate for investigating
-current node116-not-seeing-M
+historical example_host_b-sees-M may be a useful baseline candidate for investigating
+current example_host_b-not-seeing-M
 ```
 
 This is appropriate when the operator investigates uneven ingestion because the
@@ -476,19 +476,19 @@ historical visibility pattern may help explain what changed.
 Accepted baseline would require selection:
 
 ```text
-for this ingestion unevenness investigation, use historical node116-sees-M as the
+for this ingestion unevenness investigation, use historical example_host_b-sees-M as the
 comparison reference
 ```
 
 That acceptance supports structured comparison, but it still does not assert
-that node116 is required to see M.
+that example_host_b is required to see M.
 
 ### Expectation
 
 Expectation would require an additional authority path:
 
 ```text
-node116 should see M
+example_host_b should see M
 ```
 
 Such a statement could be valid only if backed by a declared expectation,
@@ -585,17 +585,17 @@ change, continuity break, ambiguity, stale support, degraded evidence quality,
 operator investigation pressure, or ingestion unevenness without any claim that a
 condition should have held.
 
-For node116:
+For example_host_b:
 
 ```text
-node116 stopped seeing M and ingestion became uneven
+example_host_b stopped seeing M and ingestion became uneven
 ```
 
 is enough to create an operator-significant concern for investigation. It is not
 enough to assert:
 
 ```text
-node116 violated an expectation by not seeing M
+example_host_b violated an expectation by not seeing M
 ```
 
 ### Required question 6: Can expectation exist without an accepted baseline?
@@ -605,10 +605,10 @@ Yes, if another should-bearing authority directly declares the expectation.
 Examples of possible authority shapes:
 
 ```text
-operator declares node116 should see M
-policy requires node116 to see M under condition C
-requirement states service S depends on node116 seeing M
-accepted design invariant says M must be mounted on node116
+operator declares example_host_b should see M
+policy requires example_host_b to see M under condition C
+requirement states service S depends on example_host_b seeing M
+accepted design invariant says M must be mounted on example_host_b
 ```
 
 In those cases, an expectation can exist without first accepting a historical
@@ -622,14 +622,14 @@ Yes.
 An accepted baseline can select a comparison reference for investigation,
 assessment, or view construction without saying the reference should continue.
 
-For node116:
+For example_host_b:
 
 ```text
-compare current visibility against historical node116-sees-M
+compare current visibility against historical example_host_b-sees-M
 ```
 
 can be accepted for an investigation even if the operator has not asserted that
-node116 must or should see M.
+example_host_b must or should see M.
 
 ### Required question 8: Can candidate baselines emerge from history?
 
@@ -638,8 +638,8 @@ Yes, as candidates.
 Historical observation and continuity can support candidate baselines:
 
 ```text
-node116 historically saw M
-therefore node116-sees-M may be a useful comparison reference
+example_host_b historically saw M
+therefore example_host_b-sees-M may be a useful comparison reference
 ```
 
 The candidate must remain caveated. History can make a reference plausible; it
@@ -690,7 +690,7 @@ Concern can emerge at multiple points:
 | Expectation violation | Yes | Current state conflicts with a should-bearing expectation. |
 | Other | Yes | Ambiguity, stale evidence, degraded support, uneven ingestion, or operator investigation context may create concern. |
 
-The strongest concern in the node116 example is not a single concept. It is a
+The strongest concern in the example_host_b example is not a single concept. It is a
 compound operator-significant situation:
 
 ```text
@@ -715,7 +715,7 @@ visibility is absent.
 
 ### Visibility must not collapse into ownership
 
-The node116 example can be investigated without asserting who owns mount M or
+The example_host_b example can be investigated without asserting who owns mount M or
 which host controls the underlying storage.
 
 ### Continuity must not collapse into expectation
@@ -787,11 +787,11 @@ concern
     boundaries have been crossed.
 ```
 
-For the node116 example, the repository can safely say that historical
-node116-sees-M evidence and current node116-not-seeing-M evidence create a
+For the example_host_b example, the repository can safely say that historical
+example_host_b-sees-M evidence and current example_host_b-not-seeing-M evidence create a
 visibility change and possible continuity break. That history can support a
 candidate baseline. An accepted baseline would require scoped authority
-selection. A `node116 should see M` expectation would require additional
+selection. A `example_host_b should see M` expectation would require additional
 should-bearing authority. Operator-significant concern can exist before that
 expectation if the visibility loss, continuity break, ingestion unevenness, or
 ambiguity matters to the operator's investigation.

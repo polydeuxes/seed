@@ -99,7 +99,7 @@ Policy returns one of:
   "action": "ssh.install",
   "risk": "L3",
   "reason": "Installing packages changes host state and requires approval.",
-  "scope": "host:node-1",
+  "scope": "host:example_host",
   "required_approval": {
     "role": "operator",
     "expires_in_minutes": 30
@@ -172,7 +172,7 @@ Example:
 {
   "action": "ssh.install",
   "capability": "ssh_access",
-  "scope": "host:node-1",
+  "scope": "host:example_host",
   "approved_by": "operator@example.com",
   "expires_at": "2026-06-02T15:00:00Z",
   "constraints": {
@@ -327,5 +327,5 @@ Blocked.
 Good:
 
 ```text
-Installing SSH changes host node-1, so Seed can prepare a non-executable HandoffPlan for AWX with the required policy summary and secret boundary. AWX/Vault/ssh-agent handle credentials, prompts, retries, and the job lifecycle.
+Installing SSH changes host example_host, so Seed can prepare a non-executable HandoffPlan for AWX with the required policy summary and secret boundary. AWX/Vault/ssh-agent handle credentials, prompts, retries, and the job lifecycle.
 ```

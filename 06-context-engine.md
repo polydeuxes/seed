@@ -28,24 +28,24 @@ It answers:
   },
   "trigger": {
     "event_id": "evt_...",
-    "text": "can you install ssh on node-1?"
+    "text": "can you install ssh on example_host?"
   },
   "active_goal": {
     "id": "goal_...",
-    "summary": "Make node-1 accessible over SSH",
+    "summary": "Make example_host accessible over SSH",
     "status": "active"
   },
   "entities": [
     {
       "id": "ent_node_1",
       "kind": "host",
-      "name": "node-1",
+      "name": "example_host",
       "confidence": 0.98
     }
   ],
   "facts": [
     {
-      "subject": "node-1",
+      "subject": "example_host",
       "predicate": "ssh.service.running",
       "value": false,
       "freshness": "stale",
@@ -110,7 +110,7 @@ Operational knowledge has the highest priority for infrastructure decisions beca
 
 Examples:
 
-- node210 disk usage
+- example_host_e disk usage
 - container health
 - service status
 
@@ -164,7 +164,7 @@ Claims made by users.
 Examples:
 
 - "My server is down."
-- "Node210 is the registry."
+- "Example host is the registry."
 
 User statements are evidence until supported or disputed by additional observed Facts; Seed preserves provenance rather than stamping them `verified`.
 
@@ -268,7 +268,7 @@ This can be deterministic, model-assisted, or both.
 Examples:
 
 ```text
-Input: "install ssh on node-1"
+Input: "install ssh on example_host"
 Known capability: ssh_access
 Available operations/tools: verify_ssh_access
 Missing tool: install_ssh_server

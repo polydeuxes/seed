@@ -13,7 +13,7 @@ from seed_runtime.state import StateProjector
 
 
 OBSERVED_AT = datetime(2026, 1, 1, tzinfo=timezone.utc)
-ENDPOINT = "192.168.254.115:9100"
+ENDPOINT = "192.0.2.115:9100"
 
 
 def _prometheus(predicate: str, value: object, *, metadata=None) -> Observation:
@@ -80,7 +80,7 @@ def test_unknown_predicate_passes_through_unchanged():
 
 def test_canonical_availability_is_measurement_and_endpoint_scoped():
     original = _prometheus(
-        "up", 1, metadata={"hostname": "node115", "instance": ENDPOINT}
+        "up", 1, metadata={"hostname": "example_host", "instance": ENDPOINT}
     )
     ledger = EventLedger()
 
@@ -89,7 +89,7 @@ def test_canonical_availability_is_measurement_and_endpoint_scoped():
     )
     state = StateProjector(ledger).project("ws_predicates")
 
-    assert state.get_best_fact("node115", "availability_status") is None
+    assert state.get_best_fact("example_host", "availability_status") is None
     assert state.get_best_fact(ENDPOINT, "availability_status").value == "up"
     support = state.get_fact_support(ENDPOINT, "availability_status")
     assert support.predicate_semantics == "measurement"

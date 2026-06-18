@@ -15,7 +15,7 @@ handling, storage topology projection, availability projection, current-facts
 lookup, inference rules, predicate catalogs, or tests.
 
 Short answer: repository authority does **not** currently contain a general
-operational expectation concept that can say `node116 should see mount M`.
+operational expectation concept that can say `example_host_b should see mount M`.
 It contains current observations, current measurement support, optional expiry
 for facts, stale-fact refresh recommendations, goals, capabilities,
 verification status, read projections, and ambiguity surfaces. Those are
@@ -151,7 +151,7 @@ expectation
 Example:
 
 ```text
-node116 has seen mount M
+example_host_b has seen mount M
 for 180 days
 
 therefore expectation emerges
@@ -195,7 +195,7 @@ authority does not currently promote it to expectation.
 ```text
 operator declares:
 
-node116
+example_host_b
 should see
 mount M
 ```
@@ -277,9 +277,9 @@ Repository remains visibility-only.
   deviation from what should be visible.
 - Useful concern surfaces become limited to evidence quality, staleness,
   ambiguity, conflicts, and current observed health/availability. They cannot
-  answer why `node116 no longer sees mount M` matters unless that concern is
+  answer why `example_host_b no longer sees mount M` matters unless that concern is
   encoded elsewhere.
-- The node116 scenario's operator-significant part is hard to explain without
+- The example_host_b scenario's operator-significant part is hard to explain without
   either expectation, goal context, or declared operational concern.
 
 #### Compatibility with repository authority
@@ -308,7 +308,7 @@ Consequences:
 - Continuity is largely discarded from projected State for volatile measurements
   by default.
 - Current projections can show current visibility, current counts, and current
-  ambiguity; they do not show `node116 saw M continuously for 180 days`.
+  ambiguity; they do not show `example_host_b saw M continuously for 180 days`.
 - Staleness can indicate that a fact's evidence has expired, but it does not
   mean a former visibility pattern should still hold.
 
@@ -344,7 +344,7 @@ that full semantics.
 | Stale fact refresh recommendations | Yes | Suggests a capability to refresh stale knowledge. | It is about evidence maintenance, not expected visibility. |
 | Goals | Yes | Can express desired outcomes and relevance. | A goal is operator-owned context, not a mount visibility assertion. |
 | Policy / requirements vocabulary | Partly in docs | Can express constraints or requirements. | No implemented topology expectation relation was found. |
-| Capability verification | Yes | Distinguishes verified/provider-reported/unverified capability evidence. | Verification status is about capability support, not `node116 should see M`. |
+| Capability verification | Yes | Distinguishes verified/provider-reported/unverified capability evidence. | Verification status is about capability support, not `example_host_b should see M`. |
 | Availability status | Yes | Expresses scoped current up/down/unknown evidence. | It is observed/projected availability, not an expectation of future or intended availability. |
 | Current-facts behavior | Yes | Provides best current belief or current samples. | It has no missing-expected comparison. |
 | Storage topology ambiguity | Yes | Surfaces uncertainty about observed filesystem topology. | It explicitly avoids topology truth, ownership, and expectations. |
@@ -384,12 +384,12 @@ Current repository surfaces can already create some concern without expectation:
 - endpoint availability down can create current health concern for that endpoint;
 - capability unverified/stale states can create capability-confidence concern.
 
-But the node116 example's specific concern is a deviation concern:
+But the example_host_b example's specific concern is a deviation concern:
 
 ```text
-node116 used to see mount M
-node116 no longer sees mount M
-this matters because node116 was expected to see M, or because history suggests
+example_host_b used to see mount M
+example_host_b no longer sees mount M
+this matters because example_host_b was expected to see M, or because history suggests
 that losing M may be operator-significant
 ```
 
@@ -402,13 +402,13 @@ repository can surface only `currently not visible`, `stale`, `ambiguous`, or
 Scenario:
 
 ```text
-node115 exports storage
+example_host exports storage
 
-node116 mounts storage
+example_host_b mounts storage
 
-node116 has historically seen the mount
+example_host_b has historically seen the mount
 
-node116 loses visibility
+example_host_b loses visibility
 
 ingestion becomes uneven
 
@@ -433,11 +433,11 @@ operator should eventually be informed
 
 ### What current repository authority cannot express
 
-- `node115 exports storage` as authoritative storage topology, unless some
+- `example_host exports storage` as authoritative storage topology, unless some
   existing explicit fact or relationship asserts it in the current data.
-- `node116 is intended to mount storage from node115` as a requirement.
-- `node116 should see mount M` as an expectation.
-- `node116 losing M is an operator-significant deviation` without an expectation,
+- `example_host_b is intended to mount storage from example_host` as a requirement.
+- `example_host_b should see mount M` as an expectation.
+- `example_host_b losing M is an operator-significant deviation` without an expectation,
   goal, or declared concern context.
 - `ingestion becomes uneven because of storage visibility loss` as causality,
   unless separately supported by evidence.
@@ -446,10 +446,10 @@ operator should eventually be informed
 
 | Clause | Required concept | Existing status |
 |---|---|---|
-| `node115 exports storage` | storage topology/export relationship or fact | Not generally established by current storage measurements alone. |
-| `node116 mounts storage` | observed filesystem visibility on node116 or its endpoint | Partly supported through filesystem measurement subject and dimensions. |
-| `node116 has historically seen the mount` | observation history / continuity evidence | Ledger may contain history; current State mostly discards measurement history by default. |
-| `node116 loses visibility` | observed current absence or changed current measurement set | Partly expressible by comparing current projections over time, not as a persisted continuity concept. |
+| `example_host exports storage` | storage topology/export relationship or fact | Not generally established by current storage measurements alone. |
+| `example_host_b mounts storage` | observed filesystem visibility on example_host_b or its endpoint | Partly supported through filesystem measurement subject and dimensions. |
+| `example_host_b has historically seen the mount` | observation history / continuity evidence | Ledger may contain history; current State mostly discards measurement history by default. |
+| `example_host_b loses visibility` | observed current absence or changed current measurement set | Partly expressible by comparing current projections over time, not as a persisted continuity concept. |
 | `ingestion becomes uneven` | ingestion health/quality measurement or operational symptom | Not established by filesystem projection alone. |
 | `operator should eventually be informed` | concern/notification/attention semantics | Not implemented; not derivable from visibility alone. |
 
@@ -460,12 +460,12 @@ expected visibility or a confirmed concern relation. Knowing who owns the storag
 could help route responsibility, but the deviation is explainable as:
 
 ```text
-node116 was expected to see mount M
-node116 currently does not see mount M
+example_host_b was expected to see mount M
+example_host_b currently does not see mount M
 therefore there is a visibility deviation
 ```
 
-That statement does not require knowing that node115 owns the storage. It does
+That statement does not require knowing that example_host owns the storage. It does
 require knowing what `expected` means and who authorized it.
 
 ## Boundary preservation analysis
@@ -493,7 +493,7 @@ prior observation` or `not currently observed`, not `unexpected`.
 Only in a weak, caveated sense. History can support a statement like:
 
 ```text
-node116 has repeatedly observed mount M in the past
+example_host_b has repeatedly observed mount M in the past
 ```
 
 It can also support a candidate baseline if the repository defines such a
@@ -567,7 +567,7 @@ from existing event retention, separately from projected State.
 - This audit does not implement HomeOps surfaces.
 - This audit does not implement lenses or views.
 - This audit does not recommend a new predicate, relationship, schema, or API.
-- This audit does not conclude that ownership is needed for the node116 example.
+- This audit does not conclude that ownership is needed for the example_host_b example.
 - This audit does not conclude that history alone can create an expectation.
 - This audit does not conclude that expectations must be declared; it finds that
   current repository authority does not already implement implicit expectations.

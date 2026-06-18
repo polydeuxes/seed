@@ -15,7 +15,7 @@ After filesystem and storage-topology details were removed from the default stat
 ```text
 192.168.254.116:9100 (aliases: 0 total; facts: 111)
 192.168.254.202:9100 (aliases: 0 total; facts: 97)
-192.168.254.200:9100 (aliases: 0 total; facts: 90)
+192.0.2.200:9100 (aliases: 0 total; facts: 90)
 ```
 
 The previous Prometheus endpoint audit identified that endpoint-scoped facts can dominate the default summary. This audit narrows the question to `state_summary()` top-entity selection.

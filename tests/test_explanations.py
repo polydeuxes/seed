@@ -75,35 +75,35 @@ def test_inferred_fact_explanation_recurses_to_observed_source():
 def test_endpoint_scoped_explanation_resolves_only_endpoint():
     state = _state(
         [
-            _fact("fact_alias_ip", "node115", "alias", "192.168.254.115"),
+            _fact("fact_alias_ip", "example_host", "alias", "192.0.2.115"),
             _fact(
                 "fact_alias_endpoint",
-                "192.168.254.115",
+                "192.0.2.115",
                 "alias",
-                "192.168.254.115:9100",
+                "192.0.2.115:9100",
             ),
-            _fact("fact_status", "192.168.254.115:9100", "availability_status", "down"),
+            _fact("fact_status", "192.0.2.115:9100", "availability_status", "down"),
         ]
     )
 
     explanation = ExplanationBuilder(state).why(
-        "192.168.254.115:9100", "health_status"
+        "192.0.2.115:9100", "health_status"
     )
 
     observed_source = explanation.current_beliefs[0].facts[0].source_fact
     assert observed_source is not None
-    assert observed_source.entity_resolution == ["192.168.254.115:9100"]
+    assert observed_source.entity_resolution == ["192.0.2.115:9100"]
 
 
 def test_ambiguous_runtime_explanation_returns_competing_supported_values():
     state = _state(
         [
-            _fact("fact_docker", "jellyfin", "runtime", "docker"),
-            _fact("fact_systemd", "jellyfin", "runtime", "systemd"),
+            _fact("fact_docker", "web_service", "runtime", "docker"),
+            _fact("fact_systemd", "web_service", "runtime", "systemd"),
         ]
     )
 
-    explanation = ExplanationBuilder(state).why("jellyfin", "runtime")
+    explanation = ExplanationBuilder(state).why("web_service", "runtime")
 
     assert explanation.status == "ambiguous"
     assert explanation.current_beliefs == []
@@ -192,10 +192,10 @@ def test_recursive_explanation_chain_traverses_preserved_source_facts():
 
 def test_confidence_cap_explanation_identifies_applied_rule_cap():
     state = _state(
-        [_fact("fact_runtime", "jellyfin", "runtime", "docker", confidence=0.95)]
+        [_fact("fact_runtime", "web_service", "runtime", "docker", confidence=0.95)]
     )
 
-    explanation = ExplanationBuilder(state).why("jellyfin", "managed_by")
+    explanation = ExplanationBuilder(state).why("web_service", "managed_by")
 
     inferred = explanation.current_beliefs[0].facts[0]
     assert inferred.inferred_confidence == 0.6

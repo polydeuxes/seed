@@ -7,8 +7,8 @@ This audit reviews a rendering problem exposed by Local Users Observation v1.
 The operator inspected group membership facts with:
 
 ```text
---current-facts node115 group_member
---fact-support node115 group_member
+--current-facts example_host group_member
+--fact-support example_host group_member
 ```
 
 The output showed repeated values such as:
@@ -53,7 +53,7 @@ The `group_member` predicate intentionally uses host-subject facts with dimensio
 Example:
 
 ```text
-subject: node115
+subject: example_host
 predicate: group_member
 value: user
 dimensions:

@@ -19,7 +19,7 @@ say some scoped form of `should`, but none is a general operational expectation
 concept that can say:
 
 ```text
-node116 should see mount M
+example_host_b should see mount M
 ```
 
 The strongest current should-like authorities are:
@@ -164,7 +164,7 @@ this environmental fact is true
 ```
 
 For the storage example, a goal such as `maintain ingestion reliability` may make
-loss of mount visibility relevant. It does not alone authorize `node116 should
+loss of mount visibility relevant. It does not alone authorize `example_host_b should
 see mount M` unless the goal is paired with a requirement, policy, declared
 expectation, or validated supporting-condition model that connects that goal to
 that mount.
@@ -195,7 +195,7 @@ policy rule or requirement, for example:
 
 ```text
 production observations must be read-only unless approved
-node116 must retain mount M while service S is active
+example_host_b must retain mount M while service S is active
 ```
 
 The first shape matches current policy/execution style. The second is not found
@@ -223,7 +223,7 @@ command
 action execution authority
 ```
 
-A statement such as `I expect node116 to see mount M` can authorize a declared
+A statement such as `I expect example_host_b to see mount M` can authorize a declared
 expectation if Seed has a concept and event path for declared expectations. It
 must not silently become an action such as remounting M, and it must not become a
 source-verified observation that M is visible.
@@ -255,7 +255,7 @@ It cannot say:
 
 ```text
 Seed should use C
-node116 should see M
+example_host_b should see M
 ```
 
 except as an input to a recommendation, decision, or command path governed by
@@ -291,7 +291,7 @@ Continuity and work-position documents can preserve active inquiry, selected
 frontier, constraints, unresolved tensions, validation state, and next safe
 moves. This is important for investigation continuity, but it does not make
 historical observations into normative environmental expectations. It can
-preserve that `whether node116 should see mount M` is the current open question.
+preserve that `whether example_host_b should see mount M` is the current open question.
 
 ## Goal / requirement / policy / expectation distinctions
 
@@ -324,7 +324,7 @@ No current general concept was found that means:
 this observed topology/visibility condition should be true or continue
 ```
 
-for arbitrary operational facts such as `node116 sees mount M`.
+for arbitrary operational facts such as `example_host_b sees mount M`.
 
 ### 2. What is the difference between goal, requirement, policy, expectation, concern, alert, and recommendation?
 
@@ -384,7 +384,7 @@ newer evidence should be considered for a purpose. They cannot say that the
 underlying world should match the old evidence.
 
 For the example, stale filesystem visibility support can justify refreshing
-storage observations. It does not justify `node116 should still see M`.
+storage observations. It does not justify `example_host_b should still see M`.
 
 ### 6. Can capability verification create expectation?
 
@@ -396,14 +396,14 @@ should hold.
 For the example, verified observation capability might support a recommendation
 to refresh observations. It does not create a mount visibility expectation.
 
-### 7. For node116 storage, what authority is required to say `node116 should see mount M`?
+### 7. For example_host_b storage, what authority is required to say `example_host_b should see mount M`?
 
 One of the following would be required:
 
 1. a **declared expectation** from an authorized operator or accepted
-   configuration stating that node116 is intended to see M;
+   configuration stating that example_host_b is intended to see M;
 2. a **requirement** in an accepted service/topology model stating that the
-   relevant ingestion/service role requires M on node116;
+   relevant ingestion/service role requires M on example_host_b;
 3. a **policy** that mandates the visibility condition for a scope;
 4. a **goal-derived expectation rule** that explicitly derives supporting
    operational expectations from a goal and accepted topology/requirement model;
@@ -465,8 +465,8 @@ not currently encode a continuity-derived expectation.
 Therefore, the safe current formulation is:
 
 ```text
-node116 historically saw mount M
-node116 no longer currently appears to see mount M
+example_host_b historically saw mount M
+example_host_b no longer currently appears to see mount M
 this is a visibility change and candidate continuity break
 it may deserve operator attention depending on goals, freshness, and authority
 ```
@@ -474,7 +474,7 @@ it may deserve operator attention depending on goals, freshness, and authority
 Not:
 
 ```text
-node116 should see mount M
+example_host_b should see mount M
 ```
 
 unless expectation authority is separately present.
@@ -486,13 +486,13 @@ Refresh need is about whether additional evidence would improve knowledge
 quality. Refresh recommendation is advisory. None of these says the old state
 should continue.
 
-In the node116 example:
+In the example_host_b example:
 
 | Item | Classification |
 | --- | --- |
 | last filesystem sample for M is old | staleness/freshness finding |
 | current support is inadequate for incident triage | refresh need |
-| consider refreshing node116 filesystem observation | recommendation |
+| consider refreshing example_host_b filesystem observation | recommendation |
 | execute observation now | command only after decision/authority |
 | new observation succeeds/fails | observation execution result |
 
@@ -510,7 +510,7 @@ capability_verified != execution authority
 ```
 
 Thus capability verification can support `Seed is ready to observe` or `Seed has
-a verified local capability`, not `node116 should see M`.
+a verified local capability`, not `example_host_b should see M`.
 
 ## Operator prose authority boundary
 
@@ -535,14 +535,14 @@ operator expects notice -> Seed invents alert rules and remediation
 operator notes history -> Seed creates normative topology expectation
 ```
 
-## Node116 example analysis
+## Example host example analysis
 
 Operational example:
 
 ```text
-node116 historically sees mount M
-node116 stops seeing mount M
-node116 ingestion becomes uneven
+example_host_b historically sees mount M
+example_host_b stops seeing mount M
+example_host_b ingestion becomes uneven
 operator expects to be informed
 ```
 
@@ -550,11 +550,11 @@ Classification under current authority:
 
 | Statement | Classification | Current authority |
 | --- | --- | --- |
-| `node116 historically sees mount M` | Observation history / continuity evidence | Ledger/history may support this; projected State may only retain latest current measurement support unless history is queried. |
-| `node116 stops seeing mount M` | Current observation change / visibility loss candidate | Supported if current observations or absence/change analysis exists; absence alone needs caveats. |
-| `node116 ingestion becomes uneven` | Observation or assessment, depending on evidence | Requires ingestion measurements or operator-provided evidence. |
+| `example_host_b historically sees mount M` | Observation history / continuity evidence | Ledger/history may support this; projected State may only retain latest current measurement support unless history is queried. |
+| `example_host_b stops seeing mount M` | Current observation change / visibility loss candidate | Supported if current observations or absence/change analysis exists; absence alone needs caveats. |
+| `example_host_b ingestion becomes uneven` | Observation or assessment, depending on evidence | Requires ingestion measurements or operator-provided evidence. |
 | `loss of M may explain uneven ingestion` | Hypothesis / concern candidate | Requires causal support before becoming claim. |
-| `node116 should see M` | Expectation | Not authorized by current history alone; requires declared expectation, requirement, policy, or promoted baseline. |
+| `example_host_b should see M` | Expectation | Not authorized by current history alone; requires declared expectation, requirement, policy, or promoted baseline. |
 | `operator expects to be informed` | Operator intent / possible notification expectation | Needs represented expectation or policy to become alert/notification rule. |
 | `this deserves attention` | Concern | Can be surfaced as ambiguity/change/freshness/goal-relevance pressure without asserting `should`. |
 | `notify operator now` | Alert/action | Requires alert semantics or command/notification authority. |
@@ -564,10 +564,10 @@ Classification under current authority:
 A boundary-preserving phrasing would be:
 
 ```text
-Seed observed a change in mount visibility for node116 relative to historical
+Seed observed a change in mount visibility for example_host_b relative to historical
 continuity evidence. Because ingestion is uneven and the operator has expressed
 an information need, Seed may surface a concern or recommend refreshing evidence.
-Seed cannot assert that node116 should see M unless an expectation authority is
+Seed cannot assert that example_host_b should see M unless an expectation authority is
 present.
 ```
 
@@ -681,8 +681,8 @@ concern, alert, recommendation, decision, command, and action.
   HomeOps, or SeedOps.
 - This audit does not conclude that history should promote to expectation.
 - This audit does not conclude that every declared expectation should alert.
-- This audit does not conclude that `node116 should see mount M` is true.
+- This audit does not conclude that `example_host_b should see mount M` is true.
 - This audit does not conclude that ownership is required to express the
-  node116 concern.
+  example_host_b concern.
 - This audit does not change State, facts, projections, capability verification,
   refresh recommendations, policy evaluation, plans, approvals, or tests.

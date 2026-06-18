@@ -685,11 +685,11 @@ def build_parser() -> argparse.ArgumentParser:
         description="Run Seed locally with Ollama /api/generate intent classification.",
         epilog=(
             "Examples:\n"
-            "  python scripts/seed_local.py --fact jellyfin host node115 "
-            "--fact jellyfin runtime docker 'restart jellyfin?'\n"
+            "  python scripts/seed_local.py --fact web_service host example_host "
+            "--fact web_service runtime docker 'restart web_service?'\n"
             "  python scripts/seed_local.py --db .seed-local.sqlite "
             "--registered-provider docker_container_lifecycle "
-            "--fact jellyfin host node115 --preconditions plan_000001\n"
+            "--fact web_service host example_host --preconditions plan_000001\n"
             "  python scripts/seed_local.py --db .seed-local.sqlite "
             "--proposal plan_000001\n"
             "  python scripts/seed_local.py --db .seed-local.sqlite "
@@ -864,8 +864,8 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "dev shorthand for an Observation-derived Fact before handling messages "
             "or precondition reports; repeat as --fact SUBJECT PREDICATE VALUE "
-            "(for example: --fact jellyfin host node115, "
-            "--fact jellyfin runtime docker)"
+            "(for example: --fact web_service host example_host, "
+            "--fact web_service runtime docker)"
         ),
     )
     parser.add_argument(

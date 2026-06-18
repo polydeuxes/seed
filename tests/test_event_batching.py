@@ -67,7 +67,7 @@ def test_state_projection_after_append_many_replay_matches_repeated_append(tmp_p
     observed_at = datetime(2026, 1, 1, tzinfo=timezone.utc)
     fact = Fact(
         id="fact_batch_runtime",
-        subject_id="node115",
+        subject_id="example_host",
         predicate="runtime",
         value="docker",
         evidence_ids=[],
@@ -93,8 +93,8 @@ def test_state_projection_after_append_many_replay_matches_repeated_append(tmp_p
     batch_state = StateProjector(batch).project("ws")
     repeated_state = StateProjector(repeated).project("ws")
     assert batch_state.get_best_fact(
-        "node115", "runtime"
-    ) == repeated_state.get_best_fact("node115", "runtime")
+        "example_host", "runtime"
+    ) == repeated_state.get_best_fact("example_host", "runtime")
 
 
 def test_observation_ingest_keeps_observation_evidence_fact_event_counts():
@@ -103,7 +103,7 @@ def test_observation_ingest_keeps_observation_evidence_fact_event_counts():
         id="obs_batch_cpu",
         source_type="provider",
         observed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
-        subject="node115",
+        subject="example_host",
         predicate="cpu.count",
         value=8,
     )
@@ -129,7 +129,7 @@ def test_fact_promotion_suppressed_observation_remains_without_fact():
         id="obs_suppressed_uname",
         source_type="provider",
         observed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
-        subject="node115",
+        subject="example_host",
         predicate="os",
         value="linux",
         metadata={
@@ -173,7 +173,7 @@ def _batch_observations() -> list[Observation]:
             id="obs_batch_cpu_many",
             source_type="provider",
             observed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
-            subject="node115",
+            subject="example_host",
             predicate="cpu.count",
             value=8,
         ),
@@ -181,7 +181,7 @@ def _batch_observations() -> list[Observation]:
             id="obs_batch_runtime_many",
             source_type="discovery",
             observed_at=datetime(2026, 1, 1, 0, 1, tzinfo=timezone.utc),
-            subject="node115",
+            subject="example_host",
             predicate="runtime",
             value="docker",
         ),
@@ -189,7 +189,7 @@ def _batch_observations() -> list[Observation]:
             id="obs_batch_inferred_many",
             source_type="inferred",
             observed_at=datetime(2026, 1, 1, 0, 2, tzinfo=timezone.utc),
-            subject="node115",
+            subject="example_host",
             predicate="role",
             value="media",
         ),
@@ -247,7 +247,7 @@ def test_observation_ingest_many_suppressed_promotion_keeps_only_observation_and
         id="obs_batch_suppressed_uname",
         source_type="provider",
         observed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
-        subject="node115",
+        subject="example_host",
         predicate="os",
         value="linux",
         metadata={

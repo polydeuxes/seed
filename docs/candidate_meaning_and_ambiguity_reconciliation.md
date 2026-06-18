@@ -252,7 +252,7 @@ The receiving Seed needs candidate meanings so it can preserve what was imported
 Storage topology exposed the same pattern through paths such as:
 
 ```text
-/mnt/node210/sda1
+/mnt/example_host_e/sda1
 ```
 
 That path may support candidates including:
@@ -409,9 +409,9 @@ Prometheus was not lying in these cases. Seed attached meanings too early.
 Bad collapse:
 
 ```text
-/mnt/node210/sda1
+/mnt/example_host_e/sda1
         ↓
-node210 owns storage
+example_host_e owns storage
 ```
 
 Correct handling:
@@ -570,7 +570,7 @@ Yes. A single observation can support multiple simultaneous interpretation plane
 Example observation:
 
 ```text
-/mnt/node210/sda1
+/mnt/example_host_e/sda1
 ```
 
 Possible planes:

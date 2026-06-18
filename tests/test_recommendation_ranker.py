@@ -34,7 +34,7 @@ def _service_recommendations() -> list[CapabilityRecommendation]:
 def _runtime_fact(value: str) -> Fact:
     return Fact(
         id=f"fact_runtime_{value}",
-        subject_id="jellyfin",
+        subject_id="web_service",
         predicate="runtime",
         value=value,
         observed_at=utc_now(),
@@ -128,7 +128,7 @@ def test_expired_docker_fact_does_not_beat_fresh_systemd_fact():
     now = utc_now()
     expired_docker = Fact(
         id="fact_runtime_docker_expired",
-        subject_id="jellyfin",
+        subject_id="web_service",
         predicate="runtime",
         value="docker",
         observed_at=now,
@@ -136,7 +136,7 @@ def test_expired_docker_fact_does_not_beat_fresh_systemd_fact():
     )
     fresh_systemd = Fact(
         id="fact_runtime_systemd_fresh",
-        subject_id="jellyfin",
+        subject_id="web_service",
         predicate="runtime",
         value="systemd",
         observed_at=now,

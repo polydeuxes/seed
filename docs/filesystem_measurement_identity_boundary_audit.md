@@ -8,11 +8,11 @@ Short answer: the observed behavior is best explained as **E. broader architectu
 
 ## Audit question
 
-Why are Prometheus filesystem measurements queryable on the scrape endpoint subject, for example `192.168.254.115:9100 filesystem_free_bytes`, but not on a host subject such as `node115 filesystem_free_bytes`, while State Summary can still know many aliases for `node115` and storage remains `(none)` in the bounded summary?
+Why are Prometheus filesystem measurements queryable on the scrape endpoint subject, for example `192.0.2.115:9100 filesystem_free_bytes`, but not on a host subject such as `example_host filesystem_free_bytes`, while State Summary can still know many aliases for `example_host` and storage remains `(none)` in the bounded summary?
 
 ## Observed behavior
 
-The Prometheus observation source collects `node_filesystem_avail_bytes` and `node_filesystem_size_bytes` from a fixed safe-query allowlist. Each Prometheus sample is emitted with `subject=instance`, where `instance` is the Prometheus target label such as `192.168.254.115:9100`. The source then emits filesystem observations with raw predicates `filesystem_avail_bytes` and `filesystem_size_bytes`; predicate normalization maps these to canonical filesystem predicates in the normal ingestion pipeline.
+The Prometheus observation source collects `node_filesystem_avail_bytes` and `node_filesystem_size_bytes` from a fixed safe-query allowlist. Each Prometheus sample is emitted with `subject=instance`, where `instance` is the Prometheus target label such as `192.0.2.115:9100`. The source then emits filesystem observations with raw predicates `filesystem_avail_bytes` and `filesystem_size_bytes`; predicate normalization maps these to canonical filesystem predicates in the normal ingestion pipeline.
 
 For Prometheus `node_uname_info`, the source has special handling: only `node_uname_info` is described as authoritative for stable host identity, and its metadata includes `instance` and `nodename`. Other metrics, including filesystem metrics, intentionally keep only metric labels and remain endpoint-scoped.
 
@@ -20,8 +20,8 @@ For Prometheus `node_uname_info`, the source has special handling: only `node_un
 
 The repository currently distinguishes at least four concepts that are easy to conflate:
 
-1. **Scrape endpoint**: a Prometheus `instance` label such as `192.168.254.115:9100`.
-2. **Host identity**: a stable name such as `node115`, often discovered from `node_uname_info` `nodename` or other durable identity predicates.
+1. **Scrape endpoint**: a Prometheus `instance` label such as `192.0.2.115:9100`.
+2. **Host identity**: a stable name such as `example_host`, often discovered from `node_uname_info` `nodename` or other durable identity predicates.
 3. **Alias edge**: an explicit identity relation. The alias resolver builds from alias-like predicates, but it refuses aliases that cross the endpoint/non-endpoint boundary.
 4. **Measurement subject**: the subject attached to a time-series fact. For Prometheus filesystem metrics this is currently the endpoint-shaped `instance`, not the host.
 
@@ -40,9 +40,9 @@ Alias construction has two relevant paths:
 - `EndpointAliasNormalizer` can derive source-specific instance predicates from metadata containing both a stable name and endpoint. For Prometheus, `node_uname_info` can produce `prometheus_instance` from `nodename -> instance` because it carries both metadata fields.
 - `EndpointIdentityNormalizer` can derive `alias` observations between known identities and endpoint-shaped subjects when endpoint base identities match known identity predicates.
 
-However, projection does not allow these to collapse host and endpoint identity for query ownership. `prometheus_instance` is deliberately not an alias predicate, and even an `alias` fact between `node115` and `192.168.254.115:9100` is blocked by the endpoint boundary in the alias resolver.
+However, projection does not allow these to collapse host and endpoint identity for query ownership. `prometheus_instance` is deliberately not an alias predicate, and even an `alias` fact between `example_host` and `192.0.2.115:9100` is blocked by the endpoint boundary in the alias resolver.
 
-Repository tests encode this boundary directly. They assert that a `prometheus_instance` fact on `node115` does not make endpoint `up` reachable through `node115`, and that Prometheus nodename discovery preserves a `prometheus_instance` fact without aliasing endpoint measurements to the host.
+Repository tests encode this boundary directly. They assert that a `prometheus_instance` fact on `example_host` does not make endpoint `up` reachable through `example_host`, and that Prometheus nodename discovery preserves a `prometheus_instance` fact without aliasing endpoint measurements to the host.
 
 ## Storage-summary implications
 
@@ -59,7 +59,7 @@ If an explicit storage projection is empty while direct endpoint `--current-fact
 
 The same boundary affects more than storage:
 
-- Prometheus `up` is normalized to endpoint-scoped `availability_status`, and tests assert `node115 availability_status` remains unknown when only endpoint availability exists.
+- Prometheus `up` is normalized to endpoint-scoped `availability_status`, and tests assert `example_host availability_status` remains unknown when only endpoint availability exists.
 - State Summary separates endpoint scrape availability from host availability and service availability.
 - `endpoint_role` is an endpoint-scoped predicate. Relationship projection avoids treating Prometheus endpoint roles as general service ownership/provides relationships.
 - `prometheus_instance` is not used to project a monitored-by relationship for Prometheus observations.
@@ -70,7 +70,7 @@ This means the pattern is not storage-specific. Storage is one symptom of a larg
 
 ### A. Storage projection issue
 
-Possible only if explicit `storage_state_projection` fails to produce rows even when complete matching `filesystem_free_bytes` and `filesystem_total_bytes` samples exist on the same endpoint subject and dimensions. It does not explain why `node115 filesystem_free_bytes` is empty.
+Possible only if explicit `storage_state_projection` fails to produce rows even when complete matching `filesystem_free_bytes` and `filesystem_total_bytes` samples exist on the same endpoint subject and dimensions. It does not explain why `example_host filesystem_free_bytes` is empty.
 
 ### B. Alias resolution issue
 
@@ -92,15 +92,15 @@ Best overall answer. The repository is preserving boundaries such as `endpoint v
 
 ### 1. Where do filesystem measurements currently live?
 
-They live on the **endpoint subject / Prometheus instance** from the metric label, for example `192.168.254.115:9100`. They are not re-owned to `node115` during ingestion or current-fact lookup.
+They live on the **endpoint subject / Prometheus instance** from the metric label, for example `192.0.2.115:9100`. They are not re-owned to `example_host` during ingestion or current-fact lookup.
 
 ### 2. Is the current location intentional or accidental?
 
 The endpoint-scoped location appears intentional. The source comments say only `node_uname_info` is authoritative for stable host identity and other metrics remain endpoint-scoped. Tests also explicitly preserve endpoint facts from being reachable as host facts through `prometheus_instance`.
 
-### 3. Should `node115 filesystem_free_bytes` exist?
+### 3. Should `example_host filesystem_free_bytes` exist?
 
-Repository authority does not currently say yes. Under the present model, it should not exist merely because `node115` has `prometheus_instance=192.168.254.115:9100` or many aliases. It would require a separate architectural decision to model host ownership of endpoint-derived filesystem measurements.
+Repository authority does not currently say yes. Under the present model, it should not exist merely because `example_host` has `prometheus_instance=192.0.2.115:9100` or many aliases. It would require a separate architectural decision to model host ownership of endpoint-derived filesystem measurements.
 
 ### 4. Does alias knowledge currently bridge host -> endpoint for query purposes?
 

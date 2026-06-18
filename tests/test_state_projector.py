@@ -11,7 +11,7 @@ import seed_runtime.state as state_module
 def test_projector_rebuilds_state_deterministically():
     ledger = EventLedger()
     workspace_id = "ws_1"
-    entity = Entity(id="ent_1", kind="host", name="node-1")
+    entity = Entity(id="ent_1", kind="host", name="example_host")
     fact = Fact(
         id="fact_1",
         subject_id="ent_1",
@@ -43,7 +43,7 @@ def test_projector_rebuilds_state_deterministically():
     second = StateProjector(ledger).project(workspace_id)
 
     assert first == second
-    assert first.entities["ent_1"].name == "node-1"
+    assert first.entities["ent_1"].name == "example_host"
     assert first.facts["fact_1"].value is False
     assert first.goals["goal_1"].status == "active"
     assert first.open_tool_needs[0].name == "install_ssh_server"
@@ -57,7 +57,7 @@ def test_fact_replay_defers_relationship_projection_until_finalization(monkeypat
     facts = [
         Fact(
             id="fact_group",
-            subject_id="node115",
+            subject_id="example_host",
             predicate="group",
             value="servers",
             evidence_ids=["evt_source"],
@@ -65,17 +65,17 @@ def test_fact_replay_defers_relationship_projection_until_finalization(monkeypat
         ),
         Fact(
             id="fact_alias",
-            subject_id="node115",
+            subject_id="example_host",
             predicate="alias",
-            value="192.168.254.115",
+            value="192.0.2.115",
             evidence_ids=["evt_source"],
             observed_at=observed_at,
         ),
         Fact(
             id="fact_host",
-            subject_id="jellyfin",
+            subject_id="web_service",
             predicate="host",
-            value="node115",
+            value="example_host",
             evidence_ids=["evt_source"],
             observed_at=observed_at,
         ),
@@ -110,17 +110,17 @@ def test_fact_replay_defers_relationship_projection_until_finalization(monkeypat
         (relationship.subject, relationship.predicate, relationship.object)
         for relationship in state.entity_relationships
     ] == [
-        ("node115", "group", "servers"),
-        ("node115", "alias", "192.168.254.115"),
-        ("jellyfin", "host", "node115"),
+        ("example_host", "group", "servers"),
+        ("example_host", "alias", "192.0.2.115"),
+        ("web_service", "host", "example_host"),
     ]
     assert [
         (relationship.subject, relationship.relationship, relationship.object)
         for relationship in state.relationships
     ] == [
-        ("node115", "alias_of", "192.168.254.115"),
-        ("node115", "member_of", "servers"),
-        ("jellyfin", "runs_on", "node115"),
+        ("example_host", "alias_of", "192.0.2.115"),
+        ("example_host", "member_of", "servers"),
+        ("web_service", "runs_on", "example_host"),
     ]
     timing_names = [name for name, _elapsed in diagnostics.timings]
     assert "event replay" in timing_names
@@ -164,15 +164,15 @@ def test_projector_projects_entity_relationships_from_string_facts():
     facts = [
         Fact(
             id="fact_host",
-            subject_id="jellyfin",
+            subject_id="web_service",
             predicate="host",
-            value="node115",
+            value="example_host",
             evidence_ids=["evt_source"],
             observed_at=observed_at,
         ),
         Fact(
             id="fact_runtime",
-            subject_id="jellyfin",
+            subject_id="web_service",
             predicate="runtime",
             value="docker",
             evidence_ids=["evt_source"],
@@ -180,15 +180,15 @@ def test_projector_projects_entity_relationships_from_string_facts():
         ),
         Fact(
             id="fact_container",
-            subject_id="jellyfin",
+            subject_id="web_service",
             predicate="container",
-            value="jellyfin",
+            value="web_service",
             evidence_ids=["evt_source"],
             observed_at=observed_at,
         ),
         Fact(
             id="fact_running",
-            subject_id="jellyfin",
+            subject_id="web_service",
             predicate="running",
             value=True,
             evidence_ids=["evt_source"],
@@ -205,10 +205,10 @@ def test_projector_projects_entity_relationships_from_string_facts():
         (relationship.subject, relationship.predicate, relationship.object)
         for relationship in state.entity_relationships
     ] == [
-        ("jellyfin", "host", "node115"),
-        ("jellyfin", "runtime", "docker"),
-        ("jellyfin", "container", "jellyfin"),
-        ("jellyfin", "managed_by", "docker_container_lifecycle"),
+        ("web_service", "host", "example_host"),
+        ("web_service", "runtime", "docker"),
+        ("web_service", "container", "web_service"),
+        ("web_service", "managed_by", "docker_container_lifecycle"),
     ]
 
 
@@ -219,15 +219,15 @@ def test_entity_relationship_query_helpers_return_deduped_matches():
     facts = [
         Fact(
             id="fact_host",
-            subject_id="jellyfin",
+            subject_id="web_service",
             predicate="host",
-            value="node115",
+            value="example_host",
             evidence_ids=["evt_source"],
             observed_at=observed_at,
         ),
         Fact(
             id="fact_runtime",
-            subject_id="jellyfin",
+            subject_id="web_service",
             predicate="runtime",
             value="docker",
             evidence_ids=["evt_source"],
@@ -235,7 +235,7 @@ def test_entity_relationship_query_helpers_return_deduped_matches():
         ),
         Fact(
             id="fact_runtime_duplicate",
-            subject_id="jellyfin",
+            subject_id="web_service",
             predicate="runtime",
             value="docker",
             evidence_ids=["evt_source"],
@@ -256,12 +256,12 @@ def test_entity_relationship_query_helpers_return_deduped_matches():
 
     state = StateProjector(ledger).project(workspace_id)
 
-    assert state.find_related("jellyfin", "host") == ["node115"]
-    assert state.find_entities("runtime", "docker") == ["jellyfin", "grafana"]
+    assert state.find_related("web_service", "host") == ["example_host"]
+    assert state.find_entities("runtime", "docker") == ["web_service", "grafana"]
     assert [
         (relationship.subject, relationship.predicate, relationship.object)
-        for relationship in state.get_entity_relationships("node115")
-    ] == [("jellyfin", "host", "node115")]
+        for relationship in state.get_entity_relationships("example_host")
+    ] == [("web_service", "host", "example_host")]
 
 
 def _observed_fact(
@@ -286,7 +286,7 @@ def test_runtime_docker_infers_managed_by_docker_container_lifecycle():
     workspace_id = "ws_infer_docker"
     observed_at = utc_now()
     runtime = _observed_fact(
-        "fact_runtime_docker", "jellyfin", "runtime", "docker", observed_at
+        "fact_runtime_docker", "web_service", "runtime", "docker", observed_at
     )
 
     ledger.append("fact.observed", workspace_id, {"fact": to_plain(runtime)})
@@ -294,14 +294,14 @@ def test_runtime_docker_infers_managed_by_docker_container_lifecycle():
     state = StateProjector(ledger).project(workspace_id)
 
     assert state.observed_facts == {runtime.id: runtime}
-    assert state.find_related("jellyfin", "managed_by") == [
+    assert state.find_related("web_service", "managed_by") == [
         "docker_container_lifecycle"
     ]
     inferred = state.inferred_facts[
-        "fact_inferred_jellyfin_managed_by_docker_container_lifecycle"
+        "fact_inferred_web_service_managed_by_docker_container_lifecycle"
     ]
     assert inferred.inferred is True
-    assert inferred.subject_id == "jellyfin"
+    assert inferred.subject_id == "web_service"
     assert inferred.predicate == "managed_by"
     assert inferred.value == "docker_container_lifecycle"
 
@@ -328,10 +328,10 @@ def test_observed_managed_by_fact_wins_over_inferred_managed_by():
     workspace_id = "ws_observed_wins"
     observed_at = utc_now()
     runtime = _observed_fact(
-        "fact_runtime_docker", "jellyfin", "runtime", "docker", observed_at
+        "fact_runtime_docker", "web_service", "runtime", "docker", observed_at
     )
     managed_by = _observed_fact(
-        "fact_managed_by_custom", "jellyfin", "managed_by", "custom_cli", observed_at
+        "fact_managed_by_custom", "web_service", "managed_by", "custom_cli", observed_at
     )
 
     ledger.append("fact.observed", workspace_id, {"fact": to_plain(runtime)})
@@ -340,7 +340,7 @@ def test_observed_managed_by_fact_wins_over_inferred_managed_by():
     state = StateProjector(ledger).project(workspace_id)
 
     assert state.inferred_facts == {}
-    assert state.find_related("jellyfin", "managed_by") == ["custom_cli"]
+    assert state.find_related("web_service", "managed_by") == ["custom_cli"]
     assert state.facts[managed_by.id] == managed_by
     assert state.facts[managed_by.id].inferred is False
 
@@ -402,9 +402,9 @@ def test_relationship_query_helpers_preserve_provenance_when_requested():
     observed_at = utc_now()
     fact = Fact(
         id="fact_host",
-        subject_id="jellyfin",
+        subject_id="web_service",
         predicate="host",
-        value="node115",
+        value="example_host",
         evidence_ids=["evd_1"],
         observed_at=observed_at,
         source_type="discovery",
@@ -414,9 +414,9 @@ def test_relationship_query_helpers_preserve_provenance_when_requested():
     ledger.append("fact.observed", workspace_id, {"fact": to_plain(fact)})
     state = StateProjector(ledger).project(workspace_id)
 
-    assert state.find_related("jellyfin", "host", include_provenance=True) == [
+    assert state.find_related("web_service", "host", include_provenance=True) == [
         {
-            "object": "node115",
+            "object": "example_host",
             "fact_id": "fact_host",
             "source_type": "discovery",
             "confidence": 0.95,
@@ -425,9 +425,9 @@ def test_relationship_query_helpers_preserve_provenance_when_requested():
             "inferred": False,
         }
     ]
-    assert state.find_entities("host", "node115", include_provenance=True) == [
+    assert state.find_entities("host", "example_host", include_provenance=True) == [
         {
-            "subject": "jellyfin",
+            "subject": "web_service",
             "fact_id": "fact_host",
             "source_type": "discovery",
             "confidence": 0.95,
@@ -444,7 +444,7 @@ def test_inferred_confidence_is_capped_by_source_fact_confidence():
     observed_at = utc_now()
     runtime = Fact(
         id="fact_runtime_docker",
-        subject_id="jellyfin",
+        subject_id="web_service",
         predicate="runtime",
         value="docker",
         observed_at=observed_at,
@@ -456,7 +456,7 @@ def test_inferred_confidence_is_capped_by_source_fact_confidence():
     state = StateProjector(ledger).project(workspace_id)
 
     inferred = state.inferred_facts[
-        "fact_inferred_jellyfin_managed_by_docker_container_lifecycle"
+        "fact_inferred_web_service_managed_by_docker_container_lifecycle"
     ]
     assert inferred.source_type == "inferred"
     assert inferred.confidence == 0.4
@@ -480,14 +480,14 @@ def test_fact_conflicts_no_conflict_for_single_value():
         [
             Fact(
                 id="fact_runtime_docker_1",
-                subject_id="jellyfin",
+                subject_id="web_service",
                 predicate="runtime",
                 value="docker",
                 observed_at=observed_at,
             ),
             Fact(
                 id="fact_runtime_docker_2",
-                subject_id="jellyfin",
+                subject_id="web_service",
                 predicate="runtime",
                 value="docker",
                 observed_at=observed_at,
@@ -505,14 +505,14 @@ def test_fact_conflicts_detects_docker_vs_systemd_equal_confidence_without_winne
         [
             Fact(
                 id="fact_runtime_docker",
-                subject_id="jellyfin",
+                subject_id="web_service",
                 predicate="runtime",
                 value="docker",
                 observed_at=observed_at,
             ),
             Fact(
                 id="fact_runtime_systemd",
-                subject_id="jellyfin",
+                subject_id="web_service",
                 predicate="runtime",
                 value="systemd",
                 observed_at=observed_at,
@@ -523,7 +523,7 @@ def test_fact_conflicts_detects_docker_vs_systemd_equal_confidence_without_winne
     conflict = next(
         conflict for conflict in state.fact_conflicts if conflict.predicate == "runtime"
     )
-    assert conflict.subject == "jellyfin"
+    assert conflict.subject == "web_service"
     assert conflict.predicate == "runtime"
     assert conflict.values == ["docker", "systemd"]
     assert conflict.winning_value is None
@@ -532,7 +532,7 @@ def test_fact_conflicts_detects_docker_vs_systemd_equal_confidence_without_winne
         "fact_runtime_docker",
         "fact_runtime_systemd",
     ]
-    assert state.get_best_fact("jellyfin", "runtime") is None
+    assert state.get_best_fact("web_service", "runtime") is None
     assert "multiple values" in conflict.reason
 
 
@@ -542,7 +542,7 @@ def test_ambiguous_runtime_does_not_infer_managed_by():
         [
             Fact(
                 id="fact_runtime_docker",
-                subject_id="jellyfin",
+                subject_id="web_service",
                 predicate="runtime",
                 value="docker",
                 observed_at=observed_at,
@@ -551,7 +551,7 @@ def test_ambiguous_runtime_does_not_infer_managed_by():
             ),
             Fact(
                 id="fact_runtime_systemd",
-                subject_id="jellyfin",
+                subject_id="web_service",
                 predicate="runtime",
                 value="systemd",
                 observed_at=observed_at,
@@ -562,7 +562,7 @@ def test_ambiguous_runtime_does_not_infer_managed_by():
         workspace_id="ws_ambiguous_runtime_no_infer",
     )
 
-    assert state.find_related("jellyfin", "managed_by") == []
+    assert state.find_related("web_service", "managed_by") == []
     assert state.inferred_facts == {}
 
 
@@ -572,7 +572,7 @@ def test_fact_conflicts_two_docker_supports_win_over_one_systemd():
         [
             Fact(
                 id="fact_runtime_docker_1",
-                subject_id="jellyfin",
+                subject_id="web_service",
                 predicate="runtime",
                 value="docker",
                 observed_at=observed_at,
@@ -582,7 +582,7 @@ def test_fact_conflicts_two_docker_supports_win_over_one_systemd():
             ),
             Fact(
                 id="fact_runtime_docker_2",
-                subject_id="jellyfin",
+                subject_id="web_service",
                 predicate="runtime",
                 value="docker",
                 observed_at=observed_at,
@@ -592,7 +592,7 @@ def test_fact_conflicts_two_docker_supports_win_over_one_systemd():
             ),
             Fact(
                 id="fact_runtime_systemd",
-                subject_id="jellyfin",
+                subject_id="web_service",
                 predicate="runtime",
                 value="systemd",
                 observed_at=observed_at,
@@ -610,7 +610,7 @@ def test_fact_conflicts_two_docker_supports_win_over_one_systemd():
     assert conflict.winning_value == "docker"
     assert conflict.best_fact_id in {"fact_runtime_docker_1", "fact_runtime_docker_2"}
     assert conflict.conflicting_fact_ids == ["fact_runtime_systemd"]
-    assert state.get_best_fact("jellyfin", "runtime").value == "docker"
+    assert state.get_best_fact("web_service", "runtime").value == "docker"
 
 
 def test_discovery_docker_wins_over_lower_confidence_user_systemd():
@@ -619,7 +619,7 @@ def test_discovery_docker_wins_over_lower_confidence_user_systemd():
         [
             Fact(
                 id="fact_runtime_docker",
-                subject_id="jellyfin",
+                subject_id="web_service",
                 predicate="runtime",
                 value="docker",
                 observed_at=observed_at,
@@ -628,7 +628,7 @@ def test_discovery_docker_wins_over_lower_confidence_user_systemd():
             ),
             Fact(
                 id="fact_runtime_systemd",
-                subject_id="jellyfin",
+                subject_id="web_service",
                 predicate="runtime",
                 value="systemd",
                 observed_at=observed_at,
@@ -645,7 +645,7 @@ def test_discovery_docker_wins_over_lower_confidence_user_systemd():
     assert conflict.winning_value == "docker"
     assert conflict.best_fact_id == "fact_runtime_docker"
     assert conflict.conflicting_fact_ids == ["fact_runtime_systemd"]
-    assert state.get_best_fact("jellyfin", "runtime").value == "docker"
+    assert state.get_best_fact("web_service", "runtime").value == "docker"
 
 
 def test_fact_conflicts_selects_highest_confidence_as_best():
@@ -654,7 +654,7 @@ def test_fact_conflicts_selects_highest_confidence_as_best():
         [
             Fact(
                 id="fact_runtime_docker",
-                subject_id="jellyfin",
+                subject_id="web_service",
                 predicate="runtime",
                 value="docker",
                 observed_at=observed_at,
@@ -662,7 +662,7 @@ def test_fact_conflicts_selects_highest_confidence_as_best():
             ),
             Fact(
                 id="fact_runtime_systemd",
-                subject_id="jellyfin",
+                subject_id="web_service",
                 predicate="runtime",
                 value="systemd",
                 observed_at=observed_at,
@@ -680,7 +680,7 @@ def test_fact_conflicts_lower_confidence_inferred_fact_loses_to_observed_fact():
     state = StateProjector(EventLedger()).project("ws_empty")
     observed = Fact(
         id="fact_observed_runtime",
-        subject_id="jellyfin",
+        subject_id="web_service",
         predicate="runtime",
         value="docker",
         observed_at=observed_at,
@@ -688,7 +688,7 @@ def test_fact_conflicts_lower_confidence_inferred_fact_loses_to_observed_fact():
     )
     inferred = Fact(
         id="fact_inferred_runtime",
-        subject_id="jellyfin",
+        subject_id="web_service",
         predicate="runtime",
         value="systemd",
         observed_at=observed_at,
@@ -711,7 +711,7 @@ def test_fact_conflicts_preserves_provenance():
         [
             Fact(
                 id="fact_runtime_docker",
-                subject_id="jellyfin",
+                subject_id="web_service",
                 predicate="runtime",
                 value="docker",
                 evidence_ids=["evd_docker"],
@@ -720,7 +720,7 @@ def test_fact_conflicts_preserves_provenance():
             ),
             Fact(
                 id="fact_runtime_systemd",
-                subject_id="jellyfin",
+                subject_id="web_service",
                 predicate="runtime",
                 value="systemd",
                 evidence_ids=["evd_systemd"],
@@ -740,15 +740,15 @@ def test_alias_observation_does_not_resolve_endpoint_fact_to_host_subject():
     state = _projected_state(
         [
             Fact(
-                id="fact_alias_node115_instance",
-                subject_id="node115",
+                id="fact_alias_example_host_instance",
+                subject_id="example_host",
                 predicate="alias",
-                value="192.168.254.115:9100",
+                value="192.0.2.115:9100",
                 observed_at=observed_at,
             ),
             Fact(
                 id="fact_prometheus_up",
-                subject_id="192.168.254.115:9100",
+                subject_id="192.0.2.115:9100",
                 predicate="up",
                 value=1,
                 observed_at=observed_at,
@@ -759,8 +759,8 @@ def test_alias_observation_does_not_resolve_endpoint_fact_to_host_subject():
         workspace_id="ws_alias_best_fact",
     )
 
-    assert state.get_best_fact("node115", "up") is None
-    best = state.get_best_fact("192.168.254.115:9100", "up")
+    assert state.get_best_fact("example_host", "up") is None
+    best = state.get_best_fact("192.0.2.115:9100", "up")
     assert best is not None
     assert best.id == "fact_prometheus_up"
     assert state.entity_aliases == []
@@ -772,14 +772,14 @@ def test_prometheus_instance_observation_does_not_resolve_endpoint_fact_to_host(
         [
             Fact(
                 id="fact_prometheus_instance",
-                subject_id="node115",
+                subject_id="example_host",
                 predicate="prometheus_instance",
-                value="192.168.254.115:9100",
+                value="192.0.2.115:9100",
                 observed_at=observed_at,
             ),
             Fact(
                 id="fact_prometheus_up",
-                subject_id="192.168.254.115:9100",
+                subject_id="192.0.2.115:9100",
                 predicate="up",
                 value=1,
                 observed_at=observed_at,
@@ -790,8 +790,8 @@ def test_prometheus_instance_observation_does_not_resolve_endpoint_fact_to_host(
         workspace_id="ws_prometheus_instance_best_fact",
     )
 
-    assert state.get_best_fact("node115", "up") is None
-    assert state.get_best_fact("192.168.254.115:9100", "up").id == "fact_prometheus_up"
+    assert state.get_best_fact("example_host", "up") is None
+    assert state.get_best_fact("192.0.2.115:9100", "up").id == "fact_prometheus_up"
 
 
 def test_exact_subject_query_can_disable_alias_resolution():
@@ -799,15 +799,15 @@ def test_exact_subject_query_can_disable_alias_resolution():
     state = _projected_state(
         [
             Fact(
-                id="fact_alias_node115_instance",
-                subject_id="node115",
+                id="fact_alias_example_host_instance",
+                subject_id="example_host",
                 predicate="alias",
-                value="192.168.254.115:9100",
+                value="192.0.2.115:9100",
                 observed_at=observed_at,
             ),
             Fact(
                 id="fact_prometheus_up",
-                subject_id="192.168.254.115:9100",
+                subject_id="192.0.2.115:9100",
                 predicate="up",
                 value=1,
                 observed_at=observed_at,
@@ -816,8 +816,8 @@ def test_exact_subject_query_can_disable_alias_resolution():
         workspace_id="ws_alias_exact_mode",
     )
 
-    assert state.get_best_fact("192.168.254.115:9100", "up") is not None
-    assert state.get_best_fact("node115", "up", resolve_aliases=False) is None
+    assert state.get_best_fact("192.0.2.115:9100", "up") is not None
+    assert state.get_best_fact("example_host", "up", resolve_aliases=False) is None
 
 
 def test_unrelated_ip_does_not_merge_without_explicit_alias():
@@ -825,10 +825,10 @@ def test_unrelated_ip_does_not_merge_without_explicit_alias():
     state = _projected_state(
         [
             Fact(
-                id="fact_alias_node115_instance",
-                subject_id="node115",
+                id="fact_alias_example_host_instance",
+                subject_id="example_host",
                 predicate="alias",
-                value="192.168.254.115:9100",
+                value="192.0.2.115:9100",
                 observed_at=observed_at,
             ),
             Fact(
@@ -842,7 +842,7 @@ def test_unrelated_ip_does_not_merge_without_explicit_alias():
         workspace_id="ws_alias_no_unrelated_merge",
     )
 
-    assert state.get_best_fact("node115", "up") is None
+    assert state.get_best_fact("example_host", "up") is None
 
 
 def test_endpoint_and_host_measurements_remain_separate_without_identity_alias():
@@ -850,15 +850,15 @@ def test_endpoint_and_host_measurements_remain_separate_without_identity_alias()
     state = _projected_state(
         [
             Fact(
-                id="fact_alias_node115_instance",
-                subject_id="node115",
+                id="fact_alias_example_host_instance",
+                subject_id="example_host",
                 predicate="alias",
-                value="192.168.254.115:9100",
+                value="192.0.2.115:9100",
                 observed_at=observed_at,
             ),
             Fact(
                 id="fact_node_up",
-                subject_id="node115",
+                subject_id="example_host",
                 predicate="up",
                 value=0,
                 observed_at=observed_at,
@@ -867,7 +867,7 @@ def test_endpoint_and_host_measurements_remain_separate_without_identity_alias()
             ),
             Fact(
                 id="fact_prometheus_up",
-                subject_id="192.168.254.115:9100",
+                subject_id="192.0.2.115:9100",
                 predicate="up",
                 value=1,
                 observed_at=observed_at,
@@ -880,9 +880,9 @@ def test_endpoint_and_host_measurements_remain_separate_without_identity_alias()
 
     assert not any(conflict.predicate == "up" for conflict in state.fact_conflicts)
     assert "fact_node_up" in state.facts
-    assert state.get_best_fact("node115", "up").id == "fact_node_up"
+    assert state.get_best_fact("example_host", "up").id == "fact_node_up"
     assert (
-        state.get_best_fact("192.168.254.115:9100", "up").id
+        state.get_best_fact("192.0.2.115:9100", "up").id
         == "fact_prometheus_up"
     )
 
@@ -903,13 +903,13 @@ def test_projector_derives_entity_types_from_facts_and_relationships():
         )
 
     facts = [
-        fact("fact_ansible", "node115", "ansible_host", "192.168.1.115"),
-        fact("fact_ip", "node115", "ip_address", "192.168.1.115"),
-        fact("fact_os", "node115", "os", "linux"),
-        fact("fact_group", "node115", "group", "servers"),
-        fact("fact_runs", "jellyfin", "runs_on", "node115"),
-        fact("fact_monitor", "node115", "prometheus_instance", "node115:9100"),
-        fact("fact_capability", "node115", "provides", "ssh_access"),
+        fact("fact_ansible", "example_host", "ansible_host", "192.168.1.115"),
+        fact("fact_ip", "example_host", "ip_address", "192.168.1.115"),
+        fact("fact_os", "example_host", "os", "linux"),
+        fact("fact_group", "example_host", "group", "servers"),
+        fact("fact_runs", "web_service", "runs_on", "example_host"),
+        fact("fact_monitor", "example_host", "prometheus_instance", "example_host:9100"),
+        fact("fact_capability", "example_host", "provides", "ssh_access"),
         fact("fact_endpoint", "192.168.1.115:8096", "status", "up"),
     ]
     for observed_fact in facts:
@@ -917,15 +917,15 @@ def test_projector_derives_entity_types_from_facts_and_relationships():
 
     state = StateProjector(ledger).project(workspace_id)
 
-    assert state.get_current_entity_types("node115") == ["host"]
+    assert state.get_current_entity_types("example_host") == ["host"]
     assert state.get_current_entity_types("servers") == ["group"]
-    assert state.get_current_entity_types("jellyfin") == ["service"]
+    assert state.get_current_entity_types("web_service") == ["service"]
     assert state.get_current_entity_types("prometheus") == ["monitoring_system"]
     assert state.get_current_entity_types("ssh_access") == ["capability"]
     assert state.get_current_entity_types("192.168.1.115:8096") == ["endpoint"]
     assert any(
         assertion.source_fact_id == "fact_os"
-        for assertion in state.get_entity_type_assertions("node115")
+        for assertion in state.get_entity_type_assertions("example_host")
     )
     assert any(
         assertion.source_relationship_id

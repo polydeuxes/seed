@@ -387,9 +387,9 @@ Storage path text is another source emission that can be overinterpreted.
 Bad collapse:
 
 ```text
-/mnt/node210/sda1
+/mnt/example_host_e/sda1
         ↓
-node210 owns storage
+example_host_e owns storage
 ```
 
 Correct shape:

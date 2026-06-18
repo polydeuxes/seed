@@ -29,9 +29,9 @@ filesystems:
   10.0.0.1:9100 /: ... bytes free/total
   192.168.254.100:9100 /: ... bytes free/total
   192.168.254.100:9100 /mnt/merged: ... bytes free/total
-  192.168.254.100:9100 /mnt/node205/sda1: ... bytes free/total
-  192.168.254.101:9100 /mnt/node200/sda1: ... bytes free/total
-  192.168.254.101:9100 /mnt/node205/sda1: ... bytes free/total
+  192.168.254.100:9100 /mnt/example_host_205/sda1: ... bytes free/total
+  192.168.254.101:9100 /mnt/example_host_f/sda1: ... bytes free/total
+  192.168.254.101:9100 /mnt/example_host_205/sda1: ... bytes free/total
 ```
 
 This output is technically grounded in observed filesystem measurements, but it is semantically over-broad as a top-level state summary.
@@ -126,7 +126,7 @@ However, exact endpoint subject preservation does not solve summary meaning.
 It still produces rows such as:
 
 ```text
-192.168.254.101:9100 /mnt/node205/sda1
+192.168.254.101:9100 /mnt/example_host_205/sda1
 ```
 
 which are accurate as endpoint-scoped measurements, but ambiguous as high-level storage topology.
@@ -242,19 +242,19 @@ this endpoint reported a filesystem measurement for this mountpoint and dimensio
 Example:
 
 ```text
-192.168.254.101:9100 /mnt/node205/sda1
+192.168.254.101:9100 /mnt/example_host_205/sda1
 ```
 
 Safe claim:
 
 ```text
-The 192.168.254.101:9100 scrape target reported measurements for /mnt/node205/sda1.
+The 192.168.254.101:9100 scrape target reported measurements for /mnt/example_host_205/sda1.
 ```
 
 Unsafe implied claim:
 
 ```text
-node101 owns node205 storage.
+example_host_101 owns example_host_205 storage.
 ```
 
 ### Boundary 2: mountpoint path vs topology authority
@@ -264,7 +264,7 @@ A path containing a node name is not authority that the named node currently own
 Example:
 
 ```text
-/mnt/node210/sda1
+/mnt/example_host_e/sda1
 ```
 
 may be:
@@ -332,7 +332,7 @@ Ask-worthy cases include:
 ```
 
 ```text
-/mnt/sda1 and /mnt/node210/sda1 may refer to same or related backing storage
+/mnt/sda1 and /mnt/example_host_e/sda1 may refer to same or related backing storage
 ```
 
 ```text

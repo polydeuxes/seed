@@ -16,17 +16,17 @@ def _triples(observations):
 def test_ini_inventory_emits_authoritative_identity_observations(tmp_path):
     inventory_path = tmp_path / "inventory.ini"
     inventory_path.write_text(
-        "[nodegroup]\nnode115 ansible_host=192.168.254.115\n", encoding="utf-8"
+        "[nodegroup]\nexample_host ansible_host=192.0.2.115\n", encoding="utf-8"
     )
 
     observations = AnsibleInventoryObservationSource(inventory_path).collect()
 
     assert _triples(observations) == {
-        ("node115", "hostname", "node115"),
-        ("node115", "ansible_host", "192.168.254.115"),
-        ("node115", "ip_address", "192.168.254.115"),
-        ("node115", "alias", "192.168.254.115"),
-        ("node115", "group", "nodegroup"),
+        ("example_host", "hostname", "example_host"),
+        ("example_host", "ansible_host", "192.0.2.115"),
+        ("example_host", "ip_address", "192.0.2.115"),
+        ("example_host", "alias", "192.0.2.115"),
+        ("example_host", "group", "nodegroup"),
     }
     assert {observation.source_type for observation in observations} == {"imported"}
     assert {observation.confidence for observation in observations} == {0.95}
@@ -47,8 +47,8 @@ def test_yaml_inventory_emits_authoritative_identity_observations(tmp_path):
     inventory_path.write_text(
         """all:
   hosts:
-    node115:
-      ansible_host: 192.168.254.115
+    example_host:
+      ansible_host: 192.0.2.115
 """,
         encoding="utf-8",
     )
@@ -56,11 +56,11 @@ def test_yaml_inventory_emits_authoritative_identity_observations(tmp_path):
     observations = AnsibleInventoryObservationSource(inventory_path).collect()
 
     assert _triples(observations) == {
-        ("node115", "hostname", "node115"),
-        ("node115", "ansible_host", "192.168.254.115"),
-        ("node115", "ip_address", "192.168.254.115"),
-        ("node115", "alias", "192.168.254.115"),
-        ("node115", "group", "all"),
+        ("example_host", "hostname", "example_host"),
+        ("example_host", "ansible_host", "192.0.2.115"),
+        ("example_host", "ip_address", "192.0.2.115"),
+        ("example_host", "alias", "192.0.2.115"),
+        ("example_host", "group", "all"),
     }
 
 
@@ -71,15 +71,15 @@ def test_yaml_children_inventory_records_each_group_membership(tmp_path):
   children:
     nodegroup:
       hosts:
-        node115:
-          ansible_host: 192.168.254.115
+        example_host:
+          ansible_host: 192.0.2.115
 """,
         encoding="utf-8",
     )
 
     observations = AnsibleInventoryObservationSource(inventory_path).collect()
 
-    assert ("node115", "group", "nodegroup") in _triples(observations)
+    assert ("example_host", "group", "nodegroup") in _triples(observations)
 
 
 def test_ini_extension_containing_yaml_uses_yaml_parser(tmp_path):
@@ -89,15 +89,15 @@ def test_ini_extension_containing_yaml_uses_yaml_parser(tmp_path):
   children:
     servers:
       hosts:
-        node115:
-          ansible_host: 192.168.254.115
+        example_host:
+          ansible_host: 192.0.2.115
 """,
         encoding="utf-8",
     )
 
     observations = AnsibleInventoryObservationSource(inventory_path).collect()
 
-    assert ("node115", "group", "servers") in _triples(observations)
+    assert ("example_host", "group", "servers") in _triples(observations)
     assert {
         observation.metadata["input_detected_format"] for observation in observations
     } == {"yaml"}
@@ -110,12 +110,12 @@ def test_ini_extension_containing_yaml_uses_yaml_parser(tmp_path):
 def test_yaml_extension_containing_ini_uses_ini_parser(tmp_path):
     inventory_path = tmp_path / "inventory.yml"
     inventory_path.write_text(
-        "[servers]\nnode115 ansible_host=192.168.254.115\n", encoding="utf-8"
+        "[servers]\nexample_host ansible_host=192.0.2.115\n", encoding="utf-8"
     )
 
     observations = AnsibleInventoryObservationSource(inventory_path).collect()
 
-    assert ("node115", "group", "servers") in _triples(observations)
+    assert ("example_host", "group", "servers") in _triples(observations)
     assert {
         observation.metadata["input_detected_format"] for observation in observations
     } == {"ini"}
@@ -138,8 +138,8 @@ def test_secret_inventory_vars_are_ignored(tmp_path):
     inventory_path.write_text(
         """all:
   hosts:
-    node115:
-      ansible_host: 192.168.254.115
+    example_host:
+      ansible_host: 192.0.2.115
       ansible_password: do-not-ingest
       ansible_become_password: do-not-ingest
       ansible_ssh_private_key_file: /secret/key
@@ -157,18 +157,18 @@ def test_secret_inventory_vars_are_ignored(tmp_path):
     assert "do-not-ingest" not in serialized
     assert "/secret/key" not in serialized
     assert _triples(observations) == {
-        ("node115", "hostname", "node115"),
-        ("node115", "ansible_host", "192.168.254.115"),
-        ("node115", "ip_address", "192.168.254.115"),
-        ("node115", "alias", "192.168.254.115"),
-        ("node115", "group", "all"),
+        ("example_host", "hostname", "example_host"),
+        ("example_host", "ansible_host", "192.0.2.115"),
+        ("example_host", "ip_address", "192.0.2.115"),
+        ("example_host", "alias", "192.0.2.115"),
+        ("example_host", "group", "all"),
     }
 
 
 def test_inventory_and_prometheus_observations_keep_endpoint_availability_scoped(tmp_path):
     inventory_path = tmp_path / "inventory.ini"
     inventory_path.write_text(
-        "[nodegroup]\nnode115 ansible_host=192.168.254.115\n", encoding="utf-8"
+        "[nodegroup]\nexample_host ansible_host=192.0.2.115\n", encoding="utf-8"
     )
     ledger = EventLedger()
     service = ObservationCollectionService(ObservationIngestor(ledger))
@@ -180,14 +180,14 @@ def test_inventory_and_prometheus_observations_keep_endpoint_availability_scoped
                     id="obs_prometheus_up",
                     source_type="provider",
                     observed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
-                    subject="192.168.254.115:9100",
+                    subject="192.0.2.115:9100",
                     predicate="up",
                     value=1,
                     confidence=0.95,
                     metadata={
                         "source_name": "prometheus",
-                        "nodename": "node115",
-                        "instance": "192.168.254.115:9100",
+                        "nodename": "example_host",
+                        "instance": "192.0.2.115:9100",
                     },
                 )
             ],
@@ -198,13 +198,13 @@ def test_inventory_and_prometheus_observations_keep_endpoint_availability_scoped
 
     state = StateProjector(ledger).project("ws_ansible")
 
-    assert state.alias_resolver.canonical("192.168.254.115") == "node115"
-    assert state.alias_resolver.canonical("192.168.254.115:9100") == "192.168.254.115:9100"
-    assert state.get_best_fact("node115", "up") is None
-    assert state.get_best_fact("192.168.254.115:9100", "up").value == 1
+    assert state.alias_resolver.canonical("192.0.2.115") == "example_host"
+    assert state.alias_resolver.canonical("192.0.2.115:9100") == "192.0.2.115:9100"
+    assert state.get_best_fact("example_host", "up") is None
+    assert state.get_best_fact("192.0.2.115:9100", "up").value == 1
     assert any(
-        fact.subject_id == "node115"
+        fact.subject_id == "example_host"
         and fact.predicate == "prometheus_instance"
-        and fact.value == "192.168.254.115:9100"
+        and fact.value == "192.0.2.115:9100"
         for fact in state.facts.values()
     )

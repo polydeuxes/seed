@@ -424,7 +424,7 @@ Entity types are inferred after facts and relationships exist. This can validate
 
 ### 5. State query routing can cross endpoint and host boundaries through alias resolution
 
-State lookup defaults can resolve aliases. Existing tests expect `state.get_best_fact("node115", "up")` to return the `up` fact attached to `192.168.254.115:9100` when a `prometheus_instance` or alias connection exists. This makes endpoint availability appear through a host query path.
+State lookup defaults can resolve aliases. Existing tests expect `state.get_best_fact("example_host", "up")` to return the `up` fact attached to `192.0.2.115:9100` when a `prometheus_instance` or alias connection exists. This makes endpoint availability appear through a host query path.
 
 ---
 
@@ -520,14 +520,14 @@ but it can become reachable through host identity aliases.
 This behavior still exists. When `node_uname_info` provides `nodename` and `instance`, `EndpointAliasNormalizer` derives:
 
 ```text
-node115 prometheus_instance 192.168.254.115:9100
+example_host prometheus_instance 192.0.2.115:9100
 ```
 
 The relationship catalog then projects:
 
 ```text
-node115 alias_of 192.168.254.115:9100
-node115 monitored_by prometheus
+example_host alias_of 192.0.2.115:9100
+example_host monitored_by prometheus
 ```
 
 ### endpoint observation → host fact attachment

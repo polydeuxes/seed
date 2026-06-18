@@ -17,10 +17,10 @@ Representative relationships included:
 ```text
 192.168.254.208:9100 provides node-exporter
 192.168.254.101:9200 provides cadvisor
-node211 alias_of 192.168.254.211:9100
-node211 monitored_by prometheus
-node115 alias_of 192.168.254.115:9200
-node115 alias_of 192.168.254.115:9100
+example_host_211 alias_of 192.168.254.211:9100
+example_host_211 monitored_by prometheus
+example_host alias_of 192.0.2.115:9200
+example_host alias_of 192.0.2.115:9100
 ```
 
 Entity typing showed examples such as:
@@ -43,7 +43,7 @@ object types: expected=capability actual=monitoring_system
 and warnings such as:
 
 ```text
-node211 monitored_by prometheus
+example_host_211 monitored_by prometheus
 reason: subject type is unknown; expected host
 ```
 
@@ -76,15 +76,15 @@ They should not all be represented through `alias_of`, `provides`, and host-leve
 Examples that may be valid:
 
 ```text
-node115 alias_of 192.168.254.115
-node115 alias_of host machine-id identity
+example_host alias_of 192.0.2.115
+example_host alias_of host machine-id identity
 ```
 
 Examples that are not valid identity equivalence:
 
 ```text
-node115 alias_of 192.168.254.115:9100
-node115 alias_of 192.168.254.115:9200
+example_host alias_of 192.0.2.115:9100
+example_host alias_of 192.0.2.115:9200
 ```
 
 A host is not the same entity as a host:port endpoint.
@@ -92,15 +92,15 @@ A host is not the same entity as a host:port endpoint.
 Better relationship shape:
 
 ```text
-node115 has_endpoint 192.168.254.115:9100
-node115 has_endpoint 192.168.254.115:9200
+example_host has_endpoint 192.0.2.115:9100
+example_host has_endpoint 192.0.2.115:9200
 ```
 
 or equivalently:
 
 ```text
-192.168.254.115:9100 endpoint_of node115
-192.168.254.115:9200 endpoint_of node115
+192.0.2.115:9100 endpoint_of example_host
+192.0.2.115:9200 endpoint_of example_host
 ```
 
 This preserves identity while still connecting the host to its observed scrape targets.
@@ -136,7 +136,7 @@ Examples:
 Endpoint-level:
 
 ```text
-subject=192.168.254.115:9100
+subject=192.0.2.115:9100
 predicate=prometheus_instance
 predicate=endpoint_role
 predicate=up / scrape status
@@ -145,7 +145,7 @@ predicate=up / scrape status
 Host-level:
 
 ```text
-subject=node115 or 192.168.254.115
+subject=example_host or 192.0.2.115
 predicate=os
 predicate=filesystem_* measurement when host identity is known
 ```
@@ -196,7 +196,7 @@ This audit does not choose the final vocabulary. It only rejects using `provides
 Warnings such as:
 
 ```text
-node211 monitored_by prometheus
+example_host_211 monitored_by prometheus
 subject type is unknown; expected host
 ```
 
@@ -278,8 +278,8 @@ Near-term Prometheus ingestion fixes should consider:
 Potential tests:
 
 ```text
-node115 is not alias_of 192.168.254.115:9100
-192.168.254.115:9100 is typed endpoint only
+example_host is not alias_of 192.0.2.115:9100
+192.0.2.115:9100 is typed endpoint only
 os facts from Prometheus attach to host subject, not endpoint subject
 endpoint_role attaches to endpoint subject
 prometheus target up remains endpoint-scoped

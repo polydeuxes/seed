@@ -19,7 +19,7 @@ same thing as continuity evidence**, but the repository also does not yet contai
 a general first-class baseline concept for operational topology such as:
 
 ```text
-node116 normally sees mount M
+example_host_b normally sees mount M
 ```
 
 The strongest repository-preserving interpretation is that baseline is a
@@ -50,7 +50,7 @@ concern
 ```
 
 Therefore, the repository appears to need the baseline question resolved before
-expectation can be discussed safely for the node116 scenario. A baseline-like
+expectation can be discussed safely for the example_host_b scenario. A baseline-like
 reference could help an operator ask whether a visibility change is significant
 without prematurely asserting that the mount was required.
 
@@ -71,10 +71,10 @@ Or is it a distinct architectural concept?
 The operational pressure behind the question is:
 
 ```text
-node116 has observed mount M
+example_host_b has observed mount M
 for a long period of time
 
-node116 stops observing mount M
+example_host_b stops observing mount M
 
 operator notices change
 
@@ -108,7 +108,7 @@ Their findings remain mutually compatible with the inspected repository evidence
    read projections, goals, policy, requirements inside validation boundaries,
    capability verification, and lens-like interpretation.
 2. Current repository authority does not contain a general operational
-   expectation capable of saying `node116 should see mount M`.
+   expectation capable of saying `example_host_b should see mount M`.
 3. History can support continuity evidence, but current projected State is not a
    general continuity model: measurement projection defaults to keeping the
    latest sample per canonical subject, predicate, and dimensions while the
@@ -203,8 +203,8 @@ baseline
 
 #### What it explains
 
-This model explains the operator's intuition in the node116 scenario. If
-node116 has observed mount M for a long period, then loss of that observation is
+This model explains the operator's intuition in the example_host_b scenario. If
+example_host_b has observed mount M for a long period, then loss of that observation is
 significant because it deviates from a long-lived pattern. It does not require
 up-front declaration of every mount that matters.
 
@@ -228,14 +228,14 @@ available. Therefore, the current State projection cannot itself substantiate
 This model also risks smuggling in expectation. A statement such as:
 
 ```text
-node116 has always seen M, therefore M is baseline, therefore loss matters
+example_host_b has always seen M, therefore M is baseline, therefore loss matters
 ```
 
 is safe only if `matters` means comparison-worthy or attention-worthy. It is not
 safe if it means:
 
 ```text
-node116 should still see M
+example_host_b should still see M
 ```
 
 #### Compatibility
@@ -261,14 +261,14 @@ because an operator, policy, requirement, workflow, imported source, or other
 named authority selected a reference condition. Historical continuity may inform
 that selection but does not itself bind it.
 
-For node116, an operator could declare:
+For example_host_b, an operator could declare:
 
 ```text
-For this investigation, compare current node116 mount visibility to the selected
-reference condition in which node116 saw mount M.
+For this investigation, compare current example_host_b mount visibility to the selected
+reference condition in which example_host_b saw mount M.
 ```
 
-That can support deviation analysis without asserting that node116 must continue
+That can support deviation analysis without asserting that example_host_b must continue
 to see M.
 
 #### Repository support
@@ -309,7 +309,7 @@ What reference condition is supported by the current projection plus historical
 ledger evidence?
 ```
 
-For node116, a baseline projection could summarize that node116 historically had
+For example_host_b, a baseline projection could summarize that example_host_b historically had
 mount M visible and current projected State no longer has the current sample.
 
 #### Repository support
@@ -350,10 +350,10 @@ stored State object. Instead, a continuity or topology lens interprets historica
 visibility evidence as a baseline-like comparison frame for the operator's
 question.
 
-For node116, the lens would say:
+For example_host_b, the lens would say:
 
 ```text
-Compared with the observed historical visibility pattern, current node116 mount
+Compared with the observed historical visibility pattern, current example_host_b mount
 visibility differs because M is no longer observed.
 ```
 
@@ -388,12 +388,12 @@ Continuity evidence is sufficient. No separate baseline concept is needed.
 
 #### What it explains
 
-This model preserves minimal architecture. Node116's change could be described
+This model preserves minimal architecture. Example host's change could be described
 without introducing baseline:
 
 ```text
-Historical evidence: node116 repeatedly observed M.
-Current evidence: node116 no longer observes M.
+Historical evidence: example_host_b repeatedly observed M.
+Current evidence: example_host_b no longer observes M.
 Concern: operator may want to investigate changed visibility.
 ```
 
@@ -425,10 +425,10 @@ Continuity answers:
 What survived or persisted across observations despite change?
 ```
 
-In the node116 example, continuity evidence would be:
+In the example_host_b example, continuity evidence would be:
 
 ```text
-node116 observed mount M repeatedly over a long period
+example_host_b observed mount M repeatedly over a long period
 ```
 
 Under current repository authority, this is historical evidence, not current
@@ -450,11 +450,11 @@ or authority-bearing:
 For the audit's first required question, continuity differs from baseline and
 expectation as follows:
 
-| Concept | Primary question | Node116 example | Boundary |
+| Concept | Primary question | Example host example | Boundary |
 | --- | --- | --- | --- |
-| Continuity | What pattern survived across observations? | node116 historically observed M. | Does not select a reference by itself and does not say should. |
-| Baseline | What reference condition is used for comparison? | compare current node116 visibility against a reference where M was visible. | May be evidence-backed or declared, but must not automatically become should. |
-| Expectation | What condition is authority-backed as anticipated or required? | node116 should see M. | Requires named authority; history alone is insufficient. |
+| Continuity | What pattern survived across observations? | example_host_b historically observed M. | Does not select a reference by itself and does not say should. |
+| Baseline | What reference condition is used for comparison? | compare current example_host_b visibility against a reference where M was visible. | May be evidence-backed or declared, but must not automatically become should. |
+| Expectation | What condition is authority-backed as anticipated or required? | example_host_b should see M. | Requires named authority; history alone is insufficient. |
 
 ## Baseline analysis
 
@@ -472,7 +472,7 @@ but baseline involves selection, framing, or interpretation of a reference state
 The same continuity evidence can support multiple possible baselines:
 
 ```text
-node116 normally sees M
+example_host_b normally sees M
 cluster nodes normally see M
 this mountpoint normally appears on nodes in group G
 this investigation compares against the last known complete observation
@@ -487,10 +487,10 @@ explain deviation without asserting that the baseline is desired or required.
 For example:
 
 ```text
-Baseline-like comparison: node116 previously observed M.
-Current observation: node116 no longer observes M.
+Baseline-like comparison: example_host_b previously observed M.
+Current observation: example_host_b no longer observes M.
 Concern: this is a visibility deviation worth explaining.
-No expectation asserted: the audit does not claim node116 should see M.
+No expectation asserted: the audit does not claim example_host_b should see M.
 ```
 
 Therefore, a baseline can exist without expectation if it is scoped as a
@@ -498,7 +498,7 @@ reference condition rather than an obligation. Conversely, expectation can exist
 without a baseline if an authority directly declares:
 
 ```text
-node116 should see mount M
+example_host_b should see mount M
 ```
 
 without deriving that statement from a historical reference. That expectation
@@ -515,7 +515,7 @@ under a named authority?
 ```
 
 The required documents and implementation evidence continue to show no general
-operational expectation authority for `node116 should see mount M`. The
+operational expectation authority for `example_host_b should see mount M`. The
 repository contains should-like concepts in bounded domains:
 
 - policy constraints over behavior;
@@ -526,21 +526,21 @@ repository contains should-like concepts in bounded domains:
 - capability verification as support/readiness evidence without execution or
   selection authority.
 
-None of these currently supplies a general topology expectation. In the node116
+None of these currently supplies a general topology expectation. In the example_host_b
 example, expectation would require extra authority such as an operator-declared
 requirement, policy, goal-linked supporting-condition model, imported inventory,
 or accepted expectation record. Historical visibility alone does not provide
 that authority.
 
-## Node116 example analysis
+## Example host example analysis
 
 Scenario:
 
 ```text
-node116 has observed mount M
+example_host_b has observed mount M
 for a long period of time
 
-node116 stops observing mount M
+example_host_b stops observing mount M
 
 operator notices change
 
@@ -550,12 +550,12 @@ operator wonders whether change is significant
 ### Observation
 
 Observation records source-attributed reports at observation times. The relevant
-observations are Prometheus or other measurement reports that node116 had
+observations are Prometheus or other measurement reports that example_host_b had
 filesystem visibility for M, followed by a later report in which M is missing or
 no current complete filesystem measurement for M exists.
 
 Observation does not assert truth beyond the report. It does not say M belongs
-to node116, should be mounted, or is operationally required.
+to example_host_b, should be mounted, or is operationally required.
 
 ### Visibility
 
@@ -564,12 +564,12 @@ vantage point. Existing storage projection can represent current filesystem
 visibility by subject, mountpoint, and dimensions, and can group mount visibility
 across endpoints.
 
-For node116:
+For example_host_b:
 
 ```text
-Before: node116 had visibility of mount M.
+Before: example_host_b had visibility of mount M.
 After: current projection no longer contains complete current visibility of M
-       for node116.
+       for example_host_b.
 ```
 
 Visibility remains separate from ownership and expected topology.
@@ -579,7 +579,7 @@ Visibility remains separate from ownership and expected topology.
 Continuity is the survival of the observed pattern over time:
 
 ```text
-node116 repeatedly observed M across many samples or observation events.
+example_host_b repeatedly observed M across many samples or observation events.
 ```
 
 Continuity helps explain why the disappearance is not just a single isolated
@@ -592,7 +592,7 @@ limit. The current projection is not itself a continuity authority.
 A baseline would be the comparison reference:
 
 ```text
-For this question, treat node116-sees-M as the reference condition being compared
+For this question, treat example_host_b-sees-M as the reference condition being compared
 against current visibility.
 ```
 
@@ -607,13 +607,13 @@ That reference could be:
 The key boundary is that baseline-as-reference does not assert:
 
 ```text
-node116 should see M
+example_host_b should see M
 ```
 
 It only says:
 
 ```text
-current node116 visibility differs from the reference condition.
+current example_host_b visibility differs from the reference condition.
 ```
 
 ### Expectation
@@ -621,7 +621,7 @@ current node116 visibility differs from the reference condition.
 Expectation would say:
 
 ```text
-node116 should continue seeing mount M
+example_host_b should continue seeing mount M
 ```
 
 Current repository authority cannot make that assertion from history alone. It
@@ -637,7 +637,7 @@ visibility or from a selected comparison reference. That concern can be framed a
 uncertainty, investigation pressure, ambiguity, or knowledge-quality need:
 
 ```text
-node116's current visibility differs from the historical/reference condition;
+example_host_b's current visibility differs from the historical/reference condition;
 this may deserve investigation, but the repository has not asserted that the
 mount should continue.
 ```
@@ -682,7 +682,7 @@ is false. Refresh recommendations are deterministic advisory signals for
 acquiring newer evidence; they are not commands, truth claims, or operational
 expectations.
 
-In the node116 scenario, stale or missing mount evidence can create refresh or
+In the example_host_b scenario, stale or missing mount evidence can create refresh or
 investigation pressure without asserting that the mount should exist.
 
 ### Measurement retention
@@ -704,7 +704,7 @@ expectation by itself.
 
 Goals make knowledge relevant to operator-owned desired outcomes, while policy
 and requirements can carry bounded should-authority. Current repository evidence
-does not show a general requirement that maps `node116` to `mount M` as an
+does not show a general requirement that maps `example_host_b` to `mount M` as an
 intended visibility relation.
 
 ### Verification evidence
@@ -712,7 +712,7 @@ intended visibility relation.
 Capability verification is evidence about whether a capability candidate appears
 supported or ready. It does not select a capability, authorize execution, or
 create operational expectations. Verification-like concepts therefore do not
-supply baseline authority for node116.
+supply baseline authority for example_host_b.
 
 ### Projection architecture
 
@@ -769,14 +769,14 @@ should-bearing or anticipated condition under named authority.
 Yes, if baseline is scoped as a comparison reference. Example:
 
 ```text
-Use the historical node116-sees-M condition as the reference for this
+Use the historical example_host_b-sees-M condition as the reference for this
 investigation.
 ```
 
 That does not assert:
 
 ```text
-node116 should see M.
+example_host_b should see M.
 ```
 
 ### 3. Can expectation exist without a baseline?
@@ -784,7 +784,7 @@ node116 should see M.
 Yes. An operator, policy, requirement, or other authority could declare:
 
 ```text
-node116 should see M
+example_host_b should see M
 ```
 
 without deriving it from a baseline. It would still need authority and support,
@@ -796,18 +796,18 @@ Yes. A deviation from a comparison reference can create concern, ambiguity,
 attention pressure, or a refresh/investigation need without becoming a violation
 of expectation.
 
-### 5. Would the node116 example benefit from baseline before expectation?
+### 5. Would the example_host_b example benefit from baseline before expectation?
 
 Yes. Baseline would let the repository explain the operator's question:
 
 ```text
-Is current node116 visibility significant compared with the reference condition?
+Is current example_host_b visibility significant compared with the reference condition?
 ```
 
 before requiring the stronger and currently unsupported statement:
 
 ```text
-node116 should continue seeing M.
+example_host_b should continue seeing M.
 ```
 
 ### 6. Is baseline evidence, projection, lens, view, interpretation, or other?
@@ -914,8 +914,8 @@ This audit does not conclude that:
 - expectation records should be implemented;
 - continuity history should be retained in current State;
 - alerts, HomeOps, SeedOps, or operator dashboards should be created;
-- node116 should see mount M;
-- mount M is owned by node116 or any other host;
+- example_host_b should see mount M;
+- mount M is owned by example_host_b or any other host;
 - loss of M caused ingestion unevenness;
 - historical continuity is sufficient to create operational requirement;
 - baseline must be declared in all cases;

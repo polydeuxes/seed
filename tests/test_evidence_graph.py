@@ -48,7 +48,7 @@ def _state_with_supported_and_unsupported_facts() -> State:
             "observation_id": "obs_1",
             "subject": "service",
             "predicate": "runs_on",
-            "value": "node116",
+            "value": "example_host_b",
             "run_id": "run_1",
         },
         confidence=0.91,
@@ -57,7 +57,7 @@ def _state_with_supported_and_unsupported_facts() -> State:
         id="fact_supported",
         subject_id="service",
         predicate="runs_on",
-        value="node116",
+        value="example_host_b",
         evidence_ids=[evidence.id],
         source_type="discovery",
         confidence=0.91,
@@ -65,7 +65,7 @@ def _state_with_supported_and_unsupported_facts() -> State:
     )
     unsupported = Fact(
         id="fact_unsupported",
-        subject_id="node214",
+        subject_id="example_host_d",
         predicate="status",
         value="degraded",
         evidence_ids=[],
@@ -79,7 +79,7 @@ def _state_with_supported_and_unsupported_facts() -> State:
         FactSupport(
             subject="service",
             predicate="runs_on",
-            value="node116",
+            value="example_host_b",
             supporting_fact_ids=[supported.id],
             source_types=["discovery"],
             confidence=0.91,
@@ -129,10 +129,10 @@ def test_fact_evidence_view_explains_supported_fact_and_reports_unsupported():
 def test_find_evidence_for_fact_matches_optional_object():
     state = _state_with_supported_and_unsupported_facts()
 
-    matches = find_evidence_for_fact(state, "service", "runs_on", "node116")
+    matches = find_evidence_for_fact(state, "service", "runs_on", "example_host_b")
 
     assert [view.fact_id for view in matches] == ["fact_supported"]
-    assert find_evidence_for_fact(state, "service", "runs_on", "node117") == []
+    assert find_evidence_for_fact(state, "service", "runs_on", "example_host_c") == []
 
 
 def test_evidence_graph_ordering_is_deterministic_and_state_is_not_mutated():
@@ -165,7 +165,7 @@ def _event_count(db_path: Path) -> int:
 def test_cli_evidence_commands_are_read_only_and_print_expected_output(tmp_path, capsys, monkeypatch):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
-    assert seed_local.main(["--db", str(db_path), "--observe", "service", "runs_on", "node116"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--observe", "service", "runs_on", "example_host_b"]) == 0
     capsys.readouterr()
     before_count = _event_count(db_path)
 
@@ -181,10 +181,10 @@ def test_cli_evidence_commands_are_read_only_and_print_expected_output(tmp_path,
     assert "Evidence Nodes: 1" in evidence_output
     assert _event_count(db_path) == before_count
 
-    assert seed_local.main(["--db", str(db_path), "--why-fact", "service", "runs_on", "node116"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--why-fact", "service", "runs_on", "example_host_b"]) == 0
     why_output = capsys.readouterr().out
     assert "Fact" in why_output
-    assert "service runs_on node116" in why_output
+    assert "service runs_on example_host_b" in why_output
     assert "Explanation" in why_output
     assert "Evidence" in why_output
     assert _event_count(db_path) == before_count
@@ -198,7 +198,7 @@ def test_cli_evidence_commands_are_read_only_and_print_expected_output(tmp_path,
 def test_cli_why_fact_handles_missing_fact(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
-    assert seed_local.main(["--db", str(db_path), "--observe", "service", "runs_on", "node116"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--observe", "service", "runs_on", "example_host_b"]) == 0
     capsys.readouterr()
 
     assert seed_local.main(["--db", str(db_path), "--why-fact", "missing", "runs_on"]) == 0

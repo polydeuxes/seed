@@ -133,7 +133,7 @@ def test_summary_aggregates_conflicts_contradictions_graph_and_stale_signals():
     supported = _fact("fact-supported", "svc", "runtime", "docker", evidence_ids=["evd-1"])
     conflict_a = _fact("fact-conflict-a", "svc", "status", "healthy", evidence_ids=["evd-a"])
     conflict_b = _fact("fact-conflict-b", "svc", "status", "degraded", evidence_ids=["evd-b"])
-    stale = _fact("fact-stale", "svc", "host", "node1", expires_at=expired_at)
+    stale = _fact("fact-stale", "svc", "host", "example_host_1", expires_at=expired_at)
     state = State(workspace_id="ws", last_event_id="evt-last")
     state.facts = {
         fact.id: fact
@@ -150,7 +150,7 @@ def test_summary_aggregates_conflicts_contradictions_graph_and_stale_signals():
             severity="warning",
             subject="svc",
             relationship="runs_on",
-            object="node1",
+            object="example_host_1",
             relationship_ids=["rel-1"],
             source_fact_ids=["fact-supported"],
             reason="test graph issue",

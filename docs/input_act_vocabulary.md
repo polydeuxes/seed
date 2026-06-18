@@ -22,7 +22,7 @@ These are related, but they are not the same thing.
 
 An input act classifies the user's utterance as input. A decision kind classifies Seed's next runtime behavior after context composition, model or classifier decision-making, validation, guard checks, policy, and capability constraints. The same input act can lead to different decision kinds depending on evidence, policy, available tools, missing capabilities, ambiguity, and safety. Conversely, the same decision kind can be an appropriate response to several different input acts.
 
-For example, `Install Docker on node116.` is a `command_request` because the user is asking for an action. Its possible downstream `DecisionKind` may be `request_tool`, `propose_action_plan`, `call_tool`, or `refuse` depending on capability, policy, and validation. The input act should not pre-authorize execution.
+For example, `Install Docker on example_host_b.` is a `command_request` because the user is asking for an action. Its possible downstream `DecisionKind` may be `request_tool`, `propose_action_plan`, `call_tool`, or `refuse` depending on capability, policy, and validation. The input act should not pre-authorize execution.
 
 ## Why Existing Vocabulary Is Insufficient
 
@@ -84,8 +84,8 @@ A `command_request` is a user request for Seed to perform, initiate, plan, chang
 
 #### Examples
 
-- `Install Docker on node116.`
-- `Check whether Jellyfin is listening on port 8096.`
+- `Install Docker on example_host_b.`
+- `Check whether web_service is listening on port 8096.`
 - `Create a state patch for the corrected host mapping.`
 
 #### Likely downstream handling
@@ -111,7 +111,7 @@ A `user_observation` is a user-provided report about the world, environment, rep
 
 #### Examples
 
-- `Jellyfin is running on node116.`
+- `web_service is running on example_host_b.`
 - `The local Docker daemon is down.`
 - `The repository has no docs check configured.`
 
@@ -164,7 +164,7 @@ A `correction` is a user statement that revises, negates, or supersedes previous
 
 #### Examples
 
-- `No, node116 is not the Jellyfin host anymore.`
+- `No, example_host_b is not the web_service host anymore.`
 - `Actually, the port is 8097, not 8096.`
 - `Correction: the README does not say ToolExecutor owns every action.`
 
@@ -215,10 +215,10 @@ A `casual_answer` usually maps to `answer`. It may map to `ask_question` if the 
 | User text | InputAct | Possible `DecisionKind` |
 | --- | --- | --- |
 | `What does Seed know about ProjectionStore?` | `operator_query` | `answer` |
-| `Jellyfin is running on node116.` | `user_observation` | `answer` or `ask_question` |
+| `web_service is running on example_host_b.` | `user_observation` | `answer` or `ask_question` |
 | `README says ToolExecutor owns execution.` | `documentation_claim` | `answer` or `ask_question` |
-| `No, node116 is not the Jellyfin host anymore.` | `correction` | `answer` or `ask_question` |
-| `Install Docker on node116.` | `command_request` | `request_tool`, `propose_action_plan`, `call_tool`, or `refuse` depending on policy and capability |
+| `No, example_host_b is not the web_service host anymore.` | `correction` | `answer` or `ask_question` |
+| `Install Docker on example_host_b.` | `command_request` | `request_tool`, `propose_action_plan`, `call_tool`, or `refuse` depending on policy and capability |
 | `Thanks, that makes sense.` | `casual_answer` | `answer` |
 
 The table is illustrative, not a routing specification. The `InputAct` column describes the user input. The `DecisionKind` column describes possible downstream runtime choices after existing decision, validation, guard, policy, and capability logic.

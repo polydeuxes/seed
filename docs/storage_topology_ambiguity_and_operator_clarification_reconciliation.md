@@ -36,9 +36,9 @@ filesystems:
   10.0.0.1:9100 /: ... bytes free/total
   192.168.254.100:9100 /: ... bytes free/total
   192.168.254.100:9100 /mnt/merged: ... bytes free/total
-  192.168.254.100:9100 /mnt/node205/sda1: ... bytes free/total
-  192.168.254.101:9100 /mnt/node200/sda1: ... bytes free/total
-  192.168.254.101:9100 /mnt/node205/sda1: ... bytes free/total
+  192.168.254.100:9100 /mnt/example_host_205/sda1: ... bytes free/total
+  192.168.254.101:9100 /mnt/example_host_f/sda1: ... bytes free/total
+  192.168.254.101:9100 /mnt/example_host_205/sda1: ... bytes free/total
 ```
 
 The observed environment intentionally contains cluster cross-mounts and compatibility paths. Some retired node topology names remain in mount paths because the filesystem layout could not be fully renamed without disrupting existing topology.
@@ -46,8 +46,8 @@ The observed environment intentionally contains cluster cross-mounts and compati
 Example operator-provided scenario:
 
 ```text
-node115 /mnt/sda1
-node115 /mnt/node210/sda1
+example_host /mnt/sda1
+example_host /mnt/example_host_e/sda1
 ```
 
 may represent two paths into the same or related storage topology, not two independently owned local physical disks.
@@ -77,15 +77,15 @@ It becomes a contradiction only when Seed already holds a stronger claim that co
 For example:
 
 ```text
-/mnt/node210/sda1 means physical storage owned by node210
+/mnt/example_host_e/sda1 means physical storage owned by example_host_e
 ```
 
 would conflict with evidence that:
 
 ```text
-node115 /mnt/sda1 maps to the same backing storage
-node115 also exposes /mnt/node210/sda1
-node210 is retired
+example_host /mnt/sda1 maps to the same backing storage
+example_host also exposes /mnt/example_host_e/sda1
+example_host_e is retired
 ```
 
 But without the ownership claim, Seed should not fabricate contradiction.
@@ -136,8 +136,8 @@ Examples:
 ```text
 /
 /mnt/sda1
-/mnt/node205/sda1
-/mnt/node210/sda1
+/mnt/example_host_205/sda1
+/mnt/example_host_e/sda1
 /mnt/merged
 ```
 
@@ -195,10 +195,10 @@ It may include historical or retained naming that is operationally valid but sem
 A path such as:
 
 ```text
-/mnt/node210/sda1
+/mnt/example_host_e/sda1
 ```
 
-may not mean node210 currently owns or serves that storage.
+may not mean example_host_e currently owns or serves that storage.
 
 It may mean:
 
@@ -268,15 +268,15 @@ operator clarification
 Current output can make this look true:
 
 ```text
-192.168.254.101:9100 /mnt/node205/sda1
+192.168.254.101:9100 /mnt/example_host_205/sda1
         means
-node101 owns node205 storage
+example_host_101 owns example_host_205 storage
 ```
 
 But the safer interpretation is:
 
 ```text
-node101's node-exporter endpoint reported a mounted filesystem at /mnt/node205/sda1
+example_host_101's node-exporter endpoint reported a mounted filesystem at /mnt/example_host_205/sda1
 ```
 
 ### Collapse 2: host-local visibility as physical ownership
@@ -293,7 +293,7 @@ physically owned by host
 
 ### Collapse 3: path name as topology truth
 
-A path containing `node210` does not prove current node210 ownership or liveness.
+A path containing `example_host_e` does not prove current example_host_e ownership or liveness.
 
 Path names may be conventions, aliases, compatibility shims, or historical artifacts.
 
@@ -305,7 +305,7 @@ Example possibility:
 
 ```text
 /mnt/sda1
-/mnt/node210/sda1
+/mnt/example_host_e/sda1
 ```
 
 may be:
@@ -333,13 +333,13 @@ A topology anomaly is not a contradiction unless two claims cannot both be true.
 For example:
 
 ```text
-node210 is retired
+example_host_e is retired
 ```
 
 and:
 
 ```text
-path /mnt/node210/sda1 exists on node115
+path /mnt/example_host_e/sda1 exists on example_host
 ```
 
 can both be true.
@@ -372,9 +372,9 @@ Seed should not ask when the ambiguity does not affect any current decision, pro
 ### Example ask-worthy ambiguity
 
 ```text
-node115 reports /mnt/sda1
-node115 reports /mnt/node210/sda1
-node210 appears retired
+example_host reports /mnt/sda1
+example_host reports /mnt/example_host_e/sda1
+example_host_e appears retired
 mount sizes or devices suggest overlap
 ```
 
@@ -403,7 +403,7 @@ This is ask-worthy because it affects:
 ### Example not ask-worthy ambiguity
 
 ```text
-node101 reports /run/user/1000
+example_host_101 reports /run/user/1000
 ```
 
 Unless it affects an active question or recommendation, this can remain a low-value measurement or be hidden from summary projection.
@@ -423,14 +423,14 @@ This filesystem looks weird. What is it?
 Better:
 
 ```text
-I observed node115 reporting both /mnt/sda1 and /mnt/node210/sda1.
+I observed example_host reporting both /mnt/sda1 and /mnt/example_host_e/sda1.
 Do these refer to the same backing storage, a compatibility mount, a remote mount, or two separate filesystems?
 ```
 
 Better:
 
 ```text
-I observed node101 reporting /mnt/node205/sda1.
+I observed example_host_101 reporting /mnt/example_host_205/sda1.
 Should paths under /mnt/node*/sda1 be treated as remote/cross-mounted storage rather than local physical ownership?
 ```
 
@@ -454,11 +454,11 @@ path pattern /mnt/node*/sda1 usually denotes cluster cross-mount
 ```
 
 ```text
-/mnt/node210/sda1 on node115 is a compatibility alias
+/mnt/example_host_e/sda1 on example_host is a compatibility alias
 ```
 
 ```text
-node210 is retired, but the path name remains for compatibility
+example_host_e is retired, but the path name remains for compatibility
 ```
 
 ```text
@@ -540,9 +540,9 @@ A storage topology discrepancy should become a contradiction only when Seed has 
 Examples of possible contradiction:
 
 ```text
-Claim A: /mnt/node210/sda1 is physically owned by active node210.
-Claim B: node210 is retired and no longer owns storage.
-Claim C: /mnt/node210/sda1 is served by node115 local disk.
+Claim A: /mnt/example_host_e/sda1 is physically owned by active example_host_e.
+Claim B: example_host_e is retired and no longer owns storage.
+Claim C: /mnt/example_host_e/sda1 is served by example_host local disk.
 ```
 
 These may conflict depending on claim scope and time.
@@ -550,8 +550,8 @@ These may conflict depending on claim scope and time.
 But this is not contradiction:
 
 ```text
-node210 is retired
-/mnt/node210/sda1 still exists as a compatibility path
+example_host_e is retired
+/mnt/example_host_e/sda1 still exists as a compatibility path
 ```
 
 Those can both be true.
@@ -692,7 +692,7 @@ Should /mnt/node*/sda1 paths be treated as cluster cross-mounts rather than loca
 or:
 
 ```text
-Does /mnt/node210/sda1 remain as a compatibility path even though node210 is retired?
+Does /mnt/example_host_e/sda1 remain as a compatibility path even though example_host_e is retired?
 ```
 
 ### Where should the next implementation attention go?
@@ -717,7 +717,7 @@ The immediate issue is that the summary displays all filesystem measurements as 
 
 - Weird storage topology is ambiguity, not contradiction by default.
 - Mount visibility does not imply physical storage ownership.
-- Path names such as `/mnt/node210/sda1` are not topology authority.
+- Path names such as `/mnt/example_host_e/sda1` are not topology authority.
 - Operator clarification is appropriate when ambiguity affects ownership, authority, recommendation, action, or important projection.
 - State-summary filesystem projection is now the next likely boundary to audit.
 

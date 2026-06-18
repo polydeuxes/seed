@@ -207,9 +207,9 @@ def test_missing_tool_examples_normalize_to_catalog_capabilities():
     builder = DecisionBuilder()
 
     examples = (
-        ("restart jellyfin", "service_management"),
+        ("restart web_service", "service_management"),
         ("check disk usage", "disk_inspection"),
-        ("Docker version on node115", "docker_inspection"),
+        ("Docker version on example_host", "docker_inspection"),
         ("stock price of Apple", "finance_lookup"),
         ("weather in Jacksonville", "weather_lookup"),
     )

@@ -186,7 +186,7 @@ rather than direct possession of reality.
 Assume:
 
 ```text
-hostname = node115
+hostname = example_host
 ```
 
 Support may include:
@@ -206,7 +206,7 @@ The result remains:
 
 ```text
 Claim:
-hostname = node115
+hostname = example_host
 ```
 
 with strong support.

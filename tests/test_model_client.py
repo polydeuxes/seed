@@ -26,13 +26,13 @@ def sample_context() -> ContextPacket:
     return ContextPacket(
         workspace_id="workspace-1",
         session_id="session-1",
-        current_input={"event_id": "event-1", "text": "is node-1 out of disk?"},
+        current_input={"event_id": "event-1", "text": "is example_host out of disk?"},
         active_goal={
             "id": "goal-1",
             "summary": "Check node health",
             "status": "active",
         },
-        entities=[{"id": "entity-1", "kind": "host", "name": "node-1"}],
+        entities=[{"id": "entity-1", "kind": "host", "name": "example_host"}],
         facts=[
             {
                 "id": "fact-1",
@@ -88,10 +88,10 @@ def test_render_decision_prompt_snapshot_is_compact_and_deterministic():
 Choose exactly one decision for the Seed runtime.
 
 CURRENT INPUT
-{"text":"is node-1 out of disk?"}
+{"text":"is example_host out of disk?"}
 
 RELEVANT STATE SUMMARY
-{"active_goal":{"status":"active","summary":"Check node health"},"entities":[{"kind":"host","name":"node-1"}],"facts":[{"predicate":"disk_status","subject":"node-1","value":"unknown"}]}
+{"active_goal":{"status":"active","summary":"Check node health"},"entities":[{"kind":"host","name":"example_host"}],"facts":[{"predicate":"disk_status","subject":"example_host","value":"unknown"}]}
 
 VISIBLE TOOLS
 [{"input_schema":{"properties":{"host":{"type":"string"}},"required":["host"],"type":"object"},"name":"docker_storage_summary","output_schema":{"properties":{"used_bytes":{"type":"integer"}},"required":["used_bytes"],"type":"object"},"risk_class":"L1","summary":"Summarize Docker disk usage for a host."}]
@@ -179,7 +179,7 @@ def test_serialize_decision_prompt_includes_retry_prompt_when_present():
 
 def test_decision_prompt_model_client_sends_serialized_context_to_transport():
     transport = FakeTransport(
-        '{"kind":"answer","reason":"context has it","answer":"node-1 is healthy"}'
+        '{"kind":"answer","reason":"context has it","answer":"example_host is healthy"}'
     )
     client = DecisionPromptModelClient(transport)
 
@@ -187,7 +187,7 @@ def test_decision_prompt_model_client_sends_serialized_context_to_transport():
 
     assert (
         raw
-        == '{"kind":"answer","reason":"context has it","answer":"node-1 is healthy"}'
+        == '{"kind":"answer","reason":"context has it","answer":"example_host is healthy"}'
     )
     assert len(transport.prompts) == 1
     assert "CURRENT INPUT" in transport.prompts[0]
@@ -196,7 +196,7 @@ def test_decision_prompt_model_client_sends_serialized_context_to_transport():
 
 def test_decision_prompt_model_client_is_injectable_into_parsed_decision_model():
     transport = FakeTransport(
-        '{"kind":"call_tool","reason":"visible tool matches","tool_name":"docker_storage_summary","tool_arguments":{"host":"node-1"}}'
+        '{"kind":"call_tool","reason":"visible tool matches","tool_name":"docker_storage_summary","tool_arguments":{"host":"example_host"}}'
     )
     model = ParsedDecisionModel(DecisionPromptModelClient(transport))
 
@@ -204,7 +204,7 @@ def test_decision_prompt_model_client_is_injectable_into_parsed_decision_model()
 
     assert decision.kind == "call_tool"
     assert decision.tool_name == "docker_storage_summary"
-    assert decision.tool_arguments == {"host": "node-1"}
+    assert decision.tool_arguments == {"host": "example_host"}
 
 
 def test_command_transport_writes_prompt_to_stdin_and_returns_stdout():

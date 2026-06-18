@@ -314,38 +314,38 @@ def test_runtime_docker_repeated_observations_still_aggregate_support():
 def test_endpoint_availability_keeps_current_sample_per_endpoint():
     first_alias = _fact(
         "fact_alias_9100",
-        "192.168.254.115:9100",
+        "192.0.2.115:9100",
         predicate="alias",
-        subject_id="node115",
+        subject_id="example_host",
     )
     second_alias = _fact(
         "fact_alias_9200",
-        "192.168.254.115:9200",
+        "192.0.2.115:9200",
         predicate="alias",
-        subject_id="node115",
+        subject_id="example_host",
     )
     endpoint_up = _fact(
         "fact_endpoint_up",
         "up",
         predicate="availability_status",
-        subject_id="192.168.254.115:9200",
+        subject_id="192.0.2.115:9200",
     )
     endpoint_down = _fact(
         "fact_endpoint_z_down",
         "down",
         predicate="availability_status",
-        subject_id="192.168.254.115:9100",
+        subject_id="192.0.2.115:9100",
     )
 
     state = _project(first_alias, second_alias, endpoint_up, endpoint_down)
 
-    assert state.get_best_fact("node115", "availability_status") is None
-    assert state.get_fact_support("node115", "availability_status") is None
+    assert state.get_best_fact("example_host", "availability_status") is None
+    assert state.get_fact_support("example_host", "availability_status") is None
     assert state.get_best_fact(
-        "192.168.254.115:9100", "availability_status"
+        "192.0.2.115:9100", "availability_status"
     ) == endpoint_down
     assert state.get_best_fact(
-        "192.168.254.115:9200", "availability_status"
+        "192.0.2.115:9200", "availability_status"
     ) == endpoint_up
     assert endpoint_down.id in state.facts
     assert endpoint_up.id in state.facts
@@ -419,22 +419,22 @@ def test_debug_history_availability_status_keeps_samples_without_conflict():
         "fact_availability_old_up",
         "up",
         predicate="availability_status",
-        subject_id="node115",
+        subject_id="example_host",
     )
     new_down = _fact(
         "fact_availability_new_down",
         "down",
         predicate="availability_status",
-        subject_id="node115",
+        subject_id="example_host",
         observed_offset=1,
     )
 
     state = _project(old_up, new_down, measurement_history_limit=2)
 
     assert set(state.facts) == {old_up.id, new_down.id}
-    assert state.get_best_fact("node115", "health_status") is None
-    assert state.get_best_fact("node115", "availability_status") == new_down
-    support = state.get_fact_support("node115", "availability_status")
+    assert state.get_best_fact("example_host", "health_status") is None
+    assert state.get_best_fact("example_host", "availability_status") == new_down
+    support = state.get_fact_support("example_host", "availability_status")
     assert support is not None
     assert support.value == "down"
     assert support.supporting_fact_ids == [new_down.id]
@@ -446,21 +446,21 @@ def test_debug_history_filesystem_dimensions_coexist_without_conflict():
         "fact_root_current",
         20,
         predicate="filesystem_free_bytes",
-        subject_id="node115",
+        subject_id="example_host",
         dimensions={"mountpoint": "/", "device": "/dev/sda1"},
     )
     data = _fact(
         "fact_data_current",
         30,
         predicate="filesystem_free_bytes",
-        subject_id="node115",
+        subject_id="example_host",
         dimensions={"mountpoint": "/data", "device": "/dev/sdb1"},
     )
 
     state = _project(root, data, measurement_history_limit=2)
 
     assert set(state.facts) == {root.id, data.id}
-    supports = state.get_fact_supports("node115", "filesystem_free_bytes")
+    supports = state.get_fact_supports("example_host", "filesystem_free_bytes")
     assert {(support.dimensions["mountpoint"], support.value) for support in supports} == {
         ("/", 20),
         ("/data", 30),
@@ -474,14 +474,14 @@ def test_debug_history_filesystem_series_uses_newest_without_conflict():
         "fact_root_old",
         10,
         predicate="filesystem_free_bytes",
-        subject_id="node115",
+        subject_id="example_host",
         dimensions=dimensions,
     )
     current = _fact(
         "fact_root_current",
         20,
         predicate="filesystem_free_bytes",
-        subject_id="node115",
+        subject_id="example_host",
         dimensions=dimensions,
         observed_offset=1,
     )
@@ -490,10 +490,10 @@ def test_debug_history_filesystem_series_uses_newest_without_conflict():
 
     assert set(state.facts) == {old.id, current.id}
     assert state.get_best_fact(
-        "node115", "filesystem_free_bytes", dimensions=dimensions
+        "example_host", "filesystem_free_bytes", dimensions=dimensions
     ) == current
     support = state.get_fact_support(
-        "node115", "filesystem_free_bytes", dimensions=dimensions
+        "example_host", "filesystem_free_bytes", dimensions=dimensions
     )
     assert support is not None
     assert support.value == 20
@@ -620,7 +620,7 @@ def test_multi_cardinality_predicates_keep_all_values_current_without_conflicts(
                 f"fact_{predicate}_{index}",
                 value,
                 predicate=predicate,
-                subject_id="node115",
+                subject_id="example_host",
                 observed_offset=index,
             )
             for index, value in enumerate(values)
@@ -629,10 +629,10 @@ def test_multi_cardinality_predicates_keep_all_values_current_without_conflicts(
         state = _project(*facts)
 
         assert [
-            fact.value for fact in state.get_current_facts("node115", predicate)
+            fact.value for fact in state.get_current_facts("example_host", predicate)
         ] == sorted(values)
         assert [
-            support.value for support in state.get_fact_supports("node115", predicate)
+            support.value for support in state.get_fact_supports("example_host", predicate)
         ] == values
         assert not any(
             conflict.predicate == predicate for conflict in state.get_fact_conflicts()
@@ -657,39 +657,39 @@ def test_endpoint_availability_and_health_do_not_flatten_to_host_alias():
     aliases = [
         _fact(
             "fact_alias_9100_role_scope",
-            "192.168.254.115:9100",
+            "192.0.2.115:9100",
             predicate="alias",
-            subject_id="node115",
+            subject_id="example_host",
         ),
         _fact(
             "fact_alias_9200_role_scope",
-            "192.168.254.115:9200",
+            "192.0.2.115:9200",
             predicate="alias",
-            subject_id="node115",
+            subject_id="example_host",
         ),
     ]
     node_exporter_down = _fact(
         "fact_node_exporter_down",
         "down",
         predicate="availability_status",
-        subject_id="192.168.254.115:9100",
+        subject_id="192.0.2.115:9100",
     )
     cadvisor_up = _fact(
         "fact_cadvisor_up",
         "up",
         predicate="availability_status",
-        subject_id="192.168.254.115:9200",
+        subject_id="192.0.2.115:9200",
     )
 
     state = _project(*aliases, node_exporter_down, cadvisor_up)
 
-    assert state.get_best_fact("node115", "availability_status") is None
-    assert state.get_best_fact("node115", "health_status") is None
-    assert state.get_best_fact("192.168.254.115:9100", "health_status").value == (
+    assert state.get_best_fact("example_host", "availability_status") is None
+    assert state.get_best_fact("example_host", "health_status") is None
+    assert state.get_best_fact("192.0.2.115:9100", "health_status").value == (
         "degraded"
     )
-    assert state.get_best_fact("192.168.254.115:9200", "health_status").value == "ok"
+    assert state.get_best_fact("192.0.2.115:9200", "health_status").value == "ok"
     assert not any(
-        fact.subject_id == "node115" and fact.predicate == "health_status"
+        fact.subject_id == "example_host" and fact.predicate == "health_status"
         for fact in state.facts.values()
     )

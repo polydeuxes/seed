@@ -231,7 +231,7 @@ subject = host:port instance
 Example:
 
 ```text
-192.168.254.115:9100 os linux
+192.0.2.115:9100 os linux
 ```
 
 Problem:

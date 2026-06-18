@@ -37,7 +37,7 @@ or concern question. It originated from operational pressure:
 Storage surfaces appeared empty.
 Filesystem measurements existed.
 Identity boundaries prevented expected visibility.
-Node116 mount-loss examples exposed operational concerns.
+Example host mount-loss examples exposed operational concerns.
 The operator wanted Seed to eventually help identify meaningful topology changes.
 ```
 
@@ -49,12 +49,12 @@ was meaningful.
 
 The earliest storage symptom was explained by the endpoint/host identity and
 measurement-subject boundary: Prometheus filesystem measurements are attached to
-scrape endpoint subjects, while host identities such as `node115` or `node116`
+scrape endpoint subjects, while host identities such as `example_host` or `example_host_b`
 are not silently collapsed with endpoint-shaped subjects for query ownership.
 Alias-like knowledge such as a Prometheus instance relation preserves identity
 knowledge, but it does not transfer endpoint-owned measurements to the host.
 
-The node116 example then widened the pressure: even if ownership is unknown, a
+The example_host_b example then widened the pressure: even if ownership is unknown, a
 node that historically saw a mount and now no longer sees it may still matter to
 an operator. That forced the branch to distinguish descriptive visibility,
 continuity, comparison reference, expectation, and concern without converting
@@ -128,7 +128,7 @@ important.
    execution, or remediation authority.
 
 7. **Expectation requires separate should-bearing authority.** To say
-   `node116 should see mount M`, repository authority would require an authorized
+   `example_host_b should see mount M`, repository authority would require an authorized
    expectation, requirement, policy, goal-derived rule, or approved baseline
    promotion mechanism. Current observation history alone is insufficient.
 
@@ -219,17 +219,17 @@ an investigation of the original pain.
   implementation/evidence question unless a separate architecture investigation
   makes causality part of its scope.
 
-## Node116 example revisited
+## Example host example revisited
 
-The original node116 example can now be explained coherently using repository-authoritative terminology:
+The original example_host_b example can now be explained coherently using repository-authoritative terminology:
 
 ```text
 Observation:
-    Seed has evidence that node116, or an endpoint associated with node116,
+    Seed has evidence that example_host_b, or an endpoint associated with example_host_b,
     reported filesystem visibility for mount M at earlier times.
 
 Current visibility:
-    Later evidence no longer shows that same node116-scoped visibility for
+    Later evidence no longer shows that same example_host_b-scoped visibility for
     mount M.
 
 Continuity:
@@ -245,7 +245,7 @@ Accepted baseline:
     visibility as the comparison reference for a scoped investigation.
 
 Expectation:
-    The repository still cannot say `node116 should see M` unless separate
+    The repository still cannot say `example_host_b should see M` unless separate
     should-bearing authority declares or derives that expectation.
 
 Concern:
@@ -253,7 +253,7 @@ Concern:
     operator-significant even before ownership or expectation is proven.
 ```
 
-This explanation does not assert that node116 owns mount M. It does not assert
+This explanation does not assert that example_host_b owns mount M. It does not assert
 that mount M exists now. It does not assert that missing M is a policy violation.
 It does not authorize remediation. It explains why the operator's concern is
 legitimate as a visibility/continuity/comparison-reference concern while
@@ -323,7 +323,7 @@ contradicts or reopens one of the reconciled boundaries, for example:
   expectation without separate should-bearing authority;
 - concern is treated as alerting, remediation, or execution authority without an
   intervening authority decision;
-- new evidence shows that the node116 example cannot be explained by the
+- new evidence shows that the example_host_b example cannot be explained by the
   observation/visibility/continuity/comparison-reference/concern progression.
 
 Reopening would also be justified if the repository deliberately chooses to make
@@ -368,7 +368,7 @@ What was learned:
 ```text
 Storage appeared empty because endpoint-owned measurements, host identity,
 alias-like knowledge, and bounded summaries have different authorities.
-The node116 mount-loss pressure is best explained as visibility loss over time,
+The example_host_b mount-loss pressure is best explained as visibility loss over time,
 not as implicit ownership.
 Historical continuity can support a candidate comparison reference.
 Authorized selection can make that reference an accepted baseline for a scope.

@@ -68,7 +68,7 @@ def test_environment_inventory_lists_known_entities_and_facts_from_state():
     entity = Entity(
         id="ent_1",
         kind="host",
-        name="node-1",
+        name="example_host",
         aliases=["primary"],
         attributes={"source": "user"},
         confidence=0.9,

@@ -55,10 +55,10 @@ def test_creates_non_executable_service_management_plan_that_requires_approval()
     need = ToolNeed(
         id="need_service",
         workspace_id="ws",
-        name="restart_jellyfin",
+        name="restart_web_service",
         capability="service_management",
         summary="Restart a containerized service",
-        reason="User asked to restart Jellyfin",
+        reason="User asked to restart web_service",
     )
     recommendation = RankedRecommendation(
         provider="docker_container_lifecycle",
@@ -134,10 +134,10 @@ def test_projected_state_includes_action_plan_by_id_and_remains_non_executable()
     need = ToolNeed(
         id="need_service",
         workspace_id="ws",
-        name="restart_jellyfin",
+        name="restart_web_service",
         capability="service_management",
         summary="Restart a containerized service",
-        reason="User asked to restart Jellyfin",
+        reason="User asked to restart web_service",
     )
     recommendation = RankedRecommendation(
         provider="docker_container_lifecycle",
@@ -168,10 +168,10 @@ def test_create_plan_does_not_execute_tools_or_register_tools_or_approve():
     need = ToolNeed(
         id="need_service",
         workspace_id="ws",
-        name="restart_jellyfin",
+        name="restart_web_service",
         capability="service_management",
         summary="Restart a containerized service",
-        reason="User asked to restart Jellyfin",
+        reason="User asked to restart web_service",
     )
     recommendation = RankedRecommendation(
         provider="docker_container_lifecycle",

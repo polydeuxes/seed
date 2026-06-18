@@ -27,7 +27,7 @@ Repeated probe usage produced a stable pattern.
 Runtime-oriented inquiries frequently participated:
 
 ```text
-node115
+example_host
 prometheus
 localhost:9090
 ```

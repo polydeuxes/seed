@@ -86,40 +86,40 @@ def test_core_catalog_contains_initial_relationship_vocabulary():
 
 def test_group_alias_prometheus_and_host_facts_do_not_alias_endpoint_instances():
     state = _project(
-        _fact("fact_group", "node115", "group", "servers"),
-        _fact("fact_alias", "node115", "alias", "192.168.254.115"),
-        _fact("fact_prom", "node115", "prometheus_instance", "192.168.254.115:9100"),
-        _fact("fact_host", "jellyfin", "host", "node115"),
+        _fact("fact_group", "example_host", "group", "servers"),
+        _fact("fact_alias", "example_host", "alias", "192.0.2.115"),
+        _fact("fact_prom", "example_host", "prometheus_instance", "192.0.2.115:9100"),
+        _fact("fact_host", "web_service", "host", "example_host"),
     )
 
     assert [
         (edge.subject, edge.relationship, edge.object)
         for edge in state.get_relationships()
     ] == [
-        ("node115", "alias_of", "192.168.254.115"),
-        ("node115", "member_of", "servers"),
-        ("jellyfin", "runs_on", "node115"),
-        ("node115", "monitored_by", "prometheus"),
+        ("example_host", "alias_of", "192.0.2.115"),
+        ("example_host", "member_of", "servers"),
+        ("web_service", "runs_on", "example_host"),
+        ("example_host", "monitored_by", "prometheus"),
     ]
 
 
 def test_self_alias_facts_are_retained_without_projecting_relationships():
     state = _project(
-        _fact("fact_hostname", "node200", "hostname", "node200"),
-        _fact("fact_self_alias", "node200", "alias", "node200"),
-        _fact("fact_ip_alias", "node200", "alias", "192.168.254.200"),
+        _fact("fact_hostname", "example_host_f", "hostname", "example_host_f"),
+        _fact("fact_self_alias", "example_host_f", "alias", "example_host_f"),
+        _fact("fact_ip_alias", "example_host_f", "alias", "192.0.2.200"),
     )
 
     assert set(state.facts) == {"fact_hostname", "fact_self_alias", "fact_ip_alias"}
     assert [
         (edge.subject, edge.relationship, edge.object)
         for edge in state.get_relationships()
-    ] == [("node200", "alias_of", "192.168.254.200")]
+    ] == [("example_host_f", "alias_of", "192.0.2.200")]
     assert seed_local.state_summary(state)["graph_issue_count"] == 0
 
 
 def test_relationship_preserves_source_fact_provenance_and_is_deterministic():
-    fact = _fact("fact_group", "node115", "group", "servers")
+    fact = _fact("fact_group", "example_host", "group", "servers")
 
     first = _project(fact).get_relationships()[0]
     second = _project(fact).get_relationships()[0]
@@ -134,15 +134,15 @@ def test_relationship_preserves_source_fact_provenance_and_is_deterministic():
 
 def test_relationship_query_helpers_filter_edges():
     state = _project(
-        _fact("fact_group_1", "node115", "group", "servers"),
-        _fact("fact_group_2", "node210", "group", "servers"),
-        _fact("fact_host", "jellyfin", "host", "node115"),
+        _fact("fact_group_1", "example_host", "group", "servers"),
+        _fact("fact_group_2", "example_host_e", "group", "servers"),
+        _fact("fact_host", "web_service", "host", "example_host"),
     )
 
     assert len(state.get_relationships(relationship="member_of")) == 2
-    assert state.find_related("jellyfin", "runs_on") == ["node115"]
-    assert state.find_subjects("member_of", "servers") == ["node115", "node210"]
-    assert state.get_relationships(subject="node115", object="servers")[0].relationship == "member_of"
+    assert state.find_related("web_service", "runs_on") == ["example_host"]
+    assert state.find_subjects("member_of", "servers") == ["example_host", "example_host_e"]
+    assert state.get_relationships(subject="example_host", object="servers")[0].relationship == "member_of"
     assert [
         edge.relationship for edge in state.get_relationships(relationship_kind="hosting")
     ] == ["runs_on"]
@@ -150,22 +150,22 @@ def test_relationship_query_helpers_filter_edges():
 
 def test_dependency_traversal_uses_relationship_semantics():
     state = _project(
-        _fact("fact_alias", "node115", "alias", "primary-node"),
-        _fact("fact_group", "node115", "group", "servers"),
-        _fact("fact_host", "jellyfin", "host", "node115"),
-        _fact("fact_prom", "node115", "prometheus_instance", "node115:9100"),
+        _fact("fact_alias", "example_host", "alias", "primary-host"),
+        _fact("fact_group", "example_host", "group", "servers"),
+        _fact("fact_host", "web_service", "host", "example_host"),
+        _fact("fact_prom", "example_host", "prometheus_instance", "example_host:9100"),
     )
 
-    assert state.find_dependencies("jellyfin") == ["node115", "prometheus"]
-    assert state.find_dependents("prometheus") == ["node115", "jellyfin"]
-    assert "primary-node" not in state.find_dependencies("node115")
-    assert "servers" not in state.find_dependencies("node115")
+    assert state.find_dependencies("web_service") == ["example_host", "prometheus"]
+    assert state.find_dependents("prometheus") == ["example_host", "web_service"]
+    assert "primary-host" not in state.find_dependencies("example_host")
+    assert "servers" not in state.find_dependencies("example_host")
 
 
 def test_sqlite_reopen_preserves_relationship_projection(tmp_path):
     path = tmp_path / "relationships.sqlite"
     ledger = SQLiteEventLedger(str(path))
-    fact = _fact("fact_group", "node115", "group", "servers")
+    fact = _fact("fact_group", "example_host", "group", "servers")
     ledger.append("fact.observed", "ws", {"fact": to_plain(fact)})
     expected = StateProjector(ledger).project("ws").get_relationships()
     ledger.close()
@@ -181,7 +181,7 @@ def test_sqlite_reopen_preserves_relationship_projection(tmp_path):
 
 
 def test_state_summary_optionally_includes_relationship_count():
-    state = _project(_fact("fact_group", "node115", "group", "servers"))
+    state = _project(_fact("fact_group", "example_host", "group", "servers"))
 
     assert "relationship_count" not in seed_local.state_summary(state)
     summary = seed_local.state_summary(state, include_relationship_count=True)
@@ -196,12 +196,12 @@ def test_cli_relationship_filters_print_projected_edges(tmp_path, capsys):
     ledger.append(
         "fact.observed",
         seed_local.DEFAULT_WORKSPACE,
-        {"fact": to_plain(_fact("fact_group", "node115", "group", "servers"))},
+        {"fact": to_plain(_fact("fact_group", "example_host", "group", "servers"))},
     )
     ledger.append(
         "fact.observed",
         seed_local.DEFAULT_WORKSPACE,
-        {"fact": to_plain(_fact("fact_host", "jellyfin", "host", "node115"))},
+        {"fact": to_plain(_fact("fact_host", "web_service", "host", "example_host"))},
     )
     ledger.close()
 
@@ -211,7 +211,7 @@ def test_cli_relationship_filters_print_projected_edges(tmp_path, capsys):
             str(path),
             "--relationships",
             "--relationship-subject",
-            "node115",
+            "example_host",
             "--relationship",
             "member_of",
             "--relationship-object",
@@ -219,14 +219,14 @@ def test_cli_relationship_filters_print_projected_edges(tmp_path, capsys):
         ]
     ) == 0
 
-    assert capsys.readouterr().out == "node115 member_of servers\n"
+    assert capsys.readouterr().out == "example_host member_of servers\n"
 
 
 def test_endpoint_role_projects_provides_relationship_for_non_prometheus_facts():
     state = _project(
         _fact(
             "fact_endpoint_role",
-            "192.168.254.115:9100",
+            "192.0.2.115:9100",
             "endpoint_role",
             "node-exporter",
         )
@@ -235,8 +235,8 @@ def test_endpoint_role_projects_provides_relationship_for_non_prometheus_facts()
     assert [
         (edge.subject, edge.relationship, edge.object)
         for edge in state.get_relationships()
-    ] == [("192.168.254.115:9100", "provides", "node-exporter")]
-    assert state.get_current_entity_types("192.168.254.115:9100") == ["endpoint"]
+    ] == [("192.0.2.115:9100", "provides", "node-exporter")]
+    assert state.get_current_entity_types("192.0.2.115:9100") == ["endpoint"]
     assert state.get_current_entity_types("node-exporter") == ["capability"]
     assert state.get_graph_issues() == []
 
@@ -247,7 +247,7 @@ def test_endpoint_role_projects_provides_relationship_for_non_prometheus_observa
             id="obs_custom_endpoint_role",
             source_type="provider",
             observed_at=NOW,
-            subject="192.168.254.115:9100",
+            subject="192.0.2.115:9100",
             predicate="endpoint_role",
             value="node-exporter",
             metadata={"source_name": "custom_inventory"},
@@ -257,8 +257,8 @@ def test_endpoint_role_projects_provides_relationship_for_non_prometheus_observa
     assert [
         (edge.subject, edge.relationship, edge.object)
         for edge in state.get_relationships()
-    ] == [("192.168.254.115:9100", "provides", "node-exporter")]
-    assert state.get_current_entity_types("192.168.254.115:9100") == ["endpoint"]
+    ] == [("192.0.2.115:9100", "provides", "node-exporter")]
+    assert state.get_current_entity_types("192.0.2.115:9100") == ["endpoint"]
     assert state.get_current_entity_types("node-exporter") == ["capability"]
     assert state.get_graph_issues() == []
 
@@ -269,29 +269,29 @@ def test_prometheus_instance_does_not_project_monitored_by_for_prometheus_observ
             id="obs_prometheus_instance",
             source_type="provider",
             observed_at=NOW,
-            subject="node115",
+            subject="example_host",
             predicate="prometheus_instance",
-            value="192.168.254.115:9100",
+            value="192.0.2.115:9100",
             metadata={"source_name": "prometheus"},
         )
     )
 
     assert [
         (fact.subject_id, fact.predicate, fact.value) for fact in state.facts.values()
-    ] == [("node115", "prometheus_instance", "192.168.254.115:9100")]
+    ] == [("example_host", "prometheus_instance", "192.0.2.115:9100")]
     assert state.get_relationships() == []
     assert state.get_graph_issues() == []
 
 
 def test_non_prometheus_instance_facts_still_project_existing_monitored_by_relationship():
     state = _project(
-        _fact("fact_prom", "node115", "prometheus_instance", "node115:9100")
+        _fact("fact_prom", "example_host", "prometheus_instance", "example_host:9100")
     )
 
     assert [
         (edge.subject, edge.relationship, edge.object)
         for edge in state.get_relationships()
-    ] == [("node115", "monitored_by", "prometheus")]
+    ] == [("example_host", "monitored_by", "prometheus")]
 
 
 def test_prometheus_endpoint_role_does_not_project_provides_relationship():
@@ -300,7 +300,7 @@ def test_prometheus_endpoint_role_does_not_project_provides_relationship():
             id="obs_prometheus_endpoint_role",
             source_type="provider",
             observed_at=NOW,
-            subject="192.168.254.115:9100",
+            subject="192.0.2.115:9100",
             predicate="endpoint_role",
             value="node-exporter",
             metadata={"source_name": "prometheus"},
@@ -309,8 +309,8 @@ def test_prometheus_endpoint_role_does_not_project_provides_relationship():
 
     assert [
         (fact.subject_id, fact.predicate, fact.value) for fact in state.facts.values()
-    ] == [("192.168.254.115:9100", "endpoint_role", "node-exporter")]
+    ] == [("192.0.2.115:9100", "endpoint_role", "node-exporter")]
     assert state.get_relationships() == []
-    assert state.get_current_entity_types("192.168.254.115:9100") == ["endpoint"]
+    assert state.get_current_entity_types("192.0.2.115:9100") == ["endpoint"]
     assert state.get_entity_type_assertions("node-exporter") == []
     assert state.get_graph_issues() == []

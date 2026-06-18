@@ -40,12 +40,12 @@ def load_seed_local_module():
 def _state() -> State:
     observed_at = utc_now()
     state = State(workspace_id="ws", last_event_id="evt_last", projection_version="v1")
-    state.entities["node214"] = Entity(id="node214", kind="host", name="node214")
+    state.entities["example_host_d"] = Entity(id="example_host_d", kind="host", name="example_host_d")
     state.facts["fact_runtime"] = Fact(
         id="fact_runtime",
-        subject_id="jellyfin",
+        subject_id="web_service",
         predicate="runs_on",
-        value="node214",
+        value="example_host_d",
         evidence_ids=["evd_runtime"],
         confidence=0.91,
         observed_at=observed_at,
@@ -54,9 +54,9 @@ def _state() -> State:
         id="obs_runtime",
         source_type="discovery",
         observed_at=observed_at,
-        subject="jellyfin",
+        subject="web_service",
         predicate="runs_on",
-        value="node214",
+        value="example_host_d",
     )
     state.goals["goal_backup"] = Goal(
         id="goal_backup",
@@ -89,7 +89,7 @@ def _state() -> State:
         GraphValidationIssue(
             id="issue_storage",
             severity="error",
-            subject="node214",
+            subject="example_host_d",
             relationship="storage",
             object="inconsistent",
             relationship_ids=["rel_storage"],
@@ -111,9 +111,9 @@ def test_fact_view_builds_correctly_from_projected_state():
     assert views == [
         FactView(
             fact_id="fact_runtime",
-            subject="jellyfin",
+            subject="web_service",
             predicate="runs_on",
-            object="node214",
+            object="example_host_d",
             confidence=0.91,
             dimensions={},
             supporting_event_ids=["evd_runtime"],
@@ -126,7 +126,7 @@ def test_fact_view_includes_sorted_dimensions_from_projected_state():
     observed_at = utc_now()
     state.facts["fact_root_rw"] = Fact(
         id="fact_root_rw",
-        subject_id="node115",
+        subject_id="example_host",
         predicate="mount_option",
         value="rw",
         dimensions={"mount_point": "/", "mount_option": "rw"},
@@ -140,7 +140,7 @@ def test_fact_view_includes_sorted_dimensions_from_projected_state():
     assert views == [
         FactView(
             fact_id="fact_root_rw",
-            subject="node115",
+            subject="example_host",
             predicate="mount_option",
             object="rw",
             confidence=0.9,
@@ -156,7 +156,7 @@ def test_fact_view_ordering_uses_dimensions_deterministically():
     facts = [
         Fact(
             id="fact_eth1",
-            subject_id="node115",
+            subject_id="example_host",
             predicate="interface_mtu",
             value=1500,
             dimensions={"interface": "eth1"},
@@ -165,7 +165,7 @@ def test_fact_view_ordering_uses_dimensions_deterministically():
         ),
         Fact(
             id="fact_eth0",
-            subject_id="node115",
+            subject_id="example_host",
             predicate="interface_mtu",
             value=1500,
             dimensions={"interface": "eth0"},
@@ -190,7 +190,7 @@ def test_format_fact_views_prints_dimensions_compactly_when_present():
         [
             FactView(
                 fact_id="fact_root_rw",
-                subject="node115",
+                subject="example_host",
                 predicate="mount_option",
                 object="rw",
                 confidence=1.0,
@@ -198,7 +198,7 @@ def test_format_fact_views_prints_dimensions_compactly_when_present():
             ),
             FactView(
                 fact_id="fact_eth0_mtu",
-                subject="node115",
+                subject="example_host",
                 predicate="interface_mtu",
                 object=1500,
                 confidence=1.0,
@@ -206,7 +206,7 @@ def test_format_fact_views_prints_dimensions_compactly_when_present():
             ),
             FactView(
                 fact_id="fact_listener_tcp",
-                subject="node115",
+                subject="example_host",
                 predicate="listening_protocol",
                 object="tcp",
                 confidence=1.0,
@@ -218,9 +218,9 @@ def test_format_fact_views_prints_dimensions_compactly_when_present():
     assert output.splitlines() == [
         "Current Facts",
         "",
-        "* node115 mount_option rw (mount_point=/)",
-        "* node115 interface_mtu 1500 (interface=eth0)",
-        "* node115 listening_protocol tcp (address=0.0.0.0, port=9100, protocol=tcp)",
+        "* example_host mount_option rw (mount_point=/)",
+        "* example_host interface_mtu 1500 (interface=eth0)",
+        "* example_host listening_protocol tcp (address=0.0.0.0, port=9100, protocol=tcp)",
     ]
 
 
@@ -231,13 +231,13 @@ def test_format_fact_views_omits_parentheses_for_dimensionless_facts():
         [
             FactView(
                 fact_id="fact_alias",
-                subject="node115",
+                subject="example_host",
                 predicate="alias",
-                object="node115.local",
+                object="example_host.local",
                 confidence=1.0,
             )
         ]
-    ) == "Current Facts\n\n* node115 alias node115.local"
+    ) == "Current Facts\n\n* example_host alias example_host.local"
 
 
 def test_format_fact_views_keeps_same_value_facts_with_different_dimensions_distinguishable():
@@ -246,7 +246,7 @@ def test_format_fact_views_keeps_same_value_facts_with_different_dimensions_dist
         [
             FactView(
                 fact_id="fact_eth0",
-                subject="node115",
+                subject="example_host",
                 predicate="interface_mtu",
                 object=1500,
                 confidence=1.0,
@@ -254,7 +254,7 @@ def test_format_fact_views_keeps_same_value_facts_with_different_dimensions_dist
             ),
             FactView(
                 fact_id="fact_eth1",
-                subject="node115",
+                subject="example_host",
                 predicate="interface_mtu",
                 object=1500,
                 confidence=1.0,
@@ -263,8 +263,8 @@ def test_format_fact_views_keeps_same_value_facts_with_different_dimensions_dist
         ]
     )
 
-    assert "* node115 interface_mtu 1500 (interface=eth0)" in output
-    assert "* node115 interface_mtu 1500 (interface=eth1)" in output
+    assert "* example_host interface_mtu 1500 (interface=eth0)" in output
+    assert "* example_host interface_mtu 1500 (interface=eth1)" in output
 
 
 def test_observation_view_builds_correctly_from_projected_state():
@@ -274,7 +274,7 @@ def test_observation_view_builds_correctly_from_projected_state():
         ObservationView(
             observation_id="obs_runtime",
             observation_type="discovery",
-            summary="jellyfin runs_on node214",
+            summary="web_service runs_on example_host_d",
             supporting_event_ids=["obs_runtime"],
         )
     ]
@@ -312,7 +312,7 @@ def test_issue_view_builds_correctly_from_projected_state():
     assert build_issue_view(_state()) == [
         IssueView(
             issue_id="issue_storage",
-            summary="node214 storage inconsistent: storage inconsistency",
+            summary="example_host_d storage inconsistent: storage inconsistency",
             severity="high",
             supporting_event_ids=["fact_runtime", "rel_storage"],
         )
@@ -336,18 +336,18 @@ def test_state_summary_counts_match_materialized_views_with_fact_supports():
     observed_at = utc_now()
     state.facts["fact_runtime_repeat"] = Fact(
         id="fact_runtime_repeat",
-        subject_id="jellyfin",
+        subject_id="web_service",
         predicate="runs_on",
-        value="node214",
+        value="example_host_d",
         evidence_ids=["evd_runtime_repeat"],
         confidence=0.95,
         observed_at=observed_at,
     )
     state.fact_supports = [
         FactSupport(
-            subject="jellyfin",
+            subject="web_service",
             predicate="runs_on",
-            value="node214",
+            value="example_host_d",
             supporting_fact_ids=["fact_runtime", "fact_runtime_repeat"],
             source_types=["discovery"],
             confidence=0.95,

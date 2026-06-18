@@ -88,7 +88,7 @@ observation_sources:
     policy_action: ssh.verify
     visibility: model_visible
     examples:
-      - input: {host: node-1}
+      - input: {host: example_host}
         output: {reachable: true, service_running: true}
 
 handoff_providers:
@@ -101,7 +101,7 @@ handoff_providers:
     executable: false
     visibility: handoff_only
     examples:
-      - target: {host: node-1}
+      - target: {host: example_host}
         output: {executable: false, provider: awx, operation: install_ssh_server}
 ```
 

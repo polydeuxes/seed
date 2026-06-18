@@ -92,7 +92,7 @@ Examples:
 show state summary
 show a summary
 explain why nginx is down
-run uptime on node116
+run uptime on example_host_b
 find where StateProjector is defined
 ```
 

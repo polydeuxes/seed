@@ -283,16 +283,16 @@ Possible future implementations could include:
 
 ```text
 See:
-    --impact node115
+    --impact example_host
 
 See:
-    --impact node115 --section network
+    --impact example_host --section network
 
 See:
-    --current-facts node115 interface
+    --current-facts example_host interface
 
 See:
-    --fact-support node115 interface
+    --fact-support example_host interface
 ```
 
 These are examples rather than implementation requirements.

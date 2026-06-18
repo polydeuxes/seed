@@ -15,7 +15,7 @@ After the default filesystem and storage-topology rendering leak was removed fro
 ```text
 192.168.254.116:9100 (aliases: 0 total; facts: 111)
 192.168.254.202:9100 (aliases: 0 total; facts: 97)
-192.168.254.200:9100 (aliases: 0 total; facts: 90)
+192.0.2.200:9100 (aliases: 0 total; facts: 90)
 ```
 
 This suggests a separate boundary issue from the storage-detail rendering leak.

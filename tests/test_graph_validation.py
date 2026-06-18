@@ -110,14 +110,14 @@ def test_other_graph_warning_has_no_hint():
 
 def test_duplicate_monitored_by_warnings_collapse_and_preserve_relationship_ids():
     state = _project(
-        _fact("node_exporter", "node115", "prometheus_instance", "node115:9100"),
-        _fact("cadvisor", "node115", "prometheus_instance", "node115:8080"),
+        _fact("node_exporter", "example_host", "prometheus_instance", "example_host:9100"),
+        _fact("cadvisor", "example_host", "prometheus_instance", "example_host:8080"),
     )
 
     assert len(state.graph_issues) == 1
     issue = state.graph_issues[0]
     assert (issue.subject, issue.relationship, issue.object) == (
-        "node115",
+        "example_host",
         "monitored_by",
         "prometheus",
     )
