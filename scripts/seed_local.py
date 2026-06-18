@@ -1083,6 +1083,26 @@ def build_parser() -> argparse.ArgumentParser:
         help="print projected graph validation issues and exit",
     )
     parser.add_argument(
+        "--graph-issue-summary",
+        action="store_true",
+        help=(
+            "print a read-only grouped summary of projected graph validation "
+            "issues and exit"
+        ),
+    )
+    parser.add_argument(
+        "--graph-issue-limit",
+        type=int,
+        default=10,
+        help="maximum graph issue categories to show in --graph-issue-summary",
+    )
+    parser.add_argument(
+        "--graph-issue-examples",
+        type=int,
+        default=3,
+        help="maximum example issues per category in --graph-issue-summary",
+    )
+    parser.add_argument(
         "--severity",
         choices=["warning", "error"],
         help="filter --graph-issues by severity",
@@ -1501,6 +1521,10 @@ def validate_lifecycle_args(
         parser.error("--include-history can only be used with --fact-support")
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
+    if args.graph_issue_limit < 0:
+        parser.error("--graph-issue-limit must be non-negative")
+    if args.graph_issue_examples < 0:
+        parser.error("--graph-issue-examples must be non-negative")
     if args.include_warnings and not args.unhealthy:
         parser.error("--include-warnings can only be used with --unhealthy")
     if args.fact_expires_at and args.fact_ttl_seconds is not None:
@@ -3102,6 +3126,90 @@ def format_relationships(state: State, args: argparse.Namespace) -> str:
         )
         or "no relationships"
     )
+
+
+def format_graph_issue_summary(
+    state: State, *, category_limit: int = 10, examples_per_category: int = 3
+) -> str:
+    """Format a grouped read-only orientation summary for graph issues."""
+
+    issues = state.get_graph_issues()
+    total = len(issues)
+    warning_count = sum(1 for issue in issues if issue.severity == "warning")
+    error_count = sum(1 for issue in issues if issue.severity == "error")
+    by_severity = Counter(issue.severity for issue in issues)
+    grouped: dict[tuple[str, str, str], list[Any]] = defaultdict(list)
+    for issue in issues:
+        grouped[(issue.severity, issue.relationship, issue.reason)].append(issue)
+
+    sorted_groups = sorted(
+        grouped.items(),
+        key=lambda item: (
+            -len(item[1]),
+            item[0][0],
+            item[0][1],
+            item[0][2],
+        ),
+    )[:category_limit]
+
+    lines = [
+        "Graph Issue Summary",
+        "",
+        "Totals:",
+        f"- warnings: {warning_count}",
+        f"- errors: {error_count}",
+        f"- total: {total}",
+        "",
+        "By severity:",
+        f"- warning: {by_severity.get('warning', 0)}",
+        f"- error: {by_severity.get('error', 0)}",
+        "",
+        "Top categories:",
+    ]
+    if not sorted_groups:
+        lines.append("- none")
+    else:
+        for (severity, relationship, reason), category_issues in sorted_groups:
+            percent = (len(category_issues) / total * 100) if total else 0.0
+            lines.append(
+                f"- {severity} | {relationship} | {reason}: "
+                f"{len(category_issues)} ({percent:.1f}% of total)"
+            )
+
+    lines.extend(["", "Representative examples:"])
+    if not sorted_groups:
+        lines.append("- none")
+    else:
+        for (severity, relationship, reason), category_issues in sorted_groups:
+            lines.append(f"- {severity} | {relationship} | {reason}")
+            examples = sorted(
+                category_issues,
+                key=lambda issue: (issue.subject, issue.object, issue.id),
+            )[:examples_per_category]
+            if not examples:
+                lines.append("  - none")
+                continue
+            for issue in examples:
+                lines.append(
+                    f"  - {issue.subject} {issue.relationship} {issue.object}; "
+                    f"reason: {issue.reason}"
+                )
+                lines.append(
+                    "    subject types: "
+                    f"expected={','.join(issue.expected_subject_types) or 'none'} "
+                    f"actual={','.join(issue.actual_subject_types) or 'none'}"
+                )
+                lines.append(
+                    "    object types: "
+                    f"expected={','.join(issue.expected_object_types) or 'none'} "
+                    f"actual={','.join(issue.actual_object_types) or 'none'}"
+                )
+                lines.append(
+                    "    counts: "
+                    f"source_facts={len(issue.source_fact_ids)} "
+                    f"relationships={len(issue.relationship_ids)}"
+                )
+    return "\n".join(lines)
 
 
 def format_graph_issues(
@@ -4852,6 +4960,16 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.graph_issues:
         print(format_graph_issues(projected_state_from_args(args), args.severity))
+        return 0
+
+    if args.graph_issue_summary:
+        print(
+            format_graph_issue_summary(
+                projected_state_from_args(args),
+                category_limit=args.graph_issue_limit,
+                examples_per_category=args.graph_issue_examples,
+            )
+        )
         return 0
 
     if args.entity_types or args.entity_type:
