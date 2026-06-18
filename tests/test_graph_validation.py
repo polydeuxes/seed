@@ -4,7 +4,7 @@ from scripts import seed_local
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.models import Fact
 from seed_runtime.serialization import to_plain
-from seed_runtime.state import StateProjector
+from seed_runtime.state import GraphValidationIssue, State, StateProjector
 
 NOW = datetime(2026, 6, 4, 12, 0, tzinfo=timezone.utc)
 
@@ -110,7 +110,9 @@ def test_other_graph_warning_has_no_hint():
 
 def test_duplicate_monitored_by_warnings_collapse_and_preserve_relationship_ids():
     state = _project(
-        _fact("node_exporter", "example_host", "prometheus_instance", "example_host:9100"),
+        _fact(
+            "node_exporter", "example_host", "prometheus_instance", "example_host:9100"
+        ),
         _fact("cadvisor", "example_host", "prometheus_instance", "example_host:8080"),
     )
 
@@ -177,9 +179,7 @@ def test_graph_issues_cli_and_state_summary(tmp_path, capsys):
     assert "subject type is unknown; expected host" in output
 
     assert (
-        seed_local.main(
-            ["--db", str(path), "--graph-issues", "--severity", "warning"]
-        )
+        seed_local.main(["--db", str(path), "--graph-issues", "--severity", "warning"])
         == 0
     )
     assert "warning: mystery member_of servers" in capsys.readouterr().out
@@ -195,7 +195,9 @@ def test_graph_issues_cli_and_state_summary(tmp_path, capsys):
     assert summary["graph_issue_count"] == 1
     assert summary["graph_issue_warning_count"] == 1
     assert summary["graph_issue_error_count"] == 0
-    assert "graph issues: 1 warning, 0 errors" in seed_local.format_state_summary(summary)
+    assert "graph issues: 1 warning, 0 errors" in seed_local.format_state_summary(
+        summary
+    )
 
 
 def test_state_summary_separates_graph_warnings_and_errors():
@@ -211,4 +213,176 @@ def test_state_summary_separates_graph_warnings_and_errors():
     assert summary["graph_issue_count"] == 2
     assert summary["graph_issue_warning_count"] == 1
     assert summary["graph_issue_error_count"] == 1
-    assert "graph issues: 1 warning, 1 error" in seed_local.format_state_summary(summary)
+    assert "graph issues: 1 warning, 1 error" in seed_local.format_state_summary(
+        summary
+    )
+
+
+def _graph_issue(
+    issue_id,
+    severity,
+    subject,
+    relationship,
+    object_,
+    reason,
+    *,
+    source_fact_ids=None,
+    relationship_ids=None,
+):
+    return GraphValidationIssue(
+        id=issue_id,
+        severity=severity,
+        subject=subject,
+        relationship=relationship,
+        object=object_,
+        relationship_ids=list(relationship_ids or [f"rel-{issue_id}"]),
+        source_fact_ids=list(source_fact_ids or [f"fact-{issue_id}"]),
+        reason=reason,
+        hint=None,
+        expected_subject_types=["host"],
+        actual_subject_types=["unknown"],
+        expected_object_types=["group"],
+        actual_object_types=["unknown"],
+    )
+
+
+def test_graph_issue_summary_formats_projected_state_groups_and_limits_examples():
+    state = State("ws")
+    state.graph_issues = [
+        _graph_issue(
+            "1",
+            "warning",
+            "node-a",
+            "member_of",
+            "workers",
+            "subject type is unknown; expected host",
+        ),
+        _graph_issue(
+            "2",
+            "warning",
+            "node-b",
+            "member_of",
+            "workers",
+            "subject type is unknown; expected host",
+        ),
+        _graph_issue(
+            "3",
+            "warning",
+            "node-c",
+            "member_of",
+            "workers",
+            "subject type is unknown; expected host",
+        ),
+        _graph_issue(
+            "4",
+            "error",
+            "svc",
+            "runs_on",
+            "node-a",
+            "object type is unknown; expected host",
+        ),
+    ]
+
+    output = seed_local.format_graph_issue_summary(
+        state, category_limit=1, examples_per_category=2
+    )
+
+    assert "Graph Issue Summary" in output
+    assert "- warnings: 3" in output
+    assert "- errors: 1" in output
+    assert "- total: 4" in output
+    assert "- warning: 3" in output
+    assert "- error: 1" in output
+    assert (
+        "warning | member_of | subject type is unknown; expected host: 3 (75.0% of total)"
+        in output
+    )
+    assert "error | runs_on" not in output
+    assert (
+        "node-a member_of workers; reason: subject type is unknown; expected host"
+        in output
+    )
+    assert (
+        "node-b member_of workers; reason: subject type is unknown; expected host"
+        in output
+    )
+    assert "node-c member_of workers" not in output
+    assert "subject types: expected=host actual=unknown" in output
+    assert "object types: expected=group actual=unknown" in output
+    assert "counts: source_facts=1 relationships=1" in output
+
+
+def test_graph_issue_summary_does_not_mutate_state():
+    state = State("ws")
+    state.graph_issues = [
+        _graph_issue("1", "warning", "node-a", "member_of", "workers", "reason")
+    ]
+    before = to_plain(state.graph_issues)
+
+    seed_local.format_graph_issue_summary(state)
+
+    assert to_plain(state.graph_issues) == before
+
+
+def test_graph_issue_summary_cli_reads_projected_state_and_is_read_only(
+    tmp_path, capsys
+):
+    path = tmp_path / "graph-issue-summary.sqlite"
+    ledger = SQLiteEventLedger(str(path))
+    ledger.append(
+        "fact.observed",
+        seed_local.DEFAULT_WORKSPACE,
+        {"fact": to_plain(_fact("membership", "mystery", "group", "servers"))},
+    )
+    before_events = len(ledger.list_events(seed_local.DEFAULT_WORKSPACE))
+    ledger.close()
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(path),
+                "--graph-issue-summary",
+                "--graph-issue-limit",
+                "10",
+                "--graph-issue-examples",
+                "3",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "Graph Issue Summary" in output
+    assert "- warnings: 1" in output
+    assert (
+        "warning | member_of | subject type is unknown; expected host: 1 (100.0% of total)"
+        in output
+    )
+    assert (
+        "mystery member_of servers; reason: subject type is unknown; expected host"
+        in output
+    )
+
+    reopened = SQLiteEventLedger(str(path))
+    try:
+        assert len(reopened.list_events(seed_local.DEFAULT_WORKSPACE)) == before_events
+    finally:
+        reopened.close()
+
+
+def test_existing_graph_issues_cli_output_remains_unchanged(tmp_path, capsys):
+    path = tmp_path / "graph-issues-unchanged.sqlite"
+    ledger = SQLiteEventLedger(str(path))
+    ledger.append(
+        "fact.observed",
+        seed_local.DEFAULT_WORKSPACE,
+        {"fact": to_plain(_fact("membership", "mystery", "group", "servers"))},
+    )
+    ledger.close()
+
+    assert seed_local.main(["--db", str(path), "--graph-issues"]) == 0
+
+    output = capsys.readouterr().out
+    assert output.startswith("warning: mystery member_of servers\n")
+    assert "Graph Issue Summary" not in output
