@@ -9,6 +9,9 @@ from typing import Any
 
 from seed_runtime.state import GraphValidationIssue, State
 
+UNKNOWN_EXAMPLE_LIMIT = 3
+TOP_UNKNOWN_LIMIT = 10
+
 CLASSIFICATION_ORDER = [
     "host",
     "service",
@@ -40,11 +43,16 @@ class ClassificationCoverageDiagnostic:
     concrete_mismatch_graph_issue_count: int
     catalog_type_counts: dict[str, int]
     top_unknown_predicates: list[tuple[str, int]] = field(default_factory=list)
-    top_unknown_relationship_categories: list[tuple[str, int]] = field(default_factory=list)
-    top_unknown_graph_issue_categories: list[tuple[str, int]] = field(default_factory=list)
+    unknown_predicate_examples: dict[str, list[str]] = field(default_factory=dict)
+    top_unknown_relationship_categories: list[tuple[str, int]] = field(
+        default_factory=list
+    )
+    top_unknown_graph_issue_categories: list[tuple[str, int]] = field(
+        default_factory=list
+    )
 
     def record_facts(self) -> dict[str, Any]:
-        """Return scalar facts suitable for self-observation evidence."""
+        """Return bounded facts suitable for self-observation evidence."""
 
         return {
             "diagnostic name": self.diagnostic_name,
@@ -59,6 +67,10 @@ class ClassificationCoverageDiagnostic:
             "unknown-object graph issue count": self.unknown_object_graph_issue_count,
             "both-unknown graph issue count": self.both_unknown_graph_issue_count,
             "concrete-mismatch graph issue count": self.concrete_mismatch_graph_issue_count,
+            "top unknown predicate examples": {
+                predicate: examples
+                for predicate, examples in self.unknown_predicate_examples.items()
+            },
         }
 
 
@@ -88,11 +100,17 @@ def build_classification_coverage_diagnostic(
             catalog_type_counts[entity_type] += 1
 
     unknown_entities = {
-        entity_id for entity_id, entity_types in current_types.items() if entity_types == ["unknown"]
+        entity_id
+        for entity_id, entity_types in current_types.items()
+        if entity_types == ["unknown"]
     }
     issues = state.get_graph_issues()
-    unknown_subject_issues = [issue for issue in issues if _issue_subject_unknown(issue, unknown_entities)]
-    unknown_object_issues = [issue for issue in issues if _issue_object_unknown(issue, unknown_entities)]
+    unknown_subject_issues = [
+        issue for issue in issues if _issue_subject_unknown(issue, unknown_entities)
+    ]
+    unknown_object_issues = [
+        issue for issue in issues if _issue_object_unknown(issue, unknown_entities)
+    ]
     both_unknown_issues = [
         issue
         for issue in issues
@@ -107,21 +125,37 @@ def build_classification_coverage_diagnostic(
     ]
 
     unknown_predicates: Counter[str] = Counter()
+    unknown_predicate_example_sets: dict[str, set[str]] = {}
     for fact in state.facts.values():
         value = fact.value if isinstance(fact.value, str) else None
-        if fact.subject_id in unknown_entities or value in unknown_entities:
+        examples: list[str] = []
+        if fact.subject_id in unknown_entities:
+            examples.append(fact.subject_id)
+        if value in unknown_entities:
+            examples.append(value)
+        if examples:
             unknown_predicates[fact.predicate] += 1
+            unknown_predicate_example_sets.setdefault(fact.predicate, set()).update(
+                examples
+            )
 
     relationship_categories: Counter[str] = Counter()
     for relationship in state.relationships:
-        if relationship.subject in unknown_entities or relationship.object in unknown_entities:
+        if (
+            relationship.subject in unknown_entities
+            or relationship.object in unknown_entities
+        ):
             relationship_categories[str(relationship.relationship_kind)] += 1
 
     issue_categories: Counter[str] = Counter()
     for issue in unknown_subject_issues + unknown_object_issues:
-        issue_categories[f"{issue.severity} | {issue.relationship} | {issue.reason}"] += 1
+        issue_categories[
+            f"{issue.severity} | {issue.relationship} | {issue.reason}"
+        ] += 1
 
-    unknown_percentage = (unknown_entity_count / entity_count * 100.0) if entity_count else 0.0
+    unknown_percentage = (
+        (unknown_entity_count / entity_count * 100.0) if entity_count else 0.0
+    )
     return ClassificationCoverageDiagnostic(
         diagnostic_name="entity_classification_coverage",
         observed_at=observed_at,
@@ -137,9 +171,15 @@ def build_classification_coverage_diagnostic(
         both_unknown_graph_issue_count=len(both_unknown_issues),
         concrete_mismatch_graph_issue_count=len(concrete_mismatch_issues),
         catalog_type_counts=dict(sorted(catalog_type_counts.items())),
-        top_unknown_predicates=unknown_predicates.most_common(10),
-        top_unknown_relationship_categories=relationship_categories.most_common(10),
-        top_unknown_graph_issue_categories=issue_categories.most_common(10),
+        top_unknown_predicates=_top_counter_items(unknown_predicates),
+        unknown_predicate_examples={
+            predicate: sorted(unknown_predicate_example_sets.get(predicate, ()))[
+                :UNKNOWN_EXAMPLE_LIMIT
+            ]
+            for predicate, _count in _top_counter_items(unknown_predicates)
+        },
+        top_unknown_relationship_categories=_top_counter_items(relationship_categories),
+        top_unknown_graph_issue_categories=_top_counter_items(issue_categories),
     )
 
 
@@ -158,30 +198,65 @@ def format_classification_coverage(diagnostic: ClassificationCoverageDiagnostic)
         "Classification distribution:",
     ]
     for entity_type in CLASSIFICATION_ORDER:
-        lines.append(f"  {entity_type}: {diagnostic.classification_distribution.get(entity_type, 0)}")
-    lines.extend([
-        "",
-        "Graph issue impact:",
-        f"  issues involving unknown subject: {diagnostic.unknown_subject_graph_issue_count}",
-        f"  issues involving unknown object: {diagnostic.unknown_object_graph_issue_count}",
-        f"  issues involving both unknown: {diagnostic.both_unknown_graph_issue_count}",
-        f"  issues involving concrete type mismatch: {diagnostic.concrete_mismatch_graph_issue_count}",
-        "",
-        "Coverage visibility:",
-        "  catalog type | assigned count",
-    ])
+        lines.append(
+            f"  {entity_type}: {diagnostic.classification_distribution.get(entity_type, 0)}"
+        )
+    lines.extend(
+        [
+            "",
+            "Graph issue impact:",
+            f"  issues involving unknown subject: {diagnostic.unknown_subject_graph_issue_count}",
+            f"  issues involving unknown object: {diagnostic.unknown_object_graph_issue_count}",
+            f"  issues involving both unknown: {diagnostic.both_unknown_graph_issue_count}",
+            f"  issues involving concrete type mismatch: {diagnostic.concrete_mismatch_graph_issue_count}",
+            "",
+            "Coverage visibility:",
+            "  catalog type | assigned count",
+        ]
+    )
     if diagnostic.catalog_type_counts:
         for entity_type, count in diagnostic.catalog_type_counts.items():
             lines.append(f"  {entity_type}: {count}")
     else:
         lines.append("  none: 0")
-    lines.extend(["", "Unknown contributor visibility:", "  top predicates involving unknown entities:"])
-    _append_counter_lines(lines, diagnostic.top_unknown_predicates)
+    lines.extend(
+        [
+            "",
+            "Unknown contributor visibility:",
+            "  top predicates involving unknown entities:",
+        ]
+    )
+    _append_predicate_lines(
+        lines, diagnostic.top_unknown_predicates, diagnostic.unknown_predicate_examples
+    )
     lines.append("  top relationship categories involving unknown entities:")
     _append_counter_lines(lines, diagnostic.top_unknown_relationship_categories)
     lines.append("  top graph issue categories involving unknown entities:")
     _append_counter_lines(lines, diagnostic.top_unknown_graph_issue_categories)
     return "\n".join(lines)
+
+
+def _top_counter_items(counter: Counter[str]) -> list[tuple[str, int]]:
+    return sorted(counter.items(), key=lambda item: (-item[1], item[0]))[
+        :TOP_UNKNOWN_LIMIT
+    ]
+
+
+def _append_predicate_lines(
+    lines: list[str],
+    items: list[tuple[str, int]],
+    examples_by_predicate: dict[str, list[str]],
+) -> None:
+    if not items:
+        lines.append("    none: 0")
+        return
+    for name, count in items:
+        lines.append(f"    {name}: {count}")
+        examples = examples_by_predicate.get(name, [])[:UNKNOWN_EXAMPLE_LIMIT]
+        if examples:
+            lines.append("      examples:")
+            for example in examples:
+                lines.append(f"        - {example}")
 
 
 def _append_counter_lines(lines: list[str], items: list[tuple[str, int]]) -> None:
@@ -192,9 +267,13 @@ def _append_counter_lines(lines: list[str], items: list[tuple[str, int]]) -> Non
         lines.append(f"    {name}: {count}")
 
 
-def _issue_subject_unknown(issue: GraphValidationIssue, unknown_entities: set[str]) -> bool:
+def _issue_subject_unknown(
+    issue: GraphValidationIssue, unknown_entities: set[str]
+) -> bool:
     return "unknown" in issue.actual_subject_types or issue.subject in unknown_entities
 
 
-def _issue_object_unknown(issue: GraphValidationIssue, unknown_entities: set[str]) -> bool:
+def _issue_object_unknown(
+    issue: GraphValidationIssue, unknown_entities: set[str]
+) -> bool:
     return "unknown" in issue.actual_object_types or issue.object in unknown_entities
