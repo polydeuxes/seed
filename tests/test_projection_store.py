@@ -445,9 +445,12 @@ def test_cli_state_summary_reuses_summary_read_model_without_deserializing_state
     assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
     second_output = capsys.readouterr().out
 
-    assert "  cache: miss" in first_output
-    assert "  cache: hit" in second_output
-    assert second_output.replace("  cache: hit", "  cache: miss") == first_output
+    assert "  state-build cache: miss" in first_output
+    assert "  state-build cache: hit" in second_output
+    assert first_output.count("State Build") == 1
+    assert second_output.count("State Build") == 1
+    assert "Projected State:" in first_output
+    assert "Fact Accounting:" in second_output
 
 
 def test_incremental_replay_matches_full_replay_and_preserves_order():
@@ -774,7 +777,9 @@ def test_projection_cache_status_surfaces_hit_and_miss_without_changing_state():
     assert any(
         status.message == "Projection replay" for status in miss_consumer.statuses
     )
-    assert any(status.message == "Projection cache: hit" for status in hit_consumer.statuses)
+    assert any(
+        status.message == "Projection cache: hit" for status in hit_consumer.statuses
+    )
 
 
 def test_projection_cache_status_surfaces_incremental_replay_without_changing_validity():
@@ -798,9 +803,7 @@ def test_projection_cache_status_surfaces_incremental_replay_without_changing_va
     assert status.snapshot_last_event_id == first.id
     assert snapshot is not None
     assert snapshot.last_event_id == state.last_event_id
-    assert any(
-        status.message == "Incremental replay" for status in consumer.statuses
-    )
+    assert any(status.message == "Incremental replay" for status in consumer.statuses)
 
 
 def test_inspection_cli_emits_projection_status_to_stderr_and_preserves_json_stdout(
@@ -813,8 +816,7 @@ def test_inspection_cli_emits_projection_status_to_stderr_and_preserves_json_std
     ledger.close()
 
     assert (
-        seed_local.main(["--db", str(db_path), "--capability-candidates", "ssh"])
-        == 0
+        seed_local.main(["--db", str(db_path), "--capability-candidates", "ssh"]) == 0
     )
     captured = capsys.readouterr()
 
@@ -845,9 +847,15 @@ def test_state_summary_cli_surfaces_summary_cache_hit_and_state_cache_miss(
     second = capsys.readouterr()
     assert "State-build cache: hit" in second.err
     assert "Projection cache:" not in second.err
-    assert "  cache: miss" in first.out
-    assert "  cache: hit" in second.out
-    assert second.out.replace("  cache: hit", "  cache: miss") == first.out
+    assert "  state-build cache: miss" in first.out
+    assert "  state-build cache: hit" in second.out
+    assert "  projection cache: miss" in first.out
+    assert "  state cache: miss" in first.out
+    assert first.out.count("State Build") == 1
+    assert second.out.count("State Build") == 1
+    assert "\nState:\n" not in first.out
+    assert "Projected State:" in first.out
+
 
 def test_long_projection_replay_emits_bounded_intermediate_progress():
     ledger = EventLedger()
