@@ -1572,6 +1572,10 @@ def test_kernel_cpu_memory_observation_avoids_execution_root_network_and_provide
 def _write_listener_fixture(proc: Path) -> Path:
     net = proc / "net"
     net.mkdir(parents=True, exist_ok=True)
+    process_fd = proc / "1234" / "fd"
+    process_fd.mkdir(parents=True, exist_ok=True)
+    (proc / "1234" / "comm").write_text("sshd\n", encoding="utf-8")
+    (process_fd / "3").symlink_to("socket:[1]")
     (net / "tcp").write_text(
         "  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n"
         "   0: 00000000:0016 00000000:0000 0A 00000000:00000000 00:00000000 00000000 0 0 1\n"
@@ -1644,10 +1648,14 @@ def test_local_host_source_emits_tcp_udp_listener_observations(monkeypatch, tmp_
     assert ("node-a", "listening_endpoint", "udp [::]:1234") in triples
     assert ("node-a", "listening_protocol", "tcp") in triples
     assert ("node-a", "listening_protocol", "udp") in triples
+    assert ("node-a", "listening_socket_family", "ipv4") in triples
+    assert ("node-a", "listening_socket_family", "ipv6") in triples
     assert ("node-a", "listening_address", "0.0.0.0") in triples
     assert ("node-a", "listening_address", "::1") in triples
     assert ("node-a", "listening_port", 22) in triples
     assert ("node-a", "listening_port", 53) in triples
+    assert ("node-a", "listening_process_id", 1234) in triples
+    assert ("node-a", "listening_process_name", "sshd") in triples
     assert ("node-a", "listening_endpoint", "tcp 127.0.0.1:80") not in triples
     endpoint = next(obs for obs in observations if obs.value == "tcp 0.0.0.0:22")
     assert endpoint.dimensions == {
@@ -1660,6 +1668,33 @@ def test_local_host_source_emits_tcp_udp_listener_observations(monkeypatch, tmp_
     assert endpoint.metadata["question_answered"] == (
         "What protocol/address/port endpoints are bound locally?"
     )
+    process = next(obs for obs in observations if obs.predicate == "listening_process_name")
+    assert process.dimensions == endpoint.dimensions
+    assert process.metadata["process_inode"] == "1"
+    assert process.metadata["process_source"] == "/proc/1234/fd and /proc/1234/comm"
+
+
+def test_local_host_source_preserves_missing_listener_process_information(
+    monkeypatch, tmp_path
+):
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    proc = _write_listener_fixture(tmp_path / "proc")
+    (proc / "1234" / "fd" / "3").unlink()
+    _patch_listener_host(monkeypatch)
+
+    observations = LocalHostObservationSource(proc_root=proc).collect()
+    tcp_22 = [
+        obs
+        for obs in observations
+        if obs.dimensions.get("protocol") == "tcp"
+        and obs.dimensions.get("address") == "0.0.0.0"
+        and obs.dimensions.get("port") == "22"
+    ]
+
+    assert any(obs.predicate == "listening_endpoint" for obs in tcp_22)
+    assert not any(obs.predicate == "listening_process_id" for obs in tcp_22)
+    assert not any(obs.predicate == "listening_process_name" for obs in tcp_22)
 
 
 def test_listening_port_observation_is_deterministic(monkeypatch, tmp_path):
@@ -1705,6 +1740,9 @@ def test_listening_port_observation_projects_without_availability_reachability_h
     assert state.get_current_facts("node-a", "listening_port")
     assert state.get_current_facts("node-a", "listening_protocol")
     assert state.get_current_facts("node-a", "listening_address")
+    assert state.get_current_facts("node-a", "listening_socket_family")
+    assert state.get_current_facts("node-a", "listening_process_id")
+    assert state.get_current_facts("node-a", "listening_process_name")
     for forbidden in (
         "availability_status",
         "reachability_status",

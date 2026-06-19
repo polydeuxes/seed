@@ -323,6 +323,28 @@
       "cardinality": "multi"
     },
     {
+      "predicate": "listening_socket_family",
+      "kind": "durable_fact",
+      "value_type": "enum",
+      "allowed_values": [
+        "ipv4",
+        "ipv6"
+      ],
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "listening_process_id",
+      "kind": "durable_fact",
+      "value_type": "integer",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "listening_process_name",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
       "predicate": "local_observation_status",
       "kind": "measurement",
       "value_type": "enum",
