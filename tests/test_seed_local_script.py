@@ -1766,8 +1766,8 @@ def test_cli_state_summary_cache_debug_without_db_reports_unavailable(capsys):
     assert "State Build Cache Debug" in output
     assert "- status: ineligible" in output
     assert "- reason: --db is required for persisted read-model caches" in output
-    assert "Summary cache:\n- status: unavailable" in output
-    assert "State cache:\n- status: unavailable" in output
+    assert "State-build cache:\n- status: unavailable" in output
+    assert "Projection cache:\n- status: unavailable" in output
 
 
 def test_cli_state_summary_cache_debug_does_not_ingest_or_execute(
@@ -1821,7 +1821,7 @@ def test_cli_state_summary_cache_debug_does_not_ingest_or_execute(
     )
 
     output = capsys.readouterr().out
-    assert "Summary cache:\n- status: miss" in output
+    assert "State-build cache:\n- status: miss" in output
     assert "Projection replay / build subphase timings:" in output
     assert "- event replay:" in output
     assert "- finalization: fact support construction:" in output
@@ -1855,12 +1855,12 @@ def test_cli_state_summary_cache_debug_reports_warm_summary_hit(tmp_path, capsys
 
     assert seed_local.main(["--db", str(db_path), "--state-build-cache-debug"]) == 0
     cold_output = capsys.readouterr().out
-    assert "Summary cache:\n- status: miss" in cold_output
+    assert "State-build cache:\n- status: miss" in cold_output
 
     assert seed_local.main(["--db", str(db_path), "--state-build-cache-debug"]) == 0
     warm_output = capsys.readouterr().out
-    assert "Summary cache:\n- status: hit" in warm_output
-    assert "State cache:\n- status: skipped" in warm_output
+    assert "State-build cache:\n- status: hit" in warm_output
+    assert "Projection cache:\n- status: skipped" in warm_output
     assert "Projection replay / build subphase timings:" not in warm_output
 
 
@@ -1891,7 +1891,9 @@ def test_cli_state_summary_cache_debug_does_not_change_normal_summary_output(
     capsys.readouterr()
     assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
     after = capsys.readouterr().out
-    assert before == after
+    assert "  cache: miss" in before
+    assert "  cache: hit" in after
+    assert after.replace("  cache: hit", "  cache: miss") == before
 
 
 def test_cli_state_summary_reports_projected_world_model_without_ingestion(

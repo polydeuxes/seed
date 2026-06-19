@@ -571,7 +571,7 @@ def project_state_with_cache(
                 emit_status(
                     status_consumer,
                     "projection_cache_load",
-                    "State cache: hit",
+                    "Projection cache: hit",
                     completed=True,
                 )
                 return snapshot_state, StateCacheStatus(
@@ -591,7 +591,7 @@ def project_state_with_cache(
                     emit_status(
                         status_consumer,
                         "projection_cache_load",
-                        "State cache: miss",
+                        "Projection cache: miss",
                         completed=True,
                     )
                     emit_status(
@@ -651,7 +651,7 @@ def project_state_with_cache(
         emit_status(
             status_consumer,
             "projection_cache_load",
-            "State cache: miss",
+            "Projection cache: miss",
             completed=True,
         )
     emit_status(

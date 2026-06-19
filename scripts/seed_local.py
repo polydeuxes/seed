@@ -1172,12 +1172,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--rebuild-state-cache",
         action="store_true",
-        help="clear and rebuild the persisted projected State cache for --db",
+        help="clear and rebuild the persisted projection cache for --db",
     )
     parser.add_argument(
         "--state-cache-status",
         action="store_true",
-        help="print projected State cache hit/miss status for --db",
+        help="print projection cache hit/miss status for --db",
     )
     parser.add_argument(
         "--why",
@@ -1911,7 +1911,7 @@ def _load_or_build_fact_index_from_args(
     *,
     status_consumer: ExecutionStatusConsumer | None = None,
 ) -> Any | None:
-    """Return the shared fact index cache when the State cache is eligible."""
+    """Return the shared fact index cache when the projection cache is eligible."""
 
     if not _can_use_state_cache(args):
         return None
@@ -2002,7 +2002,7 @@ def projected_state_summary_from_args(
     *,
     status_consumer: ExecutionStatusConsumer | None = None,
 ) -> tuple[StateSummary, dict[str, Any]]:
-    """Return the state-summary views, using a dependent summary read-model cache."""
+    """Return state-build accounting, using a dependent read-model cache."""
 
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
     store = _projection_store_from_args(args)
@@ -2026,23 +2026,31 @@ def projected_state_summary_from_args(
                 emit_status(
                     status_consumer,
                     "state_summary_cache_load",
-                    "State-summary cache: hit",
+                    "State-build cache: hit",
                     completed=True,
                 )
                 payload = snapshot.summary_payload
                 view_summary = StateSummary(**payload["state_view_summary"])
-                return view_summary, payload["operator_summary"]
+                operator_summary = dict(payload["operator_summary"])
+                operator_summary.update(
+                    {
+                        "projection_version": view_summary.projection_version,
+                        "last_event_id": view_summary.last_event_id,
+                        "cache_status": "hit",
+                    }
+                )
+                return view_summary, operator_summary
 
         if store is not None and _can_use_state_cache(args):
             emit_status(
                 status_consumer,
                 "state_summary_cache_load",
-                "State-summary cache: miss",
+                "State-build cache: miss",
                 completed=True,
             )
         projector = _state_projector_from_args(args, ledger)
         if store is not None and _can_use_state_cache(args):
-            state, _status = project_state_with_cache(
+            state, state_cache_status = project_state_with_cache(
                 ledger,
                 args.workspace,
                 store,
@@ -2053,6 +2061,17 @@ def projected_state_summary_from_args(
             state = projector.project(args.workspace)
         view_summary = build_state_summary(state)
         operator_summary = state_summary(state)
+        if store is not None and _can_use_state_cache(args):
+            cache_status = "hit" if state_cache_status.cache_hit else "miss"
+        else:
+            cache_status = "unavailable"
+        operator_summary.update(
+            {
+                "projection_version": view_summary.projection_version,
+                "last_event_id": view_summary.last_event_id,
+                "cache_status": cache_status,
+            }
+        )
         if store is not None and _can_use_state_cache(args):
             store.save_summary_snapshot(
                 SummaryProjectionSnapshot(
@@ -2291,16 +2310,16 @@ def format_state_summary_cache_debug_report(
     lines.extend(
         [
             "",
-            "Summary cache:",
+            "State-build cache:",
             f"- status: {report.summary_cache_status}",
             "",
-            "State cache:",
+            "Projection cache:",
             f"- status: {report.state_cache_status}",
             "",
             "Last event ids:",
             f"- current last event id: {_format_cache_status_id(report.current_last_event_id)}",
-            f"- cached summary last event id: {_format_cache_status_id(report.cached_summary_last_event_id)}",
-            f"- cached state last event id: {_format_cache_status_id(report.cached_state_last_event_id)}",
+            f"- cached state-build last event id: {_format_cache_status_id(report.cached_summary_last_event_id)}",
+            f"- cached projection last event id: {_format_cache_status_id(report.cached_state_last_event_id)}",
         ]
     )
     if report.notes:
@@ -3505,7 +3524,7 @@ def format_state_view_summary(summary: StateSummary) -> str:
 
     return "\n".join(
         [
-            "State Summary",
+            "State Build",
             "",
             f"Facts: {summary.facts_count}",
             f"Observations: {summary.observations_count}",
@@ -3708,27 +3727,34 @@ def format_state_summary(summary: dict[str, Any]) -> str:
     """Format the projected state summary for concise terminal inspection."""
 
     lines = [
-        "State summary",
-        f"entities: {summary['entity_count']}",
-        f"facts: {summary['fact_count']}",
-        f"durable facts: {summary['durable_fact_count']}",
-        f"measurement current samples: {summary['measurement_current_sample_count']}",
-        f"conflicts: {summary['conflict_count']}",
-        f"stale facts: {summary['stale_fact_count']}",
-        "graph issues: "
+        "State Build",
+        "",
+        "Projection:",
+        f"  version: {summary.get('projection_version', 'unknown')}",
+        f"  last event: {summary.get('last_event_id') or 'none'}",
+        f"  cache: {summary.get('cache_status', 'unknown')}",
+        "",
+        "State:",
+        f"  entities: {summary['entity_count']}",
+        f"  facts: {summary['fact_count']}",
+        f"  durable facts: {summary['durable_fact_count']}",
+        f"  measurement current samples: {summary['measurement_current_sample_count']}",
+        f"  conflicts: {summary['conflict_count']}",
+        f"  stale facts: {summary['stale_fact_count']}",
+        "  graph issues: "
         f"{summary['graph_issue_warning_count']} "
         f"warning{'s' if summary['graph_issue_warning_count'] != 1 else ''}, "
         f"{summary['graph_issue_error_count']} "
         f"error{'s' if summary['graph_issue_error_count'] != 1 else ''}",
-        "observation sources:",
+        "  observation sources:",
     ]
     if "relationship_count" in summary:
-        lines.insert(3, f"relationships: {summary['relationship_count']}")
+        lines.insert(9, f"  relationships: {summary['relationship_count']}")
     sources = summary["observation_source_counts"]
     lines.extend(
-        [f"  {source}: {count}" for source, count in sources.items()] or ["  (none)"]
+        [f"    {source}: {count}" for source, count in sources.items()] or ["    (none)"]
     )
-    # Default State Summary is intentionally not a storage/filesystem detail
+    # Default State Build is intentionally not a storage/filesystem detail
     # surface. Storage projection data may exist on explicit storage-focused
     # surfaces, but bounded storage detail is still detail and must not leak here.
     return "\n".join(lines)
