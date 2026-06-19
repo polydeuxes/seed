@@ -445,7 +445,9 @@ def test_cli_state_summary_reuses_summary_read_model_without_deserializing_state
     assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
     second_output = capsys.readouterr().out
 
-    assert second_output == first_output
+    assert "  cache: miss" in first_output
+    assert "  cache: hit" in second_output
+    assert second_output.replace("  cache: hit", "  cache: miss") == first_output
 
 
 def test_incremental_replay_matches_full_replay_and_preserves_order():
@@ -767,12 +769,12 @@ def test_projection_cache_status_surfaces_hit_and_miss_without_changing_state():
     assert hit_status.cache_hit is True
     assert state_to_payload(missed_state) == state_to_payload(hit_state)
     assert any(
-        status.message == "State cache: miss" for status in miss_consumer.statuses
+        status.message == "Projection cache: miss" for status in miss_consumer.statuses
     )
     assert any(
         status.message == "Projection replay" for status in miss_consumer.statuses
     )
-    assert any(status.message == "State cache: hit" for status in hit_consumer.statuses)
+    assert any(status.message == "Projection cache: hit" for status in hit_consumer.statuses)
 
 
 def test_projection_cache_status_surfaces_incremental_replay_without_changing_validity():
@@ -818,7 +820,7 @@ def test_inspection_cli_emits_projection_status_to_stderr_and_preserves_json_std
 
     assert captured.err.splitlines()[:3] == [
         "Loading projection cache...",
-        "State cache: miss",
+        "Projection cache: miss",
         "Projection replay: 0 / 1",
     ]
     assert '"boundary": "capability_candidate_preservation_only"' in captured.out
@@ -836,14 +838,16 @@ def test_state_summary_cli_surfaces_summary_cache_hit_and_state_cache_miss(
 
     assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
     first = capsys.readouterr()
-    assert "State-summary cache: miss" in first.err
-    assert "State cache: miss" in first.err
+    assert "State-build cache: miss" in first.err
+    assert "Projection cache: miss" in first.err
 
     assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
     second = capsys.readouterr()
-    assert "State-summary cache: hit" in second.err
-    assert "State cache:" not in second.err
-    assert first.out == second.out
+    assert "State-build cache: hit" in second.err
+    assert "Projection cache:" not in second.err
+    assert "  cache: miss" in first.out
+    assert "  cache: hit" in second.out
+    assert second.out.replace("  cache: hit", "  cache: miss") == first.out
 
 def test_long_projection_replay_emits_bounded_intermediate_progress():
     ledger = EventLedger()

@@ -494,7 +494,7 @@ def test_cli_state_view_commands_do_not_append_events(tmp_path, capsys):
         assert _event_count(db_path) == before
 
     output = capsys.readouterr().out
-    assert "State Summary" in output
+    assert "State Build" in output
     assert "Current Facts" in output
     assert "Current Observations" in output
     assert "Current Requirements" in output
