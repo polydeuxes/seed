@@ -43,7 +43,9 @@ def test_classification_coverage_empty_state():
     assert diagnostic.classified_entity_count == 0
     assert diagnostic.unknown_entity_count == 0
     assert diagnostic.unknown_percentage == 0.0
-    assert "Entity Classification Coverage" in format_classification_coverage(diagnostic)
+    assert "Entity Classification Coverage" in format_classification_coverage(
+        diagnostic
+    )
 
 
 def test_classification_coverage_fully_classified_entities():
@@ -109,12 +111,57 @@ def test_classification_coverage_default_command_does_not_record(tmp_path, capsy
     assert after == before
 
 
+def test_unknown_contributor_examples_are_shown_bounded_and_deterministic():
+    state = _project(
+        _fact("z", "zeta", "defines", "value"),
+        _fact("a", "alpha", "defines", "value"),
+        _fact("b", "beta", "defines", "value"),
+        _fact("d", "delta", "defines", "value"),
+        _fact("i", "importer", "imports", "alpha"),
+    )
+    diagnostic = build_classification_coverage_diagnostic(state, observed_at=NOW)
+
+    assert diagnostic.top_unknown_predicates == [("defines", 4), ("imports", 1)]
+    assert diagnostic.unknown_predicate_examples["defines"] == [
+        "alpha",
+        "beta",
+        "delta",
+    ]
+    assert diagnostic.unknown_predicate_examples["imports"] == ["alpha", "importer"]
+
+    output = format_classification_coverage(diagnostic)
+    assert "Unknown contributor visibility:" in output
+    assert "    defines: 4" in output
+    assert "      examples:\n        - alpha\n        - beta\n        - delta" in output
+    assert "        - zeta" not in output
+
+
+def test_classification_coverage_record_preserves_bounded_example_visibility(tmp_path):
+    db = tmp_path / "seed.sqlite"
+    for subject in ["zeta", "alpha", "beta", "delta"]:
+        seed_local.main(["--db", str(db), "--observe", subject, "defines", "value"])
+
+    assert (
+        seed_local.main(["--db", str(db), "--classification-coverage", "--record"]) == 0
+    )
+
+    events = SQLiteEventLedger(db).list("local")
+    assert any(
+        event.kind == "fact.inferred"
+        and event.payload["fact"]["predicate"] == "top_unknown_predicate_examples"
+        and event.payload["fact"]["value"] == {"defines": ["alpha", "beta", "delta"]}
+        for event in events
+    )
+
+
 def test_classification_coverage_record_appends_self_observation_evidence(tmp_path):
     db = tmp_path / "seed.sqlite"
     seed_local.main(["--db", str(db), "--observe", "mystery", "custom", "value"])
     before_events = SQLiteEventLedger(db).list("local")
 
-    assert seed_local.main(["--db", str(db), "--classification-coverage", "--record"]) == 0
+    assert (
+        seed_local.main(["--db", str(db), "--classification-coverage", "--record"]) == 0
+    )
 
     after_events = SQLiteEventLedger(db).list("local")
     assert len(after_events) > len(before_events)
