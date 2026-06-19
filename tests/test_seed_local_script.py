@@ -1721,6 +1721,9 @@ def test_parser_supports_fact_projection_queries():
     refreshes_args = parser.parse_args(["--stale-fact-refreshes"])
     summary_args = parser.parse_args(["--state-summary"])
     summary_debug_args = parser.parse_args(["--state-summary-cache-debug"])
+    current_facts_debug_args = parser.parse_args(
+        ["--current-facts", "web_service", "runtime", "--current-facts-cache-debug"]
+    )
 
     history_args = parser.parse_args(
         [
@@ -1747,6 +1750,7 @@ def test_parser_supports_fact_projection_queries():
     assert refreshes_args.stale_fact_refreshes is True
     assert summary_args.state_summary is True
     assert summary_debug_args.state_summary_cache_debug is True
+    assert current_facts_debug_args.current_facts_cache_debug is True
 
 
 def test_cli_state_summary_cache_debug_without_db_reports_unavailable(capsys):
@@ -2176,6 +2180,82 @@ def test_cli_current_facts_and_fact_support_keep_raw_alias_evidence(tmp_path, ca
     support_output = capsys.readouterr().out
     assert "value: 192.0.2.115" in support_output
     assert "value: 192.168.254.116" in support_output
+
+
+def test_cli_current_facts_cache_debug_renders_timing_section(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "current-facts-debug.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [("example_host", "alias", "example_host.local")],
+    )
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--current-facts",
+                "example_host",
+                "alias",
+                "--current-facts-cache-debug",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert output.splitlines()[0] == "example_host.local"
+    assert "Current Facts Timing" in output
+    assert "Cache:\n- state cache: miss" in output
+    assert "- projection store open:" in output
+    assert "- cache lookup:" in output
+    assert "- projection replay:" in output
+    assert "- snapshot save:" in output
+    assert "- read model build:" in output
+    assert "- render:" in output
+    assert "- total:" in output
+
+
+def test_cli_current_facts_cache_debug_does_not_change_facts_returned(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "current-facts-debug-same-facts.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [
+            ("example_host", "alias", "192.0.2.115"),
+            ("example_host", "alias", "192.168.254.116"),
+        ],
+    )
+
+    assert (
+        seed_local.main(["--db", str(db_path), "--current-facts", "example_host", "alias"])
+        == 0
+    )
+    normal_output = capsys.readouterr().out
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--current-facts",
+                "example_host",
+                "alias",
+                "--current-facts-cache-debug",
+            ]
+        )
+        == 0
+    )
+    debug_output = capsys.readouterr().out
+    debug_facts = debug_output.split("\n\nCurrent Facts Timing\n", 1)[0] + "\n"
+
+    assert normal_output == "192.0.2.115\n192.168.254.116\n"
+    assert debug_facts == normal_output
 
 
 def test_cli_fact_support_prints_projected_grouped_values(capsys):
