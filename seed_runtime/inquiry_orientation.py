@@ -58,6 +58,7 @@ class RelatedMaterial:
     surface: str
     support: str
     why_related: str
+    surface_family: str
 
 
 @dataclass(frozen=True)
@@ -133,7 +134,9 @@ def build_inquiry_orientation(
     return InquiryOrientationView(
         note=note,
         related_material=related,
-        uncertainty=UNCERTAINTY_WITH_MATCHES if related else UNCERTAINTY_WITHOUT_MATCHES,
+        uncertainty=(
+            UNCERTAINTY_WITH_MATCHES if related else UNCERTAINTY_WITHOUT_MATCHES
+        ),
     )
 
 
@@ -149,8 +152,13 @@ def format_inquiry_orientation(view: InquiryOrientationView) -> str:
     if view.related_material:
         for item in view.related_material:
             lines.append(f"  - [{item.material_type}] {item.label}: {item.surface}")
+            lines.append("")
+            lines.append("    surface family:")
+            lines.append(f"      {item.surface_family}")
     else:
-        lines.append("  No deterministic related material found in projected read models.")
+        lines.append(
+            "  No deterministic related material found in projected read models."
+        )
     lines.extend(["", "Support / why related:"])
     if view.related_material:
         for item in view.related_material:
@@ -222,14 +230,13 @@ def _fact_matches(state: State, tokens: set[str]) -> list[RelatedMaterial]:
                     f"path={support.dimensions.get('path')!r}"
                 ),
                 why_related=f"case-normalized token overlap: {', '.join(sorted(overlaps))}",
+                surface_family="fact support",
             )
         )
     return matches
 
 
-def _source_navigation_matches(
-    state: State, tokens: set[str]
-) -> list[RelatedMaterial]:
+def _source_navigation_matches(state: State, tokens: set[str]) -> list[RelatedMaterial]:
     matches: list[RelatedMaterial] = []
     for token in sorted(tokens):
         view = build_source_navigation(state, token)
@@ -241,6 +248,7 @@ def _source_navigation_matches(
                     surface=f"{row.value} ({row.path or 'no path'})",
                     support=f"source-navigation support={row.representative_support_id}",
                     why_related=f"source-navigation lexical match for token: {token}",
+                    surface_family="source navigation",
                 )
             )
     return matches

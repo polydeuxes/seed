@@ -81,7 +81,10 @@ def test_orientation_output_includes_required_sections_and_supported_match(tmp_p
 
     output = format_inquiry_orientation(build_inquiry_orientation(state, note))
 
-    assert "Inquiry note:\n  example_host keeps showing up first and that feels wrong" in output
+    assert (
+        "Inquiry note:\n  example_host keeps showing up first and that feels wrong"
+        in output
+    )
     assert "Potentially related material:" in output
     assert "example_host runtime prometheus-node-exporter" in output
     assert "Support / why related:" in output
@@ -141,7 +144,9 @@ def test_orientation_helper_does_not_mutate_state_or_create_actions(tmp_path):
     assert state.action_plans == {}
 
 
-def test_state_summary_and_source_navigation_matches_do_not_assert_importance_or_ownership(tmp_path):
+def test_state_summary_and_source_navigation_matches_do_not_assert_importance_or_ownership(
+    tmp_path,
+):
     _ledger, state = _state_with_example_host_fact()
     note = record_inquiry_note(
         tmp_path / "probe.jsonl",
@@ -157,3 +162,119 @@ def test_state_summary_and_source_navigation_matches_do_not_assert_importance_or
     assert "assert ownership" in output
     assert "owner:" not in output.lower()
     assert "most important" not in output.lower()
+
+
+def _state_with_example_source_navigation_fact():
+    ledger = EventLedger()
+    fact = Fact(
+        id="fact_example_source_define",
+        subject_id="seed_runtime.example",
+        predicate="defines",
+        value="seed_runtime.example.examplesurface",
+        dimensions={"path": "seed_runtime/example.py"},
+        observed_at=utc_now(),
+        evidence_ids=["evd_example_source_define"],
+    )
+    ledger.append("fact.observed", "ws", {"fact": to_plain(fact)})
+    return ledger, StateProjector(ledger).project("ws")
+
+
+def test_fact_support_surface_family_renders_without_changing_match(tmp_path):
+    _ledger, state = _state_with_example_host_fact()
+    note = record_inquiry_note(
+        tmp_path / "probe.jsonl",
+        "example_host keeps showing up first",
+        recorded_at=datetime(2026, 6, 16, tzinfo=timezone.utc),
+    )
+
+    view = build_inquiry_orientation(state, note)
+    output = format_inquiry_orientation(view)
+
+    assert [
+        (item.material_type, item.label, item.surface, item.support)
+        for item in view.related_material
+    ] == [
+        (
+            "projected fact support",
+            "example_host",
+            "example_host runtime prometheus-node-exporter",
+            "fact support subject='example_host' predicate='runtime' path=None",
+        )
+    ]
+    assert view.related_material[0].surface_family == "fact support"
+    assert "surface family:\n      fact support" in output
+
+
+def test_source_navigation_surface_family_renders_without_changing_match(tmp_path):
+    _ledger, state = _state_with_example_source_navigation_fact()
+    note = record_inquiry_note(
+        tmp_path / "probe.jsonl",
+        "examplesurface source lookup",
+        recorded_at=datetime(2026, 6, 16, tzinfo=timezone.utc),
+    )
+
+    view = build_inquiry_orientation(state, note)
+    output = format_inquiry_orientation(view)
+
+    source_matches = [
+        item
+        for item in view.related_material
+        if item.material_type == "source navigation defines"
+    ]
+    assert [
+        (item.material_type, item.label, item.surface, item.support)
+        for item in source_matches
+    ] == [
+        (
+            "source navigation defines",
+            "seed_runtime.example.examplesurface",
+            "seed_runtime.example.examplesurface (seed_runtime/example.py)",
+            "source-navigation support=seed_runtime.example|defines|seed_runtime.example.examplesurface|path=seed_runtime/example.py",
+        )
+    ]
+    assert source_matches[0].surface_family == "source navigation"
+    assert "surface family:\n      source navigation" in output
+
+
+def test_surface_family_labels_preserve_ranking_and_retrieval_scope(tmp_path):
+    _ledger, state = _state_with_example_source_navigation_fact()
+    note = record_inquiry_note(
+        tmp_path / "probe.jsonl",
+        "seed_runtime.example examplesurface",
+        recorded_at=datetime(2026, 6, 16, tzinfo=timezone.utc),
+    )
+
+    view = build_inquiry_orientation(state, note)
+
+    assert [(item.material_type, item.label) for item in view.related_material] == [
+        ("projected fact support", "seed_runtime.example"),
+        ("source navigation defines", "seed_runtime.example.examplesurface"),
+    ]
+    assert len(view.related_material) == 2
+    assert {item.surface_family for item in view.related_material} == {
+        "fact support",
+        "source navigation",
+    }
+
+
+def test_surface_family_labels_do_not_add_authority_claims(tmp_path):
+    _ledger, state = _state_with_example_source_navigation_fact()
+    note = record_inquiry_note(
+        tmp_path / "probe.jsonl",
+        "examplesurface",
+        recorded_at=datetime(2026, 6, 16, tzinfo=timezone.utc),
+    )
+
+    view = build_inquiry_orientation(state, note)
+    output = format_inquiry_orientation(view).lower()
+
+    assert "surface family:" in output
+    for item in view.related_material:
+        label = item.surface_family.lower()
+        assert "importance" not in label
+        assert "intent" not in label
+        assert "concern" not in label
+        assert "action" not in label
+        assert "recommend" not in label
+    assert "recommended action" in output  # only in the negated authority boundary
+    assert "next safe move" in output  # only in the negated authority boundary
