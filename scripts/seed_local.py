@@ -1278,6 +1278,14 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--current-facts-cache-debug",
+        action="store_true",
+        help=(
+            "print current-facts cache status and phase timings; "
+            "does not ingest observations or execute tools"
+        ),
+    )
+    parser.add_argument(
         "--current-observations",
         action="store_true",
         help="print read-only projected Observation views and exit",
@@ -1477,6 +1485,8 @@ def validate_lifecycle_args(
         )
     if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
         parser.error("--current-facts accepts either no values or SUBJECT PREDICATE")
+    if args.current_facts_cache_debug and args.current_facts is None:
+        parser.error("--current-facts-cache-debug requires --current-facts")
     if args.why_fact is not None and len(args.why_fact) not in {2, 3}:
         parser.error("--why-fact accepts SUBJECT PREDICATE [OBJECT]")
     if args.confidence_fact is not None and len(args.confidence_fact) not in {2, 3}:
@@ -3892,6 +3902,124 @@ def format_best_fact(
     )
 
 
+@dataclass(frozen=True)
+class CurrentFactsTimingReport:
+    output: str
+    cache_status: str
+    timings: list[tuple[str, float]]
+
+
+class _TimingProjectionStore:
+    def __init__(self, store: ProjectionStore, timings: list[tuple[str, float]]):
+        self._store = store
+        self._timings = timings
+
+    def _timed(self, name: str, func):
+        started = time.perf_counter()
+        try:
+            return func()
+        finally:
+            self._timings.append((name, time.perf_counter() - started))
+
+    def load_snapshot(self, *args, **kwargs):
+        return self._timed(
+            "cache lookup", lambda: self._store.load_snapshot(*args, **kwargs)
+        )
+
+    def save_snapshot(self, *args, **kwargs):
+        return self._timed(
+            "snapshot save", lambda: self._store.save_snapshot(*args, **kwargs)
+        )
+
+    def __getattr__(self, name: str):
+        return getattr(self._store, name)
+
+
+def _format_current_facts_timing_report(report: CurrentFactsTimingReport) -> str:
+    lines = [
+        "Current Facts Timing",
+        "",
+        "Cache:",
+        f"- state cache: {report.cache_status}",
+        "",
+        "Timings:",
+    ]
+    lines.extend(f"- {name}: {elapsed:.6f}s" for name, elapsed in report.timings)
+    return "\n".join(lines)
+
+
+def _current_facts_timing_from_args(args: argparse.Namespace) -> CurrentFactsTimingReport:
+    timings: list[tuple[str, float]] = []
+    started = time.perf_counter()
+
+    def timed(name: str, func):
+        phase_started = time.perf_counter()
+        try:
+            return func()
+        finally:
+            timings.append((name, time.perf_counter() - phase_started))
+
+    ledger: EventLedger = timed(
+        "ledger open", lambda: SQLiteEventLedger(args.db) if args.db else EventLedger()
+    )
+    raw_store = timed("projection store open", lambda: _projection_store_from_args(args))
+    store = _TimingProjectionStore(raw_store, timings) if raw_store is not None else None
+    try:
+        if len(args.current_facts) != 0:
+            seed_dev_state_from_args(args, ledger)
+        history_limit = 1
+        projector = timed(
+            "state projector construction",
+            lambda: _state_projector_from_args(
+                args, ledger, measurement_history_limit=history_limit
+            ),
+        )
+        if store is not None and _can_use_state_cache(
+            args, measurement_history_limit=history_limit
+        ):
+            state, status = timed(
+                "projection replay",
+                lambda: project_state_with_cache(
+                    ledger,
+                    args.workspace,
+                    store,
+                    projector=projector,
+                    status_consumer=None,
+                ),
+            )
+            cache_status = "hit" if status.cache_hit else "miss"
+        else:
+            state = timed("projection replay", lambda: projector.project(args.workspace))
+            cache_status = "unavailable"
+
+        if len(args.current_facts) == 0:
+            views = timed("read model build", lambda: build_fact_view(state))
+            output = timed("render", lambda: format_fact_views(views))
+        else:
+            subject, predicate = args.current_facts
+            fact_index = timed(
+                "read model build",
+                lambda: _load_or_build_fact_index_from_args(args, state),
+            )
+            output = timed(
+                "render",
+                lambda: format_current_facts(
+                    state,
+                    subject,
+                    predicate,
+                    include_expired=args.include_expired,
+                    fact_index=fact_index,
+                ),
+            )
+        timings.append(("total", time.perf_counter() - started))
+        return CurrentFactsTimingReport(output, cache_status, timings)
+    finally:
+        for resource in (raw_store, ledger):
+            close = getattr(resource, "close", None)
+            if close is not None:
+                close()
+
+
 def format_current_facts(
     state: State,
     subject: str,
@@ -5208,6 +5336,12 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.current_facts is not None:
+        if args.current_facts_cache_debug:
+            report = _current_facts_timing_from_args(args)
+            print(report.output)
+            print()
+            print(_format_current_facts_timing_report(report))
+            return 0
         if len(args.current_facts) == 0:
             print(
                 format_fact_views(
