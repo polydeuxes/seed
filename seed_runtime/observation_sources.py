@@ -11,6 +11,7 @@ import platform
 import re
 import shutil
 import socket
+import subprocess
 import stat
 import struct
 import time
@@ -2186,6 +2187,190 @@ def _prometheus_os_from_uname(metric: dict[str, Any]) -> str | None:
     return normalized
 
 
+class SystemdObservationSource:
+    """Read-only systemd observation source using systemctl machine output.
+
+    The source records only systemd-reported unit identity, runtime state,
+    substate, and unit-file enablement state. It does not interpret health,
+    ownership, intent, dependencies, or desired state.
+    """
+
+    name = "systemd"
+    source_type: ObservationSourceType = "discovery"
+
+    def __init__(
+        self,
+        *,
+        observed_at: datetime | None = None,
+        command_runner: Any | None = None,
+        hostname: str | None = None,
+    ) -> None:
+        self.observed_at = observed_at
+        self.command_runner = command_runner or self._run_command
+        self.hostname = hostname
+        self.last_collection_counters: dict[str, Any] = {}
+
+    def collect(self) -> list[Observation]:
+        """Return observations for units reported by systemd."""
+
+        observed_at = self.observed_at or datetime.now(timezone.utc)
+        subject_host = self.hostname or platform.node() or "localhost"
+        runtime_units = self._collect_runtime_units()
+        unit_file_states = self._collect_unit_file_states()
+        unit_names = sorted(set(runtime_units) | set(unit_file_states))
+        observations: list[Observation] = []
+        metadata = {
+            "source_name": self.name,
+            "collector": "SystemdObservationSource",
+            "read_only": True,
+            "local_only": True,
+            "observation_surface": "systemd",
+            "shell_execution": False,
+            "privilege_escalation": False,
+            "service_health_asserted": False,
+            "desired_state_asserted": False,
+            "operator_intent_asserted": False,
+            "ownership_asserted": False,
+        }
+        for unit_name in unit_names:
+            dimensions = {"unit": unit_name}
+            unit_metadata = {**metadata, "unit": unit_name}
+            observations.append(
+                self._observation(
+                    observed_at,
+                    subject_host,
+                    "systemd_unit",
+                    unit_name,
+                    unit_metadata,
+                    dimensions,
+                )
+            )
+            runtime = runtime_units.get(unit_name, {})
+            for source_key, predicate in (
+                ("active", "systemd_active_state"),
+                ("sub", "systemd_sub_state"),
+            ):
+                value = _systemd_string(runtime.get(source_key))
+                if value is not None:
+                    observations.append(
+                        self._observation(
+                            observed_at,
+                            subject_host,
+                            predicate,
+                            value,
+                            unit_metadata,
+                            dimensions,
+                        )
+                    )
+            unit_file_state = _systemd_string(unit_file_states.get(unit_name))
+            if unit_file_state is not None:
+                observations.append(
+                    self._observation(
+                        observed_at,
+                        subject_host,
+                        "systemd_unit_file_state",
+                        unit_file_state,
+                        unit_metadata,
+                        dimensions,
+                    )
+                )
+        self.last_collection_counters = {
+            "units_observed": len(unit_names),
+            "runtime_units_observed": len(runtime_units),
+            "unit_files_observed": len(unit_file_states),
+        }
+        return observations
+
+    def _collect_runtime_units(self) -> dict[str, dict[str, Any]]:
+        output = self.command_runner(
+            [
+                "systemctl",
+                "list-units",
+                "--all",
+                "--output=json",
+                "--no-pager",
+                "--plain",
+            ]
+        )
+        units: dict[str, dict[str, Any]] = {}
+        for entry in _systemd_json_rows(output):
+            unit = _systemd_string(entry.get("unit") or entry.get("UNIT"))
+            if unit is None:
+                continue
+            units[unit] = {
+                "active": entry.get("active") or entry.get("ACTIVE"),
+                "sub": entry.get("sub") or entry.get("SUB"),
+            }
+        return units
+
+    def _collect_unit_file_states(self) -> dict[str, str]:
+        output = self.command_runner(
+            [
+                "systemctl",
+                "list-unit-files",
+                "--output=json",
+                "--no-pager",
+                "--plain",
+            ]
+        )
+        states: dict[str, str] = {}
+        for entry in _systemd_json_rows(output):
+            unit = _systemd_string(entry.get("unit_file") or entry.get("UNIT FILE"))
+            state = _systemd_string(entry.get("state") or entry.get("STATE"))
+            if unit is not None and state is not None:
+                states[unit] = state
+        return states
+
+    @staticmethod
+    def _run_command(command: list[str]) -> str:
+        completed = subprocess.run(
+            command,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        return completed.stdout
+
+    def _observation(
+        self,
+        observed_at: datetime,
+        subject: str,
+        predicate: str,
+        value: Any,
+        metadata: dict[str, Any],
+        dimensions: dict[str, str],
+    ) -> Observation:
+        return Observation(
+            id=new_id("obs_systemd"),
+            source_type=self.source_type,
+            observed_at=observed_at,
+            subject=subject,
+            predicate=predicate,
+            value=value,
+            confidence=1.0,
+            metadata=metadata,
+            dimensions=dimensions,
+        )
+
+
+def _systemd_json_rows(output: str) -> list[dict[str, Any]]:
+    try:
+        payload = json.loads(output or "[]")
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(payload, list):
+        return []
+    return [entry for entry in payload if isinstance(entry, dict)]
+
+
+def _systemd_string(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    stripped = value.strip()
+    return stripped or None
+
+
 class JsonObservationSource:
     """Observation source backed by a local JSON inventory file.
 
@@ -2550,7 +2735,9 @@ class ObservationCollectionService:
                     total_observations=len(normalized),
                     total_events=(2 * len(normalized)) + promoted_count,
                     facts_promoted=promoted_count,
-                    source_counters=dict(getattr(source, "last_collection_counters", {})),
+                    source_counters=dict(
+                        getattr(source, "last_collection_counters", {})
+                    ),
                 )
             )
         return [fact for fact in facts if fact is not None]
