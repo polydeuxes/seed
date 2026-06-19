@@ -81,6 +81,7 @@ Handoff / Continuation Lineage
 View / Lens / Orientation
 Descriptive Language / Authority Formation
 Surface / Bounded Consequence
+Documentation Metadata Surface
 Operator Entrypoint Pressure
 ```
 
@@ -121,6 +122,7 @@ For the current status of these concerns and the active frontier, see `architect
 | Where are repository surfaces, bounded consequence, state-summary scope, and operator-entrypoint pressure routed? | `repository_surface_inventory_observation.md`, `bounded_consequence_discipline_observation.md`, `state_summary_decomposition_audit.md`, and `operator_entrypoint_pressure_audit.md` |
 | Where are graph issue orientation and source-navigation entity typing audit findings routed? | `graph_issue_orientation_audit.md` and `source_navigation_entity_typing_graph_issue_audit.md` |
 | What could the documentation lineage observation see, and what remained blind? | `observation_surface_and_blind_spot_audit.md` |
+| Where is authored documentation front matter observed as structure rather than prose? | `documentation_metadata_surface_observation.md` |
 | Where is the distinction between bounded observable domains, acquisition paths, and inspection/view consumers observed? | `observable_domain_consumer_activity_observation.md`, `host_observation_reconciliation.md`, and `host_observation_composability_audit.md` |
 | What appears to continue when artifact, inquiry, observation, and discovery-path lineage are discussed? | `lineage_distinction_observation.md` |
 | What kinds of things do recent investigations appear to preserve? | `preservation_surface_observation.md` |

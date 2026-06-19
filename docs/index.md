@@ -63,6 +63,7 @@ related:
   - repository_orientation_audit.md
   - graph_issue_orientation_audit.md
   - source_navigation_entity_typing_graph_issue_audit.md
+  - documentation_metadata_surface_observation.md
 ---
 
 # Seed Documentation Index
@@ -135,6 +136,7 @@ Use this file to find the right document family before reading specific document
 - `authority_formation_pattern_observation.md` — observation of recurring authority-formation patterns across description, pressure, reconciliation, metadata, catalogs, tests, and runtime behavior.
 - `authority_owner_observation.md` — observation of possible authority-owner surfaces and owner-language pressure without assigning new canonical authority.
 - `repository_orientation_audit.md` — audit of orientation-related documents and how their questions, authority status, and unresolved edges are positioned.
+- `documentation_metadata_surface_observation.md` — observation of authored documentation front matter as a structural repository surface, preserving the boundary between metadata facts and prose claims.
 
 ## Foundational Ontology And Claim Semantics
 
