@@ -99,11 +99,15 @@ def test_repository_source_discovers_and_observes_python_files(tmp_path):
         ),
     }
     assert all(obs.source_type == "discovery" for obs in observations)
-    assert all(obs.metadata["source_name"] == "repository_source" for obs in observations)
+    assert all(
+        obs.metadata["source_name"] == "repository_source" for obs in observations
+    )
     assert all("calls" not in obs.predicate for obs in observations)
 
 
-def test_repository_source_ingests_through_projection_without_grep_or_behavior(tmp_path):
+def test_repository_source_ingests_through_projection_without_grep_or_behavior(
+    tmp_path,
+):
     source_file = tmp_path / "seed_runtime" / "state.py"
     source_file.parent.mkdir()
     source_file.write_text(
@@ -130,12 +134,10 @@ def test_repository_source_ingests_through_projection_without_grep_or_behavior(t
 
     assert facts
     assert [
-        fact.value
-        for fact in state.get_current_facts("seed_runtime.state", "imports")
+        fact.value for fact in state.get_current_facts("seed_runtime.state", "imports")
     ] == ["project_state_with_cache"]
     assert [
-        fact.value
-        for fact in state.get_current_facts("seed_runtime.state", "defines")
+        fact.value for fact in state.get_current_facts("seed_runtime.state", "defines")
     ] == ["seed_runtime.state.StateProjector"]
     assert [
         fact.value for fact in state.get_current_facts("tests.test_state", "imports")
@@ -145,7 +147,9 @@ def test_repository_source_ingests_through_projection_without_grep_or_behavior(t
     assert all(fact.predicate in {"imports", "defines"} for fact in facts)
 
 
-def test_repeated_repository_observation_preserves_history_but_stabilizes_current_claims(tmp_path):
+def test_repeated_repository_observation_preserves_history_but_stabilizes_current_claims(
+    tmp_path,
+):
     source_file = tmp_path / "seed_runtime" / "state.py"
     source_file.parent.mkdir()
     source_file.write_text(
@@ -2161,21 +2165,11 @@ def test_prometheus_node_uname_os_endpoint_evidence_is_preserved_without_fact_pr
         "192.0.2.115:9100"
     )
     assert state.get_best_fact("192.0.2.115:9100", "up").value == 1
-    assert (
-        state.get_best_fact("192.0.2.115:9100", "availability_status").value == "up"
-    )
-    assert (
-        state.get_best_fact("192.0.2.115:9100", "filesystem_avail_bytes").value == 1
-    )
-    assert (
-        state.get_best_fact("192.0.2.115:9100", "filesystem_free_bytes").value == 1
-    )
-    assert (
-        state.get_best_fact("192.0.2.115:9100", "filesystem_size_bytes").value == 1
-    )
-    assert (
-        state.get_best_fact("192.0.2.115:9100", "filesystem_total_bytes").value == 1
-    )
+    assert state.get_best_fact("192.0.2.115:9100", "availability_status").value == "up"
+    assert state.get_best_fact("192.0.2.115:9100", "filesystem_avail_bytes").value == 1
+    assert state.get_best_fact("192.0.2.115:9100", "filesystem_free_bytes").value == 1
+    assert state.get_best_fact("192.0.2.115:9100", "filesystem_size_bytes").value == 1
+    assert state.get_best_fact("192.0.2.115:9100", "filesystem_total_bytes").value == 1
     assert not any(
         fact.subject_id == "192.0.2.115:9100" and fact.predicate == "os"
         for fact in facts
@@ -2303,8 +2297,7 @@ def test_prometheus_vector_sample_timestamp_and_value_are_preserved(monkeypatch)
     assert observation.observed_at == sample_time
     assert observation.value == 1
     assert (
-        observation.metadata["prometheus_sample_timestamp"]
-        == sample_time.isoformat()
+        observation.metadata["prometheus_sample_timestamp"] == sample_time.isoformat()
     )
     assert observation.metadata["prometheus_sample_timestamp_raw"] == "1718123456.789"
     assert observation.metadata["source_observed_at"] == sample_time.isoformat()
@@ -2312,7 +2305,9 @@ def test_prometheus_vector_sample_timestamp_and_value_are_preserved(monkeypatch)
     assert observation.metadata["source_time_authority"] == "prometheus"
     assert observation.metadata["seed_collection_time_authority"] == "seed_local_clock"
     assert observation.metadata["query_temporal_intent"] == "current_instant"
-    seed_collected_at = datetime.fromisoformat(observation.metadata["seed_collected_at"])
+    seed_collected_at = datetime.fromisoformat(
+        observation.metadata["seed_collected_at"]
+    )
     assert before <= seed_collected_at <= after
     assert seed_collected_at != observation.observed_at
 
@@ -2374,8 +2369,7 @@ def test_prometheus_event_timestamp_remains_independent_from_sample_time(monkeyp
     assert observed_event.kind == "observation.observed"
     assert observed_event.timestamp != sample_time
     assert (
-        observed_event.payload["observation"]["observed_at"]
-        == sample_time.isoformat()
+        observed_event.payload["observation"]["observed_at"] == sample_time.isoformat()
     )
     assert (
         observed_event.payload["observation"]["metadata"]["seed_collected_at"]
@@ -2575,7 +2569,11 @@ def test_local_host_source_emits_identity_observations(monkeypatch, tmp_path):
     triples = {(obs.subject, obs.predicate, obs.value) for obs in observations}
     assert ("example_host", "hostname", "example_host") in triples
     assert ("example_host", "machine_id", "0123456789abcdef0123456789abcdef") in triples
-    assert ("example_host", "boot_id", "11111111-2222-3333-4444-555555555555") in triples
+    assert (
+        "example_host",
+        "boot_id",
+        "11111111-2222-3333-4444-555555555555",
+    ) in triples
     assert not [obs for obs in observations if obs.predicate == "fqdn"]
     for obs in observations:
         if obs.predicate in {"hostname", "machine_id", "boot_id"}:
@@ -2616,7 +2614,11 @@ def test_local_host_source_emits_fqdn_only_when_locally_configured(
     ).collect()
 
     triples = {(obs.subject, obs.predicate, obs.value) for obs in observations}
-    assert ("example_host.example.test", "hostname", "example_host.example.test") in triples
+    assert (
+        "example_host.example.test",
+        "hostname",
+        "example_host.example.test",
+    ) in triples
     assert ("example_host.example.test", "fqdn", "example_host.example.test") in triples
 
 
@@ -2968,7 +2970,9 @@ def test_local_users_observation_emits_fixture_passwd_and_group_facts(tmp_path):
     passwd, group = _write_local_users_fixture(tmp_path)
     source = LocalHostObservationSource(etc_passwd=passwd, etc_group=group)
 
-    observations = source._collect_local_user_observations(BASE_TIME, "example_host", {})
+    observations = source._collect_local_user_observations(
+        BASE_TIME, "example_host", {}
+    )
     triples = {(obs.subject, obs.predicate, obs.value) for obs in observations}
 
     assert ("example_host", "user_account", "john") in triples
@@ -3106,3 +3110,187 @@ def test_local_users_observation_avoids_forbidden_activity_privilege_sources(
     assert all(obs.metadata["pam_inspected"] is False for obs in observations)
     assert all(obs.metadata["utmp_wtmp_inspected"] is False for obs in observations)
     assert all(obs.metadata["loginctl_inspected"] is False for obs in observations)
+
+
+def test_systemd_observations_normalize_and_project_reported_states():
+    from seed_runtime.observation_sources import SystemdObservationSource
+
+    commands: list[tuple[str, ...]] = []
+
+    def runner(command: list[str]) -> str:
+        commands.append(tuple(command))
+        if command[:2] == ["systemctl", "list-units"]:
+            return json.dumps(
+                [
+                    {
+                        "unit": "nginx.service",
+                        "load": "loaded",
+                        "active": "active",
+                        "sub": "running",
+                    },
+                    {
+                        "unit": "cron.service",
+                        "load": "loaded",
+                        "active": "inactive",
+                        "sub": "dead",
+                    },
+                ]
+            )
+        if command[:2] == ["systemctl", "list-unit-files"]:
+            return json.dumps(
+                [
+                    {"unit_file": "nginx.service", "state": "enabled"},
+                    {"unit_file": "cron.service", "state": "disabled"},
+                ]
+            )
+        raise AssertionError(command)
+
+    observations = SystemdObservationSource(
+        observed_at=BASE_TIME, command_runner=runner, hostname="node-a"
+    ).collect()
+    triples = {
+        (obs.subject, obs.predicate, obs.value, obs.dimensions["unit"])
+        for obs in observations
+    }
+
+    assert ("node-a", "systemd_unit", "nginx.service", "nginx.service") in triples
+    assert ("node-a", "systemd_active_state", "active", "nginx.service") in triples
+    assert ("node-a", "systemd_sub_state", "running", "nginx.service") in triples
+    assert ("node-a", "systemd_unit_file_state", "enabled", "nginx.service") in triples
+    assert ("node-a", "systemd_unit", "cron.service", "cron.service") in triples
+    assert ("node-a", "systemd_active_state", "inactive", "cron.service") in triples
+    assert ("node-a", "systemd_sub_state", "dead", "cron.service") in triples
+    assert ("node-a", "systemd_unit_file_state", "disabled", "cron.service") in triples
+    assert commands == [
+        (
+            "systemctl",
+            "list-units",
+            "--all",
+            "--output=json",
+            "--no-pager",
+            "--plain",
+        ),
+        (
+            "systemctl",
+            "list-unit-files",
+            "--output=json",
+            "--no-pager",
+            "--plain",
+        ),
+    ]
+    assert all(obs.metadata["service_health_asserted"] is False for obs in observations)
+
+    ledger = EventLedger()
+    facts = ObservationCollectionService(
+        ObservationIngestor(ledger), normalization_pipeline=None
+    ).collect(
+        FakeObservationSource(observations, name="systemd", source_type="discovery"),
+        "ws_systemd",
+    )
+    state = StateProjector(ledger).project("ws_systemd")
+
+    assert [
+        (fact.value, fact.dimensions)
+        for fact in state.get_current_facts(
+            "node-a", "systemd_active_state", dimensions={"unit": "nginx.service"}
+        )
+    ] == [("active", {"unit": "nginx.service"})]
+    assert (
+        state.get_best_fact(
+            "node-a", "systemd_sub_state", dimensions={"unit": "nginx.service"}
+        ).value
+        == "running"
+    )
+    assert (
+        state.get_best_fact(
+            "node-a", "systemd_unit_file_state", dimensions={"unit": "nginx.service"}
+        ).value
+        == "enabled"
+    )
+    assert {fact.predicate for fact in facts} == {
+        "systemd_unit",
+        "systemd_active_state",
+        "systemd_sub_state",
+        "systemd_unit_file_state",
+    }
+
+
+def test_systemd_missing_fields_are_safe_and_projection_is_deterministic():
+    from seed_runtime.observation_sources import SystemdObservationSource
+
+    def runner(command: list[str]) -> str:
+        if command[:2] == ["systemctl", "list-units"]:
+            return json.dumps(
+                [
+                    {"unit": "partial.service", "active": "activating"},
+                    {"load": "loaded", "active": "failed", "sub": "failed"},
+                ]
+            )
+        if command[:2] == ["systemctl", "list-unit-files"]:
+            return json.dumps(
+                [
+                    {"unit_file": "partial.service"},
+                    {"unit_file": "generated.service", "state": "generated"},
+                ]
+            )
+        raise AssertionError(command)
+
+    source = SystemdObservationSource(
+        observed_at=BASE_TIME, command_runner=runner, hostname="node-a"
+    )
+    first = source.collect()
+    second = source.collect()
+
+    def stable(observations):
+        return [
+            (obs.subject, obs.predicate, obs.value, obs.dimensions)
+            for obs in observations
+        ]
+
+    assert stable(first) == stable(second)
+    assert stable(first) == [
+        ("node-a", "systemd_unit", "generated.service", {"unit": "generated.service"}),
+        (
+            "node-a",
+            "systemd_unit_file_state",
+            "generated",
+            {"unit": "generated.service"},
+        ),
+        ("node-a", "systemd_unit", "partial.service", {"unit": "partial.service"}),
+        (
+            "node-a",
+            "systemd_active_state",
+            "activating",
+            {"unit": "partial.service"},
+        ),
+    ]
+
+    ledger = EventLedger()
+    ObservationCollectionService(
+        ObservationIngestor(ledger), normalization_pipeline=None
+    ).collect(
+        FakeObservationSource(first, name="systemd", source_type="discovery"),
+        "ws_systemd_missing",
+    )
+    state = StateProjector(ledger).project("ws_systemd_missing")
+
+    assert (
+        state.get_best_fact(
+            "node-a", "systemd_sub_state", dimensions={"unit": "partial.service"}
+        )
+        is None
+    )
+    assert (
+        state.get_best_fact(
+            "node-a", "systemd_unit_file_state", dimensions={"unit": "partial.service"}
+        )
+        is None
+    )
+    assert (
+        state.get_best_fact(
+            "node-a",
+            "systemd_unit_file_state",
+            dimensions={"unit": "generated.service"},
+        ).value
+        == "generated"
+    )
