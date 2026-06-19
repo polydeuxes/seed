@@ -46,6 +46,7 @@ related:
   - interaction_as_evidence_observation.md
   - interaction_temporalness_observation.md
   - movement_preservation_observation.md
+  - observable_domain_consumer_activity_observation.md
   - participant_orientation_view_selection_observation.md
   - view_branch_continuity_reconciliation.md
   - promotion_and_reconciliation_observation.md
@@ -124,6 +125,7 @@ Use this file to find the right document family before reading specific document
 - `interaction_as_evidence_observation.md` — observation of whether interaction itself becomes evidence when repository questions concern participation, activation, operator interpretation, current concern, active edge, or safe continuation rather than preserved artifacts alone.
 - `interaction_temporalness_observation.md` — observation of whether interaction carries temporal structure through activation, selection shift, abandoned paths, redirection, and continuation without proposing runtime, conversation, or event-model changes.
 - `movement_preservation_observation.md` — observation of whether repository work preserves states, movements, or both, and where movement disappears when continuation becomes difficult.
+- `observable_domain_consumer_activity_observation.md` — observation that bounded host-observable domains may be acquired, projected, summarized, or inspected by different consumers without the domain boundary necessarily changing.
 - `bounty_board_and_investigation_selection_observation.md` — observation of how investigations appear to have become active, how inquiry historically moved, and how the bounty board preserves deferred inquiry without acting as roadmap authority.
 - `promotion_and_reconciliation_observation.md` — observation of how descriptive vocabulary, recurring repository language, and reconciliation pressure interact without treating promotion into architecture as automatic.
 - `role_of_descriptive_vocabulary_observation.md` — observation of descriptive vocabulary as bridge, lens, pressure carrier, and navigation aid without making descriptive terms canonical ontology.
