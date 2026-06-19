@@ -25,7 +25,7 @@ Operators still need to answer questions like:
 Where is state_summary defined?
 What file owns this symbol?
 What symbols does this file define?
-Where is --state-summary exposed?
+Where is --state-build exposed?
 What implementation surface should I inspect next?
 ```
 
@@ -74,7 +74,7 @@ claims render once while supporting provenance remains attached.
 --fact-support
 --why-fact
 --relationships
---state-summary
+--state-build
 ```
 
 A source navigation query should follow that style: project existing state,

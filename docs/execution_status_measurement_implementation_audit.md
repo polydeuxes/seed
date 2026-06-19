@@ -60,7 +60,7 @@ python scripts/seed_local.py --db "$db" --observe-repository-source .
 Projection/read-model measurements after repository observation populated the temporary DB:
 
 ```text
-python scripts/seed_local.py --db "$db" --state-summary
+python scripts/seed_local.py --db "$db" --state-build
 python scripts/seed_local.py --db "$db" --current-facts scripts/seed_local.py imports
 python scripts/seed_local.py --db "$db" --capability-candidates python
 python scripts/seed_local.py --db "$db" --capability-verification python
@@ -102,7 +102,7 @@ State cache: miss
 Projection replay: 0 / 10761
 ```
 
-For `--state-summary`, the preceding state-summary cache status was also visible:
+For `--state-build`, the preceding state-summary cache status was also visible:
 
 ```text
 Loading state-summary cache...
@@ -116,7 +116,7 @@ Measured table:
 
 | Command | Return code | Elapsed | Last observed status |
 | --- | ---: | ---: | --- |
-| `--state-summary` | 124 | 20.070s | `Projection replay: 0 / 10761` |
+| `--state-build` | 124 | 20.070s | `Projection replay: 0 / 10761` |
 | `--current-facts scripts/seed_local.py imports` | 124 | 20.072s | `Projection replay: 0 / 10761` |
 | `--capability-candidates python` | 124 | 20.068s | `Projection replay: 0 / 10761` |
 | `--capability-verification python` | 124 | 20.067s | `Projection replay: 0 / 10761` |
@@ -196,7 +196,7 @@ Measured finding: repository-source collection produced `3587` observations and 
 
 Difference from local-host observation: both paths share collection boundary, normalization, ingestion, and persistence status. Repository observation has its own file-discovery and source-file extraction loops, and those repository-specific loops are silent.
 
-### `--state-summary`
+### `--state-build`
 
 Path:
 
@@ -233,7 +233,7 @@ Status coverage:
 - cache mutation: yes, state projection snapshot and state-summary snapshot on miss;
 - knowledge mutation: no.
 
-Measured finding: in the cold-cache measured path, `--state-summary` timed out after `20.070s` with final status `Projection replay: 0 / 10761`, so it did not measurably reach post-replay state-summary phases during that bounded run.
+Measured finding: in the cold-cache measured path, `--state-build` timed out after `20.070s` with final status `Projection replay: 0 / 10761`, so it did not measurably reach post-replay state-summary phases during that bounded run.
 
 ### `--current-facts SUBJECT PREDICATE`
 

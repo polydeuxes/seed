@@ -99,7 +99,7 @@ Expected still-unanswerable questions:
 
 ```text
 Which CLI flag reaches state_summary?
-Which branch dispatches --state-summary?
+Which branch dispatches --state-build?
 Which function calls project_state_with_cache?
 Which path reaches summary-cache load?
 Which path reaches projection-cache save?

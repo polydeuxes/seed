@@ -113,7 +113,7 @@ error messages for CLI misuse
 Examples:
 
 ```text
---state-summary flag handling
+--state-build flag handling
 printing headings
 indentation
 line ordering for display

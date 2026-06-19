@@ -59,7 +59,7 @@ Implementation and test surfaces sampled only to understand current operator int
 Searches sampled CLI entrypoints and related tests for:
 
 ```text
---state-summary
+--state-build
 --current-facts
 --impact
 --source-navigation

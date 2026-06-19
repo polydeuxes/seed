@@ -189,7 +189,7 @@ State Views answer:
 - What capabilities exist?
 - What issues exist?
 
-They are projections and not separate persistence systems. They do not append events, replay runtime decisions, invoke `RuntimeLoop`, call providers, evaluate policy, execute operation implementations, run shell commands, or perform network calls. CLI flags such as `--current-facts`, `--current-observations`, `--current-requirements`, `--current-capabilities`, `--current-issues`, and `--state-summary` load projected State, reuse `ProjectionStore` snapshots when available, and render plain text.
+They are projections and not separate persistence systems. They do not append events, replay runtime decisions, invoke `RuntimeLoop`, call providers, evaluate policy, execute operation implementations, run shell commands, or perform network calls. CLI flags such as `--current-facts`, `--current-observations`, `--current-requirements`, `--current-capabilities`, `--current-issues`, and `--state-build` load projected State, reuse `ProjectionStore` snapshots when available, and render plain text.
 
 ### Context Views
 

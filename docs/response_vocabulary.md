@@ -669,7 +669,7 @@ surfaces. A surface may belong to more than one category.
 | CLI `--stale-facts` / refresh recommendations | Integrity Response, Inventory Response, Why-Not Response | Communicates stale facts and recommendation signals only. |
 | CLI `--graph-issues` output | Issue Response, Integrity Response | Communicates graph validation issues. |
 | CLI `--unhealthy` output | Issue Response, State Response | Communicates projected down endpoints and graph errors without executing checks. |
-| CLI `--state-summary` output | State Response, Response Summary | Communicates read-only projected world-model summary. |
+| CLI `--state-build` output | State Response, Response Summary | Communicates read-only projected world-model summary. |
 | CLI `--integrity-summary` output | Integrity Response, Response Summary | Communicates Projection Integrity Summary counts and caveats. |
 | CLI `--capabilities` / capability inventory output | Capability Response, Inventory Response, Integrity Response | Communicates capability verification states. |
 | CLI `--relationships` output | State Response, Inventory Response | Communicates projected topology relationships. |

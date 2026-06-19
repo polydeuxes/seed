@@ -482,7 +482,7 @@ def test_cli_state_view_commands_do_not_append_events(tmp_path, capsys):
     before = _event_count(db_path)
 
     commands = [
-        ["--state-summary"],
+        ["--state-build"],
         ["--current-facts"],
         ["--current-observations"],
         ["--current-requirements"],
@@ -512,5 +512,5 @@ def test_cli_state_view_commands_do_not_invoke_runtime_provider_policy_or_tools(
 
     monkeypatch.setattr(seed_local, "build_local_app", explode)
 
-    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
     assert seed_local.main(["--db", str(db_path), "--current-facts"]) == 0

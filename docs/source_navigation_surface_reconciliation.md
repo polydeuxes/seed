@@ -358,7 +358,7 @@ Navigation begins when the operator can start with the artifact as they know it:
 state_summary
 seed_runtime/state_summary_views.py
 seed_runtime.state_summary_views
---state-summary
+--state-build
 ```
 
 and reach the preserved evidence without first reverse-engineering the fact shape.

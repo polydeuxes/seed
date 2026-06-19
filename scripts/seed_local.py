@@ -1146,7 +1146,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="render a bounded read-only orientation view for an inquiry note",
     )
     parser.add_argument(
-        "--state-summary",
+        "--state-build",
         action="store_true",
         help=(
             "print a concise read-only summary of the projected world model; "
@@ -1154,10 +1154,10 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
-        "--state-summary-cache-debug",
+        "--state-build-cache-debug",
         action="store_true",
         help=(
-            "print read-only state-summary cache eligibility, hit/miss status, "
+            "print read-only state-build cache eligibility, hit/miss status, "
             "last-event ids, and phase timings; does not ingest observations or execute tools"
         ),
     )
@@ -1455,8 +1455,8 @@ def validate_lifecycle_args(
         bool(args.decision_context),
         bool(args.candidate_requests),
         bool(args.candidate_routes),
-        bool(args.state_summary),
-        bool(args.state_summary_cache_debug),
+        bool(args.state_build),
+        bool(args.state_build_cache_debug),
         bool(args.integrity_summary),
         bool(args.inferred_facts),
         bool(args.fact_conflicts),
@@ -1480,7 +1480,7 @@ def validate_lifecycle_args(
             "--verification-evidence, --capability-verification, "
             "--capability-promotion-readiness, --current-issues, "
             "--decision-context, --candidate-requests, --candidate-routes, "
-            "--state-summary, --state-summary-cache-debug, --integrity-summary, "
+            "--state-build, --state-build-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --rebuild-state-cache, --state-cache-status, "
             "or --events-only"
@@ -2013,7 +2013,7 @@ def projected_state_summary_from_args(
             emit_status(
                 status_consumer,
                 "state_summary_cache_load",
-                "Loading state-summary cache...",
+                "Loading state-build cache...",
             )
             snapshot = store.load_summary_snapshot(
                 args.workspace,
@@ -2099,7 +2099,7 @@ def _format_cache_status_id(value: str | None) -> str:
 def state_summary_cache_debug_from_args(
     args: argparse.Namespace,
 ) -> StateSummaryCacheDebugReport:
-    """Measure the state-summary cache boundary without ingesting or executing tools."""
+    """Measure the state-build cache boundary without ingesting or executing tools."""
 
     timings: list[tuple[str, float]] = []
     notes: list[str] = []
@@ -2281,7 +2281,7 @@ def format_state_summary_cache_debug_report(
     report: StateSummaryCacheDebugReport,
 ) -> str:
     lines = [
-        "State Summary Cache Debug",
+        "State Build Cache Debug",
         "",
         "Cache eligibility:",
         f"- status: {'eligible' if report.cache_eligible else 'ineligible'}",
@@ -5163,7 +5163,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
 
-    if args.state_summary:
+    if args.state_build:
         view_summary, operator_summary = projected_state_summary_from_args(
             args, status_consumer=CliExecutionStatusConsumer()
         )
@@ -5174,7 +5174,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
 
-    if args.state_summary_cache_debug:
+    if args.state_build_cache_debug:
         print(
             format_state_summary_cache_debug_report(
                 state_summary_cache_debug_from_args(args)

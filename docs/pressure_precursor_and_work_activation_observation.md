@@ -508,7 +508,7 @@ Earliest preserved signal:
 A strong concrete precursor appears inside the State Summary performance lineage:
 during investigation, the operator had to grep for `project_state_with_cache`,
 `SQLiteProjectionStore`, `state_summary`, `build_state_summary`, and
-`--state-summary`. That exposed a source-navigation gap, later preserved in
+`--state-build`. That exposed a source-navigation gap, later preserved in
 source-navigation audits and reconciliations.
 
 What happened next:

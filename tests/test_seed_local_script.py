@@ -1719,8 +1719,8 @@ def test_parser_supports_fact_projection_queries():
     best_args = parser.parse_args(["--best-fact", "web_service", "runtime"])
     conflicts_args = parser.parse_args(["--fact-conflicts"])
     refreshes_args = parser.parse_args(["--stale-fact-refreshes"])
-    summary_args = parser.parse_args(["--state-summary"])
-    summary_debug_args = parser.parse_args(["--state-summary-cache-debug"])
+    summary_args = parser.parse_args(["--state-build"])
+    summary_debug_args = parser.parse_args(["--state-build-cache-debug"])
     current_facts_debug_args = parser.parse_args(["--current-facts-cache-debug"])
     filtered_current_facts_debug_args = parser.parse_args(
         ["--current-facts", "web_service", "runtime", "--current-facts-cache-debug"]
@@ -1749,8 +1749,8 @@ def test_parser_supports_fact_projection_queries():
     assert best_args.best_fact == ["web_service", "runtime"]
     assert conflicts_args.fact_conflicts is True
     assert refreshes_args.stale_fact_refreshes is True
-    assert summary_args.state_summary is True
-    assert summary_debug_args.state_summary_cache_debug is True
+    assert summary_args.state_build is True
+    assert summary_debug_args.state_build_cache_debug is True
     assert current_facts_debug_args.current_facts_cache_debug is True
     assert current_facts_debug_args.current_facts is None
     assert filtered_current_facts_debug_args.current_facts_cache_debug is True
@@ -1760,10 +1760,10 @@ def test_parser_supports_fact_projection_queries():
 def test_cli_state_summary_cache_debug_without_db_reports_unavailable(capsys):
     seed_local = load_seed_local_module()
 
-    assert seed_local.main(["--state-summary-cache-debug"]) == 0
+    assert seed_local.main(["--state-build-cache-debug"]) == 0
 
     output = capsys.readouterr().out
-    assert "State Summary Cache Debug" in output
+    assert "State Build Cache Debug" in output
     assert "- status: ineligible" in output
     assert "- reason: --db is required for persisted read-model caches" in output
     assert "Summary cache:\n- status: unavailable" in output
@@ -1795,13 +1795,13 @@ def test_cli_state_summary_cache_debug_does_not_ingest_or_execute(
     monkeypatch.setattr(
         seed_local,
         "seed_dev_state_from_args",
-        lambda args, ledger: pytest.fail("state-summary cache debug must not ingest"),
+        lambda args, ledger: pytest.fail("state-build cache debug must not ingest"),
     )
     monkeypatch.setattr(
         seed_local,
         "build_local_app",
         lambda *args, **kwargs: pytest.fail(
-            "state-summary cache debug must not execute"
+            "state-build cache debug must not execute"
         ),
     )
 
@@ -1810,7 +1810,7 @@ def test_cli_state_summary_cache_debug_does_not_ingest_or_execute(
             [
                 "--db",
                 str(db_path),
-                "--state-summary-cache-debug",
+                "--state-build-cache-debug",
                 "--fact",
                 "ignored",
                 "os",
@@ -1853,11 +1853,11 @@ def test_cli_state_summary_cache_debug_reports_warm_summary_hit(tmp_path, capsys
     finally:
         ledger.close()
 
-    assert seed_local.main(["--db", str(db_path), "--state-summary-cache-debug"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--state-build-cache-debug"]) == 0
     cold_output = capsys.readouterr().out
     assert "Summary cache:\n- status: miss" in cold_output
 
-    assert seed_local.main(["--db", str(db_path), "--state-summary-cache-debug"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--state-build-cache-debug"]) == 0
     warm_output = capsys.readouterr().out
     assert "Summary cache:\n- status: hit" in warm_output
     assert "State cache:\n- status: skipped" in warm_output
@@ -1885,11 +1885,11 @@ def test_cli_state_summary_cache_debug_does_not_change_normal_summary_output(
     finally:
         ledger.close()
 
-    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
     before = capsys.readouterr().out
-    assert seed_local.main(["--db", str(db_path), "--state-summary-cache-debug"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--state-build-cache-debug"]) == 0
     capsys.readouterr()
-    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
     after = capsys.readouterr().out
     assert before == after
 
@@ -2000,7 +2000,7 @@ def test_cli_state_summary_reports_projected_world_model_without_ingestion(
 
     assert (
         seed_local.main(
-            ["--db", str(db_path), "--state-summary", "--fact", "ignored", "os", "x"]
+            ["--db", str(db_path), "--state-build", "--fact", "ignored", "os", "x"]
         )
         == 0
     )
@@ -2076,7 +2076,7 @@ def test_cli_state_summary_counts_local_observation_without_availability_as_unkn
         [("example_host", "local_observation_status", "observed")],
     )
 
-    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
 
     output = capsys.readouterr().out
     assert "entities: 1" in output
@@ -2093,7 +2093,7 @@ def test_cli_state_summary_counts_host_availability_up(tmp_path, capsys):
         [("example_host", "availability_status", "up")],
     )
 
-    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
 
     output = capsys.readouterr().out
     assert "entities: 1" in output
@@ -2110,7 +2110,7 @@ def test_cli_state_summary_counts_host_availability_down(tmp_path, capsys):
         [("example_host", "availability_status", "down")],
     )
 
-    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
 
     output = capsys.readouterr().out
     assert "entities: 1" in output
@@ -2133,7 +2133,7 @@ def test_cli_state_summary_keeps_endpoint_availability_separate_from_host(
         ],
     )
 
-    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
 
     output = capsys.readouterr().out
     assert "entities: 2" in output
@@ -2151,7 +2151,7 @@ def test_cli_state_summary_no_longer_renders_legacy_top_entities(tmp_path, capsy
         [("example_host", "alias", alias) for alias in aliases],
     )
 
-    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
 
     output = capsys.readouterr().out
     assert "top entities by kind:" not in output
@@ -2189,13 +2189,13 @@ def test_cli_current_facts_and_fact_support_keep_raw_alias_evidence(tmp_path, ca
 def test_cli_cache_debug_commands_are_standalone_views(capsys):
     seed_local = load_seed_local_module()
 
-    assert seed_local.main(["--state-summary-cache-debug"]) == 0
+    assert seed_local.main(["--state-build-cache-debug"]) == 0
     state_summary_output = capsys.readouterr().out
 
     assert seed_local.main(["--current-facts-cache-debug"]) == 0
     current_facts_output = capsys.readouterr().out
 
-    assert "State Summary Cache Debug" in state_summary_output
+    assert "State Build Cache Debug" in state_summary_output
     assert "Current Facts Timing" in current_facts_output
 
 

@@ -43,7 +43,7 @@ architecture remain authoritative for their own scopes.
 During the cache investigation, the operator experienced this pressure:
 
 ```text
-seed --state-summary takes roughly five minutes on cold path
+seed --state-build takes roughly five minutes on cold path
 ```
 
 The pressure was real operational evidence. It identified a lived boundary in

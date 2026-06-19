@@ -14,7 +14,7 @@ This audit classifies the currently rendered State Summary output by repository 
 
 ## Rendered sections discovered
 
-The CLI `--state-summary` path renders two State Summary-related layers together:
+The CLI `--state-build` path renders two State Summary-related layers together:
 
 1. Compact `StateSummary`, rendered by `format_state_view_summary(...)`.
 2. Operator State Summary, rendered by `format_state_summary(...)`.

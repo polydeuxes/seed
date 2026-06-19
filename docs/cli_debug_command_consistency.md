@@ -10,8 +10,8 @@ filtered invocation.
 
 Current cache-debug entrypoints following this rule:
 
-- `--state-summary-cache-debug` renders state-summary cache eligibility, cache
-  status, and timings without `--state-summary`.
+- `--state-build-cache-debug` renders state-summary cache eligibility, cache
+  status, and timings without `--state-build`.
 - `--current-facts-cache-debug` renders the current-facts view with cache status
   and timings without requiring `--current-facts`.
 

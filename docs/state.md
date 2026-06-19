@@ -252,7 +252,7 @@ The read-only CLI views are:
 - `--current-requirements`
 - `--current-capabilities`
 - `--current-issues`
-- `--state-summary`
+- `--state-build`
 - `--evidence`
 - `--why-fact SUBJECT PREDICATE [OBJECT]`
 - `--unsupported-facts`
