@@ -382,6 +382,7 @@ These documents route emerging work without promoting it to canonical architectu
 - `view_branch_continuity_reconciliation.md` — reconciliation of view-branch continuity boundaries, preserving View as read-side authority while keeping orientation and lens exploratory.
 - `bounded_consequence_discipline_observation.md` — observation of bounded-consequence discipline across surfaces, authority owners, views, source navigation, inquiry notes, and state summary.
 - `graph_issue_orientation_audit.md` — audit of graph issue production and orientation semantics for operator-facing validation issues.
+- `source_navigation_entity_typing_graph_issue_audit.md` — implementation visibility audit for repository source endpoint classification gaps behind unknown graph issue endpoints.
 - `documentation_lineage_observation.md` — observation of recent documentation lineage, investigation clusters, generative documents, bridge documents, consolidating documents, and the difference between documentation lineage and inquiry lineage.
 - `discovery_path_preservation_observation.md` — observation of critique-driven discovery paths, compression removal, and the gap between conclusion preservation and understanding-transition preservation.
 - `lineage_distinction_observation.md` — observation of artifact, inquiry, observation, and discovery-path lineage surfaces and what each appears to preserve without reconciling lineage ontology.
