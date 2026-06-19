@@ -129,7 +129,7 @@ Decision Journal is an append-only event layer, not a separate mutable decision 
 - final outcome: `answered`, `tool_succeeded`, `tool_failed`, `tool_unknown`, `policy_denied`, or `malformed_decision`
 - error details when a decision is malformed, a tool is unknown, policy denies, or a handler fails
 
-This journal explains why a path was chosen and what happened afterward. It prepares Seed for `--why`, `--impact`, `--state-summary`, `--relationships`, `--graph-issues`, audit/explain views, and verification commands while preserving `EventLedger` as the source of truth. If an outcome changes after a proposal, Seed appends another event instead of mutating a prior event.
+This journal explains why a path was chosen and what happened afterward. It prepares Seed for `--why`, `--impact`, `--state-build`, `--relationships`, `--graph-issues`, audit/explain views, and verification commands while preserving `EventLedger` as the source of truth. If an outcome changes after a proposal, Seed appends another event instead of mutating a prior event.
 
 ## Runtime Trace
 

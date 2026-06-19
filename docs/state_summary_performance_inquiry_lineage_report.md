@@ -105,7 +105,7 @@ Desired shape:
 
 ## State-summary profiling finding
 
-Profiled `--state-summary`:
+Profiled `--state-build`:
 
 ```text
 938296092 function calls in 438.858 seconds
@@ -161,7 +161,7 @@ project_state_with_cache
 SQLiteProjectionStore
 state_summary
 build_state_summary
---state-summary
+--state-build
 ```
 
 That exposed a separate gap preserved in:

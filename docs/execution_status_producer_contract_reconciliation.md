@@ -17,7 +17,7 @@ Runtime surfaces reviewed:
 - `seed_runtime/projection_store.py`, including state projection cache load, full replay, incremental replay, and cache save.
 - `seed_runtime/state.py`, including `StateProjector.project` and `project_from_state` replay progress.
 - `seed_runtime/fact_index.py`, including fact-index cache load, build, and save status.
-- `scripts/seed_local.py`, including `--observe-local-host`, `--observe-repository-source`, `--state-summary`, current-facts, candidate, verification, and promotion-readiness read-model inspection paths.
+- `scripts/seed_local.py`, including `--observe-local-host`, `--observe-repository-source`, `--state-build`, current-facts, candidate, verification, and promotion-readiness read-model inspection paths.
 
 Recent documentation reviewed:
 

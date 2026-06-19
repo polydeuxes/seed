@@ -38,7 +38,7 @@ Where is Prometheus interpreted?
 Where are claims promoted?
 Where are projections produced?
 Where is --impact implemented?
-Where is --state-summary implemented?
+Where is --state-build implemented?
 Which capability owns this behavior?
 Which file defines this symbol?
 How is this code reached?
@@ -256,7 +256,7 @@ entrypoint
     answers: where can this behavior be entered?
 ```
 
-A function named `state_summary` may define summary construction. The `--state-summary` CLI flag may expose that behavior to an operator. The definition and the entrypoint should remain separate observations connected by an invocation or dispatch relationship when supported.
+A function named `state_summary` may define summary construction. The `--state-build` CLI flag may expose that behavior to an operator. The definition and the entrypoint should remain separate observations connected by an invocation or dispatch relationship when supported.
 
 ---
 
@@ -441,7 +441,7 @@ entrypoint edge identifies how the owner is reached
 
 Entrypoint knowledge is required to locate behavior from the perspective of an operator, runtime, external caller, or test.
 
-A repository-wide search for a flag such as `--impact` or `--state-summary` can locate parser declarations, but Seed self-knowledge should not depend on ad hoc search. A source observation layer should be able to represent:
+A repository-wide search for a flag such as `--impact` or `--state-build` can locate parser declarations, but Seed self-knowledge should not depend on ad hoc search. A source observation layer should be able to represent:
 
 ```text
 CLI flag --impact
@@ -449,7 +449,7 @@ CLI flag --impact
     parsed by CLI parser
     dispatches to impact view construction / rendering path
 
-CLI flag --state-summary
+CLI flag --state-build
     declared in source file
     dispatches to state summary view construction / rendering path
 ```
@@ -540,7 +540,7 @@ which view exposes impact or state summary outputs
 | Where are claims promoted? | `function promotes claim`; `function emits Fact`; `promotion rule defined_by file`; `projector applies rule`. |
 | Where are projections produced? | `function produces projection`; `StateProjector.project invoked_by entrypoint`; `ProjectionStore loads/writes projection snapshot`. |
 | Where is `--impact` implemented? | `CLI flag --impact declared_by file`; `flag dispatches to impact formatter/view builder`; `view helper defines impact semantics`; `renderer formats impact output`. |
-| Where is `--state-summary` implemented? | `CLI flag --state-summary declared_by file`; `flag dispatches to state_summary / build_state_summary`; `read-model helper owns aggregation`; `CLI renderer formats terminal output`. |
+| Where is `--state-build` implemented? | `CLI flag --state-build declared_by file`; `flag dispatches to state_summary / build_state_summary`; `read-model helper owns aggregation`; `CLI renderer formats terminal output`. |
 
 ### Prometheus-Specific Finding
 

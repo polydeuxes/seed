@@ -157,7 +157,7 @@ current CLI:
 Where is state_summary defined?
 What defines state_summary?
 Why does Seed say state_summary_views defines state_summary?
-Where is --state-summary declared?
+Where is --state-build declared?
 ```
 
 The operator must instead discover exact canonical values by grepping raw facts.
@@ -199,7 +199,7 @@ answers.
    ```text
    state_summary
    main
-   --state-summary
+   --state-build
    ```
 
    but facts may use fully qualified objects or entrypoint-specific normalized

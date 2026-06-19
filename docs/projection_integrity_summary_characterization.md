@@ -440,7 +440,7 @@ new runtime behavior:
 
 Existing CLI surfaces also expose many of these pieces individually:
 
-- `--state-summary`
+- `--state-build`
 - `--fact-support`
 - `--best-fact`
 - `--current-facts`

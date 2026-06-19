@@ -15,7 +15,7 @@ The build plan from here should treat Seed as a planning + knowledge + handoff r
 - Semantic catalogs: `PredicateCatalog`, `RelationshipCatalog`, `EntityTypeCatalog`, `CapabilityCatalog`, and `InferenceCatalog`.
 - Knowledge projection: Facts, FactSupport, confidence/provenance, predicate cardinality, measurements versus durable facts, measurement retention, identity/alias resolution, relationships/topology, entity types, graph validation, and explanation/why queries.
 - Projection performance model: append-only `EventLedger`, deterministic projected state, `ProjectionStore` cache, `--rebuild-state-cache`, and `--state-cache-status`.
-- Operator queries: `--state-summary`, `--impact ENTITY`, `--why ENTITY PREDICATE`, `--unhealthy`, `--down`, `--graph-issues`, `--relationships`, `--entity-types`, and `--current-facts`.
+- Operator queries: `--state-build`, `--impact ENTITY`, `--why ENTITY PREDICATE`, `--unhealthy`, `--down`, `--graph-issues`, `--relationships`, `--entity-types`, and `--current-facts`.
 
 ## Session 1: Create skeleton and domain model
 

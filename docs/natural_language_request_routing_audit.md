@@ -237,7 +237,7 @@ matched capability != accepted execution
 CLI flags remain explicit operator commands.
 
 ```text
-seed --state-summary
+seed --state-build
 ```
 
 is different from:

@@ -37,7 +37,7 @@ The operator needed to answer:
 
 ```text
 Does seedstate use the projection cache?
-Where does --state-summary call project_state_with_cache?
+Where does --state-build call project_state_with_cache?
 Which code path invokes state_summary(state)?
 ```
 
@@ -49,7 +49,7 @@ and rebuild_state_cache.
 
 scripts/seed_local.py calls project_state_with_cache in local CLI paths.
 
-scripts/seed_local.py renders --state-summary by calling build_state_summary(state)
+scripts/seed_local.py renders --state-build by calling build_state_summary(state)
 and state_summary(state).
 ```
 
@@ -144,8 +144,8 @@ questions such as:
 ```text
 Which source file imports project_state_with_cache?
 Which source file defines project_state_with_cache?
-Which CLI flag declares --state-summary?
-Which function or branch handles --state-summary?
+Which CLI flag declares --state-build?
+Which function or branch handles --state-build?
 Which handler calls build_state_summary(state)?
 Which handler calls state_summary(state)?
 Which code path uses SQLiteProjectionStore?

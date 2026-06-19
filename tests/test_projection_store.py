@@ -224,7 +224,7 @@ def test_cli_rebuild_state_cache_clears_and_rebuilds(tmp_path, capsys):
         seed_local.main(["--db", str(db_path), "--fact", "svc", "runtime", "docker"])
         == 0
     )
-    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
     assert seed_local.main(["--db", str(db_path), "--rebuild-state-cache"]) == 0
 
     output = capsys.readouterr().out
@@ -433,7 +433,7 @@ def test_cli_state_summary_reuses_summary_read_model_without_deserializing_state
         == 0
     )
     capsys.readouterr()
-    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
     first_output = capsys.readouterr().out
 
     def fail_state_load(_payload):
@@ -442,7 +442,7 @@ def test_cli_state_summary_reuses_summary_read_model_without_deserializing_state
         )
 
     monkeypatch.setattr(seed_local, "project_state_with_cache", fail_state_load)
-    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
     second_output = capsys.readouterr().out
 
     assert second_output == first_output
@@ -834,12 +834,12 @@ def test_state_summary_cli_surfaces_summary_cache_hit_and_state_cache_miss(
     _append_fact(ledger, "local", "fact_one", "docker")
     ledger.close()
 
-    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
     first = capsys.readouterr()
     assert "State-summary cache: miss" in first.err
     assert "State cache: miss" in first.err
 
-    assert seed_local.main(["--db", str(db_path), "--state-summary"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
     second = capsys.readouterr()
     assert "State-summary cache: hit" in second.err
     assert "State cache:" not in second.err

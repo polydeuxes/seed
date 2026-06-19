@@ -65,7 +65,7 @@ The local CLI already exposes:
 * `--db` for selecting a SQLite event ledger path
 * `--observe-local-host` for local read-only discovery intake
 * `--observe-prometheus` for provider intake
-* `--state-summary` and other read-only projected views
+* `--state-build` and other read-only projected views
 
 The CLI path distinguishes local host observation from Prometheus observation, but there is no dedicated `--preflight` or equivalent local resource readiness command.
 

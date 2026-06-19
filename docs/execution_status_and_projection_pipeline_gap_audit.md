@@ -140,7 +140,7 @@ A follow-up implementation audit should identify the concrete phases and status 
 ```text
 --observe-local-host
 --observe-repository-source
---state-summary / seedstate
+--state-build / seedstate
 --current-facts SUBJECT PREDICATE
 --capability-candidates FILTER
 --capability-verification FILTER

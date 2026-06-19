@@ -265,7 +265,7 @@ These lenses should remain deterministic read-only projections unless separate r
 
 4. **Recent boundary work already points away from a dashboard interpretation.** Endpoint prominence, filesystem projection, storage ambiguity, and availability scope work all reduced accidental operational interpretation without removing the output.
 
-5. **State construction is coupled to State Summary as a default operator entry point.** `--state-summary` builds State and both summary layers, then persists a dependent summary snapshot. This is appropriate for performance, but architecturally it can make State Summary look like the canonical way to consume State.
+5. **State construction is coupled to State Summary as a default operator entry point.** `--state-build` builds State and both summary layers, then persists a dependent summary snapshot. This is appropriate for performance, but architecturally it can make State Summary look like the canonical way to consume State.
 
 6. **A State-vs-lens split is the natural next architectural vocabulary.** One deterministic State can support multiple read-only deterministic lenses. State Summary can then narrow to State shape/projection accounting while other lenses own operational, inventory, prominence, provenance, and storage interpretations.
 

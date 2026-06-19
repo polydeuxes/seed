@@ -327,7 +327,7 @@ filesystem measurements are dimensioned multi-row measurements
 
 ## Affected Surfaces
 
-- `seed --state-summary` top entities: `facts: X` label now means durable ranking count.
+- `seed --state-build` top entities: `facts: X` label now means durable ranking count.
 - `seed --current-facts SUBJECT filesystem_free_bytes` without dimensions: can return no facts even when measurement facts exist.
 - `seed --current-facts SUBJECT filesystem_total_bytes` without dimensions: same ambiguity risk.
 - Operator interpretation of endpoint prominence: improved ranking, but label ambiguity can mislead audit/debug work.
@@ -393,7 +393,7 @@ Add regression coverage proving:
 
 - a subject with two filesystem mountpoints returns both current filesystem facts from `state.get_current_facts(subject, "filesystem_free_bytes")`, or returns an explicit ambiguity message if enumeration is not desired;
 - `--current-facts SUBJECT filesystem_free_bytes` does not print `no current facts` when current dimensioned filesystem facts exist;
-- `--state-summary` top-entity rendering does not label durable ranking evidence as total facts;
+- `--state-build` top-entity rendering does not label durable ranking evidence as total facts;
 - storage projections still use only measurement facts and do not promote ownership, identity, or topology truth.
 
 ## Non-Goals

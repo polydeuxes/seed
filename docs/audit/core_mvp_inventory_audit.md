@@ -101,7 +101,7 @@ InputInspector / ObservationSource
       -> FactSupport / FactConflict / graph issues
   -> ProjectionStore / project_state_with_cache
   -> CLI read-only queries
-      -> --state-summary
+      -> --state-build
       -> --impact
       -> --why
       -> --relationships
@@ -168,9 +168,9 @@ Legend:
 | `RelationshipCatalog` | `seed_runtime/relationship_catalog.py` | Relationship vocabulary derived from facts. | StateProjector | Projection/graph queries | Yes via projector | No | Yes | No | Yes | **Core MVP** | Relationship semantics are read-only projection. |
 | `EntityTypeCatalog` | `seed_runtime/entity_type_catalog.py` | Entity type vocabulary. | StateProjector | Projection/graph validation | Yes via projector | No | Yes | No | Yes | **Core MVP** | Required for graph issue classification. |
 | `InferenceCatalog` | `seed_runtime/inference_catalog.py` | Deterministic local fact projection rules. | StateProjector/CLI | Projection/explanations | Yes via projector | No | Yes | No | Yes | **Core MVP** | Local deterministic reasoning, not orchestration. |
-| `GraphValidator` / graph issue models | `seed_runtime/state.py` | Type/topology validation findings. | StateProjector | CLI `--graph-issues`, `--state-summary`, `--unhealthy` | Yes via projector | No | Yes | No | Yes | **Core MVP** | Read-only diagnostics. |
+| `GraphValidator` / graph issue models | `seed_runtime/state.py` | Type/topology validation findings. | StateProjector | CLI `--graph-issues`, `--state-build`, `--unhealthy` | Yes via projector | No | Yes | No | Yes | **Core MVP** | Read-only diagnostics. |
 | `ExplanationBuilder` | `seed_runtime/explanations.py` | Why/belief explanations from projected state. | CLI | CLI `--why` | No direct Runtime | No | Yes | No | Yes | **Core MVP** | Read-only explanation path. |
-| State View builders | `seed_runtime/state_views.py` | Read-only projected state views. | CLI | `--state-summary`, current views | No direct Runtime | No | Yes | No | Yes | **Core MVP** | Views are projection surfaces, not persistence. |
+| State View builders | `seed_runtime/state_views.py` | Read-only projected state views. | CLI | `--state-build`, current views | No direct Runtime | No | Yes | No | Yes | **Core MVP** | Views are projection surfaces, not persistence. |
 | `RuntimeTrace` / `RuntimeTraceReader` | `seed_runtime/runtime_trace.py` | Read-only RuntimeLoop trace reconstruction. | CLI trace paths | `--trace-run`, `--why-run` | No | No | Yes, historical | No | No | **Historical compatibility** | Explicitly for historical RuntimeLoop runs. |
 | `DecisionJournal` | `seed_runtime/decision_journal.py` | RuntimeLoop decision audit event records. | RuntimeLoop | RuntimeTrace | No canonical Runtime | No | Historical trace only | No | No | **Historical compatibility** | Runtime is canonical; RuntimeLoop traces may read records. |
 | `RuntimeLoop` | `seed_runtime/runtime_loop.py` | Deprecated deterministic orchestration prototype. | Experimental tests only | RuntimeLoop tests/trace compatibility | No | No | Historical trace only | No | No | **Experimental/quarantined** | Must not be wired into CLI/API/default/canonical tests per module doc. |
@@ -237,7 +237,7 @@ Notably **not** reached by canonical Runtime:
 
 The maintained read-only CLI query paths are:
 
-- `--state-summary`
+- `--state-build`
 - `--impact`
 - `--why`
 - `--relationships`
