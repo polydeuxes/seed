@@ -3112,6 +3112,106 @@ def test_local_users_observation_avoids_forbidden_activity_privilege_sources(
     assert all(obs.metadata["loginctl_inspected"] is False for obs in observations)
 
 
+
+def test_local_host_observation_includes_systemd_source(monkeypatch):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    class FakeSystemdSource:
+        def __init__(self, *, observed_at, hostname):
+            self.observed_at = observed_at
+            self.hostname = hostname
+
+        def collect(self):
+            return [
+                Observation(
+                    id="obs_systemd_local",
+                    source_type="discovery",
+                    observed_at=self.observed_at,
+                    subject=self.hostname,
+                    predicate="systemd_unit",
+                    value="nginx.service",
+                    confidence=1.0,
+                    metadata={"collector": "SystemdObservationSource"},
+                    dimensions={"unit": "nginx.service"},
+                )
+            ]
+
+    monkeypatch.setattr(sources.platform, "node", lambda: "node-a")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(sources, "SystemdObservationSource", FakeSystemdSource)
+
+    observations = LocalHostObservationSource().collect()
+
+    assert ("node-a", "systemd_unit", "nginx.service") in {
+        (obs.subject, obs.predicate, obs.value) for obs in observations
+    }
+
+
+def test_systemd_observations_flow_through_local_host_collection_and_projection():
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class FakeSystemdSource:
+        def collect(self):
+            return [
+                Observation(
+                    id="obs_systemd_unit_local",
+                    source_type="discovery",
+                    observed_at=BASE_TIME,
+                    subject="node-a",
+                    predicate="systemd_unit",
+                    value="nginx.service",
+                    confidence=1.0,
+                    metadata={"collector": "SystemdObservationSource"},
+                    dimensions={"unit": "nginx.service"},
+                ),
+                Observation(
+                    id="obs_systemd_active_local",
+                    source_type="discovery",
+                    observed_at=BASE_TIME,
+                    subject="node-a",
+                    predicate="systemd_active_state",
+                    value="active",
+                    confidence=1.0,
+                    metadata={"collector": "SystemdObservationSource"},
+                    dimensions={"unit": "nginx.service"},
+                ),
+            ]
+
+    source = LocalHostObservationSource(systemd_source=FakeSystemdSource())
+    observations = source._collect_systemd_observations(BASE_TIME, "node-a")
+    assert {obs.predicate for obs in observations} == {
+        "systemd_unit",
+        "systemd_active_state",
+    }
+
+    ledger = EventLedger()
+    facts = ObservationCollectionService(
+        ObservationIngestor(ledger), normalization_pipeline=None
+    ).collect(source, "ws_local_host_systemd")
+    state = StateProjector(ledger).project("ws_local_host_systemd")
+
+    assert {fact.predicate for fact in facts} >= {
+        "systemd_unit",
+        "systemd_active_state",
+    }
+    assert (
+        state.get_best_fact(
+            "node-a", "systemd_active_state", dimensions={"unit": "nginx.service"}
+        ).value
+        == "active"
+    )
+    fact_view = build_fact_view(state)
+    assert ("node-a", "systemd_unit", "nginx.service") in {
+        (fact.subject, fact.predicate, fact.object) for fact in fact_view
+    }
+
 def test_systemd_observations_normalize_and_project_reported_states():
     from seed_runtime.observation_sources import SystemdObservationSource
 

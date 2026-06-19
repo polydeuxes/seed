@@ -342,6 +342,7 @@ class LocalHostObservationSource:
         etc_passwd: str | Path = "/etc/passwd",
         etc_group: str | Path = "/etc/group",
         dpkg_status: str | Path = "/var/lib/dpkg/status",
+        systemd_source: Any | None = None,
     ) -> None:
         self.name = name
         self.proc_root = Path(proc_root)
@@ -359,6 +360,7 @@ class LocalHostObservationSource:
         self.etc_passwd = Path(etc_passwd)
         self.etc_group = Path(etc_group)
         self.dpkg_status = Path(dpkg_status)
+        self.systemd_source = systemd_source
 
     def collect(self) -> list[Observation]:
         """Return local host facts without executing or mutating the host."""
@@ -461,7 +463,21 @@ class LocalHostObservationSource:
         observations.extend(
             self._collect_local_package_observations(observed_at, hostname)
         )
+        observations.extend(self._collect_systemd_observations(observed_at, hostname))
         return observations
+
+    def _collect_systemd_observations(
+        self, observed_at: datetime, hostname: str
+    ) -> list[Observation]:
+        """Collect systemd unit facts through the dedicated systemd source."""
+
+        source = self.systemd_source
+        if source is None:
+            source = SystemdObservationSource(observed_at=observed_at, hostname=hostname)
+        try:
+            return source.collect()
+        except Exception:
+            return []
 
     def _collect_local_package_observations(
         self, observed_at: datetime, hostname: str
@@ -2215,8 +2231,17 @@ class SystemdObservationSource:
 
         observed_at = self.observed_at or datetime.now(timezone.utc)
         subject_host = self.hostname or platform.node() or "localhost"
-        runtime_units = self._collect_runtime_units()
-        unit_file_states = self._collect_unit_file_states()
+        try:
+            runtime_units = self._collect_runtime_units()
+            unit_file_states = self._collect_unit_file_states()
+        except (OSError, subprocess.CalledProcessError):
+            self.last_collection_counters = {
+                "units_observed": 0,
+                "runtime_units_observed": 0,
+                "unit_files_observed": 0,
+                "collection_error": True,
+            }
+            return []
         unit_names = sorted(set(runtime_units) | set(unit_file_states))
         observations: list[Observation] = []
         metadata = {
