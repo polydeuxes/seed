@@ -3328,9 +3328,10 @@ def record_classification_coverage_diagnostic(
 ) -> list[Fact]:
     """Append classification coverage diagnostic facts via observations."""
 
+    diagnostic_run_subject = f"diagnostic_run:{new_id('diagnostic_run')}"
     observations = [
         DevObservationSeed(
-            subject="seed:self",
+            subject=diagnostic_run_subject,
             predicate=_diagnostic_fact_predicate(name),
             value=value,
             source_type="inferred",

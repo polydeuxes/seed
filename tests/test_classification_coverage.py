@@ -158,6 +158,8 @@ def test_classification_coverage_record_appends_self_observation_evidence(tmp_pa
     db = tmp_path / "seed.sqlite"
     seed_local.main(["--db", str(db), "--observe", "mystery", "custom", "value"])
     before_events = SQLiteEventLedger(db).list("local")
+    before_state = StateProjector(SQLiteEventLedger(db)).project("local")
+    before_mystery_types = before_state.get_current_entity_types("mystery")
 
     assert (
         seed_local.main(["--db", str(db), "--classification-coverage", "--record"]) == 0
@@ -165,15 +167,58 @@ def test_classification_coverage_record_appends_self_observation_evidence(tmp_pa
 
     after_events = SQLiteEventLedger(db).list("local")
     assert len(after_events) > len(before_events)
-    observed = [event for event in after_events if event.kind == "observation.observed"]
+    appended_events = after_events[len(before_events) :]
+    observed = [
+        event for event in appended_events if event.kind == "observation.observed"
+    ]
     assert any(
         event.payload["observation"]["metadata"]["ingested_by"]
         == "scripts.seed_local --classification-coverage --record"
         for event in observed
     )
+    recorded_facts = [
+        event.payload["fact"]
+        for event in appended_events
+        if event.kind == "fact.inferred"
+    ]
+    recorded_subjects = {fact["subject_id"] for fact in recorded_facts}
+    assert len(recorded_subjects) == 1
+    assert next(iter(recorded_subjects)).startswith("diagnostic_run:")
+    assert {fact["subject_id"] for fact in recorded_facts} == recorded_subjects
     assert any(
-        event.kind == "fact.inferred"
-        and event.payload["fact"]["predicate"] == "diagnostic_name"
-        and event.payload["fact"]["value"] == "entity_classification_coverage"
-        for event in after_events
+        fact["predicate"] == "diagnostic_name"
+        and fact["value"] == "entity_classification_coverage"
+        for fact in recorded_facts
     )
+    assert all(fact["subject_id"] != "mystery" for fact in recorded_facts)
+
+    after_state = StateProjector(SQLiteEventLedger(db)).project("local")
+    assert after_state.get_current_entity_types("mystery") == before_mystery_types
+    assert after_state.get_current_entity_types("mystery") == ["unknown"]
+    assert not after_state.get_relationships(subject="mystery")
+
+
+def test_classification_coverage_record_does_not_repair_relationship_issues(tmp_path):
+    db = tmp_path / "seed.sqlite"
+    seed_local.main(["--db", str(db), "--observe", "mystery", "group", "servers"])
+    before_state = StateProjector(SQLiteEventLedger(db)).project("local")
+    before_issues = before_state.get_graph_issues()
+
+    assert before_state.get_current_entity_types("mystery") == ["unknown"]
+    assert len(before_issues) == 1
+
+    assert (
+        seed_local.main(["--db", str(db), "--classification-coverage", "--record"]) == 0
+    )
+
+    after_state = StateProjector(SQLiteEventLedger(db)).project("local")
+    after_issues = after_state.get_graph_issues()
+    assert after_state.get_current_entity_types("mystery") == ["unknown"]
+    assert len(after_issues) == len(before_issues)
+    assert [
+        (issue.subject, issue.relationship, issue.object, issue.reason)
+        for issue in after_issues
+    ] == [
+        (issue.subject, issue.relationship, issue.object, issue.reason)
+        for issue in before_issues
+    ]
