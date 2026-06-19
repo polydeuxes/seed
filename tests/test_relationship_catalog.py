@@ -8,7 +8,6 @@ from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
 from scripts import seed_local
 
-
 NOW = datetime(2026, 6, 4, 12, 0, tzinfo=timezone.utc)
 
 
@@ -141,10 +140,19 @@ def test_relationship_query_helpers_filter_edges():
 
     assert len(state.get_relationships(relationship="member_of")) == 2
     assert state.find_related("web_service", "runs_on") == ["example_host"]
-    assert state.find_subjects("member_of", "servers") == ["example_host", "example_host_e"]
-    assert state.get_relationships(subject="example_host", object="servers")[0].relationship == "member_of"
+    assert state.find_subjects("member_of", "servers") == [
+        "example_host",
+        "example_host_e",
+    ]
+    assert (
+        state.get_relationships(subject="example_host", object="servers")[
+            0
+        ].relationship
+        == "member_of"
+    )
     assert [
-        edge.relationship for edge in state.get_relationships(relationship_kind="hosting")
+        edge.relationship
+        for edge in state.get_relationships(relationship_kind="hosting")
     ] == ["runs_on"]
 
 
@@ -187,7 +195,9 @@ def test_state_summary_optionally_includes_relationship_count():
     summary = seed_local.state_summary(state, include_relationship_count=True)
 
     assert summary["relationship_count"] == 1
-    assert "relationships: 1" in seed_local.format_state_summary(summary)
+    output = seed_local.format_state_summary(summary)
+    assert "relationships: 1" not in output
+    assert "Projected State:" in output
 
 
 def test_cli_relationship_filters_print_projected_edges(tmp_path, capsys):
@@ -205,19 +215,22 @@ def test_cli_relationship_filters_print_projected_edges(tmp_path, capsys):
     )
     ledger.close()
 
-    assert seed_local.main(
-        [
-            "--db",
-            str(path),
-            "--relationships",
-            "--relationship-subject",
-            "example_host",
-            "--relationship",
-            "member_of",
-            "--relationship-object",
-            "servers",
-        ]
-    ) == 0
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(path),
+                "--relationships",
+                "--relationship-subject",
+                "example_host",
+                "--relationship",
+                "member_of",
+                "--relationship-object",
+                "servers",
+            ]
+        )
+        == 0
+    )
 
     assert capsys.readouterr().out == "example_host member_of servers\n"
 

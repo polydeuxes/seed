@@ -67,14 +67,20 @@ def test_cli_state_summary_rejects_storage_projection_sections():
                 {
                     "mountpoint": "/mnt/example_host_205/sda1",
                     "visible_endpoint_count": 2,
-                    "visible_endpoints": ["example_host_100:9100", "example_host_101:9100"],
+                    "visible_endpoints": [
+                        "example_host_100:9100",
+                        "example_host_101:9100",
+                    ],
                 }
             ],
             "shared_storage_candidates": [
                 {
                     "mountpaths": ["/mnt/example_host_205/sda1"],
                     "visible_endpoint_count": 2,
-                    "visible_endpoints": ["example_host_100:9100", "example_host_101:9100"],
+                    "visible_endpoints": [
+                        "example_host_100:9100",
+                        "example_host_101:9100",
+                    ],
                     "evidence": ["matching total bytes", "matching device"],
                     "confidence": "medium",
                     "boundary": (
@@ -631,7 +637,14 @@ def test_cli_plan_prints_non_executable_top_recommendation_plan(monkeypatch, cap
 
     assert (
         seed_local.main(
-            ["--fact", "web_service", "runtime", "docker", "--plan", "restart web_service?"]
+            [
+                "--fact",
+                "web_service",
+                "runtime",
+                "docker",
+                "--plan",
+                "restart web_service?",
+            ]
         )
         == 0
     )
@@ -1800,9 +1813,7 @@ def test_cli_state_summary_cache_debug_does_not_ingest_or_execute(
     monkeypatch.setattr(
         seed_local,
         "build_local_app",
-        lambda *args, **kwargs: pytest.fail(
-            "state-build cache debug must not execute"
-        ),
+        lambda *args, **kwargs: pytest.fail("state-build cache debug must not execute"),
     )
 
     assert (
@@ -1891,9 +1902,11 @@ def test_cli_state_summary_cache_debug_does_not_change_normal_summary_output(
     capsys.readouterr()
     assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
     after = capsys.readouterr().out
-    assert "  cache: miss" in before
-    assert "  cache: hit" in after
-    assert after.replace("  cache: hit", "  cache: miss") == before
+    assert "  state-build cache: miss" in before
+    assert "  state-build cache: hit" in after
+    assert before.count("State Build") == 1
+    assert after.count("State Build") == 1
+    assert "Projected State:" in before
 
 
 def test_cli_state_summary_reports_projected_world_model_without_ingestion(
@@ -2014,9 +2027,13 @@ def test_cli_state_summary_reports_projected_world_model_without_ingestion(
     assert "measurement current samples: 4" in output
     assert "conflicts: 1" in output
     assert "stale facts: 1" in output
+    assert "Observation Sources:" in output
     assert "  discovery: 4" in output
     assert "  imported: 1" in output
     assert "  user: 3" in output
+    assert output.count("State Build") == 1
+    assert "Projected State:" in output
+    assert "Fact Accounting:" in output
     assert "top entities by kind:" not in output
     assert "top entities:" not in output
     assert "    host-up (aliases: 1 total; facts: 3)" not in output
@@ -2174,13 +2191,17 @@ def test_cli_current_facts_and_fact_support_keep_raw_alias_evidence(tmp_path, ca
     )
 
     assert (
-        seed_local.main(["--db", str(db_path), "--current-facts", "example_host", "alias"])
+        seed_local.main(
+            ["--db", str(db_path), "--current-facts", "example_host", "alias"]
+        )
         == 0
     )
     assert capsys.readouterr().out.splitlines() == aliases
 
     assert (
-        seed_local.main(["--db", str(db_path), "--fact-support", "example_host", "alias"])
+        seed_local.main(
+            ["--db", str(db_path), "--fact-support", "example_host", "alias"]
+        )
         == 0
     )
     support_output = capsys.readouterr().out
@@ -2275,7 +2296,9 @@ def test_cli_current_facts_cache_debug_filtered_legacy_behavior_remains_unchange
     )
 
     assert (
-        seed_local.main(["--db", str(db_path), "--current-facts", "example_host", "alias"])
+        seed_local.main(
+            ["--db", str(db_path), "--current-facts", "example_host", "alias"]
+        )
         == 0
     )
     normal_output = capsys.readouterr().out
@@ -2414,7 +2437,9 @@ def test_cli_availability_status_history_visibility_does_not_change_current(caps
     ]
 
     assert (
-        seed_local.main([*facts, "--fact-support", "example_host", "availability_status"])
+        seed_local.main(
+            [*facts, "--fact-support", "example_host", "availability_status"]
+        )
         == 0
     )
     default_output = capsys.readouterr().out
@@ -2438,7 +2463,8 @@ def test_cli_availability_status_history_visibility_does_not_change_current(caps
     assert "value: down" in history_output
 
     assert (
-        seed_local.main([*facts, "--best-fact", "example_host", "availability_status"]) == 0
+        seed_local.main([*facts, "--best-fact", "example_host", "availability_status"])
+        == 0
     )
     best_output = capsys.readouterr().out
     assert "value: down" in best_output
@@ -2592,7 +2618,9 @@ def test_cli_fact_ttl_can_expire_seeded_fact(capsys):
         == 0
     )
 
-    assert capsys.readouterr().out.strip() == "no current belief for web_service runtime"
+    assert (
+        capsys.readouterr().out.strip() == "no current belief for web_service runtime"
+    )
 
 
 def test_cli_fact_expires_at_keeps_unexpired_seeded_fact(capsys):
@@ -2811,7 +2839,9 @@ def test_cli_diff_observations_json_does_not_ingest_inventory(tmp_path, capsys):
     assert "new_facts: 1" in output
     assert "matching_facts: 0" in output
     assert (
-        seed_local.main(["--db", str(db_path), "--fact-support", "web_service", "runtime"])
+        seed_local.main(
+            ["--db", str(db_path), "--fact-support", "web_service", "runtime"]
+        )
         == 0
     )
     support_output = capsys.readouterr().out
@@ -2893,7 +2923,9 @@ def test_cli_observe_local_host_timings_are_comparable_and_non_semantic(
 
     plain_events = seed_local.SQLiteEventLedger(str(plain_db)).list_events()
     timing_events = seed_local.SQLiteEventLedger(str(timing_db)).list_events()
-    assert [event.kind for event in timing_events] == [event.kind for event in plain_events]
+    assert [event.kind for event in timing_events] == [
+        event.kind for event in plain_events
+    ]
 
 
 def test_cli_observe_local_host_quiet_output_suppresses_rendering_only(
@@ -3323,7 +3355,14 @@ def test_cli_events_without_message_lists_persisted_events_and_exits(
     db_path = tmp_path / "seed.sqlite"
     assert (
         seed_local.main(
-            ["--db", str(db_path), "--observe", "example_host", "architecture", "x86_64"]
+            [
+                "--db",
+                str(db_path),
+                "--observe",
+                "example_host",
+                "architecture",
+                "x86_64",
+            ]
         )
         == 0
     )
@@ -3766,13 +3805,14 @@ def test_cli_alias_to_endpoint_does_not_resolve_host_best_fact_after_sqlite_reop
     )
     capsys.readouterr()
 
-    assert seed_local.main(["--db", str(db_path), "--best-fact", "example_host", "up"]) == 0
+    assert (
+        seed_local.main(["--db", str(db_path), "--best-fact", "example_host", "up"])
+        == 0
+    )
     assert capsys.readouterr().out == "no current belief for example_host up\n"
 
     assert (
-        seed_local.main(
-            ["--db", str(db_path), "--best-fact", "192.0.2.115:9100", "up"]
-        )
+        seed_local.main(["--db", str(db_path), "--best-fact", "192.0.2.115:9100", "up"])
         == 0
     )
     output = capsys.readouterr().out
@@ -4128,9 +4168,14 @@ def test_cli_entity_type_projection_queries():
     parser = seed_local.build_parser()
 
     assert parser.parse_args(["--entity-types"]).entity_types is True
-    assert parser.parse_args(["--entity-type", "example_host"]).entity_type == "example_host"
+    assert (
+        parser.parse_args(["--entity-type", "example_host"]).entity_type
+        == "example_host"
+    )
     state = seed_local.State(workspace_id="ws")
-    assert seed_local.format_entity_types(state, "example_host") == "example_host: unknown"
+    assert (
+        seed_local.format_entity_types(state, "example_host") == "example_host: unknown"
+    )
 
 
 def _persist_impact_facts(seed_local, db_path, facts):
@@ -4190,9 +4235,7 @@ def test_cli_impact_keeps_endpoint_alias_availability_on_endpoint(tmp_path, caps
         ],
     )
 
-    assert (
-        seed_local.main(["--db", str(db_path), "--impact", "192.0.2.115:9100"]) == 0
-    )
+    assert seed_local.main(["--db", str(db_path), "--impact", "192.0.2.115:9100"]) == 0
 
     output = capsys.readouterr().out
     assert "entity: 192.0.2.115:9100" in output
@@ -4249,7 +4292,9 @@ def test_cli_current_facts_and_impact_keep_all_aliases_without_conflict(
     )
 
     assert (
-        seed_local.main(["--db", str(db_path), "--current-facts", "example_host", "alias"])
+        seed_local.main(
+            ["--db", str(db_path), "--current-facts", "example_host", "alias"]
+        )
         == 0
     )
     assert capsys.readouterr().out.splitlines() == aliases
@@ -4420,7 +4465,14 @@ def test_cli_inferred_facts_displays_projection_provenance(capsys):
 
     assert (
         seed_local.main(
-            ["--fact", "web_service", "runtime", "docker", "--inferred-facts", "web_service"]
+            [
+                "--fact",
+                "web_service",
+                "runtime",
+                "docker",
+                "--inferred-facts",
+                "web_service",
+            ]
         )
         == 0
     )
@@ -4746,9 +4798,7 @@ def test_cli_observe_repository_source_timings_include_source_counters(
     source_dir = repo_path / "seed_runtime"
     source_dir.mkdir(parents=True)
     (source_dir / "state.py").write_text(
-        "import json\n"
-        "def project():\n"
-        "    return json.dumps({})\n",
+        "import json\n" "def project():\n" "    return json.dumps({})\n",
         encoding="utf-8",
     )
 

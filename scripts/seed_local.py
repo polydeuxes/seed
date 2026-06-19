@@ -2037,6 +2037,9 @@ def projected_state_summary_from_args(
                         "projection_version": view_summary.projection_version,
                         "last_event_id": view_summary.last_event_id,
                         "cache_status": "hit",
+                        "state_build_cache_status": "hit",
+                        "projection_cache_status": "hit",
+                        "state_cache_status": "hit",
                     }
                 )
                 return view_summary, operator_summary
@@ -2070,6 +2073,9 @@ def projected_state_summary_from_args(
                 "projection_version": view_summary.projection_version,
                 "last_event_id": view_summary.last_event_id,
                 "cache_status": cache_status,
+                "state_build_cache_status": "miss",
+                "projection_cache_status": cache_status,
+                "state_cache_status": cache_status,
             }
         )
         if store is not None and _can_use_state_cache(args):
@@ -3723,20 +3729,35 @@ def _counts_by(
     )
 
 
-def format_state_summary(summary: dict[str, Any]) -> str:
-    """Format the projected state summary for concise terminal inspection."""
+def format_state_build(view_summary: StateSummary, summary: dict[str, Any]) -> str:
+    """Format the single state-build accounting surface."""
 
+    def cache_status(key: str) -> str:
+        value = summary.get(key, "miss")
+        return value if value in {"hit", "miss"} else "miss"
+
+    sources = summary["observation_source_counts"]
     lines = [
         "State Build",
         "",
-        "Projection:",
-        f"  version: {summary.get('projection_version', 'unknown')}",
-        f"  last event: {summary.get('last_event_id') or 'none'}",
-        f"  cache: {summary.get('cache_status', 'unknown')}",
+        "Build:",
+        f"  state-build cache: {cache_status('state_build_cache_status')}",
+        f"  projection cache: {cache_status('projection_cache_status')}",
+        f"  state cache: {cache_status('state_cache_status')}",
         "",
-        "State:",
+        "Projection:",
+        f"  version: {view_summary.projection_version}",
+        f"  last event: {view_summary.last_event_id or 'none'}",
+        "",
+        "Projected State:",
         f"  entities: {summary['entity_count']}",
         f"  facts: {summary['fact_count']}",
+        f"  observations: {view_summary.observations_count}",
+        f"  requirements: {view_summary.requirements_count}",
+        f"  capabilities: {view_summary.capabilities_count}",
+        f"  issues: {view_summary.issues_count}",
+        "",
+        "Fact Accounting:",
         f"  durable facts: {summary['durable_fact_count']}",
         f"  measurement current samples: {summary['measurement_current_sample_count']}",
         f"  conflicts: {summary['conflict_count']}",
@@ -3746,18 +3767,31 @@ def format_state_summary(summary: dict[str, Any]) -> str:
         f"warning{'s' if summary['graph_issue_warning_count'] != 1 else ''}, "
         f"{summary['graph_issue_error_count']} "
         f"error{'s' if summary['graph_issue_error_count'] != 1 else ''}",
-        "  observation sources:",
+        "",
+        "Observation Sources:",
     ]
-    if "relationship_count" in summary:
-        lines.insert(9, f"  relationships: {summary['relationship_count']}")
-    sources = summary["observation_source_counts"]
     lines.extend(
-        [f"    {source}: {count}" for source, count in sources.items()] or ["    (none)"]
+        [f"  {source}: {count}" for source, count in sources.items()] or ["  (none)"]
     )
     # Default State Build is intentionally not a storage/filesystem detail
     # surface. Storage projection data may exist on explicit storage-focused
     # surfaces, but bounded storage detail is still detail and must not leak here.
     return "\n".join(lines)
+
+
+def format_state_summary(summary: dict[str, Any]) -> str:
+    """Format legacy operator summary dictionaries as a state-build surface."""
+
+    view_summary = StateSummary(
+        facts_count=summary["fact_count"],
+        observations_count=summary.get("observation_count", 0),
+        requirements_count=summary.get("requirement_count", 0),
+        capabilities_count=summary.get("capability_count", 0),
+        issues_count=summary.get("issue_count", 0),
+        projection_version=summary.get("projection_version", STATE_PROJECTION_VERSION),
+        last_event_id=summary.get("last_event_id"),
+    )
+    return format_state_build(view_summary, summary)
 
 
 def diff_observations_json_from_args(args: argparse.Namespace) -> dict[str, Any]:
@@ -3977,7 +4011,9 @@ def _format_current_facts_timing_report(report: CurrentFactsTimingReport) -> str
     return "\n".join(lines)
 
 
-def _current_facts_timing_from_args(args: argparse.Namespace) -> CurrentFactsTimingReport:
+def _current_facts_timing_from_args(
+    args: argparse.Namespace,
+) -> CurrentFactsTimingReport:
     timings: list[tuple[str, float]] = []
     started = time.perf_counter()
 
@@ -3991,8 +4027,12 @@ def _current_facts_timing_from_args(args: argparse.Namespace) -> CurrentFactsTim
     ledger: EventLedger = timed(
         "ledger open", lambda: SQLiteEventLedger(args.db) if args.db else EventLedger()
     )
-    raw_store = timed("projection store open", lambda: _projection_store_from_args(args))
-    store = _TimingProjectionStore(raw_store, timings) if raw_store is not None else None
+    raw_store = timed(
+        "projection store open", lambda: _projection_store_from_args(args)
+    )
+    store = (
+        _TimingProjectionStore(raw_store, timings) if raw_store is not None else None
+    )
     try:
         current_facts_args = args.current_facts or []
         if len(current_facts_args) != 0:
@@ -4019,7 +4059,9 @@ def _current_facts_timing_from_args(args: argparse.Namespace) -> CurrentFactsTim
             )
             cache_status = "hit" if status.cache_hit else "miss"
         else:
-            state = timed("projection replay", lambda: projector.project(args.workspace))
+            state = timed(
+                "projection replay", lambda: projector.project(args.workspace)
+            )
             cache_status = "unavailable"
 
         if len(current_facts_args) == 0:
@@ -5193,11 +5235,7 @@ def main(argv: list[str] | None = None) -> int:
         view_summary, operator_summary = projected_state_summary_from_args(
             args, status_consumer=CliExecutionStatusConsumer()
         )
-        print(
-            format_state_view_summary(view_summary)
-            + "\n\n"
-            + format_state_summary(operator_summary)
-        )
+        print(format_state_build(view_summary, operator_summary))
         return 0
 
     if args.state_build_cache_debug:
