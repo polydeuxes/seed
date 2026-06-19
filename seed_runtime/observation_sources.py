@@ -236,6 +236,9 @@ _LISTENER_QUESTIONS = {
     "listening_protocol": "What local listener protocol is exposed by kernel state?",
     "listening_address": "What local addresses are bound by listeners?",
     "listening_endpoint": "What protocol/address/port endpoints are bound locally?",
+    "listening_socket_family": "What socket address families are bound by listeners?",
+    "listening_process_id": "What process IDs are directly linked to listener socket inodes?",
+    "listening_process_name": "What process names are directly linked to listener socket inodes?",
 }
 
 _LOCAL_USER_QUESTIONS = {
@@ -1324,6 +1327,7 @@ class LocalHostObservationSource:
                 ("listening_protocol", protocol),
                 ("listening_address", address),
                 ("listening_port", port),
+                ("listening_socket_family", listener["address_family"]),
             ):
                 observations.append(
                     self._observation(
@@ -1339,6 +1343,28 @@ class LocalHostObservationSource:
                         dimensions=dimensions,
                     )
                 )
+            process = listener.get("process")
+            if process is not None:
+                for predicate, value in (
+                    ("listening_process_id", process["pid"]),
+                    ("listening_process_name", process["name"]),
+                ):
+                    observations.append(
+                        self._observation(
+                            observed_at,
+                            hostname,
+                            predicate,
+                            value,
+                            metadata={
+                                **per_listener_metadata,
+                                "process_inode": listener["inode"],
+                                "process_source": process["source"],
+                                "question_answered": _LISTENER_QUESTIONS[predicate],
+                                "fact_produced": predicate,
+                            },
+                            dimensions=dimensions,
+                        )
+                    )
         return observations
 
     @staticmethod
@@ -1353,9 +1379,12 @@ class LocalHostObservationSource:
             ("udp", "ipv4", self.proc_root / "net" / "udp", "/proc/net/udp"),
             ("udp", "ipv6", self.proc_root / "net" / "udp6", "/proc/net/udp6"),
         )
+        inode_processes = self._socket_inode_processes()
         for protocol, family, path, source_name in sources:
             entries.extend(
-                self._parse_proc_net_socket_table(protocol, family, path, source_name)
+                self._parse_proc_net_socket_table(
+                    protocol, family, path, source_name, inode_processes
+                )
             )
         return sorted(
             entries,
@@ -1369,7 +1398,12 @@ class LocalHostObservationSource:
         )
 
     def _parse_proc_net_socket_table(
-        self, protocol: str, family: str, path: Path, source_name: str
+        self,
+        protocol: str,
+        family: str,
+        path: Path,
+        source_name: str,
+        inode_processes: dict[str, dict[str, Any]] | None = None,
     ) -> list[dict[str, Any]]:
         text = self._read_text(path)
         if not text:
@@ -1380,7 +1414,7 @@ class LocalHostObservationSource:
         entries: list[dict[str, Any]] = []
         for line in lines[1:]:
             fields = line.split()
-            if len(fields) < 4 or ":" not in fields[1]:
+            if len(fields) < 10 or ":" not in fields[1]:
                 return []
             local_address, local_port = fields[1].split(":", 1)
             state = fields[3].upper()
@@ -1395,17 +1429,68 @@ class LocalHostObservationSource:
             address = self._decode_proc_net_address(local_address, family)
             if address is None:
                 return []
-            entries.append(
-                {
-                    "protocol": protocol,
-                    "address_family": family,
-                    "address": address,
-                    "port": port,
-                    "state": state,
-                    "source": source_name,
-                }
-            )
+            inode = fields[9]
+            entry = {
+                "protocol": protocol,
+                "address_family": family,
+                "address": address,
+                "port": port,
+                "state": state,
+                "inode": inode,
+                "source": source_name,
+            }
+            process = (inode_processes or {}).get(inode)
+            if process is not None:
+                entry["process"] = process
+            entries.append(entry)
         return entries
+
+    def _socket_inode_processes(self) -> dict[str, dict[str, Any]]:
+        """Return directly observable process metadata keyed by socket inode.
+
+        This links only procfs fd symlinks of the form ``socket:[inode]`` to
+        numeric /proc process directories and their ``comm`` names. Missing or
+        unreadable process information is preserved as absence.
+        """
+
+        processes: dict[str, dict[str, Any]] = {}
+        if not self.proc_root.exists():
+            return processes
+        try:
+            process_dirs = list(self.proc_root.iterdir())
+        except OSError:
+            return processes
+        for process_dir in process_dirs:
+            if not process_dir.name.isdigit() or not process_dir.is_dir():
+                continue
+            try:
+                pid = int(process_dir.name)
+            except ValueError:
+                continue
+            name = self._read_text(process_dir / "comm", max_bytes=4096)
+            if not name:
+                continue
+            process = {
+                "pid": pid,
+                "name": name.splitlines()[0],
+                "source": f"/proc/{pid}/fd and /proc/{pid}/comm",
+            }
+            fd_dir = process_dir / "fd"
+            if not fd_dir.is_dir():
+                continue
+            try:
+                fd_paths = list(fd_dir.iterdir())
+            except OSError:
+                continue
+            for fd_path in fd_paths:
+                try:
+                    target = os.readlink(fd_path)
+                except OSError:
+                    continue
+                match = re.fullmatch(r"socket:\[(\d+)\]", target)
+                if match:
+                    processes.setdefault(match.group(1), process)
+        return processes
 
     @staticmethod
     def _decode_proc_net_address(value: str, family: str) -> str | None:
