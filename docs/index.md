@@ -46,6 +46,22 @@ related:
   - interaction_as_evidence_observation.md
   - interaction_temporalness_observation.md
   - movement_preservation_observation.md
+  - participant_orientation_view_selection_observation.md
+  - view_branch_continuity_reconciliation.md
+  - promotion_and_reconciliation_observation.md
+  - role_of_descriptive_vocabulary_observation.md
+  - descriptive_language_vs_authority_observation.md
+  - defines_authority_reconciliation_observation.md
+  - defines_relationship_reconciliation_audit.md
+  - authority_formation_pattern_observation.md
+  - authority_owner_observation.md
+  - repository_surface_inventory_observation.md
+  - bounded_consequence_discipline_observation.md
+  - operator_entrypoint_pressure_audit.md
+  - state_summary_decomposition_audit.md
+  - repository_orientation_audit.md
+  - graph_issue_orientation_audit.md
+  - source_navigation_entity_typing_graph_issue_audit.md
 ---
 
 # Seed Documentation Index
@@ -109,6 +125,14 @@ Use this file to find the right document family before reading specific document
 - `interaction_temporalness_observation.md` — observation of whether interaction carries temporal structure through activation, selection shift, abandoned paths, redirection, and continuation without proposing runtime, conversation, or event-model changes.
 - `movement_preservation_observation.md` — observation of whether repository work preserves states, movements, or both, and where movement disappears when continuation becomes difficult.
 - `bounty_board_and_investigation_selection_observation.md` — observation of how investigations appear to have become active, how inquiry historically moved, and how the bounty board preserves deferred inquiry without acting as roadmap authority.
+- `promotion_and_reconciliation_observation.md` — observation of how descriptive vocabulary, recurring repository language, and reconciliation pressure interact without treating promotion into architecture as automatic.
+- `role_of_descriptive_vocabulary_observation.md` — observation of descriptive vocabulary as bridge, lens, pressure carrier, and navigation aid without making descriptive terms canonical ontology.
+- `descriptive_language_vs_authority_observation.md` — observation of the boundary between useful descriptive language and authority-bearing architectural language.
+- `defines_authority_reconciliation_observation.md` — observation of where `defines` metadata and documentation claims appear to carry authority and where they remain descriptive.
+- `defines_relationship_reconciliation_audit.md` — audit of current `defines` producers and meanings across documentation metadata, source declarations, runtime routes, and graph relationships.
+- `authority_formation_pattern_observation.md` — observation of recurring authority-formation patterns across description, pressure, reconciliation, metadata, catalogs, tests, and runtime behavior.
+- `authority_owner_observation.md` — observation of possible authority-owner surfaces and owner-language pressure without assigning new canonical authority.
+- `repository_orientation_audit.md` — audit of orientation-related documents and how their questions, authority status, and unresolved edges are positioned.
 
 ## Foundational Ontology And Claim Semantics
 
@@ -142,6 +166,9 @@ Use this file to find the right document family before reading specific document
 - `current_observation_evidence_change_event_implementation_findings.md`
 - `source_definitions_and_entrypoint_observation_reconciliation.md`
 - `source_navigation_surface_reconciliation.md`
+- `defines_authority_reconciliation_observation.md`
+- `defines_relationship_reconciliation_audit.md`
+- `source_navigation_entity_typing_graph_issue_audit.md`
 - `input_source_authority_reconciliation.md`
 - `documentation_observation_design.md`
 - `documentation_observation_frontier.md`
@@ -215,8 +242,10 @@ Use this file to find the right document family before reading specific document
 - `state_summary_endpoint_prominence_audit.md`
 - `state_summary_filesystem_projection_boundary_audit.md`
 - `state_summary_top_entity_selection_audit.md`
+- `state_summary_decomposition_audit.md`
 - `read_model_inventory_and_authority_reconciliation.md`
 - `view_authority_and_surface_responsibility_reconciliation.md`
+- `view_branch_continuity_reconciliation.md`
 - `operator_interface_and_projection_authority_reconciliation.md`
 - `impact_overview_authority_reconciliation.md`
 - `entity_impact_drilldown_reconciliation.md`
@@ -262,6 +291,7 @@ Use this file to find the right document family before reading specific document
 - `operator_investigation_workflow_reconciliation.md`
 - `operator_navigation_reconciliation.md`
 - `operator_pain_as_frontier_signal.md`
+- `operator_entrypoint_pressure_audit.md`
 - `operator_trial_plan.md`
 
 ## Handoff And Continuation
@@ -317,6 +347,7 @@ Use this file to find the right document family before reading specific document
 - `self_observation_reconciliation.md`
 - `repository_observation_language_boundary.md`
 - `repository_observation_source_design.md`
+- `repository_surface_inventory_observation.md`
 - `repository_observation_seed_characterization.md`
 - `repository_observation_v0_implementation_characterization.md`
 - `repository_reconciliation_frontier.md`
@@ -343,6 +374,10 @@ These documents route emerging work without promoting it to canonical architectu
 - `concept_stability_audit.md` — documentation-only audit of which recent ontology concepts appear stable, unstable, recurring, load-bearing, transformed, or still under pressure.
 - `surviving_pressure_after_decomposition_observation.md` — cross-document observation of pressure stability across lens decomposition, vocabulary change, support visibility, continuity, preservation, and current concern.
 - `situatedness_and_pressure_observation.md` — cross-document observation of situated pressure patterns across reference point, current concern, continuity concern, Active Edge, and Current Work Position without proposing runtime representation.
+- `participant_orientation_view_selection_observation.md` — observation of participant orientation and view selection pressure across lens, view, orientation, inquiry, and unresolvedness documents without changing view authority.
+- `view_branch_continuity_reconciliation.md` — reconciliation of view-branch continuity boundaries, preserving View as read-side authority while keeping orientation and lens exploratory.
+- `bounded_consequence_discipline_observation.md` — observation of bounded-consequence discipline across surfaces, authority owners, views, source navigation, inquiry notes, and state summary.
+- `graph_issue_orientation_audit.md` — audit of graph issue production and orientation semantics for operator-facing validation issues.
 - `documentation_lineage_observation.md` — observation of recent documentation lineage, investigation clusters, generative documents, bridge documents, consolidating documents, and the difference between documentation lineage and inquiry lineage.
 - `discovery_path_preservation_observation.md` — observation of critique-driven discovery paths, compression removal, and the gap between conclusion preservation and understanding-transition preservation.
 - `lineage_distinction_observation.md` — observation of artifact, inquiry, observation, and discovery-path lineage surfaces and what each appears to preserve without reconciling lineage ontology.

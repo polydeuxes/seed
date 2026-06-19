@@ -86,6 +86,14 @@ Use this frontier characterization when the question is not only what Seed knows
 * [`relation_cluster_observation.md`](relation_cluster_observation.md) — observation of whether decomposed relation-of-use families appear independent or recur as clusters across current work, active edge, pressure, continuation, boundary, significance, activation, and preservation failure.
 * [`interaction_as_evidence_observation.md`](interaction_as_evidence_observation.md) — observation of whether some current-work, operator-facing, and activation questions make interaction or participation evidential without proposing runtime, UI, workflow, or response-system changes.
 * [`interaction_temporalness_observation.md`](interaction_temporalness_observation.md) — observation of whether interaction itself carries temporal structure through activation, selection shift, abandonment, redirection, and continuation without proposing runtime or event-model changes.
+* [`participant_orientation_view_selection_observation.md`](participant_orientation_view_selection_observation.md) — observation of participant orientation and selected view pressure across View, lens, orientation, inquiry, and unresolvedness documents without changing View authority.
+* [`view_branch_continuity_reconciliation.md`](view_branch_continuity_reconciliation.md) — reconciliation of View branch continuity, preserving View as read-side authority while keeping lens and orientation concerns exploratory.
+* [`promotion_and_reconciliation_observation.md`](promotion_and_reconciliation_observation.md) — observation of how descriptive vocabulary, recurring language, and reconciliation pressure interact without making promotion into architecture automatic.
+* [`role_of_descriptive_vocabulary_observation.md`](role_of_descriptive_vocabulary_observation.md) — observation of descriptive vocabulary as bridge, lens, pressure carrier, and navigation aid without promoting descriptive terms into ontology.
+* [`descriptive_language_vs_authority_observation.md`](descriptive_language_vs_authority_observation.md) — observation of the boundary between useful descriptive language and authority-bearing architectural language.
+* [`defines_authority_reconciliation_observation.md`](defines_authority_reconciliation_observation.md) and [`defines_relationship_reconciliation_audit.md`](defines_relationship_reconciliation_audit.md) — routing for `defines` authority and relationship-meaning pressure across documentation metadata, source declarations, runtime routes, and graph relationships.
+* [`authority_formation_pattern_observation.md`](authority_formation_pattern_observation.md) and [`authority_owner_observation.md`](authority_owner_observation.md) — observations of authority-formation patterns and authority-owner language without assigning new canonical owners.
+* [`repository_orientation_audit.md`](repository_orientation_audit.md) — audit of orientation-related documents and their authority status, unresolved edges, and conceptual neighborhoods.
 
 ## Language / Operator Interface
 
@@ -155,6 +163,8 @@ Prometheus cleanup should route here before implementation when dealing with `up
 
 * [`repository_observation_frontier.md`](repository_observation_frontier.md) — repository observation frontier.
 * [`repository_observation_source_design.md`](repository_observation_source_design.md) — repository observation source design.
+* [`repository_surface_inventory_observation.md`](repository_surface_inventory_observation.md) — repository surface inventory observation across operator-facing and repository-facing surfaces.
+* [`source_navigation_entity_typing_graph_issue_audit.md`](source_navigation_entity_typing_graph_issue_audit.md) — audit of source navigation, entity typing, and graph issue production boundaries.
 * [`input_inspection_boundary_reconciliation.md`](input_inspection_boundary_reconciliation.md) — reconciliation of source/repository observation inspection and language candidate inspection as a shared preservation pattern but not yet one shared boundary.
 * [`documentation_observation_frontier.md`](documentation_observation_frontier.md) — documentation observation frontier.
 * [`knowledge_navigation_layers_frontier.md`](knowledge_navigation_layers_frontier.md) — navigation-layer frontier connecting repository, architecture, and knowledge navigation questions.
@@ -167,10 +177,11 @@ Prometheus cleanup should route here before implementation when dealing with `up
 Use these for operator-facing views and read-only projections. These surfaces explain or summarize projected knowledge; they must not mutate evidence, facts, relationships, projections, or hosts.
 
 * Operator surface families — [`operator_surface_family_observation.md`](operator_surface_family_observation.md), [`operator_understanding_surface_observation.md`](operator_understanding_surface_observation.md), [`understanding_visibility_existing_surface_audit.md`](understanding_visibility_existing_surface_audit.md)
-* State summary — [`state_summary_authority_reconciliation.md`](state_summary_authority_reconciliation.md), [`state_summary_cli_boundary_audit.md`](state_summary_cli_boundary_audit.md), [`state.md`](state.md)
+* Surface consequence and pressure — [`bounded_consequence_discipline_observation.md`](bounded_consequence_discipline_observation.md), [`operator_entrypoint_pressure_audit.md`](operator_entrypoint_pressure_audit.md)
+* State summary — [`state_summary_authority_reconciliation.md`](state_summary_authority_reconciliation.md), [`state_summary_cli_boundary_audit.md`](state_summary_cli_boundary_audit.md), [`state_summary_decomposition_audit.md`](state_summary_decomposition_audit.md), [`state.md`](state.md)
 * Impact — [`impact_overview_authority_reconciliation.md`](impact_overview_authority_reconciliation.md), [`entity_impact_drilldown_reconciliation.md`](entity_impact_drilldown_reconciliation.md)
 * Fact support — [`claim_support_frontier.md`](claim_support_frontier.md), [`claim_support_design.md`](claim_support_design.md), [`evidence_strength_and_claim_strength_reconciliation.md`](evidence_strength_and_claim_strength_reconciliation.md)
-* Graph issues — [`read_model_inventory_and_authority_reconciliation.md`](read_model_inventory_and_authority_reconciliation.md), [`state.md`](state.md), [`why_not_vocabulary.md`](why_not_vocabulary.md)
+* Graph issues — [`read_model_inventory_and_authority_reconciliation.md`](read_model_inventory_and_authority_reconciliation.md), [`graph_issue_orientation_audit.md`](graph_issue_orientation_audit.md), [`source_navigation_entity_typing_graph_issue_audit.md`](source_navigation_entity_typing_graph_issue_audit.md), [`state.md`](state.md), [`why_not_vocabulary.md`](why_not_vocabulary.md)
 * Entity types — [`entity_type_catalog/core.json`](../entity_type_catalog/core.json), [`self_observation_audit.md`](self_observation_audit.md)
 * Relationships — [`relationship_catalog/core.json`](../relationship_catalog/core.json), [`relationship_promotion_reconciliation.md`](relationship_promotion_reconciliation.md), [`relationship_observation_v0_reconciliation.md`](relationship_observation_v0_reconciliation.md)
 

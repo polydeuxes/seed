@@ -77,6 +77,10 @@ Explanatory Load
 Observation Surface / Blind Spots
 Persistence / Continuity / Current Work Position
 Handoff / Continuation Lineage
+View / Lens / Orientation
+Descriptive Language / Authority Formation
+Surface / Bounded Consequence
+Operator Entrypoint Pressure
 ```
 
 These frontiers are routed here for discovery only. They are characterized or emerging; they are not reconciled architecture, canonical ontology, roadmap authority, or implementation direction.
@@ -111,6 +115,10 @@ For the current status of these concerns and the active frontier, see `architect
 | How do I move from a question to concepts, architecture, documentation, repository structure, and implementation artifacts? | `knowledge_navigation_layers_frontier.md` |
 | Where are emerging operation, attribution, relationship, inquiry, derivation, and handoff-lineage frontiers routed? | `operations_frontier.md`, `operation_attribution_frontier.md`, `relationship_frontier.md`, `inquiry_frontier.md`, `derivation_frontier.md`, `handoff_and_continuation_lineage_frontier.md`, and `future_frontiers.md` |
 | Where are current documentation navigation hygiene findings? | `navigation_hygiene_audit.md` |
+| Where are recent View, lens, orientation, inquiry, and unresolvedness investigations routed? | `participant_orientation_view_selection_observation.md`, `view_branch_continuity_reconciliation.md`, `lens_view_reconciliation.md`, `lens_orientation_and_dashboard_observation.md`, `inquiry_as_bridge_observation.md`, and `unresolvedness_observation.md` |
+| Where are descriptive-language, `defines`, and authority-formation questions routed? | `promotion_and_reconciliation_observation.md`, `role_of_descriptive_vocabulary_observation.md`, `descriptive_language_vs_authority_observation.md`, `defines_authority_reconciliation_observation.md`, `defines_relationship_reconciliation_audit.md`, `authority_formation_pattern_observation.md`, and `authority_owner_observation.md` |
+| Where are repository surfaces, bounded consequence, state-summary scope, and operator-entrypoint pressure routed? | `repository_surface_inventory_observation.md`, `bounded_consequence_discipline_observation.md`, `state_summary_decomposition_audit.md`, and `operator_entrypoint_pressure_audit.md` |
+| Where are graph issue orientation and source-navigation entity typing audit findings routed? | `graph_issue_orientation_audit.md` and `source_navigation_entity_typing_graph_issue_audit.md` |
 | What could the documentation lineage observation see, and what remained blind? | `observation_surface_and_blind_spot_audit.md` |
 | What appears to continue when artifact, inquiry, observation, and discovery-path lineage are discussed? | `lineage_distinction_observation.md` |
 | What kinds of things do recent investigations appear to preserve? | `preservation_surface_observation.md` |
@@ -208,6 +216,8 @@ Start with:
 * `architectural_knowledge_map.md`
 * `navigation_hygiene_audit.md`
 * `source_navigation_surface_reconciliation.md`
+* `repository_orientation_audit.md`
+* `source_navigation_entity_typing_graph_issue_audit.md`
 * `understanding_visibility_existing_surface_audit.md`
 
 This is currently a frontier characterization, not a reconciliation or implementation plan. It records structural navigation, architectural navigation, and knowledge navigation as related but non-identical layers.
@@ -215,7 +225,7 @@ This is currently a frontier characterization, not a reconciliation or implement
 
 ## Emerging Meta-Architecture Frontiers
 
-Concern: recently characterized or emerging questions about navigation, operations, operation attribution, relationship ontology, inquiry, attention, active-edge pressure, object/role/operation boundaries, concept stability, persistence, continuity, current work position, derivation, handoff/continuation lineage, observed documentation lineage, discovery-path preservation, lineage distinction, documentation compression, explanatory-load pressure, understanding-as-claim pressure, knowledge-and-understanding distinction pressure, decompression-shaped learning, and observation-surface limits.
+Concern: recently characterized or emerging questions about navigation, operations, operation attribution, relationship ontology, inquiry, attention, active-edge pressure, object/role/operation boundaries, concept stability, persistence, continuity, current work position, view/lens/orientation boundaries, descriptive-language promotion pressure, authority formation, bounded-consequence discipline, operator-entrypoint pressure, derivation, handoff/continuation lineage, observed documentation lineage, discovery-path preservation, lineage distinction, documentation compression, explanatory-load pressure, understanding-as-claim pressure, knowledge-and-understanding distinction pressure, decompression-shaped learning, and observation-surface limits.
 
 Start with:
 
@@ -230,8 +240,24 @@ Start with:
 * `attention_trigger_frontier.md`
 * `attention_target_frontier.md`
 * `active_edge_frontier.md`
+* `participant_orientation_view_selection_observation.md`
+* `view_branch_continuity_reconciliation.md`
 * `object_role_and_operation_frontier.md`
 * `concept_stability_audit.md`
+* `promotion_and_reconciliation_observation.md`
+* `role_of_descriptive_vocabulary_observation.md`
+* `descriptive_language_vs_authority_observation.md`
+* `defines_authority_reconciliation_observation.md`
+* `defines_relationship_reconciliation_audit.md`
+* `authority_formation_pattern_observation.md`
+* `authority_owner_observation.md`
+* `repository_orientation_audit.md`
+* `repository_surface_inventory_observation.md`
+* `bounded_consequence_discipline_observation.md`
+* `state_summary_decomposition_audit.md`
+* `operator_entrypoint_pressure_audit.md`
+* `graph_issue_orientation_audit.md`
+* `source_navigation_entity_typing_graph_issue_audit.md`
 * `documentation_lineage_observation.md`
 * `observation_surface_and_blind_spot_audit.md`
 * `discovery_path_preservation_observation.md`
@@ -246,7 +272,7 @@ Start with:
 * `relation_of_use_observation.md`
 * `future_frontiers.md`
 
-Read these as a connected investigation cluster: inquiry exposes why work begins, attention asks why one unresolved possibility becomes active and what receives attention, active edge asks what currently pulls work forward among preserved concerns, object/role/operation asks whether candidate concepts are durable things or contextual participation, persistence/continuity/current-work-position asks what survives change and what orientation must survive for active work to resume without collapsing into storage, identity, or implementation machinery, documentation lineage observes how these investigations generated follow-on documents without defining lineage as architecture, the observation-surface audit records what that lineage observation could and could not see, discovery-path preservation observes critique-driven understanding transitions, lineage distinction observes which artifact, inquiry, observation, and discovery-path surfaces appear distinct or overlapping, bounty-board/investigation-selection observation records how inquiry appears to have become active without treating the bounty board as roadmap authority, and relation-of-use observation records the boundary where preserved knowledge remains useful or becomes inert without defining ontology or implementation. These documents should be read as frontier/status/map routing, not as canonical architecture. Do not use this cluster to promote operations, inquiry, attention, active-edge, object, role, persistence, continuity, current work position, derivation, lineage, critique, or discovery-retrospective concepts into the foundational ontology without a later reconciliation.
+Read these as a connected investigation cluster: inquiry exposes why work begins, attention asks why one unresolved possibility becomes active and what receives attention, active edge asks what currently pulls work forward among preserved concerns, view/lens/orientation work asks how participant position and selected view shape continuation without changing View authority, descriptive-language and `defines` work asks how useful language, metadata, and reconciliation pressure relate to authority without making promotion automatic, surface and bounded-consequence work asks how repository-facing surfaces constrain effect and responsibility, object/role/operation asks whether candidate concepts are durable things or contextual participation, persistence/continuity/current-work-position asks what survives change and what orientation must survive for active work to resume without collapsing into storage, identity, or implementation machinery, documentation lineage observes how these investigations generated follow-on documents without defining lineage as architecture, the observation-surface audit records what that lineage observation could and could not see, discovery-path preservation observes critique-driven understanding transitions, lineage distinction observes which artifact, inquiry, observation, and discovery-path surfaces appear distinct or overlapping, bounty-board/investigation-selection observation records how inquiry appears to have become active without treating the bounty board as roadmap authority, and relation-of-use observation records the boundary where preserved knowledge remains useful or becomes inert without defining ontology or implementation. These documents should be read as frontier/status/map routing, not as canonical architecture. Do not use this cluster to promote operations, inquiry, attention, active-edge, view, lens, orientation, authority owner, bounded consequence, object, role, persistence, continuity, current work position, derivation, lineage, critique, or discovery-retrospective concepts into the foundational ontology without a later reconciliation.
 
 ## Knowledge Selection
 
