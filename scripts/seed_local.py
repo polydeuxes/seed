@@ -42,6 +42,10 @@ from seed_runtime.context_views import (
     DecisionContextView,
     build_decision_context_view,
 )
+from seed_runtime.classification_coverage import (
+    build_classification_coverage_diagnostic,
+    format_classification_coverage,
+)
 from seed_runtime.confidence import (
     FactConfidence,
     build_confidence_summary,
@@ -1106,6 +1110,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--severity",
         choices=["warning", "error"],
         help="filter --graph-issues by severity",
+    )
+    parser.add_argument(
+        "--classification-coverage",
+        action="store_true",
+        help="inspect projected entity classification coverage; read-only unless --record is also supplied",
+    )
+    parser.add_argument(
+        "--record",
+        action="store_true",
+        help="with --classification-coverage, append diagnostic self-observation evidence",
     )
     parser.add_argument(
         "--entity-types",
@@ -3308,6 +3322,32 @@ def format_entity_types(state: State, entity_id: str | None = None) -> str:
     return "\n".join(lines) or "no entity types"
 
 
+
+def record_classification_coverage_diagnostic(
+    args: argparse.Namespace, diagnostic: Any
+) -> list[Fact]:
+    """Append classification coverage diagnostic facts via observations."""
+
+    observations = [
+        DevObservationSeed(
+            subject="seed:self",
+            predicate=_diagnostic_fact_predicate(name),
+            value=value,
+            source_type="inferred",
+            confidence=1.0,
+            ingested_by="scripts.seed_local --classification-coverage --record",
+        )
+        for name, value in diagnostic.record_facts().items()
+    ]
+    ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
+    return ingest_observations(
+        ledger, args.workspace, observations, session_id=args.session
+    )
+
+
+def _diagnostic_fact_predicate(name: str) -> str:
+    return name.replace("-", " ").replace(" ", "_")
+
 def format_evidence_graph(state: State) -> str:
     """Format the read-only Evidence Graph summary and concise links."""
 
@@ -5170,6 +5210,14 @@ def main(argv: list[str] | None = None) -> int:
                 examples_per_category=args.graph_issue_examples,
             )
         )
+        return 0
+
+    if args.classification_coverage:
+        state = projected_state_from_args(args)
+        diagnostic = build_classification_coverage_diagnostic(state)
+        if args.record:
+            record_classification_coverage_diagnostic(args, diagnostic)
+        print(format_classification_coverage(diagnostic))
         return 0
 
     if args.entity_types or args.entity_type:
