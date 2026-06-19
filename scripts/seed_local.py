@@ -1441,6 +1441,7 @@ def validate_lifecycle_args(
         bool(args.fact_support),
         bool(args.best_fact),
         bool(args.current_facts is not None),
+        bool(args.current_facts_cache_debug and args.current_facts is None),
         bool(args.source_navigation),
         bool(args.current_observations),
         bool(args.current_requirements),
@@ -1473,7 +1474,8 @@ def validate_lifecycle_args(
             "--evidence, --why-fact, --unsupported-facts, --contradictions, "
             "--confidence, --confidence-fact, --trace-run, "
             "--why-run, --fact-support, --best-fact, "
-            "--current-facts, --current-observations, --current-requirements, "
+            "--current-facts, --current-facts-cache-debug, "
+            "--current-observations, --current-requirements, "
             "--current-capabilities, --capability-status, --capability-candidates, "
             "--verification-evidence, --capability-verification, "
             "--capability-promotion-readiness, --current-issues, "
@@ -1485,8 +1487,9 @@ def validate_lifecycle_args(
         )
     if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
         parser.error("--current-facts accepts either no values or SUBJECT PREDICATE")
-    if args.current_facts_cache_debug and args.current_facts is None:
-        parser.error("--current-facts-cache-debug requires --current-facts")
+    # Cache-debug surfaces are standalone read-only views.  A cache-debug flag
+    # owns dispatch for its underlying view and may also be combined with the
+    # legacy view flag when that view accepts additional query arguments.
     if args.why_fact is not None and len(args.why_fact) not in {2, 3}:
         parser.error("--why-fact accepts SUBJECT PREDICATE [OBJECT]")
     if args.confidence_fact is not None and len(args.confidence_fact) not in {2, 3}:
@@ -3965,7 +3968,8 @@ def _current_facts_timing_from_args(args: argparse.Namespace) -> CurrentFactsTim
     raw_store = timed("projection store open", lambda: _projection_store_from_args(args))
     store = _TimingProjectionStore(raw_store, timings) if raw_store is not None else None
     try:
-        if len(args.current_facts) != 0:
+        current_facts_args = args.current_facts or []
+        if len(current_facts_args) != 0:
             seed_dev_state_from_args(args, ledger)
         history_limit = 1
         projector = timed(
@@ -3992,11 +3996,11 @@ def _current_facts_timing_from_args(args: argparse.Namespace) -> CurrentFactsTim
             state = timed("projection replay", lambda: projector.project(args.workspace))
             cache_status = "unavailable"
 
-        if len(args.current_facts) == 0:
+        if len(current_facts_args) == 0:
             views = timed("read model build", lambda: build_fact_view(state))
             output = timed("render", lambda: format_fact_views(views))
         else:
-            subject, predicate = args.current_facts
+            subject, predicate = current_facts_args
             fact_index = timed(
                 "read model build",
                 lambda: _load_or_build_fact_index_from_args(args, state),
@@ -5335,13 +5339,14 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
 
+    if args.current_facts_cache_debug:
+        report = _current_facts_timing_from_args(args)
+        print(report.output)
+        print()
+        print(_format_current_facts_timing_report(report))
+        return 0
+
     if args.current_facts is not None:
-        if args.current_facts_cache_debug:
-            report = _current_facts_timing_from_args(args)
-            print(report.output)
-            print()
-            print(_format_current_facts_timing_report(report))
-            return 0
         if len(args.current_facts) == 0:
             print(
                 format_fact_views(
