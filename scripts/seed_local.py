@@ -30,6 +30,11 @@ from seed_runtime.capability_inventory import (
     CapabilityInventoryEntry,
     build_capability_inventory,
 )
+from seed_runtime.capability_needs import (
+    build_capability_needs,
+    capability_needs_json,
+    format_capability_needs,
+)
 from seed_runtime.capability_promotion_readiness import (
     build_capability_promotion_readiness_inspection,
 )
@@ -153,6 +158,7 @@ from seed_runtime.observation_sources import (
 from seed_runtime.observations import ObservationIngestor
 from seed_runtime.ownership_discrepancies import (
     build_ownership_discrepancies,
+    diagnostic_capability_need_records,
     format_ownership_discrepancies,
     ownership_discrepancies_json,
 )
@@ -1469,8 +1475,17 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help=(
             "infer provisional storage/service ownership candidates from existing "
-            "facts and report ambiguous or conflicting ownership; read-only"
+            "facts and report ambiguous or conflicting ownership; read-only unless --record is also supplied"
         ),
+    )
+    parser.add_argument(
+        "--capability-needs",
+        action="store_true",
+        help="print recorded diagnostic capability needs and exit",
+    )
+    parser.add_argument(
+        "--diagnostic",
+        help="limit --capability-needs to one diagnostic name",
     )
     parser.add_argument(
         "--subject",
@@ -1554,6 +1569,7 @@ def validate_lifecycle_args(
         bool(args.stale_facts),
         bool(args.stale_fact_refreshes),
         bool(args.ownership_discrepancies),
+        bool(args.capability_needs),
         bool(args.rebuild_state_cache),
         bool(args.state_cache_status),
         bool(args.events_only),
@@ -1625,10 +1641,16 @@ def validate_lifecycle_args(
         )
     if args.include_history and not args.fact_support:
         parser.error("--include-history can only be used with --fact-support")
-    if args.subject and not args.ownership_discrepancies:
-        parser.error("--subject can only be used with --ownership-discrepancies")
-    if args.json_output and not args.ownership_discrepancies:
-        parser.error("--json can only be used with --ownership-discrepancies")
+    if args.subject and not (args.ownership_discrepancies or args.capability_needs):
+        parser.error(
+            "--subject can only be used with --ownership-discrepancies or --capability-needs"
+        )
+    if args.diagnostic and not args.capability_needs:
+        parser.error("--diagnostic can only be used with --capability-needs")
+    if args.json_output and not (args.ownership_discrepancies or args.capability_needs):
+        parser.error(
+            "--json can only be used with --ownership-discrepancies or --capability-needs"
+        )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
     if args.graph_issue_limit < 0:
@@ -3422,6 +3444,51 @@ def record_classification_coverage_diagnostic(
         )
         for name, value in diagnostic.record_facts().items()
     ]
+    ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
+    return ingest_observations(
+        ledger, args.workspace, observations, session_id=args.session
+    )
+
+
+def record_ownership_discrepancy_capability_needs(
+    args: argparse.Namespace, rows: list[Any]
+) -> list[Fact]:
+    """Append ownership discrepancy capability needs as diagnostic facts."""
+
+    diagnostic_run_subject = f"diagnostic_run:{new_id('diagnostic_run')}"
+    observations: list[DevObservationSeed] = [
+        DevObservationSeed(
+            subject=diagnostic_run_subject,
+            predicate="diagnostic_name",
+            value="ownership_discrepancies",
+            source_type="inferred",
+            confidence=1.0,
+            ingested_by="scripts.seed_local --ownership-discrepancies --record",
+        )
+    ]
+    for row in rows:
+        for record in diagnostic_capability_need_records(row):
+            observations.append(
+                DevObservationSeed(
+                    subject=diagnostic_run_subject,
+                    predicate="diagnostic_capability_need",
+                    value=record,
+                    source_type="inferred",
+                    confidence=1.0,
+                    ingested_by="scripts.seed_local --ownership-discrepancies --record",
+                )
+            )
+            for name, value in record.items():
+                observations.append(
+                    DevObservationSeed(
+                        subject=diagnostic_run_subject,
+                        predicate=_diagnostic_fact_predicate(name),
+                        value=value,
+                        source_type="inferred",
+                        confidence=1.0,
+                        ingested_by="scripts.seed_local --ownership-discrepancies --record",
+                    )
+                )
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
     return ingest_observations(
         ledger, args.workspace, observations, session_id=args.session
@@ -5415,12 +5482,26 @@ def main(argv: list[str] | None = None) -> int:
         rows = build_ownership_discrepancies(
             projected_state_from_args(args), subject_filter=args.subject
         )
+        if args.record:
+            record_ownership_discrepancy_capability_needs(args, rows)
         if args.json_output:
             print(
                 json.dumps(ownership_discrepancies_json(rows), indent=2, sort_keys=True)
             )
         else:
             print(format_ownership_discrepancies(rows))
+        return 0
+
+    if args.capability_needs:
+        entries = build_capability_needs(
+            projected_state_from_args(args),
+            subject_filter=args.subject,
+            diagnostic_filter=args.diagnostic,
+        )
+        if args.json_output:
+            print(json.dumps(capability_needs_json(entries), indent=2, sort_keys=True))
+        else:
+            print(format_capability_needs(entries))
         return 0
 
     if args.state_build:

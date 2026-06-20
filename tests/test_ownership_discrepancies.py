@@ -3,6 +3,9 @@ import json
 import sys
 from pathlib import Path
 
+from seed_runtime.events import SQLiteEventLedger
+from seed_runtime.state import StateProjector
+
 SCRIPT_PATH = Path("scripts/seed_local.py")
 
 
@@ -119,3 +122,144 @@ def test_no_ownership_evidence_reports_missing_owner(tmp_path, capsys):
 
     assert rows[0]["conflict"] == "missing_owner"
     assert rows[0]["candidate_owner"] is None
+
+
+def test_ownership_discrepancies_without_record_does_not_modify_event_count(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db = tmp_path / "seed.sqlite"
+    ingest(seed_local, db, ("api", "prometheus_target", "10.0.0.7:9100"))
+    before = len(SQLiteEventLedger(db).list("local"))
+
+    assert seed_local.main(["--db", str(db), "--ownership-discrepancies"]) == 0
+
+    assert "insufficient_evidence" in capsys.readouterr().out
+    after = len(SQLiteEventLedger(db).list("local"))
+    assert after == before
+
+
+def test_ownership_discrepancies_record_appends_diagnostic_run_scoped_facts(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db = tmp_path / "seed.sqlite"
+    ingest(seed_local, db, ("node116", "prometheus_target", "10.0.0.7:9100"))
+    before_events = SQLiteEventLedger(db).list("local")
+
+    assert (
+        seed_local.main(["--db", str(db), "--ownership-discrepancies", "--record"]) == 0
+    )
+
+    capsys.readouterr()
+    appended = SQLiteEventLedger(db).list("local")[len(before_events) :]
+    facts = [
+        event.payload["fact"] for event in appended if event.kind == "fact.inferred"
+    ]
+    assert facts
+    run_subjects = {fact["subject_id"] for fact in facts}
+    assert len(run_subjects) == 1
+    assert next(iter(run_subjects)).startswith("diagnostic_run:")
+    assert {"node116", "node115", "service", "filesystem"}.isdisjoint(run_subjects)
+    assert any(
+        f["predicate"] == "diagnostic_name" and f["value"] == "ownership_discrepancies"
+        for f in facts
+    )
+    assert any(
+        f["predicate"] == "needed_evidence" and f["value"] == "local_listener"
+        for f in facts
+    )
+    assert any(
+        f["predicate"] == "candidate_capability"
+        and f["value"] == "tcp_listen_inventory"
+        for f in facts
+    )
+    assert any(
+        f["predicate"] == "privilege_level"
+        and f["value"] == "non_root_partial_root_full"
+        for f in facts
+    )
+
+
+def test_capability_needs_view_retrieves_recorded_needs_and_filters(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db = tmp_path / "seed.sqlite"
+    ingest(seed_local, db, ("node116", "prometheus_target", "10.0.0.7:9100"))
+    assert (
+        seed_local.main(["--db", str(db), "--ownership-discrepancies", "--record"]) == 0
+    )
+    capsys.readouterr()
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db),
+                "--capability-needs",
+                "--subject",
+                "node116",
+                "--diagnostic",
+                "ownership_discrepancies",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "Capability Needs" in output
+    assert "tcp_listen_inventory" in output
+    assert "subjects: 1" in output
+    assert "ownership_discrepancies" in output
+
+
+def test_capability_needs_json_output_is_valid(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db = tmp_path / "seed.sqlite"
+    ingest(seed_local, db, ("node116", "prometheus_target", "10.0.0.7:9100"))
+    assert (
+        seed_local.main(["--db", str(db), "--ownership-discrepancies", "--record"]) == 0
+    )
+    capsys.readouterr()
+
+    assert seed_local.main(["--db", str(db), "--capability-needs", "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    tcp = next(item for item in payload if item["capability"] == "tcp_listen_inventory")
+    assert tcp["subjects"] == ["node116"]
+    assert tcp["diagnostics"] == ["ownership_discrepancies"]
+    assert "local_listener" in tcp["needed_evidence"]
+
+
+def test_recorded_diagnostic_needs_do_not_affect_inference_validation_or_ownership_facts(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db = tmp_path / "seed.sqlite"
+    ingest(seed_local, db, ("node116", "prometheus_target", "10.0.0.7:9100"))
+    before_state = StateProjector(SQLiteEventLedger(db)).project("local")
+    before_rows = run_json(seed_local, db, capsys, "node116")
+    before_issues = [
+        (i.subject, i.relationship, i.object, i.reason)
+        for i in before_state.get_graph_issues()
+    ]
+
+    assert (
+        seed_local.main(["--db", str(db), "--ownership-discrepancies", "--record"]) == 0
+    )
+    capsys.readouterr()
+
+    after_state = StateProjector(SQLiteEventLedger(db)).project("local")
+    after_rows = run_json(seed_local, db, capsys, "node116")
+    after_issues = [
+        (i.subject, i.relationship, i.object, i.reason)
+        for i in after_state.get_graph_issues()
+    ]
+    assert after_rows == before_rows
+    assert after_issues == before_issues
+    entity_facts = [
+        fact
+        for fact in after_state.facts.values()
+        if not fact.subject_id.startswith("diagnostic_run:")
+    ]
+    assert all("owner" not in fact.predicate for fact in entity_facts)
+    assert all("capability" not in fact.predicate for fact in entity_facts)
