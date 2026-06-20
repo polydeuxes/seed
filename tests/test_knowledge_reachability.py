@@ -245,7 +245,7 @@ def test_reachability_observability_records_required_metadata(tmp_path):
         ledger,
         "w",
         repo_root=tmp_path,
-        limit=2,
+        limit=100,
         progress=messages.append,
         progress_interval_seconds=-1,
     )
@@ -260,7 +260,7 @@ def test_reachability_observability_records_required_metadata(tmp_path):
         "total",
     ):
         assert phase in payload["metadata"]["timings"]
-    assert payload["metadata"]["candidate_counts"]["capped"] == 2
+    assert payload["metadata"]["candidate_counts"]["used"] <= 100
     assert payload["metadata"]["candidate_sources"]["default seeds"] > 0
     assert payload["metadata"]["candidate_sources"]["event payloads"] > 0
     assert payload["metadata"]["candidate_sources"]["docs/"] > 0
@@ -338,7 +338,7 @@ def test_reachability_scale_uses_indexed_evaluation_for_large_candidate_set():
         )
 
     result = build_knowledge_reachability_audit_result(
-        ledger, "w", limit=100_000, max_seconds=None
+        ledger, "w", limit=100_000, all_candidates=True, max_seconds=None
     )
     counters = result.metadata.algorithmic_counters
 
@@ -351,3 +351,90 @@ def test_reachability_scale_uses_indexed_evaluation_for_large_candidate_set():
     assert counters["fact_support_index_build_calls"] == 1
     assert counters["source_navigation_rows_scanned"] == 1_000
     assert counters["membership_checks"] <= counters["candidates_evaluated"] * 5
+
+
+def test_reachability_default_discovery_stops_early_and_reports_raw_seen_used():
+    from seed_runtime.knowledge_reachability import build_knowledge_reachability_audit_result
+
+    ledger = EventLedger()
+    for idx in range(10_000):
+        ledger.append("operator.note", "w", {"text": f"synthetic_candidate_{idx}"})
+
+    result = build_knowledge_reachability_audit_result(ledger, "w", limit=500, max_seconds=None)
+    counts = result.metadata.candidate_counts
+
+    assert counts["used"] <= 500
+    assert counts["used"] < 10_000
+    assert counts["raw_seen"] < 10_000
+    assert counts["limit"] == 500
+
+
+def test_reachability_all_scans_all_synthetic_candidates():
+    from seed_runtime.knowledge_reachability import build_knowledge_reachability_audit_result
+
+    ledger = EventLedger()
+    for idx in range(1_000):
+        ledger.append("operator.note", "w", {"text": f"all_candidate_{idx}"})
+
+    result = build_knowledge_reachability_audit_result(
+        ledger, "w", limit=100, all_candidates=True, max_seconds=None
+    )
+
+    assert result.metadata.candidate_counts["evaluated"] >= 1_000
+    assert result.metadata.truncated is False
+
+
+def test_reachability_read_model_substep_timing_appears():
+    from seed_runtime.knowledge_reachability import build_knowledge_reachability_audit_result
+
+    ledger = EventLedger()
+    messages = []
+    build_knowledge_reachability_audit_result(
+        ledger, "w", subject="node115", progress=messages.append
+    )
+
+    for name in (
+        "read_model.current_facts",
+        "read_model.fact_support",
+        "read_model.state_summary",
+        "read_model.inquiry_orientation",
+    ):
+        assert any(msg.startswith(f"[reachability] start {name}") for msg in messages)
+        assert any(msg.startswith(f"[reachability] end {name}") and "rows=" in msg for msg in messages)
+
+
+def test_reachability_read_model_does_not_call_broad_builders(monkeypatch):
+    from seed_runtime.knowledge_reachability import build_knowledge_reachability_audit_result
+    import seed_runtime.knowledge_reachability as kr
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("broad read-model builder called")
+
+    monkeypatch.setattr(kr, "build_fact_view", forbidden, raising=False)
+    monkeypatch.setattr(kr, "build_observation_view", forbidden, raising=False)
+    monkeypatch.setattr(kr, "state_summary", forbidden, raising=False)
+
+    ledger = EventLedger()
+    for idx in range(20):
+        ledger.append("operator.note", "w", {"text": f"candidate_token_{idx}"})
+
+    result = build_knowledge_reachability_audit_result(ledger, "w", limit=10)
+
+    assert result.metadata.algorithmic_counters["read_model_build_calls"] == 1
+
+
+def test_reachability_subject_filter_avoids_broad_repo_scan(tmp_path):
+    from seed_runtime.knowledge_reachability import build_knowledge_reachability_audit_result
+
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "seed_runtime").mkdir()
+    for idx in range(100):
+        (tmp_path / "docs" / f"doc_{idx}.md").write_text("content\n")
+        (tmp_path / "seed_runtime" / f"module_{idx}.py").write_text("# content\n")
+
+    result = build_knowledge_reachability_audit_result(
+        EventLedger(), "w", repo_root=tmp_path, subject="node115"
+    )
+
+    assert result.metadata.scan_counts["repo files scanned"] == 0
+    assert result.metadata.candidate_counts["evaluated"] == 1
