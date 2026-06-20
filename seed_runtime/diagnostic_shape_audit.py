@@ -201,6 +201,16 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         ),
         diagnostic_fact_read_markers=("build_capability_needs",),
     ),
+    "correlation_audit": DiagnosticImplementationSpec(
+        name="correlation_audit",
+        module_path="seed_runtime/correlation_audit.py",
+        build_function="build_correlation_audit",
+        format_function="format_correlation_audit",
+        json_function="correlation_audit_json",
+        cli_flags=("--correlation-audit",),
+        repo_file_markers=("build_consumer_audit",),
+        diagnostic_fact_read_markers=("build_capability_needs",),
+    ),
     "privilege_discovery": DiagnosticImplementationSpec(
         name="privilege_discovery",
         module_path="seed_runtime/privilege_discovery.py",
