@@ -1660,6 +1660,32 @@ UNCONN 0      0             [::]:1234         [::]:*
     assert all("process" not in entry and "container" not in entry for entry in entries)
 
 
+def test_ss_listener_output_parser_preserves_visible_process_attribution():
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    output = """State  Recv-Q Send-Q Local Address:Port Peer Address:Port Process
+LISTEN 0      4096       0.0.0.0:9100      0.0.0.0:* users:(("node_exporter",pid=1234,fd=3))
+"""
+
+    entries = LocalHostObservationSource.parse_ss_listener_output(output, "tcp")
+
+    assert entries == [
+        {
+            "protocol": "tcp",
+            "address_family": "ipv4",
+            "address": "0.0.0.0",
+            "port": 9100,
+            "state": "LISTEN",
+            "source": "ss -lnt",
+            "process": {
+                "pid": 1234,
+                "name": "node_exporter",
+                "source": "ss process attribution",
+            },
+        }
+    ]
+
+
 def test_local_host_source_emits_tcp_udp_listener_observations(monkeypatch, tmp_path):
     from seed_runtime.observation_sources import LocalHostObservationSource
 

@@ -199,3 +199,17 @@ def test_consumer_audit_uses_canonical_mapping_without_prefix_matches(tmp_path):
     assert mapped.consumers == ("read_models", "state_build")
     assert prefix.orphaned is True
     assert unused.orphaned is True
+
+
+def test_listener_predicates_consumed_by_ownership_discrepancy_diagnostics():
+    for predicate in (
+        "listener_address",
+        "listener_port",
+        "listener_scope",
+        "listener_attribution_status",
+        "listening_process_id",
+        "listening_process_name",
+    ):
+        row = build_consumer_audit(predicate_filter=predicate).items[0]
+        assert row.orphaned is False
+        assert "diagnostics" in row.consumers

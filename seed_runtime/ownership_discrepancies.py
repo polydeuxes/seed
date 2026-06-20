@@ -76,6 +76,18 @@ _STORAGE_PREDICATES = {
     "storage_owner_candidate",
 }
 _HOST_PREDICATES = {"host", "hostname", "node", "endpoint", "instance"}
+_LOCAL_LISTENER_PREDICATES = {
+    "listening_socket",
+    "listening_endpoint",
+    "listener_protocol",
+    "listener_address",
+    "listener_port",
+    "listener_scope",
+    "listener_attribution_status",
+    "listening_process_id",
+    "listening_process_name",
+}
+
 _SERVICE_PREDICATES = {
     "listens_on",
     "listen_endpoint",
@@ -162,6 +174,14 @@ def diagnostic_capability_need_records(
     if row.conflict is None:
         return []
     needs = _CAPABILITY_NEEDS_BY_CONFLICT.get((row.kind, row.conflict), [])
+    if row.kind == "service" and row.conflict == "owner_not_observed":
+        observed_predicates = {ref.predicate for ref in row.evidence}
+        if observed_predicates & {"listening_process_id", "listening_process_name"}:
+            needs = [
+                need
+                for need in needs
+                if need[1] != "listener_process_inventory"
+            ]
     return [
         {
             "diagnostic_name": "ownership_discrepancies",
@@ -365,9 +385,14 @@ def _diagnose_service_subject(
                 candidates, str(fact.value), 0.65, fact, "service_config_source"
             )
     listener_refs = _matching_local_listener_refs(endpoint_only, facts)
+    process_refs = _matching_listener_process_refs(listener_refs, facts)
     for ref in listener_refs:
         _add_candidate_ref(
             candidates, ref.subject, 0.55, ref, "local_listener_confirmed"
+        )
+    for ref in process_refs:
+        _add_candidate_ref(
+            candidates, ref.subject, 0.68, ref, "listener_process_observed"
         )
     if listener_refs:
         rows = _rows_for_candidates(subject, "service", candidates, set(), set())
@@ -380,8 +405,13 @@ def _diagnose_service_subject(
                 row.evidence_count,
                 "owner_not_observed" if row.conflict is None else row.conflict,
                 (
-                    "Local listener evidence confirms a socket is present, but process/container "
-                    "owner attribution is unavailable."
+                    (
+                        "Local listener evidence confirms a socket is present and process "
+                        "attribution is available, but service/container ownership remains unverified."
+                        if process_refs
+                        else "Local listener evidence confirms a socket is present, but process/container "
+                        "owner attribution is unavailable."
+                    )
                     if row.conflict is None
                     else row.reason
                 ),
@@ -536,6 +566,46 @@ def _matching_local_listener_refs(
                     seen.add(fact.id)
                 break
     return matches
+
+
+def _matching_listener_process_refs(
+    listener_refs: list[OwnershipEvidenceRef], facts: list[Fact]
+) -> list[OwnershipEvidenceRef]:
+    """Return process-attribution observations for matched listener sockets only."""
+
+    listener_subjects = {ref.subject for ref in listener_refs}
+    listener_keys = set()
+    for ref in listener_refs:
+        listener = _listener_protocol_address_port_ref(ref)
+        if listener is not None:
+            listener_keys.add(listener)
+    if not listener_subjects:
+        return []
+    matches: list[OwnershipEvidenceRef] = []
+    seen: set[str] = set()
+    for fact in facts:
+        if fact.predicate not in _LOCAL_LISTENER_PREDICATES:
+            continue
+        if fact.predicate not in {"listening_process_id", "listening_process_name"}:
+            continue
+        listener = _listener_protocol_address_port(fact)
+        if (
+            (listener is not None and listener in listener_keys)
+            or (listener is None and fact.subject_id in listener_subjects)
+        ) and fact.id not in seen:
+            matches.append(_evidence(fact, "listener_process_observed"))
+            seen.add(fact.id)
+    return matches
+
+
+def _listener_protocol_address_port_ref(
+    ref: OwnershipEvidenceRef,
+) -> tuple[str | None, str, int] | None:
+    class _RefFact:
+        value = ref.value
+        dimensions = {}
+
+    return _listener_protocol_address_port(_RefFact())  # type: ignore[arg-type]
 
 
 def _endpoint_host_port(value: Any) -> tuple[str | None, int] | None:
