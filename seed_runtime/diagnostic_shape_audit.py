@@ -103,6 +103,28 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         record_function="record_ownership_discrepancy_capability_needs",
         cli_flags=("--ownership-discrepancies",),
     ),
+    "audit_snapshot": DiagnosticImplementationSpec(
+        name="audit_snapshot",
+        module_path="seed_runtime/audit_snapshots.py",
+        build_function="create_audit_snapshot",
+        cli_flags=("--audit-snapshot",),
+        mutation_markers=("os.remove", "shutil.rmtree", "authorize_execution"),
+    ),
+    "audit_snapshots": DiagnosticImplementationSpec(
+        name="audit_snapshots",
+        module_path="seed_runtime/audit_snapshots.py",
+        format_function="format_audit_snapshots",
+        cli_flags=("--audit-snapshots",),
+        mutation_markers=(".write_text(", "subprocess.run", "os.remove", "shutil.rmtree", "authorize_execution"),
+    ),
+    "audit_compare": DiagnosticImplementationSpec(
+        name="audit_compare",
+        module_path="seed_runtime/audit_snapshots.py",
+        build_function="compare_audit_snapshots",
+        format_function="format_audit_compare",
+        cli_flags=("--audit-compare",),
+        mutation_markers=(".write_text(", "subprocess.run", "os.remove", "shutil.rmtree", "authorize_execution"),
+    ),
     "capability_needs": DiagnosticImplementationSpec(
         name="capability_needs",
         module_path="seed_runtime/capability_needs.py",
