@@ -129,11 +129,15 @@ def build_observation_inventory(
 def _providers_from_file(path: Path, repo_root: Path) -> list[ObservationProviderInventory]:
     tree = ast.parse(path.read_text(encoding="utf-8"))
     module = path.relative_to(repo_root).with_suffix("").as_posix().replace("/", ".")
+    module_predicates = _module_predicate_constants(tree)
     providers = []
     for node in tree.body:
         if not isinstance(node, ast.ClassDef) or not _is_provider_class(node):
             continue
-        predicates = sorted(_predicate_literals(node))
+        predicates = set(_predicate_literals(node))
+        if node.name == "LocalHostObservationSource":
+            predicates.update(module_predicates.get("_LISTENER_QUESTIONS", set()))
+        predicates = sorted(predicates)
         providers.append(
             ObservationProviderInventory(
                 name=_class_string_attr(node, "name") or _default_provider_name(node.name),
@@ -153,6 +157,25 @@ def _is_provider_class(node: ast.ClassDef) -> bool:
         return False
     has_collect = any(isinstance(item, ast.FunctionDef) and item.name == "collect" for item in node.body)
     return has_collect and (node.name.endswith("ObservationSource") or _class_string_attr(node, "source_type") is not None)
+
+
+def _module_predicate_constants(tree: ast.Module) -> dict[str, set[str]]:
+    constants: dict[str, set[str]] = {}
+    for node in tree.body:
+        if not isinstance(node, ast.Assign):
+            continue
+        names = [target.id for target in node.targets if isinstance(target, ast.Name)]
+        if not names or not isinstance(node.value, ast.Dict):
+            continue
+        keys = {
+            key.value
+            for key in node.value.keys
+            if isinstance(key, ast.Constant) and isinstance(key.value, str)
+        }
+        for name in names:
+            if name.endswith("_QUESTIONS"):
+                constants[name] = keys
+    return constants
 
 
 def _predicate_literals(node: ast.ClassDef) -> set[str]:

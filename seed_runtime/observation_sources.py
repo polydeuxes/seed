@@ -239,6 +239,12 @@ _LISTENER_QUESTIONS = {
     "listening_socket_family": "What socket address families are bound by listeners?",
     "listening_process_id": "What process IDs are directly linked to listener socket inodes?",
     "listening_process_name": "What process names are directly linked to listener socket inodes?",
+    "listening_socket": "What local listening sockets are visible without escalation?",
+    "listener_protocol": "What protocol is visible for a local listener?",
+    "listener_address": "What local address is visible for a listener?",
+    "listener_port": "What local port is visible for a listener?",
+    "listener_scope": "What bind-address scope is visible for a local listener?",
+    "listener_attribution_status": "What ownership-attribution boundary applies to a local listener?",
 }
 
 _LOCAL_USER_QUESTIONS = {
@@ -1314,6 +1320,17 @@ class LocalHostObservationSource:
                 "port": str(port),
                 "address_family": listener["address_family"],
             }
+            scope = self._listener_scope(address)
+            attribution_status = (
+                "process_observed"
+                if listener.get("process") is not None
+                else "unprivileged_socket_only"
+            )
+            dimensions = {
+                **dimensions,
+                "listener_scope": scope,
+                "listener_attribution_status": attribution_status,
+            }
             per_listener_metadata = {
                 **listener_metadata,
                 "source": listener["source"],
@@ -1321,6 +1338,8 @@ class LocalHostObservationSource:
                 "protocol": protocol,
                 "address": address,
                 "port": str(port),
+                "listener_scope": scope,
+                "listener_attribution_status": attribution_status,
             }
             for predicate, value in (
                 ("listening_endpoint", endpoint),
@@ -1328,6 +1347,12 @@ class LocalHostObservationSource:
                 ("listening_address", address),
                 ("listening_port", port),
                 ("listening_socket_family", listener["address_family"]),
+                ("listening_socket", endpoint),
+                ("listener_protocol", protocol),
+                ("listener_address", address),
+                ("listener_port", port),
+                ("listener_scope", scope),
+                ("listener_attribution_status", attribution_status),
             ):
                 observations.append(
                     self._observation(
@@ -1371,6 +1396,18 @@ class LocalHostObservationSource:
     def _format_listener_address(address: str) -> str:
         return f"[{address}]" if ":" in address else address
 
+    @staticmethod
+    def _listener_scope(address: str) -> str:
+        if address in {"0.0.0.0", "::"}:
+            return "wildcard"
+        try:
+            parsed = ipaddress.ip_address(address)
+        except ValueError:
+            return "unknown"
+        if parsed.is_loopback:
+            return "loopback"
+        return "specific"
+
     def _listening_socket_entries(self) -> list[dict[str, Any]]:
         entries: list[dict[str, Any]] = []
         sources = (
@@ -1396,6 +1433,55 @@ class LocalHostObservationSource:
                 item["source"],
             ),
         )
+
+
+    @staticmethod
+    def parse_ss_listener_output(output: str, protocol: str) -> list[dict[str, Any]]:
+        """Parse representative ``ss -ln[tu]`` output without process attribution."""
+
+        entries: list[dict[str, Any]] = []
+        for raw_line in output.splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("State ") or line.startswith("Netid "):
+                continue
+            fields = line.split()
+            if len(fields) < 5:
+                continue
+            local = fields[3] if fields[0].upper() in {"LISTEN", "UNCONN"} else fields[4]
+            parsed = LocalHostObservationSource._parse_ss_local_endpoint(local)
+            if parsed is None:
+                continue
+            address, port = parsed
+            entries.append(
+                {
+                    "protocol": protocol,
+                    "address_family": "ipv6" if ":" in address else "ipv4",
+                    "address": address,
+                    "port": port,
+                    "state": fields[0].upper(),
+                    "source": f"ss -ln{protocol[0]}",
+                }
+            )
+        return entries
+
+    @staticmethod
+    def _parse_ss_local_endpoint(value: str) -> tuple[str, int] | None:
+        endpoint = value.rsplit("%", 1)[0] if "%" in value else value
+        if endpoint.startswith("[") and "]:" in endpoint:
+            address, port_text = endpoint[1:].rsplit("]:", 1)
+        elif ":" in endpoint:
+            address, port_text = endpoint.rsplit(":", 1)
+        else:
+            return None
+        if address in {"*", "0.0.0.0"}:
+            address = "0.0.0.0"
+        elif address == "[::]":
+            address = "::"
+        try:
+            port = int(port_text)
+        except ValueError:
+            return None
+        return address, port
 
     def _parse_proc_net_socket_table(
         self,
