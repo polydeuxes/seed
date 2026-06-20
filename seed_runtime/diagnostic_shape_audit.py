@@ -6,7 +6,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
-from seed_runtime.diagnostic_inventory import DIAGNOSTIC_INVENTORY, DiagnosticInventoryEntry
+from seed_runtime.diagnostic_inventory import (
+    DIAGNOSTIC_INVENTORY,
+    DiagnosticInventoryEntry,
+)
 
 AuditStatus = Literal["consistent", "warning", "mismatch", "unknown"]
 AUDIT_FIELDS = (
@@ -115,7 +118,13 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         module_path="seed_runtime/audit_snapshots.py",
         format_function="format_audit_snapshots",
         cli_flags=("--audit-snapshots",),
-        mutation_markers=(".write_text(", "subprocess.run", "os.remove", "shutil.rmtree", "authorize_execution"),
+        mutation_markers=(
+            ".write_text(",
+            "subprocess.run",
+            "os.remove",
+            "shutil.rmtree",
+            "authorize_execution",
+        ),
     ),
     "audit_compare": DiagnosticImplementationSpec(
         name="audit_compare",
@@ -123,9 +132,14 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         build_function="compare_audit_snapshots",
         format_function="format_audit_compare",
         cli_flags=("--audit-compare",),
-        mutation_markers=(".write_text(", "subprocess.run", "os.remove", "shutil.rmtree", "authorize_execution"),
+        mutation_markers=(
+            ".write_text(",
+            "subprocess.run",
+            "os.remove",
+            "shutil.rmtree",
+            "authorize_execution",
+        ),
     ),
-
     "consumer_audit": DiagnosticImplementationSpec(
         name="consumer_audit",
         module_path="seed_runtime/consumer_dependency_audit.py",
@@ -153,13 +167,30 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         cli_flags=("--capability-needs",),
         diagnostic_fact_read_markers=("diagnostic_run:", "diagnostic_capability_need"),
     ),
+    "ops_brief": DiagnosticImplementationSpec(
+        name="ops_brief",
+        module_path="seed_runtime/ops_brief.py",
+        build_function="build_ops_brief",
+        format_function="format_ops_brief",
+        json_function="to_json_dict",
+        cli_flags=("--ops-brief",),
+        repo_file_markers=(
+            "build_observation_inventory",
+            "build_consumer_audit",
+            "build_diagnostic_shape_audit",
+            "list_audit_snapshots",
+        ),
+        diagnostic_fact_read_markers=("build_capability_needs",),
+    ),
 }
 
 
 def build_diagnostic_shape_audit(
     entries: tuple[DiagnosticInventoryEntry, ...] = DIAGNOSTIC_INVENTORY,
     *,
-    implementation_specs: dict[str, DiagnosticImplementationSpec] = IMPLEMENTATION_SPECS,
+    implementation_specs: dict[
+        str, DiagnosticImplementationSpec
+    ] = IMPLEMENTATION_SPECS,
     repo_root: Path | None = None,
 ) -> list[DiagnosticShapeAuditRow]:
     root = repo_root or Path(__file__).resolve().parents[1]
@@ -183,11 +214,15 @@ def build_diagnostic_shape_audit(
     return rows
 
 
-def diagnostic_shape_audit_json(rows: list[DiagnosticShapeAuditRow]) -> list[dict[str, Any]]:
+def diagnostic_shape_audit_json(
+    rows: list[DiagnosticShapeAuditRow],
+) -> list[dict[str, Any]]:
     return [row.to_json_dict() for row in rows]
 
 
-def summarize_diagnostic_shape_audit(rows: list[DiagnosticShapeAuditRow]) -> DiagnosticShapeAuditSummary:
+def summarize_diagnostic_shape_audit(
+    rows: list[DiagnosticShapeAuditRow],
+) -> DiagnosticShapeAuditSummary:
     diagnostics = {row.diagnostic for row in rows}
     return DiagnosticShapeAuditSummary(
         diagnostics_audited=len(diagnostics),
@@ -205,47 +240,92 @@ def format_diagnostic_shape_audit(rows: list[DiagnosticShapeAuditRow]) -> str:
         if row.diagnostic != current:
             current = row.diagnostic
             lines.append(row.diagnostic)
-        lines.extend([
-            f"  {row.field}",
-            f"    declared: {_display(row.declared)}",
-            f"    observed: {_display(row.observed)}",
-            f"    status: {row.status}",
-        ])
+        lines.extend(
+            [
+                f"  {row.field}",
+                f"    declared: {_display(row.declared)}",
+                f"    observed: {_display(row.observed)}",
+                f"    status: {row.status}",
+            ]
+        )
     summary = summarize_diagnostic_shape_audit(rows)
-    lines.extend([
-        "",
-        f"Diagnostics audited: {summary.diagnostics_audited}",
-        f"Consistent: {summary.consistent}",
-        f"Warnings: {summary.warnings}",
-        f"Mismatches: {summary.mismatches}",
-        f"Unknown: {summary.unknown}",
-    ])
+    lines.extend(
+        [
+            "",
+            f"Diagnostics audited: {summary.diagnostics_audited}",
+            f"Consistent: {summary.consistent}",
+            f"Warnings: {summary.warnings}",
+            f"Mismatches: {summary.mismatches}",
+            f"Unknown: {summary.unknown}",
+        ]
+    )
     return "\n".join(lines)
 
 
-def _observe(entry: DiagnosticInventoryEntry, spec: DiagnosticImplementationSpec, root: Path, cli_source: str) -> dict[str, bool | str | None]:
+def _observe(
+    entry: DiagnosticInventoryEntry,
+    spec: DiagnosticImplementationSpec,
+    root: Path,
+    cli_source: str,
+) -> dict[str, bool | str | None]:
     module_source = _read(root / spec.module_path)
-    record_source = _function_source(cli_source, spec.record_function) if spec.record_function else ""
+    record_source = (
+        _function_source(cli_source, spec.record_function)
+        if spec.record_function
+        else ""
+    )
     all_source = "\n".join([module_source, cli_source])
     has_json_renderer = bool(spec.json_function and spec.json_function in module_source)
-    has_json_path = bool(spec.json_cli_flags and all(flag in cli_source for flag in spec.json_cli_flags)) or (entry.supports_json and "args.json_output" in cli_source and any(flag in cli_source for flag in spec.cli_flags))
+    has_json_path = bool(
+        spec.json_cli_flags and all(flag in cli_source for flag in spec.json_cli_flags)
+    ) or (
+        entry.supports_json
+        and "args.json_output" in cli_source
+        and any(flag in cli_source for flag in spec.cli_flags)
+    )
     record_scope = None
     if record_source:
-        protected = ('subject="node115"', 'subject="node116"', 'subject="filesystem"', 'subject="service"', 'subject="host"')
-        if "diagnostic_run:" in record_source and not any(marker in record_source for marker in protected):
+        protected = (
+            'subject="node115"',
+            'subject="node116"',
+            'subject="filesystem"',
+            'subject="service"',
+            'subject="host"',
+        )
+        if "diagnostic_run:" in record_source and not any(
+            marker in record_source for marker in protected
+        ):
             record_scope = "diagnostic_run"
         elif any(marker in record_source for marker in protected):
             record_scope = "cluster_subject"
     return {
-        "supports_record": bool(spec.record_function and spec.record_function in cli_source),
+        "supports_record": bool(
+            spec.record_function and spec.record_function in cli_source
+        ),
         "supports_json": bool(has_json_renderer and has_json_path),
         "record_scope": record_scope or "none",
-        "emits_diagnostic_facts": "DevObservationSeed" in record_source and ("diagnostic_" in record_source or "record_facts" in record_source),
-        "writes_event_ledger": "ingest_observations" in record_source and "EventLedger" in record_source,
-        "reads_diagnostic_facts": all(marker in module_source for marker in spec.diagnostic_fact_read_markers) if spec.diagnostic_fact_read_markers else False,
-        "uses_repo_files": any(marker in module_source for marker in spec.repo_file_markers) if spec.repo_file_markers else False,
-        "uses_projected_state": "State" in module_source or any(flag in cli_source and "projected_state_from_args" in cli_source for flag in spec.cli_flags),
-        "mutates_cluster": any(marker in module_source for marker in spec.mutation_markers),
+        "emits_diagnostic_facts": "DevObservationSeed" in record_source
+        and ("diagnostic_" in record_source or "record_facts" in record_source),
+        "writes_event_ledger": "ingest_observations" in record_source
+        and "EventLedger" in record_source,
+        "reads_diagnostic_facts": (
+            all(marker in module_source for marker in spec.diagnostic_fact_read_markers)
+            if spec.diagnostic_fact_read_markers
+            else False
+        ),
+        "uses_repo_files": (
+            any(marker in module_source for marker in spec.repo_file_markers)
+            if spec.repo_file_markers
+            else False
+        ),
+        "uses_projected_state": "State" in module_source
+        or any(
+            flag in cli_source and "projected_state_from_args" in cli_source
+            for flag in spec.cli_flags
+        ),
+        "mutates_cluster": any(
+            marker in module_source for marker in spec.mutation_markers
+        ),
     }
 
 
