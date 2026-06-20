@@ -67,6 +67,11 @@ from seed_runtime.diagnostic_inventory import (
     diagnostic_inventory_json,
     format_diagnostic_inventory,
 )
+from seed_runtime.diagnostic_shape_audit import (
+    build_diagnostic_shape_audit,
+    diagnostic_shape_audit_json,
+    format_diagnostic_shape_audit,
+)
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.facts import (
     Fact,
@@ -875,6 +880,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="list diagnostic/test-like operational surfaces and their declared shape",
     )
     parser.add_argument(
+        "--diagnostic-shape-audit",
+        action="store_true",
+        help="compare diagnostic registry declarations with static implementation shape",
+    )
+    parser.add_argument(
         "--knowledge-reachability-audit",
         action="store_true",
         help="audit knowledge reachability across preserved, projected, read-model, inquiry, and rendered surfaces",
@@ -1579,6 +1589,7 @@ def validate_lifecycle_args(
         bool(args.stale_fact_refreshes),
         bool(args.ownership_discrepancies),
         bool(args.capability_needs),
+        bool(args.diagnostic_shape_audit),
         bool(args.rebuild_state_cache),
         bool(args.state_cache_status),
         bool(args.events_only),
@@ -1600,7 +1611,7 @@ def validate_lifecycle_args(
             "--state-build, --state-build-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --ownership-discrepancies, "
-            "--rebuild-state-cache, --state-cache-status, "
+            "--diagnostic-shape-audit, --rebuild-state-cache, --state-cache-status, "
             "or --events-only"
         )
     if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
@@ -1657,11 +1668,14 @@ def validate_lifecycle_args(
     if args.diagnostic and not args.capability_needs:
         parser.error("--diagnostic can only be used with --capability-needs")
     if args.json_output and not (
-        args.ownership_discrepancies or args.capability_needs or args.diagnostic_inventory
+        args.ownership_discrepancies
+        or args.capability_needs
+        or args.diagnostic_inventory
+        or args.diagnostic_shape_audit
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, or --diagnostic-inventory"
+            "--capability-needs, --diagnostic-inventory, or --diagnostic-shape-audit"
         )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
@@ -5354,6 +5368,14 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(diagnostic_inventory_json(), indent=2, sort_keys=True))
         else:
             print(format_diagnostic_inventory())
+        return 0
+
+    if args.diagnostic_shape_audit:
+        rows = build_diagnostic_shape_audit()
+        if args.json_output:
+            print(json.dumps(diagnostic_shape_audit_json(rows), indent=2, sort_keys=True))
+        else:
+            print(format_diagnostic_shape_audit(rows))
         return 0
 
     if args.unhealthy:

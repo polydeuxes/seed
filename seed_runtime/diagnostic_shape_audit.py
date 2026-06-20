@@ -1,0 +1,252 @@
+"""Static diagnostic shape self-audit."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Literal
+
+from seed_runtime.diagnostic_inventory import DIAGNOSTIC_INVENTORY, DiagnosticInventoryEntry
+
+AuditStatus = Literal["consistent", "warning", "mismatch", "unknown"]
+AUDIT_FIELDS = (
+    "supports_record",
+    "supports_json",
+    "record_scope",
+    "emits_diagnostic_facts",
+    "writes_event_ledger",
+    "reads_diagnostic_facts",
+    "uses_repo_files",
+    "uses_projected_state",
+    "mutates_cluster",
+)
+
+
+@dataclass(frozen=True)
+class DiagnosticImplementationSpec:
+    name: str
+    module_path: str
+    build_function: str | None = None
+    format_function: str | None = None
+    json_function: str | None = None
+    record_function: str | None = None
+    cli_flags: tuple[str, ...] = ()
+    json_cli_flags: tuple[str, ...] = ()
+    repo_file_markers: tuple[str, ...] = ()
+    diagnostic_fact_read_markers: tuple[str, ...] = ()
+    mutation_markers: tuple[str, ...] = (
+        "subprocess.run",
+        ".write_text(",
+        "os.remove",
+        "shutil.rmtree",
+        "authorize_execution",
+    )
+
+
+@dataclass(frozen=True)
+class DiagnosticShapeAuditRow:
+    diagnostic: str
+    field: str
+    declared: bool | str
+    observed: bool | str | None
+    status: AuditStatus
+
+    def to_json_dict(self) -> dict[str, Any]:
+        return {
+            "diagnostic": self.diagnostic,
+            "field": self.field,
+            "declared": _json_value(self.declared),
+            "observed": _json_value(self.observed),
+            "status": self.status,
+        }
+
+
+@dataclass(frozen=True)
+class DiagnosticShapeAuditSummary:
+    diagnostics_audited: int
+    consistent: int
+    warnings: int
+    mismatches: int
+    unknown: int
+
+
+IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
+    "classification_coverage": DiagnosticImplementationSpec(
+        name="classification_coverage",
+        module_path="seed_runtime/classification_coverage.py",
+        build_function="build_classification_coverage_diagnostic",
+        format_function="format_classification_coverage",
+        record_function="record_classification_coverage_diagnostic",
+        cli_flags=("--classification-coverage",),
+    ),
+    "graph_issue_summary": DiagnosticImplementationSpec(
+        name="graph_issue_summary",
+        module_path="seed_runtime/state.py",
+        cli_flags=("--graph-issue-summary",),
+    ),
+    "knowledge_reachability": DiagnosticImplementationSpec(
+        name="knowledge_reachability",
+        module_path="seed_runtime/knowledge_reachability.py",
+        build_function="build_knowledge_reachability_audit_result",
+        format_function="format_knowledge_reachability_table",
+        json_function="knowledge_reachability_json",
+        cli_flags=("--knowledge-reachability-audit",),
+        json_cli_flags=("--knowledge-reachability-audit-json",),
+        repo_file_markers=("repo_root", "repo_paths", "repository"),
+    ),
+    "ownership_discrepancies": DiagnosticImplementationSpec(
+        name="ownership_discrepancies",
+        module_path="seed_runtime/ownership_discrepancies.py",
+        build_function="build_ownership_discrepancies",
+        format_function="format_ownership_discrepancies",
+        json_function="ownership_discrepancies_json",
+        record_function="record_ownership_discrepancy_capability_needs",
+        cli_flags=("--ownership-discrepancies",),
+    ),
+    "capability_needs": DiagnosticImplementationSpec(
+        name="capability_needs",
+        module_path="seed_runtime/capability_needs.py",
+        build_function="build_capability_needs",
+        format_function="format_capability_needs",
+        json_function="capability_needs_json",
+        cli_flags=("--capability-needs",),
+        diagnostic_fact_read_markers=("diagnostic_run:", "diagnostic_capability_need"),
+    ),
+}
+
+
+def build_diagnostic_shape_audit(
+    entries: tuple[DiagnosticInventoryEntry, ...] = DIAGNOSTIC_INVENTORY,
+    *,
+    implementation_specs: dict[str, DiagnosticImplementationSpec] = IMPLEMENTATION_SPECS,
+    repo_root: Path | None = None,
+) -> list[DiagnosticShapeAuditRow]:
+    root = repo_root or Path(__file__).resolve().parents[1]
+    cli_source = _read(root / "scripts" / "seed_local.py")
+    rows: list[DiagnosticShapeAuditRow] = []
+    for entry in entries:
+        spec = implementation_specs.get(entry.name)
+        observed = _observe(entry, spec, root, cli_source) if spec else {}
+        for field in AUDIT_FIELDS:
+            declared = getattr(entry, field)
+            value = observed.get(field)
+            rows.append(
+                DiagnosticShapeAuditRow(
+                    diagnostic=entry.name,
+                    field=field,
+                    declared=declared,
+                    observed=value,
+                    status=_status(declared, value),
+                )
+            )
+    return rows
+
+
+def diagnostic_shape_audit_json(rows: list[DiagnosticShapeAuditRow]) -> list[dict[str, Any]]:
+    return [row.to_json_dict() for row in rows]
+
+
+def summarize_diagnostic_shape_audit(rows: list[DiagnosticShapeAuditRow]) -> DiagnosticShapeAuditSummary:
+    diagnostics = {row.diagnostic for row in rows}
+    return DiagnosticShapeAuditSummary(
+        diagnostics_audited=len(diagnostics),
+        consistent=sum(row.status == "consistent" for row in rows),
+        warnings=sum(row.status == "warning" for row in rows),
+        mismatches=sum(row.status == "mismatch" for row in rows),
+        unknown=sum(row.status == "unknown" for row in rows),
+    )
+
+
+def format_diagnostic_shape_audit(rows: list[DiagnosticShapeAuditRow]) -> str:
+    lines = ["Diagnostic Shape Audit", ""]
+    current = None
+    for row in rows:
+        if row.diagnostic != current:
+            current = row.diagnostic
+            lines.append(row.diagnostic)
+        lines.extend([
+            f"  {row.field}",
+            f"    declared: {_display(row.declared)}",
+            f"    observed: {_display(row.observed)}",
+            f"    status: {row.status}",
+        ])
+    summary = summarize_diagnostic_shape_audit(rows)
+    lines.extend([
+        "",
+        f"Diagnostics audited: {summary.diagnostics_audited}",
+        f"Consistent: {summary.consistent}",
+        f"Warnings: {summary.warnings}",
+        f"Mismatches: {summary.mismatches}",
+        f"Unknown: {summary.unknown}",
+    ])
+    return "\n".join(lines)
+
+
+def _observe(entry: DiagnosticInventoryEntry, spec: DiagnosticImplementationSpec, root: Path, cli_source: str) -> dict[str, bool | str | None]:
+    module_source = _read(root / spec.module_path)
+    record_source = _function_source(cli_source, spec.record_function) if spec.record_function else ""
+    all_source = "\n".join([module_source, cli_source])
+    has_json_renderer = bool(spec.json_function and spec.json_function in module_source)
+    has_json_path = bool(spec.json_cli_flags and all(flag in cli_source for flag in spec.json_cli_flags)) or (entry.supports_json and "args.json_output" in cli_source and any(flag in cli_source for flag in spec.cli_flags))
+    record_scope = None
+    if record_source:
+        protected = ('subject="node115"', 'subject="node116"', 'subject="filesystem"', 'subject="service"', 'subject="host"')
+        if "diagnostic_run:" in record_source and not any(marker in record_source for marker in protected):
+            record_scope = "diagnostic_run"
+        elif any(marker in record_source for marker in protected):
+            record_scope = "cluster_subject"
+    return {
+        "supports_record": bool(spec.record_function and spec.record_function in cli_source),
+        "supports_json": bool(has_json_renderer and has_json_path),
+        "record_scope": record_scope or "none",
+        "emits_diagnostic_facts": "DevObservationSeed" in record_source and ("diagnostic_" in record_source or "record_facts" in record_source),
+        "writes_event_ledger": "ingest_observations" in record_source and "EventLedger" in record_source,
+        "reads_diagnostic_facts": all(marker in module_source for marker in spec.diagnostic_fact_read_markers) if spec.diagnostic_fact_read_markers else False,
+        "uses_repo_files": any(marker in module_source for marker in spec.repo_file_markers) if spec.repo_file_markers else False,
+        "uses_projected_state": "State" in module_source or any(flag in cli_source and "projected_state_from_args" in cli_source for flag in spec.cli_flags),
+        "mutates_cluster": any(marker in module_source for marker in spec.mutation_markers),
+    }
+
+
+def _status(declared: bool | str, observed: bool | str | None) -> AuditStatus:
+    if observed is None:
+        return "unknown"
+    if declared == observed:
+        return "consistent"
+    if declared is False and observed in (None, "none"):
+        return "consistent"
+    return "mismatch"
+
+
+def _function_source(source: str, function_name: str | None) -> str:
+    if not function_name:
+        return ""
+    marker = f"def {function_name}("
+    start = source.find(marker)
+    if start < 0:
+        return ""
+    next_def = source.find("\ndef ", start + len(marker))
+    return source[start:] if next_def < 0 else source[start:next_def]
+
+
+def _read(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return ""
+
+
+def _display(value: Any) -> str:
+    if value is True:
+        return "yes"
+    if value is False:
+        return "no"
+    if value is None:
+        return "unknown"
+    return str(value)
+
+
+def _json_value(value: Any) -> Any:
+    if isinstance(value, bool) or value is None:
+        return value
+    return str(value)
