@@ -63,6 +63,10 @@ from seed_runtime.contradictions import (
     build_contradictions,
 )
 from seed_runtime.decisions import DecisionValidator
+from seed_runtime.diagnostic_inventory import (
+    diagnostic_inventory_json,
+    format_diagnostic_inventory,
+)
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.facts import (
     Fact,
@@ -866,6 +870,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "--diagnostic-inventory",
+        action="store_true",
+        help="list diagnostic/test-like operational surfaces and their declared shape",
+    )
+    parser.add_argument(
         "--knowledge-reachability-audit",
         action="store_true",
         help="audit knowledge reachability across preserved, projected, read-model, inquiry, and rendered surfaces",
@@ -1647,9 +1656,12 @@ def validate_lifecycle_args(
         )
     if args.diagnostic and not args.capability_needs:
         parser.error("--diagnostic can only be used with --capability-needs")
-    if args.json_output and not (args.ownership_discrepancies or args.capability_needs):
+    if args.json_output and not (
+        args.ownership_discrepancies or args.capability_needs or args.diagnostic_inventory
+    ):
         parser.error(
-            "--json can only be used with --ownership-discrepancies or --capability-needs"
+            "--json can only be used with --ownership-discrepancies, "
+            "--capability-needs, or --diagnostic-inventory"
         )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
@@ -5335,6 +5347,13 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.impact:
         print(format_entity_impact(projected_state_from_args(args), args.impact))
+        return 0
+
+    if args.diagnostic_inventory:
+        if args.json_output:
+            print(json.dumps(diagnostic_inventory_json(), indent=2, sort_keys=True))
+        else:
+            print(format_diagnostic_inventory())
         return 0
 
     if args.unhealthy:
