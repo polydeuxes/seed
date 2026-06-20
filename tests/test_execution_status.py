@@ -14,6 +14,7 @@ from seed_runtime.observation_sources import (
 from seed_runtime.observations import Observation, ObservationIngestor
 from seed_runtime.projection_store import (
     InMemoryProjectionStore,
+    STATE_PROJECTION_NAME,
     STATE_PROJECTION_VERSION,
     project_state_with_cache,
 )
@@ -175,7 +176,9 @@ def test_execution_status_is_not_included_in_projection_cache():
     consumer = RecordingExecutionStatusConsumer()
 
     project_state_with_cache(ledger, "ws", store, status_consumer=consumer)
-    snapshot = store.load_snapshot("ws", "state", STATE_PROJECTION_VERSION)
+    snapshot = store.load_snapshot(
+        "ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION
+    )
 
     assert snapshot is not None
     assert "execution_status" not in str(snapshot.state_payload)

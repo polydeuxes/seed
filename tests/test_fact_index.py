@@ -87,11 +87,14 @@ def test_derived_fact_index_cache_hits_only_for_matching_projection_version_and_
         state_projection_version=STATE_PROJECTION_VERSION,
         state_last_event_id=state.last_event_id,
     )
+    wrong_projection_version = "state-v0"
+    assert wrong_projection_version != STATE_PROJECTION_VERSION
+
     wrong_version = store.load_derived_index_snapshot(
         "ws",
         FACT_INDEX_NAME,
         FACT_INDEX_VERSION,
-        state_projection_version="state-v0",
+        state_projection_version=wrong_projection_version,
         state_last_event_id=state.last_event_id,
     )
     wrong_event = store.load_derived_index_snapshot(
