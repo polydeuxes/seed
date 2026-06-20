@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass, asdict
 import time
 from pathlib import Path
 import json
 import re
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, Iterable, Iterator
 
 from seed_runtime.events import EventLedger
 from seed_runtime.inquiry_orientation import (
@@ -65,18 +66,99 @@ class KnowledgeReachabilityRow:
 
 @dataclass(frozen=True)
 class KnowledgeReachabilityMetadata:
-    timing: dict[str, float]
-    candidates: dict[str, int]
+    timings: dict[str, float]
+    candidate_counts: dict[str, int]
+    candidate_sources: dict[str, int] | None = None
+    scan_counts: dict[str, int] | None = None
+    cache: dict[str, str] | None = None
+    indexes: dict[str, float] | None = None
     truncated: bool = False
     reason: str | None = None
     limit: int | None = DEFAULT_AUDIT_LIMIT
     max_seconds: float | None = DEFAULT_MAX_SECONDS
+
+    @property
+    def timing(self) -> dict[str, float]:
+        return self.timings
+
+    @property
+    def candidates(self) -> dict[str, int]:
+        return self.candidate_counts
 
 
 @dataclass(frozen=True)
 class KnowledgeReachabilityAuditResult:
     rows: list[KnowledgeReachabilityRow]
     metadata: KnowledgeReachabilityMetadata
+
+
+@dataclass
+class _ReachabilityTimer:
+    progress: Callable[[str], None] | None = None
+    timings: dict[str, float] | None = None
+
+    def __post_init__(self) -> None:
+        if self.timings is None:
+            self.timings = {}
+        self._total_start = time.monotonic()
+
+    @contextmanager
+    def phase(self, name: str, **start_fields: Any) -> Iterator[Callable[..., None]]:
+        self.emit("start", name, **start_fields)
+        start = time.monotonic()
+        end_fields: dict[str, Any] = {}
+
+        def add_fields(**fields: Any) -> None:
+            end_fields.update(fields)
+
+        try:
+            yield add_fields
+        finally:
+            elapsed = time.monotonic() - start
+            assert self.timings is not None
+            self.timings[name] = elapsed
+            self.emit("end", name, elapsed=elapsed, **end_fields)
+
+    def progress_message(
+        self, name: str, current: int, total: int, **fields: Any
+    ) -> None:
+        elapsed = time.monotonic() - self._total_start
+        self.emit(
+            "progress", name, prefix=f"{current}/{total}", elapsed=elapsed, **fields
+        )
+
+    def total(self) -> float:
+        return time.monotonic() - self._total_start
+
+    def emit(
+        self,
+        event: str,
+        phase: str,
+        *,
+        elapsed: float | None = None,
+        prefix: str | None = None,
+        **fields: Any,
+    ) -> None:
+        if self.progress is None:
+            return
+        pieces = [f"[reachability] {event} {phase}"]
+        if prefix:
+            pieces.append(prefix)
+        if elapsed is not None:
+            pieces.append(
+                f"{elapsed:.2f}s" if event == "end" else f"elapsed={elapsed:.2f}s"
+            )
+        pieces.extend(
+            f"{key}={value}" for key, value in fields.items() if value is not None
+        )
+        self.progress(" ".join(pieces))
+
+
+@dataclass(frozen=True)
+class _CandidateDiscovery:
+    candidates: dict[str, str]
+    source_counts: dict[str, int]
+    scan_counts: dict[str, int]
 
 
 @dataclass(frozen=True)
@@ -127,64 +209,81 @@ def build_knowledge_reachability_audit_result(
     progress: Callable[[str], None] | None = None,
     progress_interval_seconds: float = PROGRESS_INTERVAL_SECONDS,
 ) -> KnowledgeReachabilityAuditResult:
-    timings: dict[str, float] = {}
-    t0 = time.monotonic()
-    state = StateProjector(ledger).project(workspace_id)
-    events = ledger.list_events(workspace_id)
-    timings["load state/cache"] = time.monotonic() - t0
+    timer = _ReachabilityTimer(progress)
+    cache = {"state": "miss", "summary": "miss", "projection": "miss"}
+    scan_counts: dict[str, int] = {}
+    source_counts: dict[str, int] = {}
+    index_timings: dict[str, float] = {}
 
-    t0 = time.monotonic()
-    candidates = _discover_candidates(events, state, repo_root or Path.cwd())
-    if subject:
-        candidates = {subject: _family_for_candidate(subject)}
-    if family:
-        candidates = {c: f for c, f in candidates.items() if f == family}
-    discovered = len(candidates)
-    sorted_candidates = sorted(candidates)
-    skipped = 0
-    truncated = False
-    reason = None
-    effective_limit = None if all_candidates or subject else limit
-    if effective_limit is not None and len(sorted_candidates) > effective_limit:
-        skipped = len(sorted_candidates) - effective_limit
-        sorted_candidates = sorted_candidates[:effective_limit]
-        truncated = True
-        reason = "limit"
-    timings["discover candidates"] = time.monotonic() - t0
+    with timer.phase("load_state", state_cache=cache["state"], evaluated=0):
+        state = StateProjector(ledger).project(workspace_id)
+        events = ledger.list_events(workspace_id)
 
-    t0 = time.monotonic()
-    indexes = _build_indexes(events, state)
-    timings["build indexes"] = time.monotonic() - t0
-
-    t0 = time.monotonic()
-    deadline = time.monotonic() + max_seconds if max_seconds is not None else None
-    next_progress = time.monotonic() + progress_interval_seconds
-    rows: list[KnowledgeReachabilityRow] = []
-    for idx, candidate in enumerate(sorted_candidates, start=1):
-        now = time.monotonic()
-        if deadline is not None and now >= deadline:
-            skipped += len(sorted_candidates) - idx + 1
+    with timer.phase("discover_candidates") as finish_discovery:
+        discovery = _discover_candidates(events, state, repo_root or Path.cwd())
+        candidates = discovery.candidates
+        source_counts = discovery.source_counts
+        scan_counts = discovery.scan_counts
+        if subject:
+            candidates = {subject: _family_for_candidate(subject)}
+        if family:
+            candidates = {c: f for c, f in candidates.items() if f == family}
+        discovered = len(candidates)
+        sorted_candidates = sorted(candidates)
+        skipped = 0
+        truncated = False
+        reason = None
+        effective_limit = None if all_candidates or subject else limit
+        if effective_limit is not None and len(sorted_candidates) > effective_limit:
+            skipped = len(sorted_candidates) - effective_limit
+            sorted_candidates = sorted_candidates[:effective_limit]
             truncated = True
-            reason = "max_seconds"
-            break
-        if progress and now >= next_progress:
-            progress(f"evaluated {idx - 1}/{len(sorted_candidates)} candidates...")
-            next_progress = now + progress_interval_seconds
-        flags = _candidate_flags_from_indexes(candidate, indexes)
-        rows.append(
-            KnowledgeReachabilityRow(
-                candidates[candidate], candidate, *flags, _first_loss(flags)
-            )
+            reason = "limit"
+        finish_discovery(discovered=discovered, capped=len(sorted_candidates))
+
+    with timer.phase("build_indexes"):
+        indexes = _build_indexes(
+            events, state, timer=timer, index_timings=index_timings
         )
-    timings["evaluate candidates"] = time.monotonic() - t0
-    timings["render"] = 0.0
+
+    with timer.phase("evaluate") as finish_evaluate:
+        deadline = time.monotonic() + max_seconds if max_seconds is not None else None
+        next_progress = time.monotonic() + progress_interval_seconds
+        rows: list[KnowledgeReachabilityRow] = []
+        for idx, candidate in enumerate(sorted_candidates, start=1):
+            now = time.monotonic()
+            if deadline is not None and now >= deadline:
+                skipped += len(sorted_candidates) - idx + 1
+                truncated = True
+                reason = "max_seconds"
+                break
+            if progress and now >= next_progress:
+                timer.progress_message("evaluate", idx - 1, len(sorted_candidates))
+                next_progress = now + progress_interval_seconds
+            flags = _candidate_flags_from_indexes(candidate, indexes)
+            rows.append(
+                KnowledgeReachabilityRow(
+                    candidates[candidate], candidate, *flags, _first_loss(flags)
+                )
+            )
+        finish_evaluate(evaluated=len(rows))
+
+    with timer.phase("render"):
+        pass
+    assert timer.timings is not None
+    timer.timings["total"] = timer.total()
     metadata = KnowledgeReachabilityMetadata(
-        timing={k: round(v, 6) for k, v in timings.items()},
-        candidates={
+        timings={k: round(v, 6) for k, v in timer.timings.items()},
+        candidate_counts={
             "discovered": discovered,
+            "capped": len(sorted_candidates),
             "evaluated": len(rows),
             "skipped": skipped,
         },
+        candidate_sources=source_counts,
+        scan_counts=scan_counts,
+        cache=cache,
+        indexes={k: round(v, 6) for k, v in index_timings.items()},
         truncated=truncated,
         reason=reason,
         limit=effective_limit,
@@ -220,10 +319,10 @@ def format_knowledge_reachability_table(
     if metadata is None:
         return table
     timing = "\n".join(
-        f"  {name}: {seconds:.3f}s" for name, seconds in metadata.timing.items()
+        f"  {name}: {seconds:.3f}s" for name, seconds in metadata.timings.items()
     )
     candidates = "\n".join(
-        f"  {name}: {count}" for name, count in metadata.candidates.items()
+        f"  {name}: {count}" for name, count in metadata.candidate_counts.items()
     )
     guard = ""
     if metadata.truncated:
@@ -238,7 +337,13 @@ def knowledge_reachability_json(
     rendered = [asdict(row) for row in rows]
     if metadata is None:
         return rendered
-    return {"metadata": asdict(metadata), "rows": rendered}
+    metadata_payload = asdict(metadata)
+    metadata_payload["timing"] = {
+        **metadata.timings,
+        "load state/cache": metadata.timings.get("load_state", 0.0),
+    }
+    metadata_payload["candidates"] = metadata.candidate_counts
+    return {"metadata": metadata_payload, "rows": rendered}
 
 
 def _candidate_flags(
@@ -247,15 +352,51 @@ def _candidate_flags(
     return _candidate_flags_from_indexes(candidate, _build_indexes(events, state))
 
 
-def _build_indexes(events: list[Any], state: State) -> _AuditIndexes:
-    projected_surfaces = _projected_surfaces(state)
-    read_surfaces = _read_model_surfaces(state)
-    inquiry_surfaces = _inquiry_surfaces(state)
+def _build_indexes(
+    events: list[Any],
+    state: State,
+    *,
+    timer: _ReachabilityTimer | None = None,
+    index_timings: dict[str, float] | None = None,
+) -> _AuditIndexes:
+    local_timer = timer or _ReachabilityTimer(None)
+    timings = index_timings if index_timings is not None else {}
+    with local_timer.phase("projected_entities"):
+        projected_entities = _projected_entity_surfaces(state)
+    timings["projected_entities"] = (
+        local_timer.timings.get("projected_entities", 0.0)
+        if local_timer.timings
+        else 0.0
+    )
+    with local_timer.phase("projected_facts"):
+        projected_facts = _projected_fact_surfaces(state)
+    timings["projected_facts"] = (
+        local_timer.timings.get("projected_facts", 0.0) if local_timer.timings else 0.0
+    )
+    with local_timer.phase("fact_support"):
+        fact_support = _fact_support_surfaces(state)
+    timings["fact_support"] = (
+        local_timer.timings.get("fact_support", 0.0) if local_timer.timings else 0.0
+    )
+    with local_timer.phase("source_navigation"):
+        read_surfaces = _read_model_surfaces(state)
+    timings["source_navigation"] = (
+        local_timer.timings.get("source_navigation", 0.0)
+        if local_timer.timings
+        else 0.0
+    )
+    with local_timer.phase("inquiry_orientation"):
+        inquiry_surfaces = _inquiry_surfaces(state)
+    timings["inquiry_orientation"] = (
+        local_timer.timings.get("inquiry_orientation", 0.0)
+        if local_timer.timings
+        else 0.0
+    )
     return _AuditIndexes(
         preserved_surfaces=[
             item for event in events for item in (_json(event.payload), event.kind)
         ],
-        projected_surfaces=projected_surfaces,
+        projected_surfaces=[*projected_entities, *projected_facts, *fact_support],
         read_model_surfaces=read_surfaces,
         inquiry_surfaces=inquiry_surfaces,
     )
@@ -275,11 +416,24 @@ def _candidate_flags_from_indexes(
 
 
 def _projected_surfaces(state: State) -> list[str]:
+    return [
+        *_projected_fact_surfaces(state),
+        *_fact_support_surfaces(state),
+        *_projected_entity_surfaces(state),
+    ]
+
+
+def _projected_fact_surfaces(state: State) -> list[str]:
     surfaces: list[str] = []
     for fact in state.facts.values():
         surfaces.extend(
             [fact.subject_id, fact.predicate, _json(fact.value), _json(fact.dimensions)]
         )
+    return surfaces
+
+
+def _fact_support_surfaces(state: State) -> list[str]:
+    surfaces: list[str] = []
     for support in state.fact_supports:
         surfaces.extend(
             [
@@ -289,6 +443,11 @@ def _projected_surfaces(state: State) -> list[str]:
                 _json(support.dimensions),
             ]
         )
+    return surfaces
+
+
+def _projected_entity_surfaces(state: State) -> list[str]:
+    surfaces: list[str] = []
     for obs in state.observations.values():
         surfaces.extend([obs.subject, obs.predicate, _json(obs.value), obs.source_type])
     for entity in state.entities.values():
@@ -329,28 +488,63 @@ def _inquiry_surfaces(state: State) -> list[str]:
 
 def _discover_candidates(
     events: list[Any], state: State, repo_root: Path
-) -> dict[str, str]:
-    found = {seed: _family_for_candidate(seed) for seed in DEFAULT_SEEDS}
-    surfaces = [_json(event.payload) for event in events] + _projected_surfaces(state)
-    for text in surfaces:
+) -> _CandidateDiscovery:
+    found: dict[str, str] = {}
+    source_counts = {
+        "default seeds": 0,
+        "event payloads": 0,
+        "projected state": 0,
+        "docs/": 0,
+        "seed_runtime/": 0,
+    }
+    scan_counts = {
+        "event payloads scanned": 0,
+        "facts scanned": 0,
+        "repo files scanned": 0,
+        "symbols scanned": 0,
+    }
+
+    def add(candidate: str, family: str, source: str) -> None:
+        before = len(found)
+        found.setdefault(candidate, family)
+        if len(found) > before:
+            source_counts[source] += 1
+
+    for seed in DEFAULT_SEEDS:
+        add(seed, _family_for_candidate(seed), "default seeds")
+
+    for event in events:
+        scan_counts["event payloads scanned"] += 1
+        for token in _TOKEN_RE.findall(_json(event.payload)):
+            if _useful_token(token):
+                add(token, _family_for_candidate(token), "event payloads")
+
+    projected_surfaces = _projected_surfaces(state)
+    scan_counts["facts scanned"] = len(state.facts) + len(state.fact_supports)
+    for text in projected_surfaces:
         for token in _TOKEN_RE.findall(text):
             if _useful_token(token):
-                found.setdefault(token, _family_for_candidate(token))
+                add(token, _family_for_candidate(token), "projected state")
+
     for path in (
         (repo_root / "docs").glob("**/*") if (repo_root / "docs").exists() else []
     ):
         if path.is_file():
-            found.setdefault(str(path.relative_to(repo_root)), "repository")
+            scan_counts["repo files scanned"] += 1
+            add(str(path.relative_to(repo_root)), "repository", "docs/")
             for token in _TOKEN_RE.findall(
                 path.stem.replace("_", " ").replace("-", " ")
             ):
+                scan_counts["symbols scanned"] += 1
                 if _useful_token(token):
-                    found.setdefault(token.lower(), "repository")
+                    add(token.lower(), "repository", "docs/")
     runtime_dir = repo_root / "seed_runtime"
     if runtime_dir.exists():
         for path in runtime_dir.glob("*.py"):
-            found.setdefault(path.stem.replace("_", " "), "projection")
-    return found
+            scan_counts["repo files scanned"] += 1
+            scan_counts["symbols scanned"] += 1
+            add(path.stem.replace("_", " "), "projection", "seed_runtime/")
+    return _CandidateDiscovery(found, source_counts, scan_counts)
 
 
 def _family_for_candidate(candidate: str) -> str:

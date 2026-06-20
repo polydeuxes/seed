@@ -226,3 +226,53 @@ def test_reachability_max_seconds_marks_truncated_results():
     assert result.metadata.reason == "max_seconds"
     assert result.metadata.candidates["evaluated"] == 0
     assert result.metadata.candidates["skipped"] >= 5
+
+
+def test_reachability_observability_records_required_metadata(tmp_path):
+    from seed_runtime.knowledge_reachability import (
+        build_knowledge_reachability_audit_result,
+    )
+
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "runtime-note.md").write_text("runtime note\n")
+    (tmp_path / "seed_runtime").mkdir()
+    (tmp_path / "seed_runtime" / "state_views.py").write_text("# symbol\n")
+    ledger = EventLedger()
+    ledger.append("operator.note", "w", {"text": "event_payload_candidate"})
+    messages = []
+
+    result = build_knowledge_reachability_audit_result(
+        ledger,
+        "w",
+        repo_root=tmp_path,
+        limit=2,
+        progress=messages.append,
+        progress_interval_seconds=-1,
+    )
+    payload = knowledge_reachability_json(result.rows, result.metadata)
+
+    for phase in (
+        "load_state",
+        "discover_candidates",
+        "build_indexes",
+        "evaluate",
+        "render",
+        "total",
+    ):
+        assert phase in payload["metadata"]["timings"]
+    assert payload["metadata"]["candidate_counts"]["capped"] == 2
+    assert payload["metadata"]["candidate_sources"]["default seeds"] > 0
+    assert payload["metadata"]["candidate_sources"]["event payloads"] > 0
+    assert payload["metadata"]["candidate_sources"]["docs/"] > 0
+    assert payload["metadata"]["candidate_sources"]["seed_runtime/"] > 0
+    assert "event payloads scanned" in payload["metadata"]["scan_counts"]
+    assert payload["metadata"]["cache"]["state"] in {"hit", "miss"}
+    assert messages.index(
+        "[reachability] start load_state state_cache=miss evaluated=0"
+    ) < next(
+        idx
+        for idx, msg in enumerate(messages)
+        if msg.startswith("[reachability] end load_state")
+    )
+    assert any(msg.startswith("[reachability] progress evaluate") for msg in messages)
+    assert json.loads(json.dumps(payload))["metadata"]["candidate_sources"]
