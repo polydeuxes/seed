@@ -197,6 +197,14 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         cli_flags=("--capability-needs",),
         diagnostic_fact_read_markers=("diagnostic_run:", "diagnostic_capability_need"),
     ),
+    "investigation_path": DiagnosticImplementationSpec(
+        name="investigation_path",
+        module_path="seed_runtime/investigation_path_audit.py",
+        build_function="build_investigation_path_audit",
+        format_function="format_investigation_path_audit",
+        json_function="investigation_path_audit_json",
+        cli_flags=("--investigation-path",),
+    ),
     "ops_brief": DiagnosticImplementationSpec(
         name="ops_brief",
         module_path="seed_runtime/ops_brief.py",
