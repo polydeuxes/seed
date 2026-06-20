@@ -113,6 +113,46 @@ def build_ownership_discrepancies(
     return rows
 
 
+_CAPABILITY_NEEDS_BY_CONFLICT: dict[
+    tuple[OwnershipKind, ConflictClass], list[tuple[str, str, str]]
+] = {
+    ("service", "insufficient_evidence"): [
+        ("local_listener", "tcp_listen_inventory", "non_root_partial_root_full"),
+        ("process_inventory", "process_inventory", "partial_root_full"),
+        ("container_inventory", "container_inventory", "partial_root_full"),
+    ],
+    ("storage", "missing_owner"): [
+        ("mount_source", "mount_source_inventory", "non_root_partial_root_full"),
+        ("export_visibility", "export_visibility_inventory", "partial_root_full"),
+    ],
+    ("service", "missing_owner"): [
+        ("local_listener", "tcp_listen_inventory", "non_root_partial_root_full"),
+        ("service_manager", "systemd_unit_inventory", "partial_root_full"),
+    ],
+}
+
+
+def diagnostic_capability_need_records(
+    row: OwnershipDiscrepancyRow,
+) -> list[dict[str, Any]]:
+    """Return diagnostic-only capability needs implied by an ownership row."""
+
+    if row.conflict is None:
+        return []
+    needs = _CAPABILITY_NEEDS_BY_CONFLICT.get((row.kind, row.conflict), [])
+    return [
+        {
+            "diagnostic_name": "ownership_discrepancies",
+            "diagnostic_subject": row.subject,
+            "diagnostic_conflict": row.conflict,
+            "needed_evidence": needed_evidence,
+            "candidate_capability": candidate_capability,
+            "privilege_level": privilege_level,
+        }
+        for needed_evidence, candidate_capability, privilege_level in needs
+    ]
+
+
 def ownership_discrepancies_json(
     rows: list[OwnershipDiscrepancyRow],
 ) -> list[dict[str, Any]]:
