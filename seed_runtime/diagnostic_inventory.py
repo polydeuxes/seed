@@ -140,6 +140,22 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
     ),
 
     DiagnosticInventoryEntry(
+        name="consumer_audit",
+        cli_flags=("--consumer-audit",),
+        uses_projected_state=False,
+        uses_repo_files=True,
+        supports_json=True,
+        supports_record=False,
+        record_scope="none",
+        emits_diagnostic_facts=False,
+        emits_cluster_facts=False,
+        writes_event_ledger=False,
+        mutates_cluster=False,
+        reads_diagnostic_facts=False,
+        description="Audits implementation-backed consumers of observation predicates and diagnostic surfaces without recording facts.",
+    ),
+
+    DiagnosticInventoryEntry(
         name="observation_utilization",
         cli_flags=("--observation-utilization",),
         uses_projected_state=True,

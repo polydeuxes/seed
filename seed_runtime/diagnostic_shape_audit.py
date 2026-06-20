@@ -126,6 +126,15 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         mutation_markers=(".write_text(", "subprocess.run", "os.remove", "shutil.rmtree", "authorize_execution"),
     ),
 
+    "consumer_audit": DiagnosticImplementationSpec(
+        name="consumer_audit",
+        module_path="seed_runtime/consumer_dependency_audit.py",
+        build_function="build_consumer_audit",
+        format_function="format_consumer_audit",
+        json_function="consumer_audit_json",
+        cli_flags=("--consumer-audit",),
+        repo_file_markers=("CONSUMER_PATHS", "_read_sources"),
+    ),
     "observation_utilization": DiagnosticImplementationSpec(
         name="observation_utilization",
         module_path="seed_runtime/observation_utilization.py",
