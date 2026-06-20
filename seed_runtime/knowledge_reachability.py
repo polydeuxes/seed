@@ -3,20 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
+import time
 from pathlib import Path
 import json
 import re
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
 from seed_runtime.events import EventLedger
 from seed_runtime.inquiry_orientation import (
     InquiryNoteRecord,
     build_inquiry_orientation,
     format_inquiry_orientation,
-)
-from seed_runtime.source_navigation import (
-    build_source_navigation,
-    format_source_navigation,
 )
 from seed_runtime.state import State, StateProjector
 from seed_runtime.state_summary_views import state_summary
@@ -49,6 +46,9 @@ FAMILIES = (
     "inquiry",
 )
 STAGES = ("Preserved", "Projected", "Read Model", "Inquiry Orientation", "Rendered")
+DEFAULT_AUDIT_LIMIT = 500
+DEFAULT_MAX_SECONDS = 60.0
+PROGRESS_INTERVAL_SECONDS = 5.0
 
 
 @dataclass(frozen=True)
@@ -63,6 +63,30 @@ class KnowledgeReachabilityRow:
     first_loss: str
 
 
+@dataclass(frozen=True)
+class KnowledgeReachabilityMetadata:
+    timing: dict[str, float]
+    candidates: dict[str, int]
+    truncated: bool = False
+    reason: str | None = None
+    limit: int | None = DEFAULT_AUDIT_LIMIT
+    max_seconds: float | None = DEFAULT_MAX_SECONDS
+
+
+@dataclass(frozen=True)
+class KnowledgeReachabilityAuditResult:
+    rows: list[KnowledgeReachabilityRow]
+    metadata: KnowledgeReachabilityMetadata
+
+
+@dataclass(frozen=True)
+class _AuditIndexes:
+    preserved_surfaces: list[str]
+    projected_surfaces: list[str]
+    read_model_surfaces: list[str]
+    inquiry_surfaces: list[str]
+
+
 def build_knowledge_reachability_audit(
     ledger: EventLedger,
     workspace_id: str,
@@ -70,27 +94,109 @@ def build_knowledge_reachability_audit(
     family: str | None = None,
     subject: str | None = None,
     repo_root: Path | None = None,
+    limit: int | None = DEFAULT_AUDIT_LIMIT,
+    all_candidates: bool = False,
+    max_seconds: float | None = DEFAULT_MAX_SECONDS,
+    progress: Callable[[str], None] | None = None,
+    progress_interval_seconds: float = PROGRESS_INTERVAL_SECONDS,
 ) -> list[KnowledgeReachabilityRow]:
+    return build_knowledge_reachability_audit_result(
+        ledger,
+        workspace_id,
+        family=family,
+        subject=subject,
+        repo_root=repo_root,
+        limit=limit,
+        all_candidates=all_candidates,
+        max_seconds=max_seconds,
+        progress=progress,
+        progress_interval_seconds=progress_interval_seconds,
+    ).rows
+
+
+def build_knowledge_reachability_audit_result(
+    ledger: EventLedger,
+    workspace_id: str,
+    *,
+    family: str | None = None,
+    subject: str | None = None,
+    repo_root: Path | None = None,
+    limit: int | None = DEFAULT_AUDIT_LIMIT,
+    all_candidates: bool = False,
+    max_seconds: float | None = DEFAULT_MAX_SECONDS,
+    progress: Callable[[str], None] | None = None,
+    progress_interval_seconds: float = PROGRESS_INTERVAL_SECONDS,
+) -> KnowledgeReachabilityAuditResult:
+    timings: dict[str, float] = {}
+    t0 = time.monotonic()
     state = StateProjector(ledger).project(workspace_id)
     events = ledger.list_events(workspace_id)
+    timings["load state/cache"] = time.monotonic() - t0
+
+    t0 = time.monotonic()
     candidates = _discover_candidates(events, state, repo_root or Path.cwd())
     if subject:
         candidates = {subject: _family_for_candidate(subject)}
-    rows = []
-    for candidate in sorted(candidates):
-        candidate_family = candidates[candidate]
-        if family and candidate_family != family:
-            continue
-        flags = _candidate_flags(candidate, events, state)
+    if family:
+        candidates = {c: f for c, f in candidates.items() if f == family}
+    discovered = len(candidates)
+    sorted_candidates = sorted(candidates)
+    skipped = 0
+    truncated = False
+    reason = None
+    effective_limit = None if all_candidates or subject else limit
+    if effective_limit is not None and len(sorted_candidates) > effective_limit:
+        skipped = len(sorted_candidates) - effective_limit
+        sorted_candidates = sorted_candidates[:effective_limit]
+        truncated = True
+        reason = "limit"
+    timings["discover candidates"] = time.monotonic() - t0
+
+    t0 = time.monotonic()
+    indexes = _build_indexes(events, state)
+    timings["build indexes"] = time.monotonic() - t0
+
+    t0 = time.monotonic()
+    deadline = time.monotonic() + max_seconds if max_seconds is not None else None
+    next_progress = time.monotonic() + progress_interval_seconds
+    rows: list[KnowledgeReachabilityRow] = []
+    for idx, candidate in enumerate(sorted_candidates, start=1):
+        now = time.monotonic()
+        if deadline is not None and now >= deadline:
+            skipped += len(sorted_candidates) - idx + 1
+            truncated = True
+            reason = "max_seconds"
+            break
+        if progress and now >= next_progress:
+            progress(f"evaluated {idx - 1}/{len(sorted_candidates)} candidates...")
+            next_progress = now + progress_interval_seconds
+        flags = _candidate_flags_from_indexes(candidate, indexes)
         rows.append(
             KnowledgeReachabilityRow(
-                candidate_family, candidate, *flags, _first_loss(flags)
+                candidates[candidate], candidate, *flags, _first_loss(flags)
             )
         )
-    return rows
+    timings["evaluate candidates"] = time.monotonic() - t0
+    timings["render"] = 0.0
+    metadata = KnowledgeReachabilityMetadata(
+        timing={k: round(v, 6) for k, v in timings.items()},
+        candidates={
+            "discovered": discovered,
+            "evaluated": len(rows),
+            "skipped": skipped,
+        },
+        truncated=truncated,
+        reason=reason,
+        limit=effective_limit,
+        max_seconds=max_seconds,
+    )
+    return KnowledgeReachabilityAuditResult(rows, metadata)
 
 
-def format_knowledge_reachability_table(rows: list[KnowledgeReachabilityRow]) -> str:
+def format_knowledge_reachability_table(
+    rows: list[KnowledgeReachabilityRow],
+    metadata: KnowledgeReachabilityMetadata | None = None,
+) -> str:
     headers = ["Family", "Candidate", *STAGES, "First Loss"]
     body = [
         [
@@ -108,37 +214,63 @@ def format_knowledge_reachability_table(rows: list[KnowledgeReachabilityRow]) ->
     def fmt(row: list[str]) -> str:
         return " | ".join(cell.ljust(widths[i]) for i, cell in enumerate(row))
 
-    return "\n".join(
+    table = "\n".join(
         [fmt(headers), fmt(["-" * w for w in widths]), *[fmt(row) for row in body]]
     )
+    if metadata is None:
+        return table
+    timing = "\n".join(
+        f"  {name}: {seconds:.3f}s" for name, seconds in metadata.timing.items()
+    )
+    candidates = "\n".join(
+        f"  {name}: {count}" for name, count in metadata.candidates.items()
+    )
+    guard = ""
+    if metadata.truncated:
+        guard = f"\nTruncated: true ({metadata.reason})"
+    return f"Knowledge Reachability Audit\nTiming:\n{timing}\nCandidates:\n{candidates}{guard}\n\n{table}"
 
 
 def knowledge_reachability_json(
     rows: list[KnowledgeReachabilityRow],
-) -> list[dict[str, Any]]:
-    return [asdict(row) for row in rows]
+    metadata: KnowledgeReachabilityMetadata | None = None,
+) -> list[dict[str, Any]] | dict[str, Any]:
+    rendered = [asdict(row) for row in rows]
+    if metadata is None:
+        return rendered
+    return {"metadata": asdict(metadata), "rows": rendered}
 
 
 def _candidate_flags(
     candidate: str, events: list[Any], state: State
 ) -> tuple[bool, bool, bool, bool, bool]:
-    preserved = _contains(
-        candidate,
-        [item for event in events for item in (_json(event.payload), event.kind)],
-    )
+    return _candidate_flags_from_indexes(candidate, _build_indexes(events, state))
+
+
+def _build_indexes(events: list[Any], state: State) -> _AuditIndexes:
     projected_surfaces = _projected_surfaces(state)
-    projected = _contains(candidate, projected_surfaces)
-    read_surfaces = _read_model_surfaces(state, candidate)
-    read_model = _contains(candidate, read_surfaces)
-    note = InquiryNoteRecord(
-        note_id="audit", raw_note=candidate, recorded_at="1970-01-01T00:00:00Z"
+    read_surfaces = _read_model_surfaces(state)
+    inquiry_surfaces = _inquiry_surfaces(state)
+    return _AuditIndexes(
+        preserved_surfaces=[
+            item for event in events for item in (_json(event.payload), event.kind)
+        ],
+        projected_surfaces=projected_surfaces,
+        read_model_surfaces=read_surfaces,
+        inquiry_surfaces=inquiry_surfaces,
     )
-    orientation = format_inquiry_orientation(build_inquiry_orientation(state, note))
-    inquiry = (
-        _contains(candidate, [orientation])
-        and "No deterministic related material" not in orientation
+
+
+def _candidate_flags_from_indexes(
+    candidate: str, indexes: _AuditIndexes
+) -> tuple[bool, bool, bool, bool, bool]:
+    preserved = _contains(candidate, indexes.preserved_surfaces)
+    projected = _contains(candidate, indexes.projected_surfaces)
+    read_model = _contains(candidate, indexes.read_model_surfaces)
+    inquiry = _contains(candidate, indexes.inquiry_surfaces)
+    rendered = _contains(
+        candidate, indexes.read_model_surfaces + indexes.inquiry_surfaces
     )
-    rendered = _contains(candidate, read_surfaces + ([orientation] if inquiry else []))
     return preserved, projected, read_model, inquiry, rendered
 
 
@@ -174,20 +306,25 @@ def _projected_surfaces(state: State) -> list[str]:
     return surfaces
 
 
-def _read_model_surfaces(state: State, candidate: str) -> list[str]:
+def _read_model_surfaces(state: State) -> list[str]:
     fact_lines = [
         f"{v.subject} {v.predicate} {_json(v.object)} {_json(v.dimensions)}"
         for v in build_fact_view(state)
     ]
     obs_lines = [v.summary for v in build_observation_view(state)]
-    nav_view = build_source_navigation(state, candidate)
-    nav = (
-        format_source_navigation(nav_view)
-        if nav_view.definitions or nav_view.imports
-        else ""
-    )
     summary = _json(state_summary(state))
-    return [*fact_lines, *obs_lines, nav, summary]
+    return [*fact_lines, *obs_lines, summary]
+
+
+def _inquiry_surfaces(state: State) -> list[str]:
+    # Build inquiry orientation once so the audit is bounded and cache-aware.
+    note = InquiryNoteRecord(
+        note_id="audit",
+        raw_note=" ".join(DEFAULT_SEEDS),
+        recorded_at="1970-01-01T00:00:00Z",
+    )
+    orientation = format_inquiry_orientation(build_inquiry_orientation(state, note))
+    return [] if "No deterministic related material" in orientation else [orientation]
 
 
 def _discover_candidates(

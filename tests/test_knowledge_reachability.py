@@ -100,3 +100,129 @@ def test_reachability_integration_fixture_finds_distinct_loss_stages(tmp_path):
     assert any(
         row.read_model for row in rows if "build_source_navigation" in row.candidate
     )
+
+
+def test_reachability_builds_state_once_for_multi_candidate_audit(monkeypatch):
+    import seed_runtime.knowledge_reachability as kr
+
+    calls = 0
+    original_project = kr.StateProjector.project
+
+    def counted_project(self, workspace_id):
+        nonlocal calls
+        calls += 1
+        return original_project(self, workspace_id)
+
+    monkeypatch.setattr(kr.StateProjector, "project", counted_project)
+    ledger = EventLedger()
+    for idx in range(3):
+        ledger.append(
+            "fact.observed",
+            "w",
+            {"fact": _fact(f"fact_{idx}", f"node{idx}", "mentions", f"token{idx}")},
+        )
+
+    rows = build_knowledge_reachability_audit(ledger, "w", limit=10)
+
+    assert len(rows) > 1
+    assert calls == 1
+
+
+def test_reachability_default_candidate_evaluation_is_capped():
+    from seed_runtime.knowledge_reachability import (
+        build_knowledge_reachability_audit_result,
+    )
+
+    ledger = EventLedger()
+    for idx in range(10):
+        ledger.append("operator.note", "w", {"text": f"candidate_token_{idx}"})
+
+    result = build_knowledge_reachability_audit_result(ledger, "w", limit=3)
+
+    assert result.metadata.candidates["evaluated"] == 3
+    assert result.metadata.candidates["skipped"] > 0
+    assert result.metadata.truncated is True
+    assert result.metadata.reason == "limit"
+
+
+def test_reachability_all_disables_candidate_cap():
+    from seed_runtime.knowledge_reachability import (
+        build_knowledge_reachability_audit_result,
+    )
+
+    ledger = EventLedger()
+    for idx in range(10):
+        ledger.append("operator.note", "w", {"text": f"candidate_token_{idx}"})
+
+    result = build_knowledge_reachability_audit_result(
+        ledger, "w", limit=3, all_candidates=True
+    )
+
+    assert (
+        result.metadata.candidates["evaluated"]
+        == result.metadata.candidates["discovered"]
+    )
+    assert result.metadata.truncated is False
+
+
+def test_reachability_json_includes_timing_metadata_and_valid_json():
+    from seed_runtime.knowledge_reachability import (
+        build_knowledge_reachability_audit_result,
+    )
+
+    ledger = EventLedger()
+    ledger.append(
+        "fact.observed", "w", {"fact": _fact("fact_1", "node115", "up", True)}
+    )
+
+    result = build_knowledge_reachability_audit_result(ledger, "w", subject="node115")
+    encoded = json.dumps(knowledge_reachability_json(result.rows, result.metadata))
+    decoded = json.loads(encoded)
+
+    assert "metadata" in decoded
+    assert "timing" in decoded["metadata"]
+    assert "load state/cache" in decoded["metadata"]["timing"]
+    assert decoded["metadata"]["candidates"]["evaluated"] == 1
+
+
+def test_reachability_progress_callback_keeps_json_payload_clean():
+    from seed_runtime.knowledge_reachability import (
+        build_knowledge_reachability_audit_result,
+    )
+
+    ledger = EventLedger()
+    for idx in range(3):
+        ledger.append("operator.note", "w", {"text": f"candidate_token_{idx}"})
+    progress_messages = []
+
+    result = build_knowledge_reachability_audit_result(
+        ledger,
+        "w",
+        limit=3,
+        progress=progress_messages.append,
+        progress_interval_seconds=-1,
+    )
+    encoded = json.dumps(knowledge_reachability_json(result.rows, result.metadata))
+
+    assert progress_messages
+    assert "evaluated" in progress_messages[0]
+    assert json.loads(encoded)["metadata"]["candidates"]["evaluated"] == 3
+
+
+def test_reachability_max_seconds_marks_truncated_results():
+    from seed_runtime.knowledge_reachability import (
+        build_knowledge_reachability_audit_result,
+    )
+
+    ledger = EventLedger()
+    for idx in range(5):
+        ledger.append("operator.note", "w", {"text": f"candidate_token_{idx}"})
+
+    result = build_knowledge_reachability_audit_result(
+        ledger, "w", limit=5, max_seconds=0
+    )
+
+    assert result.metadata.truncated is True
+    assert result.metadata.reason == "max_seconds"
+    assert result.metadata.candidates["evaluated"] == 0
+    assert result.metadata.candidates["skipped"] >= 5
