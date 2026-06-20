@@ -263,7 +263,7 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         writes_event_ledger=False,
         mutates_cluster=False,
         reads_diagnostic_facts=False,
-        description="Compares existing operational audit snapshots to classify observable outcome impact without recording facts.",
+        description="Compares existing operational audit snapshots, reports snapshot coverage, and classifies observable outcome impact without recording facts.",
     ),
     DiagnosticInventoryEntry(
         name="pressure_audit",
