@@ -188,6 +188,19 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         ),
         diagnostic_fact_read_markers=("build_capability_needs",),
     ),
+    "pressure_audit": DiagnosticImplementationSpec(
+        name="pressure_audit",
+        module_path="seed_runtime/pressure_audit.py",
+        build_function="build_pressure_audit",
+        format_function="format_pressure_audit",
+        json_function="pressure_audit_json",
+        cli_flags=("--pressure-audit",),
+        repo_file_markers=(
+            "build_consumer_audit",
+            "build_diagnostic_shape_audit",
+        ),
+        diagnostic_fact_read_markers=("build_capability_needs",),
+    ),
 }
 
 
@@ -307,8 +320,7 @@ def _observe(
     cli_surface_source = _cli_surface_source(cli_source, spec.cli_flags)
     has_json_renderer = bool(spec.json_function and spec.json_function in module_source)
     has_direct_json_output = (
-        "args.json_output" in cli_surface_source
-        and "json.dumps" in cli_surface_source
+        "args.json_output" in cli_surface_source and "json.dumps" in cli_surface_source
     )
     has_json_path = (
         bool(
@@ -361,7 +373,9 @@ def _observe(
     }
 
 
-def _implementation_source(module_source: str, spec: DiagnosticImplementationSpec) -> str:
+def _implementation_source(
+    module_source: str, spec: DiagnosticImplementationSpec
+) -> str:
     """Return the implementation slice owned by one diagnostic surface.
 
     The audit is intentionally static, but it must not attribute every marker in a
