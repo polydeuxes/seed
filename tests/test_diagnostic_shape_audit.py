@@ -60,6 +60,11 @@ def test_matching_registry_declarations_report_consistent_for_current_diagnostic
         _row(rows, "current_facts_cache_debug", "mutates_cluster").status
         == "consistent"
     )
+    assert _row(rows, "investigation_path", "supports_json").status == "consistent"
+    assert (
+        _row(rows, "investigation_path", "writes_event_ledger").status == "consistent"
+    )
+    assert _row(rows, "investigation_path", "mutates_cluster").status == "consistent"
 
 
 def test_mismatched_fixture_reports_mismatch(tmp_path):

@@ -27,6 +27,7 @@ def test_cli_diagnostic_inventory_lists_known_diagnostics(capsys):
         "observation_utilization",
         "consumer_audit",
         "current_facts_cache_debug",
+        "investigation_path",
     ]:
         assert name in output
 
@@ -46,6 +47,7 @@ def test_cli_diagnostic_inventory_json_emits_valid_json(capsys):
         "observation_utilization",
         "consumer_audit",
         "current_facts_cache_debug",
+        "investigation_path",
     }
     assert payload[0]["cli_flags"]
 
@@ -73,6 +75,10 @@ def test_current_diagnostic_shapes_match_implementation_authority():
     )
     assert not _entry("current_facts_cache_debug").writes_event_ledger
     assert not _entry("current_facts_cache_debug").mutates_cluster
+    assert _entry("investigation_path").cli_flags == ("--investigation-path",)
+    assert _entry("investigation_path").supports_json
+    assert not _entry("investigation_path").writes_event_ledger
+    assert not _entry("investigation_path").mutates_cluster
 
 
 def test_inventory_rendering_is_generated_from_registry_data():
