@@ -105,6 +105,11 @@ from seed_runtime.observation_utilization import (
     observation_utilization_json,
 )
 from seed_runtime.ops_brief import build_ops_brief, format_ops_brief
+from seed_runtime.operational_story import (
+    build_operational_story,
+    format_operational_story,
+    operational_story_json,
+)
 from seed_runtime.operational_surface_inventory import (
     build_operational_surface_classification_audit,
     build_operational_surface_inventory,
@@ -971,6 +976,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="compare diagnostic registry declarations with static implementation shape",
     )
     parser.add_argument(
+        "--operational-story",
+        action="store_true",
+        help="compose existing operational evidence into a read-only story view",
+    )
+    parser.add_argument(
         "--operational-surface-inventory",
         action="store_true",
         help="discover operational CLI surfaces from implementation evidence",
@@ -1775,6 +1785,7 @@ def validate_lifecycle_args(
         bool(args.ownership_discrepancies),
         bool(args.capability_needs),
         bool(args.diagnostic_shape_audit),
+        bool(args.operational_story),
         bool(args.operational_surface_inventory),
         bool(args.visibility_coverage_audit),
         bool(args.operational_surface_classification_audit),
@@ -1812,7 +1823,7 @@ def validate_lifecycle_args(
             "--state-build, --state-build-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --ownership-discrepancies, "
-            "--diagnostic-shape-audit, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --pressure-audit, --privilege-discovery, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
+            "--diagnostic-shape-audit, --operational-story, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --pressure-audit, --privilege-discovery, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
             "or --events-only"
         )
     if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
@@ -1893,6 +1904,7 @@ def validate_lifecycle_args(
         or args.capability_needs
         or args.diagnostic_inventory
         or args.diagnostic_shape_audit
+        or args.operational_story
         or args.operational_surface_inventory
         or args.visibility_coverage_audit
         or args.operational_surface_classification_audit
@@ -1910,7 +1922,7 @@ def validate_lifecycle_args(
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --pressure-audit, --privilege-discovery, --correlation-audit, or --audit-compare"
+            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --operational-story, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --pressure-audit, --privilege-discovery, --correlation-audit, or --audit-compare"
         )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
@@ -5764,6 +5776,16 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(brief.to_json_dict(), indent=2, sort_keys=True))
         else:
             print(format_ops_brief(brief))
+        return 0
+
+    if args.operational_story:
+        story = build_operational_story(
+            projected_state_from_args(args), repo_root=REPO_ROOT
+        )
+        if args.json_output:
+            print(json.dumps(operational_story_json(story), indent=2, sort_keys=True))
+        else:
+            print(format_operational_story(story))
         return 0
 
     if args.investigation_path:
