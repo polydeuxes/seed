@@ -589,9 +589,14 @@ def _matching_listener_process_refs(
         if fact.predicate not in {"listening_process_id", "listening_process_name"}:
             continue
         listener = _listener_protocol_address_port(fact)
+        unkeyed_single_listener_match = (
+            listener is None
+            and len(listener_keys) <= 1
+            and fact.subject_id in listener_subjects
+        )
         if (
             (listener is not None and listener in listener_keys)
-            or (listener is None and fact.subject_id in listener_subjects)
+            or unkeyed_single_listener_match
         ) and fact.id not in seen:
             matches.append(_evidence(fact, "listener_process_observed"))
             seen.add(fact.id)
