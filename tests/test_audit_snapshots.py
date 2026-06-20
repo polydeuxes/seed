@@ -163,3 +163,80 @@ def test_git_metadata_failure_is_graceful(tmp_path):
     payload = collect_git_metadata(tmp_path, runner=fail)
     assert payload["available"] is False
     assert "git missing" in payload["reason"]
+
+
+def test_latest_previous_resolution_is_kind_specific_with_mixed_regression_fixture(tmp_path):
+    create_audit_snapshot(
+        repo_root=tmp_path,
+        kind="observation_inventory",
+        payload={"predicates": [{"predicate": "cpu_count"}, {"predicate": "cpu_model"}], "providers": [], "families": [], "summary": {"predicate_count": 2}},
+        command="seed --audit-snapshot observation_inventory",
+        seed_db=None,
+        events=[],
+        projection_version="v1",
+        snapshot_id="2026-06-20T160000Z",
+    )
+    create_audit_snapshot(
+        repo_root=tmp_path,
+        kind="ownership_discrepancies",
+        payload=[],
+        command="seed --audit-snapshot ownership_discrepancies",
+        seed_db=None,
+        events=[],
+        projection_version="v1",
+        snapshot_id="2026-06-20T163000Z",
+    )
+    create_audit_snapshot(
+        repo_root=tmp_path,
+        kind="observation_inventory",
+        payload={"predicates": [{"predicate": "cpu_count"}, {"predicate": "cpu_model"}, {"predicate": "memory_total_bytes"}], "providers": [], "families": [], "summary": {"predicate_count": 3}},
+        command="seed --audit-snapshot observation_inventory",
+        seed_db=None,
+        events=[],
+        projection_version="v1",
+        snapshot_id="2026-06-20T170000Z",
+    )
+
+    diff = compare_audit_snapshots(tmp_path, "latest", "previous", kind="observation_inventory")
+
+    assert diff["snapshots"] == {"previous": "2026-06-20T160000Z", "latest": "2026-06-20T170000Z"}
+    assert diff["predicates"]["added"] == ["memory_total_bytes"]
+    assert diff["predicates"]["removed"] == []
+
+
+def test_ownership_latest_previous_ignores_observation_snapshots(tmp_path):
+    create_audit_snapshot(repo_root=tmp_path, kind="ownership_discrepancies", payload=[{"kind": "service", "subject": "svc-a", "conflict": "missing_owner"}], command="seed --audit-snapshot ownership_discrepancies", seed_db=None, events=[], projection_version="v1", snapshot_id="2026-06-20T160000Z")
+    create_audit_snapshot(repo_root=tmp_path, kind="observation_inventory", payload={"predicates": [{"predicate": "cpu_count"}], "providers": [], "families": [], "summary": {}}, command="seed --audit-snapshot observation_inventory", seed_db=None, events=[], projection_version="v1", snapshot_id="2026-06-20T163000Z")
+    create_audit_snapshot(repo_root=tmp_path, kind="ownership_discrepancies", payload=[{"kind": "service", "subject": "svc-a", "conflict": "owner_not_observed"}], command="seed --audit-snapshot ownership_discrepancies", seed_db=None, events=[], projection_version="v1", snapshot_id="2026-06-20T170000Z")
+
+    diff = compare_audit_snapshots(tmp_path, "latest", "previous", kind="ownership_discrepancies")
+
+    assert diff["snapshots"] == {"previous": "2026-06-20T160000Z", "latest": "2026-06-20T170000Z"}
+    assert diff["changes"]["conflict"][0]["to"] == "owner_not_observed"
+
+
+def test_snapshot_ids_appear_in_human_and_json_compare_output(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+    for sid, predicates in [("2026-06-20T160000Z", ["up"]), ("2026-06-20T170000Z", ["up", "down"])]:
+        create_audit_snapshot(repo_root=tmp_path, kind="observation_inventory", payload={"predicates": [{"predicate": p} for p in predicates], "providers": [], "families": [], "summary": {}}, command="seed --audit-snapshot observation_inventory", seed_db=None, events=[], projection_version="v1", snapshot_id=sid)
+
+    assert seed_local.main(["--audit-compare", "latest", "previous", "--kind", "observation_inventory"]) == 0
+    human = capsys.readouterr().out
+    assert "Comparing:" in human
+    assert "previous: 2026-06-20T160000Z" in human
+    assert "latest: 2026-06-20T170000Z" in human
+
+    assert seed_local.main(["--audit-compare", "latest", "previous", "--kind", "observation_inventory", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["snapshots"] == {"previous": "2026-06-20T160000Z", "latest": "2026-06-20T170000Z"}
+
+
+def test_compare_fails_cleanly_with_fewer_than_two_kind_snapshots(tmp_path):
+    create_audit_snapshot(repo_root=tmp_path, kind="observation_inventory", payload={"predicates": [], "providers": [], "families": [], "summary": {}}, command="seed --audit-snapshot observation_inventory", seed_db=None, events=[], projection_version="v1", snapshot_id="2026-06-20T160000Z")
+
+    try:
+        compare_audit_snapshots(tmp_path, "latest", "previous", kind="observation_inventory")
+    except FileNotFoundError as exc:
+        assert "need at least two observation_inventory snapshots" in str(exc)
+    else:
+        raise AssertionError("expected compare to fail with a clear insufficient-snapshots message")

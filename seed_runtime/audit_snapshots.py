@@ -128,17 +128,29 @@ def format_audit_snapshots(rows: list[dict[str, Any]]) -> str:
 
 
 def compare_audit_snapshots(repo_root: Path, a: str, b: str, *, kind: str) -> dict[str, Any]:
-    path_a = _resolve_snapshot(repo_root, a, kind=kind) / f"{kind}.json"
-    path_b = _resolve_snapshot(repo_root, b, kind=kind) / f"{kind}.json"
+    left_ref, right_ref = _comparison_refs(a, b)
+    snapshot_a = _resolve_snapshot(repo_root, left_ref, kind=kind)
+    snapshot_b = _resolve_snapshot(repo_root, right_ref, kind=kind)
+    path_a = snapshot_a / f"{kind}.json"
+    path_b = snapshot_b / f"{kind}.json"
     left = _read_json(path_a)
     right = _read_json(path_b)
     if left is None or right is None:
         raise FileNotFoundError(f"snapshot kind file missing for {kind}")
     if kind == "observation_inventory":
-        return _compare_observation_inventory(left, right)
-    if kind == "ownership_discrepancies":
-        return _compare_ownership_discrepancies(left, right)
-    raise ValueError(f"unsupported audit compare kind: {kind}")
+        diff = _compare_observation_inventory(left, right)
+    elif kind == "ownership_discrepancies":
+        diff = _compare_ownership_discrepancies(left, right)
+    else:
+        raise ValueError(f"unsupported audit compare kind: {kind}")
+    diff["snapshots"] = {"previous": snapshot_a.name, "latest": snapshot_b.name}
+    return diff
+
+
+def _comparison_refs(a: str, b: str) -> tuple[str, str]:
+    if a == "latest" and b == "previous":
+        return b, a
+    return a, b
 
 
 def _resolve_snapshot(repo_root: Path, ref: str, *, kind: str) -> Path:
@@ -147,7 +159,7 @@ def _resolve_snapshot(repo_root: Path, ref: str, *, kind: str) -> Path:
     if ref in {"latest", "previous"}:
         dirs = [p for p in dirs if (p / f"{kind}.json").exists()]
         if len(dirs) < (1 if ref == "latest" else 2):
-            raise FileNotFoundError(f"not enough snapshots containing {kind}.json for {ref}")
+            raise FileNotFoundError(f"need at least two {kind} snapshots")
         return dirs[-1] if ref == "latest" else dirs[-2]
     path = root / ref
     if not path.exists():
@@ -201,6 +213,7 @@ def _capability_needs(row: dict[str, Any]) -> set[str]:
 def format_audit_compare(diff: dict[str, Any]) -> str:
     if diff["kind"] == "observation_inventory":
         lines = ["Audit Compare: observation_inventory", ""]
+        lines.extend(_format_compared_snapshots(diff))
         for title, section in [("Predicates", "predicates"), ("Providers", "providers"), ("Families", "families")]:
             lines += [f"{title}:", f"  added: {', '.join(diff[section]['added']) or 'none'}", f"  removed: {', '.join(diff[section]['removed']) or 'none'}", ""]
         lines.append("Summary:")
@@ -209,7 +222,9 @@ def format_audit_compare(diff: dict[str, Any]) -> str:
         if not diff["summary_changes"]:
             lines.append("  none")
         return "\n".join(lines)
-    lines = ["Audit Compare: ownership_discrepancies", "", "Rows:", f"  added: {len(diff['added_rows'])}", f"  removed: {len(diff['removed_rows'])}", "", "Changes:"]
+    lines = ["Audit Compare: ownership_discrepancies", ""]
+    lines.extend(_format_compared_snapshots(diff))
+    lines.extend(["Rows:", f"  added: {len(diff['added_rows'])}", f"  removed: {len(diff['removed_rows'])}", "", "Changes:"])
     any_change = False
     for field, changes in diff["changes"].items():
         if changes:
@@ -218,3 +233,15 @@ def format_audit_compare(diff: dict[str, Any]) -> str:
     if not any_change:
         lines.append("  none")
     return "\n".join(lines)
+
+
+def _format_compared_snapshots(diff: dict[str, Any]) -> list[str]:
+    snapshots = diff.get("snapshots") or {}
+    if not snapshots:
+        return []
+    return [
+        "Comparing:",
+        f"  previous: {snapshots.get('previous', '-')}",
+        f"  latest: {snapshots.get('latest', '-')}",
+        "",
+    ]
