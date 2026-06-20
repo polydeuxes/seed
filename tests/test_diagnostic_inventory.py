@@ -25,6 +25,7 @@ def test_cli_diagnostic_inventory_lists_known_diagnostics(capsys):
         "ownership_discrepancies",
         "capability_needs",
         "observation_utilization",
+        "consumer_audit",
     ]:
         assert name in output
 
@@ -42,6 +43,7 @@ def test_cli_diagnostic_inventory_json_emits_valid_json(capsys):
         "ownership_discrepancies",
         "capability_needs",
         "observation_utilization",
+        "consumer_audit",
     }
     assert payload[0]["cli_flags"]
 

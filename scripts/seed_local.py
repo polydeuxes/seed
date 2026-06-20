@@ -64,6 +64,11 @@ from seed_runtime.confidence import (
     build_fact_confidences,
     find_fact_confidence,
 )
+from seed_runtime.consumer_dependency_audit import (
+    build_consumer_audit,
+    consumer_audit_json,
+    format_consumer_audit,
+)
 from seed_runtime.contradictions import (
     Contradiction,
     build_contradiction_summary,
@@ -923,6 +928,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="compare diagnostic registry declarations with static implementation shape",
     )
     parser.add_argument(
+        "--consumer-audit",
+        action="store_true",
+        help="audit implementation-backed consumers of predicates and diagnostics",
+    )
+    parser.add_argument(
         "--observation-inventory",
         action="store_true",
         help="discover observation providers and predicates from implementation",
@@ -1662,6 +1672,7 @@ def validate_lifecycle_args(
         bool(args.ownership_discrepancies),
         bool(args.capability_needs),
         bool(args.diagnostic_shape_audit),
+        bool(args.consumer_audit),
         bool(args.observation_inventory),
         bool(args.audit_snapshot),
         bool(args.audit_snapshots),
@@ -1687,7 +1698,7 @@ def validate_lifecycle_args(
             "--state-build, --state-build-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --ownership-discrepancies, "
-            "--diagnostic-shape-audit, --observation-inventory, --observation-utilization, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
+            "--diagnostic-shape-audit, --consumer-audit, --observation-inventory, --observation-utilization, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
             "or --events-only"
         )
     if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
@@ -1743,26 +1754,27 @@ def validate_lifecycle_args(
         parser.error("--kind can only be used with --audit-compare")
     if args.provider and not (args.observation_inventory or args.observation_utilization):
         parser.error("--provider can only be used with --observation-inventory or --observation-utilization")
-    if args.predicate and not (args.observation_inventory or args.observation_utilization):
-        parser.error("--predicate can only be used with --observation-inventory or --observation-utilization")
+    if args.predicate and not (args.observation_inventory or args.observation_utilization or args.consumer_audit):
+        parser.error("--predicate can only be used with --observation-inventory, --observation-utilization, or --consumer-audit")
     if args.subject and not (args.ownership_discrepancies or args.capability_needs):
         parser.error(
             "--subject can only be used with --ownership-discrepancies or --capability-needs"
         )
-    if args.diagnostic and not args.capability_needs:
-        parser.error("--diagnostic can only be used with --capability-needs")
+    if args.diagnostic and not (args.capability_needs or args.consumer_audit):
+        parser.error("--diagnostic can only be used with --capability-needs or --consumer-audit")
     if args.json_output and not (
         args.ownership_discrepancies
         or args.capability_needs
         or args.diagnostic_inventory
         or args.diagnostic_shape_audit
+        or args.consumer_audit
         or args.observation_inventory
         or args.observation_utilization
         or args.audit_compare
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --observation-inventory, --observation-utilization, or --audit-compare"
+            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --consumer-audit, --observation-inventory, --observation-utilization, or --audit-compare"
         )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
@@ -5705,6 +5717,18 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(capability_needs_json(entries), indent=2, sort_keys=True))
         else:
             print(format_capability_needs(entries))
+        return 0
+
+
+    if args.consumer_audit:
+        audit = build_consumer_audit(
+            predicate_filter=args.predicate,
+            diagnostic_filter=args.diagnostic,
+        )
+        if args.json_output:
+            print(json.dumps(consumer_audit_json(audit), indent=2, sort_keys=True))
+        else:
+            print(format_consumer_audit(audit))
         return 0
 
     if args.state_build:
