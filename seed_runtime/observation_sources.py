@@ -215,9 +215,16 @@ _HOSTS_FILE_SOURCE = "/etc/hosts"
 
 _MOUNT_QUESTIONS = {
     "mount_point": "What mount points currently exist?",
+    "mount_target": "What mount target currently exists?",
     "filesystem_type": "What filesystem type is mounted?",
+    "mount_fstype": "What filesystem type is mounted?",
     "mounted_device": "Which device backs the mount?",
+    "mount_source": "What source backs the mount?",
     "mount_option": "What mount options are recorded for the mount?",
+    "mount_options": "What mount option set is recorded for the mount?",
+    "mount_source_host": "What remote host appears in the mount source?",
+    "mount_source_path": "What remote path appears in the mount source?",
+    "mount_attribution_status": "What attribution boundary applies to the mount source?",
 }
 
 _STORAGE_QUESTIONS = {
@@ -482,7 +489,9 @@ class LocalHostObservationSource:
 
         source = self.systemd_source
         if source is None:
-            source = SystemdObservationSource(observed_at=observed_at, hostname=hostname)
+            source = SystemdObservationSource(
+                observed_at=observed_at, hostname=hostname
+            )
         try:
             return source.collect()
         except Exception:
@@ -1434,7 +1443,6 @@ class LocalHostObservationSource:
             ),
         )
 
-
     @staticmethod
     def parse_ss_listener_output(output: str, protocol: str) -> list[dict[str, Any]]:
         """Parse representative ``ss -ln[tu]`` output without process attribution."""
@@ -1447,7 +1455,9 @@ class LocalHostObservationSource:
             fields = line.split()
             if len(fields) < 5:
                 continue
-            local = fields[3] if fields[0].upper() in {"LISTEN", "UNCONN"} else fields[4]
+            local = (
+                fields[3] if fields[0].upper() in {"LISTEN", "UNCONN"} else fields[4]
+            )
             parsed = LocalHostObservationSource._parse_ss_local_endpoint(local)
             if parsed is None:
                 continue
@@ -1796,11 +1806,11 @@ class LocalHostObservationSource:
     def _collect_mount_observations(
         self, observed_at: datetime, hostname: str, metadata: dict[str, Any]
     ) -> list[Observation]:
-        """Collect mounted filesystem facts from /proc/mounts only.
+        """Collect mounted filesystem facts from local mount-table inspection.
 
         Mount facts describe local kernel mount-table entries. They do not
-        assert health, writability, reachability, storage availability, or
-        device accessibility.
+        assert health, writability, reachability, storage availability, device
+        accessibility, export existence, or storage ownership.
         """
 
         observations: list[Observation] = []
@@ -1819,11 +1829,28 @@ class LocalHostObservationSource:
                 "device_health_asserted": False,
                 "device_accessibility_asserted": False,
             }
-            for predicate, value in (
+            source_host = mount.get("mount_source_host")
+            source_path = mount.get("mount_source_path")
+            attribution_status = (
+                "remote_source_observed_export_unattributed"
+                if source_host
+                else "local_or_unparsed_source"
+            )
+            scalar_facts = [
                 ("mount_point", mount_point),
+                ("mount_target", mount_point),
                 ("filesystem_type", mount["filesystem_type"]),
+                ("mount_fstype", mount["filesystem_type"]),
                 ("mounted_device", mount["mounted_device"]),
-            ):
+                ("mount_source", mount["mounted_device"]),
+                ("mount_options", ",".join(mount["mount_options"])),
+                ("mount_attribution_status", attribution_status),
+            ]
+            if source_host:
+                scalar_facts.append(("mount_source_host", source_host))
+            if source_path:
+                scalar_facts.append(("mount_source_path", source_path))
+            for predicate, value in scalar_facts:
                 observations.append(
                     self._observation(
                         observed_at,
@@ -1881,6 +1908,7 @@ class LocalHostObservationSource:
                     "filesystem_type": self._decode_proc_mount_field(filesystem_type),
                     "mount_options": decoded_options,
                     "source": "/proc/mounts",
+                    **_remote_mount_source_parts(self._decode_proc_mount_field(device)),
                 }
             )
         return sorted(
@@ -2853,6 +2881,72 @@ def export_observations_json(
             entry["expires_at"] = fact.expires_at.isoformat()
         observations.append(entry)
     return {"observations": observations}
+
+
+def _remote_mount_source_parts(source: str) -> dict[str, str]:
+    """Return remote host/path parts from common remote mount source syntax."""
+
+    if source.startswith("//"):
+        rest = source[2:]
+        if "/" not in rest:
+            return {}
+        host, share = rest.split("/", 1)
+        host = host.strip("[]")
+        return (
+            {"mount_source_host": host, "mount_source_path": f"/{share}"}
+            if host and share
+            else {}
+        )
+    if ":" not in source or source.startswith("/"):
+        return {}
+    host, path = source.split(":", 1)
+    host = host.strip("[]")
+    if not host or not path.startswith("/"):
+        return {}
+    return {"mount_source_host": host, "mount_source_path": path}
+
+
+def parse_findmnt_json_mounts(payload: str | dict[str, Any]) -> list[dict[str, Any]]:
+    """Parse findmnt --json --output TARGET,SOURCE,FSTYPE,OPTIONS output."""
+
+    data = json.loads(payload) if isinstance(payload, str) else payload
+    entries: list[dict[str, Any]] = []
+
+    def visit(items: list[dict[str, Any]]) -> None:
+        for item in items:
+            target = item.get("target") or item.get("TARGET")
+            source = item.get("source") or item.get("SOURCE")
+            fstype = item.get("fstype") or item.get("FSTYPE")
+            options = item.get("options") or item.get("OPTIONS") or ""
+            if target and source and fstype:
+                opts = sorted(
+                    dict.fromkeys(opt for opt in str(options).split(",") if opt)
+                )
+                entries.append(
+                    {
+                        "mounted_device": str(source),
+                        "mount_point": str(target),
+                        "filesystem_type": str(fstype),
+                        "mount_options": opts,
+                        "source": "findmnt --json",
+                        **_remote_mount_source_parts(str(source)),
+                    }
+                )
+            children = item.get("children") or []
+            if isinstance(children, list):
+                visit(children)
+
+    filesystems = data.get("filesystems", []) if isinstance(data, dict) else []
+    if isinstance(filesystems, list):
+        visit(filesystems)
+    return sorted(
+        entries,
+        key=lambda item: (
+            item["mount_point"],
+            item["mounted_device"],
+            item["filesystem_type"],
+        ),
+    )
 
 
 class ObservationCollectionService:

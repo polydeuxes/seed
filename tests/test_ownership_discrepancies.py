@@ -68,7 +68,8 @@ def test_remote_mount_uses_source_owner_not_consumer(tmp_path, capsys):
     rows = run_json(seed_local, db, capsys, "/mnt/media")
 
     assert rows[0]["candidate_owner"] == "node115"
-    assert rows[0]["conflict"] is None
+    assert rows[0]["conflict"] == "remote_export_attribution_missing"
+    assert "export attribution remains unverified" in rows[0]["reason"]
     assert all(ref["role"] != "ownership_fact_written" for ref in rows[0]["evidence"])
 
 
@@ -114,8 +115,9 @@ def test_prometheus_target_without_host_or_process_is_insufficient(tmp_path, cap
     assert rows[0]["candidate_owner"] is None
 
 
-
-def test_prometheus_target_with_local_listener_moves_to_attribution_need(tmp_path, capsys):
+def test_prometheus_target_with_local_listener_moves_to_attribution_need(
+    tmp_path, capsys
+):
     seed_local = load_seed_local_module()
     db = tmp_path / "seed.sqlite"
     ingest(
@@ -147,8 +149,12 @@ def test_local_listener_does_not_infer_container_ownership_and_records_attributi
     )
 
     rows = run_json(seed_local, db, capsys, "api")
-    assert all(ref["role"] != "process_or_container_observed" for ref in rows[0]["evidence"])
-    assert seed_local.main(["--db", str(db), "--ownership-discrepancies", "--record"]) == 0
+    assert all(
+        ref["role"] != "process_or_container_observed" for ref in rows[0]["evidence"]
+    )
+    assert (
+        seed_local.main(["--db", str(db), "--ownership-discrepancies", "--record"]) == 0
+    )
     capsys.readouterr()
     assert seed_local.main(["--db", str(db), "--capability-needs", "--json"]) == 0
     needs = json.loads(capsys.readouterr().out)
@@ -158,6 +164,7 @@ def test_local_listener_does_not_infer_container_ownership_and_records_attributi
         "container_port_mapping",
         "container_inventory",
     }.issubset(capabilities)
+
 
 def test_no_ownership_evidence_reports_missing_owner(tmp_path, capsys):
     seed_local = load_seed_local_module()
@@ -308,3 +315,57 @@ def test_recorded_diagnostic_needs_do_not_affect_inference_validation_or_ownersh
     ]
     assert all("owner" not in fact.predicate for fact in entity_facts)
     assert all("capability" not in fact.predicate for fact in entity_facts)
+
+
+def test_remote_mount_source_host_increases_confidence_preserves_uncertainty_and_records_needs(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db = tmp_path / "seed.sqlite"
+    ingest(
+        seed_local,
+        db,
+        ("/mnt/node205/sda1", "mount_point", "/mnt/node205/sda1"),
+        ("/mnt/node205/sda1", "host", "consumer"),
+        ("/mnt/node205/sda1", "mount_source", "node205:/mnt/sda1"),
+        ("/mnt/node205/sda1", "mount_source_host", "node205"),
+        ("/mnt/node205/sda1", "mount_source_path", "/mnt/sda1"),
+        (
+            "/mnt/node205/sda1",
+            "mount_attribution_status",
+            "remote_source_observed_export_unattributed",
+        ),
+    )
+
+    rows = run_json(seed_local, db, capsys, "/mnt/node205/sda1")
+
+    assert rows[0]["candidate_owner"] == "node205"
+    assert rows[0]["confidence"] > 0.72
+    assert rows[0]["conflict"] == "remote_export_attribution_missing"
+    assert "export attribution remains unverified" in rows[0]["reason"]
+    assert all("owner" not in ref["predicate"] for ref in rows[0]["evidence"])
+    assert any(
+        ref["role"] == "remote_mount_source_host_observed"
+        for ref in rows[0]["evidence"]
+    )
+
+    assert (
+        seed_local.main(["--db", str(db), "--ownership-discrepancies", "--record"]) == 0
+    )
+    capsys.readouterr()
+    assert seed_local.main(["--db", str(db), "--capability-needs", "--json"]) == 0
+    needs = json.loads(capsys.readouterr().out)
+    capabilities = {item["capability"] for item in needs}
+    assert {
+        "nfs_export_inventory",
+        "smb_share_inventory",
+        "remote_storage_export_inventory",
+    } <= capabilities
+
+    state = StateProjector(SQLiteEventLedger(db)).project("local")
+    entity_facts = [
+        fact
+        for fact in state.facts.values()
+        if not fact.subject_id.startswith("diagnostic_run:")
+    ]
+    assert all("owner" not in fact.predicate for fact in entity_facts)

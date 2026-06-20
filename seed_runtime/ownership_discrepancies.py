@@ -16,6 +16,7 @@ ConflictClass = Literal[
     "consumer_mistaken_as_owner",
     "shared_visibility_not_ownership",
     "mount_source_conflict",
+    "remote_export_attribution_missing",
     "service_endpoint_conflict",
     "insufficient_evidence",
 ]
@@ -59,6 +60,9 @@ _STORAGE_PREDICATES = {
     "filesystem_mounted_at",
     "mounted_at",
     "mount_source",
+    "mount_source_host",
+    "mount_source_path",
+    "mount_attribution_status",
     "filesystem_source",
     "device",
     "device_id",
@@ -122,13 +126,26 @@ _CAPABILITY_NEEDS_BY_CONFLICT: dict[
         ("container_inventory", "container_inventory", "partial_root_full"),
     ],
     ("service", "owner_not_observed"): [
-        ("listener_process_inventory", "listener_process_inventory", "partial_root_full"),
+        (
+            "listener_process_inventory",
+            "listener_process_inventory",
+            "partial_root_full",
+        ),
         ("container_port_mapping", "container_port_mapping", "partial_root_full"),
         ("container_inventory", "container_inventory", "partial_root_full"),
     ],
     ("storage", "missing_owner"): [
         ("mount_source", "mount_source_inventory", "non_root_partial_root_full"),
         ("export_visibility", "export_visibility_inventory", "partial_root_full"),
+    ],
+    ("storage", "remote_export_attribution_missing"): [
+        ("nfs_export_inventory", "nfs_export_inventory", "partial_root_full"),
+        ("smb_share_inventory", "smb_share_inventory", "partial_root_full"),
+        (
+            "remote_storage_export_inventory",
+            "remote_storage_export_inventory",
+            "partial_root_full",
+        ),
     ],
     ("service", "missing_owner"): [
         ("local_listener", "tcp_listen_inventory", "non_root_partial_root_full"),
@@ -246,7 +263,15 @@ def _diagnose_storage_subject(
             owner = _host_from_source(fact.value)
             if owner:
                 source_hosts.add(owner)
-                _add_candidate(candidates, owner, 0.86, fact, "mount_source_owner")
+                _add_candidate(
+                    candidates, owner, 0.86, fact, "remote_mount_source_observed"
+                )
+        if fact.predicate == "mount_source_host":
+            owner = str(fact.value)
+            source_hosts.add(owner)
+            _add_candidate(
+                candidates, owner, 0.88, fact, "remote_mount_source_host_observed"
+            )
         if fact.predicate in {
             "export_path",
             "shared_path",
@@ -341,7 +366,9 @@ def _diagnose_service_subject(
             )
     listener_refs = _matching_local_listener_refs(endpoint_only, facts)
     for ref in listener_refs:
-        _add_candidate_ref(candidates, ref.subject, 0.55, ref, "local_listener_confirmed")
+        _add_candidate_ref(
+            candidates, ref.subject, 0.55, ref, "local_listener_confirmed"
+        )
     if listener_refs:
         rows = _rows_for_candidates(subject, "service", candidates, set(), set())
         return [
@@ -397,8 +424,11 @@ def _rows_for_candidates(subject, kind, candidates, consumers, sources):
     conflict = None
     reason = "Provisional owner inferred from existing cluster evidence."
     if kind == "storage" and len(sources) == 1 and ordered[0].owner in sources:
-        conflict = None
-        reason = "Remote mount source evidence identifies the owner; local mount hosts are treated as consumers."
+        conflict = "remote_export_attribution_missing"
+        reason = (
+            "Remote mount source evidence supports this candidate owner and treats "
+            "local mount hosts as consumers, but export attribution remains unverified."
+        )
     elif len(ordered) > 1 and ordered[1].confidence >= 0.45:
         conflict = (
             "mount_source_conflict"
