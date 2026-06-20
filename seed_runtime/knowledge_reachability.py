@@ -68,6 +68,7 @@ class KnowledgeReachabilityRow:
 class KnowledgeReachabilityMetadata:
     timings: dict[str, float]
     candidate_counts: dict[str, int]
+    algorithmic_counters: dict[str, int] | None = None
     candidate_sources: dict[str, int] | None = None
     scan_counts: dict[str, int] | None = None
     cache: dict[str, str] | None = None
@@ -163,10 +164,10 @@ class _CandidateDiscovery:
 
 @dataclass(frozen=True)
 class _AuditIndexes:
-    preserved_surfaces: list[str]
-    projected_surfaces: list[str]
-    read_model_surfaces: list[str]
-    inquiry_surfaces: list[str]
+    preserved_terms: set[str]
+    projected_terms: set[str]
+    read_model_terms: set[str]
+    inquiry_terms: set[str]
 
 
 def build_knowledge_reachability_audit(
@@ -214,13 +215,16 @@ def build_knowledge_reachability_audit_result(
     scan_counts: dict[str, int] = {}
     source_counts: dict[str, int] = {}
     index_timings: dict[str, float] = {}
+    counters = _new_counters()
 
     with timer.phase("load_state", state_cache=cache["state"], evaluated=0):
         state = StateProjector(ledger).project(workspace_id)
         events = ledger.list_events(workspace_id)
 
     with timer.phase("discover_candidates") as finish_discovery:
-        discovery = _discover_candidates(events, state, repo_root or Path.cwd())
+        discovery = _discover_candidates(
+            events, state, repo_root or Path.cwd(), counters
+        )
         candidates = discovery.candidates
         source_counts = discovery.source_counts
         scan_counts = discovery.scan_counts
@@ -243,7 +247,7 @@ def build_knowledge_reachability_audit_result(
 
     with timer.phase("build_indexes"):
         indexes = _build_indexes(
-            events, state, timer=timer, index_timings=index_timings
+            events, state, timer=timer, index_timings=index_timings, counters=counters
         )
 
     with timer.phase("evaluate") as finish_evaluate:
@@ -260,26 +264,36 @@ def build_knowledge_reachability_audit_result(
             if progress and now >= next_progress:
                 timer.progress_message("evaluate", idx - 1, len(sorted_candidates))
                 next_progress = now + progress_interval_seconds
-            flags = _candidate_flags_from_indexes(candidate, indexes)
+            flags = _candidate_flags_from_indexes(candidate, indexes, counters)
             rows.append(
                 KnowledgeReachabilityRow(
                     candidates[candidate], candidate, *flags, _first_loss(flags)
                 )
             )
-        finish_evaluate(evaluated=len(rows))
+        finish_evaluate(
+            evaluated=len(rows), membership_checks=counters["membership_checks"]
+        )
 
     with timer.phase("render"):
         pass
     assert timer.timings is not None
     timer.timings["total"] = timer.total()
+    counters["candidate_count"] = len(rows)
+    counters["raw_candidates_discovered"] = discovered
+    counters["candidates_evaluated"] = len(rows)
+    for key in sorted(counters):
+        timer.emit("counter", key, value=counters[key])
     metadata = KnowledgeReachabilityMetadata(
         timings={k: round(v, 6) for k, v in timer.timings.items()},
         candidate_counts={
             "discovered": discovered,
+            "raw_candidates_discovered": discovered,
             "capped": len(sorted_candidates),
+            "candidates_evaluated": len(rows),
             "evaluated": len(rows),
             "skipped": skipped,
         },
+        algorithmic_counters=dict(counters),
         candidate_sources=source_counts,
         scan_counts=scan_counts,
         cache=cache,
@@ -349,7 +363,10 @@ def knowledge_reachability_json(
 def _candidate_flags(
     candidate: str, events: list[Any], state: State
 ) -> tuple[bool, bool, bool, bool, bool]:
-    return _candidate_flags_from_indexes(candidate, _build_indexes(events, state))
+    counters = _new_counters()
+    return _candidate_flags_from_indexes(
+        candidate, _build_indexes(events, state, counters=counters), counters
+    )
 
 
 def _build_indexes(
@@ -358,34 +375,51 @@ def _build_indexes(
     *,
     timer: _ReachabilityTimer | None = None,
     index_timings: dict[str, float] | None = None,
+    counters: dict[str, int] | None = None,
 ) -> _AuditIndexes:
     local_timer = timer or _ReachabilityTimer(None)
     timings = index_timings if index_timings is not None else {}
+    counters = counters if counters is not None else _new_counters()
+    counters["state_projection_build_calls"] += 1
     with local_timer.phase("projected_entities"):
-        projected_entities = _projected_entity_surfaces(state)
+        counters["entity_projection_build_calls"] += 1
+        projected_entities = _projected_entity_surfaces(state, counters)
     timings["projected_entities"] = (
         local_timer.timings.get("projected_entities", 0.0)
         if local_timer.timings
         else 0.0
     )
     with local_timer.phase("projected_facts"):
-        projected_facts = _projected_fact_surfaces(state)
+        projected_facts = _projected_fact_surfaces(state, counters)
     timings["projected_facts"] = (
         local_timer.timings.get("projected_facts", 0.0) if local_timer.timings else 0.0
     )
     with local_timer.phase("fact_support"):
-        fact_support = _fact_support_surfaces(state)
+        counters["fact_support_index_build_calls"] += 1
+        fact_support = _fact_support_surfaces(state, counters)
     timings["fact_support"] = (
         local_timer.timings.get("fact_support", 0.0) if local_timer.timings else 0.0
     )
-    with local_timer.phase("source_navigation"):
-        read_surfaces = _read_model_surfaces(state)
-    timings["source_navigation"] = (
-        local_timer.timings.get("source_navigation", 0.0)
+    with local_timer.phase(
+        "source_navigation.index_from_fact_support"
+    ) as finish_source_index:
+        source_nav_terms = _source_navigation_terms_from_fact_support(state, counters)
+        finish_source_index(
+            supports_scanned=counters["fact_supports_scanned"],
+            terms=len(source_nav_terms),
+        )
+    timings["source_navigation.index_from_fact_support"] = (
+        local_timer.timings.get("source_navigation.index_from_fact_support", 0.0)
         if local_timer.timings
         else 0.0
     )
+    with local_timer.phase("read_model"):
+        read_surfaces = _read_model_surfaces(state, counters)
+    timings["read_model"] = (
+        local_timer.timings.get("read_model", 0.0) if local_timer.timings else 0.0
+    )
     with local_timer.phase("inquiry_orientation"):
+        counters["orientation_build_calls"] += 1
         inquiry_surfaces = _inquiry_surfaces(state)
     timings["inquiry_orientation"] = (
         local_timer.timings.get("inquiry_orientation", 0.0)
@@ -393,38 +427,46 @@ def _build_indexes(
         else 0.0
     )
     return _AuditIndexes(
-        preserved_surfaces=[
-            item for event in events for item in (_json(event.payload), event.kind)
-        ],
-        projected_surfaces=[*projected_entities, *projected_facts, *fact_support],
-        read_model_surfaces=read_surfaces,
-        inquiry_surfaces=inquiry_surfaces,
+        preserved_terms=_surface_terms(
+            (item for event in events for item in (_json(event.payload), event.kind)),
+            counters,
+        ),
+        projected_terms=_surface_terms(
+            [*projected_entities, *projected_facts, *fact_support], counters
+        ),
+        read_model_terms=_surface_terms([*read_surfaces, *source_nav_terms], counters),
+        inquiry_terms=_surface_terms(inquiry_surfaces, counters),
     )
 
 
 def _candidate_flags_from_indexes(
-    candidate: str, indexes: _AuditIndexes
+    candidate: str, indexes: _AuditIndexes, counters: dict[str, int]
 ) -> tuple[bool, bool, bool, bool, bool]:
-    preserved = _contains(candidate, indexes.preserved_surfaces)
-    projected = _contains(candidate, indexes.projected_surfaces)
-    read_model = _contains(candidate, indexes.read_model_surfaces)
-    inquiry = _contains(candidate, indexes.inquiry_surfaces)
-    rendered = _contains(
-        candidate, indexes.read_model_surfaces + indexes.inquiry_surfaces
-    )
+    preserved = _contains(candidate, indexes.preserved_terms, counters)
+    projected = _contains(candidate, indexes.projected_terms, counters)
+    read_model = _contains(candidate, indexes.read_model_terms, counters)
+    inquiry = _contains(candidate, indexes.inquiry_terms, counters)
+    rendered = read_model or inquiry
+    counters["membership_checks"] += 1
     return preserved, projected, read_model, inquiry, rendered
 
 
-def _projected_surfaces(state: State) -> list[str]:
+def _projected_surfaces(
+    state: State, counters: dict[str, int] | None = None
+) -> list[str]:
     return [
-        *_projected_fact_surfaces(state),
-        *_fact_support_surfaces(state),
-        *_projected_entity_surfaces(state),
+        *_projected_fact_surfaces(state, counters),
+        *_fact_support_surfaces(state, counters),
+        *_projected_entity_surfaces(state, counters),
     ]
 
 
-def _projected_fact_surfaces(state: State) -> list[str]:
+def _projected_fact_surfaces(
+    state: State, counters: dict[str, int] | None = None
+) -> list[str]:
     surfaces: list[str] = []
+    if counters is not None:
+        counters["facts_scanned"] += len(state.facts)
     for fact in state.facts.values():
         surfaces.extend(
             [fact.subject_id, fact.predicate, _json(fact.value), _json(fact.dimensions)]
@@ -432,8 +474,12 @@ def _projected_fact_surfaces(state: State) -> list[str]:
     return surfaces
 
 
-def _fact_support_surfaces(state: State) -> list[str]:
+def _fact_support_surfaces(
+    state: State, counters: dict[str, int] | None = None
+) -> list[str]:
     surfaces: list[str] = []
+    if counters is not None:
+        counters["fact_supports_scanned"] += len(state.fact_supports)
     for support in state.fact_supports:
         surfaces.extend(
             [
@@ -446,7 +492,9 @@ def _fact_support_surfaces(state: State) -> list[str]:
     return surfaces
 
 
-def _projected_entity_surfaces(state: State) -> list[str]:
+def _projected_entity_surfaces(
+    state: State, counters: dict[str, int] | None = None
+) -> list[str]:
     surfaces: list[str] = []
     for obs in state.observations.values():
         surfaces.extend([obs.subject, obs.predicate, _json(obs.value), obs.source_type])
@@ -465,7 +513,11 @@ def _projected_entity_surfaces(state: State) -> list[str]:
     return surfaces
 
 
-def _read_model_surfaces(state: State) -> list[str]:
+def _read_model_surfaces(
+    state: State, counters: dict[str, int] | None = None
+) -> list[str]:
+    if counters is not None:
+        counters["read_model_build_calls"] += 1
     fact_lines = [
         f"{v.subject} {v.predicate} {_json(v.object)} {_json(v.dimensions)}"
         for v in build_fact_view(state)
@@ -486,8 +538,75 @@ def _inquiry_surfaces(state: State) -> list[str]:
     return [] if "No deterministic related material" in orientation else [orientation]
 
 
+def _new_counters() -> dict[str, int]:
+    return {
+        "candidate_count": 0,
+        "raw_candidates_discovered": 0,
+        "candidates_evaluated": 0,
+        "facts_scanned": 0,
+        "fact_supports_scanned": 0,
+        "source_navigation_build_calls": 0,
+        "source_navigation_query_calls": 0,
+        "source_navigation_rows_scanned": 0,
+        "orientation_build_calls": 0,
+        "orientation_query_calls": 0,
+        "docs_scanned": 0,
+        "symbols_scanned": 0,
+        "tokenizations": 0,
+        "normalizations": 0,
+        "membership_checks": 0,
+        "state_projection_build_calls": 0,
+        "entity_projection_build_calls": 0,
+        "fact_support_index_build_calls": 0,
+        "read_model_build_calls": 0,
+    }
+
+
+def _source_navigation_terms_from_fact_support(
+    state: State, counters: dict[str, int]
+) -> list[str]:
+    counters["source_navigation_rows_scanned"] += len(state.fact_supports)
+    terms: list[str] = []
+    for support in state.fact_supports:
+        if support.predicate not in {"defines", "imports"}:
+            continue
+        terms.extend(
+            [
+                support.subject,
+                support.predicate,
+                str(support.value),
+                str(support.dimensions.get("path", "")),
+                str(support.value).rsplit(".", 1)[-1],
+            ]
+        )
+    return terms
+
+
+def _surface_terms(
+    surfaces: Iterable[str], counters: dict[str, int] | None = None
+) -> set[str]:
+    terms: set[str] = set()
+    for surface in surfaces:
+        text = str(surface).lower()
+        if text:
+            terms.add(text)
+        if counters is not None:
+            counters["tokenizations"] += 1
+        tokens = [token.lower() for token in _TOKEN_RE.findall(text)]
+        terms.update(tokens)
+        for width in (2, 3, 4):
+            terms.update(
+                " ".join(tokens[index : index + width])
+                for index in range(0, max(0, len(tokens) - width + 1))
+            )
+    return terms
+
+
 def _discover_candidates(
-    events: list[Any], state: State, repo_root: Path
+    events: list[Any],
+    state: State,
+    repo_root: Path,
+    counters: dict[str, int] | None = None,
 ) -> _CandidateDiscovery:
     found: dict[str, str] = {}
     source_counts = {
@@ -515,13 +634,20 @@ def _discover_candidates(
 
     for event in events:
         scan_counts["event payloads scanned"] += 1
+        if counters is not None:
+            counters["tokenizations"] += 1
         for token in _TOKEN_RE.findall(_json(event.payload)):
             if _useful_token(token):
                 add(token, _family_for_candidate(token), "event payloads")
 
     projected_surfaces = _projected_surfaces(state)
+    if counters is not None:
+        counters["facts_scanned"] += len(state.facts)
+        counters["fact_supports_scanned"] += len(state.fact_supports)
     scan_counts["facts scanned"] = len(state.facts) + len(state.fact_supports)
     for text in projected_surfaces:
+        if counters is not None:
+            counters["tokenizations"] += 1
         for token in _TOKEN_RE.findall(text):
             if _useful_token(token):
                 add(token, _family_for_candidate(token), "projected state")
@@ -531,7 +657,11 @@ def _discover_candidates(
     ):
         if path.is_file():
             scan_counts["repo files scanned"] += 1
+            if counters is not None:
+                counters["docs_scanned"] += 1
             add(str(path.relative_to(repo_root)), "repository", "docs/")
+            if counters is not None:
+                counters["tokenizations"] += 1
             for token in _TOKEN_RE.findall(
                 path.stem.replace("_", " ").replace("-", " ")
             ):
@@ -543,6 +673,8 @@ def _discover_candidates(
         for path in runtime_dir.glob("*.py"):
             scan_counts["repo files scanned"] += 1
             scan_counts["symbols scanned"] += 1
+            if counters is not None:
+                counters["symbols_scanned"] += 1
             add(path.stem.replace("_", " "), "projection", "seed_runtime/")
     return _CandidateDiscovery(found, source_counts, scan_counts)
 
@@ -571,9 +703,10 @@ def _first_loss(flags: tuple[bool, bool, bool, bool, bool]) -> str:
     return "none" if all(flags) else ("not present" if not any(flags) else "none")
 
 
-def _contains(candidate: str, surfaces: Iterable[str]) -> bool:
-    needle = candidate.lower()
-    return any(needle in str(surface).lower() for surface in surfaces)
+def _contains(candidate: str, terms: set[str], counters: dict[str, int]) -> bool:
+    counters["normalizations"] += 1
+    counters["membership_checks"] += 1
+    return candidate.lower() in terms
 
 
 def _json(value: Any) -> str:

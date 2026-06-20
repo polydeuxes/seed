@@ -5455,6 +5455,17 @@ def main(argv: list[str] | None = None) -> int:
                     print(
                         f"[reachability]   {name}: {count}", file=sys.stderr, flush=True
                     )
+                print(
+                    "[reachability] algorithmic counters:",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                for name, count in (result.metadata.algorithmic_counters or {}).items():
+                    print(
+                        f"[reachability] {name}={count}",
+                        file=sys.stderr,
+                        flush=True,
+                    )
                 print("[reachability] cache visibility:", file=sys.stderr, flush=True)
                 for name, status in (result.metadata.cache or {}).items():
                     print(

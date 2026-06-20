@@ -276,3 +276,78 @@ def test_reachability_observability_records_required_metadata(tmp_path):
     )
     assert any(msg.startswith("[reachability] progress evaluate") for msg in messages)
     assert json.loads(json.dumps(payload))["metadata"]["candidate_sources"]
+
+
+def test_reachability_hot_loop_counters_do_not_scale_builders_with_candidates():
+    from seed_runtime.knowledge_reachability import (
+        build_knowledge_reachability_audit_result,
+    )
+
+    ledger = EventLedger()
+    for idx in range(25):
+        ledger.append("operator.note", "w", {"text": f"candidate_token_{idx}"})
+    for idx in range(10):
+        ledger.append(
+            "fact.observed",
+            "w",
+            {
+                "fact": _fact(
+                    f"fact_{idx}",
+                    f"module{idx}",
+                    "defines",
+                    f"module{idx}.Symbol{idx}",
+                    {"path": f"seed_runtime/module{idx}.py"},
+                )
+            },
+        )
+
+    result = build_knowledge_reachability_audit_result(ledger, "w", limit=20)
+    counters = result.metadata.algorithmic_counters
+
+    assert counters is not None
+    assert counters["source_navigation_build_calls"] == 0
+    assert counters["source_navigation_query_calls"] == 0
+    assert counters["orientation_build_calls"] == 1
+    assert counters["fact_support_index_build_calls"] == 1
+    assert counters["read_model_build_calls"] == 1
+    assert counters["fact_supports_scanned"] < counters["candidates_evaluated"] * 10
+    assert counters["normalizations"] <= counters["candidates_evaluated"] * 4
+
+
+def test_reachability_scale_uses_indexed_evaluation_for_large_candidate_set():
+    from seed_runtime.knowledge_reachability import (
+        build_knowledge_reachability_audit_result,
+    )
+
+    ledger = EventLedger()
+    for idx in range(100_000):
+        ledger.append("operator.note", "w", {"text": f"scale_candidate_{idx}"})
+    for idx in range(1_000):
+        ledger.append(
+            "fact.observed",
+            "w",
+            {
+                "fact": _fact(
+                    f"scale_fact_{idx}",
+                    f"scale_module_{idx}",
+                    "defines" if idx % 2 == 0 else "imports",
+                    f"scale_module_{idx}.ScaleSymbol{idx}",
+                    {"path": f"seed_runtime/scale_module_{idx}.py"},
+                )
+            },
+        )
+
+    result = build_knowledge_reachability_audit_result(
+        ledger, "w", limit=100_000, max_seconds=None
+    )
+    counters = result.metadata.algorithmic_counters
+
+    assert counters is not None
+    assert counters["raw_candidates_discovered"] >= 100_000
+    assert counters["candidates_evaluated"] >= 100_000
+    assert counters["source_navigation_build_calls"] == 0
+    assert counters["source_navigation_query_calls"] == 0
+    assert counters["orientation_build_calls"] == 1
+    assert counters["fact_support_index_build_calls"] == 1
+    assert counters["source_navigation_rows_scanned"] == 1_000
+    assert counters["membership_checks"] <= counters["candidates_evaluated"] * 5
