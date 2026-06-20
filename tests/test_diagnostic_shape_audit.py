@@ -41,6 +41,7 @@ def test_matching_registry_declarations_report_consistent_for_current_diagnostic
     assert _row(rows, "ownership_discrepancies", "supports_json").status == "consistent"
     assert _row(rows, "knowledge_reachability", "uses_repo_files").status == "consistent"
     assert _row(rows, "capability_needs", "reads_diagnostic_facts").status == "consistent"
+    assert _row(rows, "observation_utilization", "uses_repo_files").status == "consistent"
 
 
 def test_mismatched_fixture_reports_mismatch(tmp_path):
@@ -76,7 +77,7 @@ def test_record_enabled_diagnostics_validate_diagnostic_run_scoping():
 def test_json_capable_diagnostics_validate_json_support():
     rows = build_diagnostic_shape_audit()
 
-    for diagnostic in ["ownership_discrepancies", "capability_needs", "knowledge_reachability"]:
+    for diagnostic in ["ownership_discrepancies", "capability_needs", "knowledge_reachability", "observation_utilization"]:
         row = _row(rows, diagnostic, "supports_json")
         assert row.observed is True
         assert row.status == "consistent"

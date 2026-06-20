@@ -138,6 +138,22 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         reads_diagnostic_facts=False,
         description="Compares two local operational audit snapshots without recording facts.",
     ),
+
+    DiagnosticInventoryEntry(
+        name="observation_utilization",
+        cli_flags=("--observation-utilization",),
+        uses_projected_state=True,
+        uses_repo_files=True,
+        supports_json=True,
+        supports_record=False,
+        record_scope="none",
+        emits_diagnostic_facts=False,
+        emits_cluster_facts=False,
+        writes_event_ledger=False,
+        mutates_cluster=False,
+        reads_diagnostic_facts=False,
+        description="Audits implementation-backed participation of observation predicates across projection, read-model, and diagnostic surfaces.",
+    ),
     DiagnosticInventoryEntry(
         name="capability_needs",
         cli_flags=("--capability-needs",),
