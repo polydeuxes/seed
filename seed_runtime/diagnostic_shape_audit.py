@@ -12,6 +12,12 @@ from seed_runtime.diagnostic_inventory import (
 )
 
 AuditStatus = Literal["consistent", "warning", "mismatch", "unknown"]
+FILTERABLE_AUDIT_STATUSES: tuple[AuditStatus, ...] = (
+    "consistent",
+    "warning",
+    "mismatch",
+    "unknown",
+)
 AUDIT_FIELDS = (
     "supports_record",
     "supports_json",
@@ -214,10 +220,22 @@ def build_diagnostic_shape_audit(
     return rows
 
 
+def filter_diagnostic_shape_audit_rows(
+    rows: list[DiagnosticShapeAuditRow], status: AuditStatus | None = None
+) -> list[DiagnosticShapeAuditRow]:
+    if status is None:
+        return rows
+    return [row for row in rows if row.status == status]
+
+
 def diagnostic_shape_audit_json(
     rows: list[DiagnosticShapeAuditRow],
+    *,
+    status: AuditStatus | None = None,
 ) -> list[dict[str, Any]]:
-    return [row.to_json_dict() for row in rows]
+    return [
+        row.to_json_dict() for row in filter_diagnostic_shape_audit_rows(rows, status)
+    ]
 
 
 def summarize_diagnostic_shape_audit(
@@ -233,10 +251,20 @@ def summarize_diagnostic_shape_audit(
     )
 
 
-def format_diagnostic_shape_audit(rows: list[DiagnosticShapeAuditRow]) -> str:
+def format_diagnostic_shape_audit(
+    rows: list[DiagnosticShapeAuditRow],
+    *,
+    status: AuditStatus | None = None,
+) -> str:
+    filtered_rows = filter_diagnostic_shape_audit_rows(rows, status)
     lines = ["Diagnostic Shape Audit", ""]
+    if status is not None:
+        lines.append(f"Filter: status={status}")
+        lines.append("")
+    if status is not None and not filtered_rows:
+        lines.append(f"No diagnostic shape audit rows matched status={status}.")
     current = None
-    for row in rows:
+    for row in filtered_rows:
         if row.diagnostic != current:
             current = row.diagnostic
             lines.append(row.diagnostic)
@@ -249,16 +277,17 @@ def format_diagnostic_shape_audit(rows: list[DiagnosticShapeAuditRow]) -> str:
             ]
         )
     summary = summarize_diagnostic_shape_audit(rows)
-    lines.extend(
-        [
-            "",
-            f"Diagnostics audited: {summary.diagnostics_audited}",
-            f"Consistent: {summary.consistent}",
-            f"Warnings: {summary.warnings}",
-            f"Mismatches: {summary.mismatches}",
-            f"Unknown: {summary.unknown}",
-        ]
-    )
+    summary_lines = [
+        "",
+        f"Diagnostics audited: {summary.diagnostics_audited}",
+        f"Consistent: {summary.consistent}",
+        f"Warnings: {summary.warnings}",
+        f"Mismatches: {summary.mismatches}",
+        f"Unknown: {summary.unknown}",
+    ]
+    if status is not None:
+        summary_lines.append(f"Filtered rows: {len(filtered_rows)}")
+    lines.extend(summary_lines)
     return "\n".join(lines)
 
 
