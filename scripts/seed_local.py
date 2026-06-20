@@ -69,6 +69,11 @@ from seed_runtime.consumer_dependency_audit import (
     consumer_audit_json,
     format_consumer_audit,
 )
+from seed_runtime.emitter_consumer_audit import (
+    build_emitter_consumer_audit,
+    emitter_consumer_audit_json,
+    format_emitter_consumer_audit,
+)
 from seed_runtime.correlation_audit import (
     build_correlation_audit,
     correlation_audit_json,
@@ -996,6 +1001,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="audit implementation-backed consumers of predicates and diagnostics",
     )
     parser.add_argument(
+        "--emitter-consumer-audit",
+        action="store_true",
+        help="audit implementation-backed emitted outputs and their visible consumers",
+    )
+    parser.add_argument(
         "--observation-inventory",
         action="store_true",
         help="discover observation providers and predicates from implementation",
@@ -1769,6 +1779,7 @@ def validate_lifecycle_args(
         bool(args.visibility_coverage_audit),
         bool(args.operational_surface_classification_audit),
         bool(args.consumer_audit),
+        bool(args.emitter_consumer_audit),
         bool(args.observation_inventory),
         bool(args.observation_utilization),
         bool(args.ops_brief),
@@ -1801,7 +1812,7 @@ def validate_lifecycle_args(
             "--state-build, --state-build-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --ownership-discrepancies, "
-            "--diagnostic-shape-audit, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --pressure-audit, --privilege-discovery, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
+            "--diagnostic-shape-audit, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --pressure-audit, --privilege-discovery, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
             "or --events-only"
         )
     if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
@@ -1886,6 +1897,7 @@ def validate_lifecycle_args(
         or args.visibility_coverage_audit
         or args.operational_surface_classification_audit
         or args.consumer_audit
+        or args.emitter_consumer_audit
         or args.observation_inventory
         or args.observation_utilization
         or args.ops_brief
@@ -1898,7 +1910,7 @@ def validate_lifecycle_args(
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --pressure-audit, --privilege-discovery, --correlation-audit, or --audit-compare"
+            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --pressure-audit, --privilege-discovery, --correlation-audit, or --audit-compare"
         )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
@@ -5990,6 +6002,16 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(consumer_audit_json(audit), indent=2, sort_keys=True))
         else:
             print(format_consumer_audit(audit))
+        return 0
+
+    if args.emitter_consumer_audit:
+        audit = build_emitter_consumer_audit(REPO_ROOT)
+        if args.json_output:
+            print(
+                json.dumps(emitter_consumer_audit_json(audit), indent=2, sort_keys=True)
+            )
+        else:
+            print(format_emitter_consumer_audit(audit))
         return 0
 
     if args.state_build:
