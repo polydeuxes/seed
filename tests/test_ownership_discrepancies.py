@@ -154,6 +154,7 @@ def test_unrecorded_owner_not_observed_listener_gap_surfaces_capability_need(
     assert ownership_rows[0]["candidate_owner"] == "node-a"
     assert ownership_rows[0]["conflict"] == "owner_not_observed"
     assert ownership_rows[0]["confidence"] == 0.55
+    capsys.readouterr()
     assert seed_local.main(["--db", str(db), "--capability-needs", "--json"]) == 0
     needs = json.loads(capsys.readouterr().out)
     capabilities = {item["capability"]: item for item in needs}
@@ -405,3 +406,65 @@ def test_remote_mount_source_host_increases_confidence_preserves_uncertainty_and
         if not fact.subject_id.startswith("diagnostic_run:")
     ]
     assert all("owner" not in fact.predicate for fact in entity_facts)
+
+
+def test_local_listener_process_attribution_strengthens_evidence_without_owner_fact(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db = tmp_path / "seed.sqlite"
+    ingest(
+        seed_local,
+        db,
+        ("api", "prometheus_target", "127.0.0.1:9100"),
+        ("node-a", "listening_socket", "tcp 127.0.0.1:9100"),
+        ("node-a", "listener_attribution_status", "process_observed"),
+        ("node-a", "listening_process_id", "1234"),
+        ("node-a", "listening_process_name", "node_exporter"),
+    )
+
+    rows = run_json(seed_local, db, capsys, "api")
+
+    assert rows[0]["candidate_owner"] == "node-a"
+    assert rows[0]["conflict"] == "owner_not_observed"
+    assert rows[0]["confidence"] == 0.68
+    assert "process attribution is available" in rows[0]["reason"]
+    assert any(
+        ref["predicate"] == "listening_process_name"
+        and ref["role"] == "listener_process_observed"
+        for ref in rows[0]["evidence"]
+    )
+
+    state = StateProjector(SQLiteEventLedger(db)).project("local")
+    entity_facts = [
+        fact
+        for fact in state.facts.values()
+        if not fact.subject_id.startswith("diagnostic_run:")
+    ]
+    assert not any(
+        fact.predicate in {"service_owner", "owned_by", "ownership"}
+        for fact in entity_facts
+    )
+
+
+def test_capability_needs_do_not_request_listener_process_when_observed(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db = tmp_path / "seed.sqlite"
+    ingest(
+        seed_local,
+        db,
+        ("api", "prometheus_target", "127.0.0.1:9100"),
+        ("node-a", "listening_socket", "tcp 127.0.0.1:9100"),
+        ("node-a", "listener_attribution_status", "process_observed"),
+        ("node-a", "listening_process_id", "1234"),
+    )
+
+    capsys.readouterr()
+    assert seed_local.main(["--db", str(db), "--capability-needs", "--json"]) == 0
+    needs = json.loads(capsys.readouterr().out)
+    capabilities = {item["capability"] for item in needs}
+
+    assert "listener_process_inventory" not in capabilities
+    assert "container_port_mapping" in capabilities

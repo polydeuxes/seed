@@ -1445,7 +1445,7 @@ class LocalHostObservationSource:
 
     @staticmethod
     def parse_ss_listener_output(output: str, protocol: str) -> list[dict[str, Any]]:
-        """Parse representative ``ss -ln[tu]`` output without process attribution."""
+        """Parse representative ``ss -ln[tu]p`` listener output opportunistically."""
 
         entries: list[dict[str, Any]] = []
         for raw_line in output.splitlines():
@@ -1462,17 +1462,31 @@ class LocalHostObservationSource:
             if parsed is None:
                 continue
             address, port = parsed
-            entries.append(
-                {
-                    "protocol": protocol,
-                    "address_family": "ipv6" if ":" in address else "ipv4",
-                    "address": address,
-                    "port": port,
-                    "state": fields[0].upper(),
-                    "source": f"ss -ln{protocol[0]}",
-                }
-            )
+            entry = {
+                "protocol": protocol,
+                "address_family": "ipv6" if ":" in address else "ipv4",
+                "address": address,
+                "port": port,
+                "state": fields[0].upper(),
+                "source": f"ss -ln{protocol[0]}",
+            }
+            process = LocalHostObservationSource._parse_ss_process(fields[5:])
+            if process is not None:
+                entry["process"] = process
+            entries.append(entry)
         return entries
+
+    @staticmethod
+    def _parse_ss_process(fields: list[str]) -> dict[str, Any] | None:
+        text = " ".join(fields)
+        match = re.search(r'"(?P<name>[^"]+)",pid=(?P<pid>\d+)', text)
+        if not match:
+            return None
+        return {
+            "pid": int(match.group("pid")),
+            "name": match.group("name"),
+            "source": "ss process attribution",
+        }
 
     @staticmethod
     def _parse_ss_local_endpoint(value: str) -> tuple[str, int] | None:
