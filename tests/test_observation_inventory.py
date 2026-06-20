@@ -2,7 +2,10 @@ import json
 from pathlib import Path
 
 from scripts import seed_local
-from seed_runtime.observation_inventory import build_observation_inventory, format_observation_inventory
+from seed_runtime.observation_inventory import (
+    build_observation_inventory,
+    format_observation_inventory,
+)
 
 
 def test_cli_observation_inventory_renders(capsys):
@@ -17,7 +20,13 @@ def test_cli_observation_inventory_renders(capsys):
 def test_cli_observation_inventory_json_is_valid(capsys):
     assert seed_local.main(["--observation-inventory", "--json"]) == 0
     payload = json.loads(capsys.readouterr().out)
-    assert set(payload) >= {"providers", "predicates", "families", "summary", "metadata"}
+    assert set(payload) >= {
+        "providers",
+        "predicates",
+        "families",
+        "summary",
+        "metadata",
+    }
 
 
 def test_providers_and_predicates_are_discovered_from_implementation():
@@ -54,6 +63,20 @@ def test_summary_counts_are_correct():
 def test_empty_inventory_behavior_is_sane(tmp_path):
     (tmp_path / "seed_runtime").mkdir()
     inv = build_observation_inventory(tmp_path)
-    assert inv.to_json_dict()["summary"] == {"provider_count": 0, "predicate_count": 0, "family_count": 0}
+    assert inv.to_json_dict()["summary"] == {
+        "provider_count": 0,
+        "predicate_count": 0,
+        "family_count": 0,
+    }
     rendered = format_observation_inventory(inv)
     assert "Providers: 0" in rendered
+
+
+def test_mount_source_predicates_are_visible_in_observation_inventory():
+    predicates = {p.predicate for p in build_observation_inventory().predicates}
+    assert {
+        "mount_source",
+        "mount_source_host",
+        "mount_source_path",
+        "mount_attribution_status",
+    } <= predicates

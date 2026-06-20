@@ -1631,7 +1631,6 @@ def _patch_listener_host(monkeypatch):
     )
 
 
-
 def test_ss_listener_output_parser_collects_tcp_udp_without_privileged_fields():
     from seed_runtime.observation_sources import LocalHostObservationSource
 
@@ -1645,10 +1644,9 @@ UNCONN 0      0          0.0.0.0:53        0.0.0.0:*
 UNCONN 0      0             [::]:1234         [::]:*
 """
 
-    entries = (
-        LocalHostObservationSource.parse_ss_listener_output(tcp_output, "tcp")
-        + LocalHostObservationSource.parse_ss_listener_output(udp_output, "udp")
-    )
+    entries = LocalHostObservationSource.parse_ss_listener_output(
+        tcp_output, "tcp"
+    ) + LocalHostObservationSource.parse_ss_listener_output(udp_output, "udp")
 
     assert {
         (entry["protocol"], entry["address"], entry["port"]) for entry in entries
@@ -1660,6 +1658,7 @@ UNCONN 0      0             [::]:1234         [::]:*
         ("udp", "::", 1234),
     }
     assert all("process" not in entry and "container" not in entry for entry in entries)
+
 
 def test_local_host_source_emits_tcp_udp_listener_observations(monkeypatch, tmp_path):
     from seed_runtime.observation_sources import LocalHostObservationSource
@@ -1706,7 +1705,9 @@ def test_local_host_source_emits_tcp_udp_listener_observations(monkeypatch, tmp_
     assert endpoint.metadata["question_answered"] == (
         "What protocol/address/port endpoints are bound locally?"
     )
-    process = next(obs for obs in observations if obs.predicate == "listening_process_name")
+    process = next(
+        obs for obs in observations if obs.predicate == "listening_process_name"
+    )
     assert process.dimensions == endpoint.dimensions
     assert process.metadata["process_inode"] == "1"
     assert process.metadata["process_source"] == "/proc/1234/fd and /proc/1234/comm"
@@ -3195,7 +3196,6 @@ def test_local_users_observation_avoids_forbidden_activity_privilege_sources(
     assert all(obs.metadata["loginctl_inspected"] is False for obs in observations)
 
 
-
 def test_local_host_observation_includes_systemd_source(monkeypatch):
     from seed_runtime import observation_sources as sources
     from seed_runtime.observation_sources import LocalHostObservationSource
@@ -3294,6 +3294,7 @@ def test_systemd_observations_flow_through_local_host_collection_and_projection(
     assert ("node-a", "systemd_unit", "nginx.service") in {
         (fact.subject, fact.predicate, fact.object) for fact in fact_view
     }
+
 
 def test_systemd_observations_normalize_and_project_reported_states():
     from seed_runtime.observation_sources import SystemdObservationSource
@@ -3477,3 +3478,66 @@ def test_systemd_missing_fields_are_safe_and_projection_is_deterministic():
         ).value
         == "generated"
     )
+
+
+def test_findmnt_json_parser_extracts_remote_mount_source_parts():
+    from seed_runtime.observation_sources import parse_findmnt_json_mounts
+
+    mounts = parse_findmnt_json_mounts(
+        '{"filesystems":[{"target":"/mnt/node205/sda1","source":"node205:/mnt/sda1","fstype":"nfs4","options":"rw,relatime"}]}'
+    )
+
+    assert mounts == [
+        {
+            "mounted_device": "node205:/mnt/sda1",
+            "mount_point": "/mnt/node205/sda1",
+            "filesystem_type": "nfs4",
+            "mount_options": ["relatime", "rw"],
+            "source": "findmnt --json",
+            "mount_source_host": "node205",
+            "mount_source_path": "/mnt/sda1",
+        }
+    ]
+
+
+def test_remote_mount_source_observations_include_host_path_and_uncertain_attribution(
+    monkeypatch, tmp_path
+):
+    from seed_runtime import observation_sources as sources
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    class DiskUsage:
+        total = 1000
+        free = 250
+
+    proc = tmp_path / "proc"
+    proc.mkdir()
+    (proc / "mounts").write_text(
+        "node205:/mnt/sda1 /mnt/node205/sda1 nfs4 rw,relatime 0 0\n/dev/sda1 / ext4 rw 0 0\n",
+        encoding="utf-8",
+    )
+    missing = tmp_path / "missing"
+    monkeypatch.setattr(sources.platform, "node", lambda: "consumer")
+    monkeypatch.setattr(sources.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(sources.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(sources.shutil, "disk_usage", lambda path: DiskUsage())
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_collect_network_observations",
+        lambda self, observed_at, hostname, metadata: [],
+    )
+
+    observations = LocalHostObservationSource(
+        proc_root=proc, sys_class_net=missing, resolv_conf=missing
+    ).collect()
+    triples = {(obs.subject, obs.predicate, obs.value) for obs in observations}
+
+    assert ("consumer", "mount_source", "node205:/mnt/sda1") in triples
+    assert ("consumer", "mount_source_host", "node205") in triples
+    assert ("consumer", "mount_source_path", "/mnt/sda1") in triples
+    assert (
+        "consumer",
+        "mount_attribution_status",
+        "remote_source_observed_export_unattributed",
+    ) in triples
+    assert ("consumer", "mount_source_host", "/dev/sda1") not in triples
