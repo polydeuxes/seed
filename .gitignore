@@ -3,3 +3,4 @@ __pycache__/
 .pytest_cache/
 builder_out/
 *.db
+.audit/

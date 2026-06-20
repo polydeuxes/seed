@@ -20,6 +20,13 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from seed_runtime.action_plans import ActionPlanService, ActionPlanTransitionError
+from seed_runtime.audit_snapshots import (
+    compare_audit_snapshots,
+    create_audit_snapshot,
+    format_audit_compare,
+    format_audit_snapshots,
+    list_audit_snapshots,
+)
 from seed_runtime.ansible_inventory_source import AnsibleInventoryObservationSource
 from seed_runtime.candidate_requests import (
     inspect_candidate_requests,
@@ -879,6 +886,28 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "--audit-snapshot",
+        choices=["observation_inventory", "ownership_discrepancies"],
+        help="save a local operational audit snapshot for one supported kind",
+    )
+    parser.add_argument(
+        "--audit-snapshots",
+        action="store_true",
+        help="list local operational audit snapshots",
+    )
+    parser.add_argument(
+        "--audit-compare",
+        nargs=2,
+        metavar=("SNAPSHOT_A", "SNAPSHOT_B"),
+        help="compare two local operational audit snapshots",
+    )
+    parser.add_argument(
+        "--kind",
+        choices=["observation_inventory", "ownership_discrepancies"],
+        help="audit snapshot kind for --audit-compare",
+    )
+
+    parser.add_argument(
         "--diagnostic-inventory",
         action="store_true",
         help="list diagnostic/test-like operational surfaces and their declared shape",
@@ -1624,6 +1653,9 @@ def validate_lifecycle_args(
         bool(args.capability_needs),
         bool(args.diagnostic_shape_audit),
         bool(args.observation_inventory),
+        bool(args.audit_snapshot),
+        bool(args.audit_snapshots),
+        bool(args.audit_compare),
         bool(args.rebuild_state_cache),
         bool(args.state_cache_status),
         bool(args.events_only),
@@ -1645,7 +1677,7 @@ def validate_lifecycle_args(
             "--state-build, --state-build-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --ownership-discrepancies, "
-            "--diagnostic-shape-audit, --observation-inventory, --rebuild-state-cache, --state-cache-status, "
+            "--diagnostic-shape-audit, --observation-inventory, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
             "or --events-only"
         )
     if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
@@ -1695,6 +1727,10 @@ def validate_lifecycle_args(
         )
     if args.include_history and not args.fact_support:
         parser.error("--include-history can only be used with --fact-support")
+    if args.audit_compare and not args.kind:
+        parser.error("--audit-compare requires --kind")
+    if args.kind and not args.audit_compare:
+        parser.error("--kind can only be used with --audit-compare")
     if args.provider and not args.observation_inventory:
         parser.error("--provider can only be used with --observation-inventory")
     if args.predicate and not args.observation_inventory:
@@ -1711,10 +1747,11 @@ def validate_lifecycle_args(
         or args.diagnostic_inventory
         or args.diagnostic_shape_audit
         or args.observation_inventory
+        or args.audit_compare
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, or --observation-inventory"
+            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --observation-inventory, or --audit-compare"
         )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
@@ -5400,6 +5437,47 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.impact:
         print(format_entity_impact(projected_state_from_args(args), args.impact))
+        return 0
+
+
+    if args.audit_snapshot:
+        ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
+        try:
+            events = ledger.list_events(args.workspace)
+        finally:
+            close = getattr(ledger, "close", None)
+            if close is not None:
+                close()
+        if args.audit_snapshot == "observation_inventory":
+            payload = build_observation_inventory().to_json_dict()
+        else:
+            payload = ownership_discrepancies_json(
+                build_ownership_discrepancies(projected_state_from_args(args))
+            )
+        result = create_audit_snapshot(
+            repo_root=REPO_ROOT,
+            kind=args.audit_snapshot,
+            payload=payload,
+            command=f"seed --audit-snapshot {args.audit_snapshot}",
+            seed_db=args.db,
+            events=events,
+            projection_version=STATE_PROJECTION_VERSION,
+        )
+        print(f"Created audit snapshot {result.snapshot_id}: {result.directory}")
+        return 0
+
+    if args.audit_snapshots:
+        print(format_audit_snapshots(list_audit_snapshots(REPO_ROOT)))
+        return 0
+
+    if args.audit_compare:
+        diff = compare_audit_snapshots(
+            REPO_ROOT, args.audit_compare[0], args.audit_compare[1], kind=args.kind
+        )
+        if args.json_output:
+            print(json.dumps(diff, indent=2, sort_keys=True))
+        else:
+            print(format_audit_compare(diff))
         return 0
 
     if args.diagnostic_inventory:
