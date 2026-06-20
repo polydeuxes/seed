@@ -17,8 +17,6 @@ from seed_runtime.inquiry_orientation import (
     format_inquiry_orientation,
 )
 from seed_runtime.state import State, StateProjector
-from seed_runtime.state_summary_views import state_summary
-from seed_runtime.state_views import build_fact_view, build_observation_view
 
 _TOKEN_RE = re.compile(r"[A-Za-z][A-Za-z0-9_./:-]{2,}")
 DEFAULT_SEEDS = [
@@ -50,6 +48,14 @@ STAGES = ("Preserved", "Projected", "Read Model", "Inquiry Orientation", "Render
 DEFAULT_AUDIT_LIMIT = 500
 DEFAULT_MAX_SECONDS = 60.0
 PROGRESS_INTERVAL_SECONDS = 5.0
+DEFAULT_SOURCE_BUDGETS = {
+    "default seeds": None,
+    "event payloads": 200,
+    "projected state": 200,
+    "docs/": 50,
+    "seed_runtime/": 50,
+    "source-navigation terms": 100,
+}
 
 
 @dataclass(frozen=True)
@@ -160,6 +166,9 @@ class _CandidateDiscovery:
     candidates: dict[str, str]
     source_counts: dict[str, int]
     scan_counts: dict[str, int]
+    raw_seen: int
+    used: int
+    truncated: bool
 
 
 @dataclass(frozen=True)
@@ -222,8 +231,15 @@ def build_knowledge_reachability_audit_result(
         events = ledger.list_events(workspace_id)
 
     with timer.phase("discover_candidates") as finish_discovery:
+        effective_limit = None if all_candidates or subject else limit
         discovery = _discover_candidates(
-            events, state, repo_root or Path.cwd(), counters
+            events,
+            state,
+            repo_root or Path.cwd(),
+            counters,
+            limit=effective_limit,
+            all_candidates=all_candidates,
+            subject=subject,
         )
         candidates = discovery.candidates
         source_counts = discovery.source_counts
@@ -235,15 +251,22 @@ def build_knowledge_reachability_audit_result(
         discovered = len(candidates)
         sorted_candidates = sorted(candidates)
         skipped = 0
-        truncated = False
+        truncated = discovery.truncated
         reason = None
-        effective_limit = None if all_candidates or subject else limit
+        if truncated:
+            reason = "limit"
+            skipped = max(0, discovery.raw_seen - len(sorted_candidates))
         if effective_limit is not None and len(sorted_candidates) > effective_limit:
             skipped = len(sorted_candidates) - effective_limit
             sorted_candidates = sorted_candidates[:effective_limit]
             truncated = True
             reason = "limit"
-        finish_discovery(discovered=discovered, capped=len(sorted_candidates))
+        finish_discovery(
+            raw_seen=discovery.raw_seen,
+            used=len(sorted_candidates),
+            limit=effective_limit,
+            truncated=truncated,
+        )
 
     with timer.phase("build_indexes"):
         indexes = _build_indexes(
@@ -279,15 +302,18 @@ def build_knowledge_reachability_audit_result(
     assert timer.timings is not None
     timer.timings["total"] = timer.total()
     counters["candidate_count"] = len(rows)
-    counters["raw_candidates_discovered"] = discovered
+    counters["raw_candidates_discovered"] = discovery.raw_seen
     counters["candidates_evaluated"] = len(rows)
     for key in sorted(counters):
         timer.emit("counter", key, value=counters[key])
     metadata = KnowledgeReachabilityMetadata(
         timings={k: round(v, 6) for k, v in timer.timings.items()},
         candidate_counts={
+            "raw_seen": discovery.raw_seen,
+            "used": len(sorted_candidates),
+            "limit": effective_limit if effective_limit is not None else 0,
             "discovered": discovered,
-            "raw_candidates_discovered": discovered,
+            "raw_candidates_discovered": discovery.raw_seen,
             "capped": len(sorted_candidates),
             "candidates_evaluated": len(rows),
             "evaluated": len(rows),
@@ -414,7 +440,7 @@ def _build_indexes(
         else 0.0
     )
     with local_timer.phase("read_model"):
-        read_surfaces = _read_model_surfaces(state, counters)
+        read_surfaces = _read_model_surfaces(state, counters, local_timer)
     timings["read_model"] = (
         local_timer.timings.get("read_model", 0.0) if local_timer.timings else 0.0
     )
@@ -514,17 +540,46 @@ def _projected_entity_surfaces(
 
 
 def _read_model_surfaces(
-    state: State, counters: dict[str, int] | None = None
+    state: State,
+    counters: dict[str, int] | None = None,
+    timer: _ReachabilityTimer | None = None,
 ) -> list[str]:
     if counters is not None:
         counters["read_model_build_calls"] += 1
-    fact_lines = [
-        f"{v.subject} {v.predicate} {_json(v.object)} {_json(v.dimensions)}"
-        for v in build_fact_view(state)
-    ]
-    obs_lines = [v.summary for v in build_observation_view(state)]
-    summary = _json(state_summary(state))
-    return [*fact_lines, *obs_lines, summary]
+    local_timer = timer or _ReachabilityTimer(None)
+    surfaces: list[str] = []
+    with local_timer.phase("read_model.current_facts") as finish:
+        for fact in state.facts.values():
+            surfaces.append(
+                f"{fact.subject_id} {fact.predicate} {_json(fact.value)} "
+                f"{_json(fact.dimensions)}"
+            )
+        finish(rows=len(state.facts))
+    with local_timer.phase("read_model.fact_support") as finish:
+        for support in state.fact_supports:
+            surfaces.append(
+                f"{support.subject} {support.predicate} {_json(support.value)} "
+                f"{_json(support.dimensions)}"
+            )
+        finish(rows=len(state.fact_supports))
+    with local_timer.phase("read_model.state_summary") as finish:
+        surfaces.append(
+            " ".join(
+                [
+                    f"entities {len(state.entities)}",
+                    f"facts {len(state.facts)}",
+                    f"observations {len(state.observations)}",
+                    f"relationships {len(state.relationships)}",
+                ]
+            )
+        )
+        finish(rows=1)
+    with local_timer.phase("read_model.inquiry_orientation") as finish:
+        notes = getattr(state, "inquiry_notes", {})
+        note_ids = [getattr(note, "note_id", str(note)) for note in notes.values()]
+        surfaces.extend(note_ids)
+        finish(rows=len(note_ids))
+    return surfaces
 
 
 def _inquiry_surfaces(state: State) -> list[str]:
@@ -607,6 +662,10 @@ def _discover_candidates(
     state: State,
     repo_root: Path,
     counters: dict[str, int] | None = None,
+    *,
+    limit: int | None = DEFAULT_AUDIT_LIMIT,
+    all_candidates: bool = False,
+    subject: str | None = None,
 ) -> _CandidateDiscovery:
     found: dict[str, str] = {}
     source_counts = {
@@ -615,15 +674,39 @@ def _discover_candidates(
         "projected state": 0,
         "docs/": 0,
         "seed_runtime/": 0,
+        "source-navigation terms": 0,
     }
     scan_counts = {
         "event payloads scanned": 0,
         "facts scanned": 0,
         "repo files scanned": 0,
         "symbols scanned": 0,
+        "source-navigation terms scanned": 0,
     }
+    raw_seen = 0
+    truncated = False
+    source_budgets = (
+        {key: None for key in DEFAULT_SOURCE_BUDGETS} if all_candidates else DEFAULT_SOURCE_BUDGETS
+    )
+
+    if subject:
+        found[subject] = _family_for_candidate(subject)
+        return _CandidateDiscovery(found, source_counts, scan_counts, 1, 1, False)
+
+    def globally_full() -> bool:
+        return limit is not None and len(found) >= limit
+
+    def source_full(source: str) -> bool:
+        budget = source_budgets.get(source)
+        return budget is not None and source_counts[source] >= budget
 
     def add(candidate: str, family: str, source: str) -> None:
+        nonlocal raw_seen
+        raw_seen += 1
+        if globally_full() and candidate not in found:
+            return
+        if source_full(source) and candidate not in found:
+            return
         before = len(found)
         found.setdefault(candidate, family)
         if len(found) > before:
@@ -633,6 +716,11 @@ def _discover_candidates(
         add(seed, _family_for_candidate(seed), "default seeds")
 
     for event in events:
+        if globally_full():
+            truncated = True
+            break
+        if source_full("event payloads"):
+            break
         scan_counts["event payloads scanned"] += 1
         if counters is not None:
             counters["tokenizations"] += 1
@@ -640,43 +728,71 @@ def _discover_candidates(
             if _useful_token(token):
                 add(token, _family_for_candidate(token), "event payloads")
 
-    projected_surfaces = _projected_surfaces(state)
-    if counters is not None:
-        counters["facts_scanned"] += len(state.facts)
-        counters["fact_supports_scanned"] += len(state.fact_supports)
-    scan_counts["facts scanned"] = len(state.facts) + len(state.fact_supports)
-    for text in projected_surfaces:
+    if not globally_full():
+        projected_surfaces = _projected_surfaces(state)
         if counters is not None:
-            counters["tokenizations"] += 1
-        for token in _TOKEN_RE.findall(text):
-            if _useful_token(token):
-                add(token, _family_for_candidate(token), "projected state")
-
-    for path in (
-        (repo_root / "docs").glob("**/*") if (repo_root / "docs").exists() else []
-    ):
-        if path.is_file():
-            scan_counts["repo files scanned"] += 1
-            if counters is not None:
-                counters["docs_scanned"] += 1
-            add(str(path.relative_to(repo_root)), "repository", "docs/")
+            counters["facts_scanned"] += len(state.facts)
+            counters["fact_supports_scanned"] += len(state.fact_supports)
+        scan_counts["facts scanned"] = len(state.facts) + len(state.fact_supports)
+        for text in projected_surfaces:
+            if globally_full() or source_full("projected state"):
+                if globally_full():
+                    truncated = True
+                break
             if counters is not None:
                 counters["tokenizations"] += 1
-            for token in _TOKEN_RE.findall(
-                path.stem.replace("_", " ").replace("-", " ")
-            ):
-                scan_counts["symbols scanned"] += 1
+            for token in _TOKEN_RE.findall(text):
                 if _useful_token(token):
-                    add(token.lower(), "repository", "docs/")
+                    add(token, _family_for_candidate(token), "projected state")
+
+    if not globally_full():
+        for term in _source_navigation_terms_from_fact_support(
+            state, _new_counters()
+        ):
+            scan_counts["source-navigation terms scanned"] += 1
+            if globally_full() or source_full("source-navigation terms"):
+                if globally_full():
+                    truncated = True
+                break
+            if _useful_token(term):
+                add(term, "repository", "source-navigation terms")
+
+    if not globally_full():
+        for path in (
+            (repo_root / "docs").glob("**/*") if (repo_root / "docs").exists() else []
+        ):
+            if globally_full() or source_full("docs/"):
+                if globally_full():
+                    truncated = True
+                break
+            if path.is_file():
+                scan_counts["repo files scanned"] += 1
+                if counters is not None:
+                    counters["docs_scanned"] += 1
+                add(str(path.relative_to(repo_root)), "repository", "docs/")
+                if counters is not None:
+                    counters["tokenizations"] += 1
+                for token in _TOKEN_RE.findall(
+                    path.stem.replace("_", " ").replace("-", " ")
+                ):
+                    scan_counts["symbols scanned"] += 1
+                    if _useful_token(token):
+                        add(token.lower(), "repository", "docs/")
     runtime_dir = repo_root / "seed_runtime"
-    if runtime_dir.exists():
+    if not globally_full() and runtime_dir.exists():
         for path in runtime_dir.glob("*.py"):
+            if globally_full() or source_full("seed_runtime/"):
+                if globally_full():
+                    truncated = True
+                break
             scan_counts["repo files scanned"] += 1
             scan_counts["symbols scanned"] += 1
             if counters is not None:
                 counters["symbols_scanned"] += 1
             add(path.stem.replace("_", " "), "projection", "seed_runtime/")
-    return _CandidateDiscovery(found, source_counts, scan_counts)
+    return _CandidateDiscovery(
+        found, source_counts, scan_counts, raw_seen, len(found), truncated
+    )
 
 
 def _family_for_candidate(candidate: str) -> str:
