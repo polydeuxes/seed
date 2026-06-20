@@ -220,6 +220,22 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         reads_diagnostic_facts=False,
         description="Reports read-only current-facts cache and timing phases without recording facts or mutating cluster state.",
     ),
+
+    DiagnosticInventoryEntry(
+        name="impact_audit",
+        cli_flags=("--impact-audit",),
+        uses_projected_state=False,
+        uses_repo_files=False,
+        supports_json=True,
+        supports_record=False,
+        record_scope="none",
+        emits_diagnostic_facts=False,
+        emits_cluster_facts=False,
+        writes_event_ledger=False,
+        mutates_cluster=False,
+        reads_diagnostic_facts=False,
+        description="Compares existing operational audit snapshots to classify observable outcome impact without recording facts.",
+    ),
     DiagnosticInventoryEntry(
         name="pressure_audit",
         cli_flags=("--pressure-audit",),
