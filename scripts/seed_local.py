@@ -96,7 +96,7 @@ from seed_runtime.handoff_plans import (
 from seed_runtime.ids import new_id
 from seed_runtime.inference_catalog import InferenceCatalog
 from seed_runtime.knowledge_reachability import (
-    build_knowledge_reachability_audit,
+    build_knowledge_reachability_audit_result,
     format_knowledge_reachability_table,
     knowledge_reachability_json,
 )
@@ -879,6 +879,23 @@ def build_parser() -> argparse.ArgumentParser:
         "--knowledge-reachability-audit-json",
         action="store_true",
         help="render knowledge reachability audit as JSON",
+    )
+    parser.add_argument(
+        "--knowledge-reachability-audit-limit",
+        type=int,
+        default=500,
+        help="maximum candidates to evaluate by default (default: 500)",
+    )
+    parser.add_argument(
+        "--knowledge-reachability-audit-all",
+        action="store_true",
+        help="evaluate all discovered candidates without the default cap",
+    )
+    parser.add_argument(
+        "--knowledge-reachability-audit-max-seconds",
+        type=float,
+        default=60.0,
+        help="soft maximum evaluation seconds before rendering partial results (default: 60)",
     )
     parser.add_argument("--model", default=DEFAULT_MODEL, help="Ollama model name")
     parser.add_argument(
@@ -5315,12 +5332,16 @@ def main(argv: list[str] | None = None) -> int:
     if args.knowledge_reachability_audit:
         ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
         try:
-            rows = build_knowledge_reachability_audit(
+            result = build_knowledge_reachability_audit_result(
                 ledger,
                 args.workspace,
                 family=args.knowledge_reachability_audit_family,
                 subject=args.knowledge_reachability_audit_subject,
                 repo_root=REPO_ROOT,
+                limit=args.knowledge_reachability_audit_limit,
+                all_candidates=args.knowledge_reachability_audit_all,
+                max_seconds=args.knowledge_reachability_audit_max_seconds,
+                progress=lambda message: print(message, file=sys.stderr),
             )
         finally:
             close = getattr(ledger, "close", None)
@@ -5328,10 +5349,14 @@ def main(argv: list[str] | None = None) -> int:
                 close()
         if args.knowledge_reachability_audit_json:
             print(
-                json.dumps(knowledge_reachability_json(rows), indent=2, sort_keys=True)
+                json.dumps(
+                    knowledge_reachability_json(result.rows, result.metadata),
+                    indent=2,
+                    sort_keys=True,
+                )
             )
         else:
-            print(format_knowledge_reachability_table(rows))
+            print(format_knowledge_reachability_table(result.rows, result.metadata))
         return 0
 
     if args.state_build:
