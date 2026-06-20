@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 import time
 from pathlib import Path
 import json
@@ -56,6 +56,46 @@ DEFAULT_SOURCE_BUDGETS = {
     "seed_runtime/": 50,
     "source-navigation terms": 100,
 }
+
+
+@dataclass
+class _TokenizationCache:
+    counters: dict[str, int]
+    _entries: dict[str, tuple[str, tuple[str, ...], frozenset[str]]] = field(
+        default_factory=dict
+    )
+
+    def tokenized(self, value: Any) -> tuple[str, tuple[str, ...], frozenset[str]]:
+        text = str(value)
+        self.counters["tokenization_requests"] += 1
+        cached = self._entries.get(text)
+        if cached is not None:
+            self.counters["tokenization_cache_hits"] += 1
+            return cached
+        lowered = text.lower()
+        tokens = tuple(token.lower() for token in _TOKEN_RE.findall(lowered))
+        terms: set[str] = set(tokens)
+        if lowered:
+            terms.add(lowered)
+        for width in (2, 3, 4):
+            terms.update(
+                " ".join(tokens[index : index + width])
+                for index in range(0, max(0, len(tokens) - width + 1))
+            )
+        entry = (lowered, tokens, frozenset(terms))
+        self._entries[text] = entry
+        self.counters["tokenizations"] += 1
+        self.counters["tokenization_unique"] = len(self._entries)
+        return entry
+
+    def tokens(self, value: Any) -> tuple[str, ...]:
+        return self.tokenized(value)[1]
+
+    def terms(self, value: Any) -> frozenset[str]:
+        return self.tokenized(value)[2]
+
+    def normalize(self, value: Any) -> str:
+        return self.tokenized(value)[0]
 
 
 @dataclass(frozen=True)
@@ -225,6 +265,7 @@ def build_knowledge_reachability_audit_result(
     source_counts: dict[str, int] = {}
     index_timings: dict[str, float] = {}
     counters = _new_counters()
+    token_cache = _TokenizationCache(counters)
 
     with timer.phase("load_state", state_cache=cache["state"], evaluated=0):
         state = StateProjector(ledger).project(workspace_id)
@@ -237,6 +278,7 @@ def build_knowledge_reachability_audit_result(
             state,
             repo_root or Path.cwd(),
             counters,
+            token_cache=token_cache,
             limit=effective_limit,
             all_candidates=all_candidates,
             subject=subject,
@@ -270,7 +312,12 @@ def build_knowledge_reachability_audit_result(
 
     with timer.phase("build_indexes"):
         indexes = _build_indexes(
-            events, state, timer=timer, index_timings=index_timings, counters=counters
+            events,
+            state,
+            timer=timer,
+            index_timings=index_timings,
+            counters=counters,
+            token_cache=token_cache,
         )
 
     with timer.phase("evaluate") as finish_evaluate:
@@ -287,7 +334,9 @@ def build_knowledge_reachability_audit_result(
             if progress and now >= next_progress:
                 timer.progress_message("evaluate", idx - 1, len(sorted_candidates))
                 next_progress = now + progress_interval_seconds
-            flags = _candidate_flags_from_indexes(candidate, indexes, counters)
+            flags = _candidate_flags_from_indexes(
+                candidate, indexes, counters, token_cache
+            )
             rows.append(
                 KnowledgeReachabilityRow(
                     candidates[candidate], candidate, *flags, _first_loss(flags)
@@ -391,7 +440,10 @@ def _candidate_flags(
 ) -> tuple[bool, bool, bool, bool, bool]:
     counters = _new_counters()
     return _candidate_flags_from_indexes(
-        candidate, _build_indexes(events, state, counters=counters), counters
+        candidate,
+        _build_indexes(events, state, counters=counters),
+        counters,
+        _TokenizationCache(counters),
     )
 
 
@@ -402,10 +454,12 @@ def _build_indexes(
     timer: _ReachabilityTimer | None = None,
     index_timings: dict[str, float] | None = None,
     counters: dict[str, int] | None = None,
+    token_cache: _TokenizationCache | None = None,
 ) -> _AuditIndexes:
     local_timer = timer or _ReachabilityTimer(None)
     timings = index_timings if index_timings is not None else {}
     counters = counters if counters is not None else _new_counters()
+    token_cache = token_cache or _TokenizationCache(counters)
     counters["state_projection_build_calls"] += 1
     with local_timer.phase("projected_entities"):
         counters["entity_projection_build_calls"] += 1
@@ -456,22 +510,31 @@ def _build_indexes(
         preserved_terms=_surface_terms(
             (item for event in events for item in (_json(event.payload), event.kind)),
             counters,
+            token_cache,
         ),
         projected_terms=_surface_terms(
-            [*projected_entities, *projected_facts, *fact_support], counters
+            [*projected_entities, *projected_facts, *fact_support],
+            counters,
+            token_cache,
         ),
-        read_model_terms=_surface_terms([*read_surfaces, *source_nav_terms], counters),
-        inquiry_terms=_surface_terms(inquiry_surfaces, counters),
+        read_model_terms=_surface_terms(
+            [*read_surfaces, *source_nav_terms], counters, token_cache
+        ),
+        inquiry_terms=_surface_terms(inquiry_surfaces, counters, token_cache),
     )
 
 
 def _candidate_flags_from_indexes(
-    candidate: str, indexes: _AuditIndexes, counters: dict[str, int]
+    candidate: str,
+    indexes: _AuditIndexes,
+    counters: dict[str, int],
+    token_cache: _TokenizationCache | None = None,
 ) -> tuple[bool, bool, bool, bool, bool]:
-    preserved = _contains(candidate, indexes.preserved_terms, counters)
-    projected = _contains(candidate, indexes.projected_terms, counters)
-    read_model = _contains(candidate, indexes.read_model_terms, counters)
-    inquiry = _contains(candidate, indexes.inquiry_terms, counters)
+    token_cache = token_cache or _TokenizationCache(counters)
+    preserved = _contains(candidate, indexes.preserved_terms, counters, token_cache)
+    projected = _contains(candidate, indexes.projected_terms, counters, token_cache)
+    read_model = _contains(candidate, indexes.read_model_terms, counters, token_cache)
+    inquiry = _contains(candidate, indexes.inquiry_terms, counters, token_cache)
     rendered = read_model or inquiry
     counters["membership_checks"] += 1
     return preserved, projected, read_model, inquiry, rendered
@@ -608,6 +671,9 @@ def _new_counters() -> dict[str, int]:
         "docs_scanned": 0,
         "symbols_scanned": 0,
         "tokenizations": 0,
+        "tokenization_requests": 0,
+        "tokenization_cache_hits": 0,
+        "tokenization_unique": 0,
         "normalizations": 0,
         "membership_checks": 0,
         "state_projection_build_calls": 0,
@@ -638,22 +704,16 @@ def _source_navigation_terms_from_fact_support(
 
 
 def _surface_terms(
-    surfaces: Iterable[str], counters: dict[str, int] | None = None
+    surfaces: Iterable[str],
+    counters: dict[str, int] | None = None,
+    token_cache: _TokenizationCache | None = None,
 ) -> set[str]:
+    if counters is None:
+        counters = _new_counters()
+    token_cache = token_cache or _TokenizationCache(counters)
     terms: set[str] = set()
     for surface in surfaces:
-        text = str(surface).lower()
-        if text:
-            terms.add(text)
-        if counters is not None:
-            counters["tokenizations"] += 1
-        tokens = [token.lower() for token in _TOKEN_RE.findall(text)]
-        terms.update(tokens)
-        for width in (2, 3, 4):
-            terms.update(
-                " ".join(tokens[index : index + width])
-                for index in range(0, max(0, len(tokens) - width + 1))
-            )
+        terms.update(token_cache.terms(surface))
     return terms
 
 
@@ -662,11 +722,15 @@ def _discover_candidates(
     state: State,
     repo_root: Path,
     counters: dict[str, int] | None = None,
+    token_cache: _TokenizationCache | None = None,
     *,
     limit: int | None = DEFAULT_AUDIT_LIMIT,
     all_candidates: bool = False,
     subject: str | None = None,
 ) -> _CandidateDiscovery:
+    if counters is None:
+        counters = _new_counters()
+    token_cache = token_cache or _TokenizationCache(counters)
     found: dict[str, str] = {}
     source_counts = {
         "default seeds": 0,
@@ -686,7 +750,9 @@ def _discover_candidates(
     raw_seen = 0
     truncated = False
     source_budgets = (
-        {key: None for key in DEFAULT_SOURCE_BUDGETS} if all_candidates else DEFAULT_SOURCE_BUDGETS
+        {key: None for key in DEFAULT_SOURCE_BUDGETS}
+        if all_candidates
+        else DEFAULT_SOURCE_BUDGETS
     )
 
     if subject:
@@ -722,9 +788,7 @@ def _discover_candidates(
         if source_full("event payloads"):
             break
         scan_counts["event payloads scanned"] += 1
-        if counters is not None:
-            counters["tokenizations"] += 1
-        for token in _TOKEN_RE.findall(_json(event.payload)):
+        for token in token_cache.tokens(_json(event.payload)):
             if _useful_token(token):
                 add(token, _family_for_candidate(token), "event payloads")
 
@@ -739,16 +803,12 @@ def _discover_candidates(
                 if globally_full():
                     truncated = True
                 break
-            if counters is not None:
-                counters["tokenizations"] += 1
-            for token in _TOKEN_RE.findall(text):
+            for token in token_cache.tokens(text):
                 if _useful_token(token):
                     add(token, _family_for_candidate(token), "projected state")
 
     if not globally_full():
-        for term in _source_navigation_terms_from_fact_support(
-            state, _new_counters()
-        ):
+        for term in _source_navigation_terms_from_fact_support(state, _new_counters()):
             scan_counts["source-navigation terms scanned"] += 1
             if globally_full() or source_full("source-navigation terms"):
                 if globally_full():
@@ -770,9 +830,7 @@ def _discover_candidates(
                 if counters is not None:
                     counters["docs_scanned"] += 1
                 add(str(path.relative_to(repo_root)), "repository", "docs/")
-                if counters is not None:
-                    counters["tokenizations"] += 1
-                for token in _TOKEN_RE.findall(
+                for token in token_cache.tokens(
                     path.stem.replace("_", " ").replace("-", " ")
                 ):
                     scan_counts["symbols scanned"] += 1
@@ -819,10 +877,15 @@ def _first_loss(flags: tuple[bool, bool, bool, bool, bool]) -> str:
     return "none" if all(flags) else ("not present" if not any(flags) else "none")
 
 
-def _contains(candidate: str, terms: set[str], counters: dict[str, int]) -> bool:
+def _contains(
+    candidate: str,
+    terms: set[str],
+    counters: dict[str, int],
+    token_cache: _TokenizationCache,
+) -> bool:
     counters["normalizations"] += 1
     counters["membership_checks"] += 1
-    return candidate.lower() in terms
+    return token_cache.normalize(candidate) in terms
 
 
 def _json(value: Any) -> str:
