@@ -188,6 +188,21 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         ),
         diagnostic_fact_read_markers=("build_capability_needs",),
     ),
+    "current_facts_cache_debug": DiagnosticImplementationSpec(
+        name="current_facts_cache_debug",
+        module_path="scripts/seed_local.py",
+        build_function="_current_facts_timing_from_args",
+        format_function="_format_current_facts_timing_report",
+        cli_flags=("--current-facts-cache-debug",),
+        mutation_markers=(
+            "subprocess.run",
+            ".write_text(",
+            "os.remove",
+            "shutil.rmtree",
+            "authorize_execution",
+            "ingest_observations",
+        ),
+    ),
     "pressure_audit": DiagnosticImplementationSpec(
         name="pressure_audit",
         module_path="seed_runtime/pressure_audit.py",

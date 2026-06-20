@@ -2247,12 +2247,90 @@ def test_cli_current_facts_cache_debug_renders_timing_section(tmp_path, capsys):
     assert "Current Facts Timing" in output
     assert "Cache:\n- state cache: miss" in output
     assert "- projection store open:" in output
-    assert "- cache lookup:" in output
-    assert "- projection replay:" in output
+    assert "- cache metadata lookup + cached projection row load:" in output
+    assert "- state cache miss path (full projection rebuild):" in output
+    assert "- full projection rebuild:" in output
+    assert "- event replay:" in output
+    assert "- projection replay:" not in output
     assert "- snapshot save:" in output
-    assert "- read model build:" in output
+    assert "- read-model build:" in output
     assert "- render:" in output
     assert "- total:" in output
+
+
+def test_cli_current_facts_cache_debug_warm_hit_labels_cached_projection_load(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "current-facts-debug-warm-hit.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [("example_host", "alias", "example_host.local")],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--current-facts-cache-debug"]) == 0
+    capsys.readouterr()
+
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        before_events = len(ledger.list_events("local"))
+    finally:
+        ledger.close()
+
+    assert seed_local.main(["--db", str(db_path), "--current-facts-cache-debug"]) == 0
+
+    output = capsys.readouterr().out
+    assert "Cache:\n- state cache: hit" in output
+    assert "- ledger open:" in output
+    assert "- cache metadata lookup + cached projection row load:" in output
+    assert "- cached projection load/materialize:" in output
+    assert (
+        "- state cache hit path (metadata validation + cached projection load):"
+        in output
+    )
+    assert "- full projection rebuild:" not in output
+    assert "- projection replay:" not in output
+    assert "- read-model build:" in output
+    assert "- stdout/output time:" in output
+
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        assert len(ledger.list_events("local")) == before_events
+    finally:
+        ledger.close()
+
+
+def test_cli_current_facts_cache_debug_filtered_reports_fact_index_timing(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "current-facts-debug-fact-index.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [("example_host", "alias", "example_host.local")],
+    )
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--current-facts",
+                "example_host",
+                "alias",
+                "--current-facts-cache-debug",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert output.split("\n\nCurrent Facts Timing\n", 1)[0] == "example_host.local"
+    assert "- fact-index cache lookup/load:" in output
+    assert "- fact-index build/load:" in output
+    assert "- query/filter + render:" in output
 
 
 def test_cli_current_facts_cache_debug_standalone_does_not_change_facts_returned(
