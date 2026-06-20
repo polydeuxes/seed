@@ -1,9 +1,15 @@
 import importlib.util
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 from seed_runtime.events import SQLiteEventLedger
+from seed_runtime.models import Fact
+from seed_runtime.ownership_discrepancies import (
+    _evidence,
+    _matching_listener_process_refs,
+)
 from seed_runtime.state import StateProjector
 
 SCRIPT_PATH = Path("scripts/seed_local.py")
@@ -468,3 +474,50 @@ def test_capability_needs_do_not_request_listener_process_when_observed(
 
     assert "listener_process_inventory" not in capabilities
     assert "container_port_mapping" in capabilities
+
+
+def test_listener_process_matching_does_not_cross_multiple_local_listeners():
+    observed_at = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    listener_refs = [
+        _evidence(
+            Fact(
+                id="listener-9100",
+                subject_id="node-a",
+                predicate="listening_socket",
+                value="tcp 127.0.0.1:9100",
+                observed_at=observed_at,
+            ),
+            "local_listener_confirmed",
+        ),
+        _evidence(
+            Fact(
+                id="listener-9200",
+                subject_id="node-a",
+                predicate="listening_socket",
+                value="tcp 127.0.0.1:9200",
+                observed_at=observed_at,
+            ),
+            "local_listener_confirmed",
+        ),
+    ]
+    facts = [
+        Fact(
+            id="process-9100",
+            subject_id="node-a",
+            predicate="listening_process_name",
+            value="node_exporter",
+            dimensions={"protocol": "tcp", "address": "127.0.0.1", "port": "9100"},
+            observed_at=observed_at,
+        ),
+        Fact(
+            id="unkeyed-process",
+            subject_id="node-a",
+            predicate="listening_process_name",
+            value="ambiguous_listener_process",
+            observed_at=observed_at,
+        ),
+    ]
+
+    matches = _matching_listener_process_refs(listener_refs, facts)
+
+    assert [match.fact_id for match in matches] == ["process-9100"]
