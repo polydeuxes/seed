@@ -80,6 +80,7 @@ from seed_runtime.diagnostic_inventory import (
     format_diagnostic_inventory,
 )
 from seed_runtime.diagnostic_shape_audit import (
+    FILTERABLE_AUDIT_STATUSES,
     build_diagnostic_shape_audit,
     diagnostic_shape_audit_json,
     format_diagnostic_shape_audit,
@@ -927,6 +928,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--diagnostic-shape-audit",
         action="store_true",
         help="compare diagnostic registry declarations with static implementation shape",
+    )
+    parser.add_argument(
+        "--mismatches",
+        action="store_true",
+        help="with --diagnostic-shape-audit, show only mismatch rows",
+    )
+    parser.add_argument(
+        "--status",
+        choices=FILTERABLE_AUDIT_STATUSES,
+        help="with --diagnostic-shape-audit, show only rows with this audit status",
     )
     parser.add_argument(
         "--consumer-audit",
@@ -5531,12 +5542,17 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.diagnostic_shape_audit:
         rows = build_diagnostic_shape_audit()
+        shape_status = "mismatch" if args.mismatches else args.status
         if args.json_output:
             print(
-                json.dumps(diagnostic_shape_audit_json(rows), indent=2, sort_keys=True)
+                json.dumps(
+                    diagnostic_shape_audit_json(rows, status=shape_status),
+                    indent=2,
+                    sort_keys=True,
+                )
             )
         else:
-            print(format_diagnostic_shape_audit(rows))
+            print(format_diagnostic_shape_audit(rows, status=shape_status))
         return 0
 
     if args.observation_inventory:
