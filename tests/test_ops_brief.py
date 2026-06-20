@@ -113,6 +113,27 @@ def test_ops_brief_includes_observation_ownership_capability_diagnostic_and_snap
     assert brief.snapshots["snapshot_count"] == 1
 
 
+def test_ops_brief_summarizes_unrecorded_owner_not_observed_capability_needs(tmp_path):
+    state = State(workspace_id="ws")
+    state.facts = {
+        "f_target": _fact("f_target", "api", "prometheus_target", "127.0.0.1:9100"),
+        "f_listener": _fact(
+            "f_listener", "node-a", "listening_socket", "tcp 127.0.0.1:9100"
+        ),
+    }
+
+    brief = build_ops_brief(state, repo_root=tmp_path)
+    rendered = format_ops_brief(brief)
+
+    assert brief.ownership["conflicts"]["owner_not_observed"] == 1
+    assert {
+        "capability": "listener_process_inventory",
+        "subject_count": 1,
+    } in brief.capabilities["top_capability_needs"]
+    assert "1. listener_process_inventory (1)" in rendered
+    assert "container_inventory (1)" in rendered
+
+
 def test_recommended_actions_are_generated_from_evidence():
     brief = build_ops_brief(_state_with_pressure())
 

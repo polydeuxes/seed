@@ -1,10 +1,14 @@
-"""Diagnostic-run scoped capability-need views."""
+"""Capability-need views from recorded diagnostics and current read-only diagnostics."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any
 
+from seed_runtime.ownership_discrepancies import (
+    build_ownership_discrepancies,
+    diagnostic_capability_need_records,
+)
 from seed_runtime.state import State
 
 
@@ -24,6 +28,15 @@ def build_capability_needs(
     diagnostic_filter: str | None = None,
 ) -> list[CapabilityNeedEntry]:
     entries: dict[str, CapabilityNeedEntry] = {}
+    for row in build_ownership_discrepancies(state, subject_filter=subject_filter):
+        for value in diagnostic_capability_need_records(row):
+            _add_capability_need(
+                entries,
+                value,
+                diagnostic_run="current_projection",
+                subject_filter=subject_filter,
+                diagnostic_filter=diagnostic_filter,
+            )
     for fact in state.facts.values():
         if not fact.subject_id.startswith("diagnostic_run:"):
             continue
@@ -31,26 +44,57 @@ def build_capability_needs(
             fact.value, dict
         ):
             continue
-        value: dict[str, Any] = fact.value
-        subject = str(value.get("diagnostic_subject") or value.get("subject") or "")
-        diagnostic = str(value.get("diagnostic_name") or value.get("diagnostic") or "")
-        capability = str(
-            value.get("candidate_capability") or value.get("capability") or ""
+        _add_capability_need(
+            entries,
+            fact.value,
+            diagnostic_run=fact.subject_id,
+            subject_filter=subject_filter,
+            diagnostic_filter=diagnostic_filter,
         )
-        needed = str(value.get("needed_evidence") or "")
-        if not capability or not subject or not diagnostic:
-            continue
-        if subject_filter and subject != subject_filter:
-            continue
-        if diagnostic_filter and diagnostic != diagnostic_filter:
-            continue
-        entry = entries.setdefault(capability, CapabilityNeedEntry(capability))
-        entry.subjects.add(subject)
-        entry.diagnostics.add(diagnostic)
-        if needed:
-            entry.needed_evidence.add(needed)
-        entry.diagnostic_runs.add(fact.subject_id)
-    return sorted(entries.values(), key=lambda e: (-len(e.subjects), e.capability))
+    return sorted(
+        entries.values(),
+        key=lambda e: (
+            -len(e.subjects),
+            _capability_priority(e.capability),
+            e.capability,
+        ),
+    )
+
+
+def _capability_priority(capability: str) -> int:
+    return {
+        "listener_process_inventory": 0,
+        "container_port_mapping": 1,
+        "container_inventory": 2,
+    }.get(capability, 100)
+
+
+def _add_capability_need(
+    entries: dict[str, CapabilityNeedEntry],
+    value: dict[str, Any],
+    *,
+    diagnostic_run: str,
+    subject_filter: str | None,
+    diagnostic_filter: str | None,
+) -> None:
+    subject = str(value.get("diagnostic_subject") or value.get("subject") or "")
+    diagnostic = str(value.get("diagnostic_name") or value.get("diagnostic") or "")
+    capability = str(
+        value.get("candidate_capability") or value.get("capability") or ""
+    )
+    needed = str(value.get("needed_evidence") or "")
+    if not capability or not subject or not diagnostic:
+        return
+    if subject_filter and subject != subject_filter:
+        return
+    if diagnostic_filter and diagnostic != diagnostic_filter:
+        return
+    entry = entries.setdefault(capability, CapabilityNeedEntry(capability))
+    entry.subjects.add(subject)
+    entry.diagnostics.add(diagnostic)
+    if needed:
+        entry.needed_evidence.add(needed)
+    entry.diagnostic_runs.add(diagnostic_run)
 
 
 def capability_needs_json(entries: list[CapabilityNeedEntry]) -> list[dict[str, Any]]:
