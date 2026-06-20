@@ -69,6 +69,11 @@ from seed_runtime.consumer_dependency_audit import (
     consumer_audit_json,
     format_consumer_audit,
 )
+from seed_runtime.correlation_audit import (
+    build_correlation_audit,
+    correlation_audit_json,
+    format_correlation_audit,
+)
 from seed_runtime.contradictions import (
     Contradiction,
     build_contradiction_summary,
@@ -980,6 +985,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="explain privilege boundaries for current capability needs without escalation",
     )
     parser.add_argument(
+        "--correlation-audit",
+        action="store_true",
+        help="expose suspected disconnects between evidence, consumers, and pressure surfaces",
+    )
+    parser.add_argument(
         "--provider",
         help="limit --observation-inventory to one provider name",
     )
@@ -1713,6 +1723,7 @@ def validate_lifecycle_args(
         bool(args.observation_inventory),
         bool(args.ops_brief),
         bool(args.pressure_audit),
+        bool(args.correlation_audit),
         bool(args.audit_snapshot),
         bool(args.audit_snapshots),
         bool(args.audit_compare),
@@ -1737,7 +1748,7 @@ def validate_lifecycle_args(
             "--state-build, --state-build-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --ownership-discrepancies, "
-            "--diagnostic-shape-audit, --consumer-audit, --observation-inventory, --observation-utilization, --ops-brief, --pressure-audit, --privilege-discovery, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
+            "--diagnostic-shape-audit, --consumer-audit, --observation-inventory, --observation-utilization, --ops-brief, --pressure-audit, --privilege-discovery, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
             "or --events-only"
         )
     if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
@@ -1824,11 +1835,12 @@ def validate_lifecycle_args(
         or args.ops_brief
         or args.pressure_audit
         or args.privilege_discovery
+        or args.correlation_audit
         or args.audit_compare
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --consumer-audit, --observation-inventory, --observation-utilization, --ops-brief, --pressure-audit, --privilege-discovery, or --audit-compare"
+            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --consumer-audit, --observation-inventory, --observation-utilization, --ops-brief, --pressure-audit, --privilege-discovery, --correlation-audit, or --audit-compare"
         )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
@@ -5626,6 +5638,16 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(privilege_discovery_json(audit), indent=2, sort_keys=True))
         else:
             print(format_privilege_discovery(audit))
+        return 0
+
+    if args.correlation_audit:
+        audit = build_correlation_audit(
+            projected_state_from_args(args), repo_root=REPO_ROOT
+        )
+        if args.json_output:
+            print(json.dumps(correlation_audit_json(audit), indent=2, sort_keys=True))
+        else:
+            print(format_correlation_audit(audit))
         return 0
 
     if args.unhealthy:
