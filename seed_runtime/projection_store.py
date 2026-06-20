@@ -561,7 +561,13 @@ def project_state_with_cache(
         if snapshot is not None:
             snapshot_last_event_id = snapshot.last_event_id
             try:
-                snapshot_state = state_from_payload(snapshot.state_payload)
+                if diagnostics is not None:
+                    snapshot_state = diagnostics.timed(
+                        "cached projection load/materialize",
+                        lambda: state_from_payload(snapshot.state_payload),
+                    )
+                else:
+                    snapshot_state = state_from_payload(snapshot.state_payload)
             except Exception:
                 snapshot_state = None
             if (
@@ -662,9 +668,19 @@ def project_state_with_cache(
         total=len(events),
     )
     if isinstance(projector, StateProjector):
-        state = projector.project(
-            workspace_id, status_consumer=status_consumer, diagnostics=diagnostics
-        )
+        if diagnostics is not None:
+            state = diagnostics.timed(
+                "full projection rebuild",
+                lambda: projector.project(
+                    workspace_id,
+                    status_consumer=status_consumer,
+                    diagnostics=diagnostics,
+                ),
+            )
+        else:
+            state = projector.project(
+                workspace_id, status_consumer=status_consumer, diagnostics=diagnostics
+            )
     else:
         state = projector.project(workspace_id)
         emit_status(

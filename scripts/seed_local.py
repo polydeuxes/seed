@@ -4368,12 +4368,25 @@ class _TimingProjectionStore:
 
     def load_snapshot(self, *args, **kwargs):
         return self._timed(
-            "cache lookup", lambda: self._store.load_snapshot(*args, **kwargs)
+            "cache metadata lookup + cached projection row load",
+            lambda: self._store.load_snapshot(*args, **kwargs),
         )
 
     def save_snapshot(self, *args, **kwargs):
         return self._timed(
             "snapshot save", lambda: self._store.save_snapshot(*args, **kwargs)
+        )
+
+    def load_derived_index_snapshot(self, *args, **kwargs):
+        return self._timed(
+            "fact-index cache lookup/load",
+            lambda: self._store.load_derived_index_snapshot(*args, **kwargs),
+        )
+
+    def save_derived_index_snapshot(self, *args, **kwargs):
+        return self._timed(
+            "fact-index cache save",
+            lambda: self._store.save_derived_index_snapshot(*args, **kwargs),
         )
 
     def __getattr__(self, name: str):
@@ -4396,6 +4409,8 @@ def _format_current_facts_timing_report(report: CurrentFactsTimingReport) -> str
 def _current_facts_timing_from_args(
     args: argparse.Namespace,
 ) -> CurrentFactsTimingReport:
+    """Build a read-only timing report for the current-facts State path."""
+
     timings: list[tuple[str, float]] = []
     started = time.perf_counter()
 
@@ -4429,34 +4444,52 @@ def _current_facts_timing_from_args(
         if store is not None and _can_use_state_cache(
             args, measurement_history_limit=history_limit
         ):
-            state, status = timed(
-                "projection replay",
-                lambda: project_state_with_cache(
-                    ledger,
-                    args.workspace,
-                    store,
-                    projector=projector,
-                    status_consumer=None,
-                ),
+            projection_diagnostics = ProjectionBuildDiagnostics()
+            state_path_started = time.perf_counter()
+            state, status = project_state_with_cache(
+                ledger,
+                args.workspace,
+                store,
+                projector=projector,
+                status_consumer=None,
+                diagnostics=projection_diagnostics,
             )
+            if status.cache_hit:
+                state_path_label = "state cache hit path (metadata validation + cached projection load)"
+            elif status.incremental_replay:
+                state_path_label = "state cache miss path (incremental event replay)"
+            else:
+                state_path_label = "state cache miss path (full projection rebuild)"
+            timings.append((state_path_label, time.perf_counter() - state_path_started))
+            timings.extend(projection_diagnostics.timings)
             cache_status = "hit" if status.cache_hit else "miss"
         else:
             state = timed(
-                "projection replay", lambda: projector.project(args.workspace)
+                "full projection rebuild (event replay)",
+                lambda: projector.project(args.workspace),
             )
             cache_status = "unavailable"
 
         if len(current_facts_args) == 0:
-            views = timed("read model build", lambda: build_fact_view(state))
+            views = timed("read-model build", lambda: build_fact_view(state))
             output = timed("render", lambda: format_fact_views(views))
         else:
             subject, predicate = current_facts_args
             fact_index = timed(
-                "read model build",
-                lambda: _load_or_build_fact_index_from_args(args, state),
+                "fact-index build/load",
+                lambda: (
+                    load_or_build_fact_index(
+                        state,
+                        workspace_id=args.workspace,
+                        store=store,
+                        status_consumer=None,
+                    )
+                    if store is not None and _can_use_state_cache(args)
+                    else None
+                ),
             )
             output = timed(
-                "render",
+                "query/filter + render",
                 lambda: format_current_facts(
                     state,
                     subject,
@@ -4465,6 +4498,7 @@ def _current_facts_timing_from_args(
                     fact_index=fact_index,
                 ),
             )
+        timings.append(("stdout/output time", 0.0))
         timings.append(("total", time.perf_counter() - started))
         return CurrentFactsTimingReport(output, cache_status, timings)
     finally:

@@ -26,6 +26,7 @@ def test_cli_diagnostic_inventory_lists_known_diagnostics(capsys):
         "capability_needs",
         "observation_utilization",
         "consumer_audit",
+        "current_facts_cache_debug",
     ]:
         assert name in output
 
@@ -44,12 +45,15 @@ def test_cli_diagnostic_inventory_json_emits_valid_json(capsys):
         "capability_needs",
         "observation_utilization",
         "consumer_audit",
+        "current_facts_cache_debug",
     }
     assert payload[0]["cli_flags"]
 
 
 def test_recording_diagnostics_declare_diagnostic_run_scope_and_ledger_writes():
-    recording_entries = [entry for entry in DIAGNOSTIC_INVENTORY if entry.supports_record]
+    recording_entries = [
+        entry for entry in DIAGNOSTIC_INVENTORY if entry.supports_record
+    ]
 
     assert recording_entries
     assert all(entry.record_scope == "diagnostic_run" for entry in recording_entries)
@@ -64,6 +68,11 @@ def test_current_diagnostic_shapes_match_implementation_authority():
     assert _entry("ownership_discrepancies").supports_record
     assert _entry("knowledge_reachability").uses_repo_files
     assert _entry("capability_needs").reads_diagnostic_facts
+    assert _entry("current_facts_cache_debug").cli_flags == (
+        "--current-facts-cache-debug",
+    )
+    assert not _entry("current_facts_cache_debug").writes_event_ledger
+    assert not _entry("current_facts_cache_debug").mutates_cluster
 
 
 def test_inventory_rendering_is_generated_from_registry_data():

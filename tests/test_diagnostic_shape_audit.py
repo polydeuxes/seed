@@ -52,6 +52,14 @@ def test_matching_registry_declarations_report_consistent_for_current_diagnostic
         _row(rows, "observation_utilization", "uses_repo_files").status == "consistent"
     )
     assert _row(rows, "consumer_audit", "uses_repo_files").status == "consistent"
+    assert (
+        _row(rows, "current_facts_cache_debug", "writes_event_ledger").status
+        == "consistent"
+    )
+    assert (
+        _row(rows, "current_facts_cache_debug", "mutates_cluster").status
+        == "consistent"
+    )
 
 
 def test_mismatched_fixture_reports_mismatch(tmp_path):
