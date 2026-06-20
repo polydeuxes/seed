@@ -203,6 +203,22 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "ingest_observations",
         ),
     ),
+
+    "impact_audit": DiagnosticImplementationSpec(
+        name="impact_audit",
+        module_path="seed_runtime/impact_audit.py",
+        build_function="build_impact_audit",
+        format_function="format_impact_audit",
+        json_function="impact_audit_json",
+        cli_flags=("--impact-audit",),
+        mutation_markers=(
+            ".write_text(",
+            "subprocess.run",
+            "os.remove",
+            "shutil.rmtree",
+            "authorize_execution",
+        ),
+    ),
     "pressure_audit": DiagnosticImplementationSpec(
         name="pressure_audit",
         module_path="seed_runtime/pressure_audit.py",
