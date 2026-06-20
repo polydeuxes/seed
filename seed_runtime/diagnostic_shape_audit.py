@@ -201,6 +201,15 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         ),
         diagnostic_fact_read_markers=("build_capability_needs",),
     ),
+    "privilege_discovery": DiagnosticImplementationSpec(
+        name="privilege_discovery",
+        module_path="seed_runtime/privilege_discovery.py",
+        build_function="build_privilege_discovery",
+        format_function="format_privilege_discovery",
+        json_function="privilege_discovery_json",
+        cli_flags=("--privilege-discovery",),
+        diagnostic_fact_read_markers=("build_capability_needs",),
+    ),
 }
 
 
