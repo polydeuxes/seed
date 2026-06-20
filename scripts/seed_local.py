@@ -906,6 +906,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="limit knowledge reachability audit to one candidate string",
     )
     parser.add_argument(
+        "--candidate-kind",
+        choices=[
+            "repository_concept",
+            "code_symbol",
+            "schema_field",
+            "runtime_value",
+            "platform_value",
+            "generated_identifier",
+            "network_identifier",
+            "presentation_label",
+            "relationship_label",
+            "unknown",
+        ],
+        help="limit knowledge reachability audit to one candidate kind",
+    )
+    parser.add_argument(
         "--knowledge-reachability-audit-json",
         action="store_true",
         help="render knowledge reachability audit as JSON",
@@ -5373,7 +5389,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.diagnostic_shape_audit:
         rows = build_diagnostic_shape_audit()
         if args.json_output:
-            print(json.dumps(diagnostic_shape_audit_json(rows), indent=2, sort_keys=True))
+            print(
+                json.dumps(diagnostic_shape_audit_json(rows), indent=2, sort_keys=True)
+            )
         else:
             print(format_diagnostic_shape_audit(rows))
         return 0
@@ -5478,6 +5496,7 @@ def main(argv: list[str] | None = None) -> int:
                 ledger,
                 args.workspace,
                 family=args.knowledge_reachability_audit_family,
+                candidate_kind=args.candidate_kind,
                 subject=args.knowledge_reachability_audit_subject,
                 repo_root=REPO_ROOT,
                 limit=args.knowledge_reachability_audit_limit,

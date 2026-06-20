@@ -48,6 +48,68 @@ STAGES = ("Preserved", "Projected", "Read Model", "Inquiry Orientation", "Render
 DEFAULT_AUDIT_LIMIT = 500
 DEFAULT_MAX_SECONDS = 60.0
 PROGRESS_INTERVAL_SECONDS = 5.0
+
+CANDIDATE_KINDS = (
+    "repository_concept",
+    "code_symbol",
+    "schema_field",
+    "runtime_value",
+    "platform_value",
+    "generated_identifier",
+    "network_identifier",
+    "presentation_label",
+    "relationship_label",
+    "unknown",
+)
+_REPOSITORY_CONCEPTS = {
+    "fact",
+    "observation",
+    "evidence",
+    "inferencerule",
+    "inference rule",
+}
+_SCHEMA_FIELDS = {
+    "confidence",
+    "dimensions",
+    "address",
+    "canonical_name",
+    "subject_id",
+    "predicate",
+    "value",
+    "evidence_ids",
+    "source_type",
+    "observed_at",
+}
+_PLATFORM_VALUES = {
+    "amd64",
+    "x86_64",
+    "vfat",
+    "ext4",
+    "docker0",
+    "eno1",
+    "linux",
+    "darwin",
+}
+_PRESENTATION_LABELS = {s.lower() for s in DEFAULT_SEEDS if " " in s} | {"continuation"}
+_GENERATED_ID_RE = re.compile(
+    r"^(?:evd|fact)_obs_\d+$|^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
+_MAC_RE = re.compile(r"^(?:[0-9a-f]{2}:){5}[0-9a-f]{2}$", re.IGNORECASE)
+_IPV4_RE = re.compile(
+    r"^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)$"
+)
+_HOSTNAME_RE = re.compile(
+    r"^(?=.{1,253}$)(?!-)[A-Za-z0-9-]{1,63}(?<!-)(?:\.(?!-)[A-Za-z0-9-]{1,63}(?<!-))+$"
+)
+_CODE_SYMBOL_RE = re.compile(r"^(?:[A-Z][A-Za-z0-9]*)(?:\.[A-Z][A-Za-z0-9]*)*$")
+_CODE_SYMBOL_LOWER = {
+    "capabilitycatalog",
+    "inputact",
+    "relationshipdefinition",
+    "inferencerule",
+}
+
 DEFAULT_SOURCE_BUDGETS = {
     "default seeds": None,
     "event payloads": 200,
@@ -101,6 +163,7 @@ class _TokenizationCache:
 @dataclass(frozen=True)
 class KnowledgeReachabilityRow:
     family: str
+    candidate_kind: str
     candidate: str
     preserved: bool
     projected: bool
@@ -114,6 +177,8 @@ class KnowledgeReachabilityRow:
 class KnowledgeReachabilityMetadata:
     timings: dict[str, float]
     candidate_counts: dict[str, int]
+    candidate_kind_counts: dict[str, int] | None = None
+    loss_stage_counts: dict[str, int] | None = None
     algorithmic_counters: dict[str, int] | None = None
     candidate_sources: dict[str, int] | None = None
     scan_counts: dict[str, int] | None = None
@@ -224,6 +289,7 @@ def build_knowledge_reachability_audit(
     workspace_id: str,
     *,
     family: str | None = None,
+    candidate_kind: str | None = None,
     subject: str | None = None,
     repo_root: Path | None = None,
     limit: int | None = DEFAULT_AUDIT_LIMIT,
@@ -236,6 +302,7 @@ def build_knowledge_reachability_audit(
         ledger,
         workspace_id,
         family=family,
+        candidate_kind=candidate_kind,
         subject=subject,
         repo_root=repo_root,
         limit=limit,
@@ -251,6 +318,7 @@ def build_knowledge_reachability_audit_result(
     workspace_id: str,
     *,
     family: str | None = None,
+    candidate_kind: str | None = None,
     subject: str | None = None,
     repo_root: Path | None = None,
     limit: int | None = DEFAULT_AUDIT_LIMIT,
@@ -290,6 +358,12 @@ def build_knowledge_reachability_audit_result(
             candidates = {subject: _family_for_candidate(subject)}
         if family:
             candidates = {c: f for c, f in candidates.items() if f == family}
+        if candidate_kind:
+            candidates = {
+                c: f
+                for c, f in candidates.items()
+                if _candidate_kind(c) == candidate_kind
+            }
         discovered = len(candidates)
         sorted_candidates = sorted(candidates)
         skipped = 0
@@ -339,7 +413,11 @@ def build_knowledge_reachability_audit_result(
             )
             rows.append(
                 KnowledgeReachabilityRow(
-                    candidates[candidate], candidate, *flags, _first_loss(flags)
+                    candidates[candidate],
+                    _candidate_kind(candidate),
+                    candidate,
+                    *flags,
+                    _first_loss(flags),
                 )
             )
         finish_evaluate(
@@ -368,6 +446,8 @@ def build_knowledge_reachability_audit_result(
             "evaluated": len(rows),
             "skipped": skipped,
         },
+        candidate_kind_counts=_count_by(rows, "candidate_kind"),
+        loss_stage_counts=_count_by(rows, "first_loss"),
         algorithmic_counters=dict(counters),
         candidate_sources=source_counts,
         scan_counts=scan_counts,
@@ -385,10 +465,11 @@ def format_knowledge_reachability_table(
     rows: list[KnowledgeReachabilityRow],
     metadata: KnowledgeReachabilityMetadata | None = None,
 ) -> str:
-    headers = ["Family", "Candidate", *STAGES, "First Loss"]
+    headers = ["Family", "Kind", "Candidate", *STAGES, "First Loss"]
     body = [
         [
             r.family,
+            r.candidate_kind,
             r.candidate,
             *[_yes(getattr(r, _attr(h))) for h in STAGES],
             r.first_loss,
@@ -413,10 +494,18 @@ def format_knowledge_reachability_table(
     candidates = "\n".join(
         f"  {name}: {count}" for name, count in metadata.candidate_counts.items()
     )
+    kinds = "\n".join(
+        f"  {name}: {count}"
+        for name, count in (metadata.candidate_kind_counts or {}).items()
+    )
+    losses = "\n".join(
+        f"  {name}: {count}"
+        for name, count in (metadata.loss_stage_counts or {}).items()
+    )
     guard = ""
     if metadata.truncated:
         guard = f"\nTruncated: true ({metadata.reason})"
-    return f"Knowledge Reachability Audit\nTiming:\n{timing}\nCandidates:\n{candidates}{guard}\n\n{table}"
+    return f"Knowledge Reachability Audit\nTiming:\n{timing}\nCandidates:\n{candidates}\nCandidate Kinds:\n{kinds}\nLoss Stages:\n{losses}{guard}\n\n{table}"
 
 
 def knowledge_reachability_json(
@@ -853,6 +942,40 @@ def _discover_candidates(
     )
 
 
+def _candidate_kind(candidate: str) -> str:
+    text = candidate.strip()
+    lower = text.lower()
+    if _GENERATED_ID_RE.match(text):
+        return "generated_identifier"
+    if _MAC_RE.match(text) or _IPV4_RE.match(text) or _HOSTNAME_RE.match(text):
+        return "network_identifier"
+    if lower in _REPOSITORY_CONCEPTS:
+        return "repository_concept"
+    if _CODE_SYMBOL_RE.match(text) or lower in _CODE_SYMBOL_LOWER:
+        return "code_symbol"
+    if lower in _SCHEMA_FIELDS:
+        return "schema_field"
+    if lower in _PLATFORM_VALUES or re.match(r"^(?:en|eth|wlan|docker)\w+$", lower):
+        return "platform_value"
+    if lower in _PRESENTATION_LABELS:
+        return "presentation_label"
+    if "relationship" in lower or lower.endswith(" edge") or lower == "active edge":
+        return "relationship_label"
+    if lower in {"localhost", "prometheus"} or lower.startswith("node"):
+        return "runtime_value"
+    if " " in lower:
+        return "presentation_label"
+    return "unknown"
+
+
+def _count_by(rows: list[KnowledgeReachabilityRow], attr: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in rows:
+        key = getattr(row, attr)
+        counts[key] = counts.get(key, 0) + 1
+    return dict(sorted(counts.items()))
+
+
 def _family_for_candidate(candidate: str) -> str:
     text = candidate.lower()
     if any(t in text for t in ("node", "localhost", "prometheus")):
@@ -869,12 +992,20 @@ def _family_for_candidate(candidate: str) -> str:
 
 
 def _first_loss(flags: tuple[bool, bool, bool, bool, bool]) -> str:
-    seen = False
-    for stage, present in zip(STAGES, flags):
-        if seen and not present:
-            return stage
-        seen = seen or present
-    return "none" if all(flags) else ("not present" if not any(flags) else "none")
+    preserved, projected, read_model, inquiry, rendered = flags
+    if not preserved and not projected and not read_model and (inquiry or rendered):
+        return "visibility_only"
+    if not preserved:
+        return "not_preserved" if any(flags) else "not_preserved"
+    if not projected:
+        return "projected_loss"
+    if not read_model:
+        return "read_model_loss"
+    if not inquiry:
+        return "orientation_loss"
+    if not rendered:
+        return "render_loss"
+    return "none"
 
 
 def _contains(
