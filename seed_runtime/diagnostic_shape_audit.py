@@ -146,6 +146,22 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "authorize_execution",
         ),
     ),
+    "operational_surface_inventory": DiagnosticImplementationSpec(
+        name="operational_surface_inventory",
+        module_path="seed_runtime/operational_surface_inventory.py",
+        build_function="build_operational_surface_inventory",
+        format_function="format_operational_surface_inventory",
+        json_function="operational_surface_inventory_json",
+        cli_flags=("--operational-surface-inventory",),
+    ),
+    "visibility_coverage_audit": DiagnosticImplementationSpec(
+        name="visibility_coverage_audit",
+        module_path="seed_runtime/operational_surface_inventory.py",
+        build_function="build_visibility_coverage_audit",
+        format_function="format_visibility_coverage_audit",
+        json_function="visibility_coverage_audit_json",
+        cli_flags=("--visibility-coverage-audit",),
+    ),
     "consumer_audit": DiagnosticImplementationSpec(
         name="consumer_audit",
         module_path="seed_runtime/consumer_dependency_audit.py",
@@ -203,7 +219,6 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "ingest_observations",
         ),
     ),
-
     "impact_audit": DiagnosticImplementationSpec(
         name="impact_audit",
         module_path="seed_runtime/impact_audit.py",
