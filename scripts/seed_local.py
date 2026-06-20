@@ -83,6 +83,11 @@ from seed_runtime.observation_inventory import (
     build_observation_inventory,
     format_observation_inventory,
 )
+from seed_runtime.observation_utilization import (
+    build_observation_utilization_audit,
+    format_observation_utilization,
+    observation_utilization_json,
+)
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.facts import (
     Fact,
@@ -923,6 +928,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="discover observation providers and predicates from implementation",
     )
     parser.add_argument(
+        "--observation-utilization",
+        action="store_true",
+        help="audit where observation predicates participate after collection",
+    )
+    parser.add_argument(
         "--provider",
         help="limit --observation-inventory to one provider name",
     )
@@ -1677,7 +1687,7 @@ def validate_lifecycle_args(
             "--state-build, --state-build-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --ownership-discrepancies, "
-            "--diagnostic-shape-audit, --observation-inventory, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
+            "--diagnostic-shape-audit, --observation-inventory, --observation-utilization, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
             "or --events-only"
         )
     if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
@@ -1731,10 +1741,10 @@ def validate_lifecycle_args(
         parser.error("--audit-compare requires --kind")
     if args.kind and not args.audit_compare:
         parser.error("--kind can only be used with --audit-compare")
-    if args.provider and not args.observation_inventory:
-        parser.error("--provider can only be used with --observation-inventory")
-    if args.predicate and not args.observation_inventory:
-        parser.error("--predicate can only be used with --observation-inventory")
+    if args.provider and not (args.observation_inventory or args.observation_utilization):
+        parser.error("--provider can only be used with --observation-inventory or --observation-utilization")
+    if args.predicate and not (args.observation_inventory or args.observation_utilization):
+        parser.error("--predicate can only be used with --observation-inventory or --observation-utilization")
     if args.subject and not (args.ownership_discrepancies or args.capability_needs):
         parser.error(
             "--subject can only be used with --ownership-discrepancies or --capability-needs"
@@ -1747,11 +1757,12 @@ def validate_lifecycle_args(
         or args.diagnostic_inventory
         or args.diagnostic_shape_audit
         or args.observation_inventory
+        or args.observation_utilization
         or args.audit_compare
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --observation-inventory, or --audit-compare"
+            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --observation-inventory, --observation-utilization, or --audit-compare"
         )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
@@ -5505,6 +5516,16 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(inventory.to_json_dict(), indent=2, sort_keys=True))
         else:
             print(format_observation_inventory(inventory))
+        return 0
+
+    if args.observation_utilization:
+        audit = build_observation_utilization_audit(
+            provider_filter=args.provider, predicate_filter=args.predicate
+        )
+        if args.json_output:
+            print(json.dumps(observation_utilization_json(audit), indent=2, sort_keys=True))
+        else:
+            print(format_observation_utilization(audit))
         return 0
 
     if args.unhealthy:

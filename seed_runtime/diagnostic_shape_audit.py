@@ -125,6 +125,16 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         cli_flags=("--audit-compare",),
         mutation_markers=(".write_text(", "subprocess.run", "os.remove", "shutil.rmtree", "authorize_execution"),
     ),
+
+    "observation_utilization": DiagnosticImplementationSpec(
+        name="observation_utilization",
+        module_path="seed_runtime/observation_utilization.py",
+        build_function="build_observation_utilization_audit",
+        format_function="format_observation_utilization",
+        json_function="observation_utilization_json",
+        cli_flags=("--observation-utilization",),
+        repo_file_markers=("PROJECTED_PATHS", "READ_MODEL_PATHS", "DIAGNOSTIC_PATHS"),
+    ),
     "capability_needs": DiagnosticImplementationSpec(
         name="capability_needs",
         module_path="seed_runtime/capability_needs.py",
