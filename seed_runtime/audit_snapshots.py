@@ -128,8 +128,8 @@ def format_audit_snapshots(rows: list[dict[str, Any]]) -> str:
 
 
 def compare_audit_snapshots(repo_root: Path, a: str, b: str, *, kind: str) -> dict[str, Any]:
-    path_a = _resolve_snapshot(repo_root, a) / f"{kind}.json"
-    path_b = _resolve_snapshot(repo_root, b) / f"{kind}.json"
+    path_a = _resolve_snapshot(repo_root, a, kind=kind) / f"{kind}.json"
+    path_b = _resolve_snapshot(repo_root, b, kind=kind) / f"{kind}.json"
     left = _read_json(path_a)
     right = _read_json(path_b)
     if left is None or right is None:
@@ -141,12 +141,13 @@ def compare_audit_snapshots(repo_root: Path, a: str, b: str, *, kind: str) -> di
     raise ValueError(f"unsupported audit compare kind: {kind}")
 
 
-def _resolve_snapshot(repo_root: Path, ref: str) -> Path:
+def _resolve_snapshot(repo_root: Path, ref: str, *, kind: str) -> Path:
     root = audit_root(repo_root)
     dirs = sorted([p for p in root.iterdir() if p.is_dir()]) if root.exists() else []
     if ref in {"latest", "previous"}:
+        dirs = [p for p in dirs if (p / f"{kind}.json").exists()]
         if len(dirs) < (1 if ref == "latest" else 2):
-            raise FileNotFoundError(f"not enough snapshots for {ref}")
+            raise FileNotFoundError(f"not enough snapshots containing {kind}.json for {ref}")
         return dirs[-1] if ref == "latest" else dirs[-2]
     path = root / ref
     if not path.exists():

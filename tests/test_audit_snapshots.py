@@ -95,6 +95,44 @@ def test_observation_compare_reports_predicates_and_summary(tmp_path):
     assert "predicate_count: 1 -> 2" in text
 
 
+def test_observation_latest_previous_skip_snapshots_without_kind(tmp_path):
+    create_audit_snapshot(
+        repo_root=tmp_path,
+        kind="observation_inventory",
+        payload={"predicates": [{"predicate": "first"}], "providers": [], "families": [], "summary": {"predicate_count": 1}},
+        command="seed --audit-snapshot observation_inventory",
+        seed_db=None,
+        events=[],
+        projection_version="v1",
+        snapshot_id="2026-06-20T184233Z",
+    )
+    create_audit_snapshot(
+        repo_root=tmp_path,
+        kind="ownership_discrepancies",
+        payload=[],
+        command="seed --audit-snapshot ownership_discrepancies",
+        seed_db=None,
+        events=[],
+        projection_version="v1",
+        snapshot_id="2026-06-20T185012Z",
+    )
+    create_audit_snapshot(
+        repo_root=tmp_path,
+        kind="observation_inventory",
+        payload={"predicates": [{"predicate": "first"}, {"predicate": "second"}], "providers": [], "families": [], "summary": {"predicate_count": 2}},
+        command="seed --audit-snapshot observation_inventory",
+        seed_db=None,
+        events=[],
+        projection_version="v1",
+        snapshot_id="2026-06-20T190001Z",
+    )
+
+    diff = compare_audit_snapshots(tmp_path, "previous", "latest", kind="observation_inventory")
+
+    assert diff["predicates"]["added"] == ["second"]
+    assert diff["summary_changes"]["predicate_count"] == {"from": 1, "to": 2}
+
+
 def test_ownership_compare_reports_rows_and_changes(tmp_path):
     a = [{"kind": "service", "subject": "svc", "conflict": "insufficient_evidence", "confidence": 0.0, "candidate_owner": None, "capability_needs": ["local_listener"]}]
     b = [
