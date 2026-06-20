@@ -886,6 +886,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="render knowledge reachability audit as JSON",
     )
     parser.add_argument(
+        "--knowledge-reachability-audit-debug",
+        action="store_true",
+        help="print structured reachability audit diagnostics to stderr",
+    )
+    parser.add_argument(
         "--knowledge-reachability-audit-limit",
         type=int,
         default=500,
@@ -5370,8 +5375,26 @@ def main(argv: list[str] | None = None) -> int:
                 limit=args.knowledge_reachability_audit_limit,
                 all_candidates=args.knowledge_reachability_audit_all,
                 max_seconds=args.knowledge_reachability_audit_max_seconds,
-                progress=lambda message: print(message, file=sys.stderr),
+                progress=lambda message: print(message, file=sys.stderr, flush=True),
             )
+            if args.knowledge_reachability_audit_debug:
+                print("[reachability] candidate sources:", file=sys.stderr, flush=True)
+                for name, count in (result.metadata.candidate_sources or {}).items():
+                    print(
+                        f"[reachability]   {name}: {count}", file=sys.stderr, flush=True
+                    )
+                print("[reachability] scan counts:", file=sys.stderr, flush=True)
+                for name, count in (result.metadata.scan_counts or {}).items():
+                    print(
+                        f"[reachability]   {name}: {count}", file=sys.stderr, flush=True
+                    )
+                print("[reachability] cache visibility:", file=sys.stderr, flush=True)
+                for name, status in (result.metadata.cache or {}).items():
+                    print(
+                        f"[reachability]   {name} cache {status}",
+                        file=sys.stderr,
+                        flush=True,
+                    )
         finally:
             close = getattr(ledger, "close", None)
             if close is not None:

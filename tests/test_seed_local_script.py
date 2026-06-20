@@ -5161,3 +5161,36 @@ def test_cli_impact_includes_compact_storage_topology_without_health_inference(
     assert "availability_status: unknown" in output
     assert "storage_health" not in output
     assert "filesystem_health" not in output
+
+
+def test_cli_reachability_debug_writes_diagnostics_to_stderr_and_json_to_stdout(
+    tmp_path,
+):
+    db_path = tmp_path / "reachability.sqlite"
+    process = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--db",
+            str(db_path),
+            "--knowledge-reachability-audit",
+            "--knowledge-reachability-audit-json",
+            "--knowledge-reachability-audit-debug",
+            "--knowledge-reachability-audit-limit",
+            "1",
+        ],
+        cwd=Path.cwd(),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert process.returncode == 0
+    decoded = json.loads(process.stdout)
+    assert "[reachability]" not in process.stdout
+    assert "[reachability] start load_state" in process.stderr
+    assert "[reachability] end load_state" in process.stderr
+    assert "state cache miss" in process.stderr
+    assert "candidate sources:" in process.stderr
+    assert decoded["metadata"]["timings"]["load_state"] >= 0
+    assert "candidate_sources" in decoded["metadata"]
