@@ -214,6 +214,20 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         json_function="investigation_path_audit_json",
         cli_flags=("--investigation-path",),
     ),
+    "operational_story": DiagnosticImplementationSpec(
+        name="operational_story",
+        module_path="seed_runtime/operational_story.py",
+        build_function="build_operational_story",
+        format_function="format_operational_story",
+        json_function="operational_story_json",
+        cli_flags=("--operational-story",),
+        repo_file_markers=(
+            "build_pressure_audit",
+            "build_correlation_audit",
+            "build_impact_audit",
+        ),
+        diagnostic_fact_read_markers=("build_capability_needs",),
+    ),
     "ops_brief": DiagnosticImplementationSpec(
         name="ops_brief",
         module_path="seed_runtime/ops_brief.py",
