@@ -1,0 +1,117 @@
+import json
+
+from scripts import seed_local
+from seed_runtime.diagnostic_inventory import DIAGNOSTIC_INVENTORY
+from seed_runtime.operational_surface_inventory import (
+    build_operational_surface_inventory,
+    build_visibility_coverage_audit,
+    format_operational_surface_inventory,
+    format_visibility_coverage_audit,
+)
+
+
+def _surface(surfaces, name):
+    return next(surface for surface in surfaces if surface.name == name)
+
+
+def test_operational_surfaces_are_discovered_from_argparse_evidence():
+    surfaces = build_operational_surface_inventory(seed_local.build_parser())
+
+    debug = _surface(surfaces, "--current-facts-cache-debug")
+    assert debug.category == "debug"
+    assert debug.evidence == "argparse"
+
+
+def test_operational_surface_inventory_renders(capsys):
+    assert seed_local.main(["--operational-surface-inventory"]) == 0
+
+    output = capsys.readouterr().out
+    assert "Operational Surface Inventory" in output
+    assert "--current-facts-cache-debug" in output
+    assert "Registered:" in output
+
+
+def test_operational_surface_inventory_json_is_valid(capsys):
+    assert seed_local.main(["--operational-surface-inventory", "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert isinstance(payload["surfaces"], list)
+    assert any(
+        surface["name"] == "--operational-surface-inventory"
+        and surface["registered"] is True
+        for surface in payload["surfaces"]
+    )
+
+
+def test_visibility_coverage_audit_renders(capsys):
+    assert seed_local.main(["--visibility-coverage-audit"]) == 0
+
+    output = capsys.readouterr().out
+    assert "Visibility Coverage Audit" in output
+    assert "Discovered surfaces:" in output
+    assert "Unregistered surfaces:" in output
+
+
+def test_visibility_coverage_audit_json_is_valid(capsys):
+    assert seed_local.main(["--visibility-coverage-audit", "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["discovered"] >= payload["registered"]
+    assert isinstance(payload["unregistered"], list)
+
+
+def test_unregistered_surfaces_are_reported_with_custom_registry():
+    parser = seed_local.build_parser()
+    entries = tuple(
+        entry
+        for entry in DIAGNOSTIC_INVENTORY
+        if "--current-facts-cache-debug" not in entry.cli_flags
+    )
+
+    audit = build_visibility_coverage_audit(parser, diagnostic_entries=entries)
+
+    assert "--current-facts-cache-debug" in [
+        surface.name for surface in audit.unregistered
+    ]
+    assert "invisible to diagnostic inventory" in format_visibility_coverage_audit(
+        audit
+    )
+
+
+def test_registered_surfaces_are_not_falsely_reported():
+    audit = build_visibility_coverage_audit(seed_local.build_parser())
+
+    assert "--current-facts-cache-debug" not in [
+        surface.name for surface in audit.unregistered
+    ]
+    assert _surface(audit.surfaces, "--visibility-coverage-audit").registered is True
+
+
+def test_empty_state_behavior_is_sane():
+    assert "No operational surfaces discovered" in format_operational_surface_inventory(
+        ()
+    )
+    audit = build_visibility_coverage_audit(
+        seed_local.build_parser(), diagnostic_entries=()
+    )
+    assert audit.discovered > 0
+
+
+def test_operational_surface_inventory_does_not_write_event_ledger_or_mutate_cluster(
+    tmp_path,
+):
+    db_path = tmp_path / "seed.sqlite"
+
+    assert (
+        seed_local.main(["--db", str(db_path), "--operational-surface-inventory"]) == 0
+    )
+    assert not db_path.exists()
+
+
+def test_visibility_coverage_audit_does_not_write_event_ledger_or_mutate_cluster(
+    tmp_path,
+):
+    db_path = tmp_path / "seed.sqlite"
+
+    assert seed_local.main(["--db", str(db_path), "--visibility-coverage-audit"]) == 0
+    assert not db_path.exists()

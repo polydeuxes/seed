@@ -100,6 +100,14 @@ from seed_runtime.observation_utilization import (
     observation_utilization_json,
 )
 from seed_runtime.ops_brief import build_ops_brief, format_ops_brief
+from seed_runtime.operational_surface_inventory import (
+    build_operational_surface_inventory,
+    build_visibility_coverage_audit,
+    format_operational_surface_inventory,
+    format_visibility_coverage_audit,
+    operational_surface_inventory_json,
+    visibility_coverage_audit_json,
+)
 from seed_runtime.impact_audit import (
     build_impact_audit,
     format_impact_audit,
@@ -950,6 +958,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="compare diagnostic registry declarations with static implementation shape",
     )
     parser.add_argument(
+        "--operational-surface-inventory",
+        action="store_true",
+        help="discover operational CLI surfaces from implementation evidence",
+    )
+    parser.add_argument(
+        "--visibility-coverage-audit",
+        action="store_true",
+        help="audit which discovered operational surfaces are visible in diagnostic inventory",
+    )
+    parser.add_argument(
         "--mismatches",
         action="store_true",
         help="with --diagnostic-shape-audit, show only mismatch rows",
@@ -1729,6 +1747,8 @@ def validate_lifecycle_args(
         bool(args.ownership_discrepancies),
         bool(args.capability_needs),
         bool(args.diagnostic_shape_audit),
+        bool(args.operational_surface_inventory),
+        bool(args.visibility_coverage_audit),
         bool(args.consumer_audit),
         bool(args.observation_inventory),
         bool(args.ops_brief),
@@ -1759,7 +1779,7 @@ def validate_lifecycle_args(
             "--state-build, --state-build-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --ownership-discrepancies, "
-            "--diagnostic-shape-audit, --consumer-audit, --observation-inventory, --observation-utilization, --ops-brief, --impact-audit, --pressure-audit, --privilege-discovery, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
+            "--diagnostic-shape-audit, --operational-surface-inventory, --visibility-coverage-audit, --consumer-audit, --observation-inventory, --observation-utilization, --ops-brief, --impact-audit, --pressure-audit, --privilege-discovery, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
             "or --events-only"
         )
     if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
@@ -1840,6 +1860,8 @@ def validate_lifecycle_args(
         or args.capability_needs
         or args.diagnostic_inventory
         or args.diagnostic_shape_audit
+        or args.operational_surface_inventory
+        or args.visibility_coverage_audit
         or args.consumer_audit
         or args.observation_inventory
         or args.observation_utilization
@@ -1852,7 +1874,7 @@ def validate_lifecycle_args(
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --consumer-audit, --observation-inventory, --observation-utilization, --ops-brief, --impact-audit, --pressure-audit, --privilege-discovery, --correlation-audit, or --audit-compare"
+            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --operational-surface-inventory, --visibility-coverage-audit, --consumer-audit, --observation-inventory, --observation-utilization, --ops-brief, --impact-audit, --pressure-audit, --privilege-discovery, --correlation-audit, or --audit-compare"
         )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
@@ -5634,6 +5656,32 @@ def main(argv: list[str] | None = None) -> int:
             )
         else:
             print(format_diagnostic_shape_audit(rows, status=shape_status))
+        return 0
+
+    if args.operational_surface_inventory:
+        surfaces = build_operational_surface_inventory(build_parser())
+        if args.json_output:
+            print(
+                json.dumps(
+                    operational_surface_inventory_json(surfaces),
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+        else:
+            print(format_operational_surface_inventory(surfaces))
+        return 0
+
+    if args.visibility_coverage_audit:
+        audit = build_visibility_coverage_audit(build_parser())
+        if args.json_output:
+            print(
+                json.dumps(
+                    visibility_coverage_audit_json(audit), indent=2, sort_keys=True
+                )
+            )
+        else:
+            print(format_visibility_coverage_audit(audit))
         return 0
 
     if args.observation_inventory:
