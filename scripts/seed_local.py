@@ -151,6 +151,11 @@ from seed_runtime.observation_sources import (
     export_observations_json,
 )
 from seed_runtime.observations import ObservationIngestor
+from seed_runtime.ownership_discrepancies import (
+    build_ownership_discrepancies,
+    format_ownership_discrepancies,
+    ownership_discrepancies_json,
+)
 from seed_runtime.registry import ToolRegistry
 from seed_runtime.rule_inventory import collect_rule_inventory
 from seed_runtime.runtime import Runtime
@@ -1454,6 +1459,24 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="print capability recommendations for refreshing expired facts",
     )
+    parser.add_argument(
+        "--ownership-discrepancies",
+        action="store_true",
+        help=(
+            "infer provisional storage/service ownership candidates from existing "
+            "facts and report ambiguous or conflicting ownership; read-only"
+        ),
+    )
+    parser.add_argument(
+        "--subject",
+        help="limit --ownership-discrepancies to one subject",
+    )
+    parser.add_argument(
+        "--json",
+        dest="json_output",
+        action="store_true",
+        help="render supported diagnostic commands as JSON",
+    )
     return parser
 
 
@@ -1525,6 +1548,7 @@ def validate_lifecycle_args(
         bool(args.fact_conflicts),
         bool(args.stale_facts),
         bool(args.stale_fact_refreshes),
+        bool(args.ownership_discrepancies),
         bool(args.rebuild_state_cache),
         bool(args.state_cache_status),
         bool(args.events_only),
@@ -1545,7 +1569,8 @@ def validate_lifecycle_args(
             "--decision-context, --candidate-requests, --candidate-routes, "
             "--state-build, --state-build-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
-            "--stale-fact-refreshes, --rebuild-state-cache, --state-cache-status, "
+            "--stale-fact-refreshes, --ownership-discrepancies, "
+            "--rebuild-state-cache, --state-cache-status, "
             "or --events-only"
         )
     if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
@@ -1595,6 +1620,10 @@ def validate_lifecycle_args(
         )
     if args.include_history and not args.fact_support:
         parser.error("--include-history can only be used with --fact-support")
+    if args.subject and not args.ownership_discrepancies:
+        parser.error("--subject can only be used with --ownership-discrepancies")
+    if args.json_output and not args.ownership_discrepancies:
+        parser.error("--json can only be used with --ownership-discrepancies")
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
     if args.graph_issue_limit < 0:
@@ -5357,6 +5386,18 @@ def main(argv: list[str] | None = None) -> int:
             )
         else:
             print(format_knowledge_reachability_table(result.rows, result.metadata))
+        return 0
+
+    if args.ownership_discrepancies:
+        rows = build_ownership_discrepancies(
+            projected_state_from_args(args), subject_filter=args.subject
+        )
+        if args.json_output:
+            print(
+                json.dumps(ownership_discrepancies_json(rows), indent=2, sort_keys=True)
+            )
+        else:
+            print(format_ownership_discrepancies(rows))
         return 0
 
     if args.state_build:
