@@ -159,7 +159,7 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
     DiagnosticInventoryEntry(
         name="observation_utilization",
         cli_flags=("--observation-utilization",),
-        uses_projected_state=True,
+        uses_projected_state=False,
         uses_repo_files=True,
         supports_json=True,
         supports_record=False,
@@ -169,7 +169,11 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         writes_event_ledger=False,
         mutates_cluster=False,
         reads_diagnostic_facts=False,
-        description="Audits implementation-backed participation of observation predicates across projection, read-model, and diagnostic surfaces.",
+        description=(
+            "Audits implementation source participation of observation predicates "
+            "across projection, read-model, and diagnostic surfaces without "
+            "loading projected state."
+        ),
     ),
     DiagnosticInventoryEntry(
         name="capability_needs",

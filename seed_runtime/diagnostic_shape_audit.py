@@ -303,14 +303,20 @@ def _observe(
         if spec.record_function
         else ""
     )
-    all_source = "\n".join([module_source, cli_source])
+    implementation_source = _implementation_source(module_source, spec)
+    cli_surface_source = _cli_surface_source(cli_source, spec.cli_flags)
     has_json_renderer = bool(spec.json_function and spec.json_function in module_source)
-    has_json_path = bool(
-        spec.json_cli_flags and all(flag in cli_source for flag in spec.json_cli_flags)
-    ) or (
-        entry.supports_json
-        and "args.json_output" in cli_source
-        and any(flag in cli_source for flag in spec.cli_flags)
+    has_direct_json_output = (
+        "args.json_output" in cli_surface_source
+        and "json.dumps" in cli_surface_source
+    )
+    has_json_path = (
+        bool(
+            spec.json_cli_flags
+            and all(flag in cli_source for flag in spec.json_cli_flags)
+        )
+        or bool(has_json_renderer and "args.json_output" in cli_surface_source)
+        or has_direct_json_output
     )
     record_scope = None
     if record_source:
@@ -331,7 +337,7 @@ def _observe(
         "supports_record": bool(
             spec.record_function and spec.record_function in cli_source
         ),
-        "supports_json": bool(has_json_renderer and has_json_path),
+        "supports_json": bool(has_json_path),
         "record_scope": record_scope or "none",
         "emits_diagnostic_facts": "DevObservationSeed" in record_source
         and ("diagnostic_" in record_source or "record_facts" in record_source),
@@ -347,15 +353,50 @@ def _observe(
             if spec.repo_file_markers
             else False
         ),
-        "uses_projected_state": "State" in module_source
-        or any(
-            flag in cli_source and "projected_state_from_args" in cli_source
-            for flag in spec.cli_flags
-        ),
+        "uses_projected_state": "State" in implementation_source
+        or "projected_state_from_args" in cli_surface_source,
         "mutates_cluster": any(
-            marker in module_source for marker in spec.mutation_markers
+            marker in implementation_source for marker in spec.mutation_markers
         ),
     }
+
+
+def _implementation_source(module_source: str, spec: DiagnosticImplementationSpec) -> str:
+    """Return the implementation slice owned by one diagnostic surface.
+
+    The audit is intentionally static, but it must not attribute every marker in a
+    shared module to every surface in that module.  Snapshot creation, listing,
+    and comparison live together, so broad module scans confused local artifact
+    writes with compare/list behavior.
+    """
+    parts = []
+    for function_name in (
+        spec.build_function,
+        spec.format_function,
+        spec.json_function,
+        spec.record_function,
+    ):
+        if function_name:
+            parts.append(_function_source(module_source, function_name))
+    return "\n".join(part for part in parts if part) or module_source
+
+
+def _cli_surface_source(cli_source: str, cli_flags: tuple[str, ...]) -> str:
+    parts = []
+    for flag in cli_flags:
+        attr = flag.lstrip("-").replace("-", "_")
+        marker = f"if args.{attr}"
+        start = 0
+        while True:
+            start = cli_source.find(marker, start)
+            if start < 0:
+                break
+            next_if = cli_source.find("\n    if args.", start + len(marker))
+            parts.append(
+                cli_source[start:] if next_if < 0 else cli_source[start:next_if]
+            )
+            start += len(marker)
+    return "\n".join(parts)
 
 
 def _status(declared: bool | str, observed: bool | str | None) -> AuditStatus:

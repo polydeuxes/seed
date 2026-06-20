@@ -243,7 +243,7 @@ def test_cli_mismatches_filter_shows_only_mismatch_rows_and_filtered_count(capsy
     assert "Mismatches:" in output
 
 
-def test_cli_json_mismatch_filter_only_returns_mismatch_rows(capsys):
+def test_cli_json_mismatch_filter_returns_no_rows_when_audit_is_green(capsys):
     assert (
         seed_local.main(["--diagnostic-shape-audit", "--json", "--status", "mismatch"])
         == 0
@@ -251,8 +251,42 @@ def test_cli_json_mismatch_filter_only_returns_mismatch_rows(capsys):
 
     payload = json.loads(capsys.readouterr().out)
 
-    assert payload
-    assert {item["status"] for item in payload} == {"mismatch"}
+    assert payload == []
+
+
+def test_current_shape_audit_has_no_mismatches_for_registered_surfaces():
+    rows = build_diagnostic_shape_audit()
+
+    assert [row for row in rows if row.status == "mismatch"] == []
+    assert "Mismatches: 0" in format_diagnostic_shape_audit(rows)
+
+
+def test_snapshot_and_consumer_projected_state_detection_matches_behavior():
+    rows = build_diagnostic_shape_audit()
+
+    for diagnostic in ["audit_snapshots", "audit_compare", "consumer_audit"]:
+        row = _row(rows, diagnostic, "uses_projected_state")
+        assert row.declared is False
+        assert row.observed is False
+        assert row.status == "consistent"
+
+
+def test_snapshot_local_artifact_surfaces_are_not_cluster_mutation():
+    rows = build_diagnostic_shape_audit()
+
+    for diagnostic in ["audit_snapshots", "audit_compare"]:
+        row = _row(rows, diagnostic, "mutates_cluster")
+        assert row.declared is False
+        assert row.observed is False
+        assert row.status == "consistent"
+
+
+def test_audit_compare_json_detection_matches_cli_output_path():
+    row = _row(build_diagnostic_shape_audit(), "audit_compare", "supports_json")
+
+    assert row.declared is True
+    assert row.observed is True
+    assert row.status == "consistent"
 
 
 def _row_fixture(diagnostic, field, status):
