@@ -100,6 +100,11 @@ from seed_runtime.pressure_audit import (
     format_pressure_audit,
     pressure_audit_json,
 )
+from seed_runtime.privilege_discovery import (
+    build_privilege_discovery,
+    format_privilege_discovery,
+    privilege_discovery_json,
+)
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.facts import (
     Fact,
@@ -970,6 +975,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="rank current operational pressure from existing read-only audits",
     )
     parser.add_argument(
+        "--privilege-discovery",
+        action="store_true",
+        help="explain privilege boundaries for current capability needs without escalation",
+    )
+    parser.add_argument(
         "--provider",
         help="limit --observation-inventory to one provider name",
     )
@@ -1727,7 +1737,7 @@ def validate_lifecycle_args(
             "--state-build, --state-build-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --ownership-discrepancies, "
-            "--diagnostic-shape-audit, --consumer-audit, --observation-inventory, --observation-utilization, --ops-brief, --pressure-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
+            "--diagnostic-shape-audit, --consumer-audit, --observation-inventory, --observation-utilization, --ops-brief, --pressure-audit, --privilege-discovery, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
             "or --events-only"
         )
     if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
@@ -1813,11 +1823,12 @@ def validate_lifecycle_args(
         or args.observation_utilization
         or args.ops_brief
         or args.pressure_audit
+        or args.privilege_discovery
         or args.audit_compare
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --consumer-audit, --observation-inventory, --observation-utilization, --ops-brief, --pressure-audit, or --audit-compare"
+            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --consumer-audit, --observation-inventory, --observation-utilization, --ops-brief, --pressure-audit, --privilege-discovery, or --audit-compare"
         )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
@@ -5607,6 +5618,14 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(pressure_audit_json(audit), indent=2, sort_keys=True))
         else:
             print(format_pressure_audit(audit))
+        return 0
+
+    if args.privilege_discovery:
+        audit = build_privilege_discovery(projected_state_from_args(args))
+        if args.json_output:
+            print(json.dumps(privilege_discovery_json(audit), indent=2, sort_keys=True))
+        else:
+            print(format_privilege_discovery(audit))
         return 0
 
     if args.unhealthy:
