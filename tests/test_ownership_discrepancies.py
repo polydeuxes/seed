@@ -114,6 +114,51 @@ def test_prometheus_target_without_host_or_process_is_insufficient(tmp_path, cap
     assert rows[0]["candidate_owner"] is None
 
 
+
+def test_prometheus_target_with_local_listener_moves_to_attribution_need(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db = tmp_path / "seed.sqlite"
+    ingest(
+        seed_local,
+        db,
+        ("api", "prometheus_target", "127.0.0.1:9100"),
+        ("node-a", "listening_socket", "tcp 127.0.0.1:9100"),
+        ("node-a", "listener_attribution_status", "unprivileged_socket_only"),
+    )
+
+    rows = run_json(seed_local, db, capsys, "api")
+
+    assert rows[0]["candidate_owner"] == "node-a"
+    assert rows[0]["conflict"] == "owner_not_observed"
+    assert "Local listener evidence confirms" in rows[0]["reason"]
+    assert any(ref["role"] == "local_listener_confirmed" for ref in rows[0]["evidence"])
+
+
+def test_local_listener_does_not_infer_container_ownership_and_records_attribution_needs(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local_module()
+    db = tmp_path / "seed.sqlite"
+    ingest(
+        seed_local,
+        db,
+        ("api", "prometheus_target", "127.0.0.1:9100"),
+        ("node-a", "listening_socket", "tcp 127.0.0.1:9100"),
+    )
+
+    rows = run_json(seed_local, db, capsys, "api")
+    assert all(ref["role"] != "process_or_container_observed" for ref in rows[0]["evidence"])
+    assert seed_local.main(["--db", str(db), "--ownership-discrepancies", "--record"]) == 0
+    capsys.readouterr()
+    assert seed_local.main(["--db", str(db), "--capability-needs", "--json"]) == 0
+    needs = json.loads(capsys.readouterr().out)
+    capabilities = {item["capability"] for item in needs}
+    assert {
+        "listener_process_inventory",
+        "container_port_mapping",
+        "container_inventory",
+    }.issubset(capabilities)
+
 def test_no_ownership_evidence_reports_missing_owner(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db = tmp_path / "seed.sqlite"

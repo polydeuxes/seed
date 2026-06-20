@@ -1631,6 +1631,36 @@ def _patch_listener_host(monkeypatch):
     )
 
 
+
+def test_ss_listener_output_parser_collects_tcp_udp_without_privileged_fields():
+    from seed_runtime.observation_sources import LocalHostObservationSource
+
+    tcp_output = """State  Recv-Q Send-Q Local Address:Port Peer Address:Port Process
+LISTEN 0      4096       0.0.0.0:22        0.0.0.0:*
+LISTEN 0      4096       127.0.0.1:9094    0.0.0.0:*
+LISTEN 0      4096          [::]:443          [::]:*
+"""
+    udp_output = """State  Recv-Q Send-Q Local Address:Port Peer Address:Port Process
+UNCONN 0      0          0.0.0.0:53        0.0.0.0:*
+UNCONN 0      0             [::]:1234         [::]:*
+"""
+
+    entries = (
+        LocalHostObservationSource.parse_ss_listener_output(tcp_output, "tcp")
+        + LocalHostObservationSource.parse_ss_listener_output(udp_output, "udp")
+    )
+
+    assert {
+        (entry["protocol"], entry["address"], entry["port"]) for entry in entries
+    } == {
+        ("tcp", "0.0.0.0", 22),
+        ("tcp", "127.0.0.1", 9094),
+        ("tcp", "::", 443),
+        ("udp", "0.0.0.0", 53),
+        ("udp", "::", 1234),
+    }
+    assert all("process" not in entry and "container" not in entry for entry in entries)
+
 def test_local_host_source_emits_tcp_udp_listener_observations(monkeypatch, tmp_path):
     from seed_runtime.observation_sources import LocalHostObservationSource
 
@@ -1657,12 +1687,20 @@ def test_local_host_source_emits_tcp_udp_listener_observations(monkeypatch, tmp_
     assert ("node-a", "listening_process_id", 1234) in triples
     assert ("node-a", "listening_process_name", "sshd") in triples
     assert ("node-a", "listening_endpoint", "tcp 127.0.0.1:80") not in triples
+    assert ("node-a", "listening_socket", "tcp 0.0.0.0:22") in triples
+    assert ("node-a", "listener_protocol", "tcp") in triples
+    assert ("node-a", "listener_address", "0.0.0.0") in triples
+    assert ("node-a", "listener_port", 22) in triples
+    assert ("node-a", "listener_scope", "wildcard") in triples
+    assert ("node-a", "listener_attribution_status", "process_observed") in triples
     endpoint = next(obs for obs in observations if obs.value == "tcp 0.0.0.0:22")
     assert endpoint.dimensions == {
         "protocol": "tcp",
         "address": "0.0.0.0",
         "port": "22",
         "address_family": "ipv4",
+        "listener_scope": "wildcard",
+        "listener_attribution_status": "process_observed",
     }
     assert endpoint.metadata["source"] == "/proc/net/tcp"
     assert endpoint.metadata["question_answered"] == (
@@ -1693,6 +1731,11 @@ def test_local_host_source_preserves_missing_listener_process_information(
     ]
 
     assert any(obs.predicate == "listening_endpoint" for obs in tcp_22)
+    assert any(
+        obs.predicate == "listener_attribution_status"
+        and obs.value == "unprivileged_socket_only"
+        for obs in tcp_22
+    )
     assert not any(obs.predicate == "listening_process_id" for obs in tcp_22)
     assert not any(obs.predicate == "listening_process_name" for obs in tcp_22)
 
@@ -1743,6 +1786,8 @@ def test_listening_port_observation_projects_without_availability_reachability_h
     assert state.get_current_facts("node-a", "listening_socket_family")
     assert state.get_current_facts("node-a", "listening_process_id")
     assert state.get_current_facts("node-a", "listening_process_name")
+    assert state.get_current_facts("node-a", "listening_socket")
+    assert state.get_current_facts("node-a", "listener_attribution_status")
     for forbidden in (
         "availability_status",
         "reachability_status",

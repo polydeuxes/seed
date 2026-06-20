@@ -345,6 +345,56 @@
       "cardinality": "multi"
     },
     {
+      "predicate": "listening_socket",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "listener_protocol",
+      "kind": "durable_fact",
+      "value_type": "enum",
+      "allowed_values": [
+        "tcp",
+        "udp"
+      ],
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "listener_address",
+      "kind": "durable_fact",
+      "value_type": "string",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "listener_port",
+      "kind": "durable_fact",
+      "value_type": "integer",
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "listener_scope",
+      "kind": "durable_fact",
+      "value_type": "enum",
+      "allowed_values": [
+        "wildcard",
+        "loopback",
+        "specific",
+        "unknown"
+      ],
+      "cardinality": "multi"
+    },
+    {
+      "predicate": "listener_attribution_status",
+      "kind": "durable_fact",
+      "value_type": "enum",
+      "allowed_values": [
+        "unprivileged_socket_only",
+        "process_observed"
+      ],
+      "cardinality": "multi"
+    },
+    {
       "predicate": "local_observation_status",
       "kind": "measurement",
       "value_type": "enum",

@@ -121,6 +121,11 @@ _CAPABILITY_NEEDS_BY_CONFLICT: dict[
         ("process_inventory", "process_inventory", "partial_root_full"),
         ("container_inventory", "container_inventory", "partial_root_full"),
     ],
+    ("service", "owner_not_observed"): [
+        ("listener_process_inventory", "listener_process_inventory", "partial_root_full"),
+        ("container_port_mapping", "container_port_mapping", "partial_root_full"),
+        ("container_inventory", "container_inventory", "partial_root_full"),
+    ],
     ("storage", "missing_owner"): [
         ("mount_source", "mount_source_inventory", "non_root_partial_root_full"),
         ("export_visibility", "export_visibility_inventory", "partial_root_full"),
@@ -334,6 +339,30 @@ def _diagnose_service_subject(
             _add_candidate(
                 candidates, str(fact.value), 0.65, fact, "service_config_source"
             )
+    listener_refs = _matching_local_listener_refs(endpoint_only, facts)
+    for ref in listener_refs:
+        _add_candidate_ref(candidates, ref.subject, 0.55, ref, "local_listener_confirmed")
+    if listener_refs:
+        rows = _rows_for_candidates(subject, "service", candidates, set(), set())
+        return [
+            OwnershipDiscrepancyRow(
+                row.subject,
+                row.kind,
+                row.candidate_owner,
+                row.confidence,
+                row.evidence_count,
+                "owner_not_observed" if row.conflict is None else row.conflict,
+                (
+                    "Local listener evidence confirms a socket is present, but process/container "
+                    "owner attribution is unavailable."
+                    if row.conflict is None
+                    else row.reason
+                ),
+                row.evidence,
+                row.label,
+            )
+            for row in rows
+        ]
     if not candidates and endpoint_only:
         return [
             OwnershipDiscrepancyRow(
@@ -406,8 +435,16 @@ def _rows_for_candidates(subject, kind, candidates, consumers, sources):
 def _add_candidate(
     candidates, owner: str, confidence: float, fact: Fact, role: str
 ) -> None:
+    _add_candidate_ref(candidates, owner, confidence, _evidence(fact, role), role)
+
+
+def _add_candidate_ref(
+    candidates, owner: str, confidence: float, ref: OwnershipEvidenceRef, role: str
+) -> None:
+    ref = OwnershipEvidenceRef(
+        ref.fact_id, ref.support_ids, ref.subject, ref.predicate, ref.value, role
+    )
     existing = candidates.get(owner)
-    ref = _evidence(fact, role)
     if existing is None:
         candidates[owner] = OwnershipCandidate(owner, confidence, [ref])
     else:
@@ -439,3 +476,73 @@ def _host_from_source(value: Any) -> str | None:
     if ":" in text and not text.startswith("/"):
         return text.split(":", 1)[0].strip("[]") or None
     return None
+
+
+def _matching_local_listener_refs(
+    endpoint_refs: list[OwnershipEvidenceRef], facts: list[Fact]
+) -> list[OwnershipEvidenceRef]:
+    endpoints = [_endpoint_host_port(ref.value) for ref in endpoint_refs]
+    endpoints = [item for item in endpoints if item is not None]
+    if not endpoints:
+        return []
+    listener_facts = [
+        fact
+        for fact in facts
+        if fact.predicate in {"listening_socket", "listening_endpoint"}
+    ]
+    matches: list[OwnershipEvidenceRef] = []
+    seen: set[str] = set()
+    for fact in listener_facts:
+        listener = _listener_protocol_address_port(fact)
+        if listener is None:
+            continue
+        _protocol, address, port = listener
+        for endpoint_host, endpoint_port in endpoints:
+            if endpoint_port != port:
+                continue
+            if address in {"0.0.0.0", "::", endpoint_host, "127.0.0.1", "::1"}:
+                if fact.id not in seen:
+                    matches.append(_evidence(fact, "local_listener_confirmed"))
+                    seen.add(fact.id)
+                break
+    return matches
+
+
+def _endpoint_host_port(value: Any) -> tuple[str | None, int] | None:
+    text = str(value)
+    if "//" in text:
+        text = text.split("//", 1)[1].split("/", 1)[0]
+    if text.startswith("[") and "]:" in text:
+        host, port_text = text[1:].split("]:", 1)
+    elif ":" in text:
+        host, port_text = text.rsplit(":", 1)
+    else:
+        return None
+    try:
+        return host.strip("[]") or None, int(port_text)
+    except ValueError:
+        return None
+
+
+def _listener_protocol_address_port(fact: Fact) -> tuple[str | None, str, int] | None:
+    protocol = fact.dimensions.get("protocol") if fact.dimensions else None
+    address = fact.dimensions.get("address") if fact.dimensions else None
+    port_text = fact.dimensions.get("port") if fact.dimensions else None
+    if address and port_text:
+        try:
+            return protocol, address, int(port_text)
+        except ValueError:
+            return None
+    text = str(fact.value)
+    parts = text.split()
+    endpoint = parts[-1] if parts else text
+    if endpoint.startswith("[") and "]:" in endpoint:
+        address, port_text = endpoint[1:].split("]:", 1)
+    elif ":" in endpoint:
+        address, port_text = endpoint.rsplit(":", 1)
+    else:
+        return None
+    try:
+        return (parts[0] if len(parts) > 1 else protocol), address, int(port_text)
+    except ValueError:
+        return None
