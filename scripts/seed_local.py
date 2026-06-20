@@ -93,6 +93,7 @@ from seed_runtime.observation_utilization import (
     format_observation_utilization,
     observation_utilization_json,
 )
+from seed_runtime.ops_brief import build_ops_brief, format_ops_brief
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.facts import (
     Fact,
@@ -943,6 +944,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="audit where observation predicates participate after collection",
     )
     parser.add_argument(
+        "--ops-brief",
+        action="store_true",
+        help="summarize current operational state from existing read-only audits",
+    )
+    parser.add_argument(
         "--provider",
         help="limit --observation-inventory to one provider name",
     )
@@ -1674,6 +1680,7 @@ def validate_lifecycle_args(
         bool(args.diagnostic_shape_audit),
         bool(args.consumer_audit),
         bool(args.observation_inventory),
+        bool(args.ops_brief),
         bool(args.audit_snapshot),
         bool(args.audit_snapshots),
         bool(args.audit_compare),
@@ -1752,16 +1759,28 @@ def validate_lifecycle_args(
         parser.error("--audit-compare requires --kind")
     if args.kind and not args.audit_compare:
         parser.error("--kind can only be used with --audit-compare")
-    if args.provider and not (args.observation_inventory or args.observation_utilization):
-        parser.error("--provider can only be used with --observation-inventory or --observation-utilization")
-    if args.predicate and not (args.observation_inventory or args.observation_utilization or args.consumer_audit):
-        parser.error("--predicate can only be used with --observation-inventory, --observation-utilization, or --consumer-audit")
+    if args.provider and not (
+        args.observation_inventory or args.observation_utilization
+    ):
+        parser.error(
+            "--provider can only be used with --observation-inventory or --observation-utilization"
+        )
+    if args.predicate and not (
+        args.observation_inventory
+        or args.observation_utilization
+        or args.consumer_audit
+    ):
+        parser.error(
+            "--predicate can only be used with --observation-inventory, --observation-utilization, or --consumer-audit"
+        )
     if args.subject and not (args.ownership_discrepancies or args.capability_needs):
         parser.error(
             "--subject can only be used with --ownership-discrepancies or --capability-needs"
         )
     if args.diagnostic and not (args.capability_needs or args.consumer_audit):
-        parser.error("--diagnostic can only be used with --capability-needs or --consumer-audit")
+        parser.error(
+            "--diagnostic can only be used with --capability-needs or --consumer-audit"
+        )
     if args.json_output and not (
         args.ownership_discrepancies
         or args.capability_needs
@@ -1770,11 +1789,12 @@ def validate_lifecycle_args(
         or args.consumer_audit
         or args.observation_inventory
         or args.observation_utilization
+        or args.ops_brief
         or args.audit_compare
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --consumer-audit, --observation-inventory, --observation-utilization, or --audit-compare"
+            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --consumer-audit, --observation-inventory, --observation-utilization, --ops-brief, or --audit-compare"
         )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
@@ -5462,7 +5482,6 @@ def main(argv: list[str] | None = None) -> int:
         print(format_entity_impact(projected_state_from_args(args), args.impact))
         return 0
 
-
     if args.audit_snapshot:
         ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
         try:
@@ -5535,9 +5554,21 @@ def main(argv: list[str] | None = None) -> int:
             provider_filter=args.provider, predicate_filter=args.predicate
         )
         if args.json_output:
-            print(json.dumps(observation_utilization_json(audit), indent=2, sort_keys=True))
+            print(
+                json.dumps(
+                    observation_utilization_json(audit), indent=2, sort_keys=True
+                )
+            )
         else:
             print(format_observation_utilization(audit))
+        return 0
+
+    if args.ops_brief:
+        brief = build_ops_brief(projected_state_from_args(args), repo_root=REPO_ROOT)
+        if args.json_output:
+            print(json.dumps(brief.to_json_dict(), indent=2, sort_keys=True))
+        else:
+            print(format_ops_brief(brief))
         return 0
 
     if args.unhealthy:
@@ -5718,7 +5749,6 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print(format_capability_needs(entries))
         return 0
-
 
     if args.consumer_audit:
         audit = build_consumer_audit(

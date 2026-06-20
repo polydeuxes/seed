@@ -65,7 +65,10 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
     ),
     DiagnosticInventoryEntry(
         name="knowledge_reachability",
-        cli_flags=("--knowledge-reachability-audit", "--knowledge-reachability-audit-json"),
+        cli_flags=(
+            "--knowledge-reachability-audit",
+            "--knowledge-reachability-audit-json",
+        ),
         uses_projected_state=True,
         uses_repo_files=True,
         supports_json=True,
@@ -138,7 +141,6 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         reads_diagnostic_facts=False,
         description="Compares two local operational audit snapshots without recording facts.",
     ),
-
     DiagnosticInventoryEntry(
         name="consumer_audit",
         cli_flags=("--consumer-audit",),
@@ -154,7 +156,6 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         reads_diagnostic_facts=False,
         description="Audits implementation-backed consumers of observation predicates and diagnostic surfaces without recording facts.",
     ),
-
     DiagnosticInventoryEntry(
         name="observation_utilization",
         cli_flags=("--observation-utilization",),
@@ -184,6 +185,21 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         mutates_cluster=False,
         reads_diagnostic_facts=True,
         description="Reads recorded diagnostic facts and reports capability needs by subject.",
+    ),
+    DiagnosticInventoryEntry(
+        name="ops_brief",
+        cli_flags=("--ops-brief",),
+        uses_projected_state=True,
+        uses_repo_files=True,
+        supports_json=True,
+        supports_record=False,
+        record_scope="none",
+        emits_diagnostic_facts=False,
+        emits_cluster_facts=False,
+        writes_event_ledger=False,
+        mutates_cluster=False,
+        reads_diagnostic_facts=True,
+        description="Aggregates existing operational visibility surfaces into a read-only triage brief.",
     ),
 )
 
@@ -225,7 +241,8 @@ def format_diagnostic_inventory(
         for entry in entries
     ]
     widths = [
-        max(len(row[index]) for row in [headers, *rows]) for index in range(len(headers))
+        max(len(row[index]) for row in [headers, *rows])
+        for index in range(len(headers))
     ]
     rendered = [_render_row(headers, widths)]
     rendered.extend(_render_row(row, widths) for row in rows)
