@@ -95,6 +95,11 @@ from seed_runtime.handoff_plans import (
 )
 from seed_runtime.ids import new_id
 from seed_runtime.inference_catalog import InferenceCatalog
+from seed_runtime.knowledge_reachability import (
+    build_knowledge_reachability_audit,
+    format_knowledge_reachability_table,
+    knowledge_reachability_json,
+)
 from seed_runtime.local_host_mounts import (
     MOUNT_COLLAPSE_GROUP_ORDER,
     classify_mount_collapse_group,
@@ -847,6 +852,33 @@ def build_parser() -> argparse.ArgumentParser:
         "--replacement-plan",
         metavar="REPLACEMENT_ID",
         help="replacement action plan id required by --supersede-plan",
+    )
+
+    parser.add_argument(
+        "--knowledge-reachability-audit",
+        action="store_true",
+        help="audit knowledge reachability across preserved, projected, read-model, inquiry, and rendered surfaces",
+    )
+    parser.add_argument(
+        "--knowledge-reachability-audit-family",
+        choices=[
+            "runtime",
+            "relationships",
+            "ownership",
+            "projection",
+            "repository",
+            "inquiry",
+        ],
+        help="limit knowledge reachability audit to one candidate family",
+    )
+    parser.add_argument(
+        "--knowledge-reachability-audit-subject",
+        help="limit knowledge reachability audit to one candidate string",
+    )
+    parser.add_argument(
+        "--knowledge-reachability-audit-json",
+        action="store_true",
+        help="render knowledge reachability audit as JSON",
     )
     parser.add_argument("--model", default=DEFAULT_MODEL, help="Ollama model name")
     parser.add_argument(
@@ -3322,7 +3354,6 @@ def format_entity_types(state: State, entity_id: str | None = None) -> str:
     return "\n".join(lines) or "no entity types"
 
 
-
 def record_classification_coverage_diagnostic(
     args: argparse.Namespace, diagnostic: Any
 ) -> list[Fact]:
@@ -3348,6 +3379,7 @@ def record_classification_coverage_diagnostic(
 
 def _diagnostic_fact_predicate(name: str) -> str:
     return name.replace("-", " ").replace(" ", "_")
+
 
 def format_evidence_graph(state: State) -> str:
     """Format the read-only Evidence Graph summary and concise links."""
@@ -5278,6 +5310,28 @@ def main(argv: list[str] | None = None) -> int:
                 build_inquiry_orientation(projected_state_from_args(args), note)
             )
         )
+        return 0
+
+    if args.knowledge_reachability_audit:
+        ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
+        try:
+            rows = build_knowledge_reachability_audit(
+                ledger,
+                args.workspace,
+                family=args.knowledge_reachability_audit_family,
+                subject=args.knowledge_reachability_audit_subject,
+                repo_root=REPO_ROOT,
+            )
+        finally:
+            close = getattr(ledger, "close", None)
+            if close is not None:
+                close()
+        if args.knowledge_reachability_audit_json:
+            print(
+                json.dumps(knowledge_reachability_json(rows), indent=2, sort_keys=True)
+            )
+        else:
+            print(format_knowledge_reachability_table(rows))
         return 0
 
     if args.state_build:
