@@ -162,6 +162,14 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         json_function="visibility_coverage_audit_json",
         cli_flags=("--visibility-coverage-audit",),
     ),
+    "operational_surface_classification_audit": DiagnosticImplementationSpec(
+        name="operational_surface_classification_audit",
+        module_path="seed_runtime/operational_surface_inventory.py",
+        build_function="build_operational_surface_classification_audit",
+        format_function="format_operational_surface_classification_audit",
+        json_function="operational_surface_classification_audit_json",
+        cli_flags=("--operational-surface-classification-audit",),
+    ),
     "consumer_audit": DiagnosticImplementationSpec(
         name="consumer_audit",
         module_path="seed_runtime/consumer_dependency_audit.py",

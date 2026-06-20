@@ -115,3 +115,101 @@ def test_visibility_coverage_audit_does_not_write_event_ledger_or_mutate_cluster
 
     assert seed_local.main(["--db", str(db_path), "--visibility-coverage-audit"]) == 0
     assert not db_path.exists()
+
+
+def _classification(items, name):
+    return next(item for item in items if item.surface == name)
+
+
+def test_operational_surface_classification_audit_classifies_primary_surfaces():
+    from seed_runtime.operational_surface_inventory import build_operational_surface_classification_audit
+
+    audit = build_operational_surface_classification_audit(seed_local.build_parser())
+
+    assert _classification(audit.items, "--observe-local-host").classification == "primary_surface"
+    assert _classification(audit.items, "--ownership-discrepancies").classification == "primary_surface"
+    assert _classification(audit.items, "--pressure-audit").classification == "primary_surface"
+
+
+def test_filters_are_not_classified_as_primary_surfaces():
+    from seed_runtime.operational_surface_inventory import build_operational_surface_classification_audit
+
+    audit = build_operational_surface_classification_audit(seed_local.build_parser())
+
+    assert _classification(audit.items, "--candidate-kind").classification == "filter"
+    assert _classification(audit.items, "--provider").classification == "filter"
+    assert _classification(audit.items, "--predicate").classification == "filter"
+
+
+def test_modifiers_are_not_classified_as_primary_surfaces():
+    from seed_runtime.operational_surface_inventory import build_operational_surface_classification_audit
+
+    audit = build_operational_surface_classification_audit(seed_local.build_parser())
+
+    assert _classification(audit.items, "--json").classification == "modifier"
+
+
+def test_debug_surfaces_are_recognized():
+    from seed_runtime.operational_surface_inventory import build_operational_surface_classification_audit
+
+    audit = build_operational_surface_classification_audit(seed_local.build_parser())
+
+    assert _classification(audit.items, "--current-facts-cache-debug").classification == "debug_surface"
+
+
+def test_manual_input_paths_are_recognized():
+    from seed_runtime.operational_surface_inventory import build_operational_surface_classification_audit
+
+    audit = build_operational_surface_classification_audit(seed_local.build_parser())
+
+    alias = _classification(audit.items, "--alias")
+    assert alias.classification == "manual_input"
+    assert "operator-provided" in alias.reason
+
+
+def test_operational_surface_classification_audit_renders_and_json_is_valid(capsys):
+    assert seed_local.main(["--operational-surface-classification-audit"]) == 0
+    output = capsys.readouterr().out
+    assert "Operational Surface Classification Audit" in output
+    assert "Primary Surfaces:" in output
+    assert "Filters:" in output
+
+    assert seed_local.main(["--operational-surface-classification-audit", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert isinstance(payload["items"], list)
+    assert any(
+        item["surface"] == "--alias" and item["classification"] == "manual_input"
+        for item in payload["items"]
+    )
+
+
+def test_classification_empty_state_behavior_is_sane():
+    import argparse
+    from seed_runtime.operational_surface_inventory import (
+        build_operational_surface_classification_audit,
+        format_operational_surface_classification_audit,
+    )
+
+    audit = build_operational_surface_classification_audit(argparse.ArgumentParser())
+
+    assert audit.items == ()
+    assert "No CLI elements discovered" in format_operational_surface_classification_audit(audit)
+
+
+def test_visibility_coverage_differentiates_primary_filters_and_modifiers():
+    parser = seed_local.build_parser()
+    entries = tuple(
+        entry
+        for entry in DIAGNOSTIC_INVENTORY
+        if "--visibility-coverage-audit" not in entry.cli_flags
+    )
+
+    audit = build_visibility_coverage_audit(parser, diagnostic_entries=entries)
+    output = format_visibility_coverage_audit(audit)
+
+    assert "Unregistered primary surfaces:" in output
+    assert "Unregistered filters:" in output
+    assert "Unregistered modifiers:" in output
+    assert audit.unregistered_classification_counts["primary_surface"] > 0
+    assert audit.unregistered_classification_counts["filter"] > 0
+    assert audit.unregistered_classification_counts["modifier"] > 0
