@@ -56,7 +56,7 @@ def test_reachability_detects_first_loss_at_projection_for_preserved_only_concep
 
     assert row.preserved is True
     assert row.projected is False
-    assert row.first_loss == "Projected"
+    assert row.first_loss == "projected_loss"
 
 
 def test_reachability_integration_fixture_finds_distinct_loss_stages(tmp_path):
@@ -94,7 +94,7 @@ def test_reachability_integration_fixture_finds_distinct_loss_stages(tmp_path):
     by_candidate = {row.candidate: row for row in rows}
 
     assert by_candidate["node115"].first_loss == "none"
-    assert by_candidate["storage topology"].first_loss == "Projected"
+    assert by_candidate["storage topology"].first_loss == "projected_loss"
     assert by_candidate["state build"].projected is True
     assert by_candidate["source navigation"].family == "repository"
     assert any(
@@ -354,13 +354,17 @@ def test_reachability_scale_uses_indexed_evaluation_for_large_candidate_set():
 
 
 def test_reachability_default_discovery_stops_early_and_reports_raw_seen_used():
-    from seed_runtime.knowledge_reachability import build_knowledge_reachability_audit_result
+    from seed_runtime.knowledge_reachability import (
+        build_knowledge_reachability_audit_result,
+    )
 
     ledger = EventLedger()
     for idx in range(10_000):
         ledger.append("operator.note", "w", {"text": f"synthetic_candidate_{idx}"})
 
-    result = build_knowledge_reachability_audit_result(ledger, "w", limit=500, max_seconds=None)
+    result = build_knowledge_reachability_audit_result(
+        ledger, "w", limit=500, max_seconds=None
+    )
     counts = result.metadata.candidate_counts
 
     assert counts["used"] <= 500
@@ -370,7 +374,9 @@ def test_reachability_default_discovery_stops_early_and_reports_raw_seen_used():
 
 
 def test_reachability_all_scans_all_synthetic_candidates():
-    from seed_runtime.knowledge_reachability import build_knowledge_reachability_audit_result
+    from seed_runtime.knowledge_reachability import (
+        build_knowledge_reachability_audit_result,
+    )
 
     ledger = EventLedger()
     for idx in range(1_000):
@@ -385,7 +391,9 @@ def test_reachability_all_scans_all_synthetic_candidates():
 
 
 def test_reachability_read_model_substep_timing_appears():
-    from seed_runtime.knowledge_reachability import build_knowledge_reachability_audit_result
+    from seed_runtime.knowledge_reachability import (
+        build_knowledge_reachability_audit_result,
+    )
 
     ledger = EventLedger()
     messages = []
@@ -400,11 +408,16 @@ def test_reachability_read_model_substep_timing_appears():
         "read_model.inquiry_orientation",
     ):
         assert any(msg.startswith(f"[reachability] start {name}") for msg in messages)
-        assert any(msg.startswith(f"[reachability] end {name}") and "rows=" in msg for msg in messages)
+        assert any(
+            msg.startswith(f"[reachability] end {name}") and "rows=" in msg
+            for msg in messages
+        )
 
 
 def test_reachability_read_model_does_not_call_broad_builders(monkeypatch):
-    from seed_runtime.knowledge_reachability import build_knowledge_reachability_audit_result
+    from seed_runtime.knowledge_reachability import (
+        build_knowledge_reachability_audit_result,
+    )
     import seed_runtime.knowledge_reachability as kr
 
     def forbidden(*args, **kwargs):
@@ -424,7 +437,9 @@ def test_reachability_read_model_does_not_call_broad_builders(monkeypatch):
 
 
 def test_reachability_subject_filter_avoids_broad_repo_scan(tmp_path):
-    from seed_runtime.knowledge_reachability import build_knowledge_reachability_audit_result
+    from seed_runtime.knowledge_reachability import (
+        build_knowledge_reachability_audit_result,
+    )
 
     (tmp_path / "docs").mkdir()
     (tmp_path / "seed_runtime").mkdir()
@@ -438,3 +453,106 @@ def test_reachability_subject_filter_avoids_broad_repo_scan(tmp_path):
 
     assert result.metadata.scan_counts["repo files scanned"] == 0
     assert result.metadata.candidate_counts["evaluated"] == 1
+
+
+def test_reachability_candidate_kind_classifies_required_examples():
+    from seed_runtime.knowledge_reachability import (
+        build_knowledge_reachability_audit_result,
+    )
+
+    cases = {
+        "Fact": "repository_concept",
+        "Observation": "repository_concept",
+        "Evidence": "repository_concept",
+        "InferenceRule": "repository_concept",
+        "CapabilityCatalog": "code_symbol",
+        "InputAct": "code_symbol",
+        "RelationshipDefinition": "code_symbol",
+        "confidence": "schema_field",
+        "dimensions": "schema_field",
+        "canonical_name": "schema_field",
+        "address": "schema_field",
+        "amd64": "platform_value",
+        "x86_64": "platform_value",
+        "vfat": "platform_value",
+        "ext4": "platform_value",
+        "docker0": "platform_value",
+        "eno1": "platform_value",
+        "evd_obs_000001": "generated_identifier",
+        "fact_obs_000001": "generated_identifier",
+        "cf4f3b31-e8c8-48fb-a14c-e8c185050ae6": "generated_identifier",
+        "aa:bb:cc:dd:ee:ff": "network_identifier",
+        "192.168.1.10": "network_identifier",
+        "node.example.internal": "network_identifier",
+        "shared storage candidates": "presentation_label",
+        "source navigation": "presentation_label",
+        "current work position": "presentation_label",
+        "continuation": "presentation_label",
+    }
+    for candidate, expected in cases.items():
+        result = build_knowledge_reachability_audit_result(
+            EventLedger(), "w", subject=candidate
+        )
+        assert result.rows[0].candidate_kind == expected
+
+
+def test_reachability_visibility_only_is_not_none_and_json_includes_kind(monkeypatch):
+    from seed_runtime.knowledge_reachability import (
+        build_knowledge_reachability_audit_result,
+    )
+    import seed_runtime.knowledge_reachability as kr
+
+    monkeypatch.setattr(
+        kr,
+        "_build_indexes",
+        lambda *args, **kwargs: kr._AuditIndexes(
+            set(), set(), set(), {"source navigation"}
+        ),
+    )
+    ledger = EventLedger()
+    result = build_knowledge_reachability_audit_result(
+        ledger, "w", subject="source navigation"
+    )
+    row = result.rows[0]
+    payload = knowledge_reachability_json(result.rows, result.metadata)
+
+    assert row.preserved is False
+    assert row.projected is False
+    assert row.read_model is False
+    assert row.rendered is True
+    assert row.first_loss == "visibility_only"
+    assert payload["rows"][0]["candidate_kind"] == "presentation_label"
+
+
+def test_reachability_summary_counts_and_candidate_kind_filtering():
+    from seed_runtime.knowledge_reachability import (
+        build_knowledge_reachability_audit_result,
+    )
+
+    ledger = EventLedger()
+    for text in ("Fact", "CapabilityCatalog", "evd_obs_000001", "source navigation"):
+        ledger.append("operator.note", "w", {"text": text})
+
+    result = build_knowledge_reachability_audit_result(
+        ledger, "w", all_candidates=True, max_seconds=None
+    )
+    kind_counts = result.metadata.candidate_kind_counts
+    loss_counts = result.metadata.loss_stage_counts
+
+    assert kind_counts is not None
+    assert kind_counts["repository_concept"] >= 1
+    assert kind_counts["code_symbol"] >= 1
+    assert kind_counts["generated_identifier"] >= 1
+    assert kind_counts["presentation_label"] >= 1
+    assert loss_counts is not None
+    assert sum(loss_counts.values()) == len(result.rows)
+
+    filtered = build_knowledge_reachability_audit_result(
+        ledger,
+        "w",
+        candidate_kind="presentation_label",
+        all_candidates=True,
+        max_seconds=None,
+    )
+    assert filtered.rows
+    assert {row.candidate_kind for row in filtered.rows} == {"presentation_label"}
