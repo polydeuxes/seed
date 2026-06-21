@@ -61,6 +61,7 @@ class OperationalGraphNode:
             "type": self.type,
             "label": self.label,
             "classification": self.classification,
+            "taxonomy": "aggregate" if self.aggregate else "concrete",
             "aggregate": self.aggregate,
         }
 
@@ -222,15 +223,27 @@ def operational_graph_json(graph: OperationalGraph) -> dict[str, Any]:
 
 
 def build_operational_graph_confidence(
-    root: str | Path | None = None, confidence: Confidence | None = None
+    root: str | Path | None = None,
+    confidence: Confidence | None = None,
+    exclude_aggregate: bool = False,
 ) -> dict[str, Any]:
     """Summarize why operational graph edge confidence was assigned."""
 
     graph = build_operational_graph(root)
+    nodes = {node.id: node for node in graph.nodes}
+    graph_edges = tuple(
+        edge
+        for edge in graph.edges
+        if not exclude_aggregate
+        or not (
+            (nodes.get(edge.source) and nodes[edge.source].aggregate)
+            or (nodes.get(edge.target) and nodes[edge.target].aggregate)
+        )
+    )
     tiers: dict[str, dict[str, Any]] = {}
     selected = ("high", "medium", "low") if confidence is None else (confidence,)
     for tier in selected:
-        edges = [edge for edge in graph.edges if edge.confidence == tier]
+        edges = [edge for edge in graph_edges if edge.confidence == tier]
         evidence_counts = Counter(item.kind for edge in edges for item in edge.evidence)
         type_counts = Counter(edge.type for edge in edges)
         tiers[tier] = {
@@ -238,6 +251,8 @@ def build_operational_graph_confidence(
             "relationship_types": dict(sorted(type_counts.items())),
             "evidence_categories": dict(sorted(evidence_counts.items())),
             "uncertainty_causes": _uncertainty_causes(edges, graph),
+            "uncertainty_categories": _uncertainty_categories(edges, graph),
+            "confidence_interpretation": _confidence_interpretation(edges, graph),
             "reason": _confidence_reason(tier),
             "potential_confidence_improvement": _confidence_improvement(tier),
             "representative_examples": [
@@ -247,12 +262,22 @@ def build_operational_graph_confidence(
 
     important_low = [
         _edge_example(edge, include_importance=True)
-        for edge in sorted(graph.edges, key=_edge_sort_key)
+        for edge in sorted(graph_edges, key=_edge_sort_key)
         if edge.confidence == "low" and _importance(edge)
     ]
     return {
         "summary": {
-            **graph.summary,
+            **{
+                **graph.summary,
+                "edges": len(graph_edges),
+                "relationship_types": dict(Counter(edge.type for edge in graph_edges)),
+                "confidence_counts": dict(
+                    Counter(edge.confidence for edge in graph_edges)
+                ),
+            },
+            "total_graph_edges": len(graph.edges),
+            "excluded_aggregate_edges": len(graph.edges) - len(graph_edges),
+            "exclude_aggregate": exclude_aggregate,
             "read_only": True,
             "writes_event_ledger": False,
             "mutates_cluster": False,
@@ -359,6 +384,17 @@ def format_operational_graph_confidence(analysis: dict[str, Any]) -> str:
         lines.extend(_count_lines(data["evidence_categories"]))
         lines.append("Uncertainty causes:")
         lines.extend(_count_lines(data.get("uncertainty_causes", {})))
+        interpretation = data.get("confidence_interpretation", {})
+        lines.append("Caused primarily by:")
+        lines.append(
+            f"  aggregate targets: {interpretation.get('aggregate_target_edges', 0)}"
+        )
+        lines.append("Operational relationship uncertainty:")
+        lines.append(
+            f"  {interpretation.get('operational_relationship_uncertainty_edges', 0)}"
+        )
+        lines.append("Uncertainty categories:")
+        lines.extend(_count_lines(data.get("uncertainty_categories", {})))
         lines.extend(
             [
                 f"Reason: {data['reason']}",
@@ -478,6 +514,55 @@ def _uncertainty_causes(
         if not any(item.source and ":" in item.source for item in edge.evidence):
             counts["missing_line_attribution"] += 1
     return dict(sorted(counts.items()))
+
+
+def _uncertainty_categories(
+    edges: list[OperationalGraphEdge], graph: OperationalGraph
+) -> dict[str, int]:
+    nodes = {node.id: node for node in graph.nodes}
+    counts: Counter[str] = Counter()
+    for edge in edges:
+        source = nodes.get(edge.source)
+        target = nodes.get(edge.target)
+        has_aggregate_endpoint = bool(
+            (source and source.aggregate) or (target and target.aggregate)
+        )
+        kinds = {item.kind for item in edge.evidence}
+        if has_aggregate_endpoint:
+            counts["taxonomy_uncertainty"] += 1
+        elif edge.confidence == "low" or kinds == {"indirect"}:
+            counts["relationship_uncertainty"] += 1
+        if not any(item.source and ":" in item.source for item in edge.evidence):
+            counts["attribution_uncertainty"] += 1
+        if kinds == {"reference"}:
+            counts["reference_only_uncertainty"] += 1
+    return dict(sorted(counts.items()))
+
+
+def _confidence_interpretation(
+    edges: list[OperationalGraphEdge], graph: OperationalGraph
+) -> dict[str, int]:
+    nodes = {node.id: node for node in graph.nodes}
+    aggregate_target_edges = 0
+    aggregate_endpoint_edges = 0
+    relationship_uncertainty_edges = 0
+    for edge in edges:
+        source = nodes.get(edge.source)
+        target = nodes.get(edge.target)
+        has_aggregate_endpoint = bool(
+            (source and source.aggregate) or (target and target.aggregate)
+        )
+        if target and target.aggregate:
+            aggregate_target_edges += 1
+        if has_aggregate_endpoint:
+            aggregate_endpoint_edges += 1
+        elif edge.confidence == "low":
+            relationship_uncertainty_edges += 1
+    return {
+        "aggregate_target_edges": aggregate_target_edges,
+        "aggregate_endpoint_edges": aggregate_endpoint_edges,
+        "operational_relationship_uncertainty_edges": relationship_uncertainty_edges,
+    }
 
 
 def _stronger(left: Confidence, right: Confidence) -> Confidence:

@@ -103,6 +103,7 @@ def test_current_diagnostic_shapes_match_implementation_authority():
     assert not _entry("operational_graph").mutates_cluster
     assert _entry("operational_graph_confidence").cli_flags == (
         "--operational-graph-confidence",
+        "--exclude-aggregate",
     )
     assert _entry("operational_graph_taxonomy").cli_flags == (
         "--operational-graph-taxonomy",

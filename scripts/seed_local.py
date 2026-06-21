@@ -1017,6 +1017,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="analyze operational graph edge confidence quality",
     )
     parser.add_argument(
+        "--exclude-aggregate",
+        action="store_true",
+        help="exclude aggregate endpoint edges from --operational-graph-confidence",
+    )
+    parser.add_argument(
         "--operational-graph-taxonomy",
         action="store_true",
         help="summarize operational graph node classifications and aggregate connectivity",
@@ -1947,6 +1952,8 @@ def validate_lifecycle_args(
     )
     if graph_confidence_tier and not args.operational_graph_confidence:
         parser.error("confidence tier filter requires --operational-graph-confidence")
+    if args.exclude_aggregate and not args.operational_graph_confidence:
+        parser.error("--exclude-aggregate requires --operational-graph-confidence")
     if args.audit_compare and not args.kind:
         parser.error("--audit-compare requires --kind")
     if args.kind and not args.audit_compare:
@@ -5836,7 +5843,9 @@ def main(argv: list[str] | None = None) -> int:
             or args.operational_graph_confidence_tier_option
         )
         analysis = build_operational_graph_confidence(
-            REPO_ROOT, confidence=graph_confidence_tier
+            REPO_ROOT,
+            confidence=graph_confidence_tier,
+            exclude_aggregate=args.exclude_aggregate,
         )
         if args.json_output:
             print(

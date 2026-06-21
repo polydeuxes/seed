@@ -29,6 +29,9 @@ def test_operational_graph_classifies_aggregate_and_concrete_nodes():
     assert nodes["emitter:action_plan"].classification == "concrete_emitter"
     assert nodes["surface:views"].aggregate is True
     assert nodes["diagnostic:capability_needs"].aggregate is False
+    node_json = nodes["surface:views"].to_json_dict()
+    assert node_json["taxonomy"] == "aggregate"
+    assert nodes["diagnostic:capability_needs"].to_json_dict()["taxonomy"] == "concrete"
 
 
 def test_operational_graph_json_valid(capsys):
@@ -94,6 +97,9 @@ def test_operational_graph_confidence_renders(capsys):
     assert "Low Confidence" in out
     assert "Reason:" in out
     assert "Uncertainty causes:" in out
+    assert "Caused primarily by:" in out
+    assert "Operational relationship uncertainty:" in out
+    assert "Uncertainty categories:" in out
     assert "Representative examples:" in out
 
 
@@ -115,8 +121,41 @@ def test_operational_graph_confidence_reports_all_tiers_and_reasoning():
     assert "indirect helper evidence" in analysis["tiers"]["medium"]["reason"]
     assert "reference-only" in analysis["tiers"]["low"]["reason"]
     assert analysis["tiers"]["low"]["representative_examples"]
-    assert analysis["tiers"]["low"]["uncertainty_causes"]["aggregate_target"] > 0
-    assert analysis["tiers"]["low"]["uncertainty_causes"]["reference_only_evidence"] > 0
+    low = analysis["tiers"]["low"]
+    assert low["uncertainty_causes"]["aggregate_target"] > 0
+    assert low["uncertainty_causes"]["reference_only_evidence"] > 0
+    assert (
+        low["uncertainty_categories"]["taxonomy_uncertainty"]
+        == low["uncertainty_causes"]["aggregate_target"]
+    )
+    assert low["uncertainty_categories"]["reference_only_uncertainty"] > 0
+    assert (
+        low["confidence_interpretation"]["aggregate_target_edges"]
+        == low["uncertainty_causes"]["aggregate_target"]
+    )
+    assert low["confidence_interpretation"]["operational_relationship_uncertainty_edges"] == 0
+
+
+def test_operational_graph_confidence_exclude_aggregate_filters_taxonomy_noise(capsys):
+    analysis = build_operational_graph_confidence(exclude_aggregate=True)
+    full = build_operational_graph_confidence()
+    assert analysis["summary"]["exclude_aggregate"] is True
+    assert analysis["summary"]["excluded_aggregate_edges"] > 0
+    assert analysis["summary"]["edges"] < full["summary"]["edges"]
+    assert (
+        analysis["tiers"]["low"]["uncertainty_causes"].get("aggregate_target", 0)
+        == 0
+    )
+
+    assert (
+        seed_local.main(
+            ["--operational-graph-confidence", "--exclude-aggregate", "--json"]
+        )
+        == 0
+    )
+    data = json.loads(capsys.readouterr().out)
+    assert data["summary"]["exclude_aggregate"] is True
+    assert data["summary"]["excluded_aggregate_edges"] > 0
 
 
 def test_operational_graph_confidence_filter_reports_selected_tier(capsys):
