@@ -27,6 +27,7 @@ def test_cli_diagnostic_inventory_lists_known_diagnostics(capsys):
         "observation_utilization",
         "operational_graph",
         "operational_graph_confidence",
+        "operational_graph_taxonomy",
         "consumer_audit",
         "emitter_attribution_audit",
         "current_facts_cache_debug",
@@ -50,6 +51,7 @@ def test_cli_diagnostic_inventory_json_emits_valid_json(capsys):
         "observation_utilization",
         "operational_graph",
         "operational_graph_confidence",
+        "operational_graph_taxonomy",
         "consumer_audit",
         "emitter_attribution_audit",
         "current_facts_cache_debug",
@@ -94,6 +96,14 @@ def test_current_diagnostic_shapes_match_implementation_authority():
     assert _entry("operational_graph_confidence").cli_flags == (
         "--operational-graph-confidence",
     )
+    assert _entry("operational_graph_taxonomy").cli_flags == (
+        "--operational-graph-taxonomy",
+    )
+    assert _entry("operational_graph_taxonomy").supports_json
+    assert not _entry("operational_graph_taxonomy").supports_record
+    assert _entry("operational_graph_taxonomy").record_scope == "none"
+    assert not _entry("operational_graph_taxonomy").writes_event_ledger
+    assert not _entry("operational_graph_taxonomy").mutates_cluster
     assert _entry("operational_graph_confidence").supports_json
     assert not _entry("operational_graph_confidence").supports_record
     assert _entry("operational_graph_confidence").record_scope == "none"

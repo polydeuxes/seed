@@ -118,10 +118,13 @@ from seed_runtime.operational_story import (
 from seed_runtime.operational_graph import (
     build_operational_graph,
     build_operational_graph_confidence,
+    build_operational_graph_taxonomy,
     format_operational_graph,
     format_operational_graph_confidence,
+    format_operational_graph_taxonomy,
     operational_graph_confidence_json,
     operational_graph_json,
+    operational_graph_taxonomy_json,
 )
 from seed_runtime.operational_surface_inventory import (
     build_operational_surface_classification_audit,
@@ -1004,6 +1007,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="analyze operational graph edge confidence quality",
     )
     parser.add_argument(
+        "--operational-graph-taxonomy",
+        action="store_true",
+        help="summarize operational graph node classifications and aggregate connectivity",
+    )
+    parser.add_argument(
         "operational_graph_confidence_tier",
         nargs="?",
         choices=["high", "medium", "low"],
@@ -1833,6 +1841,7 @@ def validate_lifecycle_args(
         bool(args.operational_story),
         bool(args.operational_graph),
         bool(args.operational_graph_confidence),
+        bool(args.operational_graph_taxonomy),
         bool(args.operational_surface_inventory),
         bool(args.visibility_coverage_audit),
         bool(args.operational_surface_classification_audit),
@@ -1961,6 +1970,7 @@ def validate_lifecycle_args(
         or args.operational_story
         or args.operational_graph
         or args.operational_graph_confidence
+        or args.operational_graph_taxonomy
         or args.operational_surface_inventory
         or args.visibility_coverage_audit
         or args.operational_surface_classification_audit
@@ -5780,6 +5790,18 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(operational_graph_json(graph), indent=2, sort_keys=True))
         else:
             print(format_operational_graph(graph))
+        return 0
+
+    if args.operational_graph_taxonomy:
+        analysis = build_operational_graph_taxonomy(REPO_ROOT)
+        if args.json_output:
+            print(
+                json.dumps(
+                    operational_graph_taxonomy_json(analysis), indent=2, sort_keys=True
+                )
+            )
+        else:
+            print(format_operational_graph_taxonomy(analysis))
         return 0
 
     if args.operational_graph_confidence:
