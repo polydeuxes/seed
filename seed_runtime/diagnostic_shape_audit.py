@@ -365,6 +365,21 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "authorize_execution",
         ),
     ),
+    "snapshot_policy_audit": DiagnosticImplementationSpec(
+        name="snapshot_policy_audit",
+        module_path="seed_runtime/snapshot_policy_audit.py",
+        build_function="build_snapshot_policy_audit",
+        format_function="format_snapshot_policy_audit",
+        json_function="snapshot_policy_audit_json",
+        cli_flags=("--snapshot-policy-audit",),
+        mutation_markers=(
+            ".write_text(",
+            "subprocess.run",
+            "os.remove",
+            "shutil.rmtree",
+            "authorize_execution",
+        ),
+    ),
     "pressure_audit": DiagnosticImplementationSpec(
         name="pressure_audit",
         module_path="seed_runtime/pressure_audit.py",
