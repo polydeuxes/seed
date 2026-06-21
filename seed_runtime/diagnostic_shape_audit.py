@@ -391,6 +391,22 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "authorize_execution",
         ),
     ),
+    "reference_selection": DiagnosticImplementationSpec(
+        name="reference_selection",
+        module_path="seed_runtime/reference_selection.py",
+        build_function="build_reference_selection",
+        format_function="format_reference_selection",
+        json_function="reference_selection_json",
+        cli_flags=("--reference-selection",),
+        repo_file_markers=("build_impact_audit", "build_snapshot_policy_audit"),
+        mutation_markers=(
+            ".write_text(",
+            "subprocess.run",
+            "os.remove",
+            "shutil.rmtree",
+            "authorize_execution",
+        ),
+    ),
     "repository_state_observation": DiagnosticImplementationSpec(
         name="repository_state_observation",
         module_path="seed_runtime/repository_observation.py",
