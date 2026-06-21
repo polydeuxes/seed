@@ -197,6 +197,22 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         cli_flags=("--emitter-attribution-audit", "--include-rendered"),
         repo_file_markers=("build_emitter_consumer_audit", "_implementation_evidence"),
     ),
+    "architecture_conformance_audit": DiagnosticImplementationSpec(
+        name="architecture_conformance_audit",
+        module_path="seed_runtime/architecture_conformance_audit.py",
+        build_function="build_architecture_conformance_audit",
+        format_function="format_architecture_conformance_audit",
+        json_function="architecture_conformance_audit_json",
+        cli_flags=("--architecture-conformance-audit",),
+        repo_file_markers=("discover_architecture_evidence", "build_operational_graph"),
+        mutation_markers=(
+            ".write_text(",
+            "subprocess.run",
+            "os.remove",
+            "shutil.rmtree",
+            "authorize_execution",
+        ),
+    ),
     "operational_graph": DiagnosticImplementationSpec(
         name="operational_graph",
         module_path="seed_runtime/operational_graph.py",

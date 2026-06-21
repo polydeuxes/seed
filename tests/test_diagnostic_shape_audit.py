@@ -113,6 +113,7 @@ def test_json_capable_diagnostics_validate_json_support():
         "capability_needs",
         "knowledge_reachability",
         "observation_utilization",
+        "architecture_conformance_audit",
         "operational_graph",
         "operational_graph_confidence",
         "operational_graph_taxonomy",
