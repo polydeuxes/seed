@@ -207,3 +207,5 @@ Use these for operator-facing views and read-only projections. These surfaces ex
 Historical reconciliation, characterization, audit, and vocabulary documents remain part of the record. Do not delete them merely because their conclusions have been routed through this map.
 
 * [`unified_derivation_architecture_investigation.md`](unified_derivation_architecture_investigation.md) — investigation of shared derivation mechanics across operational, historical, documentary, operator, and future reasoning without collapsing authority models.
+
+* [`projection_self_description_investigation.md`](projection_self_description_investigation.md) — investigation of projection self-description as a repository capability, comparing projection stage visibility with operational/diagnostic self-description.
