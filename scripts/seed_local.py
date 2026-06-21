@@ -182,6 +182,11 @@ from seed_runtime.reasoning_path_audit import (
     format_reasoning_path_audit,
     reasoning_path_audit_json,
 )
+from seed_runtime.selection_path_audit import (
+    build_selection_path_audit,
+    format_selection_path_audit,
+    selection_path_audit_json,
+)
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.facts import (
     Fact,
@@ -1031,6 +1036,11 @@ def build_parser() -> argparse.ArgumentParser:
         nargs=2,
         metavar=("DOMAIN", "SUBJECT"),
         help="show the evidence-backed derivation path for an operational conclusion",
+    )
+    parser.add_argument(
+        "--selection-path",
+        metavar="TARGET",
+        help="show read-only selection evidence for why an operational conclusion was selected",
     )
     parser.add_argument(
         "--operational-graph",
@@ -1939,7 +1949,7 @@ def validate_lifecycle_args(
             "--state-build, --state-build-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --ownership-discrepancies, "
-            "--diagnostic-shape-audit, --operational-story, --reasoning-path, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
+            "--diagnostic-shape-audit, --operational-story, --reasoning-path, --selection-path, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
             "or --events-only"
         )
     if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
@@ -2030,6 +2040,7 @@ def validate_lifecycle_args(
         or args.diagnostic_shape_audit
         or args.operational_story
         or args.reasoning_path
+        or args.selection_path
         or args.architecture_conformance_audit
         or args.operational_graph
         or args.operational_graph_confidence
@@ -2055,7 +2066,7 @@ def validate_lifecycle_args(
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --operational-story, --reasoning-path, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --correlation-audit, or --audit-compare"
+            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --operational-story, --reasoning-path, --selection-path, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --correlation-audit, or --audit-compare"
         )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
@@ -5877,6 +5888,20 @@ def main(argv: list[str] | None = None) -> int:
             )
         else:
             print(format_reasoning_path_audit(audit))
+        return 0
+
+    if args.selection_path:
+        audit = build_selection_path_audit(
+            projected_state_from_args(args),
+            args.selection_path,
+            repo_root=REPO_ROOT,
+        )
+        if args.json_output:
+            print(
+                json.dumps(selection_path_audit_json(audit), indent=2, sort_keys=True)
+            )
+        else:
+            print(format_selection_path_audit(audit))
         return 0
 
     if args.operational_graph:
