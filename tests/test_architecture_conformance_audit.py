@@ -34,7 +34,11 @@ def test_architecture_conformance_audit_json_valid(capsys):
 def test_aligned_findings_can_be_reported():
     finding = _finding(
         "event",
-        (ArchitectureEvidence("event", "docs/architecture.md", "architecture reference mentions event"),),
+        (
+            ArchitectureEvidence(
+                "event", "docs/architecture.md", "architecture reference mentions event"
+            ),
+        ),
         (OperationalEvidence("event", "operational_graph", "node event:x", "high"),),
     )
     assert finding.classification == "aligned"
@@ -46,8 +50,21 @@ def test_aligned_findings_can_be_reported():
 def test_drift_findings_can_be_reported():
     finding = _finding(
         "projection",
-        (ArchitectureEvidence("projection", "docs/architecture.md", "architecture says projection creates view"),),
-        (OperationalEvidence("projection", "operational_graph", "projection relationship carrier observed", "high"),),
+        (
+            ArchitectureEvidence(
+                "projection",
+                "docs/architecture.md",
+                "architecture says projection creates view",
+            ),
+        ),
+        (
+            OperationalEvidence(
+                "projection",
+                "operational_graph",
+                "projection relationship carrier observed",
+                "high",
+            ),
+        ),
     )
     assert finding.classification == "drift"
 
@@ -56,7 +73,11 @@ def test_underspecified_findings_can_be_reported():
     finding = _finding(
         "surface",
         (),
-        (OperationalEvidence("surface", "operational_graph", "node surface:x", "high"),),
+        (
+            OperationalEvidence(
+                "surface", "operational_graph", "node surface:x", "high"
+            ),
+        ),
     )
     assert finding.classification == "underspecified"
 
@@ -66,8 +87,12 @@ def test_emergent_structure_findings_can_be_reported():
         "consumer",
         (),
         (
-            OperationalEvidence("consumer", "operational_graph", "relationship one", "high"),
-            OperationalEvidence("consumer", "operational_graph", "relationship two", "high"),
+            OperationalEvidence(
+                "consumer", "operational_graph", "relationship one", "high"
+            ),
+            OperationalEvidence(
+                "consumer", "operational_graph", "relationship two", "high"
+            ),
         ),
     )
     assert finding.classification == "emergent_structure"
@@ -76,8 +101,18 @@ def test_emergent_structure_findings_can_be_reported():
 def test_unknown_findings_can_be_reported():
     finding = _finding(
         "authorization",
-        (ArchitectureEvidence("authorization", "docs/architecture.md", "architecture reference mentions authorization"),),
-        (OperationalEvidence("authorization", "operational_graph", "indirect relationship", "low"),),
+        (
+            ArchitectureEvidence(
+                "authorization",
+                "docs/architecture.md",
+                "architecture reference mentions authorization",
+            ),
+        ),
+        (
+            OperationalEvidence(
+                "authorization", "operational_graph", "indirect relationship", "low"
+            ),
+        ),
     )
     assert finding.classification == "unknown"
 
@@ -85,11 +120,17 @@ def test_unknown_findings_can_be_reported():
 def test_architecture_and_operational_evidence_are_shown():
     finding = _finding(
         "event",
-        (ArchitectureEvidence("event", "docs/architecture.md", "architecture reference mentions event"),),
+        (
+            ArchitectureEvidence(
+                "event", "docs/architecture.md", "architecture reference mentions event"
+            ),
+        ),
         (OperationalEvidence("event", "operational_graph", "node event:x", "high"),),
     )
     output = format_architecture_conformance_audit(
-        build_architecture_conformance_audit(architecture_evidence=finding.architecture_evidence)
+        build_architecture_conformance_audit(
+            architecture_evidence=finding.architecture_evidence
+        )
     )
     assert "Architecture evidence:" in output
     assert "Operational evidence:" in output
@@ -99,7 +140,11 @@ def test_architecture_conformance_distinguishes_concepts_from_detail_nodes():
     action_plan = _finding(
         "action plan",
         (),
-        (OperationalEvidence("action plan", "operational_graph", "node action_plan", "high"),),
+        (
+            OperationalEvidence(
+                "action plan", "operational_graph", "node action_plan", "high"
+            ),
+        ),
     )
     address_method = _finding(
         "address assignment method",
@@ -142,7 +187,11 @@ def test_architecture_conformance_surfaces_significant_findings_first():
             ),
         ),
         edges=(),
-        metadata={"read_only": True, "writes_event_ledger": False, "mutates_cluster": False},
+        metadata={
+            "read_only": True,
+            "writes_event_ledger": False,
+            "mutates_cluster": False,
+        },
     )
     audit = build_architecture_conformance_audit(
         architecture_evidence=(),
@@ -160,7 +209,9 @@ def test_architecture_conformance_surfaces_significant_findings_first():
 def test_architecture_conformance_keeps_detail_findings_and_reports_breakdown():
     graph = OperationalGraph(
         nodes=(
-            OperationalGraphNode("node:action_plan", "node", "action_plan", "concrete_node"),
+            OperationalGraphNode(
+                "node:action_plan", "node", "action_plan", "concrete_node"
+            ),
             OperationalGraphNode(
                 "observation_predicate:kernel_version",
                 "observation_predicate",
@@ -169,7 +220,11 @@ def test_architecture_conformance_keeps_detail_findings_and_reports_breakdown():
             ),
         ),
         edges=(),
-        metadata={"read_only": True, "writes_event_ledger": False, "mutates_cluster": False},
+        metadata={
+            "read_only": True,
+            "writes_event_ledger": False,
+            "mutates_cluster": False,
+        },
     )
     audit = build_architecture_conformance_audit(architecture_evidence=(), graph=graph)
     output = format_architecture_conformance_audit(audit)
@@ -189,7 +244,10 @@ def test_architecture_conformance_empty_state_is_sane(tmp_path):
     (tmp_path / "scripts").mkdir()
     audit = build_architecture_conformance_audit(tmp_path)
     assert audit.findings == ()
-    assert "No architecture or operational evidence" in format_architecture_conformance_audit(audit)
+    assert (
+        "No architecture or operational evidence"
+        in format_architecture_conformance_audit(audit)
+    )
 
 
 def test_architecture_conformance_does_not_write_event_ledger_or_mutate_cluster():
@@ -209,12 +267,26 @@ def _realization_for(audit, concept):
 
 def test_concept_realization_reports_direct_realization():
     graph = OperationalGraph(
-        nodes=(OperationalGraphNode("node:capability", "node", "capability", "concrete_node"),),
+        nodes=(
+            OperationalGraphNode(
+                "node:capability", "node", "capability", "concrete_node"
+            ),
+        ),
         edges=(),
-        metadata={"read_only": True, "writes_event_ledger": False, "mutates_cluster": False},
+        metadata={
+            "read_only": True,
+            "writes_event_ledger": False,
+            "mutates_cluster": False,
+        },
     )
     audit = build_architecture_conformance_audit(
-        architecture_evidence=(ArchitectureEvidence("capability", "docs/architecture.md", "architecture reference mentions capability"),),
+        architecture_evidence=(
+            ArchitectureEvidence(
+                "capability",
+                "docs/architecture.md",
+                "architecture reference mentions capability",
+            ),
+        ),
         graph=graph,
     )
     realization = _realization_for(audit, "capability")
@@ -225,21 +297,40 @@ def test_concept_realization_reports_direct_realization():
 def test_concept_realization_reports_indirect_realization_and_vocabulary_drift():
     graph = OperationalGraph(
         nodes=(
-            OperationalGraphNode("surface:ownership_discrepancies", "surface", "ownership_discrepancies", "concrete_surface"),
-            OperationalGraphNode("node:owner_not_observed", "node", "owner_not_observed", "concrete_node"),
+            OperationalGraphNode(
+                "surface:ownership_discrepancies",
+                "surface",
+                "ownership_discrepancies",
+                "concrete_surface",
+            ),
+            OperationalGraphNode(
+                "node:owner_not_observed", "node", "owner_not_observed", "concrete_node"
+            ),
         ),
         edges=(),
-        metadata={"read_only": True, "writes_event_ledger": False, "mutates_cluster": False},
+        metadata={
+            "read_only": True,
+            "writes_event_ledger": False,
+            "mutates_cluster": False,
+        },
     )
     audit = build_architecture_conformance_audit(
-        architecture_evidence=(ArchitectureEvidence("ownership", "docs/architecture.md", "architecture reference mentions ownership"),),
+        architecture_evidence=(
+            ArchitectureEvidence(
+                "ownership",
+                "docs/architecture.md",
+                "architecture reference mentions ownership",
+            ),
+        ),
         graph=graph,
     )
     finding = next(item for item in audit.findings if item.subject == "ownership")
     realization = _realization_for(audit, "ownership")
     assert finding.classification == "obsolete_design"
     assert realization.assessment == "indirectly_realized"
-    assert [item.subject for item in realization.realizations] == ["ownership discrepancies"]
+    assert [item.subject for item in realization.realizations] == [
+        "ownership discrepancies"
+    ]
     output = format_architecture_conformance_audit(audit)
     assert "Subject: ownership" in output
     assert "Classification: obsolete_design" in output
@@ -249,12 +340,29 @@ def test_concept_realization_reports_indirect_realization_and_vocabulary_drift()
 
 def test_concept_realization_reports_partial_realization():
     graph = OperationalGraph(
-        nodes=(OperationalGraphNode("surface:privilege_discovery", "surface", "privilege_discovery", "concrete_surface"),),
+        nodes=(
+            OperationalGraphNode(
+                "surface:privilege_discovery",
+                "surface",
+                "privilege_discovery",
+                "concrete_surface",
+            ),
+        ),
         edges=(),
-        metadata={"read_only": True, "writes_event_ledger": False, "mutates_cluster": False},
+        metadata={
+            "read_only": True,
+            "writes_event_ledger": False,
+            "mutates_cluster": False,
+        },
     )
     audit = build_architecture_conformance_audit(
-        architecture_evidence=(ArchitectureEvidence("privilege boundary", "docs/architecture.md", "architecture reference mentions privilege boundary"),),
+        architecture_evidence=(
+            ArchitectureEvidence(
+                "privilege boundary",
+                "docs/architecture.md",
+                "architecture reference mentions privilege boundary",
+            ),
+        ),
         graph=graph,
     )
     realization = _realization_for(audit, "privilege boundary")
@@ -263,9 +371,23 @@ def test_concept_realization_reports_partial_realization():
 
 
 def test_concept_realization_reports_not_observed_concept_absence():
-    graph = OperationalGraph(nodes=(), edges=(), metadata={"read_only": True, "writes_event_ledger": False, "mutates_cluster": False})
+    graph = OperationalGraph(
+        nodes=(),
+        edges=(),
+        metadata={
+            "read_only": True,
+            "writes_event_ledger": False,
+            "mutates_cluster": False,
+        },
+    )
     audit = build_architecture_conformance_audit(
-        architecture_evidence=(ArchitectureEvidence("authorization", "docs/architecture.md", "architecture reference mentions authorization"),),
+        architecture_evidence=(
+            ArchitectureEvidence(
+                "authorization",
+                "docs/architecture.md",
+                "architecture reference mentions authorization",
+            ),
+        ),
         graph=graph,
     )
     realization = _realization_for(audit, "authorization")
@@ -277,4 +399,134 @@ def test_concept_realization_json_shape_is_valid(capsys):
     assert seed_local.main(["--architecture-conformance-audit", "--json"]) == 0
     data = json.loads(capsys.readouterr().out)
     assert "concept_realizations" in data
-    assert all({"concept", "assessment", "realizations"} <= set(item) for item in data["concept_realizations"])
+    assert all(
+        {"concept", "assessment", "realizations"} <= set(item)
+        for item in data["concept_realizations"]
+    )
+
+
+def test_concrete_emitters_are_not_leaf_nodes_by_default():
+    graph = OperationalGraph(
+        nodes=(
+            OperationalGraphNode(
+                "emitter:state_patches", "emitter", "state_patches", "concrete_emitter"
+            ),
+        ),
+        edges=(),
+        metadata={
+            "read_only": True,
+            "writes_event_ledger": False,
+            "mutates_cluster": False,
+        },
+    )
+    audit = build_architecture_conformance_audit(architecture_evidence=(), graph=graph)
+    finding = next(item for item in audit.findings if item.subject == "state patches")
+    assert finding.significance == "workflow_structure"
+    assert finding.significance != "leaf_node"
+    assert finding.operational_evidence[0].graph_classification == "concrete_emitter"
+
+
+def test_concrete_diagnostics_are_not_leaf_nodes_by_default():
+    graph = OperationalGraph(
+        nodes=(
+            OperationalGraphNode(
+                "diagnostic:visibility_coverage_audit",
+                "diagnostic",
+                "visibility_coverage_audit",
+                "concrete_diagnostic",
+            ),
+        ),
+        edges=(),
+        metadata={
+            "read_only": True,
+            "writes_event_ledger": False,
+            "mutates_cluster": False,
+        },
+    )
+    audit = build_architecture_conformance_audit(architecture_evidence=(), graph=graph)
+    finding = next(
+        item for item in audit.findings if item.subject == "visibility coverage audit"
+    )
+    assert finding.significance == "visibility_structure"
+    assert finding.significance != "leaf_node"
+    assert finding.operational_evidence[0].graph_classification == "concrete_diagnostic"
+
+
+def test_visibility_and_workflow_structures_are_distinguished_from_schema_details():
+    graph = OperationalGraph(
+        nodes=(
+            OperationalGraphNode(
+                "diagnostic:visibility_coverage_audit",
+                "diagnostic",
+                "visibility_coverage_audit",
+                "concrete_diagnostic",
+            ),
+            OperationalGraphNode(
+                "emitter:tool_needs", "emitter", "tool_needs", "concrete_emitter"
+            ),
+            OperationalGraphNode(
+                "observation_predicate:user_uid",
+                "observation_predicate",
+                "user_uid",
+                "concrete_observation_predicate",
+            ),
+        ),
+        edges=(),
+        metadata={
+            "read_only": True,
+            "writes_event_ledger": False,
+            "mutates_cluster": False,
+        },
+    )
+    audit = build_architecture_conformance_audit(architecture_evidence=(), graph=graph)
+    significance = {item.subject: item.significance for item in audit.findings}
+    assert significance["visibility coverage audit"] == "visibility_structure"
+    assert significance["tool needs"] == "workflow_structure"
+    assert significance["user uid"] == "schema_detail"
+
+
+def test_unknown_placeholder_nodes_are_not_high_confidence_concrete_structures():
+    graph = OperationalGraph(
+        nodes=(
+            OperationalGraphNode(
+                "emitter:unknown", "emitter", "unknown", "concrete_emitter"
+            ),
+        ),
+        edges=(),
+        metadata={
+            "read_only": True,
+            "writes_event_ledger": False,
+            "mutates_cluster": False,
+        },
+    )
+    audit = build_architecture_conformance_audit(architecture_evidence=(), graph=graph)
+    finding = next(item for item in audit.findings if item.subject == "unknown")
+    assert finding.significance == "unknown_structure"
+    assert finding.operational_evidence[0].confidence == "medium"
+    assert finding.operational_evidence[0].graph_classification == "concrete_emitter"
+
+
+def test_architecture_conformance_json_exposes_graph_significance_metadata():
+    graph = OperationalGraph(
+        nodes=(
+            OperationalGraphNode(
+                "emitter:state_patches", "emitter", "state_patches", "concrete_emitter"
+            ),
+        ),
+        edges=(),
+        metadata={
+            "read_only": True,
+            "writes_event_ledger": False,
+            "mutates_cluster": False,
+        },
+    )
+    audit = build_architecture_conformance_audit(architecture_evidence=(), graph=graph)
+    data = audit.to_json_dict()
+    finding = next(
+        item for item in data["findings"] if item["subject"] == "state patches"
+    )
+    assert finding["significance"] == "workflow_structure"
+    assert (
+        finding["operational_evidence"][0]["graph_classification"] == "concrete_emitter"
+    )
+    assert finding["operational_evidence"][0]["confidence"] == "high"
