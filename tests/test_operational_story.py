@@ -51,6 +51,12 @@ def test_operational_story_renders_and_json_is_valid(tmp_path, capsys):
     assert payload["boundary"]["writes_event_ledger"] is False
     assert payload["boundary"]["mutates_cluster"] is False
     assert isinstance(payload["investigation_path"], list)
+    assert payload["investigation_path"]
+    assert {"surface", "reason", "order"} <= set(payload["investigation_path"][0])
+    assert any(
+        step["reason"] == "primary implementation-backed consumer visibility"
+        for step in payload["investigation_path"]
+    )
 
 
 def test_operational_story_incorporates_surfaces(tmp_path, capsys):
@@ -78,6 +84,7 @@ def test_operational_story_incorporates_surfaces(tmp_path, capsys):
     assert any(c["area"] == "Listener Attribution" for c in payload["correlation_gaps"])
     assert payload["impact"]["overall"] in {"unknown", "improved", "regressed", "unchanged"}
     assert "capability_pressure" in text
+    assert "primary implementation-backed consumer visibility" in text
     assert any(u["area"] == "impact" for u in payload["unknowns"])
 
 

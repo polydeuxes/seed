@@ -29,7 +29,7 @@ class OperationalStory:
     impact: dict[str, Any]
     recent_changes: list[str]
     observed_outcomes: list[str]
-    investigation_path: list[dict[str, str]]
+    investigation_path: list[dict[str, str | int]]
     unknowns: list[dict[str, str]]
     boundary: dict[str, bool | str]
 
@@ -103,7 +103,7 @@ def build_operational_story(
         recent_changes=_recent_changes(impact.metrics),
         observed_outcomes=_observed_outcomes(impact.metrics),
         investigation_path=[
-            {"surface": step.name, "purpose": step.purpose}
+            {"surface": step.name, "reason": step.reason, "order": step.order}
             for step in investigation.surfaces
         ],
         unknowns=unknowns,
@@ -171,7 +171,7 @@ def format_operational_story(story: OperationalStory) -> str:
     lines.extend(
         _bullets(
             [
-                f"{s['surface']}: {s['purpose']}"
+                f"{s['surface']}: {s['reason']}"
                 for s in story.investigation_path
             ],
             "none available",
@@ -259,10 +259,20 @@ def _impact_unknown_reason(metrics: list[ImpactMetric]) -> str:
     return "no comparable impact metrics are currently available"
 
 def _domain_for(primary: PressureItem | None) -> str:
-    if primary and "ownership" in primary.category.lower():
+    if primary is None:
+        return "operational"
+    category = primary.category.lower()
+    reason = primary.reason.lower()
+    if "ownership" in category or "ownership" in reason:
         return "ownership"
-    if primary and "capability" in primary.category.lower():
+    if "capability" in category or "capability" in reason:
         return "capability"
+    if "consumer" in category or "consumer" in reason or "orphaned" in category:
+        return "consumer"
+    if "correlation" in category or "correlation" in reason:
+        return "correlation"
+    if "pressure" in category or "pressure" in reason:
+        return "pressure"
     return "operational"
 
 def _bullets(values: list[str], empty: str) -> list[str]:
