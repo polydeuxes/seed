@@ -204,7 +204,11 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         format_function="format_architecture_conformance_audit",
         json_function="architecture_conformance_audit_json",
         cli_flags=("--architecture-conformance-audit",),
-        repo_file_markers=("discover_architecture_evidence", "build_operational_graph"),
+        repo_file_markers=(
+            "discover_architecture_evidence",
+            "build_operational_graph",
+            "_significance",
+        ),
         mutation_markers=(
             ".write_text(",
             "subprocess.run",
