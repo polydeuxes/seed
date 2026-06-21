@@ -9,6 +9,7 @@ from seed_runtime.architecture_conformance_audit import (
     format_architecture_conformance_audit,
 )
 from seed_runtime.events import EventLedger
+from seed_runtime.operational_graph import OperationalGraph, OperationalGraphNode
 
 
 def test_architecture_conformance_audit_renders(capsys):
@@ -26,6 +27,8 @@ def test_architecture_conformance_audit_json_valid(capsys):
     assert "findings" in data
     assert "summary" in data
     assert data["summary"]["read_only"] is True
+    assert "significance" in data["summary"]
+    assert all("significance" in finding for finding in data["findings"])
 
 
 def test_aligned_findings_can_be_reported():
@@ -35,6 +38,7 @@ def test_aligned_findings_can_be_reported():
         (OperationalEvidence("event", "operational_graph", "node event:x", "high"),),
     )
     assert finding.classification == "aligned"
+    assert finding.significance == "workflow_structure"
     assert finding.architecture_evidence
     assert finding.operational_evidence
 
@@ -89,6 +93,95 @@ def test_architecture_and_operational_evidence_are_shown():
     )
     assert "Architecture evidence:" in output
     assert "Operational evidence:" in output
+
+
+def test_architecture_conformance_distinguishes_concepts_from_detail_nodes():
+    action_plan = _finding(
+        "action plan",
+        (),
+        (OperationalEvidence("action plan", "operational_graph", "node action_plan", "high"),),
+    )
+    address_method = _finding(
+        "address assignment method",
+        (),
+        (
+            OperationalEvidence(
+                "address assignment method",
+                "operational_graph",
+                "node address_assignment_method",
+                "high",
+            ),
+        ),
+    )
+    assert action_plan.significance == "architectural_concept"
+    assert address_method.significance == "schema_detail"
+    assert "architecturally relevant structure" in action_plan.reason
+    assert "not expected to enumerate exhaustively" in address_method.reason
+
+
+def test_architecture_conformance_surfaces_significant_findings_first():
+    graph = OperationalGraph(
+        nodes=(
+            OperationalGraphNode(
+                "observation_predicate:kernel_version",
+                "observation_predicate",
+                "kernel_version",
+                "concrete_observation_predicate",
+            ),
+            OperationalGraphNode(
+                "node:action_plan",
+                "node",
+                "action_plan",
+                "concrete_node",
+            ),
+            OperationalGraphNode(
+                "observation_predicate:user_uid",
+                "observation_predicate",
+                "user_uid",
+                "concrete_observation_predicate",
+            ),
+        ),
+        edges=(),
+        metadata={"read_only": True, "writes_event_ledger": False, "mutates_cluster": False},
+    )
+    audit = build_architecture_conformance_audit(
+        architecture_evidence=(),
+        graph=graph,
+    )
+    subjects = [finding.subject for finding in audit.findings]
+    assert subjects == ["action plan", "kernel version", "user uid"]
+    assert [finding.significance for finding in audit.findings] == [
+        "architectural_concept",
+        "schema_detail",
+        "schema_detail",
+    ]
+
+
+def test_architecture_conformance_keeps_detail_findings_and_reports_breakdown():
+    graph = OperationalGraph(
+        nodes=(
+            OperationalGraphNode("node:action_plan", "node", "action_plan", "concrete_node"),
+            OperationalGraphNode(
+                "observation_predicate:kernel_version",
+                "observation_predicate",
+                "kernel_version",
+                "concrete_observation_predicate",
+            ),
+        ),
+        edges=(),
+        metadata={"read_only": True, "writes_event_ledger": False, "mutates_cluster": False},
+    )
+    audit = build_architecture_conformance_audit(architecture_evidence=(), graph=graph)
+    output = format_architecture_conformance_audit(audit)
+    assert len(audit.findings) == 2
+    assert audit.summary["significance"]["architectural_concept"] == 1
+    assert audit.summary["significance"]["schema_detail"] == 1
+    assert audit.summary["architecturally_significant"] == 1
+    assert audit.summary["schema_detail_findings"] == 1
+    assert "Significance:" in output
+    assert "architecturally significant: 1" in output
+    assert "schema/detail findings: 1" in output
+    assert "Subject: kernel version" in output
 
 
 def test_architecture_conformance_empty_state_is_sane(tmp_path):

@@ -244,7 +244,7 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         writes_event_ledger=False,
         mutates_cluster=False,
         reads_diagnostic_facts=False,
-        description="Compares architecture evidence with observed operational structure without recording facts or mutating cluster state.",
+        description="Compares architecture evidence with observed operational structure and significance breakdowns without recording facts or mutating cluster state.",
     ),
     DiagnosticInventoryEntry(
         name="operational_graph",

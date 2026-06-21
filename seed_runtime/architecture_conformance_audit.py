@@ -12,6 +12,16 @@ from seed_runtime.operational_graph import OperationalGraph, build_operational_g
 Classification = Literal[
     "aligned", "drift", "underspecified", "obsolete_design", "emergent_structure", "unknown"
 ]
+Significance = Literal[
+    "architectural_concept",
+    "operational_structure",
+    "workflow_structure",
+    "visibility_structure",
+    "schema_detail",
+    "observation_detail",
+    "leaf_node",
+    "unknown",
+]
 
 ARCHITECTURE_TERMS: tuple[str, ...] = (
     "projection", "projections", "view", "views", "read model", "read models",
@@ -21,6 +31,34 @@ ARCHITECTURE_TERMS: tuple[str, ...] = (
 )
 ARCHITECTURE_PATHS: tuple[str, ...] = (
     "seed.md", "docs/index.md", "docs/architectural_knowledge_map.md", "docs/README.md"
+)
+ARCHITECTURAL_CONCEPTS: frozenset[str] = frozenset(
+    {
+        "action plan",
+        "approval",
+        "authorization",
+        "capability",
+        "operational graph",
+        "ownership",
+        "pressure",
+        "privilege",
+        "projection",
+    }
+)
+SCHEMA_DETAIL_TERMS: frozenset[str] = frozenset(
+    {
+        "address assignment method",
+        "cpu count",
+        "kernel version",
+        "mount options",
+        "user uid",
+    }
+)
+WORKFLOW_TERMS: frozenset[str] = frozenset(
+    {"consumer", "emitter", "event", "approval", "action plan"}
+)
+VISIBILITY_TERMS: frozenset[str] = frozenset(
+    {"audit", "diagnostic", "observation", "operational graph", "surface", "view"}
 )
 
 @dataclass(frozen=True)
@@ -47,6 +85,7 @@ class OperationalEvidence:
 class ArchitectureConformanceFinding:
     subject: str
     classification: Classification
+    significance: Significance
     architecture_evidence: tuple[ArchitectureEvidence, ...]
     operational_evidence: tuple[OperationalEvidence, ...]
     reason: str
@@ -55,6 +94,7 @@ class ArchitectureConformanceFinding:
         return {
             "subject": self.subject,
             "classification": self.classification,
+            "significance": self.significance,
             "architecture_evidence": [e.to_json_dict() for e in self.architecture_evidence],
             "operational_evidence": [e.to_json_dict() for e in self.operational_evidence],
             "reason": self.reason,
@@ -67,7 +107,21 @@ class ArchitectureConformanceAudit:
 
     @property
     def summary(self) -> dict[str, Any]:
-        return {"findings": len(self.findings), "classifications": dict(sorted(Counter(f.classification for f in self.findings).items())), **self.metadata}
+        return {
+            "findings": len(self.findings),
+            "classifications": dict(sorted(Counter(f.classification for f in self.findings).items())),
+            "significance": dict(sorted(Counter(f.significance for f in self.findings).items())),
+            "architecturally_significant": sum(
+                1
+                for f in self.findings
+                if f.significance
+                in {"architectural_concept", "operational_structure", "workflow_structure", "visibility_structure"}
+            ),
+            "schema_detail_findings": sum(
+                1 for f in self.findings if f.significance in {"schema_detail", "observation_detail", "leaf_node"}
+            ),
+            **self.metadata,
+        }
 
     def to_json_dict(self) -> dict[str, Any]:
         return {"summary": self.summary, "findings": [f.to_json_dict() for f in self.findings], "metadata": dict(self.metadata)}
@@ -79,7 +133,19 @@ def build_architecture_conformance_audit(root: str | Path | None = None, *, arch
     op_graph = graph if graph is not None else build_operational_graph(repo_root)
     operational = _operational_evidence(op_graph)
     subjects = sorted({e.subject for e in arch} | {e.subject for e in operational})
-    findings = tuple(_finding(subject, tuple(e for e in arch if e.subject == subject), tuple(e for e in operational if e.subject == subject)) for subject in subjects)
+    findings = tuple(
+        sorted(
+            (
+                _finding(
+                    subject,
+                    tuple(e for e in arch if e.subject == subject),
+                    tuple(e for e in operational if e.subject == subject),
+                )
+                for subject in subjects
+            ),
+            key=_finding_sort_key,
+        )
+    )
     return ArchitectureConformanceAudit(findings, {"read_only": True, "writes_event_ledger": False, "mutates_cluster": False, "records_diagnostics": False})
 
 
@@ -105,11 +171,21 @@ def format_architecture_conformance_audit(audit: ArchitectureConformanceAudit) -
     lines = ["Architecture Conformance Audit", "", f"Findings: {len(audit.findings)}", "Classifications:"]
     counts = audit.summary["classifications"]
     lines.extend([f"  {k}: {v}" for k, v in counts.items()] if counts else ["  none"])
+    significance = audit.summary["significance"]
+    lines.append("Significance:")
+    lines.extend([f"  {k}: {v}" for k, v in significance.items()] if significance else ["  none"])
+    lines.extend(
+        [
+            "Significance groups:",
+            f"  architecturally significant: {audit.summary['architecturally_significant']}",
+            f"  schema/detail findings: {audit.summary['schema_detail_findings']}",
+        ]
+    )
     if not audit.findings:
         lines.extend(["", "No architecture or operational evidence was discovered."])
         return "\n".join(lines)
     for f in audit.findings:
-        lines.extend(["", f"Subject: {f.subject}", f"Classification: {f.classification}", f"Reason: {f.reason}", "Architecture evidence:"])
+        lines.extend(["", f"Subject: {f.subject}", f"Classification: {f.classification}", f"Significance: {f.significance}", f"Reason: {f.reason}", "Architecture evidence:"])
         lines.extend([f"  {e.source}: {e.detail}" for e in f.architecture_evidence] or ["  none"])
         lines.append("Operational evidence:")
         lines.extend([f"  {e.source}: {e.detail} ({e.confidence})" for e in f.operational_evidence] or ["  none"])
@@ -128,17 +204,63 @@ def _operational_evidence(graph: OperationalGraph) -> tuple[OperationalEvidence,
 
 
 def _finding(subject: str, arch: tuple[ArchitectureEvidence, ...], operational: tuple[OperationalEvidence, ...]) -> ArchitectureConformanceFinding:
+    significance = _significance(subject, arch, operational)
     if arch and operational:
         if any(e.confidence == "low" for e in operational):
-            return ArchitectureConformanceFinding(subject, "unknown", arch, operational, "Architecture and operation are both present, but operational evidence is low-confidence or indirect.")
+            return ArchitectureConformanceFinding(subject, "unknown", significance, arch, operational, "Architecture and operation are both present, but operational evidence is low-confidence or indirect.")
         if _conflict(subject, arch, operational):
-            return ArchitectureConformanceFinding(subject, "drift", arch, operational, "Architecture and operational evidence use conflicting relationship vocabulary for this subject.")
-        return ArchitectureConformanceFinding(subject, "aligned", arch, operational, "Architecture and operational graph both contain evidence for this subject.")
+            return ArchitectureConformanceFinding(subject, "drift", significance, arch, operational, "Architecture and operational evidence use conflicting relationship vocabulary for this subject.")
+        return ArchitectureConformanceFinding(subject, "aligned", significance, arch, operational, "Architecture and operational graph both contain evidence for this subject.")
     if operational:
         classification: Classification = "emergent_structure" if len(operational) > 1 else "underspecified"
-        reason = "Operational graph shows recurring structure without architecture evidence." if classification == "emergent_structure" else "Operational graph shows behavior without architecture evidence."
-        return ArchitectureConformanceFinding(subject, classification, arch, operational, reason)
-    return ArchitectureConformanceFinding(subject, "obsolete_design", arch, operational, "Architecture describes this subject, but the operational graph did not observe it.")
+        reason = _missing_architecture_reason(classification, significance)
+        return ArchitectureConformanceFinding(subject, classification, significance, arch, operational, reason)
+    return ArchitectureConformanceFinding(subject, "obsolete_design", significance, arch, operational, "Architecture describes this subject, but the operational graph did not observe it.")
+
+
+def _missing_architecture_reason(classification: Classification, significance: Significance) -> str:
+    if significance in {"schema_detail", "observation_detail", "leaf_node"}:
+        return "Operational graph shows a schema, catalog, observation, or leaf detail that architecture is not expected to enumerate exhaustively."
+    if classification == "emergent_structure":
+        return "Operational graph shows recurring structure without architecture evidence."
+    return "Operational graph shows an architecturally relevant structure without architecture evidence."
+
+
+def _significance(subject: str, arch: tuple[ArchitectureEvidence, ...], operational: tuple[OperationalEvidence, ...]) -> Significance:
+    if subject in ARCHITECTURAL_CONCEPTS:
+        return "architectural_concept"
+    if subject in SCHEMA_DETAIL_TERMS:
+        return "schema_detail"
+    if subject in WORKFLOW_TERMS:
+        return "workflow_structure"
+    if subject in VISIBILITY_TERMS:
+        return "visibility_structure"
+    op_text = " ".join(e.detail.lower() for e in operational)
+    if "observation_predicate" in op_text or "observation predicate" in op_text:
+        return "observation_detail"
+    if any(token in subject for token in (" uid", " count", " version", " options", " method")):
+        return "schema_detail"
+    if arch and operational:
+        return "operational_structure"
+    if operational:
+        if len(operational) > 1:
+            return "operational_structure"
+        return "leaf_node"
+    return "unknown"
+
+
+def _finding_sort_key(finding: ArchitectureConformanceFinding) -> tuple[int, str, str]:
+    rank = {
+        "architectural_concept": 0,
+        "operational_structure": 1,
+        "workflow_structure": 2,
+        "visibility_structure": 3,
+        "unknown": 4,
+        "schema_detail": 5,
+        "observation_detail": 6,
+        "leaf_node": 7,
+    }
+    return (rank[finding.significance], finding.classification, finding.subject)
 
 
 def _conflict(subject: str, arch: tuple[ArchitectureEvidence, ...], operational: tuple[OperationalEvidence, ...]) -> bool:
