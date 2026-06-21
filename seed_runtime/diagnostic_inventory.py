@@ -278,7 +278,7 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
     ),
     DiagnosticInventoryEntry(
         name="operational_graph_confidence",
-        cli_flags=("--operational-graph-confidence",),
+        cli_flags=("--operational-graph-confidence", "--exclude-aggregate"),
         uses_projected_state=False,
         uses_repo_files=True,
         supports_json=True,

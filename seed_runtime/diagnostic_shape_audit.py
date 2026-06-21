@@ -251,8 +251,12 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         build_function="build_operational_graph_confidence",
         format_function="format_operational_graph_confidence",
         json_function="operational_graph_confidence_json",
-        cli_flags=("--operational-graph-confidence",),
-        repo_file_markers=("build_operational_graph", "IMPORTANT_SURFACES"),
+        cli_flags=("--operational-graph-confidence", "--exclude-aggregate"),
+        repo_file_markers=(
+            "build_operational_graph",
+            "IMPORTANT_SURFACES",
+            "exclude_aggregate",
+        ),
         mutation_markers=(
             ".write_text(",
             "subprocess.run",
