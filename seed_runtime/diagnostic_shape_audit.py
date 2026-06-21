@@ -480,6 +480,14 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         repo_file_markers=("build_consumer_audit",),
         diagnostic_fact_read_markers=("build_capability_needs",),
     ),
+    "projection_shape": DiagnosticImplementationSpec(
+        name="projection_shape",
+        module_path="seed_runtime/projection_shape.py",
+        build_function="build_projection_shape",
+        format_function="format_projection_shape",
+        json_function="projection_shape_json",
+        cli_flags=("--projection-shape",),
+    ),
     "privilege_discovery": DiagnosticImplementationSpec(
         name="privilege_discovery",
         module_path="seed_runtime/privilege_discovery.py",

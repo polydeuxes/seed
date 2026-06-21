@@ -110,6 +110,11 @@ from seed_runtime.diagnostic_shape_audit import (
     diagnostic_shape_audit_json,
     format_diagnostic_shape_audit,
 )
+from seed_runtime.projection_shape import (
+    build_projection_shape,
+    format_projection_shape,
+    projection_shape_json,
+)
 from seed_runtime.observation_inventory import (
     build_observation_inventory,
     format_observation_inventory,
@@ -1204,6 +1209,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="limit --observation-inventory to one predicate",
     )
     parser.add_argument(
+        "--projection-shape",
+        action="store_true",
+        help="show read-only implementation-backed projection stage shape",
+    )
+    parser.add_argument(
         "--knowledge-reachability-audit",
         action="store_true",
         help="audit knowledge reachability across preserved, projected, read-model, inquiry, and rendered surfaces",
@@ -1925,6 +1935,7 @@ def validate_lifecycle_args(
         bool(args.ownership_discrepancies),
         bool(args.capability_needs),
         bool(args.diagnostic_shape_audit),
+        bool(args.projection_shape),
         bool(args.component_audit),
         bool(args.operational_story),
         bool(args.architecture_conformance_audit),
@@ -2060,6 +2071,7 @@ def validate_lifecycle_args(
         or args.capability_needs
         or args.diagnostic_inventory
         or args.diagnostic_shape_audit
+        or args.projection_shape
         or args.component_audit
         or args.operational_story
         or args.reasoning_path
@@ -2090,7 +2102,7 @@ def validate_lifecycle_args(
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --correlation-audit, or --audit-compare"
+            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --correlation-audit, or --audit-compare, or --projection-shape"
         )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
@@ -5868,6 +5880,14 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(diagnostic_inventory_json(), indent=2, sort_keys=True))
         else:
             print(format_diagnostic_inventory())
+        return 0
+
+    if args.projection_shape:
+        shape = build_projection_shape()
+        if args.json_output:
+            print(json.dumps(projection_shape_json(shape), indent=2, sort_keys=True))
+        else:
+            print(format_projection_shape(shape))
         return 0
 
     if args.diagnostic_shape_audit:
