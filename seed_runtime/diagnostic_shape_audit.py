@@ -197,6 +197,26 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         cli_flags=("--emitter-attribution-audit", "--include-rendered"),
         repo_file_markers=("build_emitter_consumer_audit", "_implementation_evidence"),
     ),
+    "component_audit": DiagnosticImplementationSpec(
+        name="component_audit",
+        module_path="seed_runtime/component_audit.py",
+        build_function="build_component_audit",
+        format_function="format_component_audit",
+        json_function="component_audit_json",
+        cli_flags=("--component-audit",),
+        repo_file_markers=(
+            "build_operational_graph",
+            "build_consumer_audit",
+            "ARCHITECTURE_PATHS",
+        ),
+        mutation_markers=(
+            ".write_text(",
+            "subprocess.run",
+            "os.remove",
+            "shutil.rmtree",
+            "authorize_execution",
+        ),
+    ),
     "architecture_conformance_audit": DiagnosticImplementationSpec(
         name="architecture_conformance_audit",
         module_path="seed_runtime/architecture_conformance_audit.py",

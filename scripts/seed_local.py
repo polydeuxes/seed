@@ -74,6 +74,11 @@ from seed_runtime.consumer_dependency_audit import (
     consumer_audit_json,
     format_consumer_audit,
 )
+from seed_runtime.component_audit import (
+    build_component_audit,
+    component_audit_json,
+    format_component_audit,
+)
 from seed_runtime.emitter_consumer_audit import (
     build_emitter_consumer_audit,
     emitter_consumer_audit_json,
@@ -1032,6 +1037,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="compare architecture evidence with observed operational structure",
     )
     parser.add_argument(
+        "--component-audit",
+        metavar="COMPONENT",
+        help="summarize a component's current repository role from read-only visibility evidence",
+    )
+    parser.add_argument(
         "--operational-story",
         action="store_true",
         help="compose existing operational evidence into a read-only story view",
@@ -1915,6 +1925,7 @@ def validate_lifecycle_args(
         bool(args.ownership_discrepancies),
         bool(args.capability_needs),
         bool(args.diagnostic_shape_audit),
+        bool(args.component_audit),
         bool(args.operational_story),
         bool(args.architecture_conformance_audit),
         bool(args.operational_graph),
@@ -1960,7 +1971,7 @@ def validate_lifecycle_args(
             "--state-build, --state-build-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --ownership-discrepancies, "
-            "--diagnostic-shape-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
+            "--diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
             "or --events-only"
         )
     if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
@@ -2049,6 +2060,7 @@ def validate_lifecycle_args(
         or args.capability_needs
         or args.diagnostic_inventory
         or args.diagnostic_shape_audit
+        or args.component_audit
         or args.operational_story
         or args.reasoning_path
         or args.selection_path
@@ -2078,7 +2090,7 @@ def validate_lifecycle_args(
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --correlation-audit, or --audit-compare"
+            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --correlation-audit, or --audit-compare"
         )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
@@ -5871,6 +5883,14 @@ def main(argv: list[str] | None = None) -> int:
             )
         else:
             print(format_diagnostic_shape_audit(rows, status=shape_status))
+        return 0
+
+    if args.component_audit:
+        audit = build_component_audit(args.component_audit, REPO_ROOT)
+        if args.json_output:
+            print(json.dumps(component_audit_json(audit), indent=2, sort_keys=True))
+        else:
+            print(format_component_audit(audit))
         return 0
 
     if args.architecture_conformance_audit:
