@@ -26,6 +26,7 @@ def test_cli_diagnostic_inventory_lists_known_diagnostics(capsys):
         "capability_needs",
         "observation_utilization",
         "consumer_audit",
+        "emitter_attribution_audit",
         "current_facts_cache_debug",
         "investigation_path",
     ]:
@@ -46,6 +47,7 @@ def test_cli_diagnostic_inventory_json_emits_valid_json(capsys):
         "capability_needs",
         "observation_utilization",
         "consumer_audit",
+        "emitter_attribution_audit",
         "current_facts_cache_debug",
         "investigation_path",
     }
