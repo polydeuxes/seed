@@ -123,3 +123,80 @@ def test_attribution_json_reports_domain_classification(capsys):
     assert seed_local.main(["--emitter-attribution-audit", "--json"]) == 0
     data = json.loads(capsys.readouterr().out)
     assert {item["emission_type"] for item in data["items"]} == {"domain_emission"}
+
+
+def test_direct_append_literal_attributes_unknown_emitter_candidate(tmp_path):
+    runtime = tmp_path / "seed_runtime"
+    scripts = tmp_path / "scripts"
+    runtime.mkdir()
+    scripts.mkdir()
+    (runtime / "workflow.py").write_text(
+        'def emit(self):\n    self._require_ledger().append("workflow.done", "s", {})\n',
+        encoding="utf-8",
+    )
+    (runtime / "state.py").write_text(
+        'def consume(event):\n    return event.kind == "workflow.done"\n',
+        encoding="utf-8",
+    )
+
+    audit = build_emitter_attribution_audit(tmp_path)
+    item = next(item for item in audit.items if item.event == "workflow.done")
+
+    assert item.status == "attributed"
+    assert item.confidence == "high"
+    assert item.emitter == "workflow"
+    assert item.attribution_evidence[0].category == "direct_emitter"
+
+
+def test_dynamic_construction_does_not_override_direct_emitter_evidence(tmp_path):
+    runtime = tmp_path / "seed_runtime"
+    scripts = tmp_path / "scripts"
+    runtime.mkdir()
+    scripts.mkdir()
+    (runtime / "action_plans.py").write_text(
+        "from seed_runtime.events import Event\n"
+        "def emit(self, kind):\n"
+        '    Event(kind=kind, subject="s", predicate="p", object="o")\n'
+        '    self._require_ledger().append("action_plan.accepted", "s", {})\n',
+        encoding="utf-8",
+    )
+    (runtime / "state.py").write_text(
+        'def consume(event):\n    return event.kind == "action_plan.accepted"\n',
+        encoding="utf-8",
+    )
+
+    audit = build_emitter_attribution_audit(tmp_path)
+    item = next(item for item in audit.items if item.event == "action_plan.accepted")
+
+    assert item.status == "attributed"
+    assert item.confidence == "high"
+    assert any(e.category == "direct_emitter" for e in item.attribution_evidence)
+    assert any(e.category == "event_constructor" for e in item.supporting_references)
+
+
+def test_action_plan_lifecycle_events_are_attributed_from_direct_evidence():
+    audit = build_emitter_attribution_audit()
+
+    for event in (
+        "action_plan.accepted",
+        "action_plan.approved",
+        "action_plan.rejected",
+        "action_plan.superseded",
+    ):
+        item = next(item for item in audit.items if item.event == event)
+        assert item.status == "attributed"
+        assert item.emitter == "action_plan"
+        assert item.confidence == "high"
+        assert any(e.category == "direct_emitter" for e in item.attribution_evidence)
+        assert item.supporting_references
+
+
+def test_attribution_json_distinguishes_driving_evidence_from_references(capsys):
+    assert seed_local.main(["--emitter-attribution-audit", "--json"]) == 0
+    data = json.loads(capsys.readouterr().out)
+    item = next(i for i in data["items"] if i["event"] == "action_plan.accepted")
+
+    assert item["confidence"] == "high"
+    assert item["attribution_evidence"]
+    assert item["attribution_evidence"][0]["category"] == "direct_emitter"
+    assert "supporting_references" in item
