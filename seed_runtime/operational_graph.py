@@ -12,6 +12,22 @@ from seed_runtime.emitter_consumer_audit import build_emitter_consumer_audit
 
 EvidenceKind = Literal["direct", "indirect", "reference"]
 Confidence = Literal["high", "medium", "low"]
+NodeClassification = Literal[
+    "concrete_surface",
+    "aggregate_surface",
+    "concrete_emitter",
+    "aggregate_emitter",
+    "concrete_projection",
+    "aggregate_projection",
+    "concrete_diagnostic",
+    "aggregate_diagnostic",
+    "concrete_event",
+    "aggregate_event",
+    "concrete_observation_predicate",
+    "aggregate_observation_predicate",
+    "concrete_node",
+    "aggregate_node",
+]
 
 IMPORTANT_SURFACES = {
     "operational_story",
@@ -33,9 +49,20 @@ class OperationalGraphNode:
     id: str
     type: str
     label: str
+    classification: NodeClassification
+
+    @property
+    def aggregate(self) -> bool:
+        return self.classification.startswith("aggregate_")
 
     def to_json_dict(self) -> dict[str, Any]:
-        return {"id": self.id, "type": self.type, "label": self.label}
+        return {
+            "id": self.id,
+            "type": self.type,
+            "label": self.label,
+            "classification": self.classification,
+            "aggregate": self.aggregate,
+        }
 
 
 @dataclass(frozen=True)
@@ -99,7 +126,12 @@ def build_operational_graph(root: str | Path | None = None) -> OperationalGraph:
 
     def node(kind: str, label: str) -> str:
         node_id = f"{kind}:{label}"
-        nodes.setdefault(node_id, OperationalGraphNode(node_id, kind, label))
+        nodes.setdefault(
+            node_id,
+            OperationalGraphNode(
+                node_id, kind, label, _node_classification(kind, label)
+            ),
+        )
         return node_id
 
     def add_edge(
@@ -205,6 +237,7 @@ def build_operational_graph_confidence(
             "edge_count": len(edges),
             "relationship_types": dict(sorted(type_counts.items())),
             "evidence_categories": dict(sorted(evidence_counts.items())),
+            "uncertainty_causes": _uncertainty_causes(edges, graph),
             "reason": _confidence_reason(tier),
             "potential_confidence_improvement": _confidence_improvement(tier),
             "representative_examples": [
@@ -226,6 +259,7 @@ def build_operational_graph_confidence(
             "filtered_confidence": confidence,
         },
         "tiers": tiers,
+        "taxonomy": build_operational_graph_taxonomy(root),
         "important_low_confidence_edges": important_low[:10],
         "metadata": dict(graph.metadata),
     }
@@ -233,6 +267,70 @@ def build_operational_graph_confidence(
 
 def operational_graph_confidence_json(analysis: dict[str, Any]) -> dict[str, Any]:
     return analysis
+
+
+def build_operational_graph_taxonomy(root: str | Path | None = None) -> dict[str, Any]:
+    """Summarize operational graph node taxonomy without mutating state."""
+
+    graph = build_operational_graph(root)
+    classification_counts = Counter(node.classification for node in graph.nodes)
+    type_counts = Counter(node.type for node in graph.nodes)
+    degree = Counter()
+    for edge in graph.edges:
+        degree[edge.source] += 1
+        degree[edge.target] += 1
+    aggregate_nodes = [node for node in graph.nodes if node.aggregate]
+    return {
+        "summary": {
+            "nodes": len(graph.nodes),
+            "aggregate_nodes": len(aggregate_nodes),
+            "concrete_nodes": len(graph.nodes) - len(aggregate_nodes),
+            "edges": len(graph.edges),
+            "read_only": True,
+            "writes_event_ledger": False,
+            "mutates_cluster": False,
+        },
+        "node_types": dict(sorted(type_counts.items())),
+        "classifications": dict(sorted(classification_counts.items())),
+        "aggregate_connectivity": [
+            {
+                "id": node.id,
+                "type": node.type,
+                "label": node.label,
+                "classification": node.classification,
+                "degree": degree[node.id],
+            }
+            for node in sorted(
+                aggregate_nodes, key=lambda item: (-degree[item.id], item.id)
+            )
+        ],
+        "metadata": dict(graph.metadata),
+    }
+
+
+def operational_graph_taxonomy_json(analysis: dict[str, Any]) -> dict[str, Any]:
+    return analysis
+
+
+def format_operational_graph_taxonomy(analysis: dict[str, Any]) -> str:
+    lines = [
+        "Operational Graph Taxonomy",
+        "",
+        f"Nodes: {analysis['summary']['nodes']}",
+        f"Aggregate nodes: {analysis['summary']['aggregate_nodes']}",
+        f"Concrete nodes: {analysis['summary']['concrete_nodes']}",
+        "",
+        "Node classifications:",
+    ]
+    lines.extend(_count_lines(analysis["classifications"]))
+    lines.extend(["", "Aggregate nodes by connectivity:"])
+    aggregate = analysis["aggregate_connectivity"][:10]
+    if aggregate:
+        for node in aggregate:
+            lines.append(f"  {node['id']} ({node['classification']}): {node['degree']}")
+    else:
+        lines.append("  none")
+    return "\n".join(lines)
 
 
 def format_operational_graph_confidence(analysis: dict[str, Any]) -> str:
@@ -259,6 +357,8 @@ def format_operational_graph_confidence(analysis: dict[str, Any]) -> str:
         lines.extend(_count_lines(data["relationship_types"]))
         lines.append("Common evidence:")
         lines.extend(_count_lines(data["evidence_categories"]))
+        lines.append("Uncertainty causes:")
+        lines.extend(_count_lines(data.get("uncertainty_causes", {})))
         lines.extend(
             [
                 f"Reason: {data['reason']}",
@@ -273,7 +373,9 @@ def format_operational_graph_confidence(analysis: dict[str, Any]) -> str:
                 lines.append(
                     f"  {example['source']} -> {example['target']} ({example['type']})"
                 )
-                lines.append(f"    evidence: {', '.join(example['evidence_categories'])}")
+                lines.append(
+                    f"    evidence: {', '.join(example['evidence_categories'])}"
+                )
         else:
             lines.append("  none")
         lines.append("")
@@ -320,6 +422,64 @@ def format_operational_graph(graph: OperationalGraph) -> str:
     return "\n".join(lines)
 
 
+def _node_classification(kind: str, label: str) -> NodeClassification:
+    if kind == "surface":
+        return (
+            "aggregate_surface" if _is_aggregate_surface(label) else "concrete_surface"
+        )
+    if kind == "emitter":
+        return "concrete_emitter"
+    if kind == "diagnostic":
+        return "concrete_diagnostic"
+    if kind == "event":
+        return "concrete_event"
+    if kind == "observation_predicate":
+        return "concrete_observation_predicate"
+    if "projection" in kind or label in {
+        "projection_builders",
+        "projection builders",
+        "read_models",
+        "read models",
+        "state_build",
+    }:
+        return (
+            "aggregate_projection"
+            if _is_aggregate_surface(label)
+            else "concrete_projection"
+        )
+    return "aggregate_node" if _is_aggregate_surface(label) else "concrete_node"
+
+
+def _is_aggregate_surface(label: str) -> bool:
+    return label in {
+        *CONSUMER_PATHS.keys(),
+        "projection builders",
+        "read models",
+        "diagnostics and audits",
+        "CLI surfaces",
+    }
+
+
+def _uncertainty_causes(
+    edges: list[OperationalGraphEdge], graph: OperationalGraph
+) -> dict[str, int]:
+    nodes = {node.id: node for node in graph.nodes}
+    counts: Counter[str] = Counter()
+    for edge in edges:
+        if nodes.get(edge.target) and nodes[edge.target].aggregate:
+            counts["aggregate_target"] += 1
+        if nodes.get(edge.source) and nodes[edge.source].aggregate:
+            counts["aggregate_source"] += 1
+        kinds = {item.kind for item in edge.evidence}
+        if kinds == {"reference"}:
+            counts["reference_only_evidence"] += 1
+        if kinds == {"indirect"}:
+            counts["indirect_only_discovery"] += 1
+        if not any(item.source and ":" in item.source for item in edge.evidence):
+            counts["missing_line_attribution"] += 1
+    return dict(sorted(counts.items()))
+
+
 def _stronger(left: Confidence, right: Confidence) -> Confidence:
     order = {"low": 0, "medium": 1, "high": 2}
     return left if order[left] >= order[right] else right
@@ -364,9 +524,16 @@ def _edge_example(
 
 
 def _importance(edge: OperationalGraphEdge) -> list[str]:
-    labels = {edge.source.removeprefix("surface:"), edge.target.removeprefix("surface:")}
+    labels = {
+        edge.source.removeprefix("surface:"),
+        edge.target.removeprefix("surface:"),
+    }
     return sorted(surface for surface in IMPORTANT_SURFACES if surface in labels)
 
 
 def _count_lines(counts: dict[str, int]) -> list[str]:
-    return [f"  {name}: {count}" for name, count in counts.items()] if counts else ["  none"]
+    return (
+        [f"  {name}: {count}" for name, count in counts.items()]
+        if counts
+        else ["  none"]
+    )

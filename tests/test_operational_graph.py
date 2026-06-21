@@ -5,6 +5,7 @@ from seed_runtime.events import EventLedger
 from seed_runtime.operational_graph import (
     build_operational_graph,
     build_operational_graph_confidence,
+    build_operational_graph_taxonomy,
     format_operational_graph_confidence,
 )
 
@@ -17,6 +18,17 @@ def test_operational_graph_renders(capsys):
     assert "Edges:" in out
     assert "Relationship types:" in out
     assert "Confidence counts:" in out
+
+
+def test_operational_graph_classifies_aggregate_and_concrete_nodes():
+    graph = build_operational_graph()
+    nodes = {node.id: node for node in graph.nodes}
+    assert nodes["surface:views"].classification == "aggregate_surface"
+    assert nodes["surface:diagnostics"].classification == "aggregate_surface"
+    assert nodes["diagnostic:capability_needs"].classification == "concrete_diagnostic"
+    assert nodes["emitter:action_plan"].classification == "concrete_emitter"
+    assert nodes["surface:views"].aggregate is True
+    assert nodes["diagnostic:capability_needs"].aggregate is False
 
 
 def test_operational_graph_json_valid(capsys):
@@ -81,6 +93,7 @@ def test_operational_graph_confidence_renders(capsys):
     assert "Medium Confidence" in out
     assert "Low Confidence" in out
     assert "Reason:" in out
+    assert "Uncertainty causes:" in out
     assert "Representative examples:" in out
 
 
@@ -90,6 +103,7 @@ def test_operational_graph_confidence_json_valid(capsys):
     assert "summary" in data
     assert "tiers" in data
     assert "important_low_confidence_edges" in data
+    assert "taxonomy" in data
 
 
 def test_operational_graph_confidence_reports_all_tiers_and_reasoning():
@@ -101,6 +115,8 @@ def test_operational_graph_confidence_reports_all_tiers_and_reasoning():
     assert "indirect helper evidence" in analysis["tiers"]["medium"]["reason"]
     assert "reference-only" in analysis["tiers"]["low"]["reason"]
     assert analysis["tiers"]["low"]["representative_examples"]
+    assert analysis["tiers"]["low"]["uncertainty_causes"]["aggregate_target"] > 0
+    assert analysis["tiers"]["low"]["uncertainty_causes"]["reference_only_evidence"] > 0
 
 
 def test_operational_graph_confidence_filter_reports_selected_tier(capsys):
@@ -131,6 +147,31 @@ def test_operational_graph_confidence_does_not_write_event_ledger_or_mutate_clus
     ledger = EventLedger()
     before = ledger.list_events()
     analysis = build_operational_graph_confidence()
+    after = ledger.list_events()
+    assert before == after == []
+    assert analysis["summary"]["writes_event_ledger"] is False
+    assert analysis["summary"]["mutates_cluster"] is False
+
+
+def test_operational_graph_taxonomy_renders_and_json_is_valid(capsys):
+    assert seed_local.main(["--operational-graph-taxonomy"]) == 0
+    out = capsys.readouterr().out
+    assert "Operational Graph Taxonomy" in out
+    assert "Aggregate nodes:" in out
+    assert "aggregate_surface" in out
+
+    assert seed_local.main(["--operational-graph-taxonomy", "--json"]) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["summary"]["aggregate_nodes"] > 0
+    assert data["summary"]["concrete_nodes"] > 0
+    assert data["classifications"]["aggregate_surface"] > 0
+    assert data["aggregate_connectivity"]
+
+
+def test_operational_graph_taxonomy_does_not_write_event_ledger_or_mutate_cluster():
+    ledger = EventLedger()
+    before = ledger.list_events()
+    analysis = build_operational_graph_taxonomy()
     after = ledger.list_events()
     assert before == after == []
     assert analysis["summary"]["writes_event_ledger"] is False

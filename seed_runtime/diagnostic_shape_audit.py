@@ -213,6 +213,22 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "authorize_execution",
         ),
     ),
+    "operational_graph_taxonomy": DiagnosticImplementationSpec(
+        name="operational_graph_taxonomy",
+        module_path="seed_runtime/operational_graph.py",
+        build_function="build_operational_graph_taxonomy",
+        format_function="format_operational_graph_taxonomy",
+        json_function="operational_graph_taxonomy_json",
+        cli_flags=("--operational-graph-taxonomy",),
+        repo_file_markers=("build_operational_graph", "_node_classification"),
+        mutation_markers=(
+            ".write_text(",
+            "subprocess.run",
+            "os.remove",
+            "shutil.rmtree",
+            "authorize_execution",
+        ),
+    ),
     "operational_graph_confidence": DiagnosticImplementationSpec(
         name="operational_graph_confidence",
         module_path="seed_runtime/operational_graph.py",
