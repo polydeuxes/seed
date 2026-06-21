@@ -114,6 +114,7 @@ def test_json_capable_diagnostics_validate_json_support():
         "knowledge_reachability",
         "observation_utilization",
         "consumer_audit",
+        "emitter_attribution_audit",
     ]:
         row = _row(rows, diagnostic, "supports_json")
         assert row.observed is True

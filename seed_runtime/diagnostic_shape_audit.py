@@ -188,6 +188,15 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         cli_flags=("--emitter-consumer-audit",),
         repo_file_markers=("SCAN_PATHS", "_python_files"),
     ),
+    "emitter_attribution_audit": DiagnosticImplementationSpec(
+        name="emitter_attribution_audit",
+        module_path="seed_runtime/emitter_attribution_audit.py",
+        build_function="build_emitter_attribution_audit",
+        format_function="format_emitter_attribution_audit",
+        json_function="emitter_attribution_audit_json",
+        cli_flags=("--emitter-attribution-audit",),
+        repo_file_markers=("build_emitter_consumer_audit", "_implementation_evidence"),
+    ),
     "observation_utilization": DiagnosticImplementationSpec(
         name="observation_utilization",
         module_path="seed_runtime/observation_utilization.py",
