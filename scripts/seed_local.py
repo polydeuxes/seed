@@ -152,6 +152,11 @@ from seed_runtime.impact_audit import (
     format_impact_audit,
     impact_audit_json,
 )
+from seed_runtime.snapshot_policy_audit import (
+    build_snapshot_policy_audit,
+    format_snapshot_policy_audit,
+    snapshot_policy_audit_json,
+)
 from seed_runtime.pressure_audit import (
     build_pressure_audit,
     format_pressure_audit,
@@ -1120,6 +1125,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="audit before/after operational outcomes from existing snapshots without recording or mutating cluster state",
     )
     parser.add_argument(
+        "--snapshot-policy-audit",
+        action="store_true",
+        help="audit snapshot readiness and usefulness without creating snapshots or mutating state",
+    )
+    parser.add_argument(
         "--pressure-audit",
         action="store_true",
         help="rank current operational pressure from existing read-only audits",
@@ -1880,6 +1890,7 @@ def validate_lifecycle_args(
         bool(args.ops_brief),
         bool(args.investigation_path),
         bool(args.impact_audit),
+        bool(args.snapshot_policy_audit),
         bool(args.pressure_audit),
         bool(args.privilege_discovery),
         bool(args.correlation_audit),
@@ -1907,7 +1918,7 @@ def validate_lifecycle_args(
             "--state-build, --state-build-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --ownership-discrepancies, "
-            "--diagnostic-shape-audit, --operational-story, --reasoning-path, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --pressure-audit, --privilege-discovery, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
+            "--diagnostic-shape-audit, --operational-story, --reasoning-path, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --snapshot-policy-audit, --pressure-audit, --privilege-discovery, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
             "or --events-only"
         )
     if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
@@ -2013,6 +2024,7 @@ def validate_lifecycle_args(
         or args.ops_brief
         or args.investigation_path
         or args.impact_audit
+        or args.snapshot_policy_audit
         or args.pressure_audit
         or args.privilege_discovery
         or args.correlation_audit
@@ -2020,7 +2032,7 @@ def validate_lifecycle_args(
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --operational-story, --reasoning-path, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --pressure-audit, --privilege-discovery, --correlation-audit, or --audit-compare"
+            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --operational-story, --reasoning-path, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --snapshot-policy-audit, --pressure-audit, --privilege-discovery, --correlation-audit, or --audit-compare"
         )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
@@ -5986,6 +5998,16 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(impact_audit_json(audit), indent=2, sort_keys=True))
         else:
             print(format_impact_audit(audit))
+        return 0
+
+    if args.snapshot_policy_audit:
+        audit = build_snapshot_policy_audit(REPO_ROOT)
+        if args.json_output:
+            print(
+                json.dumps(snapshot_policy_audit_json(audit), indent=2, sort_keys=True)
+            )
+        else:
+            print(format_snapshot_policy_audit(audit))
         return 0
 
     if args.pressure_audit:
