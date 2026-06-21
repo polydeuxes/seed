@@ -25,6 +25,7 @@ def test_cli_diagnostic_inventory_lists_known_diagnostics(capsys):
         "ownership_discrepancies",
         "capability_needs",
         "observation_utilization",
+        "operational_graph",
         "consumer_audit",
         "emitter_attribution_audit",
         "current_facts_cache_debug",
@@ -46,6 +47,7 @@ def test_cli_diagnostic_inventory_json_emits_valid_json(capsys):
         "ownership_discrepancies",
         "capability_needs",
         "observation_utilization",
+        "operational_graph",
         "consumer_audit",
         "emitter_attribution_audit",
         "current_facts_cache_debug",
@@ -81,6 +83,12 @@ def test_current_diagnostic_shapes_match_implementation_authority():
     assert _entry("investigation_path").supports_json
     assert not _entry("investigation_path").writes_event_ledger
     assert not _entry("investigation_path").mutates_cluster
+    assert _entry("operational_graph").cli_flags == ("--operational-graph",)
+    assert _entry("operational_graph").supports_json
+    assert not _entry("operational_graph").supports_record
+    assert _entry("operational_graph").record_scope == "none"
+    assert not _entry("operational_graph").writes_event_ledger
+    assert not _entry("operational_graph").mutates_cluster
 
 
 def test_inventory_rendering_is_generated_from_registry_data():

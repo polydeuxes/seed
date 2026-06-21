@@ -197,6 +197,22 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         cli_flags=("--emitter-attribution-audit", "--include-rendered"),
         repo_file_markers=("build_emitter_consumer_audit", "_implementation_evidence"),
     ),
+    "operational_graph": DiagnosticImplementationSpec(
+        name="operational_graph",
+        module_path="seed_runtime/operational_graph.py",
+        build_function="build_operational_graph",
+        format_function="format_operational_graph",
+        json_function="operational_graph_json",
+        cli_flags=("--operational-graph",),
+        repo_file_markers=("build_emitter_consumer_audit", "build_consumer_audit"),
+        mutation_markers=(
+            ".write_text(",
+            "subprocess.run",
+            "os.remove",
+            "shutil.rmtree",
+            "authorize_execution",
+        ),
+    ),
     "observation_utilization": DiagnosticImplementationSpec(
         name="observation_utilization",
         module_path="seed_runtime/observation_utilization.py",
