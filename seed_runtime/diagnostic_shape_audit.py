@@ -306,6 +306,16 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         repo_file_markers=("build_operational_story", "build_pressure_audit"),
         diagnostic_fact_read_markers=("build_capability_needs",),
     ),
+    "selection_path": DiagnosticImplementationSpec(
+        name="selection_path",
+        module_path="seed_runtime/selection_path_audit.py",
+        build_function="build_selection_path_audit",
+        format_function="format_selection_path_audit",
+        json_function="selection_path_audit_json",
+        cli_flags=("--selection-path",),
+        repo_file_markers=("build_operational_story", "build_pressure_audit"),
+        diagnostic_fact_read_markers=("build_pressure_audit",),
+    ),
     "operational_story": DiagnosticImplementationSpec(
         name="operational_story",
         module_path="seed_runtime/operational_story.py",
