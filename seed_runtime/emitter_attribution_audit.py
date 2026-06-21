@@ -11,11 +11,24 @@ from seed_runtime.emitter_consumer_audit import (
     EmitterConsumerAudit,
     EmissionType,
     build_emitter_consumer_audit,
+    _emitter_name,
     _python_files,
 )
 
 AttributionStatus = Literal[
     "attributed", "dynamic", "indirect", "discovery_gap", "missing", "unknown"
+]
+AttributionConfidence = Literal["high", "medium", "low", "none"]
+EvidenceCategory = Literal[
+    "direct_emitter",
+    "event_constructor",
+    "indirect_emitter",
+    "projection_consumer",
+    "diagnostic_reference",
+    "inventory_reference",
+    "test_reference",
+    "string_reference",
+    "unknown_reference",
 ]
 
 WORKFLOW_PREFIXES = (
@@ -28,6 +41,15 @@ WORKFLOW_PREFIXES = (
 
 
 @dataclass(frozen=True)
+class ClassifiedEvidence:
+    category: EvidenceCategory
+    location: str
+
+    def to_json_dict(self) -> dict[str, str]:
+        return {"category": self.category, "location": self.location}
+
+
+@dataclass(frozen=True)
 class EmitterAttributionItem:
     event: str
     emitter: str
@@ -36,6 +58,9 @@ class EmitterAttributionItem:
     consumers: tuple[str, ...]
     evidence: tuple[str, ...] = ()
     emission_type: EmissionType = "domain_emission"
+    confidence: AttributionConfidence = "none"
+    attribution_evidence: tuple[ClassifiedEvidence, ...] = ()
+    supporting_references: tuple[ClassifiedEvidence, ...] = ()
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
@@ -46,6 +71,13 @@ class EmitterAttributionItem:
             "consumers": list(self.consumers),
             "evidence": list(self.evidence),
             "emission_type": self.emission_type,
+            "confidence": self.confidence,
+            "attribution_evidence": [
+                e.to_json_dict() for e in self.attribution_evidence
+            ],
+            "supporting_references": [
+                e.to_json_dict() for e in self.supporting_references
+            ],
         }
 
 
@@ -95,21 +127,37 @@ def build_emitter_attribution_audit(
                         consumers=item.consumers,
                         evidence=tuple(e for e in item.evidence if e),
                         emission_type=item.emission_type,
+                        confidence="high",
+                        attribution_evidence=tuple(
+                            ClassifiedEvidence("direct_emitter", e)
+                            for e in item.evidence
+                            if e
+                        ),
                     )
                 )
                 continue
-            status, reason = _unknown_reason(
-                event, literal_refs.get(event, ()), dynamic_refs
-            )
+            refs = literal_refs.get(event, ())
+            (
+                status,
+                reason,
+                emitter,
+                confidence,
+                attribution_evidence,
+                supporting_references,
+            ) = _unknown_attribution(event, refs, dynamic_refs)
             items.append(
                 EmitterAttributionItem(
                     event=event,
-                    emitter="unknown",
+                    emitter=emitter,
                     status=status,
                     reason=reason,
                     consumers=item.consumers,
-                    evidence=tuple(literal_refs.get(event, ())) + tuple(dynamic_refs),
+                    evidence=tuple(e.location for e in attribution_evidence)
+                    + tuple(e.location for e in supporting_references),
                     emission_type=item.emission_type,
+                    confidence=confidence,
+                    attribution_evidence=attribution_evidence,
+                    supporting_references=supporting_references,
                 )
             )
     return EmitterAttributionAudit(
@@ -160,42 +208,109 @@ def format_emitter_attribution_audit(audit: EmitterAttributionAudit) -> str:
             f"Emitter: {item.emitter}",
             f"Status: {item.status}",
             f"Reason: {item.reason}",
+            f"Confidence: {item.confidence}",
+            "",
+            "Attribution evidence:",
+        ]
+        lines += (
+            [f"  {e.category}: {e.location}" for e in item.attribution_evidence]
+            if item.attribution_evidence
+            else ["  none"]
+        )
+        lines += [
+            f"Supporting references: {len(item.supporting_references)}",
             "",
         ]
     return "\n".join(lines).rstrip()
 
 
-def _unknown_reason(
-    event: str, refs: tuple[str, ...], dynamic_refs: tuple[str, ...]
-) -> tuple[AttributionStatus, str]:
-    if dynamic_refs and any(event.startswith(prefix) for prefix in WORKFLOW_PREFIXES):
+def _unknown_attribution(
+    event: str,
+    refs: tuple[ClassifiedEvidence, ...],
+    dynamic_refs: tuple[ClassifiedEvidence, ...],
+) -> tuple[
+    AttributionStatus,
+    str,
+    str,
+    AttributionConfidence,
+    tuple[ClassifiedEvidence, ...],
+    tuple[ClassifiedEvidence, ...],
+]:
+    direct = tuple(ref for ref in refs if ref.category == "direct_emitter")
+    indirect = tuple(ref for ref in refs if ref.category == "indirect_emitter")
+    supporting = (
+        tuple(ref for ref in refs if ref.category != "direct_emitter") + dynamic_refs
+    )
+    if direct:
+        return (
+            "attributed",
+            "direct emitter evidence was found; unrelated dynamic construction does not downgrade attribution",
+            _emitter_name(direct[0].location.rsplit(":", 1)[0], event),
+            "high",
+            direct,
+            supporting,
+        )
+    non_consumer_refs = tuple(
+        ref
+        for ref in refs
+        if ref.category not in {"projection_consumer", "diagnostic_reference"}
+    )
+    if (
+        dynamic_refs
+        and not non_consumer_refs
+        and any(event.startswith(prefix) for prefix in WORKFLOW_PREFIXES)
+    ):
         return (
             "dynamic",
-            "workflow event has consumers, while emitter discovery also found dynamic event construction that cannot be attributed to a literal event kind",
+            "workflow event has consumers and only dynamic event construction evidence was found",
+            "unknown",
+            "low",
+            dynamic_refs,
+            refs,
         )
-    if refs and any(
-        "pending_actions.py" in ref or "action_plans.py" in ref for ref in refs
-    ):
+    if indirect:
         return (
             "indirect",
             "event is visible through workflow helper or registration references, but current emit-call evidence does not attribute the helper path",
+            "unknown",
+            "medium",
+            indirect,
+            tuple(ref for ref in refs if ref.category != "indirect_emitter")
+            + dynamic_refs,
         )
     if refs:
         return (
             "discovery_gap",
             "event literal is present in implementation evidence and consumed, but no direct emit call is attributed by current discovery",
+            "unknown",
+            "low",
+            (),
+            refs + dynamic_refs,
+        )
+    if dynamic_refs and any(event.startswith(prefix) for prefix in WORKFLOW_PREFIXES):
+        return (
+            "dynamic",
+            "workflow event has consumers and only dynamic event construction evidence was found",
+            "unknown",
+            "low",
+            dynamic_refs,
+            (),
         )
     return (
         "missing",
         "event is consumed by implementation evidence, but no emitter literal was found in the scanned implementation scope",
+        "unknown",
+        "none",
+        (),
+        dynamic_refs,
     )
 
 
 def _implementation_evidence(
     root: Path,
-) -> tuple[dict[str, tuple[str, ...]], tuple[str, ...]]:
-    literals: dict[str, set[str]] = {}
-    dynamic: set[str] = set()
+) -> tuple[dict[str, tuple[ClassifiedEvidence, ...]], tuple[ClassifiedEvidence, ...]]:
+    literals: dict[str, set[ClassifiedEvidence]] = {}
+    dynamic: set[ClassifiedEvidence] = set()
     for path in _python_files(root):
         source = path.read_text(encoding="utf-8")
         rel = path.relative_to(root).as_posix()
@@ -209,18 +324,73 @@ def _implementation_evidence(
                 and isinstance(node.value, str)
                 and "." in node.value
             ):
-                literals.setdefault(node.value, set()).add(f"{rel}:{node.lineno}")
+                literals.setdefault(node.value, set()).add(
+                    ClassifiedEvidence(_reference_category(rel), f"{rel}:{node.lineno}")
+                )
             if isinstance(node, ast.Call):
                 if isinstance(node.func, ast.Name) and node.func.id == "Event":
                     if not any(
                         kw.arg == "kind" and isinstance(kw.value, ast.Constant)
                         for kw in node.keywords
                     ):
-                        dynamic.add(f"{rel}:{node.lineno}")
+                        dynamic.add(
+                            ClassifiedEvidence(
+                                "event_constructor", f"{rel}:{node.lineno}"
+                            )
+                        )
                 if isinstance(node.func, ast.Attribute) and node.func.attr in {
                     "append",
                     "append_many",
                 }:
                     if not (node.args and isinstance(node.args[0], ast.Constant)):
-                        dynamic.add(f"{rel}:{node.lineno}")
-    return ({k: tuple(sorted(v)) for k, v in literals.items()}, tuple(sorted(dynamic)))
+                        dynamic.add(
+                            ClassifiedEvidence(
+                                "event_constructor", f"{rel}:{node.lineno}"
+                            )
+                        )
+    for path in _python_files(root):
+        source = path.read_text(encoding="utf-8")
+        rel = path.relative_to(root).as_posix()
+        try:
+            tree = ast.parse(source)
+        except SyntaxError:
+            continue
+        for node in ast.walk(tree):
+            if _is_direct_append_literal(node):
+                literal = node.args[0].value
+                literals.setdefault(literal, set()).add(
+                    ClassifiedEvidence("direct_emitter", f"{rel}:{node.lineno}")
+                )
+    return (
+        {
+            k: tuple(sorted(v, key=lambda e: (e.category, e.location)))
+            for k, v in literals.items()
+        },
+        tuple(sorted(dynamic, key=lambda e: (e.category, e.location))),
+    )
+
+
+def _is_direct_append_literal(node: ast.AST) -> bool:
+    return (
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr in {"append", "append_many"}
+        and bool(node.args)
+        and isinstance(node.args[0], ast.Constant)
+        and isinstance(node.args[0].value, str)
+        and "." in node.args[0].value
+    )
+
+
+def _reference_category(rel: str) -> EvidenceCategory:
+    if rel.startswith("tests/") or rel.startswith("test_"):
+        return "test_reference"
+    if rel.endswith("diagnostic_inventory.py"):
+        return "inventory_reference"
+    if "audit" in rel or "diagnostic" in rel:
+        return "diagnostic_reference"
+    if rel in {"seed_runtime/state.py", "seed_runtime/projection_store.py"}:
+        return "projection_consumer"
+    if "action_plans.py" in rel or "pending_actions.py" in rel:
+        return "indirect_emitter"
+    return "string_reference"
