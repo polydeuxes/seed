@@ -208,6 +208,7 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "discover_architecture_evidence",
             "build_operational_graph",
             "_significance",
+            "_concept_realizations",
         ),
         mutation_markers=(
             ".write_text(",
