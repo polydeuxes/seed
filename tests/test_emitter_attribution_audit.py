@@ -81,3 +81,45 @@ def test_emitter_attribution_audit_does_not_write_event_ledger_or_mutate_cluster
     after = ledger.list_events()
     assert before == after == []
     assert audit.metadata["discovery"]
+
+
+def test_attribution_excludes_rendered_messages_from_default_counts():
+    audit = build_emitter_attribution_audit()
+    events = {item.event for item in audit.items}
+    assert (
+        "No deterministic related material found in projected read models."
+        not in events
+    )
+    assert "No supportable lexical overlap was found." not in events
+    assert (
+        "Guardrail: diagnostic only; no ownership facts are inferred or written."
+        not in events
+    )
+    assert all(item.emission_type == "domain_emission" for item in audit.items)
+    assert audit.summary["attributed"] == sum(
+        item.status == "attributed" and item.emission_type == "domain_emission"
+        for item in audit.items
+    )
+
+
+def test_action_plan_events_remain_attributed():
+    audit = build_emitter_attribution_audit()
+    item = next(item for item in audit.items if item.event == "action_plan.created")
+    assert item.status == "attributed"
+    assert item.emitter == "action_plan"
+    assert item.emission_type == "domain_emission"
+
+
+def test_attribution_include_rendered_classifies_guardrail_messages(capsys):
+    assert seed_local.main(["--emitter-attribution-audit", "--include-rendered"]) == 0
+    out = capsys.readouterr().out
+    assert (
+        "Guardrail: diagnostic only; no ownership facts are inferred or written." in out
+    )
+    assert "Emission type: guardrail_text" in out
+
+
+def test_attribution_json_reports_domain_classification(capsys):
+    assert seed_local.main(["--emitter-attribution-audit", "--json"]) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert {item["emission_type"] for item in data["items"]} == {"domain_emission"}

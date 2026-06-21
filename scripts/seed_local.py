@@ -1026,6 +1026,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="explain why emitted artifacts have attributed or unknown emitters",
     )
     parser.add_argument(
+        "--include-rendered",
+        action="store_true",
+        help="with emitter audits, include rendered/fallback/guardrail strings with a distinct classification",
+    )
+    parser.add_argument(
         "--observation-inventory",
         action="store_true",
         help="discover observation providers and predicates from implementation",
@@ -6039,7 +6044,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.emitter_consumer_audit:
-        audit = build_emitter_consumer_audit(REPO_ROOT)
+        audit = build_emitter_consumer_audit(
+            REPO_ROOT, include_rendered=args.include_rendered
+        )
         if args.json_output:
             print(
                 json.dumps(emitter_consumer_audit_json(audit), indent=2, sort_keys=True)
@@ -6049,7 +6056,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.emitter_attribution_audit:
-        audit = build_emitter_attribution_audit(REPO_ROOT)
+        audit = build_emitter_attribution_audit(
+            REPO_ROOT, include_rendered=args.include_rendered
+        )
         if args.json_output:
             print(
                 json.dumps(
