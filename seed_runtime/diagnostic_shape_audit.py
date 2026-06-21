@@ -213,6 +213,22 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "authorize_execution",
         ),
     ),
+    "operational_graph_confidence": DiagnosticImplementationSpec(
+        name="operational_graph_confidence",
+        module_path="seed_runtime/operational_graph.py",
+        build_function="build_operational_graph_confidence",
+        format_function="format_operational_graph_confidence",
+        json_function="operational_graph_confidence_json",
+        cli_flags=("--operational-graph-confidence",),
+        repo_file_markers=("build_operational_graph", "IMPORTANT_SURFACES"),
+        mutation_markers=(
+            ".write_text(",
+            "subprocess.run",
+            "os.remove",
+            "shutil.rmtree",
+            "authorize_execution",
+        ),
+    ),
     "observation_utilization": DiagnosticImplementationSpec(
         name="observation_utilization",
         module_path="seed_runtime/observation_utilization.py",

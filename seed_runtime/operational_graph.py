@@ -13,6 +13,20 @@ from seed_runtime.emitter_consumer_audit import build_emitter_consumer_audit
 EvidenceKind = Literal["direct", "indirect", "reference"]
 Confidence = Literal["high", "medium", "low"]
 
+IMPORTANT_SURFACES = {
+    "operational_story",
+    "pressure_audit",
+    "correlation_audit",
+    "investigation_path",
+    "capability_needs",
+    "capability_candidates",
+    "capability_status",
+    "ownership_discrepancies",
+    "diagnostics",
+    "read_models",
+    "views",
+}
+
 
 @dataclass(frozen=True)
 class OperationalGraphNode:
@@ -175,6 +189,108 @@ def operational_graph_json(graph: OperationalGraph) -> dict[str, Any]:
     return graph.to_json_dict()
 
 
+def build_operational_graph_confidence(
+    root: str | Path | None = None, confidence: Confidence | None = None
+) -> dict[str, Any]:
+    """Summarize why operational graph edge confidence was assigned."""
+
+    graph = build_operational_graph(root)
+    tiers: dict[str, dict[str, Any]] = {}
+    selected = ("high", "medium", "low") if confidence is None else (confidence,)
+    for tier in selected:
+        edges = [edge for edge in graph.edges if edge.confidence == tier]
+        evidence_counts = Counter(item.kind for edge in edges for item in edge.evidence)
+        type_counts = Counter(edge.type for edge in edges)
+        tiers[tier] = {
+            "edge_count": len(edges),
+            "relationship_types": dict(sorted(type_counts.items())),
+            "evidence_categories": dict(sorted(evidence_counts.items())),
+            "reason": _confidence_reason(tier),
+            "potential_confidence_improvement": _confidence_improvement(tier),
+            "representative_examples": [
+                _edge_example(edge) for edge in sorted(edges, key=_edge_sort_key)[:3]
+            ],
+        }
+
+    important_low = [
+        _edge_example(edge, include_importance=True)
+        for edge in sorted(graph.edges, key=_edge_sort_key)
+        if edge.confidence == "low" and _importance(edge)
+    ]
+    return {
+        "summary": {
+            **graph.summary,
+            "read_only": True,
+            "writes_event_ledger": False,
+            "mutates_cluster": False,
+            "filtered_confidence": confidence,
+        },
+        "tiers": tiers,
+        "important_low_confidence_edges": important_low[:10],
+        "metadata": dict(graph.metadata),
+    }
+
+
+def operational_graph_confidence_json(analysis: dict[str, Any]) -> dict[str, Any]:
+    return analysis
+
+
+def format_operational_graph_confidence(analysis: dict[str, Any]) -> str:
+    lines = ["Operational Graph Confidence", ""]
+    if not analysis["summary"]["edges"]:
+        return "\n".join(
+            [
+                *lines,
+                "No implementation-backed operational relationships were discovered.",
+            ]
+        )
+    for tier in ("high", "medium", "low"):
+        data = analysis["tiers"].get(tier)
+        if data is None:
+            continue
+        lines.extend(
+            [
+                f"{tier.title()} Confidence",
+                "",
+                f"Edges: {data['edge_count']}",
+                "Relationship types:",
+            ]
+        )
+        lines.extend(_count_lines(data["relationship_types"]))
+        lines.append("Common evidence:")
+        lines.extend(_count_lines(data["evidence_categories"]))
+        lines.extend(
+            [
+                f"Reason: {data['reason']}",
+                "Potential confidence improvement: "
+                f"{data['potential_confidence_improvement']}",
+                "Representative examples:",
+            ]
+        )
+        examples = data["representative_examples"]
+        if examples:
+            for example in examples:
+                lines.append(
+                    f"  {example['source']} -> {example['target']} ({example['type']})"
+                )
+                lines.append(f"    evidence: {', '.join(example['evidence_categories'])}")
+        else:
+            lines.append("  none")
+        lines.append("")
+
+    important = analysis["important_low_confidence_edges"]
+    lines.append("Operationally relevant low-confidence edges:")
+    if important:
+        for example in important:
+            lines.append(
+                f"  {example['source']} -> {example['target']} ({example['type']})"
+            )
+            lines.append(f"    importance: {', '.join(example['importance'])}")
+    else:
+        lines.append("  none")
+    return "\n".join(lines).rstrip()
+
+
 def format_operational_graph(graph: OperationalGraph) -> str:
     lines = [
         "Operational Graph",
@@ -207,3 +323,50 @@ def format_operational_graph(graph: OperationalGraph) -> str:
 def _stronger(left: Confidence, right: Confidence) -> Confidence:
     order = {"low": 0, "medium": 1, "high": 2}
     return left if order[left] >= order[right] else right
+
+
+def _confidence_reason(tier: str) -> str:
+    return {
+        "high": "relationship has direct emitter evidence",
+        "medium": "relationship has indirect helper evidence",
+        "low": "relationship is inferred from reference-only or consumer-only evidence",
+    }[tier]
+
+
+def _confidence_improvement(tier: str) -> str:
+    return {
+        "high": "already directly supported; corroborating consumers may improve resilience",
+        "medium": "discover direct consumer or emitter evidence for this relationship",
+        "low": "direct emitter evidence or bidirectional implementation evidence not yet discovered",
+    }[tier]
+
+
+def _edge_sort_key(edge: OperationalGraphEdge) -> tuple[str, str, str]:
+    return (edge.source, edge.type, edge.target)
+
+
+def _edge_example(
+    edge: OperationalGraphEdge, include_importance: bool = False
+) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "source": edge.source,
+        "target": edge.target,
+        "type": edge.type,
+        "confidence": edge.confidence,
+        "evidence_categories": sorted({item.kind for item in edge.evidence}),
+        "evidence": [item.to_json_dict() for item in edge.evidence[:3]],
+        "reason": _confidence_reason(edge.confidence),
+        "potential_confidence_improvement": _confidence_improvement(edge.confidence),
+    }
+    if include_importance:
+        result["importance"] = _importance(edge)
+    return result
+
+
+def _importance(edge: OperationalGraphEdge) -> list[str]:
+    labels = {edge.source.removeprefix("surface:"), edge.target.removeprefix("surface:")}
+    return sorted(surface for surface in IMPORTANT_SURFACES if surface in labels)
+
+
+def _count_lines(counts: dict[str, int]) -> list[str]:
+    return [f"  {name}: {count}" for name, count in counts.items()] if counts else ["  none"]

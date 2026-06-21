@@ -24,9 +24,16 @@ _OPERATIONAL_KEYWORDS: tuple[tuple[str, str], ...] = (
     ("observation", "observation"),
     ("ownership", "analysis"),
     ("analysis", "analysis"),
+    ("confidence", "analysis"),
     ("coverage", "analysis"),
 )
-_AUXILIARY_FLAGS = {"--json", "--record", "--mismatches", "--status"}
+_AUXILIARY_FLAGS = {
+    "--json",
+    "--record",
+    "--mismatches",
+    "--status",
+    "--operational-graph-confidence-tier",
+}
 _MODIFIER_FLAGS = {
     "--json",
     "--record",
@@ -42,6 +49,7 @@ _MODIFIER_FLAGS = {
     "--knowledge-reachability-audit-all",
     "--knowledge-reachability-audit-limit",
     "--knowledge-reachability-audit-max-seconds",
+    "--operational-graph-confidence-tier",
 }
 _MANUAL_INPUT_FLAGS = {
     "--alias",
