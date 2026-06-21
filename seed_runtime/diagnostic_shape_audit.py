@@ -295,6 +295,16 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         json_function="investigation_path_audit_json",
         cli_flags=("--investigation-path",),
     ),
+    "reasoning_path": DiagnosticImplementationSpec(
+        name="reasoning_path",
+        module_path="seed_runtime/reasoning_path_audit.py",
+        build_function="build_reasoning_path_audit",
+        format_function="format_reasoning_path_audit",
+        json_function="reasoning_path_audit_json",
+        cli_flags=("--reasoning-path",),
+        repo_file_markers=("build_operational_story", "build_pressure_audit"),
+        diagnostic_fact_read_markers=("build_capability_needs",),
+    ),
     "operational_story": DiagnosticImplementationSpec(
         name="operational_story",
         module_path="seed_runtime/operational_story.py",
