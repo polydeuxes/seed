@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
@@ -12,6 +13,7 @@ from seed_runtime.operational_graph import OperationalGraph, build_operational_g
 Classification = Literal[
     "aligned", "drift", "underspecified", "obsolete_design", "emergent_structure", "unknown"
 ]
+RealizationAssessment = Literal["directly_realized", "indirectly_realized", "partially_realized", "not_observed", "unknown"]
 Significance = Literal[
     "architectural_concept",
     "operational_structure",
@@ -82,6 +84,23 @@ class OperationalEvidence:
         return {"subject": self.subject, "source": self.source, "detail": self.detail, "confidence": self.confidence}
 
 @dataclass(frozen=True)
+class ConceptRealization:
+    concept: str
+    assessment: RealizationAssessment
+    realizations: tuple[OperationalEvidence, ...]
+    supporting_evidence: tuple[str, ...]
+    reason: str
+
+    def to_json_dict(self) -> dict[str, Any]:
+        return {
+            "concept": self.concept,
+            "assessment": self.assessment,
+            "realizations": [e.to_json_dict() for e in self.realizations],
+            "supporting_evidence": list(self.supporting_evidence),
+            "reason": self.reason,
+        }
+
+@dataclass(frozen=True)
 class ArchitectureConformanceFinding:
     subject: str
     classification: Classification
@@ -103,6 +122,7 @@ class ArchitectureConformanceFinding:
 @dataclass(frozen=True)
 class ArchitectureConformanceAudit:
     findings: tuple[ArchitectureConformanceFinding, ...]
+    concept_realizations: tuple[ConceptRealization, ...]
     metadata: dict[str, Any]
 
     @property
@@ -120,11 +140,13 @@ class ArchitectureConformanceAudit:
             "schema_detail_findings": sum(
                 1 for f in self.findings if f.significance in {"schema_detail", "observation_detail", "leaf_node"}
             ),
+            "concept_realizations": len(self.concept_realizations),
+            "realization_assessments": dict(sorted(Counter(r.assessment for r in self.concept_realizations).items())),
             **self.metadata,
         }
 
     def to_json_dict(self) -> dict[str, Any]:
-        return {"summary": self.summary, "findings": [f.to_json_dict() for f in self.findings], "metadata": dict(self.metadata)}
+        return {"summary": self.summary, "findings": [f.to_json_dict() for f in self.findings], "concept_realizations": [r.to_json_dict() for r in self.concept_realizations], "metadata": dict(self.metadata)}
 
 
 def build_architecture_conformance_audit(root: str | Path | None = None, *, architecture_evidence: tuple[ArchitectureEvidence, ...] | None = None, graph: OperationalGraph | None = None) -> ArchitectureConformanceAudit:
@@ -132,6 +154,7 @@ def build_architecture_conformance_audit(root: str | Path | None = None, *, arch
     arch = architecture_evidence if architecture_evidence is not None else discover_architecture_evidence(repo_root)
     op_graph = graph if graph is not None else build_operational_graph(repo_root)
     operational = _operational_evidence(op_graph)
+    realizations = _concept_realizations(arch, operational)
     subjects = sorted({e.subject for e in arch} | {e.subject for e in operational})
     findings = tuple(
         sorted(
@@ -146,7 +169,7 @@ def build_architecture_conformance_audit(root: str | Path | None = None, *, arch
             key=_finding_sort_key,
         )
     )
-    return ArchitectureConformanceAudit(findings, {"read_only": True, "writes_event_ledger": False, "mutates_cluster": False, "records_diagnostics": False})
+    return ArchitectureConformanceAudit(findings, realizations, {"read_only": True, "writes_event_ledger": False, "mutates_cluster": False, "records_diagnostics": False})
 
 
 def architecture_conformance_audit_json(audit: ArchitectureConformanceAudit) -> dict[str, Any]:
@@ -181,6 +204,13 @@ def format_architecture_conformance_audit(audit: ArchitectureConformanceAudit) -
             f"  schema/detail findings: {audit.summary['schema_detail_findings']}",
         ]
     )
+    if audit.concept_realizations:
+        lines.extend(["", "Concept Realizations:"])
+        for item in audit.concept_realizations:
+            lines.extend(["", f"Concept: {item.concept}", f"Assessment: {item.assessment}", f"Reason: {item.reason}", "Operational realizations:"])
+            lines.extend([f"  {e.subject} — {e.source}: {e.detail} ({e.confidence})" for e in item.realizations] or ["  none"])
+            lines.append("Supporting evidence:")
+            lines.extend([f"  {e}" for e in item.supporting_evidence] or ["  none"])
     if not audit.findings:
         lines.extend(["", "No architecture or operational evidence was discovered."])
         return "\n".join(lines)
@@ -201,6 +231,48 @@ def _operational_evidence(graph: OperationalGraph) -> tuple[OperationalEvidence,
     for edge_type, count in edge_counts.items():
         items.append(OperationalEvidence(_normalize(edge_type), "operational_graph", f"{count} {edge_type!r} relationships observed", "high"))
     return tuple(items)
+
+
+def _concept_realizations(arch: tuple[ArchitectureEvidence, ...], operational: tuple[OperationalEvidence, ...]) -> tuple[ConceptRealization, ...]:
+    concepts = sorted({e.subject for e in arch})
+    return tuple(_concept_realization(concept, tuple(e for e in operational if _realizes(concept, e))) for concept in concepts)
+
+
+def _concept_realization(concept: str, matches: tuple[OperationalEvidence, ...]) -> ConceptRealization:
+    if not matches:
+        return ConceptRealization(concept, "not_observed", (), (), "No operational structure was found with direct or lexical evidence for this architecture concept.")
+    direct = tuple(e for e in matches if e.subject == concept)
+    if direct and all(e.confidence != "low" for e in direct):
+        return ConceptRealization(concept, "directly_realized", direct, _support(direct), "Operational vocabulary contains the architecture concept directly.")
+    if all(e.confidence == "low" for e in matches):
+        return ConceptRealization(concept, "unknown", matches, _support(matches), "Only low-confidence operational evidence is available for this architecture concept.")
+    full_token = tuple(e for e in matches if _concept_tokens(concept) <= _concept_tokens(e.subject + " " + e.detail))
+    if full_token:
+        return ConceptRealization(concept, "indirectly_realized", full_token, _support(full_token), "The architecture term is absent as a node, but implementation-backed operational structures carry the same concept vocabulary.")
+    return ConceptRealization(concept, "partially_realized", matches, _support(matches), "Operational evidence overlaps the architecture concept, but does not cover the full concept vocabulary.")
+
+
+def _realizes(concept: str, evidence: OperationalEvidence) -> bool:
+    concept_tokens = _concept_tokens(concept)
+    evidence_tokens = _concept_tokens(evidence.subject + " " + evidence.detail)
+    return bool(concept_tokens & evidence_tokens)
+
+
+def _concept_tokens(value: str) -> set[str]:
+    tokens = set()
+    for token in re.findall(r"[a-z0-9]+", _normalize(value)):
+        if token in {"node", "classified", "as", "concrete", "aggregate", "relationship", "relationships", "observed"}:
+            continue
+        if token.endswith("ies") and len(token) > 4:
+            token = token[:-3] + "y"
+        elif token.endswith("s") and len(token) > 3:
+            token = token[:-1]
+        tokens.add(token)
+    return tokens
+
+
+def _support(evidence: tuple[OperationalEvidence, ...]) -> tuple[str, ...]:
+    return tuple(dict.fromkeys(f"{e.source}: {e.detail}" for e in evidence))
 
 
 def _finding(subject: str, arch: tuple[ArchitectureEvidence, ...], operational: tuple[OperationalEvidence, ...]) -> ArchitectureConformanceFinding:

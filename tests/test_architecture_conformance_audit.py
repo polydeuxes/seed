@@ -201,3 +201,80 @@ def test_architecture_conformance_does_not_write_event_ledger_or_mutate_cluster(
     assert audit.metadata["writes_event_ledger"] is False
     assert audit.metadata["mutates_cluster"] is False
     assert audit.metadata["records_diagnostics"] is False
+
+
+def _realization_for(audit, concept):
+    return next(item for item in audit.concept_realizations if item.concept == concept)
+
+
+def test_concept_realization_reports_direct_realization():
+    graph = OperationalGraph(
+        nodes=(OperationalGraphNode("node:capability", "node", "capability", "concrete_node"),),
+        edges=(),
+        metadata={"read_only": True, "writes_event_ledger": False, "mutates_cluster": False},
+    )
+    audit = build_architecture_conformance_audit(
+        architecture_evidence=(ArchitectureEvidence("capability", "docs/architecture.md", "architecture reference mentions capability"),),
+        graph=graph,
+    )
+    realization = _realization_for(audit, "capability")
+    assert realization.assessment == "directly_realized"
+    assert realization.realizations[0].subject == "capability"
+
+
+def test_concept_realization_reports_indirect_realization_and_vocabulary_drift():
+    graph = OperationalGraph(
+        nodes=(
+            OperationalGraphNode("surface:ownership_discrepancies", "surface", "ownership_discrepancies", "concrete_surface"),
+            OperationalGraphNode("node:owner_not_observed", "node", "owner_not_observed", "concrete_node"),
+        ),
+        edges=(),
+        metadata={"read_only": True, "writes_event_ledger": False, "mutates_cluster": False},
+    )
+    audit = build_architecture_conformance_audit(
+        architecture_evidence=(ArchitectureEvidence("ownership", "docs/architecture.md", "architecture reference mentions ownership"),),
+        graph=graph,
+    )
+    finding = next(item for item in audit.findings if item.subject == "ownership")
+    realization = _realization_for(audit, "ownership")
+    assert finding.classification == "obsolete_design"
+    assert realization.assessment == "indirectly_realized"
+    assert [item.subject for item in realization.realizations] == ["ownership discrepancies"]
+    output = format_architecture_conformance_audit(audit)
+    assert "Subject: ownership" in output
+    assert "Classification: obsolete_design" in output
+    assert "Concept: ownership" in output
+    assert "Assessment: indirectly_realized" in output
+
+
+def test_concept_realization_reports_partial_realization():
+    graph = OperationalGraph(
+        nodes=(OperationalGraphNode("surface:privilege_discovery", "surface", "privilege_discovery", "concrete_surface"),),
+        edges=(),
+        metadata={"read_only": True, "writes_event_ledger": False, "mutates_cluster": False},
+    )
+    audit = build_architecture_conformance_audit(
+        architecture_evidence=(ArchitectureEvidence("privilege boundary", "docs/architecture.md", "architecture reference mentions privilege boundary"),),
+        graph=graph,
+    )
+    realization = _realization_for(audit, "privilege boundary")
+    assert realization.assessment == "partially_realized"
+    assert realization.realizations[0].subject == "privilege discovery"
+
+
+def test_concept_realization_reports_not_observed_concept_absence():
+    graph = OperationalGraph(nodes=(), edges=(), metadata={"read_only": True, "writes_event_ledger": False, "mutates_cluster": False})
+    audit = build_architecture_conformance_audit(
+        architecture_evidence=(ArchitectureEvidence("authorization", "docs/architecture.md", "architecture reference mentions authorization"),),
+        graph=graph,
+    )
+    realization = _realization_for(audit, "authorization")
+    assert realization.assessment == "not_observed"
+    assert realization.realizations == ()
+
+
+def test_concept_realization_json_shape_is_valid(capsys):
+    assert seed_local.main(["--architecture-conformance-audit", "--json"]) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert "concept_realizations" in data
+    assert all({"concept", "assessment", "realizations"} <= set(item) for item in data["concept_realizations"])
