@@ -202,3 +202,5 @@ Use these for operator-facing views and read-only projections. These surfaces ex
 * Capability boundaries: [`capability_gap_and_operator_bridge_reconciliation.md`](capability_gap_and_operator_bridge_reconciliation.md), [`capability_acquisition_reconciliation.md`](capability_acquisition_reconciliation.md), [`capability_verification_reconciliation.md`](capability_verification_reconciliation.md)
 
 Historical reconciliation, characterization, audit, and vocabulary documents remain part of the record. Do not delete them merely because their conclusions have been routed through this map.
+
+* [`unified_derivation_architecture_investigation.md`](unified_derivation_architecture_investigation.md) — investigation of shared derivation mechanics across operational, historical, documentary, operator, and future reasoning without collapsing authority models.
