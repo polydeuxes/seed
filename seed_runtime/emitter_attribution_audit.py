@@ -9,6 +9,7 @@ from typing import Any, Literal
 
 from seed_runtime.emitter_consumer_audit import (
     EmitterConsumerAudit,
+    EmissionType,
     build_emitter_consumer_audit,
     _python_files,
 )
@@ -34,6 +35,7 @@ class EmitterAttributionItem:
     reason: str
     consumers: tuple[str, ...]
     evidence: tuple[str, ...] = ()
+    emission_type: EmissionType = "domain_emission"
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
@@ -43,6 +45,7 @@ class EmitterAttributionItem:
             "reason": self.reason,
             "consumers": list(self.consumers),
             "evidence": list(self.evidence),
+            "emission_type": self.emission_type,
         }
 
 
@@ -73,9 +76,11 @@ class EmitterAttributionAudit:
 
 def build_emitter_attribution_audit(
     root: str | Path | None = None,
+    *,
+    include_rendered: bool = False,
 ) -> EmitterAttributionAudit:
     repo_root = Path(root) if root is not None else Path(__file__).resolve().parents[1]
-    base = build_emitter_consumer_audit(repo_root)
+    base = build_emitter_consumer_audit(repo_root, include_rendered=include_rendered)
     literal_refs, dynamic_refs = _implementation_evidence(repo_root)
     items: list[EmitterAttributionItem] = []
     for item in base.items:
@@ -89,6 +94,7 @@ def build_emitter_attribution_audit(
                         reason="direct event emission evidence is attributed by the emitter/consumer audit",
                         consumers=item.consumers,
                         evidence=tuple(e for e in item.evidence if e),
+                        emission_type=item.emission_type,
                     )
                 )
                 continue
@@ -103,12 +109,14 @@ def build_emitter_attribution_audit(
                     reason=reason,
                     consumers=item.consumers,
                     evidence=tuple(literal_refs.get(event, ())) + tuple(dynamic_refs),
+                    emission_type=item.emission_type,
                 )
             )
     return EmitterAttributionAudit(
         items=tuple(sorted(items, key=lambda i: (i.status, i.event))),
         metadata={
             "discovery": "Refines emitter/consumer audit rows with AST literal references, dynamic Event/append calls, and workflow-prefix visibility hints.",
+            "include_rendered": include_rendered,
             "scope": list(base.metadata.get("scope", [])),
         },
     )
@@ -140,7 +148,12 @@ def format_emitter_attribution_audit(audit: EmitterAttributionAudit) -> str:
         )
         return "\n".join(lines)
     for item in audit.items:
-        lines += [f"Event: {item.event}", "", "Consumers:"]
+        lines += [
+            f"Event: {item.event}",
+            f"Emission type: {item.emission_type}",
+            "",
+            "Consumers:",
+        ]
         lines += [f"  {c}" for c in item.consumers] if item.consumers else ["  none"]
         lines += [
             "",

@@ -203,7 +203,7 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
     ),
     DiagnosticInventoryEntry(
         name="emitter_consumer_audit",
-        cli_flags=("--emitter-consumer-audit",),
+        cli_flags=("--emitter-consumer-audit", "--include-rendered"),
         uses_projected_state=False,
         uses_repo_files=True,
         supports_json=True,
@@ -218,7 +218,7 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
     ),
     DiagnosticInventoryEntry(
         name="emitter_attribution_audit",
-        cli_flags=("--emitter-attribution-audit",),
+        cli_flags=("--emitter-attribution-audit", "--include-rendered"),
         uses_projected_state=False,
         uses_repo_files=True,
         supports_json=True,
