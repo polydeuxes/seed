@@ -117,7 +117,10 @@ from seed_runtime.operational_story import (
 )
 from seed_runtime.operational_graph import (
     build_operational_graph,
+    build_operational_graph_confidence,
     format_operational_graph,
+    format_operational_graph_confidence,
+    operational_graph_confidence_json,
     operational_graph_json,
 )
 from seed_runtime.operational_surface_inventory import (
@@ -996,6 +999,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="build the implementation-backed operational relationship graph",
     )
     parser.add_argument(
+        "--operational-graph-confidence",
+        action="store_true",
+        help="analyze operational graph edge confidence quality",
+    )
+    parser.add_argument(
+        "operational_graph_confidence_tier",
+        nargs="?",
+        choices=["high", "medium", "low"],
+        help="optional confidence tier filter for --operational-graph-confidence",
+    )
+    parser.add_argument(
+        "--operational-graph-confidence-tier",
+        dest="operational_graph_confidence_tier_option",
+        choices=["high", "medium", "low"],
+        help="optional confidence tier filter for --operational-graph-confidence",
+    )
+    parser.add_argument(
         "--operational-surface-inventory",
         action="store_true",
         help="discover operational CLI surfaces from implementation evidence",
@@ -1812,6 +1832,7 @@ def validate_lifecycle_args(
         bool(args.diagnostic_shape_audit),
         bool(args.operational_story),
         bool(args.operational_graph),
+        bool(args.operational_graph_confidence),
         bool(args.operational_surface_inventory),
         bool(args.visibility_coverage_audit),
         bool(args.operational_surface_classification_audit),
@@ -1900,6 +1921,12 @@ def validate_lifecycle_args(
         )
     if args.include_history and not args.fact_support:
         parser.error("--include-history can only be used with --fact-support")
+    graph_confidence_tier = (
+        args.operational_graph_confidence_tier
+        or args.operational_graph_confidence_tier_option
+    )
+    if graph_confidence_tier and not args.operational_graph_confidence:
+        parser.error("confidence tier filter requires --operational-graph-confidence")
     if args.audit_compare and not args.kind:
         parser.error("--audit-compare requires --kind")
     if args.kind and not args.audit_compare:
@@ -1933,6 +1960,7 @@ def validate_lifecycle_args(
         or args.diagnostic_shape_audit
         or args.operational_story
         or args.operational_graph
+        or args.operational_graph_confidence
         or args.operational_surface_inventory
         or args.visibility_coverage_audit
         or args.operational_surface_classification_audit
@@ -5643,6 +5671,17 @@ def inquiry_note_store_path_from_args(args: argparse.Namespace) -> Path:
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
+    if argv is None:
+        argv = sys.argv[1:]
+    if argv is not None and "--operational-graph-confidence" in argv:
+        rewritten = list(argv)
+        if "--operational-graph-confidence-tier" not in rewritten:
+            for tier in ("high", "medium", "low"):
+                if tier in rewritten:
+                    rewritten.remove(tier)
+                    rewritten.extend(["--operational-graph-confidence-tier", tier])
+                    break
+        argv = rewritten
     args = parser.parse_args(argv)
     validate_lifecycle_args(args, parser)
     if args.show_predicate_catalog:
@@ -5741,6 +5780,26 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(operational_graph_json(graph), indent=2, sort_keys=True))
         else:
             print(format_operational_graph(graph))
+        return 0
+
+    if args.operational_graph_confidence:
+        graph_confidence_tier = (
+            args.operational_graph_confidence_tier
+            or args.operational_graph_confidence_tier_option
+        )
+        analysis = build_operational_graph_confidence(
+            REPO_ROOT, confidence=graph_confidence_tier
+        )
+        if args.json_output:
+            print(
+                json.dumps(
+                    operational_graph_confidence_json(analysis),
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+        else:
+            print(format_operational_graph_confidence(analysis))
         return 0
 
     if args.operational_surface_inventory:

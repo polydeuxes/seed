@@ -114,6 +114,7 @@ def test_json_capable_diagnostics_validate_json_support():
         "knowledge_reachability",
         "observation_utilization",
         "operational_graph",
+        "operational_graph_confidence",
         "consumer_audit",
         "emitter_attribution_audit",
     ]:
