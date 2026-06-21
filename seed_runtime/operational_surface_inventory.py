@@ -22,6 +22,7 @@ _OPERATIONAL_KEYWORDS: tuple[tuple[str, str], ...] = (
     ("view", "view"),
     ("observe", "observation"),
     ("observation", "observation"),
+    ("reference", "analysis"),
     ("ownership", "analysis"),
     ("analysis", "analysis"),
     ("confidence", "analysis"),
@@ -207,7 +208,9 @@ def build_visibility_coverage_audit(
     diagnostic_entries: tuple[DiagnosticInventoryEntry, ...] = DIAGNOSTIC_INVENTORY,
 ) -> VisibilityCoverageAudit:
     return VisibilityCoverageAudit(
-        build_operational_surface_inventory(parser, diagnostic_entries=diagnostic_entries),
+        build_operational_surface_inventory(
+            parser, diagnostic_entries=diagnostic_entries
+        ),
         build_operational_surface_classification_audit(
             parser, diagnostic_entries=diagnostic_entries
         ).items,
@@ -349,9 +352,11 @@ def _iter_public_long_options(parser: argparse.ArgumentParser):
 
 
 def _registered_and_json_flags(
-    diagnostic_entries: tuple[DiagnosticInventoryEntry, ...]
+    diagnostic_entries: tuple[DiagnosticInventoryEntry, ...],
 ) -> tuple[set[str], set[str]]:
-    registered_flags = {flag for entry in diagnostic_entries for flag in entry.cli_flags}
+    registered_flags = {
+        flag for entry in diagnostic_entries for flag in entry.cli_flags
+    }
     json_flags = {
         flag
         for entry in diagnostic_entries
@@ -368,21 +373,45 @@ def _classification_for(flag: str, action: argparse.Action) -> tuple[str, str]:
     if "debug" in haystack:
         return "debug_surface", "argparse help exposes diagnostic/debug behavior"
     if flag in _MANUAL_INPUT_FLAGS or getattr(action, "nargs", None) in {2, 3}:
-        return "manual_input", "accepts operator-provided evidence or values instead of exposing a standalone view"
+        return (
+            "manual_input",
+            "accepts operator-provided evidence or values instead of exposing a standalone view",
+        )
     if flag in _MODIFIER_FLAGS:
-        return "modifier", "argparse help and validation show this changes rendering or scope of another command"
+        return (
+            "modifier",
+            "argparse help and validation show this changes rendering or scope of another command",
+        )
     if any(hint in haystack for hint in _LEGACY_HINTS):
-        return "legacy_surface", "implementation help or validation marks this as legacy behavior"
+        return (
+            "legacy_surface",
+            "implementation help or validation marks this as legacy behavior",
+        )
     if any(hint in haystack for hint in _FILTER_HINTS):
-        return "filter", "argparse help constrains this option to limiting or selecting another command's output"
+        return (
+            "filter",
+            "argparse help constrains this option to limiting or selecting another command's output",
+        )
     category = _category_for(flag, help_text)
     if category and action_type in _PRIMARY_ACTIONS:
-        return "primary_surface", "store_true operational flag owns a standalone CLI experience"
+        return (
+            "primary_surface",
+            "store_true operational flag owns a standalone CLI experience",
+        )
     if category and getattr(action, "nargs", None) in {"?", "*"}:
-        return "primary_surface", "optional argument operational flag owns dispatch and may accept a query argument"
+        return (
+            "primary_surface",
+            "optional argument operational flag owns dispatch and may accept a query argument",
+        )
     if category:
-        return "primary_surface", "operational keyword in argparse help indicates a standalone command path"
-    return "unknown", "no operational, filter, modifier, debug, manual-input, or legacy evidence was found"
+        return (
+            "primary_surface",
+            "operational keyword in argparse help indicates a standalone command path",
+        )
+    return (
+        "unknown",
+        "no operational, filter, modifier, debug, manual-input, or legacy evidence was found",
+    )
 
 
 def _category_for(flag: str, help_text: str) -> str | None:
