@@ -365,6 +365,21 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "authorize_execution",
         ),
     ),
+    "repository_state_observation": DiagnosticImplementationSpec(
+        name="repository_state_observation",
+        module_path="seed_runtime/repository_observation.py",
+        build_function="observe_repository",
+        format_function="format_repository_observation",
+        json_function="repository_observation_json",
+        cli_flags=("--observe-repository",),
+        repo_file_markers=("repository_path", "Path("),
+        mutation_markers=(
+            ".write_text(",
+            "os.remove",
+            "shutil.rmtree",
+            "authorize_execution",
+        ),
+    ),
     "snapshot_policy_audit": DiagnosticImplementationSpec(
         name="snapshot_policy_audit",
         module_path="seed_runtime/snapshot_policy_audit.py",
@@ -610,7 +625,7 @@ def _cli_surface_source(cli_source: str, cli_flags: tuple[str, ...]) -> str:
     parts = []
     for flag in cli_flags:
         attr = flag.lstrip("-").replace("-", "_")
-        marker = f"if args.{attr}"
+        marker = f"if args.{attr}:"
         start = 0
         while True:
             start = cli_source.find(marker, start)

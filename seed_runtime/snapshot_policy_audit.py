@@ -10,6 +10,10 @@ from typing import Any, Literal
 
 from seed_runtime.audit_snapshots import SUPPORTED_KINDS, audit_root
 from seed_runtime.impact_audit import build_impact_audit
+from seed_runtime.repository_observation import (
+    RepositoryObservation,
+    observe_repository,
+)
 
 Recommendation = Literal[
     "snapshot_recommended",
@@ -65,6 +69,9 @@ class SnapshotConstrainedSurface:
 
 @dataclass(frozen=True)
 class SnapshotPolicyAudit:
+    repository_context: RepositoryObservation
+    repository_context_health: str
+    repository_context_reason: str
     snapshot_kinds: list[SnapshotKindPolicy]
     comparison_availability: list[dict[str, Any]]
     recommendations: list[dict[str, str]]
@@ -74,6 +81,9 @@ class SnapshotPolicyAudit:
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
+            "repository_context": self.repository_context.to_json_dict(),
+            "repository_context_health": self.repository_context_health,
+            "repository_context_reason": self.repository_context_reason,
             "snapshot_kinds": [k.to_json_dict() for k in self.snapshot_kinds],
             "comparison_availability": self.comparison_availability,
             "recommendations": self.recommendations,
@@ -112,13 +122,23 @@ def build_snapshot_policy_audit(
         }
         for row in impact.coverage
     ]
+    repository_context = observe_repository(root)
+    repository_health, repository_reason = _repository_context_health(
+        repository_context
+    )
     surfaces = _operational_surfaces(comparison_availability)
     recommendations = [
         {"kind": row.kind, "recommendation": row.recommendation, "reason": row.reason}
         for row in kinds
     ]
     return SnapshotPolicyAudit(
-        kinds, comparison_availability, recommendations, surfaces
+        repository_context,
+        repository_health,
+        repository_reason,
+        kinds,
+        comparison_availability,
+        recommendations,
+        surfaces,
     )
 
 
@@ -127,7 +147,20 @@ def snapshot_policy_audit_json(audit: SnapshotPolicyAudit) -> dict[str, Any]:
 
 
 def format_snapshot_policy_audit(audit: SnapshotPolicyAudit) -> str:
-    lines = ["Snapshot Policy Audit", "", "Snapshot Kinds:"]
+    lines = [
+        "Snapshot Policy Audit",
+        "",
+        "Repository Context:",
+        f"  health: {audit.repository_context_health}",
+        f"  reason: {audit.repository_context_reason}",
+        f"  status available: {'yes' if audit.repository_context.repository_status_available else 'no'}",
+        f"  vcs: {audit.repository_context.repository_vcs or 'unknown'}",
+        f"  latest repository state: {audit.repository_context.repository_head_commit or 'unknown'}",
+        f"  branch: {audit.repository_context.repository_branch or 'unknown'}",
+        f"  status: {_repository_status_label(audit.repository_context)}",
+        "",
+        "Snapshot Kinds:",
+    ]
     if not audit.snapshot_kinds:
         lines.append("  none")
     for row in audit.snapshot_kinds:
@@ -259,3 +292,20 @@ def _operational_surfaces(
 
 def _value(value: int | None) -> str:
     return "unknown" if value is None else str(value)
+
+
+def _repository_context_health(observation: RepositoryObservation) -> tuple[str, str]:
+    if not observation.repository_status_available:
+        return (
+            "missing",
+            observation.reason or "repository-state evidence is unavailable",
+        )
+    if observation.repository_head_commit and observation.repository_dirty is False:
+        return "healthy", "repository-state evidence is complete and clean"
+    return "partial", "repository-state evidence is available but working tree is dirty or incomplete"
+
+
+def _repository_status_label(observation: RepositoryObservation) -> str:
+    if not observation.repository_status_available:
+        return "unknown"
+    return "dirty" if observation.repository_dirty else "clean"

@@ -1,142 +1,124 @@
-from __future__ import annotations
+import json
+import subprocess
 
-from seed_runtime.knowledge.repository_observation import (
-    extract_repository_artifact_facts,
+import scripts.seed_local as seed_local
+from seed_runtime.repository_observation import (
+    GitRepositoryObservationProvider,
+    observe_repository,
+)
+from seed_runtime.snapshot_policy_audit import (
+    build_snapshot_policy_audit,
+    format_snapshot_policy_audit,
 )
 
 
-_SOURCE_PATH = "seed_runtime/runtime.py"
-
-
-def _facts(text: str):
-    return extract_repository_artifact_facts(_SOURCE_PATH, text)
-
-
-def test_extracts_module_fact_for_source_path():
-    facts = _facts("""class Runtime:\n    pass\n""")
-
-    assert any(
-        fact.artifact_kind == "module"
-        and fact.path == _SOURCE_PATH
-        and fact.parent_symbol is None
-        and "Module/file seed_runtime/runtime.py exists" in fact.fact
-        for fact in facts
+def _git(repo, *args):
+    return subprocess.run(
+        ["git", *args], cwd=repo, text=True, capture_output=True, check=True
     )
 
 
-def test_extracts_class_definition_fact():
-    facts = _facts("""class Runtime:\n    pass\n""")
+def _repo(tmp_path, name="repo"):
+    repo = tmp_path / name
+    repo.mkdir()
+    _git(repo, "init")
+    _git(repo, "config", "user.email", "seed@example.invalid")
+    _git(repo, "config", "user.name", "Seed Test")
+    (repo / "file.txt").write_text("clean\n", encoding="utf-8")
+    _git(repo, "add", "file.txt")
+    _git(repo, "commit", "-m", "initial")
+    return repo
 
-    assert any(
-        fact.artifact_kind == "class"
-        and fact.symbol == "Runtime"
-        and fact.parent_symbol is None
-        and fact.path == _SOURCE_PATH
-        for fact in facts
+
+def test_repository_state_observation_clean_git_repo_branch_and_commit(tmp_path):
+    repo = _repo(tmp_path)
+
+    observation = observe_repository(repo)
+
+    assert observation.repository_path == str(repo.resolve())
+    assert observation.repository_vcs == "git"
+    assert observation.repository_status_available is True
+    assert observation.repository_head_commit
+    assert observation.repository_branch in {"main", "master"}
+    assert observation.repository_dirty is False
+    assert observation.repository_staged_count == 0
+    assert observation.repository_modified_count == 0
+    assert observation.repository_untracked_count == 0
+
+
+def test_repository_state_path_is_not_hardcoded_to_seed_and_dirty_is_represented(tmp_path):
+    repo = _repo(tmp_path, "other-repository")
+    (repo / "file.txt").write_text("dirty\n", encoding="utf-8")
+    (repo / "new.txt").write_text("new\n", encoding="utf-8")
+
+    observation = observe_repository(repo)
+
+    assert observation.repository_path.endswith("other-repository")
+    assert observation.repository_dirty is True
+    assert observation.repository_modified_count == 1
+    assert observation.repository_untracked_count == 1
+
+
+def test_repository_state_git_unavailable_is_explicit_and_non_fatal(tmp_path, monkeypatch):
+    repo = _repo(tmp_path)
+    monkeypatch.setattr(
+        "seed_runtime.repository_observation.shutil.which", lambda _: None
     )
 
+    observation = GitRepositoryObservationProvider().observe(repo)
 
-def test_extracts_top_level_function_definition_fact():
-    facts = _facts("""def helper():\n    pass\n""")
+    assert observation.repository_status_available is False
+    assert observation.reason == "git executable is unavailable"
+    assert observation.repository_head_commit is None
 
-    assert any(
-        fact.artifact_kind == "function"
-        and fact.symbol == "helper"
-        and fact.parent_symbol is None
-        and fact.path == _SOURCE_PATH
-        for fact in facts
+
+def test_observe_repository_cli_json_is_read_only(tmp_path, capsys):
+    repo = _repo(tmp_path)
+    before = _git(repo, "rev-parse", "HEAD").stdout.strip()
+
+    code = seed_local.main(["--observe-repository", str(repo), "--json"])
+    payload = json.loads(capsys.readouterr().out)
+    after = _git(repo, "rev-parse", "HEAD").stdout.strip()
+
+    assert code == 0
+    assert payload["repository_head_commit"] == before
+    assert after == before
+    assert payload["writes_event_ledger"] is False
+    assert payload["mutates_cluster"] is False
+
+
+def test_snapshot_policy_reports_repository_context_health_and_distinguishes_comparison(
+    tmp_path,
+):
+    repo = _repo(tmp_path)
+    from tests.test_snapshot_policy_audit import _ownership_snapshot
+    _ownership_snapshot(repo, "2026-06-20T160000Z")
+    _ownership_snapshot(repo, "2026-06-20T170000Z")
+    _git(repo, "add", ".audit")
+    _git(repo, "commit", "-m", "snapshots")
+
+    audit = build_snapshot_policy_audit(repo)
+    rendered = format_snapshot_policy_audit(audit)
+
+    assert audit.repository_context_health == "healthy"
+    assert any(row.comparison_available for row in audit.snapshot_kinds)
+    assert "Repository Context:" in rendered
+    assert "health: healthy" in rendered
+    assert "comparison available: yes" in rendered
+
+
+def test_snapshot_policy_can_have_comparison_available_with_missing_repository_context(
+    tmp_path, monkeypatch
+):
+    from tests.test_snapshot_policy_audit import _ownership_snapshot
+    _ownership_snapshot(tmp_path, "2026-06-20T160000Z")
+    _ownership_snapshot(tmp_path, "2026-06-20T170000Z")
+    monkeypatch.setattr(
+        "seed_runtime.repository_observation.shutil.which", lambda _: None
     )
 
+    audit = build_snapshot_policy_audit(tmp_path)
 
-def test_extracts_class_method_fact_without_top_level_function_fact():
-    facts = _facts("""class Runtime:\n    def handle_user_message(self):\n        pass\n""")
-
-    assert any(
-        fact.artifact_kind == "class"
-        and fact.symbol == "Runtime"
-        and fact.parent_symbol is None
-        and fact.path == _SOURCE_PATH
-        for fact in facts
-    )
-    assert any(
-        fact.artifact_kind == "method"
-        and fact.symbol == "handle_user_message"
-        and fact.parent_symbol == "Runtime"
-        and fact.path == _SOURCE_PATH
-        for fact in facts
-    )
-    assert not any(
-        fact.artifact_kind == "function" and fact.symbol == "handle_user_message"
-        for fact in facts
-    )
-
-
-def test_extracts_async_class_method_fact():
-    facts = _facts("""class Collector:\n    async def collect(self):\n        pass\n""")
-
-    assert any(
-        fact.artifact_kind == "method"
-        and fact.symbol == "collect"
-        and fact.parent_symbol == "Collector"
-        and fact.path == _SOURCE_PATH
-        for fact in facts
-    )
-
-
-def test_extracts_top_level_async_function_definition_fact():
-    facts = _facts("""async def collect():\n    pass\n""")
-
-    assert any(
-        fact.artifact_kind == "function"
-        and fact.symbol == "collect"
-        and fact.parent_symbol is None
-        and fact.path == _SOURCE_PATH
-        for fact in facts
-    )
-
-
-def test_ignores_nested_function_inside_function():
-    facts = _facts("""def outer():\n    def inner():\n        pass\n""")
-
-    assert any(
-        fact.artifact_kind == "function"
-        and fact.symbol == "outer"
-        and fact.parent_symbol is None
-        for fact in facts
-    )
-    assert not any(fact.symbol == "inner" for fact in facts)
-
-
-def test_extracts_import_facts():
-    facts = _facts(
-        """import json\nfrom seed_runtime.models import Decision\nfrom seed_runtime.execution import ToolExecutor\n"""
-    )
-
-    import_symbols = {
-        fact.symbol for fact in facts if fact.artifact_kind == "import"
-    }
-    assert import_symbols == {
-        "json",
-        "seed_runtime.models.Decision",
-        "seed_runtime.execution.ToolExecutor",
-    }
-    assert all(fact.parent_symbol is None for fact in facts)
-
-
-def test_parse_failure_returns_only_module_fact_without_raising():
-    facts = _facts("""def broken(\n""")
-
-    assert len(facts) == 1
-    assert facts[0].artifact_kind == "module"
-    assert facts[0].path == _SOURCE_PATH
-    assert facts[0].parent_symbol is None
-    assert "could not be parsed" in facts[0].fact
-
-
-def test_extractor_emits_only_artifact_facts_without_architecture_inference():
-    facts = _facts("""class ToolExecutor:\n    pass\n""")
-
-    assert {fact.artifact_kind for fact in facts} == {"module", "class"}
-    assert all(not hasattr(fact, "claim_family") for fact in facts)
-    assert all(not hasattr(fact, "outcome") for fact in facts)
-    assert all("owns" not in fact.fact.lower() for fact in facts)
+    assert any(row.comparison_available for row in audit.snapshot_kinds)
+    assert audit.repository_context_health == "missing"
+    assert audit.repository_context.repository_status_available is False
