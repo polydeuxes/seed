@@ -365,6 +365,22 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "authorize_execution",
         ),
     ),
+    "history_brief": DiagnosticImplementationSpec(
+        name="history_brief",
+        module_path="seed_runtime/history_brief.py",
+        build_function="build_history_brief",
+        format_function="format_history_brief",
+        json_function="history_brief_json",
+        cli_flags=("--history-brief",),
+        repo_file_markers=("build_impact_audit", "build_snapshot_policy_audit"),
+        mutation_markers=(
+            ".write_text(",
+            "subprocess.run",
+            "os.remove",
+            "shutil.rmtree",
+            "authorize_execution",
+        ),
+    ),
     "repository_state_observation": DiagnosticImplementationSpec(
         name="repository_state_observation",
         module_path="seed_runtime/repository_observation.py",
