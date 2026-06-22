@@ -252,3 +252,98 @@ def test_link_observation_is_read_only_and_does_not_mutate_files(tmp_path):
     assert before == after
     assert report.boundary["mutates_repository"] is False
     assert report.boundary["writes_event_ledger"] is False
+
+
+def test_code_block_observation_records_closed_fences_without_contents(tmp_path):
+    _write(
+        tmp_path / "docs" / "code.md",
+        "\n".join(
+            [
+                "# Code",
+                "",
+                "```Python title=example",
+                "print('secret runtime behavior')",
+                "# Not a Markdown Heading",
+                "```",
+                "",
+            ]
+        ),
+    )
+
+    report = observe_documentation_structure(tmp_path)
+    document = report.documents[0]
+    payload = document.to_json_dict()
+
+    assert payload["code_block_observations"] == [
+        {
+            "fence_type": "backtick",
+            "info_string": "Python title=example",
+            "language": "python",
+            "start_line": 3,
+            "end_line": 6,
+            "closed": True,
+        }
+    ]
+    assert report.summary["code_block_count"] == 1
+    assert report.summary["unclosed_code_block_count"] == 0
+    assert report.summary["code_block_languages"] == ["python"]
+    assert payload["heading_outline"] == [
+        {"level": 1, "text": "Code", "line_number": 1}
+    ]
+    rendered_payload = json.dumps(payload)
+    assert "secret runtime behavior" not in rendered_payload
+    assert "Not a Markdown Heading" not in rendered_payload
+
+
+def test_code_block_observation_records_tilde_fences_and_unclosed_fences(tmp_path):
+    _write(
+        tmp_path / "docs" / "fences.md",
+        "\n".join(
+            [
+                "# Fences",
+                "",
+                "~~~",
+                "[hidden link](missing.md)",
+                "~~~",
+                "",
+                "```Shell",
+                "seed --should-not-be-inferred",
+                "# Hidden Heading",
+            ]
+        ),
+    )
+
+    report = observe_documentation_structure(tmp_path)
+    document = report.documents[0]
+    payload = document.to_json_dict()
+
+    assert payload["code_block_observations"] == [
+        {
+            "fence_type": "tilde",
+            "info_string": None,
+            "language": None,
+            "start_line": 3,
+            "end_line": 5,
+            "closed": True,
+        },
+        {
+            "fence_type": "backtick",
+            "info_string": "Shell",
+            "language": "shell",
+            "start_line": 7,
+            "end_line": None,
+            "closed": False,
+        },
+    ]
+    assert report.summary["code_block_count"] == 2
+    assert report.summary["unclosed_code_block_count"] == 1
+    assert report.summary["code_block_languages"] == ["shell"]
+    assert payload["link_observations"] == []
+    assert payload["heading_outline"] == [
+        {"level": 1, "text": "Fences", "line_number": 1}
+    ]
+    rendered_payload = json.dumps(payload)
+    assert "hidden link" not in rendered_payload
+    assert "missing.md" not in rendered_payload
+    assert "should-not-be-inferred" not in rendered_payload
+    assert "Hidden Heading" not in rendered_payload

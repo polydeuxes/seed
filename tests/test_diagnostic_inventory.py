@@ -81,6 +81,8 @@ def test_current_diagnostics_do_not_mutate_cluster():
 def test_current_diagnostic_shapes_match_implementation_authority():
     assert _entry("documentation_structure").cli_flags == ("--documentation-structure",)
     assert _entry("documentation_structure").uses_repo_files
+    assert "fenced code block structure" in _entry("documentation_structure").description
+    assert "without parsing code contents" in _entry("documentation_structure").description
     assert _entry("documentation_structure").supports_json
     assert not _entry("documentation_structure").supports_record
     assert _entry("documentation_structure").record_scope == "none"

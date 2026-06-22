@@ -40,6 +40,16 @@ class DocumentationLinkRecord:
 
 
 @dataclass(frozen=True)
+class DocumentationCodeBlockRecord:
+    fence_type: str
+    info_string: str | None
+    language: str | None
+    start_line: int
+    end_line: int | None
+    closed: bool
+
+
+@dataclass(frozen=True)
 class DocumentationStructureRecord:
     path: str
     front_matter_present: bool
@@ -52,6 +62,7 @@ class DocumentationStructureRecord:
     skipped_heading_level_present: bool
     duplicate_heading_texts: tuple[str, ...]
     link_observations: tuple[DocumentationLinkRecord, ...]
+    code_block_observations: tuple[DocumentationCodeBlockRecord, ...]
     structure_status: str
 
     def to_json_dict(self) -> dict[str, Any]:
@@ -60,13 +71,16 @@ class DocumentationStructureRecord:
         data["heading_outline"] = [asdict(heading) for heading in self.heading_outline]
         data["duplicate_heading_texts"] = list(self.duplicate_heading_texts)
         data["link_observations"] = [asdict(link) for link in self.link_observations]
+        data["code_block_observations"] = [
+            asdict(code_block) for code_block in self.code_block_observations
+        ]
         return data
 
 
 @dataclass(frozen=True)
 class DocumentationStructureReport:
     documents: tuple[DocumentationStructureRecord, ...]
-    summary: dict[str, int]
+    summary: dict[str, Any]
     boundary: dict[str, bool]
 
     def to_json_dict(self) -> dict[str, Any]:
@@ -103,17 +117,37 @@ def observe_documentation_structure(repo_root: Path) -> DocumentationStructureRe
             for d in documents
             for link in d.link_observations
         ),
+        "code_block_count": sum(len(d.code_block_observations) for d in documents),
+        "unclosed_code_block_count": sum(
+            not code_block.closed
+            for d in documents
+            for code_block in d.code_block_observations
+        ),
+        "code_block_languages": sorted(
+            {
+                code_block.language
+                for d in documents
+                for code_block in d.code_block_observations
+                if code_block.language is not None
+            }
+        ),
     }
     return DocumentationStructureReport(documents, summary, dict(BOUNDARY))
 
 
-def observe_markdown_document(path: Path, repo_root: Path | None = None) -> DocumentationStructureRecord:
+def observe_markdown_document(
+    path: Path, repo_root: Path | None = None
+) -> DocumentationStructureRecord:
     text = path.read_text(encoding="utf-8")
     lines = text.splitlines()
     front_matter_present, keys = _front_matter(lines)
-    heading_outline = tuple(_heading_outline(lines))
+    code_block_observations = tuple(_code_block_observations(lines))
+    code_content_lines = _code_content_line_numbers(code_block_observations, len(lines))
+    heading_outline = tuple(_heading_outline(lines, code_content_lines))
     source_path = _relative_path(path, repo_root)
-    link_observations = tuple(_link_observations(lines, path, source_path, repo_root))
+    link_observations = tuple(
+        _link_observations(lines, path, source_path, repo_root, code_content_lines)
+    )
     title_heading = _first_h1(heading_outline)
     heading_present = title_heading is not None
     return DocumentationStructureRecord(
@@ -128,6 +162,7 @@ def observe_markdown_document(path: Path, repo_root: Path | None = None) -> Docu
         skipped_heading_level_present=_skipped_heading_level_present(heading_outline),
         duplicate_heading_texts=tuple(_duplicate_heading_texts(heading_outline)),
         link_observations=link_observations,
+        code_block_observations=code_block_observations,
         structure_status=_structure_status(front_matter_present, heading_present),
     )
 
@@ -149,6 +184,9 @@ def format_documentation_structure(report: DocumentationStructureReport) -> str:
         f"Internal docs links: {summary['internal_doc_link_count']}",
         f"External links: {summary['external_link_count']}",
         f"Broken local docs links: {summary['broken_local_doc_link_count']}",
+        f"Fenced code blocks: {summary['code_block_count']}",
+        f"Unclosed fenced code blocks: {summary['unclosed_code_block_count']}",
+        f"Fenced code block languages: {_format_languages(summary['code_block_languages'])}",
         "",
         f"Boundary: {BOUNDARY_TEXT}",
     ]
@@ -158,6 +196,86 @@ def format_documentation_structure(report: DocumentationStructureReport) -> str:
         for document in incomplete:
             lines.append(f"- {document.path}: {document.structure_status}")
     return "\n".join(lines)
+
+
+
+def _code_block_observations(lines: list[str]) -> list[DocumentationCodeBlockRecord]:
+    code_blocks: list[DocumentationCodeBlockRecord] = []
+    open_fence: tuple[str, int, str | None, str | None, int] | None = None
+    for line_number, line in enumerate(lines, start=1):
+        match = _FENCE_RE.match(line)
+        if match is None:
+            continue
+        fence = match.group(1)
+        fence_char = fence[0]
+        info_string = _normalize_info_string(match.group(2))
+        if open_fence is None:
+            open_fence = (
+                fence_char,
+                len(fence),
+                info_string,
+                _language(info_string),
+                line_number,
+            )
+            continue
+        open_char, open_length, open_info, open_language, start_line = open_fence
+        if fence_char == open_char and len(fence) >= open_length:
+            code_blocks.append(
+                DocumentationCodeBlockRecord(
+                    fence_type=_fence_type(open_char),
+                    info_string=open_info,
+                    language=open_language,
+                    start_line=start_line,
+                    end_line=line_number,
+                    closed=True,
+                )
+            )
+            open_fence = None
+    if open_fence is not None:
+        open_char, _open_length, open_info, open_language, start_line = open_fence
+        code_blocks.append(
+            DocumentationCodeBlockRecord(
+                fence_type=_fence_type(open_char),
+                info_string=open_info,
+                language=open_language,
+                start_line=start_line,
+                end_line=None,
+                closed=False,
+            )
+        )
+    return code_blocks
+
+
+def _normalize_info_string(raw_info: str) -> str | None:
+    info = raw_info.strip()
+    return info or None
+
+
+def _language(info_string: str | None) -> str | None:
+    if info_string is None:
+        return None
+    language = info_string.split(None, 1)[0].strip().lower()
+    return language or None
+
+
+def _fence_type(fence_char: str) -> str:
+    return "backtick" if fence_char == "`" else "tilde"
+
+
+def _code_content_line_numbers(
+    code_blocks: tuple[DocumentationCodeBlockRecord, ...], line_count: int
+) -> set[int]:
+    line_numbers: set[int] = set()
+    for block in code_blocks:
+        end = block.end_line if block.end_line is not None else line_count + 1
+        line_numbers.update(range(block.start_line + 1, end))
+    return line_numbers
+
+
+def _format_languages(languages: object) -> str:
+    if not languages:
+        return "none"
+    return ", ".join(str(language) for language in languages)
 
 
 def _front_matter(lines: list[str]) -> tuple[bool, list[str]]:
@@ -179,14 +297,20 @@ def _front_matter(lines: list[str]) -> tuple[bool, list[str]]:
 
 
 _ATX_HEADING_RE = re.compile(r"^(#{1,6})(?:[ \t]+|$)(.*)$")
+_FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
 _INLINE_LINK_RE = re.compile(r"(?<!!)\[[^\]\n]+\]\(([^)\s]+)(?:\s+[^)]*)?\)")
 _REFERENCE_LINK_RE = re.compile(r"^\s{0,3}\[[^\]\n]+\]:\s*(\S+)")
 _SCHEME_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")
 
 
-def _heading_outline(lines: list[str]) -> list[DocumentationHeadingRecord]:
+def _heading_outline(
+    lines: list[str], code_content_lines: set[int] | None = None
+) -> list[DocumentationHeadingRecord]:
     headings: list[DocumentationHeadingRecord] = []
+    code_content_lines = code_content_lines or set()
     for line_number, line in enumerate(lines, start=1):
+        if line_number in code_content_lines:
+            continue
         match = _ATX_HEADING_RE.match(line)
         if match is None:
             continue
@@ -250,10 +374,17 @@ def _relative_path(path: Path, repo_root: Path | None) -> str:
 
 
 def _link_observations(
-    lines: list[str], path: Path, source_path: str, repo_root: Path | None
+    lines: list[str],
+    path: Path,
+    source_path: str,
+    repo_root: Path | None,
+    code_content_lines: set[int] | None = None,
 ) -> list[DocumentationLinkRecord]:
     links: list[DocumentationLinkRecord] = []
-    for line in lines:
+    code_content_lines = code_content_lines or set()
+    for line_number, line in enumerate(lines, start=1):
+        if line_number in code_content_lines:
+            continue
         for target in _markdown_link_targets(line):
             raw_target = _normalize_link_target(target)
             if not raw_target:
@@ -300,11 +431,15 @@ def _points_under_docs(target: str, source_path: Path, repo_root: Path | None) -
 def _local_doc_link_is_broken(link: DocumentationLinkRecord, repo_root: Path) -> bool:
     if not link.is_relative or not link.points_under_docs:
         return False
-    resolved = _resolved_local_target(link.raw_target, repo_root / link.source_path, repo_root)
+    resolved = _resolved_local_target(
+        link.raw_target, repo_root / link.source_path, repo_root
+    )
     return resolved is not None and not resolved.exists()
 
 
-def _resolved_local_target(target: str, source_path: Path, repo_root: Path) -> Path | None:
+def _resolved_local_target(
+    target: str, source_path: Path, repo_root: Path
+) -> Path | None:
     target_path = target.split("#", 1)[0].split("?", 1)[0]
     if not target_path:
         return source_path.resolve()

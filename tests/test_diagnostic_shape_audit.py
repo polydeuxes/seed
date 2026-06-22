@@ -46,6 +46,10 @@ def test_matching_registry_declarations_report_consistent_for_current_diagnostic
         _row(rows, "knowledge_reachability", "uses_repo_files").status == "consistent"
     )
     assert (
+        _row(rows, "documentation_structure", "uses_repo_files").status
+        == "consistent"
+    )
+    assert (
         _row(rows, "capability_needs", "reads_diagnostic_facts").status == "consistent"
     )
     assert (
