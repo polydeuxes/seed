@@ -299,6 +299,20 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         cli_flags=("--observation-utilization",),
         repo_file_markers=("PROJECTED_PATHS", "READ_MODEL_PATHS", "DIAGNOSTIC_PATHS"),
     ),
+    "observation_domains": DiagnosticImplementationSpec(
+        name="observation_domains",
+        module_path="seed_runtime/observation_domains.py",
+        build_function="build_observation_domains",
+        format_function="format_observation_domains",
+        json_function="observation_domains_json",
+        cli_flags=("--observation-domains",),
+        repo_file_markers=(
+            "build_observation_inventory",
+            "build_observation_utilization_audit",
+            "build_operational_story",
+        ),
+        diagnostic_fact_read_markers=("build_capability_needs",),
+    ),
     "capability_needs": DiagnosticImplementationSpec(
         name="capability_needs",
         module_path="seed_runtime/capability_needs.py",
