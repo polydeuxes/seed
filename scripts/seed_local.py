@@ -124,6 +124,11 @@ from seed_runtime.observation_inventory import (
     build_observation_inventory,
     format_observation_inventory,
 )
+from seed_runtime.observation_domains import (
+    build_observation_domains,
+    format_observation_domains,
+    observation_domains_json,
+)
 from seed_runtime.observation_utilization import (
     build_observation_utilization_audit,
     format_observation_utilization,
@@ -1161,6 +1166,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="audit where observation predicates participate after collection",
     )
     parser.add_argument(
+        "--observation-domains",
+        nargs="?",
+        const="__all__",
+        metavar="DOMAIN",
+        help="show read-only observation-domain coverage and gap visibility derived from existing evidence",
+    )
+    parser.add_argument(
         "--ops-brief",
         action="store_true",
         help="summarize current operational state from existing read-only audits",
@@ -1995,7 +2007,7 @@ def validate_lifecycle_args(
             "--state-build, --state-build-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --ownership-discrepancies, "
-            "--diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
+            "--diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
             "or --events-only"
         )
     if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
@@ -2102,6 +2114,7 @@ def validate_lifecycle_args(
         or args.emitter_attribution_audit
         or args.observation_inventory
         or args.observation_utilization
+        or args.observation_domains
         or args.ops_brief
         or args.investigation_path
         or args.impact_audit
@@ -2116,7 +2129,7 @@ def validate_lifecycle_args(
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, or --audit-compare, or --projection-shape"
+            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, or --audit-compare, or --projection-shape"
         )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
@@ -6074,6 +6087,15 @@ def main(argv: list[str] | None = None) -> int:
             )
         else:
             print(format_observation_utilization(audit))
+        return 0
+
+    if args.observation_domains:
+        domain = None if args.observation_domains == "__all__" else args.observation_domains
+        report = build_observation_domains(projected_state_from_args(args), domain)
+        if args.json_output:
+            print(json.dumps(observation_domains_json(report), indent=2, sort_keys=True))
+        else:
+            print(format_observation_domains(report))
         return 0
 
     if args.ops_brief:
