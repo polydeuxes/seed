@@ -308,6 +308,15 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         cli_flags=("--capability-needs",),
         diagnostic_fact_read_markers=("diagnostic_run:", "diagnostic_capability_need"),
     ),
+    "capability_relationship": DiagnosticImplementationSpec(
+        name="capability_relationship",
+        module_path="seed_runtime/capability_relationship.py",
+        build_function="build_capability_relationship",
+        format_function="format_capability_relationship",
+        json_function="capability_relationship_json",
+        cli_flags=("--capability-relationship",),
+        diagnostic_fact_read_markers=("build_capability_needs",),
+    ),
     "investigation_path": DiagnosticImplementationSpec(
         name="investigation_path",
         module_path="seed_runtime/investigation_path_audit.py",
