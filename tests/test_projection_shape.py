@@ -76,8 +76,11 @@ def test_projection_shape_authority_boundary_and_unknown_handling():
     stages = _stages()
     assert stages["alias_projection"].authority_boundary == "identity-resolution"
     assert stages["graph_issue_construction"].authority_boundary == "validation-only"
-    assert stages["measurement_evidence_scan"].authority_boundary == "unknown"
-    assert "unknown" in format_projection_shape()
+    assert stages["fact_conflict_handling"].authority_boundary == "explanatory-only"
+    assert stages["measurement_evidence_scan"].authority_boundary == "projection-boundary"
+    output = format_projection_shape()
+    assert "Does Not Influence: unknown" not in output
+    assert "unknown" not in output
 
 
 def test_projection_shape_read_only_no_event_ledger_writes_no_cluster_mutation():
