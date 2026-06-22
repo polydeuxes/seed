@@ -2,17 +2,32 @@
 
 ## Central finding
 
-Repository evidence supports a cautious answer:
+Repository evidence supports a stronger conclusion than the original visibility-only model.
 
 ```text
 artifact visibility exists
 
-but artifact relationships are only partially repository-visible
+artifact-attached structure exists
+
+artifact-to-artifact structure remains mostly human-interpreted
 ```
 
-The current `seed --inquiry-artifacts` surface makes artifact visibility visible.
+The implemented `seed --inquiry-artifacts` surface does more than classify artifacts.
 
-It does not yet make artifact relationships, attachment, lineage, or structure visible as first-class repository output.
+It exposes repeatable relationships between:
+
+```text
+artifact
+    -> visibility class
+
+artifact
+    -> evidence
+
+artifact
+    -> limitation
+```
+
+These relationships are implementation-backed and repository-visible.
 
 ## Current visibility baseline
 
@@ -31,36 +46,91 @@ unsupported_conclusion document_visible
 open_question        document_visible
 ```
 
-This supports artifact visibility.
+Unlike earlier interpretations, the surface also exposes supporting evidence and limitations for every artifact.
 
-It does not by itself support artifact relationship visibility.
+## Three levels of artifact structure
 
-## Implementation-backed artifact relationships today
+### Level 1: Artifact visibility
 
-The strongest implementation-backed relationships are endpoint relationships rather than full inquiry-artifact relationships.
+Repository-visible today.
+
+```text
+artifact
+    -> visibility class
+```
 
 Examples:
 
 ```text
 unknown
-    -> unsupported domain
-
-boundary
-    -> read-only behavior
-
-boundary
-    -> mutation boundary
+    -> repository_visible
 
 pressure
-    -> capability relationship
-
-pressure
-    -> operational meaning
+    -> partially_visible
 ```
 
-These are repository-visible through existing surfaces.
+### Level 2: Artifact-attached structure
 
-However they are not yet evidence that relationships such as:
+Repository-visible today.
+
+```text
+artifact
+    -> evidence
+
+artifact
+    -> limitation
+```
+
+Examples:
+
+```text
+unknown
+    -> diagnostic_inventory
+
+unknown
+    -> diagnostic_shape_audit
+
+unknown
+    -> knowledge_reachability
+
+boundary
+    -> capability_relationship
+
+boundary
+    -> privilege_discovery
+
+pressure
+    -> pressure_audit
+
+pressure
+    -> capability_relationship
+
+pressure
+    -> selection_path
+
+pressure
+    -> reasoning_path
+```
+
+And:
+
+```text
+pressure
+    -> no transformation inference
+
+unknown
+    -> no inquiry movement inference
+```
+
+through limitations.
+
+This is already structure.
+
+### Level 3: Artifact-to-artifact structure
+
+Mostly human-interpreted today.
+
+Examples:
 
 ```text
 gap
@@ -74,54 +144,74 @@ finding
 
 boundary
     -> unknown
+
+finding
+    -> supported conclusion
+
+supported conclusion
+    -> new pressure
 ```
 
-are implementation-backed artifact relationships.
+These appear repeatedly across investigations but are not repository-visible as first-class relationships.
 
-Those richer relationships remain mostly investigation-backed and human-interpreted.
+## Implementation-backed relationships today
 
-## Repository-visible relationships
-
-Current repository-visible relationships include:
+The strongest implementation-backed relationships are:
 
 ```text
 artifact
     -> visibility class
 
-unknown
-    -> repository_visible
+artifact
+    -> evidence
 
-boundary
-    -> repository_visible
-
-pressure
-    -> partially_visible
-
-finding
-    -> partially_visible
-
-gap
-    -> partially_visible
+artifact
+    -> limitation
 ```
 
-and selected endpoint relations inside implementation-backed surfaces:
+This is stronger than a pure label model.
+
+The inquiry-artifacts surface emits artifacts together with supporting evidence and explicit boundaries.
+
+## Repository-visible relationships
+
+Repository-visible relationships include:
 
 ```text
-capability pressure
-    -> operational meaning
+artifact
+    -> visibility class
 
-unsupported domain
-    -> unknown
+artifact
+    -> evidence source
 
-surface behavior
-    -> boundary
+artifact
+    -> limitation
 ```
 
-These are meaningful, but they are not yet full artifact-to-artifact structure.
+Examples:
+
+```text
+unknown
+    -> diagnostic_inventory
+
+unknown
+    -> operational_surface_classification_audit
+
+boundary
+    -> privilege_discovery
+
+pressure
+    -> pressure_audit
+
+gap
+    -> observation_domains
+```
+
+These are directly emitted by implementation-backed output.
 
 ## Human-interpreted relationships
 
-The following relationships currently depend heavily on humans reading investigation chains:
+The following remain primarily investigation-chain relationships:
 
 ```text
 gap
@@ -146,25 +236,35 @@ open question
     -> next investigation
 ```
 
-These appear repeatedly and are useful.
+These relationships remain useful and recurrent.
 
-But current evidence does not show them as repository-visible relationships without prose interpretation.
+However they still depend on human reconstruction.
 
 ## Do inquiry artifacts behave as labels or related units?
 
-Repository evidence supports both, depending on visibility level.
+Repository evidence supports a layered answer.
 
 ### As labels
 
-The `--inquiry-artifacts` surface currently exposes artifact categories and visibility status.
+The surface exposes visibility classes.
 
-That is label-like.
+### As structured units
+
+The surface also exposes:
+
+```text
+artifact
+    -> evidence
+
+artifact
+    -> limitation
+```
+
+This means artifacts already carry attached structure.
 
 ### As related units
 
-Investigation chains repeatedly show artifacts behaving as related units.
-
-Examples:
+Investigation chains continue to show:
 
 ```text
 gap produces pressure
@@ -176,18 +276,67 @@ finding produces boundary
 boundary preserves unknown
 ```
 
-This related-unit behavior is stronger in documents than in implementation-backed surfaces.
+These relationships remain mostly outside repository-visible structure.
+
+## Attachment candidates
+
+The strongest attachment-style behavior already visible is:
+
+```text
+artifact
+    -> evidence
+
+artifact
+    -> limitation
+```
+
+Examples:
+
+```text
+pressure
+    attaches to
+    pressure_audit evidence
+
+boundary
+    attaches to
+    privilege_discovery evidence
+
+unknown
+    attaches to
+    knowledge_reachability evidence
+```
+
+This is evidence for attachment-like structure.
+
+It is not evidence for artifact-to-artifact attachment.
+
+## Lineage candidates
+
+Potential lineage-like behavior remains mostly human-interpreted.
+
+Examples:
+
+```text
+pressure
+    -> finding
+
+finding
+    -> supported conclusion
+
+supported conclusion
+    -> pressure
+```
+
+Repository-visible evidence remains limited.
 
 ## Structural meaning indicators
 
-Evidence that an artifact relationship is structurally meaningful would include:
+Evidence that an artifact relationship is structurally meaningful includes:
 
 ```text
 repeatability
 multiple investigations
 multiple surfaces
-multiple diagnostics
-stable attachment behavior
 stable recurrence
 visibility without prose interpretation
 ```
@@ -195,29 +344,50 @@ visibility without prose interpretation
 Current status:
 
 ```text
-repeatability              supported
-multiple investigations     supported
-multiple surfaces           partially supported
-stable attachment behavior  human-interpreted
-visibility without prose    weak for artifact-to-artifact relationships
+artifact -> visibility      supported
+artifact -> evidence        supported
+artifact -> limitation      supported
+artifact -> artifact        mostly human interpreted
 ```
 
 ## Counterexamples
 
-### Visibility without relationship evidence
+### Visibility without richer structure
 
-The clearest example is:
+```text
+supported_conclusion
+    -> document_visible
+
+open_question
+    -> document_visible
+```
+
+Visibility classification alone does not imply structure.
+
+### Structure without artifact-to-artifact relationships
+
+The inquiry-artifacts surface itself.
+
+It exposes:
 
 ```text
 artifact
-    -> visibility class
+    -> evidence
+
+artifact
+    -> limitation
 ```
 
-This provides useful visibility, but does not prove artifact structure.
+without exposing:
+
+```text
+finding
+    -> boundary
+```
+
+or similar inquiry relationships.
 
 ### Relationships supported by prose only
-
-The strongest examples are:
 
 ```text
 finding
@@ -230,124 +400,99 @@ open question
     -> next investigation
 ```
 
-These relationships are important, but remain document-visible.
-
-### Partial repository relationship evidence
-
-Examples:
-
-```text
-unknown
-    -> unsupported domain
-
-boundary
-    -> read-only behavior
-
-pressure
-    -> capability meaning
-```
-
-These show relationship-like structure, but not a general artifact relationship model.
+remain document-visible.
 
 ## Historical perspective
 
 The current situation resembles:
 
 ```text
-entity visibility
-    before
-relationship visibility
+artifact visibility
+    -> artifact-attached structure
+    -> artifact-to-artifact structure
 ```
 
-or:
+more than:
 
 ```text
 artifact visibility
-    before
-artifact structure
+    -> artifact relationships
 ```
 
-This resembles earlier repository-domain evolution where visibility appeared before richer relationship structure.
-
-That analogy is useful but limited.
-
-It does not imply implementation work.
+The inquiry-artifacts surface appears to have crossed the second boundary already.
 
 ## Important distinctions
 
-### Artifact
-
-A recurring inquiry unit such as unknown, boundary, pressure, finding, or gap.
-
 ### Artifact visibility
 
-Whether that unit is repository-visible, partially visible, or document-visible.
+Classification of visibility.
+
+### Artifact-attached structure
+
+Evidence and limitations attached directly to an artifact.
 
 ### Artifact relationship
 
-A connection between artifacts.
+A relationship between artifacts.
 
 ### Artifact attachment
 
-A local qualifying relationship, such as boundary attaching to finding.
+Local attachment behavior.
 
 ### Artifact lineage
 
-A longer relationship across inquiry movement, such as conclusion leading to new pressure.
+Longer inquiry evolution relationships.
 
 ### Artifact structure
 
-Repeatable relationship, attachment, or lineage behavior that becomes stable enough to be visible beyond prose.
-
-These are not equivalent.
+The combination of repeatable visibility, evidence attachment, limitations, relationships, or lineage.
 
 ## Supported conclusions
 
-1. Repository-visible artifact visibility exists today.
-2. Repository-visible artifact relationships exist only partially today.
-3. The strongest implementation-backed relationships are endpoint relations involving unknown, boundary, and pressure.
-4. Richer artifact-to-artifact relationships remain mostly human-interpreted.
-5. Inquiry artifacts behave as related units in investigation chains, but as mostly labels in the current visibility surface.
-6. Repository evidence supports moving conceptually from artifact visibility toward artifact structure, but does not show that structure as implemented.
-7. The current situation resembles visibility before relationship visibility in earlier repository domains.
+1. Repository-visible artifact visibility exists.
+2. Repository-visible artifact-attached structure exists.
+3. Artifact-to-artifact structure remains mostly human-interpreted.
+4. The strongest implementation-backed relationships are artifact-to-visibility, artifact-to-evidence, and artifact-to-limitation.
+5. Inquiry artifacts behave as more than isolated labels.
+6. The inquiry-artifacts surface already exposes attachment-like structure.
+7. The strongest missing boundary is artifact-to-artifact structure rather than basic artifact structure.
+8. The current situation resembles visibility, then attachment, then relationship visibility.
 
 ## Unsupported conclusions
 
-- Artifact relationships are fully repository-visible today.
-- Attachment is implementation-backed today.
+- Artifact-to-artifact relationships are repository-visible today.
+- Attachment between artifacts is implementation-backed today.
 - Lineage is implementation-backed today.
-- The current inquiry-artifacts surface implements artifact structure.
-- Prose ingestion is required for the next investigation step.
 - Inquiry graphs should be implemented.
-- The candidate relationships are complete or canonical.
+- Linguistic branching is more than an analogy.
+- The identified relationship hierarchy is canonical.
 
 ## Open questions
 
-- Which artifact relationship can become repository-visible first?
-- Is unknown-to-boundary stronger than boundary-to-unknown?
-- Does gap-to-pressure have enough evidence to become structurally meaningful?
-- Are supported conclusions too document-visible to participate in artifact structure today?
-- What distinguishes stable attachment from repeated prose association?
-- Can artifact lineage be visible without inquiry movement visibility?
+- Which artifact-to-artifact relationship can become repository-visible first?
+- Is artifact-to-evidence the foundational attachment relationship?
+- Can partially visible artifacts gain attachment structure before relationship structure?
+- What distinguishes stable attachment from repeated association?
+- Can lineage become visible without movement visibility?
 
 ## Acceptance answers
 
 ### Do repository-visible artifact relationships already exist?
 
-Partially. Endpoint relations involving unknown, boundary, and pressure are visible, but richer artifact-to-artifact relationships remain mostly human-interpreted.
+Yes. Artifact-to-visibility, artifact-to-evidence, and artifact-to-limitation relationships are implementation-backed and repository-visible.
 
 ### Which artifact relationships are implementation-backed?
 
-The strongest are unknown-to-unsupported-domain, boundary-to-read-only or mutation behavior, and pressure-to-capability meaning. Candidate relationships such as gap-to-pressure or finding-to-boundary are not yet implementation-backed as artifact relationships.
+Artifact-to-visibility, artifact-to-evidence, and artifact-to-limitation are the strongest implementation-backed relationships.
 
 ### Which relationships remain human interpreted?
 
-Gap-to-pressure, pressure-to-finding, finding-to-boundary, boundary-to-unknown, finding-to-supported-conclusion, supported-conclusion-to-new-pressure, and open-question-to-next-investigation remain mostly human-interpreted.
+Gap-to-pressure, pressure-to-finding, finding-to-boundary, boundary-to-unknown, finding-to-supported-conclusion, supported-conclusion-to-new-pressure, and open-question-to-next-investigation.
 
 ### Do inquiry artifacts behave more like isolated labels or related units?
 
-The current surface exposes them mostly as labels with visibility classes. Investigation chains show them behaving as related units.
+More like structured units with attached evidence and limitations, though most artifact-to-artifact relationships remain human interpreted.
 
 ### Does repository evidence support moving from artifact visibility toward artifact structure?
 
-Yes, as an investigation direction. Visibility, recurrence, and partial endpoint relationships support the idea, but artifact structure is not currently implementation-backed.
+Yes. The inquiry-artifacts surface already demonstrates artifact-attached structure and suggests a progression toward richer artifact structure.
