@@ -315,3 +315,18 @@ def _row_fixture(diagnostic, field, status):
         observed=False if status == "mismatch" else True,
         status=status,
     )
+
+
+def test_documentation_structure_checked_by_diagnostic_shape_audit():
+    rows = [
+        row
+        for row in build_diagnostic_shape_audit()
+        if row.diagnostic == "documentation_structure"
+    ]
+
+    assert rows
+    fields = {row.field: row for row in rows}
+    assert fields["supports_json"].status == "consistent"
+    assert fields["uses_repo_files"].status == "consistent"
+    assert fields["writes_event_ledger"].status == "consistent"
+    assert fields["mutates_cluster"].status == "consistent"

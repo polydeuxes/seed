@@ -103,6 +103,22 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         json_cli_flags=("--knowledge-reachability-audit-json",),
         repo_file_markers=("repo_root", "repo_paths", "repository"),
     ),
+    "documentation_structure": DiagnosticImplementationSpec(
+        name="documentation_structure",
+        module_path="seed_runtime/documentation_structure.py",
+        build_function="observe_documentation_structure",
+        format_function="format_documentation_structure",
+        json_function="documentation_structure_json",
+        cli_flags=("--documentation-structure",),
+        repo_file_markers=("repo_root", "docs", "glob"),
+        mutation_markers=(
+            ".write_text(",
+            "subprocess.run",
+            "os.remove",
+            "shutil.rmtree",
+            "authorize_execution",
+        ),
+    ),
     "ownership_discrepancies": DiagnosticImplementationSpec(
         name="ownership_discrepancies",
         module_path="seed_runtime/ownership_discrepancies.py",
