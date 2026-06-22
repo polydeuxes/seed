@@ -30,6 +30,9 @@ def test_observes_yaml_front_matter_keys_and_h1_without_values_or_prose(tmp_path
     assert "repository docs" not in json.dumps(document.to_json_dict())
     assert document.heading_present is True
     assert document.title_heading == "Example"
+    assert document.heading_outline[0].level == 1
+    assert document.heading_outline[0].text == "Example"
+    assert document.heading_outline[0].line_number == 5
     assert document.structure_status == "complete"
     payload = report.to_json_dict()
     assert payload["boundary"] == {
@@ -44,6 +47,65 @@ def test_observes_yaml_front_matter_keys_and_h1_without_values_or_prose(tmp_path
     rendered_payload = json.dumps(payload)
     assert "claims authority" not in rendered_payload
     assert "shape meaning" not in rendered_payload
+
+
+def test_heading_outline_records_only_structural_heading_metadata(tmp_path):
+    _write(
+        tmp_path / "docs" / "outline.md",
+        "\n".join(
+            [
+                "---",
+                "status: draft",
+                "---",
+                "# Guide",
+                "",
+                "This paragraph mentions # Not a Heading and claims production purpose.",
+                "### Deep Section",
+                "## Repeated",
+                "###### Leaf",
+                "## Repeated",
+                "#### Skipped Again",
+                "",
+            ]
+        ),
+    )
+
+    document = observe_documentation_structure(tmp_path).documents[0]
+    payload = document.to_json_dict()
+
+    assert payload["heading_outline"] == [
+        {"level": 1, "text": "Guide", "line_number": 4},
+        {"level": 3, "text": "Deep Section", "line_number": 7},
+        {"level": 2, "text": "Repeated", "line_number": 8},
+        {"level": 6, "text": "Leaf", "line_number": 9},
+        {"level": 2, "text": "Repeated", "line_number": 10},
+        {"level": 4, "text": "Skipped Again", "line_number": 11},
+    ]
+    assert document.has_section_headings is True
+    assert document.max_heading_depth == 6
+    assert document.skipped_heading_level_present is True
+    assert document.duplicate_heading_texts == ("Repeated",)
+
+    rendered_payload = json.dumps(payload)
+    assert "Not a Heading" not in rendered_payload
+    assert "production purpose" not in rendered_payload
+
+
+def test_heading_text_is_not_used_to_infer_document_purpose(tmp_path):
+    _write(
+        tmp_path / "docs" / "purpose_words.md",
+        "# Operational Runbook\n\nThis prose says the document governs cluster truth.\n",
+    )
+
+    document = observe_documentation_structure(tmp_path).documents[0]
+    payload = document.to_json_dict()
+
+    assert payload["heading_outline"] == [
+        {"level": 1, "text": "Operational Runbook", "line_number": 1},
+    ]
+    assert "purpose" not in payload
+    assert "document_purpose" not in payload
+    assert "governs cluster truth" not in json.dumps(payload)
 
 
 def test_front_matter_must_start_file_and_missing_heading_status(tmp_path):

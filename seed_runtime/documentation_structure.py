@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -24,17 +25,31 @@ BOUNDARY = {
 
 
 @dataclass(frozen=True)
+class DocumentationHeadingRecord:
+    level: int
+    text: str
+    line_number: int
+
+
+@dataclass(frozen=True)
 class DocumentationStructureRecord:
     path: str
     front_matter_present: bool
     front_matter_keys: tuple[str, ...]
     heading_present: bool
     title_heading: str | None
+    heading_outline: tuple[DocumentationHeadingRecord, ...]
+    has_section_headings: bool
+    max_heading_depth: int
+    skipped_heading_level_present: bool
+    duplicate_heading_texts: tuple[str, ...]
     structure_status: str
 
     def to_json_dict(self) -> dict[str, Any]:
         data = asdict(self)
         data["front_matter_keys"] = list(self.front_matter_keys)
+        data["heading_outline"] = [asdict(heading) for heading in self.heading_outline]
+        data["duplicate_heading_texts"] = list(self.duplicate_heading_texts)
         return data
 
 
@@ -75,7 +90,8 @@ def observe_markdown_document(path: Path, repo_root: Path | None = None) -> Docu
     text = path.read_text(encoding="utf-8")
     lines = text.splitlines()
     front_matter_present, keys = _front_matter(lines)
-    title_heading = _first_h1(lines)
+    heading_outline = tuple(_heading_outline(lines))
+    title_heading = _first_h1(heading_outline)
     heading_present = title_heading is not None
     return DocumentationStructureRecord(
         path=_relative_path(path, repo_root),
@@ -83,6 +99,11 @@ def observe_markdown_document(path: Path, repo_root: Path | None = None) -> Docu
         front_matter_keys=tuple(keys),
         heading_present=heading_present,
         title_heading=title_heading,
+        heading_outline=heading_outline,
+        has_section_headings=any(heading.level > 1 for heading in heading_outline),
+        max_heading_depth=max((heading.level for heading in heading_outline), default=0),
+        skipped_heading_level_present=_skipped_heading_level_present(heading_outline),
+        duplicate_heading_texts=tuple(_duplicate_heading_texts(heading_outline)),
         structure_status=_structure_status(front_matter_present, heading_present),
     )
 
@@ -130,11 +151,53 @@ def _front_matter(lines: list[str]) -> tuple[bool, list[str]]:
     return True, keys
 
 
-def _first_h1(lines: list[str]) -> str | None:
-    for line in lines:
-        if line.startswith("# "):
-            return line[2:].strip()
+_ATX_HEADING_RE = re.compile(r"^(#{1,6})(?:[ \t]+|$)(.*)$")
+
+
+def _heading_outline(lines: list[str]) -> list[DocumentationHeadingRecord]:
+    headings: list[DocumentationHeadingRecord] = []
+    for line_number, line in enumerate(lines, start=1):
+        match = _ATX_HEADING_RE.match(line)
+        if match is None:
+            continue
+        headings.append(
+            DocumentationHeadingRecord(
+                level=len(match.group(1)),
+                text=match.group(2).strip(),
+                line_number=line_number,
+            )
+        )
+    return headings
+
+
+def _first_h1(headings: tuple[DocumentationHeadingRecord, ...]) -> str | None:
+    for heading in headings:
+        if heading.level == 1:
+            return heading.text
     return None
+
+
+def _skipped_heading_level_present(
+    headings: tuple[DocumentationHeadingRecord, ...],
+) -> bool:
+    previous_level = 0
+    for heading in headings:
+        if heading.level > previous_level + 1:
+            return True
+        previous_level = heading.level
+    return False
+
+
+def _duplicate_heading_texts(
+    headings: tuple[DocumentationHeadingRecord, ...],
+) -> list[str]:
+    seen: set[str] = set()
+    duplicates: set[str] = set()
+    for heading in headings:
+        if heading.text in seen:
+            duplicates.add(heading.text)
+        seen.add(heading.text)
+    return sorted(duplicates)
 
 
 def _structure_status(front_matter_present: bool, heading_present: bool) -> str:

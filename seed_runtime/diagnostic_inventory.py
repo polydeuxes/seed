@@ -94,7 +94,7 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         writes_event_ledger=False,
         mutates_cluster=False,
         reads_diagnostic_facts=False,
-        description="Observes structural metadata for top-level repository Markdown docs without interpreting prose, extracting claims, inferring authority, inferring shapes, writing events, or mutating the repository.",
+        description="Observes front matter and structural heading outline metadata for top-level repository Markdown docs without interpreting prose, extracting claims, inferring authority, inferring shapes, writing events, or mutating the repository.",
     ),
     DiagnosticInventoryEntry(
         name="ownership_discrepancies",
