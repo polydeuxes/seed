@@ -178,3 +178,77 @@ def test_cli_json_is_valid_and_does_not_write_event_ledger_or_mutate_repo(tmp_pa
     assert payload["boundary"]["infers_claims"] is False
     assert payload["boundary"]["infers_authority"] is False
     assert payload["boundary"]["infers_shapes"] is False
+
+
+def test_link_observation_records_targets_without_interpreting_text_or_prose(tmp_path):
+    _write(tmp_path / "docs" / "target.md", "# Target\n")
+    _write(
+        tmp_path / "docs" / "links.md",
+        "\n".join(
+            [
+                "# Links",
+                "",
+                "[Authoritative relationship type](target.md) and [External ontology](https://example.test/schema).",
+                "[claim-id]: missing.md",
+                "This prose says target.md is cluster truth and should not appear.",
+                "",
+            ]
+        ),
+    )
+
+    report = observe_documentation_structure(tmp_path)
+    document = next(d for d in report.documents if d.path == "docs/links.md")
+    payload = document.to_json_dict()
+
+    assert payload["link_observations"] == [
+        {
+            "source_path": "docs/links.md",
+            "raw_target": "target.md",
+            "is_relative": True,
+            "points_under_docs": True,
+        },
+        {
+            "source_path": "docs/links.md",
+            "raw_target": "https://example.test/schema",
+            "is_relative": False,
+            "points_under_docs": False,
+        },
+        {
+            "source_path": "docs/links.md",
+            "raw_target": "missing.md",
+            "is_relative": True,
+            "points_under_docs": True,
+        },
+    ]
+    assert report.summary["internal_doc_link_count"] == 2
+    assert report.summary["external_link_count"] == 1
+    assert report.summary["broken_local_doc_link_count"] == 1
+
+    rendered_payload = json.dumps(payload)
+    assert "Authoritative relationship type" not in rendered_payload
+    assert "External ontology" not in rendered_payload
+    assert "claim-id" not in rendered_payload
+    assert "cluster truth" not in rendered_payload
+    assert "relationship" not in rendered_payload
+    assert "ontology" not in rendered_payload
+
+
+def test_link_observation_is_read_only_and_does_not_mutate_files(tmp_path):
+    _write(tmp_path / "docs" / "target.md", "# Target\n")
+    _write(tmp_path / "docs" / "links.md", "# Links\n\n[Read only](target.md)\n")
+    before = {
+        p.relative_to(tmp_path).as_posix(): p.read_text(encoding="utf-8")
+        for p in tmp_path.rglob("*")
+        if p.is_file()
+    }
+
+    report = observe_documentation_structure(tmp_path)
+
+    after = {
+        p.relative_to(tmp_path).as_posix(): p.read_text(encoding="utf-8")
+        for p in tmp_path.rglob("*")
+        if p.is_file()
+    }
+    assert before == after
+    assert report.boundary["mutates_repository"] is False
+    assert report.boundary["writes_event_ledger"] is False
