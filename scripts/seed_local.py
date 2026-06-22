@@ -265,6 +265,11 @@ from seed_runtime.inquiry_orientation import (
     record_inquiry_note,
     select_inquiry_note,
 )
+from seed_runtime.inquiry_artifacts import (
+    build_inquiry_artifacts,
+    format_inquiry_artifacts,
+    inquiry_artifacts_json,
+)
 from seed_runtime.integrity_summary import (
     ProjectionIntegritySummary,
     build_projection_integrity_summary,
@@ -1613,6 +1618,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="render a bounded read-only orientation view for an inquiry note",
     )
     parser.add_argument(
+        "--inquiry-artifacts",
+        action="store_true",
+        help="show read-only repository-visible inquiry artifact classifications",
+    )
+    parser.add_argument(
         "--state-build",
         action="store_true",
         help=(
@@ -1949,6 +1959,7 @@ def validate_lifecycle_args(
         bool(args.decision_context),
         bool(args.candidate_requests),
         bool(args.candidate_routes),
+        bool(args.inquiry_artifacts),
         bool(args.state_build),
         bool(args.state_build_cache_debug),
         bool(args.integrity_summary),
@@ -2003,7 +2014,7 @@ def validate_lifecycle_args(
             "--current-capabilities, --capability-status, --capability-candidates, "
             "--verification-evidence, --capability-verification, "
             "--capability-promotion-readiness, --current-issues, "
-            "--decision-context, --candidate-requests, --candidate-routes, "
+            "--decision-context, --candidate-requests, --candidate-routes, --inquiry-artifacts, "
             "--state-build, --state-build-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --ownership-discrepancies, "
@@ -2125,11 +2136,12 @@ def validate_lifecycle_args(
         or args.privilege_discovery
         or args.capability_relationship
         or args.correlation_audit
+        or args.inquiry_artifacts
         or args.audit_compare
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, or --audit-compare, or --projection-shape"
+            "--capability-needs, --diagnostic-inventory, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, or --audit-compare, or --projection-shape"
         )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
@@ -6090,10 +6102,14 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.observation_domains:
-        domain = None if args.observation_domains == "__all__" else args.observation_domains
+        domain = (
+            None if args.observation_domains == "__all__" else args.observation_domains
+        )
         report = build_observation_domains(projected_state_from_args(args), domain)
         if args.json_output:
-            print(json.dumps(observation_domains_json(report), indent=2, sort_keys=True))
+            print(
+                json.dumps(observation_domains_json(report), indent=2, sort_keys=True)
+            )
         else:
             print(format_observation_domains(report))
         return 0
@@ -6281,6 +6297,14 @@ def main(argv: list[str] | None = None) -> int:
                 sort_keys=True,
             )
         )
+        return 0
+
+    if args.inquiry_artifacts:
+        view = build_inquiry_artifacts()
+        if args.json_output:
+            print(json.dumps(inquiry_artifacts_json(view), indent=2, sort_keys=True))
+        else:
+            print(format_inquiry_artifacts(view))
         return 0
 
     if args.record_inquiry_note is not None:

@@ -511,6 +511,21 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         json_function="projection_shape_json",
         cli_flags=("--projection-shape",),
     ),
+    "inquiry_artifacts": DiagnosticImplementationSpec(
+        name="inquiry_artifacts",
+        module_path="seed_runtime/inquiry_artifacts.py",
+        build_function="build_inquiry_artifacts",
+        format_function="format_inquiry_artifacts",
+        json_function="inquiry_artifacts_json",
+        cli_flags=("--inquiry-artifacts",),
+        mutation_markers=(
+            ".write_text(",
+            "subprocess.run",
+            "os.remove",
+            "shutil.rmtree",
+            "authorize_execution",
+        ),
+    ),
     "privilege_discovery": DiagnosticImplementationSpec(
         name="privilege_discovery",
         module_path="seed_runtime/privilege_discovery.py",
