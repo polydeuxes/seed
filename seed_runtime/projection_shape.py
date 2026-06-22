@@ -152,16 +152,15 @@ PROJECTION_SHAPE_STAGES: tuple[ProjectionShapeStage, ...] = (
         produces=("fact_conflicts",),
         influences=("fact_conflict_views", "integrity_summary"),
         does_not_influence=("facts", "relationships", "entity_type_assertions"),
-        authority_boundary="validation-only",
+        authority_boundary="explanatory-only",
     ),
     ProjectionShapeStage(
         stage="measurement_evidence_scan",
         consumes=("facts",),
-        produces=("all_measurement_evidence_ids",),
+        produces=("measurement_evidence_id_set",),
         influences=("measurement_provenance_pruning",),
-        does_not_influence=("unknown",),
-        authority_boundary="unknown",
-        confidence="weak_evidence_unknown_boundary",
+        does_not_influence=(),
+        authority_boundary="projection-boundary",
     ),
 )
 
@@ -197,10 +196,17 @@ def format_projection_shape(shape: dict[str, object] | None = None) -> str:
         lines.extend(
             [
                 f"  Stage: {stage.stage}",
-                f"    Consumes: {_join(stage.consumes)}",
-                f"    Produces: {_join(stage.produces)}",
-                f"    Influences: {_join(stage.influences)}",
-                f"    Does Not Influence: {_join(stage.does_not_influence)}",
+                f"    Consumes:{_format_values(stage.consumes)}",
+                f"    Produces:{_format_values(stage.produces)}",
+                f"    Influences:{_format_values(stage.influences)}",
+            ]
+        )
+        if stage.does_not_influence:
+            lines.append(
+                f"    Does Not Influence:{_format_values(stage.does_not_influence)}"
+            )
+        lines.extend(
+            [
                 f"    Authority Boundary: {stage.authority_boundary}",
                 f"    Confidence: {stage.confidence}",
             ]
@@ -208,5 +214,9 @@ def format_projection_shape(shape: dict[str, object] | None = None) -> str:
     return "\n".join(lines)
 
 
-def _join(values: tuple[str, ...]) -> str:
-    return ", ".join(values) if values else "none"
+def _format_values(values: tuple[str, ...]) -> str:
+    if not values:
+        return " none"
+    if len(values) == 1:
+        return f" {values[0]}"
+    return "\n" + "\n".join(f"      - {value}" for value in values)
