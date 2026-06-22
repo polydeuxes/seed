@@ -99,6 +99,7 @@ Use this frontier characterization when the question is not only what Seed knows
 * [`repository_orientation_audit.md`](repository_orientation_audit.md) — audit of orientation-related documents and their authority status, unresolved edges, and conceptual neighborhoods.
 * [`repository_navigation_question_surface_discoverability_investigation.md`](repository_navigation_question_surface_discoverability_investigation.md) — investigation of common worker questions, existing self-knowledge surfaces, question-to-surface mappings, discoverability strengths/weaknesses, and whether navigation is emerging as repository self-knowledge without implementing routing behavior.
 * [`reasoning_space_translation_investigation.md`](reasoning_space_translation_investigation.md) — investigation of repository-visible reasoning spaces, existing implicit translation surfaces, manual worker translations, recurring translation patterns, and whether discoverability gaps are often translation gaps without implementing routing, navigation, assistants, or ontology changes.
+* [`context_preservation_surface_investigation.md`](context_preservation_surface_investigation.md) — investigation of whether current translation-oriented self-knowledge surfaces are better explained as context-preserving translations that carry reasoning, selection, reference, operational, component, projection, diagnostic-governance, and authority context without implementation changes.
 
 ## Language / Operator Interface
 
