@@ -137,6 +137,8 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "line_count",
             "code_block",
             "section",
+            "skeleton",
+            "rendered_signature",
         ),
         mutation_markers=(
             ".write_text(",

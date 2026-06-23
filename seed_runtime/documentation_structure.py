@@ -607,6 +607,71 @@ def _skeleton_signature(document: DocumentationStructureRecord) -> str:
     return "|".join(parts) or "none"
 
 
+def _section_skeleton_metrics(document: DocumentationStructureRecord) -> dict[str, int]:
+    heading_levels = [heading.level for heading in document.heading_outline]
+    return {
+        "section_count": sum(heading.level > 1 for heading in document.heading_outline),
+        "max_depth": max(heading_levels, default=0),
+        "h1_count": sum(heading.level == 1 for heading in document.heading_outline),
+        "h2_count": sum(heading.level == 2 for heading in document.heading_outline),
+        "h3_count": sum(heading.level == 3 for heading in document.heading_outline),
+    }
+
+
+def _rendered_skeleton_entries(
+    document: DocumentationStructureRecord,
+) -> tuple[str, ...]:
+    entries: list[str] = []
+    for heading in document.heading_outline:
+        if heading.level not in (2, 3):
+            continue
+        entry = (
+            f"H{heading.level}:{heading.text}" if heading.text else f"H{heading.level}"
+        )
+        if entries and entries[-1] == entry:
+            continue
+        entries.append(entry)
+    return tuple(entries)
+
+
+def _render_skeleton_signature(
+    document: DocumentationStructureRecord, max_entries: int = 8
+) -> str:
+    entries = _rendered_skeleton_entries(document)
+    if not entries:
+        return "none"
+    if len(entries) <= max_entries:
+        return "|".join(entries)
+    omitted = len(entries) - max_entries
+    return f"{'|'.join(entries[:max_entries])}|... +{omitted} more"
+
+
+def _skeleton_signature_rows(
+    documents: tuple[DocumentationStructureRecord, ...], top: int | None
+) -> tuple[dict[str, Any], ...]:
+    counts = Counter(_skeleton_signature(document) for document in documents)
+    representatives = {
+        _skeleton_signature(document): document for document in documents
+    }
+    rows = []
+    for signature, document_count in sorted(
+        counts.items(), key=lambda item: (-item[1], str(item[0]))
+    ):
+        document = representatives[signature]
+        rows.append(
+            {
+                "signature": signature,
+                "rendered_signature": _render_skeleton_signature(document),
+                "document_count": document_count,
+                "docs_count": document_count,
+                **_section_skeleton_metrics(document),
+            }
+        )
+    if top is not None:
+        rows = rows[:top]
+    return tuple(rows)
+
+
 def _common_section_rows(
     section_doc_counts: Counter[str], document_count: int, threshold: int
 ) -> tuple[dict[str, int | str], ...]:
@@ -767,10 +832,7 @@ def _build_recurrence_report(
             code_fence_languages, "language", rare_min, rare_max, limit
         ),
     }
-    skeleton_counts = Counter(_skeleton_signature(document) for document in documents)
-    skeleton_rows = _counter_rows(
-        skeleton_counts, "signature", "document_count", top, 1
-    )
+    skeleton_rows = _skeleton_signature_rows(documents, top)
     section_doc_counts: Counter[str] = Counter()
     for document in documents:
         section_doc_counts.update(
@@ -1358,7 +1420,11 @@ def format_documentation_structure_recurrence(
         )
     elif recurrence.section_skeleton_signatures:
         for row in recurrence.section_skeleton_signatures:
-            lines.append(f"- {row['signature']}: {row['document_count']} docs")
+            lines.append(
+                f"- {row['rendered_signature']}: {row['document_count']} docs; "
+                f"sections={row['section_count']}; max_depth={row['max_depth']}; "
+                f"h1={row['h1_count']}; h2={row['h2_count']}; h3={row['h3_count']}"
+            )
     else:
         lines.append("- none")
     if options.recurrence.missing_common_sections:
