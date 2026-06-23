@@ -1017,6 +1017,7 @@ def test_recurrence_text_top_and_summary_only_controls(tmp_path, monkeypatch, ca
     assert "- Repeat: 2" in output
     assert "- Other: 1" not in output
     assert "Boundary: read only; observes structural recurrence only" in output
+    assert "Section skeleton signatures:" not in output
 
     assert (
         seed_local.main(["--documentation-structure", "--recurrence", "--summary-only"])
@@ -1139,13 +1140,19 @@ def test_recurrence_human_skeleton_signatures_are_compact_structural_visibility(
     monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
 
     assert (
-        seed_local.main(["--documentation-structure", "--recurrence", "--top", "10"])
+        seed_local.main(
+            ["--documentation-structure", "--recurrence", "--skeletons", "--top", "10"]
+        )
         == 0
     )
 
     output = capsys.readouterr().out
-    assert "- none: 1 docs; sections=0; max_depth=1; h1=3; h2=0; h3=0" in output
-    assert "- none: 1 docs; sections=0; max_depth=1; h1=2; h2=0; h3=0" in output
+    assert (
+        "- no H2/H3 sections: 2 docs; sections=0; max_depth=1; h1=5; h2=0; h3=0"
+        in output
+    )
+    assert "    - h1=3: 1 docs; sections=0; max_depth=1; h2=0; h3=0" in output
+    assert "    - h1=2: 1 docs; sections=0; max_depth=1; h2=0; h3=0" in output
     assert "H1|H1|H1" not in output
     assert "H2:Raw Start|H3:Raw Detail|H2:Raw End" in output
     assert "Raw Beginning" not in output
@@ -1165,19 +1172,27 @@ def test_recurrence_human_skeleton_signatures_truncate_but_json_keeps_raw_signat
     _write(tmp_path / "docs" / "long.md", f"# Title\n{headings}")
     monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
 
-    assert seed_local.main(["--documentation-structure", "--recurrence"]) == 0
+    assert (
+        seed_local.main(["--documentation-structure", "--recurrence", "--skeletons"])
+        == 0
+    )
 
     output = capsys.readouterr().out
-    assert "... +4 more" in output
+    assert "... +9 more" in output
     assert "H2:Raw 11" not in output
 
-    assert seed_local.main(["--documentation-structure", "--recurrence", "--json"]) == 0
+    assert (
+        seed_local.main(
+            ["--documentation-structure", "--recurrence", "--skeletons", "--json"]
+        )
+        == 0
+    )
 
     payload = json.loads(capsys.readouterr().out)
     row = payload["recurrence"]["section_skeleton_signatures"][0]
     assert row["signature"].endswith("H2:Raw 11")
     assert "... +4 more" not in row["signature"]
-    assert row["rendered_signature"].endswith("... +4 more")
+    assert row["rendered_signature"].endswith("... +9 more")
     assert row["document_count"] == 1
     assert row["docs_count"] == 1
     assert row["section_count"] == 12
@@ -1186,3 +1201,52 @@ def test_recurrence_human_skeleton_signatures_truncate_but_json_keeps_raw_signat
     assert row["h2_count"] == 12
     assert row["h3_count"] == 0
     assert payload["boundary"]["mutates_repository"] is False
+
+
+def test_recurrence_long_skeletons_truncate_human_but_json_preserves_raw(
+    tmp_path, monkeypatch, capsys
+):
+    headings = "\n".join(f"## Section {index}" for index in range(1, 8))
+    _write(tmp_path / "docs" / "long.md", f"# Long\n{headings}\n")
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    assert (
+        seed_local.main(["--documentation-structure", "--recurrence", "--skeletons"])
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "H2:Section 1|H2:Section 2|H2:Section 3|... +4 more" in output
+    assert "H2:Section 7" not in output
+
+    assert (
+        seed_local.main(
+            ["--documentation-structure", "--recurrence", "--skeletons", "--json"]
+        )
+        == 0
+    )
+    payload = json.loads(capsys.readouterr().out)
+    signatures = payload["recurrence"]["section_skeleton_signatures"]
+    assert signatures[0]["signature"].endswith("H2:Section 7")
+
+
+def test_recurrence_summary_only_skeletons_shows_totals_not_rows(
+    tmp_path, monkeypatch, capsys
+):
+    _write(tmp_path / "docs" / "one.md", "# One\n## Visible\n")
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    assert (
+        seed_local.main(
+            [
+                "--documentation-structure",
+                "--recurrence",
+                "--skeletons",
+                "--summary-only",
+            ]
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "Section skeleton signatures:" in output
+    assert "total distinct signatures:" in output
+    assert "H2:Visible" not in output

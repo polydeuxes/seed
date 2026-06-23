@@ -96,6 +96,7 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
             "--rare",
             "--missing-common-sections",
             "--outliers",
+            "--skeletons",
             "--limit",
             "--top",
             "--summary-only",
