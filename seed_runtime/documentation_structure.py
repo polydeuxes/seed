@@ -75,6 +75,11 @@ class DocumentationStructureRecurrenceOptions:
 
 
 @dataclass(frozen=True)
+class DocumentationStructureDrilldownOptions:
+    where: str | None = None
+
+
+@dataclass(frozen=True)
 class DocumentationStructureOptions:
     selection_filters: DocumentationStructureSelectionFilters = field(
         default_factory=DocumentationStructureSelectionFilters
@@ -87,6 +92,9 @@ class DocumentationStructureOptions:
     )
     recurrence: DocumentationStructureRecurrenceOptions = field(
         default_factory=DocumentationStructureRecurrenceOptions
+    )
+    drilldown: DocumentationStructureDrilldownOptions = field(
+        default_factory=DocumentationStructureDrilldownOptions
     )
 
 
@@ -236,6 +244,32 @@ class DocumentationStructureRecurrenceReport:
 
 
 @dataclass(frozen=True)
+class DocumentationStructureDrilldownMatch:
+    path: str
+    line: int
+    depth: int
+
+
+@dataclass(frozen=True)
+class DocumentationStructureDrilldownReport:
+    category: str
+    key: str
+    occurrences: int
+    documents: int
+    matches: tuple[DocumentationStructureDrilldownMatch, ...]
+
+    def to_json_dict(self) -> dict[str, Any]:
+        return {
+            "category": self.category,
+            "key": self.key,
+            "occurrences": self.occurrences,
+            "documents": self.documents,
+            "matches": [asdict(match) for match in self.matches],
+            "boundary": dict(RECURRENCE_BOUNDARY),
+        }
+
+
+@dataclass(frozen=True)
 class DocumentationStructureReport:
     documents: tuple[DocumentationStructureRecord, ...]
     summary: dict[str, Any]
@@ -244,6 +278,7 @@ class DocumentationStructureReport:
         default_factory=DocumentationStructureDetailExpansions
     )
     recurrence: DocumentationStructureRecurrenceReport | None = None
+    drilldown: DocumentationStructureDrilldownReport | None = None
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
@@ -291,6 +326,13 @@ def observe_documentation_structure(
         if options.recurrence.enabled
         else None
     )
+    drilldown = (
+        _build_drilldown_report(
+            matching_documents, options.drilldown.where, options.output_bounds
+        )
+        if options.drilldown.where is not None
+        else None
+    )
     documents = _bound_documents(documents, repo_root, options.output_bounds)
     summary = _summary(
         matching_documents,
@@ -307,6 +349,7 @@ def observe_documentation_structure(
         dict(BOUNDARY),
         options.detail_expansions,
         recurrence,
+        drilldown,
     )
 
 
@@ -536,6 +579,8 @@ def _document_metrics(raw_bytes: bytes, lines: list[str]) -> dict[str, int | boo
 def documentation_structure_json(
     report: DocumentationStructureReport,
 ) -> dict[str, Any]:
+    if report.drilldown is not None:
+        return report.drilldown.to_json_dict()
     if report.recurrence is not None:
         return report.to_recurrence_json_dict()
     return report.to_json_dict()
@@ -964,11 +1009,61 @@ def _build_recurrence_report(
     )
 
 
+def _parse_drilldown_where(where: str) -> tuple[str, str]:
+    category, separator, key = where.partition(":")
+    if separator != ":" or category != "section-label" or key == "":
+        raise ValueError("--where supports only section-label:<exact label>")
+    return category, key
+
+
+def _build_drilldown_report(
+    documents: tuple[DocumentationStructureRecord, ...],
+    where: str | None,
+    bounds: DocumentationStructureOutputBounds | None = None,
+) -> DocumentationStructureDrilldownReport:
+    if where is None:
+        raise ValueError("--where requires a structural target")
+    category, key = _parse_drilldown_where(where)
+    matches: list[DocumentationStructureDrilldownMatch] = []
+    document_paths: set[str] = set()
+    for document in documents:
+        document_matched = False
+        for section in document.sections:
+            if section.heading_text != key:
+                continue
+            matches.append(
+                DocumentationStructureDrilldownMatch(
+                    path=document.path,
+                    line=section.start_line,
+                    depth=section.heading_level,
+                )
+            )
+            document_matched = True
+        if document_matched:
+            document_paths.add(document.path)
+    emitted_matches: tuple[DocumentationStructureDrilldownMatch, ...]
+    if bounds is not None and bounds.summary_only:
+        emitted_matches = ()
+    elif bounds is not None and bounds.limit is not None:
+        emitted_matches = tuple(matches[: bounds.limit])
+    else:
+        emitted_matches = tuple(matches)
+    return DocumentationStructureDrilldownReport(
+        category=category,
+        key=key,
+        occurrences=len(matches),
+        documents=len(document_paths),
+        matches=emitted_matches,
+    )
+
+
 def format_documentation_structure(
     report: DocumentationStructureReport,
     options: DocumentationStructureOptions | None = None,
 ) -> str:
     options = options or DocumentationStructureOptions()
+    if report.drilldown is not None:
+        return format_documentation_structure_drilldown(report.drilldown, options)
     if report.recurrence is not None:
         return format_documentation_structure_recurrence(report.recurrence, options)
     summary = report.summary
@@ -1409,6 +1504,35 @@ def _resolved_local_target(
     if not target_path:
         return source_path.resolve()
     return (source_path.parent / target_path).resolve()
+
+
+def format_documentation_structure_drilldown(
+    drilldown: DocumentationStructureDrilldownReport,
+    options: DocumentationStructureOptions | None = None,
+) -> str:
+    options = options or DocumentationStructureOptions()
+    lines = [
+        "Documentation Structure Drilldown",
+        "",
+        f"Category: {drilldown.category}",
+        f"Key: {drilldown.key}",
+        "",
+        f"Occurrences: {drilldown.occurrences}",
+        f"Documents: {drilldown.documents}",
+    ]
+    if not options.output_bounds.summary_only:
+        matches = drilldown.matches
+        lines.append("")
+        if matches:
+            for match in matches:
+                lines.append(f"{match.path}:{match.line} depth={match.depth}")
+            omitted = drilldown.occurrences - len(matches)
+            if omitted > 0:
+                lines.append(f"... +{omitted} more")
+        else:
+            lines.append("- none")
+    lines.extend(["", f"Boundary: {RECURRENCE_BOUNDARY_TEXT}"])
+    return "\n".join(lines)
 
 
 def format_documentation_structure_recurrence(

@@ -111,6 +111,7 @@ from seed_runtime.diagnostic_inventory import (
 )
 from seed_runtime.documentation_structure import (
     DocumentationStructureDetailExpansions,
+    DocumentationStructureDrilldownOptions,
     DocumentationStructureOptions,
     DocumentationStructureOutputBounds,
     DocumentationStructureRecurrenceOptions,
@@ -1126,6 +1127,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--skeletons",
         action="store_true",
         help="with --documentation-structure --recurrence, include section skeleton signature rows",
+    )
+    documentation_detail_group.add_argument(
+        "--where",
+        metavar="CATEGORY:KEY",
+        help="with --documentation-structure, drill down to exact structural occurrences; supports section-label:<label>",
     )
 
     documentation_output_group = parser.add_argument_group(
@@ -2222,12 +2228,13 @@ def validate_lifecycle_args(
             args.rare,
             args.missing_common_sections,
             args.outliers,
+            args.where is not None,
         )
     )
     if documentation_structure_filter_requested and not args.documentation_structure:
         parser.error(
             "--document, --missing-front-matter, --missing-trailing-newline, "
-            "--empty-sections, --links, --code-fences, --sections, --recurrence, --rare, --missing-common-sections, --outliers, --limit, "
+            "--empty-sections, --links, --code-fences, --sections, --recurrence, --rare, --missing-common-sections, --outliers, --where, --limit, "
             "--top, --summary-only, --min-count, and --max-count require "
             "--documentation-structure"
         )
@@ -6125,6 +6132,7 @@ def main(argv: list[str] | None = None) -> int:
                 outliers=args.outliers,
                 skeletons=args.skeletons,
             ),
+            drilldown=DocumentationStructureDrilldownOptions(where=args.where),
         )
         try:
             report = observe_documentation_structure(REPO_ROOT, options, args.document)

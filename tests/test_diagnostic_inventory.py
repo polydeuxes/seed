@@ -93,6 +93,7 @@ def test_current_diagnostic_shapes_match_implementation_authority():
         "--missing-common-sections",
         "--outliers",
         "--skeletons",
+        "--where",
         "--limit",
         "--top",
         "--summary-only",
@@ -101,7 +102,7 @@ def test_current_diagnostic_shapes_match_implementation_authority():
     )
     assert _entry("documentation_structure").uses_repo_files
     assert (
-        "corpus-level structural recurrence"
+        "exact section-label structural drilldown"
         in _entry("documentation_structure").description
     )
     assert (
