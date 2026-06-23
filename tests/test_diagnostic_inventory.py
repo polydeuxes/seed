@@ -88,13 +88,15 @@ def test_current_diagnostic_shapes_match_implementation_authority():
         "--sections",
         "--links",
         "--code-fences",
+        "--recurrence",
         "--limit",
         "--top",
         "--summary-only",
     )
     assert _entry("documentation_structure").uses_repo_files
     assert (
-        "fenced code block structure" in _entry("documentation_structure").description
+        "corpus-level structural recurrence"
+        in _entry("documentation_structure").description
     )
     assert (
         "without parsing code contents" in _entry("documentation_structure").description

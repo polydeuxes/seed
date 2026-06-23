@@ -812,10 +812,7 @@ def test_documentation_structure_limit_bounds_document_output(
     _write(tmp_path / "docs" / "c.md", "# C\n")
     monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
 
-    assert (
-        seed_local.main(["--documentation-structure", "--limit", "2", "--json"])
-        == 0
-    )
+    assert seed_local.main(["--documentation-structure", "--limit", "2", "--json"]) == 0
 
     payload = json.loads(capsys.readouterr().out)
     assert [document["path"] for document in payload["documents"]] == [
@@ -841,9 +838,7 @@ def test_documentation_structure_top_prioritizes_structural_offenders(
     assert seed_local.main(["--documentation-structure", "--top", "1", "--json"]) == 0
 
     payload = json.loads(capsys.readouterr().out)
-    assert [document["path"] for document in payload["documents"]] == [
-        "docs/broken.md"
-    ]
+    assert [document["path"] for document in payload["documents"]] == ["docs/broken.md"]
     assert payload["summary"]["matching_documents"] == 3
     assert payload["summary"]["output_documents"] == 1
     assert payload["summary"]["top"] == 1
@@ -886,3 +881,100 @@ def test_documentation_structure_output_bounds_require_surface():
             assert exc.code == 2
         else:  # pragma: no cover - defensive assertion
             raise AssertionError(f"{flag} should require --documentation-structure")
+
+
+def test_recurrence_counts_are_structural_raw_and_json_boundary(
+    tmp_path, monkeypatch, capsys
+):
+    _write(tmp_path / "docs" / "target.md", "# Target\n")
+    _write(
+        tmp_path / "docs" / "alpha.md",
+        "---\nstatus: draft\nscope: secret meaning\n---\n# Alpha\n\n## Findings\nProse claims authority and ontology promotion.\n\n```bash\necho hi\n```\n\n[doc](target.md) [external](https://example.test)\n",
+    )
+    _write(
+        tmp_path / "docs" / "beta.md",
+        "---\nstatus: final\ncreated: 2026-01-01\n---\n# Beta\n\n## Findings\nNo claim should be extracted.\n\n```yaml\na: b\n```\n\n[missing](missing.md)\n",
+    )
+    before = {
+        p.relative_to(tmp_path).as_posix(): p.read_text(encoding="utf-8")
+        for p in tmp_path.rglob("*")
+        if p.is_file()
+    }
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    assert seed_local.main(["--documentation-structure", "--recurrence", "--json"]) == 0
+
+    after = {
+        p.relative_to(tmp_path).as_posix(): p.read_text(encoding="utf-8")
+        for p in tmp_path.rglob("*")
+        if p.is_file()
+    }
+    payload = json.loads(capsys.readouterr().out)
+    assert before == after
+    assert payload["documents"] == 3
+    recurrence = payload["recurrence"]
+    assert {row["label"]: row["count"] for row in recurrence["section_labels"]}[
+        "Findings"
+    ] == 2
+    assert {row["key"]: row["count"] for row in recurrence["front_matter_keys"]} == {
+        "status": 2,
+        "scope": 1,
+        "created": 1,
+    }
+    assert {row["depth"]: row["count"] for row in recurrence["heading_depths"]} == {
+        1: 3,
+        2: 2,
+    }
+    assert {
+        row["language"]: row["count"] for row in recurrence["code_fence_languages"]
+    } == {"bash": 1, "yaml": 1}
+    assert recurrence["link_target_classes"] == {
+        "internal_docs_links": 2,
+        "external_links": 1,
+        "broken_local_docs_links": 1,
+    }
+    rendered = json.dumps(payload)
+    assert "secret meaning" not in rendered
+    assert "claims authority" not in rendered
+    assert "No claim" not in rendered
+    assert payload["boundary"] == {
+        "read_only": True,
+        "prose_interpretation": False,
+        "claim_extraction": False,
+        "authority_inference": False,
+        "shape_inference": False,
+        "ontology_promotion": False,
+        "writes_event_ledger": False,
+        "mutates_repository": False,
+    }
+
+
+def test_recurrence_text_top_and_summary_only_controls(tmp_path, monkeypatch, capsys):
+    _write(
+        tmp_path / "docs" / "one.md",
+        "---\na: 1\n---\n# One\n## Repeat\n```text\nx\n```\n",
+    )
+    _write(
+        tmp_path / "docs" / "two.md",
+        "---\nb: 2\n---\n# Two\n## Repeat\n## Other\n```bash\nx\n```\n",
+    )
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    assert (
+        seed_local.main(["--documentation-structure", "--recurrence", "--top", "1"])
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "Documentation Structure Recurrence" in output
+    assert "- Repeat: 2" in output
+    assert "- Other: 1" not in output
+    assert "Boundary: read only; observes structural recurrence only" in output
+
+    assert (
+        seed_local.main(["--documentation-structure", "--recurrence", "--summary-only"])
+        == 0
+    )
+    summary_output = capsys.readouterr().out
+    assert "distinct entries:" in summary_output
+    assert "- Repeat: 2" not in summary_output
+    assert "- depth 1:" not in summary_output
