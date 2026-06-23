@@ -902,7 +902,12 @@ def test_recurrence_counts_are_structural_raw_and_json_boundary(
     }
     monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
 
-    assert seed_local.main(["--documentation-structure", "--recurrence", "--json"]) == 0
+    assert (
+        seed_local.main(
+            ["--documentation-structure", "--recurrence", "--min-count", "1", "--json"]
+        )
+        == 0
+    )
 
     after = {
         p.relative_to(tmp_path).as_posix(): p.read_text(encoding="utf-8")
@@ -913,6 +918,16 @@ def test_recurrence_counts_are_structural_raw_and_json_boundary(
     assert before == after
     assert payload["documents"] == 3
     recurrence = payload["recurrence"]
+    assert recurrence["applied_min_count"] == {
+        "section_labels": 1,
+        "front_matter_keys": 1,
+        "heading_depths": 1,
+        "code_fence_languages": 1,
+    }
+    assert recurrence["itemized_summaries"]["section_labels"] == {
+        "total_distinct_entries": 4,
+        "entries_at_or_above_min_count": 4,
+    }
     assert {row["label"]: row["count"] for row in recurrence["section_labels"]}[
         "Findings"
     ] == 2
@@ -949,6 +964,39 @@ def test_recurrence_counts_are_structural_raw_and_json_boundary(
     }
 
 
+def test_recurrence_min_count_filters_itemized_groups_not_link_totals(
+    tmp_path, monkeypatch, capsys
+):
+    _write(tmp_path / "docs" / "target.md", "# Target\n")
+    _write(
+        tmp_path / "docs" / "one.md",
+        "---\nstatus: draft\nsolo: yes\n---\n# One\n## Repeat\n```text\nx\n```\n[ok](target.md) [external](https://example.test)\n",
+    )
+    _write(
+        tmp_path / "docs" / "two.md",
+        "---\nstatus: final\n---\n# Two\n## Repeat\n## Solo\n```bash\nx\n```\n[missing](missing.md)\n",
+    )
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    assert (
+        seed_local.main(
+            ["--documentation-structure", "--recurrence", "--min-count", "2", "--json"]
+        )
+        == 0
+    )
+
+    recurrence = json.loads(capsys.readouterr().out)["recurrence"]
+    assert {row["label"] for row in recurrence["section_labels"]} == {"Repeat"}
+    assert {row["key"] for row in recurrence["front_matter_keys"]} == {"status"}
+    assert {row["depth"] for row in recurrence["heading_depths"]} == {1, 2}
+    assert recurrence["code_fence_languages"] == []
+    assert recurrence["link_target_classes"] == {
+        "internal_docs_links": 2,
+        "external_links": 1,
+        "broken_local_docs_links": 1,
+    }
+
+
 def test_recurrence_text_top_and_summary_only_controls(tmp_path, monkeypatch, capsys):
     _write(
         tmp_path / "docs" / "one.md",
@@ -975,6 +1023,8 @@ def test_recurrence_text_top_and_summary_only_controls(tmp_path, monkeypatch, ca
         == 0
     )
     summary_output = capsys.readouterr().out
-    assert "distinct entries:" in summary_output
+    assert "total distinct entries:" in summary_output
+    assert "entries at or above min_count 2:" in summary_output
+    assert "entries at or above min_count 1:" in summary_output
     assert "- Repeat: 2" not in summary_output
     assert "- depth 1:" not in summary_output

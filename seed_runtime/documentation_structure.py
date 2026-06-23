@@ -61,6 +61,7 @@ class DocumentationStructureOutputBounds:
     limit: int | None = None
     top: int | None = None
     summary_only: bool = False
+    min_count: int | None = None
 
 
 @dataclass(frozen=True)
@@ -189,11 +190,17 @@ class DocumentationStructureRecurrenceReport:
     heading_depths: tuple[dict[str, int], ...]
     code_fence_languages: tuple[dict[str, int | str], ...]
     link_target_classes: dict[str, int]
+    applied_min_count: dict[str, int]
+    itemized_summaries: dict[str, dict[str, int]]
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
             "documents": self.documents,
             "recurrence": {
+                "applied_min_count": dict(self.applied_min_count),
+                "itemized_summaries": {
+                    key: dict(value) for key, value in self.itemized_summaries.items()
+                },
                 "section_labels": list(self.section_labels),
                 "front_matter_keys": list(self.front_matter_keys),
                 "heading_depths": list(self.heading_depths),
@@ -511,13 +518,18 @@ def documentation_structure_json(
 
 
 def _counter_rows(
-    counter: Counter[Any], name: str, count_name: str, top: int | None
+    counter: Counter[Any],
+    name: str,
+    count_name: str,
+    top: int | None,
+    min_count: int = 1,
 ) -> tuple[dict[str, Any], ...]:
     rows = [
         {name: key, count_name: count}
         for key, count in sorted(
             counter.items(), key=lambda item: (-item[1], str(item[0]))
         )
+        if count >= min_count
     ]
     if top is not None:
         rows = rows[:top]
@@ -530,6 +542,17 @@ def _build_recurrence_report(
     bounds: DocumentationStructureOutputBounds | None = None,
 ) -> DocumentationStructureRecurrenceReport:
     top = bounds.top if bounds is not None else None
+    explicit_min_count = bounds.min_count if bounds is not None else None
+    applied_min_count = {
+        "section_labels": explicit_min_count if explicit_min_count is not None else 2,
+        "front_matter_keys": (
+            explicit_min_count if explicit_min_count is not None else 1
+        ),
+        "heading_depths": explicit_min_count if explicit_min_count is not None else 1,
+        "code_fence_languages": (
+            explicit_min_count if explicit_min_count is not None else 1
+        ),
+    }
     section_labels: Counter[str] = Counter(
         section.heading_text for document in documents for section in document.sections
     )
@@ -544,6 +567,21 @@ def _build_recurrence_report(
         for document in documents
         for code_block in document.code_block_observations
     )
+    itemized_counters: dict[str, Counter[Any]] = {
+        "section_labels": section_labels,
+        "front_matter_keys": front_matter_keys,
+        "heading_depths": heading_depths,
+        "code_fence_languages": code_fence_languages,
+    }
+    itemized_summaries = {
+        key: {
+            "total_distinct_entries": len(counter),
+            "entries_at_or_above_min_count": sum(
+                count >= applied_min_count[key] for count in counter.values()
+            ),
+        }
+        for key, counter in itemized_counters.items()
+    }
     link_target_classes = {
         "internal_docs_links": sum(
             link.points_under_docs
@@ -563,13 +601,29 @@ def _build_recurrence_report(
     }
     return DocumentationStructureRecurrenceReport(
         documents=len(documents),
-        section_labels=_counter_rows(section_labels, "label", "count", top),
-        front_matter_keys=_counter_rows(front_matter_keys, "key", "count", top),
-        heading_depths=_counter_rows(heading_depths, "depth", "count", top),
+        section_labels=_counter_rows(
+            section_labels, "label", "count", top, applied_min_count["section_labels"]
+        ),
+        front_matter_keys=_counter_rows(
+            front_matter_keys,
+            "key",
+            "count",
+            top,
+            applied_min_count["front_matter_keys"],
+        ),
+        heading_depths=_counter_rows(
+            heading_depths, "depth", "count", top, applied_min_count["heading_depths"]
+        ),
         code_fence_languages=_counter_rows(
-            code_fence_languages, "language", "count", top
+            code_fence_languages,
+            "language",
+            "count",
+            top,
+            applied_min_count["code_fence_languages"],
         ),
         link_target_classes=link_target_classes,
+        applied_min_count=applied_min_count,
+        itemized_summaries=itemized_summaries,
     )
 
 
@@ -1031,15 +1085,28 @@ def format_documentation_structure_recurrence(
         f"Documents: {recurrence.documents}",
     ]
     groups = (
-        ("Section labels", recurrence.section_labels, "label"),
-        ("Front matter keys", recurrence.front_matter_keys, "key"),
-        ("Heading depths", recurrence.heading_depths, "depth"),
-        ("Code fence languages", recurrence.code_fence_languages, "language"),
+        ("Section labels", "section_labels", recurrence.section_labels, "label"),
+        ("Front matter keys", "front_matter_keys", recurrence.front_matter_keys, "key"),
+        ("Heading depths", "heading_depths", recurrence.heading_depths, "depth"),
+        (
+            "Code fence languages",
+            "code_fence_languages",
+            recurrence.code_fence_languages,
+            "language",
+        ),
     )
-    for title, rows, key_name in groups:
+    for title, group_key, rows, key_name in groups:
         lines.extend(["", f"{title}:"])
         if options.output_bounds.summary_only:
-            lines.append(f"- distinct entries: {len(rows)}")
+            summary = recurrence.itemized_summaries[group_key]
+            lines.append(
+                f"- total distinct entries: {summary['total_distinct_entries']}"
+            )
+            lines.append(
+                "- entries at or above min_count "
+                f"{recurrence.applied_min_count[group_key]}: "
+                f"{summary['entries_at_or_above_min_count']}"
+            )
             continue
         if rows:
             for row in rows:
