@@ -729,3 +729,76 @@ def test_documentation_structure_document_flag_is_rejected_without_surface():
         assert exc.code == 2
     else:  # pragma: no cover - defensive assertion
         raise AssertionError("--document should require --documentation-structure")
+
+
+def test_documentation_structure_filters_select_without_detail_expansion_or_semantics(
+    tmp_path, monkeypatch, capsys
+):
+    _write(
+        tmp_path / "docs" / "missing_front.md",
+        "# Operational Truth\n\n[Hidden](target.md)\n\n```python\nprint('semantic claim')\n```\n",
+    )
+    _write(tmp_path / "docs" / "target.md", "---\nstatus: ok\n---\n# Target\n")
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    assert (
+        seed_local.main(
+            ["--documentation-structure", "--missing-front-matter", "--json"]
+        )
+        == 0
+    )
+
+    payload = json.loads(capsys.readouterr().out)
+    assert [document["path"] for document in payload["documents"]] == [
+        "docs/missing_front.md"
+    ]
+    assert payload["summary"]["total_documents"] == 1
+    assert payload["summary"]["selected_documents"] == 1
+    assert payload["summary"]["total_available_documents"] == 2
+    document = payload["documents"][0]
+    assert "sections" not in document
+    assert "link_observations" not in document
+    assert "code_block_observations" not in document
+    rendered_payload = json.dumps(payload)
+    assert "semantic claim" not in rendered_payload
+    assert "document_purpose" not in rendered_payload
+    assert payload["boundary"]["interprets_prose"] is False
+    assert payload["boundary"]["infers_claims"] is False
+    assert payload["boundary"]["infers_authority"] is False
+
+
+def test_documentation_structure_detail_expansions_do_not_select_documents(
+    tmp_path, monkeypatch, capsys
+):
+    _write(tmp_path / "docs" / "plain.md", "# Plain\n")
+    _write(
+        tmp_path / "docs" / "details.md",
+        "# Details\n\n## Child\n\n[Target](target.md)\n\n```text\nnot interpreted\n```\n",
+    )
+    _write(tmp_path / "docs" / "target.md", "# Target\n")
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    assert (
+        seed_local.main(
+            [
+                "--documentation-structure",
+                "--sections",
+                "--links",
+                "--code-fences",
+                "--json",
+            ]
+        )
+        == 0
+    )
+
+    payload = json.loads(capsys.readouterr().out)
+    assert [document["path"] for document in payload["documents"]] == [
+        "docs/details.md",
+        "docs/plain.md",
+        "docs/target.md",
+    ]
+    details = next(d for d in payload["documents"] if d["path"] == "docs/details.md")
+    assert details["sections"]
+    assert details["link_observations"]
+    assert details["code_block_observations"]
+    assert payload["boundary"]["interprets_prose"] is False

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -25,13 +25,27 @@ BOUNDARY = {
 
 
 @dataclass(frozen=True)
-class DocumentationStructureFilters:
+class DocumentationStructureSelectionFilters:
     missing_front_matter: bool = False
     missing_trailing_newline: bool = False
     empty_sections: bool = False
+
+
+@dataclass(frozen=True)
+class DocumentationStructureDetailExpansions:
+    include_sections: bool = False
     include_links: bool = False
     include_code_fences: bool = False
-    include_sections: bool = False
+
+
+@dataclass(frozen=True)
+class DocumentationStructureOptions:
+    selection_filters: DocumentationStructureSelectionFilters = field(
+        default_factory=DocumentationStructureSelectionFilters
+    )
+    detail_expansions: DocumentationStructureDetailExpansions = field(
+        default_factory=DocumentationStructureDetailExpansions
+    )
 
 
 @dataclass(frozen=True)
@@ -95,22 +109,37 @@ class DocumentationStructureRecord:
     code_block_observations: tuple[DocumentationCodeBlockRecord, ...]
     structure_status: str
 
-    def to_json_dict(self) -> dict[str, Any]:
+    def to_json_dict(
+        self,
+        detail_expansions: DocumentationStructureDetailExpansions | None = None,
+    ) -> dict[str, Any]:
+        detail_expansions = detail_expansions or DocumentationStructureDetailExpansions(
+            include_sections=True, include_links=True, include_code_fences=True
+        )
         data = asdict(self)
         data["front_matter_keys"] = list(self.front_matter_keys)
         data["heading_outline"] = [asdict(heading) for heading in self.heading_outline]
         data["duplicate_heading_texts"] = list(self.duplicate_heading_texts)
-        data["sections"] = [
-            {
-                **asdict(section),
-                "parent_heading_path": list(section.parent_heading_path),
-            }
-            for section in self.sections
-        ]
-        data["link_observations"] = [asdict(link) for link in self.link_observations]
-        data["code_block_observations"] = [
-            asdict(code_block) for code_block in self.code_block_observations
-        ]
+        if detail_expansions.include_sections:
+            data["sections"] = [
+                {
+                    **asdict(section),
+                    "parent_heading_path": list(section.parent_heading_path),
+                }
+                for section in self.sections
+            ]
+        else:
+            data.pop("sections", None)
+        if detail_expansions.include_links:
+            data["link_observations"] = [asdict(link) for link in self.link_observations]
+        else:
+            data.pop("link_observations", None)
+        if detail_expansions.include_code_fences:
+            data["code_block_observations"] = [
+                asdict(code_block) for code_block in self.code_block_observations
+            ]
+        else:
+            data.pop("code_block_observations", None)
         return data
 
 
@@ -119,10 +148,16 @@ class DocumentationStructureReport:
     documents: tuple[DocumentationStructureRecord, ...]
     summary: dict[str, Any]
     boundary: dict[str, bool]
+    detail_expansions: DocumentationStructureDetailExpansions = field(
+        default_factory=DocumentationStructureDetailExpansions
+    )
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
-            "documents": [document.to_json_dict() for document in self.documents],
+            "documents": [
+                document.to_json_dict(self.detail_expansions)
+                for document in self.documents
+            ],
             "summary": dict(self.summary),
             "boundary": dict(self.boundary),
         }
@@ -130,7 +165,7 @@ class DocumentationStructureReport:
 
 def observe_documentation_structure(
     repo_root: Path,
-    filters: DocumentationStructureFilters | None = None,
+    options: DocumentationStructureOptions | None = None,
     document: str | None = None,
 ) -> DocumentationStructureReport:
     """Observe structural metadata for allowlisted top-level docs/*.md files."""
@@ -145,9 +180,14 @@ def observe_documentation_structure(
     documents = tuple(
         observe_markdown_document(path, repo_root) for path in selected_paths
     )
-    documents = _filter_documents(documents, filters)
+    options = options or DocumentationStructureOptions()
+    all_document_count = len(documents)
+    documents = _filter_documents(documents, options.selection_filters)
     return DocumentationStructureReport(
-        documents, _summary(documents, repo_root, document), dict(BOUNDARY)
+        documents,
+        _summary(documents, repo_root, document, all_document_count),
+        dict(BOUNDARY),
+        options.detail_expansions,
     )
 
 
@@ -177,7 +217,7 @@ def _resolve_document_selection(repo_root: Path, document: str) -> Path:
 
 def _filter_documents(
     documents: tuple[DocumentationStructureRecord, ...],
-    filters: DocumentationStructureFilters | None,
+    filters: DocumentationStructureSelectionFilters | None,
 ) -> tuple[DocumentationStructureRecord, ...]:
     if filters is None:
         return documents
@@ -195,9 +235,16 @@ def _summary(
     documents: tuple[DocumentationStructureRecord, ...],
     repo_root: Path,
     selected_document: str | None = None,
+    total_available_documents: int | None = None,
 ) -> dict[str, Any]:
     summary = {
         "total_documents": len(documents),
+        "selected_documents": len(documents),
+        "total_available_documents": (
+            total_available_documents
+            if total_available_documents is not None
+            else len(documents)
+        ),
         "total_lines": sum(d.line_count for d in documents),
         "total_bytes": sum(d.byte_count for d in documents),
         "blank_line_count": sum(d.blank_line_count for d in documents),
@@ -318,7 +365,7 @@ def documentation_structure_json(
 
 def format_documentation_structure(
     report: DocumentationStructureReport,
-    filters: DocumentationStructureFilters | None = None,
+    options: DocumentationStructureOptions | None = None,
 ) -> str:
     summary = report.summary
     lines = [
@@ -360,7 +407,9 @@ def format_documentation_structure(
         lines.extend(["", "Incomplete documents:"])
         for document in incomplete:
             lines.append(f"- {document.path}: {document.structure_status}")
-    filters = filters or DocumentationStructureFilters()
+    options = options or DocumentationStructureOptions()
+    filters = options.selection_filters
+    details = options.detail_expansions
     if (
         filters.missing_front_matter
         or filters.missing_trailing_newline
@@ -372,11 +421,11 @@ def format_documentation_structure(
                 lines.append(f"- {document.path}: {document.structure_status}")
         else:
             lines.append("- none")
-    if filters.include_sections or filters.empty_sections:
+    if details.include_sections:
         lines.extend(_format_section_details(report))
-    if filters.include_links:
+    if details.include_links:
         lines.extend(_format_link_details(report))
-    if filters.include_code_fences:
+    if details.include_code_fences:
         lines.extend(_format_code_fence_details(report))
     return "\n".join(lines)
 
