@@ -115,9 +115,9 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "--missing-front-matter",
             "--missing-trailing-newline",
             "--empty-sections",
+            "--sections",
             "--links",
             "--code-fences",
-            "--sections",
         ),
         repo_file_markers=(
             "repo_root",

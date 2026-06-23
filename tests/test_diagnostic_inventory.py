@@ -85,9 +85,9 @@ def test_current_diagnostic_shapes_match_implementation_authority():
         "--missing-front-matter",
         "--missing-trailing-newline",
         "--empty-sections",
+        "--sections",
         "--links",
         "--code-fences",
-        "--sections",
     )
     assert _entry("documentation_structure").uses_repo_files
     assert (
