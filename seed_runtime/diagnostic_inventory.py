@@ -83,7 +83,15 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
     ),
     DiagnosticInventoryEntry(
         name="documentation_structure",
-        cli_flags=("--documentation-structure",),
+        cli_flags=(
+            "--documentation-structure",
+            "--missing-front-matter",
+            "--missing-trailing-newline",
+            "--empty-sections",
+            "--links",
+            "--code-fences",
+            "--sections",
+        ),
         uses_projected_state=False,
         uses_repo_files=True,
         supports_json=True,

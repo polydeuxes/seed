@@ -110,6 +110,7 @@ from seed_runtime.diagnostic_inventory import (
     format_diagnostic_inventory,
 )
 from seed_runtime.documentation_structure import (
+    DocumentationStructureFilters,
     documentation_structure_json,
     format_documentation_structure,
     observe_documentation_structure,
@@ -1050,6 +1051,36 @@ def build_parser() -> argparse.ArgumentParser:
         "--documentation-structure",
         action="store_true",
         help="observe read-only structural metadata for top-level repository Markdown docs",
+    )
+    parser.add_argument(
+        "--missing-front-matter",
+        action="store_true",
+        help="limit --documentation-structure to docs missing YAML front matter",
+    )
+    parser.add_argument(
+        "--missing-trailing-newline",
+        action="store_true",
+        help="limit --documentation-structure to docs without a trailing newline",
+    )
+    parser.add_argument(
+        "--empty-sections",
+        action="store_true",
+        help="limit --documentation-structure to docs with structurally empty sections",
+    )
+    parser.add_argument(
+        "--links",
+        action="store_true",
+        help="include link observation blocks in --documentation-structure output",
+    )
+    parser.add_argument(
+        "--code-fences",
+        action="store_true",
+        help="include fenced code block observation blocks in --documentation-structure output",
+    )
+    parser.add_argument(
+        "--sections",
+        action="store_true",
+        help="include section inventory blocks in --documentation-structure output",
     )
     parser.add_argument(
         "--diagnostic-inventory",
@@ -2087,6 +2118,21 @@ def validate_lifecycle_args(
         parser.error("confidence tier filter requires --operational-graph-confidence")
     if args.exclude_aggregate and not args.operational_graph_confidence:
         parser.error("--exclude-aggregate requires --operational-graph-confidence")
+    documentation_structure_filter_requested = any(
+        (
+            args.missing_front_matter,
+            args.missing_trailing_newline,
+            args.empty_sections,
+            args.links,
+            args.code_fences,
+            args.sections,
+        )
+    )
+    if documentation_structure_filter_requested and not args.documentation_structure:
+        parser.error(
+            "--missing-front-matter, --missing-trailing-newline, --empty-sections, "
+            "--links, --code-fences, and --sections require --documentation-structure"
+        )
     if args.audit_compare and not args.kind:
         parser.error("--audit-compare requires --kind")
     if args.kind and not args.audit_compare:
@@ -5934,7 +5980,15 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.documentation_structure:
-        report = observe_documentation_structure(REPO_ROOT)
+        filters = DocumentationStructureFilters(
+            missing_front_matter=args.missing_front_matter,
+            missing_trailing_newline=args.missing_trailing_newline,
+            empty_sections=args.empty_sections,
+            include_links=args.links,
+            include_code_fences=args.code_fences,
+            include_sections=args.sections,
+        )
+        report = observe_documentation_structure(REPO_ROOT, filters)
         if args.json_output:
             print(
                 json.dumps(
@@ -5942,7 +5996,7 @@ def main(argv: list[str] | None = None) -> int:
                 )
             )
         else:
-            print(format_documentation_structure(report))
+            print(format_documentation_structure(report, filters))
         return 0
 
     if args.projection_shape:

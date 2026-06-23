@@ -109,7 +109,15 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         build_function="observe_documentation_structure",
         format_function="format_documentation_structure",
         json_function="documentation_structure_json",
-        cli_flags=("--documentation-structure",),
+        cli_flags=(
+            "--documentation-structure",
+            "--missing-front-matter",
+            "--missing-trailing-newline",
+            "--empty-sections",
+            "--links",
+            "--code-fences",
+            "--sections",
+        ),
         repo_file_markers=(
             "repo_root",
             "docs",
