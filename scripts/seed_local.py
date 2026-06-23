@@ -1053,6 +1053,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="observe read-only structural metadata for top-level repository Markdown docs",
     )
     parser.add_argument(
+        "--document",
+        metavar="PATH",
+        help="limit --documentation-structure to one repository-relative docs/*.md document",
+    )
+    parser.add_argument(
         "--missing-front-matter",
         action="store_true",
         help="limit --documentation-structure to docs missing YAML front matter",
@@ -2126,12 +2131,14 @@ def validate_lifecycle_args(
             args.links,
             args.code_fences,
             args.sections,
+            args.document is not None,
         )
     )
     if documentation_structure_filter_requested and not args.documentation_structure:
         parser.error(
-            "--missing-front-matter, --missing-trailing-newline, --empty-sections, "
-            "--links, --code-fences, and --sections require --documentation-structure"
+            "--document, --missing-front-matter, --missing-trailing-newline, "
+            "--empty-sections, --links, --code-fences, and --sections require "
+            "--documentation-structure"
         )
     if args.audit_compare and not args.kind:
         parser.error("--audit-compare requires --kind")
@@ -5988,7 +5995,10 @@ def main(argv: list[str] | None = None) -> int:
             include_code_fences=args.code_fences,
             include_sections=args.sections,
         )
-        report = observe_documentation_structure(REPO_ROOT, filters)
+        try:
+            report = observe_documentation_structure(REPO_ROOT, filters, args.document)
+        except (FileNotFoundError, ValueError) as exc:
+            parser.error(str(exc))
         if args.json_output:
             print(
                 json.dumps(

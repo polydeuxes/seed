@@ -111,6 +111,7 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         json_function="documentation_structure_json",
         cli_flags=(
             "--documentation-structure",
+            "--document",
             "--missing-front-matter",
             "--missing-trailing-newline",
             "--empty-sections",

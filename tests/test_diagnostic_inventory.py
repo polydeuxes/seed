@@ -81,6 +81,7 @@ def test_current_diagnostics_do_not_mutate_cluster():
 def test_current_diagnostic_shapes_match_implementation_authority():
     assert _entry("documentation_structure").cli_flags == (
         "--documentation-structure",
+        "--document",
         "--missing-front-matter",
         "--missing-trailing-newline",
         "--empty-sections",
@@ -89,8 +90,12 @@ def test_current_diagnostic_shapes_match_implementation_authority():
         "--sections",
     )
     assert _entry("documentation_structure").uses_repo_files
-    assert "fenced code block structure" in _entry("documentation_structure").description
-    assert "without parsing code contents" in _entry("documentation_structure").description
+    assert (
+        "fenced code block structure" in _entry("documentation_structure").description
+    )
+    assert (
+        "without parsing code contents" in _entry("documentation_structure").description
+    )
     assert _entry("documentation_structure").supports_json
     assert not _entry("documentation_structure").supports_record
     assert _entry("documentation_structure").record_scope == "none"
@@ -108,7 +113,9 @@ def test_current_diagnostic_shapes_match_implementation_authority():
     assert _entry("investigation_path").supports_json
     assert not _entry("investigation_path").writes_event_ledger
     assert not _entry("investigation_path").mutates_cluster
-    assert _entry("architecture_conformance_audit").cli_flags == ("--architecture-conformance-audit",)
+    assert _entry("architecture_conformance_audit").cli_flags == (
+        "--architecture-conformance-audit",
+    )
     assert _entry("architecture_conformance_audit").supports_json
     assert not _entry("architecture_conformance_audit").supports_record
     assert _entry("architecture_conformance_audit").record_scope == "none"

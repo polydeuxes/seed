@@ -101,7 +101,10 @@ class DocumentationStructureRecord:
         data["heading_outline"] = [asdict(heading) for heading in self.heading_outline]
         data["duplicate_heading_texts"] = list(self.duplicate_heading_texts)
         data["sections"] = [
-            {**asdict(section), "parent_heading_path": list(section.parent_heading_path)}
+            {
+                **asdict(section),
+                "parent_heading_path": list(section.parent_heading_path),
+            }
             for section in self.sections
         ]
         data["link_observations"] = [asdict(link) for link in self.link_observations]
@@ -126,20 +129,50 @@ class DocumentationStructureReport:
 
 
 def observe_documentation_structure(
-    repo_root: Path, filters: DocumentationStructureFilters | None = None
+    repo_root: Path,
+    filters: DocumentationStructureFilters | None = None,
+    document: str | None = None,
 ) -> DocumentationStructureReport:
     """Observe structural metadata for allowlisted top-level docs/*.md files."""
 
     docs_dir = repo_root / "docs"
+    if document is None:
+        selected_paths = tuple(
+            path for path in sorted(docs_dir.glob("*.md")) if path.is_file()
+        )
+    else:
+        selected_paths = (_resolve_document_selection(repo_root, document),)
     documents = tuple(
-        observe_markdown_document(path, repo_root)
-        for path in sorted(docs_dir.glob("*.md"))
-        if path.is_file()
+        observe_markdown_document(path, repo_root) for path in selected_paths
     )
     documents = _filter_documents(documents, filters)
     return DocumentationStructureReport(
-        documents, _summary(documents, repo_root), dict(BOUNDARY)
+        documents, _summary(documents, repo_root, document), dict(BOUNDARY)
     )
+
+
+def _resolve_document_selection(repo_root: Path, document: str) -> Path:
+    selected = Path(document)
+    if selected.is_absolute():
+        raise ValueError(
+            "--document must be a repository-relative path under docs/ ending in .md"
+        )
+    if selected.suffix != ".md":
+        raise ValueError("--document must end in .md")
+    parts = selected.parts
+    if not parts or parts[0] != "docs":
+        raise ValueError("--document must be under top-level docs/")
+    if any(part in ("", ".", "..") for part in parts):
+        raise ValueError("--document must not contain path traversal")
+    resolved = (repo_root / selected).resolve()
+    docs_root = (repo_root / "docs").resolve()
+    try:
+        resolved.relative_to(docs_root)
+    except ValueError as exc:
+        raise ValueError("--document must stay under top-level docs/") from exc
+    if not resolved.is_file():
+        raise FileNotFoundError(f"document not found: {document}")
+    return resolved
 
 
 def _filter_documents(
@@ -159,9 +192,11 @@ def _filter_documents(
 
 
 def _summary(
-    documents: tuple[DocumentationStructureRecord, ...], repo_root: Path
+    documents: tuple[DocumentationStructureRecord, ...],
+    repo_root: Path,
+    selected_document: str | None = None,
 ) -> dict[str, Any]:
-    return {
+    summary = {
         "total_documents": len(documents),
         "total_lines": sum(d.line_count for d in documents),
         "total_bytes": sum(d.byte_count for d in documents),
@@ -204,6 +239,12 @@ def _summary(
         "max_section_depth": max((d.max_section_depth for d in documents), default=0),
         "empty_section_count": sum(d.empty_section_count for d in documents),
     }
+    if selected_document is not None:
+        summary["selected_document"] = (
+            documents[0].path if documents else selected_document
+        )
+    return summary
+
 
 def observe_markdown_document(
     path: Path, repo_root: Path | None = None
@@ -237,7 +278,9 @@ def observe_markdown_document(
         title_heading=title_heading,
         heading_outline=heading_outline,
         has_section_headings=any(heading.level > 1 for heading in heading_outline),
-        max_heading_depth=max((heading.level for heading in heading_outline), default=0),
+        max_heading_depth=max(
+            (heading.level for heading in heading_outline), default=0
+        ),
         skipped_heading_level_present=_skipped_heading_level_present(heading_outline),
         duplicate_heading_texts=tuple(_duplicate_heading_texts(heading_outline)),
         sections=sections,
@@ -267,7 +310,9 @@ def _document_metrics(raw_bytes: bytes, lines: list[str]) -> dict[str, int | boo
     }
 
 
-def documentation_structure_json(report: DocumentationStructureReport) -> dict[str, Any]:
+def documentation_structure_json(
+    report: DocumentationStructureReport,
+) -> dict[str, Any]:
     return report.to_json_dict()
 
 
@@ -280,6 +325,11 @@ def format_documentation_structure(
         "Documentation Structure",
         "",
         f"Total documents: {summary['total_documents']}",
+        *(
+            [f"Selected document: {summary['selected_document']}"]
+            if summary.get("selected_document")
+            else []
+        ),
         f"Total lines: {summary['total_lines']}",
         f"Total bytes: {summary['total_bytes']}",
         f"Blank lines: {summary['blank_line_count']}",
