@@ -110,7 +110,16 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         format_function="format_documentation_structure",
         json_function="documentation_structure_json",
         cli_flags=("--documentation-structure",),
-        repo_file_markers=("repo_root", "docs", "glob", "exists", "code_block", "section"),
+        repo_file_markers=(
+            "repo_root",
+            "docs",
+            "glob",
+            "exists",
+            "read_bytes",
+            "line_count",
+            "code_block",
+            "section",
+        ),
         mutation_markers=(
             ".write_text(",
             "subprocess.run",

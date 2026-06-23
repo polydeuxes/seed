@@ -62,6 +62,12 @@ class DocumentationCodeBlockRecord:
 @dataclass(frozen=True)
 class DocumentationStructureRecord:
     path: str
+    line_count: int
+    byte_count: int
+    blank_line_count: int
+    nonblank_line_count: int
+    empty_document: bool
+    has_trailing_newline: bool
     front_matter_present: bool
     front_matter_keys: tuple[str, ...]
     heading_present: bool
@@ -120,6 +126,14 @@ def observe_documentation_structure(repo_root: Path) -> DocumentationStructureRe
     )
     summary = {
         "total_documents": len(documents),
+        "total_lines": sum(d.line_count for d in documents),
+        "total_bytes": sum(d.byte_count for d in documents),
+        "blank_line_count": sum(d.blank_line_count for d in documents),
+        "nonblank_line_count": sum(d.nonblank_line_count for d in documents),
+        "empty_document_count": sum(d.empty_document for d in documents),
+        "documents_without_trailing_newline": sum(
+            not d.has_trailing_newline for d in documents
+        ),
         "front_matter_present": sum(d.front_matter_present for d in documents),
         "front_matter_missing": sum(not d.front_matter_present for d in documents),
         "heading_present": sum(d.heading_present for d in documents),
@@ -159,8 +173,10 @@ def observe_documentation_structure(repo_root: Path) -> DocumentationStructureRe
 def observe_markdown_document(
     path: Path, repo_root: Path | None = None
 ) -> DocumentationStructureRecord:
-    text = path.read_text(encoding="utf-8")
+    raw_bytes = path.read_bytes()
+    text = raw_bytes.decode("utf-8")
     lines = text.splitlines()
+    metrics = _document_metrics(raw_bytes, lines)
     front_matter_present, keys = _front_matter(lines)
     code_block_observations = tuple(_code_block_observations(lines))
     code_content_lines = _code_content_line_numbers(code_block_observations, len(lines))
@@ -174,6 +190,12 @@ def observe_markdown_document(
     heading_present = title_heading is not None
     return DocumentationStructureRecord(
         path=source_path,
+        line_count=metrics["line_count"],
+        byte_count=metrics["byte_count"],
+        blank_line_count=metrics["blank_line_count"],
+        nonblank_line_count=metrics["nonblank_line_count"],
+        empty_document=metrics["empty_document"],
+        has_trailing_newline=metrics["has_trailing_newline"],
         front_matter_present=front_matter_present,
         front_matter_keys=tuple(keys),
         heading_present=heading_present,
@@ -198,6 +220,18 @@ def observe_markdown_document(
     )
 
 
+def _document_metrics(raw_bytes: bytes, lines: list[str]) -> dict[str, int | bool]:
+    blank_line_count = sum(not line.strip() for line in lines)
+    return {
+        "line_count": len(lines),
+        "byte_count": len(raw_bytes),
+        "blank_line_count": blank_line_count,
+        "nonblank_line_count": len(lines) - blank_line_count,
+        "empty_document": len(raw_bytes) == 0,
+        "has_trailing_newline": raw_bytes.endswith(b"\n"),
+    }
+
+
 def documentation_structure_json(report: DocumentationStructureReport) -> dict[str, Any]:
     return report.to_json_dict()
 
@@ -208,6 +242,15 @@ def format_documentation_structure(report: DocumentationStructureReport) -> str:
         "Documentation Structure",
         "",
         f"Total documents: {summary['total_documents']}",
+        f"Total lines: {summary['total_lines']}",
+        f"Total bytes: {summary['total_bytes']}",
+        f"Blank lines: {summary['blank_line_count']}",
+        f"Nonblank lines: {summary['nonblank_line_count']}",
+        f"Empty documents: {summary['empty_document_count']}",
+        (
+            "Documents without trailing newline: "
+            f"{summary['documents_without_trailing_newline']}"
+        ),
         f"With YAML front matter: {summary['front_matter_present']}",
         f"Missing YAML front matter: {summary['front_matter_missing']}",
         f"With H1 heading: {summary['heading_present']}",

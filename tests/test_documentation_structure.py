@@ -49,6 +49,63 @@ def test_observes_yaml_front_matter_keys_and_h1_without_values_or_prose(tmp_path
     assert "shape meaning" not in rendered_payload
 
 
+
+def test_document_metrics_for_empty_document(tmp_path):
+    _write(tmp_path / "docs" / "empty.md", "")
+
+    document = observe_documentation_structure(tmp_path).documents[0]
+    payload = document.to_json_dict()
+
+    assert payload["line_count"] == 0
+    assert payload["byte_count"] == 0
+    assert payload["blank_line_count"] == 0
+    assert payload["nonblank_line_count"] == 0
+    assert payload["empty_document"] is True
+    assert payload["has_trailing_newline"] is False
+
+
+def test_document_metrics_for_document_without_trailing_newline(tmp_path):
+    _write(tmp_path / "docs" / "no_newline.md", "# Title\nBody")
+
+    document = observe_documentation_structure(tmp_path).documents[0]
+
+    assert document.line_count == 2
+    assert document.byte_count == len(b"# Title\nBody")
+    assert document.blank_line_count == 0
+    assert document.nonblank_line_count == 2
+    assert document.empty_document is False
+    assert document.has_trailing_newline is False
+
+
+def test_document_metrics_count_blank_lines_mechanically(tmp_path):
+    _write(tmp_path / "docs" / "blank_lines.md", "# Title\n\n   \nBody\n")
+
+    document = observe_documentation_structure(tmp_path).documents[0]
+
+    assert document.line_count == 4
+    assert document.blank_line_count == 2
+    assert document.nonblank_line_count == 2
+    assert document.has_trailing_newline is True
+
+
+def test_document_metrics_report_byte_and_line_count_summary(tmp_path):
+    _write(tmp_path / "docs" / "alpha.md", "# A\nBody\n")
+    _write(tmp_path / "docs" / "beta.md", "# B\n\n")
+
+    report = observe_documentation_structure(tmp_path)
+    metrics_by_path = {document.path: document for document in report.documents}
+
+    assert metrics_by_path["docs/alpha.md"].line_count == 2
+    assert metrics_by_path["docs/alpha.md"].byte_count == len(b"# A\nBody\n")
+    assert metrics_by_path["docs/beta.md"].line_count == 2
+    assert metrics_by_path["docs/beta.md"].byte_count == len(b"# B\n\n")
+    assert report.summary["total_lines"] == 4
+    assert report.summary["total_bytes"] == len(b"# A\nBody\n") + len(b"# B\n\n")
+    assert report.summary["blank_line_count"] == 1
+    assert report.summary["nonblank_line_count"] == 3
+    assert report.summary["empty_document_count"] == 0
+    assert report.summary["documents_without_trailing_newline"] == 0
+
 def test_heading_outline_records_only_structural_heading_metadata(tmp_path):
     _write(
         tmp_path / "docs" / "outline.md",
@@ -256,6 +313,12 @@ def test_human_output_renders_summary_incomplete_documents_and_boundary(tmp_path
 
     assert "Documentation Structure" in output
     assert "Total documents: 2" in output
+    assert "Total lines: 5" in output
+    assert "Total bytes: 29" in output
+    assert "Blank lines: 0" in output
+    assert "Nonblank lines: 5" in output
+    assert "Empty documents: 0" in output
+    assert "Documents without trailing newline: 0" in output
     assert "With YAML front matter: 1" in output
     assert "Missing YAML front matter: 1" in output
     assert "With H1 heading: 1" in output
