@@ -359,6 +359,22 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         ),
         diagnostic_fact_read_markers=("build_capability_needs",),
     ),
+    "observation_permission": DiagnosticImplementationSpec(
+        name="observation_permission",
+        module_path="seed_runtime/observation_permission.py",
+        build_function="build_observation_permission",
+        format_function="format_observation_permission",
+        json_function="observation_permission_json",
+        cli_flags=("--observation-permission",),
+        mutation_markers=(
+            ".write_text(",
+            "subprocess.run",
+            "os.remove",
+            "shutil.rmtree",
+            "authorize_execution",
+            "ingest_observations",
+        ),
+    ),
     "capability_needs": DiagnosticImplementationSpec(
         name="capability_needs",
         module_path="seed_runtime/capability_needs.py",
