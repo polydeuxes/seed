@@ -1125,3 +1125,64 @@ def test_recurrence_summary_only_keeps_buckets_and_suppresses_items(
     assert "Structural outliers:" in output
     assert "documents with structural signals:" in output
     assert "- Solo: 1" not in output
+
+
+def test_recurrence_human_skeleton_signatures_are_compact_structural_visibility(
+    tmp_path, monkeypatch, capsys
+):
+    _write(tmp_path / "docs" / "h1_a.md", "# Repeat\n# Repeat\n# Repeat\n")
+    _write(tmp_path / "docs" / "h1_b.md", "# Repeat\n# Repeat\n")
+    _write(
+        tmp_path / "docs" / "sections.md",
+        "# Title\n## Raw Start\n## Raw Start\n### Raw Detail\n### Raw Detail\n## Raw End\n",
+    )
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    assert (
+        seed_local.main(["--documentation-structure", "--recurrence", "--top", "10"])
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "- none: 1 docs; sections=0; max_depth=1; h1=3; h2=0; h3=0" in output
+    assert "- none: 1 docs; sections=0; max_depth=1; h1=2; h2=0; h3=0" in output
+    assert "H1|H1|H1" not in output
+    assert "H2:Raw Start|H3:Raw Detail|H2:Raw End" in output
+    assert "Raw Beginning" not in output
+    signature_lines = output.split("Section skeleton signatures:", 1)[1].split(
+        "Link target classes:", 1
+    )[0]
+    assert "meaning" not in signature_lines
+    assert "claim" not in signature_lines
+    assert "authority" not in signature_lines
+    assert "ontology" not in signature_lines
+
+
+def test_recurrence_human_skeleton_signatures_truncate_but_json_keeps_raw_signature(
+    tmp_path, monkeypatch, capsys
+):
+    headings = "".join(f"## Raw {index}\n" for index in range(12))
+    _write(tmp_path / "docs" / "long.md", f"# Title\n{headings}")
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    assert seed_local.main(["--documentation-structure", "--recurrence"]) == 0
+
+    output = capsys.readouterr().out
+    assert "... +4 more" in output
+    assert "H2:Raw 11" not in output
+
+    assert seed_local.main(["--documentation-structure", "--recurrence", "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    row = payload["recurrence"]["section_skeleton_signatures"][0]
+    assert row["signature"].endswith("H2:Raw 11")
+    assert "... +4 more" not in row["signature"]
+    assert row["rendered_signature"].endswith("... +4 more")
+    assert row["document_count"] == 1
+    assert row["docs_count"] == 1
+    assert row["section_count"] == 12
+    assert row["max_depth"] == 2
+    assert row["h1_count"] == 1
+    assert row["h2_count"] == 12
+    assert row["h3_count"] == 0
+    assert payload["boundary"]["mutates_repository"] is False
