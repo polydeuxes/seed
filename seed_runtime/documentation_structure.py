@@ -25,6 +25,16 @@ BOUNDARY = {
 
 
 @dataclass(frozen=True)
+class DocumentationStructureFilters:
+    missing_front_matter: bool = False
+    missing_trailing_newline: bool = False
+    empty_sections: bool = False
+    include_links: bool = False
+    include_code_fences: bool = False
+    include_sections: bool = False
+
+
+@dataclass(frozen=True)
 class DocumentationHeadingRecord:
     level: int
     text: str
@@ -115,7 +125,9 @@ class DocumentationStructureReport:
         }
 
 
-def observe_documentation_structure(repo_root: Path) -> DocumentationStructureReport:
+def observe_documentation_structure(
+    repo_root: Path, filters: DocumentationStructureFilters | None = None
+) -> DocumentationStructureReport:
     """Observe structural metadata for allowlisted top-level docs/*.md files."""
 
     docs_dir = repo_root / "docs"
@@ -124,7 +136,32 @@ def observe_documentation_structure(repo_root: Path) -> DocumentationStructureRe
         for path in sorted(docs_dir.glob("*.md"))
         if path.is_file()
     )
-    summary = {
+    documents = _filter_documents(documents, filters)
+    return DocumentationStructureReport(
+        documents, _summary(documents, repo_root), dict(BOUNDARY)
+    )
+
+
+def _filter_documents(
+    documents: tuple[DocumentationStructureRecord, ...],
+    filters: DocumentationStructureFilters | None,
+) -> tuple[DocumentationStructureRecord, ...]:
+    if filters is None:
+        return documents
+    filtered = documents
+    if filters.missing_front_matter:
+        filtered = tuple(d for d in filtered if not d.front_matter_present)
+    if filters.missing_trailing_newline:
+        filtered = tuple(d for d in filtered if not d.has_trailing_newline)
+    if filters.empty_sections:
+        filtered = tuple(d for d in filtered if d.empty_section_count > 0)
+    return filtered
+
+
+def _summary(
+    documents: tuple[DocumentationStructureRecord, ...], repo_root: Path
+) -> dict[str, Any]:
+    return {
         "total_documents": len(documents),
         "total_lines": sum(d.line_count for d in documents),
         "total_bytes": sum(d.byte_count for d in documents),
@@ -167,8 +204,6 @@ def observe_documentation_structure(repo_root: Path) -> DocumentationStructureRe
         "max_section_depth": max((d.max_section_depth for d in documents), default=0),
         "empty_section_count": sum(d.empty_section_count for d in documents),
     }
-    return DocumentationStructureReport(documents, summary, dict(BOUNDARY))
-
 
 def observe_markdown_document(
     path: Path, repo_root: Path | None = None
@@ -236,7 +271,10 @@ def documentation_structure_json(report: DocumentationStructureReport) -> dict[s
     return report.to_json_dict()
 
 
-def format_documentation_structure(report: DocumentationStructureReport) -> str:
+def format_documentation_structure(
+    report: DocumentationStructureReport,
+    filters: DocumentationStructureFilters | None = None,
+) -> str:
     summary = report.summary
     lines = [
         "Documentation Structure",
@@ -272,8 +310,76 @@ def format_documentation_structure(report: DocumentationStructureReport) -> str:
         lines.extend(["", "Incomplete documents:"])
         for document in incomplete:
             lines.append(f"- {document.path}: {document.structure_status}")
+    filters = filters or DocumentationStructureFilters()
+    if (
+        filters.missing_front_matter
+        or filters.missing_trailing_newline
+        or filters.empty_sections
+    ):
+        lines.extend(["", "Filtered documents:"])
+        if report.documents:
+            for document in report.documents:
+                lines.append(f"- {document.path}: {document.structure_status}")
+        else:
+            lines.append("- none")
+    if filters.include_sections or filters.empty_sections:
+        lines.extend(_format_section_details(report))
+    if filters.include_links:
+        lines.extend(_format_link_details(report))
+    if filters.include_code_fences:
+        lines.extend(_format_code_fence_details(report))
     return "\n".join(lines)
 
+
+def _format_section_details(report: DocumentationStructureReport) -> list[str]:
+    lines = ["", "Sections:"]
+    found = False
+    for document in report.documents:
+        for section in document.sections:
+            found = True
+            parent_path = " > ".join(section.parent_heading_path) or "none"
+            lines.append(
+                f"- {document.path}:{section.start_line}-{section.end_line} "
+                f"level={section.heading_level} heading={section.heading_text!r} "
+                f"children={section.child_section_count} parent={parent_path}"
+            )
+    if not found:
+        lines.append("- none")
+    return lines
+
+
+def _format_link_details(report: DocumentationStructureReport) -> list[str]:
+    lines = ["", "Links:"]
+    found = False
+    for document in report.documents:
+        for link in document.link_observations:
+            found = True
+            lines.append(
+                f"- {document.path}: target={link.raw_target} "
+                f"relative={str(link.is_relative).lower()} "
+                f"under_docs={str(link.points_under_docs).lower()}"
+            )
+    if not found:
+        lines.append("- none")
+    return lines
+
+
+def _format_code_fence_details(report: DocumentationStructureReport) -> list[str]:
+    lines = ["", "Code fences:"]
+    found = False
+    for document in report.documents:
+        for block in document.code_block_observations:
+            found = True
+            end = block.end_line if block.end_line is not None else "open"
+            language = block.language or "none"
+            lines.append(
+                f"- {document.path}:{block.start_line}-{end} "
+                f"type={block.fence_type} language={language} "
+                f"closed={str(block.closed).lower()}"
+            )
+    if not found:
+        lines.append("- none")
+    return lines
 
 
 def _code_block_observations(lines: list[str]) -> list[DocumentationCodeBlockRecord]:

@@ -516,3 +516,84 @@ def test_code_block_observation_records_tilde_fences_and_unclosed_fences(tmp_pat
     assert "missing.md" not in rendered_payload
     assert "should-not-be-inferred" not in rendered_payload
     assert "Hidden Heading" not in rendered_payload
+
+
+def test_documentation_structure_filter_flags_are_rejected_without_surface():
+    filter_flags = [
+        "--missing-front-matter",
+        "--missing-trailing-newline",
+        "--empty-sections",
+        "--links",
+        "--code-fences",
+        "--sections",
+    ]
+    for flag in filter_flags:
+        try:
+            seed_local.main([flag])
+        except SystemExit as exc:
+            assert exc.code == 2
+        else:  # pragma: no cover - defensive assertion
+            raise AssertionError(f"{flag} should be rejected without --documentation-structure")
+
+
+def test_documentation_structure_filter_flags_are_accepted_and_read_only(tmp_path, monkeypatch, capsys):
+    _write(tmp_path / "docs" / "complete.md", "---\nstatus: ok\n---\n# Complete\n\n[Target](target.md)\n")
+    _write(tmp_path / "docs" / "target.md", "# Target\n")
+    _write(tmp_path / "docs" / "missing_front.md", "# Missing Front\n\n")
+    _write(tmp_path / "docs" / "missing_newline.md", "---\nstatus: ok\n---\n# Missing Newline")
+    _write(tmp_path / "docs" / "empty_sections.md", "# Empty Sections\n\n## Empty\n## Next\nBody\n")
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    cases = [
+        (["--missing-front-matter"], "docs/missing_front.md"),
+        (["--missing-trailing-newline"], "docs/missing_newline.md"),
+        (["--empty-sections"], "docs/empty_sections.md"),
+        (["--links"], "Links:"),
+        (["--code-fences"], "Code fences:"),
+        (["--sections"], "Sections:"),
+    ]
+    for flags, expected in cases:
+        before = {
+            p.relative_to(tmp_path).as_posix(): p.read_bytes()
+            for p in tmp_path.rglob("*")
+            if p.is_file()
+        }
+        assert seed_local.main(["--documentation-structure", *flags]) == 0
+        output = capsys.readouterr().out
+        after = {
+            p.relative_to(tmp_path).as_posix(): p.read_bytes()
+            for p in tmp_path.rglob("*")
+            if p.is_file()
+        }
+        assert before == after
+        assert expected in output
+        assert BOUNDARY_TEXT in output
+        assert "event ledger writes" in output
+
+
+def test_documentation_structure_detail_flags_are_accepted_in_json_and_read_only(tmp_path, monkeypatch, capsys):
+    _write(
+        tmp_path / "docs" / "details.md",
+        "# Details\n\n## Empty\n\n[Target](target.md)\n\n```python\nprint('hidden')\n```\n",
+    )
+    _write(tmp_path / "docs" / "target.md", "# Target\n")
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+    before = sorted(p.relative_to(tmp_path).as_posix() for p in tmp_path.rglob("*"))
+
+    assert seed_local.main([
+        "--documentation-structure",
+        "--links",
+        "--code-fences",
+        "--sections",
+        "--json",
+    ]) == 0
+
+    after = sorted(p.relative_to(tmp_path).as_posix() for p in tmp_path.rglob("*"))
+    payload = json.loads(capsys.readouterr().out)
+    document = next(d for d in payload["documents"] if d["path"] == "docs/details.md")
+    assert before == after
+    assert document["link_observations"]
+    assert document["code_block_observations"]
+    assert document["sections"]
+    assert payload["boundary"]["writes_event_ledger"] is False
+    assert payload["boundary"]["mutates_repository"] is False
