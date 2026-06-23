@@ -112,6 +112,7 @@ from seed_runtime.diagnostic_inventory import (
 from seed_runtime.documentation_structure import (
     DocumentationStructureDetailExpansions,
     DocumentationStructureOptions,
+    DocumentationStructureOutputBounds,
     DocumentationStructureSelectionFilters,
     documentation_structure_json,
     format_documentation_structure,
@@ -1094,6 +1095,27 @@ def build_parser() -> argparse.ArgumentParser:
         "--code-fences",
         action="store_true",
         help="include fenced code block observation blocks in --documentation-structure output",
+    )
+
+    documentation_output_group = parser.add_argument_group(
+        "documentation structure output bounds"
+    )
+    documentation_output_group.add_argument(
+        "--limit",
+        type=int,
+        metavar="N",
+        help="with --documentation-structure, emit at most N matching document rows",
+    )
+    documentation_output_group.add_argument(
+        "--top",
+        type=int,
+        metavar="N",
+        help="with --documentation-structure, emit the top N documents by structural issue count",
+    )
+    documentation_output_group.add_argument(
+        "--summary-only",
+        action="store_true",
+        help="with --documentation-structure, emit summary and boundary without document rows or detail blocks",
     )
     parser.add_argument(
         "--diagnostic-inventory",
@@ -2140,14 +2162,23 @@ def validate_lifecycle_args(
             args.code_fences,
             args.sections,
             args.document is not None,
+            args.limit is not None,
+            args.top is not None,
+            args.summary_only,
         )
     )
     if documentation_structure_filter_requested and not args.documentation_structure:
         parser.error(
             "--document, --missing-front-matter, --missing-trailing-newline, "
-            "--empty-sections, --links, --code-fences, and --sections require "
+            "--empty-sections, --links, --code-fences, --sections, --limit, "
+            "--top, and --summary-only require "
             "--documentation-structure"
         )
+    if args.documentation_structure:
+        if args.limit is not None and args.limit < 0:
+            parser.error("--limit must be zero or greater")
+        if args.top is not None and args.top < 0:
+            parser.error("--top must be zero or greater")
     if args.audit_compare and not args.kind:
         parser.error("--audit-compare requires --kind")
     if args.kind and not args.audit_compare:
@@ -6005,6 +6036,11 @@ def main(argv: list[str] | None = None) -> int:
                 include_sections=args.sections,
                 include_links=args.links,
                 include_code_fences=args.code_fences,
+            ),
+            output_bounds=DocumentationStructureOutputBounds(
+                limit=args.limit,
+                top=args.top,
+                summary_only=args.summary_only,
             ),
         )
         try:

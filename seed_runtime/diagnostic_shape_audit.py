@@ -118,6 +118,9 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "--sections",
             "--links",
             "--code-fences",
+            "--limit",
+            "--top",
+            "--summary-only",
         ),
         repo_file_markers=(
             "repo_root",
