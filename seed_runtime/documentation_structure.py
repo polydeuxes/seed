@@ -39,12 +39,22 @@ class DocumentationStructureDetailExpansions:
 
 
 @dataclass(frozen=True)
+class DocumentationStructureOutputBounds:
+    limit: int | None = None
+    top: int | None = None
+    summary_only: bool = False
+
+
+@dataclass(frozen=True)
 class DocumentationStructureOptions:
     selection_filters: DocumentationStructureSelectionFilters = field(
         default_factory=DocumentationStructureSelectionFilters
     )
     detail_expansions: DocumentationStructureDetailExpansions = field(
         default_factory=DocumentationStructureDetailExpansions
+    )
+    output_bounds: DocumentationStructureOutputBounds = field(
+        default_factory=DocumentationStructureOutputBounds
     )
 
 
@@ -183,9 +193,20 @@ def observe_documentation_structure(
     options = options or DocumentationStructureOptions()
     all_document_count = len(documents)
     documents = _filter_documents(documents, options.selection_filters)
+    matching_documents = documents
+    documents = _bound_documents(documents, repo_root, options.output_bounds)
+    summary = _summary(
+        matching_documents,
+        repo_root,
+        document,
+        all_document_count,
+        len(matching_documents),
+        options.output_bounds,
+        len(documents),
+    )
     return DocumentationStructureReport(
         documents,
-        _summary(documents, repo_root, document, all_document_count),
+        summary,
         dict(BOUNDARY),
         options.detail_expansions,
     )
@@ -236,6 +257,9 @@ def _summary(
     repo_root: Path,
     selected_document: str | None = None,
     total_available_documents: int | None = None,
+    matching_document_count: int | None = None,
+    output_bounds: DocumentationStructureOutputBounds | None = None,
+    output_document_count: int | None = None,
 ) -> dict[str, Any]:
     summary = {
         "total_documents": len(documents),
@@ -243,6 +267,16 @@ def _summary(
         "total_available_documents": (
             total_available_documents
             if total_available_documents is not None
+            else len(documents)
+        ),
+        "matching_documents": (
+            matching_document_count
+            if matching_document_count is not None
+            else len(documents)
+        ),
+        "output_documents": (
+            output_document_count
+            if output_document_count is not None
             else len(documents)
         ),
         "total_lines": sum(d.line_count for d in documents),
@@ -286,11 +320,53 @@ def _summary(
         "max_section_depth": max((d.max_section_depth for d in documents), default=0),
         "empty_section_count": sum(d.empty_section_count for d in documents),
     }
+    if output_bounds is not None:
+        summary["limit"] = output_bounds.limit
+        summary["top"] = output_bounds.top
+        summary["summary_only"] = output_bounds.summary_only
     if selected_document is not None:
         summary["selected_document"] = (
             documents[0].path if documents else selected_document
         )
     return summary
+
+
+def _bound_documents(
+    documents: tuple[DocumentationStructureRecord, ...],
+    repo_root: Path,
+    bounds: DocumentationStructureOutputBounds | None,
+) -> tuple[DocumentationStructureRecord, ...]:
+    if bounds is None:
+        return documents
+    if bounds.summary_only:
+        return ()
+    bounded = documents
+    if bounds.top is not None:
+        bounded = tuple(
+            sorted(
+                bounded,
+                key=lambda document: (
+                    -_document_issue_score(document, repo_root),
+                    document.path,
+                ),
+            )[: bounds.top]
+        )
+    if bounds.limit is not None:
+        bounded = bounded[: bounds.limit]
+    return bounded
+
+
+def _document_issue_score(document: DocumentationStructureRecord, repo_root: Path) -> int:
+    return (
+        int(document.structure_status != "complete")
+        + int(not document.has_trailing_newline)
+        + document.empty_section_count
+        + sum(
+            _local_doc_link_is_broken(link, repo_root)
+            for link in document.link_observations
+        )
+        + sum(not block.closed for block in document.code_block_observations)
+    )
 
 
 def observe_markdown_document(
@@ -372,6 +448,8 @@ def format_documentation_structure(
         "Documentation Structure",
         "",
         f"Total documents: {summary['total_documents']}",
+        f"Matching documents: {summary['matching_documents']}",
+        f"Output documents: {summary['output_documents']}",
         *(
             [f"Selected document: {summary['selected_document']}"]
             if summary.get("selected_document")
@@ -402,6 +480,8 @@ def format_documentation_structure(
         "",
         f"Boundary: {BOUNDARY_TEXT}",
     ]
+    if summary.get("summary_only"):
+        return "\n".join(lines)
     incomplete = [d for d in report.documents if d.structure_status != "complete"]
     if incomplete:
         lines.extend(["", "Incomplete documents:"])

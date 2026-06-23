@@ -802,3 +802,87 @@ def test_documentation_structure_detail_expansions_do_not_select_documents(
     assert details["link_observations"]
     assert details["code_block_observations"]
     assert payload["boundary"]["interprets_prose"] is False
+
+
+def test_documentation_structure_limit_bounds_document_output(
+    tmp_path, monkeypatch, capsys
+):
+    _write(tmp_path / "docs" / "a.md", "# A\n")
+    _write(tmp_path / "docs" / "b.md", "# B\n")
+    _write(tmp_path / "docs" / "c.md", "# C\n")
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    assert (
+        seed_local.main(["--documentation-structure", "--limit", "2", "--json"])
+        == 0
+    )
+
+    payload = json.loads(capsys.readouterr().out)
+    assert [document["path"] for document in payload["documents"]] == [
+        "docs/a.md",
+        "docs/b.md",
+    ]
+    assert payload["summary"]["matching_documents"] == 3
+    assert payload["summary"]["output_documents"] == 2
+    assert payload["summary"]["limit"] == 2
+
+
+def test_documentation_structure_top_prioritizes_structural_offenders(
+    tmp_path, monkeypatch, capsys
+):
+    _write(tmp_path / "docs" / "ok.md", "---\nstatus: ok\n---\n# OK\n")
+    _write(
+        tmp_path / "docs" / "broken.md",
+        "# Broken\n\n[Missing](missing.md)\n```python\n",
+    )
+    _write(tmp_path / "docs" / "missing_front.md", "# Missing Front\n")
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    assert seed_local.main(["--documentation-structure", "--top", "1", "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert [document["path"] for document in payload["documents"]] == [
+        "docs/broken.md"
+    ]
+    assert payload["summary"]["matching_documents"] == 3
+    assert payload["summary"]["output_documents"] == 1
+    assert payload["summary"]["top"] == 1
+
+
+def test_documentation_structure_summary_only_suppresses_rows_and_details(
+    tmp_path, monkeypatch, capsys
+):
+    _write(
+        tmp_path / "docs" / "details.md",
+        "# Details\n\n## Child\n\n[Target](target.md)\n",
+    )
+    _write(tmp_path / "docs" / "target.md", "# Target\n")
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    assert (
+        seed_local.main(
+            ["--documentation-structure", "--sections", "--links", "--summary-only"]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "Matching documents: 2" in output
+    assert "Output documents: 0" in output
+    assert "\nSections:\n" not in output
+    assert "\nLinks:\n" not in output
+    assert "docs/details.md" not in output
+    assert BOUNDARY_TEXT in output
+
+
+def test_documentation_structure_output_bounds_require_surface():
+    for flag in ["--limit", "--top", "--summary-only"]:
+        args = [flag]
+        if flag != "--summary-only":
+            args.append("1")
+        try:
+            seed_local.main(args)
+        except SystemExit as exc:
+            assert exc.code == 2
+        else:  # pragma: no cover - defensive assertion
+            raise AssertionError(f"{flag} should require --documentation-structure")
