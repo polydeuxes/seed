@@ -22,6 +22,7 @@ def test_cli_diagnostic_inventory_lists_known_diagnostics(capsys):
         "classification_coverage",
         "graph_issue_summary",
         "knowledge_reachability",
+        "documentation_structure",
         "ownership_discrepancies",
         "capability_needs",
         "observation_utilization",
@@ -47,6 +48,7 @@ def test_cli_diagnostic_inventory_json_emits_valid_json(capsys):
         "classification_coverage",
         "graph_issue_summary",
         "knowledge_reachability",
+        "documentation_structure",
         "ownership_discrepancies",
         "capability_needs",
         "observation_utilization",
@@ -77,6 +79,15 @@ def test_current_diagnostics_do_not_mutate_cluster():
 
 
 def test_current_diagnostic_shapes_match_implementation_authority():
+    assert _entry("documentation_structure").cli_flags[0] == "--documentation-structure"
+    assert "--document" in _entry("documentation_structure").cli_flags
+    assert "--summary-only" in _entry("documentation_structure").cli_flags
+    assert _entry("documentation_structure").uses_repo_files
+    assert _entry("documentation_structure").supports_json
+    assert not _entry("documentation_structure").supports_record
+    assert _entry("documentation_structure").record_scope == "none"
+    assert not _entry("documentation_structure").writes_event_ledger
+    assert not _entry("documentation_structure").mutates_cluster
     assert _entry("ownership_discrepancies").supports_record
     assert _entry("knowledge_reachability").uses_repo_files
     assert _entry("capability_needs").reads_diagnostic_facts
