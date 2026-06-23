@@ -123,6 +123,7 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "--missing-common-sections",
             "--outliers",
             "--skeletons",
+            "--where",
             "--limit",
             "--top",
             "--summary-only",

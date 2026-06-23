@@ -1250,3 +1250,133 @@ def test_recurrence_summary_only_skeletons_shows_totals_not_rows(
     assert "Section skeleton signatures:" in output
     assert "total distinct signatures:" in output
     assert "H2:Visible" not in output
+
+
+def test_section_label_drilldown_text_exact_matches_limit_summary_and_boundaries(
+    tmp_path, monkeypatch, capsys
+):
+    _write(
+        tmp_path / "docs" / "alpha.md",
+        "# Alpha\n\n## Purpose\nClaims recommendation similarity classification.\n\n## Purposeful\nNot exact.\n\n### Purpose\nNo claim extraction here.\n",
+    )
+    _write(tmp_path / "docs" / "beta.md", "# Beta\n\n## Purpose\nOntology promotion prose.\n")
+    before = {
+        p.relative_to(tmp_path).as_posix(): p.read_text(encoding="utf-8")
+        for p in tmp_path.rglob("*")
+        if p.is_file()
+    }
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    assert (
+        seed_local.main(
+            [
+                "--documentation-structure",
+                "--where",
+                "section-label:Purpose",
+                "--limit",
+                "2",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    after = {
+        p.relative_to(tmp_path).as_posix(): p.read_text(encoding="utf-8")
+        for p in tmp_path.rglob("*")
+        if p.is_file()
+    }
+    assert before == after
+    assert "Documentation Structure Drilldown" in output
+    assert "Category: section-label" in output
+    assert "Key: Purpose" in output
+    assert "Occurrences: 3" in output
+    assert "Documents: 2" in output
+    assert "docs/alpha.md:3 depth=2" in output
+    assert "docs/alpha.md:9 depth=3" in output
+    assert "docs/beta.md:3 depth=2" not in output
+    assert "... +1 more" in output
+    assert "Purposeful" not in output
+    assert "Claims recommendation" not in output
+    assert "No claim extraction" not in output
+    assert "Boundary: read only; observes structural recurrence only" in output
+    assert "no prose interpretation" in output
+    assert "no claim extraction" in output
+    assert "no authority inference" in output
+    assert "no shape inference" in output
+    assert "no ontology promotion" in output
+    assert "no event ledger writes" in output
+    assert "no repository mutation" in output
+
+    assert (
+        seed_local.main(
+            [
+                "--documentation-structure",
+                "--where",
+                "section-label:Purpose",
+                "--summary-only",
+            ]
+        )
+        == 0
+    )
+    summary_output = capsys.readouterr().out
+    assert "Occurrences: 3" in summary_output
+    assert "Documents: 2" in summary_output
+    assert "docs/alpha.md:3 depth=2" not in summary_output
+
+
+def test_section_label_drilldown_json_exact_structural_observation_and_boundary(
+    tmp_path, monkeypatch, capsys
+):
+    _write(
+        tmp_path / "docs" / "alpha.md",
+        "# Alpha\n\n## Purpose\nProse says authority inference.\n\n## Purposeful\nNot exact.\n\n### Purpose\nShape inference prose.\n",
+    )
+    _write(tmp_path / "docs" / "beta.md", "# Beta\n\n## Purpose\nRecommend similar docs.\n")
+    before = {
+        p.relative_to(tmp_path).as_posix(): p.read_text(encoding="utf-8")
+        for p in tmp_path.rglob("*")
+        if p.is_file()
+    }
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    assert (
+        seed_local.main(
+            ["--documentation-structure", "--where", "section-label:Purpose", "--json"]
+        )
+        == 0
+    )
+
+    after = {
+        p.relative_to(tmp_path).as_posix(): p.read_text(encoding="utf-8")
+        for p in tmp_path.rglob("*")
+        if p.is_file()
+    }
+    payload = json.loads(capsys.readouterr().out)
+    assert before == after
+    assert payload == {
+        "category": "section-label",
+        "key": "Purpose",
+        "occurrences": 3,
+        "documents": 2,
+        "matches": [
+            {"path": "docs/alpha.md", "line": 3, "depth": 2},
+            {"path": "docs/alpha.md", "line": 9, "depth": 3},
+            {"path": "docs/beta.md", "line": 3, "depth": 2},
+        ],
+        "boundary": {
+            "read_only": True,
+            "prose_interpretation": False,
+            "claim_extraction": False,
+            "authority_inference": False,
+            "shape_inference": False,
+            "ontology_promotion": False,
+            "writes_event_ledger": False,
+            "mutates_repository": False,
+        },
+    }
+    rendered = json.dumps(payload)
+    assert "Purposeful" not in rendered
+    assert "authority inference" not in rendered
+    assert "Shape inference" not in rendered
+    assert "Recommend similar" not in rendered
