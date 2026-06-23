@@ -139,6 +139,11 @@ from seed_runtime.observation_domains import (
     format_observation_domains,
     observation_domains_json,
 )
+from seed_runtime.observation_permission import (
+    build_observation_permission,
+    format_observation_permission,
+    observation_permission_json,
+)
 from seed_runtime.observation_utilization import (
     build_observation_utilization_audit,
     format_observation_utilization,
@@ -1292,6 +1297,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="show read-only observation-domain coverage and gap visibility derived from existing evidence",
     )
     parser.add_argument(
+        "--observation-permission",
+        nargs="?",
+        const="__all__",
+        metavar="DOMAIN",
+        help="show read-only observation-domain permission visibility without enforcement or approval storage",
+    )
+    parser.add_argument(
         "--ops-brief",
         action="store_true",
         help="summarize current operational state from existing read-only audits",
@@ -2100,6 +2112,7 @@ def validate_lifecycle_args(
         bool(args.emitter_attribution_audit),
         bool(args.observation_inventory),
         bool(args.observation_utilization),
+        bool(args.observation_permission),
         bool(args.ops_brief),
         bool(args.investigation_path),
         bool(args.impact_audit),
@@ -2133,7 +2146,7 @@ def validate_lifecycle_args(
             "--state-build, --state-build-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --ownership-discrepancies, "
-            "--documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
+            "--documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
             "or --events-only"
         )
     if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
@@ -2290,6 +2303,7 @@ def validate_lifecycle_args(
         or args.observation_inventory
         or args.observation_utilization
         or args.observation_domains
+        or args.observation_permission
         or args.ops_brief
         or args.investigation_path
         or args.impact_audit
@@ -2305,7 +2319,7 @@ def validate_lifecycle_args(
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --diagnostic-inventory, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, or --audit-compare, or --projection-shape"
+            "--capability-needs, --diagnostic-inventory, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, or --audit-compare, or --projection-shape"
         )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
@@ -6317,6 +6331,23 @@ def main(argv: list[str] | None = None) -> int:
             )
         else:
             print(format_observation_domains(report))
+        return 0
+
+    if args.observation_permission:
+        domain = (
+            None
+            if args.observation_permission == "__all__"
+            else args.observation_permission
+        )
+        report = build_observation_permission(projected_state_from_args(args), domain)
+        if args.json_output:
+            print(
+                json.dumps(
+                    observation_permission_json(report), indent=2, sort_keys=True
+                )
+            )
+        else:
+            print(format_observation_permission(report))
         return 0
 
     if args.ops_brief:
