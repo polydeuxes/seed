@@ -89,10 +89,14 @@ def test_current_diagnostic_shapes_match_implementation_authority():
         "--links",
         "--code-fences",
         "--recurrence",
+        "--rare",
+        "--missing-common-sections",
+        "--outliers",
         "--limit",
         "--top",
         "--summary-only",
         "--min-count",
+        "--max-count",
     )
     assert _entry("documentation_structure").uses_repo_files
     assert (

@@ -1028,3 +1028,100 @@ def test_recurrence_text_top_and_summary_only_controls(tmp_path, monkeypatch, ca
     assert "entries at or above min_count 1:" in summary_output
     assert "- Repeat: 2" not in summary_output
     assert "- depth 1:" not in summary_output
+
+
+def test_recurrence_distribution_rare_skeleton_missing_common_and_outlier_json(
+    tmp_path, monkeypatch, capsys
+):
+    for index in range(25):
+        extra = "## Shared\n" if index < 24 else ""
+        _write(
+            tmp_path / "docs" / f"common_{index:02}.md",
+            f"---\nstatus: draft\n---\n# Doc {index}\n## Purpose\n{extra}",
+        )
+    _write(
+        tmp_path / "docs" / "outlier.md",
+        "# Outlier\n## UniqueA\n## UniqueB\n##### Deep\n```text\nx\n```\n```text\nx\n```\n```text\nx\n```\n```text\nx\n```\n```text\nx\n```\n",
+    )
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    assert (
+        seed_local.main(
+            [
+                "--documentation-structure",
+                "--recurrence",
+                "--rare",
+                "--missing-common-sections",
+                "--outliers",
+                "--limit",
+                "2",
+                "--top",
+                "2",
+                "--json",
+            ]
+        )
+        == 0
+    )
+
+    payload = json.loads(capsys.readouterr().out)
+    recurrence = payload["recurrence"]
+    section_buckets = {
+        row["bucket"]: row["distinct_entries"]
+        for row in recurrence["recurrence_distributions"]["section_labels"]
+    }
+    assert section_buckets["1"] >= 3
+    assert section_buckets["25-99"] == 1
+    rare_labels = [
+        row["label"] for row in recurrence["rare_structures"]["section_labels"]
+    ]
+    assert len(rare_labels) == 2
+    assert "Deep" in rare_labels
+    assert recurrence["section_skeleton_signatures"][0]["document_count"] == 24
+    assert recurrence["common_section_labels"] == [
+        {"label": "Purpose", "present": 25, "missing": 1}
+    ]
+    assert recurrence["documents_missing_common_sections"] == [
+        {
+            "path": "docs/outlier.md",
+            "missing_section_labels": ["Purpose"],
+            "missing_count": 1,
+        }
+    ]
+    assert recurrence["structural_outliers"][0]["path"] == "docs/outlier.md"
+    signals = {
+        signal["signal"] for signal in recurrence["structural_outliers"][0]["signals"]
+    }
+    assert "missing_front_matter" in signals
+    assert "deep_heading_depth" in signals
+    rendered = json.dumps(payload)
+    assert "meaning" not in rendered
+    assert payload["boundary"]["writes_event_ledger"] is False
+    assert payload["boundary"]["mutates_repository"] is False
+
+
+def test_recurrence_summary_only_keeps_buckets_and_suppresses_items(
+    tmp_path, monkeypatch, capsys
+):
+    _write(tmp_path / "docs" / "one.md", "# One\n## Solo\n")
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    assert (
+        seed_local.main(
+            [
+                "--documentation-structure",
+                "--recurrence",
+                "--rare",
+                "--outliers",
+                "--summary-only",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "Section label recurrence distribution:" in output
+    assert "Rare structures:" in output
+    assert "entries:" in output
+    assert "Structural outliers:" in output
+    assert "documents with structural signals:" in output
+    assert "- Solo: 1" not in output

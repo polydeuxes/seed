@@ -1102,6 +1102,21 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="show read-only corpus-level recurrence over observed documentation structure",
     )
+    documentation_detail_group.add_argument(
+        "--rare",
+        action="store_true",
+        help="with --documentation-structure --recurrence, show low-frequency structural labels",
+    )
+    documentation_detail_group.add_argument(
+        "--missing-common-sections",
+        action="store_true",
+        help="with --documentation-structure --recurrence, show structurally common section labels absent from documents",
+    )
+    documentation_detail_group.add_argument(
+        "--outliers",
+        action="store_true",
+        help="with --documentation-structure, rank documents by structural signals only",
+    )
 
     documentation_output_group = parser.add_argument_group(
         "documentation structure output bounds"
@@ -1128,6 +1143,12 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         metavar="N",
         help="with --documentation-structure --recurrence, emit itemized recurrence entries observed at least N times",
+    )
+    documentation_output_group.add_argument(
+        "--max-count",
+        type=int,
+        metavar="N",
+        help="with --documentation-structure --recurrence --rare, emit rare entries observed at most N times",
     )
     parser.add_argument(
         "--diagnostic-inventory",
@@ -2178,14 +2199,18 @@ def validate_lifecycle_args(
             args.top is not None,
             args.summary_only,
             args.min_count is not None,
+            args.max_count is not None,
             args.recurrence,
+            args.rare,
+            args.missing_common_sections,
+            args.outliers,
         )
     )
     if documentation_structure_filter_requested and not args.documentation_structure:
         parser.error(
             "--document, --missing-front-matter, --missing-trailing-newline, "
-            "--empty-sections, --links, --code-fences, --sections, --recurrence, --limit, "
-            "--top, --summary-only, and --min-count require "
+            "--empty-sections, --links, --code-fences, --sections, --recurrence, --rare, --missing-common-sections, --outliers, --limit, "
+            "--top, --summary-only, --min-count, and --max-count require "
             "--documentation-structure"
         )
     if args.documentation_structure:
@@ -2195,6 +2220,16 @@ def validate_lifecycle_args(
             parser.error("--top must be zero or greater")
         if args.min_count is not None and args.min_count < 1:
             parser.error("--min-count must be one or greater")
+        if args.max_count is not None and args.max_count < 1:
+            parser.error("--max-count must be one or greater")
+        if (
+            args.max_count is not None
+            and args.min_count is not None
+            and args.max_count < args.min_count
+        ):
+            parser.error("--max-count must be greater than or equal to --min-count")
+        if (args.rare or args.missing_common_sections) and not args.recurrence:
+            parser.error("--rare and --missing-common-sections require --recurrence")
     if args.audit_compare and not args.kind:
         parser.error("--audit-compare requires --kind")
     if args.kind and not args.audit_compare:
@@ -6058,8 +6093,14 @@ def main(argv: list[str] | None = None) -> int:
                 top=args.top,
                 summary_only=args.summary_only,
                 min_count=args.min_count,
+                max_count=args.max_count,
             ),
-            recurrence=DocumentationStructureRecurrenceOptions(enabled=args.recurrence),
+            recurrence=DocumentationStructureRecurrenceOptions(
+                enabled=args.recurrence or args.outliers,
+                rare=args.rare,
+                missing_common_sections=args.missing_common_sections,
+                outliers=args.outliers,
+            ),
         )
         try:
             report = observe_documentation_structure(REPO_ROOT, options, args.document)
