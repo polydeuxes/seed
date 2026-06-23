@@ -108,6 +108,112 @@ def test_heading_text_is_not_used_to_infer_document_purpose(tmp_path):
     assert "governs cluster truth" not in json.dumps(payload)
 
 
+def test_section_inventory_uses_heading_hierarchy_without_prose_output(tmp_path):
+    _write(
+        tmp_path / "docs" / "sections.md",
+        "\n".join(
+            [
+                "# Root",
+                "Intro prose says authority and shape should stay hidden.",
+                "## Child",
+                "### Grandchild",
+                "Grandchild body claim should stay hidden.",
+                "## Empty Child",
+                "",
+            ]
+        ),
+    )
+
+    report = observe_documentation_structure(tmp_path)
+    document = report.documents[0]
+    payload = document.to_json_dict()
+
+    assert payload["sections"] == [
+        {
+            "heading_text": "Root",
+            "heading_level": 1,
+            "start_line": 1,
+            "end_line": 6,
+            "child_section_count": 2,
+            "parent_heading_path": [],
+        },
+        {
+            "heading_text": "Child",
+            "heading_level": 2,
+            "start_line": 3,
+            "end_line": 5,
+            "child_section_count": 1,
+            "parent_heading_path": ["Root"],
+        },
+        {
+            "heading_text": "Grandchild",
+            "heading_level": 3,
+            "start_line": 4,
+            "end_line": 5,
+            "child_section_count": 0,
+            "parent_heading_path": ["Root", "Child"],
+        },
+        {
+            "heading_text": "Empty Child",
+            "heading_level": 2,
+            "start_line": 6,
+            "end_line": 6,
+            "child_section_count": 0,
+            "parent_heading_path": ["Root"],
+        },
+    ]
+    assert document.section_count == 4
+    assert document.max_section_depth == 3
+    assert document.empty_section_count == 1
+    assert report.summary["section_count"] == 4
+    assert report.summary["max_section_depth"] == 3
+    assert report.summary["empty_section_count"] == 1
+
+    rendered_payload = json.dumps(payload)
+    assert "Intro prose" not in rendered_payload
+    assert "authority" not in rendered_payload
+    assert "shape" not in rendered_payload
+    assert "body claim" not in rendered_payload
+
+
+def test_section_boundaries_ignore_heading_like_text_inside_code_blocks(tmp_path):
+    _write(
+        tmp_path / "docs" / "section_code.md",
+        "\n".join(
+            [
+                "# Root",
+                "```",
+                "## Not a Section",
+                "```",
+                "## Next",
+            ]
+        ),
+    )
+
+    document = observe_documentation_structure(tmp_path).documents[0]
+    payload = document.to_json_dict()
+
+    assert payload["sections"] == [
+        {
+            "heading_text": "Root",
+            "heading_level": 1,
+            "start_line": 1,
+            "end_line": 5,
+            "child_section_count": 1,
+            "parent_heading_path": [],
+        },
+        {
+            "heading_text": "Next",
+            "heading_level": 2,
+            "start_line": 5,
+            "end_line": 5,
+            "child_section_count": 0,
+            "parent_heading_path": ["Root"],
+        },
+    ]
+    assert "Not a Section" not in json.dumps(payload)
+
+
 def test_front_matter_must_start_file_and_missing_heading_status(tmp_path):
     _write(
         tmp_path / "docs" / "later_delimiter.md",
