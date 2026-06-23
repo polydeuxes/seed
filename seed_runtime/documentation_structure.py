@@ -32,6 +32,16 @@ class DocumentationHeadingRecord:
 
 
 @dataclass(frozen=True)
+class DocumentationSectionRecord:
+    heading_text: str
+    heading_level: int
+    start_line: int
+    end_line: int
+    child_section_count: int
+    parent_heading_path: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class DocumentationLinkRecord:
     source_path: str
     raw_target: str
@@ -61,6 +71,10 @@ class DocumentationStructureRecord:
     max_heading_depth: int
     skipped_heading_level_present: bool
     duplicate_heading_texts: tuple[str, ...]
+    sections: tuple[DocumentationSectionRecord, ...]
+    section_count: int
+    max_section_depth: int
+    empty_section_count: int
     link_observations: tuple[DocumentationLinkRecord, ...]
     code_block_observations: tuple[DocumentationCodeBlockRecord, ...]
     structure_status: str
@@ -70,6 +84,10 @@ class DocumentationStructureRecord:
         data["front_matter_keys"] = list(self.front_matter_keys)
         data["heading_outline"] = [asdict(heading) for heading in self.heading_outline]
         data["duplicate_heading_texts"] = list(self.duplicate_heading_texts)
+        data["sections"] = [
+            {**asdict(section), "parent_heading_path": list(section.parent_heading_path)}
+            for section in self.sections
+        ]
         data["link_observations"] = [asdict(link) for link in self.link_observations]
         data["code_block_observations"] = [
             asdict(code_block) for code_block in self.code_block_observations
@@ -131,6 +149,9 @@ def observe_documentation_structure(repo_root: Path) -> DocumentationStructureRe
                 if code_block.language is not None
             }
         ),
+        "section_count": sum(d.section_count for d in documents),
+        "max_section_depth": max((d.max_section_depth for d in documents), default=0),
+        "empty_section_count": sum(d.empty_section_count for d in documents),
     }
     return DocumentationStructureReport(documents, summary, dict(BOUNDARY))
 
@@ -144,6 +165,7 @@ def observe_markdown_document(
     code_block_observations = tuple(_code_block_observations(lines))
     code_content_lines = _code_content_line_numbers(code_block_observations, len(lines))
     heading_outline = tuple(_heading_outline(lines, code_content_lines))
+    sections = tuple(_section_inventory(heading_outline, lines, code_content_lines))
     source_path = _relative_path(path, repo_root)
     link_observations = tuple(
         _link_observations(lines, path, source_path, repo_root, code_content_lines)
@@ -161,6 +183,15 @@ def observe_markdown_document(
         max_heading_depth=max((heading.level for heading in heading_outline), default=0),
         skipped_heading_level_present=_skipped_heading_level_present(heading_outline),
         duplicate_heading_texts=tuple(_duplicate_heading_texts(heading_outline)),
+        sections=sections,
+        section_count=len(sections),
+        max_section_depth=max(
+            (len(section.parent_heading_path) + 1 for section in sections), default=0
+        ),
+        empty_section_count=sum(
+            _section_is_empty(section, lines, code_content_lines)
+            for section in sections
+        ),
         link_observations=link_observations,
         code_block_observations=code_block_observations,
         structure_status=_structure_status(front_matter_present, heading_present),
@@ -187,6 +218,9 @@ def format_documentation_structure(report: DocumentationStructureReport) -> str:
         f"Fenced code blocks: {summary['code_block_count']}",
         f"Unclosed fenced code blocks: {summary['unclosed_code_block_count']}",
         f"Fenced code block languages: {_format_languages(summary['code_block_languages'])}",
+        f"Sections: {summary['section_count']}",
+        f"Maximum section depth: {summary['max_section_depth']}",
+        f"Empty sections: {summary['empty_section_count']}",
         "",
         f"Boundary: {BOUNDARY_TEXT}",
     ]
@@ -322,6 +356,82 @@ def _heading_outline(
             )
         )
     return headings
+
+
+def _section_inventory(
+    headings: tuple[DocumentationHeadingRecord, ...],
+    lines: list[str],
+    code_content_lines: set[int] | None = None,
+) -> list[DocumentationSectionRecord]:
+    sections: list[DocumentationSectionRecord] = []
+    child_counts = [0 for _heading in headings]
+    parent_indexes: list[int | None] = []
+    stack: list[tuple[int, int]] = []
+    for index, heading in enumerate(headings):
+        while stack and stack[-1][0] >= heading.level:
+            stack.pop()
+        parent_index = stack[-1][1] if stack else None
+        parent_indexes.append(parent_index)
+        if parent_index is not None:
+            child_counts[parent_index] += 1
+        stack.append((heading.level, index))
+
+    parent_paths = [
+        _parent_heading_path(index, headings, parent_indexes)
+        for index, _heading in enumerate(headings)
+    ]
+    for index, heading in enumerate(headings):
+        sections.append(
+            DocumentationSectionRecord(
+                heading_text=heading.text,
+                heading_level=heading.level,
+                start_line=heading.line_number,
+                end_line=_section_end_line(index, headings, len(lines)),
+                child_section_count=child_counts[index],
+                parent_heading_path=parent_paths[index],
+            )
+        )
+    return sections
+
+
+def _parent_heading_path(
+    index: int,
+    headings: tuple[DocumentationHeadingRecord, ...],
+    parent_indexes: list[int | None],
+) -> tuple[str, ...]:
+    path: list[str] = []
+    parent_index = parent_indexes[index]
+    while parent_index is not None:
+        path.append(headings[parent_index].text)
+        parent_index = parent_indexes[parent_index]
+    return tuple(reversed(path))
+
+
+def _section_end_line(
+    index: int, headings: tuple[DocumentationHeadingRecord, ...], line_count: int
+) -> int:
+    heading = headings[index]
+    for later_heading in headings[index + 1 :]:
+        if later_heading.level <= heading.level:
+            return later_heading.line_number - 1
+    return line_count
+
+
+def _section_is_empty(
+    section: DocumentationSectionRecord,
+    lines: list[str],
+    code_content_lines: set[int] | None = None,
+) -> bool:
+    code_content_lines = code_content_lines or set()
+    for line_number in range(section.start_line + 1, section.end_line + 1):
+        if line_number in code_content_lines:
+            continue
+        line = lines[line_number - 1]
+        if _ATX_HEADING_RE.match(line):
+            continue
+        if line.strip():
+            return False
+    return True
 
 
 def _first_h1(headings: tuple[DocumentationHeadingRecord, ...]) -> str | None:
