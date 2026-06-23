@@ -92,6 +92,7 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
             "--sections",
             "--links",
             "--code-fences",
+            "--recurrence",
             "--limit",
             "--top",
             "--summary-only",
@@ -106,7 +107,7 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         writes_event_ledger=False,
         mutates_cluster=False,
         reads_diagnostic_facts=False,
-        description="Observes mechanical document metrics, front matter, heading outline metadata, section inventory boundaries, structural Markdown link targets, and fenced code block structure for top-level repository docs without parsing code contents, interpreting prose, link text, extracting claims, inferring authority, inferring shapes, writing events, or mutating the repository.",
+        description="Observes mechanical document metrics, front matter, heading outline metadata, section inventory boundaries, structural Markdown link targets, and fenced code block structure, and corpus-level structural recurrence for top-level repository docs without parsing code contents, interpreting prose, link text, extracting claims, inferring authority, inferring shapes, promoting ontology, writing events, or mutating the repository.",
     ),
     DiagnosticInventoryEntry(
         name="ownership_discrepancies",

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections import Counter
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
@@ -19,6 +20,23 @@ BOUNDARY = {
     "infers_claims": False,
     "infers_authority": False,
     "infers_shapes": False,
+    "writes_event_ledger": False,
+    "mutates_repository": False,
+}
+
+RECURRENCE_BOUNDARY_TEXT = (
+    "read only; observes structural recurrence only; no prose interpretation; "
+    "no claim extraction; no authority inference; no shape inference; "
+    "no ontology promotion; no event ledger writes; no repository mutation"
+)
+
+RECURRENCE_BOUNDARY = {
+    "read_only": True,
+    "prose_interpretation": False,
+    "claim_extraction": False,
+    "authority_inference": False,
+    "shape_inference": False,
+    "ontology_promotion": False,
     "writes_event_ledger": False,
     "mutates_repository": False,
 }
@@ -46,6 +64,11 @@ class DocumentationStructureOutputBounds:
 
 
 @dataclass(frozen=True)
+class DocumentationStructureRecurrenceOptions:
+    enabled: bool = False
+
+
+@dataclass(frozen=True)
 class DocumentationStructureOptions:
     selection_filters: DocumentationStructureSelectionFilters = field(
         default_factory=DocumentationStructureSelectionFilters
@@ -55,6 +78,9 @@ class DocumentationStructureOptions:
     )
     output_bounds: DocumentationStructureOutputBounds = field(
         default_factory=DocumentationStructureOutputBounds
+    )
+    recurrence: DocumentationStructureRecurrenceOptions = field(
+        default_factory=DocumentationStructureRecurrenceOptions
     )
 
 
@@ -141,7 +167,9 @@ class DocumentationStructureRecord:
         else:
             data.pop("sections", None)
         if detail_expansions.include_links:
-            data["link_observations"] = [asdict(link) for link in self.link_observations]
+            data["link_observations"] = [
+                asdict(link) for link in self.link_observations
+            ]
         else:
             data.pop("link_observations", None)
         if detail_expansions.include_code_fences:
@@ -154,6 +182,29 @@ class DocumentationStructureRecord:
 
 
 @dataclass(frozen=True)
+class DocumentationStructureRecurrenceReport:
+    documents: int
+    section_labels: tuple[dict[str, int | str], ...]
+    front_matter_keys: tuple[dict[str, int | str], ...]
+    heading_depths: tuple[dict[str, int], ...]
+    code_fence_languages: tuple[dict[str, int | str], ...]
+    link_target_classes: dict[str, int]
+
+    def to_json_dict(self) -> dict[str, Any]:
+        return {
+            "documents": self.documents,
+            "recurrence": {
+                "section_labels": list(self.section_labels),
+                "front_matter_keys": list(self.front_matter_keys),
+                "heading_depths": list(self.heading_depths),
+                "code_fence_languages": list(self.code_fence_languages),
+                "link_target_classes": dict(self.link_target_classes),
+            },
+            "boundary": dict(RECURRENCE_BOUNDARY),
+        }
+
+
+@dataclass(frozen=True)
 class DocumentationStructureReport:
     documents: tuple[DocumentationStructureRecord, ...]
     summary: dict[str, Any]
@@ -161,6 +212,7 @@ class DocumentationStructureReport:
     detail_expansions: DocumentationStructureDetailExpansions = field(
         default_factory=DocumentationStructureDetailExpansions
     )
+    recurrence: DocumentationStructureRecurrenceReport | None = None
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
@@ -171,6 +223,15 @@ class DocumentationStructureReport:
             "summary": dict(self.summary),
             "boundary": dict(self.boundary),
         }
+
+    def to_recurrence_json_dict(self) -> dict[str, Any]:
+        if self.recurrence is None:
+            return {
+                "documents": self.summary["matching_documents"],
+                "recurrence": {},
+                "boundary": dict(RECURRENCE_BOUNDARY),
+            }
+        return self.recurrence.to_json_dict()
 
 
 def observe_documentation_structure(
@@ -194,6 +255,11 @@ def observe_documentation_structure(
     all_document_count = len(documents)
     documents = _filter_documents(documents, options.selection_filters)
     matching_documents = documents
+    recurrence = (
+        _build_recurrence_report(matching_documents, repo_root, options.output_bounds)
+        if options.recurrence.enabled
+        else None
+    )
     documents = _bound_documents(documents, repo_root, options.output_bounds)
     summary = _summary(
         matching_documents,
@@ -209,6 +275,7 @@ def observe_documentation_structure(
         summary,
         dict(BOUNDARY),
         options.detail_expansions,
+        recurrence,
     )
 
 
@@ -356,7 +423,9 @@ def _bound_documents(
     return bounded
 
 
-def _document_issue_score(document: DocumentationStructureRecord, repo_root: Path) -> int:
+def _document_issue_score(
+    document: DocumentationStructureRecord, repo_root: Path
+) -> int:
     return (
         int(document.structure_status != "complete")
         + int(not document.has_trailing_newline)
@@ -436,13 +505,81 @@ def _document_metrics(raw_bytes: bytes, lines: list[str]) -> dict[str, int | boo
 def documentation_structure_json(
     report: DocumentationStructureReport,
 ) -> dict[str, Any]:
+    if report.recurrence is not None:
+        return report.to_recurrence_json_dict()
     return report.to_json_dict()
+
+
+def _counter_rows(
+    counter: Counter[Any], name: str, count_name: str, top: int | None
+) -> tuple[dict[str, Any], ...]:
+    rows = [
+        {name: key, count_name: count}
+        for key, count in sorted(
+            counter.items(), key=lambda item: (-item[1], str(item[0]))
+        )
+    ]
+    if top is not None:
+        rows = rows[:top]
+    return tuple(rows)
+
+
+def _build_recurrence_report(
+    documents: tuple[DocumentationStructureRecord, ...],
+    repo_root: Path,
+    bounds: DocumentationStructureOutputBounds | None = None,
+) -> DocumentationStructureRecurrenceReport:
+    top = bounds.top if bounds is not None else None
+    section_labels: Counter[str] = Counter(
+        section.heading_text for document in documents for section in document.sections
+    )
+    front_matter_keys: Counter[str] = Counter(
+        key for document in documents for key in document.front_matter_keys
+    )
+    heading_depths: Counter[int] = Counter(
+        heading.level for document in documents for heading in document.heading_outline
+    )
+    code_fence_languages: Counter[str] = Counter(
+        code_block.language or "none"
+        for document in documents
+        for code_block in document.code_block_observations
+    )
+    link_target_classes = {
+        "internal_docs_links": sum(
+            link.points_under_docs
+            for document in documents
+            for link in document.link_observations
+        ),
+        "external_links": sum(
+            not link.is_relative
+            for document in documents
+            for link in document.link_observations
+        ),
+        "broken_local_docs_links": sum(
+            _local_doc_link_is_broken(link, repo_root)
+            for document in documents
+            for link in document.link_observations
+        ),
+    }
+    return DocumentationStructureRecurrenceReport(
+        documents=len(documents),
+        section_labels=_counter_rows(section_labels, "label", "count", top),
+        front_matter_keys=_counter_rows(front_matter_keys, "key", "count", top),
+        heading_depths=_counter_rows(heading_depths, "depth", "count", top),
+        code_fence_languages=_counter_rows(
+            code_fence_languages, "language", "count", top
+        ),
+        link_target_classes=link_target_classes,
+    )
 
 
 def format_documentation_structure(
     report: DocumentationStructureReport,
     options: DocumentationStructureOptions | None = None,
 ) -> str:
+    options = options or DocumentationStructureOptions()
+    if report.recurrence is not None:
+        return format_documentation_structure_recurrence(report.recurrence, options)
     summary = report.summary
     lines = [
         "Documentation Structure",
@@ -487,7 +624,6 @@ def format_documentation_structure(
         lines.extend(["", "Incomplete documents:"])
         for document in incomplete:
             lines.append(f"- {document.path}: {document.structure_status}")
-    options = options or DocumentationStructureOptions()
     filters = options.selection_filters
     details = options.detail_expansions
     if (
@@ -882,3 +1018,43 @@ def _resolved_local_target(
     if not target_path:
         return source_path.resolve()
     return (source_path.parent / target_path).resolve()
+
+
+def format_documentation_structure_recurrence(
+    recurrence: DocumentationStructureRecurrenceReport,
+    options: DocumentationStructureOptions | None = None,
+) -> str:
+    options = options or DocumentationStructureOptions()
+    lines = [
+        "Documentation Structure Recurrence",
+        "",
+        f"Documents: {recurrence.documents}",
+    ]
+    groups = (
+        ("Section labels", recurrence.section_labels, "label"),
+        ("Front matter keys", recurrence.front_matter_keys, "key"),
+        ("Heading depths", recurrence.heading_depths, "depth"),
+        ("Code fence languages", recurrence.code_fence_languages, "language"),
+    )
+    for title, rows, key_name in groups:
+        lines.extend(["", f"{title}:"])
+        if options.output_bounds.summary_only:
+            lines.append(f"- distinct entries: {len(rows)}")
+            continue
+        if rows:
+            for row in rows:
+                label = row[key_name]
+                if key_name == "depth":
+                    label = f"depth {label}"
+                lines.append(f"- {label}: {row['count']}")
+        else:
+            lines.append("- none")
+    lines.extend(["", "Link target classes:"])
+    for key, label in (
+        ("internal_docs_links", "internal docs links"),
+        ("external_links", "external links"),
+        ("broken_local_docs_links", "broken local docs links"),
+    ):
+        lines.append(f"- {label}: {recurrence.link_target_classes[key]}")
+    lines.extend(["", f"Boundary: {RECURRENCE_BOUNDARY_TEXT}"])
+    return "\n".join(lines)

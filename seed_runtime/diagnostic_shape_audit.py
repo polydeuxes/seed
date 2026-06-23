@@ -118,6 +118,7 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "--sections",
             "--links",
             "--code-fences",
+            "--recurrence",
             "--limit",
             "--top",
             "--summary-only",
