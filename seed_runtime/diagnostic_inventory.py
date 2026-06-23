@@ -96,6 +96,7 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
             "--limit",
             "--top",
             "--summary-only",
+            "--min-count",
         ),
         uses_projected_state=False,
         uses_repo_files=True,

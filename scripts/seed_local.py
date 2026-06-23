@@ -1123,6 +1123,12 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="with --documentation-structure, emit summary and boundary without document rows or detail blocks",
     )
+    documentation_output_group.add_argument(
+        "--min-count",
+        type=int,
+        metavar="N",
+        help="with --documentation-structure --recurrence, emit itemized recurrence entries observed at least N times",
+    )
     parser.add_argument(
         "--diagnostic-inventory",
         action="store_true",
@@ -2171,6 +2177,7 @@ def validate_lifecycle_args(
             args.limit is not None,
             args.top is not None,
             args.summary_only,
+            args.min_count is not None,
             args.recurrence,
         )
     )
@@ -2178,7 +2185,7 @@ def validate_lifecycle_args(
         parser.error(
             "--document, --missing-front-matter, --missing-trailing-newline, "
             "--empty-sections, --links, --code-fences, --sections, --recurrence, --limit, "
-            "--top, and --summary-only require "
+            "--top, --summary-only, and --min-count require "
             "--documentation-structure"
         )
     if args.documentation_structure:
@@ -2186,6 +2193,8 @@ def validate_lifecycle_args(
             parser.error("--limit must be zero or greater")
         if args.top is not None and args.top < 0:
             parser.error("--top must be zero or greater")
+        if args.min_count is not None and args.min_count < 1:
+            parser.error("--min-count must be one or greater")
     if args.audit_compare and not args.kind:
         parser.error("--audit-compare requires --kind")
     if args.kind and not args.audit_compare:
@@ -6048,6 +6057,7 @@ def main(argv: list[str] | None = None) -> int:
                 limit=args.limit,
                 top=args.top,
                 summary_only=args.summary_only,
+                min_count=args.min_count,
             ),
             recurrence=DocumentationStructureRecurrenceOptions(enabled=args.recurrence),
         )

@@ -92,6 +92,7 @@ def test_current_diagnostic_shapes_match_implementation_authority():
         "--limit",
         "--top",
         "--summary-only",
+        "--min-count",
     )
     assert _entry("documentation_structure").uses_repo_files
     assert (

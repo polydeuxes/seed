@@ -122,6 +122,7 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "--limit",
             "--top",
             "--summary-only",
+            "--min-count",
         ),
         repo_file_markers=(
             "repo_root",
