@@ -71,6 +71,7 @@ class DocumentationStructureRecurrenceOptions:
     rare: bool = False
     missing_common_sections: bool = False
     outliers: bool = False
+    skeletons: bool = False
 
 
 @dataclass(frozen=True)
@@ -635,7 +636,7 @@ def _rendered_skeleton_entries(
 
 
 def _render_skeleton_signature(
-    document: DocumentationStructureRecord, max_entries: int = 8
+    document: DocumentationStructureRecord, max_entries: int = 3
 ) -> str:
     entries = _rendered_skeleton_entries(document)
     if not entries:
@@ -649,24 +650,89 @@ def _render_skeleton_signature(
 def _skeleton_signature_rows(
     documents: tuple[DocumentationStructureRecord, ...], top: int | None
 ) -> tuple[dict[str, Any], ...]:
-    counts = Counter(_skeleton_signature(document) for document in documents)
+    raw_counts = Counter(_skeleton_signature(document) for document in documents)
     representatives = {
         _skeleton_signature(document): document for document in documents
     }
-    rows = []
-    for signature, document_count in sorted(
-        counts.items(), key=lambda item: (-item[1], str(item[0]))
-    ):
+    no_section_variants: Counter[tuple[int, int, int, int, int]] = Counter()
+    no_section_raw_signatures: dict[str, int] = {}
+    rows: list[dict[str, Any]] = []
+    for signature, document_count in raw_counts.items():
         document = representatives[signature]
+        metrics = _section_skeleton_metrics(document)
+        if metrics["h2_count"] == 0 and metrics["h3_count"] == 0:
+            key = (
+                metrics["section_count"],
+                metrics["max_depth"],
+                metrics["h1_count"],
+                metrics["h2_count"],
+                metrics["h3_count"],
+            )
+            no_section_variants[key] += document_count
+            no_section_raw_signatures[signature] = document_count
+            continue
         rows.append(
             {
                 "signature": signature,
                 "rendered_signature": _render_skeleton_signature(document),
                 "document_count": document_count,
                 "docs_count": document_count,
-                **_section_skeleton_metrics(document),
+                "raw_signatures": [
+                    {"signature": signature, "document_count": document_count}
+                ],
+                **metrics,
             }
         )
+    if no_section_variants:
+        total = sum(no_section_variants.values())
+        variants = [
+            {
+                "document_count": count,
+                "docs_count": count,
+                "section_count": section_count,
+                "max_depth": max_depth,
+                "h1_count": h1_count,
+                "h2_count": h2_count,
+                "h3_count": h3_count,
+            }
+            for (
+                section_count,
+                max_depth,
+                h1_count,
+                h2_count,
+                h3_count,
+            ), count in sorted(
+                no_section_variants.items(), key=lambda item: (-item[1], item[0])
+            )
+        ]
+        rows.append(
+            {
+                "signature": "none",
+                "rendered_signature": "no H2/H3 sections",
+                "document_count": total,
+                "docs_count": total,
+                "raw_signatures": [
+                    {"signature": signature, "document_count": count}
+                    for signature, count in sorted(
+                        no_section_raw_signatures.items(),
+                        key=lambda item: (-item[1], item[0]),
+                    )
+                ],
+                "variants": variants,
+                "section_count": 0,
+                "max_depth": max(
+                    (variant[1] for variant in no_section_variants), default=0
+                ),
+                "h1_count": sum(
+                    variant[2] * count for variant, count in no_section_variants.items()
+                ),
+                "h2_count": 0,
+                "h3_count": 0,
+            }
+        )
+    rows.sort(
+        key=lambda row: (-int(row["document_count"]), str(row["rendered_signature"]))
+    )
     if top is not None:
         rows = rows[:top]
     return tuple(rows)
@@ -1413,20 +1479,29 @@ def format_documentation_structure_recurrence(
                     lines.append(f"  - {row[key_name]}: {row['count']}")
             else:
                 lines.append("  - none")
-    lines.extend(["", "Section skeleton signatures:"])
-    if options.output_bounds.summary_only:
-        lines.append(
-            f"- total distinct signatures: {len(recurrence.section_skeleton_signatures)}"
-        )
-    elif recurrence.section_skeleton_signatures:
-        for row in recurrence.section_skeleton_signatures:
+    if options.recurrence.skeletons:
+        lines.extend(["", "Section skeleton signatures:"])
+        if options.output_bounds.summary_only:
             lines.append(
-                f"- {row['rendered_signature']}: {row['document_count']} docs; "
-                f"sections={row['section_count']}; max_depth={row['max_depth']}; "
-                f"h1={row['h1_count']}; h2={row['h2_count']}; h3={row['h3_count']}"
+                f"- total distinct signatures: {len(recurrence.section_skeleton_signatures)}"
             )
-    else:
-        lines.append("- none")
+        elif recurrence.section_skeleton_signatures:
+            for row in recurrence.section_skeleton_signatures:
+                lines.append(
+                    f"- {row['rendered_signature']}: {row['document_count']} docs; "
+                    f"sections={row['section_count']}; max_depth={row['max_depth']}; "
+                    f"h1={row['h1_count']}; h2={row['h2_count']}; h3={row['h3_count']}"
+                )
+                if row.get("variants"):
+                    lines.append("  variants:")
+                    for variant in row["variants"]:
+                        lines.append(
+                            f"    - h1={variant['h1_count']}: {variant['document_count']} docs; "
+                            f"sections={variant['section_count']}; max_depth={variant['max_depth']}; "
+                            f"h2={variant['h2_count']}; h3={variant['h3_count']}"
+                        )
+        else:
+            lines.append("- none")
     if options.recurrence.missing_common_sections:
         lines.extend(["", "Common section labels:"])
         if recurrence.common_section_labels:

@@ -92,6 +92,7 @@ def test_current_diagnostic_shapes_match_implementation_authority():
         "--rare",
         "--missing-common-sections",
         "--outliers",
+        "--skeletons",
         "--limit",
         "--top",
         "--summary-only",

@@ -1117,6 +1117,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="with --documentation-structure, rank documents by structural signals only",
     )
+    documentation_detail_group.add_argument(
+        "--skeletons",
+        action="store_true",
+        help="with --documentation-structure --recurrence, include section skeleton signature rows",
+    )
 
     documentation_output_group = parser.add_argument_group(
         "documentation structure output bounds"
@@ -2228,8 +2233,12 @@ def validate_lifecycle_args(
             and args.max_count < args.min_count
         ):
             parser.error("--max-count must be greater than or equal to --min-count")
-        if (args.rare or args.missing_common_sections) and not args.recurrence:
-            parser.error("--rare and --missing-common-sections require --recurrence")
+        if (
+            args.rare or args.missing_common_sections or args.skeletons
+        ) and not args.recurrence:
+            parser.error(
+                "--rare, --missing-common-sections, and --skeletons require --recurrence"
+            )
     if args.audit_compare and not args.kind:
         parser.error("--audit-compare requires --kind")
     if args.kind and not args.audit_compare:
@@ -6100,6 +6109,7 @@ def main(argv: list[str] | None = None) -> int:
                 rare=args.rare,
                 missing_common_sections=args.missing_common_sections,
                 outliers=args.outliers,
+                skeletons=args.skeletons,
             ),
         )
         try:
