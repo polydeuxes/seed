@@ -62,11 +62,15 @@ class DocumentationStructureOutputBounds:
     top: int | None = None
     summary_only: bool = False
     min_count: int | None = None
+    max_count: int | None = None
 
 
 @dataclass(frozen=True)
 class DocumentationStructureRecurrenceOptions:
     enabled: bool = False
+    rare: bool = False
+    missing_common_sections: bool = False
+    outliers: bool = False
 
 
 @dataclass(frozen=True)
@@ -192,6 +196,12 @@ class DocumentationStructureRecurrenceReport:
     link_target_classes: dict[str, int]
     applied_min_count: dict[str, int]
     itemized_summaries: dict[str, dict[str, int]]
+    recurrence_distributions: dict[str, tuple[dict[str, int | str], ...]]
+    rare_structures: dict[str, tuple[dict[str, int | str], ...]]
+    section_skeleton_signatures: tuple[dict[str, int | str], ...]
+    common_section_labels: tuple[dict[str, int | str], ...]
+    documents_missing_common_sections: tuple[dict[str, Any], ...]
+    structural_outliers: tuple[dict[str, Any], ...]
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
@@ -206,6 +216,19 @@ class DocumentationStructureRecurrenceReport:
                 "heading_depths": list(self.heading_depths),
                 "code_fence_languages": list(self.code_fence_languages),
                 "link_target_classes": dict(self.link_target_classes),
+                "recurrence_distributions": {
+                    key: list(value)
+                    for key, value in self.recurrence_distributions.items()
+                },
+                "rare_structures": {
+                    key: list(value) for key, value in self.rare_structures.items()
+                },
+                "section_skeleton_signatures": list(self.section_skeleton_signatures),
+                "common_section_labels": list(self.common_section_labels),
+                "documents_missing_common_sections": list(
+                    self.documents_missing_common_sections
+                ),
+                "structural_outliers": list(self.structural_outliers),
             },
             "boundary": dict(RECURRENCE_BOUNDARY),
         }
@@ -536,6 +559,145 @@ def _counter_rows(
     return tuple(rows)
 
 
+_BUCKETS = (
+    ("1", 1, 1),
+    ("2", 2, 2),
+    ("3-4", 3, 4),
+    ("5-9", 5, 9),
+    ("10-24", 10, 24),
+    ("25-99", 25, 99),
+    ("100+", 100, None),
+)
+
+
+def _recurrence_distribution(counter: Counter[Any]) -> tuple[dict[str, int | str], ...]:
+    rows = []
+    for label, low, high in _BUCKETS:
+        rows.append(
+            {
+                "bucket": label,
+                "distinct_entries": sum(
+                    (count >= low and (high is None or count <= high))
+                    for count in counter.values()
+                ),
+            }
+        )
+    return tuple(rows)
+
+
+def _rare_rows(
+    counter: Counter[Any], name: str, min_count: int, max_count: int, limit: int | None
+) -> tuple[dict[str, Any], ...]:
+    rows = [
+        {name: key, "count": count}
+        for key, count in sorted(
+            counter.items(), key=lambda item: (item[1], str(item[0]))
+        )
+        if min_count <= count <= max_count
+    ]
+    if limit is not None:
+        rows = rows[:limit]
+    return tuple(rows)
+
+
+def _skeleton_signature(document: DocumentationStructureRecord) -> str:
+    parts = []
+    for heading in document.heading_outline:
+        parts.append("H1" if heading.level == 1 else f"H{heading.level}:{heading.text}")
+    return "|".join(parts) or "none"
+
+
+def _common_section_rows(
+    section_doc_counts: Counter[str], document_count: int, threshold: int
+) -> tuple[dict[str, int | str], ...]:
+    return tuple(
+        {"label": label, "present": count, "missing": document_count - count}
+        for label, count in sorted(
+            section_doc_counts.items(), key=lambda item: (-item[1], item[0])
+        )
+        if count >= threshold
+    )
+
+
+def _documents_missing_common_sections(
+    documents: tuple[DocumentationStructureRecord, ...],
+    common_labels: tuple[str, ...],
+    limit: int | None,
+) -> tuple[dict[str, Any], ...]:
+    rows = []
+    for document in documents:
+        present = {section.heading_text for section in document.sections}
+        missing = [label for label in common_labels if label not in present]
+        if missing:
+            rows.append(
+                {
+                    "path": document.path,
+                    "missing_section_labels": missing,
+                    "missing_count": len(missing),
+                }
+            )
+    rows.sort(key=lambda row: (-row["missing_count"], row["path"]))
+    if limit is not None:
+        rows = rows[:limit]
+    return tuple(rows)
+
+
+def _structural_outlier_rows(
+    documents: tuple[DocumentationStructureRecord, ...],
+    section_counts: Counter[str],
+    limit: int | None,
+) -> tuple[dict[str, Any], ...]:
+    rows = []
+    for document in documents:
+        signals = []
+        if not document.front_matter_present:
+            signals.append({"signal": "missing_front_matter"})
+        if not document.has_trailing_newline:
+            signals.append({"signal": "missing_trailing_newline"})
+        if document.empty_section_count:
+            signals.append(
+                {"signal": "empty_sections", "count": document.empty_section_count}
+            )
+        if document.section_count >= 10:
+            signals.append(
+                {"signal": "high_section_count", "count": document.section_count}
+            )
+        if len(document.code_block_observations) >= 5:
+            signals.append(
+                {
+                    "signal": "high_code_fence_count",
+                    "count": len(document.code_block_observations),
+                }
+            )
+        if len(document.link_observations) >= 10:
+            signals.append(
+                {"signal": "high_link_count", "count": len(document.link_observations)}
+            )
+        if document.max_heading_depth >= 5:
+            signals.append(
+                {"signal": "deep_heading_depth", "count": document.max_heading_depth}
+            )
+        rare_count = sum(
+            1
+            for section in document.sections
+            if section_counts[section.heading_text] <= 2
+        )
+        if rare_count:
+            signals.append({"signal": "rare_section_labels", "count": rare_count})
+        if signals:
+            rows.append(
+                {
+                    "path": document.path,
+                    "signal_count": len(signals),
+                    "signals": signals,
+                }
+            )
+    rows.sort(key=lambda row: (-row["signal_count"], row["path"]))
+    if limit is not None:
+        rows = rows[:limit]
+    return tuple(rows)
+
+
 def _build_recurrence_report(
     documents: tuple[DocumentationStructureRecord, ...],
     repo_root: Path,
@@ -582,6 +744,47 @@ def _build_recurrence_report(
         }
         for key, counter in itemized_counters.items()
     }
+    recurrence_distributions = {
+        key: _recurrence_distribution(counter)
+        for key, counter in itemized_counters.items()
+    }
+    rare_min = explicit_min_count if explicit_min_count is not None else 1
+    rare_max = (
+        bounds.max_count if bounds is not None and bounds.max_count is not None else 2
+    )
+    limit = bounds.limit if bounds is not None else None
+    rare_structures = {
+        "section_labels": _rare_rows(
+            section_labels, "label", rare_min, rare_max, limit
+        ),
+        "front_matter_keys": _rare_rows(
+            front_matter_keys, "key", rare_min, rare_max, limit
+        ),
+        "heading_depths": _rare_rows(
+            heading_depths, "depth", rare_min, rare_max, limit
+        ),
+        "code_fence_languages": _rare_rows(
+            code_fence_languages, "language", rare_min, rare_max, limit
+        ),
+    }
+    skeleton_counts = Counter(_skeleton_signature(document) for document in documents)
+    skeleton_rows = _counter_rows(
+        skeleton_counts, "signature", "document_count", top, 1
+    )
+    section_doc_counts: Counter[str] = Counter()
+    for document in documents:
+        section_doc_counts.update(
+            {section.heading_text for section in document.sections}
+        )
+    common_threshold = 25
+    common_rows = _common_section_rows(
+        section_doc_counts, len(documents), common_threshold
+    )
+    common_labels = tuple(str(row["label"]) for row in common_rows)
+    missing_common_rows = _documents_missing_common_sections(
+        documents, common_labels, limit
+    )
+    outlier_rows = _structural_outlier_rows(documents, section_labels, limit)
     link_target_classes = {
         "internal_docs_links": sum(
             link.points_under_docs
@@ -624,6 +827,12 @@ def _build_recurrence_report(
         link_target_classes=link_target_classes,
         applied_min_count=applied_min_count,
         itemized_summaries=itemized_summaries,
+        recurrence_distributions=recurrence_distributions,
+        rare_structures=rare_structures,
+        section_skeleton_signatures=skeleton_rows,
+        common_section_labels=common_rows,
+        documents_missing_common_sections=missing_common_rows,
+        structural_outliers=outlier_rows,
     )
 
 
@@ -1114,6 +1323,75 @@ def format_documentation_structure_recurrence(
                 if key_name == "depth":
                     label = f"depth {label}"
                 lines.append(f"- {label}: {row['count']}")
+        else:
+            lines.append("- none")
+    for title, group_key in (
+        ("Section label recurrence distribution", "section_labels"),
+        ("Front matter key recurrence distribution", "front_matter_keys"),
+        ("Heading depth recurrence distribution", "heading_depths"),
+        ("Code fence language recurrence distribution", "code_fence_languages"),
+    ):
+        lines.extend(["", f"{title}:"])
+        for row in recurrence.recurrence_distributions[group_key]:
+            lines.append(f"- {row['bucket']} occurrences: {row['distinct_entries']}")
+    if options.recurrence.rare:
+        lines.extend(["", "Rare structures:"])
+        for title, group_key, key_name in (
+            ("section labels", "section_labels", "label"),
+            ("front matter keys", "front_matter_keys", "key"),
+            ("heading depths", "heading_depths", "depth"),
+            ("code fence languages", "code_fence_languages", "language"),
+        ):
+            lines.append(f"- {title}:")
+            rows = recurrence.rare_structures[group_key]
+            if options.output_bounds.summary_only:
+                lines.append(f"  - entries: {len(rows)}")
+            elif rows:
+                for row in rows:
+                    lines.append(f"  - {row[key_name]}: {row['count']}")
+            else:
+                lines.append("  - none")
+    lines.extend(["", "Section skeleton signatures:"])
+    if options.output_bounds.summary_only:
+        lines.append(
+            f"- total distinct signatures: {len(recurrence.section_skeleton_signatures)}"
+        )
+    elif recurrence.section_skeleton_signatures:
+        for row in recurrence.section_skeleton_signatures:
+            lines.append(f"- {row['signature']}: {row['document_count']} docs")
+    else:
+        lines.append("- none")
+    if options.recurrence.missing_common_sections:
+        lines.extend(["", "Common section labels:"])
+        if recurrence.common_section_labels:
+            for row in recurrence.common_section_labels:
+                lines.append(
+                    f"- {row['label']}: present {row['present']}, missing {row['missing']}"
+                )
+        else:
+            lines.append("- none")
+        if not options.output_bounds.summary_only:
+            lines.extend(["", "Documents missing common section labels:"])
+            if recurrence.documents_missing_common_sections:
+                for row in recurrence.documents_missing_common_sections:
+                    labels = ", ".join(row["missing_section_labels"])
+                    lines.append(
+                        f"- {row['path']}: missing {row['missing_count']} ({labels})"
+                    )
+            else:
+                lines.append("- none")
+    if options.recurrence.outliers:
+        lines.extend(["", "Structural outliers:"])
+        if options.output_bounds.summary_only:
+            lines.append(
+                f"- documents with structural signals: {len(recurrence.structural_outliers)}"
+            )
+        elif recurrence.structural_outliers:
+            for row in recurrence.structural_outliers:
+                lines.append(f"- {row['path']}: {row['signal_count']} signals")
+                for signal in row["signals"]:
+                    suffix = f": {signal['count']}" if "count" in signal else ""
+                    lines.append(f"  - {signal['signal']}{suffix}")
         else:
             lines.append("- none")
     lines.extend(["", "Link target classes:"])
