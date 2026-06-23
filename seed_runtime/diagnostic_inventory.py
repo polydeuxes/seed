@@ -85,6 +85,7 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         name="documentation_structure",
         cli_flags=(
             "--documentation-structure",
+            "--document",
             "--missing-front-matter",
             "--missing-trailing-newline",
             "--empty-sections",

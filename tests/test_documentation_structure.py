@@ -49,7 +49,6 @@ def test_observes_yaml_front_matter_keys_and_h1_without_values_or_prose(tmp_path
     assert "shape meaning" not in rendered_payload
 
 
-
 def test_document_metrics_for_empty_document(tmp_path):
     _write(tmp_path / "docs" / "empty.md", "")
 
@@ -105,6 +104,7 @@ def test_document_metrics_report_byte_and_line_count_summary(tmp_path):
     assert report.summary["nonblank_line_count"] == 3
     assert report.summary["empty_document_count"] == 0
     assert report.summary["documents_without_trailing_newline"] == 0
+
 
 def test_heading_outline_records_only_structural_heading_metadata(tmp_path):
     _write(
@@ -327,8 +327,13 @@ def test_human_output_renders_summary_incomplete_documents_and_boundary(tmp_path
     assert "docs/missing.md: missing_front_matter_and_heading" in output
 
 
-def test_cli_json_is_valid_and_does_not_write_event_ledger_or_mutate_repo(tmp_path, monkeypatch, capsys):
-    _write(tmp_path / "docs" / "example.md", "---\nstatus: hidden\n---\n# Example\nBody claim.\n")
+def test_cli_json_is_valid_and_does_not_write_event_ledger_or_mutate_repo(
+    tmp_path, monkeypatch, capsys
+):
+    _write(
+        tmp_path / "docs" / "example.md",
+        "---\nstatus: hidden\n---\n# Example\nBody claim.\n",
+    )
     before = sorted(p.relative_to(tmp_path).as_posix() for p in tmp_path.rglob("*"))
     monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
 
@@ -533,15 +538,28 @@ def test_documentation_structure_filter_flags_are_rejected_without_surface():
         except SystemExit as exc:
             assert exc.code == 2
         else:  # pragma: no cover - defensive assertion
-            raise AssertionError(f"{flag} should be rejected without --documentation-structure")
+            raise AssertionError(
+                f"{flag} should be rejected without --documentation-structure"
+            )
 
 
-def test_documentation_structure_filter_flags_are_accepted_and_read_only(tmp_path, monkeypatch, capsys):
-    _write(tmp_path / "docs" / "complete.md", "---\nstatus: ok\n---\n# Complete\n\n[Target](target.md)\n")
+def test_documentation_structure_filter_flags_are_accepted_and_read_only(
+    tmp_path, monkeypatch, capsys
+):
+    _write(
+        tmp_path / "docs" / "complete.md",
+        "---\nstatus: ok\n---\n# Complete\n\n[Target](target.md)\n",
+    )
     _write(tmp_path / "docs" / "target.md", "# Target\n")
     _write(tmp_path / "docs" / "missing_front.md", "# Missing Front\n\n")
-    _write(tmp_path / "docs" / "missing_newline.md", "---\nstatus: ok\n---\n# Missing Newline")
-    _write(tmp_path / "docs" / "empty_sections.md", "# Empty Sections\n\n## Empty\n## Next\nBody\n")
+    _write(
+        tmp_path / "docs" / "missing_newline.md",
+        "---\nstatus: ok\n---\n# Missing Newline",
+    )
+    _write(
+        tmp_path / "docs" / "empty_sections.md",
+        "# Empty Sections\n\n## Empty\n## Next\nBody\n",
+    )
     monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
 
     cases = [
@@ -571,7 +589,9 @@ def test_documentation_structure_filter_flags_are_accepted_and_read_only(tmp_pat
         assert "event ledger writes" in output
 
 
-def test_documentation_structure_detail_flags_are_accepted_in_json_and_read_only(tmp_path, monkeypatch, capsys):
+def test_documentation_structure_detail_flags_are_accepted_in_json_and_read_only(
+    tmp_path, monkeypatch, capsys
+):
     _write(
         tmp_path / "docs" / "details.md",
         "# Details\n\n## Empty\n\n[Target](target.md)\n\n```python\nprint('hidden')\n```\n",
@@ -580,13 +600,18 @@ def test_documentation_structure_detail_flags_are_accepted_in_json_and_read_only
     monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
     before = sorted(p.relative_to(tmp_path).as_posix() for p in tmp_path.rglob("*"))
 
-    assert seed_local.main([
-        "--documentation-structure",
-        "--links",
-        "--code-fences",
-        "--sections",
-        "--json",
-    ]) == 0
+    assert (
+        seed_local.main(
+            [
+                "--documentation-structure",
+                "--links",
+                "--code-fences",
+                "--sections",
+                "--json",
+            ]
+        )
+        == 0
+    )
 
     after = sorted(p.relative_to(tmp_path).as_posix() for p in tmp_path.rglob("*"))
     payload = json.loads(capsys.readouterr().out)
@@ -597,3 +622,110 @@ def test_documentation_structure_detail_flags_are_accepted_in_json_and_read_only
     assert document["sections"]
     assert payload["boundary"]["writes_event_ledger"] is False
     assert payload["boundary"]["mutates_repository"] is False
+
+
+def test_documentation_structure_document_selects_single_doc_in_human_output(
+    tmp_path, monkeypatch, capsys
+):
+    _write(
+        tmp_path / "docs" / "selected.md",
+        "# Selected\n\nVisible prose must stay hidden.\n",
+    )
+    _write(tmp_path / "docs" / "other.md", "# Other\n")
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    assert (
+        seed_local.main(["--documentation-structure", "--document", "docs/selected.md"])
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "Selected document: docs/selected.md" in output
+    assert "Total documents: 1" in output
+    assert "docs/other.md" not in output
+    assert "Visible prose" not in output
+    assert BOUNDARY_TEXT in output
+
+
+def test_documentation_structure_document_missing_is_rejected(tmp_path, monkeypatch):
+    _write(tmp_path / "docs" / "present.md", "# Present\n")
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    try:
+        seed_local.main(["--documentation-structure", "--document", "docs/missing.md"])
+    except SystemExit as exc:
+        assert exc.code == 2
+    else:  # pragma: no cover - defensive assertion
+        raise AssertionError("missing document should be rejected")
+
+
+def test_documentation_structure_document_rejects_traversal(tmp_path, monkeypatch):
+    _write(tmp_path / "docs" / "present.md", "# Present\n")
+    _write(tmp_path / "outside.md", "# Outside\n")
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    for path in ["docs/../outside.md", "../seed/docs/present.md"]:
+        try:
+            seed_local.main(["--documentation-structure", "--document", path])
+        except SystemExit as exc:
+            assert exc.code == 2
+        else:  # pragma: no cover - defensive assertion
+            raise AssertionError(f"{path} should be rejected")
+
+
+def test_documentation_structure_document_rejects_non_doc_paths(tmp_path, monkeypatch):
+    _write(tmp_path / "docs" / "notes.txt", "# Notes\n")
+    _write(tmp_path / "README.md", "# Readme\n")
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    for path in ["docs/notes.txt", "README.md", str(tmp_path / "docs" / "notes.md")]:
+        try:
+            seed_local.main(["--documentation-structure", "--document", path])
+        except SystemExit as exc:
+            assert exc.code == 2
+        else:  # pragma: no cover - defensive assertion
+            raise AssertionError(f"{path} should be rejected")
+
+
+def test_documentation_structure_document_json_shape_is_stable(
+    tmp_path, monkeypatch, capsys
+):
+    _write(
+        tmp_path / "docs" / "selected.md",
+        "---\nsecret: hidden\n---\n# Selected\n\nClaim text.\n",
+    )
+    _write(tmp_path / "docs" / "other.md", "# Other\n")
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    assert (
+        seed_local.main(
+            [
+                "--documentation-structure",
+                "--document",
+                "docs/selected.md",
+                "--json",
+            ]
+        )
+        == 0
+    )
+
+    payload = json.loads(capsys.readouterr().out)
+    assert set(payload) == {"documents", "summary", "boundary"}
+    assert [document["path"] for document in payload["documents"]] == [
+        "docs/selected.md"
+    ]
+    assert payload["summary"]["total_documents"] == 1
+    assert payload["summary"]["selected_document"] == "docs/selected.md"
+    assert payload["boundary"]["interprets_prose"] is False
+    rendered_payload = json.dumps(payload)
+    assert "hidden" not in rendered_payload
+    assert "Claim text" not in rendered_payload
+
+
+def test_documentation_structure_document_flag_is_rejected_without_surface():
+    try:
+        seed_local.main(["--document", "docs/example.md"])
+    except SystemExit as exc:
+        assert exc.code == 2
+    else:  # pragma: no cover - defensive assertion
+        raise AssertionError("--document should require --documentation-structure")
