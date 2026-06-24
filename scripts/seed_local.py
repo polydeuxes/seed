@@ -129,6 +129,7 @@ from seed_runtime.diagnostic_inventory import (
 from seed_runtime.documentation_structure import (
     DocumentationStructureDetailExpansions,
     DocumentationStructureDrilldownOptions,
+    DocumentationStructureMembershipOptions,
     DocumentationStructureOptions,
     DocumentationStructureOutputBounds,
     DocumentationStructureRecurrenceOptions,
@@ -1154,6 +1155,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--where",
         metavar="CATEGORY:KEY",
         help="with --documentation-structure, drill down to exact structural occurrences; supports section-label:<label>",
+    )
+    documentation_detail_group.add_argument(
+        "--membership",
+        metavar="CATEGORY:KEY",
+        help="with --documentation-structure, list documents in an exact structural set; supports section-label:<label>",
     )
 
     documentation_output_group = parser.add_argument_group(
@@ -2275,12 +2281,13 @@ def validate_lifecycle_args(
             args.missing_common_sections,
             args.outliers,
             args.where is not None,
+            args.membership is not None,
         )
     )
     if documentation_structure_filter_requested and not args.documentation_structure:
         parser.error(
             "--document, --missing-front-matter, --missing-trailing-newline, "
-            "--empty-sections, --links, --code-fences, --sections, --recurrence, --rare, --missing-common-sections, --outliers, --where, --limit, "
+            "--empty-sections, --links, --code-fences, --sections, --recurrence, --rare, --missing-common-sections, --outliers, --where, --membership, --limit, "
             "--top, --summary-only, --min-count, and --max-count require "
             "--documentation-structure"
         )
@@ -6244,6 +6251,7 @@ def main(argv: list[str] | None = None) -> int:
                 skeletons=args.skeletons,
             ),
             drilldown=DocumentationStructureDrilldownOptions(where=args.where),
+            membership=DocumentationStructureMembershipOptions(target=args.membership),
         )
         try:
             report = observe_documentation_structure(REPO_ROOT, options, args.document)

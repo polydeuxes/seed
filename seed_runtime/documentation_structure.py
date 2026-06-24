@@ -41,6 +41,26 @@ RECURRENCE_BOUNDARY = {
     "mutates_repository": False,
 }
 
+MEMBERSHIP_BOUNDARY_TEXT = (
+    "exact observed structural inclusion only; no similarity; "
+    "no classification; no ontology promotion; no shape inference; "
+    "no recommendation; no prose interpretation; read only; "
+    "no event ledger writes; no repository mutation"
+)
+
+MEMBERSHIP_BOUNDARY = {
+    "read_only": True,
+    "exact_observed_structural_inclusion": True,
+    "similarity": False,
+    "classification": False,
+    "ontology_promotion": False,
+    "shape_inference": False,
+    "recommendation": False,
+    "prose_interpretation": False,
+    "writes_event_ledger": False,
+    "mutates_repository": False,
+}
+
 
 @dataclass(frozen=True)
 class DocumentationStructureSelectionFilters:
@@ -80,6 +100,11 @@ class DocumentationStructureDrilldownOptions:
 
 
 @dataclass(frozen=True)
+class DocumentationStructureMembershipOptions:
+    target: str | None = None
+
+
+@dataclass(frozen=True)
 class DocumentationStructureOptions:
     selection_filters: DocumentationStructureSelectionFilters = field(
         default_factory=DocumentationStructureSelectionFilters
@@ -95,6 +120,9 @@ class DocumentationStructureOptions:
     )
     drilldown: DocumentationStructureDrilldownOptions = field(
         default_factory=DocumentationStructureDrilldownOptions
+    )
+    membership: DocumentationStructureMembershipOptions = field(
+        default_factory=DocumentationStructureMembershipOptions
     )
 
 
@@ -270,6 +298,28 @@ class DocumentationStructureDrilldownReport:
 
 
 @dataclass(frozen=True)
+class DocumentationStructureMembershipMember:
+    path: str
+
+
+@dataclass(frozen=True)
+class DocumentationStructureMembershipReport:
+    category: str
+    key: str
+    member_count: int
+    members: tuple[DocumentationStructureMembershipMember, ...]
+
+    def to_json_dict(self) -> dict[str, Any]:
+        return {
+            "category": self.category,
+            "key": self.key,
+            "member_count": self.member_count,
+            "members": [asdict(member) for member in self.members],
+            "boundary": dict(MEMBERSHIP_BOUNDARY),
+        }
+
+
+@dataclass(frozen=True)
 class DocumentationStructureReport:
     documents: tuple[DocumentationStructureRecord, ...]
     summary: dict[str, Any]
@@ -279,6 +329,7 @@ class DocumentationStructureReport:
     )
     recurrence: DocumentationStructureRecurrenceReport | None = None
     drilldown: DocumentationStructureDrilldownReport | None = None
+    membership: DocumentationStructureMembershipReport | None = None
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
@@ -333,6 +384,13 @@ def observe_documentation_structure(
         if options.drilldown.where is not None
         else None
     )
+    membership = (
+        _build_membership_report(
+            matching_documents, options.membership.target, options.output_bounds
+        )
+        if options.membership.target is not None
+        else None
+    )
     documents = _bound_documents(documents, repo_root, options.output_bounds)
     summary = _summary(
         matching_documents,
@@ -350,6 +408,7 @@ def observe_documentation_structure(
         options.detail_expansions,
         recurrence,
         drilldown,
+        membership,
     )
 
 
@@ -579,6 +638,8 @@ def _document_metrics(raw_bytes: bytes, lines: list[str]) -> dict[str, int | boo
 def documentation_structure_json(
     report: DocumentationStructureReport,
 ) -> dict[str, Any]:
+    if report.membership is not None:
+        return report.membership.to_json_dict()
     if report.drilldown is not None:
         return report.drilldown.to_json_dict()
     if report.recurrence is not None:
@@ -1009,11 +1070,21 @@ def _build_recurrence_report(
     )
 
 
-def _parse_drilldown_where(where: str) -> tuple[str, str]:
-    category, separator, key = where.partition(":")
+def _parse_section_label_target(value: str, flag: str) -> tuple[str, str]:
+    category, separator, key = value.partition(":")
     if separator != ":" or category != "section-label" or key == "":
-        raise ValueError("--where supports only section-label:<exact label>")
+        raise ValueError(f"{flag} supports only section-label:<exact label>")
     return category, key
+
+
+def _parse_drilldown_where(where: str) -> tuple[str, str]:
+    return _parse_section_label_target(where, "--where")
+
+
+def _document_contains_exact_section_label(
+    document: DocumentationStructureRecord, label: str
+) -> bool:
+    return any(section.heading_text == label for section in document.sections)
 
 
 def _build_drilldown_report(
@@ -1057,11 +1128,40 @@ def _build_drilldown_report(
     )
 
 
+def _build_membership_report(
+    documents: tuple[DocumentationStructureRecord, ...],
+    target: str | None,
+    bounds: DocumentationStructureOutputBounds | None = None,
+) -> DocumentationStructureMembershipReport:
+    if target is None:
+        raise ValueError("--membership requires a structural target")
+    category, key = _parse_section_label_target(target, "--membership")
+    members = [
+        DocumentationStructureMembershipMember(path=document.path)
+        for document in documents
+        if _document_contains_exact_section_label(document, key)
+    ]
+    if bounds is not None and bounds.summary_only:
+        emitted_members: tuple[DocumentationStructureMembershipMember, ...] = ()
+    elif bounds is not None and bounds.limit is not None:
+        emitted_members = tuple(members[: bounds.limit])
+    else:
+        emitted_members = tuple(members)
+    return DocumentationStructureMembershipReport(
+        category=category,
+        key=key,
+        member_count=len(members),
+        members=emitted_members,
+    )
+
+
 def format_documentation_structure(
     report: DocumentationStructureReport,
     options: DocumentationStructureOptions | None = None,
 ) -> str:
     options = options or DocumentationStructureOptions()
+    if report.membership is not None:
+        return format_documentation_structure_membership(report.membership, options)
     if report.drilldown is not None:
         return format_documentation_structure_drilldown(report.drilldown, options)
     if report.recurrence is not None:
@@ -1532,6 +1632,34 @@ def format_documentation_structure_drilldown(
         else:
             lines.append("- none")
     lines.extend(["", f"Boundary: {RECURRENCE_BOUNDARY_TEXT}"])
+    return "\n".join(lines)
+
+
+def format_documentation_structure_membership(
+    membership: DocumentationStructureMembershipReport,
+    options: DocumentationStructureOptions | None = None,
+) -> str:
+    options = options or DocumentationStructureOptions()
+    lines = [
+        "Structural Membership",
+        "",
+        f"Category: {membership.category}",
+        f"Key: {membership.key}",
+        "",
+        "Members:",
+        f"    {membership.member_count}",
+    ]
+    if not options.output_bounds.summary_only:
+        lines.extend(["", "Documents:"])
+        if membership.members:
+            for member in membership.members:
+                lines.append(f"    {member.path}")
+            omitted = membership.member_count - len(membership.members)
+            if omitted > 0:
+                lines.append(f"    ... +{omitted} more")
+        else:
+            lines.append("    none")
+    lines.extend(["", f"Boundary: {MEMBERSHIP_BOUNDARY_TEXT}"])
     return "\n".join(lines)
 
 

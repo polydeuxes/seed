@@ -94,6 +94,7 @@ def test_current_diagnostic_shapes_match_implementation_authority():
         "--outliers",
         "--skeletons",
         "--where",
+        "--membership",
         "--limit",
         "--top",
         "--summary-only",
@@ -102,7 +103,7 @@ def test_current_diagnostic_shapes_match_implementation_authority():
     )
     assert _entry("documentation_structure").uses_repo_files
     assert (
-        "exact section-label structural drilldown"
+        "exact section-label structural membership"
         in _entry("documentation_structure").description
     )
     assert (
