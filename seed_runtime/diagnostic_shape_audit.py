@@ -602,6 +602,14 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         json_function="projection_shape_json",
         cli_flags=("--projection-shape",),
     ),
+    "question_surface_inventory": DiagnosticImplementationSpec(
+        name="question_surface_inventory",
+        module_path="seed_runtime/question_surface_inventory.py",
+        build_function="build_question_surface_inventory",
+        format_function="format_question_surface_inventory",
+        json_function="question_surface_inventory_json",
+        cli_flags=("--question-surface-inventory",),
+    ),
     "inquiry_artifacts": DiagnosticImplementationSpec(
         name="inquiry_artifacts",
         module_path="seed_runtime/inquiry_artifacts.py",

@@ -143,6 +143,11 @@ from seed_runtime.diagnostic_shape_audit import (
     diagnostic_shape_audit_json,
     format_diagnostic_shape_audit,
 )
+from seed_runtime.question_surface_inventory import (
+    build_question_surface_inventory,
+    format_question_surface_inventory,
+    question_surface_inventory_json,
+)
 from seed_runtime.projection_shape import (
     build_projection_shape,
     format_projection_shape,
@@ -1204,6 +1209,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="list diagnostic/test-like operational surfaces and their declared shape",
     )
     parser.add_argument(
+        "--question-surface-inventory",
+        action="store_true",
+        help="list known question families and the existing Seed surfaces that answer them",
+    )
+    parser.add_argument(
         "--diagnostic-shape-audit",
         action="store_true",
         help="compare diagnostic registry declarations with static implementation shape",
@@ -2138,6 +2148,7 @@ def validate_lifecycle_args(
         bool(args.service_ownership_authority),
         bool(args.listener_endpoint_authority),
         bool(args.diagnostic_shape_audit),
+        bool(args.question_surface_inventory),
         bool(args.projection_shape),
         bool(args.component_audit),
         bool(args.operational_story),
@@ -2324,6 +2335,7 @@ def validate_lifecycle_args(
         args.ownership_discrepancies
         or args.capability_needs
         or args.diagnostic_inventory
+        or args.question_surface_inventory
         or args.container_ownership_authority
         or args.service_ownership_authority
         or args.listener_endpoint_authority
@@ -2364,8 +2376,10 @@ def validate_lifecycle_args(
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, or --audit-compare, or --projection-shape"
+            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --question-surface-inventory, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, or --audit-compare, or --projection-shape"
         )
+    if args.question_surface_inventory and args.message:
+        parser.error("--question-surface-inventory does not accept a free-text question argument")
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
     if args.graph_issue_limit < 0:
@@ -6193,6 +6207,14 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(diagnostic_inventory_json(), indent=2, sort_keys=True))
         else:
             print(format_diagnostic_inventory())
+        return 0
+
+    if args.question_surface_inventory:
+        rows = build_question_surface_inventory()
+        if args.json_output:
+            print(json.dumps(question_surface_inventory_json(rows), indent=2, sort_keys=True))
+        else:
+            print(format_question_surface_inventory(rows))
         return 0
 
     if args.documentation_structure:
