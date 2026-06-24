@@ -159,6 +159,16 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         cli_flags=("--container-ownership-authority",),
         diagnostic_fact_read_markers=("build_capability_needs",),
     ),
+    "service_ownership_authority": DiagnosticImplementationSpec(
+        name="service_ownership_authority",
+        module_path="seed_runtime/service_ownership_authority.py",
+        build_function="evaluate_service_ownership_authority_slice",
+        format_function="format_service_ownership_authority",
+        json_function="service_ownership_authority_json",
+        cli_flags=("--service-ownership-authority",),
+        repo_file_markers=("build_observation_inventory",),
+        diagnostic_fact_read_markers=("build_capability_needs",),
+    ),
     "ownership_discrepancies": DiagnosticImplementationSpec(
         name="ownership_discrepancies",
         module_path="seed_runtime/ownership_discrepancies.py",
