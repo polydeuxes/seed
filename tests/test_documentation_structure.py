@@ -1380,3 +1380,117 @@ def test_section_label_drilldown_json_exact_structural_observation_and_boundary(
     assert "authority inference" not in rendered
     assert "Shape inference" not in rendered
     assert "Recommend similar" not in rendered
+
+
+def test_section_label_membership_exact_members_json_boundary_and_read_only(
+    tmp_path, monkeypatch, capsys
+):
+    _write(
+        tmp_path / "docs" / "alpha.md",
+        "# Alpha\n\n## Purpose\nClaims recommendation similarity classification.\n\n## Purposeful\nNot exact.\n\n### Purpose\nOntology prose.\n",
+    )
+    _write(tmp_path / "docs" / "beta.md", "# Beta\n\n## Purpose\nShape inference prose.\n")
+    _write(tmp_path / "docs" / "gamma.md", "# Gamma\n\n## Purposeful\nNot exact.\n")
+    before = {
+        p.relative_to(tmp_path).as_posix(): p.read_text(encoding="utf-8")
+        for p in tmp_path.rglob("*")
+        if p.is_file()
+    }
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    assert (
+        seed_local.main(
+            [
+                "--documentation-structure",
+                "--membership",
+                "section-label:Purpose",
+                "--json",
+            ]
+        )
+        == 0
+    )
+
+    after = {
+        p.relative_to(tmp_path).as_posix(): p.read_text(encoding="utf-8")
+        for p in tmp_path.rglob("*")
+        if p.is_file()
+    }
+    payload = json.loads(capsys.readouterr().out)
+    assert before == after
+    assert set(payload) == {"category", "key", "member_count", "members", "boundary"}
+    assert payload["category"] == "section-label"
+    assert payload["key"] == "Purpose"
+    assert payload["member_count"] == 2
+    assert payload["members"] == [
+        {"path": "docs/alpha.md"},
+        {"path": "docs/beta.md"},
+    ]
+    assert payload["boundary"]["exact_observed_structural_inclusion"] is True
+    assert payload["boundary"]["similarity"] is False
+    assert payload["boundary"]["classification"] is False
+    assert payload["boundary"]["ontology_promotion"] is False
+    assert payload["boundary"]["shape_inference"] is False
+    assert payload["boundary"]["recommendation"] is False
+    assert payload["boundary"]["prose_interpretation"] is False
+    assert payload["boundary"]["writes_event_ledger"] is False
+    assert payload["boundary"]["mutates_repository"] is False
+    rendered = json.dumps(payload)
+    assert "Purposeful" not in rendered
+    assert "Claims recommendation" not in rendered
+    assert "classification" in rendered.lower()
+    assert "ontology" in rendered.lower()
+
+
+def test_section_label_membership_human_limit_summary_and_boundary_language(
+    tmp_path, monkeypatch, capsys
+):
+    _write(tmp_path / "docs" / "alpha.md", "# Alpha\n\n## Purpose\n")
+    _write(tmp_path / "docs" / "beta.md", "# Beta\n\n## Purpose\n")
+    _write(tmp_path / "docs" / "gamma.md", "# Gamma\n\n## Purposeful\n")
+    monkeypatch.setattr(seed_local, "REPO_ROOT", tmp_path)
+
+    assert (
+        seed_local.main(
+            [
+                "--documentation-structure",
+                "--membership",
+                "section-label:Purpose",
+                "--limit",
+                "1",
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "Structural Membership" in output
+    assert "Category: section-label" in output
+    assert "Key: Purpose" in output
+    assert "Members:\n    2" in output
+    assert "docs/alpha.md" in output
+    assert "docs/beta.md" not in output
+    assert "... +1 more" in output
+    assert "Purposeful" not in output
+    assert "exact observed structural inclusion" in output
+    assert "no similarity" in output
+    assert "no classification" in output
+    assert "no ontology promotion" in output
+    assert "no shape inference" in output
+    assert "no recommendation" in output
+    assert "no prose interpretation" in output
+
+    assert (
+        seed_local.main(
+            [
+                "--documentation-structure",
+                "--membership",
+                "section-label:Purpose",
+                "--summary-only",
+            ]
+        )
+        == 0
+    )
+    summary_output = capsys.readouterr().out
+    assert "Members:\n    2" in summary_output
+    assert "docs/alpha.md" not in summary_output
+    assert "Documents:" not in summary_output

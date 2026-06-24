@@ -98,6 +98,7 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
             "--outliers",
             "--skeletons",
             "--where",
+            "--membership",
             "--limit",
             "--top",
             "--summary-only",
@@ -114,7 +115,7 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         writes_event_ledger=False,
         mutates_cluster=False,
         reads_diagnostic_facts=False,
-        description="Observes mechanical document metrics, front matter, heading outline metadata, section inventory boundaries, structural Markdown link targets, and fenced code block structure, and corpus-level structural recurrence, exact section-label structural drilldown, compact human skeleton signature rendering, and raw JSON skeleton signature metrics for top-level repository docs without parsing code contents, interpreting prose, link text, extracting claims, inferring authority, inferring shapes, promoting ontology, writing events, or mutating the repository.",
+        description="Observes mechanical document metrics, front matter, heading outline metadata, section inventory boundaries, structural Markdown link targets, and fenced code block structure, and corpus-level structural recurrence, exact section-label structural drilldown, exact section-label structural membership, compact human skeleton signature rendering, and raw JSON skeleton signature metrics for top-level repository docs without parsing code contents, interpreting prose, link text, extracting claims, inferring authority, inferring shapes, promoting ontology, writing events, or mutating the repository.",
     ),
     DiagnosticInventoryEntry(
         name="container_ownership_authority",

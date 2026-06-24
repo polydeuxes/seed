@@ -124,6 +124,7 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "--outliers",
             "--skeletons",
             "--where",
+            "--membership",
             "--limit",
             "--top",
             "--summary-only",
