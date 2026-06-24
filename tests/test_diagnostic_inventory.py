@@ -184,3 +184,17 @@ def test_inventory_rendering_is_generated_from_registry_data():
     assert "diagnostic_run" in rendered
     assert "writes_event_ledger=true" in rendered
     assert "reads_diagnostic_facts=true" in rendered
+
+
+def test_container_ownership_authority_inventory_entry_declares_boundary():
+    entry = _entry("container_ownership_authority")
+
+    assert entry.cli_flags == ("--container-ownership-authority",)
+    assert entry.supports_json is True
+    assert entry.supports_record is False
+    assert entry.record_scope == "none"
+    assert entry.uses_projected_state is True
+    assert entry.uses_repo_files is False
+    assert entry.reads_diagnostic_facts is True
+    assert entry.writes_event_ledger is False
+    assert entry.mutates_cluster is False
