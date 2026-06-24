@@ -150,6 +150,15 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "authorize_execution",
         ),
     ),
+    "container_ownership_authority": DiagnosticImplementationSpec(
+        name="container_ownership_authority",
+        module_path="seed_runtime/container_ownership_authority.py",
+        build_function="evaluate_container_ownership_authority_slice",
+        format_function="format_container_ownership_authority",
+        json_function="container_ownership_authority_json",
+        cli_flags=("--container-ownership-authority",),
+        diagnostic_fact_read_markers=("build_capability_needs",),
+    ),
     "ownership_discrepancies": DiagnosticImplementationSpec(
         name="ownership_discrepancies",
         module_path="seed_runtime/ownership_discrepancies.py",

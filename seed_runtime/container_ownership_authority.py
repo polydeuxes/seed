@@ -11,6 +11,14 @@ from seed_runtime.observation_permission import SUPPORTED_OBSERVATION_CLASSES
 from seed_runtime.privilege_discovery import _guidance_for
 from seed_runtime.state import State
 
+CONSTRAINED_AUTHORITY_PROFILE = {
+    "root": "unavailable",
+    "docker_socket_read": "unavailable",
+    "active_network_probe": "unauthorized",
+    "local_passive": "available",
+    "external_provider_query": "unknown",
+}
+
 DESIRED_OBSERVATION = "container ownership"
 CONTAINER_RUNTIME_DOMAIN = "container_runtime"
 CONTAINER_OBSERVATIONS = ("container_inventory", "container_port_mapping")
@@ -143,3 +151,44 @@ def _has_subject_specific_container_ownership_pressure(
         if need.capability in required_observations and need.subjects:
             return True
     return False
+
+
+def container_ownership_authority_json(
+    result: ContainerOwnershipAuthoritySlice,
+) -> dict[str, Any]:
+    return result.to_json_dict()
+
+
+def format_container_ownership_authority(
+    result: ContainerOwnershipAuthoritySlice,
+) -> str:
+    lines = [
+        "Container Ownership Authority",
+        "",
+        f"Desired observation: {result.desired_observation}",
+        "Required observations:",
+    ]
+    lines.extend(f"  - {item}" for item in result.required_observations)
+    lines.append("Required authority:")
+    lines.extend(
+        f"  - {observation}: {authority}"
+        for observation, authority in sorted(result.required_authority.items())
+    )
+    lines.append("Available authority:")
+    lines.extend(
+        f"  - {authority}: {status}"
+        for authority, status in sorted(result.available_authority.items())
+    )
+    lines.extend([f"Outcome: {result.outcome}", "Remaining observations:"])
+    if result.remaining_observations:
+        lines.extend(f"  - {item}" for item in result.remaining_observations)
+    else:
+        lines.append("  - none")
+    lines.append("Uncertainty:")
+    lines.extend(f"  - {item}" for item in result.uncertainty)
+    lines.append("Boundary:")
+    lines.extend(
+        f"  - {name}: {str(value).lower()}"
+        for name, value in sorted(result.boundary.items())
+    )
+    return "\n".join(lines)

@@ -47,6 +47,12 @@ from seed_runtime.capability_needs import (
     capability_needs_json,
     format_capability_needs,
 )
+from seed_runtime.container_ownership_authority import (
+    CONSTRAINED_AUTHORITY_PROFILE,
+    container_ownership_authority_json,
+    evaluate_container_ownership_authority_slice,
+    format_container_ownership_authority,
+)
 from seed_runtime.capability_relationship import (
     build_capability_relationship,
     capability_relationship_json,
@@ -1167,6 +1173,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="with --documentation-structure --recurrence --rare, emit rare entries observed at most N times",
     )
     parser.add_argument(
+        "--container-ownership-authority",
+        action="store_true",
+        help="show bounded read-only container ownership authority reasoning",
+    )
+    parser.add_argument(
         "--diagnostic-inventory",
         action="store_true",
         help="list diagnostic/test-like operational surfaces and their declared shape",
@@ -2102,6 +2113,7 @@ def validate_lifecycle_args(
         bool(args.ownership_discrepancies),
         bool(args.capability_needs),
         bool(args.documentation_structure),
+        bool(args.container_ownership_authority),
         bool(args.diagnostic_shape_audit),
         bool(args.projection_shape),
         bool(args.component_audit),
@@ -2289,6 +2301,7 @@ def validate_lifecycle_args(
         args.ownership_discrepancies
         or args.capability_needs
         or args.diagnostic_inventory
+        or args.container_ownership_authority
         or args.documentation_structure
         or args.diagnostic_shape_audit
         or args.projection_shape
@@ -2326,7 +2339,7 @@ def validate_lifecycle_args(
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --diagnostic-inventory, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, or --audit-compare, or --projection-shape"
+            "--capability-needs, --container-ownership-authority, --diagnostic-inventory, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, or --audit-compare, or --projection-shape"
         )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
@@ -6097,6 +6110,23 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(diff, indent=2, sort_keys=True))
         else:
             print(format_audit_compare(diff))
+        return 0
+
+    if args.container_ownership_authority:
+        state = projected_state_from_args(args)
+        result = evaluate_container_ownership_authority_slice(
+            state, CONSTRAINED_AUTHORITY_PROFILE
+        )
+        if args.json_output:
+            print(
+                json.dumps(
+                    container_ownership_authority_json(result),
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+        else:
+            print(format_container_ownership_authority(result))
         return 0
 
     if args.diagnostic_inventory:

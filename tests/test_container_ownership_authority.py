@@ -1,8 +1,12 @@
+import json
 from datetime import datetime, timedelta, timezone
 
+import scripts.seed_local as seed_local
 from seed_runtime.container_ownership_authority import (
     evaluate_container_ownership_authority_slice,
 )
+from seed_runtime.diagnostic_inventory import DIAGNOSTIC_INVENTORY
+from seed_runtime.diagnostic_shape_audit import build_diagnostic_shape_audit
 from seed_runtime.models import Approval
 from seed_runtime.state import State
 
@@ -102,3 +106,57 @@ def test_absent_subject_pressure_still_reports_domain_requirements_and_uncertain
         == "subject-specific ownership pressure exists only when ownership_discrepancies emits matching service conflicts"
         for item in result.uncertainty
     )
+
+
+def test_cli_container_ownership_authority_renders_constrained_profile(capsys):
+    assert seed_local.main(["--container-ownership-authority"]) == 0
+
+    output = capsys.readouterr().out
+
+    assert "container ownership" in output
+    assert "blocked" in output
+    assert "container_inventory" in output
+    assert "container_port_mapping" in output
+    assert "docker_group_or_root" in output
+
+
+def test_cli_container_ownership_authority_json_contains_required_shape(capsys):
+    assert seed_local.main(["--container-ownership-authority", "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["desired_observation"] == "container ownership"
+    for key in [
+        "desired_observation",
+        "required_observations",
+        "required_authority",
+        "available_authority",
+        "outcome",
+        "uncertainty",
+        "boundary",
+    ]:
+        assert key in payload
+    assert payload["outcome"] == "blocked"
+    assert payload["boundary"]["writes_event_ledger"] is False
+    assert payload["boundary"]["mutates_cluster"] is False
+
+
+def test_container_ownership_authority_inventory_and_shape_audit_boundary():
+    entry = next(
+        e for e in DIAGNOSTIC_INVENTORY if e.name == "container_ownership_authority"
+    )
+    assert entry.supports_json is True
+    assert entry.supports_record is False
+    assert entry.writes_event_ledger is False
+    assert entry.mutates_cluster is False
+
+    rows = [
+        row
+        for row in build_diagnostic_shape_audit()
+        if row.diagnostic == "container_ownership_authority"
+    ]
+    assert rows
+    assert [row for row in rows if row.status == "mismatch"] == []
+    assert {row.field: row.observed for row in rows}["writes_event_ledger"] is False
+    assert {row.field: row.observed for row in rows}["mutates_cluster"] is False
+    assert {row.field: row.observed for row in rows}["supports_record"] is False
