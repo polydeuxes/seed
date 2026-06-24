@@ -1,6 +1,8 @@
 # Seed System
 
-Seed is a claim-centric, knowledge-oriented runtime: it receives observations, preserves evidence, normalizes supportable claims, projects explainable state, and answers questions about what it knows and why.
+Seed is a system that continuously maintains evidence-backed answers to bounded questions by asking the subsystems responsible for answering them, while preserving authority, uncertainty, and boundaries.
+
+Seed uses a claim-centric, knowledge-oriented runtime: it receives observations, preserves evidence, normalizes supportable claims, projects explainable state, and answers questions about what it knows and why.
 
 For Seed's concise architectural thesis and constitutional statement, read [`docs/seed.md`](docs/seed.md). For concise vocabulary, read [`docs/ontology.md`](docs/ontology.md). This README is only the repository orientation surface; the documentation map lives in [`docs/README.md`](docs/README.md).
 
