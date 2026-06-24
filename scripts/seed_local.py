@@ -58,6 +58,12 @@ from seed_runtime.service_ownership_authority import (
     evaluate_service_ownership_authority_slice,
     format_service_ownership_authority,
 )
+from seed_runtime.listener_endpoint_authority import (
+    CONSTRAINED_AUTHORITY_PROFILE as LISTENER_ENDPOINT_AUTHORITY_PROFILE,
+    listener_endpoint_authority_json,
+    evaluate_listener_endpoint_authority_slice,
+    format_listener_endpoint_authority,
+)
 from seed_runtime.capability_relationship import (
     build_capability_relationship,
     capability_relationship_json,
@@ -1188,6 +1194,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="show bounded read-only service ownership authority reasoning",
     )
     parser.add_argument(
+        "--listener-endpoint-authority",
+        action="store_true",
+        help="show bounded read-only local listener endpoint authority reasoning",
+    )
+    parser.add_argument(
         "--diagnostic-inventory",
         action="store_true",
         help="list diagnostic/test-like operational surfaces and their declared shape",
@@ -2125,6 +2136,7 @@ def validate_lifecycle_args(
         bool(args.documentation_structure),
         bool(args.container_ownership_authority),
         bool(args.service_ownership_authority),
+        bool(args.listener_endpoint_authority),
         bool(args.diagnostic_shape_audit),
         bool(args.projection_shape),
         bool(args.component_audit),
@@ -2314,6 +2326,7 @@ def validate_lifecycle_args(
         or args.diagnostic_inventory
         or args.container_ownership_authority
         or args.service_ownership_authority
+        or args.listener_endpoint_authority
         or args.documentation_structure
         or args.diagnostic_shape_audit
         or args.projection_shape
@@ -2351,7 +2364,7 @@ def validate_lifecycle_args(
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --diagnostic-inventory, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, or --audit-compare, or --projection-shape"
+            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, or --audit-compare, or --projection-shape"
         )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
@@ -6156,6 +6169,23 @@ def main(argv: list[str] | None = None) -> int:
             )
         else:
             print(format_service_ownership_authority(result))
+        return 0
+
+    if args.listener_endpoint_authority:
+        state = projected_state_from_args(args)
+        result = evaluate_listener_endpoint_authority_slice(
+            state, LISTENER_ENDPOINT_AUTHORITY_PROFILE
+        )
+        if args.json_output:
+            print(
+                json.dumps(
+                    listener_endpoint_authority_json(result),
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+        else:
+            print(format_listener_endpoint_authority(result))
         return 0
 
     if args.diagnostic_inventory:

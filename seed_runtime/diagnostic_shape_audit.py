@@ -169,6 +169,15 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         repo_file_markers=("build_observation_inventory",),
         diagnostic_fact_read_markers=("build_capability_needs",),
     ),
+    "listener_endpoint_authority": DiagnosticImplementationSpec(
+        name="listener_endpoint_authority",
+        module_path="seed_runtime/listener_endpoint_authority.py",
+        build_function="evaluate_listener_endpoint_authority_slice",
+        format_function="format_listener_endpoint_authority",
+        json_function="listener_endpoint_authority_json",
+        cli_flags=("--listener-endpoint-authority",),
+        repo_file_markers=("build_observation_inventory", "build_observation_domains"),
+    ),
     "ownership_discrepancies": DiagnosticImplementationSpec(
         name="ownership_discrepancies",
         module_path="seed_runtime/ownership_discrepancies.py",
