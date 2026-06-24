@@ -1,3 +1,21 @@
+---
+doc_type: investigation
+status: exploratory
+domain: authority-aware observation reasoning
+defines:
+  - authority-aware observation reasoning gap
+  - desired observation reachability boundary
+  - observation authority profile
+  - observation uncertainty boundary
+depends_on:
+  - non_root_observation_expansion_investigation.md
+  - listening_port_observation.md
+related:
+  - container_ownership_authority_slice_report.md
+  - service_ownership_authority_slice_investigation.md
+  - reachable_observation_third_slice_investigation.md
+---
+
 # Authority-Aware Observation Reasoning Investigation
 
 ## Purpose and boundary

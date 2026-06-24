@@ -1,3 +1,18 @@
+---
+doc_type: report
+status: implemented
+domain: container ownership authority CLI
+defines:
+  - container ownership authority CLI surface
+  - container ownership authority diagnostic inventory entry
+  - container ownership authority shape audit surface
+depends_on:
+  - container_ownership_authority_slice_report.md
+related:
+  - service_ownership_authority_report.md
+  - listener_endpoint_authority_report.md
+---
+
 # Container Ownership Authority CLI Findings
 
 ## Files inspected

@@ -1,3 +1,20 @@
+---
+doc_type: investigation
+status: exploratory
+domain: reachable authority-aware observation outcome
+defines:
+  - reachable observation third slice
+  - fully reachable constrained observation outcome
+  - listener endpoint inventory reachability boundary
+depends_on:
+  - authority_aware_observation_reasoning_investigation.md
+  - non_root_observation_expansion_investigation.md
+  - listening_port_observation.md
+related:
+  - listener_endpoint_authority_report.md
+  - observation_goal_common_shape_investigation.md
+---
+
 # Reachable Observation Third-Slice Investigation
 
 ## Purpose

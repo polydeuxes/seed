@@ -1,3 +1,19 @@
+---
+doc_type: report
+status: implemented
+domain: service ownership authority evaluator
+defines:
+  - service ownership authority evaluator
+  - service ownership authority diagnostic surface
+  - service ownership authority implementation boundary
+depends_on:
+  - service_ownership_authority_slice_investigation.md
+  - container_ownership_authority_cli_report.md
+related:
+  - listener_endpoint_authority_report.md
+  - observation_goal_common_shape_investigation.md
+---
+
 # Service Ownership Authority Evaluator Report
 
 ## Files inspected
