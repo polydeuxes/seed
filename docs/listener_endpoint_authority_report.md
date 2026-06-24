@@ -1,3 +1,19 @@
+---
+doc_type: report
+status: implemented
+domain: listener endpoint authority evaluator
+defines:
+  - listener endpoint authority evaluator
+  - listener endpoint authority diagnostic surface
+  - listener endpoint reachable observation outcome
+depends_on:
+  - service_ownership_authority_report.md
+  - container_ownership_authority_cli_report.md
+related:
+  - reachable_observation_third_slice_investigation.md
+  - observation_goal_common_shape_investigation.md
+---
+
 # Listener Endpoint Authority Implementation Report
 
 ## Files inspected

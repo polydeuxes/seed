@@ -1,3 +1,19 @@
+---
+doc_type: investigation
+status: exploratory
+domain: service ownership authority observation
+defines:
+  - service ownership authority slice
+  - constrained service ownership reachability
+  - service ownership partial reachability boundary
+depends_on:
+  - authority_aware_observation_reasoning_investigation.md
+  - container_ownership_authority_slice_report.md
+related:
+  - service_ownership_authority_report.md
+  - reachable_observation_third_slice_investigation.md
+---
+
 # Service ownership authority-slice investigation
 
 ## Question

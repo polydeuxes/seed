@@ -1,3 +1,20 @@
+---
+doc_type: report
+status: exploratory
+domain: container ownership authority observation
+defines:
+  - container ownership authority slice
+  - constrained container ownership reachability
+  - container ownership authority boundary
+depends_on:
+  - implicit_observation_workflow_investigation.md
+  - observation_domain_conceptual_object_investigation.md
+related:
+  - authority_aware_observation_reasoning_investigation.md
+  - container_ownership_authority_cli_report.md
+  - service_ownership_authority_slice_investigation.md
+---
+
 # Container ownership authority slice report
 
 ## Mission question

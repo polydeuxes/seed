@@ -1,3 +1,22 @@
+---
+doc_type: investigation
+status: exploratory
+domain: authority-aware observation common shape
+defines:
+  - observation goal common implementation shape
+  - authority-aware observation recurring reasoning shape
+  - observation outcome comparison boundary
+depends_on:
+  - container_ownership_authority_cli_report.md
+  - service_ownership_authority_slice_investigation.md
+  - reachable_observation_third_slice_investigation.md
+  - constraint_aware_observation_reachability_investigation.md
+  - observation_relationship_implementation_evidence_investigation.md
+related:
+  - service_ownership_authority_report.md
+  - listener_endpoint_authority_report.md
+---
+
 # Observation Goal Common Implementation Shape Investigation
 
 ## Purpose and boundary
