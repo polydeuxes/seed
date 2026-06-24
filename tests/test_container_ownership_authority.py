@@ -27,6 +27,12 @@ def test_container_ownership_slice_blocks_without_root_or_docker_socket():
 
     assert result.desired_observation == "container ownership"
     assert result.outcome == "blocked"
+    assert result.current_strategy == "container_runtime_observation"
+    assert result.strategy_status == result.outcome
+    assert (
+        result.blocking_boundary
+        == "docker_or_root_container_runtime_authority_unavailable"
+    )
     assert "container_inventory" in result.required_observations
     assert "container_port_mapping" in result.required_observations
     assert result.required_authority["container_inventory"] == "docker_group_or_root"
@@ -39,6 +45,27 @@ def test_container_ownership_slice_blocks_without_root_or_docker_socket():
     assert result.boundary["records"] is False
     assert result.boundary["writes_event_ledger"] is False
     assert result.boundary["mutates_cluster"] is False
+    assert result.remaining_uncertainty == result.uncertainty
+
+
+def test_container_ownership_blocking_boundary_only_when_docker_or_root_unavailable():
+    profile = dict(PROFILE)
+    profile["docker_socket_read"] = "available"
+
+    result = evaluate_container_ownership_authority_slice(
+        State(workspace_id="test"), profile
+    )
+
+    assert result.required_authority == {
+        "container_inventory": "docker_group_or_root",
+        "container_port_mapping": "docker_group_or_root",
+    }
+    assert result.available_authority["root"] == "unavailable"
+    assert result.available_authority["docker_socket_read"] == "available"
+    assert result.outcome == "unknown"
+    assert result.strategy_status == result.outcome
+    assert result.blocking_boundary is None
+    assert "blocking_boundary" not in result.to_json_dict()
 
 
 def test_supplied_profile_overrides_unrelated_current_approval_state():
@@ -118,6 +145,13 @@ def test_cli_container_ownership_authority_renders_constrained_profile(capsys):
     assert "container_inventory" in output
     assert "container_port_mapping" in output
     assert "docker_group_or_root" in output
+    assert "Current strategy: container_runtime_observation" in output
+    assert "Strategy status: blocked" in output
+    assert (
+        "Blocking boundary: docker_or_root_container_runtime_authority_unavailable"
+        in output
+    )
+    assert "Remaining uncertainty:" in output
 
 
 def test_cli_container_ownership_authority_json_contains_required_shape(capsys):
@@ -132,11 +166,22 @@ def test_cli_container_ownership_authority_json_contains_required_shape(capsys):
         "required_authority",
         "available_authority",
         "outcome",
+        "current_strategy",
+        "strategy_status",
+        "blocking_boundary",
         "uncertainty",
+        "remaining_uncertainty",
         "boundary",
     ]:
         assert key in payload
     assert payload["outcome"] == "blocked"
+    assert payload["current_strategy"] == "container_runtime_observation"
+    assert payload["strategy_status"] == payload["outcome"]
+    assert (
+        payload["blocking_boundary"]
+        == "docker_or_root_container_runtime_authority_unavailable"
+    )
+    assert payload["remaining_uncertainty"] == payload["uncertainty"]
     assert payload["boundary"]["writes_event_ledger"] is False
     assert payload["boundary"]["mutates_cluster"] is False
 
