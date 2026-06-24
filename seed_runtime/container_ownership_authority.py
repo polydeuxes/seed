@@ -29,6 +29,8 @@ AUTHORITY_KEYS = (
     "local_passive",
     "external_provider_query",
 )
+CURRENT_STRATEGY = "container_runtime_observation"
+BLOCKING_BOUNDARY = "docker_or_root_container_runtime_authority_unavailable"
 
 
 @dataclass(frozen=True)
@@ -38,8 +40,12 @@ class ContainerOwnershipAuthoritySlice:
     required_authority: dict[str, str]
     available_authority: dict[str, str]
     outcome: str
+    current_strategy: str
+    strategy_status: str
     remaining_observations: tuple[str, ...]
     uncertainty: tuple[str, ...]
+    remaining_uncertainty: tuple[str, ...]
+    blocking_boundary: str | None = None
     boundary: dict[str, bool] = field(
         default_factory=lambda: {
             "read_only": True,
@@ -53,16 +59,22 @@ class ContainerOwnershipAuthoritySlice:
     )
 
     def to_json_dict(self) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "desired_observation": self.desired_observation,
             "required_observations": list(self.required_observations),
             "required_authority": dict(self.required_authority),
             "available_authority": dict(self.available_authority),
             "outcome": self.outcome,
+            "current_strategy": self.current_strategy,
+            "strategy_status": self.strategy_status,
             "remaining_observations": list(self.remaining_observations),
             "uncertainty": list(self.uncertainty),
+            "remaining_uncertainty": list(self.remaining_uncertainty),
             "boundary": dict(self.boundary),
         }
+        if self.blocking_boundary is not None:
+            payload["blocking_boundary"] = self.blocking_boundary
+        return payload
 
 
 def evaluate_container_ownership_authority_slice(
@@ -109,6 +121,7 @@ def evaluate_container_ownership_authority_slice(
         else "unknown"
     )
     remaining_observations = required_observations if outcome == "blocked" else ()
+    blocking_boundary = BLOCKING_BOUNDARY if outcome == "blocked" else None
 
     uncertainty = [
         "external_provider_query unknown and not mapped to this first slice",
@@ -137,8 +150,12 @@ def evaluate_container_ownership_authority_slice(
         required_authority=required_authority,
         available_authority=available_authority,
         outcome=outcome,
+        current_strategy=CURRENT_STRATEGY,
+        strategy_status=outcome,
         remaining_observations=remaining_observations,
         uncertainty=tuple(uncertainty),
+        remaining_uncertainty=tuple(uncertainty),
+        blocking_boundary=blocking_boundary,
     )
 
 
@@ -179,13 +196,24 @@ def format_container_ownership_authority(
         f"  - {authority}: {status}"
         for authority, status in sorted(result.available_authority.items())
     )
-    lines.extend([f"Outcome: {result.outcome}", "Remaining observations:"])
+    lines.extend(
+        [
+            f"Outcome: {result.outcome}",
+            f"Current strategy: {result.current_strategy}",
+            f"Strategy status: {result.strategy_status}",
+        ]
+    )
+    if result.blocking_boundary is not None:
+        lines.append(f"Blocking boundary: {result.blocking_boundary}")
+    lines.append("Remaining observations:")
     if result.remaining_observations:
         lines.extend(f"  - {item}" for item in result.remaining_observations)
     else:
         lines.append("  - none")
     lines.append("Uncertainty:")
     lines.extend(f"  - {item}" for item in result.uncertainty)
+    lines.append("Remaining uncertainty:")
+    lines.extend(f"  - {item}" for item in result.remaining_uncertainty)
     lines.append("Boundary:")
     lines.extend(
         f"  - {name}: {str(value).lower()}"
