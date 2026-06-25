@@ -12,6 +12,10 @@ from seed_runtime.observation_domains import (
 )
 from seed_runtime.observation_inventory import build_observation_inventory
 from seed_runtime.observation_permission import SUPPORTED_OBSERVATION_CLASSES
+from seed_runtime.ownership_discrepancies import (
+    build_ownership_discrepancies,
+    diagnostic_capability_need_records,
+)
 from seed_runtime.privilege_discovery import (
     _guidance_for,
     privilege_discovery_explanation_for,
@@ -53,7 +57,7 @@ class ServiceOwnershipAuthoritySlice:
     available_authority: dict[str, str]
     reachable_observations: tuple[str, ...]
     blocked_observations: tuple[str, ...]
-    blocked_observation_details: tuple[dict[str, str], ...]
+    blocked_observation_details: tuple[dict[str, Any], ...]
     outcome: str
     current_strategy: str
     strategy_status: str
@@ -132,8 +136,12 @@ def evaluate_service_ownership_authority_slice(
         )
     )
 
+    discrepancy_summaries = _ownership_discrepancy_summaries_by_capability(state)
     blocked_details = tuple(
-        _blocked_observation_detail(observation) for observation in blocked
+        _blocked_observation_detail(
+            observation, discrepancy_summaries.get(observation)
+        )
+        for observation in blocked
     )
 
     if reachable and blocked:
@@ -197,11 +205,36 @@ def _required_service_observations(state: State) -> tuple[str, ...]:
     return tuple(dict.fromkeys(observed))
 
 
-def _blocked_observation_detail(observation: str) -> dict[str, str]:
-    return {
+def _blocked_observation_detail(
+    observation: str, ownership_discrepancy: dict[str, str] | None = None
+) -> dict[str, Any]:
+    detail: dict[str, Any] = {
         "observation": observation,
         **privilege_discovery_explanation_for(observation),
     }
+    if ownership_discrepancy is not None:
+        detail["ownership_discrepancy"] = ownership_discrepancy
+    return detail
+
+
+def _ownership_discrepancy_summaries_by_capability(
+    state: State,
+) -> dict[str, dict[str, str]]:
+    """Return existing discrepancy-owned summaries keyed by needed capability."""
+
+    summaries: dict[str, dict[str, str]] = {}
+    for row in build_ownership_discrepancies(state):
+        for record in diagnostic_capability_need_records(row):
+            capability = str(record.get("candidate_capability") or "")
+            if not capability or capability in summaries:
+                continue
+            summaries[capability] = {
+                "conflict": str(row.conflict),
+                "reason": row.reason,
+                "needed_evidence": str(record.get("needed_evidence") or ""),
+                "candidate_capability": capability,
+            }
+    return summaries
 
 
 def _authority_for_observation(observation: str) -> str:
@@ -325,6 +358,17 @@ def format_service_ownership_authority(result: ServiceOwnershipAuthoritySlice) -
                 f"    Implementation evidence: {item['implementation_evidence']}"
             )
             lines.append(f"    Limiting reason: {item['limiting_reason']}")
+            discrepancy = item.get("ownership_discrepancy")
+            if discrepancy:
+                lines.append("    Related ownership discrepancy")
+                lines.append(f"      Conflict: {discrepancy['conflict']}")
+                lines.append(f"      Reason: {discrepancy['reason']}")
+                lines.append(
+                    f"      Needed evidence: {discrepancy['needed_evidence']}"
+                )
+                lines.append(
+                    f"      Candidate capability: {discrepancy['candidate_capability']}"
+                )
     else:
         lines.extend(
             f"  - {item}" for item in result.remaining_observations or ("none",)
