@@ -17,15 +17,22 @@ class PrivilegeDiscoveryCapability:
     operational_benefit: str
     suggested_next_step: str
     notes: str
+    implementation_evidence: str
+    guidance_status: str
+    limiting_reason: str
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
+            "capability": self.name,
             "access_level": self.access_level,
             "pressure": self.pressure,
             "operational_benefit": self.operational_benefit,
             "suggested_next_step": self.suggested_next_step,
             "notes": self.notes,
+            "implementation_evidence": self.implementation_evidence,
+            "guidance_status": self.guidance_status,
+            "limiting_reason": self.limiting_reason,
         }
 
 
@@ -76,6 +83,30 @@ _CAPABILITY_GUIDANCE: dict[str, tuple[str, str, str, str]] = {
         "requires root visibility; do not collect until explicitly authorized",
         "NFS export details may require root-owned configuration visibility.",
     ),
+    "mount_source_inventory": (
+        "local_passive",
+        "mount-source visibility",
+        "use local passive mount-source visibility before requesting privilege",
+        "Local mount tables expose mount source strings and parseable remote source host/path details without establishing export ownership.",
+    ),
+    "export_visibility_inventory": (
+        "partial_passive",
+        "passive export/share visibility",
+        "use passive export/share evidence as partial visibility before requesting privilege",
+        "Existing diagnostics recognize export/share predicates as partial ownership candidates, but export attribution may remain incomplete.",
+    ),
+}
+
+_IMPLEMENTATION_EVIDENCE: dict[str, str] = {
+    "listener_process_inventory": "registered",
+    "container_inventory": "registered",
+    "container_port_mapping": "registered",
+    "systemd_inventory": "registered",
+    "nfs_export_inventory": "not_registered",
+    "mount_source_inventory": "registered",
+    "export_visibility_inventory": "registered",
+    "smb_share_inventory": "not_registered",
+    "remote_storage_export_inventory": "not_registered",
 }
 
 
@@ -85,6 +116,8 @@ def build_privilege_discovery(state: State) -> PrivilegeDiscoveryAudit:
     capabilities = []
     for need in build_capability_needs(state):
         access, benefit, next_step, notes = _guidance_for(need.capability)
+        implementation_evidence = _implementation_evidence_for(need.capability)
+        guidance_status = _guidance_status_for(need.capability)
         pressure = len(need.subjects)
         capabilities.append(
             PrivilegeDiscoveryCapability(
@@ -94,6 +127,11 @@ def build_privilege_discovery(state: State) -> PrivilegeDiscoveryAudit:
                 operational_benefit=benefit,
                 suggested_next_step=next_step,
                 notes=notes,
+                implementation_evidence=implementation_evidence,
+                guidance_status=guidance_status,
+                limiting_reason=_limiting_reason(
+                    access, guidance_status, implementation_evidence
+                ),
             )
         )
     return PrivilegeDiscoveryAudit(capabilities=tuple(capabilities))
@@ -122,6 +160,15 @@ def format_privilege_discovery(audit: PrivilegeDiscoveryAudit) -> str:
         lines.append("Current Access:")
         lines.append(f"  {capability.access_level}")
         lines.append("")
+        lines.append("Guidance:")
+        lines.append(f"  {capability.guidance_status}")
+        lines.append("")
+        lines.append("Implementation Evidence:")
+        lines.append(f"  {capability.implementation_evidence}")
+        lines.append("")
+        lines.append("Limiting Reason:")
+        lines.append(f"  {capability.limiting_reason}")
+        lines.append("")
         lines.append("Pressure:")
         lines.append(f"  {capability.pressure} affected subjects")
         lines.append("")
@@ -149,3 +196,23 @@ def _guidance_for(capability: str) -> tuple[str, str, str, str]:
         "inspect implementation evidence before requesting additional privileges",
         "No implementation-backed privilege guidance is registered for this capability yet.",
     )
+
+
+def _guidance_status_for(capability: str) -> str:
+    return "registered" if capability in _CAPABILITY_GUIDANCE else "unknown"
+
+
+def _implementation_evidence_for(capability: str) -> str:
+    return _IMPLEMENTATION_EVIDENCE.get(capability, "unknown")
+
+
+def _limiting_reason(
+    access_level: str, guidance_status: str, implementation_evidence: str
+) -> str:
+    if guidance_status == "unknown":
+        return "missing_guidance"
+    if implementation_evidence == "not_registered":
+        return "missing_implementation_evidence"
+    if access_level == "unknown":
+        return "missing_authority"
+    return "none"
