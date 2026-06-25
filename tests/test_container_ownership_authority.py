@@ -151,7 +151,19 @@ def test_cli_container_ownership_authority_renders_constrained_profile(capsys):
         "Blocking boundary: docker_or_root_container_runtime_authority_unavailable"
         in output
     )
-    assert "Remaining uncertainty:" in output
+    assert output.count("Uncertainty:") == 1
+    assert "Remaining uncertainty:" not in output
+
+    section_order = [
+        "Goal",
+        "Strategy",
+        "Authority",
+        "Execution",
+        "Remaining work",
+        "Boundary",
+    ]
+    positions = [output.index(f"\n{section}\n") for section in section_order]
+    assert positions == sorted(positions)
 
 
 def test_cli_container_ownership_authority_json_contains_required_shape(capsys):
