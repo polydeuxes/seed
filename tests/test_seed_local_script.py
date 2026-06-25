@@ -262,7 +262,7 @@ def test_build_local_app_uses_intent_classifier_path_and_loads_echo_toolkit():
 
     assert isinstance(app.model_client, IntentPromptModelClient)
     assert isinstance(app.runtime, Runtime)
-    assert isinstance(app.runtime.model, IntentDecisionProducer)
+    assert isinstance(app.runtime.decision_producer, IntentDecisionProducer)
     assert [tool.name for tool in app.decision_input_composer.registry.list_tools()] == [
         "echo"
     ]

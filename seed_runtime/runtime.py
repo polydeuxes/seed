@@ -28,11 +28,9 @@ class StaticDecisionProducer:
     def __init__(self, decision: Decision) -> None:
         self.decision = decision
         self.last_decision_input: DecisionInputPacket | None = None
-        self.last_context: DecisionInputPacket | None = None
 
     def decide(self, decision_input: DecisionInputPacket) -> Decision:
         self.last_decision_input = decision_input
-        self.last_context = decision_input
         return self.decision
 
 
@@ -68,7 +66,7 @@ class Runtime:
         decision_validator: DecisionValidator,
         tool_executor: ToolExecutor,
         tool_need_service: ToolNeedService,
-        model: DecisionProducer,
+        decision_producer: DecisionProducer,
         capability_catalog: CapabilityCatalog | None = None,
         max_decision_retries: int = 1,
     ) -> None:
@@ -87,7 +85,7 @@ class Runtime:
         )
         self.tool_intent_guard = ToolIntentGuard()
         self.state_patch_service = StatePatchService(ledger, projector)
-        self.model = model
+        self.decision_producer = decision_producer
         self.max_decision_retries = max(0, max_decision_retries)
 
     def handle_user_message(
@@ -101,16 +99,16 @@ class Runtime:
             session_id=session_id,
         )
         state = self.projector.project(workspace_id)
-        context = self.decision_input_composer.compose(
+        decision_input = self.decision_input_composer.compose(
             workspace_id, session_id, input_event, state
         )
-        retry_context = context
+        retry_decision_input = decision_input
         validation_errors: list[str] = []
         invalid_decision_message = "Model decision failed validation."
 
         for attempt in range(self.max_decision_retries + 1):
             try:
-                decision = self.model.decide(retry_context)
+                decision = self.decision_producer.decide(retry_decision_input)
             except DecisionParseError as exc:
                 invalid_event = self.ledger.append(
                     "model.decision.parse_failed",
@@ -127,8 +125,8 @@ class Runtime:
                         payload={"errors": [str(exc)]},
                     )
 
-                retry_context = self._decision_parse_retry_context(
-                    context, exc, attempt + 1, invalid_event.id
+                retry_decision_input = self._decision_parse_retry_input(
+                    decision_input, exc, attempt + 1, invalid_event.id
                 )
                 continue
 
@@ -143,7 +141,7 @@ class Runtime:
             validation = self.decision_validator.validate(decision, state)
             if validation.ok:
                 intent_validation = self.tool_intent_guard.validate(
-                    text, decision, context.tools
+                    text, decision, decision_input.tools
                 )
                 if intent_validation.ok:
                     return self._route(
@@ -163,8 +161,8 @@ class Runtime:
                 if attempt >= self.max_decision_retries:
                     break
 
-                retry_context = self._decision_intent_retry_context(
-                    context,
+                retry_decision_input = self._decision_intent_retry_input(
+                    decision_input,
                     decision,
                     intent_validation.errors,
                     attempt + 1,
@@ -185,8 +183,12 @@ class Runtime:
             if attempt >= self.max_decision_retries:
                 break
 
-            retry_context = self._decision_retry_context(
-                context, decision, validation.errors, attempt + 1, invalid_event.id
+            retry_decision_input = self._decision_retry_input(
+                decision_input,
+                decision,
+                validation.errors,
+                attempt + 1,
+                invalid_event.id,
             )
 
         return RuntimeResponse(
@@ -195,16 +197,16 @@ class Runtime:
             payload={"errors": validation_errors},
         )
 
-    def _decision_retry_context(
+    def _decision_retry_input(
         self,
-        context: DecisionInputPacket,
+        decision_input: DecisionInputPacket,
         invalid_decision: Decision,
         errors: list[str],
         retry_number: int,
         invalid_event_id: str,
     ) -> DecisionInputPacket:
         return replace(
-            context,
+            decision_input,
             retry_prompt={
                 "instruction": "Return exactly one corrected JSON decision that satisfies the decision_schema.",
                 "retry_number": retry_number,
@@ -215,16 +217,16 @@ class Runtime:
             },
         )
 
-    def _decision_intent_retry_context(
+    def _decision_intent_retry_input(
         self,
-        context: DecisionInputPacket,
+        decision_input: DecisionInputPacket,
         rejected_decision: Decision,
         errors: list[str],
         retry_number: int,
         rejected_event_id: str,
     ) -> DecisionInputPacket:
         return replace(
-            context,
+            decision_input,
             retry_prompt={
                 "instruction": "Return exactly one corrected JSON decision whose tool call matches the current user intent and satisfies the decision_schema.",
                 "retry_number": retry_number,
@@ -235,9 +237,9 @@ class Runtime:
             },
         )
 
-    def _decision_parse_retry_context(
+    def _decision_parse_retry_input(
         self,
-        context: DecisionInputPacket,
+        decision_input: DecisionInputPacket,
         exc: DecisionParseError,
         retry_number: int,
         invalid_event_id: str,
@@ -252,7 +254,7 @@ class Runtime:
         failure_classification = self._parse_failure_classification(exc)
         if failure_classification is not None:
             retry_prompt["raw_failure_classification"] = failure_classification
-        return replace(context, retry_prompt=retry_prompt)
+        return replace(decision_input, retry_prompt=retry_prompt)
 
     def _decision_parse_failed_payload(
         self, exc: DecisionParseError, attempt: int
@@ -385,8 +387,3 @@ class Runtime:
         return RuntimeResponse(
             kind="unsupported", message="Unsupported valid decision kind."
         )
-
-
-# Compatibility aliases for the former public decision producer names.
-DecisionModel = DecisionProducer
-FakeDecisionModel = StaticDecisionProducer

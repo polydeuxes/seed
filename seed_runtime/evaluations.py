@@ -84,9 +84,11 @@ class EvalRun:
 class DecisionEvaluator:
     """Evaluate a DecisionProducer against deterministic golden cases."""
 
-    def __init__(self, registry: ToolRegistry, model: DecisionProducer) -> None:
+    def __init__(
+        self, registry: ToolRegistry, decision_producer: DecisionProducer
+    ) -> None:
         self.registry = registry
-        self.model = model
+        self.decision_producer = decision_producer
 
     def evaluate(self, cases: Iterable[EvalCase]) -> EvalRun:
         return EvalRun([self.evaluate_case(case) for case in cases])
@@ -103,11 +105,11 @@ class DecisionEvaluator:
             session_id=case.session_id,
         )
         state = projector.project(case.workspace_id)
-        context = DecisionInputComposer(self.registry).compose(
+        decision_input = DecisionInputComposer(self.registry).compose(
             case.workspace_id, case.session_id, input_event, state
         )
         try:
-            decision = self.model.decide(context)
+            decision = self.decision_producer.decide(decision_input)
         except DecisionParseError as exc:
             parse_error = f"model response was not valid JSON decision: {exc}"
             return EvalResult(

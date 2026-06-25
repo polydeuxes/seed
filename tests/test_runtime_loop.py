@@ -17,10 +17,10 @@ from seed_runtime.tool_needs import ToolNeedService
 class SequenceDecisionProducer:
     def __init__(self, decisions):
         self.decisions = list(decisions)
-        self.contexts = []
+        self.decision_inputs = []
 
-    def decide(self, context):
-        self.contexts.append(context)
+    def decide(self, decision_input):
+        self.decision_inputs.append(decision_input)
         return self.decisions.pop(0)
 
 
@@ -29,7 +29,7 @@ def make_runtime(decision, *, max_decision_retries=1):
     registry = ToolRegistry()
     registry.load_manifest("toolkits/core/echo/toolkit.yaml")
     projector = StateProjector(ledger)
-    model = decision if hasattr(decision, "decide") else StaticDecisionProducer(decision)
+    decision_producer = decision if hasattr(decision, "decide") else StaticDecisionProducer(decision)
     runtime = Runtime(
         ledger,
         projector,
@@ -37,10 +37,10 @@ def make_runtime(decision, *, max_decision_retries=1):
         DecisionValidator(registry),
         ToolExecutor(ledger, registry, projector),
         ToolNeedService(ledger, projector),
-        model,
+        decision_producer,
         max_decision_retries=max_decision_retries,
     )
-    return runtime, ledger, model
+    return runtime, ledger, decision_producer
 
 
 def test_routes_answer():
@@ -240,8 +240,8 @@ def test_retries_invalid_first_decision_with_corrected_valid_decision():
         "model.decision.proposed",
         "response.answer",
     ]
-    assert model.contexts[0].retry_prompt is None
-    assert model.contexts[1].retry_prompt == {
+    assert model.decision_inputs[0].retry_prompt is None
+    assert model.decision_inputs[1].retry_prompt == {
         "instruction": "Return exactly one corrected JSON decision that satisfies the decision_schema.",
         "retry_number": 1,
         "max_retries": 1,
@@ -317,10 +317,10 @@ def test_decision_and_invalid_decision_events_are_recorded_deterministically():
 class SequenceParseDecisionProducer:
     def __init__(self, outcomes):
         self.outcomes = list(outcomes)
-        self.contexts = []
+        self.decision_inputs = []
 
-    def decide(self, context):
-        self.contexts.append(context)
+    def decide(self, decision_input):
+        self.decision_inputs.append(decision_input)
         outcome = self.outcomes.pop(0)
         if isinstance(outcome, DecisionParseError):
             raise outcome
@@ -352,8 +352,8 @@ def test_retries_parse_failed_first_decision_with_valid_decision():
         "parse_error": "model response is not valid JSON: Expecting value",
     }
     assert parse_failed.causation_id == ledger.list_events("ws")[0].id
-    assert model.contexts[0].retry_prompt is None
-    assert model.contexts[1].retry_prompt == {
+    assert model.decision_inputs[0].retry_prompt is None
+    assert model.decision_inputs[1].retry_prompt == {
         "instruction": "Your previous output was not valid strict JSON. Return only one JSON decision object matching the decision_schema, with no prose, markdown, code fences, or extra text.",
         "retry_number": 1,
         "max_retries": 1,
@@ -391,47 +391,3 @@ def test_exhausted_parse_failures_return_invalid_decision_and_record_events():
         "raw_failure_classification": "missing_required_fields",
     }
     assert events[2].causation_id == events[0].id
-
-
-def test_legacy_decision_input_import_aliases_remain_available():
-    from seed_runtime.context import (
-        ContextComposer,
-        ContextPacket,
-        DecisionInputComposer,
-        DecisionInputPacket,
-    )
-
-    assert ContextComposer is DecisionInputComposer
-    assert ContextPacket is DecisionInputPacket
-
-
-def test_legacy_decision_producer_import_aliases_remain_available():
-    from seed_runtime.context import ContextPacket
-    from seed_runtime.models import Decision
-    from seed_runtime.runtime import (
-        DecisionModel,
-        DecisionProducer,
-        FakeDecisionModel,
-        StaticDecisionProducer,
-    )
-
-    assert DecisionModel is DecisionProducer
-    assert FakeDecisionModel is StaticDecisionProducer
-
-    decision = Decision(kind="answer", reason="done", answer="ok")
-    decision_input = ContextPacket(
-        workspace_id="ws",
-        session_id="ses",
-        current_input={"text": "hello"},
-        active_goal=None,
-        entities=[],
-        facts=[],
-        tools=[],
-        open_tool_needs=[],
-        decision_schema={"kinds": ["answer"]},
-    )
-    fake = FakeDecisionModel(decision)
-
-    assert fake.decide(decision_input) is decision
-    assert fake.last_decision_input is decision_input
-    assert fake.last_context is decision_input

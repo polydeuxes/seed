@@ -239,7 +239,7 @@ This vocabulary should extend that existing input-inspection vocabulary rather t
 
 - `Runtime.handle_user_message` remains the canonical intake and routing entry point.
 - `Runtime._route` remains the runtime route owner for validated decisions.
-- `DecisionKind`, `Decision`, `IntentDecisionModel`, `TextIntentClassifier`, `IntentPromptModelClient`, `StrictJSONIntentParser`, `DecisionBuilder`, deterministic fallback, normalization, `DecisionValidator`, `ToolIntentGuard`, `ContextComposer`, and `scripts/seed_local.py` remain existing components of the current path.
+- `DecisionKind`, `Decision`, `IntentDecisionProducer`, `TextIntentClassifier`, `IntentPromptModelClient`, `StrictJSONIntentParser`, `DecisionBuilder`, deterministic fallback, normalization, `DecisionValidator`, `ToolIntentGuard`, `DecisionInputComposer`, and `scripts/seed_local.py` remain existing components of the current path.
 - Input-act vocabulary should give Seed words for the user utterance before output/routing decisions are made.
 - Input-act vocabulary should not turn natural language into LLM-only routing, policy bypass, or direct tool execution.
 

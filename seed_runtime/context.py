@@ -134,8 +134,3 @@ class DecisionInputComposer:
             evidence=evidence,
             context_budget=budgeted.trace.to_dict(),
         )
-
-
-# Compatibility aliases for the former public runtime decision-input names.
-ContextPacket = DecisionInputPacket
-ContextComposer = DecisionInputComposer

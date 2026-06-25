@@ -164,14 +164,14 @@ def test_serialize_decision_prompt_is_backward_compatible_alias():
 
 def test_serialize_decision_prompt_includes_retry_prompt_when_present():
     context = sample_context()
-    retry_context = DecisionInputPacket(
+    retry_decision_input = DecisionInputPacket(
         **{
             **context.to_dict(),
             "retry_prompt": {"validation_errors": ["answer decisions require answer"]},
         }
     )
 
-    prompt = serialize_decision_prompt(retry_context)
+    prompt = serialize_decision_prompt(retry_decision_input)
 
     assert "\n\nCORRECTION REQUIRED\n" in prompt
     assert "answer decisions require answer" in prompt

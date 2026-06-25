@@ -168,8 +168,8 @@ git diff --exit-code docs/generated/architecture
 Runtime.handle_user_message
   -> EventLedger.append(input.user_message)
   -> StateProjector.project
-  -> ContextComposer.compose
-  -> DecisionModel.decide
+  -> DecisionInputComposer.compose
+  -> DecisionProducer.decide
   -> DecisionValidator.validate
   -> ToolIntentGuard.validate
   -> Runtime._route
