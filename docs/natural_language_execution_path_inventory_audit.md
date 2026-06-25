@@ -79,7 +79,7 @@ The repository does not currently contain an explicit, general natural-language 
 
 ### Context Composition
 
-`ContextComposer.compose` includes the current input text, active goal, selected entities, facts, evidence, visible tools, open tool needs, and a decision schema in a `ContextPacket`. This gives the decision model language-adjacent context and capability visibility, but it is context assembly rather than interpretation ownership.
+`DecisionInputComposer.compose` includes the current input text, active goal, selected entities, facts, evidence, visible tools, open tool needs, and a decision schema in a `DecisionInputPacket`. This gives the decision model language-adjacent context and capability visibility, but it is context assembly rather than interpretation ownership.
 
 ### Input Act Inspection
 
@@ -132,7 +132,7 @@ The models for action plans and handoff plans explicitly mark those artifacts as
 
 ### Visible Tool Inventory In Context
 
-`ContextComposer` exposes visible registered tools to the decision model with names, summaries, schemas, policy actions, and risk classes. This lets the model choose a tool name in a `call_tool` decision, but the selection itself is model behavior plus validation rather than a separate deterministic capability-selection component.
+`DecisionInputComposer` exposes visible registered tools to the decision model with names, summaries, schemas, policy actions, and risk classes. This lets the model choose a tool name in a `call_tool` decision, but the selection itself is model behavior plus validation rather than a separate deterministic capability-selection component.
 
 ### Tool Registry Capability Mapping
 
@@ -189,7 +189,7 @@ Ambiguity exists in implementation primarily through coarse outcomes rather than
 
 - `ask_question` is a valid decision kind and Runtime returns a question response.
 - The intent classifier includes a `clarify` intent label that builds an `ask_question` decision.
-- If no classifier is configured and no deterministic fallback matches, `IntentDecisionModel` builds a default clarification question.
+- If no classifier is configured and no deterministic fallback matches, `IntentDecisionProducer` builds a default clarification question.
 - Invalid model decisions, parse failures, and tool-intent rejections can trigger retry contexts that ask for corrected decisions.
 - Input inspection preserves a deterministic input-act label but not alternate labels.
 
@@ -203,7 +203,7 @@ Current runtime records raw input as `input.user_message`. `input_inspector.py` 
 
 ### Intent Classification vs Capability Selection
 
-`IntentDecisionModel` can convert `missing_tool` into a `request_tool` decision with a normalized capability. For visible tools, the model can choose `call_tool` directly from context. There is no standalone capability-selection boundary that first receives candidate requests and then selects among capability surfaces before execution decisions.
+`IntentDecisionProducer` can convert `missing_tool` into a `request_tool` decision with a normalized capability. For visible tools, the model can choose `call_tool` directly from context. There is no standalone capability-selection boundary that first receives candidate requests and then selects among capability surfaces before execution decisions.
 
 ### Capability Selection vs Execution
 
@@ -233,7 +233,7 @@ The implementation does not simply hard-code `Language -> Nearest Capability -> 
 
 However, partial collapses or compression points exist:
 
-- `IntentDecisionModel` compresses intent classification and decision construction into one adapter path.
+- `IntentDecisionProducer` compresses intent classification and decision construction into one adapter path.
 - `DecisionBuilder` can convert `echo` directly into a `call_tool` decision.
 - A model can choose a visible `call_tool` from context without an explicit intermediate candidate-routing artifact.
 - `missing_tool` converts language-derived need into a normalized capability string without preserving alternate capability candidates.

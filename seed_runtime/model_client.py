@@ -396,7 +396,3 @@ def _extract_model_text(raw: str) -> str:
             if isinstance(message, dict) and isinstance(message.get("content"), str):
                 return message["content"]
     return raw
-
-
-# Compatibility alias for the former parsed decision adapter name.
-ParsedDecisionModel = ParsedDecisionProducer

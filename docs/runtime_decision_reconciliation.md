@@ -8,13 +8,13 @@ This report is observational. It identifies what the current implementation demo
 
 ```text
 python - <<'PY'
-from seed_runtime.context import ContextComposer
+from seed_runtime.context import DecisionInputComposer
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
 from seed_runtime.execution import ToolExecutor
 from seed_runtime.models import Decision
 from seed_runtime.registry import ToolRegistry
-from seed_runtime.runtime import FakeDecisionModel, Runtime
+from seed_runtime.runtime import FakeDecisionProducer, Runtime
 from seed_runtime.state import StateProjector
 from seed_runtime.tool_needs import ToolNeedService
 ...
@@ -116,7 +116,7 @@ It does not decide inquiry strategy. It receives a tool name and arguments that 
 
 ### Reasoning boundary
 
-The implementation boundary for reasoning is outside these components. Runtime asks a `DecisionModel` protocol to `decide(context)`. The repository then treats the returned object as a proposed decision to validate and route. The reviewed implementation does not contain an internal responsibility that determines what additional evidence is required as an inquiry strategy.
+The implementation boundary for reasoning is outside these components. Runtime asks a `DecisionProducer` protocol to `decide(decision_input)`. The repository then treats the returned object as a proposed decision to validate and route. The reviewed implementation does not contain an internal responsibility that determines what additional evidence is required as an inquiry strategy.
 
 ### Decision boundary
 
@@ -160,7 +160,7 @@ The current implementation reveals that no reviewed component owns the full `rea
 
 Existing components own narrower transitions:
 
-- External/model reasoning to structured proposal: `DecisionModel.decide(context)` boundary.
+- External/model reasoning to structured proposal: `DecisionProducer.decide(decision_input)` boundary.
 - Structured proposal to deterministic route: `Runtime` plus `DecisionValidator` and `ToolIntentGuard`.
 - Valid tool call to execution/preflight: `ToolExecutor` plus `ToolExecutionPolicyService` and `PolicyGate`.
 

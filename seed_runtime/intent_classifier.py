@@ -119,7 +119,7 @@ class IntentClassification(SeedModel):
 class IntentClassifier(Protocol):
     """Classify a supported context into one compact intent label."""
 
-    def classify(self, context: IntentContext) -> IntentClassification: ...
+    def classify(self, decision_input: IntentContext) -> IntentClassification: ...
 
 
 class FakeIntentClassifier:
@@ -128,11 +128,9 @@ class FakeIntentClassifier:
     def __init__(self, classification: IntentClassification) -> None:
         self.classification = classification
         self.last_decision_input: IntentContext | None = None
-        self.last_context: IntentContext | None = None
 
-    def classify(self, context: IntentContext) -> IntentClassification:
-        self.last_decision_input = context
-        self.last_context = context
+    def classify(self, decision_input: IntentContext) -> IntentClassification:
+        self.last_decision_input = decision_input
         return self.classification
 
 
@@ -209,8 +207,8 @@ class IntentPromptModelClient:
             CommandTransport(command=command, timeout_seconds=timeout_seconds, env=env)
         )
 
-    def complete(self, context: IntentContext) -> str:
-        return self.transport.complete(build_intent_prompt(context))
+    def complete(self, decision_input: IntentContext) -> str:
+        return self.transport.complete(build_intent_prompt(decision_input))
 
 
 class TextIntentClassifier:
@@ -270,17 +268,17 @@ class TextIntentClassifier:
             parser=parser,
         )
 
-    def classify(self, context: IntentContext) -> IntentClassification:
-        return self.parser.parse(self.client.complete(context))
+    def classify(self, decision_input: IntentContext) -> IntentClassification:
+        return self.parser.parse(self.client.complete(decision_input))
 
 
 ParsedIntentClassifier = TextIntentClassifier
 
 
-def build_intent_prompt(context: IntentContext) -> str:
+def build_intent_prompt(decision_input: IntentContext) -> str:
     """Build a provider-neutral prompt for intent-only classification."""
 
-    context_json = _stable_json(_render_intent_context_for_prompt(context))
+    context_json = _stable_json(_render_intent_context_for_prompt(decision_input))
     shape_json = json.dumps(
         {
             "intent": "echo|answer|missing_tool|clarify|refuse",
@@ -368,21 +366,21 @@ def _render_intent_context(packet: dict[str, Any]) -> dict[str, Any]:
     )
 
 
-def _render_intent_context_for_prompt(context: IntentContext) -> dict[str, Any]:
-    return _render_intent_context(to_plain(context))
+def _render_intent_context_for_prompt(decision_input: IntentContext) -> dict[str, Any]:
+    return _render_intent_context(to_plain(decision_input))
 
 
 class DecisionBuilder:
     """Build full runtime decisions from compact intent classifications."""
 
     def build(
-        self, context: IntentContext, classification: IntentClassification
+        self, decision_input: IntentContext, classification: IntentClassification
     ) -> IntentDecision:
         arguments = classification.arguments
         reason = classification.reason or f"classified as {classification.intent}"
         if classification.intent == "echo":
             message = str(
-                arguments.get("message") or _echo_message(_input_text(context))
+                arguments.get("message") or _echo_message(_input_text(decision_input))
             )
             return Decision(
                 kind="call_tool",
@@ -394,7 +392,7 @@ class DecisionBuilder:
             answer = str(arguments.get("answer") or arguments.get("message") or "")
             return Decision(kind="answer", reason=reason, answer=answer)
         if classification.intent == "missing_tool":
-            tool_need = _normalize_tool_need(arguments, _input_text(context))
+            tool_need = _normalize_tool_need(arguments, _input_text(decision_input))
             return Decision(
                 kind="request_tool",
                 reason=reason,
@@ -440,11 +438,11 @@ class IntentDecisionProducer:
 
 
 def deterministic_intent_fallback(
-    context: IntentContext,
+    decision_input: IntentContext,
 ) -> IntentClassification | None:
     """Classify high-confidence requests without calling a model."""
 
-    text = _input_text(context)
+    text = _input_text(decision_input)
     if text.lower().startswith("echo "):
         return IntentClassification(
             intent="echo",
@@ -502,8 +500,8 @@ def _informational_topic(text: str) -> str:
     return ""
 
 
-def _input_text(context: IntentContext) -> str:
-    text = context.current_input.get("text")
+def _input_text(decision_input: IntentContext) -> str:
+    text = decision_input.current_input.get("text")
     return text if isinstance(text, str) else ""
 
 
@@ -624,7 +622,3 @@ def _without_empty(value: dict[str, Any]) -> dict[str, Any]:
         for key, item in value.items()
         if item is not None and item != [] and item != {}
     }
-
-
-# Compatibility alias for the former intent decision adapter name.
-IntentDecisionModel = IntentDecisionProducer

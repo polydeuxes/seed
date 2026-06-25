@@ -559,10 +559,10 @@ class LocalSeedApp:
             session_id=self.session_id,
         )
         state = self.projector.project(self.workspace_id)
-        context = self.decision_input_composer.compose(
+        decision_input = self.decision_input_composer.compose(
             self.workspace_id, self.session_id, input_event, state
         )
-        return self.model_client.complete(context)
+        return self.model_client.complete(decision_input)
 
 
 def seed_dev_facts(

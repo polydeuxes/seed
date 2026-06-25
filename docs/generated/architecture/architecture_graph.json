@@ -244,7 +244,7 @@
     {
       "ast_calls": [
         {
-          "method": "_decision_intent_retry_context",
+          "method": "_decision_intent_retry_input",
           "receiver": ""
         },
         {
@@ -252,11 +252,11 @@
           "receiver": ""
         },
         {
-          "method": "_decision_parse_retry_context",
+          "method": "_decision_parse_retry_input",
           "receiver": ""
         },
         {
-          "method": "_decision_retry_context",
+          "method": "_decision_retry_input",
           "receiver": ""
         },
         {
@@ -273,7 +273,11 @@
         },
         {
           "method": "compose",
-          "receiver": "context_composer"
+          "receiver": "decision_input_composer"
+        },
+        {
+          "method": "decide",
+          "receiver": "decision_producer"
         },
         {
           "method": "validate",
@@ -314,10 +318,6 @@
         {
           "method": "append",
           "receiver": "ledger"
-        },
-        {
-          "method": "decide",
-          "receiver": "model"
         },
         {
           "method": "project",

@@ -28,7 +28,7 @@ The answer is mixed:
 
 - `DecisionKind` in `seed_runtime/models.py` contains the runtime decision vocabulary.
 - `Decision` stores the selected `kind`, `reason`, and kind-specific fields such as `answer`, `question`, `tool_name`, `tool_arguments`, `tool_need`, and `state_patch`.
-- `IntentDecisionModel` adapts compact intent classification into full runtime `Decision` objects.
+- `IntentDecisionProducer` adapts compact intent classification into full runtime `Decision` objects.
 - `TextIntentClassifier` wraps an `IntentPromptModelClient` and parses strict JSON into an `IntentClassification`.
 - `IntentPromptModelClient` renders a provider-neutral intent prompt and delegates completion to a text transport.
 - `StrictJSONIntentParser` only accepts JSON objects containing `intent`, `reason`, and optional object-valued `arguments`.
@@ -55,13 +55,13 @@ The answer is mixed:
 
 ### Context-composition surfaces
 
-- `ContextComposer.compose` includes the current input event payload, active goal, entities, recent facts, recent evidence, visible tools, open tool needs, a decision schema, and context-budget trace in a `ContextPacket`.
+- `DecisionInputComposer.compose` includes the current input event payload, active goal, entities, recent facts, recent evidence, visible tools, open tool needs, a decision schema, and context-budget trace in a `DecisionInputPacket`.
 - The context decision schema currently advertises only `answer`, `ask_question`, `call_tool`, `request_tool`, and `refuse` to the composed context, even though the broader `DecisionKind` type also includes proposal/state-patch legacy or side-path kinds.
 - `build_intent_prompt` narrows compact classifier output to `echo`, `answer`, `missing_tool`, `clarify`, and `refuse` and includes guidance for general informational questions, visible tools, missing capabilities, external/current information, actions, and observations of the world.
 
 ### Local CLI intent path
 
-- `scripts/seed_local.py` constructs the local app with `ContextComposer`, `IntentPromptModelClient.for_endpoint`, `TextIntentClassifier`, `IntentDecisionModel`, `DecisionValidator`, `ToolExecutor`, `ToolNeedService`, and canonical `Runtime`.
+- `scripts/seed_local.py` constructs the local app with `DecisionInputComposer`, `IntentPromptModelClient.for_endpoint`, `TextIntentClassifier`, `IntentDecisionProducer`, `DecisionValidator`, `ToolExecutor`, `ToolNeedService`, and canonical `Runtime`.
 - One-shot CLI messages are joined into a single string and passed through `LocalSeedApp.run`, which calls `Runtime.handle_user_message`.
 - The CLI description explicitly says it runs Seed locally with Ollama `/api/generate` intent classification.
 
@@ -91,7 +91,7 @@ The answer is mixed:
 
 ### Context-advertised decision vocabulary
 
-`ContextComposer` currently advertises this narrower schema to model context:
+`DecisionInputComposer` currently advertises this narrower schema to model context:
 
 - `answer`
 - `ask_question`
@@ -134,9 +134,9 @@ raw user text
   -> Runtime.handle_user_message
   -> input.user_message event
   -> StateProjector.project
-  -> ContextComposer.compose(ContextPacket)
-  -> DecisionModel.decide
-     -> IntentDecisionModel.decide for the local CLI path
+  -> DecisionInputComposer.compose(DecisionInputPacket)
+  -> DecisionProducer.decide
+     -> IntentDecisionProducer.decide for the local CLI path
         -> deterministic_intent_fallback, or TextIntentClassifier.classify
         -> IntentPromptModelClient.complete(build_intent_prompt(context))
         -> StrictJSONIntentParser.parse
@@ -215,8 +215,8 @@ More specifically:
 This audit preserves the current boundaries:
 
 - `Runtime` remains the canonical route owner.
-- `ContextComposer` owns composition of current input and relevant state into `ContextPacket`.
-- `IntentDecisionModel`, `TextIntentClassifier`, `IntentPromptModelClient`, `StrictJSONIntentParser`, and `DecisionBuilder` own the local compact-intent-to-decision adaptation path.
+- `DecisionInputComposer` owns composition of current input and relevant state into `DecisionInputPacket`.
+- `IntentDecisionProducer`, `TextIntentClassifier`, `IntentPromptModelClient`, `StrictJSONIntentParser`, and `DecisionBuilder` own the local compact-intent-to-decision adaptation path.
 - `DecisionValidator` owns structured decision validation.
 - `ToolIntentGuard` owns deterministic tool-call intent checks.
 - `ToolNeedService` owns `request_tool` capability-gap creation and resolution support.

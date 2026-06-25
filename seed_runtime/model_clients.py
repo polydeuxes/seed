@@ -179,11 +179,11 @@ class LlamaCppDecisionProducer(LocalChatModel):
         return _without_none_or_empty(payload)
 
 
-def build_decision_prompt(context: DecisionInputPacket) -> str:
+def build_decision_prompt(decision_input: DecisionInputPacket) -> str:
     """Build the strict JSON prompt shared by all local decision clients."""
 
-    context_json = _stable_json(to_plain(context.to_dict()))
-    shape_json = _stable_json(_allowed_shapes_for_context(context))
+    context_json = _stable_json(to_plain(decision_input.to_dict()))
+    shape_json = _stable_json(_allowed_shapes_for_context(decision_input))
     return "\n\n".join(
         [
             "You are choosing exactly one Decision for the Seed runtime.",
@@ -228,8 +228,8 @@ def parse_decision_text(text: str) -> Decision:
         raise DecisionParseError(f"decision failed validation: {exc}") from exc
 
 
-def _allowed_shapes_for_context(context: DecisionInputPacket) -> list[DecisionJSONShape]:
-    allowed = set(context.decision_schema.get("kinds", []))
+def _allowed_shapes_for_context(decision_input: DecisionInputPacket) -> list[DecisionJSONShape]:
+    allowed = set(decision_input.decision_schema.get("kinds", []))
     if not allowed:
         return list(_ALLOWED_DECISION_SHAPES)
     return [shape for shape in _ALLOWED_DECISION_SHAPES if shape["kind"] in allowed]
@@ -288,8 +288,3 @@ def _stable_json(value: Any) -> str:
 
 def _without_none_or_empty(value: dict[str, Any]) -> dict[str, Any]:
     return {key: item for key, item in value.items() if item is not None and item != {}}
-
-
-# Compatibility aliases for former model-client class names.
-OllamaDecisionModel = OllamaDecisionProducer
-LlamaCppDecisionModel = LlamaCppDecisionProducer
