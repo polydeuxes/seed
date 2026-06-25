@@ -35,6 +35,8 @@ AUTHORITY_KEYS = (
     "local_passive",
     "external_provider_query",
 )
+CURRENT_STRATEGY = "composite_local_service_attribution_observation"
+BLOCKING_BOUNDARY = "docker_or_root_container_runtime_authority_unavailable"
 
 
 @dataclass(frozen=True)
@@ -46,7 +48,12 @@ class ServiceOwnershipAuthoritySlice:
     reachable_observations: tuple[str, ...]
     blocked_observations: tuple[str, ...]
     outcome: str
+    current_strategy: str
+    strategy_status: str
+    remaining_observations: tuple[str, ...]
     uncertainty: tuple[str, ...]
+    remaining_uncertainty: tuple[str, ...]
+    blocking_boundary: str | None = None
     boundary: dict[str, bool] = field(
         default_factory=lambda: {
             "read_only": True,
@@ -60,7 +67,7 @@ class ServiceOwnershipAuthoritySlice:
     )
 
     def to_json_dict(self) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "desired_observation": self.desired_observation,
             "required_observations": list(self.required_observations),
             "required_authority": dict(self.required_authority),
@@ -68,9 +75,16 @@ class ServiceOwnershipAuthoritySlice:
             "reachable_observations": list(self.reachable_observations),
             "blocked_observations": list(self.blocked_observations),
             "outcome": self.outcome,
+            "current_strategy": self.current_strategy,
+            "strategy_status": self.strategy_status,
+            "remaining_observations": list(self.remaining_observations),
             "uncertainty": list(self.uncertainty),
+            "remaining_uncertainty": list(self.remaining_uncertainty),
             "boundary": dict(self.boundary),
         }
+        if self.blocking_boundary is not None:
+            payload["blocking_boundary"] = self.blocking_boundary
+        return payload
 
 
 def evaluate_service_ownership_authority_slice(
@@ -116,6 +130,14 @@ def evaluate_service_ownership_authority_slice(
         "active_network_probe unauthorized and external_provider_query unknown are not used to promote service ownership beyond local passive evidence"
     )
 
+    blocking_boundary = (
+        BLOCKING_BOUNDARY
+        if _docker_or_root_container_runtime_authority_blocked(
+            blocked, required_authority, available_authority
+        )
+        else None
+    )
+
     return ServiceOwnershipAuthoritySlice(
         desired_observation=DESIRED_OBSERVATION,
         required_observations=required_observations,
@@ -124,7 +146,12 @@ def evaluate_service_ownership_authority_slice(
         reachable_observations=reachable,
         blocked_observations=blocked,
         outcome=outcome,
+        current_strategy=CURRENT_STRATEGY,
+        strategy_status=outcome,
+        remaining_observations=blocked,
         uncertainty=tuple(uncertainty),
+        remaining_uncertainty=tuple(uncertainty),
+        blocking_boundary=blocking_boundary,
     )
 
 
@@ -172,6 +199,22 @@ def _is_blocked(observation: str, authority: str, profile: Mapping[str, str]) ->
     return False
 
 
+def _docker_or_root_container_runtime_authority_blocked(
+    blocked_observations: tuple[str, ...],
+    required_authority: Mapping[str, str],
+    available_authority: Mapping[str, str],
+) -> bool:
+    if not blocked_observations:
+        return False
+    return any(
+        required_authority.get(observation) == "docker_group_or_root"
+        for observation in blocked_observations
+    ) and (
+        available_authority.get("root") == "unavailable"
+        and available_authority.get("docker_socket_read") == "unavailable"
+    )
+
+
 def _implementation_evidence_uncertainty(
     state: State, required_observations: tuple[str, ...]
 ) -> tuple[str, ...]:
@@ -214,11 +257,19 @@ def format_service_ownership_authority(result: ServiceOwnershipAuthoritySlice) -
     lines = [
         "Service Ownership Authority",
         "",
+        "Goal",
         f"Desired observation: {result.desired_observation}",
+        "",
+        "Strategy",
+        f"Current strategy: {result.current_strategy}",
         "Required observations:",
     ]
     lines.extend(f"  - {item}" for item in result.required_observations)
-    lines.append("Required authority:")
+    lines.extend(["", "Observation state", "Reachable observations:"])
+    lines.extend(f"  - {item}" for item in result.reachable_observations or ("none",))
+    lines.append("Remaining observations:")
+    lines.extend(f"  - {item}" for item in result.remaining_observations or ("none",))
+    lines.extend(["", "Authority", "Required authority:"])
     lines.extend(
         f"  - {observation}: {authority}"
         for observation, authority in sorted(result.required_authority.items())
@@ -228,13 +279,22 @@ def format_service_ownership_authority(result: ServiceOwnershipAuthoritySlice) -
         f"  - {authority}: {status}"
         for authority, status in sorted(result.available_authority.items())
     )
-    lines.append("Reachable observations:")
-    lines.extend(f"  - {item}" for item in result.reachable_observations or ("none",))
-    lines.append("Blocked observations:")
-    lines.extend(f"  - {item}" for item in result.blocked_observations or ("none",))
-    lines.extend([f"Outcome: {result.outcome}", "Uncertainty:"])
+    lines.extend(
+        [
+            "",
+            "Execution",
+            f"Strategy status: {result.strategy_status}",
+            f"Outcome: {result.outcome}",
+        ]
+    )
+    if result.blocking_boundary is not None:
+        lines.append(f"Blocking boundary: {result.blocking_boundary}")
+    lines.extend(["", "Uncertainty:"])
     lines.extend(f"  - {item}" for item in result.uncertainty)
-    lines.append("Boundary:")
+    if result.remaining_uncertainty != result.uncertainty:
+        lines.append("Remaining uncertainty:")
+        lines.extend(f"  - {item}" for item in result.remaining_uncertainty)
+    lines.extend(["", "Boundary"])
     lines.extend(
         f"  - {name}: {str(value).lower()}"
         for name, value in sorted(result.boundary.items())
