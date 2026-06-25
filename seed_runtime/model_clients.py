@@ -1,7 +1,7 @@
 """Local chat model clients for Seed decision models.
 
-These clients intentionally implement the existing runtime DecisionModel shape:
-``decide(context: ContextPacket) -> Decision``. They live outside Runtime so local
+These clients intentionally implement the existing runtime DecisionProducer shape:
+``decide(decision_input: DecisionInputPacket) -> Decision``. They live outside Runtime so local
 provider details can be swapped without changing the runtime loop.
 """
 
@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import Any, Literal
 from urllib import request
 
-from seed_runtime.context import ContextPacket
+from seed_runtime.context import DecisionInputPacket
 from seed_runtime.model_client import DecisionParseError
 from seed_runtime.models import Decision
 from seed_runtime.serialization import to_plain
@@ -72,8 +72,8 @@ class LocalChatModel:
     num_predict: int | None = None
 
 
-class OllamaDecisionModel(LocalChatModel):
-    """DecisionModel client for Ollama's local HTTP APIs."""
+class OllamaDecisionProducer(LocalChatModel):
+    """DecisionProducer client for Ollama's local HTTP APIs."""
 
     def __init__(
         self,
@@ -98,8 +98,8 @@ class OllamaDecisionModel(LocalChatModel):
         )
         self.api = api
 
-    def decide(self, context: ContextPacket) -> Decision:
-        prompt = build_decision_prompt(context)
+    def decide(self, decision_input: DecisionInputPacket) -> Decision:
+        prompt = build_decision_prompt(decision_input)
         if self.api == "generate":
             payload = self._generate_payload(prompt)
             url = _join_url(self.endpoint_url, "/api/generate")
@@ -137,8 +137,8 @@ class OllamaDecisionModel(LocalChatModel):
         return options
 
 
-class LlamaCppDecisionModel(LocalChatModel):
-    """DecisionModel client for llama.cpp OpenAI-compatible chat completions."""
+class LlamaCppDecisionProducer(LocalChatModel):
+    """DecisionProducer client for llama.cpp OpenAI-compatible chat completions."""
 
     def __init__(
         self,
@@ -159,10 +159,10 @@ class LlamaCppDecisionModel(LocalChatModel):
             num_predict=num_predict,
         )
 
-    def decide(self, context: ContextPacket) -> Decision:
+    def decide(self, decision_input: DecisionInputPacket) -> Decision:
         response = _post_json(
             _join_url(self.endpoint_url, "/v1/chat/completions"),
-            self._chat_completions_payload(build_decision_prompt(context)),
+            self._chat_completions_payload(build_decision_prompt(decision_input)),
             timeout=self.timeout,
         )
         return parse_decision_text(_extract_openai_chat_text(response))
@@ -179,7 +179,7 @@ class LlamaCppDecisionModel(LocalChatModel):
         return _without_none_or_empty(payload)
 
 
-def build_decision_prompt(context: ContextPacket) -> str:
+def build_decision_prompt(context: DecisionInputPacket) -> str:
     """Build the strict JSON prompt shared by all local decision clients."""
 
     context_json = _stable_json(to_plain(context.to_dict()))
@@ -228,7 +228,7 @@ def parse_decision_text(text: str) -> Decision:
         raise DecisionParseError(f"decision failed validation: {exc}") from exc
 
 
-def _allowed_shapes_for_context(context: ContextPacket) -> list[DecisionJSONShape]:
+def _allowed_shapes_for_context(context: DecisionInputPacket) -> list[DecisionJSONShape]:
     allowed = set(context.decision_schema.get("kinds", []))
     if not allowed:
         return list(_ALLOWED_DECISION_SHAPES)
@@ -288,3 +288,8 @@ def _stable_json(value: Any) -> str:
 
 def _without_none_or_empty(value: dict[str, Any]) -> dict[str, Any]:
     return {key: item for key, item in value.items() if item is not None and item != {}}
+
+
+# Compatibility aliases for former model-client class names.
+OllamaDecisionModel = OllamaDecisionProducer
+LlamaCppDecisionModel = LlamaCppDecisionProducer

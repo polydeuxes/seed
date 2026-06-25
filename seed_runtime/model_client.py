@@ -8,13 +8,13 @@ from dataclasses import dataclass, field
 from typing import Any, Protocol, Sequence
 from urllib import request
 
-from seed_runtime.context import ContextPacket
+from seed_runtime.context import DecisionInputPacket
 from seed_runtime.models import Decision
 from seed_runtime.serialization import to_plain
 
 
 class ModelClient(Protocol):
-    def complete(self, context: ContextPacket) -> str: ...
+    def complete(self, context: DecisionInputPacket) -> str: ...
 
 
 class TextCompletionTransport(Protocol):
@@ -23,7 +23,7 @@ class TextCompletionTransport(Protocol):
     def complete(self, prompt: str) -> str: ...
 
 
-def render_decision_prompt(context: ContextPacket) -> str:
+def render_decision_prompt(context: DecisionInputPacket) -> str:
     """Render a deterministic compact prompt for one model decision.
 
     Only fields that help the model choose a runtime decision are included. Runtime
@@ -69,7 +69,7 @@ def render_decision_prompt(context: ContextPacket) -> str:
     return "\n\n".join(f"{heading}\n{body}" for heading, body in sections)
 
 
-def serialize_decision_prompt(context: ContextPacket) -> str:
+def serialize_decision_prompt(context: DecisionInputPacket) -> str:
     """Backward-compatible alias for :func:`render_decision_prompt`."""
 
     return render_decision_prompt(context)
@@ -278,7 +278,7 @@ class CommandTransport:
 
 
 class DecisionPromptModelClient:
-    """Concrete ModelClient that renders ContextPacket prompts then delegates transport."""
+    """Concrete ModelClient that renders DecisionInputPacket prompts then delegates transport."""
 
     def __init__(self, transport: TextCompletionTransport) -> None:
         self.transport = transport
@@ -315,7 +315,7 @@ class DecisionPromptModelClient:
             CommandTransport(command=command, timeout_seconds=timeout_seconds, env=env)
         )
 
-    def complete(self, context: ContextPacket) -> str:
+    def complete(self, context: DecisionInputPacket) -> str:
         return self.transport.complete(render_decision_prompt(context))
 
 
@@ -355,8 +355,8 @@ class StrictJSONDecisionParser:
         return Decision(**data)
 
 
-class ParsedDecisionModel:
-    """DecisionModel adapter around a text-generating model client."""
+class ParsedDecisionProducer:
+    """DecisionProducer adapter around a text-generating model client."""
 
     def __init__(
         self, client: ModelClient, parser: StrictJSONDecisionParser | None = None
@@ -364,8 +364,8 @@ class ParsedDecisionModel:
         self.client = client
         self.parser = parser or StrictJSONDecisionParser()
 
-    def decide(self, context: ContextPacket) -> Decision:
-        return self.parser.parse(self.client.complete(context))
+    def decide(self, decision_input: DecisionInputPacket) -> Decision:
+        return self.parser.parse(self.client.complete(decision_input))
 
 
 def _stable_json(value: Any) -> str:
@@ -396,3 +396,7 @@ def _extract_model_text(raw: str) -> str:
             if isinstance(message, dict) and isinstance(message.get("content"), str):
                 return message["content"]
     return raw
+
+
+# Compatibility alias for the former parsed decision adapter name.
+ParsedDecisionModel = ParsedDecisionProducer

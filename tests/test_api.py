@@ -2,27 +2,27 @@ import ast
 from pathlib import Path
 
 from seed_runtime.api import SeedAPI
-from seed_runtime.context import ContextComposer
+from seed_runtime.context import DecisionInputComposer
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
 from seed_runtime.execution import ToolExecutor
 from seed_runtime.models import Decision, RuntimeResponse
 from seed_runtime.registry import ToolRegistry
-from seed_runtime.runtime import FakeDecisionModel, Runtime
+from seed_runtime.runtime import StaticDecisionProducer, Runtime
 from seed_runtime.state import StateProjector
 from seed_runtime.tool_needs import ToolNeedService
 
 
-def make_api(decision: Decision) -> tuple[SeedAPI, EventLedger, FakeDecisionModel]:
+def make_api(decision: Decision) -> tuple[SeedAPI, EventLedger, StaticDecisionProducer]:
     ledger = EventLedger()
     registry = ToolRegistry()
     registry.load_manifest("toolkits/core/echo/toolkit.yaml")
     projector = StateProjector(ledger)
-    provider = FakeDecisionModel(decision)
+    provider = StaticDecisionProducer(decision)
     runtime = Runtime(
         ledger,
         projector,
-        ContextComposer(registry),
+        DecisionInputComposer(registry),
         DecisionValidator(registry),
         ToolExecutor(ledger, registry, projector),
         ToolNeedService(ledger, projector),
@@ -41,8 +41,8 @@ def test_post_user_message_answer_path_returns_runtime_response():
     assert isinstance(result, RuntimeResponse)
     assert result.kind == "answer"
     assert result.message == "done"
-    assert provider.last_context is not None
-    assert provider.last_context.current_input["text"] == "hello"
+    assert provider.last_decision_input is not None
+    assert provider.last_decision_input.current_input["text"] == "hello"
     input_event = ledger.list_events("ws")[0]
     assert input_event.kind == "input.user_message"
     assert input_event.session_id == "ses"

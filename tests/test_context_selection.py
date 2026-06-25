@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from seed_runtime.context import ContextComposer
+from seed_runtime.context import DecisionInputComposer
 from seed_runtime.context_budget import ContextBudget, ENTITIES, RECENT_EVIDENCE, RECENT_FACTS
 from seed_runtime.evidence import Evidence
 from seed_runtime.facts import Fact
@@ -27,7 +27,7 @@ def _fact(
     )
 
 
-def test_context_composer_orders_facts_before_budget_truncation():
+def test_decision_input_composer_orders_facts_before_budget_truncation():
     now = utc_now()
     state = State(workspace_id="ws")
     facts = [
@@ -45,7 +45,7 @@ def test_context_composer_orders_facts_before_budget_truncation():
     state.facts = {fact.id: fact for fact in facts}
     input_event = Event(id="evt_input", kind="input.user_message", payload={"text": "go"})
 
-    packet = ContextComposer(
+    packet = DecisionInputComposer(
         ToolRegistry(), budget=ContextBudget(section_limits={RECENT_FACTS: 4})
     ).compose("ws", None, input_event, state)
 
@@ -58,7 +58,7 @@ def test_context_composer_orders_facts_before_budget_truncation():
     assert packet.context_budget["dropped_counts"][RECENT_FACTS] == 1
 
 
-def test_context_composer_orders_evidence_before_budget_truncation():
+def test_decision_input_composer_orders_evidence_before_budget_truncation():
     now = utc_now()
     state = State(workspace_id="ws")
     evidence = [
@@ -98,7 +98,7 @@ def test_context_composer_orders_evidence_before_budget_truncation():
     state.evidence = {item.id: item for item in evidence}
     input_event = Event(id="evt_input", kind="input.user_message", payload={"text": "go"})
 
-    packet = ContextComposer(
+    packet = DecisionInputComposer(
         ToolRegistry(), budget=ContextBudget(section_limits={RECENT_EVIDENCE: 3})
     ).compose("ws", None, input_event, state)
 
@@ -110,7 +110,7 @@ def test_context_composer_orders_evidence_before_budget_truncation():
     assert packet.context_budget["dropped_counts"][RECENT_EVIDENCE] == 1
 
 
-def test_context_composer_orders_goals_and_entities_before_budget_truncation():
+def test_decision_input_composer_orders_goals_and_entities_before_budget_truncation():
     state = State(workspace_id="ws")
     state.goals = {
         "goal_001_blocked": Goal(
@@ -129,7 +129,7 @@ def test_context_composer_orders_goals_and_entities_before_budget_truncation():
     state.entities = {entity.id: entity for entity in entities}
     input_event = Event(id="evt_input", kind="input.user_message", payload={"text": "go"})
 
-    packet = ContextComposer(
+    packet = DecisionInputComposer(
         ToolRegistry(), budget=ContextBudget(section_limits={ENTITIES: 3})
     ).compose("ws", None, input_event, state)
 

@@ -76,7 +76,7 @@ from seed_runtime.capability_verification import (
     build_capability_verification_inspection,
 )
 from seed_runtime.verification_evidence import build_verification_evidence
-from seed_runtime.context import ContextComposer
+from seed_runtime.context import DecisionInputComposer
 from seed_runtime.context_views import (
     DecisionContextView,
     build_decision_context_view,
@@ -314,7 +314,7 @@ from seed_runtime.integrity_summary import (
     build_projection_integrity_summary,
 )
 from seed_runtime.intent_classifier import (
-    IntentDecisionModel,
+    IntentDecisionProducer,
     IntentPromptModelClient,
     TextIntentClassifier,
 )
@@ -434,7 +434,7 @@ class LocalSeedApp:
     runtime: Runtime
     ledger: EventLedger
     projector: StateProjector
-    context_composer: ContextComposer
+    decision_input_composer: DecisionInputComposer
     model_client: IntentPromptModelClient
     workspace_id: str = DEFAULT_WORKSPACE
     session_id: str = DEFAULT_SESSION
@@ -559,7 +559,7 @@ class LocalSeedApp:
             session_id=self.session_id,
         )
         state = self.projector.project(self.workspace_id)
-        context = self.context_composer.compose(
+        context = self.decision_input_composer.compose(
             self.workspace_id, self.session_id, input_event, state
         )
         return self.model_client.complete(context)
@@ -858,18 +858,18 @@ def build_local_app(
     registry = ToolRegistry()
     registry.load_manifest(REPO_ROOT / "toolkits/core/echo/toolkit.yaml")
     projector = StateProjector(ledger)
-    context_composer = ContextComposer(registry)
+    decision_input_composer = DecisionInputComposer(registry)
     model_client = IntentPromptModelClient.for_endpoint(
         endpoint,
         timeout_seconds=timeout_seconds,
         extra_payload={"model": model, "stream": False, "format": "json"},
     )
     classifier = TextIntentClassifier(model_client)
-    model = IntentDecisionModel(classifier)
+    model = IntentDecisionProducer(classifier)
     runtime = Runtime(
         ledger,
         projector,
-        context_composer,
+        decision_input_composer,
         DecisionValidator(registry),
         ToolExecutor(ledger, registry, projector),
         ToolNeedService(ledger, projector),
@@ -880,7 +880,7 @@ def build_local_app(
         runtime=runtime,
         ledger=ledger,
         projector=projector,
-        context_composer=context_composer,
+        decision_input_composer=decision_input_composer,
         model_client=model_client,
         workspace_id=workspace_id,
         session_id=session_id,

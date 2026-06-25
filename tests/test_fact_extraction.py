@@ -1,4 +1,4 @@
-from seed_runtime.context import ContextComposer
+from seed_runtime.context import DecisionInputComposer
 from seed_runtime.events import EventLedger
 from seed_runtime.execution import ToolExecutor
 from seed_runtime.fact_extraction import FactExtractionError, FactExtractionService
@@ -43,7 +43,7 @@ def test_completed_tool_call_extracts_tool_output_evidence_into_state_and_contex
     assert state.facts == {}
 
     input_event = ledger.append("input.user_message", "ws_1", {"text": "what happened?"})
-    context = ContextComposer(registry).compose("ws_1", "ses_1", input_event, state)
+    context = DecisionInputComposer(registry).compose("ws_1", "ses_1", input_event, state)
     assert context.evidence == [evidence.__dict__]
 
 

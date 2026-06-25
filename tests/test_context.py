@@ -1,4 +1,4 @@
-from seed_runtime.context import ContextComposer
+from seed_runtime.context import DecisionInputComposer
 from seed_runtime.events import EventLedger
 from seed_runtime.models import Entity, Goal, ToolNeed
 from seed_runtime.registry import ToolRegistry
@@ -16,7 +16,7 @@ def test_context_packet_shape_is_deterministic():
     input_event = ledger.append("input.user_message", "ws", {"text": "hello"}, actor="user", session_id="ses")
     state = StateProjector(ledger).project("ws")
 
-    packet = ContextComposer(registry).compose("ws", "ses", input_event, state)
+    packet = DecisionInputComposer(registry).compose("ws", "ses", input_event, state)
 
     assert packet.current_input["text"] == "hello"
     assert packet.active_goal["summary"] == "Make SSH work"

@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from seed_runtime.context import ContextComposer
+from seed_runtime.context import DecisionInputComposer
 from seed_runtime.context_budget import (
     ACTIVE_GOALS,
     CURRENT_INPUT,
@@ -56,7 +56,7 @@ def test_context_budget_applies_section_limits_without_token_counting():
     assert selected.trace.dropped_counts[RECENT_FACTS] == 1
 
 
-def test_context_composer_uses_budget_for_priority_and_recency_selection():
+def test_decision_input_composer_uses_budget_for_priority_and_recency_selection():
     ledger = EventLedger()
     workspace_id = "ws_budget"
     base_time = utc_now()
@@ -117,7 +117,7 @@ def test_context_composer_uses_budget_for_priority_and_recency_selection():
     )
     state = StateProjector(ledger).project(workspace_id)
 
-    packet = ContextComposer(ToolRegistry(), budget=ContextBudget(max_items=4)).compose(
+    packet = DecisionInputComposer(ToolRegistry(), budget=ContextBudget(max_items=4)).compose(
         workspace_id, None, input_event, state
     )
 

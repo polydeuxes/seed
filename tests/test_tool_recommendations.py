@@ -4,7 +4,7 @@ from seed_runtime.capability_catalog import (
     CapabilityCatalogEntry,
     CapabilityRecommendation,
 )
-from seed_runtime.context import ContextComposer
+from seed_runtime.context import DecisionInputComposer
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
 from seed_runtime.execution import ToolExecutor
@@ -15,7 +15,7 @@ from seed_runtime.recommendation_ranker import (
     RecommendationRanker,
 )
 from seed_runtime.registry import ToolRegistry
-from seed_runtime.runtime import FakeDecisionModel, Runtime
+from seed_runtime.runtime import StaticDecisionProducer, Runtime
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import State, StateProjector
 from seed_runtime.tool_needs import ToolNeedService
@@ -98,11 +98,11 @@ def _runtime_with_decision(
     return Runtime(
         ledger,
         projector,
-        ContextComposer(registry),
+        DecisionInputComposer(registry),
         DecisionValidator(registry),
         tool_executor or ToolExecutor(ledger, registry, projector),
         ToolNeedService(ledger, projector),
-        FakeDecisionModel(decision),
+        StaticDecisionProducer(decision),
         capability_catalog=capability_catalog or _service_management_catalog(),
     )
 

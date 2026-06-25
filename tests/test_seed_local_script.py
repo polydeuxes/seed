@@ -10,7 +10,7 @@ from seed_runtime.models import ToolNeed
 from seed_runtime.recommendation_ranker import RankedRecommendation
 from seed_runtime.state import State
 
-from seed_runtime.intent_classifier import IntentDecisionModel, IntentPromptModelClient
+from seed_runtime.intent_classifier import IntentDecisionProducer, IntentPromptModelClient
 from seed_runtime.runtime import Runtime
 
 SCRIPT_PATH = Path("scripts/seed_local.py")
@@ -262,8 +262,8 @@ def test_build_local_app_uses_intent_classifier_path_and_loads_echo_toolkit():
 
     assert isinstance(app.model_client, IntentPromptModelClient)
     assert isinstance(app.runtime, Runtime)
-    assert isinstance(app.runtime.model, IntentDecisionModel)
-    assert [tool.name for tool in app.context_composer.registry.list_tools()] == [
+    assert isinstance(app.runtime.model, IntentDecisionProducer)
+    assert [tool.name for tool in app.decision_input_composer.registry.list_tools()] == [
         "echo"
     ]
     assert app.model_client.transport.extra_payload == {

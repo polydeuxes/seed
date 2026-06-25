@@ -6,7 +6,7 @@ from dataclasses import replace
 from typing import Protocol
 
 from seed_runtime.capability_catalog import CapabilityCatalog
-from seed_runtime.context import ContextComposer, ContextPacket
+from seed_runtime.context import DecisionInputComposer, DecisionInputPacket
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
 from seed_runtime.execution import ToolExecutor
@@ -20,17 +20,19 @@ from seed_runtime.tool_recommendations import ToolRecommendationService
 from seed_runtime.tool_needs import ToolNeedService
 
 
-class DecisionModel(Protocol):
-    def decide(self, context: ContextPacket) -> Decision: ...
+class DecisionProducer(Protocol):
+    def decide(self, decision_input: DecisionInputPacket) -> Decision: ...
 
 
-class FakeDecisionModel:
+class StaticDecisionProducer:
     def __init__(self, decision: Decision) -> None:
         self.decision = decision
-        self.last_context: ContextPacket | None = None
+        self.last_decision_input: DecisionInputPacket | None = None
+        self.last_context: DecisionInputPacket | None = None
 
-    def decide(self, context: ContextPacket) -> Decision:
-        self.last_context = context
+    def decide(self, decision_input: DecisionInputPacket) -> Decision:
+        self.last_decision_input = decision_input
+        self.last_context = decision_input
         return self.decision
 
 
@@ -62,17 +64,17 @@ class Runtime:
         self,
         ledger: EventLedger,
         projector: StateProjector,
-        context_composer: ContextComposer,
+        decision_input_composer: DecisionInputComposer,
         decision_validator: DecisionValidator,
         tool_executor: ToolExecutor,
         tool_need_service: ToolNeedService,
-        model: DecisionModel,
+        model: DecisionProducer,
         capability_catalog: CapabilityCatalog | None = None,
         max_decision_retries: int = 1,
     ) -> None:
         self.ledger = ledger
         self.projector = projector
-        self.context_composer = context_composer
+        self.decision_input_composer = decision_input_composer
         self.decision_validator = decision_validator
         self.tool_executor = tool_executor
         self.tool_need_service = tool_need_service
@@ -99,7 +101,7 @@ class Runtime:
             session_id=session_id,
         )
         state = self.projector.project(workspace_id)
-        context = self.context_composer.compose(
+        context = self.decision_input_composer.compose(
             workspace_id, session_id, input_event, state
         )
         retry_context = context
@@ -195,12 +197,12 @@ class Runtime:
 
     def _decision_retry_context(
         self,
-        context: ContextPacket,
+        context: DecisionInputPacket,
         invalid_decision: Decision,
         errors: list[str],
         retry_number: int,
         invalid_event_id: str,
-    ) -> ContextPacket:
+    ) -> DecisionInputPacket:
         return replace(
             context,
             retry_prompt={
@@ -215,12 +217,12 @@ class Runtime:
 
     def _decision_intent_retry_context(
         self,
-        context: ContextPacket,
+        context: DecisionInputPacket,
         rejected_decision: Decision,
         errors: list[str],
         retry_number: int,
         rejected_event_id: str,
-    ) -> ContextPacket:
+    ) -> DecisionInputPacket:
         return replace(
             context,
             retry_prompt={
@@ -235,11 +237,11 @@ class Runtime:
 
     def _decision_parse_retry_context(
         self,
-        context: ContextPacket,
+        context: DecisionInputPacket,
         exc: DecisionParseError,
         retry_number: int,
         invalid_event_id: str,
-    ) -> ContextPacket:
+    ) -> DecisionInputPacket:
         retry_prompt = {
             "instruction": "Your previous output was not valid strict JSON. Return only one JSON decision object matching the decision_schema, with no prose, markdown, code fences, or extra text.",
             "retry_number": retry_number,
@@ -313,7 +315,7 @@ class Runtime:
             capability_resolution = self.tool_need_service.resolve_capability(
                 need,
                 capability_catalog=self.capability_catalog,
-                tool_registry=self.context_composer.registry,
+                tool_registry=self.decision_input_composer.registry,
                 provider_recommendations=recommendations,
             )
             payload = {
@@ -383,3 +385,8 @@ class Runtime:
         return RuntimeResponse(
             kind="unsupported", message="Unsupported valid decision kind."
         )
+
+
+# Compatibility aliases for the former public decision producer names.
+DecisionModel = DecisionProducer
+FakeDecisionModel = StaticDecisionProducer

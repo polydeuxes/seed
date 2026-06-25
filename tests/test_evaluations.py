@@ -1,4 +1,4 @@
-from seed_runtime.context import ContextPacket
+from seed_runtime.context import DecisionInputPacket
 from seed_runtime.evaluations import (
     SMALL_MODEL_MVP_EVAL_CASES,
     DecisionEvaluator,
@@ -9,11 +9,11 @@ from seed_runtime.evaluations import (
 from seed_runtime.model_client import DecisionParseError
 from seed_runtime.models import Decision
 from seed_runtime.registry import ToolRegistry
-from seed_runtime.runtime import FakeDecisionModel
+from seed_runtime.runtime import StaticDecisionProducer
 
 
-class SmallModelMvpDecisionModel:
-    def decide(self, context: ContextPacket) -> Decision:
+class SmallModelMvpDecisionProducer:
+    def decide(self, context: DecisionInputPacket) -> Decision:
         text = context.current_input["text"]
         if text == "is example_host out of disk?":
             assert [tool["name"] for tool in context.tools] == [
@@ -62,7 +62,7 @@ class SmallModelMvpDecisionModel:
 def test_evaluator_passes_matching_tool_call_case():
     registry = ToolRegistry()
     registry.load_manifest("toolkits/core/echo/toolkit.yaml")
-    model = FakeDecisionModel(
+    model = StaticDecisionProducer(
         Decision(
             kind="call_tool",
             reason="safe",
@@ -89,7 +89,7 @@ def test_evaluator_passes_matching_tool_call_case():
 def test_evaluator_reports_validation_and_expectation_errors():
     registry = ToolRegistry()
     registry.load_manifest("toolkits/core/echo/toolkit.yaml")
-    model = FakeDecisionModel(
+    model = StaticDecisionProducer(
         Decision(
             kind="call_tool", reason="safe", tool_name="missing", tool_arguments={}
         )
@@ -112,7 +112,7 @@ def test_evaluator_checks_extended_expectation_fields():
     registry.load_manifest("toolkits/core/echo/toolkit.yaml")
     result = DecisionEvaluator(
         registry,
-        FakeDecisionModel(
+        StaticDecisionProducer(
             Decision(
                 kind="call_tool",
                 reason="not destructive",
@@ -160,24 +160,24 @@ def test_small_model_mvp_eval_cases_match_strategy_document():
 
 def test_small_model_mvp_eval_cases_pass_with_matching_decisions():
     run = DecisionEvaluator(
-        build_small_model_mvp_registry(), SmallModelMvpDecisionModel()
+        build_small_model_mvp_registry(), SmallModelMvpDecisionProducer()
     ).evaluate(SMALL_MODEL_MVP_EVAL_CASES)
 
     assert run.passed
     assert run.pass_rate == 1.0
 
 
-class ParseFailingDecisionModel:
-    def decide(self, context: ContextPacket) -> Decision:
+class ParseFailingDecisionProducer:
+    def decide(self, context: DecisionInputPacket) -> Decision:
         raise DecisionParseError("model response is not valid JSON: Expecting value")
 
 
-class SequencedDecisionModel:
+class SequencedDecisionProducer:
     def __init__(self, decisions: list[DecisionParseError | Decision]) -> None:
         self.decisions = decisions
         self.calls = 0
 
-    def decide(self, context: ContextPacket) -> Decision:
+    def decide(self, context: DecisionInputPacket) -> Decision:
         outcome = self.decisions[self.calls]
         self.calls += 1
         if isinstance(outcome, DecisionParseError):
@@ -187,7 +187,7 @@ class SequencedDecisionModel:
 
 def test_evaluator_records_parse_failure_as_failed_result():
     result = DecisionEvaluator(
-        ToolRegistry(), ParseFailingDecisionModel()
+        ToolRegistry(), ParseFailingDecisionProducer()
     ).evaluate_case(
         EvalCase(
             name="bad json",
@@ -207,7 +207,7 @@ def test_evaluator_records_parse_failure_as_failed_result():
 
 
 def test_evaluate_continues_after_parse_failure():
-    model = SequencedDecisionModel(
+    model = SequencedDecisionProducer(
         [
             DecisionParseError("model response must be a JSON object"),
             Decision(kind="answer", reason="safe", answer="Done."),
@@ -239,7 +239,7 @@ def test_evaluate_continues_after_parse_failure():
 
 
 def test_eval_run_valid_json_rate_is_computed_correctly():
-    model = SequencedDecisionModel(
+    model = SequencedDecisionProducer(
         [
             Decision(kind="answer", reason="safe", answer="Done."),
             DecisionParseError("decision requires kind and reason"),
