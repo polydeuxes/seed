@@ -116,3 +116,87 @@ def test_unknown_capability_need_still_appears_with_unknown_access(monkeypatch):
     assert audit.capabilities[0].name == "new_probe"
     assert audit.capabilities[0].access_level == "unknown"
     assert "inspect implementation evidence" in rendered
+
+
+def test_storage_capability_explanation_statuses_are_bounded(monkeypatch):
+    monkeypatch.setattr(
+        "seed_runtime.privilege_discovery.build_capability_needs",
+        lambda state: [
+            _need("mount_source_inventory"),
+            _need("export_visibility_inventory"),
+            _need("smb_share_inventory"),
+            _need("remote_storage_export_inventory"),
+        ],
+    )
+
+    audit = build_privilege_discovery(State(workspace_id="ws"))
+    by_name = {cap.name: cap for cap in audit.capabilities}
+
+    assert by_name["mount_source_inventory"].access_level == "local_passive"
+    assert by_name["mount_source_inventory"].guidance_status == "registered"
+    assert by_name["mount_source_inventory"].implementation_evidence == "registered"
+    assert by_name["mount_source_inventory"].limiting_reason == "none"
+
+    assert by_name["export_visibility_inventory"].access_level == "partial_passive"
+    assert by_name["export_visibility_inventory"].guidance_status == "registered"
+    assert by_name["export_visibility_inventory"].implementation_evidence == "registered"
+    assert by_name["export_visibility_inventory"].limiting_reason == "none"
+
+    assert by_name["smb_share_inventory"].access_level == "unknown"
+    assert by_name["smb_share_inventory"].guidance_status == "unknown"
+    assert by_name["smb_share_inventory"].implementation_evidence == "not_registered"
+    assert by_name["smb_share_inventory"].limiting_reason == "missing_guidance"
+
+    assert by_name["remote_storage_export_inventory"].access_level == "unknown"
+    assert by_name["remote_storage_export_inventory"].guidance_status == "unknown"
+    assert by_name["remote_storage_export_inventory"].implementation_evidence == "not_registered"
+    assert by_name["remote_storage_export_inventory"].limiting_reason == "missing_guidance"
+
+
+def test_privilege_discovery_json_includes_explanation_fields(monkeypatch):
+    monkeypatch.setattr(
+        "seed_runtime.privilege_discovery.build_capability_needs",
+        lambda state: [_need("mount_source_inventory")],
+    )
+
+    audit = build_privilege_discovery(State(workspace_id="ws"))
+    payload = audit.to_json_dict()
+    cap = payload["capabilities"][0]
+
+    assert cap["name"] == "mount_source_inventory"
+    assert cap["capability"] == "mount_source_inventory"
+    assert cap["access_level"] == "local_passive"
+    assert cap["guidance_status"] == "registered"
+    assert cap["implementation_evidence"] == "registered"
+    assert cap["limiting_reason"] == "none"
+
+
+def test_privilege_discovery_human_output_renders_explanation_fields(monkeypatch):
+    monkeypatch.setattr(
+        "seed_runtime.privilege_discovery.build_capability_needs",
+        lambda state: [_need("smb_share_inventory")],
+    )
+
+    rendered = format_privilege_discovery(
+        build_privilege_discovery(State(workspace_id="ws"))
+    )
+
+    assert "Guidance:" in rendered
+    assert "  unknown" in rendered
+    assert "Implementation Evidence:" in rendered
+    assert "  not_registered" in rendered
+    assert "Limiting Reason:" in rendered
+    assert "  missing_guidance" in rendered
+
+
+def test_missing_guidance_precedes_missing_implementation_evidence(monkeypatch):
+    monkeypatch.setattr(
+        "seed_runtime.privilege_discovery.build_capability_needs",
+        lambda state: [_need("smb_share_inventory")],
+    )
+
+    audit = build_privilege_discovery(State(workspace_id="ws"))
+
+    assert audit.capabilities[0].guidance_status == "unknown"
+    assert audit.capabilities[0].implementation_evidence == "not_registered"
+    assert audit.capabilities[0].limiting_reason == "missing_guidance"

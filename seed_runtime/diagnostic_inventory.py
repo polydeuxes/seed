@@ -719,7 +719,7 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         writes_event_ledger=False,
         mutates_cluster=False,
         reads_diagnostic_facts=True,
-        description="Explains privilege boundaries for current capability needs without privileged actions, fact recording, or cluster mutation.",
+        description="Explains privilege boundaries and bounded guidance/evidence blockers for current capability needs without privileged actions, fact recording, or cluster mutation.",
     ),
 )
 
