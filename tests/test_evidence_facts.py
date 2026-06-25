@@ -1,5 +1,5 @@
 from seed_runtime.base import SeedModel
-from seed_runtime.context import ContextComposer
+from seed_runtime.context import DecisionInputComposer
 from seed_runtime.evidence import Evidence
 from seed_runtime.events import EventLedger
 from seed_runtime.facts import Fact
@@ -73,7 +73,7 @@ def test_context_includes_evidence_backed_facts():
     input_event = ledger.append("input.user_message", workspace_id, {"text": "status?"})
     state = StateProjector(ledger).project(workspace_id)
 
-    packet = ContextComposer(ToolRegistry()).compose(
+    packet = DecisionInputComposer(ToolRegistry()).compose(
         workspace_id, None, input_event, state
     )
 

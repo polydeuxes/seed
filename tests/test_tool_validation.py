@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from seed_runtime.context import ContextComposer
+from seed_runtime.context import DecisionInputComposer
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
 from seed_runtime.execution import ToolExecutor
 from seed_runtime.models import Decision, ToolSpec, Toolkit
 from seed_runtime.registry import ToolRegistry
-from seed_runtime.runtime import FakeDecisionModel, Runtime
+from seed_runtime.runtime import StaticDecisionProducer, Runtime
 from seed_runtime.state import StateProjector
 from seed_runtime.tool_intent import ToolIntentValidation
 from seed_runtime.tool_needs import ToolNeedService
@@ -54,11 +54,11 @@ def make_runtime(decision: Decision, registry: ToolRegistry | None = None):
     runtime = Runtime(
         ledger,
         projector,
-        ContextComposer(registry),
+        DecisionInputComposer(registry),
         DecisionValidator(registry),
         ToolExecutor(ledger, registry, projector),
         ToolNeedService(ledger, projector),
-        FakeDecisionModel(decision),
+        StaticDecisionProducer(decision),
     )
     return runtime, ledger
 

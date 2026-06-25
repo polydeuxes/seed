@@ -1,10 +1,10 @@
-from seed_runtime.context import ContextComposer
+from seed_runtime.context import DecisionInputComposer
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
 from seed_runtime.execution import ToolExecutor
 from seed_runtime.models import Decision
 from seed_runtime.registry import ToolRegistry
-from seed_runtime.runtime import FakeDecisionModel, Runtime
+from seed_runtime.runtime import StaticDecisionProducer, Runtime
 from seed_runtime.state import StateProjector
 from seed_runtime.tool_intent import ToolIntentGuard
 from seed_runtime.tool_needs import ToolNeedService
@@ -15,11 +15,11 @@ def make_runtime(decision, *, max_decision_retries=0):
     registry = ToolRegistry()
     registry.load_manifest("toolkits/core/echo/toolkit.yaml")
     projector = StateProjector(ledger)
-    model = decision if hasattr(decision, "decide") else FakeDecisionModel(decision)
+    model = decision if hasattr(decision, "decide") else StaticDecisionProducer(decision)
     runtime = Runtime(
         ledger,
         projector,
-        ContextComposer(registry),
+        DecisionInputComposer(registry),
         DecisionValidator(registry),
         ToolExecutor(ledger, registry, projector),
         ToolNeedService(ledger, projector),

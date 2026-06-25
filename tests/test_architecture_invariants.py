@@ -7,13 +7,13 @@ from seed_runtime.capability_catalog import (
     CapabilityCatalogEntry,
     CapabilityRecommendation,
 )
-from seed_runtime.context import ContextComposer
+from seed_runtime.context import DecisionInputComposer
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.models import Decision, RuntimeResponse, ToolNeed
 from seed_runtime.projection_store import ProjectionStore
 from seed_runtime.registry import ToolRegistry
-from seed_runtime.runtime import FakeDecisionModel, Runtime
+from seed_runtime.runtime import StaticDecisionProducer, Runtime
 from seed_runtime.state import StateProjector
 from seed_runtime.tool_needs import ToolNeedService
 
@@ -40,11 +40,11 @@ def _runtime_for_decision(decision: Decision, tool_executor: object) -> Runtime:
     return Runtime(
         ledger,
         projector,
-        ContextComposer(registry),
+        DecisionInputComposer(registry),
         DecisionValidator(registry),
         tool_executor,  # type: ignore[arg-type]
         ToolNeedService(ledger, projector),
-        FakeDecisionModel(decision),
+        StaticDecisionProducer(decision),
         capability_catalog=CapabilityCatalog.load("capability_catalog"),
     )
 

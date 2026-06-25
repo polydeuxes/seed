@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Iterable
 
-from seed_runtime.context import ContextComposer
+from seed_runtime.context import DecisionInputComposer
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
 from seed_runtime.model_client import DecisionParseError
@@ -20,7 +20,7 @@ from seed_runtime.models import (
     utc_now,
 )
 from seed_runtime.registry import ToolRegistry
-from seed_runtime.runtime import DecisionModel
+from seed_runtime.runtime import DecisionProducer
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
 
@@ -82,9 +82,9 @@ class EvalRun:
 
 
 class DecisionEvaluator:
-    """Evaluate a DecisionModel against deterministic golden cases."""
+    """Evaluate a DecisionProducer against deterministic golden cases."""
 
-    def __init__(self, registry: ToolRegistry, model: DecisionModel) -> None:
+    def __init__(self, registry: ToolRegistry, model: DecisionProducer) -> None:
         self.registry = registry
         self.model = model
 
@@ -103,7 +103,7 @@ class DecisionEvaluator:
             session_id=case.session_id,
         )
         state = projector.project(case.workspace_id)
-        context = ContextComposer(self.registry).compose(
+        context = DecisionInputComposer(self.registry).compose(
             case.workspace_id, case.session_id, input_event, state
         )
         try:

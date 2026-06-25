@@ -3,12 +3,12 @@ from urllib import request
 
 import pytest
 
-from seed_runtime.context import ContextPacket
+from seed_runtime.context import DecisionInputPacket
 from seed_runtime.model_client import DecisionParseError
 from seed_runtime.model_clients import (
-    LlamaCppDecisionModel,
+    LlamaCppDecisionProducer,
     LocalChatModel,
-    OllamaDecisionModel,
+    OllamaDecisionProducer,
     build_decision_prompt,
     parse_decision_text,
 )
@@ -44,8 +44,8 @@ class UrlopenRecorder:
         return json.loads(self.requests[-1].data.decode("utf-8"))
 
 
-def echo_context() -> ContextPacket:
-    return ContextPacket(
+def echo_context() -> DecisionInputPacket:
+    return DecisionInputPacket(
         workspace_id="workspace-1",
         session_id="session-1",
         current_input={"event_id": "event-1", "text": "echo hello"},
@@ -144,7 +144,7 @@ def test_ollama_decision_model_posts_chat_request_and_parses_decision(monkeypatc
         {"message": {"role": "assistant", "content": expected_echo_decision_text()}}
     )
     monkeypatch.setattr(request, "urlopen", recorder)
-    model = OllamaDecisionModel(
+    model = OllamaDecisionProducer(
         "llama3.2:1b",
         endpoint_url="http://ollama.local/",
         timeout=7,
@@ -170,7 +170,7 @@ def test_ollama_decision_model_posts_chat_request_and_parses_decision(monkeypatc
 def test_ollama_decision_model_can_use_generate_endpoint(monkeypatch):
     recorder = UrlopenRecorder({"response": expected_echo_decision_text()})
     monkeypatch.setattr(request, "urlopen", recorder)
-    model = OllamaDecisionModel(
+    model = OllamaDecisionProducer(
         "llama3.2:1b",
         endpoint_url="http://ollama.local",
         max_tokens=55,
@@ -190,7 +190,7 @@ def test_llamacpp_decision_model_posts_openai_chat_request_and_parses(monkeypatc
         {"choices": [{"message": {"content": expected_echo_decision_text()}}]}
     )
     monkeypatch.setattr(request, "urlopen", recorder)
-    model = LlamaCppDecisionModel(
+    model = LlamaCppDecisionProducer(
         "local-model",
         endpoint_url="http://llama.local",
         timeout=9,

@@ -26,7 +26,7 @@ from seed_runtime.state import State
 
 
 @dataclass(frozen=True)
-class ContextPacket:
+class DecisionInputPacket:
     workspace_id: str
     session_id: str | None
     current_input: dict[str, Any]
@@ -44,7 +44,7 @@ class ContextPacket:
         return self.__dict__.copy()
 
 
-class ContextComposer:
+class DecisionInputComposer:
     def __init__(
         self, registry: ToolRegistry, budget: ContextBudget | None = None
     ) -> None:
@@ -57,7 +57,7 @@ class ContextComposer:
         session_id: str | None,
         input_event: Event,
         state: State,
-    ) -> ContextPacket:
+    ) -> DecisionInputPacket:
         ordered_goals = order_goals(state.goals.values())
         ordered_entities = order_entities(state.entities.values())
         ordered_facts = order_facts(state.facts.values())
@@ -109,7 +109,7 @@ class ContextComposer:
             for tool in self.registry.list_tools(visible_only=True)
         ]
         open_needs = [need.__dict__ for need in budgeted.sections[OPEN_TOOL_NEEDS]]
-        return ContextPacket(
+        return DecisionInputPacket(
             workspace_id=workspace_id,
             session_id=session_id,
             current_input=(
@@ -134,3 +134,8 @@ class ContextComposer:
             evidence=evidence,
             context_budget=budgeted.trace.to_dict(),
         )
+
+
+# Compatibility aliases for the former public runtime decision-input names.
+ContextPacket = DecisionInputPacket
+ContextComposer = DecisionInputComposer

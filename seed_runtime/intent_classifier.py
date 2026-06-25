@@ -15,7 +15,7 @@ from typing import Any, Literal, Protocol, Sequence
 from seed_runtime.capability_catalog import CapabilityCatalog
 
 from seed_runtime.base import SeedModel
-from seed_runtime.context import ContextPacket
+from seed_runtime.context import DecisionInputPacket
 from seed_runtime.model_client import (
     CommandTransport,
     DecisionParseError,
@@ -31,7 +31,7 @@ else:
     from seed_runtime._pydantic_compat import Field
 
 IntentLabel = Literal["echo", "answer", "missing_tool", "clarify", "refuse"]
-IntentContext = ContextPacket
+IntentContext = DecisionInputPacket
 IntentDecision = Decision
 
 _VALID_TOOL_NAME_CHARS = re.compile(r"[^a-z0-9]+")
@@ -127,9 +127,11 @@ class FakeIntentClassifier:
 
     def __init__(self, classification: IntentClassification) -> None:
         self.classification = classification
+        self.last_decision_input: IntentContext | None = None
         self.last_context: IntentContext | None = None
 
     def classify(self, context: IntentContext) -> IntentClassification:
+        self.last_decision_input = context
         self.last_context = context
         return self.classification
 
@@ -407,8 +409,8 @@ class DecisionBuilder:
         raise ValueError(f"unsupported intent {classification.intent!r}")
 
 
-class IntentDecisionModel:
-    """DecisionModel that asks for an intent label, then builds a Decision locally."""
+class IntentDecisionProducer:
+    """DecisionProducer that asks for an intent label, then builds a Decision locally."""
 
     def __init__(
         self,
@@ -418,9 +420,9 @@ class IntentDecisionModel:
         self.classifier = classifier
         self.builder = builder or DecisionBuilder()
 
-    def decide(self, context: IntentContext) -> IntentDecision:
-        text = _input_text(context)
-        classification = deterministic_intent_fallback(context)
+    def decide(self, decision_input: IntentContext) -> IntentDecision:
+        text = _input_text(decision_input)
+        classification = deterministic_intent_fallback(decision_input)
         if classification is None:
             if self.classifier is None:
                 if _requires_missing_tool(text):
@@ -432,9 +434,9 @@ class IntentDecisionModel:
                         arguments={"question": "What would you like me to do?"},
                     )
             else:
-                classification = self.classifier.classify(context)
+                classification = self.classifier.classify(decision_input)
         classification = _normalize_classification_for_input(text, classification)
-        return self.builder.build(context, classification)
+        return self.builder.build(decision_input, classification)
 
 
 def deterministic_intent_fallback(
@@ -622,3 +624,7 @@ def _without_empty(value: dict[str, Any]) -> dict[str, Any]:
         for key, item in value.items()
         if item is not None and item != [] and item != {}
     }
+
+
+# Compatibility alias for the former intent decision adapter name.
+IntentDecisionModel = IntentDecisionProducer

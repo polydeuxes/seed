@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from seed_runtime.context import ContextPacket
+from seed_runtime.context import DecisionInputPacket
 from seed_runtime.context_views import (
     ContextCapability,
     ContextFact,
@@ -15,7 +15,7 @@ from seed_runtime.intent_classifier import (
     DecisionBuilder,
     FakeIntentClassifier,
     IntentClassification,
-    IntentDecisionModel,
+    IntentDecisionProducer,
     IntentPromptModelClient,
     StrictJSONIntentParser,
     TextIntentClassifier,
@@ -35,8 +35,8 @@ class FakeTransport:
         return self.response
 
 
-def context_for(text: str) -> ContextPacket:
-    return ContextPacket(
+def context_for(text: str) -> DecisionInputPacket:
+    return DecisionInputPacket(
         workspace_id="workspace-1",
         session_id="session-1",
         current_input={"event_id": "event-1", "text": text},
@@ -59,14 +59,14 @@ def test_echo_prefix_uses_deterministic_fallback_without_model():
             arguments={},
         )
     )
-    model = IntentDecisionModel(classifier)
+    model = IntentDecisionProducer(classifier)
 
     decision = model.decide(context_for("echo hello"))
 
     assert decision.kind == "call_tool"
     assert decision.tool_name == "echo"
     assert decision.tool_arguments == {"message": "hello"}
-    assert classifier.last_context is None
+    assert classifier.last_decision_input is None
 
 
 def test_informational_questions_prefer_answer_without_requesting_tools():
@@ -77,7 +77,7 @@ def test_informational_questions_prefer_answer_without_requesting_tools():
             arguments={"name": "what_is_docker"},
         )
     )
-    model = IntentDecisionModel(classifier)
+    model = IntentDecisionProducer(classifier)
 
     for text, topic in (
         ("What is Docker?", "Docker"),
@@ -90,11 +90,11 @@ def test_informational_questions_prefer_answer_without_requesting_tools():
         assert decision.kind == "answer"
         assert topic in (decision.answer or "")
 
-    assert classifier.last_context is None
+    assert classifier.last_decision_input is None
 
 
 def test_external_action_search_and_observation_requests_are_missing_tool():
-    model = IntentDecisionModel()
+    model = IntentDecisionProducer()
 
     examples = (
         ("What is the weather in Jacksonville?", "weather_lookup"),
@@ -122,7 +122,7 @@ def test_missing_tool_intent_requests_install_docker_tool():
             },
         )
     )
-    model = IntentDecisionModel(classifier)
+    model = IntentDecisionProducer(classifier)
 
     decision = model.decide(context_for("install docker"))
 

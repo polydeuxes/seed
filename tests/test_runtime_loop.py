@@ -1,5 +1,5 @@
 import pytest
-from seed_runtime.context import ContextComposer
+from seed_runtime.context import DecisionInputComposer
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.context_views import DecisionContextView
 from seed_runtime.events import EventLedger
@@ -8,13 +8,13 @@ from seed_runtime.execution import ToolExecutor
 from seed_runtime.model_client import DecisionParseError
 from seed_runtime.models import Decision, Fact, RuntimeResponse, utc_now
 from seed_runtime.registry import ToolRegistry
-from seed_runtime.runtime import FakeDecisionModel, Runtime
+from seed_runtime.runtime import StaticDecisionProducer, Runtime
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
 from seed_runtime.tool_needs import ToolNeedService
 
 
-class SequenceDecisionModel:
+class SequenceDecisionProducer:
     def __init__(self, decisions):
         self.decisions = list(decisions)
         self.contexts = []
@@ -29,11 +29,11 @@ def make_runtime(decision, *, max_decision_retries=1):
     registry = ToolRegistry()
     registry.load_manifest("toolkits/core/echo/toolkit.yaml")
     projector = StateProjector(ledger)
-    model = decision if hasattr(decision, "decide") else FakeDecisionModel(decision)
+    model = decision if hasattr(decision, "decide") else StaticDecisionProducer(decision)
     runtime = Runtime(
         ledger,
         projector,
-        ContextComposer(registry),
+        DecisionInputComposer(registry),
         DecisionValidator(registry),
         ToolExecutor(ledger, registry, projector),
         ToolNeedService(ledger, projector),
@@ -184,8 +184,8 @@ def test_mvp_echo_loop_records_result_event_and_projects_tool_output_evidence():
         "tool.call.completed",
         "evidence.observed",
     ]
-    assert model.last_context.current_input["text"] == "echo hello"
-    assert [tool["name"] for tool in model.last_context.tools] == ["echo"]
+    assert model.last_decision_input.current_input["text"] == "echo hello"
+    assert [tool["name"] for tool in model.last_decision_input.tools] == ["echo"]
     assert projected_state.workspace_id == "ws"
     assert projected_state.open_tool_needs == []
     assert len(projected_state.evidence) == 1
@@ -214,14 +214,14 @@ def test_mvp_request_tool_loop_records_need_and_projects_open_state():
         "model.decision.proposed",
         "tool_need.created",
     ]
-    assert model.last_context.current_input["text"] == "check service"
+    assert model.last_decision_input.current_input["text"] == "check service"
     assert [need.name for need in projected_state.open_tool_needs] == [
         "lookup_service_status"
     ]
 
 
 def test_retries_invalid_first_decision_with_corrected_valid_decision():
-    model = SequenceDecisionModel(
+    model = SequenceDecisionProducer(
         [
             Decision(kind="answer", reason="missing answer"),
             Decision(kind="answer", reason="corrected", answer="done"),
@@ -263,7 +263,7 @@ def test_retries_invalid_first_decision_with_corrected_valid_decision():
 
 
 def test_invalid_first_and_second_decision_returns_invalid_decision():
-    model = SequenceDecisionModel(
+    model = SequenceDecisionProducer(
         [
             Decision(kind="answer", reason="missing answer"),
             Decision(kind="ask_question", reason="missing question"),
@@ -285,7 +285,7 @@ def test_invalid_first_and_second_decision_returns_invalid_decision():
 
 
 def test_decision_and_invalid_decision_events_are_recorded_deterministically():
-    model = SequenceDecisionModel(
+    model = SequenceDecisionProducer(
         [
             Decision(kind="answer", reason="missing answer"),
             Decision(kind="ask_question", reason="missing question"),
@@ -314,7 +314,7 @@ def test_decision_and_invalid_decision_events_are_recorded_deterministically():
     assert second_invalid.causation_id == second_proposed.id
 
 
-class SequenceParseDecisionModel:
+class SequenceParseDecisionProducer:
     def __init__(self, outcomes):
         self.outcomes = list(outcomes)
         self.contexts = []
@@ -328,7 +328,7 @@ class SequenceParseDecisionModel:
 
 
 def test_retries_parse_failed_first_decision_with_valid_decision():
-    model = SequenceParseDecisionModel(
+    model = SequenceParseDecisionProducer(
         [
             DecisionParseError("model response is not valid JSON: Expecting value"),
             Decision(kind="answer", reason="corrected", answer="done"),
@@ -366,7 +366,7 @@ def test_exhausted_parse_failures_return_invalid_decision_and_record_events():
     first_error = DecisionParseError("model response must be a JSON object")
     second_error = DecisionParseError("decision requires kind and reason")
     second_error.raw_failure_classification = "missing_required_fields"
-    model = SequenceParseDecisionModel([first_error, second_error])
+    model = SequenceParseDecisionProducer([first_error, second_error])
     runtime, ledger, _ = make_runtime(model, max_decision_retries=1)
 
     response = runtime.handle_user_message("ws", "ses", "hi")
@@ -391,3 +391,47 @@ def test_exhausted_parse_failures_return_invalid_decision_and_record_events():
         "raw_failure_classification": "missing_required_fields",
     }
     assert events[2].causation_id == events[0].id
+
+
+def test_legacy_decision_input_import_aliases_remain_available():
+    from seed_runtime.context import (
+        ContextComposer,
+        ContextPacket,
+        DecisionInputComposer,
+        DecisionInputPacket,
+    )
+
+    assert ContextComposer is DecisionInputComposer
+    assert ContextPacket is DecisionInputPacket
+
+
+def test_legacy_decision_producer_import_aliases_remain_available():
+    from seed_runtime.context import ContextPacket
+    from seed_runtime.models import Decision
+    from seed_runtime.runtime import (
+        DecisionModel,
+        DecisionProducer,
+        FakeDecisionModel,
+        StaticDecisionProducer,
+    )
+
+    assert DecisionModel is DecisionProducer
+    assert FakeDecisionModel is StaticDecisionProducer
+
+    decision = Decision(kind="answer", reason="done", answer="ok")
+    decision_input = ContextPacket(
+        workspace_id="ws",
+        session_id="ses",
+        current_input={"text": "hello"},
+        active_goal=None,
+        entities=[],
+        facts=[],
+        tools=[],
+        open_tool_needs=[],
+        decision_schema={"kinds": ["answer"]},
+    )
+    fake = FakeDecisionModel(decision)
+
+    assert fake.decide(decision_input) is decision
+    assert fake.last_decision_input is decision_input
+    assert fake.last_context is decision_input

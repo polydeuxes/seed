@@ -1,11 +1,11 @@
 import pytest
 
-from seed_runtime.context import ContextPacket
+from seed_runtime.context import DecisionInputPacket
 from seed_runtime.model_client import (
     CommandTransport,
     DecisionParseError,
     DecisionPromptModelClient,
-    ParsedDecisionModel,
+    ParsedDecisionProducer,
     StrictJSONDecisionParser,
     render_decision_prompt,
     serialize_decision_prompt,
@@ -22,8 +22,8 @@ class FakeTransport:
         return self.response
 
 
-def sample_context() -> ContextPacket:
-    return ContextPacket(
+def sample_context() -> DecisionInputPacket:
+    return DecisionInputPacket(
         workspace_id="workspace-1",
         session_id="session-1",
         current_input={"event_id": "event-1", "text": "is example_host out of disk?"},
@@ -124,7 +124,7 @@ def test_render_decision_prompt_includes_only_model_relevant_fields():
 
 def test_render_decision_prompt_includes_open_tool_needs_without_runtime_fields():
     context = sample_context()
-    context_with_need = ContextPacket(
+    context_with_need = DecisionInputPacket(
         **{
             **context.to_dict(),
             "open_tool_needs": [
@@ -164,7 +164,7 @@ def test_serialize_decision_prompt_is_backward_compatible_alias():
 
 def test_serialize_decision_prompt_includes_retry_prompt_when_present():
     context = sample_context()
-    retry_context = ContextPacket(
+    retry_context = DecisionInputPacket(
         **{
             **context.to_dict(),
             "retry_prompt": {"validation_errors": ["answer decisions require answer"]},
@@ -198,7 +198,7 @@ def test_decision_prompt_model_client_is_injectable_into_parsed_decision_model()
     transport = FakeTransport(
         '{"kind":"call_tool","reason":"visible tool matches","tool_name":"docker_storage_summary","tool_arguments":{"host":"example_host"}}'
     )
-    model = ParsedDecisionModel(DecisionPromptModelClient(transport))
+    model = ParsedDecisionProducer(DecisionPromptModelClient(transport))
 
     decision = model.decide(sample_context())
 
