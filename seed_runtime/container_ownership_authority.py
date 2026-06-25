@@ -182,10 +182,16 @@ def format_container_ownership_authority(
     lines = [
         "Container Ownership Authority",
         "",
+        "Goal",
         f"Desired observation: {result.desired_observation}",
+        "",
+        "Strategy",
+        f"Current strategy: {result.current_strategy}",
         "Required observations:",
     ]
     lines.extend(f"  - {item}" for item in result.required_observations)
+    lines.append("")
+    lines.append("Authority")
     lines.append("Required authority:")
     lines.extend(
         f"  - {observation}: {authority}"
@@ -198,23 +204,26 @@ def format_container_ownership_authority(
     )
     lines.extend(
         [
-            f"Outcome: {result.outcome}",
-            f"Current strategy: {result.current_strategy}",
+            "",
+            "Execution",
             f"Strategy status: {result.strategy_status}",
+            f"Outcome: {result.outcome}",
         ]
     )
     if result.blocking_boundary is not None:
         lines.append(f"Blocking boundary: {result.blocking_boundary}")
-    lines.append("Remaining observations:")
+    lines.extend(["", "Remaining work", "Remaining observations:"])
     if result.remaining_observations:
         lines.extend(f"  - {item}" for item in result.remaining_observations)
     else:
         lines.append("  - none")
     lines.append("Uncertainty:")
     lines.extend(f"  - {item}" for item in result.uncertainty)
-    lines.append("Remaining uncertainty:")
-    lines.extend(f"  - {item}" for item in result.remaining_uncertainty)
-    lines.append("Boundary:")
+    if result.remaining_uncertainty != result.uncertainty:
+        lines.append("Remaining uncertainty:")
+        lines.extend(f"  - {item}" for item in result.remaining_uncertainty)
+    lines.append("")
+    lines.append("Boundary")
     lines.extend(
         f"  - {name}: {str(value).lower()}"
         for name, value in sorted(result.boundary.items())
