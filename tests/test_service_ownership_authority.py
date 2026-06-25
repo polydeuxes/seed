@@ -17,6 +17,10 @@ def test_service_ownership_slice_is_partially_reachable_under_constrained_profil
 
     assert result.desired_observation == "service ownership"
     assert result.outcome == "partially_reachable"
+    assert result.current_strategy == "composite_local_service_attribution_observation"
+    assert result.strategy_status == result.outcome
+    assert result.remaining_observations == result.blocked_observations
+    assert result.remaining_uncertainty == result.uncertainty
     assert set(result.reachable_observations) >= {
         "tcp_listen_inventory",
         "listener_process_inventory",
@@ -52,6 +56,10 @@ def test_service_ownership_blocks_docker_root_dependent_observations():
     assert result.available_authority["docker_socket_read"] == "unavailable"
     assert "container_inventory" in result.blocked_observations
     assert "container_port_mapping" in result.blocked_observations
+    assert (
+        result.blocking_boundary
+        == "docker_or_root_container_runtime_authority_unavailable"
+    )
 
 
 def test_cli_service_ownership_authority_json_contains_required_shape(capsys):
@@ -67,12 +75,82 @@ def test_cli_service_ownership_authority_json_contains_required_shape(capsys):
         "blocked_observations",
         "available_authority",
         "outcome",
+        "current_strategy",
+        "strategy_status",
+        "remaining_observations",
         "uncertainty",
+        "remaining_uncertainty",
+        "blocking_boundary",
         "boundary",
     ]:
         assert key in payload
     assert payload["desired_observation"] == "service ownership"
     assert payload["outcome"] == "partially_reachable"
+    assert payload["current_strategy"] == "composite_local_service_attribution_observation"
+    assert payload["strategy_status"] == payload["outcome"]
+    assert payload["remaining_observations"] == payload["blocked_observations"]
+    assert payload["remaining_uncertainty"] == payload["uncertainty"]
+    assert (
+        payload["blocking_boundary"]
+        == "docker_or_root_container_runtime_authority_unavailable"
+    )
+
+
+def test_service_ownership_blocking_boundary_only_when_docker_root_blocks_runtime():
+    profile = dict(CONSTRAINED_AUTHORITY_PROFILE)
+    profile["docker_socket_read"] = "available"
+
+    result = evaluate_service_ownership_authority_slice(State(workspace_id="test"), profile)
+
+    assert result.blocked_observations == ()
+    assert result.remaining_observations == ()
+    assert result.blocking_boundary is None
+    assert "blocking_boundary" not in result.to_json_dict()
+
+
+def test_cli_service_ownership_authority_renders_composite_inquiry_flow(capsys):
+    assert seed_local.main(["--service-ownership-authority"]) == 0
+
+    output = capsys.readouterr().out
+
+    expected_order = [
+        "Goal",
+        "Desired observation: service ownership",
+        "Strategy",
+        "Current strategy: composite_local_service_attribution_observation",
+        "Observation state",
+        "Reachable observations:",
+        "Remaining observations:",
+        "Authority",
+        "Required authority:",
+        "Available authority:",
+        "Execution",
+        "Strategy status: partially_reachable",
+        "Outcome: partially_reachable",
+        "Blocking boundary: docker_or_root_container_runtime_authority_unavailable",
+        "Uncertainty:",
+        "Boundary",
+    ]
+    cursor = -1
+    for text in expected_order:
+        next_index = output.find(text, cursor + 1)
+        assert next_index > cursor
+        cursor = next_index
+
+
+def test_service_ownership_available_docker_socket_does_not_change_observation_semantics():
+    result = evaluate_service_ownership_authority_slice(
+        State(workspace_id="test"),
+        {**CONSTRAINED_AUTHORITY_PROFILE, "docker_socket_read": "available"},
+    )
+
+    assert result.outcome == "reachable"
+    assert set(result.reachable_observations) == {
+        "tcp_listen_inventory",
+        "listener_process_inventory",
+        "systemd_unit_inventory",
+    }
+    assert set(result.blocked_observations) == set()
 
 
 def test_service_ownership_inventory_registration_is_correct():
