@@ -141,6 +141,21 @@ def privilege_discovery_json(audit: PrivilegeDiscoveryAudit) -> dict[str, Any]:
     return audit.to_json_dict()
 
 
+def privilege_discovery_explanation_for(capability: str) -> dict[str, str]:
+    """Return existing implementation-backed explanation fields for a capability."""
+
+    access, *_ = _guidance_for(capability)
+    implementation_evidence = _implementation_evidence_for(capability)
+    guidance_status = _guidance_status_for(capability)
+    return {
+        "guidance_status": guidance_status,
+        "implementation_evidence": implementation_evidence,
+        "limiting_reason": _limiting_reason(
+            access, guidance_status, implementation_evidence
+        ),
+    }
+
+
 def format_privilege_discovery(audit: PrivilegeDiscoveryAudit) -> str:
     lines = ["Privilege Discovery", ""]
     if not audit.capabilities:
@@ -182,7 +197,9 @@ def format_privilege_discovery(audit: PrivilegeDiscoveryAudit) -> str:
         lines.append(f"  {capability.notes}")
         lines.append("")
     lines.append("Boundary:")
-    lines.append("  visibility only; no sudo, privilege escalation, event ledger writes, or cluster mutation")
+    lines.append(
+        "  visibility only; no sudo, privilege escalation, event ledger writes, or cluster mutation"
+    )
     return "\n".join(lines).rstrip()
 
 
@@ -213,6 +230,6 @@ def _limiting_reason(
         return "missing_guidance"
     if implementation_evidence == "not_registered":
         return "missing_implementation_evidence"
-    if access_level == "unknown":
+    if access_level in {"unknown", "root", "docker_group_or_root"}:
         return "missing_authority"
     return "none"

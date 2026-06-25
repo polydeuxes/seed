@@ -86,7 +86,9 @@ def test_cli_service_ownership_authority_json_contains_required_shape(capsys):
         assert key in payload
     assert payload["desired_observation"] == "service ownership"
     assert payload["outcome"] == "partially_reachable"
-    assert payload["current_strategy"] == "composite_local_service_attribution_observation"
+    assert (
+        payload["current_strategy"] == "composite_local_service_attribution_observation"
+    )
     assert payload["strategy_status"] == payload["outcome"]
     assert payload["remaining_observations"] == payload["blocked_observations"]
     assert payload["remaining_uncertainty"] == payload["uncertainty"]
@@ -96,11 +98,73 @@ def test_cli_service_ownership_authority_json_contains_required_shape(capsys):
     )
 
 
+def test_service_ownership_blocked_observations_include_privilege_explanation_fields():
+    result = evaluate_service_ownership_authority_slice(
+        State(workspace_id="test"), CONSTRAINED_AUTHORITY_PROFILE
+    )
+
+    by_observation = {
+        item["observation"]: item for item in result.blocked_observation_details
+    }
+
+    assert set(by_observation) == {
+        "container_inventory",
+        "container_port_mapping",
+    }
+    for observation in ["container_inventory", "container_port_mapping"]:
+        assert by_observation[observation]["guidance_status"] == "registered"
+        assert by_observation[observation]["implementation_evidence"] == "registered"
+        assert by_observation[observation]["limiting_reason"] == "missing_authority"
+
+
+def test_service_ownership_json_extends_blocked_observations_without_replacing_old_fields(
+    capsys,
+):
+    assert seed_local.main(["--service-ownership-authority", "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["blocked_observations"] == [
+        "container_inventory",
+        "container_port_mapping",
+    ]
+    assert payload["remaining_observations"] == payload["blocked_observations"]
+    assert payload["blocked_observation_details"] == [
+        {
+            "observation": "container_inventory",
+            "guidance_status": "registered",
+            "implementation_evidence": "registered",
+            "limiting_reason": "missing_authority",
+        },
+        {
+            "observation": "container_port_mapping",
+            "guidance_status": "registered",
+            "implementation_evidence": "registered",
+            "limiting_reason": "missing_authority",
+        },
+    ]
+
+
+def test_service_ownership_human_output_renders_blocked_observation_explanations(
+    capsys,
+):
+    assert seed_local.main(["--service-ownership-authority"]) == 0
+
+    output = capsys.readouterr().out
+
+    assert "  - container_inventory\n    Guidance: registered" in output
+    assert "    Implementation evidence: registered" in output
+    assert "    Limiting reason: missing_authority" in output
+    assert "  - container_port_mapping\n    Guidance: registered" in output
+
+
 def test_service_ownership_blocking_boundary_only_when_docker_root_blocks_runtime():
     profile = dict(CONSTRAINED_AUTHORITY_PROFILE)
     profile["docker_socket_read"] = "available"
 
-    result = evaluate_service_ownership_authority_slice(State(workspace_id="test"), profile)
+    result = evaluate_service_ownership_authority_slice(
+        State(workspace_id="test"), profile
+    )
 
     assert result.blocked_observations == ()
     assert result.remaining_observations == ()
@@ -154,7 +218,9 @@ def test_service_ownership_available_docker_socket_does_not_change_observation_s
 
 
 def test_service_ownership_inventory_registration_is_correct():
-    entry = next(e for e in DIAGNOSTIC_INVENTORY if e.name == "service_ownership_authority")
+    entry = next(
+        e for e in DIAGNOSTIC_INVENTORY if e.name == "service_ownership_authority"
+    )
 
     assert entry.cli_flags == ("--service-ownership-authority",)
     assert entry.supports_json is True
@@ -192,7 +258,9 @@ def test_service_ownership_slice_has_no_writes_permissions_or_acquisition_behavi
         len(state.events) if hasattr(state, "events") else 0,
     )
 
-    result = evaluate_service_ownership_authority_slice(state, CONSTRAINED_AUTHORITY_PROFILE)
+    result = evaluate_service_ownership_authority_slice(
+        state, CONSTRAINED_AUTHORITY_PROFILE
+    )
 
     after = (
         len(state.facts),

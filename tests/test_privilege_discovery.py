@@ -33,7 +33,9 @@ def _need(capability: str, subjects=("svc-a", "svc-b")):
     )
 
 
-def test_privilege_discovery_renders_capability_access_pressure_and_guidance(monkeypatch, capsys):
+def test_privilege_discovery_renders_capability_access_pressure_and_guidance(
+    monkeypatch, capsys
+):
     seed_local = load_seed_local()
     monkeypatch.setattr(
         "seed_runtime.privilege_discovery.build_capability_needs",
@@ -57,7 +59,9 @@ def test_privilege_discovery_renders_capability_access_pressure_and_guidance(mon
     assert "requires docker-group or root visibility" in output
 
 
-def test_privilege_discovery_json_is_valid_and_includes_boundary_fields(monkeypatch, capsys):
+def test_privilege_discovery_json_is_valid_and_includes_boundary_fields(
+    monkeypatch, capsys
+):
     seed_local = load_seed_local()
     monkeypatch.setattr(
         "seed_runtime.privilege_discovery.build_capability_needs",
@@ -77,7 +81,9 @@ def test_privilege_discovery_json_is_valid_and_includes_boundary_fields(monkeypa
     assert payload["capabilities"][0]["suggested_next_step"]
 
 
-def test_privilege_discovery_empty_state_is_sane_and_read_only(monkeypatch, tmp_path, capsys):
+def test_privilege_discovery_empty_state_is_sane_and_read_only(
+    monkeypatch, tmp_path, capsys
+):
     seed_local = load_seed_local()
     db = tmp_path / "seed.sqlite"
     monkeypatch.setattr(
@@ -139,7 +145,9 @@ def test_storage_capability_explanation_statuses_are_bounded(monkeypatch):
 
     assert by_name["export_visibility_inventory"].access_level == "partial_passive"
     assert by_name["export_visibility_inventory"].guidance_status == "registered"
-    assert by_name["export_visibility_inventory"].implementation_evidence == "registered"
+    assert (
+        by_name["export_visibility_inventory"].implementation_evidence == "registered"
+    )
     assert by_name["export_visibility_inventory"].limiting_reason == "none"
 
     assert by_name["smb_share_inventory"].access_level == "unknown"
@@ -149,8 +157,13 @@ def test_storage_capability_explanation_statuses_are_bounded(monkeypatch):
 
     assert by_name["remote_storage_export_inventory"].access_level == "unknown"
     assert by_name["remote_storage_export_inventory"].guidance_status == "unknown"
-    assert by_name["remote_storage_export_inventory"].implementation_evidence == "not_registered"
-    assert by_name["remote_storage_export_inventory"].limiting_reason == "missing_guidance"
+    assert (
+        by_name["remote_storage_export_inventory"].implementation_evidence
+        == "not_registered"
+    )
+    assert (
+        by_name["remote_storage_export_inventory"].limiting_reason == "missing_guidance"
+    )
 
 
 def test_privilege_discovery_json_includes_explanation_fields(monkeypatch):
@@ -200,3 +213,16 @@ def test_missing_guidance_precedes_missing_implementation_evidence(monkeypatch):
     assert audit.capabilities[0].guidance_status == "unknown"
     assert audit.capabilities[0].implementation_evidence == "not_registered"
     assert audit.capabilities[0].limiting_reason == "missing_guidance"
+
+
+def test_privilege_discovery_container_guidance_reports_missing_authority(monkeypatch):
+    monkeypatch.setattr(
+        "seed_runtime.privilege_discovery.build_capability_needs",
+        lambda state: [_need("container_inventory")],
+    )
+
+    audit = build_privilege_discovery(State(workspace_id="ws"))
+
+    assert audit.capabilities[0].guidance_status == "registered"
+    assert audit.capabilities[0].implementation_evidence == "registered"
+    assert audit.capabilities[0].limiting_reason == "missing_authority"

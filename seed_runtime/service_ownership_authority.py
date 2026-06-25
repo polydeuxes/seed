@@ -6,10 +6,16 @@ from dataclasses import dataclass, field
 from typing import Any, Mapping
 
 from seed_runtime.capability_needs import build_capability_needs
-from seed_runtime.observation_domains import CAPABILITY_TO_DOMAIN, build_observation_domains
+from seed_runtime.observation_domains import (
+    CAPABILITY_TO_DOMAIN,
+    build_observation_domains,
+)
 from seed_runtime.observation_inventory import build_observation_inventory
 from seed_runtime.observation_permission import SUPPORTED_OBSERVATION_CLASSES
-from seed_runtime.privilege_discovery import _guidance_for
+from seed_runtime.privilege_discovery import (
+    _guidance_for,
+    privilege_discovery_explanation_for,
+)
 from seed_runtime.state import State
 
 CONSTRAINED_AUTHORITY_PROFILE = {
@@ -47,6 +53,7 @@ class ServiceOwnershipAuthoritySlice:
     available_authority: dict[str, str]
     reachable_observations: tuple[str, ...]
     blocked_observations: tuple[str, ...]
+    blocked_observation_details: tuple[dict[str, str], ...]
     outcome: str
     current_strategy: str
     strategy_status: str
@@ -74,6 +81,9 @@ class ServiceOwnershipAuthoritySlice:
             "available_authority": dict(self.available_authority),
             "reachable_observations": list(self.reachable_observations),
             "blocked_observations": list(self.blocked_observations),
+            "blocked_observation_details": [
+                dict(item) for item in self.blocked_observation_details
+            ],
             "outcome": self.outcome,
             "current_strategy": self.current_strategy,
             "strategy_status": self.strategy_status,
@@ -98,7 +108,9 @@ def evaluate_service_ownership_authority_slice(
     capability names, observed listener/systemd support, and Docker/root limits.
     """
 
-    available_authority = {key: str(profile.get(key, "unknown")) for key in AUTHORITY_KEYS}
+    available_authority = {
+        key: str(profile.get(key, "unknown")) for key in AUTHORITY_KEYS
+    }
     required_observations = _required_service_observations(state)
     required_authority = {
         observation: _authority_for_observation(observation)
@@ -108,12 +120,20 @@ def evaluate_service_ownership_authority_slice(
     reachable = tuple(
         observation
         for observation in required_observations
-        if _is_reachable(observation, required_authority[observation], available_authority)
+        if _is_reachable(
+            observation, required_authority[observation], available_authority
+        )
     )
     blocked = tuple(
         observation
         for observation in required_observations
-        if _is_blocked(observation, required_authority[observation], available_authority)
+        if _is_blocked(
+            observation, required_authority[observation], available_authority
+        )
+    )
+
+    blocked_details = tuple(
+        _blocked_observation_detail(observation) for observation in blocked
     )
 
     if reachable and blocked:
@@ -125,7 +145,9 @@ def evaluate_service_ownership_authority_slice(
     else:
         outcome = "unknown"
 
-    uncertainty = list(_implementation_evidence_uncertainty(state, required_observations))
+    uncertainty = list(
+        _implementation_evidence_uncertainty(state, required_observations)
+    )
     uncertainty.append(
         "active_network_probe unauthorized and external_provider_query unknown are not used to promote service ownership beyond local passive evidence"
     )
@@ -145,6 +167,7 @@ def evaluate_service_ownership_authority_slice(
         available_authority=available_authority,
         reachable_observations=reachable,
         blocked_observations=blocked,
+        blocked_observation_details=blocked_details,
         outcome=outcome,
         current_strategy=CURRENT_STRATEGY,
         strategy_status=outcome,
@@ -158,7 +181,9 @@ def evaluate_service_ownership_authority_slice(
 def _required_service_observations(state: State) -> tuple[str, ...]:
     observed = []
     known = set(SERVICE_OBSERVATIONS)
-    for need in build_capability_needs(state, diagnostic_filter="ownership_discrepancies"):
+    for need in build_capability_needs(
+        state, diagnostic_filter="ownership_discrepancies"
+    ):
         if need.capability in known:
             observed.append(need.capability)
     for capability in SERVICE_OBSERVATIONS:
@@ -170,6 +195,13 @@ def _required_service_observations(state: State) -> tuple[str, ...]:
         else:
             observed.append(capability)
     return tuple(dict.fromkeys(observed))
+
+
+def _blocked_observation_detail(observation: str) -> dict[str, str]:
+    return {
+        "observation": observation,
+        **privilege_discovery_explanation_for(observation),
+    }
 
 
 def _authority_for_observation(observation: str) -> str:
@@ -186,7 +218,10 @@ def _is_reachable(observation: str, authority: str, profile: Mapping[str, str]) 
     if observation in {"tcp_listen_inventory", "systemd_unit_inventory"}:
         return profile.get("local_passive") == "available"
     if observation == "listener_process_inventory":
-        return authority == "partial_non_root" and profile.get("local_passive") == "available"
+        return (
+            authority == "partial_non_root"
+            and profile.get("local_passive") == "available"
+        )
     return False
 
 
@@ -223,27 +258,41 @@ def _implementation_evidence_uncertainty(
     predicates = {predicate.predicate for predicate in inventory.predicates}
     domains = build_observation_domains(state)
     local_listener_domain = next(
-        (domain for domain in domains.domains if domain.domain == "local_listeners"), None
+        (domain for domain in domains.domains if domain.domain == "local_listeners"),
+        None,
     )
     notes = []
-    if "listener" in families or "listening" in families or any(
-        predicate.startswith(("listener_", "listening_")) for predicate in predicates
+    if (
+        "listener" in families
+        or "listening" in families
+        or any(
+            predicate.startswith(("listener_", "listening_"))
+            for predicate in predicates
+        )
     ):
         notes.append("listener observation support exists in observation_inventory")
     else:
-        notes.append("listener observation support was not found in observation_inventory")
+        notes.append(
+            "listener observation support was not found in observation_inventory"
+        )
     if any("systemd" in predicate for predicate in predicates):
         notes.append("systemd observation support exists in observation_inventory")
     else:
-        notes.append("systemd support is limited to privilege guidance and current fact predicates, not a discovered systemd observation provider")
+        notes.append(
+            "systemd support is limited to privilege guidance and current fact predicates, not a discovered systemd observation provider"
+        )
     if local_listener_domain is not None:
         notes.append(
             f"observation_domains reports local_listeners as {local_listener_domain.classification}"
         )
     if SUPPORTED_OBSERVATION_CLASSES.get("docker_socket_read") == "local_privileged":
-        notes.append("docker_socket_read is recognized as local_privileged observation-permission activity")
+        notes.append(
+            "docker_socket_read is recognized as local_privileged observation-permission activity"
+        )
     if {"container_inventory", "container_port_mapping"} & set(required_observations):
-        notes.append("container observations remain Docker/root dependent under privilege_discovery guidance")
+        notes.append(
+            "container observations remain Docker/root dependent under privilege_discovery guidance"
+        )
     return tuple(notes)
 
 
@@ -268,7 +317,18 @@ def format_service_ownership_authority(result: ServiceOwnershipAuthoritySlice) -
     lines.extend(["", "Observation state", "Reachable observations:"])
     lines.extend(f"  - {item}" for item in result.reachable_observations or ("none",))
     lines.append("Remaining observations:")
-    lines.extend(f"  - {item}" for item in result.remaining_observations or ("none",))
+    if result.blocked_observation_details:
+        for item in result.blocked_observation_details:
+            lines.append(f"  - {item['observation']}")
+            lines.append(f"    Guidance: {item['guidance_status']}")
+            lines.append(
+                f"    Implementation evidence: {item['implementation_evidence']}"
+            )
+            lines.append(f"    Limiting reason: {item['limiting_reason']}")
+    else:
+        lines.extend(
+            f"  - {item}" for item in result.remaining_observations or ("none",)
+        )
     lines.extend(["", "Authority", "Required authority:"])
     lines.extend(
         f"  - {observation}: {authority}"
