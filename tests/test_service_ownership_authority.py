@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 
 import scripts.seed_local as seed_local
 from seed_runtime.diagnostic_inventory import DIAGNOSTIC_INVENTORY
@@ -6,8 +7,27 @@ from seed_runtime.diagnostic_shape_audit import build_diagnostic_shape_audit
 from seed_runtime.service_ownership_authority import (
     CONSTRAINED_AUTHORITY_PROFILE,
     evaluate_service_ownership_authority_slice,
+    format_service_ownership_authority,
 )
+from seed_runtime.models import Fact
 from seed_runtime.state import State
+
+
+def _state_with_service_endpoint_only() -> State:
+    state = State(workspace_id="test")
+    fact = Fact(
+        id="fact_service_endpoint",
+        subject_id="svc:web",
+        predicate="prometheus_target",
+        value="web:8080",
+        evidence_ids=[],
+        observed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        source_type="user",
+        confidence=1.0,
+    )
+    state.facts[fact.id] = fact
+    state.observed_facts[fact.id] = fact
+    return state
 
 
 def test_service_ownership_slice_is_partially_reachable_under_constrained_profile():
@@ -274,3 +294,66 @@ def test_service_ownership_slice_has_no_writes_permissions_or_acquisition_behavi
     assert result.boundary["mutates_cluster"] is False
     assert result.boundary["permission_creation"] is False
     assert result.boundary["provider_acquisition"] is False
+
+
+def test_service_ownership_consumes_existing_ownership_discrepancy_summary():
+    result = evaluate_service_ownership_authority_slice(
+        _state_with_service_endpoint_only(), CONSTRAINED_AUTHORITY_PROFILE
+    )
+
+    by_observation = {
+        item["observation"]: item for item in result.blocked_observation_details
+    }
+
+    summary = by_observation["container_inventory"]["ownership_discrepancy"]
+    assert summary == {
+        "conflict": "insufficient_evidence",
+        "reason": "Only endpoint/target evidence exists; no host, process, container, or local listener evidence was observed.",
+        "needed_evidence": "container_inventory",
+        "candidate_capability": "container_inventory",
+    }
+
+
+def test_service_ownership_discrepancy_summary_uses_existing_capability_join_only():
+    result = evaluate_service_ownership_authority_slice(
+        _state_with_service_endpoint_only(), CONSTRAINED_AUTHORITY_PROFILE
+    )
+
+    by_observation = {
+        item["observation"]: item for item in result.blocked_observation_details
+    }
+
+    assert "ownership_discrepancy" in by_observation["container_inventory"]
+    assert "ownership_discrepancy" not in by_observation["container_port_mapping"]
+
+
+def test_service_ownership_json_preserves_schema_while_nesting_discrepancy_summary():
+    result = evaluate_service_ownership_authority_slice(
+        _state_with_service_endpoint_only(), CONSTRAINED_AUTHORITY_PROFILE
+    )
+
+    payload = result.to_json_dict()
+
+    assert payload["blocked_observations"] == [
+        "container_inventory",
+        "container_port_mapping",
+    ]
+    container = payload["blocked_observation_details"][0]
+    assert container["observation"] == "container_inventory"
+    assert container["guidance_status"] == "registered"
+    assert container["implementation_evidence"] == "registered"
+    assert container["limiting_reason"] == "missing_authority"
+    assert container["ownership_discrepancy"]["conflict"] == "insufficient_evidence"
+
+
+def test_service_ownership_human_output_renders_related_discrepancy_summary():
+    result = evaluate_service_ownership_authority_slice(
+        _state_with_service_endpoint_only(), CONSTRAINED_AUTHORITY_PROFILE
+    )
+
+    output = format_service_ownership_authority(result)
+
+    assert "Related ownership discrepancy" in output
+    assert "      Conflict: insufficient_evidence" in output
+    assert "      Needed evidence: container_inventory" in output
+    assert "      Candidate capability: container_inventory" in output
