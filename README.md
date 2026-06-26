@@ -8,6 +8,10 @@ Inquiry owns the questions.
 
 Subsystems own the answers.
 
+Responsibilities define the boundaries.
+
+Authority constrains the answers.
+
 Questions discover the architecture.
 
 For Seed's concise architectural thesis and constitutional statement, read [`docs/seed.md`](docs/seed.md). For concise vocabulary, read [`docs/ontology.md`](docs/ontology.md). This README is only the repository orientation surface; the documentation map lives in [`docs/README.md`](docs/README.md).
