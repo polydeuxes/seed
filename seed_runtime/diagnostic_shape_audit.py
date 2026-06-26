@@ -222,6 +222,29 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "authorize_execution",
         ),
     ),
+
+
+    "diagnostic_inventory": DiagnosticImplementationSpec(
+        name="diagnostic_inventory",
+        module_path="seed_runtime/diagnostic_inventory.py",
+        json_function="diagnostic_inventory_json",
+        cli_flags=("--diagnostic-inventory",),
+    ),
+    "diagnostic_shape_audit": DiagnosticImplementationSpec(
+        name="diagnostic_shape_audit",
+        module_path="seed_runtime/diagnostic_shape_audit.py",
+        build_function="build_diagnostic_shape_audit",
+        format_function="format_diagnostic_shape_audit",
+        json_function="diagnostic_shape_audit_json",
+        cli_flags=("--diagnostic-shape-audit",),
+    ),
+    "projected_state_consumers": DiagnosticImplementationSpec(
+        name="projected_state_consumers",
+        module_path="seed_runtime/projected_state_consumers.py",
+        build_function="build_projected_state_consumers",
+        json_function="projected_state_consumers_json",
+        cli_flags=("--projected-state-consumers",),
+    ),
     "operational_surface_inventory": DiagnosticImplementationSpec(
         name="operational_surface_inventory",
         module_path="seed_runtime/operational_surface_inventory.py",

@@ -199,3 +199,16 @@ def test_container_ownership_authority_inventory_entry_declares_boundary():
     assert entry.reads_diagnostic_facts is True
     assert entry.writes_event_ledger is False
     assert entry.mutates_cluster is False
+
+
+def test_projected_state_consumers_registered_in_diagnostic_inventory():
+    entry = _entry("projected_state_consumers")
+
+    assert entry.cli_flags == ("--projected-state-consumers",)
+    assert entry.supports_json
+    assert not entry.supports_record
+    assert entry.record_scope == "none"
+    assert not entry.uses_projected_state
+    assert not entry.uses_repo_files
+    assert not entry.writes_event_ledger
+    assert not entry.mutates_cluster
