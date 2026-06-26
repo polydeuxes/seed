@@ -153,7 +153,7 @@ def _providers_from_file(
         if not isinstance(node, ast.ClassDef) or not _is_provider_class(node):
             continue
         predicates = set(_predicate_literals(node))
-        if node.name == "LocalHostObservationSource":
+        if node.name in {"LocalHostObservationSource", "SeedRuntimeObservationSource"}:
             for constant_name, constant_predicates in module_predicates.items():
                 if constant_name.endswith("_QUESTIONS"):
                     predicates.update(constant_predicates)
