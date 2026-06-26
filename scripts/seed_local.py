@@ -158,6 +158,11 @@ from seed_runtime.projection_shape import (
     format_projection_shape,
     projection_shape_json,
 )
+from seed_runtime.projected_state_consumers import (
+    build_projected_state_consumers,
+    format_projected_state_consumers,
+    projected_state_consumers_json,
+)
 from seed_runtime.observation_inventory import (
     build_observation_inventory,
     format_observation_inventory,
@@ -1253,6 +1258,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="compare diagnostic registry declarations with static implementation shape",
     )
     parser.add_argument(
+        "--projected-state-consumers",
+        action="store_true",
+        help="show which known surfaces consume projected state and other evidence sources",
+    )
+    parser.add_argument(
         "--architecture-conformance-audit",
         action="store_true",
         help="compare architecture evidence with observed operational structure",
@@ -2259,6 +2269,7 @@ def validate_lifecycle_args(
         bool(args.service_ownership_authority),
         bool(args.listener_endpoint_authority),
         bool(args.diagnostic_shape_audit),
+        bool(args.projected_state_consumers),
         bool(args.question_surface_inventory),
         bool(args.projection_shape),
         bool(args.component_audit),
@@ -2453,6 +2464,7 @@ def validate_lifecycle_args(
         or args.listener_endpoint_authority
         or args.documentation_structure
         or args.diagnostic_shape_audit
+        or args.projected_state_consumers
         or args.projection_shape
         or args.component_audit
         or args.operational_story
@@ -6377,6 +6389,14 @@ def main(argv: list[str] | None = None) -> int:
             )
         else:
             print(format_documentation_structure(report, options))
+        return 0
+
+    if args.projected_state_consumers:
+        rows = build_projected_state_consumers()
+        if args.json_output:
+            print(json.dumps(projected_state_consumers_json(rows), indent=2, sort_keys=True))
+        else:
+            print(format_projected_state_consumers(rows))
         return 0
 
     if args.projection_shape:
