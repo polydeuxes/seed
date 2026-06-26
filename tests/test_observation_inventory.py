@@ -80,3 +80,21 @@ def test_mount_source_predicates_are_visible_in_observation_inventory():
         "mount_source_path",
         "mount_attribution_status",
     } <= predicates
+
+
+def test_observation_inventory_exposes_seed_runtime_observations():
+    inventory = build_observation_inventory()
+    provider = next(
+        provider
+        for provider in inventory.providers
+        if provider.class_name == "SeedRuntimeObservationSource"
+    )
+
+    assert provider.source_type == "discovery"
+    assert set(provider.predicates) >= {
+        "seed_process_resident_memory_bytes",
+        "seed_process_thread_count",
+        "seed_runtime_duration_seconds",
+        "seed_sqlite_database_size_bytes",
+        "seed_event_ledger_size_bytes",
+    }

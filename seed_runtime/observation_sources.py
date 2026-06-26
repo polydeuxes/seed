@@ -199,6 +199,186 @@ class RepositorySourceObservationSource:
         )
 
 
+class SeedRuntimeObservationSource:
+    """Read-only observation source for the current Seed runtime process.
+
+    The source emits local, implementation-backed process observations as normal
+    :class:`Observation` objects. It does not persist anything itself; callers
+    use ``ObservationCollectionService`` and ``ObservationIngestor`` exactly as
+    they do for other observation sources.
+    """
+
+    name = "seed-runtime"
+    source_type: ObservationSourceType = "discovery"
+
+    def __init__(
+        self,
+        *,
+        subject: str = "Seed",
+        observed_at: datetime | None = None,
+        process_id: int | None = None,
+        proc_root: str | Path = "/proc",
+        started_at_monotonic: float | None = None,
+        monotonic_fn: Any = time.monotonic,
+        sqlite_database_path: str | Path | None = None,
+        event_ledger_path: str | Path | None = None,
+    ) -> None:
+        self.subject = subject
+        self.observed_at = observed_at
+        self.process_id = process_id if process_id is not None else os.getpid()
+        self.proc_root = Path(proc_root)
+        self.started_at_monotonic = started_at_monotonic
+        self.monotonic_fn = monotonic_fn
+        self.sqlite_database_path = (
+            Path(sqlite_database_path) if sqlite_database_path is not None else None
+        )
+        self.event_ledger_path = (
+            Path(event_ledger_path) if event_ledger_path is not None else None
+        )
+
+    def collect(self) -> list[Observation]:
+        """Return read-only Seed process observations available locally."""
+
+        observed_at = self.observed_at or datetime.now(timezone.utc)
+        metadata = {
+            "collector": "SeedRuntimeObservationSource",
+            "source_name": self.name,
+            "read_only": True,
+            "local_only": True,
+            "mutates_cluster": False,
+            "shell_execution": False,
+            "subprocess_execution": False,
+            "scheduler": False,
+            "runtime_governance": False,
+            "process_id": self.process_id,
+        }
+        observations: list[Observation] = []
+
+        status = self._read_proc_status()
+        resident_memory = self._parse_status_kib_bytes(status, "VmRSS")
+        if resident_memory is not None:
+            observations.append(
+                self._observation(
+                    observed_at,
+                    "seed_process_resident_memory_bytes",
+                    resident_memory,
+                    metadata={**metadata, "source": "proc_status", "field": "VmRSS"},
+                )
+            )
+
+        thread_count = self._parse_status_int(status, "Threads")
+        if thread_count is not None:
+            observations.append(
+                self._observation(
+                    observed_at,
+                    "seed_process_thread_count",
+                    thread_count,
+                    metadata={**metadata, "source": "proc_status", "field": "Threads"},
+                )
+            )
+
+        if self.started_at_monotonic is not None:
+            duration = max(0.0, float(self.monotonic_fn()) - self.started_at_monotonic)
+            observations.append(
+                self._observation(
+                    observed_at,
+                    "seed_runtime_duration_seconds",
+                    duration,
+                    metadata={**metadata, "source": "process_monotonic_clock"},
+                )
+            )
+
+        sqlite_size = self._file_size(self.sqlite_database_path)
+        if sqlite_size is not None:
+            observations.append(
+                self._observation(
+                    observed_at,
+                    "seed_sqlite_database_size_bytes",
+                    sqlite_size,
+                    metadata={
+                        **metadata,
+                        "source": "filesystem_stat",
+                        "path": str(self.sqlite_database_path),
+                    },
+                )
+            )
+
+        ledger_size = self._file_size(self.event_ledger_path)
+        if ledger_size is not None:
+            observations.append(
+                self._observation(
+                    observed_at,
+                    "seed_event_ledger_size_bytes",
+                    ledger_size,
+                    metadata={
+                        **metadata,
+                        "source": "filesystem_stat",
+                        "path": str(self.event_ledger_path),
+                    },
+                )
+            )
+
+        return observations
+
+    def _observation(
+        self,
+        observed_at: datetime,
+        predicate: str,
+        value: Any,
+        *,
+        metadata: dict[str, Any],
+    ) -> Observation:
+        return Observation(
+            id=new_id("obs_seed_runtime"),
+            source_type=self.source_type,
+            observed_at=observed_at,
+            subject=self.subject,
+            predicate=predicate,
+            value=value,
+            confidence=1.0,
+            metadata=metadata,
+        )
+
+    def _read_proc_status(self) -> str | None:
+        status_path = self.proc_root / str(self.process_id) / "status"
+        try:
+            return status_path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            return None
+
+    @staticmethod
+    def _parse_status_kib_bytes(status: str | None, field: str) -> int | None:
+        if status is None:
+            return None
+        match = re.search(
+            rf"^{re.escape(field)}:\s+(\d+)\s+kB\s*$", status, re.MULTILINE
+        )
+        if match is None:
+            return None
+        return int(match.group(1)) * 1024
+
+    @staticmethod
+    def _parse_status_int(status: str | None, field: str) -> int | None:
+        if status is None:
+            return None
+        match = re.search(rf"^{re.escape(field)}:\s+(\d+)\s*$", status, re.MULTILINE)
+        if match is None:
+            return None
+        return int(match.group(1))
+
+    @staticmethod
+    def _file_size(path: Path | None) -> int | None:
+        if path is None:
+            return None
+        try:
+            path_stat = path.stat()
+        except OSError:
+            return None
+        if not stat.S_ISREG(path_stat.st_mode):
+            return None
+        return int(path_stat.st_size)
+
+
 def _is_observable_repository_source(path: Path) -> bool:
     return "__pycache__" not in path.parts
 
@@ -225,6 +405,14 @@ _MOUNT_QUESTIONS = {
     "mount_source_host": "What remote host appears in the mount source?",
     "mount_source_path": "What remote path appears in the mount source?",
     "mount_attribution_status": "What attribution boundary applies to the mount source?",
+}
+
+_SEED_RUNTIME_QUESTIONS = {
+    "seed_process_resident_memory_bytes": "How much resident memory is the Seed process using?",
+    "seed_process_thread_count": "How many threads are currently visible for the Seed process?",
+    "seed_runtime_duration_seconds": "How long has the observed Seed runtime been running?",
+    "seed_sqlite_database_size_bytes": "How large is the configured Seed SQLite database file?",
+    "seed_event_ledger_size_bytes": "How large is the configured Seed event ledger file?",
 }
 
 _STORAGE_QUESTIONS = {
