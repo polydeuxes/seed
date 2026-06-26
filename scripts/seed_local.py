@@ -928,6 +928,15 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--surface-args",
+        nargs="*",
+        metavar="VALUE",
+        help=(
+            "with `ask --question-family`, forward explicit operator-provided "
+            "implementation surface parameters unchanged to the existing inquiry surface"
+        ),
+    )
+    parser.add_argument(
         "--db",
         help=(
             "SQLite event ledger path for sharing local state across runs; "
@@ -2124,6 +2133,14 @@ ASK_QUESTION_FAMILY_FLAGS: dict[str, str] = {
     "authority-constrained service ownership": "service_ownership_authority",
     "listener endpoint reachability": "listener_endpoint_authority",
     "projection shape visibility": "projection_shape",
+    "derivation explanation": "reasoning_path",
+    "selection explanation": "selection_path",
+}
+
+
+ASK_QUESTION_FAMILY_SURFACE_ARG_COUNTS: dict[str, int] = {
+    "derivation explanation": 2,
+    "selection explanation": 1,
 }
 
 
@@ -2139,6 +2156,11 @@ def apply_bounded_ask_dispatch(
     """Map `ask --question-family` to the existing exact inquiry surface."""
 
     if args.question_family is None:
+        if args.surface_args is not None:
+            parser.error(
+                "--surface-args can only be used as "
+                "`ask --question-family <exact-question-family> --surface-args ...`"
+            )
         if args.message and args.message[0] == "ask":
             parser.error("ask requires --question-family <exact-question-family>")
         return
@@ -2156,13 +2178,31 @@ def apply_bounded_ask_dispatch(
         parser.error(f"unknown Question Family: {family}")
 
     eligibility = ASK_QUESTION_FAMILY_ELIGIBILITY.get(family)
-    if eligibility != "eligible_now":
-        if eligibility == "eligible_with_parameters":
+    if eligibility == "eligible_now" and args.surface_args is not None:
+        parser.error(
+            f"Question Family '{family}' does not accept --surface-args by "
+            "current implementation-backed eligibility"
+        )
+
+    if eligibility == "eligible_with_parameters":
+        required_count = ASK_QUESTION_FAMILY_SURFACE_ARG_COUNTS[family]
+        surface_args = args.surface_args
+        if surface_args is None:
             parser.error(
-                f"Question Family '{family}' is eligible_with_parameters and "
-                "cannot currently participate in bounded ask without explicit "
-                "surface parameters"
+                f"Question Family '{family}' requires --surface-args with "
+                f"exactly {required_count} explicit operator-provided value(s)"
             )
+        if len(surface_args) != required_count:
+            parser.error(
+                f"Question Family '{family}' requires exactly {required_count} "
+                f"--surface-args value(s); received {len(surface_args)}"
+            )
+        surface_value = surface_args[0] if required_count == 1 else surface_args
+        setattr(args, ASK_QUESTION_FAMILY_FLAGS[family], surface_value)
+        args.message = []
+        return
+
+    if eligibility != "eligible_now":
         if eligibility == "diagnostic_only":
             parser.error(
                 f"Question Family '{family}' is diagnostic_only and is not an "
