@@ -6,7 +6,10 @@ from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, fields
 from typing import Any, Literal
 
-from seed_runtime.diagnostic_inventory import DiagnosticInventoryEntry, DIAGNOSTIC_INVENTORY
+from seed_runtime.diagnostic_inventory import (
+    DiagnosticInventoryEntry,
+    DIAGNOSTIC_INVENTORY,
+)
 from seed_runtime.operational_surface_inventory import OperationalSurface
 from seed_runtime.projected_state_consumers import BOUNDARY, ProjectedConsumerRow
 from seed_runtime.question_surface_inventory import QuestionSurfaceInventoryRow
@@ -51,10 +54,54 @@ CONCERN_BY_TRAIT: dict[str, Concern] = {
 }
 
 SURFACE_FIELDS: dict[str, set[str]] = {
-    "--diagnostic-inventory": {field.name for field in fields(DiagnosticInventoryEntry)},
-    "--projected-state-consumers": {field.name for field in fields(ProjectedConsumerRow)} | set(BOUNDARY),
-    "--question-surface-inventory": {field.name for field in fields(QuestionSurfaceInventoryRow)},
-    "--operational-surface-inventory": {field.name for field in fields(OperationalSurface)},
+    "--diagnostic-inventory": {
+        field.name for field in fields(DiagnosticInventoryEntry)
+    },
+    "--projected-state-consumers": {
+        field.name for field in fields(ProjectedConsumerRow)
+    }
+    | set(BOUNDARY),
+    "--question-surface-inventory": {
+        field.name for field in fields(QuestionSurfaceInventoryRow)
+    },
+    "--operational-surface-inventory": {
+        field.name for field in fields(OperationalSurface)
+    },
+}
+
+
+METADATA_FIELDS: dict[str, dict[str, str]] = {
+    "--diagnostic-inventory": {
+        "name": "inventory row identifier",
+        "cli_flags": "CLI exposure metadata for invoking the inventory row surface",
+        "description": "human-readable diagnostic inventory description",
+    },
+    "--projected-state-consumers": {
+        "surface": "inventory row identifier",
+        "cli_flags": "CLI exposure metadata for invoking the consumer surface",
+        "notes": "human-readable evidence notes for the inventory row",
+    },
+    "--question-surface-inventory": {
+        "question_family": "inventory row identifier for the question family",
+        "example_questions": "human-readable inventory examples",
+        "surface": "answering surface identifier",
+        "surface_flag": "CLI exposure metadata for the answering surface",
+        "answer_responsibility": "human-readable inventory responsibility description",
+        "authority_boundary": "human-readable authority description for the inventory row",
+        "notes": "human-readable inventory notes",
+        "human_formatter": "formatter metadata for the answering surface",
+        "implementation_reason": "human-readable implementation explanation for the inventory row",
+    },
+    "--operational-surface-inventory": {
+        "name": "inventory row identifier",
+    },
+}
+
+CONTAINER_FIELDS: dict[str, dict[str, str]] = {
+    "--projected-state-consumers": {
+        "boundary": "container for recurring operational-boundary fields: "
+        + ", ".join(sorted(BOUNDARY)),
+    },
 }
 
 MEANING_BY_TRAIT: dict[str, str] = {
@@ -88,6 +135,7 @@ MEANING_BY_TRAIT: dict[str, str] = {
     "emits_cluster_facts": "declares whether a surface emits cluster facts",
 }
 
+
 @dataclass(frozen=True)
 class ImplementationTraitCharacterizationRow:
     trait: str
@@ -102,39 +150,113 @@ class ImplementationTraitCharacterizationRow:
         return data
 
 
-def build_implementation_trait_characterization() -> tuple[ImplementationTraitCharacterizationRow, ...]:
+@dataclass(frozen=True)
+class ExposedNonTraitRow:
+    field: str
+    classification: Literal["inventory_metadata", "container_field"]
+    exposed_by: tuple[str, ...]
+    implementation_reason: str
+
+    def to_json_dict(self) -> dict[str, Any]:
+        data = asdict(self)
+        data["exposed_by"] = list(self.exposed_by)
+        return data
+
+
+def _surface_exposure() -> dict[str, list[str]]:
     exposure: dict[str, list[str]] = defaultdict(list)
     for surface, traits in SURFACE_FIELDS.items():
         for trait in traits:
             exposure[trait].append(surface)
+    return exposure
 
-    rows: list[ImplementationTraitCharacterizationRow] = []
-    for trait in sorted(exposure):
-        concern = CONCERN_BY_TRAIT.get(trait, "unclassified")
-        exposed_by = tuple(sorted(exposure[trait]))
-        if concern == "unclassified":
-            reason = "trait is exposed by the current inventories, but no implementation-backed concern mapping declares it"
-            meaning = "unclassified exposed implementation trait"
-        else:
-            reason = f"trait is declared by {', '.join(exposed_by)} and mapped by the implementation trait concern registry"
-            meaning = MEANING_BY_TRAIT[trait]
-        rows.append(ImplementationTraitCharacterizationRow(trait, concern, exposed_by, meaning, reason))
+
+def build_exposed_non_traits() -> tuple[ExposedNonTraitRow, ...]:
+    rows: list[ExposedNonTraitRow] = []
+    metadata_by_field: dict[str, list[str]] = defaultdict(list)
+    container_by_field: dict[str, list[str]] = defaultdict(list)
+    for surface, fields_by_name in METADATA_FIELDS.items():
+        for field_name in fields_by_name:
+            metadata_by_field[field_name].append(surface)
+    for surface, fields_by_name in CONTAINER_FIELDS.items():
+        for field_name in fields_by_name:
+            container_by_field[field_name].append(surface)
+
+    for field_name in sorted(metadata_by_field):
+        exposed_by = tuple(sorted(metadata_by_field[field_name]))
+        reasons = [METADATA_FIELDS[surface][field_name] for surface in exposed_by]
+        rows.append(
+            ExposedNonTraitRow(
+                field=field_name,
+                classification="inventory_metadata",
+                exposed_by=exposed_by,
+                implementation_reason="; ".join(reasons),
+            )
+        )
+    for field_name in sorted(container_by_field):
+        exposed_by = tuple(sorted(container_by_field[field_name]))
+        reasons = [CONTAINER_FIELDS[surface][field_name] for surface in exposed_by]
+        rows.append(
+            ExposedNonTraitRow(
+                field=field_name,
+                classification="container_field",
+                exposed_by=exposed_by,
+                implementation_reason="; ".join(reasons),
+            )
+        )
     return tuple(rows)
 
 
-def implementation_trait_characterization_json(rows: tuple[ImplementationTraitCharacterizationRow, ...] | None = None) -> dict[str, Any]:
+def build_implementation_trait_characterization() -> (
+    tuple[ImplementationTraitCharacterizationRow, ...]
+):
+    exposure = _surface_exposure()
+    non_trait_fields = {row.field for row in build_exposed_non_traits()}
+
+    rows: list[ImplementationTraitCharacterizationRow] = []
+    for trait in sorted(exposure):
+        if trait in non_trait_fields:
+            continue
+        concern = CONCERN_BY_TRAIT.get(trait, "unclassified")
+        exposed_by = tuple(sorted(exposure[trait]))
+        if concern == "unclassified":
+            reason = "field is exposed by the current inventories but is not yet distinguished as a recurring implementation trait, metadata, or container"
+            meaning = "unclassified exposed implementation field"
+        else:
+            reason = f"trait is declared by {', '.join(exposed_by)} and mapped by the implementation trait concern registry"
+            meaning = MEANING_BY_TRAIT[trait]
+        rows.append(
+            ImplementationTraitCharacterizationRow(
+                trait, concern, exposed_by, meaning, reason
+            )
+        )
+    return tuple(rows)
+
+
+def implementation_trait_characterization_json(
+    rows: tuple[ImplementationTraitCharacterizationRow, ...] | None = None,
+) -> dict[str, Any]:
     rows = rows or build_implementation_trait_characterization()
+    non_traits = build_exposed_non_traits()
     return {
         "concern_counts": dict(sorted(Counter(row.concern for row in rows).items())),
         "items": [row.to_json_dict() for row in rows],
+        "non_trait_counts": dict(
+            sorted(Counter(row.classification for row in non_traits).items())
+        ),
+        "non_trait_items": [row.to_json_dict() for row in non_traits],
     }
 
 
-def format_implementation_trait_characterization(rows: tuple[ImplementationTraitCharacterizationRow, ...] | None = None) -> str:
+def format_implementation_trait_characterization(
+    rows: tuple[ImplementationTraitCharacterizationRow, ...] | None = None,
+) -> str:
     rows = rows or build_implementation_trait_characterization()
     counts = Counter(row.concern for row in rows)
     lines = ["Implementation Trait Characterization", ""]
-    lines.append("concern_counts: " + ", ".join(f"{k}={v}" for k, v in sorted(counts.items())))
+    lines.append(
+        "concern_counts: " + ", ".join(f"{k}={v}" for k, v in sorted(counts.items()))
+    )
     lines.append("")
     for row in rows:
         lines.append(row.trait)
@@ -142,4 +264,13 @@ def format_implementation_trait_characterization(rows: tuple[ImplementationTrait
         lines.append(f"  exposed_by: {', '.join(row.exposed_by)}")
         lines.append(f"  implementation_meaning: {row.implementation_meaning}")
         lines.append(f"  implementation_reason: {row.implementation_reason}")
+    non_traits = build_exposed_non_traits()
+    if non_traits:
+        lines.append("")
+        lines.append("Exposed Non-Trait Fields")
+        for row in non_traits:
+            lines.append(row.field)
+            lines.append(f"  classification: {row.classification}")
+            lines.append(f"  exposed_by: {', '.join(row.exposed_by)}")
+            lines.append(f"  implementation_reason: {row.implementation_reason}")
     return "\n".join(lines)
