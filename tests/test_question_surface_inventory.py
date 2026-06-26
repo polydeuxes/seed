@@ -128,6 +128,80 @@ def test_bounded_ask_listener_endpoint_matches_direct_json(capsys):
     assert bounded == direct
 
 
+def test_bounded_ask_observation_domains_matches_direct_human_and_json(capsys):
+    assert seed_local.main(["--observation-domains"]) == 0
+    direct_human = capsys.readouterr().out
+
+    assert seed_local.main([
+        "ask",
+        "--question-family",
+        "observation domain coverage",
+    ]) == 0
+    bounded_human = capsys.readouterr().out
+
+    assert seed_local.main(["--observation-domains", "--json"]) == 0
+    direct_json = json.loads(capsys.readouterr().out)
+
+    assert seed_local.main([
+        "ask",
+        "--question-family",
+        "observation domain coverage",
+        "--json",
+    ]) == 0
+    bounded_json = json.loads(capsys.readouterr().out)
+
+    assert bounded_human == direct_human
+    assert bounded_json == direct_json
+
+
+def test_bounded_ask_observation_permission_matches_direct_human_and_json(capsys):
+    assert seed_local.main(["--observation-permission"]) == 0
+    direct_human = capsys.readouterr().out
+
+    assert seed_local.main([
+        "ask",
+        "--question-family",
+        "observation permission state",
+    ]) == 0
+    bounded_human = capsys.readouterr().out
+
+    assert seed_local.main(["--observation-permission", "--json"]) == 0
+    direct_json = json.loads(capsys.readouterr().out)
+
+    assert seed_local.main([
+        "ask",
+        "--question-family",
+        "observation permission state",
+        "--json",
+    ]) == 0
+    bounded_json = json.loads(capsys.readouterr().out)
+
+    assert bounded_human == direct_human
+    assert bounded_json == direct_json
+
+
+def test_bounded_ask_knowledge_reachability_matches_direct_json(capsys):
+    assert seed_local.main([
+        "--knowledge-reachability-audit",
+        "--knowledge-reachability-audit-json",
+    ]) == 0
+    direct = json.loads(capsys.readouterr().out)
+
+    assert seed_local.main([
+        "ask",
+        "--question-family",
+        "knowledge reachability",
+        "--json",
+    ]) == 0
+    bounded = json.loads(capsys.readouterr().out)
+
+    for payload in (direct, bounded):
+        payload["metadata"].pop("indexes", None)
+        payload["metadata"].pop("timing", None)
+        payload["metadata"].pop("timings", None)
+    assert bounded == direct
+
+
 def test_bounded_ask_rejects_parameter_required_family(capsys):
     with pytest.raises(SystemExit) as exc:
         seed_local.main(["ask", "--question-family", "derivation explanation"])
