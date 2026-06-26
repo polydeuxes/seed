@@ -4,7 +4,10 @@ import pytest
 
 import scripts.seed_local as seed_local
 from seed_runtime.diagnostic_inventory import DIAGNOSTIC_INVENTORY
-from seed_runtime.diagnostic_shape_audit import build_diagnostic_shape_audit
+from seed_runtime.diagnostic_shape_audit import (
+    IMPLEMENTATION_SPECS,
+    build_diagnostic_shape_audit,
+)
 from seed_runtime.question_surface_inventory import (
     BOUNDED_ASK_DISPATCH_SURFACES,
     bounded_ask_inventory_findings,
@@ -51,6 +54,10 @@ def test_cli_json_output_includes_required_row_fields(capsys):
         "json_support",
         "human_formatter",
         "implementation_reason",
+        "canonical_diagnostic_surface",
+        "diagnostic_inventory_name",
+        "diagnostic_shape_spec_name",
+        "relationship_status",
     }
     assert required <= set(payload[0])
     assert isinstance(payload[0]["example_questions"], list)
@@ -85,6 +92,28 @@ def test_bounded_ask_inventory_json_answers_required_operator_questions(capsys):
     assert (
         by_family["authority-constrained service ownership"]["dispatch_surface"]
         == "service_ownership_authority"
+    )
+    assert (
+        by_family["authority-constrained service ownership"][
+            "canonical_diagnostic_surface"
+        ]
+        == "service_ownership_authority"
+    )
+    assert (
+        by_family["authority-constrained service ownership"][
+            "diagnostic_inventory_name"
+        ]
+        == "service_ownership_authority"
+    )
+    assert (
+        by_family["authority-constrained service ownership"][
+            "diagnostic_shape_spec_name"
+        ]
+        == "service_ownership_authority"
+    )
+    assert (
+        by_family["authority-constrained service ownership"]["relationship_status"]
+        == "connected"
     )
     assert (
         by_family["derivation explanation"]["bounded_status"]
@@ -133,6 +162,77 @@ def test_question_surface_inventory_registration_is_read_only_and_static():
     assert entry.uses_repo_files is False
     assert entry.uses_projected_state is False
     assert entry.mutates_cluster is False
+
+
+def test_question_surface_rows_connect_to_diagnostic_inventory_and_shape_specs():
+    diagnostic_names = {entry.name for entry in DIAGNOSTIC_INVENTORY}
+    spec_names = set(IMPLEMENTATION_SPECS)
+    rows = build_question_surface_inventory()
+    dispatchable_rows = [
+        row
+        for row in rows
+        if row.bounded_status
+        in {"eligible_now", "eligible_with_parameters", "diagnostic_only"}
+    ]
+
+    assert dispatchable_rows
+    for row in dispatchable_rows:
+        assert row.relationship_status == "connected"
+        assert row.diagnostic_inventory_name in diagnostic_names
+        assert row.diagnostic_shape_spec_name in spec_names
+        assert row.diagnostic_inventory_name == row.diagnostic_shape_spec_name
+
+
+def test_canonical_surface_aliases_are_exposed_without_inference():
+    rows = {
+        row.question_family: row
+        for row in build_question_surface_inventory()
+    }
+    row = rows["knowledge reachability"]
+
+    assert row.dispatch_surface == "knowledge_reachability_audit"
+    assert row.canonical_diagnostic_surface == "knowledge_reachability"
+    assert row.diagnostic_inventory_name == "knowledge_reachability"
+    assert row.diagnostic_shape_spec_name == "knowledge_reachability"
+    assert (
+        "canonical diagnostic surface alias: "
+        "knowledge_reachability_audit -> knowledge_reachability"
+        in row.implementation_reason
+    )
+
+
+def test_representative_relationship_surfaces_validate_successfully():
+    rows = {
+        row.question_family: row
+        for row in build_question_surface_inventory()
+    }
+
+    for question_family, expected_surface in (
+        ("authority-constrained service ownership", "service_ownership_authority"),
+        ("operational pressure", "ops_brief"),
+        ("knowledge reachability", "knowledge_reachability"),
+    ):
+        row = rows[question_family]
+        assert row.relationship_status == "connected"
+        assert row.canonical_diagnostic_surface == expected_surface
+        assert row.diagnostic_inventory_name == expected_surface
+        assert row.diagnostic_shape_spec_name == expected_surface
+
+
+def test_relationship_visibility_does_not_traverse_answer_payloads():
+    payload = json.dumps(
+        [
+            row.to_json_dict()
+            for row in build_question_surface_inventory()
+            if row.relationship_status == "connected"
+        ],
+        sort_keys=True,
+    )
+
+    assert "answer_payload" not in payload
+    assert "evidence_chain" not in payload
+    assert "provenance" not in payload
+    assert "intermediate_conclusions" not in payload
 
 
 def test_question_surface_inventory_shape_audit_is_consistent():
