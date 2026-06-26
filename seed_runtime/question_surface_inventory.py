@@ -4,6 +4,85 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 
+BOUNDED_ASK_DISPATCH_SURFACES: dict[str, str] = {
+    "operational pressure": "ops_brief",
+    "current operational explanation": "operational_story",
+    "knowledge reachability": "knowledge_reachability_audit",
+    "capability pressure": "capability_needs",
+    "ownership ambiguity": "ownership_discrepancies",
+    "observation domain coverage": "observation_domains",
+    "observation permission state": "observation_permission",
+    "authority-constrained container ownership": "container_ownership_authority",
+    "authority-constrained service ownership": "service_ownership_authority",
+    "listener endpoint reachability": "listener_endpoint_authority",
+    "projection shape visibility": "projection_shape",
+    "derivation explanation": "reasoning_path",
+    "selection explanation": "selection_path",
+}
+
+BOUNDED_ASK_REQUIRED_SURFACE_ARGS: dict[str, tuple[str, ...]] = {
+    "derivation explanation": ("domain", "subject"),
+    "selection explanation": ("target",),
+}
+
+BOUNDED_ASK_DIAGNOSTIC_ONLY_FAMILIES: frozenset[str] = frozenset(
+    {
+        "surface inventory",
+        "surface shape validation",
+    }
+)
+
+BOUNDED_ASK_ARG_VALUES: dict[str, object] = {
+    "observation domain coverage": "__all__",
+    "observation permission state": "__all__",
+}
+
+
+def bounded_status_for_question_family(question_family: str) -> str:
+    """Derive bounded ask status from executable dispatch maps."""
+
+    if question_family in BOUNDED_ASK_REQUIRED_SURFACE_ARGS:
+        return "eligible_with_parameters"
+    if question_family in BOUNDED_ASK_DISPATCH_SURFACES:
+        return "eligible_now"
+    if question_family in BOUNDED_ASK_DIAGNOSTIC_ONLY_FAMILIES:
+        return "diagnostic_only"
+    return "not_dispatchable"
+
+
+def bounded_ask_inventory_findings(
+    rows: tuple["QuestionSurfaceInventoryRow", ...] | None = None,
+) -> tuple[str, ...]:
+    """Validate inventory rows against bounded ask implementation maps."""
+
+    inventory = rows or build_question_surface_inventory()
+    families = [row.question_family for row in inventory]
+    findings: list[str] = []
+    duplicates = sorted({family for family in families if families.count(family) > 1})
+    if duplicates:
+        findings.append("duplicate_question_families=" + ",".join(duplicates))
+    row_families = set(families)
+    dispatch_families = set(BOUNDED_ASK_DISPATCH_SURFACES)
+    missing_rows = sorted(dispatch_families - row_families)
+    if missing_rows:
+        findings.append("orphaned_bounded_mappings=" + ",".join(missing_rows))
+    missing_mappings = sorted(
+        family
+        for family in row_families
+        if bounded_status_for_question_family(family)
+        not in {
+            "eligible_now",
+            "eligible_with_parameters",
+            "diagnostic_only",
+            "not_dispatchable",
+        }
+    )
+    if missing_mappings:
+        findings.append(
+            "question_families_missing_bounded_visibility=" + ",".join(missing_mappings)
+        )
+    return tuple(findings)
+
 
 @dataclass(frozen=True)
 class QuestionSurfaceInventoryRow:
@@ -14,17 +93,24 @@ class QuestionSurfaceInventoryRow:
     answer_responsibility: str
     authority_boundary: str
     notes: str
+    bounded_status: str = ""
+    dispatch_surface: str = ""
+    required_surface_args: tuple[str, ...] = ()
+    json_support: bool = True
+    human_formatter: str = ""
+    implementation_reason: str = ""
 
     def to_json_dict(self) -> dict[str, object]:
         data = asdict(self)
         data["example_questions"] = list(self.example_questions)
+        data["required_surface_args"] = list(self.required_surface_args)
         return data
 
 
 def build_question_surface_inventory() -> tuple[QuestionSurfaceInventoryRow, ...]:
     """Return deterministic, read-only question-family inventory rows."""
 
-    return (
+    rows = (
         QuestionSurfaceInventoryRow(
             question_family="operational pressure",
             example_questions=(
@@ -230,6 +316,39 @@ def build_question_surface_inventory() -> tuple[QuestionSurfaceInventoryRow, ...
             notes="Does not build projected state.",
         ),
     )
+    enriched = []
+    for row in rows:
+        status = bounded_status_for_question_family(row.question_family)
+        surface = BOUNDED_ASK_DISPATCH_SURFACES.get(row.question_family, "")
+        required_args = BOUNDED_ASK_REQUIRED_SURFACE_ARGS.get(row.question_family, ())
+        reason = (
+            "present in bounded ask dispatch map"
+            if status == "eligible_now"
+            else (
+                "present in bounded ask dispatch map with required surface args"
+                if status == "eligible_with_parameters"
+                else (
+                    "question family points at diagnostic inventory/audit surface, not bounded ask dispatch"
+                    if status == "diagnostic_only"
+                    else "no bounded ask dispatch mapping in current implementation"
+                )
+            )
+        )
+        enriched.append(
+            QuestionSurfaceInventoryRow(
+                **{
+                    **row.to_json_dict(),
+                    "example_questions": tuple(row.example_questions),
+                    "required_surface_args": required_args,
+                    "bounded_status": status,
+                    "dispatch_surface": surface,
+                    "json_support": True,
+                    "human_formatter": f"format_{row.surface}",
+                    "implementation_reason": reason,
+                }
+            )
+        )
+    return tuple(enriched)
 
 
 def question_surface_inventory_json(
@@ -246,6 +365,24 @@ def format_question_surface_inventory(
     for row in inventory:
         lines.append("")
         lines.append(f"- {row.question_family}: {row.surface} ({row.surface_flag})")
+        lines.append(f"  bounded_status: {row.bounded_status}")
+        lines.append(f"  dispatch_surface: {row.dispatch_surface or 'none'}")
+        lines.append(
+            "  required_surface_args: "
+            + (
+                ", ".join(row.required_surface_args)
+                if row.required_surface_args
+                else "none"
+            )
+        )
+        lines.append(f"  json_support: {str(row.json_support).lower()}")
+        lines.append(f"  human_formatter: {row.human_formatter}")
+        lines.append(f"  implementation_reason: {row.implementation_reason}")
         lines.append(f"  responsibility: {row.answer_responsibility}")
         lines.append(f"  boundary: {row.authority_boundary}")
+    findings = bounded_ask_inventory_findings(inventory)
+    lines.append("")
+    lines.append(
+        "Implementation findings: " + ("none" if not findings else "; ".join(findings))
+    )
     return "\n".join(lines)

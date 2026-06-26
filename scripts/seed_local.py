@@ -145,6 +145,10 @@ from seed_runtime.diagnostic_shape_audit import (
     format_diagnostic_shape_audit,
 )
 from seed_runtime.question_surface_inventory import (
+    BOUNDED_ASK_ARG_VALUES,
+    BOUNDED_ASK_DISPATCH_SURFACES,
+    BOUNDED_ASK_REQUIRED_SURFACE_ARGS,
+    bounded_status_for_question_family,
     build_question_surface_inventory,
     format_question_surface_inventory,
     question_surface_inventory_json,
@@ -1239,6 +1243,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--question-surface-inventory",
+        "--question-families",
         action="store_true",
         help="list known question families and the existing Seed surfaces that answer them",
     )
@@ -2101,61 +2106,15 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-ASK_QUESTION_FAMILY_ELIGIBILITY: dict[str, str] = {
-    "operational pressure": "eligible_now",
-    "current operational explanation": "eligible_now",
-    "derivation explanation": "eligible_with_parameters",
-    "selection explanation": "eligible_with_parameters",
-    "knowledge reachability": "eligible_now",
-    "capability pressure": "eligible_now",
-    "ownership ambiguity": "eligible_now",
-    "observation domain coverage": "eligible_now",
-    "observation permission state": "eligible_now",
-    "authority-constrained container ownership": "eligible_now",
-    "authority-constrained service ownership": "eligible_now",
-    "listener endpoint reachability": "eligible_now",
-    "surface inventory": "diagnostic_only",
-    "surface shape validation": "diagnostic_only",
-    "source definition/import lookup": "not_dispatchable",
-    "inquiry orientation": "not_dispatchable",
-    "projection shape visibility": "eligible_now",
-}
-
-ASK_QUESTION_FAMILY_FLAGS: dict[str, str] = {
-    "operational pressure": "ops_brief",
-    "current operational explanation": "operational_story",
-    "knowledge reachability": "knowledge_reachability_audit",
-    "capability pressure": "capability_needs",
-    "ownership ambiguity": "ownership_discrepancies",
-    "observation domain coverage": "observation_domains",
-    "observation permission state": "observation_permission",
-    "authority-constrained container ownership": "container_ownership_authority",
-    "authority-constrained service ownership": "service_ownership_authority",
-    "listener endpoint reachability": "listener_endpoint_authority",
-    "projection shape visibility": "projection_shape",
-    "derivation explanation": "reasoning_path",
-    "selection explanation": "selection_path",
-}
-
-
-ASK_QUESTION_FAMILY_SURFACE_ARG_COUNTS: dict[str, int] = {
-    "derivation explanation": 2,
-    "selection explanation": 1,
-}
-
-
-ASK_QUESTION_FAMILY_ARG_VALUES: dict[str, object] = {
-    "observation domain coverage": "__all__",
-    "observation permission state": "__all__",
-}
-
-
 def apply_bounded_ask_dispatch(
     args: argparse.Namespace, parser: argparse.ArgumentParser
 ) -> None:
     """Map `ask --question-family` to the existing exact inquiry surface."""
 
     if args.question_family is None:
+        if args.message == ["ask"] and args.question_surface_inventory:
+            args.message = []
+            return
         if args.surface_args is not None:
             parser.error(
                 "--surface-args can only be used as "
@@ -2177,7 +2136,7 @@ def apply_bounded_ask_dispatch(
     if family not in inventory_families:
         parser.error(f"unknown Question Family: {family}")
 
-    eligibility = ASK_QUESTION_FAMILY_ELIGIBILITY.get(family)
+    eligibility = bounded_status_for_question_family(family)
     if eligibility == "eligible_now" and args.surface_args is not None:
         parser.error(
             f"Question Family '{family}' does not accept --surface-args by "
@@ -2185,7 +2144,7 @@ def apply_bounded_ask_dispatch(
         )
 
     if eligibility == "eligible_with_parameters":
-        required_count = ASK_QUESTION_FAMILY_SURFACE_ARG_COUNTS[family]
+        required_count = len(BOUNDED_ASK_REQUIRED_SURFACE_ARGS[family])
         surface_args = args.surface_args
         if surface_args is None:
             parser.error(
@@ -2198,7 +2157,7 @@ def apply_bounded_ask_dispatch(
                 f"--surface-args value(s); received {len(surface_args)}"
             )
         surface_value = surface_args[0] if required_count == 1 else surface_args
-        setattr(args, ASK_QUESTION_FAMILY_FLAGS[family], surface_value)
+        setattr(args, BOUNDED_ASK_DISPATCH_SURFACES[family], surface_value)
         args.message = []
         return
 
@@ -2215,8 +2174,8 @@ def apply_bounded_ask_dispatch(
 
     setattr(
         args,
-        ASK_QUESTION_FAMILY_FLAGS[family],
-        ASK_QUESTION_FAMILY_ARG_VALUES.get(family, True),
+        BOUNDED_ASK_DISPATCH_SURFACES[family],
+        BOUNDED_ASK_ARG_VALUES.get(family, True),
     )
     if family == "knowledge reachability" and args.json_output:
         args.knowledge_reachability_audit_json = True
@@ -2531,8 +2490,10 @@ def validate_lifecycle_args(
             "--json can only be used with --ownership-discrepancies, "
             "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --question-surface-inventory, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, or --audit-compare, or --projection-shape"
         )
-    if args.question_surface_inventory and args.message:
-        parser.error("--question-surface-inventory does not accept a free-text question argument")
+    if args.question_surface_inventory and args.message and args.message != ["ask"]:
+        parser.error(
+            "--question-surface-inventory does not accept a free-text question argument"
+        )
     if args.severity and not args.graph_issues:
         parser.error("--severity can only be used with --graph-issues")
     if args.graph_issue_limit < 0:
@@ -6366,7 +6327,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.question_surface_inventory:
         rows = build_question_surface_inventory()
         if args.json_output:
-            print(json.dumps(question_surface_inventory_json(rows), indent=2, sort_keys=True))
+            print(
+                json.dumps(
+                    question_surface_inventory_json(rows), indent=2, sort_keys=True
+                )
+            )
         else:
             print(format_question_surface_inventory(rows))
         return 0
