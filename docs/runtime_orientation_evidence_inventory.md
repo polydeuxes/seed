@@ -1,3 +1,24 @@
+---
+doc_type: inventory
+status: implementation-backed finding
+domain: runtime orientation
+inventory_of:
+  - registered surface orientation evidence
+  - runtime-orientation candidate fields
+  - unsupported runtime-orientation fields
+defines:
+  - runtime orientation evidence inventory
+  - registered-surface orientation evidence
+  - unsupported runtime-orientation field boundary
+depends_on:
+  - inquiry_surface_classes_observation.md
+  - observation_question_template_reconciliation.md
+related:
+  - runtime_orientation_reconciliation.md
+  - runtime_event_ledger_work_reconstruction_reconciliation.md
+  - repository_orientation_audit.md
+---
+
 # Runtime Orientation Evidence Inventory
 
 This implementation investigation audits existing repository evidence for a bounded read-only runtime-orientation surface. It does not implement `seed --runtime-orientation`, design runtime behavior, introduce runtime state, reconcile documents, or infer values that current implementation does not preserve.

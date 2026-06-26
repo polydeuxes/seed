@@ -1,3 +1,23 @@
+---
+doc_type: reconciliation
+status: implementation-backed finding
+domain: runtime event ledger reconstruction
+reconciles:
+  - runtime work reconstruction
+  - event ledger evidence boundary
+  - transient execution evidence boundary
+defines:
+  - runtime event ledger work reconstruction
+  - event-backed runtime work evidence
+  - transient runtime evidence boundary
+depends_on:
+  - runtime_orientation_evidence_inventory.md
+related:
+  - runtime_orientation_reconciliation.md
+  - preservation_vs_continuation_investigation.md
+  - observation_question_template_reconciliation.md
+---
+
 # Runtime Event Ledger Work Reconstruction Reconciliation
 
 ## Scope
