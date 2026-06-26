@@ -4,6 +4,7 @@ import sys
 
 from seed_runtime.implementation_trait_characterization import (
     build_implementation_trait_characterization,
+    build_exposed_non_traits,
     implementation_trait_characterization_json,
 )
 
@@ -69,7 +70,11 @@ def test_concern_counts_include_required_concerns():
 
 def test_cli_human_output():
     completed = subprocess.run(
-        [sys.executable, "scripts/seed_local.py", "--implementation-trait-characterization"],
+        [
+            sys.executable,
+            "scripts/seed_local.py",
+            "--implementation-trait-characterization",
+        ],
         check=True,
         text=True,
         capture_output=True,
@@ -81,7 +86,12 @@ def test_cli_human_output():
 
 def test_cli_json_output():
     completed = subprocess.run(
-        [sys.executable, "scripts/seed_local.py", "--implementation-trait-characterization", "--json"],
+        [
+            sys.executable,
+            "scripts/seed_local.py",
+            "--implementation-trait-characterization",
+            "--json",
+        ],
         check=True,
         text=True,
         capture_output=True,
@@ -102,3 +112,53 @@ def test_surface_boundary_row_is_read_only():
     assert rows["executes_observation"].concern == "operational_boundary"
     assert rows["provider_acquisition"].concern == "operational_boundary"
     assert rows["permission_creation"].concern == "operational_boundary"
+
+
+def test_inventory_metadata_is_reported_as_non_trait_not_unclassified_trait():
+    rows = _by_trait()
+    for field in (
+        "answer_responsibility",
+        "authority_boundary",
+        "cli_flags",
+        "description",
+    ):
+        assert field not in rows
+
+    non_traits = {row.field: row for row in build_exposed_non_traits()}
+    for field in (
+        "answer_responsibility",
+        "authority_boundary",
+        "cli_flags",
+        "description",
+    ):
+        assert non_traits[field].classification == "inventory_metadata"
+        assert non_traits[field].implementation_reason
+
+
+def test_boundary_is_reported_as_container_not_unclassified_trait():
+    rows = _by_trait()
+    assert "boundary" not in rows
+
+    non_traits = {row.field: row for row in build_exposed_non_traits()}
+    assert non_traits["boundary"].classification == "container_field"
+    assert "read_only" in non_traits["boundary"].implementation_reason
+    assert "writes_event_ledger" in non_traits["boundary"].implementation_reason
+
+
+def test_trait_characterization_has_no_unclassified_inventory_metadata():
+    payload = implementation_trait_characterization_json()
+    unclassified_traits = {
+        item["trait"] for item in payload["items"] if item["concern"] == "unclassified"
+    }
+    assert not (
+        unclassified_traits
+        & {
+            "answer_responsibility",
+            "authority_boundary",
+            "boundary",
+            "cli_flags",
+            "description",
+        }
+    )
+    assert payload["non_trait_counts"]["inventory_metadata"] >= 1
+    assert payload["non_trait_counts"]["container_field"] >= 1
