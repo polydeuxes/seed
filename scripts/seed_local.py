@@ -163,6 +163,11 @@ from seed_runtime.projected_state_consumers import (
     format_projected_state_consumers,
     projected_state_consumers_json,
 )
+from seed_runtime.implementation_trait_characterization import (
+    build_implementation_trait_characterization,
+    format_implementation_trait_characterization,
+    implementation_trait_characterization_json,
+)
 from seed_runtime.observation_inventory import (
     build_observation_inventory,
     format_observation_inventory,
@@ -1263,6 +1268,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="show which known surfaces consume projected state and other evidence sources",
     )
     parser.add_argument(
+        "--implementation-trait-characterization",
+        action="store_true",
+        help="show implementation-backed trait-to-concern characterization for exposed visibility traits",
+    )
+    parser.add_argument(
         "--architecture-conformance-audit",
         action="store_true",
         help="compare architecture evidence with observed operational structure",
@@ -2270,6 +2280,7 @@ def validate_lifecycle_args(
         bool(args.listener_endpoint_authority),
         bool(args.diagnostic_shape_audit),
         bool(args.projected_state_consumers),
+        bool(args.implementation_trait_characterization),
         bool(args.question_surface_inventory),
         bool(args.projection_shape),
         bool(args.component_audit),
@@ -2465,6 +2476,7 @@ def validate_lifecycle_args(
         or args.documentation_structure
         or args.diagnostic_shape_audit
         or args.projected_state_consumers
+        or args.implementation_trait_characterization
         or args.projection_shape
         or args.component_audit
         or args.operational_story
@@ -6397,6 +6409,20 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(projected_state_consumers_json(rows), indent=2, sort_keys=True))
         else:
             print(format_projected_state_consumers(rows))
+        return 0
+
+    if args.implementation_trait_characterization:
+        rows = build_implementation_trait_characterization()
+        if args.json_output:
+            print(
+                json.dumps(
+                    implementation_trait_characterization_json(rows),
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+        else:
+            print(format_implementation_trait_characterization(rows))
         return 0
 
     if args.projection_shape:
