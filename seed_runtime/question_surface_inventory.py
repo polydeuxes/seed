@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 
+from seed_runtime.diagnostic_inventory import DIAGNOSTIC_INVENTORY
+from seed_runtime.diagnostic_shape_audit import IMPLEMENTATION_SPECS
+
 BOUNDED_ASK_DISPATCH_SURFACES: dict[str, str] = {
     "operational pressure": "ops_brief",
     "current operational explanation": "operational_story",
@@ -36,6 +39,16 @@ BOUNDED_ASK_ARG_VALUES: dict[str, object] = {
     "observation domain coverage": "__all__",
     "observation permission state": "__all__",
 }
+
+CANONICAL_DIAGNOSTIC_SURFACE_ALIASES: dict[str, str] = {
+    "knowledge_reachability_audit": "knowledge_reachability",
+}
+
+
+def canonical_diagnostic_surface(surface: str) -> str:
+    """Return implementation-backed diagnostic surface name for a dispatch surface."""
+
+    return CANONICAL_DIAGNOSTIC_SURFACE_ALIASES.get(surface, surface)
 
 
 def bounded_status_for_question_family(question_family: str) -> str:
@@ -99,6 +112,10 @@ class QuestionSurfaceInventoryRow:
     json_support: bool = True
     human_formatter: str = ""
     implementation_reason: str = ""
+    canonical_diagnostic_surface: str = ""
+    diagnostic_inventory_name: str = ""
+    diagnostic_shape_spec_name: str = ""
+    relationship_status: str = ""
 
     def to_json_dict(self) -> dict[str, object]:
         data = asdict(self)
@@ -316,10 +333,28 @@ def build_question_surface_inventory() -> tuple[QuestionSurfaceInventoryRow, ...
             notes="Does not build projected state.",
         ),
     )
+    diagnostic_names = {entry.name for entry in DIAGNOSTIC_INVENTORY}
+    shape_spec_names = set(IMPLEMENTATION_SPECS)
     enriched = []
     for row in rows:
         status = bounded_status_for_question_family(row.question_family)
         surface = BOUNDED_ASK_DISPATCH_SURFACES.get(row.question_family, "")
+        dispatch_or_declared_surface = surface or row.surface
+        canonical_surface = canonical_diagnostic_surface(dispatch_or_declared_surface)
+        diagnostic_inventory_name = (
+            canonical_surface if canonical_surface in diagnostic_names else ""
+        )
+        diagnostic_shape_spec_name = (
+            canonical_surface if canonical_surface in shape_spec_names else ""
+        )
+        if diagnostic_inventory_name and diagnostic_shape_spec_name:
+            relationship_status = "connected"
+        elif not canonical_surface:
+            relationship_status = "not_dispatchable"
+        elif not diagnostic_inventory_name:
+            relationship_status = "missing_diagnostic_inventory"
+        else:
+            relationship_status = "missing_diagnostic_shape_spec"
         required_args = BOUNDED_ASK_REQUIRED_SURFACE_ARGS.get(row.question_family, ())
         reason = (
             "present in bounded ask dispatch map"
@@ -334,6 +369,11 @@ def build_question_surface_inventory() -> tuple[QuestionSurfaceInventoryRow, ...
                 )
             )
         )
+        if canonical_surface != dispatch_or_declared_surface:
+            reason += (
+                f"; canonical diagnostic surface alias: "
+                f"{dispatch_or_declared_surface} -> {canonical_surface}"
+            )
         enriched.append(
             QuestionSurfaceInventoryRow(
                 **{
@@ -345,6 +385,10 @@ def build_question_surface_inventory() -> tuple[QuestionSurfaceInventoryRow, ...
                     "json_support": True,
                     "human_formatter": f"format_{row.surface}",
                     "implementation_reason": reason,
+                    "canonical_diagnostic_surface": canonical_surface,
+                    "diagnostic_inventory_name": diagnostic_inventory_name,
+                    "diagnostic_shape_spec_name": diagnostic_shape_spec_name,
+                    "relationship_status": relationship_status,
                 }
             )
         )
@@ -367,6 +411,19 @@ def format_question_surface_inventory(
         lines.append(f"- {row.question_family}: {row.surface} ({row.surface_flag})")
         lines.append(f"  bounded_status: {row.bounded_status}")
         lines.append(f"  dispatch_surface: {row.dispatch_surface or 'none'}")
+        lines.append(
+            "  canonical_diagnostic_surface: "
+            + (row.canonical_diagnostic_surface or "none")
+        )
+        lines.append(
+            "  diagnostic_inventory_name: "
+            + (row.diagnostic_inventory_name or "none")
+        )
+        lines.append(
+            "  diagnostic_shape_spec_name: "
+            + (row.diagnostic_shape_spec_name or "none")
+        )
+        lines.append(f"  relationship_status: {row.relationship_status}")
         lines.append(
             "  required_surface_args: "
             + (
