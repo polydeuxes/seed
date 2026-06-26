@@ -5,7 +5,11 @@ import pytest
 import scripts.seed_local as seed_local
 from seed_runtime.diagnostic_inventory import DIAGNOSTIC_INVENTORY
 from seed_runtime.diagnostic_shape_audit import build_diagnostic_shape_audit
-from seed_runtime.question_surface_inventory import build_question_surface_inventory
+from seed_runtime.question_surface_inventory import (
+    BOUNDED_ASK_DISPATCH_SURFACES,
+    bounded_ask_inventory_findings,
+    build_question_surface_inventory,
+)
 
 
 def test_cli_human_output_lists_known_question_families_and_flags(capsys):
@@ -41,17 +45,85 @@ def test_cli_json_output_includes_required_row_fields(capsys):
         "answer_responsibility",
         "authority_boundary",
         "notes",
+        "bounded_status",
+        "dispatch_surface",
+        "required_surface_args",
+        "json_support",
+        "human_formatter",
+        "implementation_reason",
     }
     assert required <= set(payload[0])
     assert isinstance(payload[0]["example_questions"], list)
 
 
-def test_question_surface_inventory_registration_is_read_only_and_static():
-    entry = next(
-        item for item in DIAGNOSTIC_INVENTORY if item.name == "question_surface_inventory"
+def test_bounded_ask_question_families_alias_exposes_implementation_inventory(capsys):
+    assert seed_local.main(["ask", "--question-families"]) == 0
+    output = capsys.readouterr().out
+
+    assert "bounded_status: eligible_now" in output
+    assert "bounded_status: eligible_with_parameters" in output
+    assert "bounded_status: diagnostic_only" in output
+    assert "bounded_status: not_dispatchable" in output
+    assert "dispatch_surface: service_ownership_authority" in output
+    assert "required_surface_args: domain, subject" in output
+    assert "Implementation findings: none" in output
+
+
+def test_bounded_ask_inventory_json_answers_required_operator_questions(capsys):
+    assert seed_local.main(["ask", "--question-families", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+
+    by_family = {row["question_family"]: row for row in payload}
+    assert (
+        by_family["authority-constrained service ownership"]["bounded_status"]
+        == "eligible_now"
+    )
+    assert (
+        by_family["authority-constrained service ownership"]["required_surface_args"]
+        == []
+    )
+    assert (
+        by_family["authority-constrained service ownership"]["dispatch_surface"]
+        == "service_ownership_authority"
+    )
+    assert (
+        by_family["derivation explanation"]["bounded_status"]
+        == "eligible_with_parameters"
+    )
+    assert by_family["derivation explanation"]["required_surface_args"] == [
+        "domain",
+        "subject",
+    ]
+    assert (
+        by_family["source definition/import lookup"]["implementation_reason"]
+        == "no bounded ask dispatch mapping in current implementation"
     )
 
-    assert entry.cli_flags == ("--question-surface-inventory",)
+
+def test_bounded_ask_inventory_validates_question_families_and_dispatch_maps():
+    rows = build_question_surface_inventory()
+    families = [row.question_family for row in rows]
+
+    assert len(families) == len(set(families))
+    assert bounded_ask_inventory_findings(rows) == ()
+    assert set(BOUNDED_ASK_DISPATCH_SURFACES) <= set(families)
+    assert (
+        sum(1 for row in rows if row.dispatch_surface == "service_ownership_authority")
+        == 1
+    )
+
+
+def test_question_surface_inventory_registration_is_read_only_and_static():
+    entry = next(
+        item
+        for item in DIAGNOSTIC_INVENTORY
+        if item.name == "question_surface_inventory"
+    )
+
+    assert entry.cli_flags == (
+        "--question-surface-inventory",
+        "ask --question-families",
+    )
     assert entry.supports_json is True
     assert entry.supports_record is False
     assert entry.record_scope == "none"
@@ -103,11 +175,16 @@ def test_bounded_ask_service_ownership_matches_direct_human(capsys):
     assert seed_local.main(["--service-ownership-authority"]) == 0
     direct = capsys.readouterr().out
 
-    assert seed_local.main([
-        "ask",
-        "--question-family",
-        "authority-constrained service ownership",
-    ]) == 0
+    assert (
+        seed_local.main(
+            [
+                "ask",
+                "--question-family",
+                "authority-constrained service ownership",
+            ]
+        )
+        == 0
+    )
     bounded = capsys.readouterr().out
 
     assert bounded == direct
@@ -117,12 +194,17 @@ def test_bounded_ask_listener_endpoint_matches_direct_json(capsys):
     assert seed_local.main(["--listener-endpoint-authority", "--json"]) == 0
     direct = json.loads(capsys.readouterr().out)
 
-    assert seed_local.main([
-        "ask",
-        "--question-family",
-        "listener endpoint reachability",
-        "--json",
-    ]) == 0
+    assert (
+        seed_local.main(
+            [
+                "ask",
+                "--question-family",
+                "listener endpoint reachability",
+                "--json",
+            ]
+        )
+        == 0
+    )
     bounded = json.loads(capsys.readouterr().out)
 
     assert bounded == direct
@@ -132,22 +214,32 @@ def test_bounded_ask_observation_domains_matches_direct_human_and_json(capsys):
     assert seed_local.main(["--observation-domains"]) == 0
     direct_human = capsys.readouterr().out
 
-    assert seed_local.main([
-        "ask",
-        "--question-family",
-        "observation domain coverage",
-    ]) == 0
+    assert (
+        seed_local.main(
+            [
+                "ask",
+                "--question-family",
+                "observation domain coverage",
+            ]
+        )
+        == 0
+    )
     bounded_human = capsys.readouterr().out
 
     assert seed_local.main(["--observation-domains", "--json"]) == 0
     direct_json = json.loads(capsys.readouterr().out)
 
-    assert seed_local.main([
-        "ask",
-        "--question-family",
-        "observation domain coverage",
-        "--json",
-    ]) == 0
+    assert (
+        seed_local.main(
+            [
+                "ask",
+                "--question-family",
+                "observation domain coverage",
+                "--json",
+            ]
+        )
+        == 0
+    )
     bounded_json = json.loads(capsys.readouterr().out)
 
     assert bounded_human == direct_human
@@ -158,22 +250,32 @@ def test_bounded_ask_observation_permission_matches_direct_human_and_json(capsys
     assert seed_local.main(["--observation-permission"]) == 0
     direct_human = capsys.readouterr().out
 
-    assert seed_local.main([
-        "ask",
-        "--question-family",
-        "observation permission state",
-    ]) == 0
+    assert (
+        seed_local.main(
+            [
+                "ask",
+                "--question-family",
+                "observation permission state",
+            ]
+        )
+        == 0
+    )
     bounded_human = capsys.readouterr().out
 
     assert seed_local.main(["--observation-permission", "--json"]) == 0
     direct_json = json.loads(capsys.readouterr().out)
 
-    assert seed_local.main([
-        "ask",
-        "--question-family",
-        "observation permission state",
-        "--json",
-    ]) == 0
+    assert (
+        seed_local.main(
+            [
+                "ask",
+                "--question-family",
+                "observation permission state",
+                "--json",
+            ]
+        )
+        == 0
+    )
     bounded_json = json.loads(capsys.readouterr().out)
 
     assert bounded_human == direct_human
@@ -181,18 +283,28 @@ def test_bounded_ask_observation_permission_matches_direct_human_and_json(capsys
 
 
 def test_bounded_ask_knowledge_reachability_matches_direct_json(capsys):
-    assert seed_local.main([
-        "--knowledge-reachability-audit",
-        "--knowledge-reachability-audit-json",
-    ]) == 0
+    assert (
+        seed_local.main(
+            [
+                "--knowledge-reachability-audit",
+                "--knowledge-reachability-audit-json",
+            ]
+        )
+        == 0
+    )
     direct = json.loads(capsys.readouterr().out)
 
-    assert seed_local.main([
-        "ask",
-        "--question-family",
-        "knowledge reachability",
-        "--json",
-    ]) == 0
+    assert (
+        seed_local.main(
+            [
+                "ask",
+                "--question-family",
+                "knowledge reachability",
+                "--json",
+            ]
+        )
+        == 0
+    )
     bounded = json.loads(capsys.readouterr().out)
 
     for payload in (direct, bounded):
@@ -210,34 +322,46 @@ def test_bounded_ask_rejects_parameter_required_family_without_surface_args(caps
     assert "requires --surface-args" in capsys.readouterr().err
 
 
-def test_bounded_ask_derivation_explanation_forwards_surface_args_human_and_json(capsys):
+def test_bounded_ask_derivation_explanation_forwards_surface_args_human_and_json(
+    capsys,
+):
     assert seed_local.main(["--reasoning-path", "runtime", "web_service"]) == 0
     direct_human = capsys.readouterr().out
 
-    assert seed_local.main([
-        "ask",
-        "--question-family",
-        "derivation explanation",
-        "--surface-args",
-        "runtime",
-        "web_service",
-    ]) == 0
+    assert (
+        seed_local.main(
+            [
+                "ask",
+                "--question-family",
+                "derivation explanation",
+                "--surface-args",
+                "runtime",
+                "web_service",
+            ]
+        )
+        == 0
+    )
     bounded_human = capsys.readouterr().out
 
-    assert seed_local.main([
-        "--reasoning-path", "runtime", "web_service", "--json"
-    ]) == 0
+    assert (
+        seed_local.main(["--reasoning-path", "runtime", "web_service", "--json"]) == 0
+    )
     direct_json = json.loads(capsys.readouterr().out)
 
-    assert seed_local.main([
-        "ask",
-        "--question-family",
-        "derivation explanation",
-        "--surface-args",
-        "runtime",
-        "web_service",
-        "--json",
-    ]) == 0
+    assert (
+        seed_local.main(
+            [
+                "ask",
+                "--question-family",
+                "derivation explanation",
+                "--surface-args",
+                "runtime",
+                "web_service",
+                "--json",
+            ]
+        )
+        == 0
+    )
     bounded_json = json.loads(capsys.readouterr().out)
 
     assert bounded_human == direct_human
@@ -248,26 +372,36 @@ def test_bounded_ask_selection_explanation_forwards_surface_args_human_and_json(
     assert seed_local.main(["--selection-path", "container_ownership"]) == 0
     direct_human = capsys.readouterr().out
 
-    assert seed_local.main([
-        "ask",
-        "--question-family",
-        "selection explanation",
-        "--surface-args",
-        "container_ownership",
-    ]) == 0
+    assert (
+        seed_local.main(
+            [
+                "ask",
+                "--question-family",
+                "selection explanation",
+                "--surface-args",
+                "container_ownership",
+            ]
+        )
+        == 0
+    )
     bounded_human = capsys.readouterr().out
 
     assert seed_local.main(["--selection-path", "container_ownership", "--json"]) == 0
     direct_json = json.loads(capsys.readouterr().out)
 
-    assert seed_local.main([
-        "ask",
-        "--question-family",
-        "selection explanation",
-        "--surface-args",
-        "container_ownership",
-        "--json",
-    ]) == 0
+    assert (
+        seed_local.main(
+            [
+                "ask",
+                "--question-family",
+                "selection explanation",
+                "--surface-args",
+                "container_ownership",
+                "--json",
+            ]
+        )
+        == 0
+    )
     bounded_json = json.loads(capsys.readouterr().out)
 
     assert bounded_human == direct_human
@@ -276,25 +410,29 @@ def test_bounded_ask_selection_explanation_forwards_surface_args_human_and_json(
 
 def test_bounded_ask_parameterized_family_requires_exact_surface_arg_count(capsys):
     with pytest.raises(SystemExit) as too_few:
-        seed_local.main([
-            "ask",
-            "--question-family",
-            "derivation explanation",
-            "--surface-args",
-            "runtime",
-        ])
+        seed_local.main(
+            [
+                "ask",
+                "--question-family",
+                "derivation explanation",
+                "--surface-args",
+                "runtime",
+            ]
+        )
     assert too_few.value.code == 2
     assert "requires exactly 2 --surface-args" in capsys.readouterr().err
 
     with pytest.raises(SystemExit) as too_many:
-        seed_local.main([
-            "ask",
-            "--question-family",
-            "selection explanation",
-            "--surface-args",
-            "container_ownership",
-            "extra",
-        ])
+        seed_local.main(
+            [
+                "ask",
+                "--question-family",
+                "selection explanation",
+                "--surface-args",
+                "container_ownership",
+                "extra",
+            ]
+        )
     assert too_many.value.code == 2
     assert "requires exactly 1 --surface-args" in capsys.readouterr().err
 
@@ -306,13 +444,15 @@ def test_bounded_ask_rejects_surface_args_outside_parameterized_family(capsys):
     assert "--surface-args can only be used" in capsys.readouterr().err
 
     with pytest.raises(SystemExit) as zero_arg_family:
-        seed_local.main([
-            "ask",
-            "--question-family",
-            "authority-constrained service ownership",
-            "--surface-args",
-            "runtime",
-        ])
+        seed_local.main(
+            [
+                "ask",
+                "--question-family",
+                "authority-constrained service ownership",
+                "--surface-args",
+                "runtime",
+            ]
+        )
     assert zero_arg_family.value.code == 2
     assert "does not accept --surface-args" in capsys.readouterr().err
 
@@ -327,9 +467,7 @@ def test_bounded_ask_rejects_diagnostic_only_family(capsys):
 
 def test_bounded_ask_rejects_not_dispatchable_family(capsys):
     with pytest.raises(SystemExit) as exc:
-        seed_local.main([
-            "ask", "--question-family", "source definition/import lookup"
-        ])
+        seed_local.main(["ask", "--question-family", "source definition/import lookup"])
 
     assert exc.value.code == 2
     assert "not_dispatchable" in capsys.readouterr().err

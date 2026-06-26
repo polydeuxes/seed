@@ -609,7 +609,7 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         build_function="build_question_surface_inventory",
         format_function="format_question_surface_inventory",
         json_function="question_surface_inventory_json",
-        cli_flags=("--question-surface-inventory",),
+        cli_flags=("--question-surface-inventory", "ask --question-families"),
     ),
     "inquiry_artifacts": DiagnosticImplementationSpec(
         name="inquiry_artifacts",

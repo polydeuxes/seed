@@ -678,7 +678,7 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
     ),
     DiagnosticInventoryEntry(
         name="question_surface_inventory",
-        cli_flags=("--question-surface-inventory",),
+        cli_flags=("--question-surface-inventory", "ask --question-families"),
         uses_projected_state=False,
         uses_repo_files=False,
         supports_json=True,
