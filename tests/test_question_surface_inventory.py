@@ -97,3 +97,58 @@ def test_question_surface_inventory_rejects_free_text_question_argument(capsys):
         seed_local.main(["--question-surface-inventory", "what should I run?"])
 
     assert exc.value.code == 2
+
+
+def test_bounded_ask_service_ownership_matches_direct_human(capsys):
+    assert seed_local.main(["--service-ownership-authority"]) == 0
+    direct = capsys.readouterr().out
+
+    assert seed_local.main([
+        "ask",
+        "--question-family",
+        "authority-constrained service ownership",
+    ]) == 0
+    bounded = capsys.readouterr().out
+
+    assert bounded == direct
+
+
+def test_bounded_ask_listener_endpoint_matches_direct_json(capsys):
+    assert seed_local.main(["--listener-endpoint-authority", "--json"]) == 0
+    direct = json.loads(capsys.readouterr().out)
+
+    assert seed_local.main([
+        "ask",
+        "--question-family",
+        "listener endpoint reachability",
+        "--json",
+    ]) == 0
+    bounded = json.loads(capsys.readouterr().out)
+
+    assert bounded == direct
+
+
+def test_bounded_ask_rejects_parameter_required_family(capsys):
+    with pytest.raises(SystemExit) as exc:
+        seed_local.main(["ask", "--question-family", "derivation explanation"])
+
+    assert exc.value.code == 2
+    assert "eligible_with_parameters" in capsys.readouterr().err
+
+
+def test_bounded_ask_rejects_diagnostic_only_family(capsys):
+    with pytest.raises(SystemExit) as exc:
+        seed_local.main(["ask", "--question-family", "surface inventory"])
+
+    assert exc.value.code == 2
+    assert "diagnostic_only" in capsys.readouterr().err
+
+
+def test_bounded_ask_rejects_not_dispatchable_family(capsys):
+    with pytest.raises(SystemExit) as exc:
+        seed_local.main([
+            "ask", "--question-family", "source definition/import lookup"
+        ])
+
+    assert exc.value.code == 2
+    assert "not_dispatchable" in capsys.readouterr().err

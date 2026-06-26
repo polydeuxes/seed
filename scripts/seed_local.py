@@ -912,7 +912,21 @@ def build_parser() -> argparse.ArgumentParser:
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("message", nargs="*", help="message to send in one-shot mode")
+    parser.add_argument(
+        "message",
+        nargs="*",
+        help=(
+            "message to send in one-shot mode; use `ask --question-family "
+            "<exact-question-family>` for bounded question-family presentation dispatch"
+        ),
+    )
+    parser.add_argument(
+        "--question-family",
+        help=(
+            "with `ask`, dispatch an exact Question Family identifier through "
+            "its existing inquiry surface"
+        ),
+    )
     parser.add_argument(
         "--db",
         help=(
@@ -2077,6 +2091,84 @@ def build_parser() -> argparse.ArgumentParser:
     )
     return parser
 
+
+ASK_QUESTION_FAMILY_ELIGIBILITY: dict[str, str] = {
+    "operational pressure": "eligible_now",
+    "current operational explanation": "eligible_now",
+    "derivation explanation": "eligible_with_parameters",
+    "selection explanation": "eligible_with_parameters",
+    "knowledge reachability": "eligible_now",
+    "capability pressure": "eligible_now",
+    "ownership ambiguity": "eligible_now",
+    "observation domain coverage": "eligible_now",
+    "observation permission state": "eligible_now",
+    "authority-constrained container ownership": "eligible_now",
+    "authority-constrained service ownership": "eligible_now",
+    "listener endpoint reachability": "eligible_now",
+    "surface inventory": "diagnostic_only",
+    "surface shape validation": "diagnostic_only",
+    "source definition/import lookup": "not_dispatchable",
+    "inquiry orientation": "not_dispatchable",
+    "projection shape visibility": "eligible_now",
+}
+
+ASK_QUESTION_FAMILY_FLAGS: dict[str, str] = {
+    "operational pressure": "ops_brief",
+    "current operational explanation": "operational_story",
+    "knowledge reachability": "knowledge_reachability_audit",
+    "capability pressure": "capability_needs",
+    "ownership ambiguity": "ownership_discrepancies",
+    "observation domain coverage": "observation_domains",
+    "observation permission state": "observation_permission",
+    "authority-constrained container ownership": "container_ownership_authority",
+    "authority-constrained service ownership": "service_ownership_authority",
+    "listener endpoint reachability": "listener_endpoint_authority",
+    "projection shape visibility": "projection_shape",
+}
+
+
+def apply_bounded_ask_dispatch(
+    args: argparse.Namespace, parser: argparse.ArgumentParser
+) -> None:
+    """Map `ask --question-family` to the existing exact inquiry surface."""
+
+    if args.question_family is None:
+        if args.message and args.message[0] == "ask":
+            parser.error("ask requires --question-family <exact-question-family>")
+        return
+    if args.message != ["ask"]:
+        parser.error(
+            "--question-family can only be used as "
+            "`ask --question-family <exact-question-family>`"
+        )
+
+    inventory_families = {
+        row.question_family for row in build_question_surface_inventory()
+    }
+    family = args.question_family
+    if family not in inventory_families:
+        parser.error(f"unknown Question Family: {family}")
+
+    eligibility = ASK_QUESTION_FAMILY_ELIGIBILITY.get(family)
+    if eligibility != "eligible_now":
+        if eligibility == "eligible_with_parameters":
+            parser.error(
+                f"Question Family '{family}' is eligible_with_parameters and "
+                "cannot currently participate in bounded ask without explicit "
+                "surface parameters"
+            )
+        if eligibility == "diagnostic_only":
+            parser.error(
+                f"Question Family '{family}' is diagnostic_only and is not an "
+                "inquiry-answer surface for bounded ask"
+            )
+        parser.error(
+            f"Question Family '{family}' is not_dispatchable by current "
+            "implementation-backed eligibility"
+        )
+
+    setattr(args, ASK_QUESTION_FAMILY_FLAGS[family], True)
+    args.message = []
 
 def normalize_confidence_args(
     args: argparse.Namespace, parser: argparse.ArgumentParser
@@ -6089,6 +6181,7 @@ def main(argv: list[str] | None = None) -> int:
                     break
         argv = rewritten
     args = parser.parse_args(argv)
+    apply_bounded_ask_dispatch(args, parser)
     validate_lifecycle_args(args, parser)
     if args.show_predicate_catalog:
         print(format_predicate_catalog(PredicateCatalog.load(args.predicate_catalog)))
