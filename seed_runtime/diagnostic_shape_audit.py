@@ -245,6 +245,14 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         json_function="projected_state_consumers_json",
         cli_flags=("--projected-state-consumers",),
     ),
+    "implementation_trait_characterization": DiagnosticImplementationSpec(
+        name="implementation_trait_characterization",
+        module_path="seed_runtime/implementation_trait_characterization.py",
+        build_function="build_implementation_trait_characterization",
+        format_function="format_implementation_trait_characterization",
+        json_function="implementation_trait_characterization_json",
+        cli_flags=("--implementation-trait-characterization",),
+    ),
     "operational_surface_inventory": DiagnosticImplementationSpec(
         name="operational_surface_inventory",
         module_path="seed_runtime/operational_surface_inventory.py",

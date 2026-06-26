@@ -212,3 +212,19 @@ def test_projected_state_consumers_registered_in_diagnostic_inventory():
     assert not entry.uses_repo_files
     assert not entry.writes_event_ledger
     assert not entry.mutates_cluster
+
+
+def test_implementation_trait_characterization_registered_in_diagnostic_inventory():
+    entry = _entry("implementation_trait_characterization")
+
+    assert entry.cli_flags == ("--implementation-trait-characterization",)
+    assert entry.supports_json
+    assert not entry.supports_record
+    assert entry.record_scope == "none"
+    assert not entry.uses_projected_state
+    assert not entry.uses_repo_files
+    assert not entry.writes_event_ledger
+    assert not entry.mutates_cluster
+    assert not entry.emits_diagnostic_facts
+    assert not entry.emits_cluster_facts
+

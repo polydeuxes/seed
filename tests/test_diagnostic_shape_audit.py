@@ -350,3 +350,20 @@ def test_projected_state_consumers_checked_by_diagnostic_shape_audit():
     assert fields["uses_repo_files"].status == "consistent"
     assert fields["writes_event_ledger"].status == "consistent"
     assert fields["mutates_cluster"].status == "consistent"
+
+
+def test_implementation_trait_characterization_checked_by_diagnostic_shape_audit():
+    rows = [
+        row
+        for row in build_diagnostic_shape_audit()
+        if row.diagnostic == "implementation_trait_characterization"
+    ]
+
+    assert rows
+    fields = {row.field: row for row in rows}
+    assert fields["supports_json"].status == "consistent"
+    assert fields["uses_projected_state"].status == "consistent"
+    assert fields["uses_repo_files"].status == "consistent"
+    assert fields["writes_event_ledger"].status == "consistent"
+    assert fields["mutates_cluster"].status == "consistent"
+
