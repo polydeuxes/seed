@@ -2127,6 +2127,12 @@ ASK_QUESTION_FAMILY_FLAGS: dict[str, str] = {
 }
 
 
+ASK_QUESTION_FAMILY_ARG_VALUES: dict[str, object] = {
+    "observation domain coverage": "__all__",
+    "observation permission state": "__all__",
+}
+
+
 def apply_bounded_ask_dispatch(
     args: argparse.Namespace, parser: argparse.ArgumentParser
 ) -> None:
@@ -2167,8 +2173,16 @@ def apply_bounded_ask_dispatch(
             "implementation-backed eligibility"
         )
 
-    setattr(args, ASK_QUESTION_FAMILY_FLAGS[family], True)
+    setattr(
+        args,
+        ASK_QUESTION_FAMILY_FLAGS[family],
+        ASK_QUESTION_FAMILY_ARG_VALUES.get(family, True),
+    )
+    if family == "knowledge reachability" and args.json_output:
+        args.knowledge_reachability_audit_json = True
+        args.json_output = False
     args.message = []
+
 
 def normalize_confidence_args(
     args: argparse.Namespace, parser: argparse.ArgumentParser
