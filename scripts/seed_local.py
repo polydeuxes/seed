@@ -963,6 +963,14 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--presentation",
+        action="store_true",
+        help=(
+            "with `ask --question-family`, return the existing composed "
+            "QuestionFamily explanation instead of dispatching to the raw answer surface"
+        ),
+    )
+    parser.add_argument(
         "--db",
         help=(
             "SQLite event ledger path for sharing local state across runs; "
@@ -2182,6 +2190,11 @@ def apply_bounded_ask_dispatch(
                 "--surface-args can only be used as "
                 "`ask --question-family <exact-question-family> --surface-args ...`"
             )
+        if args.presentation:
+            parser.error(
+                "--presentation can only be used as "
+                "`ask --question-family <exact-question-family> --presentation`"
+            )
         if args.message and args.message[0] == "ask":
             parser.error("ask requires --question-family <exact-question-family>")
         return
@@ -2218,6 +2231,10 @@ def apply_bounded_ask_dispatch(
                 f"Question Family '{family}' requires exactly {required_count} "
                 f"--surface-args value(s); received {len(surface_args)}"
             )
+        if args.presentation:
+            args.question_family_explanation = family
+            args.message = []
+            return
         surface_value = surface_args[0] if required_count == 1 else surface_args
         setattr(args, BOUNDED_ASK_DISPATCH_SURFACES[family], surface_value)
         args.message = []
@@ -2233,6 +2250,11 @@ def apply_bounded_ask_dispatch(
             f"Question Family '{family}' is not_dispatchable by current "
             "implementation-backed eligibility"
         )
+
+    if args.presentation:
+        args.question_family_explanation = family
+        args.message = []
+        return
 
     setattr(
         args,

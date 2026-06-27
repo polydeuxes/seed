@@ -379,6 +379,134 @@ def test_bounded_ask_observation_permission_matches_direct_human_and_json(capsys
     assert bounded_json == direct_json
 
 
+def test_bounded_ask_projection_shape_json_preserves_raw_answer(capsys):
+    assert (
+        seed_local.main(
+            [
+                "ask",
+                "--question-family",
+                "projection shape visibility",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert "composed_question_family_explanation" not in payload
+    assert "stages" in payload
+    assert payload["boundary"] == {
+        "mutates_cluster": False,
+        "read_only": True,
+        "writes_event_ledger": False,
+    }
+
+
+def test_bounded_ask_question_family_presentation_json_uses_composed_explanation(capsys):
+    assert (
+        seed_local.main(
+            [
+                "ask",
+                "--question-family",
+                "projection shape visibility",
+                "--presentation",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["question_family"] == "projection shape visibility"
+    assert "composed_question_family_explanation" in payload
+    assert "stages" not in payload
+    explanation = payload["composed_question_family_explanation"]
+    assert explanation["question_family"] == "projection shape visibility"
+    sections = {section["field"]: section for section in explanation["sections"]}
+    assert set(sections) >= {
+        "question_family_definition",
+        "question_family_answer_responsibility",
+        "question_family_boundary",
+        "question_family_diagnostic_relationship",
+    }
+    assert (
+        sections["question_family_definition"]["value"]["dispatch_surface"]
+        == "projection_shape"
+    )
+
+
+def test_bounded_ask_presentation_unknown_family_remains_bounded(capsys):
+    with pytest.raises(SystemExit) as exc:
+        seed_local.main(
+            [
+                "ask",
+                "--question-family",
+                "not a family",
+                "--presentation",
+                "--json",
+            ]
+        )
+
+    assert exc.value.code == 2
+    assert "unknown Question Family: not a family" in capsys.readouterr().err
+
+
+def test_bounded_ask_presentation_rejects_free_text_routing(capsys):
+    with pytest.raises(SystemExit) as exc:
+        seed_local.main(
+            [
+                "ask",
+                "what answers this?",
+                "--question-family",
+                "projection shape visibility",
+                "--presentation",
+            ]
+        )
+
+    assert exc.value.code == 2
+    assert "--question-family can only be used" in capsys.readouterr().err
+
+
+def test_bounded_ask_presentation_parameterized_family_still_requires_surface_args(capsys):
+    with pytest.raises(SystemExit) as exc:
+        seed_local.main(
+            [
+                "ask",
+                "--question-family",
+                "derivation explanation",
+                "--presentation",
+                "--json",
+            ]
+        )
+
+    assert exc.value.code == 2
+    assert "requires --surface-args" in capsys.readouterr().err
+
+
+def test_bounded_ask_presentation_does_not_select_other_subject_compositions(capsys):
+    assert (
+        seed_local.main(
+            [
+                "ask",
+                "--question-family",
+                "projection shape visibility",
+                "--presentation",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert "composed_question_family_explanation" in payload
+    assert "composed_diagnostic_surface_explanation" not in payload
+    assert "composed_projection_stage_explanation" not in payload
+    assert (
+        payload["composed_question_family_explanation"]["question_family"]
+        == "projection shape visibility"
+    )
+
+
 def test_bounded_ask_knowledge_reachability_matches_direct_json(capsys):
     assert (
         seed_local.main(
