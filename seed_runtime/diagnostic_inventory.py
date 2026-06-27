@@ -821,6 +821,12 @@ def build_diagnostic_surface_definition(
                 "supports_json": "unknown",
                 "supports_record": "unknown",
                 "record_scope": "unknown",
+                "diagnostic_surface_boundary": {
+                    "status": "unknown",
+                    "statements": [],
+                    "evidence_source": "diagnostic_inventory",
+                    "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
+                },
                 "diagnostic_inventory_registration": "absent",
                 "shape_registration_status": "unknown",
                 "evidence_source": "diagnostic_inventory",
@@ -837,6 +843,7 @@ def build_diagnostic_surface_definition(
             "supports_json": entry.supports_json,
             "supports_record": entry.supports_record,
             "record_scope": entry.record_scope,
+            "diagnostic_surface_boundary": _diagnostic_surface_boundary(entry),
             "diagnostic_inventory_registration": "present",
             "shape_registration_status": _shape_registration_status(entry.name),
             "evidence_source": "diagnostic_inventory + diagnostic_shape_audit",
@@ -864,12 +871,65 @@ def format_diagnostic_surface_definition(diagnostic_surface: str) -> str:
             f"  supports_json: {str(definition['supports_json']).lower()}",
             f"  supports_record: {str(definition['supports_record']).lower()}",
             f"  record_scope: {definition['record_scope']}",
+            _format_diagnostic_surface_boundary(definition["diagnostic_surface_boundary"]),
             f"  diagnostic_inventory_registration: {definition['diagnostic_inventory_registration']}",
             f"  shape_registration_status: {definition['shape_registration_status']}",
             f"  implementation_reason: {definition['implementation_reason']}",
             f"  evidence_source: {definition['evidence_source']}",
         ]
     )
+
+
+def _diagnostic_surface_boundary(entry: DiagnosticInventoryEntry) -> dict[str, object]:
+    statements: list[str] = [
+        "records" if entry.supports_record else "does not record",
+        f"record_scope={entry.record_scope}",
+        "writes event ledger"
+        if entry.writes_event_ledger
+        else "does not write event ledger",
+        "mutates cluster" if entry.mutates_cluster else "does not mutate cluster",
+        "uses projected state"
+        if entry.uses_projected_state
+        else "does not use projected state",
+        "uses repository files"
+        if entry.uses_repo_files
+        else "does not use repository files",
+        "emits diagnostic facts"
+        if entry.emits_diagnostic_facts
+        else "does not emit diagnostic facts",
+        "emits cluster facts"
+        if entry.emits_cluster_facts
+        else "does not emit cluster facts",
+        "reads diagnostic facts"
+        if entry.reads_diagnostic_facts
+        else "does not read diagnostic facts",
+    ]
+    read_only = (
+        not entry.supports_record
+        and not entry.writes_event_ledger
+        and not entry.mutates_cluster
+        and not entry.emits_diagnostic_facts
+        and not entry.emits_cluster_facts
+    )
+    if read_only:
+        statements.insert(0, "read-only")
+    return {
+        "status": "known",
+        "statements": statements,
+        "evidence_source": "diagnostic_inventory",
+        "implementation_reason": "boundary recovered from declared diagnostic inventory fields",
+    }
+
+
+def _format_diagnostic_surface_boundary(boundary: object) -> str:
+    if not isinstance(boundary, dict):
+        return "  diagnostic_surface_boundary: unknown"
+    statements = boundary.get("statements")
+    if not isinstance(statements, list) or not statements:
+        statement_text = "unknown"
+    else:
+        statement_text = "; ".join(str(statement) for statement in statements)
+    return f"  diagnostic_surface_boundary: {statement_text}"
 
 
 def _shape_registration_status(diagnostic_name: str) -> str:
