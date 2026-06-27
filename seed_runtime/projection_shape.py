@@ -215,7 +215,7 @@ def format_projection_shape(shape: dict[str, object] | None = None) -> str:
 
 
 def build_projection_stage_definition(stage_name: str) -> dict[str, object]:
-    """Return a read-only identity explanation for one ProjectionStage."""
+    """Return a read-only identity and boundary explanation for one ProjectionStage."""
 
     stage = next((item for item in PROJECTION_SHAPE_STAGES if item.stage == stage_name), None)
     if stage is None:
@@ -238,6 +238,10 @@ def build_projection_stage_definition(stage_name: str) -> dict[str, object]:
             "registered_stage": True,
             "evidence_source": "projection_shape_stage_registry",
             "implementation_reason": "identity recovered from the declared projection shape stage registration",
+            "projection_stage_boundary": {
+                "authority_boundary": stage.authority_boundary,
+                "does_not_influence": list(stage.does_not_influence),
+            },
         }
     }
 
@@ -256,10 +260,25 @@ def format_projection_stage_definition(stage_name: str) -> str:
             f"  status: {definition['status']}",
             f"  stage_identifier: {definition['stage_identifier']}",
             f"  registered_stage: {str(definition['registered_stage']).lower()}",
+            *_format_projection_stage_boundary_lines(definition),
             f"  implementation_reason: {definition['implementation_reason']}",
             f"  evidence_source: {definition['evidence_source']}",
         ]
     )
+
+
+def _format_projection_stage_boundary_lines(definition: dict[str, object]) -> list[str]:
+    boundary = definition.get("projection_stage_boundary")
+    if not isinstance(boundary, dict):
+        return []
+    does_not_influence = boundary.get("does_not_influence", [])
+    if not isinstance(does_not_influence, list):
+        does_not_influence = []
+    return [
+        "  projection_stage_boundary:",
+        f"    authority_boundary: {boundary['authority_boundary']}",
+        f"    does_not_influence:{_format_values(tuple(does_not_influence))}",
+    ]
 
 
 def _format_values(values: tuple[str, ...]) -> str:

@@ -128,11 +128,18 @@ def test_projection_stage_definition_json_includes_identity(capsys):
         "registered_stage": True,
         "evidence_source": "projection_shape_stage_registry",
         "implementation_reason": "identity recovered from the declared projection shape stage registration",
+        "projection_stage_boundary": {
+            "authority_boundary": "identity-resolution",
+            "does_not_influence": ["event_ledger"],
+        },
     }
     assert "consumes" not in definition
     assert "produces" not in definition
     assert "influences" not in definition
-    assert "authority_boundary" not in definition
+    assert definition["projection_stage_boundary"] == {
+        "authority_boundary": "identity-resolution",
+        "does_not_influence": ["event_ledger"],
+    }
 
 
 def test_projection_stage_definition_human_renders_same_identity(capsys):
@@ -144,6 +151,9 @@ def test_projection_stage_definition_human_renders_same_identity(capsys):
     assert "  status: known" in output
     assert "  stage_identifier: alias_projection" in output
     assert "  registered_stage: true" in output
+    assert "  projection_stage_boundary:" in output
+    assert "    authority_boundary: identity-resolution" in output
+    assert "    does_not_influence: event_ledger" in output
     assert (
         "  implementation_reason: identity recovered from the declared projection shape stage registration"
         in output
@@ -171,6 +181,7 @@ def test_projection_stage_definition_unknown_is_bounded(capsys):
         "evidence_source": "projection_shape_stage_registry",
         "implementation_reason": "unknown projection stage; no projection shape stage declaration exists",
     }
+    assert "projection_stage_boundary" not in payload["projection_stage_definition"]
 
 
 def test_projection_stage_definition_does_not_change_projection_shape_json(capsys):
@@ -228,11 +239,11 @@ def test_projection_stage_definition_guardrails_exclude_execution_planning_and_i
         "planner behavior",
         "semantic interpretation",
         "implementation inference",
+        "future execution",
         "new projection concepts",
         "consumes",
         "produces",
         "influences",
-        "authority_boundary",
     ]:
         assert forbidden not in rendered
 
