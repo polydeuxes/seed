@@ -8,10 +8,104 @@ from seed_runtime.observation_sources import (
     RepositorySourceObservationSource,
 )
 from seed_runtime.observations import ObservationIngestor
-from seed_runtime.source_navigation import build_source_navigation, format_source_navigation
+from seed_runtime.source_navigation import (
+    build_source_navigation,
+    format_source_navigation,
+    source_navigation_json,
+)
 from seed_runtime.state import StateProjector
 
 BASE_TIME = datetime(2024, 1, 1, 0, 0, 0)
+
+
+def test_repository_artifact_definition_explanation_json_includes_definition_field(
+    tmp_path,
+):
+    view = build_source_navigation(_project_repository(tmp_path), "state_summary")
+
+    payload = source_navigation_json(view)
+
+    explanation = payload["repository_artifact_definition"]
+    assert explanation == {
+        "query": "state_summary",
+        "status": "defined",
+        "definition_kind": "unknown",
+        "definition_value": "seed_runtime.state_summary_views.state_summary",
+        "source_path": "seed_runtime/state_summary_views.py",
+        "representative_fact_id": view.definitions[0].representative_fact_id,
+        "representative_support_id": view.definitions[0].representative_support_id,
+        "boundary": [
+            "definition evidence only; no call, behavior, capability ownership, or runtime reachability claims",
+            "uses projected source facts only; does not inspect repository files or parse source during lookup",
+        ],
+    }
+
+
+def test_repository_artifact_definition_explanation_human_output_matches_json(tmp_path):
+    view = build_source_navigation(_project_repository(tmp_path), "state_summary")
+    payload = source_navigation_json(view)["repository_artifact_definition"]
+
+    rendered = format_source_navigation(view)
+
+    assert "Repository Artifact Definition:" in rendered
+    assert f"  query: {payload['query']}" in rendered
+    assert f"  status: {payload['status']}" in rendered
+    assert f"  definition kind: {payload['definition_kind']}" in rendered
+    assert f"  definition value: {payload['definition_value']}" in rendered
+    assert f"  source path: {payload['source_path']}" in rendered
+    assert (
+        f"  representative source fact: {payload['representative_fact_id']}" in rendered
+    )
+    assert (
+        f"  representative source support: {payload['representative_support_id']}"
+        in rendered
+    )
+
+
+def test_unknown_artifact_definition_explanation_is_bounded_empty(tmp_path):
+    view = build_source_navigation(_project_repository(tmp_path), "missing_artifact")
+
+    payload = source_navigation_json(view)
+    rendered = format_source_navigation(view)
+
+    assert payload["definitions"] == []
+    assert payload["imports"] == []
+    assert payload["repository_artifact_definition"] == {
+        "query": "missing_artifact",
+        "status": "unknown",
+        "definition_kind": "unknown",
+        "definition_value": None,
+        "source_path": None,
+        "representative_fact_id": None,
+        "representative_support_id": None,
+        "boundary": [
+            "definition evidence only; no call, behavior, capability ownership, or runtime reachability claims",
+            "uses projected source facts only; does not inspect repository files or parse source during lookup",
+        ],
+    }
+    assert "status: unknown" in rendered
+    assert "definition value: unknown" in rendered
+    assert "No source facts matched." in rendered
+
+
+def test_definition_explanation_does_not_claim_behavior_authority_or_reachability(
+    tmp_path,
+):
+    view = build_source_navigation(_project_repository(tmp_path), "state_summary")
+    payload = source_navigation_json(view)["repository_artifact_definition"]
+    rendered = format_source_navigation(view)
+
+    assert payload["status"] == "defined"
+    forbidden_claims = (
+        "runtime behavior:",
+        "ownership authority:",
+        "reachable:",
+        "owns capability",
+        "calls:",
+    )
+    for claim in forbidden_claims:
+        assert claim not in rendered.lower()
+        assert claim not in str(payload).lower()
 
 
 def _project_repository(tmp_path, *, twice: bool = False):
