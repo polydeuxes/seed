@@ -704,7 +704,7 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         writes_event_ledger=False,
         mutates_cluster=False,
         reads_diagnostic_facts=False,
-        description="Composes existing projection stage definition and boundary explanation fields without runtime execution, projection execution, planning, interpretation, inference, recording, event-ledger writes, or cluster mutation.",
+        description="Composes existing projection stage definition, boundary, and implementation-backed relationship explanation fields without runtime execution, projection execution, projection ordering, planning, semantic interpretation, relationship inference, recording, event-ledger writes, or cluster mutation.",
     ),
     DiagnosticInventoryEntry(
         name="question_surface_inventory",

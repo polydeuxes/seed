@@ -214,10 +214,14 @@ def format_projection_shape(shape: dict[str, object] | None = None) -> str:
     return "\n".join(lines)
 
 
+def _projection_shape_stage(stage_name: str) -> ProjectionShapeStage | None:
+    return next((item for item in PROJECTION_SHAPE_STAGES if item.stage == stage_name), None)
+
+
 def build_projection_stage_definition(stage_name: str) -> dict[str, object]:
     """Return a read-only identity and boundary explanation for one ProjectionStage."""
 
-    stage = next((item for item in PROJECTION_SHAPE_STAGES if item.stage == stage_name), None)
+    stage = _projection_shape_stage(stage_name)
     if stage is None:
         return {
             "projection_stage_definition": {
@@ -250,6 +254,21 @@ def projection_stage_definition_json(stage_name: str) -> dict[str, object]:
     return build_projection_stage_definition(stage_name)
 
 
+def build_projection_stage_relationships(stage_name: str) -> dict[str, object] | None:
+    """Return declared structural relationships for a known ProjectionStage."""
+
+    stage = _projection_shape_stage(stage_name)
+    if stage is None:
+        return None
+    return {
+        "consumes": list(stage.consumes),
+        "produces": list(stage.produces),
+        "influences": list(stage.influences),
+        "implementation_reason": "relationships recovered from declared projection shape stage fields",
+        "evidence_source": "projection_shape_stage_registry",
+    }
+
+
 def build_projection_stage_explanation(stage_name: str) -> dict[str, object]:
     """Compose existing ProjectionStage explanation fields without adding evidence."""
 
@@ -263,6 +282,9 @@ def build_projection_stage_explanation(stage_name: str) -> dict[str, object]:
         explanation["projection_stage_boundary"] = definition[
             "projection_stage_boundary"
         ]
+    relationships = build_projection_stage_relationships(stage_name)
+    if relationships is not None:
+        explanation["projection_stage_relationships"] = relationships
     return {"projection_stage_explanation": explanation}
 
 
@@ -289,6 +311,18 @@ def format_projection_stage_explanation(stage_name: str) -> str:
                 "  projection_stage_boundary:",
                 f"    authority_boundary: {boundary['authority_boundary']}",
                 f"    does_not_influence:{_format_values(tuple(boundary.get('does_not_influence', [])))}",
+            ]
+        )
+    relationships = explanation.get("projection_stage_relationships")
+    if isinstance(relationships, dict):
+        lines.extend(
+            [
+                "  projection_stage_relationships:",
+                f"    consumes:{_format_values(tuple(relationships.get('consumes', [])))}",
+                f"    produces:{_format_values(tuple(relationships.get('produces', [])))}",
+                f"    influences:{_format_values(tuple(relationships.get('influences', [])))}",
+                f"    implementation_reason: {relationships['implementation_reason']}",
+                f"    evidence_source: {relationships['evidence_source']}",
             ]
         )
     lines.extend(
