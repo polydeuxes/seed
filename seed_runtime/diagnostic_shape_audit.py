@@ -658,6 +658,7 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "--question-surface-inventory",
             "ask --question-families",
             "--question-family-definition",
+            "--question-family-explanation",
         ),
     ),
     "inquiry_artifacts": DiagnosticImplementationSpec(

@@ -697,6 +697,7 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
             "--question-surface-inventory",
             "ask --question-families",
             "--question-family-definition",
+            "--question-family-explanation",
         ),
         uses_projected_state=False,
         uses_repo_files=False,

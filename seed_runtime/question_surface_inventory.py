@@ -110,6 +110,18 @@ class QuestionFamilyDefinition:
 
 
 @dataclass(frozen=True)
+class ComposedQuestionFamilyExplanation:
+    question_family: str
+    composed_question_family_explanation: dict[str, object]
+
+    def to_json_dict(self) -> dict[str, object]:
+        return {
+            "question_family": self.question_family,
+            "composed_question_family_explanation": self.composed_question_family_explanation,
+        }
+
+
+@dataclass(frozen=True)
 class QuestionSurfaceInventoryRow:
     question_family: str
     example_questions: tuple[str, ...]
@@ -583,4 +595,97 @@ def format_question_family_definition(
         lines.insert(
             5, f"  surface: {definition['surface']} ({definition['surface_flag']})"
         )
+    return "\n".join(lines)
+
+
+def build_composed_question_family_explanation(
+    question_family: str,
+    rows: tuple[QuestionSurfaceInventoryRow, ...] | None = None,
+) -> ComposedQuestionFamilyExplanation:
+    """Compose existing QuestionFamily explanation fields for presentation only."""
+
+    explanation = build_question_family_definition(question_family, rows)
+    definition = explanation.question_family_definition
+    composed = {
+        "status": definition["status"],
+        "question_family": definition["question_family"],
+        "evidence_source": definition["evidence_source"],
+        "composition_source": "question_family_definition",
+        "sections": [
+            {
+                "label": "Definition",
+                "field": "question_family_definition",
+                "value": {
+                    "question_family": definition["question_family"],
+                    "display_name": definition["display_name"],
+                    "status": definition["status"],
+                    "bounded_status": definition["bounded_status"],
+                    "dispatch_surface": definition["dispatch_surface"],
+                },
+            },
+            {
+                "label": "Answer responsibility",
+                "field": "question_family_answer_responsibility",
+                "value": definition["question_family_answer_responsibility"],
+            },
+            {
+                "label": "Boundary",
+                "field": "question_family_boundary",
+                "value": definition["question_family_boundary"],
+            },
+            {
+                "label": "Diagnostic relationship",
+                "field": "question_family_diagnostic_relationship",
+                "value": definition["question_family_diagnostic_relationship"],
+            },
+        ],
+    }
+    return ComposedQuestionFamilyExplanation(
+        question_family=explanation.question_family,
+        composed_question_family_explanation=composed,
+    )
+
+
+def composed_question_family_explanation_json(
+    question_family: str,
+    rows: tuple[QuestionSurfaceInventoryRow, ...] | None = None,
+) -> dict[str, object]:
+    return build_composed_question_family_explanation(question_family, rows).to_json_dict()
+
+
+def format_composed_question_family_explanation(
+    question_family: str,
+    rows: tuple[QuestionSurfaceInventoryRow, ...] | None = None,
+) -> str:
+    explanation = build_composed_question_family_explanation(question_family, rows)
+    composed = explanation.composed_question_family_explanation
+    sections = composed["sections"]
+    definition_section = sections[0]["value"]
+    answer_section = sections[1]["value"]
+    boundary = sections[2]["value"]
+    diagnostic_section = sections[3]["value"]
+    lines = [
+        f"QuestionFamily explanation: {composed['question_family']}",
+        f"  status: {composed['status']}",
+        f"  evidence_source: {composed['evidence_source']}",
+        "",
+        "Definition:",
+        f"  display_name: {definition_section['display_name']}",
+        f"  bounded_status: {definition_section['bounded_status']}",
+        f"  dispatch_surface: {definition_section['dispatch_surface']}",
+        "",
+        "Answer responsibility:",
+        f"  answer_responsibility: {answer_section['answer_responsibility']}",
+        f"  responsible_answering_surface: {answer_section['responsible_answering_surface']}",
+        f"  implementation_reason: {answer_section['implementation_reason']}",
+        "",
+        "Boundary:",
+        f"  {boundary}",
+        "",
+        "Diagnostic relationship:",
+        f"  canonical_diagnostic_surface: {diagnostic_section['canonical_diagnostic_surface']}",
+        f"  diagnostic_inventory_name: {diagnostic_section['diagnostic_inventory_name']}",
+        f"  diagnostic_shape_spec_name: {diagnostic_section['diagnostic_shape_spec_name']}",
+        f"  relationship_status: {diagnostic_section['relationship_status']}",
+    ]
     return "\n".join(lines)

@@ -154,6 +154,7 @@ def test_question_surface_inventory_registration_is_read_only_and_static():
         "--question-surface-inventory",
         "ask --question-families",
         "--question-family-definition",
+        "--question-family-explanation",
     )
     assert entry.supports_json is True
     assert entry.supports_record is False
@@ -758,5 +759,118 @@ def test_question_family_definition_guardrails_exclude_behavior_and_inference(ca
         "future routing",
         "llm reasoning",
         "execute",
+    ):
+        assert forbidden not in serialized
+
+
+def test_composed_question_family_explanation_json_uses_existing_fields_only(capsys):
+    assert (
+        seed_local.main(
+            ["--question-family-explanation", "operational pressure", "--json"]
+        )
+        == 0
+    )
+    payload = json.loads(capsys.readouterr().out)
+    definition = seed_local.question_family_definition_json(
+        "operational pressure", build_question_surface_inventory()
+    )["question_family_definition"]
+    composed = payload["composed_question_family_explanation"]
+
+    assert payload["question_family"] == "operational pressure"
+    assert composed["composition_source"] == "question_family_definition"
+    assert [section["field"] for section in composed["sections"]] == [
+        "question_family_definition",
+        "question_family_answer_responsibility",
+        "question_family_boundary",
+        "question_family_diagnostic_relationship",
+    ]
+    assert composed["sections"][0]["value"] == {
+        "question_family": definition["question_family"],
+        "display_name": definition["display_name"],
+        "status": definition["status"],
+        "bounded_status": definition["bounded_status"],
+        "dispatch_surface": definition["dispatch_surface"],
+    }
+    assert composed["sections"][1]["value"] == definition[
+        "question_family_answer_responsibility"
+    ]
+    assert composed["sections"][2]["value"] == definition[
+        "question_family_boundary"
+    ]
+    assert composed["sections"][3]["value"] == definition[
+        "question_family_diagnostic_relationship"
+    ]
+
+
+def test_composed_question_family_explanation_human_orders_existing_fields(capsys):
+    assert seed_local.main(["--question-family-explanation", "source definition/import lookup"]) == 0
+    output = capsys.readouterr().out
+
+    assert "QuestionFamily explanation: source definition/import lookup" in output
+    assert "Definition:" in output
+    assert "Answer responsibility:" in output
+    assert "Boundary:" in output
+    assert "Diagnostic relationship:" in output
+    assert "bounded_status: not_dispatchable" in output
+    assert "dispatch_surface: none" in output
+    assert "answer_responsibility: looks up preserved imports and definitions from projected facts" in output
+    assert "read-only projected-fact view; does not inspect repository files, parse source, or append events" in output
+    assert "relationship_status: missing_diagnostic_inventory" in output
+
+
+def test_composed_question_family_explanation_unknown_remains_bounded(capsys):
+    assert seed_local.main(["--question-family-explanation", "made up", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    definition = seed_local.question_family_definition_json(
+        "made up", build_question_surface_inventory()
+    )["question_family_definition"]
+    composed = payload["composed_question_family_explanation"]
+
+    assert composed["status"] == "unknown"
+    assert composed["sections"][0]["value"]["bounded_status"] == "unknown"
+    assert composed["sections"][1]["value"] == definition[
+        "question_family_answer_responsibility"
+    ]
+    assert composed["sections"][2]["value"] == definition[
+        "question_family_boundary"
+    ]
+    assert composed["sections"][3]["value"] == definition[
+        "question_family_diagnostic_relationship"
+    ]
+
+
+def test_composed_question_family_explanation_does_not_change_existing_surfaces(capsys):
+    assert seed_local.main(["--question-family-definition", "operational pressure", "--json"]) == 0
+    before_definition = json.loads(capsys.readouterr().out)
+    assert seed_local.main(["--question-surface-inventory", "--json"]) == 0
+    before_inventory = json.loads(capsys.readouterr().out)
+
+    assert seed_local.main(["--question-family-explanation", "operational pressure", "--json"]) == 0
+    capsys.readouterr()
+
+    assert seed_local.main(["--question-family-definition", "operational pressure", "--json"]) == 0
+    assert json.loads(capsys.readouterr().out) == before_definition
+    assert seed_local.main(["--question-surface-inventory", "--json"]) == 0
+    assert json.loads(capsys.readouterr().out) == before_inventory
+
+
+def test_composed_question_family_explanation_guardrails_do_not_introduce_semantics(capsys):
+    assert seed_local.main(["--question-family-explanation", "operational pressure", "--json"]) == 0
+    serialized = json.dumps(json.loads(capsys.readouterr().out), sort_keys=True).lower()
+
+    for forbidden in (
+        "presentation inference",
+        "presentation reasoning",
+        "presentation interpretation",
+        "presentation normalization",
+        "presentation recommendation",
+        "semantic meaning",
+        "semantic",
+        "implementation not already present",
+        "discover",
+        "rank",
+        "relationship engine",
+        "explainablesubject",
+        "ontology",
     ):
         assert forbidden not in serialized

@@ -153,8 +153,10 @@ from seed_runtime.question_surface_inventory import (
     bounded_status_for_question_family,
     build_question_surface_inventory,
     format_question_family_definition,
+    format_composed_question_family_explanation,
     format_question_surface_inventory,
     question_family_definition_json,
+    composed_question_family_explanation_json,
     question_surface_inventory_json,
 )
 from seed_runtime.projection_shape import (
@@ -1272,6 +1274,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--question-family-definition",
         metavar="QUESTION_FAMILY",
         help="explain the implementation-backed identity of one QuestionFamily",
+    )
+    parser.add_argument(
+        "--question-family-explanation",
+        metavar="QUESTION_FAMILY",
+        help="compose existing QuestionFamily explanation fields for presentation",
     )
     parser.add_argument(
         "--diagnostic-shape-audit",
@@ -2495,6 +2502,7 @@ def validate_lifecycle_args(
         or args.diagnostic_surface_definition
         or args.question_surface_inventory
         or args.question_family_definition
+        or args.question_family_explanation
         or args.container_ownership_authority
         or args.service_ownership_authority
         or args.listener_endpoint_authority
@@ -2538,11 +2546,15 @@ def validate_lifecycle_args(
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --question-surface-inventory, --question-family-definition, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, or --audit-compare, or --projection-shape, or --projection-stage-definition"
+            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --question-surface-inventory, --question-family-definition, --question-family-explanation, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, or --audit-compare, or --projection-shape, or --projection-stage-definition"
         )
     if args.question_family_definition and args.message:
         parser.error(
             "--question-family-definition does not accept a free-text question argument"
+        )
+    if args.question_family_explanation and args.message:
+        parser.error(
+            "--question-family-explanation does not accept a free-text question argument"
         )
     if args.question_surface_inventory and args.message and args.message != ["ask"]:
         parser.error(
@@ -6418,6 +6430,26 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print(
                 format_question_family_definition(args.question_family_definition, rows)
+            )
+        return 0
+
+    if args.question_family_explanation:
+        rows = build_question_surface_inventory()
+        if args.json_output:
+            print(
+                json.dumps(
+                    composed_question_family_explanation_json(
+                        args.question_family_explanation, rows
+                    ),
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+        else:
+            print(
+                format_composed_question_family_explanation(
+                    args.question_family_explanation, rows
+                )
             )
         return 0
 
