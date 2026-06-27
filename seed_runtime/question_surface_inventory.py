@@ -475,6 +475,15 @@ def build_question_family_definition(
                 "bounded_status": "unknown",
                 "dispatch_surface": "unknown",
                 "answer_responsibility": "unknown",
+                "question_family_answer_responsibility": {
+                    "status": "unknown",
+                    "answer_responsibility": "unknown",
+                    "responsible_answering_surface": "unknown",
+                    "dispatch_surface": "unknown",
+                    "implementation_reason": "unknown question family; no question-surface inventory row exists",
+                    "relationship_status": "unknown",
+                    "evidence_source": "question_surface_inventory",
+                },
                 "question_family_boundary": "unknown question family; no implementation-backed authority boundary exists",
                 "implementation_reason": "unknown question family; no question-surface inventory row exists",
                 "evidence_source": "question_surface_inventory",
@@ -494,6 +503,16 @@ def build_question_family_definition(
             "surface_flag": row.surface_flag,
             "dispatch_surface": row.dispatch_surface or "none",
             "answer_responsibility": row.answer_responsibility,
+            "question_family_answer_responsibility": {
+                "status": "known",
+                "answer_responsibility": row.answer_responsibility,
+                "responsible_answering_surface": row.surface,
+                "surface_flag": row.surface_flag,
+                "dispatch_surface": row.dispatch_surface or "none",
+                "implementation_reason": row.implementation_reason,
+                "relationship_status": row.relationship_status,
+                "evidence_source": "question_surface_inventory",
+            },
             "question_family_boundary": row.authority_boundary,
             "implementation_reason": row.implementation_reason,
             "relationship_status": row.relationship_status,
@@ -521,7 +540,12 @@ def format_question_family_definition(
         f"  display_name: {definition['display_name']}",
         f"  bounded_status: {definition['bounded_status']}",
         f"  dispatch_surface: {definition['dispatch_surface']}",
-        f"  answer_responsibility: {definition['answer_responsibility']}",
+        "  question_family_answer_responsibility:",
+        f"    answer_responsibility: {definition['question_family_answer_responsibility']['answer_responsibility']}",
+        f"    responsible_answering_surface: {definition['question_family_answer_responsibility']['responsible_answering_surface']}",
+        f"    dispatch_surface: {definition['question_family_answer_responsibility']['dispatch_surface']}",
+        f"    implementation_reason: {definition['question_family_answer_responsibility']['implementation_reason']}",
+        f"    relationship_status: {definition['question_family_answer_responsibility']['relationship_status']}",
         f"  question_family_boundary: {definition['question_family_boundary']}",
         f"  implementation_reason: {definition['implementation_reason']}",
         f"  evidence_source: {definition['evidence_source']}",
@@ -530,5 +554,4 @@ def format_question_family_definition(
         lines.insert(
             5, f"  surface: {definition['surface']} ({definition['surface_flag']})"
         )
-        lines.insert(9, f"  relationship_status: {definition['relationship_status']}")
     return "\n".join(lines)
