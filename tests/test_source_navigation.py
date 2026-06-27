@@ -239,6 +239,128 @@ def test_dependency_explanation_does_not_claim_runtime_authority_or_execution(
         assert claim not in str(payload).lower()
 
 
+def test_repository_artifact_support_explanation_json_includes_support_summary(
+    tmp_path,
+):
+    view = build_source_navigation(_project_repository(tmp_path), "state_summary")
+
+    payload = source_navigation_json(view)
+
+    explanation = payload["repository_artifact_support"]
+    assert explanation["query"] == "state_summary"
+    assert explanation["status"] == "supported"
+    assert explanation["definition_support_count"] == 1
+    assert explanation["dependency_support_count"] == 1
+    assert explanation["total_support_count"] == 2
+    assert (
+        explanation["representative_definition_fact_id"]
+        == view.definitions[0].representative_fact_id
+    )
+    assert (
+        explanation["representative_definition_support_id"]
+        == view.definitions[0].representative_support_id
+    )
+    assert explanation["representative_dependency_fact_id"] is not None
+    assert explanation["representative_dependency_support_id"] is not None
+    assert explanation["source_paths"] == [
+        "scripts/seed_local.py",
+        "seed_runtime/state_summary_views.py",
+    ]
+    assert explanation["boundary"] == [
+        "support evidence summary only; no truth, runtime behavior, runtime reachability, ownership authority, call graph usage, import execution, module load success, dependency correctness, or semantic relevance claims",
+        "uses existing projected source fact/support evidence only; does not inspect repository files, parse source during lookup, or infer beyond source navigation matches",
+    ]
+
+
+def test_repository_artifact_support_explanation_human_output_matches_json(tmp_path):
+    view = build_source_navigation(_project_repository(tmp_path), "state_summary")
+    payload = source_navigation_json(view)["repository_artifact_support"]
+
+    rendered = format_source_navigation(view)
+
+    assert "Repository Artifact Support:" in rendered
+    assert f"  query: {payload['query']}" in rendered
+    assert f"  status: {payload['status']}" in rendered
+    assert (
+        f"  definition support facts: {payload['definition_support_count']}" in rendered
+    )
+    assert (
+        f"  dependency support facts: {payload['dependency_support_count']}" in rendered
+    )
+    assert f"  total support facts: {payload['total_support_count']}" in rendered
+    assert (
+        f"  representative definition source fact: {payload['representative_definition_fact_id']}"
+        in rendered
+    )
+    assert (
+        f"  representative definition source support: {payload['representative_definition_support_id']}"
+        in rendered
+    )
+    assert (
+        f"  representative dependency source fact: {payload['representative_dependency_fact_id']}"
+        in rendered
+    )
+    assert (
+        f"  representative dependency source support: {payload['representative_dependency_support_id']}"
+        in rendered
+    )
+    for path in payload["source_paths"]:
+        assert f"    - {path}" in rendered
+
+
+def test_unknown_artifact_support_explanation_is_bounded_unsupported(tmp_path):
+    view = build_source_navigation(_project_repository(tmp_path), "missing_artifact")
+
+    payload = source_navigation_json(view)
+    rendered = format_source_navigation(view)
+
+    assert payload["repository_artifact_support"] == {
+        "query": "missing_artifact",
+        "status": "unsupported",
+        "definition_support_count": 0,
+        "dependency_support_count": 0,
+        "total_support_count": 0,
+        "representative_definition_fact_id": None,
+        "representative_definition_support_id": None,
+        "representative_dependency_fact_id": None,
+        "representative_dependency_support_id": None,
+        "source_paths": [],
+        "boundary": [
+            "support evidence summary only; no truth, runtime behavior, runtime reachability, ownership authority, call graph usage, import execution, module load success, dependency correctness, or semantic relevance claims",
+            "uses existing projected source fact/support evidence only; does not inspect repository files, parse source during lookup, or infer beyond source navigation matches",
+        ],
+    }
+    assert "Repository Artifact Support:" in rendered
+    assert "status: unsupported" in rendered
+    assert "definition support facts: 0" in rendered
+    assert "dependency support facts: 0" in rendered
+    assert "source paths represented:\n    - none" in rendered
+
+
+def test_support_explanation_does_not_claim_truth_runtime_authority_or_semantics(
+    tmp_path,
+):
+    view = build_source_navigation(_project_repository(tmp_path), "state_summary")
+    payload = source_navigation_json(view)["repository_artifact_support"]
+    rendered = format_source_navigation(view)
+
+    assert payload["status"] == "supported"
+    forbidden_claims = (
+        "truth:",
+        "runtime behavior:",
+        "ownership authority:",
+        "reachable:",
+        "call graph:",
+        "imports executed:",
+        "module loaded:",
+        "dependency correct:",
+        "semantically relevant:",
+    )
+    for claim in forbidden_claims:
+        assert claim not in rendered.lower()
+        assert claim not in str(payload).lower()
+
+
 def test_short_symbol_lookup_finds_expected_definition(tmp_path):
     view = build_source_navigation(_project_repository(tmp_path), "state_summary")
 
