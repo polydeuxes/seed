@@ -7,7 +7,7 @@ source, ingest observations, or infer behavior/reachability/ownership.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Any, Literal
 
 from seed_runtime.facts import FactSupport
@@ -15,6 +15,10 @@ from seed_runtime.state import State
 
 SOURCE_PREDICATES = frozenset({"defines", "imports"})
 BOUNDED_ROW_LIMIT = 10
+DEFINITION_NON_CLAIMS = (
+    "definition evidence only; no call, behavior, capability ownership, or runtime reachability claims",
+    "uses projected source facts only; does not inspect repository files or parse source during lookup",
+)
 
 
 @dataclass(frozen=True)
@@ -31,12 +35,34 @@ class SourceNavigationRow:
 
 
 @dataclass(frozen=True)
+class RepositoryArtifactDefinitionExplanation:
+    """Definition visibility for one repository artifact query."""
+
+    query: str
+    status: Literal["defined", "unknown"]
+    definition_kind: str
+    definition_value: str | None
+    source_path: str | None
+    representative_fact_id: str | None
+    representative_support_id: str | None
+    boundary: tuple[str, ...]
+
+    def to_json_dict(self) -> dict[str, object]:
+        data = asdict(self)
+        data["boundary"] = list(self.boundary)
+        return data
+
+
+@dataclass(frozen=True)
 class SourceNavigationView:
     """Bounded read-only source navigation projection for one query."""
 
     query: str
     definitions: list[SourceNavigationRow] = field(default_factory=list)
     imports: list[SourceNavigationRow] = field(default_factory=list)
+    repository_artifact_definition: RepositoryArtifactDefinitionExplanation | None = (
+        None
+    )
 
 
 def build_source_navigation(state: State, query: str) -> SourceNavigationView:
@@ -52,13 +78,23 @@ def build_source_navigation(state: State, query: str) -> SourceNavigationView:
     normalized_query = query.strip()
     rows = [_row_from_support(support) for support in state.fact_supports]
     matched = [row for row in rows if _matches(row, normalized_query)]
+    definitions = sorted(
+        [row for row in matched if row.predicate == "defines"], key=_row_sort_key
+    )
+    imports = sorted(
+        [row for row in matched if row.predicate == "imports"], key=_row_sort_key
+    )
     return SourceNavigationView(
         query=normalized_query,
-        definitions=sorted(
-            [row for row in matched if row.predicate == "defines"], key=_row_sort_key
-        ),
-        imports=sorted(
-            [row for row in matched if row.predicate == "imports"], key=_row_sort_key
+        definitions=definitions,
+        imports=imports,
+        repository_artifact_definition=_definition_explanation(
+            normalized_query,
+            definitions,
+            bounded=any(
+                normalized_query == row.subject or normalized_query == row.path
+                for row in definitions + imports
+            ),
         ),
     )
 
@@ -68,6 +104,11 @@ def format_source_navigation(view: SourceNavigationView) -> str:
 
     lines = ["Source Navigation", "", f"query: {view.query}", ""]
     bounded = _is_path_or_module_lookup(view)
+    if view.repository_artifact_definition is not None:
+        lines.extend(
+            _format_definition_explanation(view.repository_artifact_definition)
+        )
+        lines.append("")
     if view.definitions:
         lines.append(_section_heading("Definitions", view.definitions, bounded=bounded))
         lines.extend(
@@ -167,4 +208,96 @@ def _format_rows(
         if row.representative_fact_id:
             lines.append(f"    representative fact: {row.representative_fact_id}")
         lines.append(f"    representative support: {row.representative_support_id}")
+    return lines
+
+
+def source_navigation_json(view: SourceNavigationView) -> dict[str, object]:
+    """Return stable JSON for source navigation visibility."""
+
+    return {
+        "query": view.query,
+        "repository_artifact_definition": (
+            view.repository_artifact_definition.to_json_dict()
+            if view.repository_artifact_definition is not None
+            else None
+        ),
+        "definitions": [_row_json(row) for row in view.definitions],
+        "imports": [_row_json(row) for row in view.imports],
+    }
+
+
+def _row_json(row: SourceNavigationRow) -> dict[str, object]:
+    return {
+        "subject": row.subject,
+        "predicate": row.predicate,
+        "value": row.value,
+        "path": row.path,
+        "support_count": row.support_count,
+        "representative_fact_id": row.representative_fact_id,
+        "representative_support_id": row.representative_support_id,
+    }
+
+
+def _definition_explanation(
+    query: str, definitions: list[SourceNavigationRow], *, bounded: bool
+) -> RepositoryArtifactDefinitionExplanation:
+    if not definitions:
+        return RepositoryArtifactDefinitionExplanation(
+            query=query,
+            status="unknown",
+            definition_kind="unknown",
+            definition_value=None,
+            source_path=None,
+            representative_fact_id=None,
+            representative_support_id=None,
+            boundary=DEFINITION_NON_CLAIMS,
+        )
+    row = definitions[0]
+    return RepositoryArtifactDefinitionExplanation(
+        query=query,
+        status="defined",
+        definition_kind="unknown",
+        definition_value=row.value,
+        source_path=row.path,
+        representative_fact_id=None if bounded else row.representative_fact_id,
+        representative_support_id=None if bounded else row.representative_support_id,
+        boundary=DEFINITION_NON_CLAIMS,
+    )
+
+
+def _format_definition_explanation(
+    explanation: RepositoryArtifactDefinitionExplanation,
+) -> list[str]:
+    lines = [
+        "Repository Artifact Definition:",
+        f"  query: {explanation.query}",
+        f"  status: {explanation.status}",
+        f"  definition kind: {explanation.definition_kind}",
+        "  definition value: "
+        + (
+            explanation.definition_value
+            if explanation.definition_value is not None
+            else "unknown"
+        ),
+        "  source path: "
+        + (
+            explanation.source_path
+            if explanation.source_path is not None
+            else "unknown"
+        ),
+        "  representative source fact: "
+        + (
+            explanation.representative_fact_id
+            if explanation.representative_fact_id is not None
+            else "unknown"
+        ),
+        "  representative source support: "
+        + (
+            explanation.representative_support_id
+            if explanation.representative_support_id is not None
+            else "unknown"
+        ),
+        "  boundary:",
+    ]
+    lines.extend(f"    - {item}" for item in explanation.boundary)
     return lines
