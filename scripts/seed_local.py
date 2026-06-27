@@ -160,7 +160,9 @@ from seed_runtime.question_surface_inventory import (
 from seed_runtime.projection_shape import (
     build_projection_shape,
     format_projection_shape,
+    format_projection_stage_definition,
     projection_shape_json,
+    projection_stage_definition_json,
 )
 from seed_runtime.projected_state_consumers import (
     build_projected_state_consumers,
@@ -1485,6 +1487,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="show read-only implementation-backed projection stage shape",
     )
     parser.add_argument(
+        "--projection-stage-definition",
+        metavar="STAGE",
+        help="explain read-only implementation-backed identity for one projection stage",
+    )
+    parser.add_argument(
         "--knowledge-reachability-audit",
         action="store_true",
         help="audit knowledge reachability across preserved, projected, read-model, inquiry, and rendered surfaces",
@@ -2298,6 +2305,7 @@ def validate_lifecycle_args(
         bool(args.implementation_trait_characterization),
         bool(args.question_surface_inventory),
         bool(args.projection_shape),
+        bool(args.projection_stage_definition),
         bool(args.component_audit),
         bool(args.operational_story),
         bool(args.architecture_conformance_audit),
@@ -2495,6 +2503,7 @@ def validate_lifecycle_args(
         or args.projected_state_consumers
         or args.implementation_trait_characterization
         or args.projection_shape
+        or args.projection_stage_definition
         or args.component_audit
         or args.operational_story
         or args.reasoning_path
@@ -2529,7 +2538,7 @@ def validate_lifecycle_args(
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --question-surface-inventory, --question-family-definition, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, or --audit-compare, or --projection-shape"
+            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --question-surface-inventory, --question-family-definition, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, or --audit-compare, or --projection-shape, or --projection-stage-definition"
         )
     if args.question_family_definition and args.message:
         parser.error(
@@ -6487,6 +6496,19 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(projection_shape_json(shape), indent=2, sort_keys=True))
         else:
             print(format_projection_shape(shape))
+        return 0
+
+    if args.projection_stage_definition:
+        if args.json_output:
+            print(
+                json.dumps(
+                    projection_stage_definition_json(args.projection_stage_definition),
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+        else:
+            print(format_projection_stage_definition(args.projection_stage_definition))
         return 0
 
     if args.diagnostic_shape_audit:
