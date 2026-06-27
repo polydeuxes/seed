@@ -222,6 +222,14 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "authorize_execution",
         ),
     ),
+    "diagnostic_surface_definition": DiagnosticImplementationSpec(
+        name="diagnostic_surface_definition",
+        module_path="seed_runtime/diagnostic_inventory.py",
+        build_function="build_diagnostic_surface_definition",
+        format_function="format_diagnostic_surface_definition",
+        json_function="diagnostic_surface_definition_json",
+        cli_flags=("--diagnostic-surface-definition",),
+    ),
     "diagnostic_inventory": DiagnosticImplementationSpec(
         name="diagnostic_inventory",
         module_path="seed_runtime/diagnostic_inventory.py",

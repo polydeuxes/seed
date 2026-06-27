@@ -124,7 +124,9 @@ from seed_runtime.contradictions import (
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.diagnostic_inventory import (
     diagnostic_inventory_json,
+    diagnostic_surface_definition_json,
     format_diagnostic_inventory,
+    format_diagnostic_surface_definition,
 )
 from seed_runtime.documentation_structure import (
     DocumentationStructureDetailExpansions,
@@ -1254,6 +1256,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="list diagnostic/test-like operational surfaces and their declared shape",
     )
     parser.add_argument(
+        "--diagnostic-surface-definition",
+        metavar="DIAGNOSTIC",
+        help="explain the implementation-backed identity of one diagnostic surface",
+    )
+    parser.add_argument(
         "--question-surface-inventory",
         "--question-families",
         action="store_true",
@@ -2286,6 +2293,7 @@ def validate_lifecycle_args(
         bool(args.service_ownership_authority),
         bool(args.listener_endpoint_authority),
         bool(args.diagnostic_shape_audit),
+        bool(args.diagnostic_surface_definition),
         bool(args.projected_state_consumers),
         bool(args.implementation_trait_characterization),
         bool(args.question_surface_inventory),
@@ -2476,6 +2484,7 @@ def validate_lifecycle_args(
         args.ownership_discrepancies
         or args.capability_needs
         or args.diagnostic_inventory
+        or args.diagnostic_surface_definition
         or args.question_surface_inventory
         or args.question_family_definition
         or args.container_ownership_authority
@@ -6358,6 +6367,19 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(diagnostic_inventory_json(), indent=2, sort_keys=True))
         else:
             print(format_diagnostic_inventory())
+        return 0
+
+    if args.diagnostic_surface_definition:
+        if args.json_output:
+            print(
+                json.dumps(
+                    diagnostic_surface_definition_json(args.diagnostic_surface_definition),
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+        else:
+            print(format_diagnostic_surface_definition(args.diagnostic_surface_definition))
         return 0
 
     if args.question_surface_inventory:

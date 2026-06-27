@@ -367,3 +367,18 @@ def test_implementation_trait_characterization_checked_by_diagnostic_shape_audit
     assert fields["writes_event_ledger"].status == "consistent"
     assert fields["mutates_cluster"].status == "consistent"
 
+
+
+def test_diagnostic_surface_definition_checked_by_diagnostic_shape_audit():
+    rows = [
+        row
+        for row in build_diagnostic_shape_audit()
+        if row.diagnostic == "diagnostic_surface_definition"
+    ]
+
+    assert rows
+    observed = {row.field: row for row in rows}
+    assert observed["supports_json"].status == "consistent"
+    assert observed["supports_record"].status == "consistent"
+    assert observed["record_scope"].status == "consistent"
+    assert observed["mutates_cluster"].status == "consistent"

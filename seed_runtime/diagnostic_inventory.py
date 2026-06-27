@@ -711,6 +711,21 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         description="Shows read-only repository-visible inquiry artifact classifications without recording, event-ledger writes, cluster mutation, inquiry graph creation, pressure transformation inference, workflow, or planning behavior.",
     ),
     DiagnosticInventoryEntry(
+        name="diagnostic_surface_definition",
+        cli_flags=("--diagnostic-surface-definition",),
+        uses_projected_state=False,
+        uses_repo_files=False,
+        supports_json=True,
+        supports_record=False,
+        record_scope="none",
+        emits_diagnostic_facts=False,
+        emits_cluster_facts=False,
+        writes_event_ledger=False,
+        mutates_cluster=False,
+        reads_diagnostic_facts=False,
+        description="Explains the implementation-backed identity of one diagnostic surface from diagnostic inventory and shape-audit declarations without execution, planning, interpretation, inference, recording, event-ledger writes, or cluster mutation.",
+    ),
+    DiagnosticInventoryEntry(
         name="diagnostic_inventory",
         cli_flags=("--diagnostic-inventory",),
         uses_projected_state=False,
@@ -786,6 +801,81 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         description="Explains privilege boundaries and bounded guidance/evidence blockers for current capability needs without privileged actions, fact recording, or cluster mutation.",
     ),
 )
+
+
+
+def build_diagnostic_surface_definition(
+    diagnostic_surface: str,
+    entries: tuple[DiagnosticInventoryEntry, ...] = DIAGNOSTIC_INVENTORY,
+) -> dict[str, object]:
+    """Return a read-only identity explanation for one DiagnosticSurface."""
+
+    entry = next((item for item in entries if item.name == diagnostic_surface), None)
+    if entry is None:
+        return {
+            "diagnostic_surface_definition": {
+                "status": "unknown",
+                "diagnostic_name": diagnostic_surface,
+                "cli_flags": [],
+                "description": "unknown",
+                "supports_json": "unknown",
+                "supports_record": "unknown",
+                "record_scope": "unknown",
+                "diagnostic_inventory_registration": "absent",
+                "shape_registration_status": "unknown",
+                "evidence_source": "diagnostic_inventory",
+                "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
+            }
+        }
+
+    return {
+        "diagnostic_surface_definition": {
+            "status": "known",
+            "diagnostic_name": entry.name,
+            "cli_flags": list(entry.cli_flags),
+            "description": entry.description,
+            "supports_json": entry.supports_json,
+            "supports_record": entry.supports_record,
+            "record_scope": entry.record_scope,
+            "diagnostic_inventory_registration": "present",
+            "shape_registration_status": _shape_registration_status(entry.name),
+            "evidence_source": "diagnostic_inventory + diagnostic_shape_audit",
+            "implementation_reason": "identity recovered from the diagnostic inventory entry and static shape-audit registration",
+        }
+    }
+
+
+def diagnostic_surface_definition_json(diagnostic_surface: str) -> dict[str, object]:
+    return build_diagnostic_surface_definition(diagnostic_surface)
+
+
+def format_diagnostic_surface_definition(diagnostic_surface: str) -> str:
+    definition = build_diagnostic_surface_definition(diagnostic_surface)[
+        "diagnostic_surface_definition"
+    ]
+    flags = definition["cli_flags"]
+    flag_text = ", ".join(flags) if isinstance(flags, list) and flags else "none"
+    return "\n".join(
+        [
+            f"DiagnosticSurface definition: {definition['diagnostic_name']}",
+            f"  status: {definition['status']}",
+            f"  cli_flags: {flag_text}",
+            f"  description: {definition['description']}",
+            f"  supports_json: {str(definition['supports_json']).lower()}",
+            f"  supports_record: {str(definition['supports_record']).lower()}",
+            f"  record_scope: {definition['record_scope']}",
+            f"  diagnostic_inventory_registration: {definition['diagnostic_inventory_registration']}",
+            f"  shape_registration_status: {definition['shape_registration_status']}",
+            f"  implementation_reason: {definition['implementation_reason']}",
+            f"  evidence_source: {definition['evidence_source']}",
+        ]
+    )
+
+
+def _shape_registration_status(diagnostic_name: str) -> str:
+    from seed_runtime.diagnostic_shape_audit import IMPLEMENTATION_SPECS
+
+    return "present" if diagnostic_name in IMPLEMENTATION_SPECS else "absent"
 
 
 def diagnostic_inventory_json(
