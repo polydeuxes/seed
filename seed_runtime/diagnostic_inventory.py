@@ -692,6 +692,21 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         description="Explains the implementation-backed identity and boundary of one projection stage from projection shape declarations without runtime execution, projection execution, planning, interpretation, inference, recording, event-ledger writes, or cluster mutation.",
     ),
     DiagnosticInventoryEntry(
+        name="projection_stage_explanation",
+        cli_flags=("--projection-stage-explanation",),
+        uses_projected_state=False,
+        uses_repo_files=False,
+        supports_json=True,
+        supports_record=False,
+        record_scope="none",
+        emits_diagnostic_facts=False,
+        emits_cluster_facts=False,
+        writes_event_ledger=False,
+        mutates_cluster=False,
+        reads_diagnostic_facts=False,
+        description="Composes existing projection stage definition and boundary explanation fields without runtime execution, projection execution, planning, interpretation, inference, recording, event-ledger writes, or cluster mutation.",
+    ),
+    DiagnosticInventoryEntry(
         name="question_surface_inventory",
         cli_flags=(
             "--question-surface-inventory",
