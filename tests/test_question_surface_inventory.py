@@ -592,6 +592,7 @@ def test_question_family_definition_json_includes_identity_explanation(capsys):
         "display_name": "authority-constrained service ownership",
         "evidence_source": "question_surface_inventory",
         "implementation_reason": "present in bounded ask dispatch map",
+        "question_family_boundary": "read-only evaluator; no provider acquisition; no execution; no event-ledger writes; no mutation",
         "question_family": "authority-constrained service ownership",
         "relationship_status": "connected",
         "status": "known",
@@ -617,6 +618,10 @@ def test_question_family_definition_human_renders_identity_explanation(capsys):
         in output
     )
     assert (
+        "question_family_boundary: read-only projected-fact view; does not inspect repository files, parse source, or append events"
+        in output
+    )
+    assert (
         "implementation_reason: no bounded ask dispatch mapping in current implementation"
         in output
     )
@@ -635,6 +640,7 @@ def test_question_family_definition_unknown_is_bounded_and_does_not_infer(capsys
         "display_name": "made up",
         "evidence_source": "question_surface_inventory",
         "implementation_reason": "unknown question family; no question-surface inventory row exists",
+        "question_family_boundary": "unknown question family; no implementation-backed authority boundary exists",
         "question_family": "made up",
         "status": "unknown",
     }
@@ -657,13 +663,20 @@ def test_question_family_definition_guardrails_exclude_behavior_and_inference(ca
         )
         == 0
     )
-    serialized = json.dumps(json.loads(capsys.readouterr().out), sort_keys=True).lower()
+    payload = json.loads(capsys.readouterr().out)
+    serialized = json.dumps(payload, sort_keys=True).lower()
+    boundary = payload["question_family_definition"]["question_family_boundary"].lower()
 
+    assert boundary == (
+        "read-only summary assembled from existing audits; no recording; no mutation"
+    )
     for forbidden in (
-        "runtime behavior",
+        "runtime execution",
         "planner behavior",
+        "routing behavior",
         "semantic interpretation",
         "implementation inference",
+        "new authority",
         "future routing",
         "llm reasoning",
         "execute",
