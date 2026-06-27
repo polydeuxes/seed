@@ -19,6 +19,10 @@ DEFINITION_NON_CLAIMS = (
     "definition evidence only; no call, behavior, capability ownership, or runtime reachability claims",
     "uses projected source facts only; does not inspect repository files or parse source during lookup",
 )
+DEPENDENCY_NON_CLAIMS = (
+    "import dependency evidence only; no runtime behavior, runtime reachability, ownership authority, call graph usage, import execution, or module load success claims",
+    "uses projected source import facts only; does not inspect repository files, parse source during lookup, or validate dependency correctness",
+)
 
 
 @dataclass(frozen=True)
@@ -54,6 +58,43 @@ class RepositoryArtifactDefinitionExplanation:
 
 
 @dataclass(frozen=True)
+class RepositoryArtifactDependencyMention:
+    """One preserved import/dependency mention for a repository artifact query."""
+
+    query: str
+    status: Literal["mentioned"]
+    dependency_value: str
+    source_path: str | None
+    representative_fact_id: str | None
+    representative_support_id: str | None
+    support_count: int
+    boundary: tuple[str, ...]
+
+    def to_json_dict(self) -> dict[str, object]:
+        data = asdict(self)
+        data["boundary"] = list(self.boundary)
+        return data
+
+
+@dataclass(frozen=True)
+class RepositoryArtifactDependencyExplanation:
+    """Dependency visibility for one repository artifact query."""
+
+    query: str
+    status: Literal["mentioned", "unknown"]
+    dependencies: list[RepositoryArtifactDependencyMention]
+    boundary: tuple[str, ...]
+
+    def to_json_dict(self) -> dict[str, object]:
+        return {
+            "query": self.query,
+            "status": self.status,
+            "dependencies": [item.to_json_dict() for item in self.dependencies],
+            "boundary": list(self.boundary),
+        }
+
+
+@dataclass(frozen=True)
 class SourceNavigationView:
     """Bounded read-only source navigation projection for one query."""
 
@@ -61,6 +102,9 @@ class SourceNavigationView:
     definitions: list[SourceNavigationRow] = field(default_factory=list)
     imports: list[SourceNavigationRow] = field(default_factory=list)
     repository_artifact_definition: RepositoryArtifactDefinitionExplanation | None = (
+        None
+    )
+    repository_artifact_dependencies: RepositoryArtifactDependencyExplanation | None = (
         None
     )
 
@@ -84,6 +128,14 @@ def build_source_navigation(state: State, query: str) -> SourceNavigationView:
     imports = sorted(
         [row for row in matched if row.predicate == "imports"], key=_row_sort_key
     )
+    bounded = any(
+        normalized_query == row.subject or normalized_query == row.path
+        for row in definitions + imports
+    )
+    dependency_mentions = sorted(
+        [row for row in rows if _dependency_mentions(row, normalized_query)],
+        key=_row_sort_key,
+    )
     return SourceNavigationView(
         query=normalized_query,
         definitions=definitions,
@@ -91,10 +143,12 @@ def build_source_navigation(state: State, query: str) -> SourceNavigationView:
         repository_artifact_definition=_definition_explanation(
             normalized_query,
             definitions,
-            bounded=any(
-                normalized_query == row.subject or normalized_query == row.path
-                for row in definitions + imports
-            ),
+            bounded=bounded,
+        ),
+        repository_artifact_dependencies=_dependency_explanation(
+            normalized_query,
+            dependency_mentions,
+            bounded=bounded,
         ),
     )
 
@@ -107,6 +161,11 @@ def format_source_navigation(view: SourceNavigationView) -> str:
     if view.repository_artifact_definition is not None:
         lines.extend(
             _format_definition_explanation(view.repository_artifact_definition)
+        )
+        lines.append("")
+    if view.repository_artifact_dependencies is not None:
+        lines.extend(
+            _format_dependency_explanation(view.repository_artifact_dependencies)
         )
         lines.append("")
     if view.definitions:
@@ -155,6 +214,12 @@ def _matches(row: SourceNavigationRow, query: str) -> bool:
         return query == row.value or query == _final_segment(row.value)
     return False
 
+
+
+def _dependency_mentions(row: SourceNavigationRow, query: str) -> bool:
+    if row.predicate != "imports":
+        return False
+    return query == row.value or query == _final_segment(row.value)
 
 def _final_segment(value: str) -> str:
     return value.rsplit(".", 1)[-1]
@@ -221,6 +286,11 @@ def source_navigation_json(view: SourceNavigationView) -> dict[str, object]:
             if view.repository_artifact_definition is not None
             else None
         ),
+        "repository_artifact_dependencies": (
+            view.repository_artifact_dependencies.to_json_dict()
+            if view.repository_artifact_dependencies is not None
+            else None
+        ),
         "definitions": [_row_json(row) for row in view.definitions],
         "imports": [_row_json(row) for row in view.imports],
     }
@@ -264,6 +334,68 @@ def _definition_explanation(
         boundary=DEFINITION_NON_CLAIMS,
     )
 
+
+
+def _dependency_explanation(
+    query: str, mentions: list[SourceNavigationRow], *, bounded: bool
+) -> RepositoryArtifactDependencyExplanation:
+    dependencies = [
+        RepositoryArtifactDependencyMention(
+            query=query,
+            status="mentioned",
+            dependency_value=row.value,
+            source_path=row.path,
+            representative_fact_id=None if bounded else row.representative_fact_id,
+            representative_support_id=None if bounded else row.representative_support_id,
+            support_count=row.support_count,
+            boundary=DEPENDENCY_NON_CLAIMS,
+        )
+        for row in mentions
+    ]
+    return RepositoryArtifactDependencyExplanation(
+        query=query,
+        status="mentioned" if dependencies else "unknown",
+        dependencies=dependencies,
+        boundary=DEPENDENCY_NON_CLAIMS,
+    )
+
+
+def _format_dependency_explanation(
+    explanation: RepositoryArtifactDependencyExplanation,
+) -> list[str]:
+    lines = [
+        "Repository Artifact Dependencies:",
+        f"  query: {explanation.query}",
+        f"  status: {explanation.status}",
+    ]
+    if explanation.dependencies:
+        lines.append("  preserved import mentions:")
+        for item in explanation.dependencies:
+            lines.extend(
+                [
+                    f"    - dependency value: {item.dependency_value}",
+                    "      source path: "
+                    + (item.source_path if item.source_path is not None else "unknown"),
+                    f"      support facts: {item.support_count}",
+                    "      representative source fact: "
+                    + (
+                        item.representative_fact_id
+                        if item.representative_fact_id is not None
+                        else "unknown"
+                    ),
+                    "      representative source support: "
+                    + (
+                        item.representative_support_id
+                        if item.representative_support_id is not None
+                        else "unknown"
+                    ),
+                ]
+            )
+    else:
+        lines.append("  preserved import mentions: none")
+    lines.append("  boundary:")
+    lines.extend(f"    - {item}" for item in explanation.boundary)
+    return lines
 
 def _format_definition_explanation(
     explanation: RepositoryArtifactDefinitionExplanation,

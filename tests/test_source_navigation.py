@@ -139,6 +139,106 @@ def _project_repository(tmp_path, *, twice: bool = False):
     return StateProjector(ledger).project("ws")
 
 
+def test_repository_artifact_dependency_explanation_json_includes_import_mentions(
+    tmp_path,
+):
+    view = build_source_navigation(_project_repository(tmp_path), "state_summary")
+
+    payload = source_navigation_json(view)
+
+    explanation = payload["repository_artifact_dependencies"]
+    assert explanation["query"] == "state_summary"
+    assert explanation["status"] == "mentioned"
+    assert explanation["boundary"] == [
+        "import dependency evidence only; no runtime behavior, runtime reachability, ownership authority, call graph usage, import execution, or module load success claims",
+        "uses projected source import facts only; does not inspect repository files, parse source during lookup, or validate dependency correctness",
+    ]
+    assert explanation["dependencies"] == [
+        {
+            "query": "state_summary",
+            "status": "mentioned",
+            "dependency_value": "state_summary",
+            "source_path": "scripts/seed_local.py",
+            "representative_fact_id": explanation["dependencies"][0][
+                "representative_fact_id"
+            ],
+            "representative_support_id": explanation["dependencies"][0][
+                "representative_support_id"
+            ],
+            "support_count": 1,
+            "boundary": [
+                "import dependency evidence only; no runtime behavior, runtime reachability, ownership authority, call graph usage, import execution, or module load success claims",
+                "uses projected source import facts only; does not inspect repository files, parse source during lookup, or validate dependency correctness",
+            ],
+        }
+    ]
+    assert explanation["dependencies"][0]["representative_fact_id"] is not None
+    assert explanation["dependencies"][0]["representative_support_id"] is not None
+
+
+def test_repository_artifact_dependency_explanation_human_output_matches_json(tmp_path):
+    view = build_source_navigation(_project_repository(tmp_path), "state_summary")
+    payload = source_navigation_json(view)["repository_artifact_dependencies"]
+    dependency = payload["dependencies"][0]
+
+    rendered = format_source_navigation(view)
+
+    assert "Repository Artifact Dependencies:" in rendered
+    assert f"  query: {payload['query']}" in rendered
+    assert f"  status: {payload['status']}" in rendered
+    assert f"    - dependency value: {dependency['dependency_value']}" in rendered
+    assert f"      source path: {dependency['source_path']}" in rendered
+    assert f"      support facts: {dependency['support_count']}" in rendered
+    assert (
+        f"      representative source fact: {dependency['representative_fact_id']}"
+        in rendered
+    )
+    assert (
+        f"      representative source support: {dependency['representative_support_id']}"
+        in rendered
+    )
+
+
+def test_unknown_artifact_dependency_explanation_is_bounded_empty(tmp_path):
+    view = build_source_navigation(_project_repository(tmp_path), "missing_artifact")
+
+    payload = source_navigation_json(view)
+    rendered = format_source_navigation(view)
+
+    assert payload["repository_artifact_dependencies"] == {
+        "query": "missing_artifact",
+        "status": "unknown",
+        "dependencies": [],
+        "boundary": [
+            "import dependency evidence only; no runtime behavior, runtime reachability, ownership authority, call graph usage, import execution, or module load success claims",
+            "uses projected source import facts only; does not inspect repository files, parse source during lookup, or validate dependency correctness",
+        ],
+    }
+    assert "Repository Artifact Dependencies:" in rendered
+    assert "preserved import mentions: none" in rendered
+
+
+def test_dependency_explanation_does_not_claim_runtime_authority_or_execution(
+    tmp_path,
+):
+    view = build_source_navigation(_project_repository(tmp_path), "state_summary")
+    payload = source_navigation_json(view)["repository_artifact_dependencies"]
+    rendered = format_source_navigation(view)
+
+    assert payload["status"] == "mentioned"
+    forbidden_claims = (
+        "runtime behavior:",
+        "ownership authority:",
+        "reachable:",
+        "call graph:",
+        "imports executed:",
+        "module loaded:",
+    )
+    for claim in forbidden_claims:
+        assert claim not in rendered.lower()
+        assert claim not in str(payload).lower()
+
+
 def test_short_symbol_lookup_finds_expected_definition(tmp_path):
     view = build_source_navigation(_project_repository(tmp_path), "state_summary")
 
