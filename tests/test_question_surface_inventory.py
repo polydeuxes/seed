@@ -592,6 +592,16 @@ def test_question_family_definition_json_includes_identity_explanation(capsys):
         "display_name": "authority-constrained service ownership",
         "evidence_source": "question_surface_inventory",
         "implementation_reason": "present in bounded ask dispatch map",
+        "question_family_answer_responsibility": {
+            "answer_responsibility": "evaluates service ownership reachability under constrained authority and implementation inventory evidence",
+            "dispatch_surface": "service_ownership_authority",
+            "evidence_source": "question_surface_inventory",
+            "implementation_reason": "present in bounded ask dispatch map",
+            "relationship_status": "connected",
+            "responsible_answering_surface": "service_ownership_authority",
+            "status": "known",
+            "surface_flag": "--service-ownership-authority",
+        },
         "question_family_boundary": "read-only evaluator; no provider acquisition; no execution; no event-ledger writes; no mutation",
         "question_family": "authority-constrained service ownership",
         "relationship_status": "connected",
@@ -621,6 +631,11 @@ def test_question_family_definition_human_renders_identity_explanation(capsys):
         "question_family_boundary: read-only projected-fact view; does not inspect repository files, parse source, or append events"
         in output
     )
+    assert "question_family_answer_responsibility:" in output
+    assert (
+        "responsible_answering_surface: source_navigation"
+        in output
+    )
     assert (
         "implementation_reason: no bounded ask dispatch mapping in current implementation"
         in output
@@ -640,6 +655,15 @@ def test_question_family_definition_unknown_is_bounded_and_does_not_infer(capsys
         "display_name": "made up",
         "evidence_source": "question_surface_inventory",
         "implementation_reason": "unknown question family; no question-surface inventory row exists",
+        "question_family_answer_responsibility": {
+            "answer_responsibility": "unknown",
+            "dispatch_surface": "unknown",
+            "evidence_source": "question_surface_inventory",
+            "implementation_reason": "unknown question family; no question-surface inventory row exists",
+            "relationship_status": "unknown",
+            "responsible_answering_surface": "unknown",
+            "status": "unknown",
+        },
         "question_family_boundary": "unknown question family; no implementation-backed authority boundary exists",
         "question_family": "made up",
         "status": "unknown",
@@ -665,8 +689,21 @@ def test_question_family_definition_guardrails_exclude_behavior_and_inference(ca
     )
     payload = json.loads(capsys.readouterr().out)
     serialized = json.dumps(payload, sort_keys=True).lower()
+    answer_responsibility = payload["question_family_definition"][
+        "question_family_answer_responsibility"
+    ]
     boundary = payload["question_family_definition"]["question_family_boundary"].lower()
 
+    assert answer_responsibility == {
+        "answer_responsibility": "compact operational pressure and visibility summary",
+        "dispatch_surface": "ops_brief",
+        "evidence_source": "question_surface_inventory",
+        "implementation_reason": "present in bounded ask dispatch map",
+        "relationship_status": "connected",
+        "responsible_answering_surface": "ops_brief",
+        "status": "known",
+        "surface_flag": "--ops-brief",
+    }
     assert boundary == (
         "read-only summary assembled from existing audits; no recording; no mutation"
     )
