@@ -269,14 +269,25 @@ def test_projection_stage_explanation_json_composes_only_existing_fields(capsys)
     assert set(explanation) == {
         "projection_stage_definition",
         "projection_stage_boundary",
+        "projection_stage_relationships",
     }
     assert explanation["projection_stage_definition"] == definition
     assert explanation["projection_stage_boundary"] == definition[
         "projection_stage_boundary"
     ]
-    assert "consumes" not in json.dumps(payload)
-    assert "produces" not in json.dumps(payload)
-    assert "influences" not in json.dumps(payload)
+    assert explanation["projection_stage_relationships"] == {
+        "consumes": ["facts"],
+        "produces": ["alias_resolver", "entity_aliases"],
+        "influences": [
+            "measurement_retention",
+            "inference",
+            "fact_conflict_handling",
+            "current_fact_selection",
+        ],
+        "implementation_reason": "relationships recovered from declared projection shape stage fields",
+        "evidence_source": "projection_shape_stage_registry",
+    }
+    assert "does_not_influence" in json.dumps(payload)
 
 
 def test_projection_stage_explanation_human_composes_without_new_evidence(capsys):
@@ -291,6 +302,14 @@ def test_projection_stage_explanation_human_composes_without_new_evidence(capsys
     assert "  projection_stage_boundary:" in output
     assert "    authority_boundary: identity-resolution" in output
     assert "    does_not_influence: event_ledger" in output
+    assert "  projection_stage_relationships:" in output
+    assert "    consumes: facts" in output
+    assert "    produces:" in output
+    assert "      - alias_resolver" in output
+    assert "      - entity_aliases" in output
+    assert "    influences:" in output
+    assert "      - measurement_retention" in output
+    assert "relationships recovered from declared projection shape stage fields" in output
     assert "projection_shape_stage_registry" in output
     assert "Consumes:" not in output
     assert "Produces:" not in output
@@ -317,6 +336,7 @@ def test_projection_stage_explanation_unknown_is_bounded(capsys):
         "implementation_reason": "unknown projection stage; no projection shape stage declaration exists",
     }
     assert "projection_stage_boundary" not in explanation
+    assert "projection_stage_relationships" not in explanation
 
 
 def test_projection_stage_explanation_preserves_existing_definition_and_shape_behavior(capsys):
@@ -363,7 +383,6 @@ def test_projection_stage_explanation_guardrails_exclude_presentation_framework_
     rendered = json.dumps(json.loads(capsys.readouterr().out)).lower()
 
     for forbidden in [
-        "infer",
         "reasoning",
         "normalize",
         "reinterpret",
@@ -374,8 +393,12 @@ def test_projection_stage_explanation_guardrails_exclude_presentation_framework_
         "explainablesubject",
         "ontology",
         "generic composition",
-        "consumes",
-        "produces",
-        "influences",
+        "projection execution",
+        "projection ordering",
+        "runtime behavior",
+        "semantic interpretation",
+        "implementation inference",
+        "relationship inference",
+        "new projection concepts",
     ]:
         assert forbidden not in rendered
