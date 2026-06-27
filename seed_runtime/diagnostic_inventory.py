@@ -708,7 +708,7 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         writes_event_ledger=False,
         mutates_cluster=False,
         reads_diagnostic_facts=False,
-        description="Lists known question families and the existing Seed surfaces that answer them without routing, recommendations, recording, event-ledger writes, projected state, or cluster mutation.",
+        description="Lists known question families and explains their existing diagnostic-surface relationships without routing, recommendations, recording, event-ledger writes, projected state, or cluster mutation.",
     ),
     DiagnosticInventoryEntry(
         name="inquiry_artifacts",
