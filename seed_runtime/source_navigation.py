@@ -27,6 +27,12 @@ SUPPORT_NON_CLAIMS = (
     "support evidence summary only; no truth, runtime behavior, runtime reachability, ownership authority, call graph usage, import execution, module load success, dependency correctness, or semantic relevance claims",
     "uses existing projected source fact/support evidence only; does not inspect repository files, parse source during lookup, or infer beyond source navigation matches",
 )
+REPOSITORY_ARTIFACT_NON_CLAIMS = (
+    "uses projected source facts/support evidence only",
+    "does not inspect repository files or parse source during lookup",
+    "does not claim calls, behavior, capability ownership, runtime reachability, ownership authority, call graph usage, import execution, module load success, dependency correctness, truth, or semantic relevance",
+    "does not infer beyond source navigation matches",
+)
 
 
 @dataclass(frozen=True)
@@ -122,6 +128,19 @@ class RepositoryArtifactSupportExplanation:
 
 
 @dataclass(frozen=True)
+class RepositoryArtifactNonClaimsExplanation:
+    """Consolidated boundary visibility for repository artifact explanations."""
+
+    query: str
+    non_claims: tuple[str, ...]
+
+    def to_json_dict(self) -> dict[str, object]:
+        data = asdict(self)
+        data["non_claims"] = list(self.non_claims)
+        return data
+
+
+@dataclass(frozen=True)
 class SourceNavigationView:
     """Bounded read-only source navigation projection for one query."""
 
@@ -135,6 +154,7 @@ class SourceNavigationView:
         None
     )
     repository_artifact_support: RepositoryArtifactSupportExplanation | None = None
+    repository_artifact_non_claims: RepositoryArtifactNonClaimsExplanation | None = None
 
 
 def build_source_navigation(state: State, query: str) -> SourceNavigationView:
@@ -183,6 +203,7 @@ def build_source_navigation(state: State, query: str) -> SourceNavigationView:
             definitions,
             dependency_mentions,
         ),
+        repository_artifact_non_claims=_non_claims_explanation(normalized_query),
     )
 
 
@@ -203,6 +224,11 @@ def format_source_navigation(view: SourceNavigationView) -> str:
         lines.append("")
     if view.repository_artifact_support is not None:
         lines.extend(_format_support_explanation(view.repository_artifact_support))
+        lines.append("")
+    if view.repository_artifact_non_claims is not None:
+        lines.extend(
+            _format_non_claims_explanation(view.repository_artifact_non_claims)
+        )
         lines.append("")
     if view.definitions:
         lines.append(_section_heading("Definitions", view.definitions, bounded=bounded))
@@ -332,6 +358,11 @@ def source_navigation_json(view: SourceNavigationView) -> dict[str, object]:
             if view.repository_artifact_support is not None
             else None
         ),
+        "repository_artifact_non_claims": (
+            view.repository_artifact_non_claims.to_json_dict()
+            if view.repository_artifact_non_claims is not None
+            else None
+        ),
         "definitions": [_row_json(row) for row in view.definitions],
         "imports": [_row_json(row) for row in view.imports],
     }
@@ -347,6 +378,12 @@ def _row_json(row: SourceNavigationRow) -> dict[str, object]:
         "representative_fact_id": row.representative_fact_id,
         "representative_support_id": row.representative_support_id,
     }
+
+
+def _non_claims_explanation(query: str) -> RepositoryArtifactNonClaimsExplanation:
+    return RepositoryArtifactNonClaimsExplanation(
+        query=query, non_claims=REPOSITORY_ARTIFACT_NON_CLAIMS
+    )
 
 
 def _definition_explanation(
@@ -525,6 +562,18 @@ def _format_definition_explanation(
         "  boundary:",
     ]
     lines.extend(f"    - {item}" for item in explanation.boundary)
+    return lines
+
+
+def _format_non_claims_explanation(
+    explanation: RepositoryArtifactNonClaimsExplanation,
+) -> list[str]:
+    lines = [
+        "Repository Artifact Non-Claims:",
+        f"  query: {explanation.query}",
+        "  this explanation does not claim:",
+    ]
+    lines.extend(f"    - {item}" for item in explanation.non_claims)
     return lines
 
 

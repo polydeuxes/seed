@@ -361,6 +361,81 @@ def test_support_explanation_does_not_claim_truth_runtime_authority_or_semantics
         assert claim not in str(payload).lower()
 
 
+def test_repository_artifact_non_claims_json_includes_consolidated_boundary(tmp_path):
+    view = build_source_navigation(_project_repository(tmp_path), "state_summary")
+
+    payload = source_navigation_json(view)
+
+    assert payload["repository_artifact_non_claims"] == {
+        "query": "state_summary",
+        "non_claims": [
+            "uses projected source facts/support evidence only",
+            "does not inspect repository files or parse source during lookup",
+            "does not claim calls, behavior, capability ownership, runtime "
+            "reachability, ownership authority, call graph usage, import execution, "
+            "module load success, dependency correctness, truth, or semantic relevance",
+            "does not infer beyond source navigation matches",
+        ],
+    }
+
+
+def test_repository_artifact_non_claims_human_output_matches_json(tmp_path):
+    view = build_source_navigation(_project_repository(tmp_path), "state_summary")
+    payload = source_navigation_json(view)["repository_artifact_non_claims"]
+
+    rendered = format_source_navigation(view)
+
+    assert "Repository Artifact Non-Claims:" in rendered
+    assert f"  query: {payload['query']}" in rendered
+    assert "  this explanation does not claim:" in rendered
+    for item in payload["non_claims"]:
+        assert f"    - {item}" in rendered
+
+
+def test_unknown_artifact_non_claims_preserve_identical_boundaries(tmp_path):
+    state = _project_repository(tmp_path)
+    known = source_navigation_json(
+        build_source_navigation(state, "state_summary")
+    )["repository_artifact_non_claims"]
+    unknown = source_navigation_json(
+        build_source_navigation(state, "missing_artifact")
+    )["repository_artifact_non_claims"]
+
+    assert unknown["query"] == "missing_artifact"
+    assert unknown["non_claims"] == known["non_claims"]
+
+
+def test_non_claims_explanation_keeps_guardrailed_terms_bounded(tmp_path):
+    view = build_source_navigation(_project_repository(tmp_path), "state_summary")
+    payload = source_navigation_json(view)["repository_artifact_non_claims"]
+    rendered = format_source_navigation(view)
+    non_claim_text = "\n".join(payload["non_claims"]).lower()
+
+    assert "implementation inference" not in non_claim_text
+    for forbidden_positive_label in (
+        "runtime behavior:",
+        "runtime reachability:",
+        "ownership authority:",
+        "call graph usage:",
+        "semantic interpretation:",
+        "dependency correctness:",
+        "implementation inference:",
+    ):
+        assert forbidden_positive_label not in rendered.lower()
+        assert forbidden_positive_label not in str(payload).lower()
+    for bounded_term in (
+        "runtime reachability",
+        "ownership authority",
+        "call graph usage",
+        "dependency correctness",
+    ):
+        assert (
+            "does not claim" in non_claim_text
+            or "does not infer" in non_claim_text
+        )
+        assert bounded_term in non_claim_text
+
+
 def test_short_symbol_lookup_finds_expected_definition(tmp_path):
     view = build_source_navigation(_project_repository(tmp_path), "state_summary")
 
