@@ -214,6 +214,54 @@ def format_projection_shape(shape: dict[str, object] | None = None) -> str:
     return "\n".join(lines)
 
 
+def build_projection_stage_definition(stage_name: str) -> dict[str, object]:
+    """Return a read-only identity explanation for one ProjectionStage."""
+
+    stage = next((item for item in PROJECTION_SHAPE_STAGES if item.stage == stage_name), None)
+    if stage is None:
+        return {
+            "projection_stage_definition": {
+                "status": "unknown",
+                "stage": stage_name,
+                "stage_identifier": stage_name,
+                "registered_stage": False,
+                "evidence_source": "projection_shape_stage_registry",
+                "implementation_reason": "unknown projection stage; no projection shape stage declaration exists",
+            }
+        }
+
+    return {
+        "projection_stage_definition": {
+            "status": "known",
+            "stage": stage.stage,
+            "stage_identifier": stage.stage,
+            "registered_stage": True,
+            "evidence_source": "projection_shape_stage_registry",
+            "implementation_reason": "identity recovered from the declared projection shape stage registration",
+        }
+    }
+
+
+def projection_stage_definition_json(stage_name: str) -> dict[str, object]:
+    return build_projection_stage_definition(stage_name)
+
+
+def format_projection_stage_definition(stage_name: str) -> str:
+    definition = build_projection_stage_definition(stage_name)[
+        "projection_stage_definition"
+    ]
+    return "\n".join(
+        [
+            f"ProjectionStage definition: {definition['stage']}",
+            f"  status: {definition['status']}",
+            f"  stage_identifier: {definition['stage_identifier']}",
+            f"  registered_stage: {str(definition['registered_stage']).lower()}",
+            f"  implementation_reason: {definition['implementation_reason']}",
+            f"  evidence_source: {definition['evidence_source']}",
+        ]
+    )
+
+
 def _format_values(values: tuple[str, ...]) -> str:
     if not values:
         return " none"
