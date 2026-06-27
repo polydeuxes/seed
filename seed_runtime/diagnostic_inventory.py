@@ -742,6 +742,21 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         description="Explains the implementation-backed identity of one diagnostic surface from diagnostic inventory and shape-audit declarations without execution, planning, interpretation, inference, recording, event-ledger writes, or cluster mutation.",
     ),
     DiagnosticInventoryEntry(
+        name="diagnostic_surface_explanation",
+        cli_flags=("--diagnostic-surface-explanation",),
+        uses_projected_state=False,
+        uses_repo_files=False,
+        supports_json=True,
+        supports_record=False,
+        record_scope="none",
+        emits_diagnostic_facts=False,
+        emits_cluster_facts=False,
+        writes_event_ledger=False,
+        mutates_cluster=False,
+        reads_diagnostic_facts=False,
+        description="Composes existing DiagnosticSurface definition, boundary, and consumption explanation fields without discovering, inferring, reasoning, recording, event-ledger writes, or cluster mutation.",
+    ),
+    DiagnosticInventoryEntry(
         name="diagnostic_inventory",
         cli_flags=("--diagnostic-inventory",),
         uses_projected_state=False,
@@ -875,6 +890,55 @@ def build_diagnostic_surface_definition(
     }
 
 
+def build_diagnostic_surface_explanation(
+    diagnostic_surface: str,
+    entries: tuple[DiagnosticInventoryEntry, ...] = DIAGNOSTIC_INVENTORY,
+) -> dict[str, object]:
+    """Compose existing DiagnosticSurface explanation fields for presentation."""
+
+    definition = build_diagnostic_surface_definition(diagnostic_surface, entries)[
+        "diagnostic_surface_definition"
+    ]
+    return {
+        "diagnostic_surface_explanation": {
+            "diagnostic_surface_definition": definition,
+            "diagnostic_surface_boundary": definition["diagnostic_surface_boundary"],
+            "diagnostic_surface_consumption": definition["diagnostic_surface_consumption"],
+        }
+    }
+
+
+def diagnostic_surface_explanation_json(diagnostic_surface: str) -> dict[str, object]:
+    return build_diagnostic_surface_explanation(diagnostic_surface)
+
+
+def format_diagnostic_surface_explanation(diagnostic_surface: str) -> str:
+    explanation = build_diagnostic_surface_explanation(diagnostic_surface)[
+        "diagnostic_surface_explanation"
+    ]
+    definition = explanation["diagnostic_surface_definition"]
+    flags = definition["cli_flags"]
+    flag_text = ", ".join(flags) if isinstance(flags, list) and flags else "none"
+    return "\n".join(
+        [
+            f"DiagnosticSurface explanation: {definition['diagnostic_name']}",
+            "  definition:",
+            f"    status: {definition['status']}",
+            f"    cli_flags: {flag_text}",
+            f"    description: {definition['description']}",
+            f"    supports_json: {str(definition['supports_json']).lower()}",
+            f"    supports_record: {str(definition['supports_record']).lower()}",
+            f"    record_scope: {definition['record_scope']}",
+            _format_diagnostic_surface_boundary(
+                explanation["diagnostic_surface_boundary"], indent="    "
+            ),
+            _format_diagnostic_surface_consumption(
+                explanation["diagnostic_surface_consumption"], indent="    "
+            ),
+        ]
+    )
+
+
 def diagnostic_surface_definition_json(diagnostic_surface: str) -> dict[str, object]:
     return build_diagnostic_surface_definition(diagnostic_surface)
 
@@ -959,26 +1023,26 @@ def _diagnostic_surface_consumption(entry: DiagnosticInventoryEntry) -> dict[str
 
 
 
-def _format_diagnostic_surface_boundary(boundary: object) -> str:
+def _format_diagnostic_surface_boundary(boundary: object, indent: str = "  ") -> str:
     if not isinstance(boundary, dict):
-        return "  diagnostic_surface_boundary: unknown"
+        return f"{indent}diagnostic_surface_boundary: unknown"
     statements = boundary.get("statements")
     if not isinstance(statements, list) or not statements:
         statement_text = "unknown"
     else:
         statement_text = "; ".join(str(statement) for statement in statements)
-    return f"  diagnostic_surface_boundary: {statement_text}"
+    return f"{indent}diagnostic_surface_boundary: {statement_text}"
 
 
 
-def _format_diagnostic_surface_consumption(consumption: object) -> str:
+def _format_diagnostic_surface_consumption(consumption: object, indent: str = "  ") -> str:
     if not isinstance(consumption, dict):
-        return "  diagnostic_surface_consumption: unknown"
+        return f"{indent}diagnostic_surface_consumption: unknown"
     declared = consumption.get("declared_consumption")
     if not isinstance(declared, dict) or not declared:
-        return "  diagnostic_surface_consumption: unknown"
+        return f"{indent}diagnostic_surface_consumption: unknown"
     items = [f"{key}={str(value).lower()}" for key, value in declared.items()]
-    return "  diagnostic_surface_consumption: " + "; ".join(items)
+    return f"{indent}diagnostic_surface_consumption: " + "; ".join(items)
 
 
 

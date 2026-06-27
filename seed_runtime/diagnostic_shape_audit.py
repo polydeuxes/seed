@@ -230,6 +230,14 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         json_function="diagnostic_surface_definition_json",
         cli_flags=("--diagnostic-surface-definition",),
     ),
+    "diagnostic_surface_explanation": DiagnosticImplementationSpec(
+        name="diagnostic_surface_explanation",
+        module_path="seed_runtime/diagnostic_inventory.py",
+        build_function="build_diagnostic_surface_explanation",
+        format_function="format_diagnostic_surface_explanation",
+        json_function="diagnostic_surface_explanation_json",
+        cli_flags=("--diagnostic-surface-explanation",),
+    ),
     "diagnostic_inventory": DiagnosticImplementationSpec(
         name="diagnostic_inventory",
         module_path="seed_runtime/diagnostic_inventory.py",
