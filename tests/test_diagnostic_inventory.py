@@ -265,6 +265,16 @@ def test_diagnostic_surface_definition_json_includes_identity_explanation(capsys
         "evidence_source": "diagnostic_inventory",
         "implementation_reason": "boundary recovered from declared diagnostic inventory fields",
     }
+    assert definition["diagnostic_surface_consumption"] == {
+        "status": "known",
+        "declared_consumption": {
+            "uses_projected_state": False,
+            "uses_repo_files": False,
+            "reads_diagnostic_facts": False,
+        },
+        "evidence_source": "diagnostic_inventory",
+        "implementation_reason": "consumption recovered from declared diagnostic inventory fields",
+    }
     assert definition["diagnostic_inventory_registration"] == "present"
     assert definition["shape_registration_status"] == "present"
 
@@ -287,6 +297,10 @@ def test_diagnostic_surface_definition_human_renders_identity_explanation(capsys
         "does not use projected state; does not use repository files; "
         "does not emit diagnostic facts; does not emit cluster facts; "
         "does not read diagnostic facts"
+    ) in output
+    assert (
+        "  diagnostic_surface_consumption: uses_projected_state=false; "
+        "uses_repo_files=false; reads_diagnostic_facts=false"
     ) in output
     assert "  diagnostic_inventory_registration: present" in output
     assert "  shape_registration_status: present" in output
@@ -311,6 +325,12 @@ def test_diagnostic_surface_definition_unknown_is_bounded(capsys):
             "evidence_source": "diagnostic_inventory",
             "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
         },
+        "diagnostic_surface_consumption": {
+            "status": "unknown",
+            "declared_consumption": {},
+            "evidence_source": "diagnostic_inventory",
+            "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
+        },
         "diagnostic_inventory_registration": "absent",
         "shape_registration_status": "unknown",
         "evidence_source": "diagnostic_inventory",
@@ -329,6 +349,29 @@ def test_diagnostic_surface_definition_does_not_change_inventory_output(capsys):
     assert _entry("diagnostic_surface_definition").record_scope == "none"
     assert not _entry("diagnostic_surface_definition").mutates_cluster
     assert "diagnostic_surface_boundary" not in payload[0]
+    assert "diagnostic_surface_consumption" not in payload[0]
+
+
+def test_diagnostic_surface_consumption_json_uses_inventory_declarations(capsys):
+    assert (
+        seed_local.main(
+            ["--diagnostic-surface-definition", "privilege_discovery", "--json"]
+        )
+        == 0
+    )
+
+    definition = json.loads(capsys.readouterr().out)["diagnostic_surface_definition"]
+
+    assert definition["diagnostic_surface_consumption"] == {
+        "status": "known",
+        "declared_consumption": {
+            "uses_projected_state": True,
+            "uses_repo_files": False,
+            "reads_diagnostic_facts": True,
+        },
+        "evidence_source": "diagnostic_inventory",
+        "implementation_reason": "consumption recovered from declared diagnostic inventory fields",
+    }
 
 
 def test_diagnostic_surface_definition_guardrails_exclude_runtime_planning_and_inference(capsys):
@@ -343,10 +386,12 @@ def test_diagnostic_surface_definition_guardrails_exclude_runtime_planning_and_i
 
     for forbidden in [
         "runtime execution",
+        "diagnostic execution",
         "planner behavior",
         "semantic interpretation",
         "implementation inference",
+        "consumption inference",
         "future execution",
-        "new diagnostic concepts",
+        "new relationship concepts",
     ]:
         assert forbidden not in rendered

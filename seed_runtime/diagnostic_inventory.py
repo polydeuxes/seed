@@ -842,6 +842,12 @@ def build_diagnostic_surface_definition(
                     "evidence_source": "diagnostic_inventory",
                     "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
                 },
+                "diagnostic_surface_consumption": {
+                    "status": "unknown",
+                    "declared_consumption": {},
+                    "evidence_source": "diagnostic_inventory",
+                    "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
+                },
                 "diagnostic_inventory_registration": "absent",
                 "shape_registration_status": "unknown",
                 "evidence_source": "diagnostic_inventory",
@@ -859,6 +865,7 @@ def build_diagnostic_surface_definition(
             "supports_record": entry.supports_record,
             "record_scope": entry.record_scope,
             "diagnostic_surface_boundary": _diagnostic_surface_boundary(entry),
+            "diagnostic_surface_consumption": _diagnostic_surface_consumption(entry),
             "diagnostic_inventory_registration": "present",
             "shape_registration_status": _shape_registration_status(entry.name),
             "evidence_source": "diagnostic_inventory + diagnostic_shape_audit",
@@ -887,6 +894,7 @@ def format_diagnostic_surface_definition(diagnostic_surface: str) -> str:
             f"  supports_record: {str(definition['supports_record']).lower()}",
             f"  record_scope: {definition['record_scope']}",
             _format_diagnostic_surface_boundary(definition["diagnostic_surface_boundary"]),
+            _format_diagnostic_surface_consumption(definition["diagnostic_surface_consumption"]),
             f"  diagnostic_inventory_registration: {definition['diagnostic_inventory_registration']}",
             f"  shape_registration_status: {definition['shape_registration_status']}",
             f"  implementation_reason: {definition['implementation_reason']}",
@@ -936,6 +944,20 @@ def _diagnostic_surface_boundary(entry: DiagnosticInventoryEntry) -> dict[str, o
     }
 
 
+def _diagnostic_surface_consumption(entry: DiagnosticInventoryEntry) -> dict[str, object]:
+    return {
+        "status": "known",
+        "declared_consumption": {
+            "uses_projected_state": entry.uses_projected_state,
+            "uses_repo_files": entry.uses_repo_files,
+            "reads_diagnostic_facts": entry.reads_diagnostic_facts,
+        },
+        "evidence_source": "diagnostic_inventory",
+        "implementation_reason": "consumption recovered from declared diagnostic inventory fields",
+    }
+
+
+
 def _format_diagnostic_surface_boundary(boundary: object) -> str:
     if not isinstance(boundary, dict):
         return "  diagnostic_surface_boundary: unknown"
@@ -945,6 +967,18 @@ def _format_diagnostic_surface_boundary(boundary: object) -> str:
     else:
         statement_text = "; ".join(str(statement) for statement in statements)
     return f"  diagnostic_surface_boundary: {statement_text}"
+
+
+
+def _format_diagnostic_surface_consumption(consumption: object) -> str:
+    if not isinstance(consumption, dict):
+        return "  diagnostic_surface_consumption: unknown"
+    declared = consumption.get("declared_consumption")
+    if not isinstance(declared, dict) or not declared:
+        return "  diagnostic_surface_consumption: unknown"
+    items = [f"{key}={str(value).lower()}" for key, value in declared.items()]
+    return "  diagnostic_surface_consumption: " + "; ".join(items)
+
 
 
 def _shape_registration_status(diagnostic_name: str) -> str:
