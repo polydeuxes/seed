@@ -475,6 +475,7 @@ def build_question_family_definition(
                 "bounded_status": "unknown",
                 "dispatch_surface": "unknown",
                 "answer_responsibility": "unknown",
+                "question_family_boundary": "unknown question family; no implementation-backed authority boundary exists",
                 "implementation_reason": "unknown question family; no question-surface inventory row exists",
                 "evidence_source": "question_surface_inventory",
             },
@@ -493,6 +494,7 @@ def build_question_family_definition(
             "surface_flag": row.surface_flag,
             "dispatch_surface": row.dispatch_surface or "none",
             "answer_responsibility": row.answer_responsibility,
+            "question_family_boundary": row.authority_boundary,
             "implementation_reason": row.implementation_reason,
             "relationship_status": row.relationship_status,
             "evidence_source": "question_surface_inventory",
@@ -520,6 +522,7 @@ def format_question_family_definition(
         f"  bounded_status: {definition['bounded_status']}",
         f"  dispatch_surface: {definition['dispatch_surface']}",
         f"  answer_responsibility: {definition['answer_responsibility']}",
+        f"  question_family_boundary: {definition['question_family_boundary']}",
         f"  implementation_reason: {definition['implementation_reason']}",
         f"  evidence_source: {definition['evidence_source']}",
     ]
@@ -527,5 +530,5 @@ def format_question_family_definition(
         lines.insert(
             5, f"  surface: {definition['surface']} ({definition['surface_flag']})"
         )
-        lines.insert(8, f"  relationship_status: {definition['relationship_status']}")
+        lines.insert(9, f"  relationship_status: {definition['relationship_status']}")
     return "\n".join(lines)
