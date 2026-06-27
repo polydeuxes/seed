@@ -248,6 +248,23 @@ def test_diagnostic_surface_definition_json_includes_identity_explanation(capsys
     assert definition["supports_json"] is True
     assert definition["supports_record"] is False
     assert definition["record_scope"] == "none"
+    assert definition["diagnostic_surface_boundary"] == {
+        "status": "known",
+        "statements": [
+            "read-only",
+            "does not record",
+            "record_scope=none",
+            "does not write event ledger",
+            "does not mutate cluster",
+            "does not use projected state",
+            "does not use repository files",
+            "does not emit diagnostic facts",
+            "does not emit cluster facts",
+            "does not read diagnostic facts",
+        ],
+        "evidence_source": "diagnostic_inventory",
+        "implementation_reason": "boundary recovered from declared diagnostic inventory fields",
+    }
     assert definition["diagnostic_inventory_registration"] == "present"
     assert definition["shape_registration_status"] == "present"
 
@@ -264,6 +281,13 @@ def test_diagnostic_surface_definition_human_renders_identity_explanation(capsys
     assert "  supports_json: true" in output
     assert "  supports_record: false" in output
     assert "  record_scope: none" in output
+    assert (
+        "  diagnostic_surface_boundary: read-only; does not record; "
+        "record_scope=none; does not write event ledger; does not mutate cluster; "
+        "does not use projected state; does not use repository files; "
+        "does not emit diagnostic facts; does not emit cluster facts; "
+        "does not read diagnostic facts"
+    ) in output
     assert "  diagnostic_inventory_registration: present" in output
     assert "  shape_registration_status: present" in output
 
@@ -281,6 +305,12 @@ def test_diagnostic_surface_definition_unknown_is_bounded(capsys):
         "supports_json": "unknown",
         "supports_record": "unknown",
         "record_scope": "unknown",
+        "diagnostic_surface_boundary": {
+            "status": "unknown",
+            "statements": [],
+            "evidence_source": "diagnostic_inventory",
+            "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
+        },
         "diagnostic_inventory_registration": "absent",
         "shape_registration_status": "unknown",
         "evidence_source": "diagnostic_inventory",
@@ -298,6 +328,7 @@ def test_diagnostic_surface_definition_does_not_change_inventory_output(capsys):
     assert _entry("diagnostic_surface_definition").supports_json is True
     assert _entry("diagnostic_surface_definition").record_scope == "none"
     assert not _entry("diagnostic_surface_definition").mutates_cluster
+    assert "diagnostic_surface_boundary" not in payload[0]
 
 
 def test_diagnostic_surface_definition_guardrails_exclude_runtime_planning_and_inference(capsys):
