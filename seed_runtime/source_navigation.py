@@ -23,6 +23,10 @@ DEPENDENCY_NON_CLAIMS = (
     "import dependency evidence only; no runtime behavior, runtime reachability, ownership authority, call graph usage, import execution, or module load success claims",
     "uses projected source import facts only; does not inspect repository files, parse source during lookup, or validate dependency correctness",
 )
+SUPPORT_NON_CLAIMS = (
+    "support evidence summary only; no truth, runtime behavior, runtime reachability, ownership authority, call graph usage, import execution, module load success, dependency correctness, or semantic relevance claims",
+    "uses existing projected source fact/support evidence only; does not inspect repository files, parse source during lookup, or infer beyond source navigation matches",
+)
 
 
 @dataclass(frozen=True)
@@ -95,6 +99,29 @@ class RepositoryArtifactDependencyExplanation:
 
 
 @dataclass(frozen=True)
+class RepositoryArtifactSupportExplanation:
+    """Support-evidence visibility for one repository artifact query."""
+
+    query: str
+    status: Literal["supported", "unsupported"]
+    definition_support_count: int
+    dependency_support_count: int
+    total_support_count: int
+    representative_definition_fact_id: str | None
+    representative_definition_support_id: str | None
+    representative_dependency_fact_id: str | None
+    representative_dependency_support_id: str | None
+    source_paths: tuple[str, ...]
+    boundary: tuple[str, ...]
+
+    def to_json_dict(self) -> dict[str, object]:
+        data = asdict(self)
+        data["source_paths"] = list(self.source_paths)
+        data["boundary"] = list(self.boundary)
+        return data
+
+
+@dataclass(frozen=True)
 class SourceNavigationView:
     """Bounded read-only source navigation projection for one query."""
 
@@ -107,6 +134,7 @@ class SourceNavigationView:
     repository_artifact_dependencies: RepositoryArtifactDependencyExplanation | None = (
         None
     )
+    repository_artifact_support: RepositoryArtifactSupportExplanation | None = None
 
 
 def build_source_navigation(state: State, query: str) -> SourceNavigationView:
@@ -150,6 +178,11 @@ def build_source_navigation(state: State, query: str) -> SourceNavigationView:
             dependency_mentions,
             bounded=bounded,
         ),
+        repository_artifact_support=_support_explanation(
+            normalized_query,
+            definitions,
+            dependency_mentions,
+        ),
     )
 
 
@@ -167,6 +200,9 @@ def format_source_navigation(view: SourceNavigationView) -> str:
         lines.extend(
             _format_dependency_explanation(view.repository_artifact_dependencies)
         )
+        lines.append("")
+    if view.repository_artifact_support is not None:
+        lines.extend(_format_support_explanation(view.repository_artifact_support))
         lines.append("")
     if view.definitions:
         lines.append(_section_heading("Definitions", view.definitions, bounded=bounded))
@@ -215,11 +251,11 @@ def _matches(row: SourceNavigationRow, query: str) -> bool:
     return False
 
 
-
 def _dependency_mentions(row: SourceNavigationRow, query: str) -> bool:
     if row.predicate != "imports":
         return False
     return query == row.value or query == _final_segment(row.value)
+
 
 def _final_segment(value: str) -> str:
     return value.rsplit(".", 1)[-1]
@@ -291,6 +327,11 @@ def source_navigation_json(view: SourceNavigationView) -> dict[str, object]:
             if view.repository_artifact_dependencies is not None
             else None
         ),
+        "repository_artifact_support": (
+            view.repository_artifact_support.to_json_dict()
+            if view.repository_artifact_support is not None
+            else None
+        ),
         "definitions": [_row_json(row) for row in view.definitions],
         "imports": [_row_json(row) for row in view.imports],
     }
@@ -335,7 +376,6 @@ def _definition_explanation(
     )
 
 
-
 def _dependency_explanation(
     query: str, mentions: list[SourceNavigationRow], *, bounded: bool
 ) -> RepositoryArtifactDependencyExplanation:
@@ -346,7 +386,9 @@ def _dependency_explanation(
             dependency_value=row.value,
             source_path=row.path,
             representative_fact_id=None if bounded else row.representative_fact_id,
-            representative_support_id=None if bounded else row.representative_support_id,
+            representative_support_id=(
+                None if bounded else row.representative_support_id
+            ),
             support_count=row.support_count,
             boundary=DEPENDENCY_NON_CLAIMS,
         )
@@ -357,6 +399,56 @@ def _dependency_explanation(
         status="mentioned" if dependencies else "unknown",
         dependencies=dependencies,
         boundary=DEPENDENCY_NON_CLAIMS,
+    )
+
+
+def _support_explanation(
+    query: str,
+    definitions: list[SourceNavigationRow],
+    dependency_mentions: list[SourceNavigationRow],
+) -> RepositoryArtifactSupportExplanation:
+    definition_support_count = sum(row.support_count for row in definitions)
+    dependency_support_count = sum(row.support_count for row in dependency_mentions)
+    definition_row = definitions[0] if definitions else None
+    dependency_row = dependency_mentions[0] if dependency_mentions else None
+    source_paths = tuple(
+        sorted(
+            {
+                row.path
+                for row in [*definitions, *dependency_mentions]
+                if row.path is not None
+            }
+        )
+    )
+    total_support_count = definition_support_count + dependency_support_count
+    return RepositoryArtifactSupportExplanation(
+        query=query,
+        status="supported" if total_support_count else "unsupported",
+        definition_support_count=definition_support_count,
+        dependency_support_count=dependency_support_count,
+        total_support_count=total_support_count,
+        representative_definition_fact_id=(
+            definition_row.representative_fact_id
+            if definition_row is not None
+            else None
+        ),
+        representative_definition_support_id=(
+            definition_row.representative_support_id
+            if definition_row is not None
+            else None
+        ),
+        representative_dependency_fact_id=(
+            dependency_row.representative_fact_id
+            if dependency_row is not None
+            else None
+        ),
+        representative_dependency_support_id=(
+            dependency_row.representative_support_id
+            if dependency_row is not None
+            else None
+        ),
+        source_paths=source_paths,
+        boundary=SUPPORT_NON_CLAIMS,
     )
 
 
@@ -397,6 +489,7 @@ def _format_dependency_explanation(
     lines.extend(f"    - {item}" for item in explanation.boundary)
     return lines
 
+
 def _format_definition_explanation(
     explanation: RepositoryArtifactDefinitionExplanation,
 ) -> list[str]:
@@ -431,5 +524,50 @@ def _format_definition_explanation(
         ),
         "  boundary:",
     ]
+    lines.extend(f"    - {item}" for item in explanation.boundary)
+    return lines
+
+
+def _format_support_explanation(
+    explanation: RepositoryArtifactSupportExplanation,
+) -> list[str]:
+    lines = [
+        "Repository Artifact Support:",
+        f"  query: {explanation.query}",
+        f"  status: {explanation.status}",
+        f"  definition support facts: {explanation.definition_support_count}",
+        f"  dependency support facts: {explanation.dependency_support_count}",
+        f"  total support facts: {explanation.total_support_count}",
+        "  representative definition source fact: "
+        + (
+            explanation.representative_definition_fact_id
+            if explanation.representative_definition_fact_id is not None
+            else "unknown"
+        ),
+        "  representative definition source support: "
+        + (
+            explanation.representative_definition_support_id
+            if explanation.representative_definition_support_id is not None
+            else "unknown"
+        ),
+        "  representative dependency source fact: "
+        + (
+            explanation.representative_dependency_fact_id
+            if explanation.representative_dependency_fact_id is not None
+            else "unknown"
+        ),
+        "  representative dependency source support: "
+        + (
+            explanation.representative_dependency_support_id
+            if explanation.representative_dependency_support_id is not None
+            else "unknown"
+        ),
+        "  source paths represented:",
+    ]
+    if explanation.source_paths:
+        lines.extend(f"    - {path}" for path in explanation.source_paths)
+    else:
+        lines.append("    - none")
+    lines.append("  boundary:")
     lines.extend(f"    - {item}" for item in explanation.boundary)
     return lines
