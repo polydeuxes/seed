@@ -250,3 +250,132 @@ def test_projection_stage_definition_guardrails_exclude_execution_planning_and_i
     direct = projection_stage_definition_json("alias_projection")
     human = format_projection_stage_definition("alias_projection")
     assert direct["projection_stage_definition"]["stage"] in human
+
+
+def test_projection_stage_explanation_json_composes_only_existing_fields(capsys):
+    assert (
+        seed_local.main(
+            ["--projection-stage-explanation", "alias_projection", "--json"]
+        )
+        == 0
+    )
+
+    payload = json.loads(capsys.readouterr().out)
+    explanation = payload["projection_stage_explanation"]
+    definition = projection_stage_definition_json("alias_projection")[
+        "projection_stage_definition"
+    ]
+
+    assert set(explanation) == {
+        "projection_stage_definition",
+        "projection_stage_boundary",
+    }
+    assert explanation["projection_stage_definition"] == definition
+    assert explanation["projection_stage_boundary"] == definition[
+        "projection_stage_boundary"
+    ]
+    assert "consumes" not in json.dumps(payload)
+    assert "produces" not in json.dumps(payload)
+    assert "influences" not in json.dumps(payload)
+
+
+def test_projection_stage_explanation_human_composes_without_new_evidence(capsys):
+    assert seed_local.main(["--projection-stage-explanation", "alias_projection"]) == 0
+
+    output = capsys.readouterr().out
+
+    assert "ProjectionStage explanation: alias_projection" in output
+    assert "  projection_stage_definition:" in output
+    assert "    status: known" in output
+    assert "    stage_identifier: alias_projection" in output
+    assert "  projection_stage_boundary:" in output
+    assert "    authority_boundary: identity-resolution" in output
+    assert "    does_not_influence: event_ledger" in output
+    assert "projection_shape_stage_registry" in output
+    assert "Consumes:" not in output
+    assert "Produces:" not in output
+    assert "Influences:" not in output
+    assert "Authority Boundary:" not in output
+
+
+def test_projection_stage_explanation_unknown_is_bounded(capsys):
+    assert (
+        seed_local.main(["--projection-stage-explanation", "missing_stage", "--json"])
+        == 0
+    )
+
+    payload = json.loads(capsys.readouterr().out)
+    explanation = payload["projection_stage_explanation"]
+
+    assert set(explanation) == {"projection_stage_definition"}
+    assert explanation["projection_stage_definition"] == {
+        "status": "unknown",
+        "stage": "missing_stage",
+        "stage_identifier": "missing_stage",
+        "registered_stage": False,
+        "evidence_source": "projection_shape_stage_registry",
+        "implementation_reason": "unknown projection stage; no projection shape stage declaration exists",
+    }
+    assert "projection_stage_boundary" not in explanation
+
+
+def test_projection_stage_explanation_preserves_existing_definition_and_shape_behavior(capsys):
+    expected_definition = projection_stage_definition_json("alias_projection")
+    expected_shape = projection_shape_json()
+    expected_human_shape = format_projection_shape()
+
+    assert seed_local.main(["--projection-stage-explanation", "alias_projection"]) == 0
+    capsys.readouterr()
+
+    assert projection_stage_definition_json("alias_projection") == expected_definition
+    assert projection_shape_json() == expected_shape
+    assert format_projection_shape() == expected_human_shape
+
+
+def test_projection_stage_explanation_visibility_registration():
+    entry = next(e for e in DIAGNOSTIC_INVENTORY if e.name == "projection_stage_explanation")
+    assert entry.cli_flags == ("--projection-stage-explanation",)
+    assert entry.supports_json is True
+    assert entry.supports_record is False
+    assert entry.record_scope == "none"
+    assert entry.writes_event_ledger is False
+    assert entry.mutates_cluster is False
+
+
+def test_projection_stage_explanation_shape_registration_consistency():
+    rows = [
+        r
+        for r in build_diagnostic_shape_audit()
+        if r.diagnostic == "projection_stage_explanation"
+    ]
+    assert rows
+    assert {row.status for row in rows} == {"consistent"}
+
+
+def test_projection_stage_explanation_guardrails_exclude_presentation_framework_and_reasoning(capsys):
+    assert (
+        seed_local.main(
+            ["--projection-stage-explanation", "alias_projection", "--json"]
+        )
+        == 0
+    )
+
+    rendered = json.dumps(json.loads(capsys.readouterr().out)).lower()
+
+    for forbidden in [
+        "infer",
+        "reasoning",
+        "normalize",
+        "reinterpret",
+        "recommend",
+        "semantic meaning",
+        "implementation not already present",
+        "presentation framework",
+        "explainablesubject",
+        "ontology",
+        "generic composition",
+        "consumes",
+        "produces",
+        "influences",
+    ]:
+        assert forbidden not in rendered

@@ -250,6 +250,56 @@ def projection_stage_definition_json(stage_name: str) -> dict[str, object]:
     return build_projection_stage_definition(stage_name)
 
 
+def build_projection_stage_explanation(stage_name: str) -> dict[str, object]:
+    """Compose existing ProjectionStage explanation fields without adding evidence."""
+
+    definition = build_projection_stage_definition(stage_name)[
+        "projection_stage_definition"
+    ]
+    explanation: dict[str, object] = {
+        "projection_stage_definition": definition,
+    }
+    if "projection_stage_boundary" in definition:
+        explanation["projection_stage_boundary"] = definition[
+            "projection_stage_boundary"
+        ]
+    return {"projection_stage_explanation": explanation}
+
+
+def projection_stage_explanation_json(stage_name: str) -> dict[str, object]:
+    return build_projection_stage_explanation(stage_name)
+
+
+def format_projection_stage_explanation(stage_name: str) -> str:
+    explanation = build_projection_stage_explanation(stage_name)[
+        "projection_stage_explanation"
+    ]
+    definition = explanation["projection_stage_definition"]
+    lines = [
+        f"ProjectionStage explanation: {definition['stage']}",
+        "  projection_stage_definition:",
+        f"    status: {definition['status']}",
+        f"    stage_identifier: {definition['stage_identifier']}",
+        f"    registered_stage: {str(definition['registered_stage']).lower()}",
+    ]
+    boundary = explanation.get("projection_stage_boundary")
+    if isinstance(boundary, dict):
+        lines.extend(
+            [
+                "  projection_stage_boundary:",
+                f"    authority_boundary: {boundary['authority_boundary']}",
+                f"    does_not_influence:{_format_values(tuple(boundary.get('does_not_influence', [])))}",
+            ]
+        )
+    lines.extend(
+        [
+            f"    implementation_reason: {definition['implementation_reason']}",
+            f"    evidence_source: {definition['evidence_source']}",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def format_projection_stage_definition(stage_name: str) -> str:
     definition = build_projection_stage_definition(stage_name)[
         "projection_stage_definition"

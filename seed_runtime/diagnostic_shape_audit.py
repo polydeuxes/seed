@@ -656,6 +656,14 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         json_function="projection_stage_definition_json",
         cli_flags=("--projection-stage-definition",),
     ),
+    "projection_stage_explanation": DiagnosticImplementationSpec(
+        name="projection_stage_explanation",
+        module_path="seed_runtime/projection_shape.py",
+        build_function="build_projection_stage_explanation",
+        format_function="format_projection_stage_explanation",
+        json_function="projection_stage_explanation_json",
+        cli_flags=("--projection-stage-explanation",),
+    ),
     "question_surface_inventory": DiagnosticImplementationSpec(
         name="question_surface_inventory",
         module_path="seed_runtime/question_surface_inventory.py",
