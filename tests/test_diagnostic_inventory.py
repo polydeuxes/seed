@@ -228,3 +228,94 @@ def test_implementation_trait_characterization_registered_in_diagnostic_inventor
     assert not entry.emits_diagnostic_facts
     assert not entry.emits_cluster_facts
 
+
+
+def test_diagnostic_surface_definition_json_includes_identity_explanation(capsys):
+    assert (
+        seed_local.main(
+            ["--diagnostic-surface-definition", "diagnostic_shape_audit", "--json"]
+        )
+        == 0
+    )
+
+    payload = json.loads(capsys.readouterr().out)
+    definition = payload["diagnostic_surface_definition"]
+
+    assert definition["status"] == "known"
+    assert definition["diagnostic_name"] == "diagnostic_shape_audit"
+    assert definition["cli_flags"] == ["--diagnostic-shape-audit"]
+    assert definition["description"] == _entry("diagnostic_shape_audit").description
+    assert definition["supports_json"] is True
+    assert definition["supports_record"] is False
+    assert definition["record_scope"] == "none"
+    assert definition["diagnostic_inventory_registration"] == "present"
+    assert definition["shape_registration_status"] == "present"
+
+
+def test_diagnostic_surface_definition_human_renders_identity_explanation(capsys):
+    assert seed_local.main(["--diagnostic-surface-definition", "diagnostic_shape_audit"]) == 0
+
+    output = capsys.readouterr().out
+
+    assert "DiagnosticSurface definition: diagnostic_shape_audit" in output
+    assert "  status: known" in output
+    assert "  cli_flags: --diagnostic-shape-audit" in output
+    assert f"  description: {_entry('diagnostic_shape_audit').description}" in output
+    assert "  supports_json: true" in output
+    assert "  supports_record: false" in output
+    assert "  record_scope: none" in output
+    assert "  diagnostic_inventory_registration: present" in output
+    assert "  shape_registration_status: present" in output
+
+
+def test_diagnostic_surface_definition_unknown_is_bounded(capsys):
+    assert seed_local.main(["--diagnostic-surface-definition", "missing_surface", "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["diagnostic_surface_definition"] == {
+        "status": "unknown",
+        "diagnostic_name": "missing_surface",
+        "cli_flags": [],
+        "description": "unknown",
+        "supports_json": "unknown",
+        "supports_record": "unknown",
+        "record_scope": "unknown",
+        "diagnostic_inventory_registration": "absent",
+        "shape_registration_status": "unknown",
+        "evidence_source": "diagnostic_inventory",
+        "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
+    }
+
+
+def test_diagnostic_surface_definition_does_not_change_inventory_output(capsys):
+    assert seed_local.main(["--diagnostic-inventory", "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+
+    assert isinstance(payload, list)
+    assert "diagnostic_surface_definition" not in payload[0]
+    assert _entry("diagnostic_surface_definition").supports_json is True
+    assert _entry("diagnostic_surface_definition").record_scope == "none"
+    assert not _entry("diagnostic_surface_definition").mutates_cluster
+
+
+def test_diagnostic_surface_definition_guardrails_exclude_runtime_planning_and_inference(capsys):
+    assert (
+        seed_local.main(
+            ["--diagnostic-surface-definition", "diagnostic_shape_audit", "--json"]
+        )
+        == 0
+    )
+
+    rendered = json.dumps(json.loads(capsys.readouterr().out)).lower()
+
+    for forbidden in [
+        "runtime execution",
+        "planner behavior",
+        "semantic interpretation",
+        "implementation inference",
+        "future execution",
+        "new diagnostic concepts",
+    ]:
+        assert forbidden not in rendered
