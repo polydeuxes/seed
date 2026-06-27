@@ -150,7 +150,9 @@ from seed_runtime.question_surface_inventory import (
     BOUNDED_ASK_REQUIRED_SURFACE_ARGS,
     bounded_status_for_question_family,
     build_question_surface_inventory,
+    format_question_family_definition,
     format_question_surface_inventory,
+    question_family_definition_json,
     question_surface_inventory_json,
 )
 from seed_runtime.projection_shape import (
@@ -1256,6 +1258,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--question-families",
         action="store_true",
         help="list known question families and the existing Seed surfaces that answer them",
+    )
+    parser.add_argument(
+        "--question-family-definition",
+        metavar="QUESTION_FAMILY",
+        help="explain the implementation-backed identity of one QuestionFamily",
     )
     parser.add_argument(
         "--diagnostic-shape-audit",
@@ -2470,6 +2477,7 @@ def validate_lifecycle_args(
         or args.capability_needs
         or args.diagnostic_inventory
         or args.question_surface_inventory
+        or args.question_family_definition
         or args.container_ownership_authority
         or args.service_ownership_authority
         or args.listener_endpoint_authority
@@ -2512,7 +2520,11 @@ def validate_lifecycle_args(
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --question-surface-inventory, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, or --audit-compare, or --projection-shape"
+            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --question-surface-inventory, --question-family-definition, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, or --audit-compare, or --projection-shape"
+        )
+    if args.question_family_definition and args.message:
+        parser.error(
+            "--question-family-definition does not accept a free-text question argument"
         )
     if args.question_surface_inventory and args.message and args.message != ["ask"]:
         parser.error(
@@ -6360,6 +6372,24 @@ def main(argv: list[str] | None = None) -> int:
             print(format_question_surface_inventory(rows))
         return 0
 
+    if args.question_family_definition:
+        rows = build_question_surface_inventory()
+        if args.json_output:
+            print(
+                json.dumps(
+                    question_family_definition_json(
+                        args.question_family_definition, rows
+                    ),
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+        else:
+            print(
+                format_question_family_definition(args.question_family_definition, rows)
+            )
+        return 0
+
     if args.documentation_structure:
         options = DocumentationStructureOptions(
             selection_filters=DocumentationStructureSelectionFilters(
@@ -6406,7 +6436,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.projected_state_consumers:
         rows = build_projected_state_consumers()
         if args.json_output:
-            print(json.dumps(projected_state_consumers_json(rows), indent=2, sort_keys=True))
+            print(
+                json.dumps(
+                    projected_state_consumers_json(rows), indent=2, sort_keys=True
+                )
+            )
         else:
             print(format_projected_state_consumers(rows))
         return 0

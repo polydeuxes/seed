@@ -12,6 +12,7 @@ from seed_runtime.question_surface_inventory import (
     BOUNDED_ASK_DISPATCH_SURFACES,
     bounded_ask_inventory_findings,
     build_question_surface_inventory,
+    question_surface_inventory_json,
 )
 
 
@@ -152,6 +153,7 @@ def test_question_surface_inventory_registration_is_read_only_and_static():
     assert entry.cli_flags == (
         "--question-surface-inventory",
         "ask --question-families",
+        "--question-family-definition",
     )
     assert entry.supports_json is True
     assert entry.supports_record is False
@@ -184,10 +186,7 @@ def test_question_surface_rows_connect_to_diagnostic_inventory_and_shape_specs()
 
 
 def test_canonical_surface_aliases_are_exposed_without_inference():
-    rows = {
-        row.question_family: row
-        for row in build_question_surface_inventory()
-    }
+    rows = {row.question_family: row for row in build_question_surface_inventory()}
     row = rows["knowledge reachability"]
 
     assert row.dispatch_surface == "knowledge_reachability_audit"
@@ -202,10 +201,7 @@ def test_canonical_surface_aliases_are_exposed_without_inference():
 
 
 def test_representative_relationship_surfaces_validate_successfully():
-    rows = {
-        row.question_family: row
-        for row in build_question_surface_inventory()
-    }
+    rows = {row.question_family: row for row in build_question_surface_inventory()}
 
     for question_family, expected_surface in (
         ("authority-constrained service ownership", "service_ownership_authority"),
@@ -571,3 +567,105 @@ def test_bounded_ask_rejects_not_dispatchable_family(capsys):
 
     assert exc.value.code == 2
     assert "not_dispatchable" in capsys.readouterr().err
+
+
+def test_question_family_definition_json_includes_identity_explanation(capsys):
+    assert (
+        seed_local.main(
+            [
+                "--question-family-definition",
+                "authority-constrained service ownership",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    definition = payload["question_family_definition"]
+    assert payload["question_family"] == "authority-constrained service ownership"
+    assert definition == {
+        "answer_responsibility": "evaluates service ownership reachability under constrained authority and implementation inventory evidence",
+        "bounded": True,
+        "bounded_status": "eligible_now",
+        "dispatch_surface": "service_ownership_authority",
+        "display_name": "authority-constrained service ownership",
+        "evidence_source": "question_surface_inventory",
+        "implementation_reason": "present in bounded ask dispatch map",
+        "question_family": "authority-constrained service ownership",
+        "relationship_status": "connected",
+        "status": "known",
+        "surface": "service_ownership_authority",
+        "surface_flag": "--service-ownership-authority",
+    }
+
+
+def test_question_family_definition_human_renders_identity_explanation(capsys):
+    assert (
+        seed_local.main(
+            ["--question-family-definition", "source definition/import lookup"]
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+
+    assert "QuestionFamily definition: source definition/import lookup" in output
+    assert "bounded_status: not_dispatchable" in output
+    assert "dispatch_surface: none" in output
+    assert (
+        "answer_responsibility: looks up preserved imports and definitions from projected facts"
+        in output
+    )
+    assert (
+        "implementation_reason: no bounded ask dispatch mapping in current implementation"
+        in output
+    )
+
+
+def test_question_family_definition_unknown_is_bounded_and_does_not_infer(capsys):
+    assert seed_local.main(["--question-family-definition", "made up", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["question_family"] == "made up"
+    assert payload["question_family_definition"] == {
+        "answer_responsibility": "unknown",
+        "bounded": "unknown",
+        "bounded_status": "unknown",
+        "dispatch_surface": "unknown",
+        "display_name": "made up",
+        "evidence_source": "question_surface_inventory",
+        "implementation_reason": "unknown question family; no question-surface inventory row exists",
+        "question_family": "made up",
+        "status": "unknown",
+    }
+
+
+def test_question_family_definition_does_not_change_inventory_output(capsys):
+    assert seed_local.main(["--question-surface-inventory", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload == question_surface_inventory_json(
+        build_question_surface_inventory()
+    )
+    assert "question_family_definition" not in payload[0]
+
+
+def test_question_family_definition_guardrails_exclude_behavior_and_inference(capsys):
+    assert (
+        seed_local.main(
+            ["--question-family-definition", "operational pressure", "--json"]
+        )
+        == 0
+    )
+    serialized = json.dumps(json.loads(capsys.readouterr().out), sort_keys=True).lower()
+
+    for forbidden in (
+        "runtime behavior",
+        "planner behavior",
+        "semantic interpretation",
+        "implementation inference",
+        "future routing",
+        "llm reasoning",
+        "execute",
+    ):
+        assert forbidden not in serialized
