@@ -603,6 +603,16 @@ def test_question_family_definition_json_includes_identity_explanation(capsys):
             "surface_flag": "--service-ownership-authority",
         },
         "question_family_boundary": "read-only evaluator; no provider acquisition; no execution; no event-ledger writes; no mutation",
+        "question_family_diagnostic_relationship": {
+            "canonical_diagnostic_surface": "service_ownership_authority",
+            "diagnostic_inventory_name": "service_ownership_authority",
+            "diagnostic_shape_spec_name": "service_ownership_authority",
+            "dispatch_surface": "service_ownership_authority",
+            "evidence_source": "question_surface_inventory",
+            "implementation_reason": "present in bounded ask dispatch map",
+            "relationship_status": "connected",
+            "status": "known",
+        },
         "question_family": "authority-constrained service ownership",
         "relationship_status": "connected",
         "status": "known",
@@ -640,6 +650,11 @@ def test_question_family_definition_human_renders_identity_explanation(capsys):
         "implementation_reason: no bounded ask dispatch mapping in current implementation"
         in output
     )
+    assert "question_family_diagnostic_relationship:" in output
+    assert "canonical_diagnostic_surface: source_navigation" in output
+    assert "diagnostic_inventory_name: none" in output
+    assert "diagnostic_shape_spec_name: none" in output
+    assert "relationship_status: missing_diagnostic_inventory" in output
 
 
 def test_question_family_definition_unknown_is_bounded_and_does_not_infer(capsys):
@@ -665,6 +680,16 @@ def test_question_family_definition_unknown_is_bounded_and_does_not_infer(capsys
             "status": "unknown",
         },
         "question_family_boundary": "unknown question family; no implementation-backed authority boundary exists",
+        "question_family_diagnostic_relationship": {
+            "canonical_diagnostic_surface": "unknown",
+            "diagnostic_inventory_name": "unknown",
+            "diagnostic_shape_spec_name": "unknown",
+            "dispatch_surface": "unknown",
+            "evidence_source": "question_surface_inventory",
+            "implementation_reason": "unknown question family; no question-surface inventory row exists",
+            "relationship_status": "unknown",
+            "status": "unknown",
+        },
         "question_family": "made up",
         "status": "unknown",
     }
@@ -692,6 +717,9 @@ def test_question_family_definition_guardrails_exclude_behavior_and_inference(ca
     answer_responsibility = payload["question_family_definition"][
         "question_family_answer_responsibility"
     ]
+    diagnostic_relationship = payload["question_family_definition"][
+        "question_family_diagnostic_relationship"
+    ]
     boundary = payload["question_family_definition"]["question_family_boundary"].lower()
 
     assert answer_responsibility == {
@@ -707,12 +735,25 @@ def test_question_family_definition_guardrails_exclude_behavior_and_inference(ca
     assert boundary == (
         "read-only summary assembled from existing audits; no recording; no mutation"
     )
+    assert diagnostic_relationship == {
+        "canonical_diagnostic_surface": "ops_brief",
+        "diagnostic_inventory_name": "ops_brief",
+        "diagnostic_shape_spec_name": "ops_brief",
+        "dispatch_surface": "ops_brief",
+        "evidence_source": "question_surface_inventory",
+        "implementation_reason": "present in bounded ask dispatch map",
+        "relationship_status": "connected",
+        "status": "known",
+    }
     for forbidden in (
         "runtime execution",
         "planner behavior",
         "routing behavior",
         "semantic interpretation",
         "implementation inference",
+        "relationship inference",
+        "relationship engine",
+        "semantic matching",
         "new authority",
         "future routing",
         "llm reasoning",
