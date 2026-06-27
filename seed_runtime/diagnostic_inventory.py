@@ -678,7 +678,11 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
     ),
     DiagnosticInventoryEntry(
         name="question_surface_inventory",
-        cli_flags=("--question-surface-inventory", "ask --question-families"),
+        cli_flags=(
+            "--question-surface-inventory",
+            "ask --question-families",
+            "--question-family-definition",
+        ),
         uses_projected_state=False,
         uses_repo_files=False,
         supports_json=True,
@@ -706,8 +710,6 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         reads_diagnostic_facts=False,
         description="Shows read-only repository-visible inquiry artifact classifications without recording, event-ledger writes, cluster mutation, inquiry graph creation, pressure transformation inference, workflow, or planning behavior.",
     ),
-
-
     DiagnosticInventoryEntry(
         name="diagnostic_inventory",
         cli_flags=("--diagnostic-inventory",),

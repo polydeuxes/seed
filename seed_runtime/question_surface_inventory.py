@@ -98,6 +98,18 @@ def bounded_ask_inventory_findings(
 
 
 @dataclass(frozen=True)
+class QuestionFamilyDefinition:
+    question_family: str
+    question_family_definition: dict[str, object]
+
+    def to_json_dict(self) -> dict[str, object]:
+        return {
+            "question_family": self.question_family,
+            "question_family_definition": self.question_family_definition,
+        }
+
+
+@dataclass(frozen=True)
 class QuestionSurfaceInventoryRow:
     question_family: str
     example_questions: tuple[str, ...]
@@ -416,8 +428,7 @@ def format_question_surface_inventory(
             + (row.canonical_diagnostic_surface or "none")
         )
         lines.append(
-            "  diagnostic_inventory_name: "
-            + (row.diagnostic_inventory_name or "none")
+            "  diagnostic_inventory_name: " + (row.diagnostic_inventory_name or "none")
         )
         lines.append(
             "  diagnostic_shape_spec_name: "
@@ -442,4 +453,79 @@ def format_question_surface_inventory(
     lines.append(
         "Implementation findings: " + ("none" if not findings else "; ".join(findings))
     )
+    return "\n".join(lines)
+
+
+def build_question_family_definition(
+    question_family: str,
+    rows: tuple[QuestionSurfaceInventoryRow, ...] | None = None,
+) -> QuestionFamilyDefinition:
+    """Return the read-only identity explanation for one QuestionFamily."""
+
+    inventory = rows or build_question_surface_inventory()
+    matches = [row for row in inventory if row.question_family == question_family]
+    if not matches:
+        return QuestionFamilyDefinition(
+            question_family=question_family,
+            question_family_definition={
+                "status": "unknown",
+                "question_family": question_family,
+                "display_name": question_family,
+                "bounded": "unknown",
+                "bounded_status": "unknown",
+                "dispatch_surface": "unknown",
+                "answer_responsibility": "unknown",
+                "implementation_reason": "unknown question family; no question-surface inventory row exists",
+                "evidence_source": "question_surface_inventory",
+            },
+        )
+
+    row = matches[0]
+    return QuestionFamilyDefinition(
+        question_family=row.question_family,
+        question_family_definition={
+            "status": "known",
+            "question_family": row.question_family,
+            "display_name": row.question_family,
+            "bounded": row.bounded_status != "not_dispatchable",
+            "bounded_status": row.bounded_status,
+            "surface": row.surface,
+            "surface_flag": row.surface_flag,
+            "dispatch_surface": row.dispatch_surface or "none",
+            "answer_responsibility": row.answer_responsibility,
+            "implementation_reason": row.implementation_reason,
+            "relationship_status": row.relationship_status,
+            "evidence_source": "question_surface_inventory",
+        },
+    )
+
+
+def question_family_definition_json(
+    question_family: str,
+    rows: tuple[QuestionSurfaceInventoryRow, ...] | None = None,
+) -> dict[str, object]:
+    return build_question_family_definition(question_family, rows).to_json_dict()
+
+
+def format_question_family_definition(
+    question_family: str,
+    rows: tuple[QuestionSurfaceInventoryRow, ...] | None = None,
+) -> str:
+    explanation = build_question_family_definition(question_family, rows)
+    definition = explanation.question_family_definition
+    lines = [
+        f"QuestionFamily definition: {definition['question_family']}",
+        f"  status: {definition['status']}",
+        f"  display_name: {definition['display_name']}",
+        f"  bounded_status: {definition['bounded_status']}",
+        f"  dispatch_surface: {definition['dispatch_surface']}",
+        f"  answer_responsibility: {definition['answer_responsibility']}",
+        f"  implementation_reason: {definition['implementation_reason']}",
+        f"  evidence_source: {definition['evidence_source']}",
+    ]
+    if definition["status"] == "known":
+        lines.insert(
+            5, f"  surface: {definition['surface']} ({definition['surface_flag']})"
+        )
+        lines.insert(8, f"  relationship_status: {definition['relationship_status']}")
     return "\n".join(lines)

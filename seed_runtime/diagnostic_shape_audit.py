@@ -222,8 +222,6 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "authorize_execution",
         ),
     ),
-
-
     "diagnostic_inventory": DiagnosticImplementationSpec(
         name="diagnostic_inventory",
         module_path="seed_runtime/diagnostic_inventory.py",
@@ -640,7 +638,11 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         build_function="build_question_surface_inventory",
         format_function="format_question_surface_inventory",
         json_function="question_surface_inventory_json",
-        cli_flags=("--question-surface-inventory", "ask --question-families"),
+        cli_flags=(
+            "--question-surface-inventory",
+            "ask --question-families",
+            "--question-family-definition",
+        ),
     ),
     "inquiry_artifacts": DiagnosticImplementationSpec(
         name="inquiry_artifacts",
