@@ -125,8 +125,10 @@ from seed_runtime.decisions import DecisionValidator
 from seed_runtime.diagnostic_inventory import (
     diagnostic_inventory_json,
     diagnostic_surface_definition_json,
+    diagnostic_surface_explanation_json,
     format_diagnostic_inventory,
     format_diagnostic_surface_definition,
+    format_diagnostic_surface_explanation,
 )
 from seed_runtime.documentation_structure import (
     DocumentationStructureDetailExpansions,
@@ -1263,6 +1265,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--diagnostic-surface-definition",
         metavar="DIAGNOSTIC",
         help="explain the implementation-backed identity of one diagnostic surface",
+    )
+    parser.add_argument(
+        "--diagnostic-surface-explanation",
+        metavar="DIAGNOSTIC",
+        help="compose existing explanation fields for one diagnostic surface",
     )
     parser.add_argument(
         "--question-surface-inventory",
@@ -2500,6 +2507,7 @@ def validate_lifecycle_args(
         or args.capability_needs
         or args.diagnostic_inventory
         or args.diagnostic_surface_definition
+        or args.diagnostic_surface_explanation
         or args.question_surface_inventory
         or args.question_family_definition
         or args.question_family_explanation
@@ -6401,6 +6409,19 @@ def main(argv: list[str] | None = None) -> int:
             )
         else:
             print(format_diagnostic_surface_definition(args.diagnostic_surface_definition))
+        return 0
+
+    if args.diagnostic_surface_explanation:
+        if args.json_output:
+            print(
+                json.dumps(
+                    diagnostic_surface_explanation_json(args.diagnostic_surface_explanation),
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+        else:
+            print(format_diagnostic_surface_explanation(args.diagnostic_surface_explanation))
         return 0
 
     if args.question_surface_inventory:

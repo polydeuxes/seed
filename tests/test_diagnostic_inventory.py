@@ -4,6 +4,7 @@ import scripts.seed_local as seed_local
 from seed_runtime.diagnostic_inventory import (
     DIAGNOSTIC_INVENTORY,
     DiagnosticInventoryEntry,
+    diagnostic_surface_definition_json,
     format_diagnostic_inventory,
 )
 
@@ -393,5 +394,134 @@ def test_diagnostic_surface_definition_guardrails_exclude_runtime_planning_and_i
         "consumption inference",
         "future execution",
         "new relationship concepts",
+    ]:
+        assert forbidden not in rendered
+
+
+def test_diagnostic_surface_explanation_json_composes_only_existing_fields(capsys):
+    assert (
+        seed_local.main(
+            ["--diagnostic-surface-explanation", "diagnostic_shape_audit", "--json"]
+        )
+        == 0
+    )
+
+    payload = json.loads(capsys.readouterr().out)
+    explanation = payload["diagnostic_surface_explanation"]
+    definition = explanation["diagnostic_surface_definition"]
+
+    assert set(explanation) == {
+        "diagnostic_surface_definition",
+        "diagnostic_surface_boundary",
+        "diagnostic_surface_consumption",
+    }
+    assert explanation["diagnostic_surface_boundary"] == definition[
+        "diagnostic_surface_boundary"
+    ]
+    assert explanation["diagnostic_surface_consumption"] == definition[
+        "diagnostic_surface_consumption"
+    ]
+    assert definition == diagnostic_surface_definition_json("diagnostic_shape_audit")[
+        "diagnostic_surface_definition"
+    ]
+
+
+def test_diagnostic_surface_explanation_human_renders_coherent_composition(capsys):
+    assert seed_local.main(["--diagnostic-surface-explanation", "diagnostic_shape_audit"]) == 0
+
+    output = capsys.readouterr().out
+
+    assert "DiagnosticSurface explanation: diagnostic_shape_audit" in output
+    assert "  definition:" in output
+    assert "    status: known" in output
+    assert "    cli_flags: --diagnostic-shape-audit" in output
+    assert "    diagnostic_surface_boundary: read-only; does not record;" in output
+    assert (
+        "    diagnostic_surface_consumption: uses_projected_state=false; "
+        "uses_repo_files=false; reads_diagnostic_facts=false"
+    ) in output
+    assert "implementation_reason" not in output
+    assert "evidence_source" not in output
+
+
+def test_diagnostic_surface_explanation_unknown_is_bounded(capsys):
+    assert seed_local.main(["--diagnostic-surface-explanation", "missing_surface", "--json"]) == 0
+
+    explanation = json.loads(capsys.readouterr().out)["diagnostic_surface_explanation"]
+
+    assert explanation["diagnostic_surface_definition"]["status"] == "unknown"
+    assert explanation["diagnostic_surface_definition"]["diagnostic_name"] == "missing_surface"
+    assert explanation["diagnostic_surface_boundary"] == {
+        "status": "unknown",
+        "statements": [],
+        "evidence_source": "diagnostic_inventory",
+        "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
+    }
+    assert explanation["diagnostic_surface_consumption"] == {
+        "status": "unknown",
+        "declared_consumption": {},
+        "evidence_source": "diagnostic_inventory",
+        "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
+    }
+
+
+def test_diagnostic_surface_explanation_preserves_existing_field_behaviors(capsys):
+    assert (
+        seed_local.main(
+            ["--diagnostic-surface-explanation", "privilege_discovery", "--json"]
+        )
+        == 0
+    )
+
+    composed = json.loads(capsys.readouterr().out)["diagnostic_surface_explanation"]
+    existing = diagnostic_surface_definition_json("privilege_discovery")[
+        "diagnostic_surface_definition"
+    ]
+
+    assert composed["diagnostic_surface_definition"] == existing
+    assert composed["diagnostic_surface_boundary"] == existing[
+        "diagnostic_surface_boundary"
+    ]
+    assert composed["diagnostic_surface_consumption"] == existing[
+        "diagnostic_surface_consumption"
+    ]
+
+
+def test_diagnostic_surface_explanation_does_not_change_inventory_output(capsys):
+    assert seed_local.main(["--diagnostic-inventory", "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+
+    assert "diagnostic_surface_explanation" not in payload[0]
+    entry = _entry("diagnostic_surface_explanation")
+    assert entry.cli_flags == ("--diagnostic-surface-explanation",)
+    assert entry.supports_json is True
+    assert entry.record_scope == "none"
+    assert not entry.writes_event_ledger
+    assert not entry.mutates_cluster
+
+
+def test_diagnostic_surface_explanation_guardrails_are_presentation_only(capsys):
+    assert (
+        seed_local.main(
+            ["--diagnostic-surface-explanation", "diagnostic_shape_audit", "--json"]
+        )
+        == 0
+    )
+
+    rendered = json.dumps(json.loads(capsys.readouterr().out)).lower()
+
+    for forbidden in [
+        "runtime inference",
+        "presentation reasoning",
+        "normalize",
+        "reinterpret",
+        "recommend",
+        "semantic meaning",
+        "implementation not already present",
+        "presentation framework",
+        "explainablesubject",
+        "ontology",
+        "generic composition",
     ]:
         assert forbidden not in rendered
