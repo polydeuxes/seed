@@ -10,7 +10,9 @@ from typing import Any
 
 BOUNDARY_TEXT = (
     "read only; observes document structure only; no prose interpretation; "
-    "no claim extraction; no authority inference; no shape inference; "
+    "no grammar interpretation; no responsibility recovery; "
+    "no lexicon stabilization; no claim extraction; "
+    "no authority inference; no shape inference; "
     "no event ledger writes; no repository mutation"
 )
 
@@ -74,6 +76,7 @@ class DocumentationStructureDetailExpansions:
     include_sections: bool = False
     include_links: bool = False
     include_code_fences: bool = False
+    include_architectural_relations: bool = False
 
 
 @dataclass(frozen=True)
@@ -162,6 +165,16 @@ class DocumentationCodeBlockRecord:
 
 
 @dataclass(frozen=True)
+class DocumentationArchitecturalRelationRecord:
+    left_term: str
+    relation: str
+    right_term: str
+    source_path: str
+    line_number: int
+    evidence: str
+
+
+@dataclass(frozen=True)
 class DocumentationStructureRecord:
     path: str
     line_count: int
@@ -185,6 +198,9 @@ class DocumentationStructureRecord:
     empty_section_count: int
     link_observations: tuple[DocumentationLinkRecord, ...]
     code_block_observations: tuple[DocumentationCodeBlockRecord, ...]
+    architectural_relation_observations: tuple[
+        DocumentationArchitecturalRelationRecord, ...
+    ]
     structure_status: str
 
     def to_json_dict(
@@ -220,6 +236,13 @@ class DocumentationStructureRecord:
             ]
         else:
             data.pop("code_block_observations", None)
+        if detail_expansions.include_architectural_relations:
+            data["architectural_relation_observations"] = [
+                asdict(relation)
+                for relation in self.architectural_relation_observations
+            ]
+        else:
+            data.pop("architectural_relation_observations", None)
         return data
 
 
@@ -503,6 +526,9 @@ def _summary(
             for link in d.link_observations
         ),
         "code_block_count": sum(len(d.code_block_observations) for d in documents),
+        "architectural_relation_observation_count": sum(
+            len(d.architectural_relation_observations) for d in documents
+        ),
         "unclosed_code_block_count": sum(
             not code_block.closed
             for d in documents
@@ -619,6 +645,9 @@ def observe_markdown_document(
         ),
         link_observations=link_observations,
         code_block_observations=code_block_observations,
+        architectural_relation_observations=tuple(
+            _architectural_relation_observations(lines, source_path, code_content_lines)
+        ),
         structure_status=_structure_status(front_matter_present, heading_present),
     )
 
@@ -1197,6 +1226,10 @@ def format_documentation_structure(
         f"Fenced code blocks: {summary['code_block_count']}",
         f"Unclosed fenced code blocks: {summary['unclosed_code_block_count']}",
         f"Fenced code block languages: {_format_languages(summary['code_block_languages'])}",
+        (
+            "Architectural relation observations: "
+            f"{summary['architectural_relation_observation_count']}"
+        ),
         f"Sections: {summary['section_count']}",
         f"Maximum section depth: {summary['max_section_depth']}",
         f"Empty sections: {summary['empty_section_count']}",
@@ -1229,6 +1262,8 @@ def format_documentation_structure(
         lines.extend(_format_link_details(report))
     if details.include_code_fences:
         lines.extend(_format_code_fence_details(report))
+    if details.include_architectural_relations:
+        lines.extend(_format_architectural_relation_details(report))
     return "\n".join(lines)
 
 
@@ -1277,6 +1312,24 @@ def _format_code_fence_details(report: DocumentationStructureReport) -> list[str
                 f"- {document.path}:{block.start_line}-{end} "
                 f"type={block.fence_type} language={language} "
                 f"closed={str(block.closed).lower()}"
+            )
+    if not found:
+        lines.append("- none")
+    return lines
+
+
+def _format_architectural_relation_details(
+    report: DocumentationStructureReport,
+) -> list[str]:
+    lines = ["", "Architectural relations:"]
+    found = False
+    for document in report.documents:
+        for relation in document.architectural_relation_observations:
+            found = True
+            lines.append(
+                f"- {relation.source_path}:{relation.line_number} "
+                f"left={relation.left_term!r} relation={relation.relation!r} "
+                f"right={relation.right_term!r} evidence={relation.evidence!r}"
             )
     if not found:
         lines.append("- none")
@@ -1379,6 +1432,51 @@ def _front_matter(lines: list[str]) -> tuple[bool, list[str]]:
             keys.append(key)
     return True, keys
 
+
+
+_ARCHITECTURAL_RELATION_RE = re.compile(
+    r"^\s*(?P<left>[A-Z][A-Za-z0-9_. /-]*?)\s+"
+    r"(?P<relation>does not own|hands off to|owns|produces|consumes|preserves"
+    r"|bounds|derives|selects|explains|observes)\s+"
+    r"(?P<right>[A-Z][A-Za-z0-9_. /-]*?)\s*[.;:]?\s*$"
+)
+_ARCHITECTURAL_INEQUALITY_RE = re.compile(
+    r"^\s*(?P<left>[A-Z][A-Za-z0-9_. /-]*?)\s*!=\s*"
+    r"(?P<right>[A-Z][A-Za-z0-9_. /-]*?)\s*[.;:]?\s*$"
+)
+
+
+def _architectural_relation_observations(
+    lines: list[str], source_path: str, code_content_lines: set[int] | None = None
+) -> list[DocumentationArchitecturalRelationRecord]:
+    observations: list[DocumentationArchitecturalRelationRecord] = []
+    code_content_lines = code_content_lines or set()
+    for line_number, line in enumerate(lines, start=1):
+        if line_number in code_content_lines:
+            continue
+        stripped = line.strip()
+        if not stripped or stripped.startswith(
+            ("#", "-", "*", ">", "|", "```", "~~~")
+        ):
+            continue
+        match = _ARCHITECTURAL_INEQUALITY_RE.match(line)
+        relation = "!="
+        if match is None:
+            match = _ARCHITECTURAL_RELATION_RE.match(line)
+            if match is None:
+                continue
+            relation = match.group("relation")
+        observations.append(
+            DocumentationArchitecturalRelationRecord(
+                left_term=match.group("left").strip(),
+                relation=relation,
+                right_term=match.group("right").strip(),
+                source_path=source_path,
+                line_number=line_number,
+                evidence=stripped,
+            )
+        )
+    return observations
 
 _ATX_HEADING_RE = re.compile(r"^(#{1,6})(?:[ \t]+|$)(.*)$")
 _FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")

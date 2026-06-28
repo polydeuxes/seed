@@ -1185,6 +1185,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="include fenced code block observation blocks in --documentation-structure output",
     )
     documentation_detail_group.add_argument(
+        "--architectural-relations",
+        action="store_true",
+        help="include explicit architectural relation form observations in --documentation-structure output",
+    )
+    documentation_detail_group.add_argument(
         "--recurrence",
         action="store_true",
         help="show read-only corpus-level recurrence over observed documentation structure",
@@ -2464,6 +2469,7 @@ def validate_lifecycle_args(
             args.empty_sections,
             args.links,
             args.code_fences,
+            args.architectural_relations,
             args.sections,
             args.document is not None,
             args.limit is not None,
@@ -2482,7 +2488,7 @@ def validate_lifecycle_args(
     if documentation_structure_filter_requested and not args.documentation_structure:
         parser.error(
             "--document, --missing-front-matter, --missing-trailing-newline, "
-            "--empty-sections, --links, --code-fences, --sections, --recurrence, --rare, --missing-common-sections, --outliers, --where, --membership, --limit, "
+            "--empty-sections, --links, --code-fences, --architectural-relations, --sections, --recurrence, --rare, --missing-common-sections, --outliers, --where, --membership, --limit, "
             "--top, --summary-only, --min-count, and --max-count require "
             "--documentation-structure"
         )
@@ -6628,6 +6634,7 @@ def main(argv: list[str] | None = None) -> int:
                 include_sections=args.sections,
                 include_links=args.links,
                 include_code_fences=args.code_fences,
+                include_architectural_relations=args.architectural_relations,
             ),
             output_bounds=DocumentationStructureOutputBounds(
                 limit=args.limit,
