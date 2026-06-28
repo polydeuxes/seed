@@ -67,10 +67,16 @@ class _OperationalStoryAnswerPayload:
 
 @dataclass(frozen=True)
 class _OperationalStoryReasoningPayload:
-    """Implementation-local support material explaining the story answer."""
+    """Implementation-local reason material explaining the story answer."""
+
+    investigation_path: list[dict[str, str | int]]
+
+
+@dataclass(frozen=True)
+class _OperationalStorySupportingEvidencePayload:
+    """Implementation-local implementation evidence supporting story reasons."""
 
     supporting_evidence: list[str]
-    investigation_path: list[dict[str, str | int]]
 
 
 def build_operational_story(
@@ -91,22 +97,24 @@ def build_operational_story(
     primary = pressure_audit.pressures[0] if pressure_audit.pressures else None
     investigation = build_investigation_path_audit(_domain_for(primary))
 
-    answer_payload, reasoning_payload = _compose_operational_story_payloads(
-        primary=primary,
-        capability_needs=capability_needs,
-        privilege_capabilities=privilege.capabilities,
-        correlation_findings=correlation.findings,
-        impact_metrics=impact.metrics,
-        impact_overall=impact.overall,
-        impact_missing=impact.missing,
-        investigation_surfaces=investigation.surfaces,
-        has_pressures=bool(pressure_audit.pressures),
+    answer_payload, reasoning_payload, supporting_evidence_payload = (
+        _compose_operational_story_payloads(
+            primary=primary,
+            capability_needs=capability_needs,
+            privilege_capabilities=privilege.capabilities,
+            correlation_findings=correlation.findings,
+            impact_metrics=impact.metrics,
+            impact_overall=impact.overall,
+            impact_missing=impact.missing,
+            investigation_surfaces=investigation.surfaces,
+            has_pressures=bool(pressure_audit.pressures),
+        )
     )
 
     return OperationalStory(
         focus=answer_payload.focus,
         pressure=answer_payload.pressure,
-        supporting_evidence=reasoning_payload.supporting_evidence,
+        supporting_evidence=supporting_evidence_payload.supporting_evidence,
         capabilities=answer_payload.capabilities,
         constraints=answer_payload.constraints,
         correlation_gaps=answer_payload.correlation_gaps,
@@ -135,8 +143,12 @@ def _compose_operational_story_payloads(
     impact_missing: list[str],
     investigation_surfaces,
     has_pressures: bool,
-) -> tuple[_OperationalStoryAnswerPayload, _OperationalStoryReasoningPayload]:
-    """Separate bounded answer material from its implementation-local reasons."""
+) -> tuple[
+    _OperationalStoryAnswerPayload,
+    _OperationalStoryReasoningPayload,
+    _OperationalStorySupportingEvidencePayload,
+]:
+    """Separate answer, reason, and supporting implementation evidence."""
 
     unknowns: list[dict[str, str]] = []
     if not has_pressures:
@@ -154,16 +166,16 @@ def _compose_operational_story_payloads(
             }
         )
     if impact_overall == "unknown":
-        unknowns.append({"area": "impact", "reason": _impact_unknown_reason(impact_metrics)})
+        unknowns.append(
+            {"area": "impact", "reason": _impact_unknown_reason(impact_metrics)}
+        )
 
     answer = _OperationalStoryAnswerPayload(
         focus=_focus(primary),
         pressure=_pressure(primary),
         capabilities=[_capability(entry) for entry in capability_needs],
         constraints=[_constraint(cap) for cap in privilege_capabilities],
-        correlation_gaps=[
-            _correlation(finding) for finding in correlation_findings
-        ],
+        correlation_gaps=[_correlation(finding) for finding in correlation_findings],
         impact={
             "overall": impact_overall,
             "missing": list(impact_missing),
@@ -174,13 +186,15 @@ def _compose_operational_story_payloads(
         unknowns=unknowns,
     )
     reasoning = _OperationalStoryReasoningPayload(
-        supporting_evidence=_supporting_evidence(primary),
         investigation_path=[
             {"surface": step.name, "reason": step.reason, "order": step.order}
             for step in investigation_surfaces
         ],
     )
-    return answer, reasoning
+    supporting_evidence = _OperationalStorySupportingEvidencePayload(
+        supporting_evidence=_supporting_evidence(primary),
+    )
+    return answer, reasoning, supporting_evidence
 
 
 def operational_story_json(story: OperationalStory) -> dict[str, Any]:
@@ -237,10 +251,7 @@ def format_operational_story(story: OperationalStory) -> str:
     lines.extend(["", "Current Investigation Path:"])
     lines.extend(
         _bullets(
-            [
-                f"{s['surface']}: {s['reason']}"
-                for s in story.investigation_path
-            ],
+            [f"{s['surface']}: {s['reason']}" for s in story.investigation_path],
             "none available",
         )
     )
@@ -259,7 +270,10 @@ def format_operational_story(story: OperationalStory) -> str:
 
 
 def _focus(primary: PressureItem | None) -> str:
-    return primary.category.lower() if primary else "no current pressure focus identified"
+    return (
+        primary.category.lower() if primary else "no current pressure focus identified"
+    )
+
 
 def _pressure(primary: PressureItem | None) -> dict[str, Any]:
     if primary is None:
@@ -272,10 +286,12 @@ def _pressure(primary: PressureItem | None) -> dict[str, Any]:
         "evidence": primary.evidence,
     }
 
+
 def _supporting_evidence(primary: PressureItem | None) -> list[str]:
     if primary is None:
         return []
     return [primary.reason, *[f"{k}: {v}" for k, v in primary.evidence.items()]]
+
 
 def _capability(entry: CapabilityNeedEntry) -> dict[str, Any]:
     return {
@@ -284,6 +300,7 @@ def _capability(entry: CapabilityNeedEntry) -> dict[str, Any]:
         "diagnostics": sorted(entry.diagnostics),
         "needed_evidence": sorted(entry.needed_evidence),
     }
+
 
 def _constraint(cap: PrivilegeDiscoveryCapability) -> dict[str, Any]:
     return {
@@ -294,6 +311,7 @@ def _constraint(cap: PrivilegeDiscoveryCapability) -> dict[str, Any]:
         "notes": cap.notes,
     }
 
+
 def _correlation(finding: CorrelationFinding) -> dict[str, Any]:
     return {
         "area": finding.area,
@@ -303,8 +321,10 @@ def _correlation(finding: CorrelationFinding) -> dict[str, Any]:
         "observed_result": finding.observed_result,
     }
 
+
 def _metric(metric: ImpactMetric) -> dict[str, Any]:
     return metric.to_json_dict()
+
 
 def _recent_changes(metrics: list[ImpactMetric]) -> list[str]:
     return [
@@ -313,17 +333,19 @@ def _recent_changes(metrics: list[ImpactMetric]) -> list[str]:
         if m.availability == "comparable"
     ]
 
+
 def _observed_outcomes(metrics: list[ImpactMetric]) -> list[str]:
     return [f"{m.area}/{m.metric}: {m.result}" for m in metrics]
+
 
 def _impact_unknown_reason(metrics: list[ImpactMetric]) -> str:
     unavailable = [m for m in metrics if m.availability != "comparable"]
     if unavailable:
         return "; ".join(
-            f"{m.metric} is {m.availability}: {m.note}"
-            for m in unavailable[:3]
+            f"{m.metric} is {m.availability}: {m.note}" for m in unavailable[:3]
         )
     return "no comparable impact metrics are currently available"
+
 
 def _domain_for(primary: PressureItem | None) -> str:
     if primary is None:
@@ -341,6 +363,7 @@ def _domain_for(primary: PressureItem | None) -> str:
     if "pressure" in category or "pressure" in reason:
         return "pressure"
     return "operational"
+
 
 def _bullets(values: list[str], empty: str) -> list[str]:
     return [f"  - {value}" for value in values] if values else [f"  {empty}"]
