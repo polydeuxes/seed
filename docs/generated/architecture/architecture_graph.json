@@ -443,6 +443,10 @@
           "receiver": ""
         },
         {
+          "method": "_realize_registered_operation",
+          "receiver": ""
+        },
+        {
           "method": "_resume_event_context",
           "receiver": ""
         },
@@ -584,20 +588,24 @@
           "receiver": ""
         },
         {
-          "method": "values",
-          "receiver": "_toolkits"
+          "method": "add_toolkit",
+          "receiver": "_index"
         },
         {
           "method": "get",
-          "receiver": "_tools"
+          "receiver": "_index"
         },
         {
-          "method": "values",
-          "receiver": "_tools"
+          "method": "list_toolkits",
+          "receiver": "_index"
         },
         {
-          "method": "values",
-          "receiver": "_tools"
+          "method": "list_tools",
+          "receiver": "_index"
+        },
+        {
+          "method": "list_tools_for_capability",
+          "receiver": "_index"
         }
       ],
       "events": [],
@@ -605,7 +613,7 @@
       "id": "ToolRegistry",
       "kind": "class",
       "layer": "registry",
-      "line": 17,
+      "line": 54,
       "owner": "registered_operation_catalog",
       "routes": [],
       "summary": "Exposes registered model-visible operations and capability mappings."

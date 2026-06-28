@@ -178,3 +178,40 @@ def test_service_appends_no_events():
 
     assert result.policy is not None
     assert ledger.list_events("ws") == []
+
+
+def test_registered_operation_validation_boundary_does_not_authorize_or_project_state():
+    tool = make_tool("safe", "L1")
+    service = make_service(make_registry(tool))
+
+    result = service._validate_registered_operation_call(
+        "safe", {"message": "hello"}
+    )
+
+    assert result.ok is True
+    assert result.tool is tool
+    assert result.validation.ok is True
+    assert result.validation_phase is None
+    assert result.error is None
+
+
+def test_policy_authorization_boundary_requires_validated_operation():
+    service = make_service(make_registry(make_tool("safe", "L1")))
+    validation = service._validate_registered_operation_call(
+        "safe", {"message": "hello"}
+    )
+    projected = {"called": False}
+
+    def state_factory():
+        projected["called"] = True
+        return projected_state()
+
+    result = service._authorize_validated_operation(
+        validation, state_provider=state_factory, scope=None
+    )
+
+    assert projected["called"] is True
+    assert result.validation.ok is True
+    assert result.policy is not None
+    assert result.policy.outcome == "allow"
+    assert result.allowed_to_execute is True

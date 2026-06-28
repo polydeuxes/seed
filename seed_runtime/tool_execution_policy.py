@@ -21,8 +21,32 @@ class PolicyEngine(Protocol):
 
 
 @dataclass(frozen=True)
+class RegisteredOperationValidationResult:
+    """Result of validating a selected registered operation call.
+
+    This result stops at operation contract validation. It says that the named
+    registered operation exists, has executable registration status, and accepts
+    the proposed input shape; it does not say policy authorizes execution now.
+    """
+
+    tool: ToolSpec | None
+    validation: ToolValidationResult
+    validation_phase: str | None = None
+
+    @property
+    def ok(self) -> bool:
+        return self.validation.ok
+
+    @property
+    def error(self) -> str | None:
+        if self.validation.ok:
+            return None
+        return "; ".join(self.validation.errors) if self.validation.errors else None
+
+
+@dataclass(frozen=True)
 class ToolExecutionPolicyResult:
-    """Result of resolving, validating, and policy-checking a tool call."""
+    """Result of validating a registered operation and evaluating policy."""
 
     tool: ToolSpec | None
     validation: ToolValidationResult
@@ -33,7 +57,12 @@ class ToolExecutionPolicyResult:
 
 
 class ToolExecutionPolicyService:
-    """Validate a tool call and preserve the raw policy decision for callers.
+    """Authorize validated registered operation calls for execution.
+
+    Registered operation validation and policy authorization are intentionally
+    separate steps: validation proves the selected operation contract accepts the
+    call, while policy decides whether that valid call may execute now. This
+    service still returns the historical combined result for compatibility.
 
     This service intentionally does not execute tools, append events, create
     pending actions, or collapse non-allow policy outcomes.  Callers remain
@@ -59,7 +88,7 @@ class ToolExecutionPolicyService:
         state: State,
         scope: str | None = None,
     ) -> ToolExecutionPolicyResult:
-        """Resolve and validate a tool call, then evaluate policy if valid."""
+        """Validate a selected registered operation, then authorize it."""
 
         return self._evaluate(
             tool_name=tool_name,
@@ -76,7 +105,7 @@ class ToolExecutionPolicyService:
         state_factory: Callable[[], State],
         scope: str | None = None,
     ) -> ToolExecutionPolicyResult:
-        """Evaluate with state projected lazily after validation succeeds."""
+        """Authorize with state projected lazily after validation succeeds."""
 
         return self._evaluate(
             tool_name=tool_name,
@@ -93,25 +122,81 @@ class ToolExecutionPolicyService:
         state_provider: Callable[[], State],
         scope: str | None,
     ) -> ToolExecutionPolicyResult:
+        registered_operation = self._validate_registered_operation_call(
+            tool_name, arguments
+        )
+        if not registered_operation.ok:
+            return self._validation_failure(registered_operation)
+
+        return self._authorize_validated_operation(
+            registered_operation,
+            state_provider=state_provider,
+            scope=scope,
+        )
+
+    def _validate_registered_operation_call(
+        self, tool_name: str, arguments: dict[str, Any]
+    ) -> RegisteredOperationValidationResult:
+        """Validate the selected registered operation before policy.
+
+        This is the validation boundary: existence, registered status, and input
+        schema are checked here; no policy state is projected and no policy
+        decision is produced.
+        """
+
         existence = self.validation_service.validate_tool_exists(tool_name)
         if not existence.ok or existence.tool is None:
-            return self._validation_failure(existence, phase="existence")
+            return RegisteredOperationValidationResult(
+                tool=existence.tool,
+                validation=existence,
+                validation_phase="existence",
+            )
         tool = existence.tool
 
         status = self.validation_service.validate_tool_status(tool)
         if not status.ok:
-            return self._validation_failure(status, phase="status")
+            return RegisteredOperationValidationResult(
+                tool=status.tool,
+                validation=status,
+                validation_phase="status",
+            )
 
         input_validation = self.validation_service.validate_input_schema(
             tool, arguments
         )
         if not input_validation.ok:
-            return self._validation_failure(input_validation, phase="input")
+            return RegisteredOperationValidationResult(
+                tool=input_validation.tool,
+                validation=input_validation,
+                validation_phase="input",
+            )
 
-        policy = self.policy_engine.evaluate(tool, state_provider(), scope=scope)
-        return ToolExecutionPolicyResult(
+        return RegisteredOperationValidationResult(
             tool=tool,
             validation=input_validation,
+            validation_phase=None,
+        )
+
+    def _authorize_validated_operation(
+        self,
+        registered_operation: RegisteredOperationValidationResult,
+        *,
+        state_provider: Callable[[], State],
+        scope: str | None,
+    ) -> ToolExecutionPolicyResult:
+        """Evaluate policy for a validated registered operation call."""
+
+        if not registered_operation.ok or registered_operation.tool is None:
+            raise ValueError(
+                "policy authorization requires a validated registered operation"
+            )
+
+        policy = self.policy_engine.evaluate(
+            registered_operation.tool, state_provider(), scope=scope
+        )
+        return ToolExecutionPolicyResult(
+            tool=registered_operation.tool,
+            validation=registered_operation.validation,
             policy=policy,
             allowed_to_execute=policy.outcome == "allow",
             error=None,
@@ -119,13 +204,13 @@ class ToolExecutionPolicyService:
         )
 
     def _validation_failure(
-        self, validation: ToolValidationResult, *, phase: str
+        self, validation: RegisteredOperationValidationResult
     ) -> ToolExecutionPolicyResult:
         return ToolExecutionPolicyResult(
             tool=validation.tool,
-            validation=validation,
+            validation=validation.validation,
             policy=None,
             allowed_to_execute=False,
-            error="; ".join(validation.errors) if validation.errors else None,
-            validation_phase=phase,
+            error=validation.error,
+            validation_phase=validation.validation_phase,
         )
