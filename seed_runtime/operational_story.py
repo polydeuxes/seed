@@ -50,6 +50,29 @@ class OperationalStory:
         }
 
 
+@dataclass(frozen=True)
+class _OperationalStoryAnswerPayload:
+    """Implementation-local bounded answer material for the story surface."""
+
+    focus: str
+    pressure: dict[str, Any]
+    capabilities: list[dict[str, Any]]
+    constraints: list[dict[str, Any]]
+    correlation_gaps: list[dict[str, Any]]
+    impact: dict[str, Any]
+    recent_changes: list[str]
+    observed_outcomes: list[str]
+    unknowns: list[dict[str, str]]
+
+
+@dataclass(frozen=True)
+class _OperationalStoryReasoningPayload:
+    """Implementation-local support material explaining the story answer."""
+
+    supporting_evidence: list[str]
+    investigation_path: list[dict[str, str | int]]
+
+
 def build_operational_story(
     state: State, *, repo_root: str | Path | None = None
 ) -> OperationalStory:
@@ -68,8 +91,55 @@ def build_operational_story(
     primary = pressure_audit.pressures[0] if pressure_audit.pressures else None
     investigation = build_investigation_path_audit(_domain_for(primary))
 
+    answer_payload, reasoning_payload = _compose_operational_story_payloads(
+        primary=primary,
+        capability_needs=capability_needs,
+        privilege_capabilities=privilege.capabilities,
+        correlation_findings=correlation.findings,
+        impact_metrics=impact.metrics,
+        impact_overall=impact.overall,
+        impact_missing=impact.missing,
+        investigation_surfaces=investigation.surfaces,
+        has_pressures=bool(pressure_audit.pressures),
+    )
+
+    return OperationalStory(
+        focus=answer_payload.focus,
+        pressure=answer_payload.pressure,
+        supporting_evidence=reasoning_payload.supporting_evidence,
+        capabilities=answer_payload.capabilities,
+        constraints=answer_payload.constraints,
+        correlation_gaps=answer_payload.correlation_gaps,
+        impact=answer_payload.impact,
+        recent_changes=answer_payload.recent_changes,
+        observed_outcomes=answer_payload.observed_outcomes,
+        investigation_path=reasoning_payload.investigation_path,
+        unknowns=answer_payload.unknowns,
+        boundary={
+            "mode": "read_only_view",
+            "records_facts": False,
+            "writes_event_ledger": False,
+            "mutates_cluster": False,
+        },
+    )
+
+
+def _compose_operational_story_payloads(
+    *,
+    primary: PressureItem | None,
+    capability_needs: list[CapabilityNeedEntry],
+    privilege_capabilities: tuple[PrivilegeDiscoveryCapability, ...],
+    correlation_findings: tuple[CorrelationFinding, ...],
+    impact_metrics: list[ImpactMetric],
+    impact_overall: str,
+    impact_missing: list[str],
+    investigation_surfaces,
+    has_pressures: bool,
+) -> tuple[_OperationalStoryAnswerPayload, _OperationalStoryReasoningPayload]:
+    """Separate bounded answer material from its implementation-local reasons."""
+
     unknowns: list[dict[str, str]] = []
-    if not pressure_audit.pressures:
+    if not has_pressures:
         unknowns.append(
             {
                 "area": "pressure",
@@ -83,37 +153,34 @@ def build_operational_story(
                 "reason": "no capability needs identified by current audit inputs",
             }
         )
-    if impact.overall == "unknown":
-        unknowns.append({"area": "impact", "reason": _impact_unknown_reason(impact.metrics)})
+    if impact_overall == "unknown":
+        unknowns.append({"area": "impact", "reason": _impact_unknown_reason(impact_metrics)})
 
-    return OperationalStory(
+    answer = _OperationalStoryAnswerPayload(
         focus=_focus(primary),
         pressure=_pressure(primary),
-        supporting_evidence=_supporting_evidence(primary),
         capabilities=[_capability(entry) for entry in capability_needs],
-        constraints=[_constraint(cap) for cap in privilege.capabilities],
+        constraints=[_constraint(cap) for cap in privilege_capabilities],
         correlation_gaps=[
-            _correlation(finding) for finding in correlation.findings
+            _correlation(finding) for finding in correlation_findings
         ],
         impact={
-            "overall": impact.overall,
-            "missing": list(impact.missing),
-            "metrics": [_metric(m) for m in impact.metrics],
+            "overall": impact_overall,
+            "missing": list(impact_missing),
+            "metrics": [_metric(m) for m in impact_metrics],
         },
-        recent_changes=_recent_changes(impact.metrics),
-        observed_outcomes=_observed_outcomes(impact.metrics),
+        recent_changes=_recent_changes(impact_metrics),
+        observed_outcomes=_observed_outcomes(impact_metrics),
+        unknowns=unknowns,
+    )
+    reasoning = _OperationalStoryReasoningPayload(
+        supporting_evidence=_supporting_evidence(primary),
         investigation_path=[
             {"surface": step.name, "reason": step.reason, "order": step.order}
-            for step in investigation.surfaces
+            for step in investigation_surfaces
         ],
-        unknowns=unknowns,
-        boundary={
-            "mode": "read_only_view",
-            "records_facts": False,
-            "writes_event_ledger": False,
-            "mutates_cluster": False,
-        },
     )
+    return answer, reasoning
 
 
 def operational_story_json(story: OperationalStory) -> dict[str, Any]:
