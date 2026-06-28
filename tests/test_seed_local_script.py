@@ -2258,6 +2258,31 @@ def test_cli_current_facts_cache_debug_renders_timing_section(tmp_path, capsys):
     assert "- total:" in output
 
 
+def test_current_facts_cache_debug_keeps_visibility_payload_separate_from_diagnostics(
+    tmp_path,
+):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "current-facts-debug-boundary.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [("example_host", "alias", "example_host.local")],
+    )
+    args = seed_local.build_parser().parse_args(
+        ["--db", str(db_path), "--current-facts-cache-debug"]
+    )
+    seed_local.validate_lifecycle_args(args, seed_local.build_parser())
+
+    report = seed_local._current_facts_timing_from_args(args)
+
+    assert report.output == report.visibility.output
+    assert "example_host alias example_host.local" in report.visibility.output
+    assert report.cache_status == report.diagnostics.cache_status
+    assert report.timings == report.diagnostics.timings
+    assert not hasattr(report.visibility, "timings")
+    assert not hasattr(report.diagnostics, "output")
+
+
 def test_cli_current_facts_cache_debug_warm_hit_labels_cached_projection_load(
     tmp_path, capsys
 ):
