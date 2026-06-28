@@ -106,3 +106,28 @@ def test_completed_tool_call_appends_tool_call_completed():
     assert completed.kind == "tool.call.completed"
     assert completed.payload["tool"] == "echo"
     assert completed.payload["output"]["message"] == "done"
+
+
+def test_completed_tool_call_recording_is_separate_from_knowledge_extraction(monkeypatch):
+    executor, ledger = make_executor()
+    extracted_event_ids = []
+    original_extract = executor._extract_post_execution_knowledge
+
+    def extract_after_recording(completed_event):
+        assert completed_event.kind == "tool.call.completed"
+        assert completed_event.id in [event.id for event in ledger.list_events("ws_1")]
+        extracted_event_ids.append(completed_event.id)
+        return original_extract(completed_event)
+
+    monkeypatch.setattr(
+        executor, "_extract_post_execution_knowledge", extract_after_recording
+    )
+
+    result = executor.execute("ws_1", "ses_1", "echo", {"message": "done"})
+
+    assert extracted_event_ids == [result.payload["completed_event_id"]]
+    assert event_kinds(ledger) == [
+        "tool.call.started",
+        "tool.call.completed",
+        "evidence.observed",
+    ]
