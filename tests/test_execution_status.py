@@ -5,6 +5,7 @@ from seed_runtime.events import EventLedger
 from seed_runtime.execution_status import (
     CliExecutionStatusConsumer,
     ExecutionStatus,
+    ExecutionStatusEmitter,
     RecordingExecutionStatusConsumer,
 )
 from seed_runtime.observation_sources import (
@@ -29,6 +30,34 @@ def _observation(value: str = "value") -> Observation:
         subject="host",
         predicate="hostname",
         value=value,
+    )
+
+
+def test_status_emitter_exposes_emission_without_consuming_status():
+    consumer = RecordingExecutionStatusConsumer()
+    emitter = ExecutionStatusEmitter(consumer)
+
+    emitter.emit(
+        "projection_replay",
+        "Projection replay",
+        current=1,
+        total=2,
+    )
+
+    assert consumer.statuses == [
+        ExecutionStatus(
+            "projection_replay",
+            "Projection replay",
+            current=1,
+            total=2,
+        )
+    ]
+
+
+def test_status_emitter_without_consumer_preserves_noop_behavior():
+    ExecutionStatusEmitter(None).emit(
+        "projection_cache_load",
+        "Loading projection cache...",
     )
 
 
