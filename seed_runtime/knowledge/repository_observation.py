@@ -8,42 +8,87 @@ claims, or integrates with runtime/tool execution.
 from __future__ import annotations
 
 import ast
+from dataclasses import dataclass
 
 from seed_runtime.knowledge.self_model_alignment import RepositoryArtifactFact
+from seed_runtime.structure_observation import STRUCTURE_OBSERVATION_OWNER
+
+
+@dataclass(frozen=True)
+class RepositoryArtifactObservationAdapterBoundary:
+    """Implementation-local adapter boundary for Python repository artifacts."""
+
+    parent_owner: str = STRUCTURE_OBSERVATION_OWNER
+    adapter_owner: str = "Repository Artifact Observation Adapter"
+    read_only: bool = True
+    structural_extraction: bool = True
+    preserves_evidence: bool = True
+    python_parsing: bool = True
+    module_observation: bool = True
+    class_observation: bool = True
+    function_observation: bool = True
+    method_observation: bool = True
+    repository_artifact_record_construction: bool = True
+    interprets_content: bool = False
+    owns_responsibility_recovery: bool = False
+    owns_lexicon: bool = False
+    writes_event_ledger: bool = False
+    mutates_repository: bool = False
+    mutates_cluster: bool = False
+
+
+REPOSITORY_ARTIFACT_OBSERVATION_ADAPTER_BOUNDARY = (
+    RepositoryArtifactObservationAdapterBoundary()
+)
+
+
+class RepositoryArtifactObservationAdapter:
+    """Observe Python repository artifact structure from caller-provided text."""
+
+    boundary = REPOSITORY_ARTIFACT_OBSERVATION_ADAPTER_BOUNDARY
+
+    def extract(
+        self,
+        source_path: str,
+        text: str,
+    ) -> list[RepositoryArtifactFact]:
+        """Extract structural artifact facts from caller-provided Python source text.
+
+        Extraction is intentionally tiny and deterministic. It always emits a module
+        fact for ``source_path`` and, when the text parses as Python, emits facts for
+        observed top-level class definitions, top-level function definitions,
+        top-level async function definitions, direct class methods, and top-level
+        imports. It does not read from disk or infer architecture/ownership.
+        """
+
+        facts = [_module_fact(source_path)]
+
+        try:
+            tree = ast.parse(text, filename=source_path)
+        except SyntaxError:
+            return [_module_fact(source_path, parse_failed=True)]
+
+        for node in tree.body:
+            if isinstance(node, ast.ClassDef):
+                facts.append(_class_fact(source_path, node.name))
+                facts.extend(_method_facts(source_path, node))
+            elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                facts.append(_function_fact(source_path, node.name))
+            elif isinstance(node, ast.Import):
+                facts.extend(_import_facts(source_path, node))
+            elif isinstance(node, ast.ImportFrom):
+                facts.extend(_import_from_facts(source_path, node))
+
+        return facts
 
 
 def extract_repository_artifact_facts(
     source_path: str,
     text: str,
 ) -> list[RepositoryArtifactFact]:
-    """Extract structural artifact facts from caller-provided Python source text.
+    """Extract structural artifact facts using the repository artifact adapter."""
 
-    Extraction is intentionally tiny and deterministic. It always emits a module
-    fact for ``source_path`` and, when the text parses as Python, emits facts for
-    observed top-level class definitions, top-level function definitions,
-    top-level async function definitions, direct class methods, and top-level
-    imports. It does not read from disk or infer architecture/ownership.
-    """
-
-    facts = [_module_fact(source_path)]
-
-    try:
-        tree = ast.parse(text, filename=source_path)
-    except SyntaxError:
-        return [_module_fact(source_path, parse_failed=True)]
-
-    for node in tree.body:
-        if isinstance(node, ast.ClassDef):
-            facts.append(_class_fact(source_path, node.name))
-            facts.extend(_method_facts(source_path, node))
-        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            facts.append(_function_fact(source_path, node.name))
-        elif isinstance(node, ast.Import):
-            facts.extend(_import_facts(source_path, node))
-        elif isinstance(node, ast.ImportFrom):
-            facts.extend(_import_from_facts(source_path, node))
-
-    return facts
+    return RepositoryArtifactObservationAdapter().extract(source_path, text)
 
 
 def _module_fact(
