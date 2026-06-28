@@ -41,6 +41,25 @@ _VERIFICATION_BOUNDARY_NOTES = (
 
 
 @dataclass(frozen=True)
+class _ObservedCapabilityEvidence:
+    """Preserved observed evidence for one capability candidate."""
+
+    candidate: str
+    supporting_evidence: list[object]
+    acquired_verification_evidence: list[VerificationEvidence]
+
+
+@dataclass(frozen=True)
+class _CapabilityVerificationStatus:
+    """Repository-rule interpretation of whether evidence verifies a capability."""
+
+    verification_status: str
+    verification_supporting_facts: list[str] = field(default_factory=list)
+    verification_supporting_evidence: list[object] = field(default_factory=list)
+    rationale: str = ""
+
+
+@dataclass(frozen=True)
 class CapabilityVerification:
     """Verification status for one preserved capability candidate."""
 
@@ -122,25 +141,52 @@ def _verification_for_candidate(
     inventory_entry: CapabilityInventoryEntry | None,
     acquired_evidence: list[VerificationEvidence],
 ) -> CapabilityVerification:
+    observed_evidence = _observed_evidence_for_candidate(candidate, acquired_evidence)
+    verification_status = _verification_status_for_candidate(inventory_entry)
+    return CapabilityVerification(
+        candidate=observed_evidence.candidate,
+        verification_status=verification_status.verification_status,
+        supporting_evidence=list(observed_evidence.supporting_evidence),
+        verification_supporting_facts=list(
+            verification_status.verification_supporting_facts
+        ),
+        verification_supporting_evidence=list(
+            verification_status.verification_supporting_evidence
+        ),
+        acquired_verification_evidence=list(
+            observed_evidence.acquired_verification_evidence
+        ),
+        rationale=verification_status.rationale,
+    )
+
+
+def _observed_evidence_for_candidate(
+    candidate: CapabilityCandidate,
+    acquired_evidence: list[VerificationEvidence],
+) -> _ObservedCapabilityEvidence:
+    return _ObservedCapabilityEvidence(
+        candidate=candidate.candidate,
+        supporting_evidence=list(candidate.supporting_evidence),
+        acquired_verification_evidence=list(acquired_evidence),
+    )
+
+
+def _verification_status_for_candidate(
+    inventory_entry: CapabilityInventoryEntry | None,
+) -> _CapabilityVerificationStatus:
     if inventory_entry is None:
-        return CapabilityVerification(
-            candidate=candidate.candidate,
+        return _CapabilityVerificationStatus(
             verification_status="unverified",
-            supporting_evidence=list(candidate.supporting_evidence),
-            acquired_verification_evidence=list(acquired_evidence),
             rationale=(
                 "candidate evidence is preserved, but no projected capability_verified "
                 "fact exists for this candidate; verification remains separate from "
                 "candidate preservation, selection, permission, and execution"
             ),
         )
-    return CapabilityVerification(
-        candidate=candidate.candidate,
+    return _CapabilityVerificationStatus(
         verification_status=inventory_entry.state,
-        supporting_evidence=list(candidate.supporting_evidence),
         verification_supporting_facts=list(inventory_entry.supporting_facts),
         verification_supporting_evidence=list(inventory_entry.supporting_evidence),
-        acquired_verification_evidence=list(acquired_evidence),
         rationale=(
             f"candidate evidence is preserved and verification status is derived from "
             f"existing capability inventory: {inventory_entry.reason}; this does not "
