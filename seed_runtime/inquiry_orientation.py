@@ -69,6 +69,17 @@ class InquiryOrientationView:
     authority_boundary: str = AUTHORITY_BOUNDARY
 
 
+@dataclass(frozen=True)
+class _ArchitecturalOrientationAnswer:
+    """Implementation-local answer composition before orientation rendering."""
+
+    answer: list[RelatedMaterial]
+    reason: str
+    support: list[str]
+    boundary: str
+    limitations: str
+
+
 def record_inquiry_note(
     store_path: Path,
     raw_note: str,
@@ -127,16 +138,33 @@ def build_inquiry_orientation(
 ) -> InquiryOrientationView:
     """Build a bounded read-only orientation view for a preserved inquiry note."""
 
+    answer = _compose_architectural_orientation_answer(state, note)
+    return InquiryOrientationView(
+        note=note,
+        related_material=answer.answer,
+        uncertainty=answer.limitations,
+        authority_boundary=answer.boundary,
+    )
+
+
+def _compose_architectural_orientation_answer(
+    state: State, note: InquiryNoteRecord
+) -> _ArchitecturalOrientationAnswer:
+    """Compose orientation answer material without rendering or transport changes."""
+
     tokens = _note_tokens(note.raw_note)
     related = _dedupe_related(
         [*_fact_matches(state, tokens), *_source_navigation_matches(state, tokens)]
     )[:_MAX_RELATED_ITEMS]
-    return InquiryOrientationView(
-        note=note,
-        related_material=related,
-        uncertainty=(
-            UNCERTAINTY_WITH_MATCHES if related else UNCERTAINTY_WITHOUT_MATCHES
+    return _ArchitecturalOrientationAnswer(
+        answer=related,
+        reason=(
+            "deterministic lexical overlaps against projected fact supports and "
+            "source-navigation matches"
         ),
+        support=[item.support for item in related],
+        boundary=AUTHORITY_BOUNDARY,
+        limitations=(UNCERTAINTY_WITH_MATCHES if related else UNCERTAINTY_WITHOUT_MATCHES),
     )
 
 
