@@ -12,6 +12,21 @@ from seed_runtime.state import State
 
 
 @dataclass(frozen=True)
+class _SelectionResultPayload:
+    selected: str
+    outcome: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class _SelectionLineagePayload:
+    candidates: list[dict[str, Any]]
+    selection_factors: list[str]
+    non_selected: list[dict[str, Any]]
+    evidence: list[dict[str, Any]]
+    unknowns: list[dict[str, str]]
+
+
+@dataclass(frozen=True)
 class SelectionPathAudit:
     target: str
     selected: str
@@ -88,26 +103,48 @@ def build_selection_path_audit(
             story.focus,
         )
 
+    return _selection_path_from_payloads(
+        target=target,
+        result=_SelectionResultPayload(
+            selected="unknown",
+            outcome={
+                "selected": "unknown",
+                "reason": "target is not an implemented selection surface",
+            },
+        ),
+        lineage=_SelectionLineagePayload(
+            candidates=[
+                _candidate(item, index)
+                for index, item in enumerate(pressure.pressures, start=1)
+            ],
+            selection_factors=["unknown"],
+            non_selected=[],
+            evidence=[],
+            unknowns=[
+                {
+                    "area": "selection_logic",
+                    "reason": "no implementation-backed selection evidence discovered for target",
+                }
+            ],
+        ),
+    )
+
+
+def _selection_path_from_payloads(
+    *,
+    target: str,
+    result: _SelectionResultPayload,
+    lineage: _SelectionLineagePayload,
+) -> SelectionPathAudit:
     return SelectionPathAudit(
         target=target,
-        selected="unknown",
-        candidates=[
-            _candidate(item, index)
-            for index, item in enumerate(pressure.pressures, start=1)
-        ],
-        selection_factors=["unknown"],
-        non_selected=[],
-        evidence=[],
-        outcome={
-            "selected": "unknown",
-            "reason": "target is not an implemented selection surface",
-        },
-        unknowns=[
-            {
-                "area": "selection_logic",
-                "reason": "no implementation-backed selection evidence discovered for target",
-            }
-        ],
+        selected=result.selected,
+        candidates=lineage.candidates,
+        selection_factors=lineage.selection_factors,
+        non_selected=lineage.non_selected,
+        evidence=lineage.evidence,
+        outcome=result.outcome,
+        unknowns=lineage.unknowns,
     )
 
 
@@ -174,21 +211,28 @@ def _from_pressure_selection(
                 "reason": "no pressure candidates available from current audit inputs",
             }
         )
-    return SelectionPathAudit(
+    return _selection_path_from_payloads(
         target=target,
-        selected=selected,
-        candidates=[
-            _candidate(item, index) for index, item in enumerate(pressures, start=1)
-        ],
-        selection_factors=factors,
-        non_selected=[_non_selected(item, selected_item) for item in pressures[1:]],
-        evidence=[_evidence(selected_item)] if selected_item else [],
-        outcome={
-            "selected": selected,
-            "focus": focus,
-            "summary": f"{selected} selected",
-        },
-        unknowns=unknowns,
+        result=_SelectionResultPayload(
+            selected=selected,
+            outcome={
+                "selected": selected,
+                "focus": focus,
+                "summary": f"{selected} selected",
+            },
+        ),
+        lineage=_SelectionLineagePayload(
+            candidates=[
+                _candidate(item, index)
+                for index, item in enumerate(pressures, start=1)
+            ],
+            selection_factors=factors,
+            non_selected=[
+                _non_selected(item, selected_item) for item in pressures[1:]
+            ],
+            evidence=[_evidence(selected_item)] if selected_item else [],
+            unknowns=unknowns,
+        ),
     )
 
 
