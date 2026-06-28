@@ -220,3 +220,27 @@ def test_runtime_still_rejects_invalid_output_schema_after_start(monkeypatch):
         "tool.call.failed",
     ]
     assert ledger.list_events("ws")[-1].payload["phase"] == "execution"
+
+
+def test_operation_selection_resolves_one_registered_operation_without_recommendations():
+    registry = ToolRegistry()
+    registry.load_manifest("toolkits/core/echo/toolkit.yaml")
+    service = ToolValidationService(registry)
+
+    selection = service.select_operation("echo")
+
+    assert selection.ok is True
+    assert selection.errors == []
+    assert selection.operation is not None
+    assert selection.operation.name == "echo"
+
+
+def test_operation_selection_preserves_unknown_tool_error_message():
+    service = ToolValidationService(ToolRegistry())
+
+    selection = service.select_operation("missing_tool")
+    validation = service.validate_tool_input("missing_tool", {})
+
+    assert selection.ok is False
+    assert selection.errors == ["unknown tool 'missing_tool'"]
+    assert validation.errors == ["unknown tool 'missing_tool'"]
