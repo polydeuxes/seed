@@ -115,6 +115,44 @@ def test_reasoning_path_json_is_valid_and_read_only(tmp_path, capsys):
     assert after == before
 
 
+def test_reasoning_path_preserves_conclusions_and_lineage_at_compatibility_handoff(
+    tmp_path, capsys
+):
+    seed_local = load_seed_local()
+    db = tmp_path / "seed.sqlite"
+    ingest(
+        seed_local,
+        db,
+        ("api", "prometheus_target", "127.0.0.1:9100"),
+        ("node-a", "listening_socket", "tcp 127.0.0.1:9100"),
+    )
+    capsys.readouterr()
+
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db),
+                "--reasoning-path",
+                "capability",
+                "listener_process_inventory",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["intermediate_conclusions"]
+    assert payload["derived_conclusions"]
+    assert payload["evidence"]
+    assert payload["consumers"]
+    assert payload["story_impact"]
+    assert all("evidence" not in item for item in payload["derived_conclusions"])
+    assert all("consumers" not in item for item in payload["derived_conclusions"])
+    assert all("story_impact" not in item for item in payload["derived_conclusions"])
+
+
 def test_reasoning_path_unknown_and_empty_state_are_explicit(tmp_path, capsys):
     seed_local = load_seed_local()
     db = tmp_path / "seed.sqlite"

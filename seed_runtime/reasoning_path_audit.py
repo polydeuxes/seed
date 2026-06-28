@@ -18,6 +18,24 @@ from seed_runtime.state import State
 
 
 @dataclass(frozen=True)
+class _DerivedConclusionPayload:
+    """Implementation-local derived conclusions separated from their lineage."""
+
+    intermediate_conclusions: list[dict[str, Any]]
+    derived_conclusions: list[dict[str, Any]]
+
+
+@dataclass(frozen=True)
+class _DerivationLineagePayload:
+    """Implementation-local derivation path evidence and consumers."""
+
+    evidence: list[dict[str, Any]]
+    consumers: list[dict[str, Any]]
+    story_impact: list[dict[str, Any]]
+    unknowns: list[dict[str, str]]
+
+
+@dataclass(frozen=True)
 class ReasoningPathAudit:
     domain: str
     subject: str
@@ -191,15 +209,40 @@ def build_reasoning_path_audit(
                 "reason": "no derivation evidence currently available",
             }
         )
+    conclusion_payload = _DerivedConclusionPayload(
+        intermediate_conclusions=intermediate,
+        derived_conclusions=derived,
+    )
+    lineage_payload = _DerivationLineagePayload(
+        evidence=evidence,
+        consumers=_dedupe(consumers),
+        story_impact=story_impact,
+        unknowns=unknowns,
+    )
+    return _reasoning_path_from_payloads(
+        domain,
+        subject,
+        conclusions=conclusion_payload,
+        lineage=lineage_payload,
+    )
+
+
+def _reasoning_path_from_payloads(
+    domain: str,
+    subject: str,
+    *,
+    conclusions: _DerivedConclusionPayload,
+    lineage: _DerivationLineagePayload,
+) -> ReasoningPathAudit:
     return ReasoningPathAudit(
         domain,
         subject,
-        evidence,
-        intermediate,
-        derived,
-        _dedupe(consumers),
-        story_impact,
-        unknowns,
+        lineage.evidence,
+        conclusions.intermediate_conclusions,
+        conclusions.derived_conclusions,
+        lineage.consumers,
+        lineage.story_impact,
+        lineage.unknowns,
     )
 
 
