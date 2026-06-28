@@ -81,6 +81,29 @@ def test_selection_path_json_is_valid_and_surfaces_selection_details(tmp_path, c
     assert payload["boundary"]["mutates_cluster"] is False
 
 
+def test_selection_path_preserves_result_and_lineage_at_compatibility_handoff(
+    tmp_path, capsys
+):
+    seed_local, db = seeded_db(tmp_path)
+    capsys.readouterr()
+
+    assert (
+        seed_local.main(
+            ["--db", str(db), "--selection-path", "current_focus", "--json"]
+        )
+        == 0
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["selected"] == payload["outcome"]["selected"]
+    assert payload["candidates"]
+    assert payload["selection_factors"]
+    assert payload["evidence"]
+    assert "candidates" not in payload["outcome"]
+    assert "selection_factors" not in payload["outcome"]
+    assert "evidence" not in payload["outcome"]
+
+
 def test_selection_path_unknown_logic_remains_explicit(tmp_path, capsys):
     seed_local, db = seeded_db(tmp_path)
     capsys.readouterr()
