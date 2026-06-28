@@ -220,8 +220,9 @@ class ToolExecutor:
         )
 
         try:
-            fn = self._load_registered(tool)
-            output = fn(
+            output = self._realize_registered_operation(
+                tool,
+                arguments,
                 ToolContext(
                     self.ledger,
                     workspace_id,
@@ -230,11 +231,7 @@ class ToolExecutor:
                     call_event.id,
                     self.registry,
                 ),
-                **arguments,
             )
-            output_validation = self.tool_validation.validate_output_schema(tool, output)
-            if not output_validation.ok:
-                raise ValueError(output_validation.errors[0])
         except Exception as exc:
             failed_event = self.ledger.append(
                 "tool.call.failed",
@@ -272,6 +269,23 @@ class ToolExecutor:
             output=output,
             payload={"output": output, "completed_event_id": completed_event.id},
         )
+
+    def _realize_registered_operation(
+        self, tool: ToolSpec, arguments: dict[str, Any], context: ToolContext
+    ) -> dict[str, Any]:
+        """Run the registered callable and validate its returned output.
+
+        Event recording stays with ``_execute_allowed_tool_call`` so the
+        implementation keeps execution realization distinct from execution
+        recording.
+        """
+
+        fn = self._load_registered(tool)
+        output = fn(context, **arguments)
+        output_validation = self.tool_validation.validate_output_schema(tool, output)
+        if not output_validation.ok:
+            raise ValueError(output_validation.errors[0])
+        return output
 
     def _policy_denied(
         self,
