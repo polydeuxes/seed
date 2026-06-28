@@ -360,6 +360,7 @@ from seed_runtime.projection_store import (
     STATE_SUMMARY_PROJECTION_NAME,
     STATE_SUMMARY_PROJECTION_VERSION,
     SummaryProjectionSnapshot,
+    StateCacheStatus,
     project_state_with_cache,
     state_from_payload,
     rebuild_state_cache,
@@ -5111,6 +5112,31 @@ class CurrentFactsTimingReport:
     timings: list[tuple[str, float]]
 
 
+@dataclass(frozen=True)
+class _CurrentFactsCacheVisibility:
+    cache_status: str
+    state_path_label: str
+
+    @classmethod
+    def from_state_cache_status(
+        cls, status: StateCacheStatus
+    ) -> "_CurrentFactsCacheVisibility":
+        """Describe the cache path that explains the measured State timing."""
+
+        if status.cache_hit:
+            state_path_label = (
+                "state cache hit path (metadata validation + cached projection load)"
+            )
+        elif status.incremental_replay:
+            state_path_label = "state cache miss path (incremental event replay)"
+        else:
+            state_path_label = "state cache miss path (full projection rebuild)"
+        return cls(
+            cache_status="hit" if status.cache_hit else "miss",
+            state_path_label=state_path_label,
+        )
+
+
 class _TimingProjectionStore:
     def __init__(self, store: ProjectionStore, timings: list[tuple[str, float]]):
         self._store = store
@@ -5211,15 +5237,17 @@ def _current_facts_timing_from_args(
                 status_consumer=None,
                 diagnostics=projection_diagnostics,
             )
-            if status.cache_hit:
-                state_path_label = "state cache hit path (metadata validation + cached projection load)"
-            elif status.incremental_replay:
-                state_path_label = "state cache miss path (incremental event replay)"
-            else:
-                state_path_label = "state cache miss path (full projection rebuild)"
-            timings.append((state_path_label, time.perf_counter() - state_path_started))
+            cache_visibility = _CurrentFactsCacheVisibility.from_state_cache_status(
+                status
+            )
+            timings.append(
+                (
+                    cache_visibility.state_path_label,
+                    time.perf_counter() - state_path_started,
+                )
+            )
             timings.extend(projection_diagnostics.timings)
-            cache_status = "hit" if status.cache_hit else "miss"
+            cache_status = cache_visibility.cache_status
         else:
             state = timed(
                 "full projection rebuild (event replay)",
