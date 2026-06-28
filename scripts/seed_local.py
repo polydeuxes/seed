@@ -5106,10 +5106,32 @@ def format_best_fact(
 
 
 @dataclass(frozen=True)
-class CurrentFactsTimingReport:
+class _CurrentFactsVisibilityPayload:
     output: str
+
+
+@dataclass(frozen=True)
+class _CurrentFactsDiagnosticPayload:
     cache_status: str
     timings: list[tuple[str, float]]
+
+
+@dataclass(frozen=True)
+class CurrentFactsTimingReport:
+    visibility: _CurrentFactsVisibilityPayload
+    diagnostics: _CurrentFactsDiagnosticPayload
+
+    @property
+    def output(self) -> str:
+        return self.visibility.output
+
+    @property
+    def cache_status(self) -> str:
+        return self.diagnostics.cache_status
+
+    @property
+    def timings(self) -> list[tuple[str, float]]:
+        return self.diagnostics.timings
 
 
 @dataclass(frozen=True)
@@ -5285,7 +5307,10 @@ def _current_facts_timing_from_args(
             )
         timings.append(("stdout/output time", 0.0))
         timings.append(("total", time.perf_counter() - started))
-        return CurrentFactsTimingReport(output, cache_status, timings)
+        return CurrentFactsTimingReport(
+            visibility=_CurrentFactsVisibilityPayload(output),
+            diagnostics=_CurrentFactsDiagnosticPayload(cache_status, timings),
+        )
     finally:
         for resource in (raw_store, ledger):
             close = getattr(resource, "close", None)
