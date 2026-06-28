@@ -97,15 +97,46 @@ def build_capability_inventory(
 
 def _inventory_capabilities(state: State) -> set[str]:
     capabilities: set[str] = set()
+    capabilities.update(_registered_operation_contract_capabilities(state))
+    capabilities.update(_requested_capabilities(state))
+    capabilities.update(_observed_verification_capability_subjects(state))
+    return capabilities
+
+
+def _registered_operation_contract_capabilities(state: State) -> set[str]:
+    """Capabilities declared by executable operation contracts.
+
+    These names come from registered ``ToolSpec`` records and only describe
+    operation-contract metadata. They are not observed evidence that the
+    capability is present, available, verified, authorized, or callable in the
+    current environment.
+    """
+
+    capabilities: set[str] = set()
     for tool in state.tools.values():
         capabilities.update(tool.capabilities or [tool.name])
-    capabilities.update(need.capability for need in state.tool_needs.values())
-    capabilities.update(
+    return capabilities
+
+
+def _observed_verification_capability_subjects(state: State) -> set[str]:
+    """Capability subjects named by observed verification facts.
+
+    These names come from projected observation/evidence-derived facts. They are
+    interpreted as observed verification support only, separate from registered
+    executable operation contracts.
+    """
+
+    return {
         fact.subject_id
         for fact in state.facts.values()
         if fact.predicate == CAPABILITY_VERIFIED_PREDICATE
-    )
-    return capabilities
+    }
+
+
+def _requested_capabilities(state: State) -> set[str]:
+    """Capabilities requested by unresolved needs, separate from evidence and contracts."""
+
+    return {need.capability for need in state.tool_needs.values()}
 
 
 def _entry_for_capability(
