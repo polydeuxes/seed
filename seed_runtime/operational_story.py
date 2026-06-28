@@ -62,6 +62,12 @@ class _OperationalStoryAnswerPayload:
     impact: dict[str, Any]
     recent_changes: list[str]
     observed_outcomes: list[str]
+
+
+@dataclass(frozen=True)
+class _OperationalStoryLimitationsPayload:
+    """Implementation-local incompleteness and unavailable authority material."""
+
     unknowns: list[dict[str, str]]
 
 
@@ -109,6 +115,7 @@ def build_operational_story(
         reasoning_payload,
         supporting_evidence_payload,
         boundary_payload,
+        limitations_payload,
     ) = (
         _compose_operational_story_payloads(
             primary=primary,
@@ -134,7 +141,7 @@ def build_operational_story(
         recent_changes=answer_payload.recent_changes,
         observed_outcomes=answer_payload.observed_outcomes,
         investigation_path=reasoning_payload.investigation_path,
-        unknowns=answer_payload.unknowns,
+        unknowns=limitations_payload.unknowns,
         boundary=boundary_payload.boundary,
     )
 
@@ -155,8 +162,9 @@ def _compose_operational_story_payloads(
     _OperationalStoryReasoningPayload,
     _OperationalStorySupportingEvidencePayload,
     _OperationalStoryBoundaryPayload,
+    _OperationalStoryLimitationsPayload,
 ]:
-    """Separate answer, reason, supporting evidence, and authority boundary."""
+    """Separate answer, reason, support, authority boundary, and limitations."""
 
     unknowns: list[dict[str, str]] = []
     if not has_pressures:
@@ -191,7 +199,6 @@ def _compose_operational_story_payloads(
         },
         recent_changes=_recent_changes(impact_metrics),
         observed_outcomes=_observed_outcomes(impact_metrics),
-        unknowns=unknowns,
     )
     reasoning = _OperationalStoryReasoningPayload(
         investigation_path=[
@@ -210,7 +217,8 @@ def _compose_operational_story_payloads(
             "mutates_cluster": False,
         },
     )
-    return answer, reasoning, supporting_evidence, boundary
+    limitations = _OperationalStoryLimitationsPayload(unknowns=unknowns)
+    return answer, reasoning, supporting_evidence, boundary, limitations
 
 
 def operational_story_json(story: OperationalStory) -> dict[str, Any]:
