@@ -27,6 +27,18 @@ _UNVERIFIED_VALUES = {"unverified", "false", "no"}
 
 
 @dataclass(frozen=True)
+class _AdmittedCapabilityState:
+    """Capability names admitted into projected knowledge before inventory presentation.
+
+    Promotion/admission is represented by existing projected
+    ``capability_verified`` facts. Inventory presentation consumes this admitted
+    state, but does not own admission or create promotion facts.
+    """
+
+    capabilities: set[str] = field(default_factory=set)
+
+
+@dataclass(frozen=True)
 class CapabilityEvidenceSummary:
     """Compact evidence summary for one capability inventory entry."""
 
@@ -99,8 +111,22 @@ def _inventory_capabilities(state: State) -> set[str]:
     capabilities: set[str] = set()
     capabilities.update(_registered_operation_contract_capabilities(state))
     capabilities.update(_requested_capabilities(state))
-    capabilities.update(_observed_verification_capability_subjects(state))
+    capabilities.update(_admitted_capability_state(state).capabilities)
     return capabilities
+
+
+def _admitted_capability_state(state: State) -> _AdmittedCapabilityState:
+    """Return capability knowledge admitted by projected promotion facts.
+
+    This is the implementation-local handoff from capability promotion/admission
+    into inventory construction. The inventory can present these current
+    capability subjects, but this helper does not evaluate readiness, perform
+    promotion, create facts, or decide execution authority.
+    """
+
+    return _AdmittedCapabilityState(
+        capabilities=_observed_verification_capability_subjects(state)
+    )
 
 
 def _registered_operation_contract_capabilities(state: State) -> set[str]:
