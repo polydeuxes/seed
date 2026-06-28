@@ -81,35 +81,13 @@ class ToolNeedService:
         authorize actions, create pending actions, or mutate registry/catalog
         state.
         """
-        catalog_entry = capability_catalog.get(tool_need.capability)
-        recommendations = provider_recommendations
-        if recommendations is None:
-            recommendations = []
-        catalog_recommendations = (
-            list(catalog_entry.recommendations) if catalog_entry is not None else []
+        resolution = _CapabilityResolution(
+            tool_need=tool_need,
+            capability_catalog=capability_catalog,
+            tool_registry=tool_registry,
+            provider_recommendations=provider_recommendations or [],
         )
-        return {
-            "known_capability": catalog_entry is not None,
-            "registered_operations": [
-                _registered_operation_candidate(tool)
-                for tool in tool_registry.list_tools_for_capability(
-                    tool_need.capability, visible_only=True
-                )
-            ],
-            "provider_recommendations": [
-                {
-                    "provider": recommendation.provider,
-                    "score": recommendation.score,
-                    "reasons": list(recommendation.reasons),
-                }
-                for recommendation in recommendations
-            ],
-            "handoff_candidates": [
-                _handoff_candidate(recommendation)
-                for recommendation in catalog_recommendations
-                if recommendation.backend_type is not None or recommendation.operation
-            ],
-        }
+        return resolution.to_payload()
 
     def set_status(
         self,
@@ -127,6 +105,68 @@ class ToolNeedService:
             causation_id=causation_id,
         )
         return updated
+
+
+class _CapabilityResolution:
+    """Read-only capability resolution with catalog and registry boundaries split.
+
+    Provider recommendations and handoff candidates are catalog-derived advisory
+    metadata. Registered operation candidates are registry-derived callable
+    inventory. Keeping these paths separate makes the recovered boundary explicit
+    without changing the request_tool response shape.
+    """
+
+    def __init__(
+        self,
+        *,
+        tool_need: ToolNeed,
+        capability_catalog: CapabilityCatalog,
+        tool_registry: ToolRegistry,
+        provider_recommendations: list[Any],
+    ) -> None:
+        self.tool_need = tool_need
+        self.capability_catalog = capability_catalog
+        self.tool_registry = tool_registry
+        self.provider_recommendations = provider_recommendations
+        self.catalog_entry = capability_catalog.get(tool_need.capability)
+
+    def to_payload(self) -> dict[str, object]:
+        return {
+            "known_capability": self.catalog_entry is not None,
+            "registered_operations": self._registered_operation_candidates(),
+            "provider_recommendations": self._provider_recommendation_payload(),
+            "handoff_candidates": self._handoff_candidates(),
+        }
+
+    def _registered_operation_candidates(self) -> list[dict[str, object]]:
+        return [
+            _registered_operation_candidate(tool)
+            for tool in self.tool_registry.list_tools_for_capability(
+                self.tool_need.capability, visible_only=True
+            )
+        ]
+
+    def _provider_recommendation_payload(self) -> list[dict[str, object]]:
+        return [
+            {
+                "provider": recommendation.provider,
+                "score": recommendation.score,
+                "reasons": list(recommendation.reasons),
+            }
+            for recommendation in self.provider_recommendations
+        ]
+
+    def _handoff_candidates(self) -> list[dict[str, object]]:
+        catalog_recommendations = (
+            list(self.catalog_entry.recommendations)
+            if self.catalog_entry is not None
+            else []
+        )
+        return [
+            _handoff_candidate(recommendation)
+            for recommendation in catalog_recommendations
+            if recommendation.backend_type is not None or recommendation.operation
+        ]
 
 
 def _registered_operation_candidate(tool: ToolSpec) -> dict[str, object]:
