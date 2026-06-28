@@ -30,8 +30,36 @@ class ToolValidationResult:
         return cls(ok=False, errors=list(errors), tool=tool)
 
 
+@dataclass(frozen=True)
+class OperationSelectionResult:
+    """Result of resolving one selected registered operation.
+
+    Operation selection consumes an already-selected operation name from a
+    ``call_tool`` decision. It does not rank capability recommendations, inspect
+    handoff metadata, or choose between providers.
+    """
+
+    ok: bool
+    errors: list[str]
+    operation: ToolSpec | None = None
+
+    @classmethod
+    def selected(cls, operation: ToolSpec) -> "OperationSelectionResult":
+        return cls(ok=True, errors=[], operation=operation)
+
+    @classmethod
+    def rejected(cls, *errors: str) -> "OperationSelectionResult":
+        return cls(ok=False, errors=list(errors), operation=None)
+
+
 class ToolValidationService:
-    """Validate registered tool calls using Seed's existing validation rules."""
+    """Validate registered tool calls using Seed's existing validation rules.
+
+    The service keeps operation selection separate from capability
+    recommendation: recommendation surfaces bounded possibilities in the
+    request_tool path, while operation selection resolves the single registered
+    operation named by an already-formed call_tool decision.
+    """
 
     def __init__(self, registry: ToolRegistry | None = None) -> None:
         self.registry = registry or ToolRegistry()
@@ -41,15 +69,32 @@ class ToolValidationService:
 
         return self.registry.require(tool_name)
 
+    def select_operation(
+        self, operation_name: str, state: State | None = None
+    ) -> OperationSelectionResult:
+        """Resolve the single registered operation named by a call_tool decision.
+
+        This preserves the existing registry/state lookup behavior and only
+        names the boundary explicitly: selection starts from an operation name,
+        not from catalog provider recommendations or capability handoff metadata.
+        """
+
+        operation = self.registry.get(operation_name)
+        if operation is None and state is not None:
+            operation = state.tools.get(operation_name)
+        if operation is None:
+            return OperationSelectionResult.rejected(
+                f"unknown tool {operation_name!r}"
+            )
+        return OperationSelectionResult.selected(operation)
+
     def validate_tool_exists(
         self, tool_name: str, state: State | None = None
     ) -> ToolValidationResult:
-        tool = self.registry.get(tool_name)
-        if tool is None and state is not None:
-            tool = state.tools.get(tool_name)
-        if tool is None:
-            return ToolValidationResult.invalid(f"unknown tool {tool_name!r}")
-        return ToolValidationResult.valid(tool)
+        selection = self.select_operation(tool_name, state)
+        if not selection.ok or selection.operation is None:
+            return ToolValidationResult.invalid(*selection.errors)
+        return ToolValidationResult.valid(selection.operation)
 
     def validate_tool_status(self, tool: ToolSpec) -> ToolValidationResult:
         if tool.status != "registered":
@@ -90,7 +135,11 @@ class ToolValidationService:
     def validate_executable_tool_call(
         self, tool_name: str, arguments: dict[str, Any]
     ) -> ToolValidationResult:
-        tool = self.require_tool(tool_name)
+        selection = self.select_operation(tool_name)
+        if not selection.ok or selection.operation is None:
+            # Preserve the historical execution-path exception for unknown tools.
+            self.require_tool(tool_name)
+        tool = selection.operation
         status = self.validate_tool_status(tool)
         if not status.ok:
             return status
