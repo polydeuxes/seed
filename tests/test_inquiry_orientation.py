@@ -6,6 +6,8 @@ from seed_runtime.events import EventLedger
 from seed_runtime.facts import Fact
 from seed_runtime.inquiry_orientation import (
     AUTHORITY_BOUNDARY,
+    _ArchitecturalOrientationAnswer,
+    _compose_architectural_orientation_answer,
     build_inquiry_orientation,
     format_inquiry_orientation,
     load_inquiry_notes,
@@ -278,3 +280,28 @@ def test_surface_family_labels_do_not_add_authority_claims(tmp_path):
         assert "recommend" not in label
     assert "recommended action" in output  # only in the negated authority boundary
     assert "next safe move" in output  # only in the negated authority boundary
+
+
+def test_architectural_orientation_answer_composition_is_separate_from_rendering(tmp_path):
+    _ledger, state = _state_with_example_host_fact()
+    note = record_inquiry_note(
+        tmp_path / "probe.jsonl",
+        "example_host keeps showing up first",
+        recorded_at=datetime(2026, 6, 16, tzinfo=timezone.utc),
+    )
+
+    answer = _compose_architectural_orientation_answer(state, note)
+    view = build_inquiry_orientation(state, note)
+    output = format_inquiry_orientation(view)
+
+    assert isinstance(answer, _ArchitecturalOrientationAnswer)
+    assert answer.answer == view.related_material
+    assert answer.boundary == view.authority_boundary == AUTHORITY_BOUNDARY
+    assert answer.limitations == view.uncertainty
+    assert answer.support == [item.support for item in view.related_material]
+    assert "deterministic lexical overlaps" in answer.reason
+    assert "Inquiry note:" in output
+    assert "Inquiry note" not in answer.__dataclass_fields__
+    assert "related_material" not in answer.__dataclass_fields__
+    assert "uncertainty" not in answer.__dataclass_fields__
+    assert "authority_boundary" not in answer.__dataclass_fields__
