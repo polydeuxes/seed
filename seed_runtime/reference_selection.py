@@ -11,6 +11,18 @@ from seed_runtime.snapshot_policy_audit import build_snapshot_policy_audit
 
 
 @dataclass(frozen=True)
+class _ReferenceChoicePayload:
+    selected_reference: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class _ComparisonLineagePayload:
+    selection_rationale: list[str]
+    alternative_references: list[dict[str, Any]]
+    limitations: list[str]
+
+
+@dataclass(frozen=True)
 class ReferenceSelection:
     domain: str
     question: str
@@ -38,21 +50,40 @@ class ReferenceSelection:
 
 def build_reference_selection(repo_root: Path, domain: str) -> ReferenceSelection:
     if domain != "history":
-        return ReferenceSelection(
+        return _reference_selection_from_payloads(
             domain=domain,
             question="unknown",
-            selected_reference={"status": "unknown"},
-            selection_rationale=["unsupported reference-selection domain"],
-            alternative_references=[
-                {
-                    "reference": "unknown",
-                    "reason": "implementation does not currently expose candidate alternatives for this domain",
-                }
-            ],
-            authority_boundary=_authority_boundary(),
-            limitations=["only the history domain is currently implementation-backed"],
+            choice=_ReferenceChoicePayload(selected_reference={"status": "unknown"}),
+            lineage=_ComparisonLineagePayload(
+                selection_rationale=["unsupported reference-selection domain"],
+                alternative_references=[
+                    {
+                        "reference": "unknown",
+                        "reason": "implementation does not currently expose candidate alternatives for this domain",
+                    }
+                ],
+                limitations=["only the history domain is currently implementation-backed"],
+            ),
         )
     return _build_history_reference_selection(repo_root)
+
+
+def _reference_selection_from_payloads(
+    *,
+    domain: str,
+    question: str,
+    choice: _ReferenceChoicePayload,
+    lineage: _ComparisonLineagePayload,
+) -> ReferenceSelection:
+    return ReferenceSelection(
+        domain=domain,
+        question=question,
+        selected_reference=choice.selected_reference,
+        selection_rationale=lineage.selection_rationale,
+        alternative_references=lineage.alternative_references,
+        authority_boundary=_authority_boundary(),
+        limitations=lineage.limitations,
+    )
 
 
 def reference_selection_json(selection: ReferenceSelection) -> dict[str, Any]:
@@ -133,14 +164,15 @@ def _build_history_reference_selection(repo_root: Path) -> ReferenceSelection:
                 "reason": "implementation does not currently expose candidate alternatives",
             }
         ]
-    return ReferenceSelection(
+    return _reference_selection_from_payloads(
         domain="history",
         question="historical comparison",
-        selected_reference=selected,
-        selection_rationale=rationale,
-        alternative_references=alternatives,
-        authority_boundary=_authority_boundary(),
-        limitations=limitations,
+        choice=_ReferenceChoicePayload(selected_reference=selected),
+        lineage=_ComparisonLineagePayload(
+            selection_rationale=rationale,
+            alternative_references=alternatives,
+            limitations=limitations,
+        ),
     )
 
 
