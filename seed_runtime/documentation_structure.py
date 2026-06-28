@@ -8,6 +8,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
+from seed_runtime.structure_observation import STRUCTURE_OBSERVATION_BOUNDARY
+
 BOUNDARY_TEXT = (
     "read only; observes document structure only; no prose interpretation; "
     "no grammar interpretation; no responsibility recovery; "
@@ -16,15 +18,7 @@ BOUNDARY_TEXT = (
     "no event ledger writes; no repository mutation"
 )
 
-BOUNDARY = {
-    "read_only": True,
-    "interprets_prose": False,
-    "infers_claims": False,
-    "infers_authority": False,
-    "infers_shapes": False,
-    "writes_event_ledger": False,
-    "mutates_repository": False,
-}
+BOUNDARY = STRUCTURE_OBSERVATION_BOUNDARY.as_documentation_boundary()
 
 RECURRENCE_BOUNDARY_TEXT = (
     "read only; observes structural recurrence only; no prose interpretation; "
