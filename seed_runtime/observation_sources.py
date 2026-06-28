@@ -121,6 +121,54 @@ class ObservationIngestionDiagnostics:
         return self.total_events / self.event_generation_and_ledger_write_seconds
 
 
+class _ObservationIngestionTiming:
+    """Build observation-ingestion timing diagnostics without emitting status."""
+
+    def __init__(self) -> None:
+        self.total_started = time.perf_counter()
+        self.source_collection_seconds = 0.0
+        self.normalization_seconds = 0.0
+        self.event_generation_and_ledger_write_seconds = 0.0
+        self._phase_started = 0.0
+
+    def start_phase(self) -> None:
+        self._phase_started = time.perf_counter()
+
+    def finish_source_collection(self) -> None:
+        self.source_collection_seconds = time.perf_counter() - self._phase_started
+
+    def finish_normalization(self) -> None:
+        self.normalization_seconds = time.perf_counter() - self._phase_started
+
+    def finish_event_generation_and_ledger_write(self) -> None:
+        self.event_generation_and_ledger_write_seconds = (
+            time.perf_counter() - self._phase_started
+        )
+
+    def build_diagnostics(
+        self,
+        *,
+        source_name: str,
+        total_observations: int,
+        total_events: int,
+        facts_promoted: int,
+        source_counters: dict[str, Any],
+    ) -> ObservationIngestionDiagnostics:
+        return ObservationIngestionDiagnostics(
+            source_name=source_name,
+            source_collection_seconds=self.source_collection_seconds,
+            normalization_seconds=self.normalization_seconds,
+            event_generation_and_ledger_write_seconds=(
+                self.event_generation_and_ledger_write_seconds
+            ),
+            total_seconds=time.perf_counter() - self.total_started,
+            total_observations=total_observations,
+            total_events=total_events,
+            facts_promoted=facts_promoted,
+            source_counters=source_counters,
+        )
+
+
 class RepositorySourceObservationSource:
     """Read-only repository source adapter for imports/defines observations."""
 
@@ -3184,14 +3232,14 @@ class ObservationCollectionService:
         """
 
         lifecycle = ObservationProducerLifecycle(status_consumer, source.name)
-        total_started = time.perf_counter()
+        timing = _ObservationIngestionTiming()
         lifecycle.collecting()
-        collect_started = time.perf_counter()
+        timing.start_phase()
         observations = list(source.collect())
-        collect_seconds = time.perf_counter() - collect_started
+        timing.finish_source_collection()
         lifecycle.collected(len(observations))
         lifecycle.normalizing(len(observations))
-        normalize_started = time.perf_counter()
+        timing.start_phase()
         normalized = [
             self._normalize_observation(source, observation)
             for observation in observations
@@ -3199,11 +3247,11 @@ class ObservationCollectionService:
         if self.normalization_pipeline is not None:
             state = StateProjector(self.ingestor.ledger).project(workspace_id)
             normalized = self.normalization_pipeline.normalize(normalized, state=state)
-        normalize_seconds = time.perf_counter() - normalize_started
+        timing.finish_normalization()
         lifecycle.normalized(len(normalized))
 
         lifecycle.ingesting(len(normalized))
-        ingest_started = time.perf_counter()
+        timing.start_phase()
         facts = self.ingestor.ingest_many(
             normalized,
             workspace_id,
@@ -3213,17 +3261,13 @@ class ObservationCollectionService:
             correlation_id=correlation_id,
             status_consumer=status_consumer,
         )
-        ingest_seconds = time.perf_counter() - ingest_started
+        timing.finish_event_generation_and_ledger_write()
         lifecycle.completed(len(normalized))
         promoted_count = sum(1 for fact in facts if fact is not None)
         if diagnostics is not None:
             diagnostics.append(
-                ObservationIngestionDiagnostics(
+                timing.build_diagnostics(
                     source_name=source.name,
-                    source_collection_seconds=collect_seconds,
-                    normalization_seconds=normalize_seconds,
-                    event_generation_and_ledger_write_seconds=ingest_seconds,
-                    total_seconds=time.perf_counter() - total_started,
                     total_observations=len(normalized),
                     total_events=(2 * len(normalized)) + promoted_count,
                     facts_promoted=promoted_count,
