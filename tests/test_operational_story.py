@@ -135,6 +135,7 @@ def test_operational_story_answer_reasoning_and_supporting_evidence_payloads_are
     from seed_runtime.impact_audit import ImpactAudit
     from seed_runtime.operational_story import (
         _OperationalStoryAnswerPayload,
+        _OperationalStoryBoundaryPayload,
         _OperationalStoryReasoningPayload,
         _OperationalStorySupportingEvidencePayload,
         _compose_operational_story_payloads,
@@ -179,6 +180,7 @@ def test_operational_story_answer_reasoning_and_supporting_evidence_payloads_are
         answer_payload,
         reasoning_payload,
         supporting_evidence_payload,
+        boundary_payload,
     ) = _compose_operational_story_payloads(
         primary=pressure,
         capability_needs=[],
@@ -196,6 +198,7 @@ def test_operational_story_answer_reasoning_and_supporting_evidence_payloads_are
     assert isinstance(
         supporting_evidence_payload, _OperationalStorySupportingEvidencePayload
     )
+    assert isinstance(boundary_payload, _OperationalStoryBoundaryPayload)
     assert answer_payload.focus == payload["focus"]
     assert answer_payload.pressure == payload["pressure"]
     assert reasoning_payload.investigation_path == []
@@ -203,8 +206,11 @@ def test_operational_story_answer_reasoning_and_supporting_evidence_payloads_are
         supporting_evidence_payload.supporting_evidence
         == payload["supporting_evidence"]
     )
+    assert boundary_payload.boundary == payload["boundary"]
     assert "supporting_evidence" not in answer_payload.__dataclass_fields__
     assert "supporting_evidence" not in reasoning_payload.__dataclass_fields__
+    assert "boundary" not in supporting_evidence_payload.__dataclass_fields__
+    assert "supporting_evidence" not in boundary_payload.__dataclass_fields__
     assert "investigation_path" not in supporting_evidence_payload.__dataclass_fields__
     assert "focus" not in reasoning_payload.__dataclass_fields__
 
