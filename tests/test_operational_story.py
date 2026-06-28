@@ -77,12 +77,16 @@ def test_operational_story_incorporates_surfaces(tmp_path, capsys):
     assert payload["pressure"]["score"] > 0
     assert payload["pressure"]["category"]
     assert any(
-        c["capability"] == "listener_process_inventory"
-        for c in payload["capabilities"]
+        c["capability"] == "listener_process_inventory" for c in payload["capabilities"]
     )
     assert any(c["access_level"] == "partial_non_root" for c in payload["constraints"])
     assert any(c["area"] == "Listener Attribution" for c in payload["correlation_gaps"])
-    assert payload["impact"]["overall"] in {"unknown", "improved", "regressed", "unchanged"}
+    assert payload["impact"]["overall"] in {
+        "unknown",
+        "improved",
+        "regressed",
+        "unchanged",
+    }
     assert "capability_pressure" in text
     assert "primary implementation-backed consumer visibility" in text
     assert any(u["area"] == "impact" for u in payload["unknowns"])
@@ -90,7 +94,10 @@ def test_operational_story_incorporates_surfaces(tmp_path, capsys):
 
 def test_operational_story_empty_state_is_sane(monkeypatch, tmp_path):
     from seed_runtime.impact_audit import ImpactAudit
-    from seed_runtime.operational_story import build_operational_story, format_operational_story
+    from seed_runtime.operational_story import (
+        build_operational_story,
+        format_operational_story,
+    )
     from seed_runtime.pressure_audit import PressureAudit
     from seed_runtime.privilege_discovery import PrivilegeDiscoveryAudit
     from seed_runtime.correlation_audit import CorrelationAudit
@@ -122,11 +129,14 @@ def test_operational_story_empty_state_is_sane(monkeypatch, tmp_path):
     assert "Unknowns:" in output
 
 
-def test_operational_story_answer_payload_is_separate_from_reasoning_payload(monkeypatch, tmp_path):
+def test_operational_story_answer_reasoning_and_supporting_evidence_payloads_are_separate(
+    monkeypatch, tmp_path
+):
     from seed_runtime.impact_audit import ImpactAudit
     from seed_runtime.operational_story import (
         _OperationalStoryAnswerPayload,
         _OperationalStoryReasoningPayload,
+        _OperationalStorySupportingEvidencePayload,
         _compose_operational_story_payloads,
         build_operational_story,
         operational_story_json,
@@ -165,7 +175,11 @@ def test_operational_story_answer_payload_is_separate_from_reasoning_payload(mon
 
     story = build_operational_story(State(workspace_id="ws"), repo_root=tmp_path)
     payload = operational_story_json(story)
-    answer_payload, reasoning_payload = _compose_operational_story_payloads(
+    (
+        answer_payload,
+        reasoning_payload,
+        supporting_evidence_payload,
+    ) = _compose_operational_story_payloads(
         primary=pressure,
         capability_needs=[],
         privilege_capabilities=(),
@@ -179,10 +193,19 @@ def test_operational_story_answer_payload_is_separate_from_reasoning_payload(mon
 
     assert isinstance(answer_payload, _OperationalStoryAnswerPayload)
     assert isinstance(reasoning_payload, _OperationalStoryReasoningPayload)
+    assert isinstance(
+        supporting_evidence_payload, _OperationalStorySupportingEvidencePayload
+    )
     assert answer_payload.focus == payload["focus"]
     assert answer_payload.pressure == payload["pressure"]
-    assert reasoning_payload.supporting_evidence == payload["supporting_evidence"]
+    assert reasoning_payload.investigation_path == []
+    assert (
+        supporting_evidence_payload.supporting_evidence
+        == payload["supporting_evidence"]
+    )
     assert "supporting_evidence" not in answer_payload.__dataclass_fields__
+    assert "supporting_evidence" not in reasoning_payload.__dataclass_fields__
+    assert "investigation_path" not in supporting_evidence_payload.__dataclass_fields__
     assert "focus" not in reasoning_payload.__dataclass_fields__
 
 
@@ -196,7 +219,9 @@ def test_operational_story_does_not_write_events_or_mutate_cluster(tmp_path, cap
     finally:
         ledger.close()
 
-    before_state = StateProjector(SQLiteEventLedger(db)).project(seed_local.DEFAULT_WORKSPACE)
+    before_state = StateProjector(SQLiteEventLedger(db)).project(
+        seed_local.DEFAULT_WORKSPACE
+    )
     before_facts = dict(before_state.facts)
     assert seed_local.main(["--db", str(db), "--operational-story"]) == 0
     capsys.readouterr()
