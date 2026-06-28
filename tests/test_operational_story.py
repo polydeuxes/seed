@@ -136,6 +136,7 @@ def test_operational_story_answer_reasoning_and_supporting_evidence_payloads_are
     from seed_runtime.operational_story import (
         _OperationalStoryAnswerPayload,
         _OperationalStoryBoundaryPayload,
+        _OperationalStoryLimitationsPayload,
         _OperationalStoryReasoningPayload,
         _OperationalStorySupportingEvidencePayload,
         _compose_operational_story_payloads,
@@ -181,6 +182,7 @@ def test_operational_story_answer_reasoning_and_supporting_evidence_payloads_are
         reasoning_payload,
         supporting_evidence_payload,
         boundary_payload,
+        limitations_payload,
     ) = _compose_operational_story_payloads(
         primary=pressure,
         capability_needs=[],
@@ -199,6 +201,7 @@ def test_operational_story_answer_reasoning_and_supporting_evidence_payloads_are
         supporting_evidence_payload, _OperationalStorySupportingEvidencePayload
     )
     assert isinstance(boundary_payload, _OperationalStoryBoundaryPayload)
+    assert isinstance(limitations_payload, _OperationalStoryLimitationsPayload)
     assert answer_payload.focus == payload["focus"]
     assert answer_payload.pressure == payload["pressure"]
     assert reasoning_payload.investigation_path == []
@@ -207,10 +210,14 @@ def test_operational_story_answer_reasoning_and_supporting_evidence_payloads_are
         == payload["supporting_evidence"]
     )
     assert boundary_payload.boundary == payload["boundary"]
+    assert limitations_payload.unknowns == payload["unknowns"]
+    assert "unknowns" not in answer_payload.__dataclass_fields__
     assert "supporting_evidence" not in answer_payload.__dataclass_fields__
     assert "supporting_evidence" not in reasoning_payload.__dataclass_fields__
     assert "boundary" not in supporting_evidence_payload.__dataclass_fields__
     assert "supporting_evidence" not in boundary_payload.__dataclass_fields__
+    assert "unknowns" not in boundary_payload.__dataclass_fields__
+    assert "boundary" not in limitations_payload.__dataclass_fields__
     assert "investigation_path" not in supporting_evidence_payload.__dataclass_fields__
     assert "focus" not in reasoning_payload.__dataclass_fields__
 
