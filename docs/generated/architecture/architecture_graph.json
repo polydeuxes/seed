@@ -431,6 +431,10 @@
           "receiver": ""
         },
         {
+          "method": "_extract_post_execution_knowledge",
+          "receiver": ""
+        },
+        {
           "method": "_failed",
           "receiver": ""
         },
@@ -444,6 +448,10 @@
         },
         {
           "method": "_realize_registered_operation",
+          "receiver": ""
+        },
+        {
+          "method": "_record_completed_tool_call",
           "receiver": ""
         },
         {

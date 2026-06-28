@@ -9,7 +9,7 @@ from typing import Any, Callable, Literal
 from seed_runtime.base import SeedModel
 from seed_runtime.events import EventLedger
 from seed_runtime.fact_extraction import FactExtractionService
-from seed_runtime.models import PendingAction, PolicyDecision, ToolSpec
+from seed_runtime.models import Event, PendingAction, PolicyDecision, ToolSpec
 from seed_runtime.pending_actions import PendingActionService
 from seed_runtime.policy import PolicyGate
 from seed_runtime.registry import ToolRegistry
@@ -251,16 +251,15 @@ class ToolExecutor:
                 payload={"error": str(exc), "failed_event_id": failed_event.id},
             )
 
-        completed_event = self.ledger.append(
-            "tool.call.completed",
+        completed_event = self._record_completed_tool_call(
             workspace_id,
-            {"tool": tool.name, "output": output},
-            actor="tool",
-            session_id=session_id,
+            session_id,
+            tool,
+            output,
             causation_id=call_event.id,
             correlation_id=correlation_id,
         )
-        self.fact_extraction.observe_tool_result(completed_event)
+        self._extract_post_execution_knowledge(completed_event)
         return ToolCallResult(
             kind="tool_result",
             status="completed",
@@ -269,6 +268,33 @@ class ToolExecutor:
             output=output,
             payload={"output": output, "completed_event_id": completed_event.id},
         )
+
+    def _record_completed_tool_call(
+        self,
+        workspace_id: str,
+        session_id: str | None,
+        tool: ToolSpec,
+        output: dict[str, Any],
+        *,
+        causation_id: str | None,
+        correlation_id: str | None,
+    ) -> Event:
+        """Record completed execution history without extracting knowledge."""
+
+        return self.ledger.append(
+            "tool.call.completed",
+            workspace_id,
+            {"tool": tool.name, "output": output},
+            actor="tool",
+            session_id=session_id,
+            causation_id=causation_id,
+            correlation_id=correlation_id,
+        )
+
+    def _extract_post_execution_knowledge(self, completed_event: Event) -> None:
+        """Promote completed execution evidence after recording is durable."""
+
+        self.fact_extraction.observe_tool_result(completed_event)
 
     def _realize_registered_operation(
         self, tool: ToolSpec, arguments: dict[str, Any], context: ToolContext
