@@ -89,6 +89,7 @@ def test_current_diagnostic_shapes_match_implementation_authority():
         "--sections",
         "--links",
         "--code-fences",
+        "--architectural-relations",
         "--recurrence",
         "--rare",
         "--missing-common-sections",

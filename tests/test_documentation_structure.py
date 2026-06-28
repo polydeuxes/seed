@@ -4,6 +4,9 @@ from pathlib import Path
 import scripts.seed_local as seed_local
 from seed_runtime.documentation_structure import (
     BOUNDARY_TEXT,
+    DocumentationStructureDetailExpansions,
+    DocumentationStructureOptions,
+    documentation_structure_json,
     format_documentation_structure,
     observe_documentation_structure,
 )
@@ -1494,3 +1497,105 @@ def test_section_label_membership_human_limit_summary_and_boundary_language(
     assert "Members:\n    2" in summary_output
     assert "docs/alpha.md" not in summary_output
     assert "Documents:" not in summary_output
+
+
+def test_documentation_structure_observes_explicit_architectural_relation_forms(tmp_path):
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    forms = [
+        ("A", "!=", "B"),
+        ("A", "owns", "B"),
+        ("A", "produces", "B"),
+        ("A", "consumes", "B"),
+        ("A", "hands off to", "B"),
+        ("A", "preserves", "B"),
+        ("A", "bounds", "B"),
+        ("A", "derives", "B"),
+        ("A", "selects", "B"),
+        ("A", "explains", "B"),
+        ("A", "observes", "B"),
+        ("A", "does not own", "B"),
+    ]
+    lines = ["---", "title: Relations", "---", "# Relations"]
+    lines.extend(f"{left} {relation} {right}" for left, relation, right in forms)
+    (docs / "relations.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    options = DocumentationStructureOptions(
+        detail_expansions=DocumentationStructureDetailExpansions(
+            include_architectural_relations=True
+        )
+    )
+    document = observe_documentation_structure(tmp_path, options).documents[0]
+
+    observed = tuple(
+        (row.left_term, row.relation, row.right_term, row.source_path, row.evidence)
+        for row in document.architectural_relation_observations
+    )
+    assert observed == tuple(
+        (left, relation, right, "docs/relations.md", f"{left} {relation} {right}")
+        for left, relation, right in forms
+    )
+    assert document.architectural_relation_observations[0].line_number == 5
+
+
+def test_documentation_structure_architectural_relations_json_and_human_output(tmp_path):
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "relations.md").write_text(
+        "---\ntitle: Relations\n---\n# Relations\nAlpha owns Beta\n",
+        encoding="utf-8",
+    )
+    options = DocumentationStructureOptions(
+        detail_expansions=DocumentationStructureDetailExpansions(
+            include_architectural_relations=True
+        )
+    )
+    report = observe_documentation_structure(tmp_path, options)
+
+    data = documentation_structure_json(report)
+    rows = data["documents"][0]["architectural_relation_observations"]
+    assert rows == [
+        {
+            "left_term": "Alpha",
+            "relation": "owns",
+            "right_term": "Beta",
+            "source_path": "docs/relations.md",
+            "line_number": 5,
+            "evidence": "Alpha owns Beta",
+        }
+    ]
+    output = format_documentation_structure(report, options)
+    assert "Architectural relations:" in output
+    assert "left='Alpha' relation='owns' right='Beta'" in output
+
+
+def test_documentation_structure_architectural_relation_counterexamples(tmp_path):
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "relations.md").write_text(
+        "\n".join(
+            [
+                "---",
+                "title: Relations",
+                "---",
+                "# Relations",
+                "In general, Alpha owns Beta when configured.",
+                "Alpha might produce Beta",
+                "- Alpha consumes Beta",
+                "```",
+                "Alpha owns Beta",
+                "```",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    options = DocumentationStructureOptions(
+        detail_expansions=DocumentationStructureDetailExpansions(
+            include_architectural_relations=True
+        )
+    )
+
+    document = observe_documentation_structure(tmp_path, options).documents[0]
+
+    assert document.architectural_relation_observations == ()
