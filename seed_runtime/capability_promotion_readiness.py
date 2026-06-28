@@ -42,6 +42,15 @@ _PROMOTION_READINESS_BOUNDARY_NOTES = (
 
 
 @dataclass(frozen=True)
+class _CapabilityVerificationPayload:
+    """Implementation-local verification payload before promotion admission checks."""
+
+    candidate: str
+    candidate_support: list[CapabilityCandidateEvidence] = field(default_factory=list)
+    verification_support: list[VerificationEvidence] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
 class CapabilityPromotionReadiness:
     """Promotion-readiness support for one capability candidate."""
 
@@ -111,12 +120,31 @@ def _readiness_for_candidate(
     candidate: CapabilityCandidate,
     verification_support: list[VerificationEvidence],
 ) -> CapabilityPromotionReadiness:
-    candidate_support = list(candidate.supporting_evidence)
-    if candidate_support and verification_support:
+    verification_payload = _verification_payload_for_candidate(
+        candidate, verification_support
+    )
+    return _promotion_readiness_from_verification_payload(verification_payload)
+
+
+def _verification_payload_for_candidate(
+    candidate: CapabilityCandidate,
+    verification_support: list[VerificationEvidence],
+) -> _CapabilityVerificationPayload:
+    return _CapabilityVerificationPayload(
+        candidate=candidate.candidate,
+        candidate_support=list(candidate.supporting_evidence),
+        verification_support=list(verification_support),
+    )
+
+
+def _promotion_readiness_from_verification_payload(
+    verification_payload: _CapabilityVerificationPayload,
+) -> CapabilityPromotionReadiness:
+    if verification_payload.candidate_support and verification_payload.verification_support:
         return CapabilityPromotionReadiness(
-            candidate=candidate.candidate,
-            candidate_support=candidate_support,
-            verification_support=list(verification_support),
+            candidate=verification_payload.candidate,
+            candidate_support=list(verification_payload.candidate_support),
+            verification_support=list(verification_payload.verification_support),
             promotion_readiness="supported",
             rationale=(
                 "candidate support is present and verification evidence is present, so "
@@ -126,9 +154,9 @@ def _readiness_for_candidate(
             ),
         )
     return CapabilityPromotionReadiness(
-        candidate=candidate.candidate,
-        candidate_support=candidate_support,
-        verification_support=list(verification_support),
+        candidate=verification_payload.candidate,
+        candidate_support=list(verification_payload.candidate_support),
+        verification_support=list(verification_payload.verification_support),
         promotion_readiness="unsupported",
         rationale=(
             "candidate support is present but required verification support is missing, "
