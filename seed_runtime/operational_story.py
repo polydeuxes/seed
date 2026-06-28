@@ -79,6 +79,13 @@ class _OperationalStorySupportingEvidencePayload:
     supporting_evidence: list[str]
 
 
+@dataclass(frozen=True)
+class _OperationalStoryBoundaryPayload:
+    """Implementation-local authority boundary limiting story conclusions."""
+
+    boundary: dict[str, bool | str]
+
+
 def build_operational_story(
     state: State, *, repo_root: str | Path | None = None
 ) -> OperationalStory:
@@ -97,7 +104,12 @@ def build_operational_story(
     primary = pressure_audit.pressures[0] if pressure_audit.pressures else None
     investigation = build_investigation_path_audit(_domain_for(primary))
 
-    answer_payload, reasoning_payload, supporting_evidence_payload = (
+    (
+        answer_payload,
+        reasoning_payload,
+        supporting_evidence_payload,
+        boundary_payload,
+    ) = (
         _compose_operational_story_payloads(
             primary=primary,
             capability_needs=capability_needs,
@@ -123,12 +135,7 @@ def build_operational_story(
         observed_outcomes=answer_payload.observed_outcomes,
         investigation_path=reasoning_payload.investigation_path,
         unknowns=answer_payload.unknowns,
-        boundary={
-            "mode": "read_only_view",
-            "records_facts": False,
-            "writes_event_ledger": False,
-            "mutates_cluster": False,
-        },
+        boundary=boundary_payload.boundary,
     )
 
 
@@ -147,8 +154,9 @@ def _compose_operational_story_payloads(
     _OperationalStoryAnswerPayload,
     _OperationalStoryReasoningPayload,
     _OperationalStorySupportingEvidencePayload,
+    _OperationalStoryBoundaryPayload,
 ]:
-    """Separate answer, reason, and supporting implementation evidence."""
+    """Separate answer, reason, supporting evidence, and authority boundary."""
 
     unknowns: list[dict[str, str]] = []
     if not has_pressures:
@@ -194,7 +202,15 @@ def _compose_operational_story_payloads(
     supporting_evidence = _OperationalStorySupportingEvidencePayload(
         supporting_evidence=_supporting_evidence(primary),
     )
-    return answer, reasoning, supporting_evidence
+    boundary = _OperationalStoryBoundaryPayload(
+        boundary={
+            "mode": "read_only_view",
+            "records_facts": False,
+            "writes_event_ledger": False,
+            "mutates_cluster": False,
+        },
+    )
+    return answer, reasoning, supporting_evidence, boundary
 
 
 def operational_story_json(story: OperationalStory) -> dict[str, Any]:
