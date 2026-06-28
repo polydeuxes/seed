@@ -39,6 +39,37 @@ class _AdmittedCapabilityState:
 
 
 @dataclass(frozen=True)
+class _ExecutableOperationContractState:
+    """Capability labels derivable from registered executable operation contracts.
+
+    These labels are operational affordance metadata from ``ToolSpec`` records.
+    They can widen the inventory presentation universe, but they are not
+    admitted repository capability knowledge and do not verify capability
+    existence.
+    """
+
+    capabilities: set[str] = field(default_factory=set)
+
+
+@dataclass(frozen=True)
+class _CapabilityInventorySources:
+    """Separated inputs consumed by capability inventory presentation."""
+
+    admitted_capabilities: _AdmittedCapabilityState
+    executable_operation_contracts: _ExecutableOperationContractState
+    requested_capabilities: set[str] = field(default_factory=set)
+
+    def capability_universe(self) -> set[str]:
+        """Return the unchanged inventory union after ownership handoff."""
+
+        capabilities: set[str] = set()
+        capabilities.update(self.executable_operation_contracts.capabilities)
+        capabilities.update(self.requested_capabilities)
+        capabilities.update(self.admitted_capabilities.capabilities)
+        return capabilities
+
+
+@dataclass(frozen=True)
 class CapabilityEvidenceSummary:
     """Compact evidence summary for one capability inventory entry."""
 
@@ -108,11 +139,22 @@ def build_capability_inventory(
 
 
 def _inventory_capabilities(state: State) -> set[str]:
-    capabilities: set[str] = set()
-    capabilities.update(_registered_operation_contract_capabilities(state))
-    capabilities.update(_requested_capabilities(state))
-    capabilities.update(_admitted_capability_state(state).capabilities)
-    return capabilities
+    return _capability_inventory_sources(state).capability_universe()
+
+
+def _capability_inventory_sources(state: State) -> _CapabilityInventorySources:
+    """Collect inventory inputs without collapsing their architectural ownership.
+
+    Capability inventory presentation still exposes the same deterministic
+    capability universe, but the source handoff now keeps admitted repository
+    capability knowledge separate from executable operation contract metadata.
+    """
+
+    return _CapabilityInventorySources(
+        admitted_capabilities=_admitted_capability_state(state),
+        executable_operation_contracts=_executable_operation_contract_state(state),
+        requested_capabilities=_requested_capabilities(state),
+    )
 
 
 def _admitted_capability_state(state: State) -> _AdmittedCapabilityState:
@@ -126,6 +168,20 @@ def _admitted_capability_state(state: State) -> _AdmittedCapabilityState:
 
     return _AdmittedCapabilityState(
         capabilities=_observed_verification_capability_subjects(state)
+    )
+
+
+def _executable_operation_contract_state(state: State) -> _ExecutableOperationContractState:
+    """Derive executable operation contract metadata from registered ToolSpecs.
+
+    This is the implementation-local handoff from registered operation
+    contracts into inventory presentation. It does not admit repository
+    capability knowledge, verify capability existence, select an operation, or
+    authorize execution.
+    """
+
+    return _ExecutableOperationContractState(
+        capabilities=_registered_operation_contract_capabilities(state)
     )
 
 

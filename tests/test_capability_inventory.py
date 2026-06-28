@@ -4,7 +4,10 @@ import json
 import sys
 from pathlib import Path
 
-from seed_runtime.capability_inventory import build_capability_inventory
+from seed_runtime.capability_inventory import (
+    _capability_inventory_sources,
+    build_capability_inventory,
+)
 from seed_runtime.evidence import Evidence
 from seed_runtime.events import EventLedger
 from seed_runtime.facts import Fact
@@ -25,7 +28,7 @@ def load_seed_local_module():
     return module
 
 
-def _tool(name: str) -> ToolSpec:
+def _tool(name: str, *, capabilities: list[str] | None = None) -> ToolSpec:
     return ToolSpec(
         name=name,
         summary=f"{name} tool",
@@ -35,6 +38,7 @@ def _tool(name: str) -> ToolSpec:
         implementation="tests:no_execute",
         toolkit_id="tests",
         risk_class="L1",
+        capabilities=capabilities or [],
     )
 
 
@@ -178,6 +182,29 @@ def test_provider_reported_state_derives_from_provider_reported_fact_value():
 
     assert build_capability_inventory(state)[0].state == "provider_reported"
 
+
+def test_capability_inventory_sources_keep_contract_metadata_separate_from_admitted_knowledge():
+    ledger = EventLedger()
+    tool = _tool("ssh_probe", capabilities=["ssh_access"])
+    ledger.append("tool.registered", "ws", {"tool": to_plain(tool)})
+    ledger.append(
+        "fact.observed",
+        "ws",
+        {"fact": to_plain(_verification_fact("filesystem_read"))},
+    )
+    state = _project(ledger)
+
+    sources = _capability_inventory_sources(state)
+
+    assert sources.executable_operation_contracts.capabilities == {"ssh_access"}
+    assert sources.admitted_capabilities.capabilities == {"filesystem_read"}
+    assert sources.capability_universe() == {"filesystem_read", "ssh_access"}
+    inventory = build_capability_inventory(state)
+    assert [entry.capability for entry in inventory] == [
+        "filesystem_read",
+        "ssh_access",
+    ]
+    assert [entry.state for entry in inventory] == ["verified", "unverified"]
 
 def test_capability_inventory_ordering_is_deterministic():
     ledger = EventLedger()
