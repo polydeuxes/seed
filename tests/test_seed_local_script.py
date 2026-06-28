@@ -1875,6 +1875,44 @@ def test_cli_state_summary_cache_debug_reports_warm_summary_hit(tmp_path, capsys
     assert "Projection replay / build subphase timings:" not in warm_output
 
 
+def test_state_summary_cache_debug_separates_visibility_from_projection_diagnostics(tmp_path):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "state-summary-debug-boundary.sqlite"
+    ledger = seed_local.SQLiteEventLedger(str(db_path))
+    try:
+        seed_local.ObservationIngestor(ledger).ingest(
+            seed_local.Observation(
+                id="obs_debug_boundary",
+                source_type="user",
+                observed_at=seed_local.utc_now(),
+                subject="boundary-host",
+                predicate="os",
+                value="linux",
+            ),
+            "local",
+        )
+    finally:
+        ledger.close()
+
+    args = seed_local.build_parser().parse_args(
+        ["--db", str(db_path), "--state-build-cache-debug"]
+    )
+
+    report = seed_local.state_summary_cache_debug_from_args(args)
+
+    assert report.visibility.summary_cache_status == report.summary_cache_status
+    assert (
+        report.projection_diagnostics.state_cache_status == report.state_cache_status
+    )
+    assert report.projection_diagnostics.projection_timings == report.projection_timings
+    assert (
+        report.projection_diagnostics.projection_counters
+        == report.projection_counters
+    )
+    assert not hasattr(report.visibility, "state_cache_status")
+    assert not hasattr(report.visibility, "projection_timings")
+
+
 def test_cli_state_summary_cache_debug_does_not_change_normal_summary_output(
     tmp_path, capsys
 ):

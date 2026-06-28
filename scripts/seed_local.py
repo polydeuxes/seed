@@ -3171,18 +3171,68 @@ def projected_state_summary_from_args(
 
 
 @dataclass(frozen=True)
-class StateSummaryCacheDebugReport:
+class _StateBuildVisibilityPayload:
     cache_eligible: bool
     cache_ineligible_reason: str | None
     summary_cache_status: str
-    state_cache_status: str
     current_last_event_id: str | None
     cached_summary_last_event_id: str | None
+    notes: list[str]
+
+
+@dataclass(frozen=True)
+class _ProjectionCacheDiagnosticPayload:
+    state_cache_status: str
     cached_state_last_event_id: str | None
-    timings: list[tuple[str, float]]
     projection_timings: list[tuple[str, float]]
     projection_counters: dict[str, int]
-    notes: list[str]
+
+
+@dataclass(frozen=True)
+class StateSummaryCacheDebugReport:
+    visibility: _StateBuildVisibilityPayload
+    projection_diagnostics: _ProjectionCacheDiagnosticPayload
+    timings: list[tuple[str, float]]
+
+    @property
+    def cache_eligible(self) -> bool:
+        return self.visibility.cache_eligible
+
+    @property
+    def cache_ineligible_reason(self) -> str | None:
+        return self.visibility.cache_ineligible_reason
+
+    @property
+    def summary_cache_status(self) -> str:
+        return self.visibility.summary_cache_status
+
+    @property
+    def state_cache_status(self) -> str:
+        return self.projection_diagnostics.state_cache_status
+
+    @property
+    def current_last_event_id(self) -> str | None:
+        return self.visibility.current_last_event_id
+
+    @property
+    def cached_summary_last_event_id(self) -> str | None:
+        return self.visibility.cached_summary_last_event_id
+
+    @property
+    def cached_state_last_event_id(self) -> str | None:
+        return self.projection_diagnostics.cached_state_last_event_id
+
+    @property
+    def projection_timings(self) -> list[tuple[str, float]]:
+        return self.projection_diagnostics.projection_timings
+
+    @property
+    def projection_counters(self) -> dict[str, int]:
+        return self.projection_diagnostics.projection_counters
+
+    @property
+    def notes(self) -> list[str]:
+        return self.visibility.notes
 
 
 def _format_cache_status_id(value: str | None) -> str:
@@ -3256,17 +3306,22 @@ def state_summary_cache_debug_from_args(
                     "state cache lookup skipped because the summary cache satisfied the request"
                 )
                 return StateSummaryCacheDebugReport(
-                    cache_eligible,
-                    cache_ineligible_reason,
-                    summary_cache_status,
-                    state_cache_status,
-                    current_last_event_id,
-                    cached_summary_last_event_id,
-                    cached_state_last_event_id,
-                    timings + [("total runtime", time.perf_counter() - started)],
-                    [],
-                    {},
-                    notes,
+                    visibility=_StateBuildVisibilityPayload(
+                        cache_eligible=cache_eligible,
+                        cache_ineligible_reason=cache_ineligible_reason,
+                        summary_cache_status=summary_cache_status,
+                        current_last_event_id=current_last_event_id,
+                        cached_summary_last_event_id=cached_summary_last_event_id,
+                        notes=notes,
+                    ),
+                    projection_diagnostics=_ProjectionCacheDiagnosticPayload(
+                        state_cache_status=state_cache_status,
+                        cached_state_last_event_id=cached_state_last_event_id,
+                        projection_timings=[],
+                        projection_counters={},
+                    ),
+                    timings=timings
+                    + [("total runtime", time.perf_counter() - started)],
                 )
             state_snapshot = timed(
                 "state cache lookup",
@@ -3347,17 +3402,21 @@ def state_summary_cache_debug_from_args(
             "rendering", lambda: format_state_summary_cache_debug_report_placeholder()
         )
         return StateSummaryCacheDebugReport(
-            cache_eligible,
-            cache_ineligible_reason,
-            summary_cache_status,
-            state_cache_status,
-            current_last_event_id,
-            cached_summary_last_event_id,
-            cached_state_last_event_id,
-            timings + [("total runtime", time.perf_counter() - started)],
-            projection_diagnostics.timings,
-            projection_diagnostics.counters,
-            notes,
+            visibility=_StateBuildVisibilityPayload(
+                cache_eligible=cache_eligible,
+                cache_ineligible_reason=cache_ineligible_reason,
+                summary_cache_status=summary_cache_status,
+                current_last_event_id=current_last_event_id,
+                cached_summary_last_event_id=cached_summary_last_event_id,
+                notes=notes,
+            ),
+            projection_diagnostics=_ProjectionCacheDiagnosticPayload(
+                state_cache_status=state_cache_status,
+                cached_state_last_event_id=cached_state_last_event_id,
+                projection_timings=projection_diagnostics.timings,
+                projection_counters=projection_diagnostics.counters,
+            ),
+            timings=timings + [("total runtime", time.perf_counter() - started)],
         )
     finally:
         for resource in (store, ledger):
