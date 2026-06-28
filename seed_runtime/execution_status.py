@@ -70,6 +70,41 @@ class CliExecutionStatusConsumer:
         return status.current % self.progress_interval == 0
 
 
+class ExecutionStatusEmitter:
+    """Construct and emit status updates without consuming or rendering them.
+
+    Producers use this boundary to publish renderer-independent status payloads.
+    Consumers remain responsible for recording, rendering, or ignoring those
+    payloads; the emitter does not own execution state or consumer behavior.
+    """
+
+    def __init__(self, consumer: ExecutionStatusConsumer | None) -> None:
+        self.consumer = consumer
+
+    def emit(
+        self,
+        phase: str,
+        message: str,
+        *,
+        current: int | None = None,
+        total: int | None = None,
+        completed: bool = False,
+    ) -> None:
+        """Publish one status update when a consumer is attached."""
+
+        if self.consumer is None:
+            return
+        self.consumer.consume(
+            ExecutionStatus(
+                phase=phase,
+                message=message,
+                current=current,
+                total=total,
+                completed=completed,
+            )
+        )
+
+
 class ProgressCadence:
     """Bound transient progress updates for long-running item loops."""
 
@@ -208,14 +243,10 @@ def emit_status(
 ) -> None:
     """Emit one transient execution-status update if a consumer is present."""
 
-    if consumer is None:
-        return
-    consumer.consume(
-        ExecutionStatus(
-            phase=phase,
-            message=message,
-            current=current,
-            total=total,
-            completed=completed,
-        )
+    ExecutionStatusEmitter(consumer).emit(
+        phase,
+        message,
+        current=current,
+        total=total,
+        completed=completed,
     )
