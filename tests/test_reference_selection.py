@@ -78,6 +78,30 @@ def test_reference_selection_history_unknown_alternatives_remain_explicit(tmp_pa
     assert "implementation does not currently expose candidate alternatives" in rendered
 
 
+def test_reference_selection_choice_lineage_handoff_preserves_public_shape(tmp_path):
+    _ownership_snapshot(tmp_path, "2026-06-20T160000Z", [_row("svc-a")])
+    _ownership_snapshot(tmp_path, "2026-06-20T170000Z", [_row("svc-b")])
+
+    payload = reference_selection_json(build_reference_selection(tmp_path, "history"))
+
+    assert set(payload) == {
+        "domain",
+        "question",
+        "selected_reference",
+        "selection_rationale",
+        "alternative_references",
+        "authority_boundary",
+        "limitations",
+        "writes_event_ledger",
+        "mutates_cluster",
+    }
+    assert payload["selected_reference"]["reference"] == "previous comparable snapshot"
+    assert "selection_rationale" not in payload["selected_reference"]
+    assert "alternative_references" not in payload["selected_reference"]
+    assert payload["selection_rationale"]
+    assert payload["alternative_references"]
+    assert payload["limitations"]
+
 def test_reference_selection_does_not_create_baselines_expectations_events_or_cluster_mutation(
     tmp_path,
 ):
