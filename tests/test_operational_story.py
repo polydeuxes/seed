@@ -122,6 +122,70 @@ def test_operational_story_empty_state_is_sane(monkeypatch, tmp_path):
     assert "Unknowns:" in output
 
 
+def test_operational_story_answer_payload_is_separate_from_reasoning_payload(monkeypatch, tmp_path):
+    from seed_runtime.impact_audit import ImpactAudit
+    from seed_runtime.operational_story import (
+        _OperationalStoryAnswerPayload,
+        _OperationalStoryReasoningPayload,
+        _compose_operational_story_payloads,
+        build_operational_story,
+        operational_story_json,
+    )
+    from seed_runtime.pressure_audit import PressureAudit, PressureItem
+    from seed_runtime.privilege_discovery import PrivilegeDiscoveryAudit
+    from seed_runtime.correlation_audit import CorrelationAudit
+
+    pressure = PressureItem(
+        category="Capability Pressure",
+        score=1,
+        reason="capability evidence requires attribution",
+        evidence={"source": "test"},
+        recommended_command="seed --operational-story",
+    )
+
+    monkeypatch.setattr(
+        "seed_runtime.operational_story.build_pressure_audit",
+        lambda state, repo_root=None: PressureAudit((pressure,)),
+    )
+    monkeypatch.setattr(
+        "seed_runtime.operational_story.build_capability_needs", lambda state: []
+    )
+    monkeypatch.setattr(
+        "seed_runtime.operational_story.build_privilege_discovery",
+        lambda state: PrivilegeDiscoveryAudit(()),
+    )
+    monkeypatch.setattr(
+        "seed_runtime.operational_story.build_correlation_audit",
+        lambda state, repo_root=None: CorrelationAudit((), {}),
+    )
+    monkeypatch.setattr(
+        "seed_runtime.operational_story.build_impact_audit",
+        lambda repo_root: ImpactAudit({}, [], "unknown", [], []),
+    )
+
+    story = build_operational_story(State(workspace_id="ws"), repo_root=tmp_path)
+    payload = operational_story_json(story)
+    answer_payload, reasoning_payload = _compose_operational_story_payloads(
+        primary=pressure,
+        capability_needs=[],
+        privilege_capabilities=(),
+        correlation_findings=(),
+        impact_metrics=[],
+        impact_overall="unknown",
+        impact_missing=[],
+        investigation_surfaces=(),
+        has_pressures=True,
+    )
+
+    assert isinstance(answer_payload, _OperationalStoryAnswerPayload)
+    assert isinstance(reasoning_payload, _OperationalStoryReasoningPayload)
+    assert answer_payload.focus == payload["focus"]
+    assert answer_payload.pressure == payload["pressure"]
+    assert reasoning_payload.supporting_evidence == payload["supporting_evidence"]
+    assert "supporting_evidence" not in answer_payload.__dataclass_fields__
+    assert "focus" not in reasoning_payload.__dataclass_fields__
+
+
 def test_operational_story_does_not_write_events_or_mutate_cluster(tmp_path, capsys):
     seed_local = load_seed_local()
     db = tmp_path / "seed.sqlite"
