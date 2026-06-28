@@ -14,21 +14,14 @@ class ManifestError(ValueError):
     """Raised when a toolkit manifest is invalid."""
 
 
-class ToolRegistry:
-    __seed_arch__ = {
-        "owner": "registered_operation_catalog",
-        "layer": "registry",
-        "summary": "Exposes registered model-visible operations and capability mappings.",
-        "edges": [
-            {"to": "RegisteredOperation", "label": "may expose registered operation"},
-        ],
-    }
+class _RegisteredOperationIndex:
+    """In-memory index of registered operation specs and their toolkit packages."""
 
     def __init__(self) -> None:
         self._tools: dict[str, ToolSpec] = {}
         self._toolkits: dict[str, Toolkit] = {}
 
-    def register_toolkit(self, toolkit: Toolkit) -> None:
+    def add_toolkit(self, toolkit: Toolkit) -> None:
         if toolkit.id in self._toolkits:
             raise ManifestError(f"toolkit {toolkit.id!r} is already registered")
         for tool in toolkit.tools:
@@ -40,12 +33,6 @@ class ToolRegistry:
 
     def get(self, name: str) -> ToolSpec | None:
         return self._tools.get(name)
-
-    def require(self, name: str) -> ToolSpec:
-        tool = self.get(name)
-        if tool is None:
-            raise KeyError(f"unknown tool {name!r}")
-        return tool
 
     def list_tools(self, *, visible_only: bool = False) -> list[ToolSpec]:
         tools = list(self._tools.values())
@@ -62,6 +49,41 @@ class ToolRegistry:
 
     def list_toolkits(self) -> list[Toolkit]:
         return sorted(self._toolkits.values(), key=lambda toolkit: toolkit.name)
+
+
+class ToolRegistry:
+    __seed_arch__ = {
+        "owner": "registered_operation_catalog",
+        "layer": "registry",
+        "summary": "Exposes registered model-visible operations and capability mappings.",
+        "edges": [
+            {"to": "RegisteredOperation", "label": "may expose registered operation"},
+        ],
+    }
+
+    def __init__(self) -> None:
+        self._index = _RegisteredOperationIndex()
+
+    def register_toolkit(self, toolkit: Toolkit) -> None:
+        self._index.add_toolkit(toolkit)
+
+    def get(self, name: str) -> ToolSpec | None:
+        return self._index.get(name)
+
+    def require(self, name: str) -> ToolSpec:
+        tool = self.get(name)
+        if tool is None:
+            raise KeyError(f"unknown tool {name!r}")
+        return tool
+
+    def list_tools(self, *, visible_only: bool = False) -> list[ToolSpec]:
+        return self._index.list_tools(visible_only=visible_only)
+
+    def list_tools_for_capability(self, capability: str, *, visible_only: bool = False) -> list[ToolSpec]:
+        return self._index.list_tools_for_capability(capability, visible_only=visible_only)
+
+    def list_toolkits(self) -> list[Toolkit]:
+        return self._index.list_toolkits()
 
     def load_manifest(self, path: str | Path) -> Toolkit:
         toolkit = load_toolkit_manifest(path)
