@@ -70,6 +70,13 @@ class InquiryOrientationView:
 
 
 @dataclass(frozen=True)
+class _ArchitecturalOrientationEvidence:
+    """Implementation-local repository evidence collected before answer composition."""
+
+    related_material: list[RelatedMaterial]
+
+
+@dataclass(frozen=True)
 class _ArchitecturalOrientationAnswer:
     """Implementation-local answer composition before orientation rendering."""
 
@@ -152,10 +159,8 @@ def _compose_architectural_orientation_answer(
 ) -> _ArchitecturalOrientationAnswer:
     """Compose orientation answer material without rendering or transport changes."""
 
-    tokens = _note_tokens(note.raw_note)
-    related = _dedupe_related(
-        [*_fact_matches(state, tokens), *_source_navigation_matches(state, tokens)]
-    )[:_MAX_RELATED_ITEMS]
+    evidence = _collect_architectural_orientation_evidence(state, note)
+    related = evidence.related_material
     return _ArchitecturalOrientationAnswer(
         answer=related,
         reason=(
@@ -166,6 +171,18 @@ def _compose_architectural_orientation_answer(
         boundary=AUTHORITY_BOUNDARY,
         limitations=(UNCERTAINTY_WITH_MATCHES if related else UNCERTAINTY_WITHOUT_MATCHES),
     )
+
+
+def _collect_architectural_orientation_evidence(
+    state: State, note: InquiryNoteRecord
+) -> _ArchitecturalOrientationEvidence:
+    """Collect repository evidence before composing the orientation answer."""
+
+    tokens = _note_tokens(note.raw_note)
+    related = _dedupe_related(
+        [*_fact_matches(state, tokens), *_source_navigation_matches(state, tokens)]
+    )[:_MAX_RELATED_ITEMS]
+    return _ArchitecturalOrientationEvidence(related_material=related)
 
 
 def format_inquiry_orientation(view: InquiryOrientationView) -> str:

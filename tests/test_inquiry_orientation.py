@@ -7,6 +7,8 @@ from seed_runtime.facts import Fact
 from seed_runtime.inquiry_orientation import (
     AUTHORITY_BOUNDARY,
     _ArchitecturalOrientationAnswer,
+    _ArchitecturalOrientationEvidence,
+    _collect_architectural_orientation_evidence,
     _compose_architectural_orientation_answer,
     build_inquiry_orientation,
     format_inquiry_orientation,
@@ -290,17 +292,23 @@ def test_architectural_orientation_answer_composition_is_separate_from_rendering
         recorded_at=datetime(2026, 6, 16, tzinfo=timezone.utc),
     )
 
+    evidence = _collect_architectural_orientation_evidence(state, note)
     answer = _compose_architectural_orientation_answer(state, note)
     view = build_inquiry_orientation(state, note)
     output = format_inquiry_orientation(view)
 
+    assert isinstance(evidence, _ArchitecturalOrientationEvidence)
     assert isinstance(answer, _ArchitecturalOrientationAnswer)
-    assert answer.answer == view.related_material
+    assert evidence.related_material == answer.answer == view.related_material
     assert answer.boundary == view.authority_boundary == AUTHORITY_BOUNDARY
     assert answer.limitations == view.uncertainty
     assert answer.support == [item.support for item in view.related_material]
     assert "deterministic lexical overlaps" in answer.reason
     assert "Inquiry note:" in output
+    assert "answer" not in evidence.__dataclass_fields__
+    assert "reason" not in evidence.__dataclass_fields__
+    assert "boundary" not in evidence.__dataclass_fields__
+    assert "limitations" not in evidence.__dataclass_fields__
     assert "Inquiry note" not in answer.__dataclass_fields__
     assert "related_material" not in answer.__dataclass_fields__
     assert "uncertainty" not in answer.__dataclass_fields__
