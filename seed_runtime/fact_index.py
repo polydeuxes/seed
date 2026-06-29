@@ -18,8 +18,10 @@ from seed_runtime.execution_status import (
 )
 from seed_runtime.facts import Fact, is_fact_expired
 from seed_runtime.read_model_ownership import (
+    publish_read_model_cache,
     read_model_cache_lookup_request,
     read_model_construction_inputs,
+    read_model_cache_publication_request,
     read_model_construction_request,
     read_model_dependency_identity,
     construct_read_model,
@@ -192,16 +194,20 @@ def load_or_build_fact_index(
         emit_status(
             status_consumer, "fact_index_cache_save", "Saving fact index cache..."
         )
-        store.save_derived_index_snapshot(
-            DerivedIndexSnapshot(
+        publish_read_model_cache(
+            read_model_cache_publication_request(construction),
+            lambda publication_construction: DerivedIndexSnapshot(
                 workspace_id=workspace_id,
-                index_name=index.index_name,
-                index_version=index.index_version,
-                state_projection_version=index.state_projection_version,
-                state_last_event_id=index.state_last_event_id,
-                index_payload=fact_index_to_payload(index),
-                created_at=index.created_at,
-            )
+                index_name=publication_construction.read_model.index_name,
+                index_version=publication_construction.read_model.index_version,
+                state_projection_version=publication_construction.read_model.state_projection_version,
+                state_last_event_id=publication_construction.read_model.state_last_event_id,
+                index_payload=fact_index_to_payload(
+                    publication_construction.read_model
+                ),
+                created_at=publication_construction.read_model.created_at,
+            ),
+            store.save_derived_index_snapshot,
         )
     return index
 

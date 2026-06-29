@@ -294,8 +294,10 @@ from seed_runtime.execution_status import (
 )
 from seed_runtime.fact_index import load_or_build_fact_index
 from seed_runtime.read_model_ownership import (
+    publish_read_model_cache,
     read_model_cache_lookup_request,
     read_model_construction_inputs,
+    read_model_cache_publication_request,
     read_model_construction_request,
     read_model_dependency_identity,
     read_model_dependency_identity_for_state_boundary,
@@ -3187,8 +3189,9 @@ def projected_state_summary_from_args(
             }
         )
         if store is not None and _can_use_state_cache(args):
-            store.save_summary_snapshot(
-                SummaryProjectionSnapshot(
+            publish_read_model_cache(
+                read_model_cache_publication_request(summary_construction),
+                lambda publication_construction: SummaryProjectionSnapshot(
                     workspace_id=args.workspace,
                     projection_name=STATE_SUMMARY_PROJECTION_NAME,
                     projection_version=STATE_SUMMARY_PROJECTION_VERSION,
@@ -3196,11 +3199,14 @@ def projected_state_summary_from_args(
                     state_projection_version=build_identity.state_projection_version,
                     state_last_event_id=build_identity.state_last_event_id,
                     summary_payload={
-                        "state_view_summary": to_plain(view_summary),
-                        "operator_summary": operator_summary,
+                        "state_view_summary": to_plain(
+                            publication_construction.read_model[0]
+                        ),
+                        "operator_summary": publication_construction.read_model[1],
                     },
                     created_at=datetime.now(timezone.utc),
-                )
+                ),
+                store.save_summary_snapshot,
             )
         return view_summary, operator_summary
     finally:
@@ -6617,26 +6623,36 @@ def main(argv: list[str] | None = None) -> int:
         if args.json_output:
             print(
                 json.dumps(
-                    diagnostic_surface_definition_json(args.diagnostic_surface_definition),
+                    diagnostic_surface_definition_json(
+                        args.diagnostic_surface_definition
+                    ),
                     indent=2,
                     sort_keys=True,
                 )
             )
         else:
-            print(format_diagnostic_surface_definition(args.diagnostic_surface_definition))
+            print(
+                format_diagnostic_surface_definition(args.diagnostic_surface_definition)
+            )
         return 0
 
     if args.diagnostic_surface_explanation:
         if args.json_output:
             print(
                 json.dumps(
-                    diagnostic_surface_explanation_json(args.diagnostic_surface_explanation),
+                    diagnostic_surface_explanation_json(
+                        args.diagnostic_surface_explanation
+                    ),
                     indent=2,
                     sort_keys=True,
                 )
             )
         else:
-            print(format_diagnostic_surface_explanation(args.diagnostic_surface_explanation))
+            print(
+                format_diagnostic_surface_explanation(
+                    args.diagnostic_surface_explanation
+                )
+            )
         return 0
 
     if args.question_surface_inventory:
@@ -6784,13 +6800,17 @@ def main(argv: list[str] | None = None) -> int:
         if args.json_output:
             print(
                 json.dumps(
-                    projection_stage_explanation_json(args.projection_stage_explanation),
+                    projection_stage_explanation_json(
+                        args.projection_stage_explanation
+                    ),
                     indent=2,
                     sort_keys=True,
                 )
             )
         else:
-            print(format_projection_stage_explanation(args.projection_stage_explanation))
+            print(
+                format_projection_stage_explanation(args.projection_stage_explanation)
+            )
         return 0
 
     if args.diagnostic_shape_audit:

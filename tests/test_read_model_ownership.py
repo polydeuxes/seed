@@ -91,3 +91,40 @@ def test_read_model_construction_request_preserves_existing_builder_handoff():
     assert result.request == request
     assert result.read_model == {"workspace_id": "ws"}
     assert result.request.cache_lookup is lookup
+
+
+def test_read_model_cache_publication_preserves_existing_snapshot_save_handoff():
+    from seed_runtime.read_model_ownership import (
+        publish_read_model_cache,
+        read_model_cache_publication_request,
+    )
+
+    state = State(workspace_id="ws", last_event_id="evt_current")
+    inputs = read_model_construction_inputs(state)
+    identity = read_model_dependency_identity(
+        inputs, state_projection_version=STATE_PROJECTION_VERSION
+    )
+    construction = construct_read_model(
+        read_model_construction_request(inputs, identity),
+        lambda construction_inputs: {
+            "workspace_id": construction_inputs.visible_state.workspace_id,
+            "last_event_id": construction_inputs.visible_state.last_event_id,
+        },
+    )
+    saved_snapshots = []
+
+    result = publish_read_model_cache(
+        read_model_cache_publication_request(construction),
+        lambda publication_construction: {
+            "payload": publication_construction.read_model,
+            "state_last_event_id": publication_construction.request.dependency_identity.state_last_event_id,
+        },
+        saved_snapshots.append,
+    )
+
+    assert result.request.construction_result is construction
+    assert result.snapshot == {
+        "payload": {"workspace_id": "ws", "last_event_id": "evt_current"},
+        "state_last_event_id": "evt_current",
+    }
+    assert saved_snapshots == [result.snapshot]

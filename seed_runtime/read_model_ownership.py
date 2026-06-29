@@ -16,6 +16,7 @@ from seed_runtime.state import State
 
 TReadModelSnapshot = TypeVar("TReadModelSnapshot")
 TReadModel = TypeVar("TReadModel")
+TCachePublicationSnapshot = TypeVar("TCachePublicationSnapshot")
 
 
 @dataclass(frozen=True)
@@ -96,6 +97,29 @@ class ReadModelConstructionResult(Generic[TReadModel]):
     read_model: TReadModel
 
 
+@dataclass(frozen=True)
+class ReadModelCachePublicationRequest(Generic[TReadModel]):
+    """Request to publish a constructed read model into its dependent cache.
+
+    The boundary owns only the existing post-construction cache publication
+    handoff: convert an already-constructed read model into the existing cache
+    snapshot shape and pass it to the existing cache store save operation. It
+    does not construct read models, perform cache lookup, derive dependency
+    identity, invalidate caches, publish projections, render output, schedule
+    work, or change cache semantics.
+    """
+
+    construction_result: ReadModelConstructionResult[TReadModel]
+
+
+@dataclass(frozen=True)
+class ReadModelCachePublicationResult(Generic[TCachePublicationSnapshot]):
+    """Result of publishing a constructed read model to its existing cache."""
+
+    request: ReadModelCachePublicationRequest[object]
+    snapshot: TCachePublicationSnapshot
+
+
 def read_model_construction_inputs(state: State) -> ReadModelConstructionInputs:
     """Return read-model construction inputs for an already-published State."""
 
@@ -127,6 +151,28 @@ def construct_read_model(
         request=request,
         read_model=build_read_model(request.inputs),
     )
+
+
+def read_model_cache_publication_request(
+    construction_result: ReadModelConstructionResult[TReadModel],
+) -> ReadModelCachePublicationRequest[TReadModel]:
+    """Return a cache publication request for a constructed read model."""
+
+    return ReadModelCachePublicationRequest(construction_result=construction_result)
+
+
+def publish_read_model_cache(
+    request: ReadModelCachePublicationRequest[TReadModel],
+    create_snapshot: Callable[
+        [ReadModelConstructionResult[TReadModel]], TCachePublicationSnapshot
+    ],
+    save_snapshot: Callable[[TCachePublicationSnapshot], None],
+) -> ReadModelCachePublicationResult[TCachePublicationSnapshot]:
+    """Publish a constructed read model through the existing cache save operation."""
+
+    snapshot = create_snapshot(request.construction_result)
+    save_snapshot(snapshot)
+    return ReadModelCachePublicationResult(request=request, snapshot=snapshot)
 
 
 def read_model_dependency_identity(
