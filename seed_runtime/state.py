@@ -97,16 +97,30 @@ class _ReplayScopeAssessment:
 
 
 @dataclass(frozen=True)
-class _ReplaySelection:
-    """Implementation-local replay target selection.
+class _ReplaySelectionJustification:
+    """Implementation-local justification for the compatible replay target set.
 
     Replay scope assessment determines whether replay is required from lineage
-    evidence. Replay selection is a separate responsibility: it decides what
-    this projector will execute. The current compatible choice remains full
-    event replay plus full finalization whenever replay is assessed as required.
+    evidence. Replay selection justification preserves why the compatible target
+    set remains full event replay plus full finalization. It does not select,
+    execute, narrow, schedule, invalidate, store, or compute replay work.
     """
 
     scope_assessment: _ReplayScopeAssessment
+    compatible_replay_targets: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class _ReplaySelection:
+    """Implementation-local replay target selection.
+
+    Replay selection consumes a justification for the compatible target set and
+    decides what this projector will execute. The current compatible choice
+    remains full event replay plus full finalization whenever replay is assessed
+    as required.
+    """
+
+    justification: _ReplaySelectionJustification
     replay_targets: tuple[str, ...]
 
 
@@ -880,7 +894,8 @@ class StateProjector:
 
         influence_lineage = _recover_projection_influence_lineage(event_list)
         replay_assessment = _assess_replay_scope(influence_lineage)
-        replay_selection = _select_replay_targets(replay_assessment)
+        replay_justification = _justify_replay_selection(replay_assessment)
+        replay_selection = _select_replay_targets(replay_justification)
         replay_request = _ReplayExecutionRequest(selection=replay_selection)
         return _execute_replay_selection(
             replay_request,
@@ -1028,7 +1043,14 @@ class StateProjector:
     ) -> None:
         affected_scope = _recover_affected_scope(event)
         affected_projections = _recover_affected_projections(affected_scope)
-        _select_replay_targets(affected_projections)
+        influence_lineage = _ProjectionInfluenceLineage(
+            source_event_ids=(event.id,),
+            affected_scopes=(affected_scope,) if affected_scope is not None else (),
+            affected_projections=affected_projections,
+        )
+        replay_assessment = _assess_replay_scope(influence_lineage)
+        replay_justification = _justify_replay_selection(replay_assessment)
+        _select_replay_targets(replay_justification)
         payload = event.payload
         if event.kind == "entity.upserted":
             data = payload.get("entity", payload)
@@ -1339,19 +1361,35 @@ def _assess_replay_scope(
     )
 
 
-def _select_replay_targets(
+def _justify_replay_selection(
     scope_assessment: _ReplayScopeAssessment,
+) -> _ReplaySelectionJustification:
+    """Preserve why the compatible replay target set is selected.
+
+    The justification keeps replay-necessity evidence adjacent to the existing
+    compatible target set without selecting or executing that target set.
+    """
+
+    return _ReplaySelectionJustification(
+        scope_assessment=scope_assessment,
+        compatible_replay_targets=("event_replay", "projection_finalization"),
+    )
+
+
+def _select_replay_targets(
+    justification: _ReplaySelectionJustification,
 ) -> _ReplaySelection:
     """Return the replay work this compatible projector will execute.
 
     The selected targets intentionally do not narrow replay execution. Replay
-    scope assessment is preserved as input evidence, while execution remains the
-    established full event replay and full projection finalization path.
+    selection justification is preserved as input evidence, while execution
+    remains the established full event replay and full projection finalization
+    path.
     """
 
     return _ReplaySelection(
-        scope_assessment=scope_assessment,
-        replay_targets=("event_replay", "projection_finalization"),
+        justification=justification,
+        replay_targets=justification.compatible_replay_targets,
     )
 
 
