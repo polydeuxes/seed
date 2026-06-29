@@ -18,9 +18,11 @@ from seed_runtime.execution_status import (
 )
 from seed_runtime.facts import Fact, is_fact_expired
 from seed_runtime.read_model_ownership import (
-    read_model_construction_inputs,
     read_model_cache_lookup_request,
+    read_model_construction_inputs,
+    read_model_construction_request,
     read_model_dependency_identity,
+    construct_read_model,
     resolve_read_model_cache_lookup,
 )
 from seed_runtime.projection_store import (
@@ -48,11 +50,18 @@ class DerivedFactIndex:
     )
 
     def current_facts(
-        self, state: State, subject: str, predicate: str, *, include_expired: bool = False
+        self,
+        state: State,
+        subject: str,
+        predicate: str,
+        *,
+        include_expired: bool = False,
     ) -> list[Fact]:
         """Return indexed facts for an exact subject/predicate lookup."""
 
-        fact_ids = self.fact_ids_by_subject_predicate.get(subject, {}).get(predicate, [])
+        fact_ids = self.fact_ids_by_subject_predicate.get(subject, {}).get(
+            predicate, []
+        )
         facts = [
             state.facts[fact_id]
             for fact_id in fact_ids
@@ -134,7 +143,9 @@ def load_or_build_fact_index(
     )
 
     if store is not None:
-        emit_status(status_consumer, "fact_index_cache_load", "Loading fact index cache...")
+        emit_status(
+            status_consumer, "fact_index_cache_load", "Loading fact index cache..."
+        )
         lookup = resolve_read_model_cache_lookup(
             read_model_cache_lookup_request(identity),
             lambda lookup_identity: store.load_derived_index_snapshot(
@@ -162,15 +173,25 @@ def load_or_build_fact_index(
             completed=True,
         )
     emit_status(status_consumer, "fact_index_build", "Building fact index...")
-    index = build_fact_index(
-        state,
-        workspace_id=workspace_id,
-        state_projection_version=state_projection_version,
-        status_consumer=status_consumer,
+    construction = construct_read_model(
+        read_model_construction_request(
+            inputs, identity, cache_lookup=lookup if store is not None else None
+        ),
+        lambda construction_inputs: build_fact_index(
+            construction_inputs.visible_state,
+            workspace_id=workspace_id,
+            state_projection_version=state_projection_version,
+            status_consumer=status_consumer,
+        ),
     )
-    emit_status(status_consumer, "fact_index_build", "Building fact index...", completed=True)
+    index = construction.read_model
+    emit_status(
+        status_consumer, "fact_index_build", "Building fact index...", completed=True
+    )
     if store is not None:
-        emit_status(status_consumer, "fact_index_cache_save", "Saving fact index cache...")
+        emit_status(
+            status_consumer, "fact_index_cache_save", "Saving fact index cache..."
+        )
         store.save_derived_index_snapshot(
             DerivedIndexSnapshot(
                 workspace_id=workspace_id,
@@ -206,7 +227,9 @@ def fact_index_from_payload(
                 str(predicate): [str(fact_id) for fact_id in fact_ids]
                 for predicate, fact_ids in predicates.items()
             }
-            for subject, predicates in payload.get("fact_ids_by_subject_predicate", {}).items()
+            for subject, predicates in payload.get(
+                "fact_ids_by_subject_predicate", {}
+            ).items()
         },
     )
 
