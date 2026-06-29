@@ -80,6 +80,13 @@ class _ReplaySelection:
     replay_targets: tuple[str, ...]
 
 
+@dataclass(frozen=True)
+class _ReplayExecutionRequest:
+    """Implementation-local request to execute an already selected replay."""
+
+    selection: _ReplaySelection
+
+
 @dataclass
 class ProjectionBuildDiagnostics:
     """Optional, non-authoritative timings for projected-State construction."""
@@ -841,11 +848,17 @@ class StateProjector:
                         total=total,
                     )
 
-        if diagnostics is not None:
-            diagnostics.timed("event replay", replay_events)
-        else:
-            replay_events()
-        return self.finalize(state, diagnostics=diagnostics)
+        replay_selection = _select_replay_targets(_AffectedProjectionSet(()))
+        replay_request = _ReplayExecutionRequest(selection=replay_selection)
+        return _execute_replay_selection(
+            replay_request,
+            replay_events=lambda: (
+                diagnostics.timed("event replay", replay_events)
+                if diagnostics is not None
+                else replay_events()
+            ),
+            finalize=lambda: self.finalize(state, diagnostics=diagnostics),
+        )
 
     def finalize(
         self, state: State, *, diagnostics: ProjectionBuildDiagnostics | None = None
@@ -1221,6 +1234,29 @@ def _recover_affected_projections(
             ("relationships", "entity_type_assertions", "graph_issues")
         )
     return _AffectedProjectionSet(())
+
+
+def _execute_replay_selection(
+    request: _ReplayExecutionRequest,
+    *,
+    replay_events: Callable[[], None],
+    finalize: Callable[[], State],
+) -> State:
+    """Execute a compatible full replay request selected by replay selection.
+
+    Execution consumes the selected replay request, but does not reinterpret it
+    into narrowing, scheduling, cache invalidation, or projection optimization.
+    The only compatible target set remains full event replay followed by full
+    projection finalization.
+    """
+
+    if request.selection.replay_targets != (
+        "event_replay",
+        "projection_finalization",
+    ):
+        raise ValueError("unsupported replay execution target selection")
+    replay_events()
+    return finalize()
 
 
 def _select_replay_targets(

@@ -90,6 +90,23 @@ def test_replay_selection_preserves_full_replay_for_empty_candidates():
     assert selection.replay_targets == ("event_replay", "projection_finalization")
 
 
+def test_replay_execution_consumes_selection_without_narrowing():
+    selection = state_module._select_replay_targets(
+        state_module._AffectedProjectionSet(("relationships",))
+    )
+    calls = []
+
+    state_module._execute_replay_selection(
+        state_module._ReplayExecutionRequest(selection=selection),
+        replay_events=lambda: calls.append("event_replay"),
+        finalize=lambda: calls.append("projection_finalization") or "state",
+    )
+
+    assert calls == ["event_replay", "projection_finalization"]
+    assert selection.affected_projections.names == ("relationships",)
+    assert selection.replay_targets == ("event_replay", "projection_finalization")
+
+
 def test_affected_scope_recovery_covers_update_events_without_applying_them():
     ledger = EventLedger()
     workspace_id = "ws_scope_updates"
