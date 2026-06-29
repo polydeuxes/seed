@@ -34,6 +34,41 @@ def test_event_application_recovers_affected_scope_before_state_mutation():
     assert after_state.facts["fact_scope"] == fact
 
 
+def test_affected_projection_recovery_is_separate_from_affected_scope():
+    scope = state_module._AffectedScope(
+        collection="facts", identity="fact_scope", subject_id="host_1"
+    )
+
+    projections = state_module._recover_affected_projections(scope)
+
+    assert scope.collection == "facts"
+    assert projections == state_module._AffectedProjectionSet(
+        (
+            "alias_resolver",
+            "measurement_history",
+            "observed_facts",
+            "inferred_facts",
+            "fact_supports",
+            "entity_relationships",
+            "relationships",
+            "entity_type_assertions",
+            "graph_issues",
+            "entity_aliases",
+            "fact_conflicts",
+        )
+    )
+    assert "facts" not in projections.names
+
+
+def test_affected_projection_recovery_does_not_create_dependency_tracking():
+    assert state_module._recover_affected_projections(
+        None
+    ) == state_module._AffectedProjectionSet(())
+    assert state_module._recover_affected_projections(
+        state_module._AffectedScope(collection="tool_needs", identity="need_scope")
+    ) == state_module._AffectedProjectionSet(())
+
+
 def test_affected_scope_recovery_covers_update_events_without_applying_them():
     ledger = EventLedger()
     workspace_id = "ws_scope_updates"
@@ -49,12 +84,12 @@ def test_affected_scope_recovery_covers_update_events_without_applying_them():
         {"action_plan_id": "plan_scope", "status": "accepted"},
     )
 
-    assert state_module._recover_affected_scope(need_event) == state_module._AffectedScope(
-        collection="tool_needs", identity="need_scope"
-    )
-    assert state_module._recover_affected_scope(plan_event) == state_module._AffectedScope(
-        collection="action_plans", identity="plan_scope"
-    )
+    assert state_module._recover_affected_scope(
+        need_event
+    ) == state_module._AffectedScope(collection="tool_needs", identity="need_scope")
+    assert state_module._recover_affected_scope(
+        plan_event
+    ) == state_module._AffectedScope(collection="action_plans", identity="plan_scope")
     assert StateProjector(ledger).project(workspace_id).tool_needs == {}
     assert StateProjector(ledger).project(workspace_id).action_plans == {}
 
@@ -932,10 +967,7 @@ def test_endpoint_and_host_measurements_remain_separate_without_identity_alias()
     assert not any(conflict.predicate == "up" for conflict in state.fact_conflicts)
     assert "fact_node_up" in state.facts
     assert state.get_best_fact("example_host", "up").id == "fact_node_up"
-    assert (
-        state.get_best_fact("192.0.2.115:9100", "up").id
-        == "fact_prometheus_up"
-    )
+    assert state.get_best_fact("192.0.2.115:9100", "up").id == "fact_prometheus_up"
 
 
 def test_projector_derives_entity_types_from_facts_and_relationships():
@@ -959,7 +991,9 @@ def test_projector_derives_entity_types_from_facts_and_relationships():
         fact("fact_os", "example_host", "os", "linux"),
         fact("fact_group", "example_host", "group", "servers"),
         fact("fact_runs", "web_service", "runs_on", "example_host"),
-        fact("fact_monitor", "example_host", "prometheus_instance", "example_host:9100"),
+        fact(
+            "fact_monitor", "example_host", "prometheus_instance", "example_host:9100"
+        ),
         fact("fact_capability", "example_host", "provides", "ssh_access"),
         fact("fact_endpoint", "192.168.1.115:8096", "status", "up"),
     ]
