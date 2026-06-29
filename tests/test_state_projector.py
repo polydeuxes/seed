@@ -8,6 +8,57 @@ from seed_runtime.state import ProjectionBuildDiagnostics, StateProjector
 import seed_runtime.state as state_module
 
 
+def test_event_application_recovers_affected_scope_before_state_mutation():
+    ledger = EventLedger()
+    workspace_id = "ws_scope_visibility"
+    fact = Fact(
+        id="fact_scope",
+        subject_id="host_1",
+        predicate="os",
+        value="linux",
+        evidence_ids=["evt_source"],
+        observed_at=utc_now(),
+    )
+    event = ledger.append("fact.observed", workspace_id, {"fact": to_plain(fact)})
+
+    recovered = state_module._recover_affected_scope(event)
+    before_state = StateProjector(EventLedger()).project(workspace_id)
+
+    assert recovered == state_module._AffectedScope(
+        collection="facts", identity="fact_scope", subject_id="host_1"
+    )
+    assert "fact_scope" not in before_state.facts
+
+    after_state = StateProjector(ledger).project(workspace_id)
+
+    assert after_state.facts["fact_scope"] == fact
+
+
+def test_affected_scope_recovery_covers_update_events_without_applying_them():
+    ledger = EventLedger()
+    workspace_id = "ws_scope_updates"
+
+    need_event = ledger.append(
+        "tool_need.status_changed",
+        workspace_id,
+        {"tool_need_id": "need_scope", "status": "satisfied"},
+    )
+    plan_event = ledger.append(
+        "action_plan.accepted",
+        workspace_id,
+        {"action_plan_id": "plan_scope", "status": "accepted"},
+    )
+
+    assert state_module._recover_affected_scope(need_event) == state_module._AffectedScope(
+        collection="tool_needs", identity="need_scope"
+    )
+    assert state_module._recover_affected_scope(plan_event) == state_module._AffectedScope(
+        collection="action_plans", identity="plan_scope"
+    )
+    assert StateProjector(ledger).project(workspace_id).tool_needs == {}
+    assert StateProjector(ledger).project(workspace_id).action_plans == {}
+
+
 def test_projector_rebuilds_state_deterministically():
     ledger = EventLedger()
     workspace_id = "ws_1"
