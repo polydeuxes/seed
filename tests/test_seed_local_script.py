@@ -2323,6 +2323,27 @@ def test_current_facts_timing_interpretation_keeps_measurements_unchanged():
     assert diagnostics.timings == [("event replay", 0.125)]
 
 
+def test_current_facts_timing_diagnostic_payload_preserves_interpreted_evidence():
+    seed_local = load_seed_local_module()
+    interpretation = seed_local._CurrentFactsTimingInterpretation(
+        cache_visibility=seed_local._CurrentFactsCacheVisibility(
+            cache_status="miss",
+            state_path_label="state cache miss path (incremental event replay)",
+        ),
+        projection_timings=(("event replay", 0.125),),
+    )
+
+    payload = seed_local._CurrentFactsTimingDiagnosticPayload.from_timing_interpretation(
+        interpretation, 0.25
+    )
+
+    assert payload.cache_status == "miss"
+    assert payload.timings == (
+        ("state cache miss path (incremental event replay)", 0.25),
+        ("event replay", 0.125),
+    )
+
+
 def test_current_facts_cache_debug_keeps_visibility_payload_separate_from_diagnostics(
     tmp_path,
 ):
