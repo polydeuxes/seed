@@ -40,6 +40,31 @@ def test_projection_build_diagnostics_keeps_measurement_and_aggregation_semantic
     assert diagnostics.counters == {"projection events": 5}
 
 
+def test_projection_diagnostic_payload_snapshots_aggregated_evidence():
+    aggregation = state_module._ProjectionDiagnosticAggregation(
+        timings=[("event replay", 0.5)], counters={"projection events": 5}
+    )
+
+    payload = state_module._ProjectionDiagnosticPayload.from_aggregation(aggregation)
+    aggregation.add_timing("event replay", 0.25)
+    aggregation.add_count("projection events", 1)
+
+    assert payload.timings == (("event replay", 0.5),)
+    assert payload.counters == {"projection events": 5}
+
+
+def test_projection_build_diagnostics_exposes_compatible_payload_snapshot():
+    diagnostics = ProjectionBuildDiagnostics()
+    diagnostics.timings.append(("event replay", 0.5))
+    diagnostics.counters["projection events"] = 5
+
+    payload = diagnostics.payload
+
+    assert payload.timings == (("event replay", 0.5),)
+    assert payload.counters == {"projection events": 5}
+    assert diagnostics.timings == [("event replay", 0.5)]
+    assert diagnostics.counters == {"projection events": 5}
+
 def test_event_application_recovers_affected_scope_before_state_mutation():
     ledger = EventLedger()
     workspace_id = "ws_scope_visibility"
