@@ -65,6 +65,22 @@ def test_projection_build_diagnostics_exposes_compatible_payload_snapshot():
     assert diagnostics.timings == [("event replay", 0.5)]
     assert diagnostics.counters == {"projection events": 5}
 
+def test_projection_diagnostic_selection_preserves_consumer_handoff():
+    payload = state_module._ProjectionDiagnosticPayload(
+        timings=(("event replay", 0.5),), counters={"projection events": 5}
+    )
+
+    selection = state_module._ProjectionDiagnosticSelection.from_payload(payload)
+    payload.counters["projection events"] = 6
+    counters = selection.counters_dict()
+    counters["projection events"] = 7
+
+    assert selection.timings == (("event replay", 0.5),)
+    assert selection.timings_list() == [("event replay", 0.5)]
+    assert selection.counters == {"projection events": 5}
+    assert selection.counters_dict() == {"projection events": 5}
+    assert payload.counters == {"projection events": 6}
+
 def test_event_application_recovers_affected_scope_before_state_mutation():
     ledger = EventLedger()
     workspace_id = "ws_scope_visibility"
