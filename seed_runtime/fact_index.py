@@ -17,7 +17,10 @@ from seed_runtime.execution_status import (
     emit_status,
 )
 from seed_runtime.facts import Fact, is_fact_expired
-from seed_runtime.read_model_ownership import read_model_construction_inputs
+from seed_runtime.read_model_ownership import (
+    read_model_construction_inputs,
+    read_model_dependency_identity,
+)
 from seed_runtime.projection_store import (
     FACT_INDEX_NAME,
     FACT_INDEX_VERSION,
@@ -98,12 +101,15 @@ def build_fact_index(
             current=index,
             total=total,
         )
+    identity = read_model_dependency_identity(
+        inputs, state_projection_version=state_projection_version
+    )
     return DerivedFactIndex(
         workspace_id=workspace_id,
         index_name=index_name,
         index_version=index_version,
-        state_projection_version=state_projection_version,
-        state_last_event_id=visible_state.last_event_id,
+        state_projection_version=identity.state_projection_version,
+        state_last_event_id=identity.state_last_event_id,
         created_at=_utc_now(),
         fact_ids_by_subject_predicate=by_subject_predicate,
     )
@@ -120,7 +126,10 @@ def load_or_build_fact_index(
     """Load a valid fact index cache or build and save one from projected State."""
 
     inputs = read_model_construction_inputs(state)
-    visible_state = inputs.visible_state
+
+    identity = read_model_dependency_identity(
+        inputs, state_projection_version=state_projection_version
+    )
 
     if store is not None:
         emit_status(status_consumer, "fact_index_cache_load", "Loading fact index cache...")
@@ -128,8 +137,8 @@ def load_or_build_fact_index(
             workspace_id,
             FACT_INDEX_NAME,
             FACT_INDEX_VERSION,
-            state_projection_version=state_projection_version,
-            state_last_event_id=visible_state.last_event_id,
+            state_projection_version=identity.state_projection_version,
+            state_last_event_id=identity.state_last_event_id,
         )
         if snapshot is not None:
             emit_status(

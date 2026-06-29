@@ -293,6 +293,11 @@ from seed_runtime.execution_status import (
     emit_status,
 )
 from seed_runtime.fact_index import load_or_build_fact_index
+from seed_runtime.read_model_ownership import (
+    read_model_construction_inputs,
+    read_model_dependency_identity,
+    read_model_dependency_identity_for_state_boundary,
+)
 from seed_runtime.evidence_graph import (
     FactEvidenceView,
     build_evidence_graph,
@@ -3083,6 +3088,10 @@ def projected_state_summary_from_args(
     try:
         latest_events = ledger.list_events(args.workspace)
         current_last_event_id = latest_events[-1].id if latest_events else None
+        cache_lookup_identity = read_model_dependency_identity_for_state_boundary(
+            state_projection_version=STATE_PROJECTION_VERSION,
+            state_last_event_id=current_last_event_id,
+        )
         if store is not None and _can_use_state_cache(args):
             emit_status(
                 status_consumer,
@@ -3093,8 +3102,8 @@ def projected_state_summary_from_args(
                 args.workspace,
                 STATE_SUMMARY_PROJECTION_NAME,
                 STATE_SUMMARY_PROJECTION_VERSION,
-                state_projection_version=STATE_PROJECTION_VERSION,
-                state_last_event_id=current_last_event_id,
+                state_projection_version=cache_lookup_identity.state_projection_version,
+                state_last_event_id=cache_lookup_identity.state_last_event_id,
             )
             if snapshot is not None:
                 emit_status(
@@ -3136,6 +3145,10 @@ def projected_state_summary_from_args(
             )
         else:
             state = projector.project(args.workspace)
+        build_inputs = read_model_construction_inputs(state)
+        build_identity = read_model_dependency_identity(
+            build_inputs, state_projection_version=STATE_PROJECTION_VERSION
+        )
         view_summary = build_state_summary(state)
         operator_summary = state_summary(state)
         if store is not None and _can_use_state_cache(args):
@@ -3159,8 +3172,8 @@ def projected_state_summary_from_args(
                     projection_name=STATE_SUMMARY_PROJECTION_NAME,
                     projection_version=STATE_SUMMARY_PROJECTION_VERSION,
                     last_event_id=state.last_event_id,
-                    state_projection_version=STATE_PROJECTION_VERSION,
-                    state_last_event_id=state.last_event_id,
+                    state_projection_version=build_identity.state_projection_version,
+                    state_last_event_id=build_identity.state_last_event_id,
                     summary_payload={
                         "state_view_summary": to_plain(view_summary),
                         "operator_summary": operator_summary,
@@ -3285,6 +3298,10 @@ def state_summary_cache_debug_from_args(
             lambda: ledger.list_events(args.workspace),
         )
         current_last_event_id = latest_events[-1].id if latest_events else None
+        cache_lookup_identity = read_model_dependency_identity_for_state_boundary(
+            state_projection_version=STATE_PROJECTION_VERSION,
+            state_last_event_id=current_last_event_id,
+        )
         summary_snapshot = None
         state_snapshot = None
         if store is not None and cache_eligible:
@@ -3294,8 +3311,8 @@ def state_summary_cache_debug_from_args(
                     args.workspace,
                     STATE_SUMMARY_PROJECTION_NAME,
                     STATE_SUMMARY_PROJECTION_VERSION,
-                    state_projection_version=STATE_PROJECTION_VERSION,
-                    state_last_event_id=current_last_event_id,
+                    state_projection_version=cache_lookup_identity.state_projection_version,
+                    state_last_event_id=cache_lookup_identity.state_last_event_id,
                 ),
             )
             summary_cache_status = "hit" if summary_snapshot is not None else "miss"
@@ -3379,6 +3396,10 @@ def state_summary_cache_debug_from_args(
         timed(
             "fact_support construction if separable", lambda: len(state.fact_supports)
         )
+        build_inputs = read_model_construction_inputs(state)
+        build_identity = read_model_dependency_identity(
+            build_inputs, state_projection_version=STATE_PROJECTION_VERSION
+        )
         view_summary = timed(
             "compact StateSummary derivation", lambda: build_state_summary(state)
         )
@@ -3394,8 +3415,8 @@ def state_summary_cache_debug_from_args(
                         projection_name=STATE_SUMMARY_PROJECTION_NAME,
                         projection_version=STATE_SUMMARY_PROJECTION_VERSION,
                         last_event_id=state.last_event_id,
-                        state_projection_version=STATE_PROJECTION_VERSION,
-                        state_last_event_id=state.last_event_id,
+                        state_projection_version=build_identity.state_projection_version,
+                        state_last_event_id=build_identity.state_last_event_id,
                         summary_payload={
                             "state_view_summary": to_plain(view_summary),
                             "operator_summary": operator_summary,
