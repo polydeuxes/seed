@@ -294,10 +294,12 @@ from seed_runtime.execution_status import (
 )
 from seed_runtime.fact_index import load_or_build_fact_index
 from seed_runtime.read_model_ownership import (
-    read_model_construction_inputs,
     read_model_cache_lookup_request,
+    read_model_construction_inputs,
+    read_model_construction_request,
     read_model_dependency_identity,
     read_model_dependency_identity_for_state_boundary,
+    construct_read_model,
     resolve_read_model_cache_lookup,
 )
 from seed_runtime.evidence_graph import (
@@ -3156,8 +3158,20 @@ def projected_state_summary_from_args(
         build_identity = read_model_dependency_identity(
             build_inputs, state_projection_version=STATE_PROJECTION_VERSION
         )
-        view_summary = build_state_summary(state)
-        operator_summary = state_summary(state)
+        summary_construction = construct_read_model(
+            read_model_construction_request(
+                build_inputs,
+                build_identity,
+                cache_lookup=(
+                    lookup if store is not None and _can_use_state_cache(args) else None
+                ),
+            ),
+            lambda construction_inputs: (
+                build_state_summary(construction_inputs.visible_state),
+                state_summary(construction_inputs.visible_state),
+            ),
+        )
+        view_summary, operator_summary = summary_construction.read_model
         if store is not None and _can_use_state_cache(args):
             cache_status = "hit" if state_cache_status.cache_hit else "miss"
         else:
@@ -3412,11 +3426,30 @@ def state_summary_cache_debug_from_args(
         build_identity = read_model_dependency_identity(
             build_inputs, state_projection_version=STATE_PROJECTION_VERSION
         )
+        summary_construction_request = read_model_construction_request(
+            build_inputs,
+            build_identity,
+            cache_lookup=(
+                summary_lookup if store is not None and cache_eligible else None
+            ),
+        )
         view_summary = timed(
-            "compact StateSummary derivation", lambda: build_state_summary(state)
+            "compact StateSummary derivation",
+            lambda: construct_read_model(
+                summary_construction_request,
+                lambda construction_inputs: build_state_summary(
+                    construction_inputs.visible_state
+                ),
+            ).read_model,
         )
         operator_summary = timed(
-            "operator state_summary derivation", lambda: state_summary(state)
+            "operator state_summary derivation",
+            lambda: construct_read_model(
+                summary_construction_request,
+                lambda construction_inputs: state_summary(
+                    construction_inputs.visible_state
+                ),
+            ).read_model,
         )
         if store is not None and cache_eligible:
             timed(

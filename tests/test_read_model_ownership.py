@@ -1,9 +1,11 @@
 from seed_runtime.projection_store import STATE_PROJECTION_VERSION
 from seed_runtime.read_model_ownership import (
-    read_model_construction_inputs,
     read_model_cache_lookup_request,
+    read_model_construction_inputs,
+    read_model_construction_request,
     read_model_dependency_identity,
     read_model_dependency_identity_for_state_boundary,
+    construct_read_model,
     resolve_read_model_cache_lookup,
 )
 from seed_runtime.state import State
@@ -64,3 +66,28 @@ def test_read_model_cache_lookup_preserves_existing_miss_decision():
 
     assert result.cache_hit is False
     assert result.snapshot is None
+
+
+def test_read_model_construction_request_preserves_existing_builder_handoff():
+    state = State(workspace_id="ws", last_event_id="evt_current")
+    inputs = read_model_construction_inputs(state)
+    identity = read_model_dependency_identity(
+        inputs, state_projection_version=STATE_PROJECTION_VERSION
+    )
+    lookup = resolve_read_model_cache_lookup(
+        read_model_cache_lookup_request(identity),
+        lambda _lookup_identity: None,
+    )
+    request = read_model_construction_request(inputs, identity, cache_lookup=lookup)
+    calls = []
+
+    def build_read_model(construction_inputs):
+        calls.append(construction_inputs)
+        return {"workspace_id": construction_inputs.visible_state.workspace_id}
+
+    result = construct_read_model(request, build_read_model)
+
+    assert calls == [inputs]
+    assert result.request == request
+    assert result.read_model == {"workspace_id": "ws"}
+    assert result.request.cache_lookup is lookup

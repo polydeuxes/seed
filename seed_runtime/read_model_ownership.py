@@ -15,6 +15,7 @@ from typing import Generic, TypeVar
 from seed_runtime.state import State
 
 TReadModelSnapshot = TypeVar("TReadModelSnapshot")
+TReadModel = TypeVar("TReadModel")
 
 
 @dataclass(frozen=True)
@@ -71,10 +72,61 @@ class ReadModelConstructionInputs:
     visible_state: State
 
 
+@dataclass(frozen=True)
+class ReadModelConstructionRequest(Generic[TReadModelSnapshot]):
+    """Request to construct a read model after cache lookup did not reuse one.
+
+    The boundary owns only the handoff into existing construction. It consumes
+    the already-visible State inputs, the already-derived dependency identity,
+    and the already-resolved cache lookup result. It does not perform cache
+    lookup, own cache storage, save snapshots, invalidate caches, publish
+    projections, render output, schedule work, or alter read-model contents.
+    """
+
+    inputs: ReadModelConstructionInputs
+    dependency_identity: ReadModelDependencyIdentity
+    cache_lookup: ReadModelCacheLookupResult[TReadModelSnapshot] | None = None
+
+
+@dataclass(frozen=True)
+class ReadModelConstructionResult(Generic[TReadModel]):
+    """Constructed read model returned by the existing read-model builder."""
+
+    request: ReadModelConstructionRequest[object]
+    read_model: TReadModel
+
+
 def read_model_construction_inputs(state: State) -> ReadModelConstructionInputs:
     """Return read-model construction inputs for an already-published State."""
 
     return ReadModelConstructionInputs(visible_state=state)
+
+
+def read_model_construction_request(
+    inputs: ReadModelConstructionInputs,
+    dependency_identity: ReadModelDependencyIdentity,
+    *,
+    cache_lookup: ReadModelCacheLookupResult[TReadModelSnapshot] | None = None,
+) -> ReadModelConstructionRequest[TReadModelSnapshot]:
+    """Return a construction request from existing read-model handoff evidence."""
+
+    return ReadModelConstructionRequest(
+        inputs=inputs,
+        dependency_identity=dependency_identity,
+        cache_lookup=cache_lookup,
+    )
+
+
+def construct_read_model(
+    request: ReadModelConstructionRequest[TReadModelSnapshot],
+    build_read_model: Callable[[ReadModelConstructionInputs], TReadModel],
+) -> ReadModelConstructionResult[TReadModel]:
+    """Construct a read model by invoking the existing builder unchanged."""
+
+    return ReadModelConstructionResult(
+        request=request,
+        read_model=build_read_model(request.inputs),
+    )
 
 
 def read_model_dependency_identity(
