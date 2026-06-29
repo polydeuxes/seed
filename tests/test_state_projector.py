@@ -94,7 +94,7 @@ def test_projection_influence_lineage_composes_event_scope_and_projection_eviden
     assert "relationships" in lineage.affected_projections.names
 
 
-def test_replay_selection_is_separate_from_projection_influence_lineage():
+def test_replay_scope_assessment_is_separate_from_projection_influence_lineage():
     lineage = state_module._ProjectionInfluenceLineage(
         source_event_ids=("evt_lineage",),
         affected_scopes=(
@@ -105,25 +105,49 @@ def test_replay_selection_is_separate_from_projection_influence_lineage():
         affected_projections=state_module._AffectedProjectionSet(("relationships",)),
     )
 
-    selection = state_module._select_replay_targets(lineage)
+    assessment = state_module._assess_replay_scope(lineage)
+
+    assert assessment == state_module._ReplayScopeAssessment(
+        influence_lineage=lineage,
+        replay_required=True,
+    )
+    assert assessment.influence_lineage.affected_projections.names == ("relationships",)
+    assert assessment.replay_required is True
+
+
+def test_replay_selection_is_separate_from_replay_scope_assessment():
+    lineage = state_module._ProjectionInfluenceLineage(
+        source_event_ids=("evt_lineage",),
+        affected_scopes=(
+            state_module._AffectedScope(
+                collection="facts", identity="fact_scope", subject_id="host_1"
+            ),
+        ),
+        affected_projections=state_module._AffectedProjectionSet(("relationships",)),
+    )
+    assessment = state_module._assess_replay_scope(lineage)
+
+    selection = state_module._select_replay_targets(assessment)
 
     assert selection == state_module._ReplaySelection(
-        influence_lineage=lineage,
+        scope_assessment=assessment,
         replay_targets=("event_replay", "projection_finalization"),
     )
-    assert selection.influence_lineage.affected_projections.names == ("relationships",)
-    assert selection.replay_targets != selection.influence_lineage.affected_projections.names
+    assert selection.scope_assessment.influence_lineage is lineage
+    assert selection.replay_targets != ("relationships",)
 
 
-def test_replay_selection_preserves_full_replay_for_empty_lineage():
-    selection = state_module._select_replay_targets(
+def test_replay_scope_assessment_preserves_full_replay_need_for_empty_lineage():
+    assessment = state_module._assess_replay_scope(
         state_module._ProjectionInfluenceLineage(
             source_event_ids=(),
             affected_scopes=(),
             affected_projections=state_module._AffectedProjectionSet(()),
         )
     )
+    selection = state_module._select_replay_targets(assessment)
 
+    assert assessment.replay_required is True
     assert selection.replay_targets == ("event_replay", "projection_finalization")
 
 
@@ -133,7 +157,8 @@ def test_replay_execution_consumes_selection_without_narrowing():
         affected_scopes=(),
         affected_projections=state_module._AffectedProjectionSet(("relationships",)),
     )
-    selection = state_module._select_replay_targets(lineage)
+    assessment = state_module._assess_replay_scope(lineage)
+    selection = state_module._select_replay_targets(assessment)
     calls = []
 
     state_module._execute_replay_selection(
@@ -143,7 +168,9 @@ def test_replay_execution_consumes_selection_without_narrowing():
     )
 
     assert calls == ["event_replay", "projection_finalization"]
-    assert selection.influence_lineage.affected_projections.names == ("relationships",)
+    assert selection.scope_assessment.influence_lineage.affected_projections.names == (
+        "relationships",
+    )
     assert selection.replay_targets == ("event_replay", "projection_finalization")
 
 
