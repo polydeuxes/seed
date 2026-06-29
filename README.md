@@ -4,15 +4,23 @@ Seed is a system that continuously maintains evidence-backed answers to bounded 
 
 Seed uses a claim-centric, knowledge-oriented runtime: it receives observations, preserves evidence, normalizes supportable claims, projects explainable state, and answers questions about what it knows and why.
 
-Inquiry owns the questions.
+Inquiry owns questions.
 
-Subsystems own the answers.
+Subjects own subject knowledge.
 
-Responsibilities define the boundaries.
+Responsibilities own behavior.
 
-Authority constrains the answers.
+Implementations realize responsibilities.
 
-Questions discover the architecture.
+Answer Composition owns answers.
+
+Presentation owns rendering.
+
+Authority constrains claims.
+
+Evidence supports claims.
+
+Contradictions delimit claims.
 
 For Seed's concise architectural thesis and constitutional statement, read [`docs/seed.md`](docs/seed.md). For concise vocabulary, read [`docs/ontology.md`](docs/ontology.md). This README is only the repository orientation surface; the documentation map lives in [`docs/README.md`](docs/README.md).
 
