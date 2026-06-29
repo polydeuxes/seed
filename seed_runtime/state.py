@@ -50,6 +50,15 @@ from seed_runtime.models import (
 )
 
 
+@dataclass(frozen=True)
+class _AffectedScope:
+    """Implementation-local description of the projected state touched by an event."""
+
+    collection: str
+    identity: str | None = None
+    subject_id: str | None = None
+
+
 @dataclass
 class ProjectionBuildDiagnostics:
     """Optional, non-authoritative timings for projected-State construction."""
@@ -951,6 +960,7 @@ class StateProjector:
         *,
         diagnostics: ProjectionBuildDiagnostics | None = None,
     ) -> None:
+        _recover_affected_scope(event)
         payload = event.payload
         if event.kind == "entity.upserted":
             data = payload.get("entity", payload)
@@ -1083,6 +1093,74 @@ class StateProjector:
             data = payload.get("tool", payload)
             tool = ToolSpec(**data)
             state.tools[tool.name] = tool
+
+
+def _recover_affected_scope(event: Event) -> _AffectedScope | None:
+    """Return the direct projected-State scope an event application may touch.
+
+    The report is implementation-local visibility only; projection replay still
+    applies every event and finalizes all derived indexes exactly as before.
+    """
+
+    payload = event.payload
+    if event.kind == "entity.upserted":
+        data = payload.get("entity", payload)
+        return _AffectedScope("entities", data.get("id"))
+    if event.kind == "observation.observed":
+        data = payload.get("observation", payload)
+        return _AffectedScope("observations", data.get("id"))
+    if event.kind == "evidence.observed":
+        data = payload.get("evidence", payload)
+        return _AffectedScope("evidence", data.get("id"))
+    if event.kind in {"fact.observed", "fact.inferred"}:
+        data = payload.get("fact", payload)
+        return _AffectedScope(
+            "facts", data.get("id"), data.get("subject_id") or data.get("subject")
+        )
+    if event.kind == "goal.created":
+        data = payload.get("goal", payload)
+        return _AffectedScope("goals", data.get("id"))
+    if event.kind in {"tool_need.created", "tool_need.status_changed"}:
+        data = payload.get("tool_need", payload)
+        return _AffectedScope("tool_needs", data.get("id") or payload.get("tool_need_id"))
+    if event.kind == "approval.granted":
+        data = payload.get("approval", payload)
+        return _AffectedScope("approvals", data.get("id"), data.get("scope"))
+    if event.kind == "execution_authorization.granted":
+        data = payload.get("execution_authorization", payload)
+        return _AffectedScope("execution_authorizations", data.get("id"))
+    if event.kind == "execution_proposal.created":
+        data = payload.get("execution_proposal", payload)
+        return _AffectedScope("execution_proposals", data.get("id"))
+    if event.kind == "handoff_plan.created":
+        data = payload.get("handoff_plan", payload)
+        return _AffectedScope("handoff_plans", data.get("id"))
+    if event.kind in {
+        "pending_action.created",
+        "pending_action.status_changed",
+        "pending_action.approved",
+        "pending_action.completed",
+        "pending_action.cancelled",
+    }:
+        data = payload.get("pending_action", payload)
+        return _AffectedScope(
+            "pending_actions", data.get("id") or payload.get("pending_action_id")
+        )
+    if event.kind in {
+        "action_plan.created",
+        "action_plan.approved",
+        "action_plan.accepted",
+        "action_plan.rejected",
+        "action_plan.superseded",
+    }:
+        data = payload.get("action_plan", payload)
+        return _AffectedScope(
+            "action_plans", data.get("id") or payload.get("action_plan_id")
+        )
+    if event.kind == "tool.registered":
+        data = payload.get("tool", payload)
+        return _AffectedScope("tools", data.get("name"))
+    return None
 
 
 def _project_inferred_facts(
