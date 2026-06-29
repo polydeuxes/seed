@@ -82,16 +82,31 @@ class _ProjectionInfluenceLineage:
 
 
 @dataclass(frozen=True)
-class _ReplaySelection:
-    """Implementation-local replay target selection.
+class _ReplayScopeAssessment:
+    """Implementation-local assessment of replay necessity from lineage.
 
     Projection influence lineage is descriptive evidence for why projection work
-    may be required. Replay selection is a separate responsibility: it decides
-    what this projector will execute. The current compatible choice remains full
-    event replay plus full finalization regardless of lineage evidence.
+    may be required. Replay scope assessment consumes that evidence to answer
+    whether this compatible projector requires replay work. It does not select
+    targets, execute replay, compute projections, invalidate caches, persist
+    snapshots, or expose a runtime surface.
     """
 
     influence_lineage: _ProjectionInfluenceLineage
+    replay_required: bool
+
+
+@dataclass(frozen=True)
+class _ReplaySelection:
+    """Implementation-local replay target selection.
+
+    Replay scope assessment determines whether replay is required from lineage
+    evidence. Replay selection is a separate responsibility: it decides what
+    this projector will execute. The current compatible choice remains full
+    event replay plus full finalization whenever replay is assessed as required.
+    """
+
+    scope_assessment: _ReplayScopeAssessment
     replay_targets: tuple[str, ...]
 
 
@@ -864,7 +879,8 @@ class StateProjector:
                     )
 
         influence_lineage = _recover_projection_influence_lineage(event_list)
-        replay_selection = _select_replay_targets(influence_lineage)
+        replay_assessment = _assess_replay_scope(influence_lineage)
+        replay_selection = _select_replay_targets(replay_assessment)
         replay_request = _ReplayExecutionRequest(selection=replay_selection)
         return _execute_replay_selection(
             replay_request,
@@ -1307,18 +1323,34 @@ def _execute_replay_selection(
     return finalize()
 
 
-def _select_replay_targets(
+def _assess_replay_scope(
     influence_lineage: _ProjectionInfluenceLineage,
+) -> _ReplayScopeAssessment:
+    """Return whether lineage requires compatible replay work.
+
+    The assessment preserves lineage evidence and answers replay necessity only.
+    It intentionally does not narrow compatible targets; the existing projector
+    still requires replay for every projection build, including empty lineage.
+    """
+
+    return _ReplayScopeAssessment(
+        influence_lineage=influence_lineage,
+        replay_required=True,
+    )
+
+
+def _select_replay_targets(
+    scope_assessment: _ReplayScopeAssessment,
 ) -> _ReplaySelection:
     """Return the replay work this compatible projector will execute.
 
-    The selected targets intentionally do not narrow replay execution. Projection
-    influence lineage is preserved as input evidence, while execution remains the
+    The selected targets intentionally do not narrow replay execution. Replay
+    scope assessment is preserved as input evidence, while execution remains the
     established full event replay and full projection finalization path.
     """
 
     return _ReplaySelection(
-        influence_lineage=influence_lineage,
+        scope_assessment=scope_assessment,
         replay_targets=("event_replay", "projection_finalization"),
     )
 
