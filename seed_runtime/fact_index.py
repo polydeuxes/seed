@@ -19,7 +19,9 @@ from seed_runtime.execution_status import (
 from seed_runtime.facts import Fact, is_fact_expired
 from seed_runtime.read_model_ownership import (
     read_model_construction_inputs,
+    read_model_cache_lookup_request,
     read_model_dependency_identity,
+    resolve_read_model_cache_lookup,
 )
 from seed_runtime.projection_store import (
     FACT_INDEX_NAME,
@@ -133,20 +135,25 @@ def load_or_build_fact_index(
 
     if store is not None:
         emit_status(status_consumer, "fact_index_cache_load", "Loading fact index cache...")
-        snapshot = store.load_derived_index_snapshot(
-            workspace_id,
-            FACT_INDEX_NAME,
-            FACT_INDEX_VERSION,
-            state_projection_version=identity.state_projection_version,
-            state_last_event_id=identity.state_last_event_id,
+        lookup = resolve_read_model_cache_lookup(
+            read_model_cache_lookup_request(identity),
+            lambda lookup_identity: store.load_derived_index_snapshot(
+                workspace_id,
+                FACT_INDEX_NAME,
+                FACT_INDEX_VERSION,
+                state_projection_version=lookup_identity.state_projection_version,
+                state_last_event_id=lookup_identity.state_last_event_id,
+            ),
         )
-        if snapshot is not None:
+        if lookup.cache_hit:
             emit_status(
                 status_consumer,
                 "fact_index_cache_load",
                 "Fact index cache: hit",
                 completed=True,
             )
+            snapshot = lookup.snapshot
+            assert snapshot is not None
             return fact_index_from_payload(snapshot.index_payload, snapshot=snapshot)
         emit_status(
             status_consumer,

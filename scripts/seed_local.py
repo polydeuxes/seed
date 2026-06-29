@@ -295,8 +295,10 @@ from seed_runtime.execution_status import (
 from seed_runtime.fact_index import load_or_build_fact_index
 from seed_runtime.read_model_ownership import (
     read_model_construction_inputs,
+    read_model_cache_lookup_request,
     read_model_dependency_identity,
     read_model_dependency_identity_for_state_boundary,
+    resolve_read_model_cache_lookup,
 )
 from seed_runtime.evidence_graph import (
     FactEvidenceView,
@@ -3098,20 +3100,25 @@ def projected_state_summary_from_args(
                 "state_summary_cache_load",
                 "Loading state-build cache...",
             )
-            snapshot = store.load_summary_snapshot(
-                args.workspace,
-                STATE_SUMMARY_PROJECTION_NAME,
-                STATE_SUMMARY_PROJECTION_VERSION,
-                state_projection_version=cache_lookup_identity.state_projection_version,
-                state_last_event_id=cache_lookup_identity.state_last_event_id,
+            lookup = resolve_read_model_cache_lookup(
+                read_model_cache_lookup_request(cache_lookup_identity),
+                lambda lookup_identity: store.load_summary_snapshot(
+                    args.workspace,
+                    STATE_SUMMARY_PROJECTION_NAME,
+                    STATE_SUMMARY_PROJECTION_VERSION,
+                    state_projection_version=lookup_identity.state_projection_version,
+                    state_last_event_id=lookup_identity.state_last_event_id,
+                ),
             )
-            if snapshot is not None:
+            if lookup.cache_hit:
                 emit_status(
                     status_consumer,
                     "state_summary_cache_load",
                     "State-build cache: hit",
                     completed=True,
                 )
+                snapshot = lookup.snapshot
+                assert snapshot is not None
                 payload = snapshot.summary_payload
                 view_summary = StateSummary(**payload["state_view_summary"])
                 operator_summary = dict(payload["operator_summary"])
@@ -3305,18 +3312,23 @@ def state_summary_cache_debug_from_args(
         summary_snapshot = None
         state_snapshot = None
         if store is not None and cache_eligible:
-            summary_snapshot = timed(
+            summary_lookup = timed(
                 "state summary snapshot lookup",
-                lambda: store.load_summary_snapshot(
-                    args.workspace,
-                    STATE_SUMMARY_PROJECTION_NAME,
-                    STATE_SUMMARY_PROJECTION_VERSION,
-                    state_projection_version=cache_lookup_identity.state_projection_version,
-                    state_last_event_id=cache_lookup_identity.state_last_event_id,
+                lambda: resolve_read_model_cache_lookup(
+                    read_model_cache_lookup_request(cache_lookup_identity),
+                    lambda lookup_identity: store.load_summary_snapshot(
+                        args.workspace,
+                        STATE_SUMMARY_PROJECTION_NAME,
+                        STATE_SUMMARY_PROJECTION_VERSION,
+                        state_projection_version=lookup_identity.state_projection_version,
+                        state_last_event_id=lookup_identity.state_last_event_id,
+                    ),
                 ),
             )
-            summary_cache_status = "hit" if summary_snapshot is not None else "miss"
-            if summary_snapshot is not None:
+            summary_snapshot = summary_lookup.snapshot
+            summary_cache_status = "hit" if summary_lookup.cache_hit else "miss"
+            if summary_lookup.cache_hit:
+                assert summary_snapshot is not None
                 cached_summary_last_event_id = summary_snapshot.last_event_id
                 timed(
                     "state summary snapshot decode / payload reconstruction",
