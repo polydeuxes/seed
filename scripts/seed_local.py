@@ -5381,17 +5381,37 @@ class _TimingProjectionStore:
         return getattr(self._store, name)
 
 
+@dataclass(frozen=True)
+class _CurrentFactsTimingPresentation:
+    cache_status: str
+    timings: tuple[tuple[str, float], ...]
+
+    @classmethod
+    def from_report(
+        cls, report: CurrentFactsTimingReport
+    ) -> "_CurrentFactsTimingPresentation":
+        """Render preserved timing diagnostics without owning payload construction."""
+
+        return cls(
+            cache_status=report.cache_status,
+            timings=tuple(report.timings),
+        )
+
+    def format(self) -> str:
+        lines = [
+            "Current Facts Timing",
+            "",
+            "Cache:",
+            f"- state cache: {self.cache_status}",
+            "",
+            "Timings:",
+        ]
+        lines.extend(f"- {name}: {elapsed:.6f}s" for name, elapsed in self.timings)
+        return "\n".join(lines)
+
+
 def _format_current_facts_timing_report(report: CurrentFactsTimingReport) -> str:
-    lines = [
-        "Current Facts Timing",
-        "",
-        "Cache:",
-        f"- state cache: {report.cache_status}",
-        "",
-        "Timings:",
-    ]
-    lines.extend(f"- {name}: {elapsed:.6f}s" for name, elapsed in report.timings)
-    return "\n".join(lines)
+    return _CurrentFactsTimingPresentation.from_report(report).format()
 
 
 def _current_facts_timing_from_args(
