@@ -5317,6 +5317,31 @@ class _CurrentFactsTimingInterpretation:
         )
 
 
+@dataclass(frozen=True)
+class _CurrentFactsTimingDiagnosticPayload:
+    cache_status: str
+    timings: tuple[tuple[str, float], ...]
+
+    @classmethod
+    def from_timing_interpretation(
+        cls,
+        interpretation: _CurrentFactsTimingInterpretation,
+        measured_state_path_elapsed: float,
+    ) -> "_CurrentFactsTimingDiagnosticPayload":
+        """Preserve interpreted timing evidence for diagnostic consumers."""
+
+        return cls(
+            cache_status=interpretation.cache_visibility.cache_status,
+            timings=(
+                (
+                    interpretation.cache_visibility.state_path_label,
+                    measured_state_path_elapsed,
+                ),
+                *interpretation.projection_timings,
+            ),
+        )
+
+
 class _TimingProjectionStore:
     def __init__(self, store: ProjectionStore, timings: list[tuple[str, float]]):
         self._store = store
@@ -5420,14 +5445,13 @@ def _current_facts_timing_from_args(
             timing_interpretation = _CurrentFactsTimingInterpretation.from_cache_evidence(
                 status, projection_diagnostics
             )
-            timings.append(
-                (
-                    timing_interpretation.cache_visibility.state_path_label,
-                    time.perf_counter() - state_path_started,
+            timing_diagnostics = (
+                _CurrentFactsTimingDiagnosticPayload.from_timing_interpretation(
+                    timing_interpretation, time.perf_counter() - state_path_started
                 )
             )
-            timings.extend(timing_interpretation.projection_timings)
-            cache_status = timing_interpretation.cache_visibility.cache_status
+            timings.extend(timing_diagnostics.timings)
+            cache_status = timing_diagnostics.cache_status
         else:
             state = timed(
                 "full projection rebuild (event replay)",
