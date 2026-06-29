@@ -3479,6 +3479,7 @@ def state_summary_cache_debug_from_args(
         timed(
             "rendering", lambda: format_state_summary_cache_debug_report_placeholder()
         )
+        projection_payload = projection_diagnostics.payload
         return StateSummaryCacheDebugReport(
             visibility=_StateBuildVisibilityPayload(
                 cache_eligible=cache_eligible,
@@ -3491,8 +3492,8 @@ def state_summary_cache_debug_from_args(
             projection_diagnostics=_ProjectionCacheDiagnosticPayload(
                 state_cache_status=state_cache_status,
                 cached_state_last_event_id=cached_state_last_event_id,
-                projection_timings=projection_diagnostics.timings,
-                projection_counters=projection_diagnostics.counters,
+                projection_timings=list(projection_payload.timings),
+                projection_counters=projection_payload.counters,
             ),
             timings=timings + [("total runtime", time.perf_counter() - started)],
         )
@@ -5309,11 +5310,12 @@ class _CurrentFactsTimingInterpretation:
     ) -> "_CurrentFactsTimingInterpretation":
         """Interpret measured State-cache evidence without owning measurement."""
 
+        projection_payload = projection_diagnostics.payload
         return cls(
             cache_visibility=_CurrentFactsCacheVisibility.from_state_cache_status(
                 status
             ),
-            projection_timings=tuple(projection_diagnostics.timings),
+            projection_timings=projection_payload.timings,
         )
 
 

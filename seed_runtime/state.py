@@ -176,6 +176,29 @@ class _ProjectionDiagnosticAggregation:
         self.counters[name] = self.counters.get(name, 0) + amount
 
 
+@dataclass(frozen=True)
+class _ProjectionDiagnosticPayload:
+    """Implementation-local projection diagnostic evidence for consumers.
+
+    Aggregation owns how repeated measurements and counter updates are preserved.
+    This payload owner snapshots the aggregated evidence handed to downstream
+    diagnostic consumers without measuring phases, aggregating values, replaying
+    events, rendering output, or changing the compatibility surface.
+    """
+
+    timings: tuple[tuple[str, float], ...]
+    counters: dict[str, int]
+
+    @classmethod
+    def from_aggregation(
+        cls, aggregation: _ProjectionDiagnosticAggregation
+    ) -> "_ProjectionDiagnosticPayload":
+        return cls(
+            timings=tuple(aggregation.timings),
+            counters=dict(aggregation.counters),
+        )
+
+
 @dataclass
 class ProjectionBuildDiagnostics:
     """Optional, non-authoritative timings for projected-State construction."""
@@ -186,6 +209,10 @@ class ProjectionBuildDiagnostics:
     @property
     def _aggregation(self) -> _ProjectionDiagnosticAggregation:
         return _ProjectionDiagnosticAggregation(self.timings, self.counters)
+
+    @property
+    def payload(self) -> _ProjectionDiagnosticPayload:
+        return _ProjectionDiagnosticPayload.from_aggregation(self._aggregation)
 
     def timed(self, name: str, func: Callable[[], Any]) -> Any:
         started = time.perf_counter()
