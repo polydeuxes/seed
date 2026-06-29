@@ -67,16 +67,31 @@ class _AffectedProjectionSet:
 
 
 @dataclass(frozen=True)
+class _ProjectionInfluenceLineage:
+    """Implementation-local evidence for why a projection may need rebuilding.
+
+    The lineage preserves source events, the direct state scopes they can touch,
+    and the derived projection surfaces that may read those scopes. It is not a
+    replay plan, cache dependency graph, invalidation policy, projection result,
+    or read model.
+    """
+
+    source_event_ids: tuple[str, ...]
+    affected_scopes: tuple[_AffectedScope, ...]
+    affected_projections: _AffectedProjectionSet
+
+
+@dataclass(frozen=True)
 class _ReplaySelection:
     """Implementation-local replay target selection.
 
-    Affected projection recovery is descriptive: it names derived surfaces that
-    may read an affected scope. Replay selection is a separate responsibility:
-    it decides what this projector will execute. The current compatible choice
-    remains full event replay plus full finalization regardless of candidates.
+    Projection influence lineage is descriptive evidence for why projection work
+    may be required. Replay selection is a separate responsibility: it decides
+    what this projector will execute. The current compatible choice remains full
+    event replay plus full finalization regardless of lineage evidence.
     """
 
-    affected_projections: _AffectedProjectionSet
+    influence_lineage: _ProjectionInfluenceLineage
     replay_targets: tuple[str, ...]
 
 
@@ -848,7 +863,8 @@ class StateProjector:
                         total=total,
                     )
 
-        replay_selection = _select_replay_targets(_AffectedProjectionSet(()))
+        influence_lineage = _recover_projection_influence_lineage(event_list)
+        replay_selection = _select_replay_targets(influence_lineage)
         replay_request = _ReplayExecutionRequest(selection=replay_selection)
         return _execute_replay_selection(
             replay_request,
@@ -1236,6 +1252,38 @@ def _recover_affected_projections(
     return _AffectedProjectionSet(())
 
 
+def _recover_projection_influence_lineage(
+    events: Iterable[Event],
+) -> _ProjectionInfluenceLineage:
+    """Return implementation-local projection influence evidence for events.
+
+    Lineage recovery composes existing affected-scope and affected-projection
+    evidence. It does not select replay targets, compute projections, invalidate
+    caches, persist snapshots, or expose a runtime surface.
+    """
+
+    source_event_ids: list[str] = []
+    affected_scopes: list[_AffectedScope] = []
+    affected_projection_names: list[str] = []
+    seen_projection_names: set[str] = set()
+    for event in events:
+        source_event_ids.append(event.id)
+        affected_scope = _recover_affected_scope(event)
+        if affected_scope is None:
+            continue
+        affected_scopes.append(affected_scope)
+        affected_projections = _recover_affected_projections(affected_scope)
+        for name in affected_projections.names:
+            if name not in seen_projection_names:
+                seen_projection_names.add(name)
+                affected_projection_names.append(name)
+    return _ProjectionInfluenceLineage(
+        source_event_ids=tuple(source_event_ids),
+        affected_scopes=tuple(affected_scopes),
+        affected_projections=_AffectedProjectionSet(tuple(affected_projection_names)),
+    )
+
+
 def _execute_replay_selection(
     request: _ReplayExecutionRequest,
     *,
@@ -1260,17 +1308,17 @@ def _execute_replay_selection(
 
 
 def _select_replay_targets(
-    affected_projections: _AffectedProjectionSet,
+    influence_lineage: _ProjectionInfluenceLineage,
 ) -> _ReplaySelection:
     """Return the replay work this compatible projector will execute.
 
-    The selected targets intentionally do not narrow replay execution. Candidate
-    projections are preserved as input evidence, while execution remains the
+    The selected targets intentionally do not narrow replay execution. Projection
+    influence lineage is preserved as input evidence, while execution remains the
     established full event replay and full projection finalization path.
     """
 
     return _ReplaySelection(
-        affected_projections=affected_projections,
+        influence_lineage=influence_lineage,
         replay_targets=("event_replay", "projection_finalization"),
     )
 
