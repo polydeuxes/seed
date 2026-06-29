@@ -8,6 +8,38 @@ from seed_runtime.state import ProjectionBuildDiagnostics, StateProjector
 import seed_runtime.state as state_module
 
 
+def test_projection_diagnostic_aggregation_preserves_repeated_measurements():
+    aggregation = state_module._ProjectionDiagnosticAggregation(
+        timings=[("event replay", 0.125)], counters={"projection events": 2}
+    )
+
+    aggregation.add_timing("event replay", 0.375)
+    aggregation.add_timing("finalization: graph issue construction", 0.5)
+    aggregation.add_count("projection events", 3)
+
+    assert aggregation.timings == [
+        ("event replay", 0.5),
+        ("finalization: graph issue construction", 0.5),
+    ]
+    assert aggregation.counters == {"projection events": 5}
+
+
+def test_projection_build_diagnostics_keeps_measurement_and_aggregation_semantics(
+    monkeypatch,
+):
+    measurements = iter([10.0, 10.25, 20.0, 20.75])
+    monkeypatch.setattr(state_module.time, "perf_counter", lambda: next(measurements))
+    diagnostics = ProjectionBuildDiagnostics()
+
+    assert diagnostics.timed("event replay", lambda: "first") == "first"
+    assert diagnostics.timed("event replay", lambda: "second") == "second"
+    diagnostics.add_count("projection events", 2)
+    diagnostics.add_count("projection events", 3)
+
+    assert diagnostics.timings == [("event replay", 1.0)]
+    assert diagnostics.counters == {"projection events": 5}
+
+
 def test_event_application_recovers_affected_scope_before_state_mutation():
     ledger = EventLedger()
     workspace_id = "ws_scope_visibility"

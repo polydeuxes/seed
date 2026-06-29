@@ -153,11 +153,39 @@ class _ProjectionPublication:
 
 
 @dataclass
+class _ProjectionDiagnosticAggregation:
+    """Implementation-local aggregation for projection diagnostic evidence.
+
+    Measurement remains with callers that know when a phase starts and stops.
+    This owner only preserves repeated measured values and counter updates in
+    the existing diagnostic shapes.
+    """
+
+    timings: list[tuple[str, float]]
+    counters: dict[str, int]
+
+    def add_timing(self, name: str, elapsed: float) -> None:
+        for index, (existing_name, existing_elapsed) in enumerate(self.timings):
+            if existing_name == name:
+                self.timings[index] = (existing_name, existing_elapsed + elapsed)
+                break
+        else:
+            self.timings.append((name, elapsed))
+
+    def add_count(self, name: str, amount: int = 1) -> None:
+        self.counters[name] = self.counters.get(name, 0) + amount
+
+
+@dataclass
 class ProjectionBuildDiagnostics:
     """Optional, non-authoritative timings for projected-State construction."""
 
     timings: list[tuple[str, float]] = field(default_factory=list)
     counters: dict[str, int] = field(default_factory=dict)
+
+    @property
+    def _aggregation(self) -> _ProjectionDiagnosticAggregation:
+        return _ProjectionDiagnosticAggregation(self.timings, self.counters)
 
     def timed(self, name: str, func: Callable[[], Any]) -> Any:
         started = time.perf_counter()
@@ -165,15 +193,10 @@ class ProjectionBuildDiagnostics:
             return func()
         finally:
             elapsed = time.perf_counter() - started
-            for index, (existing_name, existing_elapsed) in enumerate(self.timings):
-                if existing_name == name:
-                    self.timings[index] = (existing_name, existing_elapsed + elapsed)
-                    break
-            else:
-                self.timings.append((name, elapsed))
+            self._aggregation.add_timing(name, elapsed)
 
     def add_count(self, name: str, amount: int = 1) -> None:
-        self.counters[name] = self.counters.get(name, 0) + amount
+        self._aggregation.add_count(name, amount)
 
 
 def _parse_dt(value: str | None) -> datetime | None:
