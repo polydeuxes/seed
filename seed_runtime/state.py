@@ -131,6 +131,27 @@ class _ReplayExecutionRequest:
     selection: _ReplaySelection
 
 
+@dataclass(frozen=True)
+class _ProjectionPublicationRequest:
+    """Implementation-local request to publish finalized projection state.
+
+    Projection finalization derives indexes on State. Projection publication is
+    the subsequent handoff of that finalized State as the consumer-visible
+    projected state. It does not replay events, compute projections, invalidate
+    caches, store snapshots, render output, or change read-model semantics.
+    """
+
+    finalized_state: State
+
+
+@dataclass(frozen=True)
+class _ProjectionPublication:
+    """Implementation-local publication of finalized projection state."""
+
+    request: _ProjectionPublicationRequest
+    visible_state: State
+
+
 @dataclass
 class ProjectionBuildDiagnostics:
     """Optional, non-authoritative timings for projected-State construction."""
@@ -897,7 +918,7 @@ class StateProjector:
         replay_justification = _justify_replay_selection(replay_assessment)
         replay_selection = _select_replay_targets(replay_justification)
         replay_request = _ReplayExecutionRequest(selection=replay_selection)
-        return _execute_replay_selection(
+        finalized_state = _execute_replay_selection(
             replay_request,
             replay_events=lambda: (
                 diagnostics.timed("event replay", replay_events)
@@ -906,6 +927,10 @@ class StateProjector:
             ),
             finalize=lambda: self.finalize(state, diagnostics=diagnostics),
         )
+        publication = _publish_finalized_projection(
+            _ProjectionPublicationRequest(finalized_state=finalized_state)
+        )
+        return publication.visible_state
 
     def finalize(
         self, state: State, *, diagnostics: ProjectionBuildDiagnostics | None = None
@@ -1343,6 +1368,24 @@ def _execute_replay_selection(
         raise ValueError("unsupported replay execution target selection")
     replay_events()
     return finalize()
+
+
+def _publish_finalized_projection(
+    request: _ProjectionPublicationRequest,
+) -> _ProjectionPublication:
+    """Publish finalized projection state without altering compatibility.
+
+    The current handoff is intentionally identity-preserving: consumers receive
+    the same finalized State object that prior code returned directly from
+    finalization. This makes publication ownership observable without changing
+    projection contents, read-model semantics, cache behavior, storage, CLI, or
+    JSON/event compatibility.
+    """
+
+    return _ProjectionPublication(
+        request=request,
+        visible_state=request.finalized_state,
+    )
 
 
 def _assess_replay_scope(

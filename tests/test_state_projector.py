@@ -204,6 +204,30 @@ def test_replay_execution_consumes_selection_without_narrowing():
     assert selection.replay_targets == ("event_replay", "projection_finalization")
 
 
+def test_projection_publication_preserves_finalized_state_identity():
+    finalized_state = StateProjector(EventLedger()).project("ws_publication_source")
+    request = state_module._ProjectionPublicationRequest(finalized_state=finalized_state)
+
+    publication = state_module._publish_finalized_projection(request)
+
+    assert publication == state_module._ProjectionPublication(
+        request=request, visible_state=finalized_state
+    )
+    assert publication.visible_state is finalized_state
+
+
+def test_project_from_state_publishes_same_consumer_visible_projection():
+    ledger = EventLedger()
+    workspace_id = "ws_publication_project"
+    entity = Entity(id="ent_publication", kind="host", name="example")
+    ledger.append("entity.upserted", workspace_id, {"entity": to_plain(entity)})
+
+    projected = StateProjector(ledger).project(workspace_id)
+
+    assert projected.entities == {"ent_publication": entity}
+    assert projected.workspace_id == workspace_id
+
+
 def test_affected_scope_recovery_covers_update_events_without_applying_them():
     ledger = EventLedger()
     workspace_id = "ws_scope_updates"
