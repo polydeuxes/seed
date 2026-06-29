@@ -2344,6 +2344,40 @@ def test_current_facts_timing_diagnostic_payload_preserves_interpreted_evidence(
     )
 
 
+def test_current_facts_timing_presentation_formats_preserved_diagnostics():
+    seed_local = load_seed_local_module()
+    report = seed_local.CurrentFactsTimingReport(
+        visibility=seed_local._CurrentFactsVisibilityPayload("example output"),
+        diagnostics=seed_local._CurrentFactsDiagnosticPayload(
+            "miss",
+            [
+                ("state cache miss path (incremental event replay)", 0.25),
+                ("event replay", 0.125),
+            ],
+        ),
+    )
+
+    presentation = seed_local._CurrentFactsTimingPresentation.from_report(report)
+
+    assert presentation.cache_status == "miss"
+    assert presentation.timings == (
+        ("state cache miss path (incremental event replay)", 0.25),
+        ("event replay", 0.125),
+    )
+    assert presentation.format() == seed_local._format_current_facts_timing_report(report)
+    assert presentation.format() == (
+        "Current Facts Timing\n"
+        "\n"
+        "Cache:\n"
+        "- state cache: miss\n"
+        "\n"
+        "Timings:\n"
+        "- state cache miss path (incremental event replay): 0.250000s\n"
+        "- event replay: 0.125000s"
+    )
+    assert not hasattr(presentation, "output")
+
+
 def test_current_facts_cache_debug_keeps_visibility_payload_separate_from_diagnostics(
     tmp_path,
 ):
