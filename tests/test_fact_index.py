@@ -211,3 +211,22 @@ def test_long_fact_index_build_emits_intermediate_progress_without_mutating_stat
     assert len(state.facts) == fact_count
     assert len(state.observations) == observation_count
     assert len(ledger.list_events("ws")) == 1001
+
+
+def test_fact_index_build_starts_from_read_model_construction_inputs(monkeypatch):
+    from seed_runtime import fact_index
+    from seed_runtime.read_model_ownership import ReadModelConstructionInputs
+
+    _ledger, _store, state, _event = _projected_state_with_store()
+    observed = []
+
+    def capture_inputs(visible_state):
+        observed.append(visible_state)
+        return ReadModelConstructionInputs(visible_state=visible_state)
+
+    monkeypatch.setattr(fact_index, "read_model_construction_inputs", capture_inputs)
+
+    index = fact_index.build_fact_index(state, workspace_id="ws")
+
+    assert observed == [state]
+    assert index.state_last_event_id == state.last_event_id

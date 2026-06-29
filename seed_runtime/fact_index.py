@@ -17,6 +17,7 @@ from seed_runtime.execution_status import (
     emit_status,
 )
 from seed_runtime.facts import Fact, is_fact_expired
+from seed_runtime.read_model_ownership import read_model_construction_inputs
 from seed_runtime.projection_store import (
     FACT_INDEX_NAME,
     FACT_INDEX_VERSION,
@@ -67,16 +68,24 @@ def build_fact_index(
 ) -> DerivedFactIndex:
     """Build the smallest reusable fact index from an already-projected State."""
 
+    inputs = read_model_construction_inputs(state)
+    visible_state = inputs.visible_state
     by_subject_predicate: dict[str, dict[str, list[str]]] = {}
-    subjects = sorted({support.subject for support in state.fact_supports})
+    subjects = sorted({support.subject for support in visible_state.fact_supports})
     total = len(subjects)
     cadence = ProgressCadence()
     for index, subject in enumerate(subjects, start=1):
         predicates = sorted(
-            {support.predicate for support in state.fact_supports if support.subject == subject}
+            {
+                support.predicate
+                for support in visible_state.fact_supports
+                if support.subject == subject
+            }
         )
         for predicate in predicates:
-            facts = state.get_current_facts(subject, predicate, resolve_aliases=False)
+            facts = visible_state.get_current_facts(
+                subject, predicate, resolve_aliases=False
+            )
             if facts:
                 by_subject_predicate.setdefault(subject, {})[predicate] = [
                     fact.id for fact in facts
@@ -94,7 +103,7 @@ def build_fact_index(
         index_name=index_name,
         index_version=index_version,
         state_projection_version=state_projection_version,
-        state_last_event_id=state.last_event_id,
+        state_last_event_id=visible_state.last_event_id,
         created_at=_utc_now(),
         fact_ids_by_subject_predicate=by_subject_predicate,
     )
@@ -110,6 +119,9 @@ def load_or_build_fact_index(
 ) -> DerivedFactIndex:
     """Load a valid fact index cache or build and save one from projected State."""
 
+    inputs = read_model_construction_inputs(state)
+    visible_state = inputs.visible_state
+
     if store is not None:
         emit_status(status_consumer, "fact_index_cache_load", "Loading fact index cache...")
         snapshot = store.load_derived_index_snapshot(
@@ -117,7 +129,7 @@ def load_or_build_fact_index(
             FACT_INDEX_NAME,
             FACT_INDEX_VERSION,
             state_projection_version=state_projection_version,
-            state_last_event_id=state.last_event_id,
+            state_last_event_id=visible_state.last_event_id,
         )
         if snapshot is not None:
             emit_status(

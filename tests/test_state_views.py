@@ -514,3 +514,22 @@ def test_cli_state_view_commands_do_not_invoke_runtime_provider_policy_or_tools(
 
     assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
     assert seed_local.main(["--db", str(db_path), "--current-facts"]) == 0
+
+
+def test_state_summary_starts_from_read_model_construction_inputs(monkeypatch):
+    from seed_runtime import state_views
+    from seed_runtime.read_model_ownership import ReadModelConstructionInputs
+
+    state = _state()
+    observed = []
+
+    def capture_inputs(visible_state):
+        observed.append(visible_state)
+        return ReadModelConstructionInputs(visible_state=visible_state)
+
+    monkeypatch.setattr(state_views, "read_model_construction_inputs", capture_inputs)
+
+    summary = state_views.build_state_summary(state)
+
+    assert observed == [state]
+    assert summary.last_event_id == state.last_event_id

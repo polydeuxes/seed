@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from seed_runtime.facts import FactSupport
+from seed_runtime.read_model_ownership import read_model_construction_inputs
 from seed_runtime.state import GraphValidationIssue, State
 
 
@@ -239,14 +240,16 @@ def build_issue_view(state: State) -> list[IssueView]:
 def build_state_summary(state: State) -> StateSummary:
     """Return a compact read-only summary of the projected world model."""
 
+    inputs = read_model_construction_inputs(state)
+    visible_state = inputs.visible_state
     return StateSummary(
-        facts_count=_fact_view_count(state),
-        observations_count=len(state.observations),
-        requirements_count=len(state.goals),
-        capabilities_count=len(state.tool_needs) + len(state.tools),
-        issues_count=len(state.graph_issues),
-        last_event_id=state.last_event_id,
-        projection_version=state.projection_version,
+        facts_count=_fact_view_count(visible_state),
+        observations_count=len(visible_state.observations),
+        requirements_count=len(visible_state.goals),
+        capabilities_count=len(visible_state.tool_needs) + len(visible_state.tools),
+        issues_count=len(visible_state.graph_issues),
+        last_event_id=visible_state.last_event_id,
+        projection_version=visible_state.projection_version,
     )
 
 
