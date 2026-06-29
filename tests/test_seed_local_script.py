@@ -2296,6 +2296,33 @@ def test_cli_current_facts_cache_debug_renders_timing_section(tmp_path, capsys):
     assert "- total:" in output
 
 
+def test_current_facts_timing_interpretation_keeps_measurements_unchanged():
+    seed_local = load_seed_local_module()
+    status = seed_local.StateCacheStatus(
+        cache_hit=False,
+        projection_version="test",
+        snapshot_last_event_id="event-1",
+        current_last_event_id="event-2",
+        incremental_replay=True,
+        events_applied=1,
+    )
+    diagnostics = seed_local.ProjectionBuildDiagnostics(
+        timings=[("event replay", 0.125)]
+    )
+
+    interpretation = seed_local._CurrentFactsTimingInterpretation.from_cache_evidence(
+        status, diagnostics
+    )
+
+    assert interpretation.cache_visibility.cache_status == "miss"
+    assert (
+        interpretation.cache_visibility.state_path_label
+        == "state cache miss path (incremental event replay)"
+    )
+    assert interpretation.projection_timings == (("event replay", 0.125),)
+    assert diagnostics.timings == [("event replay", 0.125)]
+
+
 def test_current_facts_cache_debug_keeps_visibility_payload_separate_from_diagnostics(
     tmp_path,
 ):

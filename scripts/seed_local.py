@@ -5296,6 +5296,27 @@ class _CurrentFactsCacheVisibility:
         )
 
 
+@dataclass(frozen=True)
+class _CurrentFactsTimingInterpretation:
+    cache_visibility: _CurrentFactsCacheVisibility
+    projection_timings: tuple[tuple[str, float], ...]
+
+    @classmethod
+    def from_cache_evidence(
+        cls,
+        status: StateCacheStatus,
+        projection_diagnostics: ProjectionBuildDiagnostics,
+    ) -> "_CurrentFactsTimingInterpretation":
+        """Interpret measured State-cache evidence without owning measurement."""
+
+        return cls(
+            cache_visibility=_CurrentFactsCacheVisibility.from_state_cache_status(
+                status
+            ),
+            projection_timings=tuple(projection_diagnostics.timings),
+        )
+
+
 class _TimingProjectionStore:
     def __init__(self, store: ProjectionStore, timings: list[tuple[str, float]]):
         self._store = store
@@ -5396,17 +5417,17 @@ def _current_facts_timing_from_args(
                 status_consumer=None,
                 diagnostics=projection_diagnostics,
             )
-            cache_visibility = _CurrentFactsCacheVisibility.from_state_cache_status(
-                status
+            timing_interpretation = _CurrentFactsTimingInterpretation.from_cache_evidence(
+                status, projection_diagnostics
             )
             timings.append(
                 (
-                    cache_visibility.state_path_label,
+                    timing_interpretation.cache_visibility.state_path_label,
                     time.perf_counter() - state_path_started,
                 )
             )
-            timings.extend(projection_diagnostics.timings)
-            cache_status = cache_visibility.cache_status
+            timings.extend(timing_interpretation.projection_timings)
+            cache_status = timing_interpretation.cache_visibility.cache_status
         else:
             state = timed(
                 "full projection rebuild (event replay)",
