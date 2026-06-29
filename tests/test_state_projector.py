@@ -69,6 +69,27 @@ def test_affected_projection_recovery_does_not_create_dependency_tracking():
     ) == state_module._AffectedProjectionSet(())
 
 
+def test_replay_selection_is_separate_from_affected_projection_recovery():
+    projections = state_module._AffectedProjectionSet(("relationships",))
+
+    selection = state_module._select_replay_targets(projections)
+
+    assert selection == state_module._ReplaySelection(
+        affected_projections=projections,
+        replay_targets=("event_replay", "projection_finalization"),
+    )
+    assert selection.affected_projections.names == ("relationships",)
+    assert selection.replay_targets != selection.affected_projections.names
+
+
+def test_replay_selection_preserves_full_replay_for_empty_candidates():
+    selection = state_module._select_replay_targets(
+        state_module._AffectedProjectionSet(())
+    )
+
+    assert selection.replay_targets == ("event_replay", "projection_finalization")
+
+
 def test_affected_scope_recovery_covers_update_events_without_applying_them():
     ledger = EventLedger()
     workspace_id = "ws_scope_updates"

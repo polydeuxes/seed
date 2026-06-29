@@ -66,6 +66,20 @@ class _AffectedProjectionSet:
     names: tuple[str, ...]
 
 
+@dataclass(frozen=True)
+class _ReplaySelection:
+    """Implementation-local replay target selection.
+
+    Affected projection recovery is descriptive: it names derived surfaces that
+    may read an affected scope. Replay selection is a separate responsibility:
+    it decides what this projector will execute. The current compatible choice
+    remains full event replay plus full finalization regardless of candidates.
+    """
+
+    affected_projections: _AffectedProjectionSet
+    replay_targets: tuple[str, ...]
+
+
 @dataclass
 class ProjectionBuildDiagnostics:
     """Optional, non-authoritative timings for projected-State construction."""
@@ -968,7 +982,8 @@ class StateProjector:
         diagnostics: ProjectionBuildDiagnostics | None = None,
     ) -> None:
         affected_scope = _recover_affected_scope(event)
-        _recover_affected_projections(affected_scope)
+        affected_projections = _recover_affected_projections(affected_scope)
+        _select_replay_targets(affected_projections)
         payload = event.payload
         if event.kind == "entity.upserted":
             data = payload.get("entity", payload)
@@ -1206,6 +1221,22 @@ def _recover_affected_projections(
             ("relationships", "entity_type_assertions", "graph_issues")
         )
     return _AffectedProjectionSet(())
+
+
+def _select_replay_targets(
+    affected_projections: _AffectedProjectionSet,
+) -> _ReplaySelection:
+    """Return the replay work this compatible projector will execute.
+
+    The selected targets intentionally do not narrow replay execution. Candidate
+    projections are preserved as input evidence, while execution remains the
+    established full event replay and full projection finalization path.
+    """
+
+    return _ReplaySelection(
+        affected_projections=affected_projections,
+        replay_targets=("event_replay", "projection_finalization"),
+    )
 
 
 def _project_inferred_facts(
