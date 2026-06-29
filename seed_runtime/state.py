@@ -199,6 +199,32 @@ class _ProjectionDiagnosticPayload:
         )
 
 
+@dataclass(frozen=True)
+class _ProjectionDiagnosticSelection:
+    """Implementation-local request for consumer-needed projection diagnostics.
+
+    Projection diagnostic payload owns the already-aggregated evidence. This
+    selection owner preserves the handoff where a diagnostic consumer requests
+    only the existing payload portions it needs, without measuring, aggregating,
+    constructing payloads, formatting output, or changing compatibility fields.
+    """
+
+    timings: tuple[tuple[str, float], ...]
+    counters: dict[str, int]
+
+    @classmethod
+    def from_payload(
+        cls, payload: "_ProjectionDiagnosticPayload"
+    ) -> "_ProjectionDiagnosticSelection":
+        return cls(timings=payload.timings, counters=dict(payload.counters))
+
+    def timings_list(self) -> list[tuple[str, float]]:
+        return list(self.timings)
+
+    def counters_dict(self) -> dict[str, int]:
+        return dict(self.counters)
+
+
 @dataclass
 class ProjectionBuildDiagnostics:
     """Optional, non-authoritative timings for projected-State construction."""

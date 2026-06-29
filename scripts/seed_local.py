@@ -403,7 +403,12 @@ from seed_runtime.secrets import (
     normalize_field_name,
     reject_secret_fields,
 )
-from seed_runtime.state import ProjectionBuildDiagnostics, State, StateProjector
+from seed_runtime.state import (
+    ProjectionBuildDiagnostics,
+    State,
+    StateProjector,
+    _ProjectionDiagnosticSelection,
+)
 from seed_runtime.source_navigation import (
     build_source_navigation,
     format_source_navigation,
@@ -3479,7 +3484,9 @@ def state_summary_cache_debug_from_args(
         timed(
             "rendering", lambda: format_state_summary_cache_debug_report_placeholder()
         )
-        projection_payload = projection_diagnostics.payload
+        projection_selection = _ProjectionDiagnosticSelection.from_payload(
+            projection_diagnostics.payload
+        )
         return StateSummaryCacheDebugReport(
             visibility=_StateBuildVisibilityPayload(
                 cache_eligible=cache_eligible,
@@ -3492,8 +3499,8 @@ def state_summary_cache_debug_from_args(
             projection_diagnostics=_ProjectionCacheDiagnosticPayload(
                 state_cache_status=state_cache_status,
                 cached_state_last_event_id=cached_state_last_event_id,
-                projection_timings=list(projection_payload.timings),
-                projection_counters=projection_payload.counters,
+                projection_timings=projection_selection.timings_list(),
+                projection_counters=projection_selection.counters_dict(),
             ),
             timings=timings + [("total runtime", time.perf_counter() - started)],
         )
@@ -5310,12 +5317,14 @@ class _CurrentFactsTimingInterpretation:
     ) -> "_CurrentFactsTimingInterpretation":
         """Interpret measured State-cache evidence without owning measurement."""
 
-        projection_payload = projection_diagnostics.payload
+        projection_selection = _ProjectionDiagnosticSelection.from_payload(
+            projection_diagnostics.payload
+        )
         return cls(
             cache_visibility=_CurrentFactsCacheVisibility.from_state_cache_status(
                 status
             ),
-            projection_timings=projection_payload.timings,
+            projection_timings=projection_selection.timings,
         )
 
 
