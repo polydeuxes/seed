@@ -69,31 +69,71 @@ def test_affected_projection_recovery_does_not_create_dependency_tracking():
     ) == state_module._AffectedProjectionSet(())
 
 
-def test_replay_selection_is_separate_from_affected_projection_recovery():
-    projections = state_module._AffectedProjectionSet(("relationships",))
+def test_projection_influence_lineage_composes_event_scope_and_projection_evidence():
+    ledger = EventLedger()
+    workspace_id = "ws_projection_lineage"
+    fact = Fact(
+        id="fact_lineage",
+        subject_id="host_lineage",
+        predicate="hostname",
+        value="example",
+        evidence_ids=["evt_source"],
+        observed_at=utc_now(),
+    )
+    event = ledger.append("fact.observed", workspace_id, {"fact": to_plain(fact)})
 
-    selection = state_module._select_replay_targets(projections)
+    lineage = state_module._recover_projection_influence_lineage([event])
+
+    assert lineage.source_event_ids == (event.id,)
+    assert lineage.affected_scopes == (
+        state_module._AffectedScope(
+            collection="facts", identity="fact_lineage", subject_id="host_lineage"
+        ),
+    )
+    assert "alias_resolver" in lineage.affected_projections.names
+    assert "relationships" in lineage.affected_projections.names
+
+
+def test_replay_selection_is_separate_from_projection_influence_lineage():
+    lineage = state_module._ProjectionInfluenceLineage(
+        source_event_ids=("evt_lineage",),
+        affected_scopes=(
+            state_module._AffectedScope(
+                collection="facts", identity="fact_scope", subject_id="host_1"
+            ),
+        ),
+        affected_projections=state_module._AffectedProjectionSet(("relationships",)),
+    )
+
+    selection = state_module._select_replay_targets(lineage)
 
     assert selection == state_module._ReplaySelection(
-        affected_projections=projections,
+        influence_lineage=lineage,
         replay_targets=("event_replay", "projection_finalization"),
     )
-    assert selection.affected_projections.names == ("relationships",)
-    assert selection.replay_targets != selection.affected_projections.names
+    assert selection.influence_lineage.affected_projections.names == ("relationships",)
+    assert selection.replay_targets != selection.influence_lineage.affected_projections.names
 
 
-def test_replay_selection_preserves_full_replay_for_empty_candidates():
+def test_replay_selection_preserves_full_replay_for_empty_lineage():
     selection = state_module._select_replay_targets(
-        state_module._AffectedProjectionSet(())
+        state_module._ProjectionInfluenceLineage(
+            source_event_ids=(),
+            affected_scopes=(),
+            affected_projections=state_module._AffectedProjectionSet(()),
+        )
     )
 
     assert selection.replay_targets == ("event_replay", "projection_finalization")
 
 
 def test_replay_execution_consumes_selection_without_narrowing():
-    selection = state_module._select_replay_targets(
-        state_module._AffectedProjectionSet(("relationships",))
+    lineage = state_module._ProjectionInfluenceLineage(
+        source_event_ids=("evt_lineage",),
+        affected_scopes=(),
+        affected_projections=state_module._AffectedProjectionSet(("relationships",)),
     )
+    selection = state_module._select_replay_targets(lineage)
     calls = []
 
     state_module._execute_replay_selection(
@@ -103,7 +143,7 @@ def test_replay_execution_consumes_selection_without_narrowing():
     )
 
     assert calls == ["event_replay", "projection_finalization"]
-    assert selection.affected_projections.names == ("relationships",)
+    assert selection.influence_lineage.affected_projections.names == ("relationships",)
     assert selection.replay_targets == ("event_replay", "projection_finalization")
 
 
