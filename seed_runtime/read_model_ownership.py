@@ -14,6 +14,20 @@ from seed_runtime.state import State
 
 
 @dataclass(frozen=True)
+class ReadModelDependencyIdentity:
+    """Dependency identity proving a read model is valid for projected State.
+
+    The boundary preserves only the already-existing identity evidence used by
+    dependent read-model caches. It does not own cache invalidation, cache
+    storage, lookup policy, read-model construction, projection publication,
+    rendering, CLI, JSON, events, or ledger behavior.
+    """
+
+    state_projection_version: str
+    state_last_event_id: str | None
+
+
+@dataclass(frozen=True)
 class ReadModelConstructionInputs:
     """Inputs handed from visible projected State into read-model builders.
 
@@ -31,3 +45,25 @@ def read_model_construction_inputs(state: State) -> ReadModelConstructionInputs:
     """Return read-model construction inputs for an already-published State."""
 
     return ReadModelConstructionInputs(visible_state=state)
+
+
+def read_model_dependency_identity(
+    inputs: ReadModelConstructionInputs, *, state_projection_version: str
+) -> ReadModelDependencyIdentity:
+    """Return the dependency identity for a read model built from inputs."""
+
+    return ReadModelDependencyIdentity(
+        state_projection_version=state_projection_version,
+        state_last_event_id=inputs.visible_state.last_event_id,
+    )
+
+
+def read_model_dependency_identity_for_state_boundary(
+    *, state_projection_version: str, state_last_event_id: str | None
+) -> ReadModelDependencyIdentity:
+    """Return dependency identity from an already-known projected State boundary."""
+
+    return ReadModelDependencyIdentity(
+        state_projection_version=state_projection_version,
+        state_last_event_id=state_last_event_id,
+    )
