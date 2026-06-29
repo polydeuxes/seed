@@ -59,6 +59,13 @@ class _AffectedScope:
     subject_id: str | None = None
 
 
+@dataclass(frozen=True)
+class _AffectedProjectionSet:
+    """Implementation-local derived projections that may read an affected scope."""
+
+    names: tuple[str, ...]
+
+
 @dataclass
 class ProjectionBuildDiagnostics:
     """Optional, non-authoritative timings for projected-State construction."""
@@ -960,7 +967,8 @@ class StateProjector:
         *,
         diagnostics: ProjectionBuildDiagnostics | None = None,
     ) -> None:
-        _recover_affected_scope(event)
+        affected_scope = _recover_affected_scope(event)
+        _recover_affected_projections(affected_scope)
         payload = event.payload
         if event.kind == "entity.upserted":
             data = payload.get("entity", payload)
@@ -1122,7 +1130,9 @@ def _recover_affected_scope(event: Event) -> _AffectedScope | None:
         return _AffectedScope("goals", data.get("id"))
     if event.kind in {"tool_need.created", "tool_need.status_changed"}:
         data = payload.get("tool_need", payload)
-        return _AffectedScope("tool_needs", data.get("id") or payload.get("tool_need_id"))
+        return _AffectedScope(
+            "tool_needs", data.get("id") or payload.get("tool_need_id")
+        )
     if event.kind == "approval.granted":
         data = payload.get("approval", payload)
         return _AffectedScope("approvals", data.get("id"), data.get("scope"))
@@ -1161,6 +1171,41 @@ def _recover_affected_scope(event: Event) -> _AffectedScope | None:
         data = payload.get("tool", payload)
         return _AffectedScope("tools", data.get("name"))
     return None
+
+
+def _recover_affected_projections(
+    affected_scope: _AffectedScope | None,
+) -> _AffectedProjectionSet:
+    """Return derived projection surfaces that may read an affected scope.
+
+    This is implementation-local visibility only. It does not track
+    dependencies, mark projections dirty, change cache invalidation, or alter
+    replay/finalization behavior.
+    """
+
+    if affected_scope is None:
+        return _AffectedProjectionSet(())
+    if affected_scope.collection == "facts":
+        return _AffectedProjectionSet(
+            (
+                "alias_resolver",
+                "measurement_history",
+                "observed_facts",
+                "inferred_facts",
+                "fact_supports",
+                "entity_relationships",
+                "relationships",
+                "entity_type_assertions",
+                "graph_issues",
+                "entity_aliases",
+                "fact_conflicts",
+            )
+        )
+    if affected_scope.collection == "evidence":
+        return _AffectedProjectionSet(
+            ("relationships", "entity_type_assertions", "graph_issues")
+        )
+    return _AffectedProjectionSet(())
 
 
 def _project_inferred_facts(
