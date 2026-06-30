@@ -3240,6 +3240,12 @@ class _ProjectionCacheDiagnosticPayload:
 
 
 @dataclass(frozen=True)
+class _StateBuildCacheDebugCacheEvidence:
+    visibility: _StateBuildVisibilityPayload
+    projection_diagnostics: _ProjectionCacheDiagnosticPayload
+
+
+@dataclass(frozen=True)
 class _StateBuildCacheDebugEvidence:
     visibility: _StateBuildVisibilityPayload
     projection_diagnostics: _ProjectionCacheDiagnosticPayload
@@ -3261,6 +3267,19 @@ class _StateBuildCacheDebugEvidenceAssembly:
     visibility: _StateBuildVisibilityPayload
     projection_diagnostics: _ProjectionCacheDiagnosticPayload
     timings: list[tuple[str, float]]
+
+    @classmethod
+    def from_cache_evidence(
+        cls,
+        cache_evidence: _StateBuildCacheDebugCacheEvidence,
+        *,
+        timings: list[tuple[str, float]],
+    ) -> "_StateBuildCacheDebugEvidenceAssembly":
+        return cls(
+            visibility=cache_evidence.visibility,
+            projection_diagnostics=cache_evidence.projection_diagnostics,
+            timings=timings,
+        )
 
 
 @dataclass(frozen=True)
@@ -3425,20 +3444,22 @@ def _state_build_cache_debug_evidence_from_args(
                     "state cache lookup skipped because the summary cache satisfied the request"
                 )
                 return _StateBuildCacheDebugEvidence.from_assembly(
-                    _StateBuildCacheDebugEvidenceAssembly(
-                        visibility=_StateBuildVisibilityPayload(
-                            cache_eligible=cache_eligible,
-                            cache_ineligible_reason=cache_ineligible_reason,
-                            summary_cache_status=summary_cache_status,
-                            current_last_event_id=current_last_event_id,
-                            cached_summary_last_event_id=cached_summary_last_event_id,
-                            notes=notes,
-                        ),
-                        projection_diagnostics=_ProjectionCacheDiagnosticPayload(
-                            state_cache_status=state_cache_status,
-                            cached_state_last_event_id=cached_state_last_event_id,
-                            projection_timings=[],
-                            projection_counters={},
+                    _StateBuildCacheDebugEvidenceAssembly.from_cache_evidence(
+                        _StateBuildCacheDebugCacheEvidence(
+                            visibility=_StateBuildVisibilityPayload(
+                                cache_eligible=cache_eligible,
+                                cache_ineligible_reason=cache_ineligible_reason,
+                                summary_cache_status=summary_cache_status,
+                                current_last_event_id=current_last_event_id,
+                                cached_summary_last_event_id=cached_summary_last_event_id,
+                                notes=notes,
+                            ),
+                            projection_diagnostics=_ProjectionCacheDiagnosticPayload(
+                                state_cache_status=state_cache_status,
+                                cached_state_last_event_id=cached_state_last_event_id,
+                                projection_timings=[],
+                                projection_counters={},
+                            ),
                         ),
                         timings=timings
                         + [("total runtime", time.perf_counter() - started)],
@@ -3549,20 +3570,22 @@ def _state_build_cache_debug_evidence_from_args(
             projection_diagnostics.payload
         )
         return _StateBuildCacheDebugEvidence.from_assembly(
-            _StateBuildCacheDebugEvidenceAssembly(
-                visibility=_StateBuildVisibilityPayload(
-                    cache_eligible=cache_eligible,
-                    cache_ineligible_reason=cache_ineligible_reason,
-                    summary_cache_status=summary_cache_status,
-                    current_last_event_id=current_last_event_id,
-                    cached_summary_last_event_id=cached_summary_last_event_id,
-                    notes=notes,
-                ),
-                projection_diagnostics=_ProjectionCacheDiagnosticPayload(
-                    state_cache_status=state_cache_status,
-                    cached_state_last_event_id=cached_state_last_event_id,
-                    projection_timings=projection_selection.timings_list(),
-                    projection_counters=projection_selection.counters_dict(),
+            _StateBuildCacheDebugEvidenceAssembly.from_cache_evidence(
+                _StateBuildCacheDebugCacheEvidence(
+                    visibility=_StateBuildVisibilityPayload(
+                        cache_eligible=cache_eligible,
+                        cache_ineligible_reason=cache_ineligible_reason,
+                        summary_cache_status=summary_cache_status,
+                        current_last_event_id=current_last_event_id,
+                        cached_summary_last_event_id=cached_summary_last_event_id,
+                        notes=notes,
+                    ),
+                    projection_diagnostics=_ProjectionCacheDiagnosticPayload(
+                        state_cache_status=state_cache_status,
+                        cached_state_last_event_id=cached_state_last_event_id,
+                        projection_timings=projection_selection.timings_list(),
+                        projection_counters=projection_selection.counters_dict(),
+                    ),
                 ),
                 timings=timings + [("total runtime", time.perf_counter() - started)],
             )
