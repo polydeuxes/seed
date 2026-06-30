@@ -3245,6 +3245,23 @@ class _StateBuildCacheDebugEvidence:
     projection_diagnostics: _ProjectionCacheDiagnosticPayload
     timings: list[tuple[str, float]]
 
+    @classmethod
+    def from_assembly(
+        cls, assembly: "_StateBuildCacheDebugEvidenceAssembly"
+    ) -> "_StateBuildCacheDebugEvidence":
+        return cls(
+            visibility=assembly.visibility,
+            projection_diagnostics=assembly.projection_diagnostics,
+            timings=assembly.timings,
+        )
+
+
+@dataclass(frozen=True)
+class _StateBuildCacheDebugEvidenceAssembly:
+    visibility: _StateBuildVisibilityPayload
+    projection_diagnostics: _ProjectionCacheDiagnosticPayload
+    timings: list[tuple[str, float]]
+
 
 @dataclass(frozen=True)
 class _StateBuildCacheDebugReportPayload:
@@ -3407,23 +3424,25 @@ def _state_build_cache_debug_evidence_from_args(
                 notes.append(
                     "state cache lookup skipped because the summary cache satisfied the request"
                 )
-                return _StateBuildCacheDebugEvidence(
-                    visibility=_StateBuildVisibilityPayload(
-                        cache_eligible=cache_eligible,
-                        cache_ineligible_reason=cache_ineligible_reason,
-                        summary_cache_status=summary_cache_status,
-                        current_last_event_id=current_last_event_id,
-                        cached_summary_last_event_id=cached_summary_last_event_id,
-                        notes=notes,
-                    ),
-                    projection_diagnostics=_ProjectionCacheDiagnosticPayload(
-                        state_cache_status=state_cache_status,
-                        cached_state_last_event_id=cached_state_last_event_id,
-                        projection_timings=[],
-                        projection_counters={},
-                    ),
-                    timings=timings
-                    + [("total runtime", time.perf_counter() - started)],
+                return _StateBuildCacheDebugEvidence.from_assembly(
+                    _StateBuildCacheDebugEvidenceAssembly(
+                        visibility=_StateBuildVisibilityPayload(
+                            cache_eligible=cache_eligible,
+                            cache_ineligible_reason=cache_ineligible_reason,
+                            summary_cache_status=summary_cache_status,
+                            current_last_event_id=current_last_event_id,
+                            cached_summary_last_event_id=cached_summary_last_event_id,
+                            notes=notes,
+                        ),
+                        projection_diagnostics=_ProjectionCacheDiagnosticPayload(
+                            state_cache_status=state_cache_status,
+                            cached_state_last_event_id=cached_state_last_event_id,
+                            projection_timings=[],
+                            projection_counters={},
+                        ),
+                        timings=timings
+                        + [("total runtime", time.perf_counter() - started)],
+                    )
                 )
             state_snapshot = timed(
                 "state cache lookup",
@@ -3529,22 +3548,24 @@ def _state_build_cache_debug_evidence_from_args(
         projection_selection = _ProjectionDiagnosticSelection.from_payload(
             projection_diagnostics.payload
         )
-        return _StateBuildCacheDebugEvidence(
-            visibility=_StateBuildVisibilityPayload(
-                cache_eligible=cache_eligible,
-                cache_ineligible_reason=cache_ineligible_reason,
-                summary_cache_status=summary_cache_status,
-                current_last_event_id=current_last_event_id,
-                cached_summary_last_event_id=cached_summary_last_event_id,
-                notes=notes,
-            ),
-            projection_diagnostics=_ProjectionCacheDiagnosticPayload(
-                state_cache_status=state_cache_status,
-                cached_state_last_event_id=cached_state_last_event_id,
-                projection_timings=projection_selection.timings_list(),
-                projection_counters=projection_selection.counters_dict(),
-            ),
-            timings=timings + [("total runtime", time.perf_counter() - started)],
+        return _StateBuildCacheDebugEvidence.from_assembly(
+            _StateBuildCacheDebugEvidenceAssembly(
+                visibility=_StateBuildVisibilityPayload(
+                    cache_eligible=cache_eligible,
+                    cache_ineligible_reason=cache_ineligible_reason,
+                    summary_cache_status=summary_cache_status,
+                    current_last_event_id=current_last_event_id,
+                    cached_summary_last_event_id=cached_summary_last_event_id,
+                    notes=notes,
+                ),
+                projection_diagnostics=_ProjectionCacheDiagnosticPayload(
+                    state_cache_status=state_cache_status,
+                    cached_state_last_event_id=cached_state_last_event_id,
+                    projection_timings=projection_selection.timings_list(),
+                    projection_counters=projection_selection.counters_dict(),
+                ),
+                timings=timings + [("total runtime", time.perf_counter() - started)],
+            )
         )
     finally:
         for resource in (store, ledger):
