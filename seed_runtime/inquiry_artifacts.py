@@ -24,6 +24,37 @@ class InquiryArtifactVisibility:
         return data
 
 
+@dataclass(frozen=True)
+class _InquiryArtifactEvidencePayload:
+    """Implementation-local supporting evidence for one inquiry artifact."""
+
+    evidence: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class _InquiryArtifactLimitationsPayload:
+    """Implementation-local limitations for one inquiry artifact."""
+
+    limitations: tuple[str, ...]
+
+
+def _artifact_visibility_from_payloads(
+    *,
+    artifact: str,
+    classification: ArtifactClassification,
+    evidence: _InquiryArtifactEvidencePayload,
+    limitations: _InquiryArtifactLimitationsPayload,
+) -> InquiryArtifactVisibility:
+    """Preserve the public visibility shape after local answer composition."""
+
+    return InquiryArtifactVisibility(
+        artifact=artifact,
+        classification=classification,
+        evidence=evidence.evidence,
+        limitations=limitations.limitations,
+    )
+
+
 BOUNDARY: dict[str, bool] = {
     "read_only": True,
     "supports_record": False,
@@ -36,26 +67,34 @@ BOUNDARY: dict[str, bool] = {
 }
 
 ARTIFACTS: tuple[InquiryArtifactVisibility, ...] = (
-    InquiryArtifactVisibility(
+    _artifact_visibility_from_payloads(
         artifact="unknown",
         classification="repository_visible",
-        evidence=(
-            "diagnostic_inventory and diagnostic_shape_audit declare and check unknown diagnostic shape status",
-            "operational_surface_classification_audit exposes unknown CLI element classification",
-            "knowledge_reachability treats unknown as a candidate kind",
+        evidence=_InquiryArtifactEvidencePayload(
+            evidence=(
+                "diagnostic_inventory and diagnostic_shape_audit declare and check unknown diagnostic shape status",
+                "operational_surface_classification_audit exposes unknown CLI element classification",
+                "knowledge_reachability treats unknown as a candidate kind",
+            )
         ),
-        limitations=("does not infer unknown inquiry movement from prose",),
+        limitations=_InquiryArtifactLimitationsPayload(
+            limitations=("does not infer unknown inquiry movement from prose",)
+        ),
     ),
-    InquiryArtifactVisibility(
+    _artifact_visibility_from_payloads(
         artifact="boundary",
         classification="repository_visible",
-        evidence=(
-            "capability_relationship exposes privilege and acquisition boundaries",
-            "privilege_discovery explains read-only privilege boundaries",
-            "diagnostic_inventory records no recording, event-ledger, and mutation boundaries for diagnostics",
+        evidence=_InquiryArtifactEvidencePayload(
+            evidence=(
+                "capability_relationship exposes privilege and acquisition boundaries",
+                "privilege_discovery explains read-only privilege boundaries",
+                "diagnostic_inventory records no recording, event-ledger, and mutation boundaries for diagnostics",
+            )
         ),
-        limitations=(
-            "does not promote every prose boundary into repository knowledge",
+        limitations=_InquiryArtifactLimitationsPayload(
+            limitations=(
+                "does not promote every prose boundary into repository knowledge",
+            )
         ),
     ),
     InquiryArtifactVisibility(
