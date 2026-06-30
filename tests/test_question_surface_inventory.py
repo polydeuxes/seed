@@ -10,6 +10,7 @@ from seed_runtime.diagnostic_shape_audit import (
 )
 from seed_runtime.question_surface_inventory import (
     BOUNDED_ASK_DISPATCH_SURFACES,
+    bounded_work_eligibility_for_question_family,
     bounded_ask_inventory_findings,
     build_question_surface_inventory,
     question_surface_inventory_json,
@@ -128,6 +129,34 @@ def test_bounded_ask_inventory_json_answers_required_operator_questions(capsys):
         by_family["source definition/import lookup"]["implementation_reason"]
         == "no bounded ask dispatch mapping in current implementation"
     )
+
+
+def test_bounded_work_eligibility_result_is_separate_from_surface_selection():
+    eligible_now = bounded_work_eligibility_for_question_family(
+        "authority-constrained service ownership"
+    )
+    assert eligible_now.question_family == "authority-constrained service ownership"
+    assert eligible_now.bounded_status == "eligible_now"
+    assert eligible_now.permitted is True
+    assert eligible_now.required_surface_args == ()
+    assert "dispatch_surface" not in eligible_now.__dataclass_fields__
+
+    eligible_with_parameters = bounded_work_eligibility_for_question_family(
+        "derivation explanation"
+    )
+    assert eligible_with_parameters.bounded_status == "eligible_with_parameters"
+    assert eligible_with_parameters.permitted is True
+    assert eligible_with_parameters.required_surface_args == ("domain", "subject")
+
+    diagnostic_only = bounded_work_eligibility_for_question_family("surface inventory")
+    assert diagnostic_only.bounded_status == "diagnostic_only"
+    assert diagnostic_only.permitted is False
+
+    not_dispatchable = bounded_work_eligibility_for_question_family(
+        "source definition/import lookup"
+    )
+    assert not_dispatchable.bounded_status == "not_dispatchable"
+    assert not_dispatchable.permitted is False
 
 
 def test_bounded_ask_inventory_validates_question_families_and_dispatch_maps():
