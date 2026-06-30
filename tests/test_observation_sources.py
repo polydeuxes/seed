@@ -2368,6 +2368,47 @@ def _prometheus_vector_payload(result):
     return {"status": "success", "data": {"resultType": "vector", "result": result}}
 
 
+def test_prometheus_decoded_sample_separates_provider_sample_from_observation():
+    from seed_runtime.observation_sources import _prometheus_decoded_sample
+
+    decoded = _prometheus_decoded_sample(
+        {
+            "metric": {
+                "instance": "node-a:9100",
+                "job": "node-exporter",
+                "mountpoint": "/",
+            },
+            "value": ["1718123456.789", "1"],
+        }
+    )
+
+    assert decoded is not None
+    assert decoded.instance == "node-a:9100"
+    assert decoded.metric == {
+        "instance": "node-a:9100",
+        "job": "node-exporter",
+        "mountpoint": "/",
+    }
+    assert decoded.sample_timestamp == datetime.fromisoformat(
+        "2024-06-11T16:30:56.789000+00:00"
+    )
+    assert decoded.sample_timestamp_raw == "1718123456.789"
+    assert decoded.sample_value == "1"
+
+
+def test_prometheus_decoded_sample_rejects_malformed_provider_samples():
+    from seed_runtime.observation_sources import _prometheus_decoded_sample
+
+    assert _prometheus_decoded_sample("not-a-sample") is None
+    assert _prometheus_decoded_sample({"metric": {}, "value": [1, "1"]}) is None
+    assert (
+        _prometheus_decoded_sample(
+            {"metric": {"instance": "node-a:9100"}, "value": ["bad", "1"]}
+        )
+        is None
+    )
+
+
 def _patch_prometheus_payloads(monkeypatch, payloads_by_query):
     from seed_runtime import observation_sources as sources
 

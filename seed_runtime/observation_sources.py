@@ -2483,35 +2483,20 @@ class PrometheusObservationSource:
         result = payload["data"]["result"]
         observations: list[Observation] = []
         for sample in result:
-            if not isinstance(sample, dict):
+            decoded = _prometheus_decoded_sample(sample)
+            if decoded is None:
                 continue
-            metric = sample.get("metric")
-            value = sample.get("value")
-            if (
-                not isinstance(metric, dict)
-                or not isinstance(value, list)
-                or len(value) < 2
-            ):
-                continue
-            instance = metric.get("instance")
-            if not isinstance(instance, str) or not instance:
-                continue
-            sample_timestamp_raw = value[0]
-            sample_timestamp = _prometheus_sample_timestamp(sample_timestamp_raw)
-            if sample_timestamp is None:
-                continue
-            sample_value = value[1]
             metadata = {
                 "collector": "PrometheusObservationSource",
                 "source_name": "prometheus",
                 "prometheus_base_url": self.base_url.rstrip("/"),
                 "prometheus_metric": query,
-                "metric_labels": dict(metric),
+                "metric_labels": dict(decoded.metric),
                 "read_only": True,
                 "http_method": "GET",
-                "prometheus_sample_timestamp": sample_timestamp.isoformat(),
-                "prometheus_sample_timestamp_raw": sample_timestamp_raw,
-                "source_observed_at": sample_timestamp.isoformat(),
+                "prometheus_sample_timestamp": decoded.sample_timestamp.isoformat(),
+                "prometheus_sample_timestamp_raw": decoded.sample_timestamp_raw,
+                "source_observed_at": decoded.sample_timestamp.isoformat(),
                 "source_time_kind": "sample_time",
                 "source_time_authority": "prometheus",
                 "seed_collected_at": seed_collected_at.isoformat(),
@@ -2522,17 +2507,17 @@ class PrometheusObservationSource:
             # Other metrics remain endpoint-scoped and do not participate in
             # endpoint alias normalization.
             if query == "node_uname_info":
-                metadata["instance"] = instance
-                nodename = metric.get("nodename")
+                metadata["instance"] = decoded.instance
+                nodename = decoded.metric.get("nodename")
                 if isinstance(nodename, str) and nodename.strip():
                     metadata["nodename"] = nodename.strip()
             if query == "up":
-                job = metric.get("job")
+                job = decoded.metric.get("job")
                 if isinstance(job, str) and job.strip():
                     observations.append(
                         self._observation(
-                            sample_timestamp,
-                            instance,
+                            decoded.sample_timestamp,
+                            decoded.instance,
                             "endpoint_role",
                             job.strip(),
                             metadata,
@@ -2540,18 +2525,18 @@ class PrometheusObservationSource:
                     )
                 observations.append(
                     self._observation(
-                        sample_timestamp,
-                        instance,
+                        decoded.sample_timestamp,
+                        decoded.instance,
                         "up",
-                        _prometheus_int(sample_value),
+                        _prometheus_int(decoded.sample_value),
                         metadata,
                     )
                 )
             elif query == "node_uname_info":
-                os_value = _prometheus_os_from_uname(metric)
+                os_value = _prometheus_os_from_uname(decoded.metric)
                 if os_value is not None:
                     os_metadata = dict(metadata)
-                    if is_endpoint_subject(instance):
+                    if is_endpoint_subject(decoded.instance):
                         os_metadata.update(
                             {
                                 "fact_promotion_suppressed": True,
@@ -2562,26 +2547,30 @@ class PrometheusObservationSource:
                         )
                     observations.append(
                         self._observation(
-                            sample_timestamp, instance, "os", os_value, os_metadata
+                            decoded.sample_timestamp,
+                            decoded.instance,
+                            "os",
+                            os_value,
+                            os_metadata,
                         )
                     )
             elif query == "node_filesystem_avail_bytes":
                 observations.append(
                     self._observation(
-                        sample_timestamp,
-                        instance,
+                        decoded.sample_timestamp,
+                        decoded.instance,
                         "filesystem_avail_bytes",
-                        _prometheus_int(sample_value),
+                        _prometheus_int(decoded.sample_value),
                         metadata,
                     )
                 )
             elif query == "node_filesystem_size_bytes":
                 observations.append(
                     self._observation(
-                        sample_timestamp,
-                        instance,
+                        decoded.sample_timestamp,
+                        decoded.instance,
                         "filesystem_size_bytes",
-                        _prometheus_int(sample_value),
+                        _prometheus_int(decoded.sample_value),
                         metadata,
                     )
                 )
@@ -2606,6 +2595,42 @@ class PrometheusObservationSource:
             metadata=metadata,
             dimensions=_filesystem_dimensions(predicate, metadata),
         )
+
+
+@dataclass(frozen=True)
+class PrometheusDecodedSample:
+    """One valid Prometheus vector sample decoded from provider JSON."""
+
+    metric: dict[str, Any]
+    instance: str
+    sample_timestamp: datetime
+    sample_timestamp_raw: Any
+    sample_value: Any
+
+
+def _prometheus_decoded_sample(sample: Any) -> PrometheusDecodedSample | None:
+    """Decode provider-shaped Prometheus sample JSON without emitting observations."""
+
+    if not isinstance(sample, dict):
+        return None
+    metric = sample.get("metric")
+    value = sample.get("value")
+    if not isinstance(metric, dict) or not isinstance(value, list) or len(value) < 2:
+        return None
+    instance = metric.get("instance")
+    if not isinstance(instance, str) or not instance:
+        return None
+    sample_timestamp_raw = value[0]
+    sample_timestamp = _prometheus_sample_timestamp(sample_timestamp_raw)
+    if sample_timestamp is None:
+        return None
+    return PrometheusDecodedSample(
+        metric=dict(metric),
+        instance=instance,
+        sample_timestamp=sample_timestamp,
+        sample_timestamp_raw=sample_timestamp_raw,
+        sample_value=value[1],
+    )
 
 
 def _filesystem_dimensions(predicate: str, metadata: dict[str, Any]) -> dict[str, str]:
