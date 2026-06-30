@@ -3268,9 +3268,16 @@ class _StateBuildCacheDebugProjectionEvidence:
 
 
 @dataclass(frozen=True)
+class _StateBuildCacheDebugReadModelEvidence:
+    summary_source: str
+    summary_snapshot_published: bool
+
+
+@dataclass(frozen=True)
 class _StateBuildCacheDebugEvidence:
     visibility: _StateBuildVisibilityPayload
     projection_diagnostics: _ProjectionCacheDiagnosticPayload
+    read_model_evidence: _StateBuildCacheDebugReadModelEvidence
     timings: list[tuple[str, float]]
 
     @classmethod
@@ -3280,6 +3287,7 @@ class _StateBuildCacheDebugEvidence:
         return cls(
             visibility=assembly.visibility,
             projection_diagnostics=assembly.projection_diagnostics,
+            read_model_evidence=assembly.read_model_evidence,
             timings=assembly.timings,
         )
 
@@ -3288,6 +3296,7 @@ class _StateBuildCacheDebugEvidence:
 class _StateBuildCacheDebugEvidenceAssembly:
     visibility: _StateBuildVisibilityPayload
     projection_diagnostics: _ProjectionCacheDiagnosticPayload
+    read_model_evidence: _StateBuildCacheDebugReadModelEvidence
     timings: list[tuple[str, float]]
 
     @classmethod
@@ -3295,6 +3304,7 @@ class _StateBuildCacheDebugEvidenceAssembly:
         cls,
         cache_evidence: _StateBuildCacheDebugCacheEvidence,
         *,
+        read_model_evidence: _StateBuildCacheDebugReadModelEvidence,
         timings: list[tuple[str, float]],
     ) -> "_StateBuildCacheDebugEvidenceAssembly":
         return cls.from_evidence_streams(
@@ -3302,6 +3312,7 @@ class _StateBuildCacheDebugEvidenceAssembly:
             _StateBuildCacheDebugProjectionEvidence(
                 projection_diagnostics=cache_evidence.projection_diagnostics
             ),
+            read_model_evidence,
             timings=timings,
         )
 
@@ -3310,12 +3321,14 @@ class _StateBuildCacheDebugEvidenceAssembly:
         cls,
         cache_evidence: _StateBuildCacheDebugCacheEvidence,
         projection_evidence: _StateBuildCacheDebugProjectionEvidence,
+        read_model_evidence: _StateBuildCacheDebugReadModelEvidence,
         *,
         timings: list[tuple[str, float]],
     ) -> "_StateBuildCacheDebugEvidenceAssembly":
         return cls(
             visibility=cache_evidence.visibility,
             projection_diagnostics=projection_evidence.projection_diagnostics,
+            read_model_evidence=read_model_evidence,
             timings=timings,
         )
 
@@ -3489,6 +3502,10 @@ def _state_build_cache_debug_evidence_from_args(
                         projection_counters={},
                     )
                 )
+                read_model_evidence = _StateBuildCacheDebugReadModelEvidence(
+                    summary_source="summary snapshot",
+                    summary_snapshot_published=False,
+                )
                 return _StateBuildCacheDebugEvidence.from_assembly(
                     _StateBuildCacheDebugEvidenceAssembly.from_evidence_streams(
                         _StateBuildCacheDebugCacheEvidence(
@@ -3503,6 +3520,7 @@ def _state_build_cache_debug_evidence_from_args(
                             projection_diagnostics=projection_evidence.projection_diagnostics,
                         ),
                         projection_evidence,
+                        read_model_evidence,
                         timings=timings
                         + [("total runtime", time.perf_counter() - started)],
                     )
@@ -3586,6 +3604,7 @@ def _state_build_cache_debug_evidence_from_args(
                 ),
             ).read_model,
         )
+        summary_snapshot_published = False
         if store is not None and cache_eligible:
             timed(
                 "state summary snapshot save",
@@ -3605,6 +3624,7 @@ def _state_build_cache_debug_evidence_from_args(
                     )
                 ),
             )
+            summary_snapshot_published = True
         timed(
             "rendering", lambda: format_state_summary_cache_debug_report_placeholder()
         )
@@ -3617,6 +3637,10 @@ def _state_build_cache_debug_evidence_from_args(
                 cached_state_last_event_id=cached_state_last_event_id,
                 projection_selection=projection_selection,
             )
+        )
+        read_model_evidence = _StateBuildCacheDebugReadModelEvidence(
+            summary_source="constructed read model",
+            summary_snapshot_published=summary_snapshot_published,
         )
         return _StateBuildCacheDebugEvidence.from_assembly(
             _StateBuildCacheDebugEvidenceAssembly.from_evidence_streams(
@@ -3632,6 +3656,7 @@ def _state_build_cache_debug_evidence_from_args(
                     projection_diagnostics=projection_evidence.projection_diagnostics,
                 ),
                 projection_evidence,
+                read_model_evidence,
                 timings=timings + [("total runtime", time.perf_counter() - started)],
             )
         )

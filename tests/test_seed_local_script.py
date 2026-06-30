@@ -1938,20 +1938,31 @@ def test_state_summary_cache_debug_assembly_consumes_cache_evidence():
     projection_evidence = seed_local._StateBuildCacheDebugProjectionEvidence(
         projection_diagnostics=projection_diagnostics
     )
+    read_model_evidence = seed_local._StateBuildCacheDebugReadModelEvidence(
+        summary_source="summary snapshot",
+        summary_snapshot_published=False,
+    )
 
     assembly = seed_local._StateBuildCacheDebugEvidenceAssembly.from_evidence_streams(
-        cache_evidence, projection_evidence, timings=[("total runtime", 0.2)]
+        cache_evidence,
+        projection_evidence,
+        read_model_evidence,
+        timings=[("total runtime", 0.2)],
     )
     compatible_assembly = (
         seed_local._StateBuildCacheDebugEvidenceAssembly.from_cache_evidence(
-            cache_evidence, timings=[("total runtime", 0.2)]
+            cache_evidence,
+            read_model_evidence=read_model_evidence,
+            timings=[("total runtime", 0.2)],
         )
     )
 
     assert assembly.visibility is visibility
     assert assembly.projection_diagnostics is projection_diagnostics
+    assert assembly.read_model_evidence is read_model_evidence
     assert assembly.timings == [("total runtime", 0.2)]
     assert compatible_assembly.projection_diagnostics is projection_diagnostics
+    assert compatible_assembly.read_model_evidence is read_model_evidence
 
 
 def test_state_summary_cache_debug_projection_evidence_from_selection():
@@ -2002,9 +2013,14 @@ def test_state_summary_cache_debug_evidence_consumes_evidence_assembly():
         projection_timings=[("projection replay / build", 0.1)],
         projection_counters={"events": 1},
     )
+    read_model_evidence = seed_local._StateBuildCacheDebugReadModelEvidence(
+        summary_source="constructed read model",
+        summary_snapshot_published=True,
+    )
     assembly = seed_local._StateBuildCacheDebugEvidenceAssembly(
         visibility=visibility,
         projection_diagnostics=projection_diagnostics,
+        read_model_evidence=read_model_evidence,
         timings=[("total runtime", 0.2)],
     )
 
@@ -2012,6 +2028,7 @@ def test_state_summary_cache_debug_evidence_consumes_evidence_assembly():
 
     assert evidence.visibility is visibility
     assert evidence.projection_diagnostics is projection_diagnostics
+    assert evidence.read_model_evidence is read_model_evidence
     assert evidence.timings == [("total runtime", 0.2)]
 
 
@@ -2032,6 +2049,10 @@ def test_state_summary_cache_debug_report_consumes_debug_evidence():
             cached_state_last_event_id=None,
             projection_timings=[("projection replay / build", 0.1)],
             projection_counters={"events": 1},
+        ),
+        read_model_evidence=seed_local._StateBuildCacheDebugReadModelEvidence(
+            summary_source="constructed read model",
+            summary_snapshot_published=True,
         ),
         timings=[("total runtime", 0.2)],
     )
