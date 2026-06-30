@@ -3247,7 +3247,7 @@ class _StateBuildCacheDebugEvidence:
 
 
 @dataclass(frozen=True)
-class StateSummaryCacheDebugReport:
+class _StateBuildCacheDebugReportPayload:
     visibility: _StateBuildVisibilityPayload
     projection_diagnostics: _ProjectionCacheDiagnosticPayload
     timings: list[tuple[str, float]]
@@ -3255,11 +3255,36 @@ class StateSummaryCacheDebugReport:
     @classmethod
     def from_evidence(
         cls, evidence: _StateBuildCacheDebugEvidence
-    ) -> "StateSummaryCacheDebugReport":
+    ) -> "_StateBuildCacheDebugReportPayload":
         return cls(
             visibility=evidence.visibility,
             projection_diagnostics=evidence.projection_diagnostics,
             timings=evidence.timings,
+        )
+
+
+@dataclass(frozen=True)
+class StateSummaryCacheDebugReport:
+    visibility: _StateBuildVisibilityPayload
+    projection_diagnostics: _ProjectionCacheDiagnosticPayload
+    timings: list[tuple[str, float]]
+
+    @classmethod
+    def from_payload(
+        cls, payload: _StateBuildCacheDebugReportPayload
+    ) -> "StateSummaryCacheDebugReport":
+        return cls(
+            visibility=payload.visibility,
+            projection_diagnostics=payload.projection_diagnostics,
+            timings=payload.timings,
+        )
+
+    @classmethod
+    def from_evidence(
+        cls, evidence: _StateBuildCacheDebugEvidence
+    ) -> "StateSummaryCacheDebugReport":
+        return cls.from_payload(
+            _StateBuildCacheDebugReportPayload.from_evidence(evidence)
         )
 
     @property
