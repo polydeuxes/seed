@@ -3240,10 +3240,27 @@ class _ProjectionCacheDiagnosticPayload:
 
 
 @dataclass(frozen=True)
+class _StateBuildCacheDebugEvidence:
+    visibility: _StateBuildVisibilityPayload
+    projection_diagnostics: _ProjectionCacheDiagnosticPayload
+    timings: list[tuple[str, float]]
+
+
+@dataclass(frozen=True)
 class StateSummaryCacheDebugReport:
     visibility: _StateBuildVisibilityPayload
     projection_diagnostics: _ProjectionCacheDiagnosticPayload
     timings: list[tuple[str, float]]
+
+    @classmethod
+    def from_evidence(
+        cls, evidence: _StateBuildCacheDebugEvidence
+    ) -> "StateSummaryCacheDebugReport":
+        return cls(
+            visibility=evidence.visibility,
+            projection_diagnostics=evidence.projection_diagnostics,
+            timings=evidence.timings,
+        )
 
     @property
     def cache_eligible(self) -> bool:
@@ -3290,10 +3307,10 @@ def _format_cache_status_id(value: str | None) -> str:
     return value if value is not None else "none"
 
 
-def state_summary_cache_debug_from_args(
+def _state_build_cache_debug_evidence_from_args(
     args: argparse.Namespace,
-) -> StateSummaryCacheDebugReport:
-    """Measure the state-build cache boundary without ingesting or executing tools."""
+) -> _StateBuildCacheDebugEvidence:
+    """Collect state-build cache-debug evidence without constructing the report."""
 
     timings: list[tuple[str, float]] = []
     notes: list[str] = []
@@ -3365,7 +3382,7 @@ def state_summary_cache_debug_from_args(
                 notes.append(
                     "state cache lookup skipped because the summary cache satisfied the request"
                 )
-                return StateSummaryCacheDebugReport(
+                return _StateBuildCacheDebugEvidence(
                     visibility=_StateBuildVisibilityPayload(
                         cache_eligible=cache_eligible,
                         cache_ineligible_reason=cache_ineligible_reason,
@@ -3487,7 +3504,7 @@ def state_summary_cache_debug_from_args(
         projection_selection = _ProjectionDiagnosticSelection.from_payload(
             projection_diagnostics.payload
         )
-        return StateSummaryCacheDebugReport(
+        return _StateBuildCacheDebugEvidence(
             visibility=_StateBuildVisibilityPayload(
                 cache_eligible=cache_eligible,
                 cache_ineligible_reason=cache_ineligible_reason,
@@ -3509,6 +3526,16 @@ def state_summary_cache_debug_from_args(
             close = getattr(resource, "close", None)
             if close is not None:
                 close()
+
+
+def state_summary_cache_debug_from_args(
+    args: argparse.Namespace,
+) -> StateSummaryCacheDebugReport:
+    """Measure the state-build cache boundary without ingesting or executing tools."""
+
+    return StateSummaryCacheDebugReport.from_evidence(
+        _state_build_cache_debug_evidence_from_args(args)
+    )
 
 
 def format_state_summary_cache_debug_report_placeholder() -> str:
