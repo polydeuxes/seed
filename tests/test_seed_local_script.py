@@ -1935,13 +1935,54 @@ def test_state_summary_cache_debug_assembly_consumes_cache_evidence():
         projection_diagnostics=projection_diagnostics,
     )
 
-    assembly = seed_local._StateBuildCacheDebugEvidenceAssembly.from_cache_evidence(
-        cache_evidence, timings=[("total runtime", 0.2)]
+    projection_evidence = seed_local._StateBuildCacheDebugProjectionEvidence(
+        projection_diagnostics=projection_diagnostics
+    )
+
+    assembly = seed_local._StateBuildCacheDebugEvidenceAssembly.from_evidence_streams(
+        cache_evidence, projection_evidence, timings=[("total runtime", 0.2)]
+    )
+    compatible_assembly = (
+        seed_local._StateBuildCacheDebugEvidenceAssembly.from_cache_evidence(
+            cache_evidence, timings=[("total runtime", 0.2)]
+        )
     )
 
     assert assembly.visibility is visibility
     assert assembly.projection_diagnostics is projection_diagnostics
     assert assembly.timings == [("total runtime", 0.2)]
+    assert compatible_assembly.projection_diagnostics is projection_diagnostics
+
+
+def test_state_summary_cache_debug_projection_evidence_from_selection():
+    seed_local = load_seed_local_module()
+
+    projection_diagnostics = seed_local.ProjectionBuildDiagnostics(
+        timings=[("projection replay / build", 0.1)], counters={"events": 1}
+    )
+    projection_selection = seed_local._ProjectionDiagnosticSelection.from_payload(
+        projection_diagnostics.payload
+    )
+
+    projection_evidence = (
+        seed_local._StateBuildCacheDebugProjectionEvidence.from_diagnostic_selection(
+            state_cache_status="miss",
+            cached_state_last_event_id="event-1",
+            projection_selection=projection_selection,
+        )
+    )
+
+    assert projection_evidence.projection_diagnostics.state_cache_status == "miss"
+    assert (
+        projection_evidence.projection_diagnostics.cached_state_last_event_id
+        == "event-1"
+    )
+    assert projection_evidence.projection_diagnostics.projection_timings == [
+        ("projection replay / build", 0.1)
+    ]
+    assert projection_evidence.projection_diagnostics.projection_counters == {
+        "events": 1
+    }
 
 
 def test_state_summary_cache_debug_evidence_consumes_evidence_assembly():
