@@ -26,10 +26,16 @@ class _DerivedConclusionPayload:
 
 
 @dataclass(frozen=True)
-class _DerivationLineagePayload:
-    """Implementation-local derivation path evidence and consumers."""
+class _DerivationSupportingEvidencePayload:
+    """Implementation-local supporting evidence for derived conclusions."""
 
     evidence: list[dict[str, Any]]
+
+
+@dataclass(frozen=True)
+class _DerivationLineagePayload:
+    """Implementation-local derivation path consumers and limitations."""
+
     consumers: list[dict[str, Any]]
     story_impact: list[dict[str, Any]]
     unknowns: list[dict[str, str]]
@@ -213,8 +219,10 @@ def build_reasoning_path_audit(
         intermediate_conclusions=intermediate,
         derived_conclusions=derived,
     )
-    lineage_payload = _DerivationLineagePayload(
+    supporting_evidence_payload = _DerivationSupportingEvidencePayload(
         evidence=evidence,
+    )
+    lineage_payload = _DerivationLineagePayload(
         consumers=_dedupe(consumers),
         story_impact=story_impact,
         unknowns=unknowns,
@@ -223,6 +231,7 @@ def build_reasoning_path_audit(
         domain,
         subject,
         conclusions=conclusion_payload,
+        supporting_evidence=supporting_evidence_payload,
         lineage=lineage_payload,
     )
 
@@ -232,12 +241,13 @@ def _reasoning_path_from_payloads(
     subject: str,
     *,
     conclusions: _DerivedConclusionPayload,
+    supporting_evidence: _DerivationSupportingEvidencePayload,
     lineage: _DerivationLineagePayload,
 ) -> ReasoningPathAudit:
     return ReasoningPathAudit(
         domain,
         subject,
-        lineage.evidence,
+        supporting_evidence.evidence,
         conclusions.intermediate_conclusions,
         conclusions.derived_conclusions,
         lineage.consumers,

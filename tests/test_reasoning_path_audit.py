@@ -153,6 +153,40 @@ def test_reasoning_path_preserves_conclusions_and_lineage_at_compatibility_hando
     assert all("story_impact" not in item for item in payload["derived_conclusions"])
 
 
+def test_reasoning_path_projects_supporting_evidence_at_compatibility_handoff():
+    from seed_runtime.reasoning_path_audit import (
+        _DerivationLineagePayload,
+        _DerivationSupportingEvidencePayload,
+        _DerivedConclusionPayload,
+        _reasoning_path_from_payloads,
+    )
+
+    supporting_evidence = [{"surface": "ownership_discrepancies", "finding": "x"}]
+    audit = _reasoning_path_from_payloads(
+        "capability",
+        "listener_process_inventory",
+        conclusions=_DerivedConclusionPayload(
+            intermediate_conclusions=[{"conclusion": "ownership attribution incomplete"}],
+            derived_conclusions=[
+                {"conclusion": "listener_process_inventory capability need"}
+            ],
+        ),
+        supporting_evidence=_DerivationSupportingEvidencePayload(
+            evidence=supporting_evidence
+        ),
+        lineage=_DerivationLineagePayload(
+            consumers=[{"surface": "capability_needs"}],
+            story_impact=[{"surface": "operational_story"}],
+            unknowns=[],
+        ),
+    )
+
+    assert audit.evidence == supporting_evidence
+    assert audit.consumers == [{"surface": "capability_needs"}]
+    assert audit.story_impact == [{"surface": "operational_story"}]
+    assert audit.to_json_dict()["evidence"] == supporting_evidence
+
+
 def test_reasoning_path_unknown_and_empty_state_are_explicit(tmp_path, capsys):
     seed_local = load_seed_local()
     db = tmp_path / "seed.sqlite"
