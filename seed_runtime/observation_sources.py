@@ -2511,69 +2511,16 @@ class PrometheusObservationSource:
                 nodename = decoded.metric.get("nodename")
                 if isinstance(nodename, str) and nodename.strip():
                     metadata["nodename"] = nodename.strip()
-            if query == "up":
-                job = decoded.metric.get("job")
-                if isinstance(job, str) and job.strip():
-                    observations.append(
-                        self._observation(
-                            decoded.sample_timestamp,
-                            decoded.instance,
-                            "endpoint_role",
-                            job.strip(),
-                            metadata,
-                        )
-                    )
-                observations.append(
-                    self._observation(
-                        decoded.sample_timestamp,
-                        decoded.instance,
-                        "up",
-                        _prometheus_int(decoded.sample_value),
-                        metadata,
-                    )
+            observations.extend(
+                self._observation(
+                    shape.observed_at,
+                    shape.subject,
+                    shape.predicate,
+                    shape.value,
+                    shape.metadata,
                 )
-            elif query == "node_uname_info":
-                os_value = _prometheus_os_from_uname(decoded.metric)
-                if os_value is not None:
-                    os_metadata = dict(metadata)
-                    if is_endpoint_subject(decoded.instance):
-                        os_metadata.update(
-                            {
-                                "fact_promotion_suppressed": True,
-                                "fact_promotion_suppressed_reason": (
-                                    "prometheus_node_uname_os_endpoint_subject"
-                                ),
-                            }
-                        )
-                    observations.append(
-                        self._observation(
-                            decoded.sample_timestamp,
-                            decoded.instance,
-                            "os",
-                            os_value,
-                            os_metadata,
-                        )
-                    )
-            elif query == "node_filesystem_avail_bytes":
-                observations.append(
-                    self._observation(
-                        decoded.sample_timestamp,
-                        decoded.instance,
-                        "filesystem_avail_bytes",
-                        _prometheus_int(decoded.sample_value),
-                        metadata,
-                    )
-                )
-            elif query == "node_filesystem_size_bytes":
-                observations.append(
-                    self._observation(
-                        decoded.sample_timestamp,
-                        decoded.instance,
-                        "filesystem_size_bytes",
-                        _prometheus_int(decoded.sample_value),
-                        metadata,
-                    )
-                )
+                for shape in _prometheus_observation_shapes(query, decoded, metadata)
+            )
         return observations
 
     def _observation(
@@ -2608,6 +2555,17 @@ class PrometheusDecodedSample:
     sample_value: Any
 
 
+@dataclass(frozen=True)
+class PrometheusObservationShape:
+    """Provider-local Prometheus sample interpretation before Observation emission."""
+
+    observed_at: datetime
+    subject: str
+    predicate: str
+    value: Any
+    metadata: dict[str, Any]
+
+
 def _prometheus_decoded_sample(sample: Any) -> PrometheusDecodedSample | None:
     """Decode provider-shaped Prometheus sample JSON without emitting observations."""
 
@@ -2631,6 +2589,82 @@ def _prometheus_decoded_sample(sample: Any) -> PrometheusDecodedSample | None:
         sample_timestamp_raw=sample_timestamp_raw,
         sample_value=value[1],
     )
+
+
+def _prometheus_observation_shapes(
+    query: str,
+    decoded: PrometheusDecodedSample,
+    metadata: dict[str, Any],
+) -> list[PrometheusObservationShape]:
+    """Map a decoded Prometheus sample into provider-local observation shapes."""
+
+    if query == "up":
+        shapes: list[PrometheusObservationShape] = []
+        job = decoded.metric.get("job")
+        if isinstance(job, str) and job.strip():
+            shapes.append(
+                PrometheusObservationShape(
+                    decoded.sample_timestamp,
+                    decoded.instance,
+                    "endpoint_role",
+                    job.strip(),
+                    metadata,
+                )
+            )
+        shapes.append(
+            PrometheusObservationShape(
+                decoded.sample_timestamp,
+                decoded.instance,
+                "up",
+                _prometheus_int(decoded.sample_value),
+                metadata,
+            )
+        )
+        return shapes
+    if query == "node_uname_info":
+        os_value = _prometheus_os_from_uname(decoded.metric)
+        if os_value is None:
+            return []
+        os_metadata = dict(metadata)
+        if is_endpoint_subject(decoded.instance):
+            os_metadata.update(
+                {
+                    "fact_promotion_suppressed": True,
+                    "fact_promotion_suppressed_reason": (
+                        "prometheus_node_uname_os_endpoint_subject"
+                    ),
+                }
+            )
+        return [
+            PrometheusObservationShape(
+                decoded.sample_timestamp,
+                decoded.instance,
+                "os",
+                os_value,
+                os_metadata,
+            )
+        ]
+    if query == "node_filesystem_avail_bytes":
+        return [
+            PrometheusObservationShape(
+                decoded.sample_timestamp,
+                decoded.instance,
+                "filesystem_avail_bytes",
+                _prometheus_int(decoded.sample_value),
+                metadata,
+            )
+        ]
+    if query == "node_filesystem_size_bytes":
+        return [
+            PrometheusObservationShape(
+                decoded.sample_timestamp,
+                decoded.instance,
+                "filesystem_size_bytes",
+                _prometheus_int(decoded.sample_value),
+                metadata,
+            )
+        ]
+    return []
 
 
 def _filesystem_dimensions(predicate: str, metadata: dict[str, Any]) -> dict[str, str]:

@@ -2409,6 +2409,64 @@ def test_prometheus_decoded_sample_rejects_malformed_provider_samples():
     )
 
 
+def test_prometheus_observation_shapes_separate_sample_interpretation_from_observation():
+    from seed_runtime.observation_sources import (
+        PrometheusDecodedSample,
+        _prometheus_observation_shapes,
+    )
+
+    observed_at = datetime.fromisoformat("2024-06-11T16:30:56+00:00")
+    decoded = PrometheusDecodedSample(
+        metric={"instance": "node-a:9100", "job": " node-exporter "},
+        instance="node-a:9100",
+        sample_timestamp=observed_at,
+        sample_timestamp_raw="1718123456",
+        sample_value="1",
+    )
+    metadata = {"prometheus_metric": "up", "metric_labels": dict(decoded.metric)}
+
+    shapes = _prometheus_observation_shapes("up", decoded, metadata)
+
+    assert [(shape.subject, shape.predicate, shape.value) for shape in shapes] == [
+        ("node-a:9100", "endpoint_role", "node-exporter"),
+        ("node-a:9100", "up", 1),
+    ]
+    assert {shape.observed_at for shape in shapes} == {observed_at}
+    assert [shape.metadata for shape in shapes] == [metadata, metadata]
+
+
+def test_prometheus_observation_shapes_preserve_endpoint_os_suppression_boundary():
+    from seed_runtime.observation_sources import (
+        PrometheusDecodedSample,
+        _prometheus_observation_shapes,
+    )
+
+    observed_at = datetime.fromisoformat("2024-06-11T16:30:56+00:00")
+    decoded = PrometheusDecodedSample(
+        metric={"instance": "192.0.2.115:9100", "sysname": "Linux"},
+        instance="192.0.2.115:9100",
+        sample_timestamp=observed_at,
+        sample_timestamp_raw="1718123456",
+        sample_value="1",
+    )
+    metadata = {
+        "prometheus_metric": "node_uname_info",
+        "metric_labels": dict(decoded.metric),
+    }
+
+    shapes = _prometheus_observation_shapes("node_uname_info", decoded, metadata)
+
+    assert [(shape.subject, shape.predicate, shape.value) for shape in shapes] == [
+        ("192.0.2.115:9100", "os", "linux")
+    ]
+    assert shapes[0].metadata["fact_promotion_suppressed"] is True
+    assert (
+        shapes[0].metadata["fact_promotion_suppressed_reason"]
+        == "prometheus_node_uname_os_endpoint_subject"
+    )
+    assert "fact_promotion_suppressed" not in metadata
+
+
 def _patch_prometheus_payloads(monkeypatch, payloads_by_query):
     from seed_runtime import observation_sources as sources
 
