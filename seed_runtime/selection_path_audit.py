@@ -14,6 +14,10 @@ from seed_runtime.state import State
 @dataclass(frozen=True)
 class _SelectionResultPayload:
     selected: str
+
+
+@dataclass(frozen=True)
+class _SelectionReasonPayload:
     outcome: dict[str, Any]
 
 
@@ -105,8 +109,8 @@ def build_selection_path_audit(
 
     return _selection_path_from_payloads(
         target=target,
-        result=_SelectionResultPayload(
-            selected="unknown",
+        result=_SelectionResultPayload(selected="unknown"),
+        reason=_SelectionReasonPayload(
             outcome={
                 "selected": "unknown",
                 "reason": "target is not an implemented selection surface",
@@ -134,6 +138,7 @@ def _selection_path_from_payloads(
     *,
     target: str,
     result: _SelectionResultPayload,
+    reason: _SelectionReasonPayload,
     lineage: _SelectionLineagePayload,
 ) -> SelectionPathAudit:
     return SelectionPathAudit(
@@ -143,7 +148,7 @@ def _selection_path_from_payloads(
         selection_factors=lineage.selection_factors,
         non_selected=lineage.non_selected,
         evidence=lineage.evidence,
-        outcome=result.outcome,
+        outcome=reason.outcome,
         unknowns=lineage.unknowns,
     )
 
@@ -213,8 +218,8 @@ def _from_pressure_selection(
         )
     return _selection_path_from_payloads(
         target=target,
-        result=_SelectionResultPayload(
-            selected=selected,
+        result=_SelectionResultPayload(selected=selected),
+        reason=_SelectionReasonPayload(
             outcome={
                 "selected": selected,
                 "focus": focus,

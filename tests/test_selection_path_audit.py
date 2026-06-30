@@ -125,6 +125,42 @@ def test_selection_path_unknown_logic_remains_explicit(tmp_path, capsys):
     )
 
 
+def test_selection_answer_and_reason_payloads_are_separate():
+    from seed_runtime.selection_path_audit import (
+        _SelectionLineagePayload,
+        _SelectionReasonPayload,
+        _SelectionResultPayload,
+        _selection_path_from_payloads,
+    )
+
+    result = _SelectionResultPayload(selected="primary pressure")
+    reason = _SelectionReasonPayload(
+        outcome={
+            "selected": "primary pressure",
+            "reason": "pressure audit selected the highest-ranked candidate",
+        }
+    )
+    lineage = _SelectionLineagePayload(
+        candidates=[],
+        selection_factors=[],
+        non_selected=[],
+        evidence=[],
+        unknowns=[],
+    )
+
+    audit = _selection_path_from_payloads(
+        target="primary_pressure",
+        result=result,
+        reason=reason,
+        lineage=lineage,
+    )
+
+    assert audit.selected == "primary pressure"
+    assert audit.outcome == reason.outcome
+    assert "outcome" not in result.__dataclass_fields__
+    assert "selected" not in reason.__dataclass_fields__
+    assert "candidates" not in reason.__dataclass_fields__
+
 def test_selection_path_does_not_change_operational_story_selection(tmp_path, capsys):
     seed_local, db = seeded_db(tmp_path)
     capsys.readouterr()
