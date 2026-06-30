@@ -3274,6 +3274,22 @@ class _StateBuildCacheDebugReadModelEvidence:
 
 
 @dataclass(frozen=True)
+class _StateBuildCacheDebugTimingEvidence:
+    timings: list[tuple[str, float]]
+
+    @classmethod
+    def from_collected_timings(
+        cls,
+        timings: list[tuple[str, float]],
+        *,
+        started: float,
+    ) -> "_StateBuildCacheDebugTimingEvidence":
+        return cls(
+            timings=timings + [("total runtime", time.perf_counter() - started)]
+        )
+
+
+@dataclass(frozen=True)
 class _StateBuildCacheDebugEvidence:
     visibility: _StateBuildVisibilityPayload
     projection_diagnostics: _ProjectionCacheDiagnosticPayload
@@ -3305,7 +3321,7 @@ class _StateBuildCacheDebugEvidenceAssembly:
         cache_evidence: _StateBuildCacheDebugCacheEvidence,
         *,
         read_model_evidence: _StateBuildCacheDebugReadModelEvidence,
-        timings: list[tuple[str, float]],
+        timing_evidence: _StateBuildCacheDebugTimingEvidence,
     ) -> "_StateBuildCacheDebugEvidenceAssembly":
         return cls.from_evidence_streams(
             cache_evidence,
@@ -3313,7 +3329,7 @@ class _StateBuildCacheDebugEvidenceAssembly:
                 projection_diagnostics=cache_evidence.projection_diagnostics
             ),
             read_model_evidence,
-            timings=timings,
+            timing_evidence,
         )
 
     @classmethod
@@ -3322,14 +3338,13 @@ class _StateBuildCacheDebugEvidenceAssembly:
         cache_evidence: _StateBuildCacheDebugCacheEvidence,
         projection_evidence: _StateBuildCacheDebugProjectionEvidence,
         read_model_evidence: _StateBuildCacheDebugReadModelEvidence,
-        *,
-        timings: list[tuple[str, float]],
+        timing_evidence: _StateBuildCacheDebugTimingEvidence,
     ) -> "_StateBuildCacheDebugEvidenceAssembly":
         return cls(
             visibility=cache_evidence.visibility,
             projection_diagnostics=projection_evidence.projection_diagnostics,
             read_model_evidence=read_model_evidence,
-            timings=timings,
+            timings=timing_evidence.timings,
         )
 
 
@@ -3521,8 +3536,9 @@ def _state_build_cache_debug_evidence_from_args(
                         ),
                         projection_evidence,
                         read_model_evidence,
-                        timings=timings
-                        + [("total runtime", time.perf_counter() - started)],
+                        _StateBuildCacheDebugTimingEvidence.from_collected_timings(
+                            timings, started=started
+                        ),
                     )
                 )
             state_snapshot = timed(
@@ -3657,7 +3673,9 @@ def _state_build_cache_debug_evidence_from_args(
                 ),
                 projection_evidence,
                 read_model_evidence,
-                timings=timings + [("total runtime", time.perf_counter() - started)],
+                _StateBuildCacheDebugTimingEvidence.from_collected_timings(
+                    timings, started=started
+                ),
             )
         )
     finally:
