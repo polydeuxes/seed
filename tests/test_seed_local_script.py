@@ -1913,6 +1913,36 @@ def test_state_summary_cache_debug_separates_visibility_from_projection_diagnost
     assert not hasattr(report.visibility, "projection_timings")
 
 
+def test_state_summary_cache_debug_evidence_consumes_evidence_assembly():
+    seed_local = load_seed_local_module()
+
+    visibility = seed_local._StateBuildVisibilityPayload(
+        cache_eligible=True,
+        cache_ineligible_reason=None,
+        summary_cache_status="miss",
+        current_last_event_id="event-1",
+        cached_summary_last_event_id=None,
+        notes=["note"],
+    )
+    projection_diagnostics = seed_local._ProjectionCacheDiagnosticPayload(
+        state_cache_status="miss",
+        cached_state_last_event_id=None,
+        projection_timings=[("projection replay / build", 0.1)],
+        projection_counters={"events": 1},
+    )
+    assembly = seed_local._StateBuildCacheDebugEvidenceAssembly(
+        visibility=visibility,
+        projection_diagnostics=projection_diagnostics,
+        timings=[("total runtime", 0.2)],
+    )
+
+    evidence = seed_local._StateBuildCacheDebugEvidence.from_assembly(assembly)
+
+    assert evidence.visibility is visibility
+    assert evidence.projection_diagnostics is projection_diagnostics
+    assert evidence.timings == [("total runtime", 0.2)]
+
+
 def test_state_summary_cache_debug_report_consumes_debug_evidence():
     seed_local = load_seed_local_module()
 
