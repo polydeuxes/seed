@@ -11,6 +11,7 @@ from seed_runtime.diagnostic_shape_audit import (
 from seed_runtime.question_surface_inventory import (
     BOUNDED_ASK_DISPATCH_SURFACES,
     bounded_work_eligibility_for_question_family,
+    bounded_work_selection_for_question_family,
     bounded_ask_inventory_findings,
     build_question_surface_inventory,
     question_surface_inventory_json,
@@ -157,6 +158,66 @@ def test_bounded_work_eligibility_result_is_separate_from_surface_selection():
     )
     assert not_dispatchable.bounded_status == "not_dispatchable"
     assert not_dispatchable.permitted is False
+
+
+def test_bounded_work_selection_result_is_separate_from_eligibility_and_dispatch():
+    eligibility = bounded_work_eligibility_for_question_family(
+        "authority-constrained service ownership"
+    )
+    selection = bounded_work_selection_for_question_family(
+        "authority-constrained service ownership", eligibility
+    )
+
+    assert selection.question_family == "authority-constrained service ownership"
+    assert selection.dispatch_surface == "service_ownership_authority"
+    assert selection.surface_value is True
+    assert selection.required_surface_args == ()
+    assert "permitted" not in selection.__dataclass_fields__
+    assert "bounded_status" not in selection.__dataclass_fields__
+
+    parameterized_eligibility = bounded_work_eligibility_for_question_family(
+        "derivation explanation"
+    )
+    parameterized_selection = bounded_work_selection_for_question_family(
+        "derivation explanation",
+        parameterized_eligibility,
+        ("runtime", "service:web"),
+    )
+
+    assert parameterized_selection.dispatch_surface == "reasoning_path"
+    assert parameterized_selection.surface_value == ("runtime", "service:web")
+    assert parameterized_selection.required_surface_args == ("domain", "subject")
+
+    diagnostic_only = bounded_work_eligibility_for_question_family("surface inventory")
+    with pytest.raises(ValueError, match="requires permitted eligibility"):
+        bounded_work_selection_for_question_family("surface inventory", diagnostic_only)
+
+
+def test_bounded_ask_dispatch_consumes_bounded_work_selection_result():
+    parser = seed_local.build_parser()
+    args = parser.parse_args([
+        "ask",
+        "--question-family",
+        "observation domain coverage",
+    ])
+
+    seed_local.apply_bounded_ask_dispatch(args, parser)
+
+    assert args.observation_domains == "__all__"
+    assert args.message == []
+
+    parameterized_args = parser.parse_args([
+        "ask",
+        "--question-family",
+        "selection explanation",
+        "--surface-args",
+        "target:one",
+    ])
+
+    seed_local.apply_bounded_ask_dispatch(parameterized_args, parser)
+
+    assert parameterized_args.selection_path == "target:one"
+    assert parameterized_args.message == []
 
 
 def test_bounded_ask_inventory_validates_question_families_and_dispatch_maps():

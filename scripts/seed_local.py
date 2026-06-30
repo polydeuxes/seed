@@ -149,9 +149,8 @@ from seed_runtime.diagnostic_shape_audit import (
     format_diagnostic_shape_audit,
 )
 from seed_runtime.question_surface_inventory import (
-    BOUNDED_ASK_ARG_VALUES,
-    BOUNDED_ASK_DISPATCH_SURFACES,
     bounded_work_eligibility_for_question_family,
+    bounded_work_selection_for_question_family,
     build_question_surface_inventory,
     format_question_family_definition,
     format_composed_question_family_explanation,
@@ -2256,8 +2255,10 @@ def apply_bounded_ask_dispatch(
             args.question_family_explanation = family
             args.message = []
             return
-        surface_value = surface_args[0] if required_count == 1 else surface_args
-        setattr(args, BOUNDED_ASK_DISPATCH_SURFACES[family], surface_value)
+        selection = bounded_work_selection_for_question_family(
+            family, eligibility, tuple(surface_args)
+        )
+        setattr(args, selection.dispatch_surface, selection.surface_value)
         args.message = []
         return
 
@@ -2277,11 +2278,8 @@ def apply_bounded_ask_dispatch(
         args.message = []
         return
 
-    setattr(
-        args,
-        BOUNDED_ASK_DISPATCH_SURFACES[family],
-        BOUNDED_ASK_ARG_VALUES.get(family, True),
-    )
+    selection = bounded_work_selection_for_question_family(family, eligibility)
+    setattr(args, selection.dispatch_surface, selection.surface_value)
     if family == "knowledge reachability" and args.json_output:
         args.knowledge_reachability_audit_json = True
         args.json_output = False
