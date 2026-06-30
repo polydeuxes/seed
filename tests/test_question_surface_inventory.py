@@ -10,6 +10,7 @@ from seed_runtime.diagnostic_shape_audit import (
 )
 from seed_runtime.question_surface_inventory import (
     BOUNDED_ASK_DISPATCH_SURFACES,
+    bounded_work_dispatch_request_for_selection,
     bounded_work_eligibility_for_question_family,
     bounded_work_selection_for_question_family,
     bounded_ask_inventory_findings,
@@ -193,7 +194,25 @@ def test_bounded_work_selection_result_is_separate_from_eligibility_and_dispatch
         bounded_work_selection_for_question_family("surface inventory", diagnostic_only)
 
 
-def test_bounded_ask_dispatch_consumes_bounded_work_selection_result():
+def test_bounded_work_dispatch_request_is_separate_from_selection():
+    eligibility = bounded_work_eligibility_for_question_family(
+        "authority-constrained service ownership"
+    )
+    selection = bounded_work_selection_for_question_family(
+        "authority-constrained service ownership", eligibility
+    )
+
+    dispatch_request = bounded_work_dispatch_request_for_selection(selection)
+
+    assert dispatch_request.question_family == "authority-constrained service ownership"
+    assert dispatch_request.dispatch_surface == "service_ownership_authority"
+    assert dispatch_request.surface_value is True
+    assert "required_surface_args" not in dispatch_request.__dataclass_fields__
+    assert "bounded_status" not in dispatch_request.__dataclass_fields__
+    assert "permitted" not in dispatch_request.__dataclass_fields__
+
+
+def test_bounded_ask_dispatch_consumes_bounded_work_dispatch_request():
     parser = seed_local.build_parser()
     args = parser.parse_args([
         "ask",

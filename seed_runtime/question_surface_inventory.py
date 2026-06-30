@@ -110,6 +110,34 @@ class BoundedWorkSelectionResult:
     reason: str = ""
 
 
+@dataclass(frozen=True)
+class BoundedWorkDispatchRequest:
+    """Implementation-backed invocation request for already selected bounded work."""
+
+    question_family: str
+    dispatch_surface: str
+    surface_value: object
+    reason: str = ""
+
+
+def bounded_work_dispatch_request_for_selection(
+    selection: BoundedWorkSelectionResult,
+) -> BoundedWorkDispatchRequest:
+    """Describe how selected bounded work is invoked by the existing CLI surface.
+
+    This recovers only the dispatch invocation already used by bounded ask; it
+    does not decide QuestionFamily lookup, eligibility, bounded work selection,
+    evidence interpretation, answer composition, rendering, or semantic routing.
+    """
+
+    return BoundedWorkDispatchRequest(
+        question_family=selection.question_family,
+        dispatch_surface=selection.dispatch_surface,
+        surface_value=selection.surface_value,
+        reason="dispatch selected bounded work through existing CLI namespace",
+    )
+
+
 def bounded_work_selection_for_question_family(
     question_family: str,
     eligibility: BoundedWorkEligibilityResult,
