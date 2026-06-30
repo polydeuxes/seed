@@ -99,6 +99,55 @@ def bounded_work_eligibility_for_question_family(
     )
 
 
+@dataclass(frozen=True)
+class BoundedWorkSelectionResult:
+    """Implementation-backed selected bounded work for an eligible QuestionFamily."""
+
+    question_family: str
+    dispatch_surface: str
+    surface_value: object
+    required_surface_args: tuple[str, ...] = ()
+    reason: str = ""
+
+
+def bounded_work_selection_for_question_family(
+    question_family: str,
+    eligibility: BoundedWorkEligibilityResult,
+    surface_args: tuple[str, ...] | None = None,
+) -> BoundedWorkSelectionResult:
+    """Select existing bounded work for an eligible exact QuestionFamily.
+
+    This recovers only the map-backed selection already used by bounded ask; it
+    does not decide eligibility, dispatch execution, argument mutation, answer
+    composition, rendering, or evidence semantics.
+    """
+
+    if eligibility.question_family != question_family:
+        raise ValueError("eligibility result question family does not match selection")
+    if not eligibility.permitted:
+        raise ValueError("bounded work selection requires permitted eligibility")
+    dispatch_surface = BOUNDED_ASK_DISPATCH_SURFACES[question_family]
+    required_surface_args = eligibility.required_surface_args
+    if required_surface_args:
+        provided_surface_args = surface_args or ()
+        surface_value = (
+            provided_surface_args[0]
+            if len(provided_surface_args) == 1
+            else provided_surface_args
+        )
+        reason = "selected parameterized bounded ask dispatch surface"
+    else:
+        surface_value = BOUNDED_ASK_ARG_VALUES.get(question_family, True)
+        reason = "selected bounded ask dispatch surface"
+    return BoundedWorkSelectionResult(
+        question_family=question_family,
+        dispatch_surface=dispatch_surface,
+        surface_value=surface_value,
+        required_surface_args=required_surface_args,
+        reason=reason,
+    )
+
+
 def bounded_ask_inventory_findings(
     rows: tuple["QuestionSurfaceInventoryRow", ...] | None = None,
 ) -> tuple[str, ...]:
