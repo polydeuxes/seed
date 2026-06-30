@@ -2,6 +2,9 @@ import json
 
 import scripts.seed_local as seed_local
 from seed_runtime.inquiry_artifacts import (
+    _InquiryArtifactEvidencePayload,
+    _InquiryArtifactLimitationsPayload,
+    _artifact_visibility_from_payloads,
     build_inquiry_artifacts,
     inquiry_artifacts_json,
 )
@@ -92,3 +95,23 @@ def test_inquiry_artifacts_checked_by_diagnostic_shape_audit():
     assert rows
     assert [row for row in rows if row.status == "mismatch"] == []
     assert any(row.field == "supports_json" and row.observed is True for row in rows)
+
+
+def test_inquiry_artifact_visibility_preserves_support_and_limitations_at_compatibility_handoff():
+    visibility = _artifact_visibility_from_payloads(
+        artifact="example",
+        classification="repository_visible",
+        evidence=_InquiryArtifactEvidencePayload(evidence=("supporting evidence",)),
+        limitations=_InquiryArtifactLimitationsPayload(limitations=("known limitation",)),
+    )
+
+    assert visibility.artifact == "example"
+    assert visibility.classification == "repository_visible"
+    assert visibility.evidence == ("supporting evidence",)
+    assert visibility.limitations == ("known limitation",)
+    assert visibility.to_json_dict() == {
+        "artifact": "example",
+        "classification": "repository_visible",
+        "evidence": ["supporting evidence"],
+        "limitations": ["known limitation"],
+    }
