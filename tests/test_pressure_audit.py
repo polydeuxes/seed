@@ -6,7 +6,12 @@ from pathlib import Path
 from seed_runtime.consumer_dependency_audit import ConsumerAudit, ConsumerAuditItem
 from seed_runtime.diagnostic_shape_audit import DiagnosticShapeAuditRow
 from seed_runtime.ownership_discrepancies import OwnershipDiscrepancyRow
-from seed_runtime.pressure_audit import build_pressure_audit, format_pressure_audit
+from seed_runtime.pressure_audit import (
+    _PressureItemCandidate,
+    _ownership_pressure,
+    build_pressure_audit,
+    format_pressure_audit,
+)
 from seed_runtime.state import State
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,6 +38,50 @@ def _ownership_row(subject="svc-a", kind="service", conflict="owner_not_observed
         reason="ambiguous",
         evidence=[],
     )
+
+
+def test_pressure_item_candidate_converts_to_public_pressure_item_shape():
+    candidate = _PressureItemCandidate(
+        category="Example",
+        score=3,
+        evidence={"count": 3},
+        reason="Example reason.",
+        recommended_command="seed --example",
+    )
+
+    item = candidate.to_pressure_item()
+
+    assert item.to_json_dict() == {
+        "category": "Example",
+        "score": 3,
+        "evidence": {"count": 3},
+        "reason": "Example reason.",
+        "recommended_command": "seed --example",
+    }
+
+
+def test_ownership_pressure_candidate_preserves_public_item_fields(monkeypatch):
+    monkeypatch.setattr(
+        "seed_runtime.pressure_audit.build_ownership_discrepancies",
+        lambda state: [_ownership_row(), _ownership_row("svc-b")],
+    )
+
+    candidate = _ownership_pressure(State(workspace_id="ws"))
+
+    assert candidate is not None
+    item = candidate.to_pressure_item()
+    assert item.category == "Ownership Attribution"
+    assert item.score == 2
+    assert item.evidence == {
+        "service ambiguities": 2,
+        "storage ambiguities": 0,
+        "conflict counts": {"owner_not_observed": 2},
+        "dominant conflict": "owner_not_observed",
+    }
+    assert item.reason == (
+        "Ownership discrepancy audit reports 2 unresolved ownership row(s)."
+    )
+    assert item.recommended_command == "seed --ownership-discrepancies"
 
 
 def test_pressure_audit_renders_json_and_evidence_backed_ranking(monkeypatch, capsys):

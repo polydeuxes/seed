@@ -36,6 +36,24 @@ class PressureItem:
 
 
 @dataclass(frozen=True)
+class _PressureItemCandidate:
+    category: str
+    score: int
+    evidence: dict[str, Any]
+    reason: str
+    recommended_command: str
+
+    def to_pressure_item(self) -> PressureItem:
+        return PressureItem(
+            category=self.category,
+            score=self.score,
+            evidence=self.evidence,
+            reason=self.reason,
+            recommended_command=self.recommended_command,
+        )
+
+
+@dataclass(frozen=True)
 class PressureAudit:
     pressures: tuple[PressureItem, ...]
 
@@ -54,15 +72,15 @@ def build_pressure_audit(
         else Path(__file__).resolve().parents[1]
     )
     items = [
-        item
-        for item in (
+        candidate.to_pressure_item()
+        for candidate in (
             _diagnostic_shape_pressure(root),
             _ownership_pressure(state),
             _capability_pressure(state),
             _orphaned_predicate_pressure(root),
             _fragile_predicate_pressure(root),
         )
-        if item is not None and item.score > 0
+        if candidate is not None and candidate.score > 0
     ]
     return PressureAudit(
         pressures=tuple(sorted(items, key=lambda item: (-item.score, item.category)))
@@ -102,7 +120,7 @@ def format_pressure_audit(audit: PressureAudit) -> str:
     return "\n".join(lines).rstrip()
 
 
-def _diagnostic_shape_pressure(root: Path) -> PressureItem | None:
+def _diagnostic_shape_pressure(root: Path) -> _PressureItemCandidate | None:
     shape_root = root if (root / "scripts" / "seed_local.py").exists() else None
     summary = summarize_diagnostic_shape_audit(
         build_diagnostic_shape_audit(repo_root=shape_root)
@@ -115,7 +133,7 @@ def _diagnostic_shape_pressure(root: Path) -> PressureItem | None:
         "warnings": summary.warnings,
         "unknowns": summary.unknown,
     }
-    return PressureItem(
+    return _PressureItemCandidate(
         category="Diagnostic Shape",
         score=score,
         evidence=evidence,
@@ -126,7 +144,7 @@ def _diagnostic_shape_pressure(root: Path) -> PressureItem | None:
     )
 
 
-def _ownership_pressure(state: State) -> PressureItem | None:
+def _ownership_pressure(state: State) -> _PressureItemCandidate | None:
     rows = [row for row in build_ownership_discrepancies(state) if row.conflict]
     conflict_counts = Counter(str(row.conflict) for row in rows)
     kind_counts = Counter(row.kind for row in rows)
@@ -134,7 +152,7 @@ def _ownership_pressure(state: State) -> PressureItem | None:
     if score <= 0:
         return None
     dominant = conflict_counts.most_common(1)[0][0] if conflict_counts else "none"
-    return PressureItem(
+    return _PressureItemCandidate(
         category="Ownership Attribution",
         score=score,
         evidence={
@@ -148,13 +166,13 @@ def _ownership_pressure(state: State) -> PressureItem | None:
     )
 
 
-def _capability_pressure(state: State) -> PressureItem | None:
+def _capability_pressure(state: State) -> _PressureItemCandidate | None:
     entries = build_capability_needs(state)
     score = sum(len(entry.subjects) for entry in entries)
     if score <= 0:
         return None
     top = entries[0]
-    return PressureItem(
+    return _PressureItemCandidate(
         category="Capability",
         score=score,
         evidence={
@@ -176,7 +194,7 @@ def _capability_pressure(state: State) -> PressureItem | None:
     )
 
 
-def _orphaned_predicate_pressure(root: Path) -> PressureItem | None:
+def _orphaned_predicate_pressure(root: Path) -> _PressureItemCandidate | None:
     items = [
         item
         for item in build_consumer_audit(root).items
@@ -184,7 +202,7 @@ def _orphaned_predicate_pressure(root: Path) -> PressureItem | None:
     ]
     if not items:
         return None
-    return PressureItem(
+    return _PressureItemCandidate(
         category="Orphaned Predicates",
         score=len(items),
         evidence={
@@ -196,7 +214,7 @@ def _orphaned_predicate_pressure(root: Path) -> PressureItem | None:
     )
 
 
-def _fragile_predicate_pressure(root: Path) -> PressureItem | None:
+def _fragile_predicate_pressure(root: Path) -> _PressureItemCandidate | None:
     items = [
         item
         for item in build_consumer_audit(root).items
@@ -204,7 +222,7 @@ def _fragile_predicate_pressure(root: Path) -> PressureItem | None:
     ]
     if not items:
         return None
-    return PressureItem(
+    return _PressureItemCandidate(
         category="Fragile Predicates",
         score=len(items),
         evidence={
