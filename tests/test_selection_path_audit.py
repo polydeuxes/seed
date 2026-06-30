@@ -130,6 +130,7 @@ def test_selection_answer_and_reason_payloads_are_separate():
         _SelectionLineagePayload,
         _SelectionReasonPayload,
         _SelectionResultPayload,
+        _SelectionSupportingEvidencePayload,
         _selection_path_from_payloads,
     )
 
@@ -140,11 +141,11 @@ def test_selection_answer_and_reason_payloads_are_separate():
             "reason": "pressure audit selected the highest-ranked candidate",
         }
     )
+    support = _SelectionSupportingEvidencePayload(evidence=[])
     lineage = _SelectionLineagePayload(
         candidates=[],
         selection_factors=[],
         non_selected=[],
-        evidence=[],
         unknowns=[],
     )
 
@@ -152,6 +153,7 @@ def test_selection_answer_and_reason_payloads_are_separate():
         target="primary_pressure",
         result=result,
         reason=reason,
+        support=support,
         lineage=lineage,
     )
 
@@ -160,6 +162,43 @@ def test_selection_answer_and_reason_payloads_are_separate():
     assert "outcome" not in result.__dataclass_fields__
     assert "selected" not in reason.__dataclass_fields__
     assert "candidates" not in reason.__dataclass_fields__
+
+
+def test_selection_reason_and_supporting_evidence_payloads_are_separate():
+    from seed_runtime.selection_path_audit import (
+        _SelectionLineagePayload,
+        _SelectionReasonPayload,
+        _SelectionResultPayload,
+        _SelectionSupportingEvidencePayload,
+        _selection_path_from_payloads,
+    )
+
+    reason = _SelectionReasonPayload(
+        outcome={"selected": "primary pressure", "summary": "primary pressure selected"}
+    )
+    support = _SelectionSupportingEvidencePayload(
+        evidence=[{"surface": "pressure_audit", "score": 2}]
+    )
+    lineage = _SelectionLineagePayload(
+        candidates=[],
+        selection_factors=[],
+        non_selected=[],
+        unknowns=[],
+    )
+
+    audit = _selection_path_from_payloads(
+        target="primary_pressure",
+        result=_SelectionResultPayload(selected="primary pressure"),
+        reason=reason,
+        support=support,
+        lineage=lineage,
+    )
+
+    assert audit.outcome == reason.outcome
+    assert audit.evidence == support.evidence
+    assert "evidence" not in reason.__dataclass_fields__
+    assert "outcome" not in support.__dataclass_fields__
+    assert "evidence" not in lineage.__dataclass_fields__
 
 def test_selection_path_does_not_change_operational_story_selection(tmp_path, capsys):
     seed_local, db = seeded_db(tmp_path)

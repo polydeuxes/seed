@@ -22,11 +22,15 @@ class _SelectionReasonPayload:
 
 
 @dataclass(frozen=True)
+class _SelectionSupportingEvidencePayload:
+    evidence: list[dict[str, Any]]
+
+
+@dataclass(frozen=True)
 class _SelectionLineagePayload:
     candidates: list[dict[str, Any]]
     selection_factors: list[str]
     non_selected: list[dict[str, Any]]
-    evidence: list[dict[str, Any]]
     unknowns: list[dict[str, str]]
 
 
@@ -116,6 +120,7 @@ def build_selection_path_audit(
                 "reason": "target is not an implemented selection surface",
             },
         ),
+        support=_SelectionSupportingEvidencePayload(evidence=[]),
         lineage=_SelectionLineagePayload(
             candidates=[
                 _candidate(item, index)
@@ -123,7 +128,6 @@ def build_selection_path_audit(
             ],
             selection_factors=["unknown"],
             non_selected=[],
-            evidence=[],
             unknowns=[
                 {
                     "area": "selection_logic",
@@ -139,6 +143,7 @@ def _selection_path_from_payloads(
     target: str,
     result: _SelectionResultPayload,
     reason: _SelectionReasonPayload,
+    support: _SelectionSupportingEvidencePayload,
     lineage: _SelectionLineagePayload,
 ) -> SelectionPathAudit:
     return SelectionPathAudit(
@@ -147,7 +152,7 @@ def _selection_path_from_payloads(
         candidates=lineage.candidates,
         selection_factors=lineage.selection_factors,
         non_selected=lineage.non_selected,
-        evidence=lineage.evidence,
+        evidence=support.evidence,
         outcome=reason.outcome,
         unknowns=lineage.unknowns,
     )
@@ -226,6 +231,9 @@ def _from_pressure_selection(
                 "summary": f"{selected} selected",
             },
         ),
+        support=_SelectionSupportingEvidencePayload(
+            evidence=[_evidence(selected_item)] if selected_item else []
+        ),
         lineage=_SelectionLineagePayload(
             candidates=[
                 _candidate(item, index)
@@ -235,7 +243,6 @@ def _from_pressure_selection(
             non_selected=[
                 _non_selected(item, selected_item) for item in pressures[1:]
             ],
-            evidence=[_evidence(selected_item)] if selected_item else [],
             unknowns=unknowns,
         ),
     )
