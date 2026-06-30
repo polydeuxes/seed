@@ -63,6 +63,42 @@ def bounded_status_for_question_family(question_family: str) -> str:
     return "not_dispatchable"
 
 
+@dataclass(frozen=True)
+class BoundedWorkEligibilityResult:
+    """Implementation-backed permission result for exact QuestionFamily invocation."""
+
+    question_family: str
+    bounded_status: str
+    permitted: bool
+    required_surface_args: tuple[str, ...] = ()
+    reason: str = ""
+
+
+def bounded_work_eligibility_for_question_family(
+    question_family: str,
+) -> BoundedWorkEligibilityResult:
+    """Return whether bounded work may execute for an exact QuestionFamily."""
+
+    bounded_status = bounded_status_for_question_family(question_family)
+    required_surface_args = BOUNDED_ASK_REQUIRED_SURFACE_ARGS.get(question_family, ())
+    permitted = bounded_status in {"eligible_now", "eligible_with_parameters"}
+    if bounded_status == "eligible_now":
+        reason = "bounded work may execute without additional surface args"
+    elif bounded_status == "eligible_with_parameters":
+        reason = "bounded work may execute after required surface args are provided"
+    elif bounded_status == "diagnostic_only":
+        reason = "diagnostic-only question family is not an inquiry-answer surface"
+    else:
+        reason = "no bounded ask dispatch mapping in current implementation"
+    return BoundedWorkEligibilityResult(
+        question_family=question_family,
+        bounded_status=bounded_status,
+        permitted=permitted,
+        required_surface_args=required_surface_args,
+        reason=reason,
+    )
+
+
 def bounded_ask_inventory_findings(
     rows: tuple["QuestionSurfaceInventoryRow", ...] | None = None,
 ) -> tuple[str, ...]:

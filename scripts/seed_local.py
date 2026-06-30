@@ -151,8 +151,7 @@ from seed_runtime.diagnostic_shape_audit import (
 from seed_runtime.question_surface_inventory import (
     BOUNDED_ASK_ARG_VALUES,
     BOUNDED_ASK_DISPATCH_SURFACES,
-    BOUNDED_ASK_REQUIRED_SURFACE_ARGS,
-    bounded_status_for_question_family,
+    bounded_work_eligibility_for_question_family,
     build_question_surface_inventory,
     format_question_family_definition,
     format_composed_question_family_explanation,
@@ -2233,15 +2232,15 @@ def apply_bounded_ask_dispatch(
     if family not in inventory_families:
         parser.error(f"unknown Question Family: {family}")
 
-    eligibility = bounded_status_for_question_family(family)
-    if eligibility == "eligible_now" and args.surface_args is not None:
+    eligibility = bounded_work_eligibility_for_question_family(family)
+    if eligibility.bounded_status == "eligible_now" and args.surface_args is not None:
         parser.error(
             f"Question Family '{family}' does not accept --surface-args by "
             "current implementation-backed eligibility"
         )
 
-    if eligibility == "eligible_with_parameters":
-        required_count = len(BOUNDED_ASK_REQUIRED_SURFACE_ARGS[family])
+    if eligibility.bounded_status == "eligible_with_parameters":
+        required_count = len(eligibility.required_surface_args)
         surface_args = args.surface_args
         if surface_args is None:
             parser.error(
@@ -2262,8 +2261,8 @@ def apply_bounded_ask_dispatch(
         args.message = []
         return
 
-    if eligibility != "eligible_now":
-        if eligibility == "diagnostic_only":
+    if not eligibility.permitted:
+        if eligibility.bounded_status == "diagnostic_only":
             parser.error(
                 f"Question Family '{family}' is diagnostic_only and is not an "
                 "inquiry-answer surface for bounded ask"
