@@ -1943,17 +1943,21 @@ def test_state_summary_cache_debug_assembly_consumes_cache_evidence():
         summary_snapshot_published=False,
     )
 
+    timing_evidence = seed_local._StateBuildCacheDebugTimingEvidence(
+        timings=[("total runtime", 0.2)]
+    )
+
     assembly = seed_local._StateBuildCacheDebugEvidenceAssembly.from_evidence_streams(
         cache_evidence,
         projection_evidence,
         read_model_evidence,
-        timings=[("total runtime", 0.2)],
+        timing_evidence,
     )
     compatible_assembly = (
         seed_local._StateBuildCacheDebugEvidenceAssembly.from_cache_evidence(
             cache_evidence,
             read_model_evidence=read_model_evidence,
-            timings=[("total runtime", 0.2)],
+            timing_evidence=timing_evidence,
         )
     )
 
@@ -1963,6 +1967,35 @@ def test_state_summary_cache_debug_assembly_consumes_cache_evidence():
     assert assembly.timings == [("total runtime", 0.2)]
     assert compatible_assembly.projection_diagnostics is projection_diagnostics
     assert compatible_assembly.read_model_evidence is read_model_evidence
+
+
+def test_state_summary_cache_debug_timing_evidence_preserves_collected_labels(
+    monkeypatch,
+):
+    seed_local = load_seed_local_module()
+
+    perf_counter_values = iter([12.5])
+    monkeypatch.setattr(
+        seed_local.time, "perf_counter", lambda: next(perf_counter_values)
+    )
+
+    timing_evidence = (
+        seed_local._StateBuildCacheDebugTimingEvidence.from_collected_timings(
+            [
+                ("projection store open", 0.01),
+                ("state summary snapshot lookup", 0.02),
+                ("projection replay / build", 0.03),
+            ],
+            started=10.0,
+        )
+    )
+
+    assert timing_evidence.timings == [
+        ("projection store open", 0.01),
+        ("state summary snapshot lookup", 0.02),
+        ("projection replay / build", 0.03),
+        ("total runtime", 2.5),
+    ]
 
 
 def test_state_summary_cache_debug_projection_evidence_from_selection():
