@@ -1934,13 +1934,21 @@ def test_state_summary_cache_debug_report_consumes_debug_evidence():
         timings=[("total runtime", 0.2)],
     )
 
-    report = seed_local.StateSummaryCacheDebugReport.from_evidence(evidence)
+    payload = seed_local._StateBuildCacheDebugReportPayload.from_evidence(evidence)
+    report = seed_local.StateSummaryCacheDebugReport.from_payload(payload)
+    compatible_report = seed_local.StateSummaryCacheDebugReport.from_evidence(evidence)
 
-    assert report.visibility is evidence.visibility
-    assert report.projection_diagnostics is evidence.projection_diagnostics
-    assert report.timings == evidence.timings
+    assert payload.visibility is evidence.visibility
+    assert payload.projection_diagnostics is evidence.projection_diagnostics
+    assert payload.timings == evidence.timings
+    assert report.visibility is payload.visibility
+    assert report.projection_diagnostics is payload.projection_diagnostics
+    assert report.timings == payload.timings
     assert report.summary_cache_status == "miss"
     assert report.state_cache_status == "miss"
+    assert compatible_report.visibility is evidence.visibility
+    assert compatible_report.projection_diagnostics is evidence.projection_diagnostics
+    assert compatible_report.timings == evidence.timings
 
 
 def test_cli_state_summary_cache_debug_does_not_change_normal_summary_output(
