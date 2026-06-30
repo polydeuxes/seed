@@ -1,184 +1,166 @@
 # Provider Language Translation Slice 001
 
-## Selected architectural boundary
+## Selected provider
 
-Recovered boundary: **Provider Language != Provider Language Translation**.
+Prometheus.
 
-The recurring implementation-local owner is **Provider Language Translation**: given a provider-native language or decoded provider-native representation, produce the bounded Seed-side translation input required by the next Seed output step.
+## Selected provider-local boundary
 
-This slice does **not** recover an intermediate-record family. The reviewed providers show that bounded translation can produce different Seed-side artifacts:
+Decoded Prometheus vector sample != Prometheus observation construction.
 
-- `PackageRecord`, later consumed by package observation emission.
-- `RelationshipFact`, later consumed by repository source observation emission.
-- directly emitted `Observation` instances for compressed providers such as Prometheus and systemd.
-- non-canonical Seed artifacts in other paths, such as repository-state observation records.
-
-The common ownership is the bounded translation work, not a mandatory record shape.
+This slice recovers exactly one Prometheus-local Provider Language Translation boundary by making the decoded vector sample a provider-local record before Prometheus observation emission. It does not introduce a shared provider framework, a shared translation layer, or any cross-provider abstraction.
 
 ## Implementation evidence
 
-### dpkg
+### Prometheus before this slice
 
-`seed_runtime.local_packages` separates dpkg status parsing from generic package observation emission. Its module docstring states that package observation emission remains generic while dpkg status parsing is isolated as the first narrow package adapter. `parse_dpkg_status(...)` consumes dpkg status database text, applies dpkg vocabulary such as `Status: install ok installed`, and returns only installed `PackageRecord` values. `package_records_to_observations(...)` separately converts those records into canonical package observations.
+`PrometheusObservationSource._query(...)` already owned safe Prometheus HTTP acquisition and vector-response validation: it rejects non-allowlisted queries, requests `/api/v1/query` with `GET`, JSON-decodes the response, verifies `status == "success"`, verifies `data.resultType == "vector"`, and verifies that `data.result` is a list.
 
-Evidence:
+Before this slice, `_observations_from_query(...)` then performed all of the following in one loop over provider samples:
 
-- Provider language: dpkg status database text.
-- Translation work: `_split_dpkg_records(...)`, `_parse_dpkg_record(...)`, status filtering, and field selection inside `parse_dpkg_status(...)`.
-- Bounded translation input: `PackageRecord`.
-- Seed-language consumer: `package_records_to_observations(...)`.
+- provider sample shape decoding (`sample` must be a dict, `metric` must be a dict, `value` must be a list with timestamp and value);
+- timestamp parsing through `_prometheus_sample_timestamp(...)`;
+- identity extraction from `metric["instance"]`;
+- metadata preservation (`metric_labels`, base URL, metric name, raw sample timestamp, sample-time authority, and seed collection time);
+- node identity metadata handling for `node_uname_info` (`instance` and `nodename` metadata);
+- predicate assignment (`endpoint_role`, `up`, `os`, `filesystem_avail_bytes`, `filesystem_size_bytes`);
+- provider-specific value conversion through `_prometheus_int(...)` and `_prometheus_os_from_uname(...)`;
+- observation emission through `_observation(...)`;
+- filesystem dimension derivation through `_filesystem_dimensions(...)` from preserved metric labels.
 
-### Python relationship extraction
+That made Prometheus more compressed than the already separated dpkg path (`Provider Language -> PackageRecord -> Observation`) and Python relationship path (`Provider Language -> RelationshipFact -> Observation`). The comparison is supporting evidence only; this slice does not normalize providers.
 
-`seed_runtime.knowledge.relationship_observation` keeps Python syntax handling inside bounded extraction helpers. `extract_python_import_relationship_facts(...)` and `extract_python_definition_relationship_facts(...)` parse caller-provided Python source text with `ast.parse(...)`, inspect only supported top-level syntax, and emit `RelationshipFact` records. The module explicitly limits import relationships to dependency/name-availability evidence and definition relationships to syntactic declaration evidence.
+### Prometheus after this slice
 
-Evidence:
+This slice adds `PrometheusDecodedSample`, a frozen provider-local record containing only the valid decoded vector-sample fields needed by downstream Prometheus translation:
 
-- Provider language: Python source text and Python AST nodes.
-- Translation work: static AST parsing and supported syntax extraction.
-- Bounded translation input: `RelationshipFact`.
-- Seed-language consumer: `RepositorySourceObservationSource.collect(...)`, which maps relationship facts to canonical `Observation` instances.
+- `metric`;
+- `instance`;
+- `sample_timestamp`;
+- `sample_timestamp_raw`;
+- `sample_value`.
 
-### Prometheus
+The new `_prometheus_decoded_sample(...)` helper accepts provider-shaped sample JSON and either returns `PrometheusDecodedSample` or `None` for malformed samples. It performs only provider sample decoding and timestamp validation; it does not assign predicates, shape observation metadata, derive filesystem dimensions, or construct observations.
 
-`PrometheusObservationSource` keeps Prometheus-provider language bounded by an allowlist of safe metric names and validated vector API payload shape. `_query(...)` owns Prometheus HTTP API validation. `_observations_from_query(...)` consumes Prometheus metric labels, sample timestamps, and sample values, then emits Seed observations with metric-specific predicates and metadata.
-
-Evidence:
-
-- Provider language: allowlisted Prometheus query names plus Prometheus vector JSON payloads.
-- Translation work: payload validation, metric label handling, sample timestamp parsing, sample-value parsing, and metric-specific observation mapping.
-- Bounded translation input: no recurring intermediate artifact is produced; the compressed translation terminates in canonical `Observation` instances.
-- Seed-language consumer: the observation collection path consumes the emitted observations directly.
-
-### systemd
-
-`SystemdObservationSource` keeps systemd-provider language bounded to `systemctl` JSON machine output. `_collect_runtime_units(...)` and `_collect_unit_file_states(...)` decode systemd rows into dictionaries keyed by unit name. `collect(...)` then emits only systemd unit identity, active state, substate, and unit-file state observations. The class docstring explicitly excludes health, ownership, intent, dependencies, and desired-state interpretation.
-
-Evidence:
-
-- Provider language: `systemctl list-units --output=json` and `systemctl list-unit-files --output=json` rows.
-- Translation work: JSON row decoding, unit-name normalization, runtime-state selection, and unit-file-state selection.
-- Bounded translation input: no recurring intermediate artifact is produced; decoded dictionaries are local to the source.
-- Seed-language consumer: `SystemdObservationSource.collect(...)` consumes those dictionaries while constructing canonical observations.
+`PrometheusObservationSource._observations_from_query(...)` now consumes `PrometheusDecodedSample` and remains the owner of Prometheus observation construction: metadata preservation, predicate assignment, identity usage, value interpretation, endpoint fact-promotion suppression, and calls to `_observation(...)` remain there.
 
 ## Before
 
-Provider language and Provider Language Translation were previously mixed inside provider/source helpers:
+```text
+PrometheusObservationSource._observations_from_query(...)
 
-- dpkg parsing and package record production happened inside `parse_dpkg_status(...)`, while the file already separated the later package observation emission step.
-- Python parsing and relationship fact production happened inside relationship extraction helpers.
-- Prometheus query execution, vector payload validation, sample decoding, and observation emission were compressed inside `PrometheusObservationSource`.
-- systemd command output decoding, row selection, unit dictionary construction, and observation emission were compressed inside `SystemdObservationSource`.
-
-The prior intermediate-structure investigation correctly identified records such as `PackageRecord` and `RelationshipFact`, but those records are counterexamples to universal artifact symmetry. Prometheus and systemd show the same bounded translation pressure without a named intermediate record.
+provider sample shape checks
++ sample timestamp parsing
++ instance extraction
++ metadata preservation
++ node_uname_info identity metadata
++ predicate assignment
++ value conversion
++ filesystem dimension inputs
++ Observation construction
+```
 
 ## After
 
-The explicit boundary is:
-
 ```text
-Provider Language
+_prometheus_decoded_sample(...)
+
+provider sample shape checks
++ sample timestamp parsing
++ instance extraction
 
 ↓
 
-Provider Language Translation
+PrometheusDecodedSample
 
 ↓
 
-bounded Seed output
+PrometheusObservationSource._observations_from_query(...)
+
+metadata preservation
++ node_uname_info identity metadata
++ predicate assignment
++ value conversion
++ filesystem dimension inputs
++ Observation construction
 ```
 
-Provider Language Translation is now documented as the recovered owner. It owns provider-native decoding and bounded vocabulary selection before Seed output construction. It does not own canonical Observation semantics, evidence interpretation, fact construction, schemas, ledgers, projection, or provider redesign.
-
-## Recovered producer
-
-Recovered producer: **Provider Language Translation**.
-
-Its responsibility is:
-
-```text
-Given provider-native language,
-produce the bounded translation input required for Seed language.
-```
-
-Provider-specific examples:
-
-- dpkg translation produces installed package records from dpkg status text.
-- Python relationship translation produces relationship facts from Python source syntax.
-- Prometheus translation produces observations from allowlisted Prometheus vector samples.
-- systemd translation produces observations from decoded systemd unit rows.
-
-## Recovered artifact, if any
-
-No single recurring implementation artifact emerged.
-
-Artifacts are provider-local and path-specific:
-
-| Provider family | Artifact produced by translation | Recurring across all reviewed providers? |
-| --- | --- | --- |
-| dpkg | `PackageRecord` | No |
-| Python relationship extraction | `RelationshipFact` | No |
-| Prometheus | canonical `Observation` instances | No intermediate artifact |
-| systemd | canonical `Observation` instances | No intermediate artifact |
-
-The recurring owner is bounded translation work, not a uniform intermediate record.
-
-## Consumer of the artifact
-
-- `PackageRecord` is consumed by `package_records_to_observations(...)`.
-- `RelationshipFact` is consumed by `RepositorySourceObservationSource.collect(...)` when repository relationship facts are converted to observations.
-- Prometheus translation output is consumed directly as `Observation` values returned by `PrometheusObservationSource.collect(...)`.
-- systemd translation output is consumed directly as `Observation` values returned by `SystemdObservationSource.collect(...)`.
-
-## Compatibility preserved
+## Compatibility preservation
 
 No compatibility boundary changed.
 
-This slice does not change runtime behavior, public schemas, event ledger behavior, diagnostic surfaces, provider inputs, provider outputs, CLI flags, observation predicates, metadata shapes, or downstream ingestion behavior.
+The public Prometheus collection surface remains `PrometheusObservationSource.collect()`. The safe query allowlist, HTTP method, response validation, observation predicates, observation subjects, values, metadata fields, dimensions, confidence, source type, and malformed-sample skip behavior are preserved. The new record and decoder are provider-local implementation details.
 
 ## Files changed
 
+- `seed_runtime/observation_sources.py`
+- `tests/test_observation_sources.py`
 - `provider_language_translation_slice_001.md`
 
 ## LOC changed
 
-- Added: 184 lines
-- Removed: 0 lines
-- Net: +184 lines
+`git diff --stat` reported:
+
+```text
+provider_language_translation_slice_001.md | 225 +++++++++++++----------------
+seed_runtime/observation_sources.py        | 101 ++++++++-----
+tests/test_observation_sources.py          |  41 ++++++
+3 files changed, 208 insertions(+), 160 deletions(-)
+```
 
 ## Tests executed
 
-- `pytest -q tests/test_local_packages.py tests/test_self_model_acquisition_pipeline.py tests/test_observation_sources.py`
+```text
+pytest -q tests/test_observation_sources.py -k 'prometheus'
+pytest -q tests/test_observation_sources.py
+```
 
-## Remaining compressed Provider Language Translation responsibilities
+Results:
 
-The following responsibilities remain compressed inside provider implementations and can be considered future local recovery candidates only if implementation pressure requires them:
+```text
+11 passed, 72 deselected
+83 passed
+```
 
-- Prometheus still combines safe query execution, response validation, sample decoding, and canonical observation construction inside `PrometheusObservationSource`.
-- systemd still combines command execution, JSON row decoding, local unit dictionaries, and canonical observation construction inside `SystemdObservationSource`.
-- dpkg translation has a natural local artifact (`PackageRecord`), but dpkg field parsing and installed-package filtering remain a single bounded helper.
-- Python relationship extraction has a natural local artifact (`RelationshipFact`), but AST parsing and supported syntax translation remain in the same helper family.
+## Recovery question answers
 
-These are intentionally left unchanged because this slice recovers only one boundary and does not redesign providers.
+### 1. Which Prometheus responsibilities were previously compressed?
 
-## Acceptance answers
+Prometheus previously compressed provider sample decoding, sample timestamp parsing, instance extraction, metadata preservation, node identity metadata handling, predicate assignment, provider-specific value interpretation, filesystem-dimension input preservation, and Observation construction inside `_observations_from_query(...)` and `_observation(...)`.
 
-### 1. Where were Provider Language and Provider Language Translation previously mixed?
+### 2. Which recovered provider-local boundary became more explicit?
 
-They were mixed inside provider-specific helpers and observation sources: dpkg status parsing in `parse_dpkg_status(...)`, Python AST extraction in relationship helpers, Prometheus query/payload/sample handling in `PrometheusObservationSource`, and systemd JSON row decoding in `SystemdObservationSource`.
+The boundary between decoded Prometheus vector sample and Prometheus observation construction became explicit. `_prometheus_decoded_sample(...)` now owns the provider JSON sample validation/decoding step and returns `PrometheusDecodedSample`; `_observations_from_query(...)` owns the downstream Prometheus translation to Seed observations.
 
-### 2. Which recovered architectural boundary became more explicit?
+### 3. How does the implementation now better reflect Provider Language Translation?
 
-**Provider Language != Provider Language Translation** became explicit.
+The implementation now shows a local translation chain:
 
-### 3. What implementation artifact is now produced, if any, and who consumes it?
+```text
+Prometheus HTTP vector JSON sample
+↓
+PrometheusDecodedSample
+↓
+Observation
+```
 
-No recurring artifact is produced. Existing provider-local artifacts remain: `PackageRecord` is consumed by `package_records_to_observations(...)`, and `RelationshipFact` is consumed by repository source observation emission. Prometheus and systemd demonstrate compressed translation directly to canonical observations.
+This mirrors the repository evidence that translation may pass through a bounded implementation-local record, while remaining strictly Prometheus-specific. The record is not a generic provider artifact and does not claim that other providers should follow the same shape.
 
-### 4. Did implementation evidence suggest a more precise responsibility name?
-
-Yes. The evidence supports **Provider Language Translation** more precisely than an intermediate-record name because the recurring implementation pressure is bounded translation work, not artifact symmetry.
-
-### 5. Did any compatibility boundary change?
+### 4. Did any compatibility boundary change?
 
 No.
+
+## Remaining provider-local compression
+
+Prometheus still intentionally keeps these responsibilities compressed in `PrometheusObservationSource._observations_from_query(...)`:
+
+- metric allowlist interpretation by query name;
+- metadata preservation policy;
+- `node_uname_info` nodename metadata handling;
+- endpoint subject fact-promotion suppression for Prometheus OS observations;
+- predicate assignment;
+- Prometheus value interpretation (`up`, filesystem byte values, uname-derived OS values);
+- filesystem dimension derivation through metadata consumed by `_filesystem_dimensions(...)`;
+- final Observation construction through `_observation(...)`.
+
+Those responsibilities remain provider-specific and were not decompressed in this slice.
