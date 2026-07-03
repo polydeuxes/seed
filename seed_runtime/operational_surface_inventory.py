@@ -117,6 +117,19 @@ class OperationalSurfaceClassificationAudit:
 
 
 @dataclass(frozen=True)
+class _CliSurfaceClassificationInput:
+    """Prepared CLI/parser surface material consumed by classification."""
+
+    flag: str
+    flags: tuple[str, ...]
+    help_text: str
+    action_type: str
+    nargs: Any
+    registered: bool
+    category: str | None
+
+
+@dataclass(frozen=True)
 class VisibilityCoverageAudit:
     surfaces: tuple[OperationalSurface, ...]
     classifications: tuple[OperationalSurfaceClassification, ...] = ()
@@ -184,17 +197,18 @@ def build_operational_surface_classification_audit(
     *,
     diagnostic_entries: tuple[DiagnosticInventoryEntry, ...] = DIAGNOSTIC_INVENTORY,
 ) -> OperationalSurfaceClassificationAudit:
-    registered_flags, _ = _registered_and_json_flags(diagnostic_entries)
     items = []
-    for action, flags, primary in _iter_public_long_options(parser):
-        classification, reason = _classification_for(primary, action)
+    for prepared in _prepare_cli_surface_classification_inputs(
+        parser, diagnostic_entries=diagnostic_entries
+    ):
+        classification, reason = _classification_for(prepared)
         items.append(
             OperationalSurfaceClassification(
-                surface=primary,
+                surface=prepared.flag,
                 classification=classification,
                 reason=reason,
-                registered=any(flag in registered_flags for flag in flags),
-                category=_category_for(primary, action.help or ""),
+                registered=prepared.registered,
+                category=prepared.category,
             )
         )
     return OperationalSurfaceClassificationAudit(
@@ -366,18 +380,41 @@ def _registered_and_json_flags(
     return registered_flags, json_flags
 
 
-def _classification_for(flag: str, action: argparse.Action) -> tuple[str, str]:
-    help_text = action.help or ""
-    haystack = f"{flag} {help_text}".lower()
-    action_type = type(action).__name__
+def _prepare_cli_surface_classification_inputs(
+    parser: argparse.ArgumentParser,
+    *,
+    diagnostic_entries: tuple[DiagnosticInventoryEntry, ...],
+) -> tuple[_CliSurfaceClassificationInput, ...]:
+    registered_flags, _ = _registered_and_json_flags(diagnostic_entries)
+    prepared = []
+    for action, flags, primary in _iter_public_long_options(parser):
+        help_text = action.help or ""
+        prepared.append(
+            _CliSurfaceClassificationInput(
+                flag=primary,
+                flags=tuple(flags),
+                help_text=help_text,
+                action_type=type(action).__name__,
+                nargs=getattr(action, "nargs", None),
+                registered=any(flag in registered_flags for flag in flags),
+                category=_category_for(primary, help_text),
+            )
+        )
+    return tuple(prepared)
+
+
+def _classification_for(
+    prepared: _CliSurfaceClassificationInput,
+) -> tuple[str, str]:
+    haystack = f"{prepared.flag} {prepared.help_text}".lower()
     if "debug" in haystack:
         return "debug_surface", "argparse help exposes diagnostic/debug behavior"
-    if flag in _MANUAL_INPUT_FLAGS or getattr(action, "nargs", None) in {2, 3}:
+    if prepared.flag in _MANUAL_INPUT_FLAGS or prepared.nargs in {2, 3}:
         return (
             "manual_input",
             "accepts operator-provided evidence or values instead of exposing a standalone view",
         )
-    if flag in _MODIFIER_FLAGS:
+    if prepared.flag in _MODIFIER_FLAGS:
         return (
             "modifier",
             "argparse help and validation show this changes rendering or scope of another command",
@@ -392,18 +429,17 @@ def _classification_for(flag: str, action: argparse.Action) -> tuple[str, str]:
             "filter",
             "argparse help constrains this option to limiting or selecting another command's output",
         )
-    category = _category_for(flag, help_text)
-    if category and action_type in _PRIMARY_ACTIONS:
+    if prepared.category and prepared.action_type in _PRIMARY_ACTIONS:
         return (
             "primary_surface",
             "store_true operational flag owns a standalone CLI experience",
         )
-    if category and getattr(action, "nargs", None) in {"?", "*"}:
+    if prepared.category and prepared.nargs in {"?", "*"}:
         return (
             "primary_surface",
             "optional argument operational flag owns dispatch and may accept a query argument",
         )
-    if category:
+    if prepared.category:
         return (
             "primary_surface",
             "operational keyword in argparse help indicates a standalone command path",

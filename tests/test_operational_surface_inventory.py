@@ -126,9 +126,56 @@ def test_operational_surface_classification_audit_classifies_primary_surfaces():
 
     audit = build_operational_surface_classification_audit(seed_local.build_parser())
 
-    assert _classification(audit.items, "--observe-local-host").classification == "primary_surface"
+    assert _classification(audit.items, "--operational-surface-inventory").classification == "primary_surface"
     assert _classification(audit.items, "--ownership-discrepancies").classification == "primary_surface"
     assert _classification(audit.items, "--pressure-audit").classification == "primary_surface"
+
+
+def test_cli_surface_classification_input_prepares_parser_material_only():
+    from seed_runtime.operational_surface_inventory import (
+        OperationalSurfaceClassification,
+        _CliSurfaceClassificationInput,
+        _prepare_cli_surface_classification_inputs,
+    )
+
+    prepared = _prepare_cli_surface_classification_inputs(
+        seed_local.build_parser(), diagnostic_entries=DIAGNOSTIC_INVENTORY
+    )
+    observe = next(item for item in prepared if item.flag == "--operational-surface-inventory")
+
+    assert isinstance(observe, _CliSurfaceClassificationInput)
+    assert observe.flag == "--operational-surface-inventory"
+    assert "--operational-surface-inventory" in observe.flags
+    assert observe.help_text
+    assert observe.action_type == "_StoreTrueAction"
+    assert observe.category == "inventory"
+    assert observe.registered is True
+    assert not isinstance(observe, OperationalSurfaceClassification)
+    assert not hasattr(observe, "classification")
+    assert not hasattr(observe, "reason")
+    assert not hasattr(observe, "to_json_dict")
+
+
+def test_classification_consumes_prepared_cli_surface_input():
+    from seed_runtime.operational_surface_inventory import (
+        _CliSurfaceClassificationInput,
+        _classification_for,
+    )
+
+    classification, reason = _classification_for(
+        _CliSurfaceClassificationInput(
+            flag="--example-debug",
+            flags=("--example-debug",),
+            help_text="Debug an example surface.",
+            action_type="_StoreTrueAction",
+            nargs=0,
+            registered=False,
+            category="debug",
+        )
+    )
+
+    assert classification == "debug_surface"
+    assert "argparse help" in reason
 
 
 def test_filters_are_not_classified_as_primary_surfaces():
