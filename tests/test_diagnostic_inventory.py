@@ -4,6 +4,10 @@ import scripts.seed_local as seed_local
 from seed_runtime.diagnostic_inventory import (
     DIAGNOSTIC_INVENTORY,
     DiagnosticInventoryEntry,
+    _DiagnosticInventoryCompositionInput,
+    _compose_diagnostic_inventory,
+    _compose_diagnostic_inventory_json,
+    _prepare_diagnostic_inventory_composition,
     diagnostic_surface_definition_json,
     format_diagnostic_inventory,
 )
@@ -188,6 +192,60 @@ def test_inventory_rendering_is_generated_from_registry_data():
     assert "writes_event_ledger=true" in rendered
     assert "reads_diagnostic_facts=true" in rendered
 
+
+
+def test_diagnostic_inventory_preparation_carries_only_inventory_entries():
+    entries = (
+        DiagnosticInventoryEntry(
+            name="synthetic_probe",
+            cli_flags=("--synthetic-probe",),
+            uses_projected_state=False,
+            uses_repo_files=True,
+            supports_json=True,
+            supports_record=False,
+            record_scope="none",
+            emits_diagnostic_facts=False,
+            emits_cluster_facts=False,
+            writes_event_ledger=False,
+            mutates_cluster=False,
+            reads_diagnostic_facts=True,
+            description="Synthetic declaration proving preparation is bounded.",
+        ),
+    )
+
+    prepared = _prepare_diagnostic_inventory_composition(entries)
+
+    assert isinstance(prepared, _DiagnosticInventoryCompositionInput)
+    assert prepared.entries == entries
+    assert set(prepared.__dataclass_fields__) == {"entries"}
+
+
+def test_diagnostic_inventory_composition_consumes_prepared_input_without_shape_changes():
+    entry = DiagnosticInventoryEntry(
+        name="synthetic_probe",
+        cli_flags=("--synthetic-probe",),
+        uses_projected_state=False,
+        uses_repo_files=True,
+        supports_json=True,
+        supports_record=True,
+        record_scope="diagnostic_run",
+        emits_diagnostic_facts=True,
+        emits_cluster_facts=False,
+        writes_event_ledger=True,
+        mutates_cluster=False,
+        reads_diagnostic_facts=True,
+        description="Synthetic declaration proving composition stays inventory-bounded.",
+    )
+    prepared = _DiagnosticInventoryCompositionInput(entries=(entry,))
+
+    rendered = _compose_diagnostic_inventory(prepared)
+    payload = _compose_diagnostic_inventory_json(prepared)
+
+    assert "synthetic_probe" in rendered
+    assert "--synthetic-probe" in rendered
+    assert payload == [entry.to_json_dict()]
+    assert "diagnostic_surface_boundary" not in payload[0]
+    assert "shape_registration_status" not in payload[0]
 
 def test_container_ownership_authority_inventory_entry_declares_boundary():
     entry = _entry("container_ownership_authority")

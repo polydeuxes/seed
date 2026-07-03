@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import Literal
+from typing import Iterable, Literal
 
 RecordScope = Literal["none", "diagnostic_run"]
 
@@ -31,6 +31,12 @@ class DiagnosticInventoryEntry:
         data["cli_flags"] = list(self.cli_flags)
         return data
 
+
+@dataclass(frozen=True)
+class _DiagnosticInventoryCompositionInput:
+    """Prepared diagnostic declarations for inventory composition only."""
+
+    entries: tuple[DiagnosticInventoryEntry, ...]
 
 DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
     DiagnosticInventoryEntry(
@@ -1068,14 +1074,34 @@ def _shape_registration_status(diagnostic_name: str) -> str:
     return "present" if diagnostic_name in IMPLEMENTATION_SPECS else "absent"
 
 
+def _prepare_diagnostic_inventory_composition(
+    entries: Iterable[DiagnosticInventoryEntry],
+) -> _DiagnosticInventoryCompositionInput:
+    return _DiagnosticInventoryCompositionInput(entries=tuple(entries))
+
+
 def diagnostic_inventory_json(
     entries: tuple[DiagnosticInventoryEntry, ...] = DIAGNOSTIC_INVENTORY,
 ) -> list[dict[str, object]]:
-    return [entry.to_json_dict() for entry in entries]
+    composition_input = _prepare_diagnostic_inventory_composition(entries)
+    return _compose_diagnostic_inventory_json(composition_input)
+
+
+def _compose_diagnostic_inventory_json(
+    composition_input: _DiagnosticInventoryCompositionInput,
+) -> list[dict[str, object]]:
+    return [entry.to_json_dict() for entry in composition_input.entries]
 
 
 def format_diagnostic_inventory(
     entries: tuple[DiagnosticInventoryEntry, ...] = DIAGNOSTIC_INVENTORY,
+) -> str:
+    composition_input = _prepare_diagnostic_inventory_composition(entries)
+    return _compose_diagnostic_inventory(composition_input)
+
+
+def _compose_diagnostic_inventory(
+    composition_input: _DiagnosticInventoryCompositionInput,
 ) -> str:
     headers = [
         "Diagnostic",
@@ -1102,7 +1128,7 @@ def format_diagnostic_inventory(
             _yes_no(entry.mutates_cluster),
             _notes(entry),
         ]
-        for entry in entries
+        for entry in composition_input.entries
     ]
     widths = [
         max(len(row[index]) for row in [headers, *rows])
