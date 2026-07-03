@@ -9,6 +9,8 @@ from seed_runtime.observation_sources import (
 )
 from seed_runtime.observations import ObservationIngestor
 from seed_runtime.source_navigation import (
+    _compose_source_navigation,
+    _prepare_source_navigation_query,
     build_source_navigation,
     format_source_navigation,
     source_navigation_json,
@@ -16,6 +18,32 @@ from seed_runtime.source_navigation import (
 from seed_runtime.state import StateProjector
 
 BASE_TIME = datetime(2024, 1, 1, 0, 0, 0)
+
+
+def test_source_navigation_private_query_handoff_carries_only_prepared_input(tmp_path):
+    prepared = _prepare_source_navigation_query(
+        _project_repository(tmp_path), "  state_summary  "
+    )
+
+    assert prepared.normalized_query == "state_summary"
+    assert prepared.source_rows
+    assert not hasattr(prepared, "definitions")
+    assert not hasattr(prepared, "imports")
+    assert not hasattr(prepared, "repository_artifact_definition")
+    assert not hasattr(prepared, "repository_artifact_dependencies")
+    assert not hasattr(prepared, "repository_artifact_support")
+    assert not hasattr(prepared, "repository_artifact_non_claims")
+
+
+def test_source_navigation_composition_consumes_private_query_handoff(tmp_path):
+    state = _project_repository(tmp_path)
+    prepared = _prepare_source_navigation_query(state, "  state_summary  ")
+
+    composed = _compose_source_navigation(prepared)
+    public = build_source_navigation(state, "  state_summary  ")
+
+    assert source_navigation_json(composed) == source_navigation_json(public)
+    assert format_source_navigation(composed) == format_source_navigation(public)
 
 
 def test_repository_artifact_definition_explanation_json_includes_definition_field(
