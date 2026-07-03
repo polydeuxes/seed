@@ -141,6 +141,14 @@ class RepositoryArtifactNonClaimsExplanation:
 
 
 @dataclass(frozen=True)
+class _PreparedSourceNavigationQuery:
+    """Private handoff from external query intake to source-navigation composition."""
+
+    normalized_query: str
+    source_rows: list[SourceNavigationRow]
+
+
+@dataclass(frozen=True)
 class SourceNavigationView:
     """Bounded read-only source navigation projection for one query."""
 
@@ -167,8 +175,26 @@ def build_source_navigation(state: State, query: str) -> SourceNavigationView:
     * paths match the preserved ``path`` dimension.
     """
 
-    normalized_query = query.strip()
-    rows = [_row_from_support(support) for support in state.fact_supports]
+    prepared_query = _prepare_source_navigation_query(state, query)
+    return _compose_source_navigation(prepared_query)
+
+
+def _prepare_source_navigation_query(
+    state: State, query: str
+) -> _PreparedSourceNavigationQuery:
+    """Prepare external query input for bounded source-navigation composition."""
+
+    return _PreparedSourceNavigationQuery(
+        normalized_query=query.strip(),
+        source_rows=[_row_from_support(support) for support in state.fact_supports],
+    )
+
+
+def _compose_source_navigation(
+    prepared_query: _PreparedSourceNavigationQuery,
+) -> SourceNavigationView:
+    normalized_query = prepared_query.normalized_query
+    rows = prepared_query.source_rows
     matched = [row for row in rows if _matches(row, normalized_query)]
     definitions = sorted(
         [row for row in matched if row.predicate == "defines"], key=_row_sort_key
