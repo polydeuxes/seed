@@ -50,6 +50,18 @@ BLOCKING_BOUNDARY = "docker_or_root_container_runtime_authority_unavailable"
 
 
 @dataclass(frozen=True)
+class _ServiceObservationAuthorityAssessment:
+    """Implementation-local authority assessment before service ownership report composition."""
+
+    required_observations: tuple[str, ...]
+    required_authority: dict[str, str]
+    available_authority: dict[str, str]
+    reachable_observations: tuple[str, ...]
+    blocked_observations: tuple[str, ...]
+    blocking_boundary: str | None
+
+
+@dataclass(frozen=True)
 class ServiceOwnershipAuthoritySlice:
     desired_observation: str
     required_observations: tuple[str, ...]
@@ -112,29 +124,12 @@ def evaluate_service_ownership_authority_slice(
     capability names, observed listener/systemd support, and Docker/root limits.
     """
 
-    available_authority = {
-        key: str(profile.get(key, "unknown")) for key in AUTHORITY_KEYS
-    }
-    required_observations = _required_service_observations(state)
-    required_authority = {
-        observation: _authority_for_observation(observation)
-        for observation in required_observations
-    }
-
-    reachable = tuple(
-        observation
-        for observation in required_observations
-        if _is_reachable(
-            observation, required_authority[observation], available_authority
-        )
-    )
-    blocked = tuple(
-        observation
-        for observation in required_observations
-        if _is_blocked(
-            observation, required_authority[observation], available_authority
-        )
-    )
+    assessment = _assess_service_observation_authority(state, profile)
+    required_observations = assessment.required_observations
+    required_authority = assessment.required_authority
+    available_authority = assessment.available_authority
+    reachable = assessment.reachable_observations
+    blocked = assessment.blocked_observations
 
     discrepancy_summaries = _ownership_discrepancy_summaries_by_capability(state)
     blocked_details = tuple(
@@ -160,14 +155,6 @@ def evaluate_service_ownership_authority_slice(
         "active_network_probe unauthorized and external_provider_query unknown are not used to promote service ownership beyond local passive evidence"
     )
 
-    blocking_boundary = (
-        BLOCKING_BOUNDARY
-        if _docker_or_root_container_runtime_authority_blocked(
-            blocked, required_authority, available_authority
-        )
-        else None
-    )
-
     return ServiceOwnershipAuthoritySlice(
         desired_observation=DESIRED_OBSERVATION,
         required_observations=required_observations,
@@ -182,6 +169,50 @@ def evaluate_service_ownership_authority_slice(
         remaining_observations=blocked,
         uncertainty=tuple(uncertainty),
         remaining_uncertainty=tuple(uncertainty),
+        blocking_boundary=assessment.blocking_boundary,
+    )
+
+
+def _assess_service_observation_authority(
+    state: State, profile: Mapping[str, str]
+) -> _ServiceObservationAuthorityAssessment:
+    """Assess required, available, reachable, and blocked observation authority."""
+
+    available_authority = {
+        key: str(profile.get(key, "unknown")) for key in AUTHORITY_KEYS
+    }
+    required_observations = _required_service_observations(state)
+    required_authority = {
+        observation: _authority_for_observation(observation)
+        for observation in required_observations
+    }
+    reachable = tuple(
+        observation
+        for observation in required_observations
+        if _is_reachable(
+            observation, required_authority[observation], available_authority
+        )
+    )
+    blocked = tuple(
+        observation
+        for observation in required_observations
+        if _is_blocked(
+            observation, required_authority[observation], available_authority
+        )
+    )
+    blocking_boundary = (
+        BLOCKING_BOUNDARY
+        if _docker_or_root_container_runtime_authority_blocked(
+            blocked, required_authority, available_authority
+        )
+        else None
+    )
+    return _ServiceObservationAuthorityAssessment(
+        required_observations=required_observations,
+        required_authority=required_authority,
+        available_authority=available_authority,
+        reachable_observations=reachable,
+        blocked_observations=blocked,
         blocking_boundary=blocking_boundary,
     )
 
