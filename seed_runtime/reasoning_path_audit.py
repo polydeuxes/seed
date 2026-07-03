@@ -15,6 +15,11 @@ from seed_runtime.ownership_discrepancies import (
 from seed_runtime.pressure_audit import build_pressure_audit
 from seed_runtime.privilege_discovery import build_privilege_discovery
 from seed_runtime.state import State
+from seed_runtime.typed_unknowns import (
+    TypedUnknownRecord,
+    preserve_typed_unknown,
+    typed_unknowns_to_public_dicts,
+)
 
 
 @dataclass(frozen=True)
@@ -38,7 +43,7 @@ class _DerivationLineagePayload:
 
     consumers: list[dict[str, Any]]
     story_impact: list[dict[str, Any]]
-    unknowns: list[dict[str, str]]
+    unknowns: list[TypedUnknownRecord]
 
 
 @dataclass(frozen=True)
@@ -207,13 +212,14 @@ def build_reasoning_path_audit(
             }
         )
 
-    unknowns = []
+    unknowns: list[TypedUnknownRecord] = []
     if not (evidence or intermediate or derived or consumers or story_impact):
         unknowns.append(
-            {
-                "area": "derivation",
-                "reason": "no derivation evidence currently available",
-            }
+            preserve_typed_unknown(
+                unknown_type="Evidence Gap",
+                area="derivation",
+                reason="no derivation evidence currently available",
+            )
         )
     conclusion_payload = _DerivedConclusionPayload(
         intermediate_conclusions=intermediate,
@@ -252,7 +258,7 @@ def _reasoning_path_from_payloads(
         conclusions.derived_conclusions,
         lineage.consumers,
         lineage.story_impact,
-        lineage.unknowns,
+        typed_unknowns_to_public_dicts(lineage.unknowns),
     )
 
 

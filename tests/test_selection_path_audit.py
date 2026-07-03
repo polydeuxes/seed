@@ -263,3 +263,37 @@ def test_selection_path_registered_in_visibility_contracts():
     ]
     assert rows
     assert {row.status for row in rows} <= {"consistent"}
+
+
+def test_selection_path_lineage_owns_typed_unknown_before_public_handoff():
+    from seed_runtime.selection_path_audit import (
+        _SelectionLineagePayload,
+        _SelectionReasonPayload,
+        _SelectionResultPayload,
+        _SelectionSupportingEvidencePayload,
+        _selection_path_from_payloads,
+    )
+    from seed_runtime.typed_unknowns import preserve_typed_unknown
+
+    typed_unknown = preserve_typed_unknown(
+        unknown_type="Implementation Unknown",
+        area="selection_logic",
+        reason="no implementation-backed selection evidence discovered for target",
+    )
+    lineage = _SelectionLineagePayload([], ["unknown"], [], [typed_unknown])
+
+    audit = _selection_path_from_payloads(
+        target="not_a_selection",
+        result=_SelectionResultPayload(selected="unknown"),
+        reason=_SelectionReasonPayload(outcome={"selected": "unknown"}),
+        support=_SelectionSupportingEvidencePayload(evidence=[]),
+        lineage=lineage,
+    )
+
+    assert lineage.unknowns[0].unknown_type == "Implementation Unknown"
+    assert audit.unknowns == [
+        {
+            "area": "selection_logic",
+            "reason": "no implementation-backed selection evidence discovered for target",
+        }
+    ]

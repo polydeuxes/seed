@@ -9,6 +9,11 @@ from typing import Any
 from seed_runtime.operational_story import build_operational_story
 from seed_runtime.pressure_audit import PressureItem, build_pressure_audit
 from seed_runtime.state import State
+from seed_runtime.typed_unknowns import (
+    TypedUnknownRecord,
+    preserve_typed_unknown,
+    typed_unknowns_to_public_dicts,
+)
 
 
 @dataclass(frozen=True)
@@ -31,7 +36,7 @@ class _SelectionLineagePayload:
     candidates: list[dict[str, Any]]
     selection_factors: list[str]
     non_selected: list[dict[str, Any]]
-    unknowns: list[dict[str, str]]
+    unknowns: list[TypedUnknownRecord]
 
 
 @dataclass(frozen=True)
@@ -129,10 +134,11 @@ def build_selection_path_audit(
             selection_factors=["unknown"],
             non_selected=[],
             unknowns=[
-                {
-                    "area": "selection_logic",
-                    "reason": "no implementation-backed selection evidence discovered for target",
-                }
+                preserve_typed_unknown(
+                    unknown_type="Implementation Unknown",
+                    area="selection_logic",
+                    reason="no implementation-backed selection evidence discovered for target",
+                )
             ],
         ),
     )
@@ -154,7 +160,7 @@ def _selection_path_from_payloads(
         non_selected=lineage.non_selected,
         evidence=support.evidence,
         outcome=reason.outcome,
-        unknowns=lineage.unknowns,
+        unknowns=typed_unknowns_to_public_dicts(lineage.unknowns),
     )
 
 
@@ -208,7 +214,7 @@ def _from_pressure_selection(
     target: str, selected: str, pressures: tuple[PressureItem, ...], focus: str
 ) -> SelectionPathAudit:
     selected_item = pressures[0] if pressures else None
-    unknowns = []
+    unknowns: list[TypedUnknownRecord] = []
     factors = (
         ["pressure audit orders candidates by descending score, then category name"]
         if pressures
@@ -216,10 +222,11 @@ def _from_pressure_selection(
     )
     if not pressures:
         unknowns.append(
-            {
-                "area": "candidate_set",
-                "reason": "no pressure candidates available from current audit inputs",
-            }
+            preserve_typed_unknown(
+                unknown_type="Evidence Gap",
+                area="candidate_set",
+                reason="no pressure candidates available from current audit inputs",
+            )
         )
     return _selection_path_from_payloads(
         target=target,
