@@ -6,6 +6,8 @@ from seed_runtime.diagnostic_inventory import DIAGNOSTIC_INVENTORY
 from seed_runtime.diagnostic_shape_audit import build_diagnostic_shape_audit
 from seed_runtime.service_ownership_authority import (
     CONSTRAINED_AUTHORITY_PROFILE,
+    _ServiceObservationAuthorityAssessment,
+    _assess_service_observation_authority,
     evaluate_service_ownership_authority_slice,
     format_service_ownership_authority,
 )
@@ -28,6 +30,30 @@ def _state_with_service_endpoint_only() -> State:
     state.facts[fact.id] = fact
     state.observed_facts[fact.id] = fact
     return state
+
+
+def test_service_observation_authority_assessment_separates_authority_from_report():
+    assessment = _assess_service_observation_authority(
+        State(workspace_id="test"), CONSTRAINED_AUTHORITY_PROFILE
+    )
+
+    assert isinstance(assessment, _ServiceObservationAuthorityAssessment)
+    assert assessment.available_authority["root"] == "unavailable"
+    assert assessment.available_authority["docker_socket_read"] == "unavailable"
+    assert assessment.required_authority["container_inventory"] == "docker_group_or_root"
+    assert "tcp_listen_inventory" in assessment.reachable_observations
+    assert set(assessment.blocked_observations) == {
+        "container_inventory",
+        "container_port_mapping",
+    }
+    assert (
+        assessment.blocking_boundary
+        == "docker_or_root_container_runtime_authority_unavailable"
+    )
+    assert "desired_observation" not in assessment.__dataclass_fields__
+    assert "outcome" not in assessment.__dataclass_fields__
+    assert "uncertainty" not in assessment.__dataclass_fields__
+    assert "boundary" not in assessment.__dataclass_fields__
 
 
 def test_service_ownership_slice_is_partially_reachable_under_constrained_profile():
