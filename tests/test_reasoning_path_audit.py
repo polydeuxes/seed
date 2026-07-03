@@ -256,3 +256,36 @@ def test_reasoning_path_registered_in_visibility_contracts():
     ]
     assert rows
     assert all(row.status == "consistent" for row in rows)
+
+
+def test_reasoning_path_lineage_owns_typed_unknown_before_public_handoff():
+    from seed_runtime.reasoning_path_audit import (
+        _DerivationLineagePayload,
+        _DerivationSupportingEvidencePayload,
+        _DerivedConclusionPayload,
+        _reasoning_path_from_payloads,
+    )
+    from seed_runtime.typed_unknowns import preserve_typed_unknown
+
+    typed_unknown = preserve_typed_unknown(
+        unknown_type="Evidence Gap",
+        area="derivation",
+        reason="no derivation evidence currently available",
+    )
+    lineage = _DerivationLineagePayload(
+        consumers=[], story_impact=[], unknowns=[typed_unknown]
+    )
+
+    audit = _reasoning_path_from_payloads(
+        "capability",
+        "not_a_known_conclusion",
+        conclusions=_DerivedConclusionPayload([], []),
+        supporting_evidence=_DerivationSupportingEvidencePayload([]),
+        lineage=lineage,
+    )
+
+    assert lineage.unknowns == [typed_unknown]
+    assert lineage.unknowns[0].unknown_type == "Evidence Gap"
+    assert audit.unknowns == [
+        {"area": "derivation", "reason": "no derivation evidence currently available"}
+    ]

@@ -210,7 +210,8 @@ def test_operational_story_answer_reasoning_and_supporting_evidence_payloads_are
         == payload["supporting_evidence"]
     )
     assert boundary_payload.boundary == payload["boundary"]
-    assert limitations_payload.unknowns == payload["unknowns"]
+    assert [unknown.to_public_dict() for unknown in limitations_payload.unknowns] == payload["unknowns"]
+    assert all(unknown.unknown_type == "Evidence Gap" for unknown in limitations_payload.unknowns)
     assert "unknowns" not in answer_payload.__dataclass_fields__
     assert "supporting_evidence" not in answer_payload.__dataclass_fields__
     assert "supporting_evidence" not in reasoning_payload.__dataclass_fields__
