@@ -64,6 +64,38 @@ def bounded_status_for_question_family(question_family: str) -> str:
 
 
 @dataclass(frozen=True)
+class _QuestionFamilyEligibilityInput:
+    """Prepared exact QuestionFamily text for bounded work eligibility only.
+
+    This private handoff carries externally supplied question-family text after
+    exact inventory admission. It does not own dispatch selection, presentation,
+    rendering, surface arguments, or public result shape.
+    """
+
+    question_family: str
+
+
+def _prepare_question_family_eligibility_input(
+    question_family: str,
+    rows: tuple["QuestionSurfaceInventoryRow", ...] | None = None,
+) -> _QuestionFamilyEligibilityInput:
+    """Prepare exact QuestionFamily text for bounded eligibility evaluation.
+
+    The preparation boundary is intentionally narrow: it admits only an exact
+    inventory-backed question family and returns the text needed by bounded
+    eligibility. It does not classify free text, select a dispatch surface,
+    validate surface arguments, compose presentation, render output, or mutate
+    runtime state.
+    """
+
+    inventory = rows or build_question_surface_inventory()
+    inventory_families = {row.question_family for row in inventory}
+    if question_family not in inventory_families:
+        raise ValueError(f"unknown Question Family: {question_family}")
+    return _QuestionFamilyEligibilityInput(question_family=question_family)
+
+
+@dataclass(frozen=True)
 class BoundedWorkEligibilityResult:
     """Implementation-backed permission result for exact QuestionFamily invocation."""
 
@@ -74,11 +106,12 @@ class BoundedWorkEligibilityResult:
     reason: str = ""
 
 
-def bounded_work_eligibility_for_question_family(
-    question_family: str,
+def _bounded_work_eligibility_for_prepared_question_family(
+    prepared_input: _QuestionFamilyEligibilityInput,
 ) -> BoundedWorkEligibilityResult:
-    """Return whether bounded work may execute for an exact QuestionFamily."""
+    """Return bounded work eligibility for prepared exact QuestionFamily text."""
 
+    question_family = prepared_input.question_family
     bounded_status = bounded_status_for_question_family(question_family)
     required_surface_args = BOUNDED_ASK_REQUIRED_SURFACE_ARGS.get(question_family, ())
     permitted = bounded_status in {"eligible_now", "eligible_with_parameters"}
@@ -97,6 +130,15 @@ def bounded_work_eligibility_for_question_family(
         required_surface_args=required_surface_args,
         reason=reason,
     )
+
+
+def bounded_work_eligibility_for_question_family(
+    question_family: str,
+) -> BoundedWorkEligibilityResult:
+    """Return whether bounded work may execute for an exact QuestionFamily."""
+
+    prepared_input = _QuestionFamilyEligibilityInput(question_family=question_family)
+    return _bounded_work_eligibility_for_prepared_question_family(prepared_input)
 
 
 @dataclass(frozen=True)

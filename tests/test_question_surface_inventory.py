@@ -10,6 +10,8 @@ from seed_runtime.diagnostic_shape_audit import (
 )
 from seed_runtime.question_surface_inventory import (
     BOUNDED_ASK_DISPATCH_SURFACES,
+    _bounded_work_eligibility_for_prepared_question_family,
+    _prepare_question_family_eligibility_input,
     bounded_work_dispatch_request_for_selection,
     bounded_work_eligibility_for_question_family,
     bounded_work_selection_for_question_family,
@@ -132,6 +134,32 @@ def test_bounded_ask_inventory_json_answers_required_operator_questions(capsys):
         by_family["source definition/import lookup"]["implementation_reason"]
         == "no bounded ask dispatch mapping in current implementation"
     )
+
+
+def test_question_family_eligibility_input_preparation_is_separate_from_eligibility():
+    prepared_input = _prepare_question_family_eligibility_input(
+        "authority-constrained service ownership"
+    )
+
+    assert prepared_input.question_family == "authority-constrained service ownership"
+    assert tuple(prepared_input.__dataclass_fields__) == ("question_family",)
+    assert "dispatch_surface" not in prepared_input.__dataclass_fields__
+    assert "surface_value" not in prepared_input.__dataclass_fields__
+    assert "bounded_status" not in prepared_input.__dataclass_fields__
+    assert "permitted" not in prepared_input.__dataclass_fields__
+
+    eligibility = _bounded_work_eligibility_for_prepared_question_family(
+        prepared_input
+    )
+
+    assert eligibility.question_family == prepared_input.question_family
+    assert eligibility.bounded_status == "eligible_now"
+    assert eligibility.permitted is True
+
+
+def test_question_family_eligibility_input_preparation_rejects_unknown_text():
+    with pytest.raises(ValueError, match="unknown Question Family: made up"):
+        _prepare_question_family_eligibility_input("made up")
 
 
 def test_bounded_work_eligibility_result_is_separate_from_surface_selection():

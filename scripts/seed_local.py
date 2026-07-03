@@ -149,8 +149,9 @@ from seed_runtime.diagnostic_shape_audit import (
     format_diagnostic_shape_audit,
 )
 from seed_runtime.question_surface_inventory import (
+    _bounded_work_eligibility_for_prepared_question_family,
+    _prepare_question_family_eligibility_input,
     bounded_work_dispatch_request_for_selection,
-    bounded_work_eligibility_for_question_family,
     bounded_work_selection_for_question_family,
     execute_bounded_work_dispatch,
     build_question_surface_inventory,
@@ -2226,14 +2227,17 @@ def apply_bounded_ask_dispatch(
             "`ask --question-family <exact-question-family>`"
         )
 
-    inventory_families = {
-        row.question_family for row in build_question_surface_inventory()
-    }
     family = args.question_family
-    if family not in inventory_families:
-        parser.error(f"unknown Question Family: {family}")
+    try:
+        prepared_input = _prepare_question_family_eligibility_input(
+            family, build_question_surface_inventory()
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
 
-    eligibility = bounded_work_eligibility_for_question_family(family)
+    eligibility = _bounded_work_eligibility_for_prepared_question_family(
+        prepared_input
+    )
     if eligibility.bounded_status == "eligible_now" and args.surface_args is not None:
         parser.error(
             f"Question Family '{family}' does not accept --surface-args by "
