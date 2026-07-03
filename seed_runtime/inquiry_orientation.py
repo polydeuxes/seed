@@ -70,15 +70,23 @@ class InquiryOrientationView:
 
 
 @dataclass(frozen=True)
-class _ArchitecturalOrientationEvidence:
-    """Implementation-local repository evidence collected before answer composition."""
+class _InquiryOrientationCompositionRequest:
+    """Implementation-local handoff from preserved inquiry note to orientation composition."""
+
+    note: InquiryNoteRecord
+    note_tokens: set[str]
+
+
+@dataclass(frozen=True)
+class _InquiryOrientationEvidence:
+    """Implementation-local evidence collected for inquiry orientation composition."""
 
     related_material: list[RelatedMaterial]
 
 
 @dataclass(frozen=True)
-class _ArchitecturalOrientationAnswer:
-    """Implementation-local answer composition before orientation rendering."""
+class _InquiryOrientationAnswer:
+    """Implementation-local answer composition before inquiry orientation rendering."""
 
     answer: list[RelatedMaterial]
     reason: str
@@ -145,7 +153,8 @@ def build_inquiry_orientation(
 ) -> InquiryOrientationView:
     """Build a bounded read-only orientation view for a preserved inquiry note."""
 
-    answer = _compose_architectural_orientation_answer(state, note)
+    request = _prepare_inquiry_orientation_composition(note)
+    answer = _compose_inquiry_orientation_answer(state, request)
     return InquiryOrientationView(
         note=note,
         related_material=answer.answer,
@@ -154,14 +163,25 @@ def build_inquiry_orientation(
     )
 
 
-def _compose_architectural_orientation_answer(
-    state: State, note: InquiryNoteRecord
-) -> _ArchitecturalOrientationAnswer:
-    """Compose orientation answer material without rendering or transport changes."""
+def _prepare_inquiry_orientation_composition(
+    note: InquiryNoteRecord,
+) -> _InquiryOrientationCompositionRequest:
+    """Prepare preserved inquiry material for bounded orientation composition."""
 
-    evidence = _collect_architectural_orientation_evidence(state, note)
+    return _InquiryOrientationCompositionRequest(
+        note=note,
+        note_tokens=_note_tokens(note.raw_note),
+    )
+
+
+def _compose_inquiry_orientation_answer(
+    state: State, request: _InquiryOrientationCompositionRequest
+) -> _InquiryOrientationAnswer:
+    """Compose inquiry orientation answer material without rendering or transport changes."""
+
+    evidence = _collect_inquiry_orientation_evidence(state, request)
     related = evidence.related_material
-    return _ArchitecturalOrientationAnswer(
+    return _InquiryOrientationAnswer(
         answer=related,
         reason=(
             "deterministic lexical overlaps against projected fact supports and "
@@ -173,16 +193,18 @@ def _compose_architectural_orientation_answer(
     )
 
 
-def _collect_architectural_orientation_evidence(
-    state: State, note: InquiryNoteRecord
-) -> _ArchitecturalOrientationEvidence:
-    """Collect repository evidence before composing the orientation answer."""
+def _collect_inquiry_orientation_evidence(
+    state: State, request: _InquiryOrientationCompositionRequest
+) -> _InquiryOrientationEvidence:
+    """Collect repository evidence before composing the inquiry orientation answer."""
 
-    tokens = _note_tokens(note.raw_note)
     related = _dedupe_related(
-        [*_fact_matches(state, tokens), *_source_navigation_matches(state, tokens)]
+        [
+            *_fact_matches(state, request.note_tokens),
+            *_source_navigation_matches(state, request.note_tokens),
+        ]
     )[:_MAX_RELATED_ITEMS]
-    return _ArchitecturalOrientationEvidence(related_material=related)
+    return _InquiryOrientationEvidence(related_material=related)
 
 
 def format_inquiry_orientation(view: InquiryOrientationView) -> str:

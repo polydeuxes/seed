@@ -6,10 +6,12 @@ from seed_runtime.events import EventLedger
 from seed_runtime.facts import Fact
 from seed_runtime.inquiry_orientation import (
     AUTHORITY_BOUNDARY,
-    _ArchitecturalOrientationAnswer,
-    _ArchitecturalOrientationEvidence,
-    _collect_architectural_orientation_evidence,
-    _compose_architectural_orientation_answer,
+    _InquiryOrientationAnswer,
+    _InquiryOrientationCompositionRequest,
+    _InquiryOrientationEvidence,
+    _collect_inquiry_orientation_evidence,
+    _compose_inquiry_orientation_answer,
+    _prepare_inquiry_orientation_composition,
     build_inquiry_orientation,
     format_inquiry_orientation,
     load_inquiry_notes,
@@ -284,7 +286,7 @@ def test_surface_family_labels_do_not_add_authority_claims(tmp_path):
     assert "next safe move" in output  # only in the negated authority boundary
 
 
-def test_architectural_orientation_answer_composition_is_separate_from_rendering(tmp_path):
+def test_inquiry_orientation_composition_request_separates_note_from_rendering(tmp_path):
     _ledger, state = _state_with_example_host_fact()
     note = record_inquiry_note(
         tmp_path / "probe.jsonl",
@@ -292,19 +294,26 @@ def test_architectural_orientation_answer_composition_is_separate_from_rendering
         recorded_at=datetime(2026, 6, 16, tzinfo=timezone.utc),
     )
 
-    evidence = _collect_architectural_orientation_evidence(state, note)
-    answer = _compose_architectural_orientation_answer(state, note)
+    request = _prepare_inquiry_orientation_composition(note)
+    evidence = _collect_inquiry_orientation_evidence(state, request)
+    answer = _compose_inquiry_orientation_answer(state, request)
     view = build_inquiry_orientation(state, note)
     output = format_inquiry_orientation(view)
 
-    assert isinstance(evidence, _ArchitecturalOrientationEvidence)
-    assert isinstance(answer, _ArchitecturalOrientationAnswer)
+    assert isinstance(request, _InquiryOrientationCompositionRequest)
+    assert isinstance(evidence, _InquiryOrientationEvidence)
+    assert isinstance(answer, _InquiryOrientationAnswer)
+    assert request.note == note
+    assert request.note_tokens == {"example_host", "keeps", "showing", "first"}
     assert evidence.related_material == answer.answer == view.related_material
     assert answer.boundary == view.authority_boundary == AUTHORITY_BOUNDARY
     assert answer.limitations == view.uncertainty
     assert answer.support == [item.support for item in view.related_material]
     assert "deterministic lexical overlaps" in answer.reason
     assert "Inquiry note:" in output
+    assert "raw_note" not in request.__dataclass_fields__
+    assert "recorded_at" not in request.__dataclass_fields__
+    assert "workspace_id" not in request.__dataclass_fields__
     assert "answer" not in evidence.__dataclass_fields__
     assert "reason" not in evidence.__dataclass_fields__
     assert "boundary" not in evidence.__dataclass_fields__
