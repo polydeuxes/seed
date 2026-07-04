@@ -38,6 +38,23 @@ class _DiagnosticInventoryCompositionInput:
 
     entries: tuple[DiagnosticInventoryEntry, ...]
 
+
+@dataclass(frozen=True)
+class _DiagnosticSurfaceBoundaryIdentification:
+    """Implementation-local boundary facts before report presentation."""
+
+    statements: tuple[str, ...]
+
+    def to_json_dict(self) -> dict[str, object]:
+        return {
+            "status": "known",
+            "statements": list(self.statements),
+            "evidence_source": "diagnostic_inventory",
+            "implementation_reason": (
+                "boundary recovered from declared diagnostic inventory fields"
+            ),
+        }
+
 DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
     DiagnosticInventoryEntry(
         name="classification_coverage",
@@ -902,7 +919,9 @@ def build_diagnostic_surface_definition(
             "supports_json": entry.supports_json,
             "supports_record": entry.supports_record,
             "record_scope": entry.record_scope,
-            "diagnostic_surface_boundary": _diagnostic_surface_boundary(entry),
+            "diagnostic_surface_boundary": _diagnostic_surface_boundary(
+                _identify_diagnostic_surface_boundary(entry)
+            ),
             "diagnostic_surface_consumption": _diagnostic_surface_consumption(entry),
             "diagnostic_inventory_registration": "present",
             "shape_registration_status": _shape_registration_status(entry.name),
@@ -990,7 +1009,9 @@ def format_diagnostic_surface_definition(diagnostic_surface: str) -> str:
     )
 
 
-def _diagnostic_surface_boundary(entry: DiagnosticInventoryEntry) -> dict[str, object]:
+def _identify_diagnostic_surface_boundary(
+    entry: DiagnosticInventoryEntry,
+) -> _DiagnosticSurfaceBoundaryIdentification:
     statements: list[str] = [
         "records" if entry.supports_record else "does not record",
         f"record_scope={entry.record_scope}",
@@ -1023,12 +1044,13 @@ def _diagnostic_surface_boundary(entry: DiagnosticInventoryEntry) -> dict[str, o
     )
     if read_only:
         statements.insert(0, "read-only")
-    return {
-        "status": "known",
-        "statements": statements,
-        "evidence_source": "diagnostic_inventory",
-        "implementation_reason": "boundary recovered from declared diagnostic inventory fields",
-    }
+    return _DiagnosticSurfaceBoundaryIdentification(statements=tuple(statements))
+
+
+def _diagnostic_surface_boundary(
+    identification: _DiagnosticSurfaceBoundaryIdentification,
+) -> dict[str, object]:
+    return identification.to_json_dict()
 
 
 def _diagnostic_surface_consumption(entry: DiagnosticInventoryEntry) -> dict[str, object]:
