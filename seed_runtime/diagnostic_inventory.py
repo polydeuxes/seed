@@ -55,6 +55,30 @@ class _DiagnosticSurfaceBoundaryIdentification:
             ),
         }
 
+
+@dataclass(frozen=True)
+class _DiagnosticSurfaceConsumptionIdentification:
+    """Implementation-local consumption facts before report presentation."""
+
+    uses_projected_state: bool
+    uses_repo_files: bool
+    reads_diagnostic_facts: bool
+
+    def to_json_dict(self) -> dict[str, object]:
+        return {
+            "status": "known",
+            "declared_consumption": {
+                "uses_projected_state": self.uses_projected_state,
+                "uses_repo_files": self.uses_repo_files,
+                "reads_diagnostic_facts": self.reads_diagnostic_facts,
+            },
+            "evidence_source": "diagnostic_inventory",
+            "implementation_reason": (
+                "consumption recovered from declared diagnostic inventory fields"
+            ),
+        }
+
+
 DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
     DiagnosticInventoryEntry(
         name="classification_coverage",
@@ -922,7 +946,9 @@ def build_diagnostic_surface_definition(
             "diagnostic_surface_boundary": _diagnostic_surface_boundary(
                 _identify_diagnostic_surface_boundary(entry)
             ),
-            "diagnostic_surface_consumption": _diagnostic_surface_consumption(entry),
+            "diagnostic_surface_consumption": _diagnostic_surface_consumption(
+                _identify_diagnostic_surface_consumption(entry)
+            ),
             "diagnostic_inventory_registration": "present",
             "shape_registration_status": _shape_registration_status(entry.name),
             "evidence_source": "diagnostic_inventory + diagnostic_shape_audit",
@@ -1053,17 +1079,20 @@ def _diagnostic_surface_boundary(
     return identification.to_json_dict()
 
 
-def _diagnostic_surface_consumption(entry: DiagnosticInventoryEntry) -> dict[str, object]:
-    return {
-        "status": "known",
-        "declared_consumption": {
-            "uses_projected_state": entry.uses_projected_state,
-            "uses_repo_files": entry.uses_repo_files,
-            "reads_diagnostic_facts": entry.reads_diagnostic_facts,
-        },
-        "evidence_source": "diagnostic_inventory",
-        "implementation_reason": "consumption recovered from declared diagnostic inventory fields",
-    }
+def _identify_diagnostic_surface_consumption(
+    entry: DiagnosticInventoryEntry,
+) -> _DiagnosticSurfaceConsumptionIdentification:
+    return _DiagnosticSurfaceConsumptionIdentification(
+        uses_projected_state=entry.uses_projected_state,
+        uses_repo_files=entry.uses_repo_files,
+        reads_diagnostic_facts=entry.reads_diagnostic_facts,
+    )
+
+
+def _diagnostic_surface_consumption(
+    identification: _DiagnosticSurfaceConsumptionIdentification,
+) -> dict[str, object]:
+    return identification.to_json_dict()
 
 
 

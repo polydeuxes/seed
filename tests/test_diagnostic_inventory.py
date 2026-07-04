@@ -6,10 +6,13 @@ from seed_runtime.diagnostic_inventory import (
     DiagnosticInventoryEntry,
     _DiagnosticInventoryCompositionInput,
     _DiagnosticSurfaceBoundaryIdentification,
+    _DiagnosticSurfaceConsumptionIdentification,
     _compose_diagnostic_inventory,
     _compose_diagnostic_inventory_json,
     _diagnostic_surface_boundary,
+    _diagnostic_surface_consumption,
     _identify_diagnostic_surface_boundary,
+    _identify_diagnostic_surface_consumption,
     _prepare_diagnostic_inventory_composition,
     diagnostic_surface_definition_json,
     format_diagnostic_inventory,
@@ -365,6 +368,27 @@ def test_diagnostic_surface_boundary_identification_precedes_presentation():
         "statements": list(identification.statements),
         "evidence_source": "diagnostic_inventory",
         "implementation_reason": "boundary recovered from declared diagnostic inventory fields",
+    }
+
+
+def test_diagnostic_surface_consumption_identification_precedes_presentation():
+    identification = _identify_diagnostic_surface_consumption(
+        _entry("diagnostic_shape_audit")
+    )
+
+    assert isinstance(identification, _DiagnosticSurfaceConsumptionIdentification)
+    assert identification.uses_projected_state is False
+    assert identification.uses_repo_files is False
+    assert identification.reads_diagnostic_facts is False
+    assert _diagnostic_surface_consumption(identification) == {
+        "status": "known",
+        "declared_consumption": {
+            "uses_projected_state": False,
+            "uses_repo_files": False,
+            "reads_diagnostic_facts": False,
+        },
+        "evidence_source": "diagnostic_inventory",
+        "implementation_reason": "consumption recovered from declared diagnostic inventory fields",
     }
 
 
