@@ -5,7 +5,11 @@ import scripts.seed_local as seed_local
 from seed_runtime.diagnostic_inventory import DIAGNOSTIC_INVENTORY
 from seed_runtime.diagnostic_shape_audit import build_diagnostic_shape_audit
 from seed_runtime.models import Approval
-from seed_runtime.observation_permission import build_observation_permission
+from seed_runtime.observation_permission import (
+    _GrantedAuthorityAssessment,
+    _assess_granted_authority,
+    build_observation_permission,
+)
 from seed_runtime.state import State
 
 
@@ -114,6 +118,50 @@ def test_observation_permission_boundary_is_read_only():
     assert report.boundary["permission_enforcement"] is False
     assert report.boundary["approval_storage"] is False
     assert report.boundary["runtime_autonomy"] is False
+
+
+def test_granted_authority_assessment_is_private_input_to_permission_composition():
+    state = State(workspace_id="test")
+    state.approvals["appr_1"] = Approval(
+        id="appr_1",
+        action="observation.neighbor_table_read",
+        scope="local",
+        approved_by="operator@example.com",
+        expires_at=datetime.now(timezone.utc) + timedelta(minutes=5),
+        constraints={"observation_domain": "neighbor_table_read"},
+    )
+
+    authority = _assess_granted_authority(
+        state, "neighbor_table_read", "local_passive"
+    )
+    entry = _domain(
+        build_observation_permission(state, "neighbor_table_read"),
+        "neighbor_table_read",
+    )
+
+    assert isinstance(authority, _GrantedAuthorityAssessment)
+    assert authority.approval_observed is True
+    assert authority.reusable_permission == "granted"
+    assert authority.future_autonomous_invocation == "granted"
+    assert entry.permission_state == "granted"
+    assert entry.authority_evidence == authority.authority_evidence
+
+
+def test_granted_authority_assessment_does_not_compose_permission_report():
+    authority = _assess_granted_authority(
+        State(workspace_id="test"), "traffic_capture", "network_passive"
+    )
+
+    assert authority == _GrantedAuthorityAssessment(
+        domain="traffic_capture",
+        approval_observed=False,
+        authority_evidence=(),
+        reusable_permission="not_granted",
+        future_autonomous_invocation="requires_operator_expression",
+    )
+    assert not hasattr(authority, "permission_state")
+    assert not hasattr(authority, "reasoning")
+    assert not hasattr(authority, "known_limitations")
 
 
 def test_observation_permission_visibility_registration():

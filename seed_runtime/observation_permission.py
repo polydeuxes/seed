@@ -21,6 +21,17 @@ PermissionState = Literal[
 
 
 @dataclass(frozen=True)
+class _GrantedAuthorityAssessment:
+    """Implementation-local reusable authority assessment for one domain."""
+
+    domain: str
+    approval_observed: bool
+    authority_evidence: tuple[str, ...]
+    reusable_permission: str
+    future_autonomous_invocation: str
+
+
+@dataclass(frozen=True)
 class ObservationPermissionDomain:
     domain: str
     observation_class: ObservationClass
@@ -137,24 +148,13 @@ def format_observation_permission(report: ObservationPermissionReport) -> str:
 
 def _domain_entry(state: State, domain: str) -> ObservationPermissionDomain:
     observation_class = SUPPORTED_OBSERVATION_CLASSES.get(domain, "unknown")
-    approval = _approval_for_domain(state, domain)
-    evidence: list[str] = []
-    if approval is not None:
-        evidence.append(
-            f"Approval(action={approval.action}, scope={approval.scope}, approved_by={approval.approved_by})"
-        )
-    if approval is not None:
+    authority = _assess_granted_authority(state, domain, observation_class)
+    if authority.approval_observed:
         permission_state: PermissionState = "granted"
-        reusable_permission = "granted"
-        future = "granted"
     elif observation_class == "unknown":
         permission_state = "unknown"
-        reusable_permission = "unknown"
-        future = "unknown"
     else:
         permission_state = "requires_operator_expression"
-        reusable_permission = "not_granted"
-        future = "requires_operator_expression"
 
     reasoning = [
         (
@@ -164,13 +164,13 @@ def _domain_entry(state: State, domain: str) -> ObservationPermissionDomain:
         ),
         (
             "reusable approval observed"
-            if approval is not None
+            if authority.approval_observed
             else "reusable approval not observed"
         ),
         "manual operator invocation may authorize only the current execution",
         "manual operator invocation does not create reusable Seed permission",
     ]
-    if approval is None:
+    if not authority.approval_observed:
         reasoning.append(
             "future autonomous invocation requires operator expression unless reusable approval is observed"
         )
@@ -178,7 +178,7 @@ def _domain_entry(state: State, domain: str) -> ObservationPermissionDomain:
         domain=domain,
         observation_class=observation_class,
         permission_state=permission_state,
-        authority_evidence=tuple(evidence),
+        authority_evidence=authority.authority_evidence,
         reasoning=tuple(reasoning),
         known_limitations=(
             "visibility only",
@@ -186,6 +186,33 @@ def _domain_entry(state: State, domain: str) -> ObservationPermissionDomain:
             "no approval record creation",
             "no autonomous runtime behavior",
         ),
+        reusable_permission=authority.reusable_permission,
+        future_autonomous_invocation=authority.future_autonomous_invocation,
+    )
+
+
+def _assess_granted_authority(
+    state: State, domain: str, observation_class: ObservationClass
+) -> _GrantedAuthorityAssessment:
+    approval = _approval_for_domain(state, domain)
+    evidence: list[str] = []
+    if approval is not None:
+        evidence.append(
+            f"Approval(action={approval.action}, scope={approval.scope}, approved_by={approval.approved_by})"
+        )
+        reusable_permission = "granted"
+        future = "granted"
+    elif observation_class == "unknown":
+        reusable_permission = "unknown"
+        future = "unknown"
+    else:
+        reusable_permission = "not_granted"
+        future = "requires_operator_expression"
+
+    return _GrantedAuthorityAssessment(
+        domain=domain,
+        approval_observed=approval is not None,
+        authority_evidence=tuple(evidence),
         reusable_permission=reusable_permission,
         future_autonomous_invocation=future,
     )
