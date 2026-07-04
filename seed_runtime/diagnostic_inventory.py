@@ -57,6 +57,13 @@ class _DiagnosticSurfaceBoundaryIdentification:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceShapeRegistrationIdentification:
+    """Implementation-local shape registration fact before definition composition."""
+
+    status: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceConsumptionIdentification:
     """Implementation-local consumption facts before report presentation."""
 
@@ -950,7 +957,9 @@ def build_diagnostic_surface_definition(
                 _identify_diagnostic_surface_consumption(entry)
             ),
             "diagnostic_inventory_registration": "present",
-            "shape_registration_status": _shape_registration_status(entry.name),
+            "shape_registration_status": _diagnostic_surface_shape_registration_status(
+                _identify_diagnostic_surface_shape_registration(entry.name)
+            ),
             "evidence_source": "diagnostic_inventory + diagnostic_shape_audit",
             "implementation_reason": "identity recovered from the diagnostic inventory entry and static shape-audit registration",
         }
@@ -1119,10 +1128,19 @@ def _format_diagnostic_surface_consumption(consumption: object, indent: str = " 
 
 
 
-def _shape_registration_status(diagnostic_name: str) -> str:
+def _identify_diagnostic_surface_shape_registration(
+    diagnostic_name: str,
+) -> _DiagnosticSurfaceShapeRegistrationIdentification:
     from seed_runtime.diagnostic_shape_audit import IMPLEMENTATION_SPECS
 
-    return "present" if diagnostic_name in IMPLEMENTATION_SPECS else "absent"
+    status = "present" if diagnostic_name in IMPLEMENTATION_SPECS else "absent"
+    return _DiagnosticSurfaceShapeRegistrationIdentification(status=status)
+
+
+def _diagnostic_surface_shape_registration_status(
+    identification: _DiagnosticSurfaceShapeRegistrationIdentification,
+) -> str:
+    return identification.status
 
 
 def _prepare_diagnostic_inventory_composition(
