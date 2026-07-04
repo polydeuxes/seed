@@ -7,12 +7,15 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticInventoryCompositionInput,
     _DiagnosticSurfaceBoundaryIdentification,
     _DiagnosticSurfaceConsumptionIdentification,
+    _DiagnosticSurfaceShapeRegistrationIdentification,
     _compose_diagnostic_inventory,
     _compose_diagnostic_inventory_json,
     _diagnostic_surface_boundary,
     _diagnostic_surface_consumption,
+    _diagnostic_surface_shape_registration_status,
     _identify_diagnostic_surface_boundary,
     _identify_diagnostic_surface_consumption,
+    _identify_diagnostic_surface_shape_registration,
     _prepare_diagnostic_inventory_composition,
     diagnostic_surface_definition_json,
     format_diagnostic_inventory,
@@ -390,6 +393,24 @@ def test_diagnostic_surface_consumption_identification_precedes_presentation():
         "evidence_source": "diagnostic_inventory",
         "implementation_reason": "consumption recovered from declared diagnostic inventory fields",
     }
+
+
+def test_diagnostic_surface_shape_registration_identification_precedes_definition_composition():
+    identification = _identify_diagnostic_surface_shape_registration(
+        "diagnostic_shape_audit"
+    )
+
+    assert isinstance(
+        identification, _DiagnosticSurfaceShapeRegistrationIdentification
+    )
+    assert identification.status == "present"
+    assert _diagnostic_surface_shape_registration_status(identification) == "present"
+
+    missing = _identify_diagnostic_surface_shape_registration("synthetic_missing")
+
+    assert isinstance(missing, _DiagnosticSurfaceShapeRegistrationIdentification)
+    assert missing.status == "absent"
+    assert _diagnostic_surface_shape_registration_status(missing) == "absent"
 
 
 def test_diagnostic_surface_definition_human_renders_identity_explanation(capsys):
