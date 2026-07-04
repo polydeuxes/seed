@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import Iterable, Literal
+from typing import Iterable, Literal, Union
 
 RecordScope = Literal["none", "diagnostic_run"]
 
@@ -53,6 +53,37 @@ class _DiagnosticSurfaceBoundaryIdentification:
             "implementation_reason": (
                 "boundary recovered from declared diagnostic inventory fields"
             ),
+        }
+
+
+@dataclass(frozen=True)
+class _KnownDiagnosticSurfaceDefinition:
+    """Implementation-local known DiagnosticSurface fact before wrapping."""
+
+    entry: DiagnosticInventoryEntry
+    boundary: _DiagnosticSurfaceBoundaryIdentification
+    consumption: _DiagnosticSurfaceConsumptionIdentification
+    shape_registration: _DiagnosticSurfaceShapeRegistrationIdentification
+
+    def to_json_dict(self) -> dict[str, object]:
+        return {
+            "status": "known",
+            "diagnostic_name": self.entry.name,
+            "cli_flags": list(self.entry.cli_flags),
+            "description": self.entry.description,
+            "supports_json": self.entry.supports_json,
+            "supports_record": self.entry.supports_record,
+            "record_scope": self.entry.record_scope,
+            "diagnostic_surface_boundary": _diagnostic_surface_boundary(self.boundary),
+            "diagnostic_surface_consumption": _diagnostic_surface_consumption(
+                self.consumption
+            ),
+            "diagnostic_inventory_registration": "present",
+            "shape_registration_status": _diagnostic_surface_shape_registration_status(
+                self.shape_registration
+            ),
+            "evidence_source": "diagnostic_inventory + diagnostic_shape_audit",
+            "implementation_reason": "identity recovered from the diagnostic inventory entry and static shape-audit registration",
         }
 
 
@@ -938,7 +969,6 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
 )
 
 
-
 def build_diagnostic_surface_definition(
     diagnostic_surface: str,
     entries: tuple[DiagnosticInventoryEntry, ...] = DIAGNOSTIC_INVENTORY,
@@ -951,29 +981,20 @@ def build_diagnostic_surface_definition(
             _produce_unknown_diagnostic_surface_definition(diagnostic_surface)
         )
 
-    return {
-        "diagnostic_surface_definition": {
-            "status": "known",
-            "diagnostic_name": entry.name,
-            "cli_flags": list(entry.cli_flags),
-            "description": entry.description,
-            "supports_json": entry.supports_json,
-            "supports_record": entry.supports_record,
-            "record_scope": entry.record_scope,
-            "diagnostic_surface_boundary": _diagnostic_surface_boundary(
-                _identify_diagnostic_surface_boundary(entry)
-            ),
-            "diagnostic_surface_consumption": _diagnostic_surface_consumption(
-                _identify_diagnostic_surface_consumption(entry)
-            ),
-            "diagnostic_inventory_registration": "present",
-            "shape_registration_status": _diagnostic_surface_shape_registration_status(
-                _identify_diagnostic_surface_shape_registration(entry.name)
-            ),
-            "evidence_source": "diagnostic_inventory + diagnostic_shape_audit",
-            "implementation_reason": "identity recovered from the diagnostic inventory entry and static shape-audit registration",
-        }
-    }
+    return _diagnostic_surface_definition_wrapper(
+        _produce_known_diagnostic_surface_definition(entry)
+    )
+
+
+def _produce_known_diagnostic_surface_definition(
+    entry: DiagnosticInventoryEntry,
+) -> _KnownDiagnosticSurfaceDefinition:
+    return _KnownDiagnosticSurfaceDefinition(
+        entry=entry,
+        boundary=_identify_diagnostic_surface_boundary(entry),
+        consumption=_identify_diagnostic_surface_consumption(entry),
+        shape_registration=_identify_diagnostic_surface_shape_registration(entry.name),
+    )
 
 
 def _produce_unknown_diagnostic_surface_definition(
@@ -983,7 +1004,9 @@ def _produce_unknown_diagnostic_surface_definition(
 
 
 def _diagnostic_surface_definition_wrapper(
-    definition: _UnknownDiagnosticSurfaceDefinition,
+    definition: Union[
+        _KnownDiagnosticSurfaceDefinition, _UnknownDiagnosticSurfaceDefinition
+    ],
 ) -> dict[str, object]:
     return {"diagnostic_surface_definition": definition.to_json_dict()}
 
@@ -1001,7 +1024,9 @@ def build_diagnostic_surface_explanation(
         "diagnostic_surface_explanation": {
             "diagnostic_surface_definition": definition,
             "diagnostic_surface_boundary": definition["diagnostic_surface_boundary"],
-            "diagnostic_surface_consumption": definition["diagnostic_surface_consumption"],
+            "diagnostic_surface_consumption": definition[
+                "diagnostic_surface_consumption"
+            ],
         }
     }
 
@@ -1056,8 +1081,12 @@ def format_diagnostic_surface_definition(diagnostic_surface: str) -> str:
             f"  supports_json: {str(definition['supports_json']).lower()}",
             f"  supports_record: {str(definition['supports_record']).lower()}",
             f"  record_scope: {definition['record_scope']}",
-            _format_diagnostic_surface_boundary(definition["diagnostic_surface_boundary"]),
-            _format_diagnostic_surface_consumption(definition["diagnostic_surface_consumption"]),
+            _format_diagnostic_surface_boundary(
+                definition["diagnostic_surface_boundary"]
+            ),
+            _format_diagnostic_surface_consumption(
+                definition["diagnostic_surface_consumption"]
+            ),
             f"  diagnostic_inventory_registration: {definition['diagnostic_inventory_registration']}",
             f"  shape_registration_status: {definition['shape_registration_status']}",
             f"  implementation_reason: {definition['implementation_reason']}",
@@ -1072,25 +1101,37 @@ def _identify_diagnostic_surface_boundary(
     statements: list[str] = [
         "records" if entry.supports_record else "does not record",
         f"record_scope={entry.record_scope}",
-        "writes event ledger"
-        if entry.writes_event_ledger
-        else "does not write event ledger",
+        (
+            "writes event ledger"
+            if entry.writes_event_ledger
+            else "does not write event ledger"
+        ),
         "mutates cluster" if entry.mutates_cluster else "does not mutate cluster",
-        "uses projected state"
-        if entry.uses_projected_state
-        else "does not use projected state",
-        "uses repository files"
-        if entry.uses_repo_files
-        else "does not use repository files",
-        "emits diagnostic facts"
-        if entry.emits_diagnostic_facts
-        else "does not emit diagnostic facts",
-        "emits cluster facts"
-        if entry.emits_cluster_facts
-        else "does not emit cluster facts",
-        "reads diagnostic facts"
-        if entry.reads_diagnostic_facts
-        else "does not read diagnostic facts",
+        (
+            "uses projected state"
+            if entry.uses_projected_state
+            else "does not use projected state"
+        ),
+        (
+            "uses repository files"
+            if entry.uses_repo_files
+            else "does not use repository files"
+        ),
+        (
+            "emits diagnostic facts"
+            if entry.emits_diagnostic_facts
+            else "does not emit diagnostic facts"
+        ),
+        (
+            "emits cluster facts"
+            if entry.emits_cluster_facts
+            else "does not emit cluster facts"
+        ),
+        (
+            "reads diagnostic facts"
+            if entry.reads_diagnostic_facts
+            else "does not read diagnostic facts"
+        ),
     ]
     read_only = (
         not entry.supports_record
@@ -1126,7 +1167,6 @@ def _diagnostic_surface_consumption(
     return identification.to_json_dict()
 
 
-
 def _format_diagnostic_surface_boundary(boundary: object, indent: str = "  ") -> str:
     if not isinstance(boundary, dict):
         return f"{indent}diagnostic_surface_boundary: unknown"
@@ -1138,8 +1178,9 @@ def _format_diagnostic_surface_boundary(boundary: object, indent: str = "  ") ->
     return f"{indent}diagnostic_surface_boundary: {statement_text}"
 
 
-
-def _format_diagnostic_surface_consumption(consumption: object, indent: str = "  ") -> str:
+def _format_diagnostic_surface_consumption(
+    consumption: object, indent: str = "  "
+) -> str:
     if not isinstance(consumption, dict):
         return f"{indent}diagnostic_surface_consumption: unknown"
     declared = consumption.get("declared_consumption")
@@ -1147,7 +1188,6 @@ def _format_diagnostic_surface_consumption(consumption: object, indent: str = " 
         return f"{indent}diagnostic_surface_consumption: unknown"
     items = [f"{key}={str(value).lower()}" for key, value in declared.items()]
     return f"{indent}diagnostic_surface_consumption: " + "; ".join(items)
-
 
 
 def _identify_diagnostic_surface_shape_registration(
