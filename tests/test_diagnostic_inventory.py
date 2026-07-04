@@ -5,6 +5,7 @@ from seed_runtime.diagnostic_inventory import (
     DIAGNOSTIC_INVENTORY,
     DiagnosticInventoryEntry,
     _DiagnosticInventoryCompositionInput,
+    _KnownDiagnosticSurfaceDefinition,
     _UnknownDiagnosticSurfaceDefinition,
     _DiagnosticSurfaceBoundaryIdentification,
     _DiagnosticSurfaceConsumptionIdentification,
@@ -18,6 +19,7 @@ from seed_runtime.diagnostic_inventory import (
     _identify_diagnostic_surface_consumption,
     _identify_diagnostic_surface_shape_registration,
     _prepare_diagnostic_inventory_composition,
+    _produce_known_diagnostic_surface_definition,
     _produce_unknown_diagnostic_surface_definition,
     _diagnostic_surface_definition_wrapper,
     diagnostic_surface_definition_json,
@@ -205,7 +207,6 @@ def test_inventory_rendering_is_generated_from_registry_data():
     assert "reads_diagnostic_facts=true" in rendered
 
 
-
 def test_diagnostic_inventory_preparation_carries_only_inventory_entries():
     entries = (
         DiagnosticInventoryEntry(
@@ -259,6 +260,7 @@ def test_diagnostic_inventory_composition_consumes_prepared_input_without_shape_
     assert "diagnostic_surface_boundary" not in payload[0]
     assert "shape_registration_status" not in payload[0]
 
+
 def test_container_ownership_authority_inventory_entry_declares_boundary():
     entry = _entry("container_ownership_authority")
 
@@ -299,7 +301,6 @@ def test_implementation_trait_characterization_registered_in_diagnostic_inventor
     assert not entry.mutates_cluster
     assert not entry.emits_diagnostic_facts
     assert not entry.emits_cluster_facts
-
 
 
 def test_diagnostic_surface_definition_json_includes_identity_explanation(capsys):
@@ -403,9 +404,7 @@ def test_diagnostic_surface_shape_registration_identification_precedes_definitio
         "diagnostic_shape_audit"
     )
 
-    assert isinstance(
-        identification, _DiagnosticSurfaceShapeRegistrationIdentification
-    )
+    assert isinstance(identification, _DiagnosticSurfaceShapeRegistrationIdentification)
     assert identification.status == "present"
     assert _diagnostic_surface_shape_registration_status(identification) == "present"
 
@@ -414,6 +413,27 @@ def test_diagnostic_surface_shape_registration_identification_precedes_definitio
     assert isinstance(missing, _DiagnosticSurfaceShapeRegistrationIdentification)
     assert missing.status == "absent"
     assert _diagnostic_surface_shape_registration_status(missing) == "absent"
+
+
+def test_known_diagnostic_surface_definition_production_precedes_wrapper_composition():
+    entry = _entry("diagnostic_shape_audit")
+
+    definition = _produce_known_diagnostic_surface_definition(entry)
+
+    assert isinstance(definition, _KnownDiagnosticSurfaceDefinition)
+    assert definition.entry == entry
+    assert isinstance(definition.boundary, _DiagnosticSurfaceBoundaryIdentification)
+    assert isinstance(
+        definition.consumption, _DiagnosticSurfaceConsumptionIdentification
+    )
+    assert isinstance(
+        definition.shape_registration, _DiagnosticSurfaceShapeRegistrationIdentification
+    )
+    assert _diagnostic_surface_definition_wrapper(definition) == {
+        "diagnostic_surface_definition": diagnostic_surface_definition_json(
+            "diagnostic_shape_audit"
+        )["diagnostic_surface_definition"]
+    }
 
 
 def test_unknown_diagnostic_surface_definition_production_precedes_wrapper_composition():
@@ -451,7 +471,10 @@ def test_unknown_diagnostic_surface_definition_production_precedes_wrapper_compo
 
 
 def test_diagnostic_surface_definition_human_renders_identity_explanation(capsys):
-    assert seed_local.main(["--diagnostic-surface-definition", "diagnostic_shape_audit"]) == 0
+    assert (
+        seed_local.main(["--diagnostic-surface-definition", "diagnostic_shape_audit"])
+        == 0
+    )
 
     output = capsys.readouterr().out
 
@@ -478,7 +501,12 @@ def test_diagnostic_surface_definition_human_renders_identity_explanation(capsys
 
 
 def test_diagnostic_surface_definition_unknown_is_bounded(capsys):
-    assert seed_local.main(["--diagnostic-surface-definition", "missing_surface", "--json"]) == 0
+    assert (
+        seed_local.main(
+            ["--diagnostic-surface-definition", "missing_surface", "--json"]
+        )
+        == 0
+    )
 
     payload = json.loads(capsys.readouterr().out)
 
@@ -545,7 +573,9 @@ def test_diagnostic_surface_consumption_json_uses_inventory_declarations(capsys)
     }
 
 
-def test_diagnostic_surface_definition_guardrails_exclude_runtime_planning_and_inference(capsys):
+def test_diagnostic_surface_definition_guardrails_exclude_runtime_planning_and_inference(
+    capsys,
+):
     assert (
         seed_local.main(
             ["--diagnostic-surface-definition", "diagnostic_shape_audit", "--json"]
@@ -585,19 +615,27 @@ def test_diagnostic_surface_explanation_json_composes_only_existing_fields(capsy
         "diagnostic_surface_boundary",
         "diagnostic_surface_consumption",
     }
-    assert explanation["diagnostic_surface_boundary"] == definition[
-        "diagnostic_surface_boundary"
-    ]
-    assert explanation["diagnostic_surface_consumption"] == definition[
-        "diagnostic_surface_consumption"
-    ]
-    assert definition == diagnostic_surface_definition_json("diagnostic_shape_audit")[
-        "diagnostic_surface_definition"
-    ]
+    assert (
+        explanation["diagnostic_surface_boundary"]
+        == definition["diagnostic_surface_boundary"]
+    )
+    assert (
+        explanation["diagnostic_surface_consumption"]
+        == definition["diagnostic_surface_consumption"]
+    )
+    assert (
+        definition
+        == diagnostic_surface_definition_json("diagnostic_shape_audit")[
+            "diagnostic_surface_definition"
+        ]
+    )
 
 
 def test_diagnostic_surface_explanation_human_renders_coherent_composition(capsys):
-    assert seed_local.main(["--diagnostic-surface-explanation", "diagnostic_shape_audit"]) == 0
+    assert (
+        seed_local.main(["--diagnostic-surface-explanation", "diagnostic_shape_audit"])
+        == 0
+    )
 
     output = capsys.readouterr().out
 
@@ -615,12 +653,20 @@ def test_diagnostic_surface_explanation_human_renders_coherent_composition(capsy
 
 
 def test_diagnostic_surface_explanation_unknown_is_bounded(capsys):
-    assert seed_local.main(["--diagnostic-surface-explanation", "missing_surface", "--json"]) == 0
+    assert (
+        seed_local.main(
+            ["--diagnostic-surface-explanation", "missing_surface", "--json"]
+        )
+        == 0
+    )
 
     explanation = json.loads(capsys.readouterr().out)["diagnostic_surface_explanation"]
 
     assert explanation["diagnostic_surface_definition"]["status"] == "unknown"
-    assert explanation["diagnostic_surface_definition"]["diagnostic_name"] == "missing_surface"
+    assert (
+        explanation["diagnostic_surface_definition"]["diagnostic_name"]
+        == "missing_surface"
+    )
     assert explanation["diagnostic_surface_boundary"] == {
         "status": "unknown",
         "statements": [],
@@ -649,12 +695,14 @@ def test_diagnostic_surface_explanation_preserves_existing_field_behaviors(capsy
     ]
 
     assert composed["diagnostic_surface_definition"] == existing
-    assert composed["diagnostic_surface_boundary"] == existing[
-        "diagnostic_surface_boundary"
-    ]
-    assert composed["diagnostic_surface_consumption"] == existing[
-        "diagnostic_surface_consumption"
-    ]
+    assert (
+        composed["diagnostic_surface_boundary"]
+        == existing["diagnostic_surface_boundary"]
+    )
+    assert (
+        composed["diagnostic_surface_consumption"]
+        == existing["diagnostic_surface_consumption"]
+    )
 
 
 def test_diagnostic_surface_explanation_does_not_change_inventory_output(capsys):
