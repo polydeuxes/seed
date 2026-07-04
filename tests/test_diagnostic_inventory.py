@@ -5,6 +5,7 @@ from seed_runtime.diagnostic_inventory import (
     DIAGNOSTIC_INVENTORY,
     DiagnosticInventoryEntry,
     _DiagnosticInventoryCompositionInput,
+    _UnknownDiagnosticSurfaceDefinition,
     _DiagnosticSurfaceBoundaryIdentification,
     _DiagnosticSurfaceConsumptionIdentification,
     _DiagnosticSurfaceShapeRegistrationIdentification,
@@ -17,6 +18,8 @@ from seed_runtime.diagnostic_inventory import (
     _identify_diagnostic_surface_consumption,
     _identify_diagnostic_surface_shape_registration,
     _prepare_diagnostic_inventory_composition,
+    _produce_unknown_diagnostic_surface_definition,
+    _diagnostic_surface_definition_wrapper,
     diagnostic_surface_definition_json,
     format_diagnostic_inventory,
 )
@@ -411,6 +414,40 @@ def test_diagnostic_surface_shape_registration_identification_precedes_definitio
     assert isinstance(missing, _DiagnosticSurfaceShapeRegistrationIdentification)
     assert missing.status == "absent"
     assert _diagnostic_surface_shape_registration_status(missing) == "absent"
+
+
+def test_unknown_diagnostic_surface_definition_production_precedes_wrapper_composition():
+    definition = _produce_unknown_diagnostic_surface_definition("synthetic_missing")
+
+    assert isinstance(definition, _UnknownDiagnosticSurfaceDefinition)
+    assert definition.diagnostic_name == "synthetic_missing"
+    assert _diagnostic_surface_definition_wrapper(definition) == {
+        "diagnostic_surface_definition": {
+            "status": "unknown",
+            "diagnostic_name": "synthetic_missing",
+            "cli_flags": [],
+            "description": "unknown",
+            "supports_json": "unknown",
+            "supports_record": "unknown",
+            "record_scope": "unknown",
+            "diagnostic_surface_boundary": {
+                "status": "unknown",
+                "statements": [],
+                "evidence_source": "diagnostic_inventory",
+                "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
+            },
+            "diagnostic_surface_consumption": {
+                "status": "unknown",
+                "declared_consumption": {},
+                "evidence_source": "diagnostic_inventory",
+                "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
+            },
+            "diagnostic_inventory_registration": "absent",
+            "shape_registration_status": "unknown",
+            "evidence_source": "diagnostic_inventory",
+            "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
+        }
+    }
 
 
 def test_diagnostic_surface_definition_human_renders_identity_explanation(capsys):

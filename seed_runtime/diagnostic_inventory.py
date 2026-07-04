@@ -57,6 +57,40 @@ class _DiagnosticSurfaceBoundaryIdentification:
 
 
 @dataclass(frozen=True)
+class _UnknownDiagnosticSurfaceDefinition:
+    """Implementation-local unknown DiagnosticSurface fact before wrapping."""
+
+    diagnostic_name: str
+
+    def to_json_dict(self) -> dict[str, object]:
+        return {
+            "status": "unknown",
+            "diagnostic_name": self.diagnostic_name,
+            "cli_flags": [],
+            "description": "unknown",
+            "supports_json": "unknown",
+            "supports_record": "unknown",
+            "record_scope": "unknown",
+            "diagnostic_surface_boundary": {
+                "status": "unknown",
+                "statements": [],
+                "evidence_source": "diagnostic_inventory",
+                "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
+            },
+            "diagnostic_surface_consumption": {
+                "status": "unknown",
+                "declared_consumption": {},
+                "evidence_source": "diagnostic_inventory",
+                "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
+            },
+            "diagnostic_inventory_registration": "absent",
+            "shape_registration_status": "unknown",
+            "evidence_source": "diagnostic_inventory",
+            "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
+        }
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceShapeRegistrationIdentification:
     """Implementation-local shape registration fact before definition composition."""
 
@@ -913,33 +947,9 @@ def build_diagnostic_surface_definition(
 
     entry = next((item for item in entries if item.name == diagnostic_surface), None)
     if entry is None:
-        return {
-            "diagnostic_surface_definition": {
-                "status": "unknown",
-                "diagnostic_name": diagnostic_surface,
-                "cli_flags": [],
-                "description": "unknown",
-                "supports_json": "unknown",
-                "supports_record": "unknown",
-                "record_scope": "unknown",
-                "diagnostic_surface_boundary": {
-                    "status": "unknown",
-                    "statements": [],
-                    "evidence_source": "diagnostic_inventory",
-                    "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
-                },
-                "diagnostic_surface_consumption": {
-                    "status": "unknown",
-                    "declared_consumption": {},
-                    "evidence_source": "diagnostic_inventory",
-                    "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
-                },
-                "diagnostic_inventory_registration": "absent",
-                "shape_registration_status": "unknown",
-                "evidence_source": "diagnostic_inventory",
-                "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
-            }
-        }
+        return _diagnostic_surface_definition_wrapper(
+            _produce_unknown_diagnostic_surface_definition(diagnostic_surface)
+        )
 
     return {
         "diagnostic_surface_definition": {
@@ -964,6 +974,18 @@ def build_diagnostic_surface_definition(
             "implementation_reason": "identity recovered from the diagnostic inventory entry and static shape-audit registration",
         }
     }
+
+
+def _produce_unknown_diagnostic_surface_definition(
+    diagnostic_surface: str,
+) -> _UnknownDiagnosticSurfaceDefinition:
+    return _UnknownDiagnosticSurfaceDefinition(diagnostic_name=diagnostic_surface)
+
+
+def _diagnostic_surface_definition_wrapper(
+    definition: _UnknownDiagnosticSurfaceDefinition,
+) -> dict[str, object]:
+    return {"diagnostic_surface_definition": definition.to_json_dict()}
 
 
 def build_diagnostic_surface_explanation(
