@@ -5,8 +5,11 @@ from seed_runtime.diagnostic_inventory import (
     DIAGNOSTIC_INVENTORY,
     DiagnosticInventoryEntry,
     _DiagnosticInventoryCompositionInput,
+    _DiagnosticSurfaceBoundaryIdentification,
     _compose_diagnostic_inventory,
     _compose_diagnostic_inventory_json,
+    _diagnostic_surface_boundary,
+    _identify_diagnostic_surface_boundary,
     _prepare_diagnostic_inventory_composition,
     diagnostic_surface_definition_json,
     format_diagnostic_inventory,
@@ -337,6 +340,32 @@ def test_diagnostic_surface_definition_json_includes_identity_explanation(capsys
     }
     assert definition["diagnostic_inventory_registration"] == "present"
     assert definition["shape_registration_status"] == "present"
+
+
+def test_diagnostic_surface_boundary_identification_precedes_presentation():
+    identification = _identify_diagnostic_surface_boundary(
+        _entry("diagnostic_shape_audit")
+    )
+
+    assert isinstance(identification, _DiagnosticSurfaceBoundaryIdentification)
+    assert identification.statements == (
+        "read-only",
+        "does not record",
+        "record_scope=none",
+        "does not write event ledger",
+        "does not mutate cluster",
+        "does not use projected state",
+        "does not use repository files",
+        "does not emit diagnostic facts",
+        "does not emit cluster facts",
+        "does not read diagnostic facts",
+    )
+    assert _diagnostic_surface_boundary(identification) == {
+        "status": "known",
+        "statements": list(identification.statements),
+        "evidence_source": "diagnostic_inventory",
+        "implementation_reason": "boundary recovered from declared diagnostic inventory fields",
+    }
 
 
 def test_diagnostic_surface_definition_human_renders_identity_explanation(capsys):
