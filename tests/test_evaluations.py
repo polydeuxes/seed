@@ -1,6 +1,9 @@
 from seed_runtime.context import DecisionInputPacket
+from seed_runtime.events import EventLedger
+from seed_runtime.state import StateProjector
 from seed_runtime.evaluations import (
     SMALL_MODEL_MVP_EVAL_CASES,
+    _assess_evaluation_support,
     DecisionEvaluator,
     EvalCase,
     EvalExpectation,
@@ -57,6 +60,32 @@ class SmallModelMvpDecisionProducer:
                 answer="Last time, example_host showed disk pressure during a Docker storage check.",
             )
         raise AssertionError(f"unexpected eval input: {text}")
+
+
+def test_evaluation_support_assessment_is_private_and_report_free():
+    registry = ToolRegistry()
+    registry.load_manifest("toolkits/core/echo/toolkit.yaml")
+
+    assessment = _assess_evaluation_support(
+        registry,
+        Decision(
+            kind="call_tool",
+            reason="safe",
+            tool_name="missing",
+            tool_arguments={},
+        ),
+        StateProjector(EventLedger()).project("ws_eval"),
+        EvalExpectation(kind="answer", answer_required=True),
+    )
+
+    assert not assessment.passed
+    assert assessment.validation_errors == ["unknown tool 'missing'"]
+    assert "expected kind 'answer', got 'call_tool'" in assessment.errors
+    assert "expected answer to be present" in assessment.errors
+    assert set(assessment.__dataclass_fields__) == {"errors", "validation_errors"}
+    assert "case_name" not in assessment.__dataclass_fields__
+    assert "decision" not in assessment.__dataclass_fields__
+    assert "parse_error" not in assessment.__dataclass_fields__
 
 
 def test_evaluator_passes_matching_tool_call_case():
@@ -151,7 +180,9 @@ def test_small_model_mvp_eval_cases_match_strategy_document():
         "what happened last time?",
     ]
     assert SMALL_MODEL_MVP_EVAL_CASES[0].expected.tool_name == "docker_storage_summary"
-    assert SMALL_MODEL_MVP_EVAL_CASES[0].expected.tool_arguments == {"host": "example_host"}
+    assert SMALL_MODEL_MVP_EVAL_CASES[0].expected.tool_arguments == {
+        "host": "example_host"
+    }
     assert SMALL_MODEL_MVP_EVAL_CASES[1].expected.tool_need_name == "install_ssh_server"
     assert SMALL_MODEL_MVP_EVAL_CASES[2].expected.question_required
     assert SMALL_MODEL_MVP_EVAL_CASES[3].expected.refusal_reason_contains == "unsafe"

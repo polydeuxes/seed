@@ -59,6 +59,18 @@ class EvalResult:
 
 
 @dataclass(frozen=True)
+class _EvaluationSupportAssessment:
+    """Implementation-local expectation and validation assessment before report composition."""
+
+    errors: list[str] = field(default_factory=list)
+    validation_errors: list[str] = field(default_factory=list)
+
+    @property
+    def passed(self) -> bool:
+        return not self.errors
+
+
+@dataclass(frozen=True)
 class EvalRun:
     results: list[EvalResult]
 
@@ -120,49 +132,15 @@ class DecisionEvaluator:
                 validation_errors=[],
                 parse_error=parse_error,
             )
-        validation = DecisionValidator(self.registry).validate(decision, state)
-        errors = list(validation.errors)
-        if decision.kind != case.expected.kind:
-            errors.append(
-                f"expected kind {case.expected.kind!r}, got {decision.kind!r}"
-            )
-        if (
-            case.expected.tool_name is not None
-            and decision.tool_name != case.expected.tool_name
-        ):
-            errors.append(
-                f"expected tool {case.expected.tool_name!r}, got {decision.tool_name!r}"
-            )
-        if (
-            case.expected.tool_arguments is not None
-            and decision.tool_arguments != case.expected.tool_arguments
-        ):
-            errors.append(
-                f"expected tool arguments {case.expected.tool_arguments!r}, got {decision.tool_arguments!r}"
-            )
-        if case.expected.tool_need_name is not None:
-            actual = (decision.tool_need or {}).get("name")
-            if actual != case.expected.tool_need_name:
-                errors.append(
-                    f"expected tool need {case.expected.tool_need_name!r}, got {actual!r}"
-                )
-        if case.expected.question_required and not decision.question:
-            errors.append("expected question to be present")
-        if case.expected.refusal_reason_contains is not None:
-            reason = decision.reason or ""
-            if case.expected.refusal_reason_contains.lower() not in reason.lower():
-                errors.append(
-                    f"expected refusal reason to contain "
-                    f"{case.expected.refusal_reason_contains!r}, got {decision.reason!r}"
-                )
-        if case.expected.answer_required and not decision.answer:
-            errors.append("expected answer to be present")
+        assessment = _assess_evaluation_support(
+            self.registry, decision, state, case.expected
+        )
         return EvalResult(
             case_name=case.name,
-            passed=not errors,
+            passed=assessment.passed,
             decision=decision,
-            errors=errors,
-            validation_errors=list(validation.errors),
+            errors=list(assessment.errors),
+            validation_errors=list(assessment.validation_errors),
         )
 
     def record_run(self, ledger: EventLedger, workspace_id: str, run: EvalRun) -> None:
@@ -234,7 +212,9 @@ def _small_model_mvp_seed_events(workspace_id: str = "ws_eval") -> tuple[Event, 
             actor="system",
             timestamp=now,
             payload={
-                "entity": to_plain(Entity(id="ent_example_host", kind="host", name="example_host"))
+                "entity": to_plain(
+                    Entity(id="ent_example_host", kind="host", name="example_host")
+                )
             },
         ),
         Event(
@@ -325,3 +305,50 @@ SMALL_MODEL_MVP_EVAL_CASES: tuple[EvalCase, ...] = (
         seed_events=_small_model_mvp_seed_events(),
     ),
 )
+
+
+def _assess_evaluation_support(
+    registry: ToolRegistry,
+    decision: Decision,
+    state: Any,
+    expected: EvalExpectation,
+) -> _EvaluationSupportAssessment:
+    """Assess validation and expectation support without composing EvalResult."""
+
+    validation = DecisionValidator(registry).validate(decision, state)
+    errors = list(validation.errors)
+    if decision.kind != expected.kind:
+        errors.append(f"expected kind {expected.kind!r}, got {decision.kind!r}")
+    if expected.tool_name is not None and decision.tool_name != expected.tool_name:
+        errors.append(
+            f"expected tool {expected.tool_name!r}, got {decision.tool_name!r}"
+        )
+    if (
+        expected.tool_arguments is not None
+        and decision.tool_arguments != expected.tool_arguments
+    ):
+        errors.append(
+            f"expected tool arguments {expected.tool_arguments!r}, "
+            f"got {decision.tool_arguments!r}"
+        )
+    if expected.tool_need_name is not None:
+        actual = (decision.tool_need or {}).get("name")
+        if actual != expected.tool_need_name:
+            errors.append(
+                f"expected tool need {expected.tool_need_name!r}, got {actual!r}"
+            )
+    if expected.question_required and not decision.question:
+        errors.append("expected question to be present")
+    if expected.refusal_reason_contains is not None:
+        reason = decision.reason or ""
+        if expected.refusal_reason_contains.lower() not in reason.lower():
+            errors.append(
+                f"expected refusal reason to contain "
+                f"{expected.refusal_reason_contains!r}, got {decision.reason!r}"
+            )
+    if expected.answer_required and not decision.answer:
+        errors.append("expected answer to be present")
+    return _EvaluationSupportAssessment(
+        errors=errors,
+        validation_errors=list(validation.errors),
+    )
