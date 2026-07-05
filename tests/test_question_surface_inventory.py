@@ -15,6 +15,7 @@ from seed_runtime.question_surface_inventory import (
     _prepare_question_family_eligibility_input,
     bounded_work_dispatch_request_for_selection,
     bounded_work_eligibility_for_question_family,
+    bounded_work_presentation_handoff_for_eligibility,
     bounded_work_refusal_for_eligibility,
     bounded_work_selected_dispatch_surface_for_eligibility,
     bounded_work_selected_surface_value_for_eligibility,
@@ -383,6 +384,28 @@ def test_bounded_work_selection_result_is_separate_from_eligibility_and_dispatch
         bounded_work_selection_for_question_family("surface inventory", diagnostic_only)
 
 
+def test_bounded_work_presentation_handoff_is_separate_from_dispatch_request():
+    eligibility = bounded_work_eligibility_for_question_family(
+        "selection explanation"
+    )
+
+    presentation_handoff = bounded_work_presentation_handoff_for_eligibility(
+        "selection explanation", eligibility
+    )
+
+    assert presentation_handoff.question_family == "selection explanation"
+    assert presentation_handoff.question_family_explanation == "selection explanation"
+    assert "dispatch_surface" not in presentation_handoff.__dataclass_fields__
+    assert "surface_value" not in presentation_handoff.__dataclass_fields__
+    assert "required_surface_args" not in presentation_handoff.__dataclass_fields__
+
+    diagnostic_only = bounded_work_eligibility_for_question_family("surface inventory")
+    with pytest.raises(ValueError, match="requires permitted eligibility"):
+        bounded_work_presentation_handoff_for_eligibility(
+            "surface inventory", diagnostic_only
+        )
+
+
 def test_bounded_work_dispatch_request_is_separate_from_selection():
     eligibility = bounded_work_eligibility_for_question_family(
         "authority-constrained service ownership"
@@ -449,6 +472,21 @@ def test_bounded_ask_dispatch_consumes_bounded_work_dispatch_request():
 
     assert parameterized_args.selection_path == "target:one"
     assert parameterized_args.message == []
+
+    presentation_args = parser.parse_args([
+        "ask",
+        "--question-family",
+        "selection explanation",
+        "--surface-args",
+        "target:one",
+        "--presentation",
+    ])
+
+    seed_local.apply_bounded_ask_dispatch(presentation_args, parser)
+
+    assert presentation_args.question_family_explanation == "selection explanation"
+    assert presentation_args.selection_path is None
+    assert presentation_args.message == []
 
 
 def test_bounded_ask_inventory_validates_question_families_and_dispatch_maps():

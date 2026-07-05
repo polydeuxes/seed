@@ -363,6 +363,39 @@ class BoundedWorkSelectionResult:
 
 
 @dataclass(frozen=True)
+class BoundedWorkPresentationHandoff:
+    """Implementation-backed presentation handoff for selected bounded work."""
+
+    question_family: str
+    question_family_explanation: str
+    reason: str = ""
+
+
+def bounded_work_presentation_handoff_for_eligibility(
+    question_family: str,
+    eligibility: BoundedWorkEligibilityResult,
+) -> BoundedWorkPresentationHandoff:
+    """Prepare the existing question-family explanation handoff for presentation.
+
+    This recovers only the local presentation handoff used by bounded ask when
+    the operator requests ``--presentation``. It does not decide exact lookup,
+    bounded eligibility, selected dispatch surface, selected surface value,
+    dispatch request construction, dispatch execution, rendering, answer
+    composition, diagnostics, schema, event ledger, or semantic routing.
+    """
+
+    if eligibility.question_family != question_family:
+        raise ValueError("eligibility result question family does not match presentation")
+    if not eligibility.permitted:
+        raise ValueError("presentation handoff requires permitted eligibility")
+    return BoundedWorkPresentationHandoff(
+        question_family=question_family,
+        question_family_explanation=question_family,
+        reason="handoff bounded ask to question family presentation",
+    )
+
+
+@dataclass(frozen=True)
 class BoundedWorkDispatchRequest:
     """Implementation-backed invocation request for already selected bounded work."""
 
