@@ -487,6 +487,27 @@ def bounded_work_dispatch_result_for_request(
     )
 
 
+def apply_bounded_work_dispatch_namespace_update(
+    args: object,
+    dispatch_request: BoundedWorkDispatchRequest,
+) -> BoundedWorkDispatchRequest:
+    """Apply the selected bounded work surface value to the CLI namespace.
+
+    This recovers only the local namespace update required by an already
+    selected bounded work dispatch request. It does not decide QuestionFamily
+    lookup, eligibility, bounded work selection, dispatch request construction,
+    dispatch result production, answer composition, rendering, diagnostics,
+    schema, event ledger, evidence interpretation, or semantic routing.
+    """
+
+    setattr(
+        args,
+        dispatch_request.dispatch_surface,
+        dispatch_request.surface_value,
+    )
+    return dispatch_request
+
+
 def execute_bounded_work_dispatch(
     args: object,
     dispatch_request: BoundedWorkDispatchRequest,
@@ -499,12 +520,10 @@ def execute_bounded_work_dispatch(
     composition, rendering, evidence interpretation, or semantic routing.
     """
 
-    setattr(
-        args,
-        dispatch_request.dispatch_surface,
-        dispatch_request.surface_value,
+    applied_request = apply_bounded_work_dispatch_namespace_update(
+        args, dispatch_request
     )
-    return bounded_work_dispatch_result_for_request(dispatch_request)
+    return bounded_work_dispatch_result_for_request(applied_request)
 
 
 
