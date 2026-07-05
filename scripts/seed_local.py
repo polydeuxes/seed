@@ -151,6 +151,7 @@ from seed_runtime.diagnostic_shape_audit import (
 from seed_runtime.question_surface_inventory import (
     _bounded_work_eligibility_for_prepared_question_family,
     _prepare_question_family_eligibility_input,
+    apply_bounded_work_dispatch_result,
     apply_bounded_work_presentation_handoff,
     bounded_work_dispatch_request_for_selection,
     bounded_work_presentation_handoff_for_eligibility,
@@ -2265,7 +2266,8 @@ def apply_bounded_ask_dispatch(
             family, eligibility, surface_args_result
         )
         dispatch_request = bounded_work_dispatch_request_for_selection(selection)
-        execute_bounded_work_dispatch(args, dispatch_request)
+        dispatch_result = execute_bounded_work_dispatch(args, dispatch_request)
+        apply_bounded_work_dispatch_result(args, dispatch_result)
         args.message = []
         return
 
@@ -2285,10 +2287,8 @@ def apply_bounded_ask_dispatch(
         family, eligibility, surface_args_result
     )
     dispatch_request = bounded_work_dispatch_request_for_selection(selection)
-    execute_bounded_work_dispatch(args, dispatch_request)
-    if family == "knowledge reachability" and args.json_output:
-        args.knowledge_reachability_audit_json = True
-        args.json_output = False
+    dispatch_result = execute_bounded_work_dispatch(args, dispatch_request)
+    apply_bounded_work_dispatch_result(args, dispatch_result)
     args.message = []
 
 
