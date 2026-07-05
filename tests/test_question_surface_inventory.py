@@ -17,6 +17,7 @@ from seed_runtime.question_surface_inventory import (
     apply_bounded_work_presentation_handoff,
     bounded_work_dispatch_request_for_selection,
     bounded_work_dispatch_result_for_request,
+    clear_bounded_ask_dispatch_message,
     bounded_work_eligibility_for_question_family,
     bounded_work_presentation_handoff_for_eligibility,
     bounded_work_refusal_for_eligibility,
@@ -548,6 +549,32 @@ def test_apply_bounded_work_dispatch_result_preserves_non_compatibility_json():
 
     assert args.observation_domains == "__all__"
     assert args.json_output is True
+
+
+def test_clear_bounded_ask_dispatch_message_consumes_dispatch_result_only():
+    parser = seed_local.build_parser()
+    args = parser.parse_args([
+        "ask",
+        "--question-family",
+        "observation domain coverage",
+    ])
+    eligibility = bounded_work_eligibility_for_question_family(
+        "observation domain coverage"
+    )
+    selection = bounded_work_selection_for_question_family(
+        "observation domain coverage", eligibility
+    )
+    dispatch_request = bounded_work_dispatch_request_for_selection(selection)
+    dispatch_result = execute_bounded_work_dispatch(args, dispatch_request)
+
+    result = clear_bounded_ask_dispatch_message(args, dispatch_result)
+
+    assert args.message == []
+    assert result.question_family == "observation domain coverage"
+    assert result.reason == "cleared bounded ask message after dispatch handoff"
+    assert "dispatch_surface" not in result.__dataclass_fields__
+    assert "surface_value" not in result.__dataclass_fields__
+    assert "required_surface_args" not in result.__dataclass_fields__
 
 
 def test_bounded_ask_dispatch_consumes_bounded_work_dispatch_request():

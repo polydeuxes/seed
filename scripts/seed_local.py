@@ -154,6 +154,7 @@ from seed_runtime.question_surface_inventory import (
     apply_bounded_work_dispatch_result,
     apply_bounded_work_presentation_handoff,
     bounded_work_dispatch_request_for_selection,
+    clear_bounded_ask_dispatch_message,
     bounded_work_presentation_handoff_for_eligibility,
     bounded_work_refusal_for_eligibility,
     bounded_work_selection_for_question_family,
@@ -2268,7 +2269,7 @@ def apply_bounded_ask_dispatch(
         dispatch_request = bounded_work_dispatch_request_for_selection(selection)
         dispatch_result = execute_bounded_work_dispatch(args, dispatch_request)
         apply_bounded_work_dispatch_result(args, dispatch_result)
-        args.message = []
+        clear_bounded_ask_dispatch_message(args, dispatch_result)
         return
 
     if not eligibility.permitted:
@@ -2289,7 +2290,7 @@ def apply_bounded_ask_dispatch(
     dispatch_request = bounded_work_dispatch_request_for_selection(selection)
     dispatch_result = execute_bounded_work_dispatch(args, dispatch_request)
     apply_bounded_work_dispatch_result(args, dispatch_result)
-    args.message = []
+    clear_bounded_ask_dispatch_message(args, dispatch_result)
 
 
 def normalize_confidence_args(
