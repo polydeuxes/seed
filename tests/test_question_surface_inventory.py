@@ -16,6 +16,7 @@ from seed_runtime.question_surface_inventory import (
     bounded_work_dispatch_request_for_selection,
     bounded_work_eligibility_for_question_family,
     bounded_work_refusal_for_eligibility,
+    bounded_work_selected_dispatch_surface_for_eligibility,
     bounded_work_selected_surface_value_for_eligibility,
     bounded_work_selection_for_question_family,
     bounded_work_surface_args_for_eligibility,
@@ -316,6 +317,31 @@ def test_bounded_work_selected_surface_value_is_separate_from_selection():
     diagnostic_only = bounded_work_eligibility_for_question_family("surface inventory")
     with pytest.raises(ValueError, match="requires permitted eligibility"):
         bounded_work_selected_surface_value_for_eligibility(
+            "surface inventory", diagnostic_only
+        )
+
+
+def test_bounded_work_selected_dispatch_surface_is_separate_from_value_and_selection():
+    eligibility = bounded_work_eligibility_for_question_family(
+        "authority-constrained service ownership"
+    )
+
+    selected_dispatch_surface = bounded_work_selected_dispatch_surface_for_eligibility(
+        "authority-constrained service ownership", eligibility
+    )
+
+    assert selected_dispatch_surface.question_family == (
+        "authority-constrained service ownership"
+    )
+    assert selected_dispatch_surface.dispatch_surface == "service_ownership_authority"
+    assert "surface_value" not in selected_dispatch_surface.__dataclass_fields__
+    assert "required_surface_args" not in selected_dispatch_surface.__dataclass_fields__
+    assert "bounded_status" not in selected_dispatch_surface.__dataclass_fields__
+    assert "permitted" not in selected_dispatch_surface.__dataclass_fields__
+
+    diagnostic_only = bounded_work_eligibility_for_question_family("surface inventory")
+    with pytest.raises(ValueError, match="requires permitted eligibility"):
+        bounded_work_selected_dispatch_surface_for_eligibility(
             "surface inventory", diagnostic_only
         )
 
