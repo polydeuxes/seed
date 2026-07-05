@@ -16,6 +16,7 @@ from seed_runtime.question_surface_inventory import (
     bounded_work_dispatch_request_for_selection,
     bounded_work_eligibility_for_question_family,
     bounded_work_refusal_for_eligibility,
+    bounded_work_selected_surface_value_for_eligibility,
     bounded_work_selection_for_question_family,
     bounded_work_surface_args_for_eligibility,
     bounded_ask_inventory_findings,
@@ -280,6 +281,43 @@ def test_bounded_work_refusal_result_is_separate_from_eligibility_and_selection(
     )
     with pytest.raises(ValueError, match="requires non-permitted eligibility"):
         bounded_work_refusal_for_eligibility(permitted)
+
+
+def test_bounded_work_selected_surface_value_is_separate_from_selection():
+    eligibility = bounded_work_eligibility_for_question_family(
+        "observation domain coverage"
+    )
+    selected_value = bounded_work_selected_surface_value_for_eligibility(
+        "observation domain coverage", eligibility
+    )
+
+    assert selected_value.question_family == "observation domain coverage"
+    assert selected_value.surface_value == "__all__"
+    assert selected_value.required_surface_args == ()
+    assert "dispatch_surface" not in selected_value.__dataclass_fields__
+    assert "bounded_status" not in selected_value.__dataclass_fields__
+    assert "permitted" not in selected_value.__dataclass_fields__
+
+    parameterized_eligibility = bounded_work_eligibility_for_question_family(
+        "selection explanation"
+    )
+    parameterized_surface_args = bounded_work_surface_args_for_eligibility(
+        "selection explanation", parameterized_eligibility, ("target:one",)
+    )
+    parameterized_value = bounded_work_selected_surface_value_for_eligibility(
+        "selection explanation",
+        parameterized_eligibility,
+        parameterized_surface_args,
+    )
+
+    assert parameterized_value.surface_value == "target:one"
+    assert parameterized_value.required_surface_args == ("target",)
+
+    diagnostic_only = bounded_work_eligibility_for_question_family("surface inventory")
+    with pytest.raises(ValueError, match="requires permitted eligibility"):
+        bounded_work_selected_surface_value_for_eligibility(
+            "surface inventory", diagnostic_only
+        )
 
 def test_bounded_work_selection_result_is_separate_from_eligibility_and_dispatch():
     eligibility = bounded_work_eligibility_for_question_family(
