@@ -152,6 +152,7 @@ from seed_runtime.question_surface_inventory import (
     _bounded_work_eligibility_for_prepared_question_family,
     _prepare_question_family_eligibility_input,
     bounded_work_dispatch_request_for_selection,
+    bounded_work_presentation_handoff_for_eligibility,
     bounded_work_refusal_for_eligibility,
     bounded_work_selection_for_question_family,
     bounded_work_surface_args_for_eligibility,
@@ -2253,7 +2254,12 @@ def apply_bounded_ask_dispatch(
 
     if eligibility.bounded_status == "eligible_with_parameters":
         if args.presentation:
-            args.question_family_explanation = family
+            presentation_handoff = bounded_work_presentation_handoff_for_eligibility(
+                family, eligibility
+            )
+            args.question_family_explanation = (
+                presentation_handoff.question_family_explanation
+            )
             args.message = []
             return
         selection = bounded_work_selection_for_question_family(
@@ -2269,7 +2275,10 @@ def apply_bounded_ask_dispatch(
         parser.error(refusal.message)
 
     if args.presentation:
-        args.question_family_explanation = family
+        presentation_handoff = bounded_work_presentation_handoff_for_eligibility(
+            family, eligibility
+        )
+        args.question_family_explanation = presentation_handoff.question_family_explanation
         args.message = []
         return
 
