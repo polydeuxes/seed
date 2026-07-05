@@ -467,6 +467,26 @@ class BoundedWorkDispatchResult:
     reason: str = ""
 
 
+def bounded_work_dispatch_result_for_request(
+    dispatch_request: BoundedWorkDispatchRequest,
+) -> BoundedWorkDispatchResult:
+    """Produce the existing dispatch result for an executed bounded work request.
+
+    This recovers only the local result-production boundary after bounded work
+    dispatch has performed the existing CLI namespace mutation. It does not
+    mutate the CLI namespace, decide QuestionFamily lookup, eligibility,
+    selection, dispatch request construction, answer composition, rendering,
+    diagnostics, schema, event ledger, or semantic routing.
+    """
+
+    return BoundedWorkDispatchResult(
+        question_family=dispatch_request.question_family,
+        dispatch_surface=dispatch_request.dispatch_surface,
+        surface_value=dispatch_request.surface_value,
+        reason="performed bounded work dispatch through existing CLI namespace",
+    )
+
+
 def execute_bounded_work_dispatch(
     args: object,
     dispatch_request: BoundedWorkDispatchRequest,
@@ -475,8 +495,8 @@ def execute_bounded_work_dispatch(
 
     This recovers only the dispatch execution already used by bounded ask; it
     does not decide QuestionFamily lookup, eligibility, bounded work selection,
-    dispatch request construction, answer composition, rendering, evidence
-    interpretation, or semantic routing.
+    dispatch request construction, dispatch result production, answer
+    composition, rendering, evidence interpretation, or semantic routing.
     """
 
     setattr(
@@ -484,12 +504,7 @@ def execute_bounded_work_dispatch(
         dispatch_request.dispatch_surface,
         dispatch_request.surface_value,
     )
-    return BoundedWorkDispatchResult(
-        question_family=dispatch_request.question_family,
-        dispatch_surface=dispatch_request.dispatch_surface,
-        surface_value=dispatch_request.surface_value,
-        reason="performed bounded work dispatch through existing CLI namespace",
-    )
+    return bounded_work_dispatch_result_for_request(dispatch_request)
 
 
 def apply_bounded_work_dispatch_result(
