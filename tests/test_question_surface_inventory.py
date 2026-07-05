@@ -13,6 +13,7 @@ from seed_runtime.question_surface_inventory import (
     _bounded_work_eligibility_for_prepared_question_family,
     _lookup_exact_question_family,
     _prepare_question_family_eligibility_input,
+    apply_bounded_work_dispatch_namespace_update,
     apply_bounded_work_dispatch_result,
     apply_bounded_work_presentation_handoff,
     bounded_work_dispatch_request_for_selection,
@@ -511,6 +512,34 @@ def test_bounded_work_dispatch_result_is_produced_from_request_without_mutation(
     assert result.dispatch_surface == "observation_permission"
     assert result.surface_value == "__all__"
     assert result.reason == "performed bounded work dispatch through existing CLI namespace"
+
+
+def test_apply_bounded_work_dispatch_namespace_update_consumes_request_only():
+    parser = seed_local.build_parser()
+    args = parser.parse_args([
+        "ask",
+        "--question-family",
+        "observation permission state",
+    ])
+    eligibility = bounded_work_eligibility_for_question_family(
+        "observation permission state"
+    )
+    selection = bounded_work_selection_for_question_family(
+        "observation permission state", eligibility
+    )
+    dispatch_request = bounded_work_dispatch_request_for_selection(selection)
+
+    applied_request = apply_bounded_work_dispatch_namespace_update(
+        args, dispatch_request
+    )
+
+    assert applied_request is dispatch_request
+    assert args.observation_permission == "__all__"
+    assert "dispatch_surface" in dispatch_request.__dataclass_fields__
+    assert "surface_value" in dispatch_request.__dataclass_fields__
+    assert "required_surface_args" not in dispatch_request.__dataclass_fields__
+    assert "bounded_status" not in dispatch_request.__dataclass_fields__
+    assert "permitted" not in dispatch_request.__dataclass_fields__
 
 def test_execute_bounded_work_dispatch_consumes_request_and_mutates_namespace():
     parser = seed_local.build_parser()
