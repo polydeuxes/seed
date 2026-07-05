@@ -16,6 +16,7 @@ from seed_runtime.question_surface_inventory import (
     bounded_work_dispatch_request_for_selection,
     bounded_work_eligibility_for_question_family,
     bounded_work_selection_for_question_family,
+    bounded_work_surface_args_for_eligibility,
     bounded_ask_inventory_findings,
     execute_bounded_work_dispatch,
     build_question_surface_inventory,
@@ -209,6 +210,46 @@ def test_bounded_work_eligibility_result_is_separate_from_surface_selection():
     assert not_dispatchable.permitted is False
 
 
+
+def test_bounded_work_surface_args_result_is_separate_from_selection():
+    eligibility = bounded_work_eligibility_for_question_family(
+        "authority-constrained service ownership"
+    )
+    no_args = bounded_work_surface_args_for_eligibility(
+        "authority-constrained service ownership", eligibility
+    )
+
+    assert no_args.question_family == "authority-constrained service ownership"
+    assert no_args.surface_args == ()
+    assert no_args.required_surface_args == ()
+    assert "dispatch_surface" not in no_args.__dataclass_fields__
+    assert "surface_value" not in no_args.__dataclass_fields__
+    assert "permitted" not in no_args.__dataclass_fields__
+
+    with pytest.raises(ValueError, match="does not accept --surface-args"):
+        bounded_work_surface_args_for_eligibility(
+            "authority-constrained service ownership", eligibility, ("extra",)
+        )
+
+    parameterized_eligibility = bounded_work_eligibility_for_question_family(
+        "selection explanation"
+    )
+    with pytest.raises(ValueError, match="requires --surface-args"):
+        bounded_work_surface_args_for_eligibility(
+            "selection explanation", parameterized_eligibility
+        )
+    with pytest.raises(ValueError, match="requires exactly 1 --surface-args value"):
+        bounded_work_surface_args_for_eligibility(
+            "selection explanation", parameterized_eligibility, ("one", "two")
+        )
+
+    provided_args = bounded_work_surface_args_for_eligibility(
+        "selection explanation", parameterized_eligibility, ("target:one",)
+    )
+
+    assert provided_args.surface_args == ("target:one",)
+    assert provided_args.required_surface_args == ("target",)
+
 def test_bounded_work_selection_result_is_separate_from_eligibility_and_dispatch():
     eligibility = bounded_work_eligibility_for_question_family(
         "authority-constrained service ownership"
@@ -227,10 +268,15 @@ def test_bounded_work_selection_result_is_separate_from_eligibility_and_dispatch
     parameterized_eligibility = bounded_work_eligibility_for_question_family(
         "derivation explanation"
     )
-    parameterized_selection = bounded_work_selection_for_question_family(
+    parameterized_surface_args = bounded_work_surface_args_for_eligibility(
         "derivation explanation",
         parameterized_eligibility,
         ("runtime", "service:web"),
+    )
+    parameterized_selection = bounded_work_selection_for_question_family(
+        "derivation explanation",
+        parameterized_eligibility,
+        parameterized_surface_args,
     )
 
     assert parameterized_selection.dispatch_surface == "reasoning_path"
