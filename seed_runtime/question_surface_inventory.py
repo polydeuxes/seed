@@ -492,6 +492,28 @@ def execute_bounded_work_dispatch(
     )
 
 
+def apply_bounded_work_dispatch_result(
+    args: object,
+    dispatch_result: BoundedWorkDispatchResult,
+) -> BoundedWorkDispatchResult:
+    """Apply existing post-dispatch CLI compatibility handling.
+
+    This recovers only the local result-handoff consumption after bounded work
+    dispatch has already executed. It does not decide QuestionFamily lookup,
+    eligibility, selection, dispatch request construction, dispatch execution,
+    answer composition, rendering, diagnostics, schema, event ledger, or
+    semantic routing.
+    """
+
+    if (
+        dispatch_result.question_family == "knowledge reachability"
+        and getattr(args, "json_output", False)
+    ):
+        setattr(args, "knowledge_reachability_audit_json", True)
+        setattr(args, "json_output", False)
+    return dispatch_result
+
+
 def bounded_work_selection_for_question_family(
     question_family: str,
     eligibility: BoundedWorkEligibilityResult,

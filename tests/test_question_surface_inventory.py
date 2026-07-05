@@ -13,6 +13,7 @@ from seed_runtime.question_surface_inventory import (
     _bounded_work_eligibility_for_prepared_question_family,
     _lookup_exact_question_family,
     _prepare_question_family_eligibility_input,
+    apply_bounded_work_dispatch_result,
     apply_bounded_work_presentation_handoff,
     bounded_work_dispatch_request_for_selection,
     bounded_work_eligibility_for_question_family,
@@ -474,6 +475,54 @@ def test_execute_bounded_work_dispatch_consumes_request_and_mutates_namespace():
     assert result.question_family == "observation permission state"
     assert result.dispatch_surface == "observation_permission"
     assert result.surface_value == "__all__"
+
+
+def test_apply_bounded_work_dispatch_result_consumes_dispatch_result_only():
+    parser = seed_local.build_parser()
+    args = parser.parse_args([
+        "ask",
+        "--question-family",
+        "knowledge reachability",
+        "--json",
+    ])
+    eligibility = bounded_work_eligibility_for_question_family("knowledge reachability")
+    selection = bounded_work_selection_for_question_family(
+        "knowledge reachability", eligibility
+    )
+    dispatch_request = bounded_work_dispatch_request_for_selection(selection)
+    dispatch_result = execute_bounded_work_dispatch(args, dispatch_request)
+
+    result = apply_bounded_work_dispatch_result(args, dispatch_result)
+
+    assert result is dispatch_result
+    assert args.knowledge_reachability_audit_json is True
+    assert args.json_output is False
+    assert "required_surface_args" not in dispatch_result.__dataclass_fields__
+    assert "bounded_status" not in dispatch_result.__dataclass_fields__
+    assert "permitted" not in dispatch_result.__dataclass_fields__
+
+
+def test_apply_bounded_work_dispatch_result_preserves_non_compatibility_json():
+    parser = seed_local.build_parser()
+    args = parser.parse_args([
+        "ask",
+        "--question-family",
+        "observation domain coverage",
+        "--json",
+    ])
+    eligibility = bounded_work_eligibility_for_question_family(
+        "observation domain coverage"
+    )
+    selection = bounded_work_selection_for_question_family(
+        "observation domain coverage", eligibility
+    )
+    dispatch_request = bounded_work_dispatch_request_for_selection(selection)
+    dispatch_result = execute_bounded_work_dispatch(args, dispatch_request)
+
+    apply_bounded_work_dispatch_result(args, dispatch_result)
+
+    assert args.observation_domains == "__all__"
+    assert args.json_output is True
 
 
 def test_bounded_ask_dispatch_consumes_bounded_work_dispatch_request():
