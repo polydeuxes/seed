@@ -13,6 +13,7 @@ from seed_runtime.question_surface_inventory import (
     _bounded_work_eligibility_for_prepared_question_family,
     _lookup_exact_question_family,
     _prepare_question_family_eligibility_input,
+    apply_bounded_work_presentation_handoff,
     bounded_work_dispatch_request_for_selection,
     bounded_work_eligibility_for_question_family,
     bounded_work_presentation_handoff_for_eligibility,
@@ -404,6 +405,34 @@ def test_bounded_work_presentation_handoff_is_separate_from_dispatch_request():
         bounded_work_presentation_handoff_for_eligibility(
             "surface inventory", diagnostic_only
         )
+
+
+def test_apply_bounded_work_presentation_handoff_consumes_handoff_only():
+    parser = seed_local.build_parser()
+    args = parser.parse_args([
+        "ask",
+        "--question-family",
+        "selection explanation",
+        "--surface-args",
+        "target:one",
+        "--presentation",
+    ])
+    eligibility = bounded_work_eligibility_for_question_family(
+        "selection explanation"
+    )
+    presentation_handoff = bounded_work_presentation_handoff_for_eligibility(
+        "selection explanation", eligibility
+    )
+
+    result = apply_bounded_work_presentation_handoff(args, presentation_handoff)
+
+    assert args.question_family_explanation == "selection explanation"
+    assert args.selection_path is None
+    assert result.question_family == "selection explanation"
+    assert result.question_family_explanation == "selection explanation"
+    assert "dispatch_surface" not in result.__dataclass_fields__
+    assert "surface_value" not in result.__dataclass_fields__
+    assert "required_surface_args" not in result.__dataclass_fields__
 
 
 def test_bounded_work_dispatch_request_is_separate_from_selection():
