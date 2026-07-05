@@ -152,6 +152,7 @@ from seed_runtime.question_surface_inventory import (
     _bounded_work_eligibility_for_prepared_question_family,
     _prepare_question_family_eligibility_input,
     bounded_work_dispatch_request_for_selection,
+    bounded_work_refusal_for_eligibility,
     bounded_work_selection_for_question_family,
     bounded_work_surface_args_for_eligibility,
     execute_bounded_work_dispatch,
@@ -2264,15 +2265,8 @@ def apply_bounded_ask_dispatch(
         return
 
     if not eligibility.permitted:
-        if eligibility.bounded_status == "diagnostic_only":
-            parser.error(
-                f"Question Family '{family}' is diagnostic_only and is not an "
-                "inquiry-answer surface for bounded ask"
-            )
-        parser.error(
-            f"Question Family '{family}' is not_dispatchable by current "
-            "implementation-backed eligibility"
-        )
+        refusal = bounded_work_refusal_for_eligibility(eligibility)
+        parser.error(refusal.message)
 
     if args.presentation:
         args.question_family_explanation = family

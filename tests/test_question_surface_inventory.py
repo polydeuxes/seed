@@ -15,6 +15,7 @@ from seed_runtime.question_surface_inventory import (
     _prepare_question_family_eligibility_input,
     bounded_work_dispatch_request_for_selection,
     bounded_work_eligibility_for_question_family,
+    bounded_work_refusal_for_eligibility,
     bounded_work_selection_for_question_family,
     bounded_work_surface_args_for_eligibility,
     bounded_ask_inventory_findings,
@@ -249,6 +250,36 @@ def test_bounded_work_surface_args_result_is_separate_from_selection():
 
     assert provided_args.surface_args == ("target:one",)
     assert provided_args.required_surface_args == ("target",)
+
+def test_bounded_work_refusal_result_is_separate_from_eligibility_and_selection():
+    diagnostic_only = bounded_work_eligibility_for_question_family("surface inventory")
+    refusal = bounded_work_refusal_for_eligibility(diagnostic_only)
+
+    assert refusal.question_family == "surface inventory"
+    assert refusal.bounded_status == "diagnostic_only"
+    assert refusal.message == (
+        "Question Family 'surface inventory' is diagnostic_only and is not an "
+        "inquiry-answer surface for bounded ask"
+    )
+    assert "permitted" not in refusal.__dataclass_fields__
+    assert "dispatch_surface" not in refusal.__dataclass_fields__
+
+    not_dispatchable = bounded_work_eligibility_for_question_family(
+        "source definition/import lookup"
+    )
+    not_dispatchable_refusal = bounded_work_refusal_for_eligibility(not_dispatchable)
+
+    assert not_dispatchable_refusal.bounded_status == "not_dispatchable"
+    assert not_dispatchable_refusal.message == (
+        "Question Family 'source definition/import lookup' is not_dispatchable by current "
+        "implementation-backed eligibility"
+    )
+
+    permitted = bounded_work_eligibility_for_question_family(
+        "authority-constrained service ownership"
+    )
+    with pytest.raises(ValueError, match="requires non-permitted eligibility"):
+        bounded_work_refusal_for_eligibility(permitted)
 
 def test_bounded_work_selection_result_is_separate_from_eligibility_and_dispatch():
     eligibility = bounded_work_eligibility_for_question_family(
