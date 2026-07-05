@@ -529,6 +529,36 @@ def apply_bounded_work_dispatch_result(
     return dispatch_result
 
 
+
+
+@dataclass(frozen=True)
+class BoundedAskDispatchMessageClearResult:
+    """Implementation-backed result of clearing the dispatched bounded ask message."""
+
+    question_family: str
+    reason: str = ""
+
+
+def clear_bounded_ask_dispatch_message(
+    args: object,
+    dispatch_result: BoundedWorkDispatchResult,
+) -> BoundedAskDispatchMessageClearResult:
+    """Clear the existing ask message after bounded work dispatch handoff.
+
+    This recovers only the local post-dispatch message-clearing boundary for
+    bounded ask compatibility. It does not decide QuestionFamily lookup,
+    eligibility, selection, dispatch request construction, dispatch execution,
+    dispatch result handling, presentation handoff, answer composition,
+    rendering, diagnostics, schema, event ledger, or semantic routing.
+    """
+
+    setattr(args, "message", [])
+    return BoundedAskDispatchMessageClearResult(
+        question_family=dispatch_result.question_family,
+        reason="cleared bounded ask message after dispatch handoff",
+    )
+
+
 def bounded_work_selection_for_question_family(
     question_family: str,
     eligibility: BoundedWorkEligibilityResult,
