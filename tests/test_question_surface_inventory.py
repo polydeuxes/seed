@@ -16,6 +16,7 @@ from seed_runtime.question_surface_inventory import (
     apply_bounded_work_dispatch_result,
     apply_bounded_work_presentation_handoff,
     bounded_work_dispatch_request_for_selection,
+    bounded_work_dispatch_result_for_request,
     bounded_work_eligibility_for_question_family,
     bounded_work_presentation_handoff_for_eligibility,
     bounded_work_refusal_for_eligibility,
@@ -453,6 +454,30 @@ def test_bounded_work_dispatch_request_is_separate_from_selection():
     assert "bounded_status" not in dispatch_request.__dataclass_fields__
     assert "permitted" not in dispatch_request.__dataclass_fields__
 
+
+
+def test_bounded_work_dispatch_result_is_produced_from_request_without_mutation():
+    parser = seed_local.build_parser()
+    args = parser.parse_args([
+        "ask",
+        "--question-family",
+        "observation permission state",
+    ])
+    eligibility = bounded_work_eligibility_for_question_family(
+        "observation permission state"
+    )
+    selection = bounded_work_selection_for_question_family(
+        "observation permission state", eligibility
+    )
+    dispatch_request = bounded_work_dispatch_request_for_selection(selection)
+
+    result = bounded_work_dispatch_result_for_request(dispatch_request)
+
+    assert args.observation_permission is None
+    assert result.question_family == "observation permission state"
+    assert result.dispatch_surface == "observation_permission"
+    assert result.surface_value == "__all__"
+    assert result.reason == "performed bounded work dispatch through existing CLI namespace"
 
 def test_execute_bounded_work_dispatch_consumes_request_and_mutates_namespace():
     parser = seed_local.build_parser()
