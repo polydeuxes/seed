@@ -64,6 +64,32 @@ def bounded_status_for_question_family(question_family: str) -> str:
 
 
 @dataclass(frozen=True)
+class ExactQuestionFamilyLookupResult:
+    """Inventory-backed exact QuestionFamily lookup for selection surfaces.
+
+    This private handoff owns only the lookup result needed before bounded
+    eligibility. It does not own eligibility classification, dispatch surface
+    selection, required-argument handling, diagnostics, presentation, rendering,
+    or mutation.
+    """
+
+    question_family: str
+
+
+def _lookup_exact_question_family(
+    question_family: str,
+    rows: tuple["QuestionSurfaceInventoryRow", ...] | None = None,
+) -> ExactQuestionFamilyLookupResult:
+    """Return an inventory-backed exact QuestionFamily or reject the text."""
+
+    inventory = rows or build_question_surface_inventory()
+    for row in inventory:
+        if row.question_family == question_family:
+            return ExactQuestionFamilyLookupResult(question_family=row.question_family)
+    raise ValueError(f"unknown Question Family: {question_family}")
+
+
+@dataclass(frozen=True)
 class _QuestionFamilyEligibilityInput:
     """Prepared exact QuestionFamily text for bounded work eligibility only.
 
@@ -88,11 +114,10 @@ def _prepare_question_family_eligibility_input(
     runtime state.
     """
 
-    inventory = rows or build_question_surface_inventory()
-    inventory_families = {row.question_family for row in inventory}
-    if question_family not in inventory_families:
-        raise ValueError(f"unknown Question Family: {question_family}")
-    return _QuestionFamilyEligibilityInput(question_family=question_family)
+    lookup_result = _lookup_exact_question_family(question_family, rows)
+    return _QuestionFamilyEligibilityInput(
+        question_family=lookup_result.question_family
+    )
 
 
 @dataclass(frozen=True)
@@ -137,7 +162,7 @@ def bounded_work_eligibility_for_question_family(
 ) -> BoundedWorkEligibilityResult:
     """Return whether bounded work may execute for an exact QuestionFamily."""
 
-    prepared_input = _QuestionFamilyEligibilityInput(question_family=question_family)
+    prepared_input = _prepare_question_family_eligibility_input(question_family)
     return _bounded_work_eligibility_for_prepared_question_family(prepared_input)
 
 
