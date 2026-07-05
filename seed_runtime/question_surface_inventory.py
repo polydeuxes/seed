@@ -267,6 +267,57 @@ def bounded_work_surface_args_for_eligibility(
 
 
 @dataclass(frozen=True)
+class BoundedWorkSelectedSurfaceValue:
+    """Implementation-backed surface value for selected bounded work."""
+
+    question_family: str
+    surface_value: object
+    required_surface_args: tuple[str, ...] = ()
+    reason: str = ""
+
+
+def bounded_work_selected_surface_value_for_eligibility(
+    question_family: str,
+    eligibility: BoundedWorkEligibilityResult,
+    surface_args_result: BoundedWorkSurfaceArgsResult | None = None,
+) -> BoundedWorkSelectedSurfaceValue:
+    """Prepare the existing CLI surface value for eligible bounded work.
+
+    This recovers only the local selected-surface-value boundary used by
+    bounded work selection. It does not decide exact lookup, bounded
+    eligibility, dispatch surface identity, dispatch request construction,
+    execution, answer composition, rendering, or semantic routing.
+    """
+
+    if eligibility.question_family != question_family:
+        raise ValueError("eligibility result question family does not match surface value")
+    if not eligibility.permitted:
+        raise ValueError("selected surface value requires permitted eligibility")
+    required_surface_args = eligibility.required_surface_args
+    if required_surface_args:
+        if surface_args_result is None:
+            surface_args_result = bounded_work_surface_args_for_eligibility(
+                question_family, eligibility
+            )
+        provided_surface_args = surface_args_result.surface_args
+        surface_value = (
+            provided_surface_args[0]
+            if len(provided_surface_args) == 1
+            else provided_surface_args
+        )
+        reason = "prepared parameterized bounded ask surface value"
+    else:
+        surface_value = BOUNDED_ASK_ARG_VALUES.get(question_family, True)
+        reason = "prepared bounded ask surface value"
+    return BoundedWorkSelectedSurfaceValue(
+        question_family=question_family,
+        surface_value=surface_value,
+        required_surface_args=required_surface_args,
+        reason=reason,
+    )
+
+
+@dataclass(frozen=True)
 class BoundedWorkSelectionResult:
     """Implementation-backed selected bounded work for an eligible QuestionFamily."""
 
@@ -357,28 +408,15 @@ def bounded_work_selection_for_question_family(
     if not eligibility.permitted:
         raise ValueError("bounded work selection requires permitted eligibility")
     dispatch_surface = BOUNDED_ASK_DISPATCH_SURFACES[question_family]
-    required_surface_args = eligibility.required_surface_args
-    if required_surface_args:
-        if surface_args_result is None:
-            surface_args_result = bounded_work_surface_args_for_eligibility(
-                question_family, eligibility
-            )
-        provided_surface_args = surface_args_result.surface_args
-        surface_value = (
-            provided_surface_args[0]
-            if len(provided_surface_args) == 1
-            else provided_surface_args
-        )
-        reason = "selected parameterized bounded ask dispatch surface"
-    else:
-        surface_value = BOUNDED_ASK_ARG_VALUES.get(question_family, True)
-        reason = "selected bounded ask dispatch surface"
+    selected_surface_value = bounded_work_selected_surface_value_for_eligibility(
+        question_family, eligibility, surface_args_result
+    )
     return BoundedWorkSelectionResult(
         question_family=question_family,
         dispatch_surface=dispatch_surface,
-        surface_value=surface_value,
-        required_surface_args=required_surface_args,
-        reason=reason,
+        surface_value=selected_surface_value.surface_value,
+        required_surface_args=selected_surface_value.required_surface_args,
+        reason="selected bounded ask dispatch surface",
     )
 
 
