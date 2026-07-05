@@ -396,6 +396,40 @@ def bounded_work_presentation_handoff_for_eligibility(
 
 
 @dataclass(frozen=True)
+class BoundedWorkPresentationHandoffResult:
+    """Implementation-backed result of applying a presentation handoff."""
+
+    question_family: str
+    question_family_explanation: str
+    reason: str = ""
+
+
+def apply_bounded_work_presentation_handoff(
+    args: object,
+    presentation_handoff: BoundedWorkPresentationHandoff,
+) -> BoundedWorkPresentationHandoffResult:
+    """Apply the existing bounded ask presentation handoff to the CLI namespace.
+
+    This recovers only the local consumption of the already prepared
+    presentation handoff. It does not decide exact lookup, bounded eligibility,
+    selected dispatch surface, selected surface value, dispatch request
+    construction, dispatch execution, rendering, answer composition,
+    diagnostics, schema, event ledger, or semantic routing.
+    """
+
+    setattr(
+        args,
+        "question_family_explanation",
+        presentation_handoff.question_family_explanation,
+    )
+    return BoundedWorkPresentationHandoffResult(
+        question_family=presentation_handoff.question_family,
+        question_family_explanation=presentation_handoff.question_family_explanation,
+        reason="applied bounded ask presentation handoff to CLI namespace",
+    )
+
+
+@dataclass(frozen=True)
 class BoundedWorkDispatchRequest:
     """Implementation-backed invocation request for already selected bounded work."""
 

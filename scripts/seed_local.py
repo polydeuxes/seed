@@ -151,6 +151,7 @@ from seed_runtime.diagnostic_shape_audit import (
 from seed_runtime.question_surface_inventory import (
     _bounded_work_eligibility_for_prepared_question_family,
     _prepare_question_family_eligibility_input,
+    apply_bounded_work_presentation_handoff,
     bounded_work_dispatch_request_for_selection,
     bounded_work_presentation_handoff_for_eligibility,
     bounded_work_refusal_for_eligibility,
@@ -2257,9 +2258,7 @@ def apply_bounded_ask_dispatch(
             presentation_handoff = bounded_work_presentation_handoff_for_eligibility(
                 family, eligibility
             )
-            args.question_family_explanation = (
-                presentation_handoff.question_family_explanation
-            )
+            apply_bounded_work_presentation_handoff(args, presentation_handoff)
             args.message = []
             return
         selection = bounded_work_selection_for_question_family(
@@ -2278,7 +2277,7 @@ def apply_bounded_ask_dispatch(
         presentation_handoff = bounded_work_presentation_handoff_for_eligibility(
             family, eligibility
         )
-        args.question_family_explanation = presentation_handoff.question_family_explanation
+        apply_bounded_work_presentation_handoff(args, presentation_handoff)
         args.message = []
         return
 
