@@ -11,6 +11,7 @@ from seed_runtime.diagnostic_shape_audit import (
 from seed_runtime.question_surface_inventory import (
     BOUNDED_ASK_DISPATCH_SURFACES,
     _bounded_work_eligibility_for_prepared_question_family,
+    _lookup_exact_question_family,
     _prepare_question_family_eligibility_input,
     bounded_work_dispatch_request_for_selection,
     bounded_work_eligibility_for_question_family,
@@ -136,6 +137,21 @@ def test_bounded_ask_inventory_json_answers_required_operator_questions(capsys):
     )
 
 
+def test_exact_question_family_lookup_is_separate_from_eligibility_and_dispatch():
+    lookup = _lookup_exact_question_family("selection explanation")
+
+    assert lookup.question_family == "selection explanation"
+    assert tuple(lookup.__dataclass_fields__) == ("question_family",)
+    assert "bounded_status" not in lookup.__dataclass_fields__
+    assert "dispatch_surface" not in lookup.__dataclass_fields__
+    assert "required_surface_args" not in lookup.__dataclass_fields__
+
+
+def test_exact_question_family_lookup_rejects_unknown_text_before_eligibility():
+    with pytest.raises(ValueError, match="unknown Question Family: made up"):
+        _lookup_exact_question_family("made up")
+
+
 def test_question_family_eligibility_input_preparation_is_separate_from_eligibility():
     prepared_input = _prepare_question_family_eligibility_input(
         "authority-constrained service ownership"
@@ -163,6 +179,9 @@ def test_question_family_eligibility_input_preparation_rejects_unknown_text():
 
 
 def test_bounded_work_eligibility_result_is_separate_from_surface_selection():
+    with pytest.raises(ValueError, match="unknown Question Family: made up"):
+        bounded_work_eligibility_for_question_family("made up")
+
     eligible_now = bounded_work_eligibility_for_question_family(
         "authority-constrained service ownership"
     )
