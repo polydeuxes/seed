@@ -18,6 +18,7 @@ from seed_runtime.question_surface_inventory import (
     bounded_work_dispatch_request_for_selection,
     bounded_work_dispatch_result_for_request,
     clear_bounded_ask_dispatch_message,
+    clear_bounded_ask_presentation_message,
     bounded_work_eligibility_for_question_family,
     bounded_work_presentation_handoff_for_eligibility,
     bounded_work_refusal_for_eligibility,
@@ -433,6 +434,37 @@ def test_apply_bounded_work_presentation_handoff_consumes_handoff_only():
     assert args.selection_path is None
     assert result.question_family == "selection explanation"
     assert result.question_family_explanation == "selection explanation"
+    assert "dispatch_surface" not in result.__dataclass_fields__
+    assert "surface_value" not in result.__dataclass_fields__
+    assert "required_surface_args" not in result.__dataclass_fields__
+
+
+def test_clear_bounded_ask_presentation_message_consumes_presentation_result_only():
+    parser = seed_local.build_parser()
+    args = parser.parse_args([
+        "ask",
+        "--question-family",
+        "selection explanation",
+        "--surface-args",
+        "target:one",
+        "--presentation",
+    ])
+    eligibility = bounded_work_eligibility_for_question_family(
+        "selection explanation"
+    )
+    presentation_handoff = bounded_work_presentation_handoff_for_eligibility(
+        "selection explanation", eligibility
+    )
+    presentation_result = apply_bounded_work_presentation_handoff(
+        args, presentation_handoff
+    )
+
+    result = clear_bounded_ask_presentation_message(args, presentation_result)
+
+    assert args.message == []
+    assert args.question_family_explanation == "selection explanation"
+    assert result.question_family == "selection explanation"
+    assert result.reason == "cleared bounded ask message after presentation handoff"
     assert "dispatch_surface" not in result.__dataclass_fields__
     assert "surface_value" not in result.__dataclass_fields__
     assert "required_surface_args" not in result.__dataclass_fields__

@@ -507,6 +507,36 @@ def execute_bounded_work_dispatch(
     return bounded_work_dispatch_result_for_request(dispatch_request)
 
 
+
+@dataclass(frozen=True)
+class BoundedAskPresentationMessageClearResult:
+    """Implementation-backed result of clearing the bounded ask presentation message."""
+
+    question_family: str
+    reason: str = ""
+
+
+def clear_bounded_ask_presentation_message(
+    args: object,
+    presentation_result: BoundedWorkPresentationHandoffResult,
+) -> BoundedAskPresentationMessageClearResult:
+    """Clear the existing ask message after bounded work presentation handoff.
+
+    This recovers only the local post-presentation message-clearing boundary for
+    bounded ask compatibility. It does not decide QuestionFamily lookup,
+    eligibility, selected dispatch surface, selected surface value, dispatch
+    request construction, dispatch execution, dispatch result handling,
+    presentation handoff production or consumption, answer composition,
+    rendering, diagnostics, schema, event ledger, or semantic routing.
+    """
+
+    setattr(args, "message", [])
+    return BoundedAskPresentationMessageClearResult(
+        question_family=presentation_result.question_family,
+        reason="cleared bounded ask message after presentation handoff",
+    )
+
+
 def apply_bounded_work_dispatch_result(
     args: object,
     dispatch_result: BoundedWorkDispatchResult,
