@@ -318,6 +318,40 @@ def bounded_work_selected_surface_value_for_eligibility(
 
 
 @dataclass(frozen=True)
+class BoundedWorkSelectedDispatchSurface:
+    """Implementation-backed dispatch surface for selected bounded work."""
+
+    question_family: str
+    dispatch_surface: str
+    reason: str = ""
+
+
+def bounded_work_selected_dispatch_surface_for_eligibility(
+    question_family: str,
+    eligibility: BoundedWorkEligibilityResult,
+) -> BoundedWorkSelectedDispatchSurface:
+    """Select the existing CLI dispatch surface for eligible bounded work.
+
+    This recovers only the local map-backed dispatch-surface boundary used by
+    bounded work selection. It does not decide exact lookup, bounded
+    eligibility, selected surface value, dispatch request construction,
+    execution, answer composition, rendering, or semantic routing.
+    """
+
+    if eligibility.question_family != question_family:
+        raise ValueError(
+            "eligibility result question family does not match dispatch surface"
+        )
+    if not eligibility.permitted:
+        raise ValueError("selected dispatch surface requires permitted eligibility")
+    return BoundedWorkSelectedDispatchSurface(
+        question_family=question_family,
+        dispatch_surface=BOUNDED_ASK_DISPATCH_SURFACES[question_family],
+        reason="selected bounded ask dispatch surface",
+    )
+
+
+@dataclass(frozen=True)
 class BoundedWorkSelectionResult:
     """Implementation-backed selected bounded work for an eligible QuestionFamily."""
 
@@ -407,16 +441,18 @@ def bounded_work_selection_for_question_family(
         raise ValueError("eligibility result question family does not match selection")
     if not eligibility.permitted:
         raise ValueError("bounded work selection requires permitted eligibility")
-    dispatch_surface = BOUNDED_ASK_DISPATCH_SURFACES[question_family]
+    selected_dispatch_surface = bounded_work_selected_dispatch_surface_for_eligibility(
+        question_family, eligibility
+    )
     selected_surface_value = bounded_work_selected_surface_value_for_eligibility(
         question_family, eligibility, surface_args_result
     )
     return BoundedWorkSelectionResult(
         question_family=question_family,
-        dispatch_surface=dispatch_surface,
+        dispatch_surface=selected_dispatch_surface.dispatch_surface,
         surface_value=selected_surface_value.surface_value,
         required_surface_args=selected_surface_value.required_surface_args,
-        reason="selected bounded ask dispatch surface",
+        reason=selected_dispatch_surface.reason,
     )
 
 
