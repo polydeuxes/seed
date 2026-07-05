@@ -167,6 +167,63 @@ def bounded_work_eligibility_for_question_family(
 
 
 @dataclass(frozen=True)
+class BoundedWorkSurfaceArgsResult:
+    """Validated operator surface args for eligible bounded work."""
+
+    question_family: str
+    surface_args: tuple[str, ...]
+    required_surface_args: tuple[str, ...] = ()
+    reason: str = ""
+
+
+def bounded_work_surface_args_for_eligibility(
+    question_family: str,
+    eligibility: BoundedWorkEligibilityResult,
+    surface_args: tuple[str, ...] | None = None,
+) -> BoundedWorkSurfaceArgsResult:
+    """Validate surface args for already eligible bounded work.
+
+    This recovers only the argument-satisfaction boundary used before bounded
+    work selection. It does not decide exact lookup, eligibility, selected
+    dispatch surface, CLI mutation, presentation, rendering, or semantic routing.
+    """
+
+    if eligibility.question_family != question_family:
+        raise ValueError("eligibility result question family does not match surface args")
+    if eligibility.bounded_status == "eligible_now":
+        if surface_args is not None:
+            raise ValueError(
+                f"Question Family '{question_family}' does not accept --surface-args by "
+                "current implementation-backed eligibility"
+            )
+        return BoundedWorkSurfaceArgsResult(
+            question_family=question_family,
+            surface_args=(),
+            required_surface_args=(),
+            reason="bounded work does not require operator surface args",
+        )
+    if eligibility.bounded_status == "eligible_with_parameters":
+        required_count = len(eligibility.required_surface_args)
+        if surface_args is None:
+            raise ValueError(
+                f"Question Family '{question_family}' requires --surface-args with "
+                f"exactly {required_count} explicit operator-provided value(s)"
+            )
+        if len(surface_args) != required_count:
+            raise ValueError(
+                f"Question Family '{question_family}' requires exactly {required_count} "
+                f"--surface-args value(s); received {len(surface_args)}"
+            )
+        return BoundedWorkSurfaceArgsResult(
+            question_family=question_family,
+            surface_args=surface_args,
+            required_surface_args=eligibility.required_surface_args,
+            reason="bounded work required operator surface args are satisfied",
+        )
+    raise ValueError("surface args require permitted bounded work eligibility")
+
+
+@dataclass(frozen=True)
 class BoundedWorkSelectionResult:
     """Implementation-backed selected bounded work for an eligible QuestionFamily."""
 
@@ -243,7 +300,7 @@ def execute_bounded_work_dispatch(
 def bounded_work_selection_for_question_family(
     question_family: str,
     eligibility: BoundedWorkEligibilityResult,
-    surface_args: tuple[str, ...] | None = None,
+    surface_args_result: BoundedWorkSurfaceArgsResult | None = None,
 ) -> BoundedWorkSelectionResult:
     """Select existing bounded work for an eligible exact QuestionFamily.
 
@@ -259,7 +316,11 @@ def bounded_work_selection_for_question_family(
     dispatch_surface = BOUNDED_ASK_DISPATCH_SURFACES[question_family]
     required_surface_args = eligibility.required_surface_args
     if required_surface_args:
-        provided_surface_args = surface_args or ()
+        if surface_args_result is None:
+            surface_args_result = bounded_work_surface_args_for_eligibility(
+                question_family, eligibility
+            )
+        provided_surface_args = surface_args_result.surface_args
         surface_value = (
             provided_surface_args[0]
             if len(provided_surface_args) == 1

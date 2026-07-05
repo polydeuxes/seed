@@ -153,6 +153,7 @@ from seed_runtime.question_surface_inventory import (
     _prepare_question_family_eligibility_input,
     bounded_work_dispatch_request_for_selection,
     bounded_work_selection_for_question_family,
+    bounded_work_surface_args_for_eligibility,
     execute_bounded_work_dispatch,
     build_question_surface_inventory,
     format_question_family_definition,
@@ -2238,31 +2239,24 @@ def apply_bounded_ask_dispatch(
     eligibility = _bounded_work_eligibility_for_prepared_question_family(
         prepared_input
     )
-    if eligibility.bounded_status == "eligible_now" and args.surface_args is not None:
-        parser.error(
-            f"Question Family '{family}' does not accept --surface-args by "
-            "current implementation-backed eligibility"
-        )
+    surface_args_result = None
+    if eligibility.permitted:
+        try:
+            surface_args_result = bounded_work_surface_args_for_eligibility(
+                family,
+                eligibility,
+                tuple(args.surface_args) if args.surface_args is not None else None,
+            )
+        except ValueError as exc:
+            parser.error(str(exc))
 
     if eligibility.bounded_status == "eligible_with_parameters":
-        required_count = len(eligibility.required_surface_args)
-        surface_args = args.surface_args
-        if surface_args is None:
-            parser.error(
-                f"Question Family '{family}' requires --surface-args with "
-                f"exactly {required_count} explicit operator-provided value(s)"
-            )
-        if len(surface_args) != required_count:
-            parser.error(
-                f"Question Family '{family}' requires exactly {required_count} "
-                f"--surface-args value(s); received {len(surface_args)}"
-            )
         if args.presentation:
             args.question_family_explanation = family
             args.message = []
             return
         selection = bounded_work_selection_for_question_family(
-            family, eligibility, tuple(surface_args)
+            family, eligibility, surface_args_result
         )
         dispatch_request = bounded_work_dispatch_request_for_selection(selection)
         execute_bounded_work_dispatch(args, dispatch_request)
@@ -2285,7 +2279,9 @@ def apply_bounded_ask_dispatch(
         args.message = []
         return
 
-    selection = bounded_work_selection_for_question_family(family, eligibility)
+    selection = bounded_work_selection_for_question_family(
+        family, eligibility, surface_args_result
+    )
     dispatch_request = bounded_work_dispatch_request_for_selection(selection)
     execute_bounded_work_dispatch(args, dispatch_request)
     if family == "knowledge reachability" and args.json_output:
