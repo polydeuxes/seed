@@ -5,6 +5,7 @@ from seed_runtime.diagnostic_inventory import (
     DIAGNOSTIC_INVENTORY,
     DiagnosticInventoryEntry,
     _DiagnosticInventoryCompositionInput,
+    _DiagnosticSurfaceBoundaryStatementSequence,
     _DiagnosticSurfaceBoundaryText,
     _DiagnosticSurfaceCliFlagDisplay,
     _DiagnosticSurfaceExplanationComposition,
@@ -31,6 +32,7 @@ from seed_runtime.diagnostic_inventory import (
     _diagnostic_surface_consumption,
     _diagnostic_surface_shape_registration_status,
     _evaluate_diagnostic_surface_read_only_boundary,
+    _extract_diagnostic_surface_boundary_statement_sequence,
     _identify_diagnostic_surface_boundary,
     _identify_diagnostic_surface_consumption,
     _identify_diagnostic_surface_shape_registration,
@@ -376,7 +378,6 @@ def test_diagnostic_surface_definition_json_includes_identity_explanation(capsys
     assert definition["shape_registration_status"] == "present"
 
 
-
 def test_diagnostic_surface_read_only_evaluation_precedes_boundary_identification():
     evaluation = _evaluate_diagnostic_surface_read_only_boundary(
         _entry("diagnostic_shape_audit")
@@ -596,6 +597,37 @@ def test_diagnostic_surface_cli_flag_display_preparation_precedes_human_renderin
 
     assert isinstance(unknown_display, _DiagnosticSurfaceCliFlagDisplay)
     assert unknown_display.text == "none"
+
+
+def test_diagnostic_surface_boundary_statement_sequence_extraction_precedes_text_rendering():
+    boundary = {
+        "status": "known",
+        "statements": ["read-only", "does not record", "record_scope=none"],
+    }
+
+    sequence = _extract_diagnostic_surface_boundary_statement_sequence(boundary)
+
+    assert isinstance(sequence, _DiagnosticSurfaceBoundaryStatementSequence)
+    assert sequence.statements == (
+        "read-only",
+        "does not record",
+        "record_scope=none",
+    )
+    assert set(sequence.__dataclass_fields__) == {"statements"}
+    assert _prepare_diagnostic_surface_boundary_text(boundary).text == (
+        "read-only; does not record; record_scope=none"
+    )
+
+    assert (
+        _extract_diagnostic_surface_boundary_statement_sequence("unknown").statements
+        == ()
+    )
+    assert (
+        _extract_diagnostic_surface_boundary_statement_sequence(
+            {"statements": []}
+        ).statements
+        == ()
+    )
 
 
 def test_diagnostic_surface_boundary_text_preparation_precedes_line_rendering():
@@ -829,15 +861,12 @@ def test_diagnostic_surface_explanation_composition_precedes_wrapper():
     assert _diagnostic_surface_explanation_wrapper(explanation) == {
         "diagnostic_surface_explanation": {
             "diagnostic_surface_definition": definition,
-            "diagnostic_surface_boundary": definition[
-                "diagnostic_surface_boundary"
-            ],
+            "diagnostic_surface_boundary": definition["diagnostic_surface_boundary"],
             "diagnostic_surface_consumption": definition[
                 "diagnostic_surface_consumption"
             ],
         }
     }
-
 
 
 def test_diagnostic_surface_explanation_line_set_assembly_precedes_human_rendering():
@@ -859,6 +888,7 @@ def test_diagnostic_surface_explanation_line_set_assembly_precedes_human_renderi
     assert format_diagnostic_surface_explanation("diagnostic_shape_audit") == "\n".join(
         line_set.lines
     )
+
 
 def test_diagnostic_surface_explanation_human_renders_coherent_composition(capsys):
     assert (

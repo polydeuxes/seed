@@ -175,6 +175,13 @@ class _DiagnosticSurfaceCliFlagDisplay:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceBoundaryStatementSequence:
+    """Implementation-local boundary statements before text rendering."""
+
+    statements: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceBoundaryText:
     """Implementation-local boundary statement text before line rendering."""
 
@@ -1136,9 +1143,7 @@ def _assemble_diagnostic_surface_explanation_line_set(
     explanation: dict[str, object],
 ) -> _DiagnosticSurfaceExplanationLineSet:
     definition = explanation["diagnostic_surface_definition"]
-    flag_display = _prepare_diagnostic_surface_cli_flag_display(
-        definition["cli_flags"]
-    )
+    flag_display = _prepare_diagnostic_surface_cli_flag_display(definition["cli_flags"])
     return _DiagnosticSurfaceExplanationLineSet(
         lines=(
             f"DiagnosticSurface explanation: {definition['diagnostic_name']}",
@@ -1174,9 +1179,7 @@ def format_diagnostic_surface_definition(diagnostic_surface: str) -> str:
 def _assemble_diagnostic_surface_definition_line_set(
     definition: dict[str, object],
 ) -> _DiagnosticSurfaceDefinitionLineSet:
-    flag_display = _prepare_diagnostic_surface_cli_flag_display(
-        definition["cli_flags"]
-    )
+    flag_display = _prepare_diagnostic_surface_cli_flag_display(definition["cli_flags"])
     return _DiagnosticSurfaceDefinitionLineSet(
         lines=(
             f"DiagnosticSurface definition: {definition['diagnostic_name']}",
@@ -1318,13 +1321,24 @@ def _format_diagnostic_surface_boundary(boundary: object, indent: str = "  ") ->
 def _prepare_diagnostic_surface_boundary_text(
     boundary: object,
 ) -> _DiagnosticSurfaceBoundaryText:
-    if not isinstance(boundary, dict):
-        return _DiagnosticSurfaceBoundaryText(text="unknown")
-    statements = boundary.get("statements")
-    if not isinstance(statements, list) or not statements:
+    sequence = _extract_diagnostic_surface_boundary_statement_sequence(boundary)
+    if not sequence.statements:
         return _DiagnosticSurfaceBoundaryText(text="unknown")
     return _DiagnosticSurfaceBoundaryText(
-        text="; ".join(str(statement) for statement in statements)
+        text="; ".join(str(statement) for statement in sequence.statements)
+    )
+
+
+def _extract_diagnostic_surface_boundary_statement_sequence(
+    boundary: object,
+) -> _DiagnosticSurfaceBoundaryStatementSequence:
+    if not isinstance(boundary, dict):
+        return _DiagnosticSurfaceBoundaryStatementSequence(statements=())
+    statements = boundary.get("statements")
+    if not isinstance(statements, list) or not statements:
+        return _DiagnosticSurfaceBoundaryStatementSequence(statements=())
+    return _DiagnosticSurfaceBoundaryStatementSequence(
+        statements=tuple(str(statement) for statement in statements)
     )
 
 
