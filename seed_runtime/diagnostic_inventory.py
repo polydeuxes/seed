@@ -154,6 +154,13 @@ class _DiagnosticSurfaceExplanationComposition:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceDefinitionLineSet:
+    """Implementation-local definition lines before human rendering."""
+
+    lines: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceCliFlagDisplay:
     """Implementation-local CLI flag display text before human rendering."""
 
@@ -1146,11 +1153,18 @@ def format_diagnostic_surface_definition(diagnostic_surface: str) -> str:
     definition = build_diagnostic_surface_definition(diagnostic_surface)[
         "diagnostic_surface_definition"
     ]
+    line_set = _assemble_diagnostic_surface_definition_line_set(definition)
+    return "\n".join(line_set.lines)
+
+
+def _assemble_diagnostic_surface_definition_line_set(
+    definition: dict[str, object],
+) -> _DiagnosticSurfaceDefinitionLineSet:
     flag_display = _prepare_diagnostic_surface_cli_flag_display(
         definition["cli_flags"]
     )
-    return "\n".join(
-        [
+    return _DiagnosticSurfaceDefinitionLineSet(
+        lines=(
             f"DiagnosticSurface definition: {definition['diagnostic_name']}",
             f"  status: {definition['status']}",
             f"  cli_flags: {flag_display.text}",
@@ -1168,7 +1182,7 @@ def format_diagnostic_surface_definition(diagnostic_surface: str) -> str:
             f"  shape_registration_status: {definition['shape_registration_status']}",
             f"  implementation_reason: {definition['implementation_reason']}",
             f"  evidence_source: {definition['evidence_source']}",
-        ]
+        )
     )
 
 
