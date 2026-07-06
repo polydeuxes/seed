@@ -189,6 +189,13 @@ class _DiagnosticSurfaceBoundaryText:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceBoundaryLine:
+    """Implementation-local boundary line before human line-set assembly."""
+
+    line: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceConsumptionDeclarationSequence:
     """Implementation-local consumption declarations before text rendering."""
 
@@ -1329,7 +1336,15 @@ def _diagnostic_surface_consumption(
 
 def _format_diagnostic_surface_boundary(boundary: object, indent: str = "  ") -> str:
     boundary_text = _prepare_diagnostic_surface_boundary_text(boundary)
-    return f"{indent}diagnostic_surface_boundary: {boundary_text.text}"
+    return _render_diagnostic_surface_boundary_line(boundary_text, indent=indent).line
+
+
+def _render_diagnostic_surface_boundary_line(
+    boundary_text: _DiagnosticSurfaceBoundaryText, indent: str = "  "
+) -> _DiagnosticSurfaceBoundaryLine:
+    return _DiagnosticSurfaceBoundaryLine(
+        line=f"{indent}diagnostic_surface_boundary: {boundary_text.text}"
+    )
 
 
 def _prepare_diagnostic_surface_boundary_text(
