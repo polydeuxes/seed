@@ -231,6 +231,13 @@ class _DiagnosticSurfaceShapeRegistrationIdentification:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceShapeRegistrationStatusLine:
+    """Implementation-local shape registration status line before line-set assembly."""
+
+    line: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceConsumptionDeclarationSet:
     """Implementation-local declared consumption facts before identification."""
 
@@ -1217,7 +1224,9 @@ def _assemble_diagnostic_surface_definition_line_set(
                 definition["diagnostic_surface_consumption"]
             ),
             f"  diagnostic_inventory_registration: {definition['diagnostic_inventory_registration']}",
-            f"  shape_registration_status: {definition['shape_registration_status']}",
+            _render_diagnostic_surface_shape_registration_status_line(
+                definition["shape_registration_status"]
+            ).line,
             f"  implementation_reason: {definition['implementation_reason']}",
             f"  evidence_source: {definition['evidence_source']}",
         )
@@ -1433,6 +1442,14 @@ def _diagnostic_surface_shape_registration_status(
     identification: _DiagnosticSurfaceShapeRegistrationIdentification,
 ) -> str:
     return identification.status
+
+
+def _render_diagnostic_surface_shape_registration_status_line(
+    status: object, indent: str = "  "
+) -> _DiagnosticSurfaceShapeRegistrationStatusLine:
+    return _DiagnosticSurfaceShapeRegistrationStatusLine(
+        line=f"{indent}shape_registration_status: {status}"
+    )
 
 
 def _prepare_diagnostic_inventory_composition(
