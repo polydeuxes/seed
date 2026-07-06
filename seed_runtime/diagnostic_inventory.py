@@ -245,6 +245,13 @@ class _DiagnosticSurfaceImplementationReasonLine:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceEvidenceSourceLine:
+    """Implementation-local evidence source line before line-set assembly."""
+
+    line: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceConsumptionDeclarationSet:
     """Implementation-local declared consumption facts before identification."""
 
@@ -1237,7 +1244,9 @@ def _assemble_diagnostic_surface_definition_line_set(
             _render_diagnostic_surface_implementation_reason_line(
                 definition["implementation_reason"]
             ).line,
-            f"  evidence_source: {definition['evidence_source']}",
+            _render_diagnostic_surface_evidence_source_line(
+                definition["evidence_source"]
+            ).line,
         )
     )
 
@@ -1466,6 +1475,14 @@ def _render_diagnostic_surface_implementation_reason_line(
 ) -> _DiagnosticSurfaceImplementationReasonLine:
     return _DiagnosticSurfaceImplementationReasonLine(
         line=f"{indent}implementation_reason: {reason}"
+    )
+
+
+def _render_diagnostic_surface_evidence_source_line(
+    evidence_source: object, indent: str = "  "
+) -> _DiagnosticSurfaceEvidenceSourceLine:
+    return _DiagnosticSurfaceEvidenceSourceLine(
+        line=f"{indent}evidence_source: {evidence_source}"
     )
 
 

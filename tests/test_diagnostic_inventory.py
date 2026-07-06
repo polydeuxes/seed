@@ -21,6 +21,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceConsumptionIdentification,
     _DiagnosticSurfaceConsumptionText,
     _DiagnosticSurfaceDefinitionLineSet,
+    _DiagnosticSurfaceEvidenceSourceLine,
     _DiagnosticSurfaceExplanationLineSet,
     _DiagnosticSurfaceImplementationReasonLine,
     _DiagnosticSurfaceShapeRegistrationIdentification,
@@ -50,6 +51,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_cli_flag_display,
     _prepare_diagnostic_surface_consumption_text,
     _render_diagnostic_surface_consumption_line,
+    _render_diagnostic_surface_evidence_source_line,
     _render_diagnostic_surface_implementation_reason_line,
     _render_diagnostic_surface_shape_registration_status_line,
     _produce_known_diagnostic_surface_definition,
@@ -540,6 +542,20 @@ def test_diagnostic_surface_implementation_reason_line_rendering_precedes_line_s
         == "    implementation_reason: known diagnostic surface recovered from diagnostic inventory"
     )
     assert set(reason_line.__dataclass_fields__) == {"line"}
+
+
+def test_diagnostic_surface_evidence_source_line_rendering_precedes_line_set_assembly():
+    evidence_source_line = _render_diagnostic_surface_evidence_source_line(
+        "diagnostic_inventory + diagnostic_shape_audit",
+        indent="    ",
+    )
+
+    assert isinstance(evidence_source_line, _DiagnosticSurfaceEvidenceSourceLine)
+    assert (
+        evidence_source_line.line
+        == "    evidence_source: diagnostic_inventory + diagnostic_shape_audit"
+    )
+    assert set(evidence_source_line.__dataclass_fields__) == {"line"}
 
 
 def test_known_diagnostic_surface_definition_production_precedes_wrapper_composition():
