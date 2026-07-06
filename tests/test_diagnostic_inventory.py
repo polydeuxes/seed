@@ -24,6 +24,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceEvidenceSourceLine,
     _DiagnosticSurfaceExplanationLineSet,
     _DiagnosticSurfaceImplementationReasonLine,
+    _DiagnosticSurfaceInventoryRegistrationLine,
     _DiagnosticSurfaceShapeRegistrationIdentification,
     _DiagnosticSurfaceShapeRegistrationLookup,
     _DiagnosticSurfaceShapeRegistrationStatusLine,
@@ -53,6 +54,7 @@ from seed_runtime.diagnostic_inventory import (
     _render_diagnostic_surface_consumption_line,
     _render_diagnostic_surface_evidence_source_line,
     _render_diagnostic_surface_implementation_reason_line,
+    _render_diagnostic_surface_inventory_registration_line,
     _render_diagnostic_surface_shape_registration_status_line,
     _produce_known_diagnostic_surface_definition,
     _produce_unknown_diagnostic_surface_definition,
@@ -518,6 +520,16 @@ def test_diagnostic_surface_shape_registration_identification_precedes_definitio
     assert isinstance(missing, _DiagnosticSurfaceShapeRegistrationIdentification)
     assert missing.status == "absent"
     assert _diagnostic_surface_shape_registration_status(missing) == "absent"
+
+
+def test_diagnostic_surface_inventory_registration_line_rendering_precedes_line_set_assembly():
+    registration_line = _render_diagnostic_surface_inventory_registration_line(
+        "present", indent="    "
+    )
+
+    assert isinstance(registration_line, _DiagnosticSurfaceInventoryRegistrationLine)
+    assert registration_line.line == "    diagnostic_inventory_registration: present"
+    assert set(registration_line.__dataclass_fields__) == {"line"}
 
 
 def test_diagnostic_surface_shape_registration_status_line_rendering_follows_status_identification():
