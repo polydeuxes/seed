@@ -28,6 +28,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceShapeRegistrationIdentification,
     _DiagnosticSurfaceShapeRegistrationLookup,
     _DiagnosticSurfaceShapeRegistrationStatusLine,
+    _DiagnosticSurfaceStatusLine,
     _compose_diagnostic_inventory,
     _assemble_diagnostic_surface_boundary_statement_set,
     _assemble_diagnostic_surface_definition_line_set,
@@ -56,6 +57,7 @@ from seed_runtime.diagnostic_inventory import (
     _render_diagnostic_surface_implementation_reason_line,
     _render_diagnostic_surface_inventory_registration_line,
     _render_diagnostic_surface_shape_registration_status_line,
+    _render_diagnostic_surface_status_line,
     _produce_known_diagnostic_surface_definition,
     _produce_unknown_diagnostic_surface_definition,
     _diagnostic_surface_definition_wrapper,
@@ -643,6 +645,14 @@ def test_diagnostic_surface_definition_line_set_assembly_precedes_human_renderin
     assert format_diagnostic_surface_definition("diagnostic_shape_audit") == "\n".join(
         line_set.lines
     )
+
+
+def test_diagnostic_surface_status_line_rendering_precedes_line_set_assembly():
+    status_line = _render_diagnostic_surface_status_line("known", indent="    ")
+
+    assert isinstance(status_line, _DiagnosticSurfaceStatusLine)
+    assert status_line.line == "    status: known"
+    assert set(status_line.__dataclass_fields__) == {"line"}
 
 
 def test_diagnostic_surface_cli_flag_display_preparation_precedes_human_rendering():
