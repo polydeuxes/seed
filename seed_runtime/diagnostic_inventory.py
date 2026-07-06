@@ -161,6 +161,13 @@ class _DiagnosticSurfaceConsumptionText:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceShapeRegistrationLookup:
+    """Implementation-local shape registration lookup before status identification."""
+
+    present: bool
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceShapeRegistrationIdentification:
     """Implementation-local shape registration fact before definition composition."""
 
@@ -1264,10 +1271,19 @@ def _prepare_diagnostic_surface_consumption_text(
 def _identify_diagnostic_surface_shape_registration(
     diagnostic_name: str,
 ) -> _DiagnosticSurfaceShapeRegistrationIdentification:
+    lookup = _lookup_diagnostic_surface_shape_registration(diagnostic_name)
+    status = "present" if lookup.present else "absent"
+    return _DiagnosticSurfaceShapeRegistrationIdentification(status=status)
+
+
+def _lookup_diagnostic_surface_shape_registration(
+    diagnostic_name: str,
+) -> _DiagnosticSurfaceShapeRegistrationLookup:
     from seed_runtime.diagnostic_shape_audit import IMPLEMENTATION_SPECS
 
-    status = "present" if diagnostic_name in IMPLEMENTATION_SPECS else "absent"
-    return _DiagnosticSurfaceShapeRegistrationIdentification(status=status)
+    return _DiagnosticSurfaceShapeRegistrationLookup(
+        present=diagnostic_name in IMPLEMENTATION_SPECS
+    )
 
 
 def _diagnostic_surface_shape_registration_status(
