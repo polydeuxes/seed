@@ -7,6 +7,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticInventoryCompositionInput,
     _DiagnosticSurfaceBoundaryStatementSequence,
     _DiagnosticSurfaceBoundaryText,
+    _DiagnosticSurfaceBoundaryLine,
     _DiagnosticSurfaceCliFlagDisplay,
     _DiagnosticSurfaceExplanationComposition,
     _KnownDiagnosticSurfaceDefinition,
@@ -43,6 +44,7 @@ from seed_runtime.diagnostic_inventory import (
     _lookup_diagnostic_surface_shape_registration,
     _prepare_diagnostic_inventory_composition,
     _prepare_diagnostic_surface_boundary_text,
+    _render_diagnostic_surface_boundary_line,
     _prepare_diagnostic_surface_cli_flag_display,
     _prepare_diagnostic_surface_consumption_text,
     _render_diagnostic_surface_consumption_line,
@@ -658,6 +660,23 @@ def test_diagnostic_surface_boundary_text_preparation_precedes_line_rendering():
 
     assert isinstance(unknown_boundary_text, _DiagnosticSurfaceBoundaryText)
     assert unknown_boundary_text.text == "unknown"
+
+
+def test_diagnostic_surface_boundary_line_rendering_follows_text_preparation():
+    boundary_text = _DiagnosticSurfaceBoundaryText(
+        text="read-only; does not record; record_scope=none"
+    )
+
+    boundary_line = _render_diagnostic_surface_boundary_line(
+        boundary_text, indent="    "
+    )
+
+    assert isinstance(boundary_line, _DiagnosticSurfaceBoundaryLine)
+    assert (
+        boundary_line.line
+        == "    diagnostic_surface_boundary: read-only; does not record; record_scope=none"
+    )
+    assert set(boundary_line.__dataclass_fields__) == {"line"}
 
 
 def test_diagnostic_surface_consumption_declaration_sequence_extraction_precedes_text_rendering():
