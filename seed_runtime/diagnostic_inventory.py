@@ -189,6 +189,13 @@ class _DiagnosticSurfaceBoundaryText:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceConsumptionDeclarationSequence:
+    """Implementation-local consumption declarations before text rendering."""
+
+    declarations: tuple[tuple[str, object], ...]
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceConsumptionText:
     """Implementation-local consumption declaration text before line rendering."""
 
@@ -1352,13 +1359,24 @@ def _format_diagnostic_surface_consumption(
 def _prepare_diagnostic_surface_consumption_text(
     consumption: object,
 ) -> _DiagnosticSurfaceConsumptionText:
-    if not isinstance(consumption, dict):
+    sequence = _extract_diagnostic_surface_consumption_declaration_sequence(consumption)
+    if not sequence.declarations:
         return _DiagnosticSurfaceConsumptionText(text="unknown")
+    items = [f"{key}={str(value).lower()}" for key, value in sequence.declarations]
+    return _DiagnosticSurfaceConsumptionText(text="; ".join(items))
+
+
+def _extract_diagnostic_surface_consumption_declaration_sequence(
+    consumption: object,
+) -> _DiagnosticSurfaceConsumptionDeclarationSequence:
+    if not isinstance(consumption, dict):
+        return _DiagnosticSurfaceConsumptionDeclarationSequence(declarations=())
     declared = consumption.get("declared_consumption")
     if not isinstance(declared, dict) or not declared:
-        return _DiagnosticSurfaceConsumptionText(text="unknown")
-    items = [f"{key}={str(value).lower()}" for key, value in declared.items()]
-    return _DiagnosticSurfaceConsumptionText(text="; ".join(items))
+        return _DiagnosticSurfaceConsumptionDeclarationSequence(declarations=())
+    return _DiagnosticSurfaceConsumptionDeclarationSequence(
+        declarations=tuple(declared.items())
+    )
 
 
 def _identify_diagnostic_surface_shape_registration(
