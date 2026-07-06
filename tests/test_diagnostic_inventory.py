@@ -16,10 +16,12 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceConsumptionDeclarationSet,
     _DiagnosticSurfaceConsumptionIdentification,
     _DiagnosticSurfaceConsumptionText,
+    _DiagnosticSurfaceDefinitionLineSet,
     _DiagnosticSurfaceShapeRegistrationIdentification,
     _DiagnosticSurfaceShapeRegistrationLookup,
     _compose_diagnostic_inventory,
     _assemble_diagnostic_surface_boundary_statement_set,
+    _assemble_diagnostic_surface_definition_line_set,
     _assemble_diagnostic_surface_consumption_declaration_set,
     _compose_diagnostic_inventory_json,
     _compose_diagnostic_surface_explanation,
@@ -40,6 +42,7 @@ from seed_runtime.diagnostic_inventory import (
     _diagnostic_surface_definition_wrapper,
     _diagnostic_surface_explanation_wrapper,
     diagnostic_surface_definition_json,
+    format_diagnostic_surface_definition,
     format_diagnostic_inventory,
 )
 
@@ -552,6 +555,26 @@ def test_unknown_diagnostic_surface_definition_production_precedes_wrapper_compo
             "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
         }
     }
+
+
+def test_diagnostic_surface_definition_line_set_assembly_precedes_human_rendering():
+    definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
+        "diagnostic_surface_definition"
+    ]
+
+    line_set = _assemble_diagnostic_surface_definition_line_set(definition)
+
+    assert isinstance(line_set, _DiagnosticSurfaceDefinitionLineSet)
+    assert line_set.lines[0] == "DiagnosticSurface definition: diagnostic_shape_audit"
+    assert "  cli_flags: --diagnostic-shape-audit" in line_set.lines
+    assert (
+        "  diagnostic_surface_consumption: uses_projected_state=false; "
+        "uses_repo_files=false; reads_diagnostic_facts=false"
+    ) in line_set.lines
+    assert set(line_set.__dataclass_fields__) == {"lines"}
+    assert format_diagnostic_surface_definition("diagnostic_shape_audit") == "\n".join(
+        line_set.lines
+    )
 
 
 def test_diagnostic_surface_cli_flag_display_preparation_precedes_human_rendering():
