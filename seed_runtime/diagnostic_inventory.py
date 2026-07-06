@@ -147,6 +147,13 @@ class _DiagnosticSurfaceCliFlagDisplay:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceBoundaryText:
+    """Implementation-local boundary statement text before line rendering."""
+
+    text: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceShapeRegistrationIdentification:
     """Implementation-local shape registration fact before definition composition."""
 
@@ -1211,14 +1218,21 @@ def _diagnostic_surface_consumption(
 
 
 def _format_diagnostic_surface_boundary(boundary: object, indent: str = "  ") -> str:
+    boundary_text = _prepare_diagnostic_surface_boundary_text(boundary)
+    return f"{indent}diagnostic_surface_boundary: {boundary_text.text}"
+
+
+def _prepare_diagnostic_surface_boundary_text(
+    boundary: object,
+) -> _DiagnosticSurfaceBoundaryText:
     if not isinstance(boundary, dict):
-        return f"{indent}diagnostic_surface_boundary: unknown"
+        return _DiagnosticSurfaceBoundaryText(text="unknown")
     statements = boundary.get("statements")
     if not isinstance(statements, list) or not statements:
-        statement_text = "unknown"
-    else:
-        statement_text = "; ".join(str(statement) for statement in statements)
-    return f"{indent}diagnostic_surface_boundary: {statement_text}"
+        return _DiagnosticSurfaceBoundaryText(text="unknown")
+    return _DiagnosticSurfaceBoundaryText(
+        text="; ".join(str(statement) for statement in statements)
+    )
 
 
 def _format_diagnostic_surface_consumption(
