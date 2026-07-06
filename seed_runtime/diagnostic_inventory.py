@@ -161,6 +161,13 @@ class _DiagnosticSurfaceDefinitionLineSet:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceExplanationLineSet:
+    """Implementation-local explanation lines before human rendering."""
+
+    lines: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceCliFlagDisplay:
     """Implementation-local CLI flag display text before human rendering."""
 
@@ -1121,12 +1128,19 @@ def format_diagnostic_surface_explanation(diagnostic_surface: str) -> str:
     explanation = build_diagnostic_surface_explanation(diagnostic_surface)[
         "diagnostic_surface_explanation"
     ]
+    line_set = _assemble_diagnostic_surface_explanation_line_set(explanation)
+    return "\n".join(line_set.lines)
+
+
+def _assemble_diagnostic_surface_explanation_line_set(
+    explanation: dict[str, object],
+) -> _DiagnosticSurfaceExplanationLineSet:
     definition = explanation["diagnostic_surface_definition"]
     flag_display = _prepare_diagnostic_surface_cli_flag_display(
         definition["cli_flags"]
     )
-    return "\n".join(
-        [
+    return _DiagnosticSurfaceExplanationLineSet(
+        lines=(
             f"DiagnosticSurface explanation: {definition['diagnostic_name']}",
             "  definition:",
             f"    status: {definition['status']}",
@@ -1141,7 +1155,7 @@ def format_diagnostic_surface_explanation(diagnostic_surface: str) -> str:
             _format_diagnostic_surface_consumption(
                 explanation["diagnostic_surface_consumption"], indent="    "
             ),
-        ]
+        )
     )
 
 
