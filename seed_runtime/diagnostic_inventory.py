@@ -203,6 +203,13 @@ class _DiagnosticSurfaceConsumptionText:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceConsumptionLine:
+    """Implementation-local consumption line before human line-set assembly."""
+
+    line: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceShapeRegistrationLookup:
     """Implementation-local shape registration lookup before status identification."""
 
@@ -1353,7 +1360,17 @@ def _format_diagnostic_surface_consumption(
     consumption: object, indent: str = "  "
 ) -> str:
     consumption_text = _prepare_diagnostic_surface_consumption_text(consumption)
-    return f"{indent}diagnostic_surface_consumption: {consumption_text.text}"
+    return _render_diagnostic_surface_consumption_line(
+        consumption_text, indent=indent
+    ).line
+
+
+def _render_diagnostic_surface_consumption_line(
+    consumption_text: _DiagnosticSurfaceConsumptionText, indent: str = "  "
+) -> _DiagnosticSurfaceConsumptionLine:
+    return _DiagnosticSurfaceConsumptionLine(
+        line=f"{indent}diagnostic_surface_consumption: {consumption_text.text}"
+    )
 
 
 def _prepare_diagnostic_surface_consumption_text(
