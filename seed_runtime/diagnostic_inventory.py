@@ -140,6 +140,13 @@ class _DiagnosticSurfaceExplanationComposition:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceCliFlagDisplay:
+    """Implementation-local CLI flag display text before human rendering."""
+
+    text: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceShapeRegistrationIdentification:
     """Implementation-local shape registration fact before definition composition."""
 
@@ -1064,14 +1071,15 @@ def format_diagnostic_surface_explanation(diagnostic_surface: str) -> str:
         "diagnostic_surface_explanation"
     ]
     definition = explanation["diagnostic_surface_definition"]
-    flags = definition["cli_flags"]
-    flag_text = ", ".join(flags) if isinstance(flags, list) and flags else "none"
+    flag_display = _prepare_diagnostic_surface_cli_flag_display(
+        definition["cli_flags"]
+    )
     return "\n".join(
         [
             f"DiagnosticSurface explanation: {definition['diagnostic_name']}",
             "  definition:",
             f"    status: {definition['status']}",
-            f"    cli_flags: {flag_text}",
+            f"    cli_flags: {flag_display.text}",
             f"    description: {definition['description']}",
             f"    supports_json: {str(definition['supports_json']).lower()}",
             f"    supports_record: {str(definition['supports_record']).lower()}",
@@ -1094,13 +1102,14 @@ def format_diagnostic_surface_definition(diagnostic_surface: str) -> str:
     definition = build_diagnostic_surface_definition(diagnostic_surface)[
         "diagnostic_surface_definition"
     ]
-    flags = definition["cli_flags"]
-    flag_text = ", ".join(flags) if isinstance(flags, list) and flags else "none"
+    flag_display = _prepare_diagnostic_surface_cli_flag_display(
+        definition["cli_flags"]
+    )
     return "\n".join(
         [
             f"DiagnosticSurface definition: {definition['diagnostic_name']}",
             f"  status: {definition['status']}",
-            f"  cli_flags: {flag_text}",
+            f"  cli_flags: {flag_display.text}",
             f"  description: {definition['description']}",
             f"  supports_json: {str(definition['supports_json']).lower()}",
             f"  supports_record: {str(definition['supports_record']).lower()}",
@@ -1117,6 +1126,16 @@ def format_diagnostic_surface_definition(diagnostic_surface: str) -> str:
             f"  evidence_source: {definition['evidence_source']}",
         ]
     )
+
+
+def _prepare_diagnostic_surface_cli_flag_display(
+    cli_flags: object,
+) -> _DiagnosticSurfaceCliFlagDisplay:
+    if isinstance(cli_flags, list) and cli_flags:
+        return _DiagnosticSurfaceCliFlagDisplay(
+            text=", ".join(str(flag) for flag in cli_flags)
+        )
+    return _DiagnosticSurfaceCliFlagDisplay(text="none")
 
 
 def _identify_diagnostic_surface_boundary(
