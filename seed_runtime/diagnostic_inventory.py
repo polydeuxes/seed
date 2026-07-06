@@ -1212,7 +1212,7 @@ def _assemble_diagnostic_surface_explanation_line_set(
             f"DiagnosticSurface explanation: {definition['diagnostic_name']}",
             "  definition:",
             f"    status: {definition['status']}",
-            f"    cli_flags: {flag_display.text}",
+            _render_diagnostic_surface_cli_flags_line(flag_display, indent="    ").line,
             f"    description: {definition['description']}",
             f"    supports_json: {str(definition['supports_json']).lower()}",
             f"    supports_record: {str(definition['supports_record']).lower()}",
