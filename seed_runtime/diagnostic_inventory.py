@@ -168,6 +168,13 @@ class _DiagnosticSurfaceExplanationLineSet:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceStatusLine:
+    """Implementation-local status line before line-set assembly."""
+
+    line: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceCliFlagDisplay:
     """Implementation-local CLI flag display text before human rendering."""
 
@@ -1232,7 +1239,7 @@ def _assemble_diagnostic_surface_definition_line_set(
     return _DiagnosticSurfaceDefinitionLineSet(
         lines=(
             f"DiagnosticSurface definition: {definition['diagnostic_name']}",
-            f"  status: {definition['status']}",
+            _render_diagnostic_surface_status_line(definition["status"]).line,
             f"  cli_flags: {flag_display.text}",
             f"  description: {definition['description']}",
             f"  supports_json: {str(definition['supports_json']).lower()}",
@@ -1258,6 +1265,12 @@ def _assemble_diagnostic_surface_definition_line_set(
             ).line,
         )
     )
+
+
+def _render_diagnostic_surface_status_line(
+    status: object, indent: str = "  "
+) -> _DiagnosticSurfaceStatusLine:
+    return _DiagnosticSurfaceStatusLine(line=f"{indent}status: {status}")
 
 
 def _prepare_diagnostic_surface_cli_flag_display(
