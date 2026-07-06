@@ -13,12 +13,14 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceBoundaryIdentification,
     _DiagnosticSurfaceBoundaryStatementSet,
     _DiagnosticSurfaceReadOnlyEvaluation,
+    _DiagnosticSurfaceConsumptionDeclarationSet,
     _DiagnosticSurfaceConsumptionIdentification,
     _DiagnosticSurfaceConsumptionText,
     _DiagnosticSurfaceShapeRegistrationIdentification,
     _DiagnosticSurfaceShapeRegistrationLookup,
     _compose_diagnostic_inventory,
     _assemble_diagnostic_surface_boundary_statement_set,
+    _assemble_diagnostic_surface_consumption_declaration_set,
     _compose_diagnostic_inventory_json,
     _compose_diagnostic_surface_explanation,
     _diagnostic_surface_boundary,
@@ -428,6 +430,22 @@ def test_diagnostic_surface_boundary_identification_precedes_presentation():
         "statements": list(identification.statements),
         "evidence_source": "diagnostic_inventory",
         "implementation_reason": "boundary recovered from declared diagnostic inventory fields",
+    }
+
+
+def test_diagnostic_surface_consumption_declaration_set_precedes_identification():
+    declaration_set = _assemble_diagnostic_surface_consumption_declaration_set(
+        _entry("diagnostic_shape_audit")
+    )
+
+    assert isinstance(declaration_set, _DiagnosticSurfaceConsumptionDeclarationSet)
+    assert declaration_set.uses_projected_state is False
+    assert declaration_set.uses_repo_files is False
+    assert declaration_set.reads_diagnostic_facts is False
+    assert set(declaration_set.__dataclass_fields__) == {
+        "uses_projected_state",
+        "uses_repo_files",
+        "reads_diagnostic_facts",
     }
 
 

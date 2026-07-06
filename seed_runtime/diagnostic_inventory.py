@@ -189,6 +189,15 @@ class _DiagnosticSurfaceShapeRegistrationIdentification:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceConsumptionDeclarationSet:
+    """Implementation-local declared consumption facts before identification."""
+
+    uses_projected_state: bool
+    uses_repo_files: bool
+    reads_diagnostic_facts: bool
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceConsumptionIdentification:
     """Implementation-local consumption facts before report presentation."""
 
@@ -1249,7 +1258,18 @@ def _diagnostic_surface_boundary(
 def _identify_diagnostic_surface_consumption(
     entry: DiagnosticInventoryEntry,
 ) -> _DiagnosticSurfaceConsumptionIdentification:
+    declaration_set = _assemble_diagnostic_surface_consumption_declaration_set(entry)
     return _DiagnosticSurfaceConsumptionIdentification(
+        uses_projected_state=declaration_set.uses_projected_state,
+        uses_repo_files=declaration_set.uses_repo_files,
+        reads_diagnostic_facts=declaration_set.reads_diagnostic_facts,
+    )
+
+
+def _assemble_diagnostic_surface_consumption_declaration_set(
+    entry: DiagnosticInventoryEntry,
+) -> _DiagnosticSurfaceConsumptionDeclarationSet:
+    return _DiagnosticSurfaceConsumptionDeclarationSet(
         uses_projected_state=entry.uses_projected_state,
         uses_repo_files=entry.uses_repo_files,
         reads_diagnostic_facts=entry.reads_diagnostic_facts,
