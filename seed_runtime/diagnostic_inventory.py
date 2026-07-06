@@ -1211,7 +1211,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
         lines=(
             f"DiagnosticSurface explanation: {definition['diagnostic_name']}",
             "  definition:",
-            f"    status: {definition['status']}",
+            _render_diagnostic_surface_status_line(
+                definition["status"], indent="    "
+            ).line,
             _render_diagnostic_surface_cli_flags_line(flag_display, indent="    ").line,
             f"    description: {definition['description']}",
             f"    supports_json: {str(definition['supports_json']).lower()}",
