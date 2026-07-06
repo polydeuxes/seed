@@ -11,12 +11,14 @@ from seed_runtime.diagnostic_inventory import (
     _KnownDiagnosticSurfaceDefinition,
     _UnknownDiagnosticSurfaceDefinition,
     _DiagnosticSurfaceBoundaryIdentification,
+    _DiagnosticSurfaceBoundaryStatementSet,
     _DiagnosticSurfaceReadOnlyEvaluation,
     _DiagnosticSurfaceConsumptionIdentification,
     _DiagnosticSurfaceConsumptionText,
     _DiagnosticSurfaceShapeRegistrationIdentification,
     _DiagnosticSurfaceShapeRegistrationLookup,
     _compose_diagnostic_inventory,
+    _assemble_diagnostic_surface_boundary_statement_set,
     _compose_diagnostic_inventory_json,
     _compose_diagnostic_surface_explanation,
     _diagnostic_surface_boundary,
@@ -381,6 +383,26 @@ def test_diagnostic_surface_read_only_evaluation_precedes_boundary_identificatio
 
     assert isinstance(recording_evaluation, _DiagnosticSurfaceReadOnlyEvaluation)
     assert recording_evaluation.read_only is False
+
+
+def test_diagnostic_surface_boundary_statement_set_precedes_identification():
+    statement_set = _assemble_diagnostic_surface_boundary_statement_set(
+        _entry("diagnostic_shape_audit")
+    )
+
+    assert isinstance(statement_set, _DiagnosticSurfaceBoundaryStatementSet)
+    assert statement_set.statements == (
+        "does not record",
+        "record_scope=none",
+        "does not write event ledger",
+        "does not mutate cluster",
+        "does not use projected state",
+        "does not use repository files",
+        "does not emit diagnostic facts",
+        "does not emit cluster facts",
+        "does not read diagnostic facts",
+    )
+    assert set(statement_set.__dataclass_fields__) == {"statements"}
 
 
 def test_diagnostic_surface_boundary_identification_precedes_presentation():

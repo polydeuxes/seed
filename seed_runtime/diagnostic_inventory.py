@@ -47,6 +47,13 @@ class _DiagnosticSurfaceReadOnlyEvaluation:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceBoundaryStatementSet:
+    """Implementation-local ordered boundary statements before identification."""
+
+    statements: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceBoundaryIdentification:
     """Implementation-local boundary facts before report presentation."""
 
@@ -1170,44 +1177,53 @@ def _identify_diagnostic_surface_boundary(
     entry: DiagnosticInventoryEntry,
 ) -> _DiagnosticSurfaceBoundaryIdentification:
     read_only = _evaluate_diagnostic_surface_read_only_boundary(entry)
-    statements: list[str] = [
-        "records" if entry.supports_record else "does not record",
-        f"record_scope={entry.record_scope}",
-        (
-            "writes event ledger"
-            if entry.writes_event_ledger
-            else "does not write event ledger"
-        ),
-        "mutates cluster" if entry.mutates_cluster else "does not mutate cluster",
-        (
-            "uses projected state"
-            if entry.uses_projected_state
-            else "does not use projected state"
-        ),
-        (
-            "uses repository files"
-            if entry.uses_repo_files
-            else "does not use repository files"
-        ),
-        (
-            "emits diagnostic facts"
-            if entry.emits_diagnostic_facts
-            else "does not emit diagnostic facts"
-        ),
-        (
-            "emits cluster facts"
-            if entry.emits_cluster_facts
-            else "does not emit cluster facts"
-        ),
-        (
-            "reads diagnostic facts"
-            if entry.reads_diagnostic_facts
-            else "does not read diagnostic facts"
-        ),
-    ]
+    statement_set = _assemble_diagnostic_surface_boundary_statement_set(entry)
+    statements = list(statement_set.statements)
     if read_only.read_only:
         statements.insert(0, "read-only")
     return _DiagnosticSurfaceBoundaryIdentification(statements=tuple(statements))
+
+
+def _assemble_diagnostic_surface_boundary_statement_set(
+    entry: DiagnosticInventoryEntry,
+) -> _DiagnosticSurfaceBoundaryStatementSet:
+    return _DiagnosticSurfaceBoundaryStatementSet(
+        statements=(
+            "records" if entry.supports_record else "does not record",
+            f"record_scope={entry.record_scope}",
+            (
+                "writes event ledger"
+                if entry.writes_event_ledger
+                else "does not write event ledger"
+            ),
+            "mutates cluster" if entry.mutates_cluster else "does not mutate cluster",
+            (
+                "uses projected state"
+                if entry.uses_projected_state
+                else "does not use projected state"
+            ),
+            (
+                "uses repository files"
+                if entry.uses_repo_files
+                else "does not use repository files"
+            ),
+            (
+                "emits diagnostic facts"
+                if entry.emits_diagnostic_facts
+                else "does not emit diagnostic facts"
+            ),
+            (
+                "emits cluster facts"
+                if entry.emits_cluster_facts
+                else "does not emit cluster facts"
+            ),
+            (
+                "reads diagnostic facts"
+                if entry.reads_diagnostic_facts
+                else "does not read diagnostic facts"
+            ),
+        )
+    )
 
 
 def _evaluate_diagnostic_surface_read_only_boundary(
