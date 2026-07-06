@@ -16,6 +16,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceReadOnlyEvaluation,
     _DiagnosticSurfaceConsumptionDeclarationSequence,
     _DiagnosticSurfaceConsumptionDeclarationSet,
+    _DiagnosticSurfaceConsumptionLine,
     _DiagnosticSurfaceConsumptionIdentification,
     _DiagnosticSurfaceConsumptionText,
     _DiagnosticSurfaceDefinitionLineSet,
@@ -35,6 +36,7 @@ from seed_runtime.diagnostic_inventory import (
     _evaluate_diagnostic_surface_read_only_boundary,
     _extract_diagnostic_surface_boundary_statement_sequence,
     _extract_diagnostic_surface_consumption_declaration_sequence,
+    _format_diagnostic_surface_consumption,
     _identify_diagnostic_surface_boundary,
     _identify_diagnostic_surface_consumption,
     _identify_diagnostic_surface_shape_registration,
@@ -43,6 +45,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_boundary_text,
     _prepare_diagnostic_surface_cli_flag_display,
     _prepare_diagnostic_surface_consumption_text,
+    _render_diagnostic_surface_consumption_line,
     _produce_known_diagnostic_surface_definition,
     _produce_unknown_diagnostic_surface_definition,
     _diagnostic_surface_definition_wrapper,
@@ -724,6 +727,35 @@ def test_diagnostic_surface_consumption_text_preparation_precedes_line_rendering
 
     assert isinstance(unknown_consumption_text, _DiagnosticSurfaceConsumptionText)
     assert unknown_consumption_text.text == "unknown"
+
+
+def test_diagnostic_surface_consumption_line_rendering_follows_text_preparation():
+    consumption_text = _DiagnosticSurfaceConsumptionText(
+        text="uses_projected_state=true; uses_repo_files=false"
+    )
+
+    consumption_line = _render_diagnostic_surface_consumption_line(
+        consumption_text, indent="    "
+    )
+
+    assert isinstance(consumption_line, _DiagnosticSurfaceConsumptionLine)
+    assert (
+        consumption_line.line
+        == "    diagnostic_surface_consumption: uses_projected_state=true; uses_repo_files=false"
+    )
+    assert set(consumption_line.__dataclass_fields__) == {"line"}
+    assert (
+        _format_diagnostic_surface_consumption(
+            {
+                "declared_consumption": {
+                    "uses_projected_state": True,
+                    "uses_repo_files": False,
+                }
+            },
+            indent="    ",
+        )
+        == consumption_line.line
+    )
 
 
 def test_diagnostic_surface_definition_human_renders_identity_explanation(capsys):
