@@ -14,6 +14,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceConsumptionIdentification,
     _DiagnosticSurfaceConsumptionText,
     _DiagnosticSurfaceShapeRegistrationIdentification,
+    _DiagnosticSurfaceShapeRegistrationLookup,
     _compose_diagnostic_inventory,
     _compose_diagnostic_inventory_json,
     _compose_diagnostic_surface_explanation,
@@ -23,6 +24,7 @@ from seed_runtime.diagnostic_inventory import (
     _identify_diagnostic_surface_boundary,
     _identify_diagnostic_surface_consumption,
     _identify_diagnostic_surface_shape_registration,
+    _lookup_diagnostic_surface_shape_registration,
     _prepare_diagnostic_inventory_composition,
     _prepare_diagnostic_surface_boundary_text,
     _prepare_diagnostic_surface_cli_flag_display,
@@ -406,6 +408,19 @@ def test_diagnostic_surface_consumption_identification_precedes_presentation():
         "evidence_source": "diagnostic_inventory",
         "implementation_reason": "consumption recovered from declared diagnostic inventory fields",
     }
+
+
+def test_diagnostic_surface_shape_registration_lookup_precedes_status_identification():
+    lookup = _lookup_diagnostic_surface_shape_registration("diagnostic_shape_audit")
+
+    assert isinstance(lookup, _DiagnosticSurfaceShapeRegistrationLookup)
+    assert lookup.present is True
+    assert set(lookup.__dataclass_fields__) == {"present"}
+
+    missing = _lookup_diagnostic_surface_shape_registration("synthetic_missing")
+
+    assert isinstance(missing, _DiagnosticSurfaceShapeRegistrationLookup)
+    assert missing.present is False
 
 
 def test_diagnostic_surface_shape_registration_identification_precedes_definition_composition():
