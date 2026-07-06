@@ -14,6 +14,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceBoundaryIdentification,
     _DiagnosticSurfaceBoundaryStatementSet,
     _DiagnosticSurfaceReadOnlyEvaluation,
+    _DiagnosticSurfaceConsumptionDeclarationSequence,
     _DiagnosticSurfaceConsumptionDeclarationSet,
     _DiagnosticSurfaceConsumptionIdentification,
     _DiagnosticSurfaceConsumptionText,
@@ -33,6 +34,7 @@ from seed_runtime.diagnostic_inventory import (
     _diagnostic_surface_shape_registration_status,
     _evaluate_diagnostic_surface_read_only_boundary,
     _extract_diagnostic_surface_boundary_statement_sequence,
+    _extract_diagnostic_surface_consumption_declaration_sequence,
     _identify_diagnostic_surface_boundary,
     _identify_diagnostic_surface_consumption,
     _identify_diagnostic_surface_shape_registration,
@@ -653,6 +655,43 @@ def test_diagnostic_surface_boundary_text_preparation_precedes_line_rendering():
 
     assert isinstance(unknown_boundary_text, _DiagnosticSurfaceBoundaryText)
     assert unknown_boundary_text.text == "unknown"
+
+
+def test_diagnostic_surface_consumption_declaration_sequence_extraction_precedes_text_rendering():
+    consumption = {
+        "status": "known",
+        "declared_consumption": {
+            "uses_projected_state": True,
+            "uses_repo_files": False,
+            "reads_diagnostic_facts": True,
+        },
+    }
+
+    sequence = _extract_diagnostic_surface_consumption_declaration_sequence(consumption)
+
+    assert isinstance(sequence, _DiagnosticSurfaceConsumptionDeclarationSequence)
+    assert sequence.declarations == (
+        ("uses_projected_state", True),
+        ("uses_repo_files", False),
+        ("reads_diagnostic_facts", True),
+    )
+    assert set(sequence.__dataclass_fields__) == {"declarations"}
+    assert _prepare_diagnostic_surface_consumption_text(consumption).text == (
+        "uses_projected_state=true; uses_repo_files=false; reads_diagnostic_facts=true"
+    )
+
+    assert (
+        _extract_diagnostic_surface_consumption_declaration_sequence(
+            "unknown"
+        ).declarations
+        == ()
+    )
+    assert (
+        _extract_diagnostic_surface_consumption_declaration_sequence(
+            {"declared_consumption": {}}
+        ).declarations
+        == ()
+    )
 
 
 def test_diagnostic_surface_consumption_text_preparation_precedes_line_rendering():
