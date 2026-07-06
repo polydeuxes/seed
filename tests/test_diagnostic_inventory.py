@@ -12,6 +12,7 @@ from seed_runtime.diagnostic_inventory import (
     _UnknownDiagnosticSurfaceDefinition,
     _DiagnosticSurfaceBoundaryIdentification,
     _DiagnosticSurfaceConsumptionIdentification,
+    _DiagnosticSurfaceConsumptionText,
     _DiagnosticSurfaceShapeRegistrationIdentification,
     _compose_diagnostic_inventory,
     _compose_diagnostic_inventory_json,
@@ -25,6 +26,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_inventory_composition,
     _prepare_diagnostic_surface_boundary_text,
     _prepare_diagnostic_surface_cli_flag_display,
+    _prepare_diagnostic_surface_consumption_text,
     _produce_known_diagnostic_surface_definition,
     _produce_unknown_diagnostic_surface_definition,
     _diagnostic_surface_definition_wrapper,
@@ -517,6 +519,38 @@ def test_diagnostic_surface_boundary_text_preparation_precedes_line_rendering():
 
     assert isinstance(unknown_boundary_text, _DiagnosticSurfaceBoundaryText)
     assert unknown_boundary_text.text == "unknown"
+
+
+def test_diagnostic_surface_consumption_text_preparation_precedes_line_rendering():
+    consumption = {
+        "status": "known",
+        "declared_consumption": {
+            "uses_projected_state": True,
+            "uses_repo_files": False,
+            "reads_diagnostic_facts": True,
+        },
+    }
+
+    consumption_text = _prepare_diagnostic_surface_consumption_text(consumption)
+
+    assert isinstance(consumption_text, _DiagnosticSurfaceConsumptionText)
+    assert (
+        consumption_text.text
+        == "uses_projected_state=true; uses_repo_files=false; reads_diagnostic_facts=true"
+    )
+    assert set(consumption_text.__dataclass_fields__) == {"text"}
+
+    empty_consumption_text = _prepare_diagnostic_surface_consumption_text(
+        {"status": "unknown", "declared_consumption": {}}
+    )
+
+    assert isinstance(empty_consumption_text, _DiagnosticSurfaceConsumptionText)
+    assert empty_consumption_text.text == "unknown"
+
+    unknown_consumption_text = _prepare_diagnostic_surface_consumption_text("unknown")
+
+    assert isinstance(unknown_consumption_text, _DiagnosticSurfaceConsumptionText)
+    assert unknown_consumption_text.text == "unknown"
 
 
 def test_diagnostic_surface_definition_human_renders_identity_explanation(capsys):
