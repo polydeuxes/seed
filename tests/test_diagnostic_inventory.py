@@ -9,6 +9,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceBoundaryText,
     _DiagnosticSurfaceBoundaryLine,
     _DiagnosticSurfaceCliFlagDisplay,
+    _DiagnosticSurfaceCliFlagsLine,
     _DiagnosticSurfaceExplanationComposition,
     _KnownDiagnosticSurfaceDefinition,
     _UnknownDiagnosticSurfaceDefinition,
@@ -51,6 +52,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_boundary_text,
     _render_diagnostic_surface_boundary_line,
     _prepare_diagnostic_surface_cli_flag_display,
+    _render_diagnostic_surface_cli_flags_line,
     _prepare_diagnostic_surface_consumption_text,
     _render_diagnostic_surface_consumption_line,
     _render_diagnostic_surface_evidence_source_line,
@@ -670,6 +672,18 @@ def test_diagnostic_surface_cli_flag_display_preparation_precedes_human_renderin
 
     assert isinstance(unknown_display, _DiagnosticSurfaceCliFlagDisplay)
     assert unknown_display.text == "none"
+
+
+def test_diagnostic_surface_cli_flags_line_rendering_follows_display_preparation():
+    flag_display = _DiagnosticSurfaceCliFlagDisplay(text="--alpha, --beta")
+
+    cli_flags_line = _render_diagnostic_surface_cli_flags_line(
+        flag_display, indent="    "
+    )
+
+    assert isinstance(cli_flags_line, _DiagnosticSurfaceCliFlagsLine)
+    assert cli_flags_line.line == "    cli_flags: --alpha, --beta"
+    assert set(cli_flags_line.__dataclass_fields__) == {"line"}
 
 
 def test_diagnostic_surface_boundary_statement_sequence_extraction_precedes_text_rendering():
