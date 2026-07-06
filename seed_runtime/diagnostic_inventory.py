@@ -40,6 +40,13 @@ class _DiagnosticInventoryCompositionInput:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceReadOnlyEvaluation:
+    """Implementation-local read-only evaluation before boundary identification."""
+
+    read_only: bool
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceBoundaryIdentification:
     """Implementation-local boundary facts before report presentation."""
 
@@ -1162,6 +1169,7 @@ def _prepare_diagnostic_surface_cli_flag_display(
 def _identify_diagnostic_surface_boundary(
     entry: DiagnosticInventoryEntry,
 ) -> _DiagnosticSurfaceBoundaryIdentification:
+    read_only = _evaluate_diagnostic_surface_read_only_boundary(entry)
     statements: list[str] = [
         "records" if entry.supports_record else "does not record",
         f"record_scope={entry.record_scope}",
@@ -1197,16 +1205,23 @@ def _identify_diagnostic_surface_boundary(
             else "does not read diagnostic facts"
         ),
     ]
-    read_only = (
-        not entry.supports_record
-        and not entry.writes_event_ledger
-        and not entry.mutates_cluster
-        and not entry.emits_diagnostic_facts
-        and not entry.emits_cluster_facts
-    )
-    if read_only:
+    if read_only.read_only:
         statements.insert(0, "read-only")
     return _DiagnosticSurfaceBoundaryIdentification(statements=tuple(statements))
+
+
+def _evaluate_diagnostic_surface_read_only_boundary(
+    entry: DiagnosticInventoryEntry,
+) -> _DiagnosticSurfaceReadOnlyEvaluation:
+    return _DiagnosticSurfaceReadOnlyEvaluation(
+        read_only=(
+            not entry.supports_record
+            and not entry.writes_event_ledger
+            and not entry.mutates_cluster
+            and not entry.emits_diagnostic_facts
+            and not entry.emits_cluster_facts
+        )
+    )
 
 
 def _diagnostic_surface_boundary(

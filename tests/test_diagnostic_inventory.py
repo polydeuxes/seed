@@ -11,6 +11,7 @@ from seed_runtime.diagnostic_inventory import (
     _KnownDiagnosticSurfaceDefinition,
     _UnknownDiagnosticSurfaceDefinition,
     _DiagnosticSurfaceBoundaryIdentification,
+    _DiagnosticSurfaceReadOnlyEvaluation,
     _DiagnosticSurfaceConsumptionIdentification,
     _DiagnosticSurfaceConsumptionText,
     _DiagnosticSurfaceShapeRegistrationIdentification,
@@ -21,6 +22,7 @@ from seed_runtime.diagnostic_inventory import (
     _diagnostic_surface_boundary,
     _diagnostic_surface_consumption,
     _diagnostic_surface_shape_registration_status,
+    _evaluate_diagnostic_surface_read_only_boundary,
     _identify_diagnostic_surface_boundary,
     _identify_diagnostic_surface_consumption,
     _identify_diagnostic_surface_shape_registration,
@@ -361,6 +363,24 @@ def test_diagnostic_surface_definition_json_includes_identity_explanation(capsys
     }
     assert definition["diagnostic_inventory_registration"] == "present"
     assert definition["shape_registration_status"] == "present"
+
+
+
+def test_diagnostic_surface_read_only_evaluation_precedes_boundary_identification():
+    evaluation = _evaluate_diagnostic_surface_read_only_boundary(
+        _entry("diagnostic_shape_audit")
+    )
+
+    assert isinstance(evaluation, _DiagnosticSurfaceReadOnlyEvaluation)
+    assert evaluation.read_only is True
+    assert set(evaluation.__dataclass_fields__) == {"read_only"}
+
+    recording_evaluation = _evaluate_diagnostic_surface_read_only_boundary(
+        _entry("classification_coverage")
+    )
+
+    assert isinstance(recording_evaluation, _DiagnosticSurfaceReadOnlyEvaluation)
+    assert recording_evaluation.read_only is False
 
 
 def test_diagnostic_surface_boundary_identification_precedes_presentation():
