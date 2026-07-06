@@ -238,6 +238,13 @@ class _DiagnosticSurfaceShapeRegistrationStatusLine:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceImplementationReasonLine:
+    """Implementation-local implementation reason line before line-set assembly."""
+
+    line: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceConsumptionDeclarationSet:
     """Implementation-local declared consumption facts before identification."""
 
@@ -1227,7 +1234,9 @@ def _assemble_diagnostic_surface_definition_line_set(
             _render_diagnostic_surface_shape_registration_status_line(
                 definition["shape_registration_status"]
             ).line,
-            f"  implementation_reason: {definition['implementation_reason']}",
+            _render_diagnostic_surface_implementation_reason_line(
+                definition["implementation_reason"]
+            ).line,
             f"  evidence_source: {definition['evidence_source']}",
         )
     )
@@ -1449,6 +1458,14 @@ def _render_diagnostic_surface_shape_registration_status_line(
 ) -> _DiagnosticSurfaceShapeRegistrationStatusLine:
     return _DiagnosticSurfaceShapeRegistrationStatusLine(
         line=f"{indent}shape_registration_status: {status}"
+    )
+
+
+def _render_diagnostic_surface_implementation_reason_line(
+    reason: object, indent: str = "  "
+) -> _DiagnosticSurfaceImplementationReasonLine:
+    return _DiagnosticSurfaceImplementationReasonLine(
+        line=f"{indent}implementation_reason: {reason}"
     )
 
 
