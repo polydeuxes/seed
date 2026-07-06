@@ -17,11 +17,13 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceConsumptionIdentification,
     _DiagnosticSurfaceConsumptionText,
     _DiagnosticSurfaceDefinitionLineSet,
+    _DiagnosticSurfaceExplanationLineSet,
     _DiagnosticSurfaceShapeRegistrationIdentification,
     _DiagnosticSurfaceShapeRegistrationLookup,
     _compose_diagnostic_inventory,
     _assemble_diagnostic_surface_boundary_statement_set,
     _assemble_diagnostic_surface_definition_line_set,
+    _assemble_diagnostic_surface_explanation_line_set,
     _assemble_diagnostic_surface_consumption_declaration_set,
     _compose_diagnostic_inventory_json,
     _compose_diagnostic_surface_explanation,
@@ -42,7 +44,9 @@ from seed_runtime.diagnostic_inventory import (
     _diagnostic_surface_definition_wrapper,
     _diagnostic_surface_explanation_wrapper,
     diagnostic_surface_definition_json,
+    diagnostic_surface_explanation_json,
     format_diagnostic_surface_definition,
+    format_diagnostic_surface_explanation,
     format_diagnostic_inventory,
 )
 
@@ -834,6 +838,27 @@ def test_diagnostic_surface_explanation_composition_precedes_wrapper():
         }
     }
 
+
+
+def test_diagnostic_surface_explanation_line_set_assembly_precedes_human_rendering():
+    explanation = diagnostic_surface_explanation_json("diagnostic_shape_audit")[
+        "diagnostic_surface_explanation"
+    ]
+
+    line_set = _assemble_diagnostic_surface_explanation_line_set(explanation)
+
+    assert isinstance(line_set, _DiagnosticSurfaceExplanationLineSet)
+    assert line_set.lines[0] == "DiagnosticSurface explanation: diagnostic_shape_audit"
+    assert "  definition:" in line_set.lines
+    assert "    cli_flags: --diagnostic-shape-audit" in line_set.lines
+    assert (
+        "    diagnostic_surface_consumption: uses_projected_state=false; "
+        "uses_repo_files=false; reads_diagnostic_facts=false"
+    ) in line_set.lines
+    assert set(line_set.__dataclass_fields__) == {"lines"}
+    assert format_diagnostic_surface_explanation("diagnostic_shape_audit") == "\n".join(
+        line_set.lines
+    )
 
 def test_diagnostic_surface_explanation_human_renders_coherent_composition(capsys):
     assert (
