@@ -122,6 +122,24 @@ class _UnknownDiagnosticSurfaceDefinition:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceExplanationComposition:
+    """Implementation-local DiagnosticSurface explanation before wrapping."""
+
+    definition: dict[str, object]
+
+    def to_json_dict(self) -> dict[str, object]:
+        return {
+            "diagnostic_surface_definition": self.definition,
+            "diagnostic_surface_boundary": self.definition[
+                "diagnostic_surface_boundary"
+            ],
+            "diagnostic_surface_consumption": self.definition[
+                "diagnostic_surface_consumption"
+            ],
+        }
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceShapeRegistrationIdentification:
     """Implementation-local shape registration fact before definition composition."""
 
@@ -1020,15 +1038,21 @@ def build_diagnostic_surface_explanation(
     definition = build_diagnostic_surface_definition(diagnostic_surface, entries)[
         "diagnostic_surface_definition"
     ]
-    return {
-        "diagnostic_surface_explanation": {
-            "diagnostic_surface_definition": definition,
-            "diagnostic_surface_boundary": definition["diagnostic_surface_boundary"],
-            "diagnostic_surface_consumption": definition[
-                "diagnostic_surface_consumption"
-            ],
-        }
-    }
+    return _diagnostic_surface_explanation_wrapper(
+        _compose_diagnostic_surface_explanation(definition)
+    )
+
+
+def _compose_diagnostic_surface_explanation(
+    definition: dict[str, object],
+) -> _DiagnosticSurfaceExplanationComposition:
+    return _DiagnosticSurfaceExplanationComposition(definition=definition)
+
+
+def _diagnostic_surface_explanation_wrapper(
+    explanation: _DiagnosticSurfaceExplanationComposition,
+) -> dict[str, object]:
+    return {"diagnostic_surface_explanation": explanation.to_json_dict()}
 
 
 def diagnostic_surface_explanation_json(diagnostic_surface: str) -> dict[str, object]:

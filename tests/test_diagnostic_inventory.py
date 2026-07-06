@@ -5,6 +5,7 @@ from seed_runtime.diagnostic_inventory import (
     DIAGNOSTIC_INVENTORY,
     DiagnosticInventoryEntry,
     _DiagnosticInventoryCompositionInput,
+    _DiagnosticSurfaceExplanationComposition,
     _KnownDiagnosticSurfaceDefinition,
     _UnknownDiagnosticSurfaceDefinition,
     _DiagnosticSurfaceBoundaryIdentification,
@@ -12,6 +13,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceShapeRegistrationIdentification,
     _compose_diagnostic_inventory,
     _compose_diagnostic_inventory_json,
+    _compose_diagnostic_surface_explanation,
     _diagnostic_surface_boundary,
     _diagnostic_surface_consumption,
     _diagnostic_surface_shape_registration_status,
@@ -22,6 +24,7 @@ from seed_runtime.diagnostic_inventory import (
     _produce_known_diagnostic_surface_definition,
     _produce_unknown_diagnostic_surface_definition,
     _diagnostic_surface_definition_wrapper,
+    _diagnostic_surface_explanation_wrapper,
     diagnostic_surface_definition_json,
     format_diagnostic_inventory,
 )
@@ -629,6 +632,29 @@ def test_diagnostic_surface_explanation_json_composes_only_existing_fields(capsy
             "diagnostic_surface_definition"
         ]
     )
+
+
+def test_diagnostic_surface_explanation_composition_precedes_wrapper():
+    definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
+        "diagnostic_surface_definition"
+    ]
+
+    explanation = _compose_diagnostic_surface_explanation(definition)
+
+    assert isinstance(explanation, _DiagnosticSurfaceExplanationComposition)
+    assert explanation.definition == definition
+    assert set(explanation.__dataclass_fields__) == {"definition"}
+    assert _diagnostic_surface_explanation_wrapper(explanation) == {
+        "diagnostic_surface_explanation": {
+            "diagnostic_surface_definition": definition,
+            "diagnostic_surface_boundary": definition[
+                "diagnostic_surface_boundary"
+            ],
+            "diagnostic_surface_consumption": definition[
+                "diagnostic_surface_consumption"
+            ],
+        }
+    }
 
 
 def test_diagnostic_surface_explanation_human_renders_coherent_composition(capsys):
