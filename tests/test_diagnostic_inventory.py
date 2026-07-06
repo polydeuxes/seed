@@ -5,6 +5,7 @@ from seed_runtime.diagnostic_inventory import (
     DIAGNOSTIC_INVENTORY,
     DiagnosticInventoryEntry,
     _DiagnosticInventoryCompositionInput,
+    _DiagnosticSurfaceCliFlagDisplay,
     _DiagnosticSurfaceExplanationComposition,
     _KnownDiagnosticSurfaceDefinition,
     _UnknownDiagnosticSurfaceDefinition,
@@ -21,6 +22,7 @@ from seed_runtime.diagnostic_inventory import (
     _identify_diagnostic_surface_consumption,
     _identify_diagnostic_surface_shape_registration,
     _prepare_diagnostic_inventory_composition,
+    _prepare_diagnostic_surface_cli_flag_display,
     _produce_known_diagnostic_surface_definition,
     _produce_unknown_diagnostic_surface_definition,
     _diagnostic_surface_definition_wrapper,
@@ -471,6 +473,23 @@ def test_unknown_diagnostic_surface_definition_production_precedes_wrapper_compo
             "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
         }
     }
+
+
+def test_diagnostic_surface_cli_flag_display_preparation_precedes_human_rendering():
+    display = _prepare_diagnostic_surface_cli_flag_display(["--alpha", "--beta"])
+
+    assert isinstance(display, _DiagnosticSurfaceCliFlagDisplay)
+    assert display.text == "--alpha, --beta"
+
+    empty_display = _prepare_diagnostic_surface_cli_flag_display([])
+
+    assert isinstance(empty_display, _DiagnosticSurfaceCliFlagDisplay)
+    assert empty_display.text == "none"
+
+    unknown_display = _prepare_diagnostic_surface_cli_flag_display("unknown")
+
+    assert isinstance(unknown_display, _DiagnosticSurfaceCliFlagDisplay)
+    assert unknown_display.text == "none"
 
 
 def test_diagnostic_surface_definition_human_renders_identity_explanation(capsys):
