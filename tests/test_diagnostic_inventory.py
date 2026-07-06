@@ -5,6 +5,7 @@ from seed_runtime.diagnostic_inventory import (
     DIAGNOSTIC_INVENTORY,
     DiagnosticInventoryEntry,
     _DiagnosticInventoryCompositionInput,
+    _DiagnosticSurfaceBoundaryText,
     _DiagnosticSurfaceCliFlagDisplay,
     _DiagnosticSurfaceExplanationComposition,
     _KnownDiagnosticSurfaceDefinition,
@@ -22,6 +23,7 @@ from seed_runtime.diagnostic_inventory import (
     _identify_diagnostic_surface_consumption,
     _identify_diagnostic_surface_shape_registration,
     _prepare_diagnostic_inventory_composition,
+    _prepare_diagnostic_surface_boundary_text,
     _prepare_diagnostic_surface_cli_flag_display,
     _produce_known_diagnostic_surface_definition,
     _produce_unknown_diagnostic_surface_definition,
@@ -490,6 +492,31 @@ def test_diagnostic_surface_cli_flag_display_preparation_precedes_human_renderin
 
     assert isinstance(unknown_display, _DiagnosticSurfaceCliFlagDisplay)
     assert unknown_display.text == "none"
+
+
+def test_diagnostic_surface_boundary_text_preparation_precedes_line_rendering():
+    boundary = {
+        "status": "known",
+        "statements": ["read-only", "does not record", "record_scope=none"],
+    }
+
+    boundary_text = _prepare_diagnostic_surface_boundary_text(boundary)
+
+    assert isinstance(boundary_text, _DiagnosticSurfaceBoundaryText)
+    assert boundary_text.text == "read-only; does not record; record_scope=none"
+    assert set(boundary_text.__dataclass_fields__) == {"text"}
+
+    empty_boundary_text = _prepare_diagnostic_surface_boundary_text(
+        {"status": "unknown", "statements": []}
+    )
+
+    assert isinstance(empty_boundary_text, _DiagnosticSurfaceBoundaryText)
+    assert empty_boundary_text.text == "unknown"
+
+    unknown_boundary_text = _prepare_diagnostic_surface_boundary_text("unknown")
+
+    assert isinstance(unknown_boundary_text, _DiagnosticSurfaceBoundaryText)
+    assert unknown_boundary_text.text == "unknown"
 
 
 def test_diagnostic_surface_definition_human_renders_identity_explanation(capsys):
