@@ -154,6 +154,13 @@ class _DiagnosticSurfaceBoundaryText:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceConsumptionText:
+    """Implementation-local consumption declaration text before line rendering."""
+
+    text: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceShapeRegistrationIdentification:
     """Implementation-local shape registration fact before definition composition."""
 
@@ -1238,13 +1245,20 @@ def _prepare_diagnostic_surface_boundary_text(
 def _format_diagnostic_surface_consumption(
     consumption: object, indent: str = "  "
 ) -> str:
+    consumption_text = _prepare_diagnostic_surface_consumption_text(consumption)
+    return f"{indent}diagnostic_surface_consumption: {consumption_text.text}"
+
+
+def _prepare_diagnostic_surface_consumption_text(
+    consumption: object,
+) -> _DiagnosticSurfaceConsumptionText:
     if not isinstance(consumption, dict):
-        return f"{indent}diagnostic_surface_consumption: unknown"
+        return _DiagnosticSurfaceConsumptionText(text="unknown")
     declared = consumption.get("declared_consumption")
     if not isinstance(declared, dict) or not declared:
-        return f"{indent}diagnostic_surface_consumption: unknown"
+        return _DiagnosticSurfaceConsumptionText(text="unknown")
     items = [f"{key}={str(value).lower()}" for key, value in declared.items()]
-    return f"{indent}diagnostic_surface_consumption: " + "; ".join(items)
+    return _DiagnosticSurfaceConsumptionText(text="; ".join(items))
 
 
 def _identify_diagnostic_surface_shape_registration(
