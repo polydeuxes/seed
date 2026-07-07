@@ -237,6 +237,13 @@ Repository authority wins.
 
 This roadmap intentionally preserves one working belief:
 
+A companion behind-the-frontier orientation is preserved in
+`town_clock_competency_orientation.md`: the Event Ledger may be read as a
+constitutional town clock, and bounded competencies may be read as local
+citizens that respond only to relevant recorded constitutional change. That
+companion does not supersede the Eye frontier and does not introduce runtime
+behavior.
+
 The organism does not become more intelligent by acting more.
 
 It becomes more intelligent by becoming a better constitutional observer.
