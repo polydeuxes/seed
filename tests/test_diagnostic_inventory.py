@@ -75,6 +75,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_consumption_text,
     _render_diagnostic_surface_consumption_line,
     _render_diagnostic_surface_evidence_source_line,
+    _render_diagnostic_surface_definition_status_line,
     _render_diagnostic_surface_implementation_reason_line,
     _render_diagnostic_surface_inventory_registration_line,
     _render_diagnostic_surface_shape_registration_status_line,
@@ -660,6 +661,20 @@ def test_diagnostic_surface_definition_identity_heading_line_rendering_precedes_
     assert isinstance(heading_line, _DiagnosticSurfaceHeadingLine)
     assert heading_line.line == "DiagnosticSurface definition: diagnostic_shape_audit"
     assert set(heading_line.__dataclass_fields__) == {"line"}
+
+
+def test_diagnostic_surface_definition_status_line_rendering_precedes_line_set_assembly():
+    definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
+        "diagnostic_surface_definition"
+    ]
+
+    status_line = _render_diagnostic_surface_definition_status_line(
+        definition, indent="    "
+    )
+
+    assert isinstance(status_line, _DiagnosticSurfaceStatusLine)
+    assert status_line.line == "    status: known"
+    assert set(status_line.__dataclass_fields__) == {"line"}
 
 
 def test_diagnostic_surface_definition_line_set_assembly_precedes_human_rendering():
