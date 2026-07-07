@@ -72,6 +72,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_definition_record_scope_value,
     _prepare_diagnostic_surface_explanation_cli_flag_display,
     _prepare_diagnostic_surface_explanation_json_support_value,
+    _prepare_diagnostic_surface_explanation_record_support_value,
     _prepare_diagnostic_surface_explanation_record_scope_value,
     _render_diagnostic_surface_explanation_description_line,
     _render_diagnostic_surface_explanation_json_support_line,
@@ -1424,10 +1425,16 @@ def test_diagnostic_surface_explanation_record_support_line_rendering_precedes_l
         explanation
     )
 
+    record_support_value = _prepare_diagnostic_surface_explanation_record_support_value(
+        explanation_definition
+    )
     record_support_line = _render_diagnostic_surface_explanation_record_support_line(
-        explanation_definition, indent="    "
+        record_support_value, indent="    "
     )
 
+    assert isinstance(record_support_value, _DiagnosticSurfaceRecordSupportValue)
+    assert record_support_value.value is False
+    assert set(record_support_value.__dataclass_fields__) == {"value"}
     assert isinstance(record_support_line, _DiagnosticSurfaceRecordSupportLine)
     assert record_support_line.line == "    supports_record: false"
     assert set(record_support_line.__dataclass_fields__) == {"line"}
