@@ -217,6 +217,13 @@ class _DiagnosticSurfaceDefinitionSectionLabel:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceDefinitionSectionIndent:
+    """Implementation-local definition section indent before section line rendering."""
+
+    text: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceNestedDefinitionFieldIndent:
     """Implementation-local nested definition field indent before line rendering."""
 
@@ -1368,6 +1375,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
     definition_section_label = (
         _prepare_diagnostic_surface_explanation_definition_section_label()
     )
+    definition_section_indent = (
+        _select_diagnostic_surface_explanation_definition_section_indent()
+    )
     field_indent = _select_diagnostic_surface_nested_definition_field_indent()
     return _DiagnosticSurfaceExplanationLineSet(
         lines=(
@@ -1375,7 +1385,7 @@ def _assemble_diagnostic_surface_explanation_line_set(
                 name_value
             ).line,
             _render_diagnostic_surface_explanation_definition_section_line(
-                definition_section_label
+                definition_section_label, indent=definition_section_indent.text
             ).line,
             _render_diagnostic_surface_explanation_status_line(
                 status_value, indent=field_indent.text
@@ -1562,10 +1572,18 @@ def _prepare_diagnostic_surface_explanation_definition_section_label() -> (
     return _DiagnosticSurfaceDefinitionSectionLabel(text="definition")
 
 
+def _select_diagnostic_surface_explanation_definition_section_indent() -> (
+    _DiagnosticSurfaceDefinitionSectionIndent
+):
+    return _DiagnosticSurfaceDefinitionSectionIndent(text="  ")
+
+
 def _render_diagnostic_surface_explanation_definition_section_line(
-    section_label: _DiagnosticSurfaceDefinitionSectionLabel,
+    section_label: _DiagnosticSurfaceDefinitionSectionLabel, indent: str = "  "
 ) -> _DiagnosticSurfaceDefinitionSectionLine:
-    return _render_diagnostic_surface_definition_section_line(section_label.text)
+    return _render_diagnostic_surface_definition_section_line(
+        section_label.text, indent=indent
+    )
 
 
 def _render_diagnostic_surface_explanation_cli_flags_line(
@@ -1795,9 +1813,9 @@ def _render_diagnostic_surface_heading_line(
 
 
 def _render_diagnostic_surface_definition_section_line(
-    section_label: object = "definition",
+    section_label: object = "definition", indent: str = "  "
 ) -> _DiagnosticSurfaceDefinitionSectionLine:
-    return _DiagnosticSurfaceDefinitionSectionLine(line=f"  {section_label}:")
+    return _DiagnosticSurfaceDefinitionSectionLine(line=f"{indent}{section_label}:")
 
 
 def _select_diagnostic_surface_nested_definition_field_indent() -> (
