@@ -182,6 +182,13 @@ class _DiagnosticSurfaceDescriptionLine:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceJsonSupportLine:
+    """Implementation-local JSON support line before line-set assembly."""
+
+    line: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceCliFlagDisplay:
     """Implementation-local CLI flag display text before human rendering."""
 
@@ -1225,7 +1232,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
             _render_diagnostic_surface_description_line(
                 definition["description"], indent="    "
             ).line,
-            f"    supports_json: {str(definition['supports_json']).lower()}",
+            _render_diagnostic_surface_json_support_line(
+                definition["supports_json"], indent="    "
+            ).line,
             f"    supports_record: {str(definition['supports_record']).lower()}",
             f"    record_scope: {definition['record_scope']}",
             _format_diagnostic_surface_boundary(
@@ -1260,7 +1269,9 @@ def _assemble_diagnostic_surface_definition_line_set(
             _render_diagnostic_surface_status_line(definition["status"]).line,
             _render_diagnostic_surface_cli_flags_line(flag_display).line,
             _render_diagnostic_surface_description_line(definition["description"]).line,
-            f"  supports_json: {str(definition['supports_json']).lower()}",
+            _render_diagnostic_surface_json_support_line(
+                definition["supports_json"]
+            ).line,
             f"  supports_record: {str(definition['supports_record']).lower()}",
             f"  record_scope: {definition['record_scope']}",
             _format_diagnostic_surface_boundary(
@@ -1303,6 +1314,14 @@ def _render_diagnostic_surface_description_line(
     description: object, indent: str = "  "
 ) -> _DiagnosticSurfaceDescriptionLine:
     return _DiagnosticSurfaceDescriptionLine(line=f"{indent}description: {description}")
+
+
+def _render_diagnostic_surface_json_support_line(
+    supports_json: object, indent: str = "  "
+) -> _DiagnosticSurfaceJsonSupportLine:
+    return _DiagnosticSurfaceJsonSupportLine(
+        line=f"{indent}supports_json: {str(supports_json).lower()}"
+    )
 
 
 def _prepare_diagnostic_surface_cli_flag_display(
