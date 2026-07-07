@@ -315,6 +315,13 @@ class _DiagnosticSurfaceRecordScopeLine:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceCliFlagsFieldLabel:
+    """Implementation-local CLI flags field label before line rendering."""
+
+    text: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceCliFlagDisplay:
     """Implementation-local CLI flag display text before human rendering."""
 
@@ -1386,6 +1393,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
         _select_diagnostic_surface_explanation_definition_section_indent()
     )
     status_field_label = _prepare_diagnostic_surface_explanation_status_field_label()
+    cli_flags_field_label = (
+        _prepare_diagnostic_surface_explanation_cli_flags_field_label()
+    )
     field_indent = _select_diagnostic_surface_nested_definition_field_indent()
     return _DiagnosticSurfaceExplanationLineSet(
         lines=(
@@ -1401,7 +1411,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
                 indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_explanation_cli_flags_line(
-                flag_display, indent=field_indent.text
+                flag_display,
+                field_label=cli_flags_field_label.text,
+                indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_explanation_description_line(
                 description_text, indent=field_indent.text
@@ -1606,10 +1618,20 @@ def _render_diagnostic_surface_explanation_definition_section_line(
     )
 
 
+def _prepare_diagnostic_surface_explanation_cli_flags_field_label() -> (
+    _DiagnosticSurfaceCliFlagsFieldLabel
+):
+    return _DiagnosticSurfaceCliFlagsFieldLabel(text="cli_flags")
+
+
 def _render_diagnostic_surface_explanation_cli_flags_line(
-    flag_display: _DiagnosticSurfaceCliFlagDisplay, indent: str = "  "
+    flag_display: _DiagnosticSurfaceCliFlagDisplay,
+    field_label: str = "cli_flags",
+    indent: str = "  ",
 ) -> _DiagnosticSurfaceCliFlagsLine:
-    return _render_diagnostic_surface_cli_flags_line(flag_display, indent=indent)
+    return _render_diagnostic_surface_cli_flags_line(
+        flag_display, field_label=field_label, indent=indent
+    )
 
 
 def diagnostic_surface_definition_json(diagnostic_surface: str) -> dict[str, object]:
@@ -1857,10 +1879,12 @@ def _render_diagnostic_surface_status_line(
 
 
 def _render_diagnostic_surface_cli_flags_line(
-    flag_display: _DiagnosticSurfaceCliFlagDisplay, indent: str = "  "
+    flag_display: _DiagnosticSurfaceCliFlagDisplay,
+    field_label: str = "cli_flags",
+    indent: str = "  ",
 ) -> _DiagnosticSurfaceCliFlagsLine:
     return _DiagnosticSurfaceCliFlagsLine(
-        line=f"{indent}cli_flags: {flag_display.text}"
+        line=f"{indent}{field_label}: {flag_display.text}"
     )
 
 
