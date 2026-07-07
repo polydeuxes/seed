@@ -71,6 +71,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_definition_record_support_value,
     _prepare_diagnostic_surface_definition_record_scope_value,
     _prepare_diagnostic_surface_explanation_cli_flag_display,
+    _prepare_diagnostic_surface_explanation_description_text,
     _prepare_diagnostic_surface_explanation_json_support_value,
     _prepare_diagnostic_surface_explanation_record_support_value,
     _prepare_diagnostic_surface_explanation_record_scope_value,
@@ -1383,10 +1384,20 @@ def test_diagnostic_surface_explanation_description_line_rendering_precedes_line
         explanation
     )
 
+    description_text = _prepare_diagnostic_surface_explanation_description_text(
+        explanation_definition
+    )
     description_line = _render_diagnostic_surface_explanation_description_line(
-        explanation_definition, indent="    "
+        description_text, indent="    "
     )
 
+    assert isinstance(description_text, _DiagnosticSurfaceDescriptionText)
+    assert (
+        description_text.text
+        == "Compares diagnostic registry declarations with static "
+        "implementation shape without recording or mutation."
+    )
+    assert set(description_text.__dataclass_fields__) == {"text"}
     assert isinstance(description_line, _DiagnosticSurfaceDescriptionLine)
     assert (
         description_line.line

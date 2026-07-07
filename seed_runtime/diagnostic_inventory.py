@@ -1320,6 +1320,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
     flag_display = _prepare_diagnostic_surface_explanation_cli_flag_display(
         explanation_definition
     )
+    description_text = _prepare_diagnostic_surface_explanation_description_text(
+        explanation_definition
+    )
     json_support_value = _prepare_diagnostic_surface_explanation_json_support_value(
         explanation_definition
     )
@@ -1349,7 +1352,7 @@ def _assemble_diagnostic_surface_explanation_line_set(
                 flag_display, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_explanation_description_line(
-                explanation_definition, indent=field_indent.text
+                description_text, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_explanation_json_support_line(
                 json_support_value, indent=field_indent.text
@@ -1410,11 +1413,19 @@ def _render_diagnostic_surface_explanation_status_line(
     )
 
 
+def _prepare_diagnostic_surface_explanation_description_text(
+    explanation_definition: _DiagnosticSurfaceExplanationDefinition,
+) -> _DiagnosticSurfaceDescriptionText:
+    return _DiagnosticSurfaceDescriptionText(
+        text=explanation_definition.definition["description"]
+    )
+
+
 def _render_diagnostic_surface_explanation_description_line(
-    explanation_definition: _DiagnosticSurfaceExplanationDefinition, indent: str = "  "
+    description_text: _DiagnosticSurfaceDescriptionText, indent: str = "  "
 ) -> _DiagnosticSurfaceDescriptionLine:
     return _render_diagnostic_surface_description_line(
-        explanation_definition.definition["description"], indent=indent
+        description_text.text, indent=indent
     )
 
 
