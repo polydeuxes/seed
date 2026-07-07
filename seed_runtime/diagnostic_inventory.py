@@ -1460,8 +1460,8 @@ def _assemble_diagnostic_surface_definition_line_set(
             _render_diagnostic_surface_definition_json_support_line(
                 definition, indent=field_indent.text
             ).line,
-            _render_diagnostic_surface_record_support_line(
-                definition["supports_record"], indent=field_indent.text
+            _render_diagnostic_surface_definition_record_support_line(
+                definition, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_record_scope_line(
                 definition["record_scope"], indent=field_indent.text
@@ -1519,6 +1519,14 @@ def _render_diagnostic_surface_definition_json_support_line(
 ) -> _DiagnosticSurfaceJsonSupportLine:
     return _render_diagnostic_surface_json_support_line(
         definition["supports_json"], indent=indent
+    )
+
+
+def _render_diagnostic_surface_definition_record_support_line(
+    definition: dict[str, object], indent: str = "  "
+) -> _DiagnosticSurfaceRecordSupportLine:
+    return _render_diagnostic_surface_record_support_line(
+        definition["supports_record"], indent=indent
     )
 
 
