@@ -1298,7 +1298,7 @@ def _assemble_diagnostic_surface_explanation_line_set(
             _render_diagnostic_surface_explanation_definition_heading_line(
                 explanation_definition
             ).line,
-            _render_diagnostic_surface_definition_section_line().line,
+            _render_diagnostic_surface_explanation_definition_section_line().line,
             _render_diagnostic_surface_explanation_status_line(
                 explanation_definition, indent=field_indent.text
             ).line,
@@ -1424,6 +1424,12 @@ def _render_diagnostic_surface_explanation_definition_heading_line(
     return _render_diagnostic_surface_explanation_heading_line(
         explanation_definition.definition["diagnostic_name"]
     )
+
+
+def _render_diagnostic_surface_explanation_definition_section_line() -> (
+    _DiagnosticSurfaceDefinitionSectionLine
+):
+    return _render_diagnostic_surface_definition_section_line()
 
 
 def diagnostic_surface_definition_json(diagnostic_surface: str) -> dict[str, object]:
