@@ -182,6 +182,13 @@ class _DiagnosticSurfaceDefinitionSectionLine:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceNestedDefinitionFieldIndent:
+    """Implementation-local nested definition field indent before line rendering."""
+
+    text: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceStatusLine:
     """Implementation-local status line before line-set assembly."""
 
@@ -1249,6 +1256,7 @@ def _assemble_diagnostic_surface_explanation_line_set(
 ) -> _DiagnosticSurfaceExplanationLineSet:
     definition = explanation["diagnostic_surface_definition"]
     flag_display = _prepare_diagnostic_surface_cli_flag_display(definition["cli_flags"])
+    field_indent = _select_diagnostic_surface_nested_definition_field_indent()
     return _DiagnosticSurfaceExplanationLineSet(
         lines=(
             _render_diagnostic_surface_heading_line(
@@ -1256,26 +1264,28 @@ def _assemble_diagnostic_surface_explanation_line_set(
             ).line,
             _render_diagnostic_surface_definition_section_line().line,
             _render_diagnostic_surface_status_line(
-                definition["status"], indent="    "
+                definition["status"], indent=field_indent.text
             ).line,
-            _render_diagnostic_surface_cli_flags_line(flag_display, indent="    ").line,
+            _render_diagnostic_surface_cli_flags_line(
+                flag_display, indent=field_indent.text
+            ).line,
             _render_diagnostic_surface_description_line(
-                definition["description"], indent="    "
+                definition["description"], indent=field_indent.text
             ).line,
             _render_diagnostic_surface_json_support_line(
-                definition["supports_json"], indent="    "
+                definition["supports_json"], indent=field_indent.text
             ).line,
             _render_diagnostic_surface_record_support_line(
-                definition["supports_record"], indent="    "
+                definition["supports_record"], indent=field_indent.text
             ).line,
             _render_diagnostic_surface_record_scope_line(
-                definition["record_scope"], indent="    "
+                definition["record_scope"], indent=field_indent.text
             ).line,
             _format_diagnostic_surface_boundary(
-                explanation["diagnostic_surface_boundary"], indent="    "
+                explanation["diagnostic_surface_boundary"], indent=field_indent.text
             ),
             _format_diagnostic_surface_consumption(
-                explanation["diagnostic_surface_consumption"], indent="    "
+                explanation["diagnostic_surface_consumption"], indent=field_indent.text
             ),
         )
     )
@@ -1348,6 +1358,12 @@ def _render_diagnostic_surface_definition_section_line() -> (
     _DiagnosticSurfaceDefinitionSectionLine
 ):
     return _DiagnosticSurfaceDefinitionSectionLine(line="  definition:")
+
+
+def _select_diagnostic_surface_nested_definition_field_indent() -> (
+    _DiagnosticSurfaceNestedDefinitionFieldIndent
+):
+    return _DiagnosticSurfaceNestedDefinitionFieldIndent(text="    ")
 
 
 def _render_diagnostic_surface_status_line(
