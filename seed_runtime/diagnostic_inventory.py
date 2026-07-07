@@ -168,6 +168,13 @@ class _DiagnosticSurfaceExplanationLineSet:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceHeadingLine:
+    """Implementation-local heading line before line-set assembly."""
+
+    line: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceStatusLine:
     """Implementation-local status line before line-set assembly."""
 
@@ -1237,7 +1244,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
     flag_display = _prepare_diagnostic_surface_cli_flag_display(definition["cli_flags"])
     return _DiagnosticSurfaceExplanationLineSet(
         lines=(
-            f"DiagnosticSurface explanation: {definition['diagnostic_name']}",
+            _render_diagnostic_surface_heading_line(
+                "explanation", definition["diagnostic_name"]
+            ).line,
             "  definition:",
             _render_diagnostic_surface_status_line(
                 definition["status"], indent="    "
@@ -1283,7 +1292,9 @@ def _assemble_diagnostic_surface_definition_line_set(
     flag_display = _prepare_diagnostic_surface_cli_flag_display(definition["cli_flags"])
     return _DiagnosticSurfaceDefinitionLineSet(
         lines=(
-            f"DiagnosticSurface definition: {definition['diagnostic_name']}",
+            _render_diagnostic_surface_heading_line(
+                "definition", definition["diagnostic_name"]
+            ).line,
             _render_diagnostic_surface_status_line(definition["status"]).line,
             _render_diagnostic_surface_cli_flags_line(flag_display).line,
             _render_diagnostic_surface_description_line(definition["description"]).line,
@@ -1315,6 +1326,14 @@ def _assemble_diagnostic_surface_definition_line_set(
                 definition["evidence_source"]
             ).line,
         )
+    )
+
+
+def _render_diagnostic_surface_heading_line(
+    surface_kind: str, diagnostic_name: object
+) -> _DiagnosticSurfaceHeadingLine:
+    return _DiagnosticSurfaceHeadingLine(
+        line=f"DiagnosticSurface {surface_kind}: {diagnostic_name}"
     )
 
 
