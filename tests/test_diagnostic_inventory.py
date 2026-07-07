@@ -81,6 +81,7 @@ from seed_runtime.diagnostic_inventory import (
     _render_diagnostic_surface_definition_record_support_line,
     _render_diagnostic_surface_definition_record_scope_line,
     _render_diagnostic_surface_definition_boundary_line,
+    _render_diagnostic_surface_definition_consumption_line,
     _render_diagnostic_surface_implementation_reason_line,
     _render_diagnostic_surface_inventory_registration_line,
     _render_diagnostic_surface_shape_registration_status_line,
@@ -761,6 +762,24 @@ def test_diagnostic_surface_definition_boundary_line_rendering_precedes_line_set
         "does not read diagnostic facts"
     )
     assert set(boundary_line.__dataclass_fields__) == {"line"}
+
+
+def test_diagnostic_surface_definition_consumption_line_rendering_precedes_line_set_assembly():
+    definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
+        "diagnostic_surface_definition"
+    ]
+
+    consumption_line = _render_diagnostic_surface_definition_consumption_line(
+        definition, indent="    "
+    )
+
+    assert isinstance(consumption_line, _DiagnosticSurfaceConsumptionLine)
+    assert (
+        consumption_line.line
+        == "    diagnostic_surface_consumption: uses_projected_state=false; "
+        "uses_repo_files=false; reads_diagnostic_facts=false"
+    )
+    assert set(consumption_line.__dataclass_fields__) == {"line"}
 
 
 def test_diagnostic_surface_definition_line_set_assembly_precedes_human_rendering():

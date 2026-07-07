@@ -1469,9 +1469,9 @@ def _assemble_diagnostic_surface_definition_line_set(
             _render_diagnostic_surface_definition_boundary_line(
                 definition, indent=field_indent.text
             ).line,
-            _format_diagnostic_surface_consumption(
-                definition["diagnostic_surface_consumption"], indent=field_indent.text
-            ),
+            _render_diagnostic_surface_definition_consumption_line(
+                definition, indent=field_indent.text
+            ).line,
             _render_diagnostic_surface_inventory_registration_line(
                 definition["diagnostic_inventory_registration"],
                 indent=field_indent.text,
@@ -1545,6 +1545,15 @@ def _render_diagnostic_surface_definition_boundary_line(
         definition["diagnostic_surface_boundary"]
     )
     return _render_diagnostic_surface_boundary_line(boundary_text, indent=indent)
+
+
+def _render_diagnostic_surface_definition_consumption_line(
+    definition: dict[str, object], indent: str = "  "
+) -> _DiagnosticSurfaceConsumptionLine:
+    consumption_text = _prepare_diagnostic_surface_consumption_text(
+        definition["diagnostic_surface_consumption"]
+    )
+    return _render_diagnostic_surface_consumption_line(consumption_text, indent=indent)
 
 
 def _render_diagnostic_surface_definition_heading_line(
