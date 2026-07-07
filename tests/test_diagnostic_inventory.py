@@ -42,6 +42,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceRecordSupportFieldLabel,
     _DiagnosticSurfaceRecordSupportLine,
     _DiagnosticSurfaceRecordSupportValue,
+    _DiagnosticSurfaceRecordScopeFieldLabel,
     _DiagnosticSurfaceRecordScopeLine,
     _DiagnosticSurfaceRecordScopeValue,
     _DiagnosticSurfaceShapeRegistrationIdentification,
@@ -88,6 +89,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_explanation_name_value,
     _prepare_diagnostic_surface_explanation_record_support_field_label,
     _prepare_diagnostic_surface_explanation_record_support_value,
+    _prepare_diagnostic_surface_explanation_record_scope_field_label,
     _prepare_diagnostic_surface_explanation_record_scope_value,
     _prepare_diagnostic_surface_explanation_definition_section_label,
     _select_diagnostic_surface_explanation_definition_section_indent,
@@ -1512,13 +1514,19 @@ def test_diagnostic_surface_explanation_record_scope_line_rendering_precedes_lin
     record_scope_value = _prepare_diagnostic_surface_explanation_record_scope_value(
         explanation_definition
     )
+    record_scope_field_label = (
+        _prepare_diagnostic_surface_explanation_record_scope_field_label()
+    )
     record_scope_line = _render_diagnostic_surface_explanation_record_scope_line(
-        record_scope_value, indent="    "
+        record_scope_value, field_label=record_scope_field_label.text, indent="    "
     )
 
     assert isinstance(record_scope_value, _DiagnosticSurfaceRecordScopeValue)
     assert record_scope_value.value == "none"
     assert set(record_scope_value.__dataclass_fields__) == {"value"}
+    assert isinstance(record_scope_field_label, _DiagnosticSurfaceRecordScopeFieldLabel)
+    assert record_scope_field_label.text == "record_scope"
+    assert set(record_scope_field_label.__dataclass_fields__) == {"text"}
     assert isinstance(record_scope_line, _DiagnosticSurfaceRecordScopeLine)
     assert record_scope_line.line == "    record_scope: none"
     assert set(record_scope_line.__dataclass_fields__) == {"line"}
