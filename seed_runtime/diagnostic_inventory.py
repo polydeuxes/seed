@@ -238,6 +238,13 @@ class _DiagnosticSurfaceDescriptionText:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceJsonSupportValue:
+    """Implementation-local JSON support value before line rendering."""
+
+    value: object
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceJsonSupportLine:
     """Implementation-local JSON support line before line-set assembly."""
 
@@ -1464,6 +1471,9 @@ def _assemble_diagnostic_surface_definition_line_set(
     description_text = _prepare_diagnostic_surface_definition_description_text(
         definition
     )
+    json_support_value = _prepare_diagnostic_surface_definition_json_support_value(
+        definition
+    )
     field_indent = _select_diagnostic_surface_top_level_definition_field_indent()
     return _DiagnosticSurfaceDefinitionLineSet(
         lines=(
@@ -1480,7 +1490,7 @@ def _assemble_diagnostic_surface_definition_line_set(
                 description_text, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_definition_json_support_line(
-                definition, indent=field_indent.text
+                json_support_value, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_definition_record_support_line(
                 definition, indent=field_indent.text
@@ -1544,11 +1554,17 @@ def _render_diagnostic_surface_definition_description_line(
     )
 
 
+def _prepare_diagnostic_surface_definition_json_support_value(
+    definition: dict[str, object],
+) -> _DiagnosticSurfaceJsonSupportValue:
+    return _DiagnosticSurfaceJsonSupportValue(value=definition["supports_json"])
+
+
 def _render_diagnostic_surface_definition_json_support_line(
-    definition: dict[str, object], indent: str = "  "
+    json_support_value: _DiagnosticSurfaceJsonSupportValue, indent: str = "  "
 ) -> _DiagnosticSurfaceJsonSupportLine:
     return _render_diagnostic_surface_json_support_line(
-        definition["supports_json"], indent=indent
+        json_support_value.value, indent=indent
     )
 
 
