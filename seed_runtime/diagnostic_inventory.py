@@ -1332,6 +1332,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
     boundary_text = _prepare_diagnostic_surface_explanation_boundary_text(
         explanation_boundary
     )
+    consumption_text = _prepare_diagnostic_surface_explanation_consumption_text(
+        explanation_consumption
+    )
     field_indent = _select_diagnostic_surface_nested_definition_field_indent()
     return _DiagnosticSurfaceExplanationLineSet(
         lines=(
@@ -1361,7 +1364,7 @@ def _assemble_diagnostic_surface_explanation_line_set(
                 boundary_text, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_explanation_consumption_line(
-                explanation_consumption, indent=field_indent.text
+                consumption_text, indent=field_indent.text
             ).line,
         )
     )
@@ -1476,13 +1479,18 @@ def _prepare_diagnostic_surface_explanation_boundary_text(
 
 
 def _render_diagnostic_surface_explanation_consumption_line(
-    explanation_consumption: _DiagnosticSurfaceExplanationConsumption,
+    consumption_text: _DiagnosticSurfaceConsumptionText,
     indent: str = "  ",
 ) -> _DiagnosticSurfaceConsumptionLine:
-    consumption_text = _prepare_diagnostic_surface_consumption_text(
+    return _render_diagnostic_surface_consumption_line(consumption_text, indent=indent)
+
+
+def _prepare_diagnostic_surface_explanation_consumption_text(
+    explanation_consumption: _DiagnosticSurfaceExplanationConsumption,
+) -> _DiagnosticSurfaceConsumptionText:
+    return _prepare_diagnostic_surface_consumption_text(
         explanation_consumption.consumption
     )
-    return _render_diagnostic_surface_consumption_line(consumption_text, indent=indent)
 
 
 def _render_diagnostic_surface_explanation_definition_heading_line(

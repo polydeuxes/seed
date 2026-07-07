@@ -75,6 +75,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_explanation_record_support_value,
     _prepare_diagnostic_surface_explanation_record_scope_value,
     _prepare_diagnostic_surface_explanation_boundary_text,
+    _prepare_diagnostic_surface_explanation_consumption_text,
     _render_diagnostic_surface_explanation_description_line,
     _render_diagnostic_surface_explanation_json_support_line,
     _render_diagnostic_surface_explanation_record_support_line,
@@ -1503,10 +1504,18 @@ def test_diagnostic_surface_explanation_consumption_line_rendering_precedes_line
         explanation
     )
 
+    consumption_text = _prepare_diagnostic_surface_explanation_consumption_text(
+        explanation_consumption
+    )
     consumption_line = _render_diagnostic_surface_explanation_consumption_line(
-        explanation_consumption, indent="    "
+        consumption_text, indent="    "
     )
 
+    assert isinstance(consumption_text, _DiagnosticSurfaceConsumptionText)
+    assert consumption_text.text == (
+        "uses_projected_state=false; uses_repo_files=false; reads_diagnostic_facts=false"
+    )
+    assert set(consumption_text.__dataclass_fields__) == {"text"}
     assert isinstance(consumption_line, _DiagnosticSurfaceConsumptionLine)
     assert consumption_line.line == (
         "    diagnostic_surface_consumption: uses_projected_state=false; "
