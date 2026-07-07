@@ -1285,7 +1285,6 @@ def _assemble_diagnostic_surface_explanation_line_set(
     explanation_definition = _extract_diagnostic_surface_explanation_definition(
         explanation
     )
-    definition = explanation_definition.definition
     explanation_boundary = _extract_diagnostic_surface_explanation_boundary(explanation)
     explanation_consumption = _extract_diagnostic_surface_explanation_consumption(
         explanation
@@ -1296,8 +1295,8 @@ def _assemble_diagnostic_surface_explanation_line_set(
     field_indent = _select_diagnostic_surface_nested_definition_field_indent()
     return _DiagnosticSurfaceExplanationLineSet(
         lines=(
-            _render_diagnostic_surface_explanation_heading_line(
-                definition["diagnostic_name"]
+            _render_diagnostic_surface_explanation_definition_heading_line(
+                explanation_definition
             ).line,
             _render_diagnostic_surface_definition_section_line().line,
             _render_diagnostic_surface_explanation_status_line(
@@ -1417,6 +1416,14 @@ def _render_diagnostic_surface_explanation_consumption_line(
         explanation_consumption.consumption
     )
     return _render_diagnostic_surface_consumption_line(consumption_text, indent=indent)
+
+
+def _render_diagnostic_surface_explanation_definition_heading_line(
+    explanation_definition: _DiagnosticSurfaceExplanationDefinition,
+) -> _DiagnosticSurfaceHeadingLine:
+    return _render_diagnostic_surface_explanation_heading_line(
+        explanation_definition.definition["diagnostic_name"]
+    )
 
 
 def diagnostic_surface_definition_json(diagnostic_surface: str) -> dict[str, object]:

@@ -13,6 +13,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceExplanationComposition,
     _KnownDiagnosticSurfaceDefinition,
     _UnknownDiagnosticSurfaceDefinition,
+    _DiagnosticSurfaceHeadingLine,
     _DiagnosticSurfaceBoundaryIdentification,
     _DiagnosticSurfaceBoundaryStatementSet,
     _DiagnosticSurfaceReadOnlyEvaluation,
@@ -67,6 +68,7 @@ from seed_runtime.diagnostic_inventory import (
     _render_diagnostic_surface_explanation_record_scope_line,
     _render_diagnostic_surface_explanation_boundary_line,
     _render_diagnostic_surface_explanation_consumption_line,
+    _render_diagnostic_surface_explanation_definition_heading_line,
     _render_diagnostic_surface_explanation_status_line,
     _render_diagnostic_surface_cli_flags_line,
     _prepare_diagnostic_surface_consumption_text,
@@ -1220,6 +1222,23 @@ def test_diagnostic_surface_explanation_consumption_line_rendering_precedes_line
         "uses_repo_files=false; reads_diagnostic_facts=false"
     )
     assert set(consumption_line.__dataclass_fields__) == {"line"}
+
+
+def test_diagnostic_surface_explanation_definition_heading_line_rendering_precedes_line_set_assembly():
+    explanation = diagnostic_surface_explanation_json("diagnostic_shape_audit")[
+        "diagnostic_surface_explanation"
+    ]
+    explanation_definition = _extract_diagnostic_surface_explanation_definition(
+        explanation
+    )
+
+    heading_line = _render_diagnostic_surface_explanation_definition_heading_line(
+        explanation_definition
+    )
+
+    assert isinstance(heading_line, _DiagnosticSurfaceHeadingLine)
+    assert heading_line.line == "DiagnosticSurface explanation: diagnostic_shape_audit"
+    assert set(heading_line.__dataclass_fields__) == {"line"}
 
 
 def test_diagnostic_surface_explanation_cli_flag_display_preparation_precedes_line_set_assembly():
