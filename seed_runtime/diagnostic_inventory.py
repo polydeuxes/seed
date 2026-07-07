@@ -1290,7 +1290,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
     explanation_consumption = _extract_diagnostic_surface_explanation_consumption(
         explanation
     )
-    flag_display = _prepare_diagnostic_surface_cli_flag_display(definition["cli_flags"])
+    flag_display = _prepare_diagnostic_surface_explanation_cli_flag_display(
+        explanation_definition
+    )
     field_indent = _select_diagnostic_surface_nested_definition_field_indent()
     return _DiagnosticSurfaceExplanationLineSet(
         lines=(
@@ -1347,6 +1349,14 @@ def _extract_diagnostic_surface_explanation_consumption(
 ) -> _DiagnosticSurfaceExplanationConsumption:
     return _DiagnosticSurfaceExplanationConsumption(
         consumption=explanation["diagnostic_surface_consumption"]
+    )
+
+
+def _prepare_diagnostic_surface_explanation_cli_flag_display(
+    explanation_definition: _DiagnosticSurfaceExplanationDefinition,
+) -> _DiagnosticSurfaceCliFlagDisplay:
+    return _prepare_diagnostic_surface_cli_flag_display(
+        explanation_definition.definition["cli_flags"]
     )
 
 
