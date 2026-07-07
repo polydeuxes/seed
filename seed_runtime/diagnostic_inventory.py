@@ -329,6 +329,13 @@ class _DiagnosticSurfaceRecordScopeValue:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceRecordScopeFieldLabel:
+    """Implementation-local record scope field label before line rendering."""
+
+    text: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceRecordScopeLine:
     """Implementation-local record scope line before line-set assembly."""
 
@@ -1426,6 +1433,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
     record_support_field_label = (
         _prepare_diagnostic_surface_explanation_record_support_field_label()
     )
+    record_scope_field_label = (
+        _prepare_diagnostic_surface_explanation_record_scope_field_label()
+    )
     field_indent = _select_diagnostic_surface_nested_definition_field_indent()
     return _DiagnosticSurfaceExplanationLineSet(
         lines=(
@@ -1461,7 +1471,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
                 indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_explanation_record_scope_line(
-                record_scope_value, indent=field_indent.text
+                record_scope_value,
+                field_label=record_scope_field_label.text,
+                indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_explanation_boundary_line(
                 boundary_text, indent=field_indent.text
@@ -1617,11 +1629,19 @@ def _prepare_diagnostic_surface_explanation_record_scope_value(
     )
 
 
+def _prepare_diagnostic_surface_explanation_record_scope_field_label() -> (
+    _DiagnosticSurfaceRecordScopeFieldLabel
+):
+    return _DiagnosticSurfaceRecordScopeFieldLabel(text="record_scope")
+
+
 def _render_diagnostic_surface_explanation_record_scope_line(
-    record_scope_value: _DiagnosticSurfaceRecordScopeValue, indent: str = "  "
+    record_scope_value: _DiagnosticSurfaceRecordScopeValue,
+    field_label: str = "record_scope",
+    indent: str = "  ",
 ) -> _DiagnosticSurfaceRecordScopeLine:
     return _render_diagnostic_surface_record_scope_line(
-        record_scope_value.value, indent=indent
+        record_scope_value.value, field_label=field_label, indent=indent
     )
 
 
@@ -1973,10 +1993,10 @@ def _render_diagnostic_surface_record_support_line(
 
 
 def _render_diagnostic_surface_record_scope_line(
-    record_scope: object, indent: str = "  "
+    record_scope: object, field_label: str = "record_scope", indent: str = "  "
 ) -> _DiagnosticSurfaceRecordScopeLine:
     return _DiagnosticSurfaceRecordScopeLine(
-        line=f"{indent}record_scope: {record_scope}"
+        line=f"{indent}{field_label}: {record_scope}"
     )
 
 
