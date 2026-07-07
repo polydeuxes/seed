@@ -1320,6 +1320,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
     flag_display = _prepare_diagnostic_surface_explanation_cli_flag_display(
         explanation_definition
     )
+    record_scope_value = _prepare_diagnostic_surface_explanation_record_scope_value(
+        explanation_definition
+    )
     field_indent = _select_diagnostic_surface_nested_definition_field_indent()
     return _DiagnosticSurfaceExplanationLineSet(
         lines=(
@@ -1343,7 +1346,7 @@ def _assemble_diagnostic_surface_explanation_line_set(
                 explanation_definition, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_explanation_record_scope_line(
-                explanation_definition, indent=field_indent.text
+                record_scope_value, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_explanation_boundary_line(
                 explanation_boundary, indent=field_indent.text
@@ -1419,11 +1422,19 @@ def _render_diagnostic_surface_explanation_record_support_line(
     )
 
 
+def _prepare_diagnostic_surface_explanation_record_scope_value(
+    explanation_definition: _DiagnosticSurfaceExplanationDefinition,
+) -> _DiagnosticSurfaceRecordScopeValue:
+    return _DiagnosticSurfaceRecordScopeValue(
+        value=explanation_definition.definition["record_scope"]
+    )
+
+
 def _render_diagnostic_surface_explanation_record_scope_line(
-    explanation_definition: _DiagnosticSurfaceExplanationDefinition, indent: str = "  "
+    record_scope_value: _DiagnosticSurfaceRecordScopeValue, indent: str = "  "
 ) -> _DiagnosticSurfaceRecordScopeLine:
     return _render_diagnostic_surface_record_scope_line(
-        explanation_definition.definition["record_scope"], indent=indent
+        record_scope_value.value, indent=indent
     )
 
 
