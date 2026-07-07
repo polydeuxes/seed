@@ -154,6 +154,13 @@ class _DiagnosticSurfaceExplanationComposition:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceExplanationDefinition:
+    """Implementation-local explanation definition before human line-set assembly."""
+
+    definition: dict[str, object]
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceDefinitionLineSet:
     """Implementation-local definition lines before human rendering."""
 
@@ -1261,7 +1268,10 @@ def format_diagnostic_surface_explanation(diagnostic_surface: str) -> str:
 def _assemble_diagnostic_surface_explanation_line_set(
     explanation: dict[str, object],
 ) -> _DiagnosticSurfaceExplanationLineSet:
-    definition = explanation["diagnostic_surface_definition"]
+    explanation_definition = _extract_diagnostic_surface_explanation_definition(
+        explanation
+    )
+    definition = explanation_definition.definition
     flag_display = _prepare_diagnostic_surface_cli_flag_display(definition["cli_flags"])
     field_indent = _select_diagnostic_surface_nested_definition_field_indent()
     return _DiagnosticSurfaceExplanationLineSet(
@@ -1295,6 +1305,14 @@ def _assemble_diagnostic_surface_explanation_line_set(
                 explanation["diagnostic_surface_consumption"], indent=field_indent.text
             ),
         )
+    )
+
+
+def _extract_diagnostic_surface_explanation_definition(
+    explanation: dict[str, object],
+) -> _DiagnosticSurfaceExplanationDefinition:
+    return _DiagnosticSurfaceExplanationDefinition(
+        definition=explanation["diagnostic_surface_definition"]
     )
 
 
