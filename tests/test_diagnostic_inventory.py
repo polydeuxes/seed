@@ -71,6 +71,7 @@ from seed_runtime.diagnostic_inventory import (
     _render_diagnostic_surface_explanation_consumption_line,
     _render_diagnostic_surface_explanation_definition_heading_line,
     _render_diagnostic_surface_explanation_definition_section_line,
+    _render_diagnostic_surface_explanation_cli_flags_line,
     _render_diagnostic_surface_definition_identity_heading_line,
     _render_diagnostic_surface_explanation_status_line,
     _render_diagnostic_surface_cli_flags_line,
@@ -1470,6 +1471,26 @@ def test_diagnostic_surface_explanation_cli_flag_display_preparation_precedes_li
     assert isinstance(flag_display, _DiagnosticSurfaceCliFlagDisplay)
     assert flag_display.text == "--diagnostic-shape-audit"
     assert set(flag_display.__dataclass_fields__) == {"text"}
+
+
+def test_diagnostic_surface_explanation_cli_flags_line_rendering_precedes_line_set_assembly():
+    explanation = diagnostic_surface_explanation_json("diagnostic_shape_audit")[
+        "diagnostic_surface_explanation"
+    ]
+    explanation_definition = _extract_diagnostic_surface_explanation_definition(
+        explanation
+    )
+    flag_display = _prepare_diagnostic_surface_explanation_cli_flag_display(
+        explanation_definition
+    )
+
+    cli_flags_line = _render_diagnostic_surface_explanation_cli_flags_line(
+        flag_display, indent="    "
+    )
+
+    assert isinstance(cli_flags_line, _DiagnosticSurfaceCliFlagsLine)
+    assert cli_flags_line.line == "    cli_flags: --diagnostic-shape-audit"
+    assert set(cli_flags_line.__dataclass_fields__) == {"line"}
 
 
 def test_diagnostic_surface_explanation_human_renders_coherent_composition(capsys):

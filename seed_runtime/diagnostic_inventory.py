@@ -1302,7 +1302,7 @@ def _assemble_diagnostic_surface_explanation_line_set(
             _render_diagnostic_surface_explanation_status_line(
                 explanation_definition, indent=field_indent.text
             ).line,
-            _render_diagnostic_surface_cli_flags_line(
+            _render_diagnostic_surface_explanation_cli_flags_line(
                 flag_display, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_explanation_description_line(
@@ -1430,6 +1430,12 @@ def _render_diagnostic_surface_explanation_definition_section_line() -> (
     _DiagnosticSurfaceDefinitionSectionLine
 ):
     return _render_diagnostic_surface_definition_section_line()
+
+
+def _render_diagnostic_surface_explanation_cli_flags_line(
+    flag_display: _DiagnosticSurfaceCliFlagDisplay, indent: str = "  "
+) -> _DiagnosticSurfaceCliFlagsLine:
+    return _render_diagnostic_surface_cli_flags_line(flag_display, indent=indent)
 
 
 def diagnostic_surface_definition_json(diagnostic_surface: str) -> dict[str, object]:
