@@ -84,6 +84,7 @@ from seed_runtime.diagnostic_inventory import (
     _render_diagnostic_surface_definition_consumption_line,
     _render_diagnostic_surface_definition_inventory_registration_line,
     _render_diagnostic_surface_definition_shape_registration_status_line,
+    _render_diagnostic_surface_definition_implementation_reason_line,
     _render_diagnostic_surface_implementation_reason_line,
     _render_diagnostic_surface_inventory_registration_line,
     _render_diagnostic_surface_shape_registration_status_line,
@@ -812,6 +813,24 @@ def test_diagnostic_surface_definition_shape_registration_status_line_rendering_
     assert isinstance(status_line, _DiagnosticSurfaceShapeRegistrationStatusLine)
     assert status_line.line == "    shape_registration_status: present"
     assert set(status_line.__dataclass_fields__) == {"line"}
+
+
+def test_diagnostic_surface_definition_implementation_reason_line_rendering_precedes_line_set_assembly():
+    definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
+        "diagnostic_surface_definition"
+    ]
+
+    reason_line = _render_diagnostic_surface_definition_implementation_reason_line(
+        definition, indent="    "
+    )
+
+    assert isinstance(reason_line, _DiagnosticSurfaceImplementationReasonLine)
+    assert (
+        reason_line.line
+        == "    implementation_reason: identity recovered from the diagnostic inventory "
+        "entry and static shape-audit registration"
+    )
+    assert set(reason_line.__dataclass_fields__) == {"line"}
 
 
 def test_diagnostic_surface_definition_line_set_assembly_precedes_human_rendering():
