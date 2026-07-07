@@ -1300,8 +1300,8 @@ def _assemble_diagnostic_surface_explanation_line_set(
                 definition["diagnostic_name"]
             ).line,
             _render_diagnostic_surface_definition_section_line().line,
-            _render_diagnostic_surface_status_line(
-                definition["status"], indent=field_indent.text
+            _render_diagnostic_surface_explanation_status_line(
+                explanation_definition, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_cli_flags_line(
                 flag_display, indent=field_indent.text
@@ -1357,6 +1357,14 @@ def _prepare_diagnostic_surface_explanation_cli_flag_display(
 ) -> _DiagnosticSurfaceCliFlagDisplay:
     return _prepare_diagnostic_surface_cli_flag_display(
         explanation_definition.definition["cli_flags"]
+    )
+
+
+def _render_diagnostic_surface_explanation_status_line(
+    explanation_definition: _DiagnosticSurfaceExplanationDefinition, indent: str = "  "
+) -> _DiagnosticSurfaceStatusLine:
+    return _render_diagnostic_surface_status_line(
+        explanation_definition.definition["status"], indent=indent
     )
 
 

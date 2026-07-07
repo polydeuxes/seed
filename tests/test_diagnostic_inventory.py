@@ -56,6 +56,7 @@ from seed_runtime.diagnostic_inventory import (
     _render_diagnostic_surface_boundary_line,
     _prepare_diagnostic_surface_cli_flag_display,
     _prepare_diagnostic_surface_explanation_cli_flag_display,
+    _render_diagnostic_surface_explanation_status_line,
     _render_diagnostic_surface_cli_flags_line,
     _prepare_diagnostic_surface_consumption_text,
     _render_diagnostic_surface_consumption_line,
@@ -1079,6 +1080,23 @@ def test_diagnostic_surface_explanation_consumption_extraction_precedes_line_set
         == explanation["diagnostic_surface_consumption"]
     )
     assert set(explanation_consumption.__dataclass_fields__) == {"consumption"}
+
+
+def test_diagnostic_surface_explanation_status_line_rendering_precedes_line_set_assembly():
+    explanation = diagnostic_surface_explanation_json("diagnostic_shape_audit")[
+        "diagnostic_surface_explanation"
+    ]
+    explanation_definition = _extract_diagnostic_surface_explanation_definition(
+        explanation
+    )
+
+    status_line = _render_diagnostic_surface_explanation_status_line(
+        explanation_definition, indent="    "
+    )
+
+    assert isinstance(status_line, _DiagnosticSurfaceStatusLine)
+    assert status_line.line == "    status: known"
+    assert set(status_line.__dataclass_fields__) == {"line"}
 
 
 def test_diagnostic_surface_explanation_cli_flag_display_preparation_precedes_line_set_assembly():
