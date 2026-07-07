@@ -168,6 +168,13 @@ class _DiagnosticSurfaceExplanationBoundary:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceExplanationConsumption:
+    """Implementation-local explanation consumption before human line-set assembly."""
+
+    consumption: object
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceDefinitionLineSet:
     """Implementation-local definition lines before human rendering."""
 
@@ -1280,6 +1287,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
     )
     definition = explanation_definition.definition
     explanation_boundary = _extract_diagnostic_surface_explanation_boundary(explanation)
+    explanation_consumption = _extract_diagnostic_surface_explanation_consumption(
+        explanation
+    )
     flag_display = _prepare_diagnostic_surface_cli_flag_display(definition["cli_flags"])
     field_indent = _select_diagnostic_surface_nested_definition_field_indent()
     return _DiagnosticSurfaceExplanationLineSet(
@@ -1310,7 +1320,7 @@ def _assemble_diagnostic_surface_explanation_line_set(
                 explanation_boundary.boundary, indent=field_indent.text
             ),
             _format_diagnostic_surface_consumption(
-                explanation["diagnostic_surface_consumption"], indent=field_indent.text
+                explanation_consumption.consumption, indent=field_indent.text
             ),
         )
     )
@@ -1329,6 +1339,14 @@ def _extract_diagnostic_surface_explanation_boundary(
 ) -> _DiagnosticSurfaceExplanationBoundary:
     return _DiagnosticSurfaceExplanationBoundary(
         boundary=explanation["diagnostic_surface_boundary"]
+    )
+
+
+def _extract_diagnostic_surface_explanation_consumption(
+    explanation: dict[str, object],
+) -> _DiagnosticSurfaceExplanationConsumption:
+    return _DiagnosticSurfaceExplanationConsumption(
+        consumption=explanation["diagnostic_surface_consumption"]
     )
 
 
