@@ -1463,8 +1463,8 @@ def _assemble_diagnostic_surface_definition_line_set(
             _render_diagnostic_surface_definition_record_support_line(
                 definition, indent=field_indent.text
             ).line,
-            _render_diagnostic_surface_record_scope_line(
-                definition["record_scope"], indent=field_indent.text
+            _render_diagnostic_surface_definition_record_scope_line(
+                definition, indent=field_indent.text
             ).line,
             _format_diagnostic_surface_boundary(
                 definition["diagnostic_surface_boundary"], indent=field_indent.text
@@ -1527,6 +1527,14 @@ def _render_diagnostic_surface_definition_record_support_line(
 ) -> _DiagnosticSurfaceRecordSupportLine:
     return _render_diagnostic_surface_record_support_line(
         definition["supports_record"], indent=indent
+    )
+
+
+def _render_diagnostic_surface_definition_record_scope_line(
+    definition: dict[str, object], indent: str = "  "
+) -> _DiagnosticSurfaceRecordScopeLine:
+    return _render_diagnostic_surface_record_scope_line(
+        definition["record_scope"], indent=indent
     )
 
 

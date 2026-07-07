@@ -79,6 +79,7 @@ from seed_runtime.diagnostic_inventory import (
     _render_diagnostic_surface_definition_description_line,
     _render_diagnostic_surface_definition_json_support_line,
     _render_diagnostic_surface_definition_record_support_line,
+    _render_diagnostic_surface_definition_record_scope_line,
     _render_diagnostic_surface_implementation_reason_line,
     _render_diagnostic_surface_inventory_registration_line,
     _render_diagnostic_surface_shape_registration_status_line,
@@ -724,6 +725,20 @@ def test_diagnostic_surface_definition_record_support_line_rendering_precedes_li
     assert isinstance(record_support_line, _DiagnosticSurfaceRecordSupportLine)
     assert record_support_line.line == "    supports_record: false"
     assert set(record_support_line.__dataclass_fields__) == {"line"}
+
+
+def test_diagnostic_surface_definition_record_scope_line_rendering_precedes_line_set_assembly():
+    definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
+        "diagnostic_surface_definition"
+    ]
+
+    record_scope_line = _render_diagnostic_surface_definition_record_scope_line(
+        definition, indent="    "
+    )
+
+    assert isinstance(record_scope_line, _DiagnosticSurfaceRecordScopeLine)
+    assert record_scope_line.line == "    record_scope: none"
+    assert set(record_scope_line.__dataclass_fields__) == {"line"}
 
 
 def test_diagnostic_surface_definition_line_set_assembly_precedes_human_rendering():
