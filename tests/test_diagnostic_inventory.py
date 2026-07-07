@@ -28,6 +28,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceExplanationLineSet,
     _DiagnosticSurfaceImplementationReasonLine,
     _DiagnosticSurfaceInventoryRegistrationLine,
+    _DiagnosticSurfaceJsonSupportLine,
     _DiagnosticSurfaceShapeRegistrationIdentification,
     _DiagnosticSurfaceShapeRegistrationLookup,
     _DiagnosticSurfaceShapeRegistrationStatusLine,
@@ -58,6 +59,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_cli_flag_display,
     _prepare_diagnostic_surface_explanation_cli_flag_display,
     _render_diagnostic_surface_explanation_description_line,
+    _render_diagnostic_surface_explanation_json_support_line,
     _render_diagnostic_surface_explanation_status_line,
     _render_diagnostic_surface_cli_flags_line,
     _prepare_diagnostic_surface_consumption_text,
@@ -1120,6 +1122,23 @@ def test_diagnostic_surface_explanation_description_line_rendering_precedes_line
         "implementation shape without recording or mutation."
     )
     assert set(description_line.__dataclass_fields__) == {"line"}
+
+
+def test_diagnostic_surface_explanation_json_support_line_rendering_precedes_line_set_assembly():
+    explanation = diagnostic_surface_explanation_json("diagnostic_shape_audit")[
+        "diagnostic_surface_explanation"
+    ]
+    explanation_definition = _extract_diagnostic_surface_explanation_definition(
+        explanation
+    )
+
+    json_support_line = _render_diagnostic_surface_explanation_json_support_line(
+        explanation_definition, indent="    "
+    )
+
+    assert isinstance(json_support_line, _DiagnosticSurfaceJsonSupportLine)
+    assert json_support_line.line == "    supports_json: true"
+    assert set(json_support_line.__dataclass_fields__) == {"line"}
 
 
 def test_diagnostic_surface_explanation_cli_flag_display_preparation_precedes_line_set_assembly():
