@@ -30,6 +30,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceInventoryRegistrationLine,
     _DiagnosticSurfaceJsonSupportLine,
     _DiagnosticSurfaceRecordSupportLine,
+    _DiagnosticSurfaceRecordScopeLine,
     _DiagnosticSurfaceShapeRegistrationIdentification,
     _DiagnosticSurfaceShapeRegistrationLookup,
     _DiagnosticSurfaceShapeRegistrationStatusLine,
@@ -62,6 +63,7 @@ from seed_runtime.diagnostic_inventory import (
     _render_diagnostic_surface_explanation_description_line,
     _render_diagnostic_surface_explanation_json_support_line,
     _render_diagnostic_surface_explanation_record_support_line,
+    _render_diagnostic_surface_explanation_record_scope_line,
     _render_diagnostic_surface_explanation_status_line,
     _render_diagnostic_surface_cli_flags_line,
     _prepare_diagnostic_surface_consumption_text,
@@ -1158,6 +1160,23 @@ def test_diagnostic_surface_explanation_record_support_line_rendering_precedes_l
     assert isinstance(record_support_line, _DiagnosticSurfaceRecordSupportLine)
     assert record_support_line.line == "    supports_record: false"
     assert set(record_support_line.__dataclass_fields__) == {"line"}
+
+
+def test_diagnostic_surface_explanation_record_scope_line_rendering_precedes_line_set_assembly():
+    explanation = diagnostic_surface_explanation_json("diagnostic_shape_audit")[
+        "diagnostic_surface_explanation"
+    ]
+    explanation_definition = _extract_diagnostic_surface_explanation_definition(
+        explanation
+    )
+
+    record_scope_line = _render_diagnostic_surface_explanation_record_scope_line(
+        explanation_definition, indent="    "
+    )
+
+    assert isinstance(record_scope_line, _DiagnosticSurfaceRecordScopeLine)
+    assert record_scope_line.line == "    record_scope: none"
+    assert set(record_scope_line.__dataclass_fields__) == {"line"}
 
 
 def test_diagnostic_surface_explanation_cli_flag_display_preparation_precedes_line_set_assembly():
