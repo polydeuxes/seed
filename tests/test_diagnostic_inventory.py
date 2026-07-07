@@ -48,6 +48,7 @@ from seed_runtime.diagnostic_inventory import (
     _evaluate_diagnostic_surface_read_only_boundary,
     _extract_diagnostic_surface_boundary_statement_sequence,
     _extract_diagnostic_surface_consumption_declaration_sequence,
+    _extract_diagnostic_surface_explanation_boundary,
     _extract_diagnostic_surface_explanation_consumption,
     _extract_diagnostic_surface_explanation_definition,
     _format_diagnostic_surface_consumption,
@@ -64,6 +65,7 @@ from seed_runtime.diagnostic_inventory import (
     _render_diagnostic_surface_explanation_json_support_line,
     _render_diagnostic_surface_explanation_record_support_line,
     _render_diagnostic_surface_explanation_record_scope_line,
+    _render_diagnostic_surface_explanation_boundary_line,
     _render_diagnostic_surface_explanation_status_line,
     _render_diagnostic_surface_cli_flags_line,
     _prepare_diagnostic_surface_consumption_text,
@@ -1177,6 +1179,26 @@ def test_diagnostic_surface_explanation_record_scope_line_rendering_precedes_lin
     assert isinstance(record_scope_line, _DiagnosticSurfaceRecordScopeLine)
     assert record_scope_line.line == "    record_scope: none"
     assert set(record_scope_line.__dataclass_fields__) == {"line"}
+
+
+def test_diagnostic_surface_explanation_boundary_line_rendering_precedes_line_set_assembly():
+    explanation = diagnostic_surface_explanation_json("diagnostic_shape_audit")[
+        "diagnostic_surface_explanation"
+    ]
+    explanation_boundary = _extract_diagnostic_surface_explanation_boundary(explanation)
+
+    boundary_line = _render_diagnostic_surface_explanation_boundary_line(
+        explanation_boundary, indent="    "
+    )
+
+    assert isinstance(boundary_line, _DiagnosticSurfaceBoundaryLine)
+    assert boundary_line.line == (
+        "    diagnostic_surface_boundary: read-only; does not record; "
+        "record_scope=none; does not write event ledger; does not mutate cluster; "
+        "does not use projected state; does not use repository files; does not emit "
+        "diagnostic facts; does not emit cluster facts; does not read diagnostic facts"
+    )
+    assert set(boundary_line.__dataclass_fields__) == {"line"}
 
 
 def test_diagnostic_surface_explanation_cli_flag_display_preparation_precedes_line_set_assembly():
