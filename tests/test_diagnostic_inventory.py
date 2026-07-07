@@ -45,6 +45,7 @@ from seed_runtime.diagnostic_inventory import (
     _extract_diagnostic_surface_boundary_statement_sequence,
     _extract_diagnostic_surface_consumption_declaration_sequence,
     _extract_diagnostic_surface_explanation_consumption,
+    _extract_diagnostic_surface_explanation_definition,
     _format_diagnostic_surface_consumption,
     _identify_diagnostic_surface_boundary,
     _identify_diagnostic_surface_consumption,
@@ -54,6 +55,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_boundary_text,
     _render_diagnostic_surface_boundary_line,
     _prepare_diagnostic_surface_cli_flag_display,
+    _prepare_diagnostic_surface_explanation_cli_flag_display,
     _render_diagnostic_surface_cli_flags_line,
     _prepare_diagnostic_surface_consumption_text,
     _render_diagnostic_surface_consumption_line,
@@ -1077,6 +1079,23 @@ def test_diagnostic_surface_explanation_consumption_extraction_precedes_line_set
         == explanation["diagnostic_surface_consumption"]
     )
     assert set(explanation_consumption.__dataclass_fields__) == {"consumption"}
+
+
+def test_diagnostic_surface_explanation_cli_flag_display_preparation_precedes_line_set_assembly():
+    explanation = diagnostic_surface_explanation_json("diagnostic_shape_audit")[
+        "diagnostic_surface_explanation"
+    ]
+    explanation_definition = _extract_diagnostic_surface_explanation_definition(
+        explanation
+    )
+
+    flag_display = _prepare_diagnostic_surface_explanation_cli_flag_display(
+        explanation_definition
+    )
+
+    assert isinstance(flag_display, _DiagnosticSurfaceCliFlagDisplay)
+    assert flag_display.text == "--diagnostic-shape-audit"
+    assert set(flag_display.__dataclass_fields__) == {"text"}
 
 
 def test_diagnostic_surface_explanation_human_renders_coherent_composition(capsys):
