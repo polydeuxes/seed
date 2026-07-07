@@ -36,6 +36,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceRecordSupportLine,
     _DiagnosticSurfaceRecordSupportValue,
     _DiagnosticSurfaceRecordScopeLine,
+    _DiagnosticSurfaceRecordScopeValue,
     _DiagnosticSurfaceShapeRegistrationIdentification,
     _DiagnosticSurfaceShapeRegistrationLookup,
     _DiagnosticSurfaceShapeRegistrationStatusLine,
@@ -68,6 +69,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_definition_description_text,
     _prepare_diagnostic_surface_definition_json_support_value,
     _prepare_diagnostic_surface_definition_record_support_value,
+    _prepare_diagnostic_surface_definition_record_scope_value,
     _prepare_diagnostic_surface_explanation_cli_flag_display,
     _render_diagnostic_surface_explanation_description_line,
     _render_diagnostic_surface_explanation_json_support_line,
@@ -783,10 +785,17 @@ def test_diagnostic_surface_definition_record_scope_line_rendering_precedes_line
         "diagnostic_surface_definition"
     ]
 
-    record_scope_line = _render_diagnostic_surface_definition_record_scope_line(
-        definition, indent="    "
+    record_scope_value = _prepare_diagnostic_surface_definition_record_scope_value(
+        definition
     )
 
+    record_scope_line = _render_diagnostic_surface_definition_record_scope_line(
+        record_scope_value, indent="    "
+    )
+
+    assert isinstance(record_scope_value, _DiagnosticSurfaceRecordScopeValue)
+    assert record_scope_value.value == "none"
+    assert set(record_scope_value.__dataclass_fields__) == {"value"}
     assert isinstance(record_scope_line, _DiagnosticSurfaceRecordScopeLine)
     assert record_scope_line.line == "    record_scope: none"
     assert set(record_scope_line.__dataclass_fields__) == {"line"}

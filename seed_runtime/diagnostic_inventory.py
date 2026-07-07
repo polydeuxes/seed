@@ -266,6 +266,13 @@ class _DiagnosticSurfaceRecordSupportLine:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceRecordScopeValue:
+    """Implementation-local record scope value before line rendering."""
+
+    value: object
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceRecordScopeLine:
     """Implementation-local record scope line before line-set assembly."""
 
@@ -1484,6 +1491,9 @@ def _assemble_diagnostic_surface_definition_line_set(
     record_support_value = _prepare_diagnostic_surface_definition_record_support_value(
         definition
     )
+    record_scope_value = _prepare_diagnostic_surface_definition_record_scope_value(
+        definition
+    )
     field_indent = _select_diagnostic_surface_top_level_definition_field_indent()
     return _DiagnosticSurfaceDefinitionLineSet(
         lines=(
@@ -1506,7 +1516,7 @@ def _assemble_diagnostic_surface_definition_line_set(
                 record_support_value, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_definition_record_scope_line(
-                definition, indent=field_indent.text
+                record_scope_value, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_definition_boundary_line(
                 definition, indent=field_indent.text
@@ -1592,11 +1602,17 @@ def _render_diagnostic_surface_definition_record_support_line(
     )
 
 
+def _prepare_diagnostic_surface_definition_record_scope_value(
+    definition: dict[str, object],
+) -> _DiagnosticSurfaceRecordScopeValue:
+    return _DiagnosticSurfaceRecordScopeValue(value=definition["record_scope"])
+
+
 def _render_diagnostic_surface_definition_record_scope_line(
-    definition: dict[str, object], indent: str = "  "
+    record_scope_value: _DiagnosticSurfaceRecordScopeValue, indent: str = "  "
 ) -> _DiagnosticSurfaceRecordScopeLine:
     return _render_diagnostic_surface_record_scope_line(
-        definition["record_scope"], indent=indent
+        record_scope_value.value, indent=indent
     )
 
 
