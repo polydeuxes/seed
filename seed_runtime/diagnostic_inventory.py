@@ -196,6 +196,13 @@ class _DiagnosticSurfaceRecordSupportLine:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceRecordScopeLine:
+    """Implementation-local record scope line before line-set assembly."""
+
+    line: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceCliFlagDisplay:
     """Implementation-local CLI flag display text before human rendering."""
 
@@ -1245,7 +1252,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
             _render_diagnostic_surface_record_support_line(
                 definition["supports_record"], indent="    "
             ).line,
-            f"    record_scope: {definition['record_scope']}",
+            _render_diagnostic_surface_record_scope_line(
+                definition["record_scope"], indent="    "
+            ).line,
             _format_diagnostic_surface_boundary(
                 explanation["diagnostic_surface_boundary"], indent="    "
             ),
@@ -1284,7 +1293,9 @@ def _assemble_diagnostic_surface_definition_line_set(
             _render_diagnostic_surface_record_support_line(
                 definition["supports_record"]
             ).line,
-            f"  record_scope: {definition['record_scope']}",
+            _render_diagnostic_surface_record_scope_line(
+                definition["record_scope"]
+            ).line,
             _format_diagnostic_surface_boundary(
                 definition["diagnostic_surface_boundary"]
             ),
@@ -1340,6 +1351,14 @@ def _render_diagnostic_surface_record_support_line(
 ) -> _DiagnosticSurfaceRecordSupportLine:
     return _DiagnosticSurfaceRecordSupportLine(
         line=f"{indent}supports_record: {str(supports_record).lower()}"
+    )
+
+
+def _render_diagnostic_surface_record_scope_line(
+    record_scope: object, indent: str = "  "
+) -> _DiagnosticSurfaceRecordScopeLine:
+    return _DiagnosticSurfaceRecordScopeLine(
+        line=f"{indent}record_scope: {record_scope}"
     )
 
 
