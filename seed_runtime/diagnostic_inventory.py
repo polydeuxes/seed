@@ -231,6 +231,13 @@ class _DiagnosticSurfaceDescriptionLine:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceDescriptionText:
+    """Implementation-local description text before line rendering."""
+
+    text: object
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceJsonSupportLine:
     """Implementation-local JSON support line before line-set assembly."""
 
@@ -1454,6 +1461,9 @@ def _assemble_diagnostic_surface_definition_line_set(
     definition: dict[str, object],
 ) -> _DiagnosticSurfaceDefinitionLineSet:
     flag_display = _prepare_diagnostic_surface_cli_flag_display(definition["cli_flags"])
+    description_text = _prepare_diagnostic_surface_definition_description_text(
+        definition
+    )
     field_indent = _select_diagnostic_surface_top_level_definition_field_indent()
     return _DiagnosticSurfaceDefinitionLineSet(
         lines=(
@@ -1467,7 +1477,7 @@ def _assemble_diagnostic_surface_definition_line_set(
                 flag_display, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_definition_description_line(
-                definition, indent=field_indent.text
+                description_text, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_definition_json_support_line(
                 definition, indent=field_indent.text
@@ -1520,11 +1530,17 @@ def _render_diagnostic_surface_definition_cli_flags_line(
     return _render_diagnostic_surface_cli_flags_line(flag_display, indent=indent)
 
 
+def _prepare_diagnostic_surface_definition_description_text(
+    definition: dict[str, object],
+) -> _DiagnosticSurfaceDescriptionText:
+    return _DiagnosticSurfaceDescriptionText(text=definition["description"])
+
+
 def _render_diagnostic_surface_definition_description_line(
-    definition: dict[str, object], indent: str = "  "
+    description_text: _DiagnosticSurfaceDescriptionText, indent: str = "  "
 ) -> _DiagnosticSurfaceDescriptionLine:
     return _render_diagnostic_surface_description_line(
-        definition["description"], indent=indent
+        description_text.text, indent=indent
     )
 
 
