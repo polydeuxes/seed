@@ -23,6 +23,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceConsumptionIdentification,
     _DiagnosticSurfaceConsumptionText,
     _DiagnosticSurfaceDefinitionLineSet,
+    _DiagnosticSurfaceDefinitionSectionLine,
     _DiagnosticSurfaceDescriptionLine,
     _DiagnosticSurfaceEvidenceSourceLine,
     _DiagnosticSurfaceExplanationConsumption,
@@ -69,6 +70,7 @@ from seed_runtime.diagnostic_inventory import (
     _render_diagnostic_surface_explanation_boundary_line,
     _render_diagnostic_surface_explanation_consumption_line,
     _render_diagnostic_surface_explanation_definition_heading_line,
+    _render_diagnostic_surface_explanation_definition_section_line,
     _render_diagnostic_surface_definition_identity_heading_line,
     _render_diagnostic_surface_explanation_status_line,
     _render_diagnostic_surface_cli_flags_line,
@@ -1443,6 +1445,14 @@ def test_diagnostic_surface_explanation_definition_heading_line_rendering_preced
     assert isinstance(heading_line, _DiagnosticSurfaceHeadingLine)
     assert heading_line.line == "DiagnosticSurface explanation: diagnostic_shape_audit"
     assert set(heading_line.__dataclass_fields__) == {"line"}
+
+
+def test_diagnostic_surface_explanation_definition_section_line_rendering_precedes_line_set_assembly():
+    section_line = _render_diagnostic_surface_explanation_definition_section_line()
+
+    assert isinstance(section_line, _DiagnosticSurfaceDefinitionSectionLine)
+    assert section_line.line == "  definition:"
+    assert set(section_line.__dataclass_fields__) == {"line"}
 
 
 def test_diagnostic_surface_explanation_cli_flag_display_preparation_precedes_line_set_assembly():
