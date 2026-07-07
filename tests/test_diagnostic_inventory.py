@@ -71,6 +71,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_definition_record_support_value,
     _prepare_diagnostic_surface_definition_record_scope_value,
     _prepare_diagnostic_surface_explanation_cli_flag_display,
+    _prepare_diagnostic_surface_explanation_json_support_value,
     _prepare_diagnostic_surface_explanation_record_scope_value,
     _render_diagnostic_surface_explanation_description_line,
     _render_diagnostic_surface_explanation_json_support_line,
@@ -1400,10 +1401,16 @@ def test_diagnostic_surface_explanation_json_support_line_rendering_precedes_lin
         explanation
     )
 
+    json_support_value = _prepare_diagnostic_surface_explanation_json_support_value(
+        explanation_definition
+    )
     json_support_line = _render_diagnostic_surface_explanation_json_support_line(
-        explanation_definition, indent="    "
+        json_support_value, indent="    "
     )
 
+    assert isinstance(json_support_value, _DiagnosticSurfaceJsonSupportValue)
+    assert json_support_value.value is True
+    assert set(json_support_value.__dataclass_fields__) == {"value"}
     assert isinstance(json_support_line, _DiagnosticSurfaceJsonSupportLine)
     assert json_support_line.line == "    supports_json: true"
     assert set(json_support_line.__dataclass_fields__) == {"line"}
