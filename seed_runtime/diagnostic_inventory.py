@@ -1321,9 +1321,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
             _render_diagnostic_surface_explanation_boundary_line(
                 explanation_boundary, indent=field_indent.text
             ).line,
-            _format_diagnostic_surface_consumption(
-                explanation_consumption.consumption, indent=field_indent.text
-            ),
+            _render_diagnostic_surface_explanation_consumption_line(
+                explanation_consumption, indent=field_indent.text
+            ).line,
         )
     )
 
@@ -1407,6 +1407,16 @@ def _render_diagnostic_surface_explanation_boundary_line(
         explanation_boundary.boundary
     )
     return _render_diagnostic_surface_boundary_line(boundary_text, indent=indent)
+
+
+def _render_diagnostic_surface_explanation_consumption_line(
+    explanation_consumption: _DiagnosticSurfaceExplanationConsumption,
+    indent: str = "  ",
+) -> _DiagnosticSurfaceConsumptionLine:
+    consumption_text = _prepare_diagnostic_surface_consumption_text(
+        explanation_consumption.consumption
+    )
+    return _render_diagnostic_surface_consumption_line(consumption_text, indent=indent)
 
 
 def diagnostic_surface_definition_json(diagnostic_surface: str) -> dict[str, object]:

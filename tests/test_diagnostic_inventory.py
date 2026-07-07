@@ -66,6 +66,7 @@ from seed_runtime.diagnostic_inventory import (
     _render_diagnostic_surface_explanation_record_support_line,
     _render_diagnostic_surface_explanation_record_scope_line,
     _render_diagnostic_surface_explanation_boundary_line,
+    _render_diagnostic_surface_explanation_consumption_line,
     _render_diagnostic_surface_explanation_status_line,
     _render_diagnostic_surface_cli_flags_line,
     _prepare_diagnostic_surface_consumption_text,
@@ -1199,6 +1200,26 @@ def test_diagnostic_surface_explanation_boundary_line_rendering_precedes_line_se
         "diagnostic facts; does not emit cluster facts; does not read diagnostic facts"
     )
     assert set(boundary_line.__dataclass_fields__) == {"line"}
+
+
+def test_diagnostic_surface_explanation_consumption_line_rendering_precedes_line_set_assembly():
+    explanation = diagnostic_surface_explanation_json("diagnostic_shape_audit")[
+        "diagnostic_surface_explanation"
+    ]
+    explanation_consumption = _extract_diagnostic_surface_explanation_consumption(
+        explanation
+    )
+
+    consumption_line = _render_diagnostic_surface_explanation_consumption_line(
+        explanation_consumption, indent="    "
+    )
+
+    assert isinstance(consumption_line, _DiagnosticSurfaceConsumptionLine)
+    assert consumption_line.line == (
+        "    diagnostic_surface_consumption: uses_projected_state=false; "
+        "uses_repo_files=false; reads_diagnostic_facts=false"
+    )
+    assert set(consumption_line.__dataclass_fields__) == {"line"}
 
 
 def test_diagnostic_surface_explanation_cli_flag_display_preparation_precedes_line_set_assembly():
