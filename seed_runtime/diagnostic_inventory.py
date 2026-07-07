@@ -1481,9 +1481,8 @@ def _assemble_diagnostic_surface_definition_line_set(
             _render_diagnostic_surface_definition_implementation_reason_line(
                 definition, indent=field_indent.text
             ).line,
-            _render_diagnostic_surface_evidence_source_line(
-                definition["evidence_source"],
-                indent=field_indent.text,
+            _render_diagnostic_surface_definition_evidence_source_line(
+                definition, indent=field_indent.text
             ).line,
         )
     )
@@ -1574,6 +1573,14 @@ def _render_diagnostic_surface_definition_implementation_reason_line(
 ) -> _DiagnosticSurfaceImplementationReasonLine:
     return _render_diagnostic_surface_implementation_reason_line(
         definition["implementation_reason"], indent=indent
+    )
+
+
+def _render_diagnostic_surface_definition_evidence_source_line(
+    definition: dict[str, object], indent: str = "  "
+) -> _DiagnosticSurfaceEvidenceSourceLine:
+    return _render_diagnostic_surface_evidence_source_line(
+        definition["evidence_source"], indent=indent
     )
 
 
