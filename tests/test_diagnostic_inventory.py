@@ -74,6 +74,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_explanation_json_support_value,
     _prepare_diagnostic_surface_explanation_record_support_value,
     _prepare_diagnostic_surface_explanation_record_scope_value,
+    _prepare_diagnostic_surface_explanation_boundary_text,
     _render_diagnostic_surface_explanation_description_line,
     _render_diagnostic_surface_explanation_json_support_line,
     _render_diagnostic_surface_explanation_record_support_line,
@@ -1469,10 +1470,21 @@ def test_diagnostic_surface_explanation_boundary_line_rendering_precedes_line_se
     ]
     explanation_boundary = _extract_diagnostic_surface_explanation_boundary(explanation)
 
+    boundary_text = _prepare_diagnostic_surface_explanation_boundary_text(
+        explanation_boundary
+    )
     boundary_line = _render_diagnostic_surface_explanation_boundary_line(
-        explanation_boundary, indent="    "
+        boundary_text, indent="    "
     )
 
+    assert isinstance(boundary_text, _DiagnosticSurfaceBoundaryText)
+    assert boundary_text.text == (
+        "read-only; does not record; record_scope=none; does not write event "
+        "ledger; does not mutate cluster; does not use projected state; does not "
+        "use repository files; does not emit diagnostic facts; does not emit "
+        "cluster facts; does not read diagnostic facts"
+    )
+    assert set(boundary_text.__dataclass_fields__) == {"text"}
     assert isinstance(boundary_line, _DiagnosticSurfaceBoundaryLine)
     assert boundary_line.line == (
         "    diagnostic_surface_boundary: read-only; does not record; "

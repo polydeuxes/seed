@@ -1329,6 +1329,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
     record_scope_value = _prepare_diagnostic_surface_explanation_record_scope_value(
         explanation_definition
     )
+    boundary_text = _prepare_diagnostic_surface_explanation_boundary_text(
+        explanation_boundary
+    )
     field_indent = _select_diagnostic_surface_nested_definition_field_indent()
     return _DiagnosticSurfaceExplanationLineSet(
         lines=(
@@ -1355,7 +1358,7 @@ def _assemble_diagnostic_surface_explanation_line_set(
                 record_scope_value, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_explanation_boundary_line(
-                explanation_boundary, indent=field_indent.text
+                boundary_text, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_explanation_consumption_line(
                 explanation_consumption, indent=field_indent.text
@@ -1461,12 +1464,15 @@ def _render_diagnostic_surface_explanation_record_scope_line(
 
 
 def _render_diagnostic_surface_explanation_boundary_line(
-    explanation_boundary: _DiagnosticSurfaceExplanationBoundary, indent: str = "  "
+    boundary_text: _DiagnosticSurfaceBoundaryText, indent: str = "  "
 ) -> _DiagnosticSurfaceBoundaryLine:
-    boundary_text = _prepare_diagnostic_surface_boundary_text(
-        explanation_boundary.boundary
-    )
     return _render_diagnostic_surface_boundary_line(boundary_text, indent=indent)
+
+
+def _prepare_diagnostic_surface_explanation_boundary_text(
+    explanation_boundary: _DiagnosticSurfaceExplanationBoundary,
+) -> _DiagnosticSurfaceBoundaryText:
+    return _prepare_diagnostic_surface_boundary_text(explanation_boundary.boundary)
 
 
 def _render_diagnostic_surface_explanation_consumption_line(
