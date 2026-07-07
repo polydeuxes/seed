@@ -41,6 +41,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceShapeRegistrationLookup,
     _DiagnosticSurfaceShapeRegistrationStatusLine,
     _DiagnosticSurfaceStatusLine,
+    _DiagnosticSurfaceStatusValue,
     _compose_diagnostic_inventory,
     _assemble_diagnostic_surface_boundary_statement_set,
     _assemble_diagnostic_surface_definition_line_set,
@@ -75,6 +76,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_explanation_json_support_value,
     _prepare_diagnostic_surface_explanation_record_support_value,
     _prepare_diagnostic_surface_explanation_record_scope_value,
+    _prepare_diagnostic_surface_explanation_status_value,
     _prepare_diagnostic_surface_explanation_boundary_text,
     _prepare_diagnostic_surface_explanation_consumption_text,
     _render_diagnostic_surface_explanation_description_line,
@@ -1367,10 +1369,16 @@ def test_diagnostic_surface_explanation_status_line_rendering_precedes_line_set_
         explanation
     )
 
+    status_value = _prepare_diagnostic_surface_explanation_status_value(
+        explanation_definition
+    )
     status_line = _render_diagnostic_surface_explanation_status_line(
-        explanation_definition, indent="    "
+        status_value, indent="    "
     )
 
+    assert isinstance(status_value, _DiagnosticSurfaceStatusValue)
+    assert status_value.value == "known"
+    assert set(status_value.__dataclass_fields__) == {"value"}
     assert isinstance(status_line, _DiagnosticSurfaceStatusLine)
     assert status_line.line == "    status: known"
     assert set(status_line.__dataclass_fields__) == {"line"}

@@ -217,6 +217,13 @@ class _DiagnosticSurfaceTopLevelDefinitionFieldIndent:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceStatusValue:
+    """Implementation-local status value before line rendering."""
+
+    value: object
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceStatusLine:
     """Implementation-local status line before line-set assembly."""
 
@@ -1320,6 +1327,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
     flag_display = _prepare_diagnostic_surface_explanation_cli_flag_display(
         explanation_definition
     )
+    status_value = _prepare_diagnostic_surface_explanation_status_value(
+        explanation_definition
+    )
     description_text = _prepare_diagnostic_surface_explanation_description_text(
         explanation_definition
     )
@@ -1346,7 +1356,7 @@ def _assemble_diagnostic_surface_explanation_line_set(
             ).line,
             _render_diagnostic_surface_explanation_definition_section_line().line,
             _render_diagnostic_surface_explanation_status_line(
-                explanation_definition, indent=field_indent.text
+                status_value, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_explanation_cli_flags_line(
                 flag_display, indent=field_indent.text
@@ -1405,12 +1415,18 @@ def _prepare_diagnostic_surface_explanation_cli_flag_display(
     )
 
 
-def _render_diagnostic_surface_explanation_status_line(
-    explanation_definition: _DiagnosticSurfaceExplanationDefinition, indent: str = "  "
-) -> _DiagnosticSurfaceStatusLine:
-    return _render_diagnostic_surface_status_line(
-        explanation_definition.definition["status"], indent=indent
+def _prepare_diagnostic_surface_explanation_status_value(
+    explanation_definition: _DiagnosticSurfaceExplanationDefinition,
+) -> _DiagnosticSurfaceStatusValue:
+    return _DiagnosticSurfaceStatusValue(
+        value=explanation_definition.definition["status"]
     )
+
+
+def _render_diagnostic_surface_explanation_status_line(
+    status_value: _DiagnosticSurfaceStatusValue, indent: str = "  "
+) -> _DiagnosticSurfaceStatusLine:
+    return _render_diagnostic_surface_status_line(status_value.value, indent=indent)
 
 
 def _prepare_diagnostic_surface_explanation_description_text(
