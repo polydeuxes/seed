@@ -69,6 +69,7 @@ from seed_runtime.diagnostic_inventory import (
     _render_diagnostic_surface_explanation_boundary_line,
     _render_diagnostic_surface_explanation_consumption_line,
     _render_diagnostic_surface_explanation_definition_heading_line,
+    _render_diagnostic_surface_definition_identity_heading_line,
     _render_diagnostic_surface_explanation_status_line,
     _render_diagnostic_surface_cli_flags_line,
     _prepare_diagnostic_surface_consumption_text,
@@ -645,6 +646,20 @@ def test_unknown_diagnostic_surface_definition_production_precedes_wrapper_compo
             "implementation_reason": "unknown diagnostic surface; no diagnostic inventory entry exists",
         }
     }
+
+
+def test_diagnostic_surface_definition_identity_heading_line_rendering_precedes_line_set_assembly():
+    definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
+        "diagnostic_surface_definition"
+    ]
+
+    heading_line = _render_diagnostic_surface_definition_identity_heading_line(
+        definition
+    )
+
+    assert isinstance(heading_line, _DiagnosticSurfaceHeadingLine)
+    assert heading_line.line == "DiagnosticSurface definition: diagnostic_shape_audit"
+    assert set(heading_line.__dataclass_fields__) == {"line"}
 
 
 def test_diagnostic_surface_definition_line_set_assembly_precedes_human_rendering():

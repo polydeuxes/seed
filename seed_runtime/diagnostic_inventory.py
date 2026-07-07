@@ -1445,8 +1445,8 @@ def _assemble_diagnostic_surface_definition_line_set(
     field_indent = _select_diagnostic_surface_top_level_definition_field_indent()
     return _DiagnosticSurfaceDefinitionLineSet(
         lines=(
-            _render_diagnostic_surface_definition_heading_line(
-                definition["diagnostic_name"]
+            _render_diagnostic_surface_definition_identity_heading_line(
+                definition
             ).line,
             _render_diagnostic_surface_status_line(
                 definition["status"], indent=field_indent.text
@@ -1489,6 +1489,14 @@ def _assemble_diagnostic_surface_definition_line_set(
                 indent=field_indent.text,
             ).line,
         )
+    )
+
+
+def _render_diagnostic_surface_definition_identity_heading_line(
+    definition: dict[str, object],
+) -> _DiagnosticSurfaceHeadingLine:
+    return _render_diagnostic_surface_definition_heading_line(
+        definition["diagnostic_name"]
     )
 
 
