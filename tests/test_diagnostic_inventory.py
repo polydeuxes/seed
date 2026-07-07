@@ -35,6 +35,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceExplanationLineSet,
     _DiagnosticSurfaceImplementationReasonLine,
     _DiagnosticSurfaceInventoryRegistrationLine,
+    _DiagnosticSurfaceJsonSupportFieldLabel,
     _DiagnosticSurfaceJsonSupportLine,
     _DiagnosticSurfaceJsonSupportValue,
     _DiagnosticSurfaceNameValue,
@@ -81,6 +82,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_explanation_cli_flags_field_label,
     _prepare_diagnostic_surface_explanation_description_text,
     _prepare_diagnostic_surface_explanation_description_field_label,
+    _prepare_diagnostic_surface_explanation_json_support_field_label,
     _prepare_diagnostic_surface_explanation_json_support_value,
     _prepare_diagnostic_surface_explanation_name_value,
     _prepare_diagnostic_surface_explanation_record_support_value,
@@ -1448,13 +1450,19 @@ def test_diagnostic_surface_explanation_json_support_line_rendering_precedes_lin
     json_support_value = _prepare_diagnostic_surface_explanation_json_support_value(
         explanation_definition
     )
+    json_support_field_label = (
+        _prepare_diagnostic_surface_explanation_json_support_field_label()
+    )
     json_support_line = _render_diagnostic_surface_explanation_json_support_line(
-        json_support_value, indent="    "
+        json_support_value, field_label=json_support_field_label.text, indent="    "
     )
 
     assert isinstance(json_support_value, _DiagnosticSurfaceJsonSupportValue)
     assert json_support_value.value is True
     assert set(json_support_value.__dataclass_fields__) == {"value"}
+    assert isinstance(json_support_field_label, _DiagnosticSurfaceJsonSupportFieldLabel)
+    assert json_support_field_label.text == "supports_json"
+    assert set(json_support_field_label.__dataclass_fields__) == {"text"}
     assert isinstance(json_support_line, _DiagnosticSurfaceJsonSupportLine)
     assert json_support_line.line == "    supports_json: true"
     assert set(json_support_line.__dataclass_fields__) == {"line"}
