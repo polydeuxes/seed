@@ -9,6 +9,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceBoundaryText,
     _DiagnosticSurfaceBoundaryLine,
     _DiagnosticSurfaceCliFlagDisplay,
+    _DiagnosticSurfaceCliFlagsFieldLabel,
     _DiagnosticSurfaceCliFlagsLine,
     _DiagnosticSurfaceExplanationComposition,
     _KnownDiagnosticSurfaceDefinition,
@@ -76,6 +77,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_definition_record_support_value,
     _prepare_diagnostic_surface_definition_record_scope_value,
     _prepare_diagnostic_surface_explanation_cli_flag_display,
+    _prepare_diagnostic_surface_explanation_cli_flags_field_label,
     _prepare_diagnostic_surface_explanation_description_text,
     _prepare_diagnostic_surface_explanation_json_support_value,
     _prepare_diagnostic_surface_explanation_name_value,
@@ -1624,10 +1626,16 @@ def test_diagnostic_surface_explanation_cli_flags_line_rendering_precedes_line_s
         explanation_definition
     )
 
+    cli_flags_field_label = (
+        _prepare_diagnostic_surface_explanation_cli_flags_field_label()
+    )
     cli_flags_line = _render_diagnostic_surface_explanation_cli_flags_line(
-        flag_display, indent="    "
+        flag_display, field_label=cli_flags_field_label.text, indent="    "
     )
 
+    assert isinstance(cli_flags_field_label, _DiagnosticSurfaceCliFlagsFieldLabel)
+    assert cli_flags_field_label.text == "cli_flags"
+    assert set(cli_flags_field_label.__dataclass_fields__) == {"text"}
     assert isinstance(cli_flags_line, _DiagnosticSurfaceCliFlagsLine)
     assert cli_flags_line.line == "    cli_flags: --diagnostic-shape-audit"
     assert set(cli_flags_line.__dataclass_fields__) == {"line"}
