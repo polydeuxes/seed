@@ -378,6 +378,13 @@ class _DiagnosticSurfaceBoundaryText:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceBoundaryFieldLabel:
+    """Implementation-local boundary field label before line rendering."""
+
+    text: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceBoundaryLine:
     """Implementation-local boundary line before human line-set assembly."""
 
@@ -1411,6 +1418,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
     boundary_text = _prepare_diagnostic_surface_explanation_boundary_text(
         explanation_boundary
     )
+    boundary_field_label = (
+        _prepare_diagnostic_surface_explanation_boundary_field_label()
+    )
     consumption_text = _prepare_diagnostic_surface_explanation_consumption_text(
         explanation_consumption
     )
@@ -1476,7 +1486,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
                 indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_explanation_boundary_line(
-                boundary_text, indent=field_indent.text
+                boundary_text,
+                field_label=boundary_field_label.text,
+                indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_explanation_consumption_line(
                 consumption_text, indent=field_indent.text
@@ -1646,9 +1658,19 @@ def _render_diagnostic_surface_explanation_record_scope_line(
 
 
 def _render_diagnostic_surface_explanation_boundary_line(
-    boundary_text: _DiagnosticSurfaceBoundaryText, indent: str = "  "
+    boundary_text: _DiagnosticSurfaceBoundaryText,
+    field_label: str = "diagnostic_surface_boundary",
+    indent: str = "  ",
 ) -> _DiagnosticSurfaceBoundaryLine:
-    return _render_diagnostic_surface_boundary_line(boundary_text, indent=indent)
+    return _render_diagnostic_surface_boundary_line(
+        boundary_text, field_label=field_label, indent=indent
+    )
+
+
+def _prepare_diagnostic_surface_explanation_boundary_field_label() -> (
+    _DiagnosticSurfaceBoundaryFieldLabel
+):
+    return _DiagnosticSurfaceBoundaryFieldLabel(text="diagnostic_surface_boundary")
 
 
 def _prepare_diagnostic_surface_explanation_boundary_text(
@@ -2116,10 +2138,12 @@ def _format_diagnostic_surface_boundary(boundary: object, indent: str = "  ") ->
 
 
 def _render_diagnostic_surface_boundary_line(
-    boundary_text: _DiagnosticSurfaceBoundaryText, indent: str = "  "
+    boundary_text: _DiagnosticSurfaceBoundaryText,
+    field_label: str = "diagnostic_surface_boundary",
+    indent: str = "  ",
 ) -> _DiagnosticSurfaceBoundaryLine:
     return _DiagnosticSurfaceBoundaryLine(
-        line=f"{indent}diagnostic_surface_boundary: {boundary_text.text}"
+        line=f"{indent}{field_label}: {boundary_text.text}"
     )
 
 
