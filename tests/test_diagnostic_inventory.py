@@ -22,6 +22,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceConsumptionIdentification,
     _DiagnosticSurfaceConsumptionText,
     _DiagnosticSurfaceDefinitionLineSet,
+    _DiagnosticSurfaceDescriptionLine,
     _DiagnosticSurfaceEvidenceSourceLine,
     _DiagnosticSurfaceExplanationConsumption,
     _DiagnosticSurfaceExplanationLineSet,
@@ -56,6 +57,7 @@ from seed_runtime.diagnostic_inventory import (
     _render_diagnostic_surface_boundary_line,
     _prepare_diagnostic_surface_cli_flag_display,
     _prepare_diagnostic_surface_explanation_cli_flag_display,
+    _render_diagnostic_surface_explanation_description_line,
     _render_diagnostic_surface_explanation_status_line,
     _render_diagnostic_surface_cli_flags_line,
     _prepare_diagnostic_surface_consumption_text,
@@ -1097,6 +1099,27 @@ def test_diagnostic_surface_explanation_status_line_rendering_precedes_line_set_
     assert isinstance(status_line, _DiagnosticSurfaceStatusLine)
     assert status_line.line == "    status: known"
     assert set(status_line.__dataclass_fields__) == {"line"}
+
+
+def test_diagnostic_surface_explanation_description_line_rendering_precedes_line_set_assembly():
+    explanation = diagnostic_surface_explanation_json("diagnostic_shape_audit")[
+        "diagnostic_surface_explanation"
+    ]
+    explanation_definition = _extract_diagnostic_surface_explanation_definition(
+        explanation
+    )
+
+    description_line = _render_diagnostic_surface_explanation_description_line(
+        explanation_definition, indent="    "
+    )
+
+    assert isinstance(description_line, _DiagnosticSurfaceDescriptionLine)
+    assert (
+        description_line.line
+        == "    description: Compares diagnostic registry declarations with static "
+        "implementation shape without recording or mutation."
+    )
+    assert set(description_line.__dataclass_fields__) == {"line"}
 
 
 def test_diagnostic_surface_explanation_cli_flag_display_preparation_precedes_line_set_assembly():
