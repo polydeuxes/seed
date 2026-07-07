@@ -23,6 +23,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceConsumptionText,
     _DiagnosticSurfaceDefinitionLineSet,
     _DiagnosticSurfaceEvidenceSourceLine,
+    _DiagnosticSurfaceExplanationConsumption,
     _DiagnosticSurfaceExplanationLineSet,
     _DiagnosticSurfaceImplementationReasonLine,
     _DiagnosticSurfaceInventoryRegistrationLine,
@@ -43,6 +44,7 @@ from seed_runtime.diagnostic_inventory import (
     _evaluate_diagnostic_surface_read_only_boundary,
     _extract_diagnostic_surface_boundary_statement_sequence,
     _extract_diagnostic_surface_consumption_declaration_sequence,
+    _extract_diagnostic_surface_explanation_consumption,
     _format_diagnostic_surface_consumption,
     _identify_diagnostic_surface_boundary,
     _identify_diagnostic_surface_consumption,
@@ -1058,6 +1060,23 @@ def test_diagnostic_surface_explanation_line_set_assembly_precedes_human_renderi
     assert format_diagnostic_surface_explanation("diagnostic_shape_audit") == "\n".join(
         line_set.lines
     )
+
+
+def test_diagnostic_surface_explanation_consumption_extraction_precedes_line_set_assembly():
+    explanation = diagnostic_surface_explanation_json("diagnostic_shape_audit")[
+        "diagnostic_surface_explanation"
+    ]
+
+    explanation_consumption = _extract_diagnostic_surface_explanation_consumption(
+        explanation
+    )
+
+    assert isinstance(explanation_consumption, _DiagnosticSurfaceExplanationConsumption)
+    assert (
+        explanation_consumption.consumption
+        == explanation["diagnostic_surface_consumption"]
+    )
+    assert set(explanation_consumption.__dataclass_fields__) == {"consumption"}
 
 
 def test_diagnostic_surface_explanation_human_renders_coherent_composition(capsys):
