@@ -1475,9 +1475,8 @@ def _assemble_diagnostic_surface_definition_line_set(
             _render_diagnostic_surface_definition_inventory_registration_line(
                 definition, indent=field_indent.text
             ).line,
-            _render_diagnostic_surface_shape_registration_status_line(
-                definition["shape_registration_status"],
-                indent=field_indent.text,
+            _render_diagnostic_surface_definition_shape_registration_status_line(
+                definition, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_implementation_reason_line(
                 definition["implementation_reason"],
@@ -1560,6 +1559,14 @@ def _render_diagnostic_surface_definition_inventory_registration_line(
 ) -> _DiagnosticSurfaceInventoryRegistrationLine:
     return _render_diagnostic_surface_inventory_registration_line(
         definition["diagnostic_inventory_registration"], indent=indent
+    )
+
+
+def _render_diagnostic_surface_definition_shape_registration_status_line(
+    definition: dict[str, object], indent: str = "  "
+) -> _DiagnosticSurfaceShapeRegistrationStatusLine:
+    return _render_diagnostic_surface_shape_registration_status_line(
+        definition["shape_registration_status"], indent=indent
     )
 
 
