@@ -1266,8 +1266,8 @@ def _assemble_diagnostic_surface_explanation_line_set(
     field_indent = _select_diagnostic_surface_nested_definition_field_indent()
     return _DiagnosticSurfaceExplanationLineSet(
         lines=(
-            _render_diagnostic_surface_heading_line(
-                "explanation", definition["diagnostic_name"]
+            _render_diagnostic_surface_explanation_heading_line(
+                definition["diagnostic_name"]
             ).line,
             _render_diagnostic_surface_definition_section_line().line,
             _render_diagnostic_surface_status_line(
@@ -1368,6 +1368,12 @@ def _render_diagnostic_surface_definition_heading_line(
     diagnostic_name: object,
 ) -> _DiagnosticSurfaceHeadingLine:
     return _render_diagnostic_surface_heading_line("definition", diagnostic_name)
+
+
+def _render_diagnostic_surface_explanation_heading_line(
+    diagnostic_name: object,
+) -> _DiagnosticSurfaceHeadingLine:
+    return _render_diagnostic_surface_heading_line("explanation", diagnostic_name)
 
 
 def _render_diagnostic_surface_heading_line(
