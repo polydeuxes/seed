@@ -7,6 +7,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticInventoryCompositionInput,
     _DiagnosticSurfaceBoundaryStatementSequence,
     _DiagnosticSurfaceBoundaryText,
+    _DiagnosticSurfaceBoundaryFieldLabel,
     _DiagnosticSurfaceBoundaryLine,
     _DiagnosticSurfaceCliFlagDisplay,
     _DiagnosticSurfaceCliFlagsFieldLabel,
@@ -96,6 +97,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_explanation_status_value,
     _prepare_diagnostic_surface_explanation_status_field_label,
     _prepare_diagnostic_surface_explanation_boundary_text,
+    _prepare_diagnostic_surface_explanation_boundary_field_label,
     _prepare_diagnostic_surface_explanation_consumption_text,
     _render_diagnostic_surface_explanation_description_line,
     _render_diagnostic_surface_explanation_json_support_line,
@@ -1541,8 +1543,11 @@ def test_diagnostic_surface_explanation_boundary_line_rendering_precedes_line_se
     boundary_text = _prepare_diagnostic_surface_explanation_boundary_text(
         explanation_boundary
     )
+    boundary_field_label = (
+        _prepare_diagnostic_surface_explanation_boundary_field_label()
+    )
     boundary_line = _render_diagnostic_surface_explanation_boundary_line(
-        boundary_text, indent="    "
+        boundary_text, field_label=boundary_field_label.text, indent="    "
     )
 
     assert isinstance(boundary_text, _DiagnosticSurfaceBoundaryText)
@@ -1553,6 +1558,9 @@ def test_diagnostic_surface_explanation_boundary_line_rendering_precedes_line_se
         "cluster facts; does not read diagnostic facts"
     )
     assert set(boundary_text.__dataclass_fields__) == {"text"}
+    assert isinstance(boundary_field_label, _DiagnosticSurfaceBoundaryFieldLabel)
+    assert boundary_field_label.text == "diagnostic_surface_boundary"
+    assert set(boundary_field_label.__dataclass_fields__) == {"text"}
     assert isinstance(boundary_line, _DiagnosticSurfaceBoundaryLine)
     assert boundary_line.line == (
         "    diagnostic_surface_boundary: read-only; does not record; "
