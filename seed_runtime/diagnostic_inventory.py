@@ -266,6 +266,13 @@ class _DiagnosticSurfaceDescriptionLine:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceDescriptionFieldLabel:
+    """Implementation-local description field label before line rendering."""
+
+    text: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceDescriptionText:
     """Implementation-local description text before line rendering."""
 
@@ -1396,6 +1403,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
     cli_flags_field_label = (
         _prepare_diagnostic_surface_explanation_cli_flags_field_label()
     )
+    description_field_label = (
+        _prepare_diagnostic_surface_explanation_description_field_label()
+    )
     field_indent = _select_diagnostic_surface_nested_definition_field_indent()
     return _DiagnosticSurfaceExplanationLineSet(
         lines=(
@@ -1416,7 +1426,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
                 indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_explanation_description_line(
-                description_text, indent=field_indent.text
+                description_text,
+                field_label=description_field_label.text,
+                indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_explanation_json_support_line(
                 json_support_value, indent=field_indent.text
@@ -1509,11 +1521,19 @@ def _prepare_diagnostic_surface_explanation_description_text(
     )
 
 
+def _prepare_diagnostic_surface_explanation_description_field_label() -> (
+    _DiagnosticSurfaceDescriptionFieldLabel
+):
+    return _DiagnosticSurfaceDescriptionFieldLabel(text="description")
+
+
 def _render_diagnostic_surface_explanation_description_line(
-    description_text: _DiagnosticSurfaceDescriptionText, indent: str = "  "
+    description_text: _DiagnosticSurfaceDescriptionText,
+    field_label: str = "description",
+    indent: str = "  ",
 ) -> _DiagnosticSurfaceDescriptionLine:
     return _render_diagnostic_surface_description_line(
-        description_text.text, indent=indent
+        description_text.text, field_label=field_label, indent=indent
     )
 
 
@@ -1889,9 +1909,11 @@ def _render_diagnostic_surface_cli_flags_line(
 
 
 def _render_diagnostic_surface_description_line(
-    description: object, indent: str = "  "
+    description: object, field_label: str = "description", indent: str = "  "
 ) -> _DiagnosticSurfaceDescriptionLine:
-    return _DiagnosticSurfaceDescriptionLine(line=f"{indent}description: {description}")
+    return _DiagnosticSurfaceDescriptionLine(
+        line=f"{indent}{field_label}: {description}"
+    )
 
 
 def _render_diagnostic_surface_json_support_line(

@@ -28,6 +28,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceDefinitionSectionLabel,
     _DiagnosticSurfaceDefinitionSectionIndent,
     _DiagnosticSurfaceDescriptionLine,
+    _DiagnosticSurfaceDescriptionFieldLabel,
     _DiagnosticSurfaceDescriptionText,
     _DiagnosticSurfaceEvidenceSourceLine,
     _DiagnosticSurfaceExplanationConsumption,
@@ -79,6 +80,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_explanation_cli_flag_display,
     _prepare_diagnostic_surface_explanation_cli_flags_field_label,
     _prepare_diagnostic_surface_explanation_description_text,
+    _prepare_diagnostic_surface_explanation_description_field_label,
     _prepare_diagnostic_surface_explanation_json_support_value,
     _prepare_diagnostic_surface_explanation_name_value,
     _prepare_diagnostic_surface_explanation_record_support_value,
@@ -1409,8 +1411,11 @@ def test_diagnostic_surface_explanation_description_line_rendering_precedes_line
     description_text = _prepare_diagnostic_surface_explanation_description_text(
         explanation_definition
     )
+    description_field_label = (
+        _prepare_diagnostic_surface_explanation_description_field_label()
+    )
     description_line = _render_diagnostic_surface_explanation_description_line(
-        description_text, indent="    "
+        description_text, field_label=description_field_label.text, indent="    "
     )
 
     assert isinstance(description_text, _DiagnosticSurfaceDescriptionText)
@@ -1420,6 +1425,9 @@ def test_diagnostic_surface_explanation_description_line_rendering_precedes_line
         "implementation shape without recording or mutation."
     )
     assert set(description_text.__dataclass_fields__) == {"text"}
+    assert isinstance(description_field_label, _DiagnosticSurfaceDescriptionFieldLabel)
+    assert description_field_label.text == "description"
+    assert set(description_field_label.__dataclass_fields__) == {"text"}
     assert isinstance(description_line, _DiagnosticSurfaceDescriptionLine)
     assert (
         description_line.line
