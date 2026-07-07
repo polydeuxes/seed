@@ -33,6 +33,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceInventoryRegistrationLine,
     _DiagnosticSurfaceJsonSupportLine,
     _DiagnosticSurfaceJsonSupportValue,
+    _DiagnosticSurfaceNameValue,
     _DiagnosticSurfaceRecordSupportLine,
     _DiagnosticSurfaceRecordSupportValue,
     _DiagnosticSurfaceRecordScopeLine,
@@ -74,6 +75,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_explanation_cli_flag_display,
     _prepare_diagnostic_surface_explanation_description_text,
     _prepare_diagnostic_surface_explanation_json_support_value,
+    _prepare_diagnostic_surface_explanation_name_value,
     _prepare_diagnostic_surface_explanation_record_support_value,
     _prepare_diagnostic_surface_explanation_record_scope_value,
     _prepare_diagnostic_surface_explanation_status_value,
@@ -1551,10 +1553,16 @@ def test_diagnostic_surface_explanation_definition_heading_line_rendering_preced
         explanation
     )
 
-    heading_line = _render_diagnostic_surface_explanation_definition_heading_line(
+    name_value = _prepare_diagnostic_surface_explanation_name_value(
         explanation_definition
     )
+    heading_line = _render_diagnostic_surface_explanation_definition_heading_line(
+        name_value
+    )
 
+    assert isinstance(name_value, _DiagnosticSurfaceNameValue)
+    assert name_value.value == "diagnostic_shape_audit"
+    assert set(name_value.__dataclass_fields__) == {"value"}
     assert isinstance(heading_line, _DiagnosticSurfaceHeadingLine)
     assert heading_line.line == "DiagnosticSurface explanation: diagnostic_shape_audit"
     assert set(heading_line.__dataclass_fields__) == {"line"}

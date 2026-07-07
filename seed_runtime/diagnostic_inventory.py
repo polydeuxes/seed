@@ -189,6 +189,13 @@ class _DiagnosticSurfaceExplanationLineSet:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceNameValue:
+    """Implementation-local diagnostic surface name before heading rendering."""
+
+    value: object
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceHeadingLine:
     """Implementation-local heading line before line-set assembly."""
 
@@ -1324,6 +1331,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
     explanation_consumption = _extract_diagnostic_surface_explanation_consumption(
         explanation
     )
+    name_value = _prepare_diagnostic_surface_explanation_name_value(
+        explanation_definition
+    )
     flag_display = _prepare_diagnostic_surface_explanation_cli_flag_display(
         explanation_definition
     )
@@ -1352,7 +1362,7 @@ def _assemble_diagnostic_surface_explanation_line_set(
     return _DiagnosticSurfaceExplanationLineSet(
         lines=(
             _render_diagnostic_surface_explanation_definition_heading_line(
-                explanation_definition
+                name_value
             ).line,
             _render_diagnostic_surface_explanation_definition_section_line().line,
             _render_diagnostic_surface_explanation_status_line(
@@ -1404,6 +1414,14 @@ def _extract_diagnostic_surface_explanation_consumption(
 ) -> _DiagnosticSurfaceExplanationConsumption:
     return _DiagnosticSurfaceExplanationConsumption(
         consumption=explanation["diagnostic_surface_consumption"]
+    )
+
+
+def _prepare_diagnostic_surface_explanation_name_value(
+    explanation_definition: _DiagnosticSurfaceExplanationDefinition,
+) -> _DiagnosticSurfaceNameValue:
+    return _DiagnosticSurfaceNameValue(
+        value=explanation_definition.definition["diagnostic_name"]
     )
 
 
@@ -1521,11 +1539,9 @@ def _prepare_diagnostic_surface_explanation_consumption_text(
 
 
 def _render_diagnostic_surface_explanation_definition_heading_line(
-    explanation_definition: _DiagnosticSurfaceExplanationDefinition,
+    name_value: _DiagnosticSurfaceNameValue,
 ) -> _DiagnosticSurfaceHeadingLine:
-    return _render_diagnostic_surface_explanation_heading_line(
-        explanation_definition.definition["diagnostic_name"]
-    )
+    return _render_diagnostic_surface_explanation_heading_line(name_value.value)
 
 
 def _render_diagnostic_surface_explanation_definition_section_line() -> (
