@@ -175,6 +175,13 @@ class _DiagnosticSurfaceHeadingLine:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceDefinitionSectionLine:
+    """Implementation-local definition section line before line-set assembly."""
+
+    line: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceStatusLine:
     """Implementation-local status line before line-set assembly."""
 
@@ -1247,7 +1254,7 @@ def _assemble_diagnostic_surface_explanation_line_set(
             _render_diagnostic_surface_heading_line(
                 "explanation", definition["diagnostic_name"]
             ).line,
-            "  definition:",
+            _render_diagnostic_surface_definition_section_line().line,
             _render_diagnostic_surface_status_line(
                 definition["status"], indent="    "
             ).line,
@@ -1335,6 +1342,12 @@ def _render_diagnostic_surface_heading_line(
     return _DiagnosticSurfaceHeadingLine(
         line=f"DiagnosticSurface {surface_kind}: {diagnostic_name}"
     )
+
+
+def _render_diagnostic_surface_definition_section_line() -> (
+    _DiagnosticSurfaceDefinitionSectionLine
+):
+    return _DiagnosticSurfaceDefinitionSectionLine(line="  definition:")
 
 
 def _render_diagnostic_surface_status_line(
