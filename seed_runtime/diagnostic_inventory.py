@@ -175,6 +175,13 @@ class _DiagnosticSurfaceStatusLine:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceDescriptionLine:
+    """Implementation-local description line before line-set assembly."""
+
+    line: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceCliFlagDisplay:
     """Implementation-local CLI flag display text before human rendering."""
 
@@ -1215,7 +1222,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
                 definition["status"], indent="    "
             ).line,
             _render_diagnostic_surface_cli_flags_line(flag_display, indent="    ").line,
-            f"    description: {definition['description']}",
+            _render_diagnostic_surface_description_line(
+                definition["description"], indent="    "
+            ).line,
             f"    supports_json: {str(definition['supports_json']).lower()}",
             f"    supports_record: {str(definition['supports_record']).lower()}",
             f"    record_scope: {definition['record_scope']}",
@@ -1250,7 +1259,7 @@ def _assemble_diagnostic_surface_definition_line_set(
             f"DiagnosticSurface definition: {definition['diagnostic_name']}",
             _render_diagnostic_surface_status_line(definition["status"]).line,
             _render_diagnostic_surface_cli_flags_line(flag_display).line,
-            f"  description: {definition['description']}",
+            _render_diagnostic_surface_description_line(definition["description"]).line,
             f"  supports_json: {str(definition['supports_json']).lower()}",
             f"  supports_record: {str(definition['supports_record']).lower()}",
             f"  record_scope: {definition['record_scope']}",
@@ -1288,6 +1297,12 @@ def _render_diagnostic_surface_cli_flags_line(
     return _DiagnosticSurfaceCliFlagsLine(
         line=f"{indent}cli_flags: {flag_display.text}"
     )
+
+
+def _render_diagnostic_surface_description_line(
+    description: object, indent: str = "  "
+) -> _DiagnosticSurfaceDescriptionLine:
+    return _DiagnosticSurfaceDescriptionLine(line=f"{indent}description: {description}")
 
 
 def _prepare_diagnostic_surface_cli_flag_display(
