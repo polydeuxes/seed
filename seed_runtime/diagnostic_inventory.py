@@ -252,6 +252,13 @@ class _DiagnosticSurfaceStatusLine:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceStatusFieldLabel:
+    """Implementation-local status field label before status line rendering."""
+
+    text: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceDescriptionLine:
     """Implementation-local description line before line-set assembly."""
 
@@ -1378,6 +1385,7 @@ def _assemble_diagnostic_surface_explanation_line_set(
     definition_section_indent = (
         _select_diagnostic_surface_explanation_definition_section_indent()
     )
+    status_field_label = _prepare_diagnostic_surface_explanation_status_field_label()
     field_indent = _select_diagnostic_surface_nested_definition_field_indent()
     return _DiagnosticSurfaceExplanationLineSet(
         lines=(
@@ -1388,7 +1396,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
                 definition_section_label, indent=definition_section_indent.text
             ).line,
             _render_diagnostic_surface_explanation_status_line(
-                status_value, indent=field_indent.text
+                status_value,
+                field_label=status_field_label.text,
+                indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_explanation_cli_flags_line(
                 flag_display, indent=field_indent.text
@@ -1463,10 +1473,20 @@ def _prepare_diagnostic_surface_explanation_status_value(
     )
 
 
+def _prepare_diagnostic_surface_explanation_status_field_label() -> (
+    _DiagnosticSurfaceStatusFieldLabel
+):
+    return _DiagnosticSurfaceStatusFieldLabel(text="status")
+
+
 def _render_diagnostic_surface_explanation_status_line(
-    status_value: _DiagnosticSurfaceStatusValue, indent: str = "  "
+    status_value: _DiagnosticSurfaceStatusValue,
+    field_label: str = "status",
+    indent: str = "  ",
 ) -> _DiagnosticSurfaceStatusLine:
-    return _render_diagnostic_surface_status_line(status_value.value, indent=indent)
+    return _render_diagnostic_surface_status_line(
+        status_value.value, field_label=field_label, indent=indent
+    )
 
 
 def _prepare_diagnostic_surface_explanation_description_text(
@@ -1831,9 +1851,9 @@ def _select_diagnostic_surface_top_level_definition_field_indent() -> (
 
 
 def _render_diagnostic_surface_status_line(
-    status: object, indent: str = "  "
+    status: object, field_label: str = "status", indent: str = "  "
 ) -> _DiagnosticSurfaceStatusLine:
-    return _DiagnosticSurfaceStatusLine(line=f"{indent}status: {status}")
+    return _DiagnosticSurfaceStatusLine(line=f"{indent}{field_label}: {status}")
 
 
 def _render_diagnostic_surface_cli_flags_line(

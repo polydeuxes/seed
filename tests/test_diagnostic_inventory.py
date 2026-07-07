@@ -45,6 +45,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceShapeRegistrationStatusLine,
     _DiagnosticSurfaceStatusLine,
     _DiagnosticSurfaceStatusValue,
+    _DiagnosticSurfaceStatusFieldLabel,
     _compose_diagnostic_inventory,
     _assemble_diagnostic_surface_boundary_statement_set,
     _assemble_diagnostic_surface_definition_line_set,
@@ -83,6 +84,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_explanation_definition_section_label,
     _select_diagnostic_surface_explanation_definition_section_indent,
     _prepare_diagnostic_surface_explanation_status_value,
+    _prepare_diagnostic_surface_explanation_status_field_label,
     _prepare_diagnostic_surface_explanation_boundary_text,
     _prepare_diagnostic_surface_explanation_consumption_text,
     _render_diagnostic_surface_explanation_description_line,
@@ -1378,13 +1380,17 @@ def test_diagnostic_surface_explanation_status_line_rendering_precedes_line_set_
     status_value = _prepare_diagnostic_surface_explanation_status_value(
         explanation_definition
     )
+    status_field_label = _prepare_diagnostic_surface_explanation_status_field_label()
     status_line = _render_diagnostic_surface_explanation_status_line(
-        status_value, indent="    "
+        status_value, field_label=status_field_label.text, indent="    "
     )
 
     assert isinstance(status_value, _DiagnosticSurfaceStatusValue)
     assert status_value.value == "known"
     assert set(status_value.__dataclass_fields__) == {"value"}
+    assert isinstance(status_field_label, _DiagnosticSurfaceStatusFieldLabel)
+    assert status_field_label.text == "status"
+    assert set(status_field_label.__dataclass_fields__) == {"text"}
     assert isinstance(status_line, _DiagnosticSurfaceStatusLine)
     assert status_line.line == "    status: known"
     assert set(status_line.__dataclass_fields__) == {"line"}
