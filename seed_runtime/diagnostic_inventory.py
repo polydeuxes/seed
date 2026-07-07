@@ -406,6 +406,13 @@ class _DiagnosticSurfaceConsumptionText:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceConsumptionFieldLabel:
+    """Implementation-local consumption field label before line rendering."""
+
+    text: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceConsumptionLine:
     """Implementation-local consumption line before human line-set assembly."""
 
@@ -1424,6 +1431,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
     consumption_text = _prepare_diagnostic_surface_explanation_consumption_text(
         explanation_consumption
     )
+    consumption_field_label = (
+        _prepare_diagnostic_surface_explanation_consumption_field_label()
+    )
     definition_section_label = (
         _prepare_diagnostic_surface_explanation_definition_section_label()
     )
@@ -1491,7 +1501,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
                 indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_explanation_consumption_line(
-                consumption_text, indent=field_indent.text
+                consumption_text,
+                field_label=consumption_field_label.text,
+                indent=field_indent.text,
             ).line,
         )
     )
@@ -1681,9 +1693,20 @@ def _prepare_diagnostic_surface_explanation_boundary_text(
 
 def _render_diagnostic_surface_explanation_consumption_line(
     consumption_text: _DiagnosticSurfaceConsumptionText,
+    field_label: str = "diagnostic_surface_consumption",
     indent: str = "  ",
 ) -> _DiagnosticSurfaceConsumptionLine:
-    return _render_diagnostic_surface_consumption_line(consumption_text, indent=indent)
+    return _render_diagnostic_surface_consumption_line(
+        consumption_text, field_label=field_label, indent=indent
+    )
+
+
+def _prepare_diagnostic_surface_explanation_consumption_field_label() -> (
+    _DiagnosticSurfaceConsumptionFieldLabel
+):
+    return _DiagnosticSurfaceConsumptionFieldLabel(
+        text="diagnostic_surface_consumption"
+    )
 
 
 def _prepare_diagnostic_surface_explanation_consumption_text(
@@ -2181,10 +2204,12 @@ def _format_diagnostic_surface_consumption(
 
 
 def _render_diagnostic_surface_consumption_line(
-    consumption_text: _DiagnosticSurfaceConsumptionText, indent: str = "  "
+    consumption_text: _DiagnosticSurfaceConsumptionText,
+    field_label: str = "diagnostic_surface_consumption",
+    indent: str = "  ",
 ) -> _DiagnosticSurfaceConsumptionLine:
     return _DiagnosticSurfaceConsumptionLine(
-        line=f"{indent}diagnostic_surface_consumption: {consumption_text.text}"
+        line=f"{indent}{field_label}: {consumption_text.text}"
     )
 
 
