@@ -308,6 +308,13 @@ class _DiagnosticSurfaceRecordSupportValue:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceRecordSupportFieldLabel:
+    """Implementation-local record support field label before line rendering."""
+
+    text: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceRecordSupportLine:
     """Implementation-local record support line before line-set assembly."""
 
@@ -1416,6 +1423,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
     json_support_field_label = (
         _prepare_diagnostic_surface_explanation_json_support_field_label()
     )
+    record_support_field_label = (
+        _prepare_diagnostic_surface_explanation_record_support_field_label()
+    )
     field_indent = _select_diagnostic_surface_nested_definition_field_indent()
     return _DiagnosticSurfaceExplanationLineSet(
         lines=(
@@ -1446,7 +1456,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
                 indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_explanation_record_support_line(
-                record_support_value, indent=field_indent.text
+                record_support_value,
+                field_label=record_support_field_label.text,
+                indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_explanation_record_scope_line(
                 record_scope_value, indent=field_indent.text
@@ -1581,11 +1593,19 @@ def _prepare_diagnostic_surface_explanation_record_support_value(
     )
 
 
+def _prepare_diagnostic_surface_explanation_record_support_field_label() -> (
+    _DiagnosticSurfaceRecordSupportFieldLabel
+):
+    return _DiagnosticSurfaceRecordSupportFieldLabel(text="supports_record")
+
+
 def _render_diagnostic_surface_explanation_record_support_line(
-    record_support_value: _DiagnosticSurfaceRecordSupportValue, indent: str = "  "
+    record_support_value: _DiagnosticSurfaceRecordSupportValue,
+    field_label: str = "supports_record",
+    indent: str = "  ",
 ) -> _DiagnosticSurfaceRecordSupportLine:
     return _render_diagnostic_surface_record_support_line(
-        record_support_value.value, indent=indent
+        record_support_value.value, field_label=field_label, indent=indent
     )
 
 
@@ -1945,10 +1965,10 @@ def _render_diagnostic_surface_json_support_line(
 
 
 def _render_diagnostic_surface_record_support_line(
-    supports_record: object, indent: str = "  "
+    supports_record: object, field_label: str = "supports_record", indent: str = "  "
 ) -> _DiagnosticSurfaceRecordSupportLine:
     return _DiagnosticSurfaceRecordSupportLine(
-        line=f"{indent}supports_record: {str(supports_record).lower()}"
+        line=f"{indent}{field_label}: {str(supports_record).lower()}"
     )
 
 
