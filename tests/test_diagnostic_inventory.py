@@ -39,6 +39,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceJsonSupportLine,
     _DiagnosticSurfaceJsonSupportValue,
     _DiagnosticSurfaceNameValue,
+    _DiagnosticSurfaceRecordSupportFieldLabel,
     _DiagnosticSurfaceRecordSupportLine,
     _DiagnosticSurfaceRecordSupportValue,
     _DiagnosticSurfaceRecordScopeLine,
@@ -85,6 +86,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_explanation_json_support_field_label,
     _prepare_diagnostic_surface_explanation_json_support_value,
     _prepare_diagnostic_surface_explanation_name_value,
+    _prepare_diagnostic_surface_explanation_record_support_field_label,
     _prepare_diagnostic_surface_explanation_record_support_value,
     _prepare_diagnostic_surface_explanation_record_scope_value,
     _prepare_diagnostic_surface_explanation_definition_section_label,
@@ -1479,13 +1481,21 @@ def test_diagnostic_surface_explanation_record_support_line_rendering_precedes_l
     record_support_value = _prepare_diagnostic_surface_explanation_record_support_value(
         explanation_definition
     )
+    record_support_field_label = (
+        _prepare_diagnostic_surface_explanation_record_support_field_label()
+    )
     record_support_line = _render_diagnostic_surface_explanation_record_support_line(
-        record_support_value, indent="    "
+        record_support_value, field_label=record_support_field_label.text, indent="    "
     )
 
     assert isinstance(record_support_value, _DiagnosticSurfaceRecordSupportValue)
     assert record_support_value.value is False
     assert set(record_support_value.__dataclass_fields__) == {"value"}
+    assert isinstance(
+        record_support_field_label, _DiagnosticSurfaceRecordSupportFieldLabel
+    )
+    assert record_support_field_label.text == "supports_record"
+    assert set(record_support_field_label.__dataclass_fields__) == {"text"}
     assert isinstance(record_support_line, _DiagnosticSurfaceRecordSupportLine)
     assert record_support_line.line == "    supports_record: false"
     assert set(record_support_line.__dataclass_fields__) == {"line"}
