@@ -76,6 +76,7 @@ from seed_runtime.diagnostic_inventory import (
     _render_diagnostic_surface_consumption_line,
     _render_diagnostic_surface_evidence_source_line,
     _render_diagnostic_surface_definition_status_line,
+    _render_diagnostic_surface_definition_description_line,
     _render_diagnostic_surface_implementation_reason_line,
     _render_diagnostic_surface_inventory_registration_line,
     _render_diagnostic_surface_shape_registration_status_line,
@@ -675,6 +676,24 @@ def test_diagnostic_surface_definition_status_line_rendering_precedes_line_set_a
     assert isinstance(status_line, _DiagnosticSurfaceStatusLine)
     assert status_line.line == "    status: known"
     assert set(status_line.__dataclass_fields__) == {"line"}
+
+
+def test_diagnostic_surface_definition_description_line_rendering_precedes_line_set_assembly():
+    definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
+        "diagnostic_surface_definition"
+    ]
+
+    description_line = _render_diagnostic_surface_definition_description_line(
+        definition, indent="    "
+    )
+
+    assert isinstance(description_line, _DiagnosticSurfaceDescriptionLine)
+    assert (
+        description_line.line
+        == "    description: Compares diagnostic registry declarations with static "
+        "implementation shape without recording or mutation."
+    )
+    assert set(description_line.__dataclass_fields__) == {"line"}
 
 
 def test_diagnostic_surface_definition_line_set_assembly_precedes_human_rendering():
