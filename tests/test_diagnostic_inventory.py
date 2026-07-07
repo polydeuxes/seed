@@ -24,6 +24,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceConsumptionText,
     _DiagnosticSurfaceDefinitionLineSet,
     _DiagnosticSurfaceDefinitionSectionLine,
+    _DiagnosticSurfaceDefinitionSectionLabel,
     _DiagnosticSurfaceDescriptionLine,
     _DiagnosticSurfaceDescriptionText,
     _DiagnosticSurfaceEvidenceSourceLine,
@@ -78,6 +79,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_explanation_name_value,
     _prepare_diagnostic_surface_explanation_record_support_value,
     _prepare_diagnostic_surface_explanation_record_scope_value,
+    _prepare_diagnostic_surface_explanation_definition_section_label,
     _prepare_diagnostic_surface_explanation_status_value,
     _prepare_diagnostic_surface_explanation_boundary_text,
     _prepare_diagnostic_surface_explanation_consumption_text,
@@ -1569,8 +1571,14 @@ def test_diagnostic_surface_explanation_definition_heading_line_rendering_preced
 
 
 def test_diagnostic_surface_explanation_definition_section_line_rendering_precedes_line_set_assembly():
-    section_line = _render_diagnostic_surface_explanation_definition_section_line()
+    section_label = _prepare_diagnostic_surface_explanation_definition_section_label()
+    section_line = _render_diagnostic_surface_explanation_definition_section_line(
+        section_label
+    )
 
+    assert isinstance(section_label, _DiagnosticSurfaceDefinitionSectionLabel)
+    assert section_label.text == "definition"
+    assert set(section_label.__dataclass_fields__) == {"text"}
     assert isinstance(section_line, _DiagnosticSurfaceDefinitionSectionLine)
     assert section_line.line == "  definition:"
     assert set(section_line.__dataclass_fields__) == {"line"}
