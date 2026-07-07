@@ -252,6 +252,13 @@ class _DiagnosticSurfaceJsonSupportLine:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceRecordSupportValue:
+    """Implementation-local record support value before line rendering."""
+
+    value: object
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceRecordSupportLine:
     """Implementation-local record support line before line-set assembly."""
 
@@ -1474,6 +1481,9 @@ def _assemble_diagnostic_surface_definition_line_set(
     json_support_value = _prepare_diagnostic_surface_definition_json_support_value(
         definition
     )
+    record_support_value = _prepare_diagnostic_surface_definition_record_support_value(
+        definition
+    )
     field_indent = _select_diagnostic_surface_top_level_definition_field_indent()
     return _DiagnosticSurfaceDefinitionLineSet(
         lines=(
@@ -1493,7 +1503,7 @@ def _assemble_diagnostic_surface_definition_line_set(
                 json_support_value, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_definition_record_support_line(
-                definition, indent=field_indent.text
+                record_support_value, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_definition_record_scope_line(
                 definition, indent=field_indent.text
@@ -1568,11 +1578,17 @@ def _render_diagnostic_surface_definition_json_support_line(
     )
 
 
+def _prepare_diagnostic_surface_definition_record_support_value(
+    definition: dict[str, object],
+) -> _DiagnosticSurfaceRecordSupportValue:
+    return _DiagnosticSurfaceRecordSupportValue(value=definition["supports_record"])
+
+
 def _render_diagnostic_surface_definition_record_support_line(
-    definition: dict[str, object], indent: str = "  "
+    record_support_value: _DiagnosticSurfaceRecordSupportValue, indent: str = "  "
 ) -> _DiagnosticSurfaceRecordSupportLine:
     return _render_diagnostic_surface_record_support_line(
-        definition["supports_record"], indent=indent
+        record_support_value.value, indent=indent
     )
 
 
