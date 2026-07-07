@@ -1323,6 +1323,9 @@ def _assemble_diagnostic_surface_explanation_line_set(
     json_support_value = _prepare_diagnostic_surface_explanation_json_support_value(
         explanation_definition
     )
+    record_support_value = _prepare_diagnostic_surface_explanation_record_support_value(
+        explanation_definition
+    )
     record_scope_value = _prepare_diagnostic_surface_explanation_record_scope_value(
         explanation_definition
     )
@@ -1346,7 +1349,7 @@ def _assemble_diagnostic_surface_explanation_line_set(
                 json_support_value, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_explanation_record_support_line(
-                explanation_definition, indent=field_indent.text
+                record_support_value, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_explanation_record_scope_line(
                 record_scope_value, indent=field_indent.text
@@ -1425,11 +1428,19 @@ def _render_diagnostic_surface_explanation_json_support_line(
     )
 
 
+def _prepare_diagnostic_surface_explanation_record_support_value(
+    explanation_definition: _DiagnosticSurfaceExplanationDefinition,
+) -> _DiagnosticSurfaceRecordSupportValue:
+    return _DiagnosticSurfaceRecordSupportValue(
+        value=explanation_definition.definition["supports_record"]
+    )
+
+
 def _render_diagnostic_surface_explanation_record_support_line(
-    explanation_definition: _DiagnosticSurfaceExplanationDefinition, indent: str = "  "
+    record_support_value: _DiagnosticSurfaceRecordSupportValue, indent: str = "  "
 ) -> _DiagnosticSurfaceRecordSupportLine:
     return _render_diagnostic_surface_record_support_line(
-        explanation_definition.definition["supports_record"], indent=indent
+        record_support_value.value, indent=indent
     )
 
 
