@@ -86,6 +86,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_inventory_composition,
     _prepare_diagnostic_surface_boundary_text,
     _prepare_diagnostic_surface_evidence_source_field_label,
+    _prepare_diagnostic_surface_evidence_source_value,
     _prepare_diagnostic_surface_implementation_reason_field_label,
     _prepare_diagnostic_surface_implementation_reason_value,
     _render_diagnostic_surface_boundary_line,
@@ -687,9 +688,12 @@ def test_diagnostic_surface_evidence_source_line_rendering_precedes_line_set_ass
     evidence_source_field_label = (
         _prepare_diagnostic_surface_evidence_source_field_label()
     )
+    evidence_source_value = _prepare_diagnostic_surface_evidence_source_value(
+        "diagnostic_inventory + diagnostic_shape_audit"
+    )
 
     evidence_source_line = _render_diagnostic_surface_evidence_source_line(
-        "diagnostic_inventory + diagnostic_shape_audit",
+        evidence_source_value.value,
         field_label=evidence_source_field_label.text,
         indent="    ",
     )
@@ -699,6 +703,11 @@ def test_diagnostic_surface_evidence_source_line_rendering_precedes_line_set_ass
     )
     assert evidence_source_field_label.text == "evidence_source"
     assert set(evidence_source_field_label.__dataclass_fields__) == {"text"}
+    assert isinstance(evidence_source_value, _DiagnosticSurfaceEvidenceSourceValue)
+    assert (
+        evidence_source_value.value == "diagnostic_inventory + diagnostic_shape_audit"
+    )
+    assert set(evidence_source_value.__dataclass_fields__) == {"value"}
     signature = inspect.signature(_render_diagnostic_surface_evidence_source_line)
 
     assert signature.parameters["field_label"].default is inspect.Parameter.empty
