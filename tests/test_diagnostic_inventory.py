@@ -36,6 +36,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceExplanationConsumption,
     _DiagnosticSurfaceExplanationLineSet,
     _DiagnosticSurfaceImplementationReasonLine,
+    _DiagnosticSurfaceInventoryRegistrationFieldLabel,
     _DiagnosticSurfaceInventoryRegistrationLine,
     _DiagnosticSurfaceJsonSupportFieldLabel,
     _DiagnosticSurfaceJsonSupportLine,
@@ -102,6 +103,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_explanation_consumption_text,
     _prepare_diagnostic_surface_explanation_consumption_field_label,
     _prepare_diagnostic_surface_definition_consumption_field_label,
+    _prepare_diagnostic_surface_definition_inventory_registration_field_label,
     _render_diagnostic_surface_explanation_description_line,
     _render_diagnostic_surface_explanation_json_support_line,
     _render_diagnostic_surface_explanation_record_support_line,
@@ -881,13 +883,21 @@ def test_diagnostic_surface_definition_inventory_registration_line_rendering_pre
     definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
         "diagnostic_surface_definition"
     ]
+    registration_field_label = (
+        _prepare_diagnostic_surface_definition_inventory_registration_field_label()
+    )
 
     registration_line = (
         _render_diagnostic_surface_definition_inventory_registration_line(
-            definition, indent="    "
+            definition, field_label=registration_field_label.text, indent="    "
         )
     )
 
+    assert isinstance(
+        registration_field_label, _DiagnosticSurfaceInventoryRegistrationFieldLabel
+    )
+    assert registration_field_label.text == "diagnostic_inventory_registration"
+    assert set(registration_field_label.__dataclass_fields__) == {"text"}
     assert isinstance(registration_line, _DiagnosticSurfaceInventoryRegistrationLine)
     assert registration_line.line == "    diagnostic_inventory_registration: present"
     assert set(registration_line.__dataclass_fields__) == {"line"}

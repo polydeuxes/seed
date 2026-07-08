@@ -434,6 +434,13 @@ class _DiagnosticSurfaceShapeRegistrationIdentification:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceInventoryRegistrationFieldLabel:
+    """Implementation-local inventory registration field label before line rendering."""
+
+    text: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceInventoryRegistrationLine:
     """Implementation-local inventory registration line before line-set assembly."""
 
@@ -1790,6 +1797,9 @@ def _assemble_diagnostic_surface_definition_line_set(
     consumption_field_label = (
         _prepare_diagnostic_surface_definition_consumption_field_label()
     )
+    inventory_registration_field_label = (
+        _prepare_diagnostic_surface_definition_inventory_registration_field_label()
+    )
     field_indent = _select_diagnostic_surface_top_level_definition_field_indent()
     return _DiagnosticSurfaceDefinitionLineSet(
         lines=(
@@ -1823,7 +1833,9 @@ def _assemble_diagnostic_surface_definition_line_set(
                 indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_definition_inventory_registration_line(
-                definition, indent=field_indent.text
+                definition,
+                field_label=inventory_registration_field_label.text,
+                indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_definition_shape_registration_status_line(
                 definition, indent=field_indent.text
@@ -1945,10 +1957,22 @@ def _prepare_diagnostic_surface_definition_consumption_field_label() -> (
 
 
 def _render_diagnostic_surface_definition_inventory_registration_line(
-    definition: dict[str, object], indent: str = "  "
+    definition: dict[str, object],
+    field_label: str = "diagnostic_inventory_registration",
+    indent: str = "  ",
 ) -> _DiagnosticSurfaceInventoryRegistrationLine:
     return _render_diagnostic_surface_inventory_registration_line(
-        definition["diagnostic_inventory_registration"], indent=indent
+        definition["diagnostic_inventory_registration"],
+        field_label=field_label,
+        indent=indent,
+    )
+
+
+def _prepare_diagnostic_surface_definition_inventory_registration_field_label() -> (
+    _DiagnosticSurfaceInventoryRegistrationFieldLabel
+):
+    return _DiagnosticSurfaceInventoryRegistrationFieldLabel(
+        text="diagnostic_inventory_registration"
     )
 
 
@@ -2278,10 +2302,12 @@ def _diagnostic_surface_shape_registration_status(
 
 
 def _render_diagnostic_surface_inventory_registration_line(
-    registration: object, indent: str = "  "
+    registration: object,
+    field_label: str = "diagnostic_inventory_registration",
+    indent: str = "  ",
 ) -> _DiagnosticSurfaceInventoryRegistrationLine:
     return _DiagnosticSurfaceInventoryRegistrationLine(
-        line=f"{indent}diagnostic_inventory_registration: {registration}"
+        line=f"{indent}{field_label}: {registration}"
     )
 
 
