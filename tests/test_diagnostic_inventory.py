@@ -1041,9 +1041,14 @@ def test_diagnostic_surface_definition_shape_registration_status_line_rendering_
     )
     assert status_field_label.text == "shape_registration_status"
     assert set(status_field_label.__dataclass_fields__) == {"text"}
+    signature = inspect.signature(
+        _render_diagnostic_surface_definition_shape_registration_status_line
+    )
+
     assert isinstance(status_value, _DiagnosticSurfaceShapeRegistrationStatusValue)
     assert status_value.value == "present"
     assert set(status_value.__dataclass_fields__) == {"value"}
+    assert signature.parameters["field_label"].default is inspect.Parameter.empty
     assert isinstance(status_line, _DiagnosticSurfaceShapeRegistrationStatusLine)
     assert status_line.line == "    shape_registration_status: present"
     assert set(status_line.__dataclass_fields__) == {"line"}

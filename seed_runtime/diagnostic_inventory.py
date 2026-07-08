@@ -2169,7 +2169,7 @@ def _prepare_diagnostic_surface_definition_shape_registration_status_value(
 
 def _render_diagnostic_surface_definition_shape_registration_status_line(
     shape_registration_status_value: _DiagnosticSurfaceShapeRegistrationStatusValue,
-    field_label: str = "shape_registration_status",
+    field_label: str,
     indent: str = "  ",
 ) -> _DiagnosticSurfaceShapeRegistrationStatusLine:
     return _render_diagnostic_surface_shape_registration_status_line(
