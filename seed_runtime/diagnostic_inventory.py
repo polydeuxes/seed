@@ -2115,7 +2115,7 @@ def _prepare_diagnostic_surface_definition_consumption_text(
 
 def _render_diagnostic_surface_definition_consumption_line(
     consumption_text: _DiagnosticSurfaceConsumptionText,
-    field_label: str = "diagnostic_surface_consumption",
+    field_label: str,
     indent: str = "  ",
 ) -> _DiagnosticSurfaceConsumptionLine:
     return _render_diagnostic_surface_consumption_line(

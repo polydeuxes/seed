@@ -967,9 +967,14 @@ def test_diagnostic_surface_definition_consumption_line_rendering_precedes_line_
         "reads_diagnostic_facts=false"
     )
     assert set(consumption_text.__dataclass_fields__) == {"text"}
+    signature = inspect.signature(
+        _render_diagnostic_surface_definition_consumption_line
+    )
+
     assert isinstance(consumption_field_label, _DiagnosticSurfaceConsumptionFieldLabel)
     assert consumption_field_label.text == "diagnostic_surface_consumption"
     assert set(consumption_field_label.__dataclass_fields__) == {"text"}
+    assert signature.parameters["field_label"].default is inspect.Parameter.empty
     assert isinstance(consumption_line, _DiagnosticSurfaceConsumptionLine)
     assert (
         consumption_line.line
