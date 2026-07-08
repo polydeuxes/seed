@@ -1195,6 +1195,12 @@ def test_diagnostic_surface_definition_evidence_source_line_rendering_precedes_l
     )
     assert evidence_source_field_label.text == "evidence_source"
     assert set(evidence_source_field_label.__dataclass_fields__) == {"text"}
+    assert (
+        "_prepare_diagnostic_surface_evidence_source_field_label"
+        in inspect.getsource(
+            _prepare_diagnostic_surface_definition_evidence_source_field_label
+        )
+    )
     signature = inspect.signature(
         _render_diagnostic_surface_definition_evidence_source_line
     )
