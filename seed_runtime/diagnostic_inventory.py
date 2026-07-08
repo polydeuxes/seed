@@ -2232,7 +2232,7 @@ def _render_diagnostic_surface_definition_evidence_source_line(
 def _prepare_diagnostic_surface_definition_evidence_source_field_label() -> (
     _DiagnosticSurfaceEvidenceSourceFieldLabel
 ):
-    return _DiagnosticSurfaceEvidenceSourceFieldLabel(text="evidence_source")
+    return _prepare_diagnostic_surface_evidence_source_field_label()
 
 
 def _render_diagnostic_surface_definition_heading_line(
