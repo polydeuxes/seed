@@ -2195,7 +2195,7 @@ def _prepare_diagnostic_surface_definition_implementation_reason_value(
 
 def _render_diagnostic_surface_definition_implementation_reason_line(
     implementation_reason_value: _DiagnosticSurfaceImplementationReasonValue,
-    field_label: str = "implementation_reason",
+    field_label: str,
     indent: str = "  ",
 ) -> _DiagnosticSurfaceImplementationReasonLine:
     return _render_diagnostic_surface_implementation_reason_line(
