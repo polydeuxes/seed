@@ -2584,6 +2584,12 @@ def _prepare_diagnostic_surface_evidence_source_field_label() -> (
     return _DiagnosticSurfaceEvidenceSourceFieldLabel(text="evidence_source")
 
 
+def _prepare_diagnostic_surface_evidence_source_value(
+    evidence_source: object,
+) -> _DiagnosticSurfaceEvidenceSourceValue:
+    return _DiagnosticSurfaceEvidenceSourceValue(value=evidence_source)
+
+
 def _render_diagnostic_surface_evidence_source_line(
     evidence_source: object,
     field_label: str,
