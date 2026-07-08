@@ -1096,8 +1096,13 @@ def test_diagnostic_surface_definition_consumption_line_rendering_precedes_line_
         _assemble_diagnostic_surface_definition_line_set
     )
     assert "_prepare_diagnostic_surface_definition_consumption_text" in assembly_source
+    assert (
+        "_prepare_diagnostic_surface_definition_consumption_field_label"
+        in assembly_source
+    )
     assert "_render_diagnostic_surface_definition_consumption_line" in assembly_source
     assert "consumption_text" in assembly_source
+    assert "field_label=consumption_field_label.text" in assembly_source
     signature = inspect.signature(
         _render_diagnostic_surface_definition_consumption_line
     )
