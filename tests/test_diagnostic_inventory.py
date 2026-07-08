@@ -851,6 +851,12 @@ def test_diagnostic_surface_definition_cli_flag_display_preparation_precedes_lin
     assert isinstance(flag_display, _DiagnosticSurfaceCliFlagDisplay)
     assert flag_display.text == "--diagnostic-shape-audit"
     assert set(flag_display.__dataclass_fields__) == {"text"}
+    assembly_source = inspect.getsource(
+        _assemble_diagnostic_surface_definition_line_set
+    )
+    assert "_prepare_diagnostic_surface_definition_cli_flag_display" in assembly_source
+    assert "_render_diagnostic_surface_definition_cli_flags_line" in assembly_source
+    assert "flag_display" in assembly_source
 
 
 def test_diagnostic_surface_definition_cli_flags_line_rendering_precedes_line_set_assembly():
