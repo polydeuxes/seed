@@ -1978,6 +1978,9 @@ def test_diagnostic_surface_explanation_consumption_line_rendering_precedes_line
     )
 
     assert isinstance(consumption_text, _DiagnosticSurfaceConsumptionText)
+    assert "_prepare_diagnostic_surface_consumption_text" in inspect.getsource(
+        _prepare_diagnostic_surface_explanation_consumption_text
+    )
     assert consumption_text.text == (
         "uses_projected_state=false; uses_repo_files=false; reads_diagnostic_facts=false"
     )
