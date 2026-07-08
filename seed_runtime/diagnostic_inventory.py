@@ -1830,6 +1830,7 @@ def format_diagnostic_surface_definition(diagnostic_surface: str) -> str:
 def _assemble_diagnostic_surface_definition_line_set(
     definition: dict[str, object],
 ) -> _DiagnosticSurfaceDefinitionLineSet:
+    name_value = _prepare_diagnostic_surface_definition_name_value(definition)
     flag_display = _prepare_diagnostic_surface_cli_flag_display(definition["cli_flags"])
     status_value = _prepare_diagnostic_surface_definition_status_value(definition)
     description_text = _prepare_diagnostic_surface_definition_description_text(
@@ -1882,7 +1883,7 @@ def _assemble_diagnostic_surface_definition_line_set(
     return _DiagnosticSurfaceDefinitionLineSet(
         lines=(
             _render_diagnostic_surface_definition_identity_heading_line(
-                definition
+                name_value
             ).line,
             _render_diagnostic_surface_definition_status_line(
                 status_value, indent=field_indent.text
@@ -1936,12 +1937,16 @@ def _assemble_diagnostic_surface_definition_line_set(
     )
 
 
-def _render_diagnostic_surface_definition_identity_heading_line(
+def _prepare_diagnostic_surface_definition_name_value(
     definition: dict[str, object],
+) -> _DiagnosticSurfaceNameValue:
+    return _DiagnosticSurfaceNameValue(value=definition["diagnostic_name"])
+
+
+def _render_diagnostic_surface_definition_identity_heading_line(
+    name_value: _DiagnosticSurfaceNameValue,
 ) -> _DiagnosticSurfaceHeadingLine:
-    return _render_diagnostic_surface_definition_heading_line(
-        definition["diagnostic_name"]
-    )
+    return _render_diagnostic_surface_definition_heading_line(name_value.value)
 
 
 def _prepare_diagnostic_surface_definition_status_value(
