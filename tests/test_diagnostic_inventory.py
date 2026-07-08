@@ -1075,12 +1075,17 @@ def test_diagnostic_surface_definition_implementation_reason_line_rendering_prec
     )
     assert reason_field_label.text == "implementation_reason"
     assert set(reason_field_label.__dataclass_fields__) == {"text"}
+    signature = inspect.signature(
+        _render_diagnostic_surface_definition_implementation_reason_line
+    )
+
     assert isinstance(reason_value, _DiagnosticSurfaceImplementationReasonValue)
     assert (
         reason_value.value
         == "identity recovered from the diagnostic inventory entry and static shape-audit registration"
     )
     assert set(reason_value.__dataclass_fields__) == {"value"}
+    assert signature.parameters["field_label"].default is inspect.Parameter.empty
     assert isinstance(reason_line, _DiagnosticSurfaceImplementationReasonLine)
     assert (
         reason_line.line
