@@ -1986,6 +1986,9 @@ def test_diagnostic_surface_explanation_consumption_line_rendering_precedes_line
     assert consumption_field_label.text == "diagnostic_surface_consumption"
     assert set(consumption_field_label.__dataclass_fields__) == {"text"}
     assert isinstance(consumption_line, _DiagnosticSurfaceConsumptionLine)
+    assert "_render_diagnostic_surface_consumption_line" in inspect.getsource(
+        _render_diagnostic_surface_explanation_consumption_line
+    )
     assert consumption_line.line == (
         "    diagnostic_surface_consumption: uses_projected_state=false; "
         "uses_repo_files=false; reads_diagnostic_facts=false"
