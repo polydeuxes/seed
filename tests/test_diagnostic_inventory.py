@@ -1137,15 +1137,32 @@ def test_diagnostic_surface_definition_inventory_registration_line_rendering_pre
         )
     )
 
+    assembly_source = inspect.getsource(
+        _assemble_diagnostic_surface_definition_line_set
+    )
+    assert (
+        "_prepare_diagnostic_surface_definition_inventory_registration_field_label"
+        in assembly_source
+    )
+    assert (
+        "_prepare_diagnostic_surface_definition_inventory_registration_value"
+        in assembly_source
+    )
+    assert (
+        "_render_diagnostic_surface_definition_inventory_registration_line"
+        in assembly_source
+    )
+    assert "inventory_registration_field_label" in assembly_source
+    assert "field_label=inventory_registration_field_label.text" in assembly_source
+    signature = inspect.signature(
+        _render_diagnostic_surface_definition_inventory_registration_line
+    )
+
     assert isinstance(
         registration_field_label, _DiagnosticSurfaceInventoryRegistrationFieldLabel
     )
     assert registration_field_label.text == "diagnostic_inventory_registration"
     assert set(registration_field_label.__dataclass_fields__) == {"text"}
-    signature = inspect.signature(
-        _render_diagnostic_surface_definition_inventory_registration_line
-    )
-
     assert isinstance(registration_value, _DiagnosticSurfaceInventoryRegistrationValue)
     assert registration_value.value == "present"
     assert set(registration_value.__dataclass_fields__) == {"value"}
