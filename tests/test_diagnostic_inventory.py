@@ -1253,6 +1253,10 @@ def test_diagnostic_surface_definition_line_set_assembly_precedes_human_renderin
 
     assert isinstance(line_set, _DiagnosticSurfaceDefinitionLineSet)
     assert line_set.lines[0] == "DiagnosticSurface definition: diagnostic_shape_audit"
+    assert "  status: known" in line_set.lines
+    assert "_render_diagnostic_surface_definition_status_line" in inspect.getsource(
+        _assemble_diagnostic_surface_definition_line_set
+    )
     assert "  cli_flags: --diagnostic-shape-audit" in line_set.lines
     assert (
         "  implementation_reason: identity recovered from the diagnostic inventory "
