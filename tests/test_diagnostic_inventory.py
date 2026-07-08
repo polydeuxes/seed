@@ -1189,6 +1189,23 @@ def test_diagnostic_surface_definition_shape_registration_status_line_rendering_
         status_value, field_label=status_field_label.text, indent="    "
     )
 
+    assembly_source = inspect.getsource(
+        _assemble_diagnostic_surface_definition_line_set
+    )
+    assert (
+        "_prepare_diagnostic_surface_definition_shape_registration_status_field_label"
+        in assembly_source
+    )
+    assert (
+        "_prepare_diagnostic_surface_definition_shape_registration_status_value"
+        in assembly_source
+    )
+    assert (
+        "_render_diagnostic_surface_definition_shape_registration_status_line"
+        in assembly_source
+    )
+    assert "shape_registration_status_field_label" in assembly_source
+    assert "field_label=shape_registration_status_field_label.text" in assembly_source
     assert isinstance(
         status_field_label, _DiagnosticSurfaceShapeRegistrationStatusFieldLabel
     )
