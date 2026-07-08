@@ -1283,6 +1283,11 @@ def test_diagnostic_surface_definition_line_set_assembly_precedes_human_renderin
         "_render_diagnostic_surface_definition_inventory_registration_line"
         in inspect.getsource(_assemble_diagnostic_surface_definition_line_set)
     )
+    assert "  shape_registration_status: present" in line_set.lines
+    assert (
+        "_render_diagnostic_surface_definition_shape_registration_status_line"
+        in inspect.getsource(_assemble_diagnostic_surface_definition_line_set)
+    )
     assert set(line_set.__dataclass_fields__) == {"lines"}
     assert format_diagnostic_surface_definition("diagnostic_shape_audit") == "\n".join(
         line_set.lines
