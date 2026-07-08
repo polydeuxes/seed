@@ -462,6 +462,13 @@ class _DiagnosticSurfaceShapeRegistrationStatusLine:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceImplementationReasonFieldLabel:
+    """Implementation-local implementation reason field label before line rendering."""
+
+    text: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceImplementationReasonLine:
     """Implementation-local implementation reason line before line-set assembly."""
 
@@ -1810,6 +1817,9 @@ def _assemble_diagnostic_surface_definition_line_set(
     shape_registration_status_field_label = (
         _prepare_diagnostic_surface_definition_shape_registration_status_field_label()
     )
+    implementation_reason_field_label = (
+        _prepare_diagnostic_surface_definition_implementation_reason_field_label()
+    )
     field_indent = _select_diagnostic_surface_top_level_definition_field_indent()
     return _DiagnosticSurfaceDefinitionLineSet(
         lines=(
@@ -1853,7 +1863,9 @@ def _assemble_diagnostic_surface_definition_line_set(
                 indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_definition_implementation_reason_line(
-                definition, indent=field_indent.text
+                definition,
+                field_label=implementation_reason_field_label.text,
+                indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_definition_evidence_source_line(
                 definition, indent=field_indent.text
@@ -2007,10 +2019,20 @@ def _prepare_diagnostic_surface_definition_shape_registration_status_field_label
 
 
 def _render_diagnostic_surface_definition_implementation_reason_line(
-    definition: dict[str, object], indent: str = "  "
+    definition: dict[str, object],
+    field_label: str = "implementation_reason",
+    indent: str = "  ",
 ) -> _DiagnosticSurfaceImplementationReasonLine:
     return _render_diagnostic_surface_implementation_reason_line(
-        definition["implementation_reason"], indent=indent
+        definition["implementation_reason"], field_label=field_label, indent=indent
+    )
+
+
+def _prepare_diagnostic_surface_definition_implementation_reason_field_label() -> (
+    _DiagnosticSurfaceImplementationReasonFieldLabel
+):
+    return _DiagnosticSurfaceImplementationReasonFieldLabel(
+        text="implementation_reason"
     )
 
 
@@ -2344,10 +2366,12 @@ def _render_diagnostic_surface_shape_registration_status_line(
 
 
 def _render_diagnostic_surface_implementation_reason_line(
-    reason: object, indent: str = "  "
+    reason: object,
+    field_label: str = "implementation_reason",
+    indent: str = "  ",
 ) -> _DiagnosticSurfaceImplementationReasonLine:
     return _DiagnosticSurfaceImplementationReasonLine(
-        line=f"{indent}implementation_reason: {reason}"
+        line=f"{indent}{field_label}: {reason}"
     )
 
 
