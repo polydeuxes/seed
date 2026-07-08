@@ -86,6 +86,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_inventory_composition,
     _prepare_diagnostic_surface_boundary_text,
     _prepare_diagnostic_surface_evidence_source_field_label,
+    _prepare_diagnostic_surface_implementation_reason_field_label,
     _render_diagnostic_surface_boundary_line,
     _prepare_diagnostic_surface_cli_flag_display,
     _prepare_diagnostic_surface_definition_cli_flag_display,
@@ -648,11 +649,22 @@ def test_diagnostic_surface_shape_registration_status_line_rendering_follows_sta
 
 
 def test_diagnostic_surface_implementation_reason_line_rendering_precedes_line_set_assembly():
+    reason_field_label = _prepare_diagnostic_surface_implementation_reason_field_label()
+
     reason_line = _render_diagnostic_surface_implementation_reason_line(
         "known diagnostic surface recovered from diagnostic inventory",
+        field_label=reason_field_label.text,
         indent="    ",
     )
 
+    assert isinstance(
+        reason_field_label, _DiagnosticSurfaceImplementationReasonFieldLabel
+    )
+    assert reason_field_label.text == "implementation_reason"
+    assert set(reason_field_label.__dataclass_fields__) == {"text"}
+    signature = inspect.signature(_render_diagnostic_surface_implementation_reason_line)
+
+    assert signature.parameters["field_label"].default is inspect.Parameter.empty
     assert isinstance(reason_line, _DiagnosticSurfaceImplementationReasonLine)
     assert (
         reason_line.line

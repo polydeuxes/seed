@@ -2554,9 +2554,17 @@ def _render_diagnostic_surface_shape_registration_status_line(
     )
 
 
+def _prepare_diagnostic_surface_implementation_reason_field_label() -> (
+    _DiagnosticSurfaceImplementationReasonFieldLabel
+):
+    return _DiagnosticSurfaceImplementationReasonFieldLabel(
+        text="implementation_reason"
+    )
+
+
 def _render_diagnostic_surface_implementation_reason_line(
     reason: object,
-    field_label: str = "implementation_reason",
+    field_label: str,
     indent: str = "  ",
 ) -> _DiagnosticSurfaceImplementationReasonLine:
     return _DiagnosticSurfaceImplementationReasonLine(
