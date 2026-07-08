@@ -2564,9 +2564,15 @@ def _render_diagnostic_surface_implementation_reason_line(
     )
 
 
+def _prepare_diagnostic_surface_evidence_source_field_label() -> (
+    _DiagnosticSurfaceEvidenceSourceFieldLabel
+):
+    return _DiagnosticSurfaceEvidenceSourceFieldLabel(text="evidence_source")
+
+
 def _render_diagnostic_surface_evidence_source_line(
     evidence_source: object,
-    field_label: str = "evidence_source",
+    field_label: str,
     indent: str = "  ",
 ) -> _DiagnosticSurfaceEvidenceSourceLine:
     return _DiagnosticSurfaceEvidenceSourceLine(
