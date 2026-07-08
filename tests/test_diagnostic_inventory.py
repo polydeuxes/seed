@@ -910,8 +910,13 @@ def test_diagnostic_surface_definition_description_line_rendering_precedes_line_
         _assemble_diagnostic_surface_definition_line_set
     )
     assert "_prepare_diagnostic_surface_definition_description_text" in assembly_source
+    assert (
+        "_prepare_diagnostic_surface_definition_description_field_label"
+        in assembly_source
+    )
     assert "_render_diagnostic_surface_definition_description_line" in assembly_source
     assert "description_text" in assembly_source
+    assert "description_field_label" in assembly_source
 
 
 def test_diagnostic_surface_definition_json_support_line_rendering_precedes_line_set_assembly():
