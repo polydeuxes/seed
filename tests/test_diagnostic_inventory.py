@@ -977,6 +977,16 @@ def test_diagnostic_surface_definition_record_support_line_rendering_precedes_li
     )
     assert record_support_field_label.text == "supports_record"
     assert set(record_support_field_label.__dataclass_fields__) == {"text"}
+    assembly_source = inspect.getsource(
+        _assemble_diagnostic_surface_definition_line_set
+    )
+    assert (
+        "_prepare_diagnostic_surface_definition_record_support_value" in assembly_source
+    )
+    assert (
+        "_render_diagnostic_surface_definition_record_support_line" in assembly_source
+    )
+    assert "record_support_value" in assembly_source
     assert isinstance(record_support_line, _DiagnosticSurfaceRecordSupportLine)
     assert record_support_line.line == "    supports_record: false"
     assert set(record_support_line.__dataclass_fields__) == {"line"}
