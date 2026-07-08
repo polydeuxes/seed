@@ -1122,6 +1122,11 @@ def test_diagnostic_surface_definition_evidence_source_line_rendering_precedes_l
     )
     assert evidence_source_field_label.text == "evidence_source"
     assert set(evidence_source_field_label.__dataclass_fields__) == {"text"}
+    signature = inspect.signature(
+        _render_diagnostic_surface_definition_evidence_source_line
+    )
+
+    assert signature.parameters["field_label"].default is inspect.Parameter.empty
     assert isinstance(evidence_source_line, _DiagnosticSurfaceEvidenceSourceLine)
     assert (
         evidence_source_line.line

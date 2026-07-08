@@ -2219,7 +2219,7 @@ def _prepare_diagnostic_surface_definition_evidence_source_value(
 
 def _render_diagnostic_surface_definition_evidence_source_line(
     evidence_source_value: _DiagnosticSurfaceEvidenceSourceValue,
-    field_label: str = "evidence_source",
+    field_label: str,
     indent: str = "  ",
 ) -> _DiagnosticSurfaceEvidenceSourceLine:
     return _render_diagnostic_surface_evidence_source_line(
