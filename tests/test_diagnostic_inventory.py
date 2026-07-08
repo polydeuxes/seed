@@ -1139,6 +1139,12 @@ def test_diagnostic_surface_definition_implementation_reason_line_rendering_prec
     )
     assert reason_field_label.text == "implementation_reason"
     assert set(reason_field_label.__dataclass_fields__) == {"text"}
+    assert (
+        "_prepare_diagnostic_surface_implementation_reason_field_label"
+        in inspect.getsource(
+            _prepare_diagnostic_surface_definition_implementation_reason_field_label
+        )
+    )
     signature = inspect.signature(
         _render_diagnostic_surface_definition_implementation_reason_line
     )
