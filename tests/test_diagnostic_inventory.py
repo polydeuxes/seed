@@ -1014,6 +1014,14 @@ def test_diagnostic_surface_definition_record_scope_line_rendering_precedes_line
     assert isinstance(record_scope_field_label, _DiagnosticSurfaceRecordScopeFieldLabel)
     assert record_scope_field_label.text == "record_scope"
     assert set(record_scope_field_label.__dataclass_fields__) == {"text"}
+    assembly_source = inspect.getsource(
+        _assemble_diagnostic_surface_definition_line_set
+    )
+    assert (
+        "_prepare_diagnostic_surface_definition_record_scope_value" in assembly_source
+    )
+    assert "_render_diagnostic_surface_definition_record_scope_line" in assembly_source
+    assert "record_scope_value" in assembly_source
     assert isinstance(record_scope_line, _DiagnosticSurfaceRecordScopeLine)
     assert record_scope_line.line == "    record_scope: none"
     assert set(record_scope_line.__dataclass_fields__) == {"line"}
