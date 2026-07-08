@@ -1166,6 +1166,9 @@ def test_diagnostic_surface_definition_implementation_reason_line_rendering_prec
     signature = inspect.signature(
         _render_diagnostic_surface_definition_implementation_reason_line
     )
+    assert "_render_diagnostic_surface_implementation_reason_line" in inspect.getsource(
+        _render_diagnostic_surface_definition_implementation_reason_line
+    )
 
     assert isinstance(reason_value, _DiagnosticSurfaceImplementationReasonValue)
     assert (
