@@ -1843,6 +1843,7 @@ def _assemble_diagnostic_surface_definition_line_set(
     record_scope_value = _prepare_diagnostic_surface_definition_record_scope_value(
         definition
     )
+    boundary_text = _prepare_diagnostic_surface_definition_boundary_text(definition)
     consumption_text = _prepare_diagnostic_surface_definition_consumption_text(
         definition
     )
@@ -1900,7 +1901,7 @@ def _assemble_diagnostic_surface_definition_line_set(
                 record_scope_value, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_definition_boundary_line(
-                definition, indent=field_indent.text
+                boundary_text, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_definition_consumption_line(
                 consumption_text,
@@ -2007,12 +2008,17 @@ def _render_diagnostic_surface_definition_record_scope_line(
     )
 
 
-def _render_diagnostic_surface_definition_boundary_line(
-    definition: dict[str, object], indent: str = "  "
-) -> _DiagnosticSurfaceBoundaryLine:
-    boundary_text = _prepare_diagnostic_surface_boundary_text(
+def _prepare_diagnostic_surface_definition_boundary_text(
+    definition: dict[str, object],
+) -> _DiagnosticSurfaceBoundaryText:
+    return _prepare_diagnostic_surface_boundary_text(
         definition["diagnostic_surface_boundary"]
     )
+
+
+def _render_diagnostic_surface_definition_boundary_line(
+    boundary_text: _DiagnosticSurfaceBoundaryText, indent: str = "  "
+) -> _DiagnosticSurfaceBoundaryLine:
     return _render_diagnostic_surface_boundary_line(boundary_text, indent=indent)
 
 
