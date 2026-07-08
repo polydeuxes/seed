@@ -1187,6 +1187,9 @@ def test_diagnostic_surface_definition_evidence_source_line_rendering_precedes_l
         evidence_source_value.value == "diagnostic_inventory + diagnostic_shape_audit"
     )
     assert set(evidence_source_value.__dataclass_fields__) == {"value"}
+    assert "_prepare_diagnostic_surface_evidence_source_value" in inspect.getsource(
+        _prepare_diagnostic_surface_definition_evidence_source_value
+    )
     assert isinstance(
         evidence_source_field_label, _DiagnosticSurfaceEvidenceSourceFieldLabel
     )
