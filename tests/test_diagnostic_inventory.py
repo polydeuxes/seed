@@ -1729,6 +1729,16 @@ def test_diagnostic_surface_explanation_line_set_assembly_precedes_human_renderi
         in inspect.getsource(_assemble_diagnostic_surface_explanation_line_set)
     )
     assert (
+        "    diagnostic_surface_boundary: read-only; does not record; "
+        "record_scope=none; does not write event ledger; does not mutate cluster; "
+        "does not use projected state; does not use repository files; "
+        "does not emit diagnostic facts; does not emit cluster facts; "
+        "does not read diagnostic facts"
+    ) in line_set.lines
+    assert "_render_diagnostic_surface_explanation_boundary_line" in inspect.getsource(
+        _assemble_diagnostic_surface_explanation_line_set
+    )
+    assert (
         "    diagnostic_surface_consumption: uses_projected_state=false; "
         "uses_repo_files=false; reads_diagnostic_facts=false"
     ) in line_set.lines
