@@ -2214,7 +2214,9 @@ def _prepare_diagnostic_surface_definition_implementation_reason_field_label() -
 def _prepare_diagnostic_surface_definition_evidence_source_value(
     definition: dict[str, object],
 ) -> _DiagnosticSurfaceEvidenceSourceValue:
-    return _DiagnosticSurfaceEvidenceSourceValue(value=definition["evidence_source"])
+    return _prepare_diagnostic_surface_evidence_source_value(
+        definition["evidence_source"]
+    )
 
 
 def _render_diagnostic_surface_definition_evidence_source_line(
