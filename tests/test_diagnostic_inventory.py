@@ -1986,6 +1986,10 @@ def test_diagnostic_surface_explanation_consumption_line_rendering_precedes_line
     )
     assert set(consumption_text.__dataclass_fields__) == {"text"}
     assert isinstance(consumption_field_label, _DiagnosticSurfaceConsumptionFieldLabel)
+    assert (
+        "_prepare_diagnostic_surface_explanation_consumption_field_label"
+        in inspect.getsource(_assemble_diagnostic_surface_explanation_line_set)
+    )
     assert consumption_field_label.text == "diagnostic_surface_consumption"
     assert set(consumption_field_label.__dataclass_fields__) == {"text"}
     assert isinstance(consumption_line, _DiagnosticSurfaceConsumptionLine)
