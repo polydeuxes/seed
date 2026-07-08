@@ -1258,6 +1258,23 @@ def test_diagnostic_surface_definition_implementation_reason_line_rendering_prec
         reason_value, field_label=reason_field_label.text, indent="    "
     )
 
+    assembly_source = inspect.getsource(
+        _assemble_diagnostic_surface_definition_line_set
+    )
+    assert (
+        "_prepare_diagnostic_surface_definition_implementation_reason_field_label"
+        in assembly_source
+    )
+    assert (
+        "_prepare_diagnostic_surface_definition_implementation_reason_value"
+        in assembly_source
+    )
+    assert (
+        "_render_diagnostic_surface_definition_implementation_reason_line"
+        in assembly_source
+    )
+    assert "implementation_reason_field_label" in assembly_source
+    assert "field_label=implementation_reason_field_label.text" in assembly_source
     assert isinstance(
         reason_field_label, _DiagnosticSurfaceImplementationReasonFieldLabel
     )
