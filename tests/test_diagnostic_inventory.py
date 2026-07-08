@@ -1706,11 +1706,16 @@ def test_diagnostic_surface_explanation_line_set_assembly_precedes_human_renderi
         "    description: Compares diagnostic registry declarations with static "
         "implementation shape without recording or mutation."
     ) in line_set.lines
+    assert "    supports_json: true" in line_set.lines
     assert "_render_diagnostic_surface_explanation_cli_flags_line" in inspect.getsource(
         _assemble_diagnostic_surface_explanation_line_set
     )
     assert (
         "_render_diagnostic_surface_explanation_description_line"
+        in inspect.getsource(_assemble_diagnostic_surface_explanation_line_set)
+    )
+    assert (
+        "_render_diagnostic_surface_explanation_json_support_line"
         in inspect.getsource(_assemble_diagnostic_surface_explanation_line_set)
     )
     assert (
