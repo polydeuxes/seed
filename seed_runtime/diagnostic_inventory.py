@@ -2141,7 +2141,7 @@ def _prepare_diagnostic_surface_definition_inventory_registration_value(
 
 def _render_diagnostic_surface_definition_inventory_registration_line(
     inventory_registration_value: _DiagnosticSurfaceInventoryRegistrationValue,
-    field_label: str = "diagnostic_inventory_registration",
+    field_label: str,
     indent: str = "  ",
 ) -> _DiagnosticSurfaceInventoryRegistrationLine:
     return _render_diagnostic_surface_inventory_registration_line(

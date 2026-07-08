@@ -1006,9 +1006,14 @@ def test_diagnostic_surface_definition_inventory_registration_line_rendering_pre
     )
     assert registration_field_label.text == "diagnostic_inventory_registration"
     assert set(registration_field_label.__dataclass_fields__) == {"text"}
+    signature = inspect.signature(
+        _render_diagnostic_surface_definition_inventory_registration_line
+    )
+
     assert isinstance(registration_value, _DiagnosticSurfaceInventoryRegistrationValue)
     assert registration_value.value == "present"
     assert set(registration_value.__dataclass_fields__) == {"value"}
+    assert signature.parameters["field_label"].default is inspect.Parameter.empty
     assert isinstance(registration_line, _DiagnosticSurfaceInventoryRegistrationLine)
     assert registration_line.line == "    diagnostic_inventory_registration: present"
     assert set(registration_line.__dataclass_fields__) == {"line"}
