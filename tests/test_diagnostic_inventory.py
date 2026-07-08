@@ -1047,6 +1047,12 @@ def test_diagnostic_surface_definition_boundary_line_rendering_precedes_line_set
         "does not read diagnostic facts"
     )
     assert set(boundary_text.__dataclass_fields__) == {"text"}
+    assembly_source = inspect.getsource(
+        _assemble_diagnostic_surface_definition_line_set
+    )
+    assert "_prepare_diagnostic_surface_definition_boundary_text" in assembly_source
+    assert "_render_diagnostic_surface_definition_boundary_line" in assembly_source
+    assert "boundary_text" in assembly_source
     signature = inspect.signature(_render_diagnostic_surface_definition_boundary_line)
 
     assert isinstance(boundary_field_label, _DiagnosticSurfaceBoundaryFieldLabel)
