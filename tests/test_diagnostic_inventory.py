@@ -110,6 +110,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_explanation_consumption_text,
     _prepare_diagnostic_surface_explanation_consumption_field_label,
     _prepare_diagnostic_surface_definition_consumption_field_label,
+    _prepare_diagnostic_surface_definition_consumption_text,
     _prepare_diagnostic_surface_definition_inventory_registration_field_label,
     _prepare_diagnostic_surface_definition_inventory_registration_value,
     _prepare_diagnostic_surface_definition_shape_registration_status_field_label,
@@ -874,13 +875,22 @@ def test_diagnostic_surface_definition_consumption_line_rendering_precedes_line_
         "diagnostic_surface_definition"
     ]
 
+    consumption_text = _prepare_diagnostic_surface_definition_consumption_text(
+        definition
+    )
     consumption_field_label = (
         _prepare_diagnostic_surface_definition_consumption_field_label()
     )
     consumption_line = _render_diagnostic_surface_definition_consumption_line(
-        definition, field_label=consumption_field_label.text, indent="    "
+        consumption_text, field_label=consumption_field_label.text, indent="    "
     )
 
+    assert isinstance(consumption_text, _DiagnosticSurfaceConsumptionText)
+    assert (
+        consumption_text.text == "uses_projected_state=false; uses_repo_files=false; "
+        "reads_diagnostic_facts=false"
+    )
+    assert set(consumption_text.__dataclass_fields__) == {"text"}
     assert isinstance(consumption_field_label, _DiagnosticSurfaceConsumptionFieldLabel)
     assert consumption_field_label.text == "diagnostic_surface_consumption"
     assert set(consumption_field_label.__dataclass_fields__) == {"text"}
