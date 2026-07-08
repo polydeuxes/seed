@@ -2044,6 +2044,10 @@ def test_diagnostic_surface_explanation_definition_section_line_rendering_preced
     assert section_indent.text == "  "
     assert set(section_indent.__dataclass_fields__) == {"text"}
     assert isinstance(section_line, _DiagnosticSurfaceDefinitionSectionLine)
+    assert (
+        "_render_diagnostic_surface_explanation_definition_section_line"
+        in inspect.getsource(_assemble_diagnostic_surface_explanation_line_set)
+    )
     assert section_line.line == "  definition:"
     assert set(section_line.__dataclass_fields__) == {"line"}
 
