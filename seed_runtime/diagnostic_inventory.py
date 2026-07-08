@@ -455,6 +455,13 @@ class _DiagnosticSurfaceShapeRegistrationStatusFieldLabel:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceShapeRegistrationStatusValue:
+    """Implementation-local shape registration status value before line rendering."""
+
+    value: object
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceShapeRegistrationStatusLine:
     """Implementation-local shape registration status line before line-set assembly."""
 
@@ -1838,6 +1845,11 @@ def _assemble_diagnostic_surface_definition_line_set(
     shape_registration_status_field_label = (
         _prepare_diagnostic_surface_definition_shape_registration_status_field_label()
     )
+    shape_registration_status_value = (
+        _prepare_diagnostic_surface_definition_shape_registration_status_value(
+            definition
+        )
+    )
     implementation_reason_field_label = (
         _prepare_diagnostic_surface_definition_implementation_reason_field_label()
     )
@@ -1888,7 +1900,7 @@ def _assemble_diagnostic_surface_definition_line_set(
                 indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_definition_shape_registration_status_line(
-                definition,
+                shape_registration_status_value,
                 field_label=shape_registration_status_field_label.text,
                 indent=field_indent.text,
             ).line,
@@ -2032,13 +2044,21 @@ def _prepare_diagnostic_surface_definition_inventory_registration_field_label() 
     )
 
 
-def _render_diagnostic_surface_definition_shape_registration_status_line(
+def _prepare_diagnostic_surface_definition_shape_registration_status_value(
     definition: dict[str, object],
+) -> _DiagnosticSurfaceShapeRegistrationStatusValue:
+    return _DiagnosticSurfaceShapeRegistrationStatusValue(
+        value=definition["shape_registration_status"]
+    )
+
+
+def _render_diagnostic_surface_definition_shape_registration_status_line(
+    shape_registration_status_value: _DiagnosticSurfaceShapeRegistrationStatusValue,
     field_label: str = "shape_registration_status",
     indent: str = "  ",
 ) -> _DiagnosticSurfaceShapeRegistrationStatusLine:
     return _render_diagnostic_surface_shape_registration_status_line(
-        definition["shape_registration_status"], field_label=field_label, indent=indent
+        shape_registration_status_value.value, field_label=field_label, indent=indent
     )
 
 
