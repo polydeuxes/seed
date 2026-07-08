@@ -2206,9 +2206,7 @@ def _render_diagnostic_surface_definition_implementation_reason_line(
 def _prepare_diagnostic_surface_definition_implementation_reason_field_label() -> (
     _DiagnosticSurfaceImplementationReasonFieldLabel
 ):
-    return _DiagnosticSurfaceImplementationReasonFieldLabel(
-        text="implementation_reason"
-    )
+    return _prepare_diagnostic_surface_implementation_reason_field_label()
 
 
 def _prepare_diagnostic_surface_definition_evidence_source_value(
