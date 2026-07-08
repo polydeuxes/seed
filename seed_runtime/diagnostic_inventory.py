@@ -2188,8 +2188,8 @@ def _prepare_diagnostic_surface_definition_shape_registration_status_field_label
 def _prepare_diagnostic_surface_definition_implementation_reason_value(
     definition: dict[str, object],
 ) -> _DiagnosticSurfaceImplementationReasonValue:
-    return _DiagnosticSurfaceImplementationReasonValue(
-        value=definition["implementation_reason"]
+    return _prepare_diagnostic_surface_implementation_reason_value(
+        definition["implementation_reason"]
     )
 
 
