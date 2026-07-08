@@ -101,6 +101,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_explanation_boundary_field_label,
     _prepare_diagnostic_surface_explanation_consumption_text,
     _prepare_diagnostic_surface_explanation_consumption_field_label,
+    _prepare_diagnostic_surface_definition_consumption_field_label,
     _render_diagnostic_surface_explanation_description_line,
     _render_diagnostic_surface_explanation_json_support_line,
     _render_diagnostic_surface_explanation_record_support_line,
@@ -857,10 +858,16 @@ def test_diagnostic_surface_definition_consumption_line_rendering_precedes_line_
         "diagnostic_surface_definition"
     ]
 
+    consumption_field_label = (
+        _prepare_diagnostic_surface_definition_consumption_field_label()
+    )
     consumption_line = _render_diagnostic_surface_definition_consumption_line(
-        definition, indent="    "
+        definition, field_label=consumption_field_label.text, indent="    "
     )
 
+    assert isinstance(consumption_field_label, _DiagnosticSurfaceConsumptionFieldLabel)
+    assert consumption_field_label.text == "diagnostic_surface_consumption"
+    assert set(consumption_field_label.__dataclass_fields__) == {"text"}
     assert isinstance(consumption_line, _DiagnosticSurfaceConsumptionLine)
     assert (
         consumption_line.line

@@ -1787,6 +1787,9 @@ def _assemble_diagnostic_surface_definition_line_set(
     record_scope_value = _prepare_diagnostic_surface_definition_record_scope_value(
         definition
     )
+    consumption_field_label = (
+        _prepare_diagnostic_surface_definition_consumption_field_label()
+    )
     field_indent = _select_diagnostic_surface_top_level_definition_field_indent()
     return _DiagnosticSurfaceDefinitionLineSet(
         lines=(
@@ -1815,7 +1818,9 @@ def _assemble_diagnostic_surface_definition_line_set(
                 definition, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_definition_consumption_line(
-                definition, indent=field_indent.text
+                definition,
+                field_label=consumption_field_label.text,
+                indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_definition_inventory_registration_line(
                 definition, indent=field_indent.text
@@ -1919,12 +1924,24 @@ def _render_diagnostic_surface_definition_boundary_line(
 
 
 def _render_diagnostic_surface_definition_consumption_line(
-    definition: dict[str, object], indent: str = "  "
+    definition: dict[str, object],
+    field_label: str = "diagnostic_surface_consumption",
+    indent: str = "  ",
 ) -> _DiagnosticSurfaceConsumptionLine:
     consumption_text = _prepare_diagnostic_surface_consumption_text(
         definition["diagnostic_surface_consumption"]
     )
-    return _render_diagnostic_surface_consumption_line(consumption_text, indent=indent)
+    return _render_diagnostic_surface_consumption_line(
+        consumption_text, field_label=field_label, indent=indent
+    )
+
+
+def _prepare_diagnostic_surface_definition_consumption_field_label() -> (
+    _DiagnosticSurfaceConsumptionFieldLabel
+):
+    return _DiagnosticSurfaceConsumptionFieldLabel(
+        text="diagnostic_surface_consumption"
+    )
 
 
 def _render_diagnostic_surface_definition_inventory_registration_line(
