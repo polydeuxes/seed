@@ -2022,6 +2022,10 @@ def test_diagnostic_surface_explanation_definition_heading_line_rendering_preced
     assert name_value.value == "diagnostic_shape_audit"
     assert set(name_value.__dataclass_fields__) == {"value"}
     assert isinstance(heading_line, _DiagnosticSurfaceHeadingLine)
+    assert (
+        "_render_diagnostic_surface_explanation_definition_heading_line"
+        in inspect.getsource(_assemble_diagnostic_surface_explanation_line_set)
+    )
     assert heading_line.line == "DiagnosticSurface explanation: diagnostic_shape_audit"
     assert set(heading_line.__dataclass_fields__) == {"line"}
 
