@@ -1831,6 +1831,7 @@ def _assemble_diagnostic_surface_definition_line_set(
     definition: dict[str, object],
 ) -> _DiagnosticSurfaceDefinitionLineSet:
     flag_display = _prepare_diagnostic_surface_cli_flag_display(definition["cli_flags"])
+    status_value = _prepare_diagnostic_surface_definition_status_value(definition)
     description_text = _prepare_diagnostic_surface_definition_description_text(
         definition
     )
@@ -1884,7 +1885,7 @@ def _assemble_diagnostic_surface_definition_line_set(
                 definition
             ).line,
             _render_diagnostic_surface_definition_status_line(
-                definition, indent=field_indent.text
+                status_value, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_definition_cli_flags_line(
                 flag_display, indent=field_indent.text
@@ -1943,10 +1944,16 @@ def _render_diagnostic_surface_definition_identity_heading_line(
     )
 
 
+def _prepare_diagnostic_surface_definition_status_value(
+    definition: dict[str, object],
+) -> _DiagnosticSurfaceStatusValue:
+    return _DiagnosticSurfaceStatusValue(value=definition["status"])
+
+
 def _render_diagnostic_surface_definition_status_line(
-    definition: dict[str, object], indent: str = "  "
+    status_value: _DiagnosticSurfaceStatusValue, indent: str = "  "
 ) -> _DiagnosticSurfaceStatusLine:
-    return _render_diagnostic_surface_status_line(definition["status"], indent=indent)
+    return _render_diagnostic_surface_status_line(status_value.value, indent=indent)
 
 
 def _render_diagnostic_surface_definition_cli_flags_line(
