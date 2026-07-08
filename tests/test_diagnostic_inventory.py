@@ -35,6 +35,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceEvidenceSourceLine,
     _DiagnosticSurfaceExplanationConsumption,
     _DiagnosticSurfaceExplanationLineSet,
+    _DiagnosticSurfaceImplementationReasonFieldLabel,
     _DiagnosticSurfaceImplementationReasonLine,
     _DiagnosticSurfaceInventoryRegistrationFieldLabel,
     _DiagnosticSurfaceInventoryRegistrationLine,
@@ -106,6 +107,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_definition_consumption_field_label,
     _prepare_diagnostic_surface_definition_inventory_registration_field_label,
     _prepare_diagnostic_surface_definition_shape_registration_status_field_label,
+    _prepare_diagnostic_surface_definition_implementation_reason_field_label,
     _render_diagnostic_surface_explanation_description_line,
     _render_diagnostic_surface_explanation_json_support_line,
     _render_diagnostic_surface_explanation_record_support_line,
@@ -932,10 +934,19 @@ def test_diagnostic_surface_definition_implementation_reason_line_rendering_prec
         "diagnostic_surface_definition"
     ]
 
-    reason_line = _render_diagnostic_surface_definition_implementation_reason_line(
-        definition, indent="    "
+    reason_field_label = (
+        _prepare_diagnostic_surface_definition_implementation_reason_field_label()
     )
 
+    reason_line = _render_diagnostic_surface_definition_implementation_reason_line(
+        definition, field_label=reason_field_label.text, indent="    "
+    )
+
+    assert isinstance(
+        reason_field_label, _DiagnosticSurfaceImplementationReasonFieldLabel
+    )
+    assert reason_field_label.text == "implementation_reason"
+    assert set(reason_field_label.__dataclass_fields__) == {"text"}
     assert isinstance(reason_line, _DiagnosticSurfaceImplementationReasonLine)
     assert (
         reason_line.line
