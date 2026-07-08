@@ -2180,9 +2180,7 @@ def _render_diagnostic_surface_definition_shape_registration_status_line(
 def _prepare_diagnostic_surface_definition_shape_registration_status_field_label() -> (
     _DiagnosticSurfaceShapeRegistrationStatusFieldLabel
 ):
-    return _DiagnosticSurfaceShapeRegistrationStatusFieldLabel(
-        text="shape_registration_status"
-    )
+    return _prepare_diagnostic_surface_shape_registration_status_field_label()
 
 
 def _prepare_diagnostic_surface_definition_implementation_reason_value(
