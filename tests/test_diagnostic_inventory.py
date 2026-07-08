@@ -940,6 +940,14 @@ def test_diagnostic_surface_definition_json_support_line_rendering_precedes_line
     assert isinstance(json_support_field_label, _DiagnosticSurfaceJsonSupportFieldLabel)
     assert json_support_field_label.text == "supports_json"
     assert set(json_support_field_label.__dataclass_fields__) == {"text"}
+    assembly_source = inspect.getsource(
+        _assemble_diagnostic_surface_definition_line_set
+    )
+    assert (
+        "_prepare_diagnostic_surface_definition_json_support_value" in assembly_source
+    )
+    assert "_render_diagnostic_surface_definition_json_support_line" in assembly_source
+    assert "json_support_value" in assembly_source
     assert isinstance(json_support_line, _DiagnosticSurfaceJsonSupportLine)
     assert json_support_line.line == "    supports_json: true"
     assert set(json_support_line.__dataclass_fields__) == {"line"}
