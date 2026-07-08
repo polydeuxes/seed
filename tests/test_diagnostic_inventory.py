@@ -1742,6 +1742,10 @@ def test_diagnostic_surface_explanation_line_set_assembly_precedes_human_renderi
         "    diagnostic_surface_consumption: uses_projected_state=false; "
         "uses_repo_files=false; reads_diagnostic_facts=false"
     ) in line_set.lines
+    assert (
+        "_render_diagnostic_surface_explanation_consumption_line"
+        in inspect.getsource(_assemble_diagnostic_surface_explanation_line_set)
+    )
     assert set(line_set.__dataclass_fields__) == {"lines"}
     assert format_diagnostic_surface_explanation("diagnostic_shape_audit") == "\n".join(
         line_set.lines
