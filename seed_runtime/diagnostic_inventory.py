@@ -1842,6 +1842,9 @@ def _assemble_diagnostic_surface_definition_line_set(
     json_support_value = _prepare_diagnostic_surface_definition_json_support_value(
         definition
     )
+    json_support_field_label = (
+        _prepare_diagnostic_surface_definition_json_support_field_label()
+    )
     record_support_value = _prepare_diagnostic_surface_definition_record_support_value(
         definition
     )
@@ -1900,7 +1903,9 @@ def _assemble_diagnostic_surface_definition_line_set(
                 indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_definition_json_support_line(
-                json_support_value, indent=field_indent.text
+                json_support_value,
+                field_label=json_support_field_label.text,
+                indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_definition_record_support_line(
                 record_support_value, indent=field_indent.text
@@ -2006,11 +2011,19 @@ def _prepare_diagnostic_surface_definition_json_support_value(
     return _DiagnosticSurfaceJsonSupportValue(value=definition["supports_json"])
 
 
+def _prepare_diagnostic_surface_definition_json_support_field_label() -> (
+    _DiagnosticSurfaceJsonSupportFieldLabel
+):
+    return _DiagnosticSurfaceJsonSupportFieldLabel(text="supports_json")
+
+
 def _render_diagnostic_surface_definition_json_support_line(
-    json_support_value: _DiagnosticSurfaceJsonSupportValue, indent: str = "  "
+    json_support_value: _DiagnosticSurfaceJsonSupportValue,
+    field_label: str = "supports_json",
+    indent: str = "  ",
 ) -> _DiagnosticSurfaceJsonSupportLine:
     return _render_diagnostic_surface_json_support_line(
-        json_support_value.value, indent=indent
+        json_support_value.value, field_label=field_label, indent=indent
     )
 
 
