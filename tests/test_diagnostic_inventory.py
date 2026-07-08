@@ -1708,6 +1708,7 @@ def test_diagnostic_surface_explanation_line_set_assembly_precedes_human_renderi
     ) in line_set.lines
     assert "    supports_json: true" in line_set.lines
     assert "    supports_record: false" in line_set.lines
+    assert "    record_scope: none" in line_set.lines
     assert "_render_diagnostic_surface_explanation_cli_flags_line" in inspect.getsource(
         _assemble_diagnostic_surface_explanation_line_set
     )
@@ -1721,6 +1722,10 @@ def test_diagnostic_surface_explanation_line_set_assembly_precedes_human_renderi
     )
     assert (
         "_render_diagnostic_surface_explanation_record_support_line"
+        in inspect.getsource(_assemble_diagnostic_surface_explanation_line_set)
+    )
+    assert (
+        "_render_diagnostic_surface_explanation_record_scope_line"
         in inspect.getsource(_assemble_diagnostic_surface_explanation_line_set)
     )
     assert (
