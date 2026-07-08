@@ -483,6 +483,13 @@ class _DiagnosticSurfaceEvidenceSourceLine:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceEvidenceSourceFieldLabel:
+    """Implementation-local evidence source field label before line rendering."""
+
+    text: str
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceConsumptionDeclarationSet:
     """Implementation-local declared consumption facts before identification."""
 
@@ -1820,6 +1827,9 @@ def _assemble_diagnostic_surface_definition_line_set(
     implementation_reason_field_label = (
         _prepare_diagnostic_surface_definition_implementation_reason_field_label()
     )
+    evidence_source_field_label = (
+        _prepare_diagnostic_surface_definition_evidence_source_field_label()
+    )
     field_indent = _select_diagnostic_surface_top_level_definition_field_indent()
     return _DiagnosticSurfaceDefinitionLineSet(
         lines=(
@@ -1868,7 +1878,9 @@ def _assemble_diagnostic_surface_definition_line_set(
                 indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_definition_evidence_source_line(
-                definition, indent=field_indent.text
+                definition,
+                field_label=evidence_source_field_label.text,
+                indent=field_indent.text,
             ).line,
         )
     )
@@ -2037,11 +2049,19 @@ def _prepare_diagnostic_surface_definition_implementation_reason_field_label() -
 
 
 def _render_diagnostic_surface_definition_evidence_source_line(
-    definition: dict[str, object], indent: str = "  "
+    definition: dict[str, object],
+    field_label: str = "evidence_source",
+    indent: str = "  ",
 ) -> _DiagnosticSurfaceEvidenceSourceLine:
     return _render_diagnostic_surface_evidence_source_line(
-        definition["evidence_source"], indent=indent
+        definition["evidence_source"], field_label=field_label, indent=indent
     )
+
+
+def _prepare_diagnostic_surface_definition_evidence_source_field_label() -> (
+    _DiagnosticSurfaceEvidenceSourceFieldLabel
+):
+    return _DiagnosticSurfaceEvidenceSourceFieldLabel(text="evidence_source")
 
 
 def _render_diagnostic_surface_definition_heading_line(
@@ -2376,10 +2396,12 @@ def _render_diagnostic_surface_implementation_reason_line(
 
 
 def _render_diagnostic_surface_evidence_source_line(
-    evidence_source: object, indent: str = "  "
+    evidence_source: object,
+    field_label: str = "evidence_source",
+    indent: str = "  ",
 ) -> _DiagnosticSurfaceEvidenceSourceLine:
     return _DiagnosticSurfaceEvidenceSourceLine(
-        line=f"{indent}evidence_source: {evidence_source}"
+        line=f"{indent}{field_label}: {evidence_source}"
     )
 
 
