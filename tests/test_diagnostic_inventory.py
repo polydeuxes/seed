@@ -1255,6 +1255,14 @@ def test_diagnostic_surface_definition_line_set_assembly_precedes_human_renderin
     assert line_set.lines[0] == "DiagnosticSurface definition: diagnostic_shape_audit"
     assert "  cli_flags: --diagnostic-shape-audit" in line_set.lines
     assert (
+        "  evidence_source: diagnostic_inventory + diagnostic_shape_audit"
+        in line_set.lines
+    )
+    assert (
+        "_render_diagnostic_surface_definition_evidence_source_line"
+        in inspect.getsource(_assemble_diagnostic_surface_definition_line_set)
+    )
+    assert (
         "  diagnostic_surface_consumption: uses_projected_state=false; "
         "uses_repo_files=false; reads_diagnostic_facts=false"
     ) in line_set.lines
