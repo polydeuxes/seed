@@ -39,6 +39,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceExplanationLineSet,
     _DiagnosticSurfaceImplementationReasonFieldLabel,
     _DiagnosticSurfaceImplementationReasonLine,
+    _DiagnosticSurfaceImplementationReasonValue,
     _DiagnosticSurfaceInventoryRegistrationFieldLabel,
     _DiagnosticSurfaceInventoryRegistrationLine,
     _DiagnosticSurfaceJsonSupportFieldLabel,
@@ -110,6 +111,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_definition_inventory_registration_field_label,
     _prepare_diagnostic_surface_definition_shape_registration_status_field_label,
     _prepare_diagnostic_surface_definition_implementation_reason_field_label,
+    _prepare_diagnostic_surface_definition_implementation_reason_value,
     _prepare_diagnostic_surface_definition_evidence_source_field_label,
     _prepare_diagnostic_surface_definition_evidence_source_value,
     _render_diagnostic_surface_explanation_description_line,
@@ -941,9 +943,12 @@ def test_diagnostic_surface_definition_implementation_reason_line_rendering_prec
     reason_field_label = (
         _prepare_diagnostic_surface_definition_implementation_reason_field_label()
     )
+    reason_value = _prepare_diagnostic_surface_definition_implementation_reason_value(
+        definition
+    )
 
     reason_line = _render_diagnostic_surface_definition_implementation_reason_line(
-        definition, field_label=reason_field_label.text, indent="    "
+        reason_value, field_label=reason_field_label.text, indent="    "
     )
 
     assert isinstance(
@@ -951,6 +956,12 @@ def test_diagnostic_surface_definition_implementation_reason_line_rendering_prec
     )
     assert reason_field_label.text == "implementation_reason"
     assert set(reason_field_label.__dataclass_fields__) == {"text"}
+    assert isinstance(reason_value, _DiagnosticSurfaceImplementationReasonValue)
+    assert (
+        reason_value.value
+        == "identity recovered from the diagnostic inventory entry and static shape-audit registration"
+    )
+    assert set(reason_value.__dataclass_fields__) == {"value"}
     assert isinstance(reason_line, _DiagnosticSurfaceImplementationReasonLine)
     assert (
         reason_line.line
