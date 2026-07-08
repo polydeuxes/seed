@@ -1105,6 +1105,12 @@ def test_diagnostic_surface_definition_shape_registration_status_line_rendering_
     )
     assert status_field_label.text == "shape_registration_status"
     assert set(status_field_label.__dataclass_fields__) == {"text"}
+    assert (
+        "_prepare_diagnostic_surface_shape_registration_status_field_label"
+        in inspect.getsource(
+            _prepare_diagnostic_surface_definition_shape_registration_status_field_label
+        )
+    )
     signature = inspect.signature(
         _render_diagnostic_surface_definition_shape_registration_status_line
     )
