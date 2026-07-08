@@ -91,6 +91,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_definition_record_support_value,
     _prepare_diagnostic_surface_definition_record_scope_value,
     _prepare_diagnostic_surface_definition_boundary_text,
+    _prepare_diagnostic_surface_definition_boundary_field_label,
     _prepare_diagnostic_surface_explanation_cli_flag_display,
     _prepare_diagnostic_surface_explanation_cli_flags_field_label,
     _prepare_diagnostic_surface_explanation_description_text,
@@ -856,8 +857,9 @@ def test_diagnostic_surface_definition_boundary_line_rendering_precedes_line_set
     ]
 
     boundary_text = _prepare_diagnostic_surface_definition_boundary_text(definition)
+    boundary_field_label = _prepare_diagnostic_surface_definition_boundary_field_label()
     boundary_line = _render_diagnostic_surface_definition_boundary_line(
-        boundary_text, indent="    "
+        boundary_text, field_label=boundary_field_label.text, indent="    "
     )
 
     assert isinstance(boundary_text, _DiagnosticSurfaceBoundaryText)
@@ -869,6 +871,9 @@ def test_diagnostic_surface_definition_boundary_line_rendering_precedes_line_set
         "does not read diagnostic facts"
     )
     assert set(boundary_text.__dataclass_fields__) == {"text"}
+    assert isinstance(boundary_field_label, _DiagnosticSurfaceBoundaryFieldLabel)
+    assert boundary_field_label.text == "diagnostic_surface_boundary"
+    assert set(boundary_field_label.__dataclass_fields__) == {"text"}
     assert isinstance(boundary_line, _DiagnosticSurfaceBoundaryLine)
     assert (
         boundary_line.line
