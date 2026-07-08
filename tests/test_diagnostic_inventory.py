@@ -34,6 +34,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceDescriptionText,
     _DiagnosticSurfaceEvidenceSourceFieldLabel,
     _DiagnosticSurfaceEvidenceSourceLine,
+    _DiagnosticSurfaceEvidenceSourceValue,
     _DiagnosticSurfaceExplanationConsumption,
     _DiagnosticSurfaceExplanationLineSet,
     _DiagnosticSurfaceImplementationReasonFieldLabel,
@@ -110,6 +111,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_definition_shape_registration_status_field_label,
     _prepare_diagnostic_surface_definition_implementation_reason_field_label,
     _prepare_diagnostic_surface_definition_evidence_source_field_label,
+    _prepare_diagnostic_surface_definition_evidence_source_value,
     _render_diagnostic_surface_explanation_description_line,
     _render_diagnostic_surface_explanation_json_support_line,
     _render_diagnostic_surface_explanation_record_support_line,
@@ -962,14 +964,24 @@ def test_diagnostic_surface_definition_evidence_source_line_rendering_precedes_l
     definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
         "diagnostic_surface_definition"
     ]
+    evidence_source_value = (
+        _prepare_diagnostic_surface_definition_evidence_source_value(definition)
+    )
     evidence_source_field_label = (
         _prepare_diagnostic_surface_definition_evidence_source_field_label()
     )
 
     evidence_source_line = _render_diagnostic_surface_definition_evidence_source_line(
-        definition, field_label=evidence_source_field_label.text, indent="    "
+        evidence_source_value,
+        field_label=evidence_source_field_label.text,
+        indent="    ",
     )
 
+    assert isinstance(evidence_source_value, _DiagnosticSurfaceEvidenceSourceValue)
+    assert (
+        evidence_source_value.value == "diagnostic_inventory + diagnostic_shape_audit"
+    )
+    assert set(evidence_source_value.__dataclass_fields__) == {"value"}
     assert isinstance(
         evidence_source_field_label, _DiagnosticSurfaceEvidenceSourceFieldLabel
     )

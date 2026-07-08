@@ -476,6 +476,13 @@ class _DiagnosticSurfaceImplementationReasonLine:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceEvidenceSourceValue:
+    """Implementation-local evidence source value before line rendering."""
+
+    value: object
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceEvidenceSourceLine:
     """Implementation-local evidence source line before line-set assembly."""
 
@@ -1827,6 +1834,9 @@ def _assemble_diagnostic_surface_definition_line_set(
     implementation_reason_field_label = (
         _prepare_diagnostic_surface_definition_implementation_reason_field_label()
     )
+    evidence_source_value = (
+        _prepare_diagnostic_surface_definition_evidence_source_value(definition)
+    )
     evidence_source_field_label = (
         _prepare_diagnostic_surface_definition_evidence_source_field_label()
     )
@@ -1878,7 +1888,7 @@ def _assemble_diagnostic_surface_definition_line_set(
                 indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_definition_evidence_source_line(
-                definition,
+                evidence_source_value,
                 field_label=evidence_source_field_label.text,
                 indent=field_indent.text,
             ).line,
@@ -2048,13 +2058,19 @@ def _prepare_diagnostic_surface_definition_implementation_reason_field_label() -
     )
 
 
-def _render_diagnostic_surface_definition_evidence_source_line(
+def _prepare_diagnostic_surface_definition_evidence_source_value(
     definition: dict[str, object],
+) -> _DiagnosticSurfaceEvidenceSourceValue:
+    return _DiagnosticSurfaceEvidenceSourceValue(value=definition["evidence_source"])
+
+
+def _render_diagnostic_surface_definition_evidence_source_line(
+    evidence_source_value: _DiagnosticSurfaceEvidenceSourceValue,
     field_label: str = "evidence_source",
     indent: str = "  ",
 ) -> _DiagnosticSurfaceEvidenceSourceLine:
     return _render_diagnostic_surface_evidence_source_line(
-        definition["evidence_source"], field_label=field_label, indent=indent
+        evidence_source_value.value, field_label=field_label, indent=indent
     )
 
 
