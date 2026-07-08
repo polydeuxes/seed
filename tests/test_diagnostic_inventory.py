@@ -88,6 +88,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_evidence_source_field_label,
     _prepare_diagnostic_surface_evidence_source_value,
     _prepare_diagnostic_surface_shape_registration_status_value,
+    _prepare_diagnostic_surface_shape_registration_status_field_label,
     _prepare_diagnostic_surface_implementation_reason_field_label,
     _prepare_diagnostic_surface_implementation_reason_value,
     _render_diagnostic_surface_boundary_line,
@@ -642,14 +643,24 @@ def test_diagnostic_surface_inventory_registration_line_rendering_precedes_line_
 
 
 def test_diagnostic_surface_shape_registration_status_line_rendering_follows_status_identification():
+    status_field_label = (
+        _prepare_diagnostic_surface_shape_registration_status_field_label()
+    )
     status_value = _prepare_diagnostic_surface_shape_registration_status_value(
         "present"
     )
 
     status_line = _render_diagnostic_surface_shape_registration_status_line(
-        status_value.value, indent="    "
+        status_value.value,
+        field_label=status_field_label.text,
+        indent="    ",
     )
 
+    assert isinstance(
+        status_field_label, _DiagnosticSurfaceShapeRegistrationStatusFieldLabel
+    )
+    assert status_field_label.text == "shape_registration_status"
+    assert set(status_field_label.__dataclass_fields__) == {"text"}
     assert isinstance(status_value, _DiagnosticSurfaceShapeRegistrationStatusValue)
     assert status_value.value == "present"
     assert set(status_value.__dataclass_fields__) == {"value"}

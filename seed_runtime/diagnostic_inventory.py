@@ -2550,6 +2550,14 @@ def _prepare_diagnostic_surface_shape_registration_status_value(
     return _DiagnosticSurfaceShapeRegistrationStatusValue(value=status)
 
 
+def _prepare_diagnostic_surface_shape_registration_status_field_label() -> (
+    _DiagnosticSurfaceShapeRegistrationStatusFieldLabel
+):
+    return _DiagnosticSurfaceShapeRegistrationStatusFieldLabel(
+        text="shape_registration_status"
+    )
+
+
 def _render_diagnostic_surface_shape_registration_status_line(
     status: object,
     field_label: str = "shape_registration_status",
