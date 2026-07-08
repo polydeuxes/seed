@@ -1232,6 +1232,9 @@ def test_diagnostic_surface_definition_evidence_source_line_rendering_precedes_l
         _render_diagnostic_surface_definition_evidence_source_line
     )
 
+    assert "_render_diagnostic_surface_evidence_source_line" in inspect.getsource(
+        _render_diagnostic_surface_definition_evidence_source_line
+    )
     assert signature.parameters["field_label"].default is inspect.Parameter.empty
     assert isinstance(evidence_source_line, _DiagnosticSurfaceEvidenceSourceLine)
     assert (
