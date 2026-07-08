@@ -1854,6 +1854,9 @@ def _assemble_diagnostic_surface_definition_line_set(
     record_scope_value = _prepare_diagnostic_surface_definition_record_scope_value(
         definition
     )
+    record_scope_field_label = (
+        _prepare_diagnostic_surface_definition_record_scope_field_label()
+    )
     boundary_text = _prepare_diagnostic_surface_definition_boundary_text(definition)
     boundary_field_label = _prepare_diagnostic_surface_definition_boundary_field_label()
     consumption_text = _prepare_diagnostic_surface_definition_consumption_text(
@@ -1916,7 +1919,9 @@ def _assemble_diagnostic_surface_definition_line_set(
                 indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_definition_record_scope_line(
-                record_scope_value, indent=field_indent.text
+                record_scope_value,
+                field_label=record_scope_field_label.text,
+                indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_definition_boundary_line(
                 boundary_text,
@@ -2060,11 +2065,19 @@ def _prepare_diagnostic_surface_definition_record_scope_value(
     return _DiagnosticSurfaceRecordScopeValue(value=definition["record_scope"])
 
 
+def _prepare_diagnostic_surface_definition_record_scope_field_label() -> (
+    _DiagnosticSurfaceRecordScopeFieldLabel
+):
+    return _DiagnosticSurfaceRecordScopeFieldLabel(text="record_scope")
+
+
 def _render_diagnostic_surface_definition_record_scope_line(
-    record_scope_value: _DiagnosticSurfaceRecordScopeValue, indent: str = "  "
+    record_scope_value: _DiagnosticSurfaceRecordScopeValue,
+    field_label: str = "record_scope",
+    indent: str = "  ",
 ) -> _DiagnosticSurfaceRecordScopeLine:
     return _render_diagnostic_surface_record_scope_line(
-        record_scope_value.value, indent=indent
+        record_scope_value.value, field_label=field_label, indent=indent
     )
 
 
