@@ -1258,6 +1258,9 @@ def test_diagnostic_surface_definition_line_set_assembly_precedes_human_renderin
         _assemble_diagnostic_surface_definition_line_set
     )
     assert "  cli_flags: --diagnostic-shape-audit" in line_set.lines
+    assert "_render_diagnostic_surface_definition_cli_flags_line" in inspect.getsource(
+        _assemble_diagnostic_surface_definition_line_set
+    )
     assert (
         "  implementation_reason: identity recovered from the diagnostic inventory "
         "entry and static shape-audit registration"
