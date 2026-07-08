@@ -810,6 +810,14 @@ def test_diagnostic_surface_definition_identity_heading_line_rendering_precedes_
     assert isinstance(name_value, _DiagnosticSurfaceNameValue)
     assert name_value.value == "diagnostic_shape_audit"
     assert set(name_value.__dataclass_fields__) == {"value"}
+    assembly_source = inspect.getsource(
+        _assemble_diagnostic_surface_definition_line_set
+    )
+    assert "_prepare_diagnostic_surface_definition_name_value" in assembly_source
+    assert (
+        "_render_diagnostic_surface_definition_identity_heading_line" in assembly_source
+    )
+    assert "name_value" in assembly_source
     assert isinstance(heading_line, _DiagnosticSurfaceHeadingLine)
     assert heading_line.line == "DiagnosticSurface definition: diagnostic_shape_audit"
     assert set(heading_line.__dataclass_fields__) == {"line"}
