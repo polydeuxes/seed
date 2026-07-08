@@ -86,6 +86,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_boundary_text,
     _render_diagnostic_surface_boundary_line,
     _prepare_diagnostic_surface_cli_flag_display,
+    _prepare_diagnostic_surface_definition_name_value,
     _prepare_diagnostic_surface_definition_status_value,
     _prepare_diagnostic_surface_definition_description_text,
     _prepare_diagnostic_surface_definition_json_support_value,
@@ -727,10 +728,14 @@ def test_diagnostic_surface_definition_identity_heading_line_rendering_precedes_
         "diagnostic_surface_definition"
     ]
 
+    name_value = _prepare_diagnostic_surface_definition_name_value(definition)
     heading_line = _render_diagnostic_surface_definition_identity_heading_line(
-        definition
+        name_value
     )
 
+    assert isinstance(name_value, _DiagnosticSurfaceNameValue)
+    assert name_value.value == "diagnostic_shape_audit"
+    assert set(name_value.__dataclass_fields__) == {"value"}
     assert isinstance(heading_line, _DiagnosticSurfaceHeadingLine)
     assert heading_line.line == "DiagnosticSurface definition: diagnostic_shape_audit"
     assert set(heading_line.__dataclass_fields__) == {"line"}
