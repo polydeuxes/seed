@@ -469,6 +469,13 @@ class _DiagnosticSurfaceImplementationReasonFieldLabel:
 
 
 @dataclass(frozen=True)
+class _DiagnosticSurfaceImplementationReasonValue:
+    """Implementation-local implementation reason value before line rendering."""
+
+    value: object
+
+
+@dataclass(frozen=True)
 class _DiagnosticSurfaceImplementationReasonLine:
     """Implementation-local implementation reason line before line-set assembly."""
 
@@ -1834,6 +1841,9 @@ def _assemble_diagnostic_surface_definition_line_set(
     implementation_reason_field_label = (
         _prepare_diagnostic_surface_definition_implementation_reason_field_label()
     )
+    implementation_reason_value = (
+        _prepare_diagnostic_surface_definition_implementation_reason_value(definition)
+    )
     evidence_source_value = (
         _prepare_diagnostic_surface_definition_evidence_source_value(definition)
     )
@@ -1883,7 +1893,7 @@ def _assemble_diagnostic_surface_definition_line_set(
                 indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_definition_implementation_reason_line(
-                definition,
+                implementation_reason_value,
                 field_label=implementation_reason_field_label.text,
                 indent=field_indent.text,
             ).line,
@@ -2040,13 +2050,21 @@ def _prepare_diagnostic_surface_definition_shape_registration_status_field_label
     )
 
 
-def _render_diagnostic_surface_definition_implementation_reason_line(
+def _prepare_diagnostic_surface_definition_implementation_reason_value(
     definition: dict[str, object],
+) -> _DiagnosticSurfaceImplementationReasonValue:
+    return _DiagnosticSurfaceImplementationReasonValue(
+        value=definition["implementation_reason"]
+    )
+
+
+def _render_diagnostic_surface_definition_implementation_reason_line(
+    implementation_reason_value: _DiagnosticSurfaceImplementationReasonValue,
     field_label: str = "implementation_reason",
     indent: str = "  ",
 ) -> _DiagnosticSurfaceImplementationReasonLine:
     return _render_diagnostic_surface_implementation_reason_line(
-        definition["implementation_reason"], field_label=field_label, indent=indent
+        implementation_reason_value.value, field_label=field_label, indent=indent
     )
 
 
