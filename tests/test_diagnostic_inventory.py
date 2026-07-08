@@ -31,6 +31,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceDefinitionSectionLabel,
     _DiagnosticSurfaceDefinitionSectionIndent,
     _DiagnosticSurfaceNestedDefinitionFieldIndent,
+    _DiagnosticSurfaceTopLevelDefinitionFieldIndent,
     _DiagnosticSurfaceDescriptionLine,
     _DiagnosticSurfaceDescriptionFieldLabel,
     _DiagnosticSurfaceDescriptionText,
@@ -121,6 +122,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_explanation_definition_section_label,
     _select_diagnostic_surface_explanation_definition_section_indent,
     _select_diagnostic_surface_nested_definition_field_indent,
+    _select_diagnostic_surface_top_level_definition_field_indent,
     _prepare_diagnostic_surface_explanation_status_value,
     _prepare_diagnostic_surface_explanation_status_field_label,
     _prepare_diagnostic_surface_explanation_boundary_text,
@@ -2062,6 +2064,17 @@ def test_diagnostic_surface_explanation_nested_definition_field_indent_selection
     assert set(field_indent.__dataclass_fields__) == {"text"}
     assert "field_indent.text" in inspect.getsource(
         _assemble_diagnostic_surface_explanation_line_set
+    )
+
+
+def test_diagnostic_surface_definition_top_level_field_indent_selection_precedes_line_rendering():
+    field_indent = _select_diagnostic_surface_top_level_definition_field_indent()
+
+    assert isinstance(field_indent, _DiagnosticSurfaceTopLevelDefinitionFieldIndent)
+    assert field_indent.text == "  "
+    assert set(field_indent.__dataclass_fields__) == {"text"}
+    assert "field_indent.text" in inspect.getsource(
+        _assemble_diagnostic_surface_definition_line_set
     )
 
 
