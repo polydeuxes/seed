@@ -50,6 +50,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceRecordScopeValue,
     _DiagnosticSurfaceShapeRegistrationIdentification,
     _DiagnosticSurfaceShapeRegistrationLookup,
+    _DiagnosticSurfaceShapeRegistrationStatusFieldLabel,
     _DiagnosticSurfaceShapeRegistrationStatusLine,
     _DiagnosticSurfaceStatusLine,
     _DiagnosticSurfaceStatusValue,
@@ -104,6 +105,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_explanation_consumption_field_label,
     _prepare_diagnostic_surface_definition_consumption_field_label,
     _prepare_diagnostic_surface_definition_inventory_registration_field_label,
+    _prepare_diagnostic_surface_definition_shape_registration_status_field_label,
     _render_diagnostic_surface_explanation_description_line,
     _render_diagnostic_surface_explanation_json_support_line,
     _render_diagnostic_surface_explanation_record_support_line,
@@ -907,11 +909,19 @@ def test_diagnostic_surface_definition_shape_registration_status_line_rendering_
     definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
         "diagnostic_surface_definition"
     ]
-
-    status_line = _render_diagnostic_surface_definition_shape_registration_status_line(
-        definition, indent="    "
+    status_field_label = (
+        _prepare_diagnostic_surface_definition_shape_registration_status_field_label()
     )
 
+    status_line = _render_diagnostic_surface_definition_shape_registration_status_line(
+        definition, field_label=status_field_label.text, indent="    "
+    )
+
+    assert isinstance(
+        status_field_label, _DiagnosticSurfaceShapeRegistrationStatusFieldLabel
+    )
+    assert status_field_label.text == "shape_registration_status"
+    assert set(status_field_label.__dataclass_fields__) == {"text"}
     assert isinstance(status_line, _DiagnosticSurfaceShapeRegistrationStatusLine)
     assert status_line.line == "    shape_registration_status: present"
     assert set(status_line.__dataclass_fields__) == {"line"}
