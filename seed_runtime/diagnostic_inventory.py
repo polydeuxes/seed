@@ -2091,7 +2091,7 @@ def _prepare_diagnostic_surface_definition_boundary_text(
 
 def _render_diagnostic_surface_definition_boundary_line(
     boundary_text: _DiagnosticSurfaceBoundaryText,
-    field_label: str = "diagnostic_surface_boundary",
+    field_label: str,
     indent: str = "  ",
 ) -> _DiagnosticSurfaceBoundaryLine:
     return _render_diagnostic_surface_boundary_line(
