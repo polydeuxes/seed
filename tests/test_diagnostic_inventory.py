@@ -42,6 +42,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceImplementationReasonValue,
     _DiagnosticSurfaceInventoryRegistrationFieldLabel,
     _DiagnosticSurfaceInventoryRegistrationLine,
+    _DiagnosticSurfaceInventoryRegistrationValue,
     _DiagnosticSurfaceJsonSupportFieldLabel,
     _DiagnosticSurfaceJsonSupportLine,
     _DiagnosticSurfaceJsonSupportValue,
@@ -110,6 +111,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_explanation_consumption_field_label,
     _prepare_diagnostic_surface_definition_consumption_field_label,
     _prepare_diagnostic_surface_definition_inventory_registration_field_label,
+    _prepare_diagnostic_surface_definition_inventory_registration_value,
     _prepare_diagnostic_surface_definition_shape_registration_status_field_label,
     _prepare_diagnostic_surface_definition_shape_registration_status_value,
     _prepare_diagnostic_surface_definition_implementation_reason_field_label,
@@ -898,10 +900,13 @@ def test_diagnostic_surface_definition_inventory_registration_line_rendering_pre
     registration_field_label = (
         _prepare_diagnostic_surface_definition_inventory_registration_field_label()
     )
+    registration_value = (
+        _prepare_diagnostic_surface_definition_inventory_registration_value(definition)
+    )
 
     registration_line = (
         _render_diagnostic_surface_definition_inventory_registration_line(
-            definition, field_label=registration_field_label.text, indent="    "
+            registration_value, field_label=registration_field_label.text, indent="    "
         )
     )
 
@@ -910,6 +915,9 @@ def test_diagnostic_surface_definition_inventory_registration_line_rendering_pre
     )
     assert registration_field_label.text == "diagnostic_inventory_registration"
     assert set(registration_field_label.__dataclass_fields__) == {"text"}
+    assert isinstance(registration_value, _DiagnosticSurfaceInventoryRegistrationValue)
+    assert registration_value.value == "present"
+    assert set(registration_value.__dataclass_fields__) == {"value"}
     assert isinstance(registration_line, _DiagnosticSurfaceInventoryRegistrationLine)
     assert registration_line.line == "    diagnostic_inventory_registration: present"
     assert set(registration_line.__dataclass_fields__) == {"line"}
