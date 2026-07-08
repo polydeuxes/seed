@@ -56,6 +56,7 @@ from seed_runtime.diagnostic_inventory import (
     _DiagnosticSurfaceShapeRegistrationLookup,
     _DiagnosticSurfaceShapeRegistrationStatusFieldLabel,
     _DiagnosticSurfaceShapeRegistrationStatusLine,
+    _DiagnosticSurfaceShapeRegistrationStatusValue,
     _DiagnosticSurfaceStatusLine,
     _DiagnosticSurfaceStatusValue,
     _DiagnosticSurfaceStatusFieldLabel,
@@ -110,6 +111,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_definition_consumption_field_label,
     _prepare_diagnostic_surface_definition_inventory_registration_field_label,
     _prepare_diagnostic_surface_definition_shape_registration_status_field_label,
+    _prepare_diagnostic_surface_definition_shape_registration_status_value,
     _prepare_diagnostic_surface_definition_implementation_reason_field_label,
     _prepare_diagnostic_surface_definition_implementation_reason_value,
     _prepare_diagnostic_surface_definition_evidence_source_field_label,
@@ -920,9 +922,14 @@ def test_diagnostic_surface_definition_shape_registration_status_line_rendering_
     status_field_label = (
         _prepare_diagnostic_surface_definition_shape_registration_status_field_label()
     )
+    status_value = (
+        _prepare_diagnostic_surface_definition_shape_registration_status_value(
+            definition
+        )
+    )
 
     status_line = _render_diagnostic_surface_definition_shape_registration_status_line(
-        definition, field_label=status_field_label.text, indent="    "
+        status_value, field_label=status_field_label.text, indent="    "
     )
 
     assert isinstance(
@@ -930,6 +937,9 @@ def test_diagnostic_surface_definition_shape_registration_status_line_rendering_
     )
     assert status_field_label.text == "shape_registration_status"
     assert set(status_field_label.__dataclass_fields__) == {"text"}
+    assert isinstance(status_value, _DiagnosticSurfaceShapeRegistrationStatusValue)
+    assert status_value.value == "present"
+    assert set(status_value.__dataclass_fields__) == {"value"}
     assert isinstance(status_line, _DiagnosticSurfaceShapeRegistrationStatusLine)
     assert status_line.line == "    shape_registration_status: present"
     assert set(status_line.__dataclass_fields__) == {"line"}
