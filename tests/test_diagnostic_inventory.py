@@ -86,6 +86,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_boundary_text,
     _render_diagnostic_surface_boundary_line,
     _prepare_diagnostic_surface_cli_flag_display,
+    _prepare_diagnostic_surface_definition_cli_flag_display,
     _prepare_diagnostic_surface_definition_name_value,
     _prepare_diagnostic_surface_definition_status_value,
     _prepare_diagnostic_surface_definition_description_text,
@@ -759,8 +760,23 @@ def test_diagnostic_surface_definition_status_line_rendering_precedes_line_set_a
     assert set(status_line.__dataclass_fields__) == {"line"}
 
 
+def test_diagnostic_surface_definition_cli_flag_display_preparation_precedes_line_set_assembly():
+    definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
+        "diagnostic_surface_definition"
+    ]
+
+    flag_display = _prepare_diagnostic_surface_definition_cli_flag_display(definition)
+
+    assert isinstance(flag_display, _DiagnosticSurfaceCliFlagDisplay)
+    assert flag_display.text == "--diagnostic-shape-audit"
+    assert set(flag_display.__dataclass_fields__) == {"text"}
+
+
 def test_diagnostic_surface_definition_cli_flags_line_rendering_precedes_line_set_assembly():
-    display = _prepare_diagnostic_surface_cli_flag_display(["--diagnostic-shape-audit"])
+    definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
+        "diagnostic_surface_definition"
+    ]
+    display = _prepare_diagnostic_surface_definition_cli_flag_display(definition)
 
     cli_flags_line = _render_diagnostic_surface_definition_cli_flags_line(
         display, indent="    "
