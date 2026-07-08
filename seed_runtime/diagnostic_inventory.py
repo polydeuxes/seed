@@ -2562,6 +2562,12 @@ def _prepare_diagnostic_surface_implementation_reason_field_label() -> (
     )
 
 
+def _prepare_diagnostic_surface_implementation_reason_value(
+    reason: object,
+) -> _DiagnosticSurfaceImplementationReasonValue:
+    return _DiagnosticSurfaceImplementationReasonValue(value=reason)
+
+
 def _render_diagnostic_surface_implementation_reason_line(
     reason: object,
     field_label: str,
