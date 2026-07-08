@@ -90,6 +90,7 @@ from seed_runtime.diagnostic_inventory import (
     _prepare_diagnostic_surface_definition_name_value,
     _prepare_diagnostic_surface_definition_status_value,
     _prepare_diagnostic_surface_definition_description_text,
+    _prepare_diagnostic_surface_definition_description_field_label,
     _prepare_diagnostic_surface_definition_json_support_value,
     _prepare_diagnostic_surface_definition_record_support_value,
     _prepare_diagnostic_surface_definition_record_scope_value,
@@ -794,9 +795,12 @@ def test_diagnostic_surface_definition_description_line_rendering_precedes_line_
     description_text = _prepare_diagnostic_surface_definition_description_text(
         definition
     )
+    description_field_label = (
+        _prepare_diagnostic_surface_definition_description_field_label()
+    )
 
     description_line = _render_diagnostic_surface_definition_description_line(
-        description_text, indent="    "
+        description_text, field_label=description_field_label.text, indent="    "
     )
 
     assert isinstance(description_text, _DiagnosticSurfaceDescriptionText)
@@ -806,6 +810,9 @@ def test_diagnostic_surface_definition_description_line_rendering_precedes_line_
         "implementation shape without recording or mutation."
     )
     assert set(description_text.__dataclass_fields__) == {"text"}
+    assert isinstance(description_field_label, _DiagnosticSurfaceDescriptionFieldLabel)
+    assert description_field_label.text == "description"
+    assert set(description_field_label.__dataclass_fields__) == {"text"}
     assert isinstance(description_line, _DiagnosticSurfaceDescriptionLine)
     assert (
         description_line.line
