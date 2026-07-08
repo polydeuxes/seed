@@ -1844,6 +1844,7 @@ def _assemble_diagnostic_surface_definition_line_set(
         definition
     )
     boundary_text = _prepare_diagnostic_surface_definition_boundary_text(definition)
+    boundary_field_label = _prepare_diagnostic_surface_definition_boundary_field_label()
     consumption_text = _prepare_diagnostic_surface_definition_consumption_text(
         definition
     )
@@ -1901,7 +1902,9 @@ def _assemble_diagnostic_surface_definition_line_set(
                 record_scope_value, indent=field_indent.text
             ).line,
             _render_diagnostic_surface_definition_boundary_line(
-                boundary_text, indent=field_indent.text
+                boundary_text,
+                field_label=boundary_field_label.text,
+                indent=field_indent.text,
             ).line,
             _render_diagnostic_surface_definition_consumption_line(
                 consumption_text,
@@ -2017,9 +2020,19 @@ def _prepare_diagnostic_surface_definition_boundary_text(
 
 
 def _render_diagnostic_surface_definition_boundary_line(
-    boundary_text: _DiagnosticSurfaceBoundaryText, indent: str = "  "
+    boundary_text: _DiagnosticSurfaceBoundaryText,
+    field_label: str = "diagnostic_surface_boundary",
+    indent: str = "  ",
 ) -> _DiagnosticSurfaceBoundaryLine:
-    return _render_diagnostic_surface_boundary_line(boundary_text, indent=indent)
+    return _render_diagnostic_surface_boundary_line(
+        boundary_text, field_label=field_label, indent=indent
+    )
+
+
+def _prepare_diagnostic_surface_definition_boundary_field_label() -> (
+    _DiagnosticSurfaceBoundaryFieldLabel
+):
+    return _DiagnosticSurfaceBoundaryFieldLabel(text="diagnostic_surface_boundary")
 
 
 def _prepare_diagnostic_surface_definition_consumption_text(
