@@ -1702,8 +1702,16 @@ def test_diagnostic_surface_explanation_line_set_assembly_precedes_human_renderi
     assert line_set.lines[0] == "DiagnosticSurface explanation: diagnostic_shape_audit"
     assert "  definition:" in line_set.lines
     assert "    cli_flags: --diagnostic-shape-audit" in line_set.lines
+    assert (
+        "    description: Compares diagnostic registry declarations with static "
+        "implementation shape without recording or mutation."
+    ) in line_set.lines
     assert "_render_diagnostic_surface_explanation_cli_flags_line" in inspect.getsource(
         _assemble_diagnostic_surface_explanation_line_set
+    )
+    assert (
+        "_render_diagnostic_surface_explanation_description_line"
+        in inspect.getsource(_assemble_diagnostic_surface_explanation_line_set)
     )
     assert (
         "    diagnostic_surface_consumption: uses_projected_state=false; "
