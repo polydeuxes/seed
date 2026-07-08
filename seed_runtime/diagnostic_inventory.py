@@ -2544,6 +2544,12 @@ def _render_diagnostic_surface_inventory_registration_line(
     )
 
 
+def _prepare_diagnostic_surface_shape_registration_status_value(
+    status: object,
+) -> _DiagnosticSurfaceShapeRegistrationStatusValue:
+    return _DiagnosticSurfaceShapeRegistrationStatusValue(value=status)
+
+
 def _render_diagnostic_surface_shape_registration_status_line(
     status: object,
     field_label: str = "shape_registration_status",
