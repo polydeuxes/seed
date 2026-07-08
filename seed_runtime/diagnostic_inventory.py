@@ -2162,8 +2162,8 @@ def _prepare_diagnostic_surface_definition_inventory_registration_field_label() 
 def _prepare_diagnostic_surface_definition_shape_registration_status_value(
     definition: dict[str, object],
 ) -> _DiagnosticSurfaceShapeRegistrationStatusValue:
-    return _DiagnosticSurfaceShapeRegistrationStatusValue(
-        value=definition["shape_registration_status"]
+    return _prepare_diagnostic_surface_shape_registration_status_value(
+        definition["shape_registration_status"]
     )
 
 
