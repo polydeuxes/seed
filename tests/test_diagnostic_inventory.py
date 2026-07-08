@@ -1114,6 +1114,12 @@ def test_diagnostic_surface_definition_shape_registration_status_line_rendering_
     signature = inspect.signature(
         _render_diagnostic_surface_definition_shape_registration_status_line
     )
+    assert (
+        "_render_diagnostic_surface_shape_registration_status_line"
+        in inspect.getsource(
+            _render_diagnostic_surface_definition_shape_registration_status_line
+        )
+    )
 
     assert isinstance(status_value, _DiagnosticSurfaceShapeRegistrationStatusValue)
     assert status_value.value == "present"
