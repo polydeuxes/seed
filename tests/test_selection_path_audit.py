@@ -359,6 +359,23 @@ def test_selected_pressure_item_lookup_is_owned_by_local_helper():
     assert _selected_pressure_item(()) is None
 
 
+def test_pressure_selection_reason_payload_is_owned_by_local_helper():
+    from seed_runtime.selection_path_audit import _pressure_selection_reason_payload
+
+    payload = _pressure_selection_reason_payload(
+        "runtime reachability", "Runtime reachability"
+    )
+
+    assert payload.outcome == {
+        "selected": "runtime reachability",
+        "focus": "Runtime reachability",
+        "summary": "runtime reachability selected",
+    }
+    assert "evidence" not in payload.__dataclass_fields__
+    assert "candidates" not in payload.__dataclass_fields__
+    assert "selection_factors" not in payload.__dataclass_fields__
+
+
 def test_focus_selection_target_matching_is_owned_by_local_helper():
     from seed_runtime.selection_path_audit import (
         _normalize_target,

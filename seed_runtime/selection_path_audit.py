@@ -236,13 +236,7 @@ def _from_pressure_selection(
     return _selection_path_from_payloads(
         target=target,
         result=_SelectionResultPayload(selected=selected),
-        reason=_SelectionReasonPayload(
-            outcome={
-                "selected": selected,
-                "focus": focus,
-                "summary": f"{selected} selected",
-            },
-        ),
+        reason=_pressure_selection_reason_payload(selected, focus),
         support=_SelectionSupportingEvidencePayload(
             evidence=[_evidence(selected_item)] if selected_item else []
         ),
@@ -252,6 +246,18 @@ def _from_pressure_selection(
             non_selected=_non_selected_from_pressures(pressures, selected_item),
             unknowns=unknowns,
         ),
+    )
+
+
+def _pressure_selection_reason_payload(
+    selected: str, focus: str
+) -> _SelectionReasonPayload:
+    return _SelectionReasonPayload(
+        outcome={
+            "selected": selected,
+            "focus": focus,
+            "summary": f"{selected} selected",
+        }
     )
 
 
