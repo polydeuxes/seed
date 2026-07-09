@@ -336,6 +336,47 @@ def test_selection_non_selected_payload_is_separate_from_candidate_set():
     assert "unknowns" not in payload.__dataclass_fields__
 
 
+def test_unsupported_target_selection_refusal_is_prepared_separately():
+    from seed_runtime.pressure_audit import PressureItem
+    from seed_runtime.selection_path_audit import _unsupported_target_selection
+
+    pressure = PressureItem(
+        category="Runtime reachability",
+        score=3,
+        reason="selected pressure",
+        evidence={"source": "selected evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+
+    audit = _unsupported_target_selection("not_a_selection", (pressure,))
+
+    assert audit.target == "not_a_selection"
+    assert audit.selected == "unknown"
+    assert audit.outcome == {
+        "selected": "unknown",
+        "reason": "target is not an implemented selection surface",
+    }
+    assert audit.candidates == [
+        {
+            "candidate": "runtime reachability",
+            "score": 3,
+            "rank": 1,
+            "reason": "selected pressure",
+            "evidence": {"source": "selected evidence"},
+        }
+    ]
+    assert audit.selection_factors == ["unknown"]
+    assert audit.non_selected == []
+    assert audit.evidence == []
+    assert audit.unknowns == [
+        {
+            "area": "selection_logic",
+            "reason": "no implementation-backed selection evidence discovered for target",
+        }
+    ]
+    assert audit.boundary["mutates_cluster"] is False
+
+
 def test_selection_path_does_not_change_operational_story_selection(tmp_path, capsys):
     seed_local, db = seeded_db(tmp_path)
     capsys.readouterr()

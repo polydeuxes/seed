@@ -136,6 +136,12 @@ def build_selection_path_audit(
             story.focus,
         )
 
+    return _unsupported_target_selection(target, pressure.pressures)
+
+
+def _unsupported_target_selection(
+    target: str, pressures: tuple[PressureItem, ...]
+) -> SelectionPathAudit:
     return _selection_path_from_payloads(
         target=target,
         result=_SelectionResultPayload(selected="unknown"),
@@ -147,7 +153,7 @@ def build_selection_path_audit(
         ),
         support=_SelectionSupportingEvidencePayload(evidence=[]),
         lineage=_SelectionLineagePayload(
-            candidate_set=_candidate_set_from_pressures(pressure.pressures),
+            candidate_set=_candidate_set_from_pressures(pressures),
             factors=_SelectionFactorPayload(selection_factors=["unknown"]),
             non_selected=_SelectionNonSelectedPayload(non_selected=[]),
             unknowns=_SelectionUnknownPayload(
