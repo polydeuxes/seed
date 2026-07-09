@@ -8,6 +8,7 @@ from seed_runtime.diagnostic_shape_audit import DiagnosticShapeAuditRow
 from seed_runtime.ownership_discrepancies import OwnershipDiscrepancyRow
 from seed_runtime.pressure_audit import (
     _PressureItemCandidate,
+    _admitted_pressure_items,
     _ownership_pressure,
     build_pressure_audit,
     format_pressure_audit,
@@ -58,6 +59,44 @@ def test_pressure_item_candidate_converts_to_public_pressure_item_shape():
         "reason": "Example reason.",
         "recommended_command": "seed --example",
     }
+
+
+def test_admitted_pressure_items_filter_convert_and_order_candidates():
+    admitted = _admitted_pressure_items(
+        _PressureItemCandidate(
+            category="Beta",
+            score=3,
+            evidence={"count": 3},
+            reason="Beta reason.",
+            recommended_command="seed --beta",
+        ),
+        None,
+        _PressureItemCandidate(
+            category="Alpha",
+            score=3,
+            evidence={"count": 3},
+            reason="Alpha reason.",
+            recommended_command="seed --alpha",
+        ),
+        _PressureItemCandidate(
+            category="Zero",
+            score=0,
+            evidence={"count": 0},
+            reason="Zero reason.",
+            recommended_command="seed --zero",
+        ),
+        _PressureItemCandidate(
+            category="Gamma",
+            score=1,
+            evidence={"count": 1},
+            reason="Gamma reason.",
+            recommended_command="seed --gamma",
+        ),
+    )
+
+    assert [item.category for item in admitted] == ["Alpha", "Beta", "Gamma"]
+    assert [item.score for item in admitted] == [3, 3, 1]
+    assert all(item.recommended_command.startswith("seed --") for item in admitted)
 
 
 def test_ownership_pressure_candidate_preserves_public_item_fields(monkeypatch):
