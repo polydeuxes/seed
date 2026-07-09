@@ -157,24 +157,28 @@ def _diagnostic_shape_pressure_evidence(
 
 def _ownership_pressure(state: State) -> _PressureItemCandidate | None:
     rows = [row for row in build_ownership_discrepancies(state) if row.conflict]
-    conflict_counts = Counter(str(row.conflict) for row in rows)
-    kind_counts = Counter(row.kind for row in rows)
     score = len(rows)
     if score <= 0:
         return None
-    dominant = conflict_counts.most_common(1)[0][0] if conflict_counts else "none"
     return _PressureItemCandidate(
         category="Ownership Attribution",
         score=score,
-        evidence={
-            "service ambiguities": kind_counts["service"],
-            "storage ambiguities": kind_counts["storage"],
-            "conflict counts": dict(sorted(conflict_counts.items())),
-            "dominant conflict": dominant,
-        },
+        evidence=_ownership_pressure_evidence(rows),
         reason=f"Ownership discrepancy audit reports {score} unresolved ownership row(s).",
         recommended_command="seed --ownership-discrepancies",
     )
+
+
+def _ownership_pressure_evidence(rows: list[Any]) -> dict[str, Any]:
+    conflict_counts = Counter(str(row.conflict) for row in rows)
+    kind_counts = Counter(row.kind for row in rows)
+    dominant = conflict_counts.most_common(1)[0][0] if conflict_counts else "none"
+    return {
+        "service ambiguities": kind_counts["service"],
+        "storage ambiguities": kind_counts["storage"],
+        "conflict counts": dict(sorted(conflict_counts.items())),
+        "dominant conflict": dominant,
+    }
 
 
 def _capability_pressure(state: State) -> _PressureItemCandidate | None:

@@ -15,6 +15,7 @@ from seed_runtime.pressure_audit import (
     _consumer_predicate_pressures,
     _diagnostic_shape_pressure_evidence,
     _ownership_pressure,
+    _ownership_pressure_evidence,
     build_pressure_audit,
     format_pressure_audit,
 )
@@ -117,6 +118,24 @@ def test_diagnostic_shape_pressure_evidence_is_owned_by_local_helper():
         "mismatches": 1,
         "warnings": 2,
         "unknowns": 1,
+    }
+
+
+def test_ownership_pressure_evidence_is_owned_by_local_helper():
+    rows = [
+        _ownership_row(),
+        _ownership_row("svc-b", kind="storage", conflict="multiple_candidates"),
+        _ownership_row("svc-c", conflict="owner_not_observed"),
+    ]
+
+    assert _ownership_pressure_evidence(rows) == {
+        "service ambiguities": 2,
+        "storage ambiguities": 1,
+        "conflict counts": {
+            "multiple_candidates": 1,
+            "owner_not_observed": 2,
+        },
+        "dominant conflict": "owner_not_observed",
     }
 
 
