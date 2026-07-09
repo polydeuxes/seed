@@ -122,7 +122,7 @@ def build_selection_path_audit(
         selected_item = _selected_pressure_item(pressure.pressures)
         return _from_pressure_selection(
             target,
-            _selected_name(selected_item, story.focus),
+            _pressure_category_selection_selected_name(selected_item, story.focus),
             pressure.pressures,
             story.focus,
         )
@@ -377,6 +377,12 @@ def _focus_selection_selected_name(
         if normalized_target == "current_focus"
         else _selected_name(selected_item, focus)
     )
+
+
+def _pressure_category_selection_selected_name(
+    selected_item: PressureItem | None, focus: str
+) -> str:
+    return _selected_name(selected_item, focus)
 
 
 def _selected_name(item: PressureItem | None, focus: str) -> str:
