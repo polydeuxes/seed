@@ -16,6 +16,7 @@ from seed_runtime.pressure_audit import (
     _capability_pressure_evidence,
     _consumer_predicate_pressures,
     _diagnostic_shape_pressure_evidence,
+    _display_mapping_evidence,
     _fragile_predicate_pressure_evidence,
     _orphaned_predicate_pressure_evidence,
     _ownership_pressure,
@@ -260,6 +261,11 @@ def test_consumer_predicate_pressures_builds_predicate_candidates_from_one_audit
         "single-consumer predicates": 1,
         "predicates": ["single_predicate"],
     }
+
+
+def test_mapping_evidence_display_is_owned_by_local_helper():
+    assert _display_mapping_evidence({"alpha": 1, "beta": "two"}) == "alpha=1, beta=two"
+    assert _display_mapping_evidence({}) == "none"
 
 
 def test_pressure_audit_renders_json_and_evidence_backed_ranking(monkeypatch, capsys):
