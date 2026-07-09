@@ -415,9 +415,16 @@ def _candidate_set_from_pressures(
 ) -> _SelectionCandidateSetPayload:
     return _SelectionCandidateSetPayload(
         candidates=[
-            _candidate(item, index) for index, item in enumerate(pressures, start=1)
+            _candidate(item, rank)
+            for rank, item in _ranked_pressure_candidates(pressures)
         ]
     )
+
+
+def _ranked_pressure_candidates(
+    pressures: tuple[PressureItem, ...],
+) -> tuple[tuple[int, PressureItem], ...]:
+    return tuple(enumerate(pressures, start=1))
 
 
 def _candidate(item: PressureItem, rank: int) -> dict[str, Any]:
