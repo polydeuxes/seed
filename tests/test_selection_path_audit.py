@@ -303,6 +303,21 @@ def test_selection_unknown_payload_is_separate_from_candidate_lineage():
     assert "non_selected" not in empty.__dataclass_fields__
 
 
+def test_pressure_candidate_public_name_projection_is_owned_by_local_helper():
+    from seed_runtime.pressure_audit import PressureItem
+    from seed_runtime.selection_path_audit import _pressure_candidate_public_name
+
+    pressure = PressureItem(
+        category="Runtime Reachability",
+        score=3,
+        reason="selected pressure",
+        evidence={"source": "selected evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+
+    assert _pressure_candidate_public_name(pressure) == "runtime reachability"
+
+
 def test_selection_non_selected_payload_is_separate_from_candidate_set():
     from seed_runtime.pressure_audit import PressureItem
     from seed_runtime.selection_path_audit import _non_selected_from_pressures
