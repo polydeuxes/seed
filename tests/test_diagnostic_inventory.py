@@ -1581,6 +1581,55 @@ def test_diagnostic_surface_definition_evidence_source_line_rendering_delegates_
     assert set(evidence_source_line.__dataclass_fields__) == {"line"}
 
 
+def test_diagnostic_surface_definition_line_set_assembly_includes_evidence_source_line(
+    monkeypatch,
+):
+    calls = []
+
+    def fake_definition_evidence_source_line(
+        evidence_source_value, *, field_label, indent
+    ):
+        calls.append(
+            {
+                "evidence_source_value": evidence_source_value,
+                "field_label": field_label,
+                "indent": indent,
+            }
+        )
+        return _DiagnosticSurfaceEvidenceSourceLine(
+            line=f"{indent}{field_label}: assembled evidence source"
+        )
+
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_render_diagnostic_surface_definition_evidence_source_line",
+        fake_definition_evidence_source_line,
+    )
+    definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
+        "diagnostic_surface_definition"
+    ]
+
+    line_set = _assemble_diagnostic_surface_definition_line_set(definition)
+
+    assert len(calls) == 1
+    assert isinstance(
+        calls[0]["evidence_source_value"],
+        _DiagnosticSurfaceEvidenceSourceValue,
+    )
+    assert (
+        calls[0]["evidence_source_value"].value
+        == "diagnostic_inventory + diagnostic_shape_audit"
+    )
+    assert calls[0]["field_label"] == "evidence_source"
+    assert calls[0]["indent"] == "  "
+    assert isinstance(line_set, _DiagnosticSurfaceDefinitionLineSet)
+    assert "  evidence_source: assembled evidence source" in line_set.lines
+    assert line_set.lines.index(
+        "  implementation_reason: identity recovered from the diagnostic inventory "
+        "entry and static shape-audit registration"
+    ) < line_set.lines.index("  evidence_source: assembled evidence source")
+
+
 def test_diagnostic_surface_definition_line_set_assembly_precedes_human_rendering():
     definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
         "diagnostic_surface_definition"
