@@ -238,13 +238,19 @@ def _orphaned_predicate_pressure(
     return _PressureItemCandidate(
         category="Orphaned Predicates",
         score=len(items),
-        evidence={
-            "orphan count": len(items),
-            "predicates": [item.item for item in items],
-        },
+        evidence=_orphaned_predicate_pressure_evidence(items),
         reason="Consumer audit found observation predicates with no implementation consumers.",
         recommended_command="seed --consumer-audit",
     )
+
+
+def _orphaned_predicate_pressure_evidence(
+    items: list[Any],
+) -> dict[str, Any]:
+    return {
+        "orphan count": len(items),
+        "predicates": [item.item for item in items],
+    }
 
 
 def _fragile_predicate_pressure(

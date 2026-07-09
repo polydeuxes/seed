@@ -16,6 +16,7 @@ from seed_runtime.pressure_audit import (
     _capability_pressure_evidence,
     _consumer_predicate_pressures,
     _diagnostic_shape_pressure_evidence,
+    _orphaned_predicate_pressure_evidence,
     _ownership_pressure,
     _ownership_pressure_evidence,
     build_pressure_audit,
@@ -190,6 +191,18 @@ def test_ownership_pressure_candidate_preserves_public_item_fields(monkeypatch):
         "Ownership discrepancy audit reports 2 unresolved ownership row(s)."
     )
     assert item.recommended_command == "seed --ownership-discrepancies"
+
+
+def test_orphaned_predicate_pressure_evidence_is_owned_by_local_helper():
+    items = [
+        ConsumerAuditItem("unused_predicate", "observation_predicate", ()),
+        ConsumerAuditItem("another_unused", "observation_predicate", ()),
+    ]
+
+    assert _orphaned_predicate_pressure_evidence(items) == {
+        "orphan count": 2,
+        "predicates": ["unused_predicate", "another_unused"],
+    }
 
 
 def test_consumer_predicate_pressures_builds_predicate_candidates_from_one_audit(
