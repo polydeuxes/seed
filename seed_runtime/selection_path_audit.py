@@ -442,12 +442,19 @@ def _non_selected_from_pressures(
 def _non_selected(
     item: PressureItem, selected_item: PressureItem | None
 ) -> dict[str, Any]:
-    reason = "not selected because another candidate sorted earlier"
+    return {
+        "candidate": item.category.lower(),
+        "score": item.score,
+        "reason": _non_selected_reason(item, selected_item),
+    }
+
+
+def _non_selected_reason(item: PressureItem, selected_item: PressureItem | None) -> str:
     if selected_item and item.score < selected_item.score:
-        reason = "lower pressure score than selected candidate"
-    elif selected_item and item.score == selected_item.score:
-        reason = "same pressure score; category name sorted after selected candidate"
-    return {"candidate": item.category.lower(), "score": item.score, "reason": reason}
+        return "lower pressure score than selected candidate"
+    if selected_item and item.score == selected_item.score:
+        return "same pressure score; category name sorted after selected candidate"
+    return "not selected because another candidate sorted earlier"
 
 
 def _evidence(item: PressureItem | None) -> dict[str, Any]:
