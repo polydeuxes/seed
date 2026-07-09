@@ -134,6 +134,7 @@ def test_selection_answer_and_reason_payloads_are_separate():
         _SelectionReasonPayload,
         _SelectionResultPayload,
         _SelectionSupportingEvidencePayload,
+        _SelectionUnknownPayload,
         _selection_path_from_payloads,
     )
 
@@ -149,7 +150,7 @@ def test_selection_answer_and_reason_payloads_are_separate():
         candidate_set=_SelectionCandidateSetPayload(candidates=[]),
         factors=_SelectionFactorPayload(selection_factors=[]),
         non_selected=_SelectionNonSelectedPayload(non_selected=[]),
-        unknowns=[],
+        unknowns=_SelectionUnknownPayload(unknowns=[]),
     )
 
     audit = _selection_path_from_payloads(
@@ -176,6 +177,7 @@ def test_selection_reason_and_supporting_evidence_payloads_are_separate():
         _SelectionReasonPayload,
         _SelectionResultPayload,
         _SelectionSupportingEvidencePayload,
+        _SelectionUnknownPayload,
         _selection_path_from_payloads,
     )
 
@@ -189,7 +191,7 @@ def test_selection_reason_and_supporting_evidence_payloads_are_separate():
         candidate_set=_SelectionCandidateSetPayload(candidates=[]),
         factors=_SelectionFactorPayload(selection_factors=[]),
         non_selected=_SelectionNonSelectedPayload(non_selected=[]),
-        unknowns=[],
+        unknowns=_SelectionUnknownPayload(unknowns=[]),
     )
 
     audit = _selection_path_from_payloads(
@@ -216,6 +218,7 @@ def test_selection_candidate_set_payload_is_separate_from_lineage_explanation():
         _SelectionReasonPayload,
         _SelectionResultPayload,
         _SelectionSupportingEvidencePayload,
+        _SelectionUnknownPayload,
         _selection_path_from_payloads,
     )
 
@@ -236,7 +239,7 @@ def test_selection_candidate_set_payload_is_separate_from_lineage_explanation():
             selection_factors=["pressure audit orders candidates"]
         ),
         non_selected=_SelectionNonSelectedPayload(non_selected=[]),
-        unknowns=[],
+        unknowns=_SelectionUnknownPayload(unknowns=[]),
     )
 
     audit = _selection_path_from_payloads(
@@ -275,6 +278,29 @@ def test_selection_factor_payload_is_separate_from_candidate_set_and_unknowns():
     assert "candidates" not in payload.__dataclass_fields__
     assert "non_selected" not in payload.__dataclass_fields__
     assert "unknowns" not in payload.__dataclass_fields__
+
+
+def test_selection_unknown_payload_is_separate_from_candidate_lineage():
+    from seed_runtime.pressure_audit import PressureItem
+    from seed_runtime.selection_path_audit import _selection_unknowns_from_pressures
+
+    pressure = PressureItem(
+        category="Runtime reachability",
+        score=3,
+        reason="selected pressure",
+        evidence={"source": "selected evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+
+    populated = _selection_unknowns_from_pressures((pressure,))
+    empty = _selection_unknowns_from_pressures(())
+
+    assert populated.unknowns == []
+    assert empty.unknowns[0].unknown_type == "Evidence Gap"
+    assert empty.unknowns[0].area == "candidate_set"
+    assert "candidates" not in empty.__dataclass_fields__
+    assert "selection_factors" not in empty.__dataclass_fields__
+    assert "non_selected" not in empty.__dataclass_fields__
 
 
 def test_selection_non_selected_payload_is_separate_from_candidate_set():
@@ -384,6 +410,7 @@ def test_selection_path_lineage_owns_typed_unknown_before_public_handoff():
         _SelectionReasonPayload,
         _SelectionResultPayload,
         _SelectionSupportingEvidencePayload,
+        _SelectionUnknownPayload,
         _selection_path_from_payloads,
     )
     from seed_runtime.typed_unknowns import preserve_typed_unknown
@@ -397,7 +424,7 @@ def test_selection_path_lineage_owns_typed_unknown_before_public_handoff():
         _SelectionCandidateSetPayload(candidates=[]),
         _SelectionFactorPayload(selection_factors=["unknown"]),
         _SelectionNonSelectedPayload(non_selected=[]),
-        [typed_unknown],
+        _SelectionUnknownPayload(unknowns=[typed_unknown]),
     )
 
     audit = _selection_path_from_payloads(
@@ -408,7 +435,7 @@ def test_selection_path_lineage_owns_typed_unknown_before_public_handoff():
         lineage=lineage,
     )
 
-    assert lineage.unknowns[0].unknown_type == "Implementation Unknown"
+    assert lineage.unknowns.unknowns[0].unknown_type == "Implementation Unknown"
     assert audit.unknowns == [
         {
             "area": "selection_logic",

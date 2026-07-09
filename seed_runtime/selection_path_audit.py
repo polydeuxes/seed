@@ -47,11 +47,16 @@ class _SelectionFactorPayload:
 
 
 @dataclass(frozen=True)
+class _SelectionUnknownPayload:
+    unknowns: list[TypedUnknownRecord]
+
+
+@dataclass(frozen=True)
 class _SelectionLineagePayload:
     candidate_set: _SelectionCandidateSetPayload
     factors: _SelectionFactorPayload
     non_selected: _SelectionNonSelectedPayload
-    unknowns: list[TypedUnknownRecord]
+    unknowns: _SelectionUnknownPayload
 
 
 @dataclass(frozen=True)
@@ -145,13 +150,15 @@ def build_selection_path_audit(
             candidate_set=_candidate_set_from_pressures(pressure.pressures),
             factors=_SelectionFactorPayload(selection_factors=["unknown"]),
             non_selected=_SelectionNonSelectedPayload(non_selected=[]),
-            unknowns=[
-                preserve_typed_unknown(
-                    unknown_type="Implementation Unknown",
-                    area="selection_logic",
-                    reason="no implementation-backed selection evidence discovered for target",
-                )
-            ],
+            unknowns=_SelectionUnknownPayload(
+                unknowns=[
+                    preserve_typed_unknown(
+                        unknown_type="Implementation Unknown",
+                        area="selection_logic",
+                        reason="no implementation-backed selection evidence discovered for target",
+                    )
+                ]
+            ),
         ),
     )
 
@@ -172,7 +179,7 @@ def _selection_path_from_payloads(
         non_selected=lineage.non_selected.non_selected,
         evidence=support.evidence,
         outcome=reason.outcome,
-        unknowns=typed_unknowns_to_public_dicts(lineage.unknowns),
+        unknowns=typed_unknowns_to_public_dicts(lineage.unknowns.unknowns),
     )
 
 
@@ -226,15 +233,7 @@ def _from_pressure_selection(
     target: str, selected: str, pressures: tuple[PressureItem, ...], focus: str
 ) -> SelectionPathAudit:
     selected_item = pressures[0] if pressures else None
-    unknowns: list[TypedUnknownRecord] = []
-    if not pressures:
-        unknowns.append(
-            preserve_typed_unknown(
-                unknown_type="Evidence Gap",
-                area="candidate_set",
-                reason="no pressure candidates available from current audit inputs",
-            )
-        )
+    unknowns = _selection_unknowns_from_pressures(pressures)
     return _selection_path_from_payloads(
         target=target,
         result=_SelectionResultPayload(selected=selected),
@@ -255,6 +254,21 @@ def _from_pressure_selection(
             unknowns=unknowns,
         ),
     )
+
+
+def _selection_unknowns_from_pressures(
+    pressures: tuple[PressureItem, ...],
+) -> _SelectionUnknownPayload:
+    unknowns: list[TypedUnknownRecord] = []
+    if not pressures:
+        unknowns.append(
+            preserve_typed_unknown(
+                unknown_type="Evidence Gap",
+                area="candidate_set",
+                reason="no pressure candidates available from current audit inputs",
+            )
+        )
+    return _SelectionUnknownPayload(unknowns=unknowns)
 
 
 def _selection_factors_from_pressures(
