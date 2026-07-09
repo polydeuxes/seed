@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from seed_runtime.capability_needs import build_capability_needs
-from seed_runtime.consumer_dependency_audit import build_consumer_audit
+from seed_runtime.consumer_dependency_audit import ConsumerAudit, build_consumer_audit
 from seed_runtime.diagnostic_shape_audit import (
     build_diagnostic_shape_audit,
     summarize_diagnostic_shape_audit,
@@ -76,8 +76,7 @@ def build_pressure_audit(
             _diagnostic_shape_pressure(root),
             _ownership_pressure(state),
             _capability_pressure(state),
-            _orphaned_predicate_pressure(root),
-            _fragile_predicate_pressure(root),
+            *_consumer_predicate_pressures(root),
         )
     )
 
@@ -200,10 +199,22 @@ def _capability_pressure(state: State) -> _PressureItemCandidate | None:
     )
 
 
-def _orphaned_predicate_pressure(root: Path) -> _PressureItemCandidate | None:
+def _consumer_predicate_pressures(
+    root: Path,
+) -> tuple[_PressureItemCandidate | None, _PressureItemCandidate | None]:
+    audit = build_consumer_audit(root)
+    return (
+        _orphaned_predicate_pressure(audit),
+        _fragile_predicate_pressure(audit),
+    )
+
+
+def _orphaned_predicate_pressure(
+    audit: ConsumerAudit,
+) -> _PressureItemCandidate | None:
     items = [
         item
-        for item in build_consumer_audit(root).items
+        for item in audit.items
         if item.kind == "observation_predicate" and item.orphaned
     ]
     if not items:
@@ -220,10 +231,12 @@ def _orphaned_predicate_pressure(root: Path) -> _PressureItemCandidate | None:
     )
 
 
-def _fragile_predicate_pressure(root: Path) -> _PressureItemCandidate | None:
+def _fragile_predicate_pressure(
+    audit: ConsumerAudit,
+) -> _PressureItemCandidate | None:
     items = [
         item
-        for item in build_consumer_audit(root).items
+        for item in audit.items
         if item.kind == "observation_predicate" and item.consumer_count == 1
     ]
     if not items:

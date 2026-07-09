@@ -9,6 +9,7 @@ from seed_runtime.ownership_discrepancies import OwnershipDiscrepancyRow
 from seed_runtime.pressure_audit import (
     _PressureItemCandidate,
     _admitted_pressure_items,
+    _consumer_predicate_pressures,
     _ownership_pressure,
     build_pressure_audit,
     format_pressure_audit,
@@ -121,6 +122,46 @@ def test_ownership_pressure_candidate_preserves_public_item_fields(monkeypatch):
         "Ownership discrepancy audit reports 2 unresolved ownership row(s)."
     )
     assert item.recommended_command == "seed --ownership-discrepancies"
+
+
+def test_consumer_predicate_pressures_builds_predicate_candidates_from_one_audit(
+    monkeypatch,
+):
+    calls = []
+    audit = ConsumerAudit(
+        items=(
+            ConsumerAuditItem("unused_predicate", "observation_predicate", ()),
+            ConsumerAuditItem(
+                "single_predicate", "observation_predicate", ("seed_runtime/state.py",)
+            ),
+            ConsumerAuditItem("non_predicate", "other", ()),
+        ),
+        metadata={},
+    )
+
+    def fake_consumer_audit(root):
+        calls.append(root)
+        return audit
+
+    monkeypatch.setattr(
+        "seed_runtime.pressure_audit.build_consumer_audit", fake_consumer_audit
+    )
+
+    orphaned, fragile = _consumer_predicate_pressures(ROOT)
+
+    assert calls == [ROOT]
+    assert orphaned is not None
+    assert orphaned.category == "Orphaned Predicates"
+    assert orphaned.evidence == {
+        "orphan count": 1,
+        "predicates": ["unused_predicate"],
+    }
+    assert fragile is not None
+    assert fragile.category == "Fragile Predicates"
+    assert fragile.evidence == {
+        "single-consumer predicates": 1,
+        "predicates": ["single_predicate"],
+    }
 
 
 def test_pressure_audit_renders_json_and_evidence_backed_ranking(monkeypatch, capsys):
