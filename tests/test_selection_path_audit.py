@@ -482,6 +482,30 @@ def test_focus_selection_selected_name_is_owned_by_local_helper():
     )
 
 
+def test_pressure_category_selection_selected_name_is_owned_by_local_helper():
+    from seed_runtime.pressure_audit import PressureItem
+    from seed_runtime.selection_path_audit import (
+        _pressure_category_selection_selected_name,
+    )
+
+    selected = PressureItem(
+        category="Runtime reachability",
+        score=3,
+        reason="selected pressure",
+        evidence={"source": "selected evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+
+    assert (
+        _pressure_category_selection_selected_name(selected, "Runtime reachability")
+        == "runtime reachability"
+    )
+    assert (
+        _pressure_category_selection_selected_name(None, "Runtime reachability")
+        == "Runtime reachability"
+    )
+
+
 def test_pressure_selection_reason_payload_is_owned_by_local_helper():
     from seed_runtime.selection_path_audit import _pressure_selection_reason_payload
 
