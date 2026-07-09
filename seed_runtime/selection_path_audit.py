@@ -362,7 +362,7 @@ def _pressure_selection_supporting_evidence_payload(
     selected_item: PressureItem | None,
 ) -> _SelectionSupportingEvidencePayload:
     return _SelectionSupportingEvidencePayload(
-        evidence=[_evidence(selected_item)] if selected_item else []
+        evidence=[_selected_pressure_evidence(selected_item)] if selected_item else []
     )
 
 
@@ -476,9 +476,7 @@ def _non_selected_reason(item: PressureItem, selected_item: PressureItem | None)
     return "not selected because another candidate sorted earlier"
 
 
-def _evidence(item: PressureItem | None) -> dict[str, Any]:
-    if item is None:
-        return {}
+def _selected_pressure_evidence(item: PressureItem) -> dict[str, Any]:
     return {
         "surface": "pressure_audit",
         "category": item.category,
