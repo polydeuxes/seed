@@ -1384,6 +1384,60 @@ def test_diagnostic_surface_definition_evidence_source_line_rendering_precedes_l
     assert set(evidence_source_line.__dataclass_fields__) == {"line"}
 
 
+def test_diagnostic_surface_definition_evidence_source_value_preparation_precedes_line_rendering():
+    definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
+        "diagnostic_surface_definition"
+    ]
+
+    evidence_source_value = (
+        _prepare_diagnostic_surface_definition_evidence_source_value(definition)
+    )
+    evidence_source_line = _render_diagnostic_surface_definition_evidence_source_line(
+        evidence_source_value,
+        field_label="evidence_source",
+        indent="    ",
+    )
+
+    assembly_source = inspect.getsource(
+        _assemble_diagnostic_surface_definition_line_set
+    )
+    assert "evidence_source_value = (" in assembly_source
+    assert (
+        "_prepare_diagnostic_surface_definition_evidence_source_value(definition)"
+        in assembly_source
+    )
+    assert (
+        "_render_diagnostic_surface_definition_evidence_source_line(\n"
+        "                evidence_source_value," in assembly_source
+    )
+
+    assert isinstance(evidence_source_value, _DiagnosticSurfaceEvidenceSourceValue)
+    assert (
+        evidence_source_value.value == "diagnostic_inventory + diagnostic_shape_audit"
+    )
+    assert set(evidence_source_value.__dataclass_fields__) == {"value"}
+    assert 'definition["evidence_source"]' in inspect.getsource(
+        _prepare_diagnostic_surface_definition_evidence_source_value
+    )
+    assert "_prepare_diagnostic_surface_evidence_source_value" in inspect.getsource(
+        _prepare_diagnostic_surface_definition_evidence_source_value
+    )
+    signature = inspect.signature(
+        _render_diagnostic_surface_definition_evidence_source_line
+    )
+
+    assert "_render_diagnostic_surface_evidence_source_line" in inspect.getsource(
+        _render_diagnostic_surface_definition_evidence_source_line
+    )
+    assert signature.parameters["field_label"].default is inspect.Parameter.empty
+    assert isinstance(evidence_source_line, _DiagnosticSurfaceEvidenceSourceLine)
+    assert (
+        evidence_source_line.line
+        == "    evidence_source: diagnostic_inventory + diagnostic_shape_audit"
+    )
+    assert set(evidence_source_line.__dataclass_fields__) == {"line"}
+
+
 def test_diagnostic_surface_definition_line_set_assembly_precedes_human_rendering():
     definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
         "diagnostic_surface_definition"
