@@ -415,8 +415,8 @@ def _candidate_set_from_pressures(
 ) -> _SelectionCandidateSetPayload:
     return _SelectionCandidateSetPayload(
         candidates=[
-            _candidate(item, rank)
-            for rank, item in _ranked_pressure_candidates(pressures)
+            _pressure_candidate_row(ranked_candidate)
+            for ranked_candidate in _ranked_pressure_candidates(pressures)
         ]
     )
 
@@ -427,7 +427,10 @@ def _ranked_pressure_candidates(
     return tuple(enumerate(pressures, start=1))
 
 
-def _candidate(item: PressureItem, rank: int) -> dict[str, Any]:
+def _pressure_candidate_row(
+    ranked_candidate: tuple[int, PressureItem],
+) -> dict[str, Any]:
+    rank, item = ranked_candidate
     return {
         "candidate": _pressure_candidate_public_name(item),
         "score": item.score,
