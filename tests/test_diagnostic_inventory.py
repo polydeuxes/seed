@@ -1438,6 +1438,47 @@ def test_diagnostic_surface_definition_evidence_source_value_preparation_precede
     assert set(evidence_source_line.__dataclass_fields__) == {"line"}
 
 
+def test_diagnostic_surface_definition_evidence_source_line_rendering_delegates_generic_line_rendering():
+    evidence_source_value = _DiagnosticSurfaceEvidenceSourceValue(
+        value="diagnostic_inventory + diagnostic_shape_audit"
+    )
+
+    evidence_source_line = _render_diagnostic_surface_definition_evidence_source_line(
+        evidence_source_value,
+        field_label="evidence_source",
+        indent="    ",
+    )
+
+    renderer_source = inspect.getsource(
+        _render_diagnostic_surface_definition_evidence_source_line
+    )
+    signature = inspect.signature(
+        _render_diagnostic_surface_definition_evidence_source_line
+    )
+
+    assert list(signature.parameters) == [
+        "evidence_source_value",
+        "field_label",
+        "indent",
+    ]
+    assert (
+        signature.parameters["evidence_source_value"].annotation
+        == "_DiagnosticSurfaceEvidenceSourceValue"
+    )
+    assert signature.parameters["field_label"].default is inspect.Parameter.empty
+    assert signature.parameters["indent"].default == "  "
+    assert "_render_diagnostic_surface_evidence_source_line" in renderer_source
+    assert "evidence_source_value.value" in renderer_source
+    assert "field_label=field_label" in renderer_source
+    assert "indent=indent" in renderer_source
+    assert isinstance(evidence_source_line, _DiagnosticSurfaceEvidenceSourceLine)
+    assert (
+        evidence_source_line.line
+        == "    evidence_source: diagnostic_inventory + diagnostic_shape_audit"
+    )
+    assert set(evidence_source_line.__dataclass_fields__) == {"line"}
+
+
 def test_diagnostic_surface_definition_line_set_assembly_precedes_human_rendering():
     definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
         "diagnostic_surface_definition"
