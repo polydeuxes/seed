@@ -66,6 +66,14 @@ class _SelectionPathInputs:
 
 
 @dataclass(frozen=True)
+class _SelectionPathPayloads:
+    result: _SelectionResultPayload
+    reason: _SelectionReasonPayload
+    support: _SelectionSupportingEvidencePayload
+    lineage: _SelectionLineagePayload
+
+
+@dataclass(frozen=True)
 class SelectionPathAudit:
     target: str
     selected: str
@@ -197,15 +205,29 @@ def _selection_path_from_payloads(
     support: _SelectionSupportingEvidencePayload,
     lineage: _SelectionLineagePayload,
 ) -> SelectionPathAudit:
+    return _selection_path_from_payload_bundle(
+        target=target,
+        payloads=_SelectionPathPayloads(
+            result=result,
+            reason=reason,
+            support=support,
+            lineage=lineage,
+        ),
+    )
+
+
+def _selection_path_from_payload_bundle(
+    *, target: str, payloads: _SelectionPathPayloads
+) -> SelectionPathAudit:
     return SelectionPathAudit(
         target=target,
-        selected=result.selected,
-        candidates=lineage.candidate_set.candidates,
-        selection_factors=lineage.factors.selection_factors,
-        non_selected=lineage.non_selected.non_selected,
-        evidence=support.evidence,
-        outcome=reason.outcome,
-        unknowns=typed_unknowns_to_public_dicts(lineage.unknowns.unknowns),
+        selected=payloads.result.selected,
+        candidates=payloads.lineage.candidate_set.candidates,
+        selection_factors=payloads.lineage.factors.selection_factors,
+        non_selected=payloads.lineage.non_selected.non_selected,
+        evidence=payloads.support.evidence,
+        outcome=payloads.reason.outcome,
+        unknowns=typed_unknowns_to_public_dicts(payloads.lineage.unknowns.unknowns),
     )
 
 
@@ -258,14 +280,9 @@ def format_selection_path_audit(audit: SelectionPathAudit) -> str:
 def _from_pressure_selection(
     target: str, selected: str, pressures: tuple[PressureItem, ...], focus: str
 ) -> SelectionPathAudit:
-    selected_item = _selected_pressure_item(pressures)
-    unknowns = _selection_unknowns_from_pressures(pressures)
-    return _selection_path_from_payloads(
+    return _selection_path_from_payload_bundle(
         target=target,
-        result=_pressure_selection_result_payload(selected),
-        reason=_pressure_selection_reason_payload(selected, focus),
-        support=_pressure_selection_supporting_evidence_payload(selected_item),
-        lineage=_pressure_selection_lineage_payload(pressures, selected_item, unknowns),
+        payloads=_pressure_selection_payloads(selected, pressures, focus),
     )
 
 
@@ -290,6 +307,19 @@ def _from_focus_selection(
         _focus_selection_selected_name(normalized_target, selected_item, focus),
         pressures,
         focus,
+    )
+
+
+def _pressure_selection_payloads(
+    selected: str, pressures: tuple[PressureItem, ...], focus: str
+) -> _SelectionPathPayloads:
+    selected_item = _selected_pressure_item(pressures)
+    unknowns = _selection_unknowns_from_pressures(pressures)
+    return _SelectionPathPayloads(
+        result=_pressure_selection_result_payload(selected),
+        reason=_pressure_selection_reason_payload(selected, focus),
+        support=_pressure_selection_supporting_evidence_payload(selected_item),
+        lineage=_pressure_selection_lineage_payload(pressures, selected_item, unknowns),
     )
 
 
