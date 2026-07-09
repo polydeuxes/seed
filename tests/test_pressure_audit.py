@@ -19,6 +19,7 @@ from seed_runtime.pressure_audit import (
     _display_collection_evidence,
     _display_mapping_evidence,
     _display_scalar_evidence,
+    _format_pressure_item_section,
     _fragile_predicate_pressure_evidence,
     _orphaned_predicate_pressure_evidence,
     _ownership_pressure,
@@ -263,6 +264,30 @@ def test_consumer_predicate_pressures_builds_predicate_candidates_from_one_audit
         "single-consumer predicates": 1,
         "predicates": ["single_predicate"],
     }
+
+
+def test_pressure_item_section_formatting_is_owned_by_local_helper():
+    item = _PressureItemCandidate(
+        category="Example",
+        score=7,
+        evidence={"count": 2, "labels": ["alpha", "beta"]},
+        reason="Example reason.",
+        recommended_command="seed --example",
+    ).to_pressure_item()
+
+    assert _format_pressure_item_section(3, item) == [
+        "3. Example",
+        "",
+        "Score: 7",
+        "",
+        "Evidence:",
+        "  count: 2",
+        "  labels: alpha, beta",
+        "",
+        "Reason: Example reason.",
+        "Recommended inspection: seed --example",
+        "",
+    ]
 
 
 def test_mapping_evidence_display_is_owned_by_local_helper():
