@@ -16,6 +16,7 @@ from seed_runtime.pressure_audit import (
     _capability_pressure_evidence,
     _consumer_predicate_pressures,
     _diagnostic_shape_pressure_evidence,
+    _fragile_predicate_pressure_evidence,
     _orphaned_predicate_pressure_evidence,
     _ownership_pressure,
     _ownership_pressure_evidence,
@@ -202,6 +203,22 @@ def test_orphaned_predicate_pressure_evidence_is_owned_by_local_helper():
     assert _orphaned_predicate_pressure_evidence(items) == {
         "orphan count": 2,
         "predicates": ["unused_predicate", "another_unused"],
+    }
+
+
+def test_fragile_predicate_pressure_evidence_is_owned_by_local_helper():
+    items = [
+        ConsumerAuditItem(
+            "single_predicate", "observation_predicate", ("seed_runtime/state.py",)
+        ),
+        ConsumerAuditItem(
+            "another_single", "observation_predicate", ("seed_runtime/cli.py",)
+        ),
+    ]
+
+    assert _fragile_predicate_pressure_evidence(items) == {
+        "single-consumer predicates": 2,
+        "predicates": ["single_predicate", "another_single"],
     }
 
 
