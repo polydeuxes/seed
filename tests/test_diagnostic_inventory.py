@@ -2,6 +2,7 @@ import inspect
 import json
 
 import scripts.seed_local as seed_local
+import seed_runtime.diagnostic_inventory as diagnostic_inventory
 from seed_runtime.diagnostic_inventory import (
     DIAGNOSTIC_INVENTORY,
     DiagnosticInventoryEntry,
@@ -1313,6 +1314,53 @@ def test_diagnostic_surface_definition_implementation_reason_line_rendering_prec
         "entry and static shape-audit registration"
     )
     assert set(reason_line.__dataclass_fields__) == {"line"}
+
+
+def test_diagnostic_surface_definition_implementation_reason_line_rendering_delegates_generic_line_rendering(
+    monkeypatch,
+):
+    calls = []
+
+    def fake_generic_implementation_reason_line(
+        implementation_reason, *, field_label, indent
+    ):
+        calls.append(
+            {
+                "implementation_reason": implementation_reason,
+                "field_label": field_label,
+                "indent": indent,
+            }
+        )
+        return _DiagnosticSurfaceImplementationReasonLine(
+            line=f"{indent}{field_label}: delegated {implementation_reason}"
+        )
+
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_render_diagnostic_surface_implementation_reason_line",
+        fake_generic_implementation_reason_line,
+    )
+
+    reason_value = _DiagnosticSurfaceImplementationReasonValue(
+        value="definition-owned implementation reason"
+    )
+
+    reason_line = _render_diagnostic_surface_definition_implementation_reason_line(
+        reason_value, field_label="implementation_reason", indent="    "
+    )
+
+    assert calls == [
+        {
+            "implementation_reason": "definition-owned implementation reason",
+            "field_label": "implementation_reason",
+            "indent": "    ",
+        }
+    ]
+    assert isinstance(reason_line, _DiagnosticSurfaceImplementationReasonLine)
+    assert (
+        reason_line.line
+        == "    implementation_reason: delegated definition-owned implementation reason"
+    )
 
 
 def test_diagnostic_surface_definition_evidence_source_line_rendering_precedes_line_set_assembly():
