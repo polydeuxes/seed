@@ -336,6 +336,26 @@ def test_selection_non_selected_payload_is_separate_from_candidate_set():
     assert "unknowns" not in payload.__dataclass_fields__
 
 
+def test_focus_selection_target_matching_is_owned_by_local_helper():
+    from seed_runtime.selection_path_audit import (
+        _normalize_target,
+        _target_matches_focus_selection,
+    )
+
+    assert _target_matches_focus_selection(
+        _normalize_target("current-focus"), "Runtime reachability"
+    )
+    assert _target_matches_focus_selection(
+        _normalize_target("primary pressure"), "Runtime reachability"
+    )
+    assert _target_matches_focus_selection(
+        _normalize_target("reachability"), "Runtime reachability"
+    )
+    assert not _target_matches_focus_selection(
+        _normalize_target("not_a_selection"), "Runtime reachability"
+    )
+
+
 def test_pressure_category_target_matching_is_owned_by_local_helper():
     from seed_runtime.pressure_audit import PressureItem
     from seed_runtime.selection_path_audit import (
