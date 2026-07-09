@@ -18,6 +18,7 @@ from seed_runtime.pressure_audit import (
     _diagnostic_shape_pressure_evidence,
     _display_collection_evidence,
     _display_mapping_evidence,
+    _display_scalar_evidence,
     _fragile_predicate_pressure_evidence,
     _orphaned_predicate_pressure_evidence,
     _ownership_pressure,
@@ -272,6 +273,12 @@ def test_mapping_evidence_display_is_owned_by_local_helper():
 def test_collection_evidence_display_is_owned_by_local_helper():
     assert _display_collection_evidence(["alpha", 2, "gamma"]) == "alpha, 2, gamma"
     assert _display_collection_evidence(()) == "none"
+
+
+def test_scalar_evidence_display_is_owned_by_local_helper():
+    assert _display_scalar_evidence("alpha") == "alpha"
+    assert _display_scalar_evidence(3) == "3"
+    assert _display_scalar_evidence(None) == "None"
 
 
 def test_pressure_audit_renders_json_and_evidence_backed_ranking(monkeypatch, capsys):

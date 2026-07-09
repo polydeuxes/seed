@@ -286,7 +286,7 @@ def _display_evidence(value: Any) -> str:
         return _display_mapping_evidence(value)
     if isinstance(value, (list, tuple, set)):
         return _display_collection_evidence(value)
-    return str(value)
+    return _display_scalar_evidence(value)
 
 
 def _display_mapping_evidence(value: dict[Any, Any]) -> str:
@@ -295,3 +295,7 @@ def _display_mapping_evidence(value: dict[Any, Any]) -> str:
 
 def _display_collection_evidence(value: list[Any] | tuple[Any, ...] | set[Any]) -> str:
     return ", ".join(str(item) for item in value) or "none"
+
+
+def _display_scalar_evidence(value: Any) -> str:
+    return str(value)
