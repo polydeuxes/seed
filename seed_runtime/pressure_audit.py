@@ -71,24 +71,30 @@ def build_pressure_audit(
         if repo_root is not None
         else Path(__file__).resolve().parents[1]
     )
-    items = [
-        candidate.to_pressure_item()
-        for candidate in (
+    return PressureAudit(
+        pressures=_admitted_pressure_items(
             _diagnostic_shape_pressure(root),
             _ownership_pressure(state),
             _capability_pressure(state),
             _orphaned_predicate_pressure(root),
             _fragile_predicate_pressure(root),
         )
-        if candidate is not None and candidate.score > 0
-    ]
-    return PressureAudit(
-        pressures=tuple(sorted(items, key=lambda item: (-item.score, item.category)))
     )
 
 
 def pressure_audit_json(audit: PressureAudit) -> dict[str, Any]:
     return audit.to_json_dict()
+
+
+def _admitted_pressure_items(
+    *candidates: _PressureItemCandidate | None,
+) -> tuple[PressureItem, ...]:
+    items = [
+        candidate.to_pressure_item()
+        for candidate in candidates
+        if candidate is not None and candidate.score > 0
+    ]
+    return tuple(sorted(items, key=lambda item: (-item.score, item.category)))
 
 
 def format_pressure_audit(audit: PressureAudit) -> str:
