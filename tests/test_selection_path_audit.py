@@ -336,6 +336,39 @@ def test_selection_non_selected_payload_is_separate_from_candidate_set():
     assert "unknowns" not in payload.__dataclass_fields__
 
 
+def test_non_selected_pressure_candidates_are_owned_by_local_helper():
+    from seed_runtime.pressure_audit import PressureItem
+    from seed_runtime.selection_path_audit import _non_selected_pressure_candidates
+
+    selected = PressureItem(
+        category="Runtime reachability",
+        score=3,
+        reason="selected pressure",
+        evidence={"source": "selected evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+    lower = PressureItem(
+        category="Documentation drift",
+        score=1,
+        reason="lower pressure",
+        evidence={"source": "lower evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+    same_score_later = PressureItem(
+        category="Storage topology",
+        score=3,
+        reason="same score pressure",
+        evidence={"source": "same score evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+
+    payload = _non_selected_pressure_candidates((selected, lower, same_score_later))
+
+    assert payload == (lower, same_score_later)
+    assert _non_selected_pressure_candidates((selected,)) == ()
+    assert _non_selected_pressure_candidates(()) == ()
+
+
 def test_non_selected_reason_is_owned_by_local_helper():
     from seed_runtime.pressure_audit import PressureItem
     from seed_runtime.selection_path_audit import _non_selected_reason

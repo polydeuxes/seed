@@ -435,8 +435,17 @@ def _non_selected_from_pressures(
     selected_item: PressureItem | None,
 ) -> _SelectionNonSelectedPayload:
     return _SelectionNonSelectedPayload(
-        non_selected=[_non_selected(item, selected_item) for item in pressures[1:]]
+        non_selected=[
+            _non_selected(item, selected_item)
+            for item in _non_selected_pressure_candidates(pressures)
+        ]
     )
+
+
+def _non_selected_pressure_candidates(
+    pressures: tuple[PressureItem, ...],
+) -> tuple[PressureItem, ...]:
+    return pressures[1:]
 
 
 def _non_selected(
