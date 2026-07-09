@@ -727,6 +727,20 @@ def test_unsupported_target_selection_refusal_is_prepared_separately():
     assert audit.boundary["mutates_cluster"] is False
 
 
+def test_unsupported_target_reason_payload_is_owned_by_local_helper():
+    from seed_runtime.selection_path_audit import _unsupported_target_reason_payload
+
+    payload = _unsupported_target_reason_payload()
+
+    assert payload.outcome == {
+        "selected": "unknown",
+        "reason": "target is not an implemented selection surface",
+    }
+    assert "evidence" not in payload.__dataclass_fields__
+    assert "candidates" not in payload.__dataclass_fields__
+    assert "selection_factors" not in payload.__dataclass_fields__
+
+
 def test_unsupported_target_unknown_payload_is_owned_by_local_helper():
     from seed_runtime.selection_path_audit import _unsupported_target_unknown_payload
 
