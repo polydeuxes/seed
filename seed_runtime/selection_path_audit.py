@@ -262,7 +262,7 @@ def _from_pressure_selection(
     unknowns = _selection_unknowns_from_pressures(pressures)
     return _selection_path_from_payloads(
         target=target,
-        result=_SelectionResultPayload(selected=selected),
+        result=_pressure_selection_result_payload(selected),
         reason=_pressure_selection_reason_payload(selected, focus),
         support=_pressure_selection_supporting_evidence_payload(selected_item),
         lineage=_pressure_selection_lineage_payload(pressures, selected_item, unknowns),
@@ -291,6 +291,10 @@ def _from_focus_selection(
         pressures,
         focus,
     )
+
+
+def _pressure_selection_result_payload(selected: str) -> _SelectionResultPayload:
+    return _SelectionResultPayload(selected=selected)
 
 
 def _pressure_selection_reason_payload(
