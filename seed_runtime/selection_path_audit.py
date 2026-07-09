@@ -109,9 +109,7 @@ def build_selection_path_audit(
     pressure = build_pressure_audit(state, repo_root=root)
     story = build_operational_story(state, repo_root=root)
 
-    if normalized in {"current_focus", "primary_pressure"} or _matches_target(
-        normalized, story.focus
-    ):
+    if _target_matches_focus_selection(normalized, story.focus):
         selected_item = pressure.pressures[0] if pressure.pressures else None
         selected = (
             story.focus
@@ -255,6 +253,13 @@ def _from_pressure_selection(
             unknowns=unknowns,
         ),
     )
+
+
+def _target_matches_focus_selection(normalized_target: str, focus: str) -> bool:
+    return normalized_target in {
+        "current_focus",
+        "primary_pressure",
+    } or _matches_target(normalized_target, focus)
 
 
 def _target_matches_pressure_category(
