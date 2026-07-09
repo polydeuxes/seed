@@ -119,12 +119,8 @@ def build_selection_path_audit(
         )
 
     if _target_matches_pressure_category(normalized, pressure.pressures):
-        selected_item = _selected_pressure_item(pressure.pressures)
-        return _from_pressure_selection(
-            target,
-            _pressure_category_selection_selected_name(selected_item, story.focus),
-            pressure.pressures,
-            story.focus,
+        return _from_pressure_category_selection(
+            target, pressure.pressures, story.focus
         )
 
     return _unsupported_target_selection(target, pressure.pressures)
@@ -237,6 +233,18 @@ def _from_pressure_selection(
         reason=_pressure_selection_reason_payload(selected, focus),
         support=_pressure_selection_supporting_evidence_payload(selected_item),
         lineage=_pressure_selection_lineage_payload(pressures, selected_item, unknowns),
+    )
+
+
+def _from_pressure_category_selection(
+    target: str, pressures: tuple[PressureItem, ...], focus: str
+) -> SelectionPathAudit:
+    selected_item = _selected_pressure_item(pressures)
+    return _from_pressure_selection(
+        target,
+        _pressure_category_selection_selected_name(selected_item, focus),
+        pressures,
+        focus,
     )
 
 

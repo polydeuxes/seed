@@ -506,6 +506,48 @@ def test_pressure_category_selection_selected_name_is_owned_by_local_helper():
     )
 
 
+def test_pressure_category_selection_is_owned_by_local_helper():
+    from seed_runtime.pressure_audit import PressureItem
+    from seed_runtime.selection_path_audit import _from_pressure_category_selection
+
+    selected = PressureItem(
+        category="Runtime reachability",
+        score=3,
+        reason="selected pressure",
+        evidence={"source": "selected evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+    lower = PressureItem(
+        category="Documentation drift",
+        score=1,
+        reason="lower pressure",
+        evidence={"source": "lower evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+
+    audit = _from_pressure_category_selection(
+        "runtime_reachability", (selected, lower), "Runtime reachability"
+    )
+
+    assert audit.target == "runtime_reachability"
+    assert audit.selected == "runtime reachability"
+    assert audit.outcome == {
+        "selected": "runtime reachability",
+        "focus": "Runtime reachability",
+        "summary": "runtime reachability selected",
+    }
+    assert audit.candidates[0]["candidate"] == "runtime reachability"
+    assert audit.evidence[0]["surface"] == "pressure_audit"
+    assert audit.non_selected == [
+        {
+            "candidate": "documentation drift",
+            "score": 1,
+            "reason": "lower pressure score than selected candidate",
+        }
+    ]
+    assert audit.boundary["mutates_cluster"] is False
+
+
 def test_pressure_selection_reason_payload_is_owned_by_local_helper():
     from seed_runtime.selection_path_audit import _pressure_selection_reason_payload
 
