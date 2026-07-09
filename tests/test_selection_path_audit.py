@@ -974,3 +974,47 @@ def test_selection_path_lineage_owns_typed_unknown_before_public_handoff():
             "reason": "no implementation-backed selection evidence discovered for target",
         }
     ]
+
+
+def test_pressure_selection_payload_bundle_is_owned_by_local_helper():
+    from seed_runtime.pressure_audit import PressureItem
+    from seed_runtime.selection_path_audit import _pressure_selection_payloads
+
+    selected = PressureItem(
+        category="Runtime reachability",
+        score=3,
+        reason="selected pressure",
+        evidence={"source": "selected evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+    lower = PressureItem(
+        category="Documentation drift",
+        score=1,
+        reason="lower pressure",
+        evidence={"source": "lower evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+
+    payloads = _pressure_selection_payloads(
+        "runtime reachability", (selected, lower), "Runtime reachability"
+    )
+
+    assert payloads.result.selected == "runtime reachability"
+    assert payloads.reason.outcome == {
+        "selected": "runtime reachability",
+        "focus": "Runtime reachability",
+        "summary": "runtime reachability selected",
+    }
+    assert payloads.support.evidence[0]["surface"] == "pressure_audit"
+    assert (
+        payloads.lineage.candidate_set.candidates[0]["candidate"]
+        == "runtime reachability"
+    )
+    assert payloads.lineage.non_selected.non_selected == [
+        {
+            "candidate": "documentation drift",
+            "score": 1,
+            "reason": "lower pressure score than selected candidate",
+        }
+    ]
+    assert payloads.lineage.unknowns.unknowns == []
