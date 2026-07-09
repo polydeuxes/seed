@@ -3,6 +3,7 @@ import json
 import sys
 from pathlib import Path
 
+from seed_runtime.capability_needs import CapabilityNeedEntry
 from seed_runtime.consumer_dependency_audit import ConsumerAudit, ConsumerAuditItem
 from seed_runtime.diagnostic_shape_audit import (
     DiagnosticShapeAuditRow,
@@ -12,6 +13,7 @@ from seed_runtime.ownership_discrepancies import OwnershipDiscrepancyRow
 from seed_runtime.pressure_audit import (
     _PressureItemCandidate,
     _admitted_pressure_items,
+    _capability_pressure_evidence,
     _consumer_predicate_pressures,
     _diagnostic_shape_pressure_evidence,
     _ownership_pressure,
@@ -136,6 +138,33 @@ def test_ownership_pressure_evidence_is_owned_by_local_helper():
             "owner_not_observed": 2,
         },
         "dominant conflict": "owner_not_observed",
+    }
+
+
+def test_capability_pressure_evidence_is_owned_by_local_helper():
+    entries = [
+        CapabilityNeedEntry(
+            capability="container_inventory",
+            subjects={"svc-b", "svc-a"},
+            diagnostics={"ownership_discrepancies"},
+        ),
+        CapabilityNeedEntry(
+            capability="listener_process_inventory",
+            subjects={"svc-a"},
+            diagnostics={"listener_endpoint_reachability"},
+        ),
+    ]
+
+    assert _capability_pressure_evidence(entries) == {
+        "capability need frequency": {
+            "container_inventory": 2,
+            "listener_process_inventory": 1,
+        },
+        "affected subjects": ["svc-a", "svc-b"],
+        "affected diagnostics": [
+            "listener_endpoint_reachability",
+            "ownership_discrepancies",
+        ],
     }
 
 
