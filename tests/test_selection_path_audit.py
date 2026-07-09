@@ -129,6 +129,7 @@ def test_selection_answer_and_reason_payloads_are_separate():
     from seed_runtime.selection_path_audit import (
         _SelectionCandidateSetPayload,
         _SelectionLineagePayload,
+        _SelectionNonSelectedPayload,
         _SelectionReasonPayload,
         _SelectionResultPayload,
         _SelectionSupportingEvidencePayload,
@@ -146,7 +147,7 @@ def test_selection_answer_and_reason_payloads_are_separate():
     lineage = _SelectionLineagePayload(
         candidate_set=_SelectionCandidateSetPayload(candidates=[]),
         selection_factors=[],
-        non_selected=[],
+        non_selected=_SelectionNonSelectedPayload(non_selected=[]),
         unknowns=[],
     )
 
@@ -169,6 +170,7 @@ def test_selection_reason_and_supporting_evidence_payloads_are_separate():
     from seed_runtime.selection_path_audit import (
         _SelectionCandidateSetPayload,
         _SelectionLineagePayload,
+        _SelectionNonSelectedPayload,
         _SelectionReasonPayload,
         _SelectionResultPayload,
         _SelectionSupportingEvidencePayload,
@@ -184,7 +186,7 @@ def test_selection_reason_and_supporting_evidence_payloads_are_separate():
     lineage = _SelectionLineagePayload(
         candidate_set=_SelectionCandidateSetPayload(candidates=[]),
         selection_factors=[],
-        non_selected=[],
+        non_selected=_SelectionNonSelectedPayload(non_selected=[]),
         unknowns=[],
     )
 
@@ -207,6 +209,7 @@ def test_selection_candidate_set_payload_is_separate_from_lineage_explanation():
     from seed_runtime.selection_path_audit import (
         _SelectionCandidateSetPayload,
         _SelectionLineagePayload,
+        _SelectionNonSelectedPayload,
         _SelectionReasonPayload,
         _SelectionResultPayload,
         _SelectionSupportingEvidencePayload,
@@ -227,7 +230,7 @@ def test_selection_candidate_set_payload_is_separate_from_lineage_explanation():
     lineage = _SelectionLineagePayload(
         candidate_set=candidate_set,
         selection_factors=["pressure audit orders candidates"],
-        non_selected=[],
+        non_selected=_SelectionNonSelectedPayload(non_selected=[]),
         unknowns=[],
     )
 
@@ -244,6 +247,39 @@ def test_selection_candidate_set_payload_is_separate_from_lineage_explanation():
     assert "selection_factors" not in candidate_set.__dataclass_fields__
     assert "non_selected" not in candidate_set.__dataclass_fields__
     assert "unknowns" not in candidate_set.__dataclass_fields__
+
+
+def test_selection_non_selected_payload_is_separate_from_candidate_set():
+    from seed_runtime.pressure_audit import PressureItem
+    from seed_runtime.selection_path_audit import _non_selected_from_pressures
+
+    selected = PressureItem(
+        category="Runtime reachability",
+        score=3,
+        reason="selected pressure",
+        evidence={"source": "selected evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+    lower = PressureItem(
+        category="Documentation drift",
+        score=1,
+        reason="lower pressure",
+        evidence={"source": "lower evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+
+    payload = _non_selected_from_pressures((selected, lower), selected)
+
+    assert payload.non_selected == [
+        {
+            "candidate": "documentation drift",
+            "score": 1,
+            "reason": "lower pressure score than selected candidate",
+        }
+    ]
+    assert "candidates" not in payload.__dataclass_fields__
+    assert "selection_factors" not in payload.__dataclass_fields__
+    assert "unknowns" not in payload.__dataclass_fields__
 
 
 def test_selection_path_does_not_change_operational_story_selection(tmp_path, capsys):
@@ -315,6 +351,7 @@ def test_selection_path_lineage_owns_typed_unknown_before_public_handoff():
     from seed_runtime.selection_path_audit import (
         _SelectionCandidateSetPayload,
         _SelectionLineagePayload,
+        _SelectionNonSelectedPayload,
         _SelectionReasonPayload,
         _SelectionResultPayload,
         _SelectionSupportingEvidencePayload,
@@ -328,7 +365,10 @@ def test_selection_path_lineage_owns_typed_unknown_before_public_handoff():
         reason="no implementation-backed selection evidence discovered for target",
     )
     lineage = _SelectionLineagePayload(
-        _SelectionCandidateSetPayload(candidates=[]), ["unknown"], [], [typed_unknown]
+        _SelectionCandidateSetPayload(candidates=[]),
+        ["unknown"],
+        _SelectionNonSelectedPayload(non_selected=[]),
+        [typed_unknown],
     )
 
     audit = _selection_path_from_payloads(
