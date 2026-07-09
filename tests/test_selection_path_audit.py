@@ -558,6 +558,27 @@ def test_pressure_selection_supporting_evidence_payload_is_owned_by_local_helper
     assert "selection_factors" not in payload.__dataclass_fields__
 
 
+def test_selected_pressure_evidence_record_is_owned_by_local_helper():
+    from seed_runtime.pressure_audit import PressureItem
+    from seed_runtime.selection_path_audit import _selected_pressure_evidence
+
+    selected = PressureItem(
+        category="Runtime reachability",
+        score=3,
+        reason="selected pressure",
+        evidence={"source": "selected evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+
+    assert _selected_pressure_evidence(selected) == {
+        "surface": "pressure_audit",
+        "category": "Runtime reachability",
+        "score": 3,
+        "reason": "selected pressure",
+        "evidence": {"source": "selected evidence"},
+    }
+
+
 def test_selected_pressure_item_lookup_is_owned_by_local_helper():
     from seed_runtime.pressure_audit import PressureItem
     from seed_runtime.selection_path_audit import _selected_pressure_item
