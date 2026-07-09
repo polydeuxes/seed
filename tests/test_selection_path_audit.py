@@ -318,6 +318,29 @@ def test_pressure_candidate_public_name_projection_is_owned_by_local_helper():
     assert _pressure_candidate_public_name(pressure) == "runtime reachability"
 
 
+def test_ranked_pressure_candidates_are_owned_by_local_helper():
+    from seed_runtime.pressure_audit import PressureItem
+    from seed_runtime.selection_path_audit import _ranked_pressure_candidates
+
+    first = PressureItem(
+        category="Runtime reachability",
+        score=3,
+        reason="selected pressure",
+        evidence={"source": "selected evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+    second = PressureItem(
+        category="Documentation drift",
+        score=1,
+        reason="lower pressure",
+        evidence={"source": "lower evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+
+    assert _ranked_pressure_candidates((first, second)) == ((1, first), (2, second))
+    assert _ranked_pressure_candidates(()) == ()
+
+
 def test_selection_non_selected_payload_is_separate_from_candidate_set():
     from seed_runtime.pressure_audit import PressureItem
     from seed_runtime.selection_path_audit import _non_selected_from_pressures
