@@ -336,6 +336,29 @@ def test_selection_non_selected_payload_is_separate_from_candidate_set():
     assert "unknowns" not in payload.__dataclass_fields__
 
 
+def test_selected_pressure_item_lookup_is_owned_by_local_helper():
+    from seed_runtime.pressure_audit import PressureItem
+    from seed_runtime.selection_path_audit import _selected_pressure_item
+
+    selected = PressureItem(
+        category="Runtime reachability",
+        score=3,
+        reason="selected pressure",
+        evidence={"source": "selected evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+    lower = PressureItem(
+        category="Documentation drift",
+        score=1,
+        reason="lower pressure",
+        evidence={"source": "lower evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+
+    assert _selected_pressure_item((selected, lower)) == selected
+    assert _selected_pressure_item(()) is None
+
+
 def test_focus_selection_target_matching_is_owned_by_local_helper():
     from seed_runtime.selection_path_audit import (
         _normalize_target,

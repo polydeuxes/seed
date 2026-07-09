@@ -110,7 +110,7 @@ def build_selection_path_audit(
     story = build_operational_story(state, repo_root=root)
 
     if _target_matches_focus_selection(normalized, story.focus):
-        selected_item = pressure.pressures[0] if pressure.pressures else None
+        selected_item = _selected_pressure_item(pressure.pressures)
         selected = (
             story.focus
             if normalized == "current_focus"
@@ -121,7 +121,7 @@ def build_selection_path_audit(
         )
 
     if _target_matches_pressure_category(normalized, pressure.pressures):
-        selected_item = pressure.pressures[0] if pressure.pressures else None
+        selected_item = _selected_pressure_item(pressure.pressures)
         return _from_pressure_selection(
             target,
             _selected_name(selected_item, story.focus),
@@ -231,7 +231,7 @@ def format_selection_path_audit(audit: SelectionPathAudit) -> str:
 def _from_pressure_selection(
     target: str, selected: str, pressures: tuple[PressureItem, ...], focus: str
 ) -> SelectionPathAudit:
-    selected_item = pressures[0] if pressures else None
+    selected_item = _selected_pressure_item(pressures)
     unknowns = _selection_unknowns_from_pressures(pressures)
     return _selection_path_from_payloads(
         target=target,
@@ -253,6 +253,10 @@ def _from_pressure_selection(
             unknowns=unknowns,
         ),
     )
+
+
+def _selected_pressure_item(pressures: tuple[PressureItem, ...]) -> PressureItem | None:
+    return pressures[0] if pressures else None
 
 
 def _target_matches_focus_selection(normalized_target: str, focus: str) -> bool:
