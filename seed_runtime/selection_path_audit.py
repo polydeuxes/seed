@@ -60,6 +60,12 @@ class _SelectionLineagePayload:
 
 
 @dataclass(frozen=True)
+class _SelectionPathInputs:
+    pressures: tuple[PressureItem, ...]
+    focus: str
+
+
+@dataclass(frozen=True)
 class SelectionPathAudit:
     target: str
     selected: str
@@ -102,20 +108,15 @@ def build_selection_path_audit(
 
     root = _selection_path_repo_root(repo_root)
     normalized = _normalize_target(target)
-    pressure = build_pressure_audit(state, repo_root=root)
-    story = build_operational_story(state, repo_root=root)
+    inputs = _selection_path_inputs(state, root)
 
-    if _target_matches_focus_selection(normalized, story.focus):
-        return _from_focus_selection(
-            target, normalized, pressure.pressures, story.focus
-        )
+    if _target_matches_focus_selection(normalized, inputs.focus):
+        return _from_focus_selection(target, normalized, inputs.pressures, inputs.focus)
 
-    if _target_matches_pressure_category(normalized, pressure.pressures):
-        return _from_pressure_category_selection(
-            target, pressure.pressures, story.focus
-        )
+    if _target_matches_pressure_category(normalized, inputs.pressures):
+        return _from_pressure_category_selection(target, inputs.pressures, inputs.focus)
 
-    return _unsupported_target_selection(target, pressure.pressures)
+    return _unsupported_target_selection(target, inputs.pressures)
 
 
 def _selection_path_repo_root(repo_root: str | Path | None) -> Path:
@@ -124,6 +125,12 @@ def _selection_path_repo_root(repo_root: str | Path | None) -> Path:
         if repo_root is not None
         else Path(__file__).resolve().parents[1]
     )
+
+
+def _selection_path_inputs(state: State, root: Path) -> _SelectionPathInputs:
+    pressure = build_pressure_audit(state, repo_root=root)
+    story = build_operational_story(state, repo_root=root)
+    return _SelectionPathInputs(pressures=pressure.pressures, focus=story.focus)
 
 
 def _unsupported_target_selection(
