@@ -149,12 +149,18 @@ def _unsupported_target_selection(
         result=_unsupported_target_result_payload(),
         reason=_unsupported_target_reason_payload(),
         support=_unsupported_target_supporting_evidence_payload(),
-        lineage=_SelectionLineagePayload(
-            candidate_set=_candidate_set_from_pressures(pressures),
-            factors=_unsupported_target_factor_payload(),
-            non_selected=_unsupported_target_non_selected_payload(),
-            unknowns=_unsupported_target_unknown_payload(),
-        ),
+        lineage=_unsupported_target_lineage_payload(pressures),
+    )
+
+
+def _unsupported_target_lineage_payload(
+    pressures: tuple[PressureItem, ...],
+) -> _SelectionLineagePayload:
+    return _SelectionLineagePayload(
+        candidate_set=_candidate_set_from_pressures(pressures),
+        factors=_unsupported_target_factor_payload(),
+        non_selected=_unsupported_target_non_selected_payload(),
+        unknowns=_unsupported_target_unknown_payload(),
     )
 
 
