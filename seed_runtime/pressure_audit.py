@@ -10,6 +10,7 @@ from typing import Any
 from seed_runtime.capability_needs import build_capability_needs
 from seed_runtime.consumer_dependency_audit import ConsumerAudit, build_consumer_audit
 from seed_runtime.diagnostic_shape_audit import (
+    DiagnosticShapeAuditSummary,
     build_diagnostic_shape_audit,
     summarize_diagnostic_shape_audit,
 )
@@ -133,20 +134,25 @@ def _diagnostic_shape_pressure(root: Path) -> _PressureItemCandidate | None:
     score = summary.mismatches + summary.warnings + summary.unknown
     if score <= 0:
         return None
-    evidence = {
-        "mismatches": summary.mismatches,
-        "warnings": summary.warnings,
-        "unknowns": summary.unknown,
-    }
     return _PressureItemCandidate(
         category="Diagnostic Shape",
         score=score,
-        evidence=evidence,
+        evidence=_diagnostic_shape_pressure_evidence(summary),
         reason=(
             "Diagnostic shape audit found visibility-contract rows that are not consistent."
         ),
         recommended_command="seed --diagnostic-shape-audit --mismatches",
     )
+
+
+def _diagnostic_shape_pressure_evidence(
+    summary: DiagnosticShapeAuditSummary,
+) -> dict[str, int]:
+    return {
+        "mismatches": summary.mismatches,
+        "warnings": summary.warnings,
+        "unknowns": summary.unknown,
+    }
 
 
 def _ownership_pressure(state: State) -> _PressureItemCandidate | None:

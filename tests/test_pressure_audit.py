@@ -4,12 +4,16 @@ import sys
 from pathlib import Path
 
 from seed_runtime.consumer_dependency_audit import ConsumerAudit, ConsumerAuditItem
-from seed_runtime.diagnostic_shape_audit import DiagnosticShapeAuditRow
+from seed_runtime.diagnostic_shape_audit import (
+    DiagnosticShapeAuditRow,
+    DiagnosticShapeAuditSummary,
+)
 from seed_runtime.ownership_discrepancies import OwnershipDiscrepancyRow
 from seed_runtime.pressure_audit import (
     _PressureItemCandidate,
     _admitted_pressure_items,
     _consumer_predicate_pressures,
+    _diagnostic_shape_pressure_evidence,
     _ownership_pressure,
     build_pressure_audit,
     format_pressure_audit,
@@ -98,6 +102,22 @@ def test_admitted_pressure_items_filter_convert_and_order_candidates():
     assert [item.category for item in admitted] == ["Alpha", "Beta", "Gamma"]
     assert [item.score for item in admitted] == [3, 3, 1]
     assert all(item.recommended_command.startswith("seed --") for item in admitted)
+
+
+def test_diagnostic_shape_pressure_evidence_is_owned_by_local_helper():
+    summary = DiagnosticShapeAuditSummary(
+        diagnostics_audited=7,
+        consistent=3,
+        warnings=2,
+        mismatches=1,
+        unknown=1,
+    )
+
+    assert _diagnostic_shape_pressure_evidence(summary) == {
+        "mismatches": 1,
+        "warnings": 2,
+        "unknowns": 1,
+    }
 
 
 def test_ownership_pressure_candidate_preserves_public_item_fields(monkeypatch):
