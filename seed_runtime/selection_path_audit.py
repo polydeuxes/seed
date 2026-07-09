@@ -100,11 +100,7 @@ def build_selection_path_audit(
 ) -> SelectionPathAudit:
     """Explain implemented selection evidence without changing selection behavior."""
 
-    root = (
-        Path(repo_root)
-        if repo_root is not None
-        else Path(__file__).resolve().parents[1]
-    )
+    root = _selection_path_repo_root(repo_root)
     normalized = _normalize_target(target)
     pressure = build_pressure_audit(state, repo_root=root)
     story = build_operational_story(state, repo_root=root)
@@ -120,6 +116,14 @@ def build_selection_path_audit(
         )
 
     return _unsupported_target_selection(target, pressure.pressures)
+
+
+def _selection_path_repo_root(repo_root: str | Path | None) -> Path:
+    return (
+        Path(repo_root)
+        if repo_root is not None
+        else Path(__file__).resolve().parents[1]
+    )
 
 
 def _unsupported_target_selection(

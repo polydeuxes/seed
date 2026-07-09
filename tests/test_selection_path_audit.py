@@ -686,6 +686,16 @@ def test_pressure_category_target_matching_is_owned_by_local_helper():
     )
 
 
+def test_selection_path_repo_root_preparation_is_owned_by_local_helper(tmp_path):
+    from seed_runtime.selection_path_audit import _selection_path_repo_root
+
+    explicit_root = tmp_path / "repo"
+
+    assert _selection_path_repo_root(explicit_root) == explicit_root
+    assert _selection_path_repo_root(str(explicit_root)) == explicit_root
+    assert _selection_path_repo_root(None) == ROOT
+
+
 def test_unsupported_target_selection_refusal_is_prepared_separately():
     from seed_runtime.pressure_audit import PressureItem
     from seed_runtime.selection_path_audit import _unsupported_target_selection
