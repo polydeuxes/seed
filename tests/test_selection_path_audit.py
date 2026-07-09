@@ -623,6 +623,17 @@ def test_focus_selection_helper_preserves_current_focus_compatibility_case():
     assert audit.candidates[0]["candidate"] == "runtime reachability"
 
 
+def test_pressure_selection_result_payload_is_owned_by_local_helper():
+    from seed_runtime.selection_path_audit import _pressure_selection_result_payload
+
+    payload = _pressure_selection_result_payload("runtime reachability")
+
+    assert payload.selected == "runtime reachability"
+    assert "outcome" not in payload.__dataclass_fields__
+    assert "evidence" not in payload.__dataclass_fields__
+    assert "candidates" not in payload.__dataclass_fields__
+
+
 def test_pressure_selection_reason_payload_is_owned_by_local_helper():
     from seed_runtime.selection_path_audit import _pressure_selection_reason_payload
 
