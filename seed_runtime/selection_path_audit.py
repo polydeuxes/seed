@@ -132,7 +132,7 @@ def _unsupported_target_selection(
         support=_unsupported_target_supporting_evidence_payload(),
         lineage=_SelectionLineagePayload(
             candidate_set=_candidate_set_from_pressures(pressures),
-            factors=_SelectionFactorPayload(selection_factors=["unknown"]),
+            factors=_unsupported_target_factor_payload(),
             non_selected=_unsupported_target_non_selected_payload(),
             unknowns=_unsupported_target_unknown_payload(),
         ),
@@ -156,6 +156,10 @@ def _unsupported_target_supporting_evidence_payload() -> (
     _SelectionSupportingEvidencePayload
 ):
     return _SelectionSupportingEvidencePayload(evidence=[])
+
+
+def _unsupported_target_factor_payload() -> _SelectionFactorPayload:
+    return _SelectionFactorPayload(selection_factors=["unknown"])
 
 
 def _unsupported_target_non_selected_payload() -> _SelectionNonSelectedPayload:
