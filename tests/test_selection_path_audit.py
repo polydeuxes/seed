@@ -765,6 +765,19 @@ def test_unsupported_target_supporting_evidence_payload_is_owned_by_local_helper
     assert "selection_factors" not in payload.__dataclass_fields__
 
 
+def test_unsupported_target_non_selected_payload_is_owned_by_local_helper():
+    from seed_runtime.selection_path_audit import (
+        _unsupported_target_non_selected_payload,
+    )
+
+    payload = _unsupported_target_non_selected_payload()
+
+    assert payload.non_selected == []
+    assert "candidates" not in payload.__dataclass_fields__
+    assert "selection_factors" not in payload.__dataclass_fields__
+    assert "unknowns" not in payload.__dataclass_fields__
+
+
 def test_unsupported_target_unknown_payload_is_owned_by_local_helper():
     from seed_runtime.selection_path_audit import _unsupported_target_unknown_payload
 
