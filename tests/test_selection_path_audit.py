@@ -727,6 +727,23 @@ def test_unsupported_target_selection_refusal_is_prepared_separately():
     assert audit.boundary["mutates_cluster"] is False
 
 
+def test_unsupported_target_unknown_payload_is_owned_by_local_helper():
+    from seed_runtime.selection_path_audit import _unsupported_target_unknown_payload
+
+    payload = _unsupported_target_unknown_payload()
+
+    assert len(payload.unknowns) == 1
+    assert payload.unknowns[0].unknown_type == "Implementation Unknown"
+    assert payload.unknowns[0].area == "selection_logic"
+    assert (
+        payload.unknowns[0].reason
+        == "no implementation-backed selection evidence discovered for target"
+    )
+    assert "candidates" not in payload.__dataclass_fields__
+    assert "selection_factors" not in payload.__dataclass_fields__
+    assert "non_selected" not in payload.__dataclass_fields__
+
+
 def test_selection_path_does_not_change_operational_story_selection(tmp_path, capsys):
     seed_local, db = seeded_db(tmp_path)
     capsys.readouterr()

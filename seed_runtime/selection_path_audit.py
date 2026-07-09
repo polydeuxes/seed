@@ -139,16 +139,20 @@ def _unsupported_target_selection(
             candidate_set=_candidate_set_from_pressures(pressures),
             factors=_SelectionFactorPayload(selection_factors=["unknown"]),
             non_selected=_SelectionNonSelectedPayload(non_selected=[]),
-            unknowns=_SelectionUnknownPayload(
-                unknowns=[
-                    preserve_typed_unknown(
-                        unknown_type="Implementation Unknown",
-                        area="selection_logic",
-                        reason="no implementation-backed selection evidence discovered for target",
-                    )
-                ]
-            ),
+            unknowns=_unsupported_target_unknown_payload(),
         ),
+    )
+
+
+def _unsupported_target_unknown_payload() -> _SelectionUnknownPayload:
+    return _SelectionUnknownPayload(
+        unknowns=[
+            preserve_typed_unknown(
+                unknown_type="Implementation Unknown",
+                area="selection_logic",
+                reason="no implementation-backed selection evidence discovered for target",
+            )
+        ]
     )
 
 
