@@ -238,12 +238,7 @@ def _from_pressure_selection(
         result=_SelectionResultPayload(selected=selected),
         reason=_pressure_selection_reason_payload(selected, focus),
         support=_pressure_selection_supporting_evidence_payload(selected_item),
-        lineage=_SelectionLineagePayload(
-            candidate_set=_candidate_set_from_pressures(pressures),
-            factors=_selection_factors_from_pressures(pressures),
-            non_selected=_non_selected_from_pressures(pressures, selected_item),
-            unknowns=unknowns,
-        ),
+        lineage=_pressure_selection_lineage_payload(pressures, selected_item, unknowns),
     )
 
 
@@ -256,6 +251,19 @@ def _pressure_selection_reason_payload(
             "focus": focus,
             "summary": f"{selected} selected",
         }
+    )
+
+
+def _pressure_selection_lineage_payload(
+    pressures: tuple[PressureItem, ...],
+    selected_item: PressureItem | None,
+    unknowns: _SelectionUnknownPayload,
+) -> _SelectionLineagePayload:
+    return _SelectionLineagePayload(
+        candidate_set=_candidate_set_from_pressures(pressures),
+        factors=_selection_factors_from_pressures(pressures),
+        non_selected=_non_selected_from_pressures(pressures, selected_item),
+        unknowns=unknowns,
     )
 
 

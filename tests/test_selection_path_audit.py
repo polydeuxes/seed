@@ -336,6 +336,63 @@ def test_selection_non_selected_payload_is_separate_from_candidate_set():
     assert "unknowns" not in payload.__dataclass_fields__
 
 
+def test_pressure_selection_lineage_payload_is_owned_by_local_helper():
+    from seed_runtime.pressure_audit import PressureItem
+    from seed_runtime.selection_path_audit import (
+        _SelectionUnknownPayload,
+        _pressure_selection_lineage_payload,
+    )
+
+    selected = PressureItem(
+        category="Runtime reachability",
+        score=3,
+        reason="selected pressure",
+        evidence={"source": "selected evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+    lower = PressureItem(
+        category="Documentation drift",
+        score=1,
+        reason="lower pressure",
+        evidence={"source": "lower evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+    unknowns = _SelectionUnknownPayload(unknowns=[])
+
+    payload = _pressure_selection_lineage_payload((selected, lower), selected, unknowns)
+
+    assert payload.candidate_set.candidates == [
+        {
+            "candidate": "runtime reachability",
+            "score": 3,
+            "rank": 1,
+            "reason": "selected pressure",
+            "evidence": {"source": "selected evidence"},
+        },
+        {
+            "candidate": "documentation drift",
+            "score": 1,
+            "rank": 2,
+            "reason": "lower pressure",
+            "evidence": {"source": "lower evidence"},
+        },
+    ]
+    assert payload.factors.selection_factors == [
+        "pressure audit orders candidates by descending score, then category name"
+    ]
+    assert payload.non_selected.non_selected == [
+        {
+            "candidate": "documentation drift",
+            "score": 1,
+            "reason": "lower pressure score than selected candidate",
+        }
+    ]
+    assert payload.unknowns == unknowns
+    assert "outcome" not in payload.__dataclass_fields__
+    assert "evidence" not in payload.__dataclass_fields__
+    assert "selected" not in payload.__dataclass_fields__
+
+
 def test_pressure_selection_supporting_evidence_payload_is_owned_by_local_helper():
     from seed_runtime.pressure_audit import PressureItem
     from seed_runtime.selection_path_audit import (
