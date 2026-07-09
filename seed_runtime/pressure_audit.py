@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from seed_runtime.capability_needs import build_capability_needs
+from seed_runtime.capability_needs import CapabilityNeedEntry, build_capability_needs
 from seed_runtime.consumer_dependency_audit import ConsumerAudit, build_consumer_audit
 from seed_runtime.diagnostic_shape_audit import (
     DiagnosticShapeAuditSummary,
@@ -190,23 +190,29 @@ def _capability_pressure(state: State) -> _PressureItemCandidate | None:
     return _PressureItemCandidate(
         category="Capability",
         score=score,
-        evidence={
-            "capability need frequency": {
-                entry.capability: len(entry.subjects) for entry in entries
-            },
-            "affected subjects": sorted(
-                {subject for entry in entries for subject in entry.subjects}
-            ),
-            "affected diagnostics": sorted(
-                {diag for entry in entries for diag in entry.diagnostics}
-            ),
-        },
+        evidence=_capability_pressure_evidence(entries),
         reason=(
             f"Capability needs audit reports missing observation capability across {score} subject occurrence(s); "
             f"top need is {top.capability}."
         ),
         recommended_command="seed --capability-needs",
     )
+
+
+def _capability_pressure_evidence(
+    entries: list[CapabilityNeedEntry],
+) -> dict[str, Any]:
+    return {
+        "capability need frequency": {
+            entry.capability: len(entry.subjects) for entry in entries
+        },
+        "affected subjects": sorted(
+            {subject for entry in entries for subject in entry.subjects}
+        ),
+        "affected diagnostics": sorted(
+            {diag for entry in entries for diag in entry.diagnostics}
+        ),
+    }
 
 
 def _consumer_predicate_pressures(
