@@ -422,7 +422,7 @@ def _candidate_set_from_pressures(
 
 def _candidate(item: PressureItem, rank: int) -> dict[str, Any]:
     return {
-        "candidate": item.category.lower(),
+        "candidate": _pressure_candidate_public_name(item),
         "score": item.score,
         "rank": rank,
         "reason": item.reason,
@@ -452,7 +452,7 @@ def _non_selected(
     item: PressureItem, selected_item: PressureItem | None
 ) -> dict[str, Any]:
     return {
-        "candidate": item.category.lower(),
+        "candidate": _pressure_candidate_public_name(item),
         "score": item.score,
         "reason": _non_selected_reason(item, selected_item),
     }
@@ -495,7 +495,11 @@ def _pressure_category_selection_selected_name(
 
 
 def _selected_name(item: PressureItem | None, focus: str) -> str:
-    return item.category.lower() if item else focus
+    return _pressure_candidate_public_name(item) if item else focus
+
+
+def _pressure_candidate_public_name(item: PressureItem) -> str:
+    return item.category.lower()
 
 
 def _normalize_target(target: str) -> str:
