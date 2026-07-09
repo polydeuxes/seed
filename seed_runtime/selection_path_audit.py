@@ -37,10 +37,15 @@ class _SelectionCandidateSetPayload:
 
 
 @dataclass(frozen=True)
+class _SelectionNonSelectedPayload:
+    non_selected: list[dict[str, Any]]
+
+
+@dataclass(frozen=True)
 class _SelectionLineagePayload:
     candidate_set: _SelectionCandidateSetPayload
     selection_factors: list[str]
-    non_selected: list[dict[str, Any]]
+    non_selected: _SelectionNonSelectedPayload
     unknowns: list[TypedUnknownRecord]
 
 
@@ -134,7 +139,7 @@ def build_selection_path_audit(
         lineage=_SelectionLineagePayload(
             candidate_set=_candidate_set_from_pressures(pressure.pressures),
             selection_factors=["unknown"],
-            non_selected=[],
+            non_selected=_SelectionNonSelectedPayload(non_selected=[]),
             unknowns=[
                 preserve_typed_unknown(
                     unknown_type="Implementation Unknown",
@@ -159,7 +164,7 @@ def _selection_path_from_payloads(
         selected=result.selected,
         candidates=lineage.candidate_set.candidates,
         selection_factors=lineage.selection_factors,
-        non_selected=lineage.non_selected,
+        non_selected=lineage.non_selected.non_selected,
         evidence=support.evidence,
         outcome=reason.outcome,
         unknowns=typed_unknowns_to_public_dicts(lineage.unknowns),
@@ -246,9 +251,7 @@ def _from_pressure_selection(
         lineage=_SelectionLineagePayload(
             candidate_set=_candidate_set_from_pressures(pressures),
             selection_factors=factors,
-            non_selected=[
-                _non_selected(item, selected_item) for item in pressures[1:]
-            ],
+            non_selected=_non_selected_from_pressures(pressures, selected_item),
             unknowns=unknowns,
         ),
     )
@@ -273,6 +276,17 @@ def _candidate(item: PressureItem, rank: int) -> dict[str, Any]:
         "reason": item.reason,
         "evidence": item.evidence,
     }
+
+
+def _non_selected_from_pressures(
+    pressures: tuple[PressureItem, ...],
+    selected_item: PressureItem | None,
+) -> _SelectionNonSelectedPayload:
+    return _SelectionNonSelectedPayload(
+        non_selected=[
+            _non_selected(item, selected_item) for item in pressures[1:]
+        ]
+    )
 
 
 def _non_selected(
