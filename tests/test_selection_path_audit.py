@@ -696,6 +696,47 @@ def test_selection_path_repo_root_preparation_is_owned_by_local_helper(tmp_path)
     assert _selection_path_repo_root(None) == ROOT
 
 
+def test_selection_path_input_collection_is_owned_by_local_helper(
+    monkeypatch, tmp_path
+):
+    import seed_runtime.selection_path_audit as selection_path_audit
+    from seed_runtime.pressure_audit import PressureItem
+
+    pressure = PressureItem(
+        category="Runtime reachability",
+        score=3,
+        reason="selected pressure",
+        evidence={"source": "selected evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+    calls = []
+
+    def fake_pressure_audit(state, *, repo_root):
+        calls.append(("pressure", state, repo_root))
+        return type("PressureAudit", (), {"pressures": (pressure,)})()
+
+    def fake_operational_story(state, *, repo_root):
+        calls.append(("story", state, repo_root))
+        return type("OperationalStory", (), {"focus": "Runtime reachability"})()
+
+    monkeypatch.setattr(
+        selection_path_audit, "build_pressure_audit", fake_pressure_audit
+    )
+    monkeypatch.setattr(
+        selection_path_audit, "build_operational_story", fake_operational_story
+    )
+
+    state = object()
+    payload = selection_path_audit._selection_path_inputs(state, tmp_path)
+
+    assert payload.pressures == (pressure,)
+    assert payload.focus == "Runtime reachability"
+    assert calls == [("pressure", state, tmp_path), ("story", state, tmp_path)]
+    assert "target" not in payload.__dataclass_fields__
+    assert "selected" not in payload.__dataclass_fields__
+    assert "outcome" not in payload.__dataclass_fields__
+
+
 def test_unsupported_target_selection_refusal_is_prepared_separately():
     from seed_runtime.pressure_audit import PressureItem
     from seed_runtime.selection_path_audit import _unsupported_target_selection
