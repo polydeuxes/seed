@@ -336,6 +336,32 @@ def test_selection_non_selected_payload_is_separate_from_candidate_set():
     assert "unknowns" not in payload.__dataclass_fields__
 
 
+def test_pressure_category_target_matching_is_owned_by_local_helper():
+    from seed_runtime.pressure_audit import PressureItem
+    from seed_runtime.selection_path_audit import (
+        _normalize_target,
+        _target_matches_pressure_category,
+    )
+
+    pressure = PressureItem(
+        category="Runtime reachability",
+        score=3,
+        reason="selected pressure",
+        evidence={"source": "selected evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+
+    assert _target_matches_pressure_category(
+        _normalize_target("runtime-reachability"), (pressure,)
+    )
+    assert _target_matches_pressure_category(
+        _normalize_target("reachability"), (pressure,)
+    )
+    assert not _target_matches_pressure_category(
+        _normalize_target("not_a_selection"), (pressure,)
+    )
+
+
 def test_unsupported_target_selection_refusal_is_prepared_separately():
     from seed_runtime.pressure_audit import PressureItem
     from seed_runtime.selection_path_audit import _unsupported_target_selection

@@ -122,12 +122,7 @@ def build_selection_path_audit(
             target, selected, pressure.pressures, story.focus
         )
 
-    matching = [
-        item
-        for item in pressure.pressures
-        if _matches_target(normalized, item.category)
-    ]
-    if matching:
+    if _target_matches_pressure_category(normalized, pressure.pressures):
         selected_item = pressure.pressures[0] if pressure.pressures else None
         return _from_pressure_selection(
             target,
@@ -260,6 +255,12 @@ def _from_pressure_selection(
             unknowns=unknowns,
         ),
     )
+
+
+def _target_matches_pressure_category(
+    normalized_target: str, pressures: tuple[PressureItem, ...]
+) -> bool:
+    return any(_matches_target(normalized_target, item.category) for item in pressures)
 
 
 def _selection_unknowns_from_pressures(
