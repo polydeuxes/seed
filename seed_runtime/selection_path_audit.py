@@ -111,13 +111,11 @@ def build_selection_path_audit(
 
     if _target_matches_focus_selection(normalized, story.focus):
         selected_item = _selected_pressure_item(pressure.pressures)
-        selected = (
-            story.focus
-            if normalized == "current_focus"
-            else _selected_name(selected_item, story.focus)
-        )
         return _from_pressure_selection(
-            target, selected, pressure.pressures, story.focus
+            target,
+            _focus_selection_selected_name(normalized, selected_item, story.focus),
+            pressure.pressures,
+            story.focus,
         )
 
     if _target_matches_pressure_category(normalized, pressure.pressures):
@@ -369,6 +367,16 @@ def _evidence(item: PressureItem | None) -> dict[str, Any]:
         "reason": item.reason,
         "evidence": item.evidence,
     }
+
+
+def _focus_selection_selected_name(
+    normalized_target: str, selected_item: PressureItem | None, focus: str
+) -> str:
+    return (
+        focus
+        if normalized_target == "current_focus"
+        else _selected_name(selected_item, focus)
+    )
 
 
 def _selected_name(item: PressureItem | None, focus: str) -> str:

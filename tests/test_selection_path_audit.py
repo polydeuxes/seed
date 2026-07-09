@@ -447,6 +447,41 @@ def test_selected_pressure_item_lookup_is_owned_by_local_helper():
     assert _selected_pressure_item(()) is None
 
 
+def test_focus_selection_selected_name_is_owned_by_local_helper():
+    from seed_runtime.pressure_audit import PressureItem
+    from seed_runtime.selection_path_audit import (
+        _focus_selection_selected_name,
+        _normalize_target,
+    )
+
+    selected = PressureItem(
+        category="Runtime reachability",
+        score=3,
+        reason="selected pressure",
+        evidence={"source": "selected evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+
+    assert (
+        _focus_selection_selected_name(
+            _normalize_target("current_focus"), selected, "Runtime reachability"
+        )
+        == "Runtime reachability"
+    )
+    assert (
+        _focus_selection_selected_name(
+            _normalize_target("primary pressure"), selected, "Runtime reachability"
+        )
+        == "runtime reachability"
+    )
+    assert (
+        _focus_selection_selected_name(
+            _normalize_target("primary pressure"), None, "Runtime reachability"
+        )
+        == "Runtime reachability"
+    )
+
+
 def test_pressure_selection_reason_payload_is_owned_by_local_helper():
     from seed_runtime.selection_path_audit import _pressure_selection_reason_payload
 
