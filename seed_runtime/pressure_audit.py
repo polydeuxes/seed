@@ -283,7 +283,11 @@ def _fragile_predicate_pressure_evidence(
 
 def _display_evidence(value: Any) -> str:
     if isinstance(value, dict):
-        return ", ".join(f"{key}={val}" for key, val in value.items()) or "none"
+        return _display_mapping_evidence(value)
     if isinstance(value, (list, tuple, set)):
         return ", ".join(str(item) for item in value) or "none"
     return str(value)
+
+
+def _display_mapping_evidence(value: dict[Any, Any]) -> str:
+    return ", ".join(f"{key}={val}" for key, val in value.items()) or "none"
