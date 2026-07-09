@@ -341,6 +341,29 @@ def test_ranked_pressure_candidates_are_owned_by_local_helper():
     assert _ranked_pressure_candidates(()) == ()
 
 
+def test_pressure_candidate_row_is_owned_by_local_helper():
+    from seed_runtime.pressure_audit import PressureItem
+    from seed_runtime.selection_path_audit import _pressure_candidate_row
+
+    pressure = PressureItem(
+        category="Runtime Reachability",
+        score=3,
+        reason="selected pressure",
+        evidence={"source": "selected evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+
+    row = _pressure_candidate_row((2, pressure))
+
+    assert row == {
+        "candidate": "runtime reachability",
+        "score": 3,
+        "rank": 2,
+        "reason": "selected pressure",
+        "evidence": {"source": "selected evidence"},
+    }
+
+
 def test_selection_non_selected_payload_is_separate_from_candidate_set():
     from seed_runtime.pressure_audit import PressureItem
     from seed_runtime.selection_path_audit import _non_selected_from_pressures
