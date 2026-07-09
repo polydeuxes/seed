@@ -129,7 +129,7 @@ def _unsupported_target_selection(
         target=target,
         result=_unsupported_target_result_payload(),
         reason=_unsupported_target_reason_payload(),
-        support=_SelectionSupportingEvidencePayload(evidence=[]),
+        support=_unsupported_target_supporting_evidence_payload(),
         lineage=_SelectionLineagePayload(
             candidate_set=_candidate_set_from_pressures(pressures),
             factors=_SelectionFactorPayload(selection_factors=["unknown"]),
@@ -150,6 +150,12 @@ def _unsupported_target_reason_payload() -> _SelectionReasonPayload:
             "reason": "target is not an implemented selection surface",
         }
     )
+
+
+def _unsupported_target_supporting_evidence_payload() -> (
+    _SelectionSupportingEvidencePayload
+):
+    return _SelectionSupportingEvidencePayload(evidence=[])
 
 
 def _unsupported_target_unknown_payload() -> _SelectionUnknownPayload:
