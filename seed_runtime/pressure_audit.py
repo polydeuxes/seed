@@ -285,9 +285,13 @@ def _display_evidence(value: Any) -> str:
     if isinstance(value, dict):
         return _display_mapping_evidence(value)
     if isinstance(value, (list, tuple, set)):
-        return ", ".join(str(item) for item in value) or "none"
+        return _display_collection_evidence(value)
     return str(value)
 
 
 def _display_mapping_evidence(value: dict[Any, Any]) -> str:
     return ", ".join(f"{key}={val}" for key, val in value.items()) or "none"
+
+
+def _display_collection_evidence(value: list[Any] | tuple[Any, ...] | set[Any]) -> str:
+    return ", ".join(str(item) for item in value) or "none"
