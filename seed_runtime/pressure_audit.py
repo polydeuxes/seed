@@ -110,20 +110,31 @@ def format_pressure_audit(audit: PressureAudit) -> str:
         )
         return "\n".join(lines)
     for index, item in enumerate(audit.pressures, start=1):
-        lines.append(f"{index}. {item.category}")
-        lines.append("")
-        lines.append(f"Score: {item.score}")
-        lines.append("")
-        lines.append("Evidence:")
-        for key, value in item.evidence.items():
-            lines.append(f"  {key}: {_display_evidence(value)}")
-        lines.append("")
-        lines.append(f"Reason: {item.reason}")
-        lines.append(f"Recommended inspection: {item.recommended_command}")
-        lines.append("")
+        lines.extend(_format_pressure_item_section(index, item))
     lines.append("Summary:")
     lines.append(f"  pressures identified: {len(audit.pressures)}")
     return "\n".join(lines).rstrip()
+
+
+def _format_pressure_item_section(index: int, item: PressureItem) -> list[str]:
+    lines = [
+        f"{index}. {item.category}",
+        "",
+        f"Score: {item.score}",
+        "",
+        "Evidence:",
+    ]
+    for key, value in item.evidence.items():
+        lines.append(f"  {key}: {_display_evidence(value)}")
+    lines.extend(
+        [
+            "",
+            f"Reason: {item.reason}",
+            f"Recommended inspection: {item.recommended_command}",
+            "",
+        ]
+    )
+    return lines
 
 
 def _diagnostic_shape_pressure(root: Path) -> _PressureItemCandidate | None:
