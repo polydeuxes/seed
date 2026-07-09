@@ -1363,6 +1363,60 @@ def test_diagnostic_surface_definition_implementation_reason_line_rendering_dele
     )
 
 
+def test_diagnostic_surface_definition_line_set_assembly_includes_implementation_reason_line(
+    monkeypatch,
+):
+    calls = []
+
+    def fake_definition_implementation_reason_line(
+        implementation_reason_value, *, field_label, indent
+    ):
+        calls.append(
+            {
+                "implementation_reason_value": implementation_reason_value,
+                "field_label": field_label,
+                "indent": indent,
+            }
+        )
+        return _DiagnosticSurfaceImplementationReasonLine(
+            line=f"{indent}{field_label}: assembled implementation reason"
+        )
+
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_render_diagnostic_surface_definition_implementation_reason_line",
+        fake_definition_implementation_reason_line,
+    )
+    definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
+        "diagnostic_surface_definition"
+    ]
+
+    line_set = _assemble_diagnostic_surface_definition_line_set(definition)
+
+    assert len(calls) == 1
+    assert isinstance(
+        calls[0]["implementation_reason_value"],
+        _DiagnosticSurfaceImplementationReasonValue,
+    )
+    assert (
+        calls[0]["implementation_reason_value"].value
+        == "identity recovered from the diagnostic inventory entry and static shape-audit registration"
+    )
+    assert calls[0]["field_label"] == "implementation_reason"
+    assert calls[0]["indent"] == "  "
+    assert isinstance(line_set, _DiagnosticSurfaceDefinitionLineSet)
+    assert "  implementation_reason: assembled implementation reason" in line_set.lines
+    assert (
+        line_set.lines.index("  shape_registration_status: present")
+        < line_set.lines.index(
+            "  implementation_reason: assembled implementation reason"
+        )
+        < line_set.lines.index(
+            "  evidence_source: diagnostic_inventory + diagnostic_shape_audit"
+        )
+    )
+
+
 def test_diagnostic_surface_definition_evidence_source_line_rendering_precedes_line_set_assembly():
     definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
         "diagnostic_surface_definition"
