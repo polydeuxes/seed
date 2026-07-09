@@ -127,7 +127,7 @@ def _unsupported_target_selection(
 ) -> SelectionPathAudit:
     return _selection_path_from_payloads(
         target=target,
-        result=_SelectionResultPayload(selected="unknown"),
+        result=_unsupported_target_result_payload(),
         reason=_unsupported_target_reason_payload(),
         support=_SelectionSupportingEvidencePayload(evidence=[]),
         lineage=_SelectionLineagePayload(
@@ -137,6 +137,10 @@ def _unsupported_target_selection(
             unknowns=_unsupported_target_unknown_payload(),
         ),
     )
+
+
+def _unsupported_target_result_payload() -> _SelectionResultPayload:
+    return _SelectionResultPayload(selected="unknown")
 
 
 def _unsupported_target_reason_payload() -> _SelectionReasonPayload:

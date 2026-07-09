@@ -727,6 +727,17 @@ def test_unsupported_target_selection_refusal_is_prepared_separately():
     assert audit.boundary["mutates_cluster"] is False
 
 
+def test_unsupported_target_result_payload_is_owned_by_local_helper():
+    from seed_runtime.selection_path_audit import _unsupported_target_result_payload
+
+    payload = _unsupported_target_result_payload()
+
+    assert payload.selected == "unknown"
+    assert "outcome" not in payload.__dataclass_fields__
+    assert "evidence" not in payload.__dataclass_fields__
+    assert "candidates" not in payload.__dataclass_fields__
+
+
 def test_unsupported_target_reason_payload_is_owned_by_local_helper():
     from seed_runtime.selection_path_audit import _unsupported_target_reason_payload
 
