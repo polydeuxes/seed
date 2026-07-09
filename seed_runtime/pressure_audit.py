@@ -266,13 +266,19 @@ def _fragile_predicate_pressure(
     return _PressureItemCandidate(
         category="Fragile Predicates",
         score=len(items),
-        evidence={
-            "single-consumer predicates": len(items),
-            "predicates": [item.item for item in items],
-        },
+        evidence=_fragile_predicate_pressure_evidence(items),
         reason="Consumer audit found observation predicates with a single implementation consumer.",
         recommended_command="seed --consumer-audit",
     )
+
+
+def _fragile_predicate_pressure_evidence(
+    items: list[Any],
+) -> dict[str, Any]:
+    return {
+        "single-consumer predicates": len(items),
+        "predicates": [item.item for item in items],
+    }
 
 
 def _display_evidence(value: Any) -> str:
