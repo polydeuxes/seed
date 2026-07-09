@@ -42,9 +42,14 @@ class _SelectionNonSelectedPayload:
 
 
 @dataclass(frozen=True)
+class _SelectionFactorPayload:
+    selection_factors: list[str]
+
+
+@dataclass(frozen=True)
 class _SelectionLineagePayload:
     candidate_set: _SelectionCandidateSetPayload
-    selection_factors: list[str]
+    factors: _SelectionFactorPayload
     non_selected: _SelectionNonSelectedPayload
     unknowns: list[TypedUnknownRecord]
 
@@ -138,7 +143,7 @@ def build_selection_path_audit(
         support=_SelectionSupportingEvidencePayload(evidence=[]),
         lineage=_SelectionLineagePayload(
             candidate_set=_candidate_set_from_pressures(pressure.pressures),
-            selection_factors=["unknown"],
+            factors=_SelectionFactorPayload(selection_factors=["unknown"]),
             non_selected=_SelectionNonSelectedPayload(non_selected=[]),
             unknowns=[
                 preserve_typed_unknown(
@@ -163,7 +168,7 @@ def _selection_path_from_payloads(
         target=target,
         selected=result.selected,
         candidates=lineage.candidate_set.candidates,
-        selection_factors=lineage.selection_factors,
+        selection_factors=lineage.factors.selection_factors,
         non_selected=lineage.non_selected.non_selected,
         evidence=support.evidence,
         outcome=reason.outcome,
@@ -222,11 +227,6 @@ def _from_pressure_selection(
 ) -> SelectionPathAudit:
     selected_item = pressures[0] if pressures else None
     unknowns: list[TypedUnknownRecord] = []
-    factors = (
-        ["pressure audit orders candidates by descending score, then category name"]
-        if pressures
-        else ["unknown"]
-    )
     if not pressures:
         unknowns.append(
             preserve_typed_unknown(
@@ -250,10 +250,22 @@ def _from_pressure_selection(
         ),
         lineage=_SelectionLineagePayload(
             candidate_set=_candidate_set_from_pressures(pressures),
-            selection_factors=factors,
+            factors=_selection_factors_from_pressures(pressures),
             non_selected=_non_selected_from_pressures(pressures, selected_item),
             unknowns=unknowns,
         ),
+    )
+
+
+def _selection_factors_from_pressures(
+    pressures: tuple[PressureItem, ...],
+) -> _SelectionFactorPayload:
+    return _SelectionFactorPayload(
+        selection_factors=(
+            ["pressure audit orders candidates by descending score, then category name"]
+            if pressures
+            else ["unknown"]
+        )
     )
 
 
@@ -262,8 +274,7 @@ def _candidate_set_from_pressures(
 ) -> _SelectionCandidateSetPayload:
     return _SelectionCandidateSetPayload(
         candidates=[
-            _candidate(item, index)
-            for index, item in enumerate(pressures, start=1)
+            _candidate(item, index) for index, item in enumerate(pressures, start=1)
         ]
     )
 
@@ -283,9 +294,7 @@ def _non_selected_from_pressures(
     selected_item: PressureItem | None,
 ) -> _SelectionNonSelectedPayload:
     return _SelectionNonSelectedPayload(
-        non_selected=[
-            _non_selected(item, selected_item) for item in pressures[1:]
-        ]
+        non_selected=[_non_selected(item, selected_item) for item in pressures[1:]]
     )
 
 
