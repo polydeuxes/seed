@@ -1332,6 +1332,23 @@ def test_diagnostic_surface_definition_evidence_source_line_rendering_precedes_l
         indent="    ",
     )
 
+    assembly_source = inspect.getsource(
+        _assemble_diagnostic_surface_definition_line_set
+    )
+    assert (
+        "_prepare_diagnostic_surface_definition_evidence_source_field_label"
+        in assembly_source
+    )
+    assert (
+        "_prepare_diagnostic_surface_definition_evidence_source_value"
+        in assembly_source
+    )
+    assert (
+        "_render_diagnostic_surface_definition_evidence_source_line" in assembly_source
+    )
+    assert "evidence_source_field_label" in assembly_source
+    assert "field_label=evidence_source_field_label.text" in assembly_source
+
     assert isinstance(evidence_source_value, _DiagnosticSurfaceEvidenceSourceValue)
     assert (
         evidence_source_value.value == "diagnostic_inventory + diagnostic_shape_audit"
