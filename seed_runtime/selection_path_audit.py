@@ -32,8 +32,13 @@ class _SelectionSupportingEvidencePayload:
 
 
 @dataclass(frozen=True)
-class _SelectionLineagePayload:
+class _SelectionCandidateSetPayload:
     candidates: list[dict[str, Any]]
+
+
+@dataclass(frozen=True)
+class _SelectionLineagePayload:
+    candidate_set: _SelectionCandidateSetPayload
     selection_factors: list[str]
     non_selected: list[dict[str, Any]]
     unknowns: list[TypedUnknownRecord]
@@ -127,10 +132,7 @@ def build_selection_path_audit(
         ),
         support=_SelectionSupportingEvidencePayload(evidence=[]),
         lineage=_SelectionLineagePayload(
-            candidates=[
-                _candidate(item, index)
-                for index, item in enumerate(pressure.pressures, start=1)
-            ],
+            candidate_set=_candidate_set_from_pressures(pressure.pressures),
             selection_factors=["unknown"],
             non_selected=[],
             unknowns=[
@@ -155,7 +157,7 @@ def _selection_path_from_payloads(
     return SelectionPathAudit(
         target=target,
         selected=result.selected,
-        candidates=lineage.candidates,
+        candidates=lineage.candidate_set.candidates,
         selection_factors=lineage.selection_factors,
         non_selected=lineage.non_selected,
         evidence=support.evidence,
@@ -242,16 +244,24 @@ def _from_pressure_selection(
             evidence=[_evidence(selected_item)] if selected_item else []
         ),
         lineage=_SelectionLineagePayload(
-            candidates=[
-                _candidate(item, index)
-                for index, item in enumerate(pressures, start=1)
-            ],
+            candidate_set=_candidate_set_from_pressures(pressures),
             selection_factors=factors,
             non_selected=[
                 _non_selected(item, selected_item) for item in pressures[1:]
             ],
             unknowns=unknowns,
         ),
+    )
+
+
+def _candidate_set_from_pressures(
+    pressures: tuple[PressureItem, ...],
+) -> _SelectionCandidateSetPayload:
+    return _SelectionCandidateSetPayload(
+        candidates=[
+            _candidate(item, index)
+            for index, item in enumerate(pressures, start=1)
+        ]
     )
 
 
