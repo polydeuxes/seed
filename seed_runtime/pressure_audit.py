@@ -274,11 +274,7 @@ def _consumer_predicate_pressures(
 def _orphaned_predicate_pressure(
     audit: ConsumerAudit,
 ) -> _PressureItemCandidate | None:
-    items = [
-        item
-        for item in audit.items
-        if item.kind == "observation_predicate" and item.orphaned
-    ]
+    items = _orphaned_predicate_pressure_items(audit)
     if not _orphaned_predicate_pressure_has_findings(items):
         return None
     score = _orphaned_predicate_pressure_score(items)
@@ -289,6 +285,14 @@ def _orphaned_predicate_pressure(
         reason="Consumer audit found observation predicates with no implementation consumers.",
         recommended_command="seed --consumer-audit",
     )
+
+
+def _orphaned_predicate_pressure_items(audit: ConsumerAudit) -> list[Any]:
+    return [
+        item
+        for item in audit.items
+        if item.kind == "observation_predicate" and item.orphaned
+    ]
 
 
 def _orphaned_predicate_pressure_has_findings(items: list[Any]) -> bool:
@@ -311,11 +315,7 @@ def _orphaned_predicate_pressure_evidence(
 def _fragile_predicate_pressure(
     audit: ConsumerAudit,
 ) -> _PressureItemCandidate | None:
-    items = [
-        item
-        for item in audit.items
-        if item.kind == "observation_predicate" and item.consumer_count == 1
-    ]
+    items = _fragile_predicate_pressure_items(audit)
     if not _fragile_predicate_pressure_has_findings(items):
         return None
     score = _fragile_predicate_pressure_score(items)
@@ -326,6 +326,14 @@ def _fragile_predicate_pressure(
         reason="Consumer audit found observation predicates with a single implementation consumer.",
         recommended_command="seed --consumer-audit",
     )
+
+
+def _fragile_predicate_pressure_items(audit: ConsumerAudit) -> list[Any]:
+    return [
+        item
+        for item in audit.items
+        if item.kind == "observation_predicate" and item.consumer_count == 1
+    ]
 
 
 def _fragile_predicate_pressure_has_findings(items: list[Any]) -> bool:
