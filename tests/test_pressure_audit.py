@@ -18,6 +18,7 @@ from seed_runtime.pressure_audit import (
     _diagnostic_shape_audit_root,
     _diagnostic_shape_audit_summary,
     _diagnostic_shape_pressure_evidence,
+    _diagnostic_shape_pressure_score,
     _display_collection_evidence,
     _display_mapping_evidence,
     _display_scalar_evidence,
@@ -145,6 +146,18 @@ def test_diagnostic_shape_audit_summary_is_owned_by_local_helper(monkeypatch, tm
         mismatches=1,
         unknown=1,
     )
+
+
+def test_diagnostic_shape_pressure_score_is_owned_by_local_helper():
+    summary = DiagnosticShapeAuditSummary(
+        diagnostics_audited=9,
+        consistent=4,
+        warnings=2,
+        mismatches=1,
+        unknown=2,
+    )
+
+    assert _diagnostic_shape_pressure_score(summary) == 5
 
 
 def test_diagnostic_shape_pressure_evidence_is_owned_by_local_helper():
