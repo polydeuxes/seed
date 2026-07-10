@@ -5,6 +5,7 @@ from seed_runtime.consumer_dependency_audit import (
     build_consumer_audit,
     format_consumer_audit,
     _diagnostic_audit_items,
+    _matched_consumer_groups,
     _observation_predicate_audit_items,
 )
 from seed_runtime.observation_inventory import ObservationPredicateInventory
@@ -210,6 +211,80 @@ def test_diagnostic_item_producer_preserves_boundary_behavior(tmp_path):
     assert "Item: ownership_discrepancies" in output
     assert "Kind: diagnostic" in output
     assert "  diagnostics" in output
+    assert not (tmp_path / "seed_events.jsonl").exists()
+
+
+def test_matched_consumer_groups_preserves_order_exact_matches_and_orphans():
+    sources = {
+        "first_group": {"first.py": "unrelated"},
+        "second_group": {"second.py": 'fact.predicate == "target_predicate"'},
+        "third_group": {"third.py": "target-predicate"},
+    }
+
+    assert _matched_consumer_groups(sources, ("target_predicate",)) == (
+        "second_group",
+        "third_group",
+    )
+    assert _matched_consumer_groups(sources, ("missing_predicate",)) == ()
+
+
+def test_audit_item_delegates_lookup_terms_and_low_level_mention_matching(tmp_path):
+    (tmp_path / "predicate_catalog").mkdir()
+    (tmp_path / "predicate_catalog" / "core.json").write_text(
+        json.dumps(
+            {
+                "mappings": [
+                    {
+                        "predicate": "raw_storage_avail_bytes",
+                        "canonical_predicate": "storage_free_bytes",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "seed_runtime").mkdir(exist_ok=True)
+    (tmp_path / "scripts").mkdir(exist_ok=True)
+    (tmp_path / "seed_runtime" / "observation_sources.py").write_text(
+        """class FixtureObservationSource:
+    source_type = "fixture"
+    def collect(self):
+        return [Observation(subject="h", predicate="raw_storage_avail_bytes", object=1)]
+""",
+        encoding="utf-8",
+    )
+    sources = {
+        "projection_builders": {"seed_runtime/state.py": "raw_storage_avail_bytes"},
+        "read_models": {
+            "seed_runtime/state_summary_views.py": 'fact.predicate == "storage_free_bytes"'
+        },
+        "diagnostics": {"seed_runtime/knowledge_reachability.py": "raw-storage-avail-bytes"},
+    }
+    for group_files in sources.values():
+        for relative_path, content in group_files.items():
+            path = tmp_path / relative_path
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(content, encoding="utf-8")
+
+    audit = build_consumer_audit(tmp_path, predicate_filter="raw_storage_avail_bytes")
+    row = audit.items[0]
+    assert row.consumers == (
+        "projection_builders",
+        "read_models",
+        "diagnostics",
+        "state_build",
+    )
+    assert row.to_json_dict()["consumers"] == [
+        "projection_builders",
+        "read_models",
+        "diagnostics",
+        "state_build",
+    ]
+    output = format_consumer_audit(audit)
+    assert "  projection_builders" in output
+    assert "  read_models" in output
+    assert "  diagnostics" in output
+    assert "  state_build" in output
     assert not (tmp_path / "seed_events.jsonl").exists()
 
 

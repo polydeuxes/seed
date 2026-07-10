@@ -213,11 +213,18 @@ def _audit_item(
     item: str, kind: str, sources: dict[str, dict[str, str]], *, repo_root: Path
 ) -> ConsumerAuditItem:
     aliases = _consumer_lookup_terms(item, repo_root=repo_root)
+    consumers = _matched_consumer_groups(sources, aliases)
+    return ConsumerAuditItem(item=item, kind=kind, consumers=consumers)
+
+
+def _matched_consumer_groups(
+    sources: dict[str, dict[str, str]], lookup_terms: Iterable[str]
+) -> tuple[str, ...]:
     consumers = []
     for consumer, files in sources.items():
-        if _mentions_any_item(files.values(), aliases):
+        if _mentions_any_item(files.values(), lookup_terms):
             consumers.append(consumer)
-    return ConsumerAuditItem(item=item, kind=kind, consumers=tuple(consumers))
+    return tuple(consumers)
 
 
 def _read_sources(root: Path) -> dict[str, dict[str, str]]:
