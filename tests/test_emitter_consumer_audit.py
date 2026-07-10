@@ -1,7 +1,13 @@
 import json
 
 from scripts import seed_local
-from seed_runtime.emitter_consumer_audit import build_emitter_consumer_audit
+from seed_runtime.diagnostic_inventory import DIAGNOSTIC_INVENTORY
+from seed_runtime.diagnostic_shape_audit import build_diagnostic_shape_audit
+from seed_runtime.emitter_consumer_audit import (
+    EmitterConsumerItem,
+    _assemble_emitter_consumer_audit,
+    build_emitter_consumer_audit,
+)
 from seed_runtime.events import EventLedger
 
 
@@ -305,3 +311,87 @@ def test_scanned_emitted_item_rows_preserve_shape_status_evidence_text_and_unkno
     assert "slice.scanned_orphan" in text
     assert "Status: partially_consumed" in text
     assert "Emitter: unknown" in text
+
+
+def test_final_audit_assembly_preserves_rows_sorting_metadata_public_outputs_and_visibility():
+    scanned_rows = [
+        EmitterConsumerItem(
+            emitter="producer_z",
+            emits=("slice.z",),
+            consumers=("diagnostics and audits",),
+            status="orphaned",
+            evidence=("seed_runtime/producer_z.py:2",),
+        ),
+        EmitterConsumerItem(
+            emitter="producer_a",
+            emits=("slice.a",),
+            consumers=("CLI surfaces",),
+            status="consumed",
+            evidence=("scripts/seed_local.py:3",),
+        ),
+    ]
+    unknown_rows = [
+        EmitterConsumerItem(
+            emitter="unknown",
+            emits=("slice.missing",),
+            consumers=("read models",),
+            status="unknown",
+        )
+    ]
+
+    ledger = EventLedger()
+    before = ledger.list_events()
+    audit = _assemble_emitter_consumer_audit(
+        scanned_rows, unknown_rows, include_rendered=True
+    )
+    after = ledger.list_events()
+
+    assert before == after == []
+    assert [item.emitter for item in audit.items] == [
+        "producer_a",
+        "producer_z",
+        "unknown",
+    ]
+    assert audit.metadata == {
+        "discovery": "AST scan of event ledger append literals, Event(...) kind literals, and event.kind comparisons; rendered strings are excluded unless include_rendered is true.",
+        "include_rendered": True,
+        "scope": ["seed_runtime", "scripts"],
+    }
+    assert audit.to_json_dict() == {
+        "summary": {
+            "items_scanned": 3,
+            "consumed": 1,
+            "orphaned": 1,
+            "partially_consumed": 0,
+            "unknown": 1,
+        },
+        "items": [item.to_json_dict() for item in audit.items],
+        "metadata": audit.metadata,
+    }
+    text = seed_local.format_emitter_consumer_audit(audit)
+    assert "Emitter/Consumer Audit" in text
+    assert "Items scanned: 3" in text
+    assert "Emitter: producer_a" in text
+    assert "Emitter: unknown" in text
+
+    inventory_entry = next(
+        entry for entry in DIAGNOSTIC_INVENTORY if entry.name == "emitter_consumer_audit"
+    )
+    assert inventory_entry.cli_flags == ("--emitter-consumer-audit", "--include-rendered")
+    assert inventory_entry.uses_repo_files is True
+    assert inventory_entry.supports_json is True
+    assert inventory_entry.supports_record is False
+    assert inventory_entry.record_scope == "none"
+    assert inventory_entry.writes_event_ledger is False
+    assert inventory_entry.mutates_cluster is False
+
+    shape_rows = build_diagnostic_shape_audit()
+    shape_by_field = {
+        row.field: row
+        for row in shape_rows
+        if row.diagnostic == "emitter_consumer_audit"
+    }
+    assert shape_by_field["supports_json"].status == "consistent"
+    assert shape_by_field["uses_repo_files"].status == "consistent"
+    assert shape_by_field["writes_event_ledger"].status == "consistent"
+    assert shape_by_field["mutates_cluster"].status == "consistent"
