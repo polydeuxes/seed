@@ -182,9 +182,9 @@ def _diagnostic_shape_pressure_evidence(
 
 
 def _ownership_pressure(state: State) -> _PressureItemCandidate | None:
-    rows = [row for row in build_ownership_discrepancies(state) if row.conflict]
+    rows = _ownership_pressure_conflicted_rows(state)
     score = _ownership_pressure_score(rows)
-    if score <= 0:
+    if not _ownership_pressure_has_findings(score):
         return None
     return _PressureItemCandidate(
         category="Ownership Attribution",
@@ -195,8 +195,16 @@ def _ownership_pressure(state: State) -> _PressureItemCandidate | None:
     )
 
 
+def _ownership_pressure_conflicted_rows(state: State) -> list[Any]:
+    return [row for row in build_ownership_discrepancies(state) if row.conflict]
+
+
 def _ownership_pressure_score(rows: list[Any]) -> int:
     return len(rows)
+
+
+def _ownership_pressure_has_findings(score: int) -> bool:
+    return score > 0
 
 
 def _ownership_pressure_evidence(rows: list[Any]) -> dict[str, Any]:
