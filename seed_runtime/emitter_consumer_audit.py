@@ -103,9 +103,21 @@ def build_emitter_consumer_audit(
     emitted = scan_result.emitted
     consumed = scan_result.consumed
 
-    items = _scanned_emitted_item_rows(scan_result)
-    items.extend(_unknown_emitter_rows(emitted, consumed))
+    scanned_rows = _scanned_emitted_item_rows(scan_result)
+    unknown_rows = _unknown_emitter_rows(emitted, consumed)
 
+    return _assemble_emitter_consumer_audit(
+        scanned_rows, unknown_rows, include_rendered=include_rendered
+    )
+
+
+def _assemble_emitter_consumer_audit(
+    scanned_rows: Iterable[EmitterConsumerItem],
+    unknown_emitter_rows: Iterable[EmitterConsumerItem],
+    *,
+    include_rendered: bool = False,
+) -> EmitterConsumerAudit:
+    items = [*scanned_rows, *unknown_emitter_rows]
     return EmitterConsumerAudit(
         items=tuple(sorted(items, key=lambda i: (i.status, i.emitter, i.emits))),
         metadata={
