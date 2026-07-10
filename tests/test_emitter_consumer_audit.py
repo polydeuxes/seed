@@ -233,3 +233,75 @@ def test_unknown_emitter_rows_preserve_consumers_order_shape_text_and_read_only(
     assert "slice.missing_a" in text
     assert "slice.missing_b" in text
     assert "Status: unknown" in text
+
+
+def test_scanned_emitted_item_rows_preserve_shape_status_evidence_text_and_unknowns(tmp_path):
+    runtime = tmp_path / "seed_runtime"
+    scripts = tmp_path / "scripts"
+    runtime.mkdir()
+    scripts.mkdir()
+    (runtime / "producer.py").write_text(
+        "def produce(ledger):\n"
+        "    ledger.append('slice.scanned_a')\n"
+        "    ledger.append('slice.scanned_b')\n"
+        "    ledger.append('slice.scanned_orphan')\n",
+        encoding="utf-8",
+    )
+    (runtime / "consumer.py").write_text(
+        "def consume(event):\n"
+        "    if event.kind == 'slice.scanned_a':\n"
+        "        return True\n"
+        "    if event.kind == 'slice.unknown_present':\n"
+        "        return True\n",
+        encoding="utf-8",
+    )
+    (scripts / "seed_local.py").write_text(
+        "def consume(event):\n"
+        "    if event.kind == 'slice.scanned_b':\n"
+        "        return True\n",
+        encoding="utf-8",
+    )
+
+    ledger = EventLedger()
+    before = ledger.list_events()
+    audit = build_emitter_consumer_audit(tmp_path)
+    after = ledger.list_events()
+
+    producer = next(item for item in audit.items if item.emitter == "producer")
+    unknown = next(item for item in audit.items if item.emitter == "unknown")
+
+    assert before == after == []
+    assert producer.emits == (
+        "slice.scanned_a",
+        "slice.scanned_b",
+        "slice.scanned_orphan",
+    )
+    assert producer.consumers == ("CLI surfaces", "diagnostics and audits")
+    assert producer.status == "partially_consumed"
+    assert producer.evidence == (
+        "seed_runtime/producer.py:2",
+        "seed_runtime/producer.py:3",
+        "seed_runtime/producer.py:4",
+    )
+    assert producer.to_json_dict() == {
+        "emitter": "producer",
+        "emits": [
+            "slice.scanned_a",
+            "slice.scanned_b",
+            "slice.scanned_orphan",
+        ],
+        "consumers": ["CLI surfaces", "diagnostics and audits"],
+        "status": "partially_consumed",
+        "evidence": [
+            "seed_runtime/producer.py:2",
+            "seed_runtime/producer.py:3",
+            "seed_runtime/producer.py:4",
+        ],
+        "emission_type": "domain_emission",
+    }
+    assert unknown.emits == ("slice.unknown_present",)
+    text = seed_local.format_emitter_consumer_audit(audit)
+    assert "Emitter: producer" in text
+    assert "slice.scanned_orphan" in text
+    assert "Status: partially_consumed" in text
+    assert "Emitter: unknown" in text
