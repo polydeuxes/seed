@@ -15,6 +15,7 @@ from seed_runtime.pressure_audit import (
     _admitted_pressure_items,
     _capability_pressure_evidence,
     _consumer_predicate_pressures,
+    _diagnostic_shape_audit_root,
     _diagnostic_shape_pressure_evidence,
     _display_collection_evidence,
     _display_mapping_evidence,
@@ -127,6 +128,18 @@ def test_diagnostic_shape_pressure_evidence_is_owned_by_local_helper():
         "warnings": 2,
         "unknowns": 1,
     }
+
+
+def test_diagnostic_shape_audit_root_is_owned_by_local_helper(tmp_path):
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    assert _diagnostic_shape_audit_root(repo_root) is None
+
+    (repo_root / "scripts").mkdir()
+    (repo_root / "scripts" / "seed_local.py").write_text("# local cli\n")
+
+    assert _diagnostic_shape_audit_root(repo_root) == repo_root
 
 
 def test_ownership_pressure_evidence_is_owned_by_local_helper():
