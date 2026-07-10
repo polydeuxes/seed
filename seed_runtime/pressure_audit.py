@@ -183,7 +183,7 @@ def _diagnostic_shape_pressure_evidence(
 
 def _ownership_pressure(state: State) -> _PressureItemCandidate | None:
     rows = [row for row in build_ownership_discrepancies(state) if row.conflict]
-    score = len(rows)
+    score = _ownership_pressure_score(rows)
     if score <= 0:
         return None
     return _PressureItemCandidate(
@@ -193,6 +193,10 @@ def _ownership_pressure(state: State) -> _PressureItemCandidate | None:
         reason=f"Ownership discrepancy audit reports {score} unresolved ownership row(s).",
         recommended_command="seed --ownership-discrepancies",
     )
+
+
+def _ownership_pressure_score(rows: list[Any]) -> int:
+    return len(rows)
 
 
 def _ownership_pressure_evidence(rows: list[Any]) -> dict[str, Any]:
