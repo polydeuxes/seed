@@ -1,7 +1,12 @@
 import json
 
 from scripts import seed_local
-from seed_runtime.emitter_attribution_audit import build_emitter_attribution_audit
+from seed_runtime.emitter_attribution_audit import (
+    ClassifiedEvidence,
+    build_emitter_attribution_audit,
+    _classify_unknown_emitter_attribution,
+    _collect_emitter_attribution_implementation_evidence,
+)
 from seed_runtime.events import EventLedger
 
 
@@ -200,3 +205,106 @@ def test_attribution_json_distinguishes_driving_evidence_from_references(capsys)
     assert item["attribution_evidence"]
     assert item["attribution_evidence"][0]["category"] == "direct_emitter"
     assert "supporting_references" in item
+
+
+
+def test_unknown_emitter_classification_preserves_returned_fields():
+    direct = (ClassifiedEvidence("direct_emitter", "seed_runtime/workflow.py:2"),)
+    indirect = (ClassifiedEvidence("indirect_emitter", "seed_runtime/pending_actions.py:4"),)
+    diagnostic = (ClassifiedEvidence("diagnostic_reference", "seed_runtime/audit.py:5"),)
+    string_ref = (ClassifiedEvidence("string_reference", "seed_runtime/other.py:6"),)
+    dynamic = (ClassifiedEvidence("event_constructor", "seed_runtime/events.py:7"),)
+
+    attributed = _classify_unknown_emitter_attribution("workflow.done", direct, dynamic)
+    assert attributed.status == "attributed"
+    assert attributed.reason.startswith("direct emitter evidence")
+    assert attributed.emitter == "workflow"
+    assert attributed.confidence == "high"
+    assert attributed.attribution_evidence == direct
+    assert attributed.supporting_references == dynamic
+
+    workflow_dynamic_with_refs = _classify_unknown_emitter_attribution(
+        "pending_action.completed", diagnostic, dynamic
+    )
+    assert workflow_dynamic_with_refs.status == "dynamic"
+    assert workflow_dynamic_with_refs.reason.startswith("workflow event")
+    assert workflow_dynamic_with_refs.emitter == "unknown"
+    assert workflow_dynamic_with_refs.confidence == "low"
+    assert workflow_dynamic_with_refs.attribution_evidence == dynamic
+    assert workflow_dynamic_with_refs.supporting_references == diagnostic
+
+    indirect_result = _classify_unknown_emitter_attribution(
+        "custom.event", indirect + string_ref, dynamic
+    )
+    assert indirect_result.status == "indirect"
+    assert indirect_result.reason.startswith("event is visible through workflow helper")
+    assert indirect_result.emitter == "unknown"
+    assert indirect_result.confidence == "medium"
+    assert indirect_result.attribution_evidence == indirect
+    assert indirect_result.supporting_references == string_ref + dynamic
+
+    discovery_gap = _classify_unknown_emitter_attribution("custom.event", string_ref, ())
+    assert discovery_gap.status == "discovery_gap"
+    assert discovery_gap.reason.startswith("event literal is present")
+    assert discovery_gap.emitter == "unknown"
+    assert discovery_gap.confidence == "low"
+    assert discovery_gap.attribution_evidence == ()
+    assert discovery_gap.supporting_references == string_ref
+
+    workflow_dynamic_only = _classify_unknown_emitter_attribution(
+        "action_plan.created", (), dynamic
+    )
+    assert workflow_dynamic_only.status == "dynamic"
+    assert workflow_dynamic_only.attribution_evidence == dynamic
+    assert workflow_dynamic_only.supporting_references == ()
+
+    missing = _classify_unknown_emitter_attribution("custom.event", (), ())
+    assert missing.status == "missing"
+    assert missing.reason.startswith("event is consumed")
+    assert missing.emitter == "unknown"
+    assert missing.confidence == "none"
+    assert missing.attribution_evidence == ()
+    assert missing.supporting_references == ()
+
+
+
+def test_implementation_evidence_collection_preserves_sources_and_ordering(tmp_path):
+    runtime = tmp_path / "seed_runtime"
+    runtime.mkdir()
+    (runtime / "alpha.py").write_text(
+        'from seed_runtime.events import Event\n'
+        'def dynamic(kind):\n'
+        '    Event(kind=kind, subject="s", predicate="p", object="o")\n'
+        'def direct(self):\n'
+        '    self._require_ledger().append("alpha.created", "s", {})\n'
+        'def literal(event):\n'
+        '    return event.kind == "alpha.created"\n',
+        encoding="utf-8",
+    )
+    (runtime / "zeta.py").write_text(
+        'def dynamic_append(self, kind):\n'
+        '    self._require_ledger().append(kind, "s", {})\n'
+        'def literal():\n'
+        '    return "zeta.reference"\n',
+        encoding="utf-8",
+    )
+    evidence = _collect_emitter_attribution_implementation_evidence(tmp_path)
+
+    alpha_refs = evidence.literal_references["alpha.created"]
+    assert [(e.category, e.location) for e in alpha_refs] == sorted(
+        (e.category, e.location) for e in alpha_refs
+    )
+    assert ("direct_emitter", "seed_runtime/alpha.py:5") in [
+        (e.category, e.location) for e in alpha_refs
+    ]
+    assert any(e.category == "string_reference" for e in alpha_refs)
+    assert evidence.literal_references["zeta.reference"] == (
+        ClassifiedEvidence("string_reference", "seed_runtime/zeta.py:4"),
+    )
+    assert evidence.dynamic_event_construction == tuple(
+        sorted(evidence.dynamic_event_construction, key=lambda e: (e.category, e.location))
+    )
+    assert evidence.dynamic_event_construction == (
+        ClassifiedEvidence("event_constructor", "seed_runtime/alpha.py:3"),
+        ClassifiedEvidence("event_constructor", "seed_runtime/zeta.py:2"),
+    )
