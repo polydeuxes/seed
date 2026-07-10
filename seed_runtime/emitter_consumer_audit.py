@@ -40,6 +40,13 @@ CONSUMER_GROUPS = {
 
 
 @dataclass(frozen=True)
+class EmitterConsumerScanResult:
+    emitted: dict[tuple[str, EmissionType], set[str]]
+    consumed: dict[tuple[str, EmissionType], set[str]]
+    evidence: dict[tuple[str, str], set[str]]
+
+
+@dataclass(frozen=True)
 class EmitterConsumerItem:
     emitter: str
     emits: tuple[str, ...]
@@ -90,31 +97,12 @@ def build_emitter_consumer_audit(
     include_rendered: bool = False,
 ) -> EmitterConsumerAudit:
     repo_root = Path(root) if root is not None else Path(__file__).resolve().parents[1]
-    py_files = _python_files(repo_root)
-    emitted: dict[tuple[str, EmissionType], set[str]] = {}
-    evidence: dict[tuple[str, str], set[str]] = {}
-    consumed: dict[tuple[str, EmissionType], set[str]] = {}
-
-    for path in py_files:
-        source = path.read_text(encoding="utf-8")
-        try:
-            tree = ast.parse(source)
-        except SyntaxError:
-            continue
-        rel = path.relative_to(repo_root).as_posix()
-        for visitor_item in _discover_file(tree, rel, include_rendered=include_rendered):
-            kind, name, line = visitor_item
-            emission_type = classify_emission_string(name)
-            if emission_type != "domain_emission" and not include_rendered:
-                continue
-            if kind == "emit":
-                emitter = _emitter_name(rel, name)
-                emitted.setdefault((emitter, emission_type), set()).add(name)
-                evidence.setdefault((emitter, name), set()).add(f"{rel}:{line}")
-            elif kind == "consume":
-                consumed.setdefault((name, emission_type), set()).add(
-                    _consumer_name(rel)
-                )
+    scan_result = _collect_emitter_consumer_scan_result(
+        repo_root, include_rendered=include_rendered
+    )
+    emitted = scan_result.emitted
+    consumed = scan_result.consumed
+    evidence = scan_result.evidence
 
     items: list[EmitterConsumerItem] = []
     for (emitter, emission_type), outputs in emitted.items():
@@ -125,18 +113,9 @@ def build_emitter_consumer_audit(
                 for c in consumed.get((output, emission_type), set())
             }
         )
-        consumed_outputs = sum(
-            1 for output in outputs if consumed.get((output, emission_type))
+        status = _derive_emitted_output_relationship_status(
+            outputs, emission_type, consumed
         )
-        status: RelationshipStatus
-        if not outputs:
-            status = "unknown"
-        elif consumed_outputs == len(outputs):
-            status = "consumed"
-        elif consumed_outputs == 0:
-            status = "orphaned"
-        else:
-            status = "partially_consumed"
         items.append(
             EmitterConsumerItem(
                 emitter=emitter,
@@ -154,20 +133,7 @@ def build_emitter_consumer_audit(
             )
         )
 
-    # Visible consumers whose emitter is not visible in scanned implementation.
-    all_emitted = {output for outputs in emitted.values() for output in outputs}
-    for (output, emission_type), consumers in consumed.items():
-        if output not in all_emitted:
-            items.append(
-                EmitterConsumerItem(
-                    emitter="unknown",
-                    emits=(output,),
-                    consumers=tuple(sorted(consumers)),
-                    status="unknown",
-                    evidence=(),
-                    emission_type=emission_type,
-                )
-            )
+    items.extend(_unknown_emitter_rows(emitted, consumed))
 
     return EmitterConsumerAudit(
         items=tuple(sorted(items, key=lambda i: (i.status, i.emitter, i.emits))),
@@ -178,6 +144,77 @@ def build_emitter_consumer_audit(
         },
     )
 
+
+
+
+
+def _unknown_emitter_rows(
+    emitted: dict[tuple[str, EmissionType], set[str]],
+    consumed: dict[tuple[str, EmissionType], set[str]],
+) -> list[EmitterConsumerItem]:
+    rows: list[EmitterConsumerItem] = []
+    all_emitted = {output for outputs in emitted.values() for output in outputs}
+    for (output, emission_type), consumers in consumed.items():
+        if output not in all_emitted:
+            rows.append(
+                EmitterConsumerItem(
+                    emitter="unknown",
+                    emits=(output,),
+                    consumers=tuple(sorted(consumers)),
+                    status="unknown",
+                    evidence=(),
+                    emission_type=emission_type,
+                )
+            )
+    return rows
+
+def _derive_emitted_output_relationship_status(
+    outputs: set[str],
+    emission_type: EmissionType,
+    consumed: dict[tuple[str, EmissionType], set[str]],
+) -> RelationshipStatus:
+    consumed_outputs = sum(
+        1 for output in outputs if consumed.get((output, emission_type))
+    )
+    if not outputs:
+        return "unknown"
+    if consumed_outputs == len(outputs):
+        return "consumed"
+    if consumed_outputs == 0:
+        return "orphaned"
+    return "partially_consumed"
+
+def _collect_emitter_consumer_scan_result(
+    repo_root: Path, *, include_rendered: bool = False
+) -> EmitterConsumerScanResult:
+    emitted: dict[tuple[str, EmissionType], set[str]] = {}
+    evidence: dict[tuple[str, str], set[str]] = {}
+    consumed: dict[tuple[str, EmissionType], set[str]] = {}
+
+    for path in _python_files(repo_root):
+        source = path.read_text(encoding="utf-8")
+        try:
+            tree = ast.parse(source)
+        except SyntaxError:
+            continue
+        rel = path.relative_to(repo_root).as_posix()
+        for visitor_item in _discover_file(tree, rel, include_rendered=include_rendered):
+            kind, name, line = visitor_item
+            emission_type = classify_emission_string(name)
+            if emission_type != "domain_emission" and not include_rendered:
+                continue
+            if kind == "emit":
+                emitter = _emitter_name(rel, name)
+                emitted.setdefault((emitter, emission_type), set()).add(name)
+                evidence.setdefault((emitter, name), set()).add(f"{rel}:{line}")
+            elif kind == "consume":
+                consumed.setdefault((name, emission_type), set()).add(_consumer_name(rel))
+
+    return EmitterConsumerScanResult(
+        emitted=emitted,
+        consumed=consumed,
+        evidence=evidence,
+    )
 
 def emitter_consumer_audit_json(audit: EmitterConsumerAudit) -> dict[str, Any]:
     return audit.to_json_dict()
