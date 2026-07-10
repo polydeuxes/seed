@@ -1821,6 +1821,203 @@ def test_diagnostic_surface_definition_line_set_assembly_consumes_status_line(
     assert "status_value" in assembly_source
 
 
+def test_diagnostic_surface_definition_line_set_assembly_consumes_cli_flags_line(
+    monkeypatch,
+):
+    calls = []
+    definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
+        "diagnostic_surface_definition"
+    ]
+    flag_display = _DiagnosticSurfaceCliFlagDisplay(text="--sentinel")
+    cli_flags_line = _DiagnosticSurfaceCliFlagsLine(line="  cli_flags: --sentinel")
+
+    def fake_prepare_diagnostic_surface_definition_cli_flag_display(
+        candidate_definition,
+    ):
+        calls.append(("prepare_cli_flags", candidate_definition))
+        return flag_display
+
+    def fake_render_diagnostic_surface_definition_cli_flags_line(
+        candidate_flag_display, *, indent="  "
+    ):
+        calls.append(("render_cli_flags", candidate_flag_display, indent))
+        return cli_flags_line
+
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_prepare_diagnostic_surface_definition_cli_flag_display",
+        fake_prepare_diagnostic_surface_definition_cli_flag_display,
+    )
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_render_diagnostic_surface_definition_cli_flags_line",
+        fake_render_diagnostic_surface_definition_cli_flags_line,
+    )
+
+    line_set = _assemble_diagnostic_surface_definition_line_set(definition)
+
+    assert line_set.lines[2] == "  cli_flags: --sentinel"
+    assert calls == [
+        ("prepare_cli_flags", definition),
+        ("render_cli_flags", flag_display, "  "),
+    ]
+    assembly_source = inspect.getsource(
+        _assemble_diagnostic_surface_definition_line_set
+    )
+    assert "_render_diagnostic_surface_definition_cli_flags_line" in assembly_source
+    assert "flag_display" in assembly_source
+
+
+def test_diagnostic_surface_definition_line_set_assembly_consumes_description_line(
+    monkeypatch,
+):
+    calls = []
+    definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
+        "diagnostic_surface_definition"
+    ]
+    description_text = _DiagnosticSurfaceDescriptionText(text="sentinel description")
+    description_field_label = _DiagnosticSurfaceDescriptionFieldLabel(
+        text="description"
+    )
+    description_line = _DiagnosticSurfaceDescriptionLine(
+        line="  description: sentinel description"
+    )
+
+    def fake_prepare_diagnostic_surface_definition_description_text(
+        candidate_definition,
+    ):
+        calls.append(("prepare_description_text", candidate_definition))
+        return description_text
+
+    def fake_prepare_diagnostic_surface_definition_description_field_label():
+        calls.append(("prepare_description_label",))
+        return description_field_label
+
+    def fake_render_diagnostic_surface_definition_description_line(
+        candidate_description_text, *, field_label="description", indent="  "
+    ):
+        calls.append(
+            (
+                "render_description",
+                candidate_description_text,
+                field_label,
+                indent,
+            )
+        )
+        return description_line
+
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_prepare_diagnostic_surface_definition_description_text",
+        fake_prepare_diagnostic_surface_definition_description_text,
+    )
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_prepare_diagnostic_surface_definition_description_field_label",
+        fake_prepare_diagnostic_surface_definition_description_field_label,
+    )
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_render_diagnostic_surface_definition_description_line",
+        fake_render_diagnostic_surface_definition_description_line,
+    )
+
+    line_set = _assemble_diagnostic_surface_definition_line_set(definition)
+
+    assert line_set.lines[3] == "  description: sentinel description"
+    assert calls == [
+        ("prepare_description_text", definition),
+        ("prepare_description_label",),
+        (
+            "render_description",
+            description_text,
+            "description",
+            "  ",
+        ),
+    ]
+    assembly_source = inspect.getsource(
+        _assemble_diagnostic_surface_definition_line_set
+    )
+    assert "_render_diagnostic_surface_definition_description_line" in assembly_source
+    assert "description_text" in assembly_source
+    assert "description_field_label.text" in assembly_source
+
+
+def test_diagnostic_surface_definition_line_set_assembly_consumes_json_support_line(
+    monkeypatch,
+):
+    calls = []
+    definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
+        "diagnostic_surface_definition"
+    ]
+    json_support_value = _DiagnosticSurfaceJsonSupportValue(value=True)
+    json_support_field_label = _DiagnosticSurfaceJsonSupportFieldLabel(
+        text="supports_json"
+    )
+    json_support_line = _DiagnosticSurfaceJsonSupportLine(
+        line="  supports_json: true"
+    )
+
+    def fake_prepare_diagnostic_surface_definition_json_support_value(
+        candidate_definition,
+    ):
+        calls.append(("prepare_json_support_value", candidate_definition))
+        return json_support_value
+
+    def fake_prepare_diagnostic_surface_definition_json_support_field_label():
+        calls.append(("prepare_json_support_label",))
+        return json_support_field_label
+
+    def fake_render_diagnostic_surface_definition_json_support_line(
+        candidate_json_support_value, *, field_label="supports_json", indent="  "
+    ):
+        calls.append(
+            (
+                "render_json_support",
+                candidate_json_support_value,
+                field_label,
+                indent,
+            )
+        )
+        return json_support_line
+
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_prepare_diagnostic_surface_definition_json_support_value",
+        fake_prepare_diagnostic_surface_definition_json_support_value,
+    )
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_prepare_diagnostic_surface_definition_json_support_field_label",
+        fake_prepare_diagnostic_surface_definition_json_support_field_label,
+    )
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_render_diagnostic_surface_definition_json_support_line",
+        fake_render_diagnostic_surface_definition_json_support_line,
+    )
+
+    line_set = _assemble_diagnostic_surface_definition_line_set(definition)
+
+    assert line_set.lines[4] == "  supports_json: true"
+    assert calls == [
+        ("prepare_json_support_value", definition),
+        ("prepare_json_support_label",),
+        (
+            "render_json_support",
+            json_support_value,
+            "supports_json",
+            "  ",
+        ),
+    ]
+    assembly_source = inspect.getsource(
+        _assemble_diagnostic_surface_definition_line_set
+    )
+    assert "_render_diagnostic_surface_definition_json_support_line" in assembly_source
+    assert "json_support_value" in assembly_source
+    assert "json_support_field_label.text" in assembly_source
+
+
 def test_diagnostic_surface_status_line_rendering_precedes_line_set_assembly():
     status_line = _render_diagnostic_surface_status_line("known", indent="    ")
 
