@@ -27,7 +27,10 @@ from seed_runtime.pressure_audit import (
     _display_scalar_evidence,
     _format_pressure_item_section,
     _fragile_predicate_pressure_evidence,
+    _fragile_predicate_pressure_has_findings,
+    _fragile_predicate_pressure_score,
     _orphaned_predicate_pressure_evidence,
+    _orphaned_predicate_pressure_has_findings,
     _orphaned_predicate_pressure_score,
     _ownership_pressure,
     _ownership_pressure_evidence,
@@ -299,6 +302,15 @@ def test_ownership_pressure_candidate_preserves_public_item_fields(monkeypatch):
     assert item.recommended_command == "seed --ownership-discrepancies"
 
 
+def test_orphaned_predicate_pressure_has_findings_is_owned_by_local_helper():
+    items = [
+        ConsumerAuditItem("unused_predicate", "observation_predicate", ()),
+    ]
+
+    assert _orphaned_predicate_pressure_has_findings(items) is True
+    assert _orphaned_predicate_pressure_has_findings([]) is False
+
+
 def test_orphaned_predicate_pressure_score_is_owned_by_local_helper():
     items = [
         ConsumerAuditItem("unused_predicate", "observation_predicate", ()),
@@ -319,6 +331,31 @@ def test_orphaned_predicate_pressure_evidence_is_owned_by_local_helper():
         "orphan count": 2,
         "predicates": ["unused_predicate", "another_unused"],
     }
+
+
+def test_fragile_predicate_pressure_has_findings_is_owned_by_local_helper():
+    items = [
+        ConsumerAuditItem(
+            "single_predicate", "observation_predicate", ("seed_runtime/state.py",)
+        ),
+    ]
+
+    assert _fragile_predicate_pressure_has_findings(items) is True
+    assert _fragile_predicate_pressure_has_findings([]) is False
+
+
+def test_fragile_predicate_pressure_score_is_owned_by_local_helper():
+    items = [
+        ConsumerAuditItem(
+            "single_predicate", "observation_predicate", ("seed_runtime/state.py",)
+        ),
+        ConsumerAuditItem(
+            "another_single", "observation_predicate", ("seed_runtime/cli.py",)
+        ),
+    ]
+
+    assert _fragile_predicate_pressure_score(items) == 2
+    assert _fragile_predicate_pressure_score([]) == 0
 
 
 def test_fragile_predicate_pressure_evidence_is_owned_by_local_helper():
