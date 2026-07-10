@@ -2018,6 +2018,156 @@ def test_diagnostic_surface_definition_line_set_assembly_consumes_json_support_l
     assert "json_support_field_label.text" in assembly_source
 
 
+def test_diagnostic_surface_definition_line_set_assembly_consumes_record_support_line(
+    monkeypatch,
+):
+    calls = []
+    definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
+        "diagnostic_surface_definition"
+    ]
+    record_support_value = _DiagnosticSurfaceRecordSupportValue(value=True)
+    record_support_field_label = _DiagnosticSurfaceRecordSupportFieldLabel(
+        text="supports_record"
+    )
+    record_support_line = _DiagnosticSurfaceRecordSupportLine(
+        line="  supports_record: true"
+    )
+
+    def fake_prepare_diagnostic_surface_definition_record_support_value(
+        candidate_definition,
+    ):
+        calls.append(("prepare_record_support_value", candidate_definition))
+        return record_support_value
+
+    def fake_prepare_diagnostic_surface_definition_record_support_field_label():
+        calls.append(("prepare_record_support_label",))
+        return record_support_field_label
+
+    def fake_render_diagnostic_surface_definition_record_support_line(
+        candidate_record_support_value, *, field_label="supports_record", indent="  "
+    ):
+        calls.append(
+            (
+                "render_record_support",
+                candidate_record_support_value,
+                field_label,
+                indent,
+            )
+        )
+        return record_support_line
+
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_prepare_diagnostic_surface_definition_record_support_value",
+        fake_prepare_diagnostic_surface_definition_record_support_value,
+    )
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_prepare_diagnostic_surface_definition_record_support_field_label",
+        fake_prepare_diagnostic_surface_definition_record_support_field_label,
+    )
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_render_diagnostic_surface_definition_record_support_line",
+        fake_render_diagnostic_surface_definition_record_support_line,
+    )
+
+    line_set = _assemble_diagnostic_surface_definition_line_set(definition)
+
+    assert line_set.lines[5] == "  supports_record: true"
+    assert calls == [
+        ("prepare_record_support_value", definition),
+        ("prepare_record_support_label",),
+        (
+            "render_record_support",
+            record_support_value,
+            "supports_record",
+            "  ",
+        ),
+    ]
+    assembly_source = inspect.getsource(
+        _assemble_diagnostic_surface_definition_line_set
+    )
+    assert "_render_diagnostic_surface_definition_record_support_line" in assembly_source
+    assert "record_support_value" in assembly_source
+    assert "record_support_field_label.text" in assembly_source
+
+
+def test_diagnostic_surface_definition_line_set_assembly_consumes_record_scope_line(
+    monkeypatch,
+):
+    calls = []
+    definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
+        "diagnostic_surface_definition"
+    ]
+    record_scope_value = _DiagnosticSurfaceRecordScopeValue(value="diagnostic_run")
+    record_scope_field_label = _DiagnosticSurfaceRecordScopeFieldLabel(
+        text="record_scope"
+    )
+    record_scope_line = _DiagnosticSurfaceRecordScopeLine(
+        line="  record_scope: diagnostic_run"
+    )
+
+    def fake_prepare_diagnostic_surface_definition_record_scope_value(
+        candidate_definition,
+    ):
+        calls.append(("prepare_record_scope_value", candidate_definition))
+        return record_scope_value
+
+    def fake_prepare_diagnostic_surface_definition_record_scope_field_label():
+        calls.append(("prepare_record_scope_label",))
+        return record_scope_field_label
+
+    def fake_render_diagnostic_surface_definition_record_scope_line(
+        candidate_record_scope_value, *, field_label="record_scope", indent="  "
+    ):
+        calls.append(
+            (
+                "render_record_scope",
+                candidate_record_scope_value,
+                field_label,
+                indent,
+            )
+        )
+        return record_scope_line
+
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_prepare_diagnostic_surface_definition_record_scope_value",
+        fake_prepare_diagnostic_surface_definition_record_scope_value,
+    )
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_prepare_diagnostic_surface_definition_record_scope_field_label",
+        fake_prepare_diagnostic_surface_definition_record_scope_field_label,
+    )
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_render_diagnostic_surface_definition_record_scope_line",
+        fake_render_diagnostic_surface_definition_record_scope_line,
+    )
+
+    line_set = _assemble_diagnostic_surface_definition_line_set(definition)
+
+    assert line_set.lines[6] == "  record_scope: diagnostic_run"
+    assert calls == [
+        ("prepare_record_scope_value", definition),
+        ("prepare_record_scope_label",),
+        (
+            "render_record_scope",
+            record_scope_value,
+            "record_scope",
+            "  ",
+        ),
+    ]
+    assembly_source = inspect.getsource(
+        _assemble_diagnostic_surface_definition_line_set
+    )
+    assert "_render_diagnostic_surface_definition_record_scope_line" in assembly_source
+    assert "record_scope_value" in assembly_source
+    assert "record_scope_field_label.text" in assembly_source
+
+
 def test_diagnostic_surface_status_line_rendering_precedes_line_set_assembly():
     status_line = _render_diagnostic_surface_status_line("known", indent="    ")
 
