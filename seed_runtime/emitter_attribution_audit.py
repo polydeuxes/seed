@@ -50,6 +50,22 @@ class ClassifiedEvidence:
 
 
 @dataclass(frozen=True)
+class EmitterAttributionImplementationEvidence:
+    literal_references: dict[str, tuple[ClassifiedEvidence, ...]]
+    dynamic_event_construction: tuple[ClassifiedEvidence, ...]
+
+
+@dataclass(frozen=True)
+class UnknownEmitterAttribution:
+    status: AttributionStatus
+    reason: str
+    emitter: str
+    confidence: AttributionConfidence
+    attribution_evidence: tuple[ClassifiedEvidence, ...]
+    supporting_references: tuple[ClassifiedEvidence, ...]
+
+
+@dataclass(frozen=True)
 class EmitterAttributionItem:
     event: str
     emitter: str
@@ -113,7 +129,9 @@ def build_emitter_attribution_audit(
 ) -> EmitterAttributionAudit:
     repo_root = Path(root) if root is not None else Path(__file__).resolve().parents[1]
     base = build_emitter_consumer_audit(repo_root, include_rendered=include_rendered)
-    literal_refs, dynamic_refs = _implementation_evidence(repo_root)
+    implementation_evidence = _collect_emitter_attribution_implementation_evidence(repo_root)
+    literal_refs = implementation_evidence.literal_references
+    dynamic_refs = implementation_evidence.dynamic_event_construction
     items: list[EmitterAttributionItem] = []
     for item in base.items:
         for event in item.emits:
@@ -137,27 +155,22 @@ def build_emitter_attribution_audit(
                 )
                 continue
             refs = literal_refs.get(event, ())
-            (
-                status,
-                reason,
-                emitter,
-                confidence,
-                attribution_evidence,
-                supporting_references,
-            ) = _unknown_attribution(event, refs, dynamic_refs)
+            attribution = _classify_unknown_emitter_attribution(
+                event, refs, dynamic_refs
+            )
             items.append(
                 EmitterAttributionItem(
                     event=event,
-                    emitter=emitter,
-                    status=status,
-                    reason=reason,
+                    emitter=attribution.emitter,
+                    status=attribution.status,
+                    reason=attribution.reason,
                     consumers=item.consumers,
-                    evidence=tuple(e.location for e in attribution_evidence)
-                    + tuple(e.location for e in supporting_references),
+                    evidence=tuple(e.location for e in attribution.attribution_evidence)
+                    + tuple(e.location for e in attribution.supporting_references),
                     emission_type=item.emission_type,
-                    confidence=confidence,
-                    attribution_evidence=attribution_evidence,
-                    supporting_references=supporting_references,
+                    confidence=attribution.confidence,
+                    attribution_evidence=attribution.attribution_evidence,
+                    supporting_references=attribution.supporting_references,
                 )
             )
     return EmitterAttributionAudit(
@@ -224,31 +237,24 @@ def format_emitter_attribution_audit(audit: EmitterAttributionAudit) -> str:
     return "\n".join(lines).rstrip()
 
 
-def _unknown_attribution(
+def _classify_unknown_emitter_attribution(
     event: str,
     refs: tuple[ClassifiedEvidence, ...],
     dynamic_refs: tuple[ClassifiedEvidence, ...],
-) -> tuple[
-    AttributionStatus,
-    str,
-    str,
-    AttributionConfidence,
-    tuple[ClassifiedEvidence, ...],
-    tuple[ClassifiedEvidence, ...],
-]:
+) -> UnknownEmitterAttribution:
     direct = tuple(ref for ref in refs if ref.category == "direct_emitter")
     indirect = tuple(ref for ref in refs if ref.category == "indirect_emitter")
     supporting = (
         tuple(ref for ref in refs if ref.category != "direct_emitter") + dynamic_refs
     )
     if direct:
-        return (
-            "attributed",
-            "direct emitter evidence was found; unrelated dynamic construction does not downgrade attribution",
-            _emitter_name(direct[0].location.rsplit(":", 1)[0], event),
-            "high",
-            direct,
-            supporting,
+        return UnknownEmitterAttribution(
+            status="attributed",
+            reason="direct emitter evidence was found; unrelated dynamic construction does not downgrade attribution",
+            emitter=_emitter_name(direct[0].location.rsplit(":", 1)[0], event),
+            confidence="high",
+            attribution_evidence=direct,
+            supporting_references=supporting,
         )
     non_consumer_refs = tuple(
         ref
@@ -260,55 +266,57 @@ def _unknown_attribution(
         and not non_consumer_refs
         and any(event.startswith(prefix) for prefix in WORKFLOW_PREFIXES)
     ):
-        return (
-            "dynamic",
-            "workflow event has consumers and only dynamic event construction evidence was found",
-            "unknown",
-            "low",
-            dynamic_refs,
-            refs,
+        return UnknownEmitterAttribution(
+            status="dynamic",
+            reason="workflow event has consumers and only dynamic event construction evidence was found",
+            emitter="unknown",
+            confidence="low",
+            attribution_evidence=dynamic_refs,
+            supporting_references=refs,
         )
     if indirect:
-        return (
-            "indirect",
-            "event is visible through workflow helper or registration references, but current emit-call evidence does not attribute the helper path",
-            "unknown",
-            "medium",
-            indirect,
-            tuple(ref for ref in refs if ref.category != "indirect_emitter")
+        return UnknownEmitterAttribution(
+            status="indirect",
+            reason="event is visible through workflow helper or registration references, but current emit-call evidence does not attribute the helper path",
+            emitter="unknown",
+            confidence="medium",
+            attribution_evidence=indirect,
+            supporting_references=tuple(
+                ref for ref in refs if ref.category != "indirect_emitter"
+            )
             + dynamic_refs,
         )
     if refs:
-        return (
-            "discovery_gap",
-            "event literal is present in implementation evidence and consumed, but no direct emit call is attributed by current discovery",
-            "unknown",
-            "low",
-            (),
-            refs + dynamic_refs,
+        return UnknownEmitterAttribution(
+            status="discovery_gap",
+            reason="event literal is present in implementation evidence and consumed, but no direct emit call is attributed by current discovery",
+            emitter="unknown",
+            confidence="low",
+            attribution_evidence=(),
+            supporting_references=refs + dynamic_refs,
         )
     if dynamic_refs and any(event.startswith(prefix) for prefix in WORKFLOW_PREFIXES):
-        return (
-            "dynamic",
-            "workflow event has consumers and only dynamic event construction evidence was found",
-            "unknown",
-            "low",
-            dynamic_refs,
-            (),
+        return UnknownEmitterAttribution(
+            status="dynamic",
+            reason="workflow event has consumers and only dynamic event construction evidence was found",
+            emitter="unknown",
+            confidence="low",
+            attribution_evidence=dynamic_refs,
+            supporting_references=(),
         )
-    return (
-        "missing",
-        "event is consumed by implementation evidence, but no emitter literal was found in the scanned implementation scope",
-        "unknown",
-        "none",
-        (),
-        dynamic_refs,
+    return UnknownEmitterAttribution(
+        status="missing",
+        reason="event is consumed by implementation evidence, but no emitter literal was found in the scanned implementation scope",
+        emitter="unknown",
+        confidence="none",
+        attribution_evidence=(),
+        supporting_references=dynamic_refs,
     )
 
 
-def _implementation_evidence(
+def _collect_emitter_attribution_implementation_evidence(
     root: Path,
-) -> tuple[dict[str, tuple[ClassifiedEvidence, ...]], tuple[ClassifiedEvidence, ...]]:
+) -> EmitterAttributionImplementationEvidence:
     literals: dict[str, set[ClassifiedEvidence]] = {}
     dynamic: set[ClassifiedEvidence] = set()
     for path in _python_files(root):
@@ -361,13 +369,22 @@ def _implementation_evidence(
                 literals.setdefault(literal, set()).add(
                     ClassifiedEvidence("direct_emitter", f"{rel}:{node.lineno}")
                 )
-    return (
-        {
+    return EmitterAttributionImplementationEvidence(
+        literal_references={
             k: tuple(sorted(v, key=lambda e: (e.category, e.location)))
             for k, v in literals.items()
         },
-        tuple(sorted(dynamic, key=lambda e: (e.category, e.location))),
+        dynamic_event_construction=tuple(
+            sorted(dynamic, key=lambda e: (e.category, e.location))
+        ),
     )
+
+
+def _implementation_evidence(
+    root: Path,
+) -> tuple[dict[str, tuple[ClassifiedEvidence, ...]], tuple[ClassifiedEvidence, ...]]:
+    evidence = _collect_emitter_attribution_implementation_evidence(root)
+    return evidence.literal_references, evidence.dynamic_event_construction
 
 
 def _is_direct_append_literal(node: ast.AST) -> bool:
@@ -394,3 +411,26 @@ def _reference_category(rel: str) -> EvidenceCategory:
     if "action_plans.py" in rel or "pending_actions.py" in rel:
         return "indirect_emitter"
     return "string_reference"
+
+
+def _unknown_attribution(
+    event: str,
+    refs: tuple[ClassifiedEvidence, ...],
+    dynamic_refs: tuple[ClassifiedEvidence, ...],
+) -> tuple[
+    AttributionStatus,
+    str,
+    str,
+    AttributionConfidence,
+    tuple[ClassifiedEvidence, ...],
+    tuple[ClassifiedEvidence, ...],
+]:
+    attribution = _classify_unknown_emitter_attribution(event, refs, dynamic_refs)
+    return (
+        attribution.status,
+        attribution.reason,
+        attribution.emitter,
+        attribution.confidence,
+        attribution.attribution_evidence,
+        attribution.supporting_references,
+    )
