@@ -14,6 +14,8 @@ from seed_runtime.pressure_audit import (
     _PressureItemCandidate,
     _admitted_pressure_items,
     _capability_pressure_evidence,
+    _capability_pressure_has_findings,
+    _capability_pressure_score,
     _consumer_predicate_pressures,
     _diagnostic_shape_audit_root,
     _diagnostic_shape_audit_summary,
@@ -26,6 +28,7 @@ from seed_runtime.pressure_audit import (
     _format_pressure_item_section,
     _fragile_predicate_pressure_evidence,
     _orphaned_predicate_pressure_evidence,
+    _orphaned_predicate_pressure_score,
     _ownership_pressure,
     _ownership_pressure_evidence,
     _ownership_pressure_score,
@@ -221,6 +224,30 @@ def test_ownership_pressure_evidence_is_owned_by_local_helper():
     }
 
 
+def test_capability_pressure_score_is_owned_by_local_helper():
+    entries = [
+        CapabilityNeedEntry(
+            capability="container_inventory",
+            subjects={"svc-b", "svc-a"},
+            diagnostics={"ownership_discrepancies"},
+        ),
+        CapabilityNeedEntry(
+            capability="listener_process_inventory",
+            subjects={"svc-a"},
+            diagnostics={"listener_endpoint_reachability"},
+        ),
+    ]
+
+    assert _capability_pressure_score(entries) == 3
+    assert _capability_pressure_score([]) == 0
+
+
+def test_capability_pressure_has_findings_is_owned_by_local_helper():
+    assert _capability_pressure_has_findings(1) is True
+    assert _capability_pressure_has_findings(0) is False
+    assert _capability_pressure_has_findings(-1) is False
+
+
 def test_capability_pressure_evidence_is_owned_by_local_helper():
     entries = [
         CapabilityNeedEntry(
@@ -270,6 +297,16 @@ def test_ownership_pressure_candidate_preserves_public_item_fields(monkeypatch):
         "Ownership discrepancy audit reports 2 unresolved ownership row(s)."
     )
     assert item.recommended_command == "seed --ownership-discrepancies"
+
+
+def test_orphaned_predicate_pressure_score_is_owned_by_local_helper():
+    items = [
+        ConsumerAuditItem("unused_predicate", "observation_predicate", ()),
+        ConsumerAuditItem("another_unused", "observation_predicate", ()),
+    ]
+
+    assert _orphaned_predicate_pressure_score(items) == 2
+    assert _orphaned_predicate_pressure_score([]) == 0
 
 
 def test_orphaned_predicate_pressure_evidence_is_owned_by_local_helper():

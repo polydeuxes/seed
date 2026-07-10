@@ -213,8 +213,8 @@ def _ownership_pressure_evidence(rows: list[Any]) -> dict[str, Any]:
 
 def _capability_pressure(state: State) -> _PressureItemCandidate | None:
     entries = build_capability_needs(state)
-    score = sum(len(entry.subjects) for entry in entries)
-    if score <= 0:
+    score = _capability_pressure_score(entries)
+    if not _capability_pressure_has_findings(score):
         return None
     top = entries[0]
     return _PressureItemCandidate(
@@ -227,6 +227,14 @@ def _capability_pressure(state: State) -> _PressureItemCandidate | None:
         ),
         recommended_command="seed --capability-needs",
     )
+
+
+def _capability_pressure_score(entries: list[CapabilityNeedEntry]) -> int:
+    return sum(len(entry.subjects) for entry in entries)
+
+
+def _capability_pressure_has_findings(score: int) -> bool:
+    return score > 0
 
 
 def _capability_pressure_evidence(
@@ -265,13 +273,18 @@ def _orphaned_predicate_pressure(
     ]
     if not items:
         return None
+    score = _orphaned_predicate_pressure_score(items)
     return _PressureItemCandidate(
         category="Orphaned Predicates",
-        score=len(items),
+        score=score,
         evidence=_orphaned_predicate_pressure_evidence(items),
         reason="Consumer audit found observation predicates with no implementation consumers.",
         recommended_command="seed --consumer-audit",
     )
+
+
+def _orphaned_predicate_pressure_score(items: list[Any]) -> int:
+    return len(items)
 
 
 def _orphaned_predicate_pressure_evidence(
