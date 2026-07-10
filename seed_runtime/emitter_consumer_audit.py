@@ -102,37 +102,8 @@ def build_emitter_consumer_audit(
     )
     emitted = scan_result.emitted
     consumed = scan_result.consumed
-    evidence = scan_result.evidence
 
-    items: list[EmitterConsumerItem] = []
-    for (emitter, emission_type), outputs in emitted.items():
-        consumers = sorted(
-            {
-                c
-                for output in outputs
-                for c in consumed.get((output, emission_type), set())
-            }
-        )
-        status = _derive_emitted_output_relationship_status(
-            outputs, emission_type, consumed
-        )
-        items.append(
-            EmitterConsumerItem(
-                emitter=emitter,
-                emits=tuple(sorted(outputs)),
-                consumers=tuple(consumers),
-                status=status,
-                evidence=tuple(
-                    sorted(
-                        e
-                        for output in outputs
-                        for e in evidence.get((emitter, output), set())
-                    )
-                ),
-                emission_type=emission_type,
-            )
-        )
-
+    items = _scanned_emitted_item_rows(scan_result)
     items.extend(_unknown_emitter_rows(emitted, consumed))
 
     return EmitterConsumerAudit(
@@ -145,7 +116,38 @@ def build_emitter_consumer_audit(
     )
 
 
-
+def _scanned_emitted_item_rows(
+    scan_result: EmitterConsumerScanResult,
+) -> list[EmitterConsumerItem]:
+    rows: list[EmitterConsumerItem] = []
+    for (emitter, emission_type), outputs in scan_result.emitted.items():
+        consumers = sorted(
+            {
+                c
+                for output in outputs
+                for c in scan_result.consumed.get((output, emission_type), set())
+            }
+        )
+        status = _derive_emitted_output_relationship_status(
+            outputs, emission_type, scan_result.consumed
+        )
+        rows.append(
+            EmitterConsumerItem(
+                emitter=emitter,
+                emits=tuple(sorted(outputs)),
+                consumers=tuple(consumers),
+                status=status,
+                evidence=tuple(
+                    sorted(
+                        e
+                        for output in outputs
+                        for e in scan_result.evidence.get((emitter, output), set())
+                    )
+                ),
+                emission_type=emission_type,
+            )
+        )
+    return rows
 
 
 def _unknown_emitter_rows(
