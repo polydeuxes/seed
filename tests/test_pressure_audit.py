@@ -16,6 +16,7 @@ from seed_runtime.pressure_audit import (
     _capability_pressure_evidence,
     _consumer_predicate_pressures,
     _diagnostic_shape_audit_root,
+    _diagnostic_shape_audit_summary,
     _diagnostic_shape_pressure_evidence,
     _display_collection_evidence,
     _display_mapping_evidence,
@@ -112,6 +113,38 @@ def test_admitted_pressure_items_filter_convert_and_order_candidates():
     assert [item.category for item in admitted] == ["Alpha", "Beta", "Gamma"]
     assert [item.score for item in admitted] == [3, 3, 1]
     assert all(item.recommended_command.startswith("seed --") for item in admitted)
+
+
+def test_diagnostic_shape_audit_summary_is_owned_by_local_helper(monkeypatch, tmp_path):
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    (repo_root / "scripts").mkdir()
+    (repo_root / "scripts" / "seed_local.py").write_text("# local cli\n")
+    rows = [
+        DiagnosticShapeAuditRow("example", "supports_json", True, False, "mismatch"),
+        DiagnosticShapeAuditRow("example", "uses_repo_files", True, None, "unknown"),
+        DiagnosticShapeAuditRow("stable", "supports_json", True, True, "consistent"),
+    ]
+    calls = []
+
+    def fake_shape_audit(repo_root=None):
+        calls.append(repo_root)
+        return rows
+
+    monkeypatch.setattr(
+        "seed_runtime.pressure_audit.build_diagnostic_shape_audit", fake_shape_audit
+    )
+
+    summary = _diagnostic_shape_audit_summary(repo_root)
+
+    assert calls == [repo_root]
+    assert summary == DiagnosticShapeAuditSummary(
+        diagnostics_audited=2,
+        consistent=1,
+        warnings=0,
+        mismatches=1,
+        unknown=1,
+    )
 
 
 def test_diagnostic_shape_pressure_evidence_is_owned_by_local_helper():

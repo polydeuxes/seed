@@ -138,9 +138,7 @@ def _format_pressure_item_section(index: int, item: PressureItem) -> list[str]:
 
 
 def _diagnostic_shape_pressure(root: Path) -> _PressureItemCandidate | None:
-    summary = summarize_diagnostic_shape_audit(
-        build_diagnostic_shape_audit(repo_root=_diagnostic_shape_audit_root(root))
-    )
+    summary = _diagnostic_shape_audit_summary(root)
     score = summary.mismatches + summary.warnings + summary.unknown
     if score <= 0:
         return None
@@ -157,6 +155,12 @@ def _diagnostic_shape_pressure(root: Path) -> _PressureItemCandidate | None:
 
 def _diagnostic_shape_audit_root(root: Path) -> Path | None:
     return root if (root / "scripts" / "seed_local.py").exists() else None
+
+
+def _diagnostic_shape_audit_summary(root: Path) -> DiagnosticShapeAuditSummary:
+    return summarize_diagnostic_shape_audit(
+        build_diagnostic_shape_audit(repo_root=_diagnostic_shape_audit_root(root))
+    )
 
 
 def _diagnostic_shape_pressure_evidence(
