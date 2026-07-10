@@ -28,6 +28,7 @@ from seed_runtime.pressure_audit import (
     _orphaned_predicate_pressure_evidence,
     _ownership_pressure,
     _ownership_pressure_evidence,
+    _ownership_pressure_score,
     build_pressure_audit,
     format_pressure_audit,
 )
@@ -193,6 +194,13 @@ def test_diagnostic_shape_audit_root_is_owned_by_local_helper(tmp_path):
     (repo_root / "scripts" / "seed_local.py").write_text("# local cli\n")
 
     assert _diagnostic_shape_audit_root(repo_root) == repo_root
+
+
+def test_ownership_pressure_score_is_owned_by_local_helper():
+    rows = [_ownership_row(), _ownership_row("svc-b"), _ownership_row("svc-c")]
+
+    assert _ownership_pressure_score(rows) == 3
+    assert _ownership_pressure_score([]) == 0
 
 
 def test_ownership_pressure_evidence_is_owned_by_local_helper():
