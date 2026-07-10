@@ -1727,6 +1727,55 @@ def test_diagnostic_surface_definition_human_formatting_consumes_line_set(
     )
 
 
+def test_diagnostic_surface_definition_line_set_assembly_consumes_identity_heading_line(
+    monkeypatch,
+):
+    calls = []
+    definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
+        "diagnostic_surface_definition"
+    ]
+    name_value = _DiagnosticSurfaceNameValue(value="sentinel_surface")
+    heading_line = _DiagnosticSurfaceHeadingLine(
+        line="DiagnosticSurface definition: sentinel_surface"
+    )
+
+    def fake_prepare_diagnostic_surface_definition_name_value(candidate_definition):
+        calls.append(("prepare_name", candidate_definition))
+        return name_value
+
+    def fake_render_diagnostic_surface_definition_identity_heading_line(
+        candidate_name_value,
+    ):
+        calls.append(("render_heading", candidate_name_value))
+        return heading_line
+
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_prepare_diagnostic_surface_definition_name_value",
+        fake_prepare_diagnostic_surface_definition_name_value,
+    )
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_render_diagnostic_surface_definition_identity_heading_line",
+        fake_render_diagnostic_surface_definition_identity_heading_line,
+    )
+
+    line_set = _assemble_diagnostic_surface_definition_line_set(definition)
+
+    assert line_set.lines[0] == "DiagnosticSurface definition: sentinel_surface"
+    assert calls == [
+        ("prepare_name", definition),
+        ("render_heading", name_value),
+    ]
+    assembly_source = inspect.getsource(
+        _assemble_diagnostic_surface_definition_line_set
+    )
+    assert (
+        "_render_diagnostic_surface_definition_identity_heading_line" in assembly_source
+    )
+    assert "name_value" in assembly_source
+
+
 def test_diagnostic_surface_status_line_rendering_precedes_line_set_assembly():
     status_line = _render_diagnostic_surface_status_line("known", indent="    ")
 
