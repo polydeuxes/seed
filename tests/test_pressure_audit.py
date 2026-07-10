@@ -33,7 +33,9 @@ from seed_runtime.pressure_audit import (
     _orphaned_predicate_pressure_has_findings,
     _orphaned_predicate_pressure_score,
     _ownership_pressure,
+    _ownership_pressure_conflicted_rows,
     _ownership_pressure_evidence,
+    _ownership_pressure_has_findings,
     _ownership_pressure_score,
     build_pressure_audit,
     format_pressure_audit,
@@ -202,11 +204,41 @@ def test_diagnostic_shape_audit_root_is_owned_by_local_helper(tmp_path):
     assert _diagnostic_shape_audit_root(repo_root) == repo_root
 
 
+def test_ownership_pressure_conflicted_rows_are_owned_by_local_helper(monkeypatch):
+    rows = [
+        _ownership_row("svc-a", conflict="owner_not_observed"),
+        _ownership_row("svc-b", conflict=None),
+        _ownership_row("svc-c", conflict="multiple_candidates"),
+    ]
+    calls = []
+
+    def fake_discrepancies(state):
+        calls.append(state.workspace_id)
+        return rows
+
+    monkeypatch.setattr(
+        "seed_runtime.pressure_audit.build_ownership_discrepancies",
+        fake_discrepancies,
+    )
+
+    selected = _ownership_pressure_conflicted_rows(State(workspace_id="ws"))
+
+    assert calls == ["ws"]
+    assert [row.subject for row in selected] == ["svc-a", "svc-c"]
+    assert all(row.conflict for row in selected)
+
+
 def test_ownership_pressure_score_is_owned_by_local_helper():
     rows = [_ownership_row(), _ownership_row("svc-b"), _ownership_row("svc-c")]
 
     assert _ownership_pressure_score(rows) == 3
     assert _ownership_pressure_score([]) == 0
+
+
+def test_ownership_pressure_has_findings_is_owned_by_local_helper():
+    assert _ownership_pressure_has_findings(1) is True
+    assert _ownership_pressure_has_findings(0) is False
+    assert _ownership_pressure_has_findings(-1) is False
 
 
 def test_ownership_pressure_evidence_is_owned_by_local_helper():
