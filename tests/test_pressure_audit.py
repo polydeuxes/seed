@@ -28,9 +28,11 @@ from seed_runtime.pressure_audit import (
     _format_pressure_item_section,
     _fragile_predicate_pressure_evidence,
     _fragile_predicate_pressure_has_findings,
+    _fragile_predicate_pressure_items,
     _fragile_predicate_pressure_score,
     _orphaned_predicate_pressure_evidence,
     _orphaned_predicate_pressure_has_findings,
+    _orphaned_predicate_pressure_items,
     _orphaned_predicate_pressure_score,
     _ownership_pressure,
     _ownership_pressure_conflicted_rows,
@@ -334,6 +336,50 @@ def test_ownership_pressure_candidate_preserves_public_item_fields(monkeypatch):
     assert item.recommended_command == "seed --ownership-discrepancies"
 
 
+def test_orphaned_predicate_pressure_items_are_owned_by_local_helper():
+    audit = ConsumerAudit(
+        items=(
+            ConsumerAuditItem(
+                "used_predicate", "observation_predicate", ("consumer.py",)
+            ),
+            ConsumerAuditItem("unused_predicate", "observation_predicate", ()),
+            ConsumerAuditItem("unused_other", "other", ()),
+            ConsumerAuditItem("another_unused", "observation_predicate", ()),
+        ),
+        metadata={},
+    )
+
+    selected = _orphaned_predicate_pressure_items(audit)
+
+    assert [item.item for item in selected] == [
+        "unused_predicate",
+        "another_unused",
+    ]
+    assert all(item.kind == "observation_predicate" for item in selected)
+    assert all(item.orphaned for item in selected)
+
+
+def test_orphaned_predicate_pressure_items_preserve_downstream_pressure_behavior():
+    audit = ConsumerAudit(
+        items=(
+            ConsumerAuditItem(
+                "used_predicate", "observation_predicate", ("consumer.py",)
+            ),
+            ConsumerAuditItem("unused_predicate", "observation_predicate", ()),
+            ConsumerAuditItem("unused_other", "other", ()),
+            ConsumerAuditItem("another_unused", "observation_predicate", ()),
+        ),
+        metadata={},
+    )
+    selected = _orphaned_predicate_pressure_items(audit)
+
+    assert _orphaned_predicate_pressure_score(selected) == 2
+    assert _orphaned_predicate_pressure_evidence(selected) == {
+        "orphan count": 2,
+        "predicates": ["unused_predicate", "another_unused"],
+    }
+
+
 def test_orphaned_predicate_pressure_has_findings_is_owned_by_local_helper():
     items = [
         ConsumerAuditItem("unused_predicate", "observation_predicate", ()),
@@ -362,6 +408,55 @@ def test_orphaned_predicate_pressure_evidence_is_owned_by_local_helper():
     assert _orphaned_predicate_pressure_evidence(items) == {
         "orphan count": 2,
         "predicates": ["unused_predicate", "another_unused"],
+    }
+
+
+def test_fragile_predicate_pressure_items_are_owned_by_local_helper():
+    audit = ConsumerAudit(
+        items=(
+            ConsumerAuditItem("unused_predicate", "observation_predicate", ()),
+            ConsumerAuditItem(
+                "single_predicate", "observation_predicate", ("consumer.py",)
+            ),
+            ConsumerAuditItem("single_other", "other", ("consumer.py",)),
+            ConsumerAuditItem(
+                "widely_used_predicate",
+                "observation_predicate",
+                ("consumer.py", "other_consumer.py"),
+            ),
+            ConsumerAuditItem("another_single", "observation_predicate", ("other.py",)),
+        ),
+        metadata={},
+    )
+
+    selected = _fragile_predicate_pressure_items(audit)
+
+    assert [item.item for item in selected] == [
+        "single_predicate",
+        "another_single",
+    ]
+    assert all(item.kind == "observation_predicate" for item in selected)
+    assert all(item.consumer_count == 1 for item in selected)
+
+
+def test_fragile_predicate_pressure_items_preserve_downstream_pressure_behavior():
+    audit = ConsumerAudit(
+        items=(
+            ConsumerAuditItem("unused_predicate", "observation_predicate", ()),
+            ConsumerAuditItem(
+                "single_predicate", "observation_predicate", ("consumer.py",)
+            ),
+            ConsumerAuditItem("single_other", "other", ("consumer.py",)),
+            ConsumerAuditItem("another_single", "observation_predicate", ("other.py",)),
+        ),
+        metadata={},
+    )
+    selected = _fragile_predicate_pressure_items(audit)
+
+    assert _fragile_predicate_pressure_score(selected) == 2
+    assert _fragile_predicate_pressure_evidence(selected) == {
+        "single-consumer predicates": 2,
+        "predicates": ["single_predicate", "another_single"],
     }
 
 
