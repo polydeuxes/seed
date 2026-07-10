@@ -1776,6 +1776,51 @@ def test_diagnostic_surface_definition_line_set_assembly_consumes_identity_headi
     assert "name_value" in assembly_source
 
 
+def test_diagnostic_surface_definition_line_set_assembly_consumes_status_line(
+    monkeypatch,
+):
+    calls = []
+    definition = diagnostic_surface_definition_json("diagnostic_shape_audit")[
+        "diagnostic_surface_definition"
+    ]
+    status_value = _DiagnosticSurfaceStatusValue(value="sentinel_status")
+    status_line = _DiagnosticSurfaceStatusLine(line="  status: sentinel_status")
+
+    def fake_prepare_diagnostic_surface_definition_status_value(candidate_definition):
+        calls.append(("prepare_status", candidate_definition))
+        return status_value
+
+    def fake_render_diagnostic_surface_definition_status_line(
+        candidate_status_value, *, indent="  "
+    ):
+        calls.append(("render_status", candidate_status_value, indent))
+        return status_line
+
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_prepare_diagnostic_surface_definition_status_value",
+        fake_prepare_diagnostic_surface_definition_status_value,
+    )
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_render_diagnostic_surface_definition_status_line",
+        fake_render_diagnostic_surface_definition_status_line,
+    )
+
+    line_set = _assemble_diagnostic_surface_definition_line_set(definition)
+
+    assert line_set.lines[1] == "  status: sentinel_status"
+    assert calls == [
+        ("prepare_status", definition),
+        ("render_status", status_value, "  "),
+    ]
+    assembly_source = inspect.getsource(
+        _assemble_diagnostic_surface_definition_line_set
+    )
+    assert "_render_diagnostic_surface_definition_status_line" in assembly_source
+    assert "status_value" in assembly_source
+
+
 def test_diagnostic_surface_status_line_rendering_precedes_line_set_assembly():
     status_line = _render_diagnostic_surface_status_line("known", indent="    ")
 
