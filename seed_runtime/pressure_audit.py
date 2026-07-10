@@ -140,7 +140,7 @@ def _format_pressure_item_section(index: int, item: PressureItem) -> list[str]:
 def _diagnostic_shape_pressure(root: Path) -> _PressureItemCandidate | None:
     summary = _diagnostic_shape_audit_summary(root)
     score = _diagnostic_shape_pressure_score(summary)
-    if score <= 0:
+    if not _diagnostic_shape_pressure_has_findings(score):
         return None
     return _PressureItemCandidate(
         category="Diagnostic Shape",
@@ -155,6 +155,10 @@ def _diagnostic_shape_pressure(root: Path) -> _PressureItemCandidate | None:
 
 def _diagnostic_shape_pressure_score(summary: DiagnosticShapeAuditSummary) -> int:
     return summary.mismatches + summary.warnings + summary.unknown
+
+
+def _diagnostic_shape_pressure_has_findings(score: int) -> bool:
+    return score > 0
 
 
 def _diagnostic_shape_audit_root(root: Path) -> Path | None:
