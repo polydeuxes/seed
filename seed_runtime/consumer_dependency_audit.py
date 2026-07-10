@@ -115,23 +115,18 @@ def build_consumer_audit(
         inventory = build_observation_inventory(
             repo_root, predicate_filter=predicate_filter
         )
-        for predicate in inventory.predicates:
-            items.append(
-                _audit_item(
-                    predicate.predicate,
-                    "observation_predicate",
-                    sources,
-                    repo_root=repo_root,
-                )
+        items.extend(
+            _observation_predicate_audit_items(
+                inventory.predicates, sources, repo_root=repo_root
             )
+        )
     if predicate_filter is None:
         diagnostics = [entry.name for entry in DIAGNOSTIC_INVENTORY]
-        for diagnostic in diagnostics:
-            if diagnostic_filter is not None and diagnostic != diagnostic_filter:
-                continue
-            items.append(
-                _audit_item(diagnostic, "diagnostic", sources, repo_root=repo_root)
+        items.extend(
+            _diagnostic_audit_items(
+                diagnostics, sources, diagnostic_filter=diagnostic_filter, repo_root=repo_root
             )
+        )
     return ConsumerAudit(
         items=tuple(sorted(items, key=lambda item: (item.kind, item.item))),
         metadata={
@@ -140,6 +135,34 @@ def build_consumer_audit(
                 f"{name}: {', '.join(paths)}" for name, paths in CONSUMER_PATHS.items()
             ),
         },
+    )
+
+
+def _observation_predicate_audit_items(
+    predicates: Iterable[Any], sources: dict[str, dict[str, str]], *, repo_root: Path
+) -> tuple[ConsumerAuditItem, ...]:
+    return tuple(
+        _audit_item(
+            predicate.predicate,
+            "observation_predicate",
+            sources,
+            repo_root=repo_root,
+        )
+        for predicate in predicates
+    )
+
+
+def _diagnostic_audit_items(
+    diagnostics: Iterable[str],
+    sources: dict[str, dict[str, str]],
+    *,
+    diagnostic_filter: str | None = None,
+    repo_root: Path,
+) -> tuple[ConsumerAuditItem, ...]:
+    return tuple(
+        _audit_item(diagnostic, "diagnostic", sources, repo_root=repo_root)
+        for diagnostic in diagnostics
+        if diagnostic_filter is None or diagnostic == diagnostic_filter
     )
 
 

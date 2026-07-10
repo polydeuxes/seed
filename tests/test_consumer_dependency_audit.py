@@ -4,7 +4,10 @@ import scripts.seed_local as seed_local
 from seed_runtime.consumer_dependency_audit import (
     build_consumer_audit,
     format_consumer_audit,
+    _diagnostic_audit_items,
+    _observation_predicate_audit_items,
 )
+from seed_runtime.observation_inventory import ObservationPredicateInventory
 
 
 def test_consumer_audit_renders(capsys):
@@ -89,6 +92,125 @@ def test_consumer_counts_are_correct_for_multiconsumer_fixture(tmp_path):
     assert row.consumer_count == 4
     assert audit.summary["multi_consumer_items"] == 1
     assert row.highlight == "widely used"
+
+
+def test_observation_predicate_item_producer_preserves_boundary_behavior(tmp_path):
+    (tmp_path / "seed_runtime").mkdir()
+    (tmp_path / "scripts").mkdir()
+    sources = {
+        "projection_builders": {"seed_runtime/state.py": '"alpha_predicate"'},
+        "read_models": {"seed_runtime/state_views.py": '"beta_predicate"'},
+    }
+    items = _observation_predicate_audit_items(
+        (
+            ObservationPredicateInventory("beta_predicate", ("fixture",)),
+            ObservationPredicateInventory("alpha_predicate", ("fixture",)),
+        ),
+        sources,
+        repo_root=tmp_path,
+    )
+
+    assert [item.kind for item in items] == [
+        "observation_predicate",
+        "observation_predicate",
+    ]
+    assert [item.item for item in items] == ["beta_predicate", "alpha_predicate"]
+    assert items[0].consumers == ("read_models",)
+    assert items[1].consumers == ("projection_builders",)
+
+    (tmp_path / "seed_runtime" / "state.py").write_text(
+        '"alpha_predicate"', encoding="utf-8"
+    )
+    (tmp_path / "seed_runtime" / "state_views.py").write_text(
+        '"beta_predicate"', encoding="utf-8"
+    )
+    (tmp_path / "seed_runtime" / "observation_sources.py").write_text(
+        """class FixtureObservationSource:
+    source_type = \"fixture\"
+    def collect(self):
+        return [
+            Observation(subject=\"h\", predicate=\"beta_predicate\", object=1),
+            Observation(subject=\"h\", predicate=\"alpha_predicate\", object=1),
+        ]
+""",
+        encoding="utf-8",
+    )
+    audit = build_consumer_audit(tmp_path)
+    observation_rows = [
+        (item.kind, item.item)
+        for item in audit.items
+        if item.kind == "observation_predicate"
+    ]
+    assert observation_rows == [
+        ("observation_predicate", "alpha_predicate"),
+        ("observation_predicate", "beta_predicate"),
+    ]
+    payload = audit.to_json_dict()
+    alpha_payload = next(
+        item for item in payload["items"] if item["item"] == "alpha_predicate"
+    )
+    assert alpha_payload == {
+        "item": "alpha_predicate",
+        "kind": "observation_predicate",
+        "consumers": ["projection_builders"],
+        "consumer_count": 1,
+        "orphaned": False,
+        "highlight": "fragile",
+    }
+    output = format_consumer_audit(audit)
+    assert "Item: alpha_predicate" in output
+    assert "Kind: observation_predicate" in output
+    assert "  projection_builders" in output
+    assert not (tmp_path / "seed_events.jsonl").exists()
+
+
+def test_diagnostic_item_producer_preserves_boundary_behavior(tmp_path):
+    (tmp_path / "seed_runtime").mkdir()
+    (tmp_path / "scripts").mkdir()
+    sources = {
+        "diagnostics": {
+            "seed_runtime/ownership_discrepancies.py": '"ownership_discrepancies"'
+        },
+        "views": {"scripts/seed_local.py": '"component_audit"'},
+    }
+    items = _diagnostic_audit_items(
+        ("component_audit", "ownership_discrepancies"),
+        sources,
+        diagnostic_filter="ownership_discrepancies",
+        repo_root=tmp_path,
+    )
+
+    assert len(items) == 1
+    assert items[0].kind == "diagnostic"
+    assert items[0].item == "ownership_discrepancies"
+    assert items[0].consumers == ("diagnostics",)
+
+    (tmp_path / "seed_runtime" / "ownership_discrepancies.py").write_text(
+        '"ownership_discrepancies"', encoding="utf-8"
+    )
+    (tmp_path / "scripts" / "seed_local.py").write_text(
+        '"component_audit"', encoding="utf-8"
+    )
+    audit = build_consumer_audit(tmp_path, diagnostic_filter="ownership_discrepancies")
+    assert [(item.kind, item.item) for item in audit.items] == [
+        ("diagnostic", "ownership_discrepancies")
+    ]
+    payload = audit.to_json_dict()
+    assert payload["items"] == [
+        {
+            "item": "ownership_discrepancies",
+            "kind": "diagnostic",
+            "consumers": ["diagnostics"],
+            "consumer_count": 1,
+            "orphaned": False,
+            "highlight": "fragile",
+        }
+    ]
+    output = format_consumer_audit(audit)
+    assert "Item: ownership_discrepancies" in output
+    assert "Kind: diagnostic" in output
+    assert "  diagnostics" in output
+    assert not (tmp_path / "seed_events.jsonl").exists()
 
 
 def test_filtering_by_diagnostic(capsys):
