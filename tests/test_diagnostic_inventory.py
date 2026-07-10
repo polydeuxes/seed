@@ -1687,6 +1687,46 @@ def test_diagnostic_surface_definition_line_set_assembly_precedes_human_renderin
     )
 
 
+def test_diagnostic_surface_definition_human_formatting_consumes_line_set(
+    monkeypatch,
+):
+    calls = []
+    definition = {"diagnostic_name": "diagnostic_shape_audit"}
+    line_set = _DiagnosticSurfaceDefinitionLineSet(
+        lines=("definition heading", "  evidence_source: line-set owned")
+    )
+
+    def fake_build_diagnostic_surface_definition(diagnostic_surface):
+        calls.append(("build", diagnostic_surface))
+        return {"diagnostic_surface_definition": definition}
+
+    def fake_assemble_diagnostic_surface_definition_line_set(candidate_definition):
+        calls.append(("assemble", candidate_definition))
+        return line_set
+
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "build_diagnostic_surface_definition",
+        fake_build_diagnostic_surface_definition,
+    )
+    monkeypatch.setattr(
+        diagnostic_inventory,
+        "_assemble_diagnostic_surface_definition_line_set",
+        fake_assemble_diagnostic_surface_definition_line_set,
+    )
+
+    rendered = format_diagnostic_surface_definition("diagnostic_shape_audit")
+
+    assert rendered == "definition heading\n  evidence_source: line-set owned"
+    assert calls == [
+        ("build", "diagnostic_shape_audit"),
+        ("assemble", definition),
+    ]
+    assert 'return "\\n".join(line_set.lines)' in inspect.getsource(
+        format_diagnostic_surface_definition
+    )
+
+
 def test_diagnostic_surface_status_line_rendering_precedes_line_set_assembly():
     status_line = _render_diagnostic_surface_status_line("known", indent="    ")
 
