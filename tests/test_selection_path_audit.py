@@ -602,6 +602,40 @@ def test_selected_pressure_item_lookup_is_owned_by_local_helper():
     assert _selected_pressure_item(()) is None
 
 
+def test_focus_selection_result_is_owned_by_local_producer():
+    from seed_runtime.pressure_audit import PressureItem
+    from seed_runtime.selection_path_audit import (
+        _focus_selection_result,
+        _normalize_target,
+    )
+
+    selected = PressureItem(
+        category="Runtime reachability",
+        score=3,
+        reason="selected pressure",
+        evidence={"source": "selected evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+
+    current_focus = _focus_selection_result(
+        _normalize_target("current-focus"), selected, "Runtime reachability"
+    )
+    primary_pressure = _focus_selection_result(
+        _normalize_target("primary pressure"), selected, "Runtime reachability"
+    )
+    fallback = _focus_selection_result(
+        _normalize_target("primary pressure"), None, "Runtime reachability"
+    )
+
+    assert current_focus.selected == "Runtime reachability"
+    assert primary_pressure.selected == "runtime reachability"
+    assert fallback.selected == "Runtime reachability"
+    assert "target" not in current_focus.__dataclass_fields__
+    assert "outcome" not in current_focus.__dataclass_fields__
+    assert "evidence" not in current_focus.__dataclass_fields__
+    assert "candidates" not in current_focus.__dataclass_fields__
+
+
 def test_focus_selection_selected_name_is_owned_by_local_helper():
     from seed_runtime.pressure_audit import PressureItem
     from seed_runtime.selection_path_audit import (

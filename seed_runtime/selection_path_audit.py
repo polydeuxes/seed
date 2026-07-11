@@ -73,6 +73,11 @@ class _SelectionTargetSelection:
 
 
 @dataclass(frozen=True)
+class _FocusSelectionResult:
+    selected: str
+
+
+@dataclass(frozen=True)
 class _SelectionPathPayloads:
     result: _SelectionResultPayload
     reason: _SelectionReasonPayload
@@ -348,12 +353,8 @@ def _from_focus_selection(
     target: str, normalized_target: str, pressures: tuple[PressureItem, ...], focus: str
 ) -> SelectionPathAudit:
     selected_item = _selected_pressure_item(pressures)
-    return _from_pressure_selection(
-        target,
-        _focus_selection_selected_name(normalized_target, selected_item, focus),
-        pressures,
-        focus,
-    )
+    result = _focus_selection_result(normalized_target, selected_item, focus)
+    return _from_pressure_selection(target, result.selected, pressures, focus)
 
 
 def _pressure_selection_payloads(
@@ -524,6 +525,14 @@ def _selected_pressure_evidence(item: PressureItem) -> dict[str, Any]:
         "reason": item.reason,
         "evidence": item.evidence,
     }
+
+
+def _focus_selection_result(
+    normalized_target: str, selected_item: PressureItem | None, focus: str
+) -> _FocusSelectionResult:
+    return _FocusSelectionResult(
+        selected=_focus_selection_selected_name(normalized_target, selected_item, focus)
+    )
 
 
 def _focus_selection_selected_name(
