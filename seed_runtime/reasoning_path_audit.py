@@ -110,16 +110,9 @@ def build_reasoning_path_audit(
     intermediate = _reasoning_path_intermediate_conclusions(relevant_rows)
     derived = _reasoning_path_derived_capability_conclusions(relevant_rows, subject)
 
+    consumers.extend(_reasoning_path_capability_need_consumers(needs, subject))
     for need in needs:
         if _matches(subject, need.capability, *need.subjects, *need.diagnostics):
-            consumers.append(
-                {
-                    "surface": "capability_needs",
-                    "reason": "reports derived diagnostic capability need",
-                    "subjects": sorted(need.subjects),
-                    "diagnostics": sorted(need.diagnostics),
-                }
-            )
             if not any(d.get("surface") == "capability_needs" for d in derived):
                 derived.append(
                     {
@@ -201,6 +194,23 @@ def build_reasoning_path_audit(
         supporting_evidence=supporting_evidence_payload,
         lineage=lineage_payload,
     )
+
+
+def _reasoning_path_capability_need_consumers(
+    needs: list[Any], subject: str
+) -> list[dict[str, Any]]:
+    """Preserve capability-needs consumers for a reasoning-path subject."""
+
+    return [
+        {
+            "surface": "capability_needs",
+            "reason": "reports derived diagnostic capability need",
+            "subjects": sorted(need.subjects),
+            "diagnostics": sorted(need.diagnostics),
+        }
+        for need in needs
+        if _matches(subject, need.capability, *need.subjects, *need.diagnostics)
+    ]
 
 
 def _reasoning_path_relevant_ownership_rows(
