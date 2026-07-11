@@ -93,7 +93,6 @@ def build_reasoning_path_audit(
         if repo_root is not None
         else Path(__file__).resolve().parents[1]
     )
-    evidence: list[dict[str, Any]] = []
     intermediate: list[dict[str, Any]] = []
     derived: list[dict[str, Any]] = []
     consumers: list[dict[str, Any]] = []
@@ -116,16 +115,11 @@ def build_reasoning_path_audit(
             for rec in diagnostic_capability_need_records(row)
         )
     ]
+    supporting_evidence_payload = _reasoning_path_supporting_evidence_payload(
+        relevant_rows
+    )
+
     for row in relevant_rows:
-        evidence.append(
-            {
-                "surface": "ownership_discrepancies",
-                "subject": row.subject,
-                "finding": row.conflict or "ownership_candidate",
-                "reason": row.reason,
-                "evidence_count": row.evidence_count,
-            }
-        )
         if row.conflict:
             intermediate.append(
                 {
@@ -213,7 +207,13 @@ def build_reasoning_path_audit(
         )
 
     unknowns: list[TypedUnknownRecord] = []
-    if not (evidence or intermediate or derived or consumers or story_impact):
+    if not (
+        supporting_evidence_payload.evidence
+        or intermediate
+        or derived
+        or consumers
+        or story_impact
+    ):
         unknowns.append(
             preserve_typed_unknown(
                 unknown_type="Evidence Gap",
@@ -224,9 +224,6 @@ def build_reasoning_path_audit(
     conclusion_payload = _DerivedConclusionPayload(
         intermediate_conclusions=intermediate,
         derived_conclusions=derived,
-    )
-    supporting_evidence_payload = _DerivationSupportingEvidencePayload(
-        evidence=evidence,
     )
     lineage_payload = _DerivationLineagePayload(
         consumers=_dedupe(consumers),
@@ -239,6 +236,25 @@ def build_reasoning_path_audit(
         conclusions=conclusion_payload,
         supporting_evidence=supporting_evidence_payload,
         lineage=lineage_payload,
+    )
+
+
+def _reasoning_path_supporting_evidence_payload(
+    relevant_rows: list[Any],
+) -> _DerivationSupportingEvidencePayload:
+    """Build implementation-local supporting evidence from selected source rows."""
+
+    return _DerivationSupportingEvidencePayload(
+        evidence=[
+            {
+                "surface": "ownership_discrepancies",
+                "subject": row.subject,
+                "finding": row.conflict or "ownership_candidate",
+                "reason": row.reason,
+                "evidence_count": row.evidence_count,
+            }
+            for row in relevant_rows
+        ]
     )
 
 

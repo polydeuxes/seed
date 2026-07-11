@@ -187,6 +187,50 @@ def test_reasoning_path_projects_supporting_evidence_at_compatibility_handoff():
     assert audit.to_json_dict()["evidence"] == supporting_evidence
 
 
+def test_reasoning_path_supporting_evidence_payload_owns_source_row_projection():
+    from types import SimpleNamespace
+
+    from seed_runtime.reasoning_path_audit import (
+        _DerivationSupportingEvidencePayload,
+        _reasoning_path_supporting_evidence_payload,
+    )
+
+    payload = _reasoning_path_supporting_evidence_payload(
+        [
+            SimpleNamespace(
+                subject="api",
+                conflict="owner_not_observed",
+                reason="socket has no owner observation",
+                evidence_count=2,
+            ),
+            SimpleNamespace(
+                subject="worker",
+                conflict="",
+                reason="candidate observed from relationship evidence",
+                evidence_count=1,
+            ),
+        ]
+    )
+
+    assert isinstance(payload, _DerivationSupportingEvidencePayload)
+    assert payload.evidence == [
+        {
+            "surface": "ownership_discrepancies",
+            "subject": "api",
+            "finding": "owner_not_observed",
+            "reason": "socket has no owner observation",
+            "evidence_count": 2,
+        },
+        {
+            "surface": "ownership_discrepancies",
+            "subject": "worker",
+            "finding": "ownership_candidate",
+            "reason": "candidate observed from relationship evidence",
+            "evidence_count": 1,
+        },
+    ]
+
+
 def test_reasoning_path_unknown_and_empty_state_are_explicit(tmp_path, capsys):
     seed_local = load_seed_local()
     db = tmp_path / "seed.sqlite"
