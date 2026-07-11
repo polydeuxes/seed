@@ -590,3 +590,48 @@ def test_reasoning_path_pressure_privilege_consumers_own_operational_lineage():
             "pressure": "ownership attribution",
         },
     ]
+
+
+def test_reasoning_path_story_impact_owns_operational_story_lineage():
+    from types import SimpleNamespace
+
+    from seed_runtime.reasoning_path_audit import _reasoning_path_story_impact
+
+    matching_story = SimpleNamespace(
+        focus="capability pressure from ownership reasoning",
+        pressure="listener_process_inventory needed",
+        to_json_dict=lambda: {
+            "focus": "capability pressure from ownership reasoning",
+            "path": ["listener_process_inventory"],
+        },
+    )
+    unrelated_story = SimpleNamespace(
+        focus="storage topology",
+        pressure="filesystem probe needed",
+        to_json_dict=lambda: {
+            "focus": "storage topology",
+            "path": ["filesystem_probe"],
+        },
+    )
+
+    story_impact, consumers = _reasoning_path_story_impact(
+        matching_story, "capability", "listener_process_inventory"
+    )
+
+    assert story_impact == [
+        {
+            "surface": "operational_story",
+            "focus": "capability pressure from ownership reasoning",
+            "pressure": "listener_process_inventory needed",
+            "reason": "operational story includes this subject, domain, or derived pressure",
+        }
+    ]
+    assert consumers == [
+        {
+            "surface": "operational_story",
+            "reason": "composes current focus and investigation path from pressure and capability surfaces",
+        }
+    ]
+    assert _reasoning_path_story_impact(
+        unrelated_story, "capability", "listener_process_inventory"
+    ) == ([], [])
