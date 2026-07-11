@@ -189,6 +189,14 @@ def _compose_inquiry_orientation_answer(
 
     evidence = _collect_inquiry_orientation_evidence(state, request)
     selected_material = _prepare_inquiry_orientation_selected_material(evidence)
+    return _prepare_inquiry_orientation_answer(selected_material)
+
+
+def _prepare_inquiry_orientation_answer(
+    selected_material: _InquiryOrientationSelectedMaterial,
+) -> _InquiryOrientationAnswer:
+    """Prepare the implementation-local answer artifact from selected material."""
+
     return _InquiryOrientationAnswer(
         answer=selected_material.related_material,
         reason=_select_inquiry_orientation_reason(selected_material),

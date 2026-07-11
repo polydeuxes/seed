@@ -12,6 +12,7 @@ from seed_runtime.inquiry_orientation import (
     _InquiryOrientationSelectedMaterial,
     _collect_inquiry_orientation_evidence,
     _compose_inquiry_orientation_answer,
+    _prepare_inquiry_orientation_answer,
     _prepare_inquiry_orientation_composition,
     _prepare_inquiry_orientation_selected_material,
     _select_inquiry_orientation_authority_boundary,
@@ -434,3 +435,39 @@ def test_selected_material_authority_boundary_is_owned_before_answer_constructio
     assert "limitations" not in selected_material.__dataclass_fields__
     assert "reason" not in selected_material.__dataclass_fields__
     assert "authority_boundary" not in answer.__dataclass_fields__
+
+
+def test_selected_material_answer_construction_is_owned_after_selection(tmp_path):
+    _ledger, state = _state_with_example_host_fact()
+    note = record_inquiry_note(
+        tmp_path / "probe.jsonl",
+        "example_host keeps showing up first",
+        recorded_at=datetime(2026, 6, 20, tzinfo=timezone.utc),
+    )
+
+    request = _prepare_inquiry_orientation_composition(note)
+    selected_material = _prepare_inquiry_orientation_selected_material(
+        _collect_inquiry_orientation_evidence(state, request)
+    )
+    prepared_answer = _prepare_inquiry_orientation_answer(selected_material)
+    composed_answer = _compose_inquiry_orientation_answer(state, request)
+    view = build_inquiry_orientation(state, note)
+
+    assert isinstance(prepared_answer, _InquiryOrientationAnswer)
+    assert prepared_answer == composed_answer
+    assert prepared_answer.answer == selected_material.related_material
+    assert prepared_answer.support == selected_material.support
+    assert prepared_answer.reason == _select_inquiry_orientation_reason(selected_material)
+    assert prepared_answer.boundary == _select_inquiry_orientation_authority_boundary(
+        selected_material
+    )
+    assert prepared_answer.limitations == _select_inquiry_orientation_limitations(
+        selected_material
+    )
+    assert view.related_material == prepared_answer.answer
+    assert view.authority_boundary == prepared_answer.boundary
+    assert view.uncertainty == prepared_answer.limitations
+    assert "note" not in prepared_answer.__dataclass_fields__
+    assert "related_material" not in prepared_answer.__dataclass_fields__
+    assert "uncertainty" not in prepared_answer.__dataclass_fields__
+    assert "authority_boundary" not in prepared_answer.__dataclass_fields__
