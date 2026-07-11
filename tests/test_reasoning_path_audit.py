@@ -532,3 +532,61 @@ def test_reasoning_path_capability_need_fallbacks_own_compatibility_conclusion()
         "listener_process_inventory",
         derived=[{"surface": "capability_needs"}],
     ) == []
+
+
+def test_reasoning_path_pressure_privilege_consumers_own_operational_lineage():
+    from types import SimpleNamespace
+
+    from seed_runtime.reasoning_path_audit import (
+        _reasoning_path_pressure_privilege_consumers,
+    )
+
+    pressure = SimpleNamespace(
+        pressures=[
+            SimpleNamespace(
+                category="capability",
+                reason="listener_process_inventory needed for ownership reasoning",
+                evidence=["owner_not_observed"],
+                score=2,
+            ),
+            SimpleNamespace(
+                category="storage",
+                reason="unrelated storage pressure",
+                evidence=["mounts"],
+                score=1,
+            ),
+        ]
+    )
+    privilege = SimpleNamespace(
+        capabilities=[
+            SimpleNamespace(
+                name="listener_process_inventory",
+                access_level="read_only",
+                pressure="ownership attribution",
+            ),
+            SimpleNamespace(
+                name="filesystem_probe",
+                access_level="read_only",
+                pressure="storage topology",
+            ),
+        ]
+    )
+
+    consumers = _reasoning_path_pressure_privilege_consumers(
+        pressure, privilege, "capability", "listener_process_inventory"
+    )
+
+    assert consumers == [
+        {
+            "surface": "pressure_audit",
+            "reason": "listener_process_inventory needed for ownership reasoning",
+            "category": "capability",
+            "score": 2,
+        },
+        {
+            "surface": "privilege_discovery",
+            "reason": "explains access boundary for the derived capability need",
+            "access_level": "read_only",
+            "pressure": "ownership attribution",
+        },
+    ]
