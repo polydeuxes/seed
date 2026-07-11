@@ -635,3 +635,35 @@ def test_reasoning_path_story_impact_owns_operational_story_lineage():
     assert _reasoning_path_story_impact(
         unrelated_story, "capability", "listener_process_inventory"
     ) == ([], [])
+
+
+def test_reasoning_path_typed_unknowns_owns_evidence_gap_preservation():
+    from seed_runtime.reasoning_path_audit import (
+        _DerivationSupportingEvidencePayload,
+        _reasoning_path_typed_unknowns,
+    )
+
+    unknowns = _reasoning_path_typed_unknowns(
+        _DerivationSupportingEvidencePayload(evidence=[]),
+        intermediate=[],
+        derived=[],
+        consumers=[],
+        story_impact=[],
+    )
+
+    assert len(unknowns) == 1
+    assert unknowns[0].unknown_type == "Evidence Gap"
+    assert unknowns[0].area == "derivation"
+    assert unknowns[0].reason == "no derivation evidence currently available"
+    assert (
+        _reasoning_path_typed_unknowns(
+            _DerivationSupportingEvidencePayload(
+                evidence=[{"surface": "ownership_discrepancies"}]
+            ),
+            intermediate=[],
+            derived=[],
+            consumers=[],
+            story_impact=[],
+        )
+        == []
+    )
