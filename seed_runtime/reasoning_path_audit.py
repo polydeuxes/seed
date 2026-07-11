@@ -93,7 +93,6 @@ def build_reasoning_path_audit(
         if repo_root is not None
         else Path(__file__).resolve().parents[1]
     )
-    intermediate: list[dict[str, Any]] = []
     derived: list[dict[str, Any]] = []
     consumers: list[dict[str, Any]] = []
     story_impact: list[dict[str, Any]] = []
@@ -109,16 +108,9 @@ def build_reasoning_path_audit(
         relevant_rows
     )
 
+    intermediate = _reasoning_path_intermediate_conclusions(relevant_rows)
+
     for row in relevant_rows:
-        if row.conflict:
-            intermediate.append(
-                {
-                    "conclusion": "ownership attribution incomplete",
-                    "surface": "ownership_discrepancies",
-                    "subject": row.subject,
-                    "reason": row.conflict,
-                }
-            )
         for rec in diagnostic_capability_need_records(row):
             if _matches(
                 subject,
@@ -244,6 +236,23 @@ def _reasoning_path_relevant_ownership_rows(
             )
             for rec in diagnostic_capability_need_records(row)
         )
+    ]
+
+
+def _reasoning_path_intermediate_conclusions(
+    relevant_rows: list[Any],
+) -> list[dict[str, Any]]:
+    """Derive implementation-local intermediate conclusions from selected rows."""
+
+    return [
+        {
+            "conclusion": "ownership attribution incomplete",
+            "surface": "ownership_discrepancies",
+            "subject": row.subject,
+            "reason": row.conflict,
+        }
+        for row in relevant_rows
+        if row.conflict
     ]
 
 
