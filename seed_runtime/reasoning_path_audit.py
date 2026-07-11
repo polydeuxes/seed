@@ -93,7 +93,6 @@ def build_reasoning_path_audit(
         if repo_root is not None
         else Path(__file__).resolve().parents[1]
     )
-    derived: list[dict[str, Any]] = []
     consumers: list[dict[str, Any]] = []
     story_impact: list[dict[str, Any]] = []
 
@@ -109,24 +108,7 @@ def build_reasoning_path_audit(
     )
 
     intermediate = _reasoning_path_intermediate_conclusions(relevant_rows)
-
-    for row in relevant_rows:
-        for rec in diagnostic_capability_need_records(row):
-            if _matches(
-                subject,
-                rec.get("candidate_capability"),
-                rec.get("diagnostic_conflict"),
-                row.subject,
-            ):
-                derived.append(
-                    {
-                        "conclusion": f"{rec['candidate_capability']} capability need",
-                        "surface": "capability_needs",
-                        "subject": row.subject,
-                        "needed_evidence": rec.get("needed_evidence"),
-                        "source_conflict": rec.get("diagnostic_conflict"),
-                    }
-                )
+    derived = _reasoning_path_derived_capability_conclusions(relevant_rows, subject)
 
     for need in needs:
         if _matches(subject, need.capability, *need.subjects, *need.diagnostics):
@@ -254,6 +236,32 @@ def _reasoning_path_intermediate_conclusions(
         for row in relevant_rows
         if row.conflict
     ]
+
+
+def _reasoning_path_derived_capability_conclusions(
+    relevant_rows: list[Any], subject: str
+) -> list[dict[str, Any]]:
+    """Derive capability conclusions from selected ownership rows."""
+
+    derived: list[dict[str, Any]] = []
+    for row in relevant_rows:
+        for rec in diagnostic_capability_need_records(row):
+            if _matches(
+                subject,
+                rec.get("candidate_capability"),
+                rec.get("diagnostic_conflict"),
+                row.subject,
+            ):
+                derived.append(
+                    {
+                        "conclusion": f"{rec['candidate_capability']} capability need",
+                        "surface": "capability_needs",
+                        "subject": row.subject,
+                        "needed_evidence": rec.get("needed_evidence"),
+                        "source_conflict": rec.get("diagnostic_conflict"),
+                    }
+                )
+    return derived
 
 
 def _reasoning_path_supporting_evidence_payload(
