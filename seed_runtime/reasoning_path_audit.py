@@ -104,17 +104,7 @@ def build_reasoning_path_audit(
     privilege = build_privilege_discovery(state)
     story = build_operational_story(state, repo_root=root)
 
-    relevant_rows = [
-        row
-        for row in rows
-        if _matches(subject, row.subject, row.conflict)
-        or any(
-            _matches(
-                subject, rec.get("candidate_capability"), rec.get("diagnostic_conflict")
-            )
-            for rec in diagnostic_capability_need_records(row)
-        )
-    ]
+    relevant_rows = _reasoning_path_relevant_ownership_rows(rows, subject)
     supporting_evidence_payload = _reasoning_path_supporting_evidence_payload(
         relevant_rows
     )
@@ -237,6 +227,24 @@ def build_reasoning_path_audit(
         supporting_evidence=supporting_evidence_payload,
         lineage=lineage_payload,
     )
+
+
+def _reasoning_path_relevant_ownership_rows(
+    rows: list[Any], subject: str
+) -> list[Any]:
+    """Select ownership rows relevant to a reasoning-path subject."""
+
+    return [
+        row
+        for row in rows
+        if _matches(subject, row.subject, row.conflict)
+        or any(
+            _matches(
+                subject, rec.get("candidate_capability"), rec.get("diagnostic_conflict")
+            )
+            for rec in diagnostic_capability_need_records(row)
+        )
+    ]
 
 
 def _reasoning_path_supporting_evidence_payload(

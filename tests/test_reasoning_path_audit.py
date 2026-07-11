@@ -187,6 +187,47 @@ def test_reasoning_path_projects_supporting_evidence_at_compatibility_handoff():
     assert audit.to_json_dict()["evidence"] == supporting_evidence
 
 
+def test_reasoning_path_relevant_ownership_rows_owns_subject_selection():
+    from types import SimpleNamespace
+
+    from seed_runtime.reasoning_path_audit import (
+        _reasoning_path_relevant_ownership_rows,
+    )
+
+    direct_match = SimpleNamespace(
+        subject="listener_process_inventory",
+        kind="service",
+        conflict="insufficient_evidence",
+        reason="direct subject match",
+        evidence_count=1,
+        evidence=[],
+    )
+    capability_match = SimpleNamespace(
+        subject="api",
+        kind="service",
+        conflict="owner_not_observed",
+        reason="socket has no owner observation",
+        evidence_count=2,
+        evidence=[],
+    )
+    unrelated = SimpleNamespace(
+        subject="worker",
+        kind="service",
+        conflict="insufficient_evidence",
+        reason="unrelated row",
+        evidence_count=1,
+        evidence=[],
+    )
+
+    selected = _reasoning_path_relevant_ownership_rows(
+        [direct_match, capability_match, unrelated],
+        "listener_process_inventory",
+    )
+
+    assert selected == [direct_match, capability_match]
+    assert unrelated not in selected
+
+
 def test_reasoning_path_supporting_evidence_payload_owns_source_row_projection():
     from types import SimpleNamespace
 
