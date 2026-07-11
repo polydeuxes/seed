@@ -111,17 +111,11 @@ def build_reasoning_path_audit(
     derived = _reasoning_path_derived_capability_conclusions(relevant_rows, subject)
 
     consumers.extend(_reasoning_path_capability_need_consumers(needs, subject))
-    for need in needs:
-        if _matches(subject, need.capability, *need.subjects, *need.diagnostics):
-            if not any(d.get("surface") == "capability_needs" for d in derived):
-                derived.append(
-                    {
-                        "conclusion": f"{need.capability} capability need",
-                        "surface": "capability_needs",
-                        "subjects": sorted(need.subjects),
-                        "needed_evidence": sorted(need.needed_evidence),
-                    }
-                )
+    derived.extend(
+        _reasoning_path_capability_need_compatibility_fallbacks(
+            needs, subject, derived
+        )
+    )
 
     for item in pressure.pressures:
         text = f"{item.category} {item.reason} {item.evidence}"
@@ -194,6 +188,26 @@ def build_reasoning_path_audit(
         supporting_evidence=supporting_evidence_payload,
         lineage=lineage_payload,
     )
+
+
+def _reasoning_path_capability_need_compatibility_fallbacks(
+    needs: list[Any], subject: str, derived: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """Preserve capability-needs derived conclusions when rows did not produce one."""
+
+    if any(d.get("surface") == "capability_needs" for d in derived):
+        return []
+    for need in needs:
+        if _matches(subject, need.capability, *need.subjects, *need.diagnostics):
+            return [
+                {
+                    "conclusion": f"{need.capability} capability need",
+                    "surface": "capability_needs",
+                    "subjects": sorted(need.subjects),
+                    "needed_evidence": sorted(need.needed_evidence),
+                }
+            ]
+    return []
 
 
 def _reasoning_path_capability_need_consumers(

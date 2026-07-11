@@ -491,3 +491,44 @@ def test_reasoning_path_capability_need_consumers_owns_need_surface_lineage():
             "diagnostics": ["listener_process_inventory"],
         },
     ]
+
+
+def test_reasoning_path_capability_need_fallbacks_own_compatibility_conclusion():
+    from types import SimpleNamespace
+
+    from seed_runtime.reasoning_path_audit import (
+        _reasoning_path_capability_need_compatibility_fallbacks,
+    )
+
+    matching_need = SimpleNamespace(
+        capability="listener_process_inventory",
+        subjects={"api"},
+        diagnostics={"owner_not_observed"},
+        needed_evidence={"process_owner", "socket_inode"},
+    )
+    unrelated_need = SimpleNamespace(
+        capability="storage_topology",
+        subjects={"disk"},
+        diagnostics={"filesystem_probe"},
+        needed_evidence={"mounts"},
+    )
+
+    fallbacks = _reasoning_path_capability_need_compatibility_fallbacks(
+        [matching_need, unrelated_need],
+        "listener_process_inventory",
+        derived=[],
+    )
+
+    assert fallbacks == [
+        {
+            "conclusion": "listener_process_inventory capability need",
+            "surface": "capability_needs",
+            "subjects": ["api"],
+            "needed_evidence": ["process_owner", "socket_inode"],
+        }
+    ]
+    assert _reasoning_path_capability_need_compatibility_fallbacks(
+        [matching_need],
+        "listener_process_inventory",
+        derived=[{"surface": "capability_needs"}],
+    ) == []
