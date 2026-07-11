@@ -228,6 +228,36 @@ def test_reasoning_path_relevant_ownership_rows_owns_subject_selection():
     assert unrelated not in selected
 
 
+def test_reasoning_path_intermediate_conclusions_owns_conflict_projection():
+    from types import SimpleNamespace
+
+    from seed_runtime.reasoning_path_audit import (
+        _reasoning_path_intermediate_conclusions,
+    )
+
+    conflict_row = SimpleNamespace(
+        subject="api",
+        conflict="owner_not_observed",
+    )
+    candidate_row = SimpleNamespace(
+        subject="worker",
+        conflict="",
+    )
+
+    intermediate = _reasoning_path_intermediate_conclusions(
+        [conflict_row, candidate_row]
+    )
+
+    assert intermediate == [
+        {
+            "conclusion": "ownership attribution incomplete",
+            "surface": "ownership_discrepancies",
+            "subject": "api",
+            "reason": "owner_not_observed",
+        }
+    ]
+
+
 def test_reasoning_path_supporting_evidence_payload_owns_source_row_projection():
     from types import SimpleNamespace
 
