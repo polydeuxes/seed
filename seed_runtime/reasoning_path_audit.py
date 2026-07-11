@@ -117,27 +117,11 @@ def build_reasoning_path_audit(
         )
     )
 
-    for item in pressure.pressures:
-        text = f"{item.category} {item.reason} {item.evidence}"
-        if subject.lower() in text.lower() or domain.lower() in item.category.lower():
-            consumers.append(
-                {
-                    "surface": "pressure_audit",
-                    "reason": item.reason,
-                    "category": item.category,
-                    "score": item.score,
-                }
-            )
-    for cap in privilege.capabilities:
-        if _matches(subject, cap.name):
-            consumers.append(
-                {
-                    "surface": "privilege_discovery",
-                    "reason": "explains access boundary for the derived capability need",
-                    "access_level": cap.access_level,
-                    "pressure": cap.pressure,
-                }
-            )
+    consumers.extend(
+        _reasoning_path_pressure_privilege_consumers(
+            pressure, privilege, domain, subject
+        )
+    )
     if (
         subject.lower() in str(story.to_json_dict()).lower()
         or domain.lower() in story.focus.lower()
@@ -188,6 +172,36 @@ def build_reasoning_path_audit(
         supporting_evidence=supporting_evidence_payload,
         lineage=lineage_payload,
     )
+
+
+def _reasoning_path_pressure_privilege_consumers(
+    pressure: Any, privilege: Any, domain: str, subject: str
+) -> list[dict[str, Any]]:
+    """Preserve pressure and privilege consumers for a reasoning-path subject."""
+
+    consumers: list[dict[str, Any]] = []
+    for item in pressure.pressures:
+        text = f"{item.category} {item.reason} {item.evidence}"
+        if subject.lower() in text.lower() or domain.lower() in item.category.lower():
+            consumers.append(
+                {
+                    "surface": "pressure_audit",
+                    "reason": item.reason,
+                    "category": item.category,
+                    "score": item.score,
+                }
+            )
+    for cap in privilege.capabilities:
+        if _matches(subject, cap.name):
+            consumers.append(
+                {
+                    "surface": "privilege_discovery",
+                    "reason": "explains access boundary for the derived capability need",
+                    "access_level": cap.access_level,
+                    "pressure": cap.pressure,
+                }
+            )
+    return consumers
 
 
 def _reasoning_path_capability_need_compatibility_fallbacks(
