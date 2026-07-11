@@ -197,11 +197,19 @@ def _compose_inquiry_orientation_answer(
         ),
         support=selected_material.support,
         boundary=AUTHORITY_BOUNDARY,
-        limitations=(
-            UNCERTAINTY_WITH_MATCHES
-            if selected_material.related_material
-            else UNCERTAINTY_WITHOUT_MATCHES
-        ),
+        limitations=_select_inquiry_orientation_limitations(selected_material),
+    )
+
+
+def _select_inquiry_orientation_limitations(
+    selected_material: _InquiryOrientationSelectedMaterial,
+) -> str:
+    """Select uncertainty text from whether related material was selected."""
+
+    return (
+        UNCERTAINTY_WITH_MATCHES
+        if selected_material.related_material
+        else UNCERTAINTY_WITHOUT_MATCHES
     )
 
 

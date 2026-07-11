@@ -14,6 +14,7 @@ from seed_runtime.inquiry_orientation import (
     _compose_inquiry_orientation_answer,
     _prepare_inquiry_orientation_composition,
     _prepare_inquiry_orientation_selected_material,
+    _select_inquiry_orientation_limitations,
     build_inquiry_orientation,
     format_inquiry_orientation,
     load_inquiry_notes,
@@ -315,6 +316,9 @@ def test_inquiry_orientation_composition_request_separates_note_from_rendering(t
     assert answer.limitations == view.uncertainty
     assert selected_material.support == [item.support for item in view.related_material]
     assert answer.support == selected_material.support
+    assert answer.limitations == _select_inquiry_orientation_limitations(
+        selected_material
+    )
     assert "deterministic lexical overlaps" in answer.reason
     assert "Inquiry note:" in output
     assert "raw_note" not in request.__dataclass_fields__
@@ -332,3 +336,44 @@ def test_inquiry_orientation_composition_request_separates_note_from_rendering(t
     assert "related_material" not in answer.__dataclass_fields__
     assert "uncertainty" not in answer.__dataclass_fields__
     assert "authority_boundary" not in answer.__dataclass_fields__
+
+
+def test_selected_material_limitations_are_owned_before_answer_construction(tmp_path):
+    _ledger, state = _state_with_example_host_fact()
+    matched_note = record_inquiry_note(
+        tmp_path / "probe.jsonl",
+        "example_host keeps showing up first",
+        recorded_at=datetime(2026, 6, 16, tzinfo=timezone.utc),
+    )
+    unmatched_note = record_inquiry_note(
+        tmp_path / "probe.jsonl",
+        "unmatched prose only",
+        recorded_at=datetime(2026, 6, 17, tzinfo=timezone.utc),
+    )
+
+    matched_request = _prepare_inquiry_orientation_composition(matched_note)
+    matched_material = _prepare_inquiry_orientation_selected_material(
+        _collect_inquiry_orientation_evidence(state, matched_request)
+    )
+    unmatched_request = _prepare_inquiry_orientation_composition(unmatched_note)
+    unmatched_material = _prepare_inquiry_orientation_selected_material(
+        _collect_inquiry_orientation_evidence(state, unmatched_request)
+    )
+
+    assert _select_inquiry_orientation_limitations(matched_material) == (
+        "Related material may be incomplete or incidental; lexical overlap is not "
+        "semantic interpretation and does not establish operator intent."
+    )
+    assert _select_inquiry_orientation_limitations(unmatched_material) == (
+        "No deterministic related material was found in already projected read models; "
+        "this absence does not prove the note is unrelated to existing work."
+    )
+    assert _compose_inquiry_orientation_answer(
+        state, matched_request
+    ).limitations == _select_inquiry_orientation_limitations(matched_material)
+    assert _compose_inquiry_orientation_answer(
+        state, unmatched_request
+    ).limitations == _select_inquiry_orientation_limitations(unmatched_material)
+    assert "answer" not in matched_material.__dataclass_fields__
+    assert "boundary" not in matched_material.__dataclass_fields__
+    assert "reason" not in matched_material.__dataclass_fields__
