@@ -903,6 +903,53 @@ def test_selection_path_input_collection_is_owned_by_local_helper(
     assert "outcome" not in payload.__dataclass_fields__
 
 
+
+def test_selection_target_selection_is_owned_by_local_helper():
+    from seed_runtime.pressure_audit import PressureItem
+    from seed_runtime.selection_path_audit import (
+        _SelectionPathInputs,
+        _normalize_target,
+        _selection_target_selection,
+    )
+
+    pressure = PressureItem(
+        category="Runtime reachability",
+        score=3,
+        reason="selected pressure",
+        evidence={"source": "selected evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+    other_pressure = PressureItem(
+        category="Documentation drift",
+        score=1,
+        reason="lower pressure",
+        evidence={"source": "lower evidence"},
+        recommended_command="seed --pressure-audit",
+    )
+    inputs = _SelectionPathInputs(
+        pressures=(pressure, other_pressure), focus="Runtime reachability"
+    )
+
+    focus = _selection_target_selection(
+        "current_focus", _normalize_target("current_focus"), inputs
+    )
+    pressure_category = _selection_target_selection(
+        "documentation-drift", _normalize_target("documentation-drift"), inputs
+    )
+    unsupported = _selection_target_selection(
+        "not_a_selection", _normalize_target("not_a_selection"), inputs
+    )
+
+    assert focus.selection_kind == "focus"
+    assert focus.target == "current_focus"
+    assert focus.normalized_target == "current_focus"
+    assert pressure_category.selection_kind == "pressure_category"
+    assert unsupported.selection_kind == "unsupported"
+    assert "pressures" not in focus.__dataclass_fields__
+    assert "focus" not in focus.__dataclass_fields__
+    assert "selected" not in focus.__dataclass_fields__
+    assert "outcome" not in focus.__dataclass_fields__
+
 def test_unsupported_target_selection_refusal_is_prepared_separately():
     from seed_runtime.pressure_audit import PressureItem
     from seed_runtime.selection_path_audit import _unsupported_target_selection
