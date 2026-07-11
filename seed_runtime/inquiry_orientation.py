@@ -193,7 +193,7 @@ def _compose_inquiry_orientation_answer(
         answer=selected_material.related_material,
         reason=_select_inquiry_orientation_reason(selected_material),
         support=selected_material.support,
-        boundary=AUTHORITY_BOUNDARY,
+        boundary=_select_inquiry_orientation_authority_boundary(selected_material),
         limitations=_select_inquiry_orientation_limitations(selected_material),
     )
 
@@ -207,6 +207,14 @@ def _select_inquiry_orientation_reason(
         "deterministic lexical overlaps against projected fact supports and "
         "source-navigation matches"
     )
+
+
+def _select_inquiry_orientation_authority_boundary(
+    selected_material: _InquiryOrientationSelectedMaterial,
+) -> str:
+    """Select authority-boundary text for the selected inquiry-orientation material."""
+
+    return AUTHORITY_BOUNDARY
 
 
 def _select_inquiry_orientation_limitations(

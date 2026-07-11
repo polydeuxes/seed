@@ -14,6 +14,7 @@ from seed_runtime.inquiry_orientation import (
     _compose_inquiry_orientation_answer,
     _prepare_inquiry_orientation_composition,
     _prepare_inquiry_orientation_selected_material,
+    _select_inquiry_orientation_authority_boundary,
     _select_inquiry_orientation_limitations,
     _select_inquiry_orientation_reason,
     build_inquiry_orientation,
@@ -406,3 +407,30 @@ def test_selected_material_reason_is_owned_before_answer_construction(tmp_path):
     assert "boundary" not in selected_material.__dataclass_fields__
     assert "limitations" not in selected_material.__dataclass_fields__
     assert "reason" not in selected_material.__dataclass_fields__
+
+
+def test_selected_material_authority_boundary_is_owned_before_answer_construction(tmp_path):
+    _ledger, state = _state_with_example_host_fact()
+    note = record_inquiry_note(
+        tmp_path / "probe.jsonl",
+        "example_host keeps showing up first",
+        recorded_at=datetime(2026, 6, 19, tzinfo=timezone.utc),
+    )
+
+    request = _prepare_inquiry_orientation_composition(note)
+    selected_material = _prepare_inquiry_orientation_selected_material(
+        _collect_inquiry_orientation_evidence(state, request)
+    )
+    boundary = _select_inquiry_orientation_authority_boundary(selected_material)
+    answer = _compose_inquiry_orientation_answer(state, request)
+    view = build_inquiry_orientation(state, note)
+
+    assert boundary == AUTHORITY_BOUNDARY
+    assert answer.boundary == boundary
+    assert view.authority_boundary == boundary
+    assert selected_material.related_material == answer.answer
+    assert selected_material.support == answer.support
+    assert "boundary" not in selected_material.__dataclass_fields__
+    assert "limitations" not in selected_material.__dataclass_fields__
+    assert "reason" not in selected_material.__dataclass_fields__
+    assert "authority_boundary" not in answer.__dataclass_fields__
