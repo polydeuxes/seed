@@ -128,21 +128,13 @@ def build_reasoning_path_audit(
     story_impact.extend(story_entries)
     consumers.extend(story_consumers)
 
-    unknowns: list[TypedUnknownRecord] = []
-    if not (
-        supporting_evidence_payload.evidence
-        or intermediate
-        or derived
-        or consumers
-        or story_impact
-    ):
-        unknowns.append(
-            preserve_typed_unknown(
-                unknown_type="Evidence Gap",
-                area="derivation",
-                reason="no derivation evidence currently available",
-            )
-        )
+    unknowns = _reasoning_path_typed_unknowns(
+        supporting_evidence_payload,
+        intermediate,
+        derived,
+        consumers,
+        story_impact,
+    )
     conclusion_payload = _DerivedConclusionPayload(
         intermediate_conclusions=intermediate,
         derived_conclusions=derived,
@@ -159,6 +151,32 @@ def build_reasoning_path_audit(
         supporting_evidence=supporting_evidence_payload,
         lineage=lineage_payload,
     )
+
+
+def _reasoning_path_typed_unknowns(
+    supporting_evidence: _DerivationSupportingEvidencePayload,
+    intermediate: list[dict[str, Any]],
+    derived: list[dict[str, Any]],
+    consumers: list[dict[str, Any]],
+    story_impact: list[dict[str, Any]],
+) -> list[TypedUnknownRecord]:
+    """Preserve typed Unknowns when no derivation path evidence is available."""
+
+    if (
+        supporting_evidence.evidence
+        or intermediate
+        or derived
+        or consumers
+        or story_impact
+    ):
+        return []
+    return [
+        preserve_typed_unknown(
+            unknown_type="Evidence Gap",
+            area="derivation",
+            reason="no derivation evidence currently available",
+        )
+    ]
 
 
 def _reasoning_path_story_impact(
