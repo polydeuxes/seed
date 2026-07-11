@@ -66,6 +66,13 @@ class _SelectionPathInputs:
 
 
 @dataclass(frozen=True)
+class _SelectionTargetSelection:
+    target: str
+    normalized_target: str
+    selection_kind: str
+
+
+@dataclass(frozen=True)
 class _SelectionPathPayloads:
     result: _SelectionResultPayload
     reason: _SelectionReasonPayload
@@ -118,13 +125,22 @@ def build_selection_path_audit(
     normalized = _normalize_target(target)
     inputs = _selection_path_inputs(state, root)
 
-    if _target_matches_focus_selection(normalized, inputs.focus):
-        return _from_focus_selection(target, normalized, inputs.pressures, inputs.focus)
+    selection = _selection_target_selection(target, normalized, inputs)
 
-    if _target_matches_pressure_category(normalized, inputs.pressures):
-        return _from_pressure_category_selection(target, inputs.pressures, inputs.focus)
+    if selection.selection_kind == "focus":
+        return _from_focus_selection(
+            selection.target,
+            selection.normalized_target,
+            inputs.pressures,
+            inputs.focus,
+        )
 
-    return _unsupported_target_selection(target, inputs.pressures)
+    if selection.selection_kind == "pressure_category":
+        return _from_pressure_category_selection(
+            selection.target, inputs.pressures, inputs.focus
+        )
+
+    return _unsupported_target_selection(selection.target, inputs.pressures)
 
 
 def _selection_path_repo_root(repo_root: str | Path | None) -> Path:
@@ -139,6 +155,30 @@ def _selection_path_inputs(state: State, root: Path) -> _SelectionPathInputs:
     pressure = build_pressure_audit(state, repo_root=root)
     story = build_operational_story(state, repo_root=root)
     return _SelectionPathInputs(pressures=pressure.pressures, focus=story.focus)
+
+
+def _selection_target_selection(
+    target: str, normalized_target: str, inputs: _SelectionPathInputs
+) -> _SelectionTargetSelection:
+    if _target_matches_focus_selection(normalized_target, inputs.focus):
+        return _SelectionTargetSelection(
+            target=target,
+            normalized_target=normalized_target,
+            selection_kind="focus",
+        )
+
+    if _target_matches_pressure_category(normalized_target, inputs.pressures):
+        return _SelectionTargetSelection(
+            target=target,
+            normalized_target=normalized_target,
+            selection_kind="pressure_category",
+        )
+
+    return _SelectionTargetSelection(
+        target=target,
+        normalized_target=normalized_target,
+        selection_kind="unsupported",
+    )
 
 
 def _unsupported_target_selection(
