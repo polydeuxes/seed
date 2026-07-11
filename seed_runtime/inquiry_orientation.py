@@ -85,6 +85,14 @@ class _InquiryOrientationEvidence:
 
 
 @dataclass(frozen=True)
+class _InquiryOrientationSelectedMaterial:
+    """Implementation-local selected material with preserved supports for answer composition."""
+
+    related_material: list[RelatedMaterial]
+    support: list[str]
+
+
+@dataclass(frozen=True)
 class _InquiryOrientationAnswer:
     """Implementation-local answer composition before inquiry orientation rendering."""
 
@@ -180,16 +188,32 @@ def _compose_inquiry_orientation_answer(
     """Compose inquiry orientation answer material without rendering or transport changes."""
 
     evidence = _collect_inquiry_orientation_evidence(state, request)
-    related = evidence.related_material
+    selected_material = _prepare_inquiry_orientation_selected_material(evidence)
     return _InquiryOrientationAnswer(
-        answer=related,
+        answer=selected_material.related_material,
         reason=(
             "deterministic lexical overlaps against projected fact supports and "
             "source-navigation matches"
         ),
-        support=[item.support for item in related],
+        support=selected_material.support,
         boundary=AUTHORITY_BOUNDARY,
-        limitations=(UNCERTAINTY_WITH_MATCHES if related else UNCERTAINTY_WITHOUT_MATCHES),
+        limitations=(
+            UNCERTAINTY_WITH_MATCHES
+            if selected_material.related_material
+            else UNCERTAINTY_WITHOUT_MATCHES
+        ),
+    )
+
+
+def _prepare_inquiry_orientation_selected_material(
+    evidence: _InquiryOrientationEvidence,
+) -> _InquiryOrientationSelectedMaterial:
+    """Prepare selected related material and preserve its support strings."""
+
+    related = evidence.related_material
+    return _InquiryOrientationSelectedMaterial(
+        related_material=related,
+        support=[item.support for item in related],
     )
 
 

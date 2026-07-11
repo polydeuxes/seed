@@ -9,9 +9,11 @@ from seed_runtime.inquiry_orientation import (
     _InquiryOrientationAnswer,
     _InquiryOrientationCompositionRequest,
     _InquiryOrientationEvidence,
+    _InquiryOrientationSelectedMaterial,
     _collect_inquiry_orientation_evidence,
     _compose_inquiry_orientation_answer,
     _prepare_inquiry_orientation_composition,
+    _prepare_inquiry_orientation_selected_material,
     build_inquiry_orientation,
     format_inquiry_orientation,
     load_inquiry_notes,
@@ -296,19 +298,23 @@ def test_inquiry_orientation_composition_request_separates_note_from_rendering(t
 
     request = _prepare_inquiry_orientation_composition(note)
     evidence = _collect_inquiry_orientation_evidence(state, request)
+    selected_material = _prepare_inquiry_orientation_selected_material(evidence)
     answer = _compose_inquiry_orientation_answer(state, request)
     view = build_inquiry_orientation(state, note)
     output = format_inquiry_orientation(view)
 
     assert isinstance(request, _InquiryOrientationCompositionRequest)
     assert isinstance(evidence, _InquiryOrientationEvidence)
+    assert isinstance(selected_material, _InquiryOrientationSelectedMaterial)
     assert isinstance(answer, _InquiryOrientationAnswer)
     assert request.note == note
     assert request.note_tokens == {"example_host", "keeps", "showing", "first"}
-    assert evidence.related_material == answer.answer == view.related_material
+    assert evidence.related_material == selected_material.related_material
+    assert selected_material.related_material == answer.answer == view.related_material
     assert answer.boundary == view.authority_boundary == AUTHORITY_BOUNDARY
     assert answer.limitations == view.uncertainty
-    assert answer.support == [item.support for item in view.related_material]
+    assert selected_material.support == [item.support for item in view.related_material]
+    assert answer.support == selected_material.support
     assert "deterministic lexical overlaps" in answer.reason
     assert "Inquiry note:" in output
     assert "raw_note" not in request.__dataclass_fields__
@@ -318,6 +324,10 @@ def test_inquiry_orientation_composition_request_separates_note_from_rendering(t
     assert "reason" not in evidence.__dataclass_fields__
     assert "boundary" not in evidence.__dataclass_fields__
     assert "limitations" not in evidence.__dataclass_fields__
+    assert "note" not in selected_material.__dataclass_fields__
+    assert "reason" not in selected_material.__dataclass_fields__
+    assert "boundary" not in selected_material.__dataclass_fields__
+    assert "limitations" not in selected_material.__dataclass_fields__
     assert "Inquiry note" not in answer.__dataclass_fields__
     assert "related_material" not in answer.__dataclass_fields__
     assert "uncertainty" not in answer.__dataclass_fields__
