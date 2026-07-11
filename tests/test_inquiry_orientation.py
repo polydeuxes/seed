@@ -15,6 +15,7 @@ from seed_runtime.inquiry_orientation import (
     _prepare_inquiry_orientation_composition,
     _prepare_inquiry_orientation_selected_material,
     _select_inquiry_orientation_limitations,
+    _select_inquiry_orientation_reason,
     build_inquiry_orientation,
     format_inquiry_orientation,
     load_inquiry_notes,
@@ -319,6 +320,7 @@ def test_inquiry_orientation_composition_request_separates_note_from_rendering(t
     assert answer.limitations == _select_inquiry_orientation_limitations(
         selected_material
     )
+    assert answer.reason == _select_inquiry_orientation_reason(selected_material)
     assert "deterministic lexical overlaps" in answer.reason
     assert "Inquiry note:" in output
     assert "raw_note" not in request.__dataclass_fields__
@@ -377,3 +379,30 @@ def test_selected_material_limitations_are_owned_before_answer_construction(tmp_
     assert "answer" not in matched_material.__dataclass_fields__
     assert "boundary" not in matched_material.__dataclass_fields__
     assert "reason" not in matched_material.__dataclass_fields__
+
+
+def test_selected_material_reason_is_owned_before_answer_construction(tmp_path):
+    _ledger, state = _state_with_example_source_navigation_fact()
+    note = record_inquiry_note(
+        tmp_path / "probe.jsonl",
+        "seed_runtime.example examplesurface",
+        recorded_at=datetime(2026, 6, 18, tzinfo=timezone.utc),
+    )
+
+    request = _prepare_inquiry_orientation_composition(note)
+    selected_material = _prepare_inquiry_orientation_selected_material(
+        _collect_inquiry_orientation_evidence(state, request)
+    )
+    reason = _select_inquiry_orientation_reason(selected_material)
+    answer = _compose_inquiry_orientation_answer(state, request)
+
+    assert reason == (
+        "deterministic lexical overlaps against projected fact supports and "
+        "source-navigation matches"
+    )
+    assert answer.reason == reason
+    assert selected_material.related_material == answer.answer
+    assert selected_material.support == answer.support
+    assert "boundary" not in selected_material.__dataclass_fields__
+    assert "limitations" not in selected_material.__dataclass_fields__
+    assert "reason" not in selected_material.__dataclass_fields__
