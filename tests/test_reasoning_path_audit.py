@@ -404,3 +404,46 @@ def test_reasoning_path_lineage_owns_typed_unknown_before_public_handoff():
     assert audit.unknowns == [
         {"area": "derivation", "reason": "no derivation evidence currently available"}
     ]
+
+
+def test_reasoning_path_derived_capability_conclusions_owns_selected_row_records():
+    from types import SimpleNamespace
+
+    from seed_runtime.reasoning_path_audit import (
+        _reasoning_path_derived_capability_conclusions,
+    )
+
+    matching_row = SimpleNamespace(
+        subject="api",
+        kind="service",
+        conflict="owner_not_observed",
+        reason="socket has no owner observation",
+        evidence_count=2,
+        evidence=[
+            SimpleNamespace(predicate="prometheus_target", value="127.0.0.1:9100"),
+            SimpleNamespace(predicate="listening_socket", value="tcp 127.0.0.1:9100"),
+        ],
+    )
+    unrelated_row = SimpleNamespace(
+        subject="worker",
+        kind="service",
+        conflict="insufficient_evidence",
+        reason="no diagnostic capability record for target subject",
+        evidence_count=1,
+        evidence=[],
+    )
+
+    derived = _reasoning_path_derived_capability_conclusions(
+        [matching_row, unrelated_row],
+        "listener_process_inventory",
+    )
+
+    assert derived == [
+        {
+            "conclusion": "listener_process_inventory capability need",
+            "surface": "capability_needs",
+            "subject": "api",
+            "needed_evidence": "listener_process_inventory",
+            "source_conflict": "owner_not_observed",
+        }
+    ]
