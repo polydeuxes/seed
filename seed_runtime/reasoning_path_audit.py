@@ -122,24 +122,11 @@ def build_reasoning_path_audit(
             pressure, privilege, domain, subject
         )
     )
-    if (
-        subject.lower() in str(story.to_json_dict()).lower()
-        or domain.lower() in story.focus.lower()
-    ):
-        story_impact.append(
-            {
-                "surface": "operational_story",
-                "focus": story.focus,
-                "pressure": story.pressure,
-                "reason": "operational story includes this subject, domain, or derived pressure",
-            }
-        )
-        consumers.append(
-            {
-                "surface": "operational_story",
-                "reason": "composes current focus and investigation path from pressure and capability surfaces",
-            }
-        )
+    story_entries, story_consumers = _reasoning_path_story_impact(
+        story, domain, subject
+    )
+    story_impact.extend(story_entries)
+    consumers.extend(story_consumers)
 
     unknowns: list[TypedUnknownRecord] = []
     if not (
@@ -172,6 +159,31 @@ def build_reasoning_path_audit(
         supporting_evidence=supporting_evidence_payload,
         lineage=lineage_payload,
     )
+
+
+def _reasoning_path_story_impact(
+    story: Any, domain: str, subject: str
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Preserve operational-story impact and consumer lineage for a subject."""
+
+    if not (
+        subject.lower() in str(story.to_json_dict()).lower()
+        or domain.lower() in story.focus.lower()
+    ):
+        return [], []
+    return [
+        {
+            "surface": "operational_story",
+            "focus": story.focus,
+            "pressure": story.pressure,
+            "reason": "operational story includes this subject, domain, or derived pressure",
+        }
+    ], [
+        {
+            "surface": "operational_story",
+            "reason": "composes current focus and investigation path from pressure and capability surfaces",
+        }
+    ]
 
 
 def _reasoning_path_pressure_privilege_consumers(
