@@ -447,3 +447,47 @@ def test_reasoning_path_derived_capability_conclusions_owns_selected_row_records
             "source_conflict": "owner_not_observed",
         }
     ]
+
+
+def test_reasoning_path_capability_need_consumers_owns_need_surface_lineage():
+    from types import SimpleNamespace
+
+    from seed_runtime.reasoning_path_audit import (
+        _reasoning_path_capability_need_consumers,
+    )
+
+    matching_need = SimpleNamespace(
+        capability="listener_process_inventory",
+        subjects={"api"},
+        diagnostics={"owner_not_observed"},
+    )
+    diagnostic_match = SimpleNamespace(
+        capability="socket_owner_lookup",
+        subjects={"worker"},
+        diagnostics={"listener_process_inventory"},
+    )
+    unrelated_need = SimpleNamespace(
+        capability="storage_topology",
+        subjects={"disk"},
+        diagnostics={"filesystem_probe"},
+    )
+
+    consumers = _reasoning_path_capability_need_consumers(
+        [matching_need, diagnostic_match, unrelated_need],
+        "listener_process_inventory",
+    )
+
+    assert consumers == [
+        {
+            "surface": "capability_needs",
+            "reason": "reports derived diagnostic capability need",
+            "subjects": ["api"],
+            "diagnostics": ["owner_not_observed"],
+        },
+        {
+            "surface": "capability_needs",
+            "reason": "reports derived diagnostic capability need",
+            "subjects": ["worker"],
+            "diagnostics": ["listener_process_inventory"],
+        },
+    ]
