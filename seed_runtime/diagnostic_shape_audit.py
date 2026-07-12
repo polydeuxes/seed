@@ -726,6 +726,21 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "authorize_execution",
         ),
     ),
+    "constitutional_fidelity": DiagnosticImplementationSpec(
+        name="constitutional_fidelity",
+        module_path="seed_runtime/constitutional_fidelity_view.py",
+        build_function="build_constitutional_fidelity_view",
+        format_function="format_constitutional_fidelity_view",
+        json_function="constitutional_fidelity_view_json",
+        cli_flags=("--constitutional-fidelity",),
+        mutation_markers=(
+            ".write_text(",
+            "subprocess.run",
+            "os.remove",
+            "shutil.rmtree",
+            "authorize_execution",
+        ),
+    ),
     "privilege_discovery": DiagnosticImplementationSpec(
         name="privilege_discovery",
         module_path="seed_runtime/privilege_discovery.py",
