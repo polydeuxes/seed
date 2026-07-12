@@ -115,6 +115,12 @@ READ_MODEL_VIEW_REGISTRATIONS: tuple[ReadModelViewRegistration, ...] = tuple(
             builder="seed_runtime.context_views.build_decision_context_view",
             renderer="scripts.seed_local.format_decision_context_view",
         ),
+        read_model_view_registration(
+            name="constitutional_process",
+            cli_flag="--constitutional-process",
+            builder="seed_runtime.constitutional_process_view.build_constitutional_process_view",
+            renderer="seed_runtime.constitutional_process_view.format_constitutional_process_view",
+        ),
     )
 )
 

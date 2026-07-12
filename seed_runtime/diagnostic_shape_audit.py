@@ -696,6 +696,21 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "authorize_execution",
         ),
     ),
+    "constitutional_process": DiagnosticImplementationSpec(
+        name="constitutional_process",
+        module_path="seed_runtime/constitutional_process_view.py",
+        build_function="build_constitutional_process_view",
+        format_function="format_constitutional_process_view",
+        json_function="constitutional_process_view_json",
+        cli_flags=("--constitutional-process",),
+        mutation_markers=(
+            ".write_text(",
+            "subprocess.run",
+            "os.remove",
+            "shutil.rmtree",
+            "authorize_execution",
+        ),
+    ),
     "privilege_discovery": DiagnosticImplementationSpec(
         name="privilege_discovery",
         module_path="seed_runtime/privilege_discovery.py",
