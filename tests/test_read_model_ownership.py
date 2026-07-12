@@ -166,3 +166,20 @@ def test_existing_read_model_view_registrations_expose_consumable_cli_flags():
     assert "--current-issues" in flags
     assert "--decision-context" in flags
     assert all(registration.read_only for registration in READ_MODEL_VIEW_REGISTRATIONS)
+
+
+def test_constitutional_process_view_registration_exposes_consumable_cli_flag():
+    from seed_runtime.read_model_ownership import READ_MODEL_VIEW_REGISTRATIONS
+
+    registration = next(
+        registration
+        for registration in READ_MODEL_VIEW_REGISTRATIONS
+        if registration.name == "constitutional_process"
+    )
+
+    assert registration.cli_flag == "--constitutional-process"
+    assert (
+        registration.builder
+        == "seed_runtime.constitutional_process_view.build_constitutional_process_view"
+    )
+    assert registration.read_only is True
