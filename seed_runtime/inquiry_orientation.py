@@ -242,11 +242,19 @@ def _prepare_inquiry_orientation_selected_material(
 ) -> _InquiryOrientationSelectedMaterial:
     """Prepare selected related material and preserve its support strings."""
 
-    related = evidence.related_material
+    related = _select_inquiry_orientation_related_material(evidence)
     return _InquiryOrientationSelectedMaterial(
         related_material=related,
         support=[item.support for item in related],
     )
+
+
+def _select_inquiry_orientation_related_material(
+    evidence: _InquiryOrientationEvidence,
+) -> list[RelatedMaterial]:
+    """Select the bounded related-material slice from collected evidence."""
+
+    return _dedupe_related(evidence.related_material)[:_MAX_RELATED_ITEMS]
 
 
 def _collect_inquiry_orientation_evidence(
@@ -254,12 +262,10 @@ def _collect_inquiry_orientation_evidence(
 ) -> _InquiryOrientationEvidence:
     """Collect repository evidence before composing the inquiry orientation answer."""
 
-    related = _dedupe_related(
-        [
-            *_fact_matches(state, request.note_tokens),
-            *_source_navigation_matches(state, request.note_tokens),
-        ]
-    )[:_MAX_RELATED_ITEMS]
+    related = [
+        *_fact_matches(state, request.note_tokens),
+        *_source_navigation_matches(state, request.note_tokens),
+    ]
     return _InquiryOrientationEvidence(related_material=related)
 
 
