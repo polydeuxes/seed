@@ -200,3 +200,49 @@ def test_constitutional_governance_view_registration_exposes_consumable_cli_flag
         == "seed_runtime.constitutional_governance_view.build_constitutional_governance_view"
     )
     assert registration.read_only is True
+
+
+def test_constitutional_read_model_contracts_recover_recurring_obligations():
+    from seed_runtime.read_model_ownership import CONSTITUTIONAL_READ_MODEL_CONTRACTS
+
+    contracts = {
+        contract.name: contract for contract in CONSTITUTIONAL_READ_MODEL_CONTRACTS
+    }
+
+    assert set(contracts) == {"constitutional_process", "constitutional_governance"}
+    for contract in contracts.values():
+        assert contract.cli_flag.startswith("--constitutional-")
+        assert contract.builder.startswith("seed_runtime.constitutional_")
+        assert contract.renderer.startswith("seed_runtime.constitutional_")
+        assert contract.json_renderer.startswith("seed_runtime.constitutional_")
+        assert contract.inventory_name == contract.name
+        assert contract.shape_audit_name == contract.name
+        assert contract.read_only is True
+        assert contract.supports_json is True
+        assert contract.supports_record is False
+        assert contract.record_scope == "none"
+        assert contract.writes_event_ledger is False
+        assert contract.mutates_cluster is False
+
+
+def test_constitutional_read_model_contracts_match_inventory_and_shape_audit():
+    from seed_runtime.diagnostic_inventory import DIAGNOSTIC_INVENTORY
+    from seed_runtime.diagnostic_shape_audit import IMPLEMENTATION_SPECS
+    from seed_runtime.read_model_ownership import CONSTITUTIONAL_READ_MODEL_CONTRACTS
+
+    inventory_by_name = {entry.name: entry for entry in DIAGNOSTIC_INVENTORY}
+
+    for contract in CONSTITUTIONAL_READ_MODEL_CONTRACTS:
+        inventory_entry = inventory_by_name[contract.inventory_name]
+        shape_spec = IMPLEMENTATION_SPECS[contract.shape_audit_name]
+
+        assert inventory_entry.cli_flags == (contract.cli_flag,)
+        assert inventory_entry.supports_json is contract.supports_json
+        assert inventory_entry.supports_record is contract.supports_record
+        assert inventory_entry.record_scope == contract.record_scope
+        assert inventory_entry.writes_event_ledger is contract.writes_event_ledger
+        assert inventory_entry.mutates_cluster is contract.mutates_cluster
+        assert shape_spec.cli_flags == (contract.cli_flag,)
+        assert f"{shape_spec.build_function}" in contract.builder
+        assert f"{shape_spec.format_function}" in contract.renderer
+        assert f"{shape_spec.json_function}" in contract.json_renderer
