@@ -9,6 +9,8 @@ from seed_runtime.emitter_attribution_audit import (
     _classify_unknown_emitter_attribution,
     _collect_emitter_attribution_implementation_evidence,
     _known_emitter_attributed_rows,
+    _unknown_emitter_attribution_item,
+    UnknownEmitterAttribution,
 )
 from seed_runtime.emitter_consumer_audit import EmitterConsumerItem
 from seed_runtime.events import EventLedger
@@ -125,6 +127,51 @@ def test_known_emitter_attributed_rows_preserve_public_outputs_and_read_only_bou
     assert "direct_emitter: seed_runtime/alpha.py:2" in rendered
 
 
+def test_unknown_emitter_attribution_item_construction_preserves_recovered_fields():
+    base_item = EmitterConsumerItem(
+        emitter="unknown",
+        emits=("workflow.done",),
+        consumers=("projection builders", "diagnostics and audits"),
+        status="consumed",
+        evidence=("seed_runtime/state.py:2",),
+        emission_type="domain_emission",
+    )
+    attribution = UnknownEmitterAttribution(
+        status="indirect",
+        reason="classification reason from recovered artifact",
+        emitter="unknown",
+        confidence="medium",
+        attribution_evidence=(
+            ClassifiedEvidence("indirect_emitter", "seed_runtime/workflow.py:3"),
+        ),
+        supporting_references=(
+            ClassifiedEvidence("event_constructor", "seed_runtime/events.py:7"),
+            ClassifiedEvidence("diagnostic_reference", "seed_runtime/audit.py:11"),
+        ),
+    )
+
+    row = _unknown_emitter_attribution_item(base_item, "workflow.done", attribution)
+
+    assert row.event == "workflow.done"
+    assert row.emitter == "unknown"
+    assert row.status == "indirect"
+    assert row.reason == "classification reason from recovered artifact"
+    assert row.consumers == ("projection builders", "diagnostics and audits")
+    assert row.evidence == (
+        "seed_runtime/workflow.py:3",
+        "seed_runtime/events.py:7",
+        "seed_runtime/audit.py:11",
+    )
+    assert row.emission_type == "domain_emission"
+    assert row.confidence == "medium"
+    assert row.attribution_evidence == (
+        ClassifiedEvidence("indirect_emitter", "seed_runtime/workflow.py:3"),
+    )
+    assert row.supporting_references == (
+        ClassifiedEvidence("event_constructor", "seed_runtime/events.py:7"),
+        ClassifiedEvidence("diagnostic_reference", "seed_runtime/audit.py:11"),
+    )
+
 def test_unknown_emitters_are_reported():
     audit = build_emitter_attribution_audit()
     assert any(item.emitter == "unknown" for item in audit.items)
@@ -221,6 +268,68 @@ def test_attribution_json_reports_domain_classification(capsys):
     data = json.loads(capsys.readouterr().out)
     assert {item["emission_type"] for item in data["items"]} == {"domain_emission"}
 
+
+def test_unknown_emitter_attribution_rows_preserve_public_outputs_and_read_only_boundary(tmp_path):
+    runtime = tmp_path / "seed_runtime"
+    scripts = tmp_path / "scripts"
+    runtime.mkdir()
+    scripts.mkdir()
+    (runtime / "state.py").write_text(
+        'def consume(event):\n    return event.kind in {"gap.event", "aaa.event"}\n',
+        encoding="utf-8",
+    )
+    (runtime / "references.py").write_text(
+        'REFERENCE = "gap.event"\n',
+        encoding="utf-8",
+    )
+    ledger = EventLedger()
+    before = ledger.list_events()
+
+    audit = build_emitter_attribution_audit(tmp_path)
+
+    assert before == ledger.list_events() == []
+    assert audit.summary == {
+        "items_scanned": 2,
+        "attributed": 0,
+        "dynamic": 0,
+        "indirect": 0,
+        "discovery_gap": 2,
+        "missing": 0,
+        "unknown": 0,
+    }
+    assert [item.event for item in audit.items] == ["aaa.event", "gap.event"]
+    assert [item.status for item in audit.items] == ["discovery_gap", "discovery_gap"]
+
+    data = emitter_attribution_audit_json(audit)
+    gap = data["items"][1]
+    assert gap["event"] == "gap.event"
+    assert gap["emitter"] == "unknown"
+    assert gap["status"] == "discovery_gap"
+    assert gap["reason"] == (
+        "event literal is present in implementation evidence and consumed, but no direct emit call is attributed by current discovery"
+    )
+    assert gap["consumers"] == ["projection builders"]
+    assert gap["evidence"] == [
+        "seed_runtime/state.py:2",
+        "seed_runtime/references.py:1",
+    ]
+    assert gap["emission_type"] == "domain_emission"
+    assert gap["confidence"] == "low"
+    assert gap["attribution_evidence"] == []
+    assert gap["supporting_references"] == [
+        {"category": "projection_consumer", "location": "seed_runtime/state.py:2"},
+        {"category": "string_reference", "location": "seed_runtime/references.py:1"},
+    ]
+
+    rendered = format_emitter_attribution_audit(audit)
+    assert "Items scanned: 2" in rendered
+    assert "Discovery Gap: 2" in rendered
+    assert "Missing: 0" in rendered
+    assert "Event: gap.event" in rendered
+    assert "Emitter: unknown" in rendered
+    assert "Status: discovery_gap" in rendered
+    assert "Confidence: low" in rendered
+    assert "Supporting references: 2" in rendered
 
 def test_direct_append_literal_attributes_unknown_emitter_candidate(tmp_path):
     runtime = tmp_path / "seed_runtime"
