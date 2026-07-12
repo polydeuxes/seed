@@ -15,6 +15,7 @@ from seed_runtime.inquiry_orientation import (
     _prepare_inquiry_orientation_answer,
     _prepare_inquiry_orientation_composition,
     _prepare_inquiry_orientation_selected_material,
+    _prepare_inquiry_orientation_support,
     _select_inquiry_orientation_authority_boundary,
     _select_inquiry_orientation_related_material,
     _select_inquiry_orientation_limitations,
@@ -378,6 +379,33 @@ def test_selected_material_owns_dedupe_and_related_material_cap(tmp_path):
     assert selected.support == [item.support for item in selected.related_material]
     assert "support" not in evidence.__dataclass_fields__
     assert "answer" not in selected.__dataclass_fields__
+
+
+def test_support_strings_are_prepared_from_selected_related_material(tmp_path):
+    _ledger, state = _state_with_example_source_navigation_fact()
+    note = record_inquiry_note(
+        tmp_path / "probe.jsonl",
+        "seed_runtime.example examplesurface",
+        recorded_at=datetime(2026, 6, 22, tzinfo=timezone.utc),
+    )
+
+    request = _prepare_inquiry_orientation_composition(note)
+    selected_related = _select_inquiry_orientation_related_material(
+        _collect_inquiry_orientation_evidence(state, request)
+    )
+    support = _prepare_inquiry_orientation_support(selected_related)
+    selected_material = _prepare_inquiry_orientation_selected_material(
+        _collect_inquiry_orientation_evidence(state, request)
+    )
+    answer = _compose_inquiry_orientation_answer(state, request)
+
+    assert support == [item.support for item in selected_related]
+    assert selected_material.related_material == selected_related
+    assert selected_material.support == support
+    assert answer.support == support
+    assert "reason" not in selected_material.__dataclass_fields__
+    assert "boundary" not in selected_material.__dataclass_fields__
+    assert "limitations" not in selected_material.__dataclass_fields__
 
 
 def test_selected_material_limitations_are_owned_before_answer_construction(tmp_path):

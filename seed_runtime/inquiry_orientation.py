@@ -245,8 +245,16 @@ def _prepare_inquiry_orientation_selected_material(
     related = _select_inquiry_orientation_related_material(evidence)
     return _InquiryOrientationSelectedMaterial(
         related_material=related,
-        support=[item.support for item in related],
+        support=_prepare_inquiry_orientation_support(related),
     )
+
+
+def _prepare_inquiry_orientation_support(
+    related_material: list[RelatedMaterial],
+) -> list[str]:
+    """Prepare support strings for the selected inquiry-orientation material."""
+
+    return [item.support for item in related_material]
 
 
 def _select_inquiry_orientation_related_material(
