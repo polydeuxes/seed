@@ -209,6 +209,14 @@ def _prepare_inquiry_orientation_answer(
     """Prepare the implementation-local answer artifact from selected material."""
 
     payload = _prepare_inquiry_orientation_answer_payload(selected_material)
+    return _assemble_inquiry_orientation_answer_artifact(payload)
+
+
+def _assemble_inquiry_orientation_answer_artifact(
+    payload: _InquiryOrientationAnswerPayload,
+) -> _InquiryOrientationAnswer:
+    """Assemble the implementation-local answer artifact from prepared fields."""
+
     return _InquiryOrientationAnswer(
         answer=payload.answer,
         reason=payload.reason,
