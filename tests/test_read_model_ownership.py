@@ -128,3 +128,41 @@ def test_read_model_cache_publication_preserves_existing_snapshot_save_handoff()
         "state_last_event_id": "evt_current",
     }
     assert saved_snapshots == [result.snapshot]
+
+
+def test_read_model_view_registration_preserves_registration_without_dispatch_or_rendering():
+    from seed_runtime.read_model_ownership import (
+        read_model_view_registration,
+        register_read_model_view,
+    )
+
+    registration = read_model_view_registration(
+        name="constitutional_placeholder",
+        cli_flag="--constitutional-placeholder",
+        builder="seed_runtime.example.build_placeholder",
+        renderer="scripts.seed_local.format_placeholder",
+    )
+
+    result = register_read_model_view(registration)
+
+    assert result.registration is registration
+    assert result.registration.read_only is True
+    assert result.registration.builder == "seed_runtime.example.build_placeholder"
+    assert result.registration.renderer == "scripts.seed_local.format_placeholder"
+
+
+def test_existing_read_model_view_registrations_expose_consumable_cli_flags():
+    from seed_runtime.read_model_ownership import (
+        READ_MODEL_VIEW_REGISTRATIONS,
+        read_model_view_registration_flags,
+    )
+
+    flags = read_model_view_registration_flags(READ_MODEL_VIEW_REGISTRATIONS)
+
+    assert "--current-facts" in flags
+    assert "--current-observations" in flags
+    assert "--current-requirements" in flags
+    assert "--current-capabilities" in flags
+    assert "--current-issues" in flags
+    assert "--decision-context" in flags
+    assert all(registration.read_only for registration in READ_MODEL_VIEW_REGISTRATIONS)

@@ -20,6 +20,106 @@ TCachePublicationSnapshot = TypeVar("TCachePublicationSnapshot")
 
 
 @dataclass(frozen=True)
+class ReadModelViewRegistration:
+    """Implementation-local registration for a consumable read-model view.
+
+    The registration boundary records that an existing CLI flag consumes an
+    already-implemented read-model builder and renderer. It does not construct
+    the read model, render output, dispatch CLI requests, parse arguments,
+    publish projections, write ledgers, mutate cluster state, or declare
+    constitutional view contents.
+    """
+
+    name: str
+    cli_flag: str
+    builder: str
+    renderer: str
+    read_only: bool = True
+
+
+@dataclass(frozen=True)
+class ReadModelViewRegistrationResult:
+    """Result of accepting one existing read-model view registration."""
+
+    registration: ReadModelViewRegistration
+
+
+def read_model_view_registration(
+    *, name: str, cli_flag: str, builder: str, renderer: str
+) -> ReadModelViewRegistration:
+    """Declare an existing read-only read-model view as consumable."""
+
+    return ReadModelViewRegistration(
+        name=name, cli_flag=cli_flag, builder=builder, renderer=renderer
+    )
+
+
+def register_read_model_view(
+    registration: ReadModelViewRegistration,
+) -> ReadModelViewRegistrationResult:
+    """Accept an existing read-model view registration without side effects."""
+
+    return ReadModelViewRegistrationResult(registration=registration)
+
+
+def read_model_view_registration_flags(
+    registrations: tuple[ReadModelViewRegistration, ...]
+) -> tuple[str, ...]:
+    """Return CLI flags from existing read-model view registrations."""
+
+    return tuple(registration.cli_flag for registration in registrations)
+
+
+READ_MODEL_VIEW_REGISTRATIONS: tuple[ReadModelViewRegistration, ...] = tuple(
+    register_read_model_view(registration).registration
+    for registration in (
+        read_model_view_registration(
+            name="state_summary",
+            cli_flag="--state-build",
+            builder="seed_runtime.state_views.build_state_summary",
+            renderer="scripts.seed_local.format_state_build",
+        ),
+        read_model_view_registration(
+            name="current_facts",
+            cli_flag="--current-facts",
+            builder="seed_runtime.state_views.build_fact_view",
+            renderer="scripts.seed_local.format_fact_views",
+        ),
+        read_model_view_registration(
+            name="current_observations",
+            cli_flag="--current-observations",
+            builder="seed_runtime.state_views.build_observation_view",
+            renderer="scripts.seed_local.format_observation_views",
+        ),
+        read_model_view_registration(
+            name="current_requirements",
+            cli_flag="--current-requirements",
+            builder="seed_runtime.state_views.build_requirement_view",
+            renderer="scripts.seed_local.format_requirement_views",
+        ),
+        read_model_view_registration(
+            name="current_capabilities",
+            cli_flag="--current-capabilities",
+            builder="seed_runtime.state_views.build_capability_view",
+            renderer="scripts.seed_local.format_capability_views",
+        ),
+        read_model_view_registration(
+            name="current_issues",
+            cli_flag="--current-issues",
+            builder="seed_runtime.state_views.build_issue_view",
+            renderer="scripts.seed_local.format_issue_views",
+        ),
+        read_model_view_registration(
+            name="decision_context",
+            cli_flag="--decision-context",
+            builder="seed_runtime.context_views.build_decision_context_view",
+            renderer="scripts.seed_local.format_decision_context_view",
+        ),
+    )
+)
+
+
+@dataclass(frozen=True)
 class ReadModelDependencyIdentity:
     """Dependency identity proving a read model is valid for projected State.
 
