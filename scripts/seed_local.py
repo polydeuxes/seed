@@ -131,6 +131,12 @@ from seed_runtime.constitutional_process_view import (
     constitutional_process_view_json,
     format_constitutional_process_view,
 )
+from seed_runtime.constitutional_view_composition import (
+    build_constitutional_view_composition,
+    constitutional_view_composition_json,
+    constitutional_view_composition_request,
+    format_constitutional_view_composition,
+)
 from seed_runtime.contradictions import (
     Contradiction,
     build_contradiction_summary,
@@ -2185,6 +2191,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="print the read-only Constitutional Fidelity View and exit",
     )
     parser.add_argument(
+        "--constitutional-view-composition",
+        nargs="+",
+        choices=(
+            "constitutional_process",
+            "constitutional_governance",
+            "constitutional_fidelity",
+        ),
+        help=(
+            "compose explicitly requested registered constitutional views into one "
+            "read-only bounded explanation and exit"
+        ),
+    )
+    parser.add_argument(
+        "--composition-purpose",
+        default="bounded_explanation",
+        help="purpose label for --constitutional-view-composition",
+    )
+    parser.add_argument(
         "--fact-conflicts",
         action="store_true",
         help="print projected active fact conflicts and their winning values",
@@ -2653,10 +2677,11 @@ def validate_lifecycle_args(
         or args.constitutional_process
         or args.constitutional_governance
         or args.constitutional_fidelity
+        or args.constitutional_view_composition
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --question-surface-inventory, --question-family-definition, --question-family-explanation, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, --constitutional-process, --constitutional-governance, --constitutional-fidelity, or --audit-compare, or --projection-shape, or --projection-stage-definition, or --projection-stage-explanation"
+            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --question-surface-inventory, --question-family-definition, --question-family-explanation, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, --constitutional-process, --constitutional-governance, --constitutional-fidelity, --constitutional-view-composition, or --audit-compare, or --projection-shape, or --projection-stage-definition, or --projection-stage-explanation"
         )
     if args.question_family_definition and args.message:
         parser.error(
@@ -8048,6 +8073,20 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(constitutional_fidelity_view_json(view), indent=2, sort_keys=True))
         else:
             print(format_constitutional_fidelity_view(view))
+        return 0
+
+    if args.constitutional_view_composition:
+        artifact = build_constitutional_view_composition(
+            constitutional_view_composition_request(
+                requested_views=tuple(args.constitutional_view_composition),
+                composition_purpose=args.composition_purpose,
+                output_format="json" if args.json_output else "human",
+            )
+        )
+        if args.json_output:
+            print(json.dumps(constitutional_view_composition_json(artifact), indent=2, sort_keys=True))
+        else:
+            print(format_constitutional_view_composition(artifact))
         return 0
 
     if args.fact_conflicts:

@@ -741,6 +741,21 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "authorize_execution",
         ),
     ),
+    "constitutional_view_composition": DiagnosticImplementationSpec(
+        name="constitutional_view_composition",
+        module_path="seed_runtime/constitutional_view_composition.py",
+        build_function="build_constitutional_view_composition",
+        format_function="format_constitutional_view_composition",
+        json_function="constitutional_view_composition_json",
+        cli_flags=("--constitutional-view-composition",),
+        mutation_markers=(
+            ".write_text(",
+            "subprocess.run",
+            "os.remove",
+            "shutil.rmtree",
+            "authorize_execution",
+        ),
+    ),
     "privilege_discovery": DiagnosticImplementationSpec(
         name="privilege_discovery",
         module_path="seed_runtime/privilege_discovery.py",
