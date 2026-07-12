@@ -103,6 +103,17 @@ class _InquiryOrientationAnswer:
     limitations: str
 
 
+@dataclass(frozen=True)
+class _InquiryOrientationAnswerPayload:
+    """Implementation-local prepared answer fields before answer artifact assembly."""
+
+    answer: list[RelatedMaterial]
+    reason: str
+    support: list[str]
+    boundary: str
+    limitations: str
+
+
 def record_inquiry_note(
     store_path: Path,
     raw_note: str,
@@ -197,7 +208,22 @@ def _prepare_inquiry_orientation_answer(
 ) -> _InquiryOrientationAnswer:
     """Prepare the implementation-local answer artifact from selected material."""
 
+    payload = _prepare_inquiry_orientation_answer_payload(selected_material)
     return _InquiryOrientationAnswer(
+        answer=payload.answer,
+        reason=payload.reason,
+        support=payload.support,
+        boundary=payload.boundary,
+        limitations=payload.limitations,
+    )
+
+
+def _prepare_inquiry_orientation_answer_payload(
+    selected_material: _InquiryOrientationSelectedMaterial,
+) -> _InquiryOrientationAnswerPayload:
+    """Prepare answer fields from selected material before answer artifact assembly."""
+
+    return _InquiryOrientationAnswerPayload(
         answer=selected_material.related_material,
         reason=_select_inquiry_orientation_reason(selected_material),
         support=selected_material.support,
