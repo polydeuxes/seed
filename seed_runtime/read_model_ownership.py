@@ -20,6 +20,68 @@ TCachePublicationSnapshot = TypeVar("TCachePublicationSnapshot")
 
 
 @dataclass(frozen=True)
+class ConstitutionalReadModelContract:
+    """Implementation-local contract for constitutional read-model views.
+
+    The contract records the recurring implementation obligations shared by
+    existing constitutional read models: producer, artifact/formatter, JSON
+    renderer, CLI consumer, diagnostic declarations, and read-only mutation
+    boundaries. It does not construct views, render output, dispatch CLI
+    requests, register diagnostics, create constitutional authority, create
+    implementation authority, or define future constitutional view contents.
+    """
+
+    name: str
+    cli_flag: str
+    builder: str
+    renderer: str
+    json_renderer: str
+    inventory_name: str
+    shape_audit_name: str
+    read_only: bool = True
+    supports_json: bool = True
+    supports_record: bool = False
+    record_scope: str = "none"
+    writes_event_ledger: bool = False
+    mutates_cluster: bool = False
+
+
+def constitutional_read_model_registration(
+    contract: ConstitutionalReadModelContract,
+) -> "ReadModelViewRegistration":
+    """Produce the existing read-model registration from the contract."""
+
+    return read_model_view_registration(
+        name=contract.name,
+        cli_flag=contract.cli_flag,
+        builder=contract.builder,
+        renderer=contract.renderer,
+    )
+
+
+CONSTITUTIONAL_READ_MODEL_CONTRACTS: tuple[ConstitutionalReadModelContract, ...] = (
+    ConstitutionalReadModelContract(
+        name="constitutional_process",
+        cli_flag="--constitutional-process",
+        builder="seed_runtime.constitutional_process_view.build_constitutional_process_view",
+        renderer="seed_runtime.constitutional_process_view.format_constitutional_process_view",
+        json_renderer="seed_runtime.constitutional_process_view.constitutional_process_view_json",
+        inventory_name="constitutional_process",
+        shape_audit_name="constitutional_process",
+    ),
+    ConstitutionalReadModelContract(
+        name="constitutional_governance",
+        cli_flag="--constitutional-governance",
+        builder="seed_runtime.constitutional_governance_view.build_constitutional_governance_view",
+        renderer="seed_runtime.constitutional_governance_view.format_constitutional_governance_view",
+        json_renderer="seed_runtime.constitutional_governance_view.constitutional_governance_view_json",
+        inventory_name="constitutional_governance",
+        shape_audit_name="constitutional_governance",
+    ),
+)
+
+
+@dataclass(frozen=True)
 class ReadModelViewRegistration:
     """Implementation-local registration for a consumable read-model view.
 
@@ -63,7 +125,7 @@ def register_read_model_view(
 
 
 def read_model_view_registration_flags(
-    registrations: tuple[ReadModelViewRegistration, ...]
+    registrations: tuple[ReadModelViewRegistration, ...],
 ) -> tuple[str, ...]:
     """Return CLI flags from existing read-model view registrations."""
 
@@ -115,17 +177,9 @@ READ_MODEL_VIEW_REGISTRATIONS: tuple[ReadModelViewRegistration, ...] = tuple(
             builder="seed_runtime.context_views.build_decision_context_view",
             renderer="scripts.seed_local.format_decision_context_view",
         ),
-        read_model_view_registration(
-            name="constitutional_process",
-            cli_flag="--constitutional-process",
-            builder="seed_runtime.constitutional_process_view.build_constitutional_process_view",
-            renderer="seed_runtime.constitutional_process_view.format_constitutional_process_view",
-        ),
-        read_model_view_registration(
-            name="constitutional_governance",
-            cli_flag="--constitutional-governance",
-            builder="seed_runtime.constitutional_governance_view.build_constitutional_governance_view",
-            renderer="seed_runtime.constitutional_governance_view.format_constitutional_governance_view",
+        *(
+            constitutional_read_model_registration(contract)
+            for contract in CONSTITUTIONAL_READ_MODEL_CONTRACTS
         ),
     )
 )
