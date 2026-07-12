@@ -145,18 +145,10 @@ def build_emitter_attribution_audit(
                 event, refs, dynamic_refs
             )
             items.append(
-                EmitterAttributionItem(
-                    event=event,
-                    emitter=attribution.emitter,
-                    status=attribution.status,
-                    reason=attribution.reason,
-                    consumers=item.consumers,
-                    evidence=tuple(e.location for e in attribution.attribution_evidence)
-                    + tuple(e.location for e in attribution.supporting_references),
-                    emission_type=item.emission_type,
-                    confidence=attribution.confidence,
-                    attribution_evidence=attribution.attribution_evidence,
-                    supporting_references=attribution.supporting_references,
+                _unknown_emitter_attribution_item(
+                    item,
+                    event,
+                    attribution,
                 )
             )
     return EmitterAttributionAudit(
@@ -189,6 +181,26 @@ def _known_emitter_attributed_rows(
             ),
         )
         for event in item.emits
+    )
+
+
+def _unknown_emitter_attribution_item(
+    item: EmitterConsumerItem,
+    event: str,
+    attribution: UnknownEmitterAttribution,
+) -> EmitterAttributionItem:
+    return EmitterAttributionItem(
+        event=event,
+        emitter=attribution.emitter,
+        status=attribution.status,
+        reason=attribution.reason,
+        consumers=item.consumers,
+        evidence=tuple(e.location for e in attribution.attribution_evidence)
+        + tuple(e.location for e in attribution.supporting_references),
+        emission_type=item.emission_type,
+        confidence=attribution.confidence,
+        attribution_evidence=attribution.attribution_evidence,
+        supporting_references=attribution.supporting_references,
     )
 
 
