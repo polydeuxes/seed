@@ -202,6 +202,23 @@ def test_constitutional_governance_view_registration_exposes_consumable_cli_flag
     assert registration.read_only is True
 
 
+def test_constitutional_fidelity_view_registration_exposes_consumable_cli_flag():
+    from seed_runtime.read_model_ownership import READ_MODEL_VIEW_REGISTRATIONS
+
+    registration = next(
+        registration
+        for registration in READ_MODEL_VIEW_REGISTRATIONS
+        if registration.name == "constitutional_fidelity"
+    )
+
+    assert registration.cli_flag == "--constitutional-fidelity"
+    assert (
+        registration.builder
+        == "seed_runtime.constitutional_fidelity_view.build_constitutional_fidelity_view"
+    )
+    assert registration.read_only is True
+
+
 def test_constitutional_read_model_contracts_recover_recurring_obligations():
     from seed_runtime.read_model_ownership import CONSTITUTIONAL_READ_MODEL_CONTRACTS
 
@@ -209,7 +226,7 @@ def test_constitutional_read_model_contracts_recover_recurring_obligations():
         contract.name: contract for contract in CONSTITUTIONAL_READ_MODEL_CONTRACTS
     }
 
-    assert set(contracts) == {"constitutional_process", "constitutional_governance"}
+    assert set(contracts) == {"constitutional_process", "constitutional_governance", "constitutional_fidelity"}
     for contract in contracts.values():
         assert contract.cli_flag.startswith("--constitutional-")
         assert contract.builder.startswith("seed_runtime.constitutional_")

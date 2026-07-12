@@ -78,6 +78,15 @@ CONSTITUTIONAL_READ_MODEL_CONTRACTS: tuple[ConstitutionalReadModelContract, ...]
         inventory_name="constitutional_governance",
         shape_audit_name="constitutional_governance",
     ),
+    ConstitutionalReadModelContract(
+        name="constitutional_fidelity",
+        cli_flag="--constitutional-fidelity",
+        builder="seed_runtime.constitutional_fidelity_view.build_constitutional_fidelity_view",
+        renderer="seed_runtime.constitutional_fidelity_view.format_constitutional_fidelity_view",
+        json_renderer="seed_runtime.constitutional_fidelity_view.constitutional_fidelity_view_json",
+        inventory_name="constitutional_fidelity",
+        shape_audit_name="constitutional_fidelity",
+    ),
 )
 
 

@@ -116,6 +116,11 @@ from seed_runtime.correlation_audit import (
     correlation_audit_json,
     format_correlation_audit,
 )
+from seed_runtime.constitutional_fidelity_view import (
+    build_constitutional_fidelity_view,
+    constitutional_fidelity_view_json,
+    format_constitutional_fidelity_view,
+)
 from seed_runtime.constitutional_governance_view import (
     build_constitutional_governance_view,
     constitutional_governance_view_json,
@@ -2175,6 +2180,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="print the read-only Constitutional Governance View and exit",
     )
     parser.add_argument(
+        "--constitutional-fidelity",
+        action="store_true",
+        help="print the read-only Constitutional Fidelity View and exit",
+    )
+    parser.add_argument(
         "--fact-conflicts",
         action="store_true",
         help="print projected active fact conflicts and their winning values",
@@ -2642,10 +2652,11 @@ def validate_lifecycle_args(
         or args.audit_compare
         or args.constitutional_process
         or args.constitutional_governance
+        or args.constitutional_fidelity
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --question-surface-inventory, --question-family-definition, --question-family-explanation, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, --constitutional-process, --constitutional-governance, or --audit-compare, or --projection-shape, or --projection-stage-definition, or --projection-stage-explanation"
+            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --question-surface-inventory, --question-family-definition, --question-family-explanation, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, --constitutional-process, --constitutional-governance, --constitutional-fidelity, or --audit-compare, or --projection-shape, or --projection-stage-definition, or --projection-stage-explanation"
         )
     if args.question_family_definition and args.message:
         parser.error(
@@ -8029,6 +8040,14 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(constitutional_governance_view_json(view), indent=2, sort_keys=True))
         else:
             print(format_constitutional_governance_view(view))
+        return 0
+
+    if args.constitutional_fidelity:
+        view = build_constitutional_fidelity_view()
+        if args.json_output:
+            print(json.dumps(constitutional_fidelity_view_json(view), indent=2, sort_keys=True))
+        else:
+            print(format_constitutional_fidelity_view(view))
         return 0
 
     if args.fact_conflicts:
