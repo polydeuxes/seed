@@ -9,6 +9,7 @@ from typing import Any, Literal
 
 from seed_runtime.emitter_consumer_audit import (
     EmitterConsumerAudit,
+    EmitterConsumerItem,
     EmissionType,
     build_emitter_consumer_audit,
     _emitter_name,
@@ -134,26 +135,11 @@ def build_emitter_attribution_audit(
     dynamic_refs = implementation_evidence.dynamic_event_construction
     items: list[EmitterAttributionItem] = []
     for item in base.items:
+        known_emitter_rows = _known_emitter_attributed_rows(item)
+        if known_emitter_rows:
+            items.extend(known_emitter_rows)
+            continue
         for event in item.emits:
-            if item.emitter != "unknown":
-                items.append(
-                    EmitterAttributionItem(
-                        event=event,
-                        emitter=item.emitter,
-                        status="attributed",
-                        reason="direct event emission evidence is attributed by the emitter/consumer audit",
-                        consumers=item.consumers,
-                        evidence=tuple(e for e in item.evidence if e),
-                        emission_type=item.emission_type,
-                        confidence="high",
-                        attribution_evidence=tuple(
-                            ClassifiedEvidence("direct_emitter", e)
-                            for e in item.evidence
-                            if e
-                        ),
-                    )
-                )
-                continue
             refs = literal_refs.get(event, ())
             attribution = _classify_unknown_emitter_attribution(
                 event, refs, dynamic_refs
@@ -180,6 +166,29 @@ def build_emitter_attribution_audit(
             "include_rendered": include_rendered,
             "scope": list(base.metadata.get("scope", [])),
         },
+    )
+
+
+def _known_emitter_attributed_rows(
+    item: EmitterConsumerItem,
+) -> tuple[EmitterAttributionItem, ...]:
+    if item.emitter == "unknown":
+        return ()
+    return tuple(
+        EmitterAttributionItem(
+            event=event,
+            emitter=item.emitter,
+            status="attributed",
+            reason="direct event emission evidence is attributed by the emitter/consumer audit",
+            consumers=item.consumers,
+            evidence=tuple(e for e in item.evidence if e),
+            emission_type=item.emission_type,
+            confidence="high",
+            attribution_evidence=tuple(
+                ClassifiedEvidence("direct_emitter", e) for e in item.evidence if e
+            ),
+        )
+        for event in item.emits
     )
 
 

@@ -4,9 +4,13 @@ from scripts import seed_local
 from seed_runtime.emitter_attribution_audit import (
     ClassifiedEvidence,
     build_emitter_attribution_audit,
+    emitter_attribution_audit_json,
+    format_emitter_attribution_audit,
     _classify_unknown_emitter_attribution,
     _collect_emitter_attribution_implementation_evidence,
+    _known_emitter_attributed_rows,
 )
+from seed_runtime.emitter_consumer_audit import EmitterConsumerItem
 from seed_runtime.events import EventLedger
 
 
@@ -31,6 +35,94 @@ def test_attributed_emitters_are_reported():
         item.status == "attributed" and item.emitter != "unknown"
         for item in audit.items
     )
+
+
+def test_known_emitter_attributed_row_construction_preserves_base_fields():
+    base_item = EmitterConsumerItem(
+        emitter="alpha",
+        emits=("alpha.created",),
+        consumers=("projection builders", "diagnostics and audits"),
+        status="consumed",
+        evidence=("seed_runtime/alpha.py:4", ""),
+        emission_type="domain_emission",
+    )
+
+    rows = _known_emitter_attributed_rows(base_item)
+
+    assert len(rows) == 1
+    row = rows[0]
+    assert row.event == "alpha.created"
+    assert row.emitter == "alpha"
+    assert row.status == "attributed"
+    assert (
+        row.reason
+        == "direct event emission evidence is attributed by the emitter/consumer audit"
+    )
+    assert row.consumers == ("projection builders", "diagnostics and audits")
+    assert row.evidence == ("seed_runtime/alpha.py:4",)
+    assert row.emission_type == "domain_emission"
+    assert row.confidence == "high"
+    assert row.attribution_evidence == (
+        ClassifiedEvidence("direct_emitter", "seed_runtime/alpha.py:4"),
+    )
+    assert row.supporting_references == ()
+
+
+def test_known_emitter_attributed_rows_preserve_public_outputs_and_read_only_boundary(tmp_path):
+    runtime = tmp_path / "seed_runtime"
+    scripts = tmp_path / "scripts"
+    runtime.mkdir()
+    scripts.mkdir()
+    (runtime / "alpha.py").write_text(
+        'def emit(self):\n'
+        '    ledger.append("alpha.created", "s", {})\n',
+        encoding="utf-8",
+    )
+    (runtime / "state.py").write_text(
+        'def consume(event):\n'
+        '    return event.kind == "alpha.created"\n',
+        encoding="utf-8",
+    )
+    ledger = EventLedger()
+    before = ledger.list_events()
+
+    audit = build_emitter_attribution_audit(tmp_path)
+
+    assert before == ledger.list_events() == []
+    assert audit.summary == {
+        "items_scanned": 1,
+        "attributed": 1,
+        "dynamic": 0,
+        "indirect": 0,
+        "discovery_gap": 0,
+        "missing": 0,
+        "unknown": 0,
+    }
+    data = emitter_attribution_audit_json(audit)
+    item = data["items"][0]
+    assert item["event"] == "alpha.created"
+    assert item["emitter"] == "alpha"
+    assert item["status"] == "attributed"
+    assert item["reason"] == (
+        "direct event emission evidence is attributed by the emitter/consumer audit"
+    )
+    assert item["consumers"] == ["projection builders"]
+    assert item["evidence"] == ["seed_runtime/alpha.py:2"]
+    assert item["emission_type"] == "domain_emission"
+    assert item["confidence"] == "high"
+    assert item["attribution_evidence"] == [
+        {"category": "direct_emitter", "location": "seed_runtime/alpha.py:2"}
+    ]
+    rendered = format_emitter_attribution_audit(audit)
+    assert "Event: alpha.created" in rendered
+    assert "Emitter: alpha" in rendered
+    assert "Status: attributed" in rendered
+    assert (
+        "Reason: direct event emission evidence is attributed by the emitter/consumer audit"
+        in rendered
+    )
+    assert "Confidence: high" in rendered
+    assert "direct_emitter: seed_runtime/alpha.py:2" in rendered
 
 
 def test_unknown_emitters_are_reported():
@@ -276,7 +368,7 @@ def test_implementation_evidence_collection_preserves_sources_and_ordering(tmp_p
         'def dynamic(kind):\n'
         '    Event(kind=kind, subject="s", predicate="p", object="o")\n'
         'def direct(self):\n'
-        '    self._require_ledger().append("alpha.created", "s", {})\n'
+        '    ledger.append("alpha.created", "s", {})\n'
         'def literal(event):\n'
         '    return event.kind == "alpha.created"\n',
         encoding="utf-8",
