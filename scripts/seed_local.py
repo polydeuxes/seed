@@ -302,6 +302,7 @@ from seed_runtime.execution_status import (
 )
 from seed_runtime.fact_index import load_or_build_fact_index
 from seed_runtime.read_model_ownership import (
+    READ_MODEL_VIEW_REGISTRATIONS,
     publish_read_model_cache,
     read_model_cache_lookup_request,
     read_model_construction_inputs,
@@ -311,7 +312,12 @@ from seed_runtime.read_model_ownership import (
     read_model_dependency_identity_for_state_boundary,
     construct_read_model,
     resolve_read_model_cache_lookup,
+    read_model_view_registration_flags,
 )
+REGISTERED_READ_MODEL_VIEW_FLAGS = read_model_view_registration_flags(
+    READ_MODEL_VIEW_REGISTRATIONS
+)
+
 from seed_runtime.evidence_graph import (
     FactEvidenceView,
     build_evidence_graph,
