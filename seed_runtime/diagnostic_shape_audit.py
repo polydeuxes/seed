@@ -711,6 +711,21 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "authorize_execution",
         ),
     ),
+    "constitutional_governance": DiagnosticImplementationSpec(
+        name="constitutional_governance",
+        module_path="seed_runtime/constitutional_governance_view.py",
+        build_function="build_constitutional_governance_view",
+        format_function="format_constitutional_governance_view",
+        json_function="constitutional_governance_view_json",
+        cli_flags=("--constitutional-governance",),
+        mutation_markers=(
+            ".write_text(",
+            "subprocess.run",
+            "os.remove",
+            "shutil.rmtree",
+            "authorize_execution",
+        ),
+    ),
     "privilege_discovery": DiagnosticImplementationSpec(
         name="privilege_discovery",
         module_path="seed_runtime/privilege_discovery.py",
