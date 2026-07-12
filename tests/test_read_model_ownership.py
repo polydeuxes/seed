@@ -183,3 +183,20 @@ def test_constitutional_process_view_registration_exposes_consumable_cli_flag():
         == "seed_runtime.constitutional_process_view.build_constitutional_process_view"
     )
     assert registration.read_only is True
+
+
+def test_constitutional_governance_view_registration_exposes_consumable_cli_flag():
+    from seed_runtime.read_model_ownership import READ_MODEL_VIEW_REGISTRATIONS
+
+    registration = next(
+        registration
+        for registration in READ_MODEL_VIEW_REGISTRATIONS
+        if registration.name == "constitutional_governance"
+    )
+
+    assert registration.cli_flag == "--constitutional-governance"
+    assert (
+        registration.builder
+        == "seed_runtime.constitutional_governance_view.build_constitutional_governance_view"
+    )
+    assert registration.read_only is True
