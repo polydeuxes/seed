@@ -16,6 +16,7 @@ from seed_runtime.inquiry_orientation import (
     _prepare_inquiry_orientation_composition,
     _prepare_inquiry_orientation_selected_material,
     _select_inquiry_orientation_authority_boundary,
+    _select_inquiry_orientation_related_material,
     _select_inquiry_orientation_limitations,
     _select_inquiry_orientation_reason,
     build_inquiry_orientation,
@@ -340,6 +341,43 @@ def test_inquiry_orientation_composition_request_separates_note_from_rendering(t
     assert "related_material" not in answer.__dataclass_fields__
     assert "uncertainty" not in answer.__dataclass_fields__
     assert "authority_boundary" not in answer.__dataclass_fields__
+
+
+def test_selected_material_owns_dedupe_and_related_material_cap(tmp_path):
+    ledger = EventLedger()
+    for index in range(12):
+        fact = Fact(
+            id=f"fact_example_host_runtime_{index}",
+            subject_id=f"example_host_{index}",
+            predicate="runtime",
+            value=f"runtime-{index:02d}",
+            observed_at=utc_now(),
+            evidence_ids=[f"evd_example_host_{index}"],
+        )
+        ledger.append("fact.observed", "ws", {"fact": to_plain(fact)})
+    state = StateProjector(ledger).project("ws")
+    note = record_inquiry_note(
+        tmp_path / "probe.jsonl",
+        "example_host runtime",
+        recorded_at=datetime(2026, 6, 21, tzinfo=timezone.utc),
+    )
+
+    request = _prepare_inquiry_orientation_composition(note)
+    evidence = _collect_inquiry_orientation_evidence(state, request)
+    selected = _prepare_inquiry_orientation_selected_material(evidence)
+    answer = _compose_inquiry_orientation_answer(state, request)
+    view = build_inquiry_orientation(state, note)
+
+    assert len(evidence.related_material) == 12
+    assert (
+        _select_inquiry_orientation_related_material(evidence)
+        == selected.related_material
+    )
+    assert len(selected.related_material) == 10
+    assert selected.related_material == answer.answer == view.related_material
+    assert selected.support == [item.support for item in selected.related_material]
+    assert "support" not in evidence.__dataclass_fields__
+    assert "answer" not in selected.__dataclass_fields__
 
 
 def test_selected_material_limitations_are_owned_before_answer_construction(tmp_path):
