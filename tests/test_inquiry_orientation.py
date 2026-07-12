@@ -7,12 +7,14 @@ from seed_runtime.facts import Fact
 from seed_runtime.inquiry_orientation import (
     AUTHORITY_BOUNDARY,
     _InquiryOrientationAnswer,
+    _InquiryOrientationAnswerPayload,
     _InquiryOrientationCompositionRequest,
     _InquiryOrientationEvidence,
     _InquiryOrientationSelectedMaterial,
     _collect_inquiry_orientation_evidence,
     _compose_inquiry_orientation_answer,
     _prepare_inquiry_orientation_answer,
+    _prepare_inquiry_orientation_answer_payload,
     _prepare_inquiry_orientation_composition,
     _prepare_inquiry_orientation_selected_material,
     _prepare_inquiry_orientation_support,
@@ -537,3 +539,43 @@ def test_selected_material_answer_construction_is_owned_after_selection(tmp_path
     assert "related_material" not in prepared_answer.__dataclass_fields__
     assert "uncertainty" not in prepared_answer.__dataclass_fields__
     assert "authority_boundary" not in prepared_answer.__dataclass_fields__
+
+
+def test_answer_payload_is_prepared_before_answer_artifact_assembly(tmp_path):
+    _ledger, state = _state_with_example_host_fact()
+    note = record_inquiry_note(
+        tmp_path / "probe.jsonl",
+        "example_host keeps showing up first",
+        recorded_at=datetime(2026, 6, 23, tzinfo=timezone.utc),
+    )
+
+    request = _prepare_inquiry_orientation_composition(note)
+    selected_material = _prepare_inquiry_orientation_selected_material(
+        _collect_inquiry_orientation_evidence(state, request)
+    )
+    payload = _prepare_inquiry_orientation_answer_payload(selected_material)
+    prepared_answer = _prepare_inquiry_orientation_answer(selected_material)
+    composed_answer = _compose_inquiry_orientation_answer(state, request)
+
+    assert isinstance(payload, _InquiryOrientationAnswerPayload)
+    assert payload.answer == selected_material.related_material
+    assert payload.support == selected_material.support
+    assert payload.reason == _select_inquiry_orientation_reason(selected_material)
+    assert payload.boundary == _select_inquiry_orientation_authority_boundary(
+        selected_material
+    )
+    assert payload.limitations == _select_inquiry_orientation_limitations(
+        selected_material
+    )
+    assert prepared_answer == _InquiryOrientationAnswer(
+        answer=payload.answer,
+        reason=payload.reason,
+        support=payload.support,
+        boundary=payload.boundary,
+        limitations=payload.limitations,
+    )
+    assert composed_answer == prepared_answer
+    assert "note" not in payload.__dataclass_fields__
+    assert "related_material" not in payload.__dataclass_fields__
+    assert "uncertainty" not in payload.__dataclass_fields__
+    assert "authority_boundary" not in payload.__dataclass_fields__
