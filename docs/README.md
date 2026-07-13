@@ -185,6 +185,7 @@ Prometheus cleanup should route here before implementation when dealing with `up
 Use these for operator-facing views and read-only projections. These surfaces explain or summarize projected knowledge; they must not mutate evidence, facts, relationships, projections, or hosts.
 
 * Operator surface families — [`operator_surface_family_observation.md`](operator_surface_family_observation.md), [`operator_understanding_surface_observation.md`](operator_understanding_surface_observation.md), [`understanding_visibility_existing_surface_audit.md`](understanding_visibility_existing_surface_audit.md)
+* Constitutional pipeline operations — [`constitutional_pipeline_operations.md`](../constitutional_pipeline_operations.md)
 * Surface consequence and pressure — [`bounded_consequence_discipline_observation.md`](bounded_consequence_discipline_observation.md), [`operator_entrypoint_pressure_audit.md`](operator_entrypoint_pressure_audit.md)
 * State summary — [`state_summary_authority_reconciliation.md`](state_summary_authority_reconciliation.md), [`state_summary_cli_boundary_audit.md`](state_summary_cli_boundary_audit.md), [`state_summary_decomposition_audit.md`](state_summary_decomposition_audit.md), [`state.md`](state.md)
 * Impact — [`impact_overview_authority_reconciliation.md`](impact_overview_authority_reconciliation.md), [`entity_impact_drilldown_reconciliation.md`](entity_impact_drilldown_reconciliation.md)
