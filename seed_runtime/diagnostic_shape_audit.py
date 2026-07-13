@@ -756,6 +756,21 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
             "authorize_execution",
         ),
     ),
+    "constitutional_pipeline_diagnostic": DiagnosticImplementationSpec(
+        name="constitutional_pipeline_diagnostic",
+        module_path="seed_runtime/constitutional_pipeline_diagnostic.py",
+        build_function="build_constitutional_pipeline_diagnostic",
+        format_function="format_constitutional_pipeline_diagnostic",
+        json_function="constitutional_pipeline_diagnostic_json",
+        cli_flags=("--constitutional-pipeline-diagnostic",),
+        mutation_markers=(
+            ".write_text(",
+            "subprocess.run",
+            "os.remove",
+            "shutil.rmtree",
+            "authorize_execution",
+        ),
+    ),
     "constitutional_view_composition": DiagnosticImplementationSpec(
         name="constitutional_view_composition",
         module_path="seed_runtime/constitutional_view_composition.py",
