@@ -8,13 +8,32 @@ SelectedConstitutionalViews artifact for Constitutional View Composition.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from collections.abc import Callable
 from typing import Any
 
 from seed_runtime.bounded_constitutional_question import BoundedConstitutionalQuestion
+from seed_runtime.constitutional_fidelity_view import (
+    ConstitutionalFidelityView,
+    build_constitutional_fidelity_view,
+)
+from seed_runtime.constitutional_governance_view import (
+    ConstitutionalGovernanceView,
+    build_constitutional_governance_view,
+)
+from seed_runtime.constitutional_process_view import (
+    ConstitutionalProcessView,
+    build_constitutional_process_view,
+)
 from seed_runtime.constitutional_view_composition import (
     CompositionOutputFormat,
     ConstitutionalViewCompositionRequest,
     constitutional_view_composition_request,
+)
+from seed_runtime.read_model_ownership import (
+    CONSTITUTIONAL_READ_MODEL_CONTRACTS,
+    ConstitutionalReadModelContract,
+    ReadModelViewRegistration,
+    constitutional_read_model_registration,
 )
 from seed_runtime.serialization import to_plain
 
@@ -93,6 +112,101 @@ class ConstitutionalCapabilityProjection:
     read_only: bool = True
     mutates_cluster: bool = False
     writes_event_ledger: bool = False
+
+
+
+
+ConstitutionalCapabilitySource = (
+    ConstitutionalProcessView | ConstitutionalGovernanceView | ConstitutionalFidelityView
+)
+
+
+_CONSTITUTIONAL_VIEW_BUILDERS: dict[str, Callable[[], ConstitutionalCapabilitySource]] = {
+    "constitutional_process": build_constitutional_process_view,
+    "constitutional_governance": build_constitutional_governance_view,
+    "constitutional_fidelity": build_constitutional_fidelity_view,
+}
+
+
+def _capability_keys_from_source(view: ConstitutionalCapabilitySource) -> tuple[str, ...]:
+    """Return exact implementation-supported keys exposed by a view artifact."""
+
+    keys: list[str] = []
+    if isinstance(view, ConstitutionalProcessView) and view.stages:
+        keys.append("process")
+    if isinstance(view, ConstitutionalGovernanceView) and view.relationships:
+        keys.append("governance")
+    if isinstance(view, ConstitutionalFidelityView) and view.classifications:
+        keys.append("fidelity")
+    return tuple(dict.fromkeys(keys))
+
+
+def _projection_for_capability_source(
+    *,
+    contract: ConstitutionalReadModelContract,
+    registration: ReadModelViewRegistration,
+    view: ConstitutionalCapabilitySource | None,
+) -> ConstitutionalCapabilityProjection:
+    """Project one registered constitutional source without mutating its owners."""
+
+    if view is None:
+        return ConstitutionalCapabilityProjection(
+            registered_view_name=registration.name,
+            capability_keys=(),
+            compatibility_answer="Unknown.",
+            read_only=contract.read_only and registration.read_only,
+            mutates_cluster=contract.mutates_cluster,
+            writes_event_ledger=contract.writes_event_ledger,
+        )
+
+    return ConstitutionalCapabilityProjection(
+        registered_view_name=registration.name,
+        capability_keys=_capability_keys_from_source(view),
+        compatibility_answer=getattr(view, "compatibility_answer", "Unknown."),
+        read_only=contract.read_only and registration.read_only and view.read_only,
+        mutates_cluster=contract.mutates_cluster or view.mutates_cluster,
+        writes_event_ledger=contract.writes_event_ledger or view.writes_event_ledger,
+    )
+
+
+def project_constitutional_capabilities(
+    contracts: tuple[ConstitutionalReadModelContract, ...] = CONSTITUTIONAL_READ_MODEL_CONTRACTS,
+    registrations: tuple[ReadModelViewRegistration, ...] | None = None,
+    view_builders: dict[str, Callable[[], ConstitutionalCapabilitySource]] = _CONSTITUTIONAL_VIEW_BUILDERS,
+) -> tuple[ConstitutionalCapabilityProjection, ...]:
+    """Regenerate deterministic capability projections from registered sources only.
+
+    The helper consumes existing constitutional read-model contracts, their
+    existing registrations, and immutable constitutional view builders. It
+    preserves exact capability keys exposed by those view artifact types and
+    performs no Selection, Composition, persistence, ledger writes, cluster
+    mutation, registration repair, semantic inference, or operator-testimony
+    interpretation.
+    """
+
+    registration_by_name = {
+        registration.name: registration for registration in registrations or ()
+    }
+    projections: list[ConstitutionalCapabilityProjection] = []
+    seen_names: set[str] = set()
+
+    for contract in contracts:
+        registration = registration_by_name.get(
+            contract.name, constitutional_read_model_registration(contract)
+        )
+        if registration.name in seen_names:
+            continue
+        seen_names.add(registration.name)
+
+        builder = view_builders.get(contract.name)
+        view = builder() if builder is not None else None
+        projections.append(
+            _projection_for_capability_source(
+                contract=contract, registration=registration, view=view
+            )
+        )
+
+    return tuple(projections)
 
 
 @dataclass(frozen=True)
