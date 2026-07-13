@@ -277,6 +277,28 @@ class _CandidateDiscovery:
 
 
 @dataclass(frozen=True)
+class _CandidateAdmission:
+    discovery: _CandidateDiscovery
+    candidates: dict[str, str]
+    sorted_candidates: list[str]
+    source_counts: dict[str, int]
+    scan_counts: dict[str, int]
+    effective_limit: int | None
+    discovered: int
+    skipped: int
+    truncated: bool
+    reason: str | None
+
+
+@dataclass(frozen=True)
+class _EvaluationResult:
+    rows: list[KnowledgeReachabilityRow]
+    skipped: int
+    truncated: bool
+    reason: str | None
+
+
+@dataclass(frozen=True)
 class _AuditIndexes:
     preserved_terms: set[str]
     projected_terms: set[str]
@@ -340,43 +362,28 @@ def build_knowledge_reachability_audit_result(
         events = ledger.list_events(workspace_id)
 
     with timer.phase("discover_candidates") as finish_discovery:
-        effective_limit = None if all_candidates or subject else limit
-        discovery = _discover_candidates(
+        admission = _admit_knowledge_reachability_candidates(
             events,
             state,
             repo_root or Path.cwd(),
             counters,
             token_cache=token_cache,
-            limit=effective_limit,
+            limit=limit,
             all_candidates=all_candidates,
             subject=subject,
+            family=family,
+            candidate_kind=candidate_kind,
         )
-        candidates = discovery.candidates
-        source_counts = discovery.source_counts
-        scan_counts = discovery.scan_counts
-        if subject:
-            candidates = {subject: _family_for_candidate(subject)}
-        if family:
-            candidates = {c: f for c, f in candidates.items() if f == family}
-        if candidate_kind:
-            candidates = {
-                c: f
-                for c, f in candidates.items()
-                if _candidate_kind(c) == candidate_kind
-            }
-        discovered = len(candidates)
-        sorted_candidates = sorted(candidates)
-        skipped = 0
-        truncated = discovery.truncated
-        reason = None
-        if truncated:
-            reason = "limit"
-            skipped = max(0, discovery.raw_seen - len(sorted_candidates))
-        if effective_limit is not None and len(sorted_candidates) > effective_limit:
-            skipped = len(sorted_candidates) - effective_limit
-            sorted_candidates = sorted_candidates[:effective_limit]
-            truncated = True
-            reason = "limit"
+        candidates = admission.candidates
+        source_counts = admission.source_counts
+        scan_counts = admission.scan_counts
+        sorted_candidates = admission.sorted_candidates
+        discovery = admission.discovery
+        effective_limit = admission.effective_limit
+        discovered = admission.discovered
+        skipped = admission.skipped
+        truncated = admission.truncated
+        reason = admission.reason
         finish_discovery(
             raw_seen=discovery.raw_seen,
             used=len(sorted_candidates),
@@ -385,7 +392,7 @@ def build_knowledge_reachability_audit_result(
         )
 
     with timer.phase("build_indexes"):
-        indexes = _build_indexes(
+        indexes = _construct_knowledge_reachability_indexes(
             events,
             state,
             timer=timer,
@@ -395,31 +402,24 @@ def build_knowledge_reachability_audit_result(
         )
 
     with timer.phase("evaluate") as finish_evaluate:
-        deadline = time.monotonic() + max_seconds if max_seconds is not None else None
-        next_progress = time.monotonic() + progress_interval_seconds
-        rows: list[KnowledgeReachabilityRow] = []
-        for idx, candidate in enumerate(sorted_candidates, start=1):
-            now = time.monotonic()
-            if deadline is not None and now >= deadline:
-                skipped += len(sorted_candidates) - idx + 1
-                truncated = True
-                reason = "max_seconds"
-                break
-            if progress and now >= next_progress:
-                timer.progress_message("evaluate", idx - 1, len(sorted_candidates))
-                next_progress = now + progress_interval_seconds
-            flags = _candidate_flags_from_indexes(
-                candidate, indexes, counters, token_cache
-            )
-            rows.append(
-                KnowledgeReachabilityRow(
-                    candidates[candidate],
-                    _candidate_kind(candidate),
-                    candidate,
-                    *flags,
-                    _first_loss(flags),
-                )
-            )
+        evaluation = _evaluate_knowledge_reachability_candidates(
+            sorted_candidates,
+            candidates,
+            indexes,
+            counters,
+            token_cache=token_cache,
+            timer=timer,
+            progress=progress,
+            progress_interval_seconds=progress_interval_seconds,
+            max_seconds=max_seconds,
+            skipped=skipped,
+            truncated=truncated,
+            reason=reason,
+        )
+        rows = evaluation.rows
+        skipped = evaluation.skipped
+        truncated = evaluation.truncated
+        reason = evaluation.reason
         finish_evaluate(
             evaluated=len(rows), membership_checks=counters["membership_checks"]
         )
@@ -460,6 +460,126 @@ def build_knowledge_reachability_audit_result(
     )
     return KnowledgeReachabilityAuditResult(rows, metadata)
 
+
+
+def _admit_knowledge_reachability_candidates(
+    events: list[Any],
+    state: State,
+    repo_root: Path,
+    counters: dict[str, int],
+    token_cache: _TokenizationCache,
+    *,
+    limit: int | None = DEFAULT_AUDIT_LIMIT,
+    all_candidates: bool = False,
+    subject: str | None = None,
+    family: str | None = None,
+    candidate_kind: str | None = None,
+) -> _CandidateAdmission:
+    effective_limit = None if all_candidates or subject else limit
+    discovery = _discover_candidates(
+        events,
+        state,
+        repo_root,
+        counters,
+        token_cache=token_cache,
+        limit=effective_limit,
+        all_candidates=all_candidates,
+        subject=subject,
+    )
+    candidates = discovery.candidates
+    if subject:
+        candidates = {subject: _family_for_candidate(subject)}
+    if family:
+        candidates = {c: f for c, f in candidates.items() if f == family}
+    if candidate_kind:
+        candidates = {
+            c: f for c, f in candidates.items() if _candidate_kind(c) == candidate_kind
+        }
+    discovered = len(candidates)
+    sorted_candidates = sorted(candidates)
+    skipped = 0
+    truncated = discovery.truncated
+    reason = None
+    if truncated:
+        reason = "limit"
+        skipped = max(0, discovery.raw_seen - len(sorted_candidates))
+    if effective_limit is not None and len(sorted_candidates) > effective_limit:
+        skipped = len(sorted_candidates) - effective_limit
+        sorted_candidates = sorted_candidates[:effective_limit]
+        truncated = True
+        reason = "limit"
+    return _CandidateAdmission(
+        discovery=discovery,
+        candidates=candidates,
+        sorted_candidates=sorted_candidates,
+        source_counts=discovery.source_counts,
+        scan_counts=discovery.scan_counts,
+        effective_limit=effective_limit,
+        discovered=discovered,
+        skipped=skipped,
+        truncated=truncated,
+        reason=reason,
+    )
+
+
+def _construct_knowledge_reachability_indexes(
+    events: list[Any],
+    state: State,
+    *,
+    timer: _ReachabilityTimer | None = None,
+    index_timings: dict[str, float] | None = None,
+    counters: dict[str, int] | None = None,
+    token_cache: _TokenizationCache | None = None,
+) -> _AuditIndexes:
+    return _build_indexes(
+        events,
+        state,
+        timer=timer,
+        index_timings=index_timings,
+        counters=counters,
+        token_cache=token_cache,
+    )
+
+
+def _evaluate_knowledge_reachability_candidates(
+    sorted_candidates: list[str],
+    candidates: dict[str, str],
+    indexes: _AuditIndexes,
+    counters: dict[str, int],
+    token_cache: _TokenizationCache,
+    *,
+    timer: _ReachabilityTimer,
+    progress: Callable[[str], None] | None = None,
+    progress_interval_seconds: float = PROGRESS_INTERVAL_SECONDS,
+    max_seconds: float | None = DEFAULT_MAX_SECONDS,
+    skipped: int = 0,
+    truncated: bool = False,
+    reason: str | None = None,
+) -> _EvaluationResult:
+    deadline = time.monotonic() + max_seconds if max_seconds is not None else None
+    next_progress = time.monotonic() + progress_interval_seconds
+    rows: list[KnowledgeReachabilityRow] = []
+    for idx, candidate in enumerate(sorted_candidates, start=1):
+        now = time.monotonic()
+        if deadline is not None and now >= deadline:
+            skipped += len(sorted_candidates) - idx + 1
+            truncated = True
+            reason = "max_seconds"
+            break
+        if progress and now >= next_progress:
+            timer.progress_message("evaluate", idx - 1, len(sorted_candidates))
+            next_progress = now + progress_interval_seconds
+        flags = _candidate_flags_from_indexes(candidate, indexes, counters, token_cache)
+        rows.append(
+            KnowledgeReachabilityRow(
+                candidates[candidate],
+                _candidate_kind(candidate),
+                candidate,
+                *flags,
+                _first_loss(flags),
+            )
+        )
+    return _EvaluationResult(rows, skipped, truncated, reason)
 
 def format_knowledge_reachability_table(
     rows: list[KnowledgeReachabilityRow],

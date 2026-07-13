@@ -556,3 +556,180 @@ def test_reachability_summary_counts_and_candidate_kind_filtering():
     )
     assert filtered.rows
     assert {row.candidate_kind for row in filtered.rows} == {"presentation_label"}
+
+
+def test_reachability_candidate_admission_helper_preserves_sources_limits_and_read_only(tmp_path):
+    from seed_runtime.knowledge_reachability import (
+        build_knowledge_reachability_audit_result,
+        format_knowledge_reachability_table,
+    )
+
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "storage-topology.md").write_text("storage topology\n")
+    (tmp_path / "seed_runtime").mkdir()
+    (tmp_path / "seed_runtime" / "unique_runtime_module.py").write_text("# cache\n")
+    ledger = EventLedger()
+    ledger.append("operator.note", "w", {"text": "event_payload_candidate"})
+    ledger.append(
+        "fact.observed",
+        "w",
+        {"fact": _fact("f1", "projected-subject", "defines", "ProjectedSymbol", {"path": "seed_runtime/projected.py"})},
+    )
+    before_events = len(ledger.list_events("w"))
+
+    result = build_knowledge_reachability_audit_result(
+        ledger, "w", repo_root=tmp_path, all_candidates=True, max_seconds=None
+    )
+    payload = knowledge_reachability_json(result.rows, result.metadata)
+    table = format_knowledge_reachability_table(result.rows, result.metadata)
+
+    assert result.metadata.candidate_sources["default seeds"] > 0
+    assert result.metadata.candidate_sources["event payloads"] > 0
+    assert result.metadata.candidate_sources["projected state"] > 0
+    assert result.metadata.candidate_sources["source-navigation terms"] > 0
+    assert result.metadata.candidate_sources["docs/"] > 0
+    assert result.metadata.candidate_sources["seed_runtime/"] > 0
+    assert result.metadata.candidate_counts["raw_seen"] >= result.metadata.candidate_counts["used"]
+    assert result.metadata.candidate_counts["limit"] == 0
+    assert result.metadata.scan_counts["event payloads scanned"] > 0
+    assert result.metadata.scan_counts["facts scanned"] > 0
+    assert result.metadata.scan_counts["repo files scanned"] > 0
+    assert result.metadata.scan_counts["symbols scanned"] > 0
+    assert result.metadata.scan_counts["source-navigation terms scanned"] > 0
+    assert payload["metadata"]["candidate_counts"]["used"] == result.metadata.candidate_counts["used"]
+    assert "Knowledge Reachability Audit" in table
+    assert len(ledger.list_events("w")) == before_events
+
+    capped = build_knowledge_reachability_audit_result(
+        ledger, "w", repo_root=tmp_path, limit=3, max_seconds=None
+    )
+    assert capped.metadata.truncated is True
+    assert capped.metadata.reason == "limit"
+
+    subject = build_knowledge_reachability_audit_result(
+        ledger, "w", repo_root=tmp_path, subject="node115"
+    )
+    assert subject.metadata.scan_counts["repo files scanned"] == 0
+    assert subject.metadata.candidate_counts["evaluated"] == 1
+
+
+def test_reachability_index_construction_helper_preserves_index_handoff_and_metadata():
+    from seed_runtime.knowledge_reachability import (
+        _construct_knowledge_reachability_indexes,
+        _new_counters,
+        _ReachabilityTimer,
+        _TokenizationCache,
+        _AuditIndexes,
+        build_knowledge_reachability_audit_result,
+        format_knowledge_reachability_table,
+    )
+    from seed_runtime.state import StateProjector
+
+    ledger = EventLedger()
+    ledger.append("operator.note", "w", {"text": "preserved-only"})
+    ledger.append(
+        "fact.observed",
+        "w",
+        {"fact": _fact("f1", "node115", "defines", "IndexedSymbol", {"path": "seed_runtime/indexed.py"})},
+    )
+    state = StateProjector(ledger).project("w")
+    counters = _new_counters()
+    timings = {}
+    messages = []
+    indexes = _construct_knowledge_reachability_indexes(
+        ledger.list_events("w"),
+        state,
+        timer=_ReachabilityTimer(messages.append),
+        index_timings=timings,
+        counters=counters,
+        token_cache=_TokenizationCache(counters),
+    )
+
+    assert isinstance(indexes, _AuditIndexes)
+    assert "preserved-only" in indexes.preserved_terms
+    assert "node115" in indexes.projected_terms
+    assert "indexedsymbol" in indexes.read_model_terms
+    assert isinstance(indexes.inquiry_terms, set)
+    for key in (
+        "projected_entities",
+        "projected_facts",
+        "fact_support",
+        "source_navigation.index_from_fact_support",
+        "read_model",
+        "inquiry_orientation",
+    ):
+        assert key in timings
+    assert counters["state_projection_build_calls"] == 1
+    assert counters["entity_projection_build_calls"] == 1
+    assert counters["fact_support_index_build_calls"] == 1
+    assert counters["read_model_build_calls"] == 1
+    assert any(msg.startswith("[reachability] start projected_entities") for msg in messages)
+
+    result = build_knowledge_reachability_audit_result(ledger, "w", subject="node115")
+    payload = knowledge_reachability_json(result.rows, result.metadata)
+    assert result.rows[0].preserved is True
+    assert result.rows[0].projected is True
+    assert result.rows[0].read_model is True
+    assert "read_model" in payload["metadata"]["indexes"]
+    assert "Knowledge Reachability Audit" in format_knowledge_reachability_table(result.rows, result.metadata)
+    assert len(ledger.list_events("w")) == 2
+
+
+def test_reachability_candidate_evaluation_helper_preserves_rows_order_progress_and_timeout():
+    from seed_runtime.knowledge_reachability import (
+        _AuditIndexes,
+        _TokenizationCache,
+        _ReachabilityTimer,
+        _evaluate_knowledge_reachability_candidates,
+        _new_counters,
+        build_knowledge_reachability_audit_result,
+        format_knowledge_reachability_table,
+    )
+
+    counters = _new_counters()
+    messages = []
+    result = _evaluate_knowledge_reachability_candidates(
+        ["alpha", "node115", "source navigation"],
+        {"alpha": "repository", "node115": "runtime", "source navigation": "repository"},
+        _AuditIndexes({"alpha", "node115"}, {"node115"}, {"node115"}, {"source navigation"}),
+        counters,
+        _TokenizationCache(counters),
+        timer=_ReachabilityTimer(messages.append),
+        progress=messages.append,
+        progress_interval_seconds=-1,
+        max_seconds=None,
+    )
+
+    assert [row.candidate for row in result.rows] == ["alpha", "node115", "source navigation"]
+    assert result.rows[0].candidate_kind == "unknown"
+    assert result.rows[0].first_loss == "projected_loss"
+    assert result.rows[1].candidate_kind == "runtime_value"
+    assert result.rows[1].first_loss == "orientation_loss"
+    assert result.rows[2].candidate_kind == "presentation_label"
+    assert result.rows[2].first_loss == "visibility_only"
+    assert any(msg.startswith("[reachability] progress evaluate") for msg in messages)
+
+    timed = _evaluate_knowledge_reachability_candidates(
+        ["alpha"],
+        {"alpha": "repository"},
+        _AuditIndexes(set(), set(), set(), set()),
+        _new_counters(),
+        _TokenizationCache(_new_counters()),
+        timer=_ReachabilityTimer(None),
+        max_seconds=0,
+    )
+    assert timed.rows == []
+    assert timed.truncated is True
+    assert timed.reason == "max_seconds"
+    assert timed.skipped == 1
+
+    ledger = EventLedger()
+    ledger.append("operator.note", "w", {"text": "alpha beta"})
+    public = build_knowledge_reachability_audit_result(ledger, "w", limit=5, progress_interval_seconds=-1)
+    payload = knowledge_reachability_json(public.rows, public.metadata)
+    assert [row.candidate for row in public.rows] == sorted(row.candidate for row in public.rows)
+    assert public.metadata.candidate_counts["evaluated"] == len(public.rows)
+    assert sum(public.metadata.loss_stage_counts.values()) == len(public.rows)
+    assert payload["rows"][0]["candidate"] == public.rows[0].candidate
+    assert "Knowledge Reachability Audit" in format_knowledge_reachability_table(public.rows, public.metadata)
+    assert len(ledger.list_events("w")) == 1
