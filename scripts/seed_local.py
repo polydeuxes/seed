@@ -122,6 +122,11 @@ from seed_runtime.constitutional_pipeline import (
     format_constitutional_pipeline_result,
     invoke_constitutional_pipeline,
 )
+from seed_runtime.constitutional_pipeline_diagnostic import (
+    build_constitutional_pipeline_diagnostic,
+    constitutional_pipeline_diagnostic_json,
+    format_constitutional_pipeline_diagnostic,
+)
 from seed_runtime.constitutional_fidelity_view import (
     build_constitutional_fidelity_view,
     constitutional_fidelity_view_json,
@@ -2205,8 +2210,16 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--constitutional-pipeline-diagnostic",
+        action="store_true",
+        help=(
+            "run the read-only full constitutional pipeline diagnostic from explicit "
+            "operator-supplied bounded inputs and exit"
+        ),
+    )
+    parser.add_argument(
         "--operator-inquiry",
-        help="operator inquiry testimony for --constitutional-pipeline",
+        help="operator inquiry testimony for --constitutional-pipeline or --constitutional-pipeline-diagnostic",
     )
     parser.add_argument(
         "--inquiry-provenance",
@@ -2727,6 +2740,7 @@ def validate_lifecycle_args(
         or args.inquiry_artifacts
         or args.audit_compare
         or args.constitutional_pipeline
+        or args.constitutional_pipeline_diagnostic
         or args.constitutional_process
         or args.constitutional_governance
         or args.constitutional_fidelity
@@ -2734,7 +2748,7 @@ def validate_lifecycle_args(
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --question-surface-inventory, --question-family-definition, --question-family-explanation, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, --constitutional-pipeline, --constitutional-process, --constitutional-governance, --constitutional-fidelity, --constitutional-view-composition, or --audit-compare, or --projection-shape, or --projection-stage-definition, or --projection-stage-explanation"
+            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --question-surface-inventory, --question-family-definition, --question-family-explanation, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --correlation-audit, --inquiry-artifacts, --constitutional-pipeline, --constitutional-pipeline-diagnostic, --constitutional-process, --constitutional-governance, --constitutional-fidelity, --constitutional-view-composition, or --audit-compare, or --projection-shape, or --projection-stage-definition, or --projection-stage-explanation"
         )
     if args.question_family_definition and args.message:
         parser.error(
@@ -8118,26 +8132,56 @@ def main(argv: list[str] | None = None) -> int:
         ]
         if missing:
             parser.error("--constitutional-pipeline requires " + ", ".join(missing))
-        result = invoke_constitutional_pipeline(
-            ConstitutionalPipelineRequest(
-                operator_inquiry=args.operator_inquiry,
-                inquiry_provenance=args.inquiry_provenance,
-                bounded_question=args.bounded_question,
-                constitutional_intent=args.constitutional_intent,
-                scope_status=args.scope_status,
-                uncertainty=tuple(args.pipeline_uncertainty),
-                unknowns=tuple(args.pipeline_unknown),
-                caller_supplied_fields=tuple(
-                    ("selection_key", key) for key in args.selection_key
-                ),
-                composition_purpose=args.composition_purpose,
-                output_format="json" if args.json_output else "human",
-            )
+        request = ConstitutionalPipelineRequest(
+            operator_inquiry=args.operator_inquiry,
+            inquiry_provenance=args.inquiry_provenance,
+            bounded_question=args.bounded_question,
+            constitutional_intent=args.constitutional_intent,
+            scope_status=args.scope_status,
+            uncertainty=tuple(args.pipeline_uncertainty),
+            unknowns=tuple(args.pipeline_unknown),
+            caller_supplied_fields=tuple(("selection_key", key) for key in args.selection_key),
+            composition_purpose=args.composition_purpose,
+            output_format="json" if args.json_output else "human",
         )
+        result = invoke_constitutional_pipeline(request)
         if args.json_output:
             print(json.dumps(constitutional_pipeline_result_json(result), indent=2, sort_keys=True))
         else:
             print(format_constitutional_pipeline_result(result))
+        return 0
+
+    if args.constitutional_pipeline_diagnostic:
+        missing = [
+            flag
+            for flag, value in (
+                ("--operator-inquiry", args.operator_inquiry),
+                ("--inquiry-provenance", args.inquiry_provenance),
+                ("--bounded-question", args.bounded_question),
+                ("--constitutional-intent", args.constitutional_intent),
+                ("--scope-status", args.scope_status),
+            )
+            if value is None
+        ]
+        if missing:
+            parser.error("--constitutional-pipeline-diagnostic requires " + ", ".join(missing))
+        request = ConstitutionalPipelineRequest(
+            operator_inquiry=args.operator_inquiry,
+            inquiry_provenance=args.inquiry_provenance,
+            bounded_question=args.bounded_question,
+            constitutional_intent=args.constitutional_intent,
+            scope_status=args.scope_status,
+            uncertainty=tuple(args.pipeline_uncertainty),
+            unknowns=tuple(args.pipeline_unknown),
+            caller_supplied_fields=tuple(("selection_key", key) for key in args.selection_key),
+            composition_purpose=args.composition_purpose,
+            output_format="json" if args.json_output else "human",
+        )
+        diagnostic = build_constitutional_pipeline_diagnostic(request)
+        if args.json_output:
+            print(json.dumps(constitutional_pipeline_diagnostic_json(diagnostic), indent=2, sort_keys=True))
+        else:
+            print(format_constitutional_pipeline_diagnostic(diagnostic))
         return 0
 
     if args.constitutional_process:
