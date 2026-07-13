@@ -26,6 +26,18 @@ def _cli(*extra):
     ]
 
 
+def test_constitutional_pipeline_modules_import_successfully():
+    import seed_runtime.bounded_constitutional_question as bounded_question
+    import seed_runtime.constitutional_pipeline as pipeline
+    import seed_runtime.constitutional_pipeline_diagnostic as pipeline_diagnostic
+    import seed_runtime.constitutional_view_selection as view_selection
+
+    assert bounded_question.produce_bounded_constitutional_question
+    assert pipeline.invoke_constitutional_pipeline
+    assert pipeline_diagnostic.build_constitutional_pipeline_diagnostic
+    assert view_selection.select_constitutional_views
+
+
 def test_public_surface_constructs_request_and_invokes_complete_pipeline_once(monkeypatch, capsys):
     import scripts.seed_local as cli
 

@@ -328,7 +328,14 @@ def format_constitutional_pipeline_result(result: ConstitutionalPipelineResult) 
         "",
         "Why these views were selected",
         f"Question selection keys: {', '.join(explanation.question_selection_keys) or 'none'}",
-        f"Available capability keys: {'; '.join(f'{name}=[{', '.join(keys) or 'none'}]' for name, keys in explanation.available_capability_keys) or 'none'}",
+        "Available capability keys: "
+        + (
+            "; ".join(
+                f"{name}=[{', '.join(keys) or 'none'}]"
+                for name, keys in explanation.available_capability_keys
+            )
+            or "none"
+        ),
         f"Matched keys: {', '.join(explanation.matched_keys) or 'none'}",
         f"Selected views explained by exact matches: {', '.join(explanation.selected_views) or 'none'}",
         "",
