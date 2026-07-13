@@ -280,11 +280,7 @@ def build_operational_graph_confidence(
         tier: _confidence_tier_summary(tier, graph_edges, graph) for tier in selected
     }
 
-    important_low = [
-        _edge_example(edge, include_importance=True)
-        for edge in sorted(graph_edges, key=_edge_sort_key)
-        if edge.confidence == "low" and _importance(edge)
-    ]
+    important_low = _important_low_confidence_edge_examples(graph_edges)
     return {
         "summary": {
             **{
@@ -305,9 +301,19 @@ def build_operational_graph_confidence(
         },
         "tiers": tiers,
         "taxonomy": build_operational_graph_taxonomy(root),
-        "important_low_confidence_edges": important_low[:10],
+        "important_low_confidence_edges": important_low,
         "metadata": dict(graph.metadata),
     }
+
+
+def _important_low_confidence_edge_examples(
+    graph_edges: tuple[OperationalGraphEdge, ...]
+) -> list[dict[str, Any]]:
+    return [
+        _edge_example(edge, include_importance=True)
+        for edge in sorted(graph_edges, key=_edge_sort_key)
+        if edge.confidence == "low" and _importance(edge)
+    ][:10]
 
 
 def _filter_aggregate_operational_graph_edges(
