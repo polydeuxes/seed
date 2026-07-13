@@ -9,6 +9,9 @@ from seed_runtime.observation_sources import (
 )
 from seed_runtime.observations import ObservationIngestor
 from seed_runtime.source_navigation import (
+    SourceNavigationRow,
+    _PreparedSourceNavigationQuery,
+    _assemble_source_navigation_match_set,
     _compose_source_navigation,
     _prepare_source_navigation_query,
     build_source_navigation,
@@ -42,6 +45,85 @@ def test_source_navigation_composition_consumes_private_query_handoff(tmp_path):
     composed = _compose_source_navigation(prepared)
     public = build_source_navigation(state, "  state_summary  ")
 
+    assert source_navigation_json(composed) == source_navigation_json(public)
+    assert format_source_navigation(composed) == format_source_navigation(public)
+
+
+def test_source_navigation_match_set_assembly_consumes_prepared_query_only():
+    prepared = _PreparedSourceNavigationQuery(
+        normalized_query="target",
+        source_rows=[
+            SourceNavigationRow(
+                subject="pkg.z",
+                predicate="defines",
+                value="pkg.z.target",
+                path="z.py",
+                support_count=1,
+                representative_fact_id="fact-z",
+                representative_support_id="support-z",
+            ),
+            SourceNavigationRow(
+                subject="pkg.a",
+                predicate="defines",
+                value="pkg.a.target",
+                path="a.py",
+                support_count=1,
+                representative_fact_id="fact-a",
+                representative_support_id="support-a",
+            ),
+            SourceNavigationRow(
+                subject="pkg.a",
+                predicate="imports",
+                value="target",
+                path="a.py",
+                support_count=1,
+                representative_fact_id="fact-import-a",
+                representative_support_id="support-import-a",
+            ),
+            SourceNavigationRow(
+                subject="pkg.z",
+                predicate="imports",
+                value="target",
+                path="z.py",
+                support_count=1,
+                representative_fact_id="fact-import-z",
+                representative_support_id="support-import-z",
+            ),
+            SourceNavigationRow(
+                subject="pkg.unmatched",
+                predicate="defines",
+                value="pkg.unmatched.other",
+                path="other.py",
+                support_count=1,
+                representative_fact_id="fact-other",
+                representative_support_id="support-other",
+            ),
+        ],
+    )
+
+    match_set = _assemble_source_navigation_match_set(prepared)
+
+    assert [row.path for row in match_set.definitions] == ["a.py", "z.py"]
+    assert [row.path for row in match_set.imports] == []
+    assert [row.path for row in match_set.dependency_mentions] == ["a.py", "z.py"]
+    assert not hasattr(match_set, "repository_artifact_definition")
+    assert not hasattr(match_set, "repository_artifact_dependencies")
+    assert not hasattr(match_set, "repository_artifact_support")
+    assert not hasattr(match_set, "repository_artifact_non_claims")
+
+def test_source_navigation_match_set_preserves_public_json_and_human_output(tmp_path):
+    state = _project_repository(tmp_path)
+    prepared = _prepare_source_navigation_query(state, "  state_summary  ")
+
+    match_set = _assemble_source_navigation_match_set(prepared)
+    composed = _compose_source_navigation(prepared)
+    public = build_source_navigation(state, "  state_summary  ")
+
+    assert [row.value for row in match_set.definitions] == [
+        "seed_runtime.state_summary_views.state_summary"
+    ]
+    assert [row.value for row in match_set.imports] == []
+    assert [row.value for row in match_set.dependency_mentions] == ["state_summary"]
     assert source_navigation_json(composed) == source_navigation_json(public)
     assert format_source_navigation(composed) == format_source_navigation(public)
 
@@ -136,7 +218,9 @@ def test_definition_explanation_does_not_claim_behavior_authority_or_reachabilit
         assert claim not in str(payload).lower()
 
 
-def _project_repository(tmp_path, *, twice: bool = False):
+def _project_repository(
+    tmp_path, *, twice: bool = False, ledger: EventLedger | None = None
+):
     runtime_dir = tmp_path / "seed_runtime"
     runtime_dir.mkdir(exist_ok=True)
     (runtime_dir / "state_summary_views.py").write_text(
@@ -152,7 +236,8 @@ def _project_repository(tmp_path, *, twice: bool = False):
         "from seed_runtime.observation_sources import PrometheusObservationSource\n",
         encoding="utf-8",
     )
-    ledger = EventLedger()
+    if ledger is None:
+        ledger = EventLedger()
     service = ObservationCollectionService(
         ObservationIngestor(ledger), normalization_pipeline=None
     )
@@ -539,6 +624,18 @@ def test_navigation_query_is_read_only(tmp_path):
         len(state.facts),
         list(state.fact_supports),
     ) == before
+
+
+def test_navigation_query_does_not_append_event_ledger_entries(tmp_path):
+    ledger = EventLedger()
+    state = _project_repository(tmp_path, ledger=ledger)
+    before = ledger.list()
+
+    view = build_source_navigation(state, "state_summary")
+    source_navigation_json(view)
+    format_source_navigation(view)
+
+    assert ledger.list() == before
 
 
 def _project_dense_repository(tmp_path):

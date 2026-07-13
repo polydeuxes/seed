@@ -149,6 +149,15 @@ class _PreparedSourceNavigationQuery:
 
 
 @dataclass(frozen=True)
+class _SourceNavigationMatchSet:
+    """Private match-set handoff for source-navigation composition."""
+
+    definitions: list[SourceNavigationRow]
+    imports: list[SourceNavigationRow]
+    dependency_mentions: list[SourceNavigationRow]
+
+
+@dataclass(frozen=True)
 class SourceNavigationView:
     """Bounded read-only source navigation projection for one query."""
 
@@ -194,22 +203,14 @@ def _compose_source_navigation(
     prepared_query: _PreparedSourceNavigationQuery,
 ) -> SourceNavigationView:
     normalized_query = prepared_query.normalized_query
-    rows = prepared_query.source_rows
-    matched = [row for row in rows if _matches(row, normalized_query)]
-    definitions = sorted(
-        [row for row in matched if row.predicate == "defines"], key=_row_sort_key
-    )
-    imports = sorted(
-        [row for row in matched if row.predicate == "imports"], key=_row_sort_key
-    )
+    match_set = _assemble_source_navigation_match_set(prepared_query)
+    definitions = match_set.definitions
+    imports = match_set.imports
     bounded = any(
         normalized_query == row.subject or normalized_query == row.path
         for row in definitions + imports
     )
-    dependency_mentions = sorted(
-        [row for row in rows if _dependency_mentions(row, normalized_query)],
-        key=_row_sort_key,
-    )
+    dependency_mentions = match_set.dependency_mentions
     return SourceNavigationView(
         query=normalized_query,
         definitions=definitions,
@@ -230,6 +231,31 @@ def _compose_source_navigation(
             dependency_mentions,
         ),
         repository_artifact_non_claims=_non_claims_explanation(normalized_query),
+    )
+
+
+def _assemble_source_navigation_match_set(
+    prepared_query: _PreparedSourceNavigationQuery,
+) -> _SourceNavigationMatchSet:
+    """Collect and sort matched source-navigation rows for composition."""
+
+    normalized_query = prepared_query.normalized_query
+    rows = prepared_query.source_rows
+    matched = [row for row in rows if _matches(row, normalized_query)]
+    definitions = sorted(
+        [row for row in matched if row.predicate == "defines"], key=_row_sort_key
+    )
+    imports = sorted(
+        [row for row in matched if row.predicate == "imports"], key=_row_sort_key
+    )
+    dependency_mentions = sorted(
+        [row for row in rows if _dependency_mentions(row, normalized_query)],
+        key=_row_sort_key,
+    )
+    return _SourceNavigationMatchSet(
+        definitions=definitions,
+        imports=imports,
+        dependency_mentions=dependency_mentions,
     )
 
 
