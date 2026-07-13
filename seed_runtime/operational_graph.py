@@ -7,8 +7,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
-from seed_runtime.consumer_dependency_audit import CONSUMER_PATHS, build_consumer_audit
-from seed_runtime.emitter_consumer_audit import build_emitter_consumer_audit
+from seed_runtime.consumer_dependency_audit import (
+    CONSUMER_PATHS,
+    ConsumerAudit,
+    build_consumer_audit,
+)
+from seed_runtime.emitter_consumer_audit import (
+    EmitterConsumerAudit,
+    build_emitter_consumer_audit,
+)
 
 EvidenceKind = Literal["direct", "indirect", "reference"]
 Confidence = Literal["high", "medium", "low"]
@@ -160,8 +167,36 @@ def build_operational_graph(root: str | Path | None = None) -> OperationalGraph:
             _stronger(current.confidence, confidence),
         )
 
-    emitter_audit = build_emitter_consumer_audit(repo_root)
-    for item in emitter_audit.items:
+    _compose_emitter_consumer_audit_graph(
+        build_emitter_consumer_audit(repo_root), node=node, add_edge=add_edge
+    )
+    _compose_consumer_dependency_audit_graph(
+        build_consumer_audit(repo_root), node=node, add_edge=add_edge
+    )
+
+    return OperationalGraph(
+        nodes=tuple(sorted(nodes.values(), key=lambda item: item.id)),
+        edges=tuple(
+            sorted(
+                edges.values(), key=lambda item: (item.source, item.type, item.target)
+            )
+        ),
+        metadata={
+            "discovery": "Composed from implementation-backed emitter/consumer and consumer dependency audits; edges without evidence are omitted.",
+            "read_only": True,
+            "writes_event_ledger": False,
+            "mutates_cluster": False,
+        },
+    )
+
+
+def _compose_emitter_consumer_audit_graph(
+    audit: EmitterConsumerAudit,
+    *,
+    node: Any,
+    add_edge: Any,
+) -> None:
+    for item in audit.items:
         emitter_id = node("emitter", item.emitter)
         for event_name in item.emits:
             event_id = node("event", event_name)
@@ -186,8 +221,14 @@ def build_operational_graph(root: str | Path | None = None) -> OperationalGraph:
                     "medium",
                 )
 
-    consumer_audit = build_consumer_audit(repo_root)
-    for item in consumer_audit.items:
+
+def _compose_consumer_dependency_audit_graph(
+    audit: ConsumerAudit,
+    *,
+    node: Any,
+    add_edge: Any,
+) -> None:
+    for item in audit.items:
         for consumer in item.consumers:
             item_id = node(item.kind, item.item)
             consumer_id = node("surface", consumer)
@@ -201,21 +242,6 @@ def build_operational_graph(root: str | Path | None = None) -> OperationalGraph:
                 for source in evidence_sources
             )
             add_edge(item_id, consumer_id, "consumes", evidence, "low")
-
-    return OperationalGraph(
-        nodes=tuple(sorted(nodes.values(), key=lambda item: item.id)),
-        edges=tuple(
-            sorted(
-                edges.values(), key=lambda item: (item.source, item.type, item.target)
-            )
-        ),
-        metadata={
-            "discovery": "Composed from implementation-backed emitter/consumer and consumer dependency audits; edges without evidence are omitted.",
-            "read_only": True,
-            "writes_event_ledger": False,
-            "mutates_cluster": False,
-        },
-    )
 
 
 def operational_graph_json(graph: OperationalGraph) -> dict[str, Any]:
@@ -240,25 +266,10 @@ def build_operational_graph_confidence(
             or (nodes.get(edge.target) and nodes[edge.target].aggregate)
         )
     )
-    tiers: dict[str, dict[str, Any]] = {}
     selected = ("high", "medium", "low") if confidence is None else (confidence,)
-    for tier in selected:
-        edges = [edge for edge in graph_edges if edge.confidence == tier]
-        evidence_counts = Counter(item.kind for edge in edges for item in edge.evidence)
-        type_counts = Counter(edge.type for edge in edges)
-        tiers[tier] = {
-            "edge_count": len(edges),
-            "relationship_types": dict(sorted(type_counts.items())),
-            "evidence_categories": dict(sorted(evidence_counts.items())),
-            "uncertainty_causes": _uncertainty_causes(edges, graph),
-            "uncertainty_categories": _uncertainty_categories(edges, graph),
-            "confidence_interpretation": _confidence_interpretation(edges, graph),
-            "reason": _confidence_reason(tier),
-            "potential_confidence_improvement": _confidence_improvement(tier),
-            "representative_examples": [
-                _edge_example(edge) for edge in sorted(edges, key=_edge_sort_key)[:3]
-            ],
-        }
+    tiers = {
+        tier: _confidence_tier_summary(tier, graph_edges, graph) for tier in selected
+    }
 
     important_low = [
         _edge_example(edge, include_importance=True)
@@ -287,6 +298,29 @@ def build_operational_graph_confidence(
         "taxonomy": build_operational_graph_taxonomy(root),
         "important_low_confidence_edges": important_low[:10],
         "metadata": dict(graph.metadata),
+    }
+
+
+def _confidence_tier_summary(
+    tier: Confidence,
+    graph_edges: tuple[OperationalGraphEdge, ...],
+    graph: OperationalGraph,
+) -> dict[str, Any]:
+    edges = [edge for edge in graph_edges if edge.confidence == tier]
+    evidence_counts = Counter(item.kind for edge in edges for item in edge.evidence)
+    type_counts = Counter(edge.type for edge in edges)
+    return {
+        "edge_count": len(edges),
+        "relationship_types": dict(sorted(type_counts.items())),
+        "evidence_categories": dict(sorted(evidence_counts.items())),
+        "uncertainty_causes": _uncertainty_causes(edges, graph),
+        "uncertainty_categories": _uncertainty_categories(edges, graph),
+        "confidence_interpretation": _confidence_interpretation(edges, graph),
+        "reason": _confidence_reason(tier),
+        "potential_confidence_improvement": _confidence_improvement(tier),
+        "representative_examples": [
+            _edge_example(edge) for edge in sorted(edges, key=_edge_sort_key)[:3]
+        ],
     }
 
 
