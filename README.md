@@ -111,3 +111,4 @@ python -m pytest
 ```
 
 Use targeted tests while working on a bounded area, and run the full suite before relying on behavior changes.
+Validate compatibility against the minimum supported interpreter (Python 3.11) before relying on runtime or syntax changes.

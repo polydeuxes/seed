@@ -8,6 +8,10 @@ dependencies = ["pydantic>=2,<3"]
 [project.scripts]
 seed = "scripts.seed_local:main"
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["seed_runtime*", "seed_builder*", "scripts*"]
+
 [tool.pytest.ini_options]
 markers = ["experimental_runtime_loop: quarantined RuntimeLoop coverage; not canonical runtime behavior"]
 pythonpath = ["."]

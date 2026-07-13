@@ -1,0 +1,36 @@
+name: Python compatibility
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python-compatibility:
+    name: Python ${{ matrix.python-version }} compatibility
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install package and test runner
+        run: python -m pip install -e . pytest
+      - name: Compile production code
+        run: python -m compileall -q seed_runtime scripts
+      - name: Run constitutional pipeline compatibility tests
+        run: >-
+          python -m pytest -q
+          tests/test_bounded_constitutional_question.py
+          tests/test_constitutional_question_projection.py
+          tests/test_constitutional_capability_projection.py
+          tests/test_constitutional_view_selection.py
+          tests/test_constitutional_view_composition.py
+          tests/test_constitutional_pipeline.py
+          tests/test_constitutional_pipeline_public_surface.py
+          tests/test_constitutional_pipeline_diagnostic.py
+          tests/test_constitutional_pipeline_provenance_explanation.py
+          tests/test_constitutional_pipeline_integration_wiring.py
