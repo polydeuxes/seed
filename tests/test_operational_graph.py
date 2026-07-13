@@ -68,6 +68,85 @@ def test_operational_graph_includes_consumer_relationships():
     assert any(edge.target.startswith("surface:") for edge in graph.edges)
 
 
+def test_operational_graph_preserves_emitter_consumer_audit_composition_boundary():
+    ledger = EventLedger()
+    before = ledger.list_events()
+    graph = build_operational_graph()
+    after = ledger.list_events()
+    data = graph.to_json_dict()
+    edges = {(edge.source, edge.target, edge.type): edge for edge in graph.edges}
+
+    assert before == after == []
+    assert graph.metadata["read_only"] is True
+    assert graph.metadata["writes_event_ledger"] is False
+    assert graph.metadata["mutates_cluster"] is False
+    assert {"summary", "nodes", "edges", "metadata"} <= data.keys()
+    assert graph.nodes == tuple(sorted(graph.nodes, key=lambda item: item.id))
+    assert graph.edges == tuple(
+        sorted(graph.edges, key=lambda item: (item.source, item.type, item.target))
+    )
+
+    emits_edge = edges[("emitter:action_plan", "event:action_plan.created", "emits")]
+    assert emits_edge.confidence == "high"
+    assert any(item.kind == "direct" for item in emits_edge.evidence)
+    assert any(item.detail == "event emission literal" for item in emits_edge.evidence)
+    assert "emitter:action_plan" in {node.id for node in graph.nodes}
+    assert "event:action_plan.created" in {node.id for node in graph.nodes}
+
+    consumes_edges = [
+        edge
+        for edge in graph.edges
+        if edge.source == "event:action_plan.created"
+        and edge.type == "consumes"
+        and edge.confidence == "medium"
+    ]
+    assert consumes_edges
+    assert all(any(item.kind == "indirect" for item in edge.evidence) for edge in consumes_edges)
+    assert all(
+        any(item.source == "emitter_consumer_audit" for item in edge.evidence)
+        for edge in consumes_edges
+    )
+    assert len(edges) == len(graph.edges)
+    assert graph.summary["relationship_types"]["emits"] > 0
+    assert graph.summary["relationship_types"]["consumes"] > 0
+    assert graph.summary["confidence_counts"]["high"] > 0
+    assert graph.summary["confidence_counts"]["medium"] > 0
+
+
+def test_operational_graph_preserves_consumer_dependency_audit_composition_boundary():
+    ledger = EventLedger()
+    before = ledger.list_events()
+    graph = build_operational_graph()
+    after = ledger.list_events()
+    data = graph.to_json_dict()
+    edges = {(edge.source, edge.target, edge.type): edge for edge in graph.edges}
+
+    assert before == after == []
+    assert graph.metadata["read_only"] is True
+    assert graph.metadata["writes_event_ledger"] is False
+    assert graph.metadata["mutates_cluster"] is False
+    assert {"summary", "nodes", "edges", "metadata"} <= data.keys()
+    assert graph.nodes == tuple(sorted(graph.nodes, key=lambda item: item.id))
+    assert graph.edges == tuple(
+        sorted(graph.edges, key=lambda item: (item.source, item.type, item.target))
+    )
+
+    node_ids = {node.id for node in graph.nodes}
+    assert "diagnostic:operational_graph" in node_ids
+    assert "surface:state_build" in node_ids
+    edge = edges[("diagnostic:operational_graph", "surface:state_build", "consumes")]
+    assert edge.confidence == "low"
+    assert any(item.kind == "reference" for item in edge.evidence)
+    assert any(
+        item.detail == "state_build source group references operational_graph"
+        for item in edge.evidence
+    )
+    assert any(item.source.startswith("seed_runtime/") for item in edge.evidence)
+    assert len(edges) == len(graph.edges)
+    assert graph.summary["relationship_types"]["consumes"] > 0
+    assert graph.summary["confidence_counts"]["low"] > 0
+
+
 def test_operational_graph_empty_state_is_sane(tmp_path):
     (tmp_path / "seed_runtime").mkdir()
     (tmp_path / "scripts").mkdir()
@@ -134,6 +213,42 @@ def test_operational_graph_confidence_reports_all_tiers_and_reasoning():
         == low["uncertainty_causes"]["aggregate_target"]
     )
     assert low["confidence_interpretation"]["operational_relationship_uncertainty_edges"] == 0
+
+
+def test_operational_graph_confidence_preserves_tier_assembly_boundary():
+    ledger = EventLedger()
+    before = ledger.list_events()
+    analysis = build_operational_graph_confidence()
+    after = ledger.list_events()
+    data = json.loads(json.dumps(analysis))
+
+    assert before == after == []
+    assert analysis["summary"]["read_only"] is True
+    assert analysis["summary"]["writes_event_ledger"] is False
+    assert analysis["summary"]["mutates_cluster"] is False
+    assert {"summary", "tiers", "taxonomy", "important_low_confidence_edges", "metadata"} <= data.keys()
+
+    tiers = analysis["tiers"]
+    assert set(tiers) == {"high", "medium", "low"}
+    assert tiers["high"]["edge_count"] == analysis["summary"]["confidence_counts"]["high"]
+    assert tiers["medium"]["edge_count"] == analysis["summary"]["confidence_counts"]["medium"]
+    assert tiers["low"]["edge_count"] == analysis["summary"]["confidence_counts"]["low"]
+    assert tiers["high"]["relationship_types"]["emits"] > 0
+    assert tiers["medium"]["relationship_types"]["consumes"] > 0
+    assert tiers["low"]["relationship_types"]["consumes"] > 0
+    assert tiers["high"]["evidence_categories"]["direct"] > 0
+    assert tiers["medium"]["evidence_categories"]["indirect"] > 0
+    assert tiers["low"]["evidence_categories"]["reference"] > 0
+    assert tiers["low"]["uncertainty_causes"]["reference_only_evidence"] > 0
+    assert tiers["low"]["uncertainty_categories"]["reference_only_uncertainty"] > 0
+    assert "direct emitter evidence" in tiers["high"]["reason"]
+    assert "indirect helper evidence" in tiers["medium"]["reason"]
+    assert "reference-only" in tiers["low"]["reason"]
+    assert "already directly supported" in tiers["high"]["potential_confidence_improvement"]
+    assert tiers["high"]["representative_examples"]
+    assert tiers["medium"]["representative_examples"]
+    assert tiers["low"]["representative_examples"]
+    assert analysis["important_low_confidence_edges"]
 
 
 def test_operational_graph_confidence_exclude_aggregate_filters_taxonomy_noise(capsys):
