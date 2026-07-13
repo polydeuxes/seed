@@ -346,6 +346,7 @@ from seed_runtime.read_model_ownership import (
     resolve_read_model_cache_lookup,
     read_model_view_registration_flags,
 )
+
 REGISTERED_READ_MODEL_VIEW_FLAGS = read_model_view_registration_flags(
     READ_MODEL_VIEW_REGISTRATIONS
 )
@@ -396,11 +397,7 @@ from seed_runtime.integrity_summary import (
     ProjectionIntegritySummary,
     build_projection_integrity_summary,
 )
-from seed_runtime.intent_classifier import (
-    IntentDecisionProducer,
-    IntentPromptModelClient,
-    TextIntentClassifier,
-)
+from seed_runtime.intent_classifier import IntentPromptModelClient
 from seed_runtime.models import Event, Observation, ToolNeed, ToolSpec, utc_now
 from seed_runtime.observation_normalizers import (
     EndpointAliasNormalizer,
@@ -524,7 +521,7 @@ class LocalSeedApp:
     ledger: EventLedger
     projector: StateProjector
     decision_input_composer: DecisionInputComposer
-    model_client: IntentPromptModelClient
+    model_client: IntentPromptModelClient | None
     workspace_id: str = DEFAULT_WORKSPACE
     session_id: str = DEFAULT_SESSION
 
@@ -939,7 +936,7 @@ def build_local_app(
     max_decision_retries: int = 1,
     database_path: str | None = None,
 ) -> LocalSeedApp:
-    """Construct a local Seed runtime using the current intent-classifier path."""
+    """Construct a local Seed runtime without model-backed decision authority."""
 
     ledger: EventLedger = (
         SQLiteEventLedger(database_path) if database_path else EventLedger()
@@ -948,13 +945,6 @@ def build_local_app(
     registry.load_manifest(REPO_ROOT / "toolkits/core/echo/toolkit.yaml")
     projector = StateProjector(ledger)
     decision_input_composer = DecisionInputComposer(registry)
-    model_client = IntentPromptModelClient.for_endpoint(
-        endpoint,
-        timeout_seconds=timeout_seconds,
-        extra_payload={"model": model, "stream": False, "format": "json"},
-    )
-    classifier = TextIntentClassifier(model_client)
-    model = IntentDecisionProducer(classifier)
     runtime = Runtime(
         ledger,
         projector,
@@ -962,7 +952,6 @@ def build_local_app(
         DecisionValidator(registry),
         ToolExecutor(ledger, registry, projector),
         ToolNeedService(ledger, projector),
-        model,
         max_decision_retries=max_decision_retries,
     )
     return LocalSeedApp(
@@ -970,7 +959,7 @@ def build_local_app(
         ledger=ledger,
         projector=projector,
         decision_input_composer=decision_input_composer,
-        model_client=model_client,
+        model_client=None,
         workspace_id=workspace_id,
         session_id=session_id,
     )
@@ -2367,9 +2356,7 @@ def apply_bounded_ask_dispatch(
     except ValueError as exc:
         parser.error(str(exc))
 
-    eligibility = _bounded_work_eligibility_for_prepared_question_family(
-        prepared_input
-    )
+    eligibility = _bounded_work_eligibility_for_prepared_question_family(prepared_input)
     surface_args_result = None
     if eligibility.permitted:
         try:
@@ -3424,9 +3411,7 @@ class _StateBuildCacheDebugTimingEvidence:
         *,
         started: float,
     ) -> "_StateBuildCacheDebugTimingEvidence":
-        return cls(
-            timings=timings + [("total runtime", time.perf_counter() - started)]
-        )
+        return cls(timings=timings + [("total runtime", time.perf_counter() - started)])
 
 
 @dataclass(frozen=True)
@@ -5797,8 +5782,10 @@ def _current_facts_timing_from_args(
                 status_consumer=None,
                 diagnostics=projection_diagnostics,
             )
-            timing_interpretation = _CurrentFactsTimingInterpretation.from_cache_evidence(
-                status, projection_diagnostics
+            timing_interpretation = (
+                _CurrentFactsTimingInterpretation.from_cache_evidence(
+                    status, projection_diagnostics
+                )
             )
             timing_diagnostics = (
                 _CurrentFactsTimingDiagnosticPayload.from_timing_interpretation(
@@ -8140,13 +8127,21 @@ def main(argv: list[str] | None = None) -> int:
             scope_status=args.scope_status,
             uncertainty=tuple(args.pipeline_uncertainty),
             unknowns=tuple(args.pipeline_unknown),
-            caller_supplied_fields=tuple(("selection_key", key) for key in args.selection_key),
+            caller_supplied_fields=tuple(
+                ("selection_key", key) for key in args.selection_key
+            ),
             composition_purpose=args.composition_purpose,
             output_format="json" if args.json_output else "human",
         )
         result = invoke_constitutional_pipeline(request)
         if args.json_output:
-            print(json.dumps(constitutional_pipeline_result_json(result), indent=2, sort_keys=True))
+            print(
+                json.dumps(
+                    constitutional_pipeline_result_json(result),
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
         else:
             print(format_constitutional_pipeline_result(result))
         return 0
@@ -8164,7 +8159,9 @@ def main(argv: list[str] | None = None) -> int:
             if value is None
         ]
         if missing:
-            parser.error("--constitutional-pipeline-diagnostic requires " + ", ".join(missing))
+            parser.error(
+                "--constitutional-pipeline-diagnostic requires " + ", ".join(missing)
+            )
         request = ConstitutionalPipelineRequest(
             operator_inquiry=args.operator_inquiry,
             inquiry_provenance=args.inquiry_provenance,
@@ -8173,13 +8170,21 @@ def main(argv: list[str] | None = None) -> int:
             scope_status=args.scope_status,
             uncertainty=tuple(args.pipeline_uncertainty),
             unknowns=tuple(args.pipeline_unknown),
-            caller_supplied_fields=tuple(("selection_key", key) for key in args.selection_key),
+            caller_supplied_fields=tuple(
+                ("selection_key", key) for key in args.selection_key
+            ),
             composition_purpose=args.composition_purpose,
             output_format="json" if args.json_output else "human",
         )
         diagnostic = build_constitutional_pipeline_diagnostic(request)
         if args.json_output:
-            print(json.dumps(constitutional_pipeline_diagnostic_json(diagnostic), indent=2, sort_keys=True))
+            print(
+                json.dumps(
+                    constitutional_pipeline_diagnostic_json(diagnostic),
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
         else:
             print(format_constitutional_pipeline_diagnostic(diagnostic))
         return 0
@@ -8187,7 +8192,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.constitutional_process:
         view = build_constitutional_process_view()
         if args.json_output:
-            print(json.dumps(constitutional_process_view_json(view), indent=2, sort_keys=True))
+            print(
+                json.dumps(
+                    constitutional_process_view_json(view), indent=2, sort_keys=True
+                )
+            )
         else:
             print(format_constitutional_process_view(view))
         return 0
@@ -8195,7 +8204,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.constitutional_governance:
         view = build_constitutional_governance_view()
         if args.json_output:
-            print(json.dumps(constitutional_governance_view_json(view), indent=2, sort_keys=True))
+            print(
+                json.dumps(
+                    constitutional_governance_view_json(view), indent=2, sort_keys=True
+                )
+            )
         else:
             print(format_constitutional_governance_view(view))
         return 0
@@ -8203,7 +8216,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.constitutional_fidelity:
         view = build_constitutional_fidelity_view()
         if args.json_output:
-            print(json.dumps(constitutional_fidelity_view_json(view), indent=2, sort_keys=True))
+            print(
+                json.dumps(
+                    constitutional_fidelity_view_json(view), indent=2, sort_keys=True
+                )
+            )
         else:
             print(format_constitutional_fidelity_view(view))
         return 0
@@ -8217,7 +8234,13 @@ def main(argv: list[str] | None = None) -> int:
             )
         )
         if args.json_output:
-            print(json.dumps(constitutional_view_composition_json(artifact), indent=2, sort_keys=True))
+            print(
+                json.dumps(
+                    constitutional_view_composition_json(artifact),
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
         else:
             print(format_constitutional_view_composition(artifact))
         return 0

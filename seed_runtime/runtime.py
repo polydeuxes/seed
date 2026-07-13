@@ -1,8 +1,7 @@
-"""Runtime loop that routes validated fake-model decisions."""
+"""Seed runtime input boundary without internal LLM decision authority."""
 
 from __future__ import annotations
 
-from dataclasses import replace
 from typing import Protocol
 
 from seed_runtime.capability_catalog import CapabilityCatalog
@@ -10,52 +9,52 @@ from seed_runtime.context import DecisionInputComposer, DecisionInputPacket
 from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
 from seed_runtime.execution import ToolExecutor
-from seed_runtime.model_client import DecisionParseError
 from seed_runtime.models import Decision, RuntimeResponse
-from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
-from seed_runtime.state_patches import StatePatchError, StatePatchService
-from seed_runtime.tool_intent import ToolIntentGuard
-from seed_runtime.tool_recommendations import ToolRecommendationService
 from seed_runtime.tool_needs import ToolNeedService
 
 
 class DecisionProducer(Protocol):
+    """Legacy import-only protocol for pre-excision callers.
+
+    Runtime no longer consumes this protocol. Implementations may still exist as
+    external adapters, but passing one to Runtime cannot restore movement.
+    """
+
     def decide(self, decision_input: DecisionInputPacket) -> Decision: ...
 
 
 class StaticDecisionProducer:
+    """Legacy inert test helper retained only as compatibility residue.
+
+    Calling ``decide`` is unsupported because model-shaped Decisions no longer
+    have internal runtime authority.
+    """
+
     def __init__(self, decision: Decision) -> None:
         self.decision = decision
         self.last_decision_input: DecisionInputPacket | None = None
 
     def decide(self, decision_input: DecisionInputPacket) -> Decision:
         self.last_decision_input = decision_input
-        return self.decision
+        raise RuntimeError(
+            "DecisionProducer.decide is unsupported: model-shaped Decisions are not Seed authority"
+        )
 
 
 class Runtime:
     __seed_arch__ = {
-        "owner": "runtime_orchestration",
+        "owner": "runtime_input_boundary",
         "layer": "runtime",
-        "summary": "Routes validated model decisions to owner services without owning their behavior.",
-        "routes": [
-            {"decision": "request_tool", "target": "ToolNeedService", "label": "request_tool"},
-            {"decision": "call_tool", "target": "ToolExecutor", "label": "call_tool only"},
-        ],
+        "summary": "Records user input and refuses to route model-produced Decisions as Seed authority.",
+        "routes": [],
         "edges": [
-            {"to": "StateProjector", "label": "projects current state"},
-            {"to": "ToolNeedService", "label": "request_tool", "path": "request_tool"},
-            {"to": "ToolRecommendationService", "label": "recommend providers", "path": "request_tool"},
-            {"to": "ToolExecutor", "label": "call_tool only", "path": "call_tool"},
+            {
+                "to": "StateProjector",
+                "label": "projects current state for deterministic callers",
+            }
         ],
-        "events": [
-            "input.user_message",
-            "model.decision.proposed",
-            "response.answer",
-            "response.question",
-            "response.refusal",
-        ],
+        "events": ["input.user_message", "runtime.decision_authority_unsupported"],
     }
 
     def __init__(
@@ -66,9 +65,9 @@ class Runtime:
         decision_validator: DecisionValidator,
         tool_executor: ToolExecutor,
         tool_need_service: ToolNeedService,
-        decision_producer: DecisionProducer,
+        decision_producer: DecisionProducer | None = None,
         capability_catalog: CapabilityCatalog | None = None,
-        max_decision_retries: int = 1,
+        max_decision_retries: int = 0,
     ) -> None:
         self.ledger = ledger
         self.projector = projector
@@ -77,16 +76,8 @@ class Runtime:
         self.tool_executor = tool_executor
         self.tool_need_service = tool_need_service
         self.capability_catalog = capability_catalog or CapabilityCatalog.load()
-        self.tool_recommendation_service = ToolRecommendationService(
-            self.capability_catalog
-        )
-        self.recommendation_ranker = (
-            self.tool_recommendation_service.recommendation_ranker
-        )
-        self.tool_intent_guard = ToolIntentGuard()
-        self.state_patch_service = StatePatchService(ledger, projector)
-        self.decision_producer = decision_producer
-        self.max_decision_retries = max(0, max_decision_retries)
+        self.decision_producer = None
+        self.max_decision_retries = 0
 
     def handle_user_message(
         self, workspace_id: str, session_id: str, text: str
@@ -98,292 +89,22 @@ class Runtime:
             actor="user",
             session_id=session_id,
         )
-        state = self.projector.project(workspace_id)
-        decision_input = self.decision_input_composer.compose(
-            workspace_id, session_id, input_event, state
-        )
-        retry_decision_input = decision_input
-        validation_errors: list[str] = []
-        invalid_decision_message = "Model decision failed validation."
-
-        for attempt in range(self.max_decision_retries + 1):
-            try:
-                decision = self.decision_producer.decide(retry_decision_input)
-            except DecisionParseError as exc:
-                invalid_event = self.ledger.append(
-                    "model.decision.parse_failed",
-                    workspace_id,
-                    self._decision_parse_failed_payload(exc, attempt),
-                    actor="system",
-                    session_id=session_id,
-                    causation_id=input_event.id,
-                )
-                if attempt >= self.max_decision_retries:
-                    return RuntimeResponse(
-                        kind="invalid_decision",
-                        message="Model decision failed parsing.",
-                        payload={"errors": [str(exc)]},
-                    )
-
-                retry_decision_input = self._decision_parse_retry_input(
-                    decision_input, exc, attempt + 1, invalid_event.id
-                )
-                continue
-
-            decision_event = self.ledger.append(
-                "model.decision.proposed",
-                workspace_id,
-                {"decision": to_plain(decision), "attempt": attempt},
-                actor="model",
-                session_id=session_id,
-                causation_id=input_event.id,
-            )
-            validation = self.decision_validator.validate(decision, state)
-            if validation.ok:
-                intent_validation = self.tool_intent_guard.validate(
-                    text, decision, decision_input.tools
-                )
-                if intent_validation.ok:
-                    return self._route(
-                        workspace_id, session_id, decision, decision_event.id
-                    )
-
-                validation_errors = intent_validation.errors
-                invalid_decision_message = "Model decision failed intent validation."
-                rejected_event = self.ledger.append(
-                    "model.decision.intent_rejected",
-                    workspace_id,
-                    {"errors": intent_validation.errors, "attempt": attempt},
-                    actor="system",
-                    session_id=session_id,
-                    causation_id=decision_event.id,
-                )
-                if attempt >= self.max_decision_retries:
-                    break
-
-                retry_decision_input = self._decision_intent_retry_input(
-                    decision_input,
-                    decision,
-                    intent_validation.errors,
-                    attempt + 1,
-                    rejected_event.id,
-                )
-                continue
-
-            validation_errors = validation.errors
-            invalid_decision_message = "Model decision failed validation."
-            invalid_event = self.ledger.append(
-                "model.decision.invalid",
-                workspace_id,
-                {"errors": validation.errors, "attempt": attempt},
-                actor="system",
-                session_id=session_id,
-                causation_id=decision_event.id,
-            )
-            if attempt >= self.max_decision_retries:
-                break
-
-            retry_decision_input = self._decision_retry_input(
-                decision_input,
-                decision,
-                validation.errors,
-                attempt + 1,
-                invalid_event.id,
-            )
-
-        return RuntimeResponse(
-            kind="invalid_decision",
-            message=invalid_decision_message,
-            payload={"errors": validation_errors},
-        )
-
-    def _decision_retry_input(
-        self,
-        decision_input: DecisionInputPacket,
-        invalid_decision: Decision,
-        errors: list[str],
-        retry_number: int,
-        invalid_event_id: str,
-    ) -> DecisionInputPacket:
-        return replace(
-            decision_input,
-            retry_prompt={
-                "instruction": "Return exactly one corrected JSON decision that satisfies the decision_schema.",
-                "retry_number": retry_number,
-                "max_retries": self.max_decision_retries,
-                "invalid_event_id": invalid_event_id,
-                "validation_errors": list(errors),
-                "invalid_decision": to_plain(invalid_decision),
+        self.ledger.append(
+            "runtime.decision_authority_unsupported",
+            workspace_id,
+            {
+                "reason": "LLM/model-produced Decisions are external grammar and cannot route Seed runtime movement.",
+                "removed_boundary": "DecisionProducer.decide -> Runtime._route",
             },
+            actor="system",
+            session_id=session_id,
+            causation_id=input_event.id,
         )
-
-    def _decision_intent_retry_input(
-        self,
-        decision_input: DecisionInputPacket,
-        rejected_decision: Decision,
-        errors: list[str],
-        retry_number: int,
-        rejected_event_id: str,
-    ) -> DecisionInputPacket:
-        return replace(
-            decision_input,
-            retry_prompt={
-                "instruction": "Return exactly one corrected JSON decision whose tool call matches the current user intent and satisfies the decision_schema.",
-                "retry_number": retry_number,
-                "max_retries": self.max_decision_retries,
-                "rejected_event_id": rejected_event_id,
-                "intent_errors": list(errors),
-                "rejected_decision": to_plain(rejected_decision),
-            },
-        )
-
-    def _decision_parse_retry_input(
-        self,
-        decision_input: DecisionInputPacket,
-        exc: DecisionParseError,
-        retry_number: int,
-        invalid_event_id: str,
-    ) -> DecisionInputPacket:
-        retry_prompt = {
-            "instruction": "Your previous output was not valid strict JSON. Return only one JSON decision object matching the decision_schema, with no prose, markdown, code fences, or extra text.",
-            "retry_number": retry_number,
-            "max_retries": self.max_decision_retries,
-            "invalid_event_id": invalid_event_id,
-            "parse_error": str(exc),
-        }
-        failure_classification = self._parse_failure_classification(exc)
-        if failure_classification is not None:
-            retry_prompt["raw_failure_classification"] = failure_classification
-        return replace(decision_input, retry_prompt=retry_prompt)
-
-    def _decision_parse_failed_payload(
-        self, exc: DecisionParseError, attempt: int
-    ) -> dict[str, object]:
-        payload: dict[str, object] = {"attempt": attempt, "parse_error": str(exc)}
-        failure_classification = self._parse_failure_classification(exc)
-        if failure_classification is not None:
-            payload["raw_failure_classification"] = failure_classification
-        return payload
-
-    def _parse_failure_classification(self, exc: DecisionParseError) -> object | None:
-        for attribute in (
-            "raw_failure_classification",
-            "failure_classification",
-            "classification",
-        ):
-            value = getattr(exc, attribute, None)
-            if value is not None:
-                return value
-        return None
-
-    def _route(
-        self, workspace_id: str, session_id: str, decision: Decision, causation_id: str
-    ) -> RuntimeResponse:
-        if decision.kind == "answer":
-            self.ledger.append(
-                "response.answer",
-                workspace_id,
-                {"answer": decision.answer},
-                actor="system",
-                session_id=session_id,
-                causation_id=causation_id,
-            )
-            return RuntimeResponse(kind="answer", message=decision.answer or "")
-        if decision.kind == "ask_question":
-            self.ledger.append(
-                "response.question",
-                workspace_id,
-                {"question": decision.question},
-                actor="system",
-                session_id=session_id,
-                causation_id=causation_id,
-            )
-            return RuntimeResponse(kind="question", message=decision.question or "")
-        if decision.kind == "request_tool":
-            need = self.tool_need_service.create_from_decision(
-                workspace_id, decision, causation_id
-            )
-            recommendations = self.tool_recommendation_service.recommend_for(
-                need, self.projector.project(workspace_id)
-            )
-            recommendation_payload = [
-                {
-                    "provider": recommendation.provider,
-                    "score": recommendation.score,
-                    "reasons": list(recommendation.reasons),
-                }
-                for recommendation in recommendations
-            ]
-            capability_resolution = self.tool_need_service.resolve_capability(
-                need,
-                capability_catalog=self.capability_catalog,
-                tool_registry=self.decision_input_composer.registry,
-                provider_recommendations=recommendations,
-            )
-            payload = {
-                "tool_need": to_plain(need),
-                "recommendations": recommendation_payload,
-                "capability_resolution": capability_resolution,
-            }
-            return RuntimeResponse(
-                kind="tool_need",
-                message=f"Recorded tool need {need.name}.",
-                payload=payload,
-            )
-        if decision.kind == "call_tool":
-            result = self.tool_executor.execute(
-                workspace_id,
-                session_id,
-                decision.tool_name or "",
-                decision.tool_arguments,
-                causation_id=causation_id,
-            )
-            return RuntimeResponse(
-                kind=result.kind,
-                message=result.message,
-                payload=result.payload,
-            )
-        if decision.kind == "propose_state_patch":
-            try:
-                result = self.state_patch_service.apply(
-                    workspace_id,
-                    decision.state_patch or {},
-                    session_id=session_id,
-                    causation_id=causation_id,
-                )
-            except StatePatchError as exc:
-                self.ledger.append(
-                    "state.patch.rejected",
-                    workspace_id,
-                    {"error": str(exc), "state_patch": decision.state_patch or {}},
-                    actor="system",
-                    session_id=session_id,
-                    causation_id=causation_id,
-                )
-                return RuntimeResponse(
-                    kind="invalid_state_patch",
-                    message="State patch failed validation.",
-                    payload={"errors": [str(exc)]},
-                )
-            event_ids = [event.id for event in result.events]
-            return RuntimeResponse(
-                kind="state_updated",
-                message=f"Applied {len(result.events)} state patch operation(s).",
-                payload={
-                    "event_ids": event_ids,
-                    "events": [to_plain(event) for event in result.events],
-                },
-            )
-        if decision.kind == "refuse":
-            self.ledger.append(
-                "response.refusal",
-                workspace_id,
-                {"reason": decision.reason},
-                actor="system",
-                session_id=session_id,
-                causation_id=causation_id,
-            )
-            return RuntimeResponse(kind="refusal", message=decision.reason)
         return RuntimeResponse(
-            kind="unsupported", message="Unsupported valid decision kind."
+            kind="unsupported",
+            message="No Seed-owned runtime decision authority is configured for free-text input.",
+            payload={
+                "reason": "model_decision_authority_excised",
+                "input_event_id": input_event.id,
+            },
         )
