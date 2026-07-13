@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from seed_runtime.bounded_constitutional_question import BoundedConstitutionalQuestion
 from seed_runtime.constitutional_view_composition import (
     CompositionOutputFormat,
     ConstitutionalViewCompositionRequest,
@@ -33,6 +34,48 @@ class ConstitutionalQuestionProjection:
     read_only: bool = True
     mutates_cluster: bool = False
     writes_event_ledger: bool = False
+
+
+def _selection_keys_from_bounded_question(
+    bounded_question: BoundedConstitutionalQuestion,
+) -> tuple[str, ...]:
+    """Return only exact caller-declared selection keys, without interpretation."""
+
+    keys: list[str] = []
+    for field_name, field_value in bounded_question.caller_supplied_fields:
+        if field_name.startswith("selection_key:"):
+            key = field_name.removeprefix("selection_key:")
+            if key:
+                keys.append(key)
+        elif field_name == "selection_key" and field_value:
+            keys.append(field_value)
+    return tuple(dict.fromkeys(keys))
+
+
+def project_constitutional_question(
+    bounded_question: BoundedConstitutionalQuestion,
+) -> ConstitutionalQuestionProjection:
+    """Deterministically project one bounded question for Selection.
+
+    Projection preserves the bounded-question identity, carries only exact
+    caller-declared selection keys, and maps bounded-question uncertainty and
+    unknowns into Selection's existing uncertainty channel. It performs no
+    capability projection, view selection, composition, persistence, ledger
+    write, cluster mutation, semantic matching, or natural-language inference.
+    """
+
+    uncertainty = (
+        *bounded_question.uncertainty,
+        *(f"unknown: {unknown}" for unknown in bounded_question.unknowns),
+    )
+    return ConstitutionalQuestionProjection(
+        bounded_question_id=bounded_question.bounded_question_id,
+        selection_keys=_selection_keys_from_bounded_question(bounded_question),
+        uncertainty=uncertainty,
+        read_only=bounded_question.read_only,
+        mutates_cluster=bounded_question.mutates_cluster,
+        writes_event_ledger=bounded_question.writes_event_ledger,
+    )
 
 
 @dataclass(frozen=True)
