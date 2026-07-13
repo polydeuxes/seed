@@ -3,12 +3,14 @@ import json
 from scripts import seed_local
 from seed_runtime.events import EventLedger
 from seed_runtime.operational_graph import (
+    OperationalGraph,
     OperationalGraphEdge,
     OperationalGraphEvidence,
     OperationalGraphNode,
     _add_operational_graph_edge,
     _filter_aggregate_operational_graph_edges,
     _important_low_confidence_edge_examples,
+    _operational_graph_confidence_summary_payload,
     _operational_graph_node_id,
     build_operational_graph,
     build_operational_graph_confidence,
@@ -483,6 +485,148 @@ def test_operational_graph_confidence_important_low_selection_preserves_boundary
     out = capsys.readouterr().out
     assert "Operationally relevant low-confidence edges:" in out
     assert "Low Confidence" in out
+
+
+def test_operational_graph_confidence_summary_payload_preserves_public_values():
+    high_edge = OperationalGraphEdge(
+        "emitter:alpha",
+        "event:alpha.created",
+        "emits",
+        (OperationalGraphEvidence("direct", "seed_runtime/alpha.py", "literal"),),
+        "high",
+    )
+    low_edge = OperationalGraphEdge(
+        "diagnostic:beta",
+        "surface:diagnostics",
+        "consumes",
+        (OperationalGraphEvidence("reference", "seed_runtime/beta.py", "reference"),),
+        "low",
+    )
+    excluded_edge = OperationalGraphEdge(
+        "diagnostic:gamma",
+        "surface:views",
+        "consumes",
+        (OperationalGraphEvidence("reference", "seed_runtime/gamma.py", "reference"),),
+        "low",
+    )
+    graph = OperationalGraph(
+        nodes=(
+            OperationalGraphNode(
+                "emitter:alpha", "emitter", "alpha", "concrete_emitter"
+            ),
+            OperationalGraphNode("surface:views", "surface", "views", "aggregate_surface"),
+        ),
+        edges=(high_edge, low_edge, excluded_edge),
+        metadata={
+            "read_only": True,
+            "writes_event_ledger": False,
+            "mutates_cluster": False,
+        },
+    )
+
+    summary = _operational_graph_confidence_summary_payload(
+        graph,
+        (high_edge, low_edge),
+        exclude_aggregate=True,
+        confidence="low",
+    )
+
+    assert set(summary) == {
+        "nodes",
+        "edges",
+        "relationship_types",
+        "confidence_counts",
+        "total_graph_edges",
+        "excluded_aggregate_edges",
+        "exclude_aggregate",
+        "read_only",
+        "writes_event_ledger",
+        "mutates_cluster",
+        "filtered_confidence",
+    }
+    assert summary["nodes"] == 2
+    assert summary["edges"] == 2
+    assert summary["relationship_types"] == {"emits": 1, "consumes": 1}
+    assert summary["confidence_counts"] == {"high": 1, "low": 1}
+    assert summary["total_graph_edges"] == 3
+    assert summary["excluded_aggregate_edges"] == 1
+    assert summary["exclude_aggregate"] is True
+    assert summary["filtered_confidence"] == "low"
+    assert summary["read_only"] is True
+    assert summary["writes_event_ledger"] is False
+    assert summary["mutates_cluster"] is False
+
+
+def test_operational_graph_confidence_summary_payload_boundary_preserves_outputs(capsys):
+    ledger = EventLedger()
+    before = ledger.list_events()
+    filtered = build_operational_graph_confidence(exclude_aggregate=True)
+    selected_low = build_operational_graph_confidence(confidence="low")
+    full = build_operational_graph_confidence()
+    after = ledger.list_events()
+    data = json.loads(json.dumps(filtered))
+
+    assert before == after == []
+    assert set(data["summary"]) == {
+        "nodes",
+        "edges",
+        "relationship_types",
+        "confidence_counts",
+        "total_graph_edges",
+        "excluded_aggregate_edges",
+        "exclude_aggregate",
+        "read_only",
+        "writes_event_ledger",
+        "mutates_cluster",
+        "filtered_confidence",
+    }
+    assert filtered["summary"]["edges"] == sum(
+        tier["edge_count"] for tier in filtered["tiers"].values()
+    )
+    assert filtered["summary"]["relationship_types"] == {
+        relationship: sum(
+            tier["relationship_types"].get(relationship, 0)
+            for tier in filtered["tiers"].values()
+        )
+        for relationship in filtered["summary"]["relationship_types"]
+    }
+    assert filtered["summary"]["confidence_counts"] == {
+        tier: filtered["tiers"][tier]["edge_count"]
+        for tier in ("high", "medium", "low")
+        if filtered["tiers"][tier]["edge_count"]
+    }
+    assert filtered["summary"]["total_graph_edges"] == full["summary"][
+        "total_graph_edges"
+    ]
+    assert filtered["summary"]["excluded_aggregate_edges"] > 0
+    assert filtered["summary"]["exclude_aggregate"] is True
+    assert filtered["summary"]["filtered_confidence"] is None
+    assert filtered["summary"]["read_only"] is True
+    assert filtered["summary"]["writes_event_ledger"] is False
+    assert filtered["summary"]["mutates_cluster"] is False
+    assert set(filtered["tiers"]) == {"high", "medium", "low"}
+    assert selected_low["summary"]["filtered_confidence"] == "low"
+    assert set(selected_low["tiers"]) == {"low"}
+    assert full["important_low_confidence_edges"]
+    assert filtered["taxonomy"]["summary"]["nodes"] > 0
+
+    assert seed_local.main(
+        [
+            "--operational-graph-confidence",
+            "--exclude-aggregate",
+            "--json",
+        ]
+    ) == 0
+    cli_data = json.loads(capsys.readouterr().out)
+    assert cli_data["summary"] == data["summary"]
+    assert set(cli_data["tiers"]) == {"high", "medium", "low"}
+
+    assert seed_local.main(["--operational-graph-confidence", "low"]) == 0
+    out = capsys.readouterr().out
+    assert "Operational Graph Confidence" in out
+    assert "Low Confidence" in out
+    assert "High Confidence" not in out
+
 
 def test_operational_graph_confidence_filter_reports_selected_tier(capsys):
     assert seed_local.main(["--operational-graph-confidence", "low"]) == 0

@@ -282,27 +282,40 @@ def build_operational_graph_confidence(
 
     important_low = _important_low_confidence_edge_examples(graph_edges)
     return {
-        "summary": {
-            **{
-                **graph.summary,
-                "edges": len(graph_edges),
-                "relationship_types": dict(Counter(edge.type for edge in graph_edges)),
-                "confidence_counts": dict(
-                    Counter(edge.confidence for edge in graph_edges)
-                ),
-            },
-            "total_graph_edges": len(graph.edges),
-            "excluded_aggregate_edges": len(graph.edges) - len(graph_edges),
-            "exclude_aggregate": exclude_aggregate,
-            "read_only": True,
-            "writes_event_ledger": False,
-            "mutates_cluster": False,
-            "filtered_confidence": confidence,
-        },
+        "summary": _operational_graph_confidence_summary_payload(
+            graph,
+            graph_edges,
+            exclude_aggregate=exclude_aggregate,
+            confidence=confidence,
+        ),
         "tiers": tiers,
         "taxonomy": build_operational_graph_taxonomy(root),
         "important_low_confidence_edges": important_low,
         "metadata": dict(graph.metadata),
+    }
+
+
+def _operational_graph_confidence_summary_payload(
+    graph: OperationalGraph,
+    graph_edges: tuple[OperationalGraphEdge, ...],
+    *,
+    exclude_aggregate: bool,
+    confidence: Confidence | None,
+) -> dict[str, Any]:
+    return {
+        **{
+            **graph.summary,
+            "edges": len(graph_edges),
+            "relationship_types": dict(Counter(edge.type for edge in graph_edges)),
+            "confidence_counts": dict(Counter(edge.confidence for edge in graph_edges)),
+        },
+        "total_graph_edges": len(graph.edges),
+        "excluded_aggregate_edges": len(graph.edges) - len(graph_edges),
+        "exclude_aggregate": exclude_aggregate,
+        "read_only": True,
+        "writes_event_ledger": False,
+        "mutates_cluster": False,
+        "filtered_confidence": confidence,
     }
 
 
