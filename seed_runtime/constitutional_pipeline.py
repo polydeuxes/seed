@@ -68,6 +68,132 @@ class ConstitutionalPipelineRequest:
     output_format: CompositionOutputFormat = "human"
 
 
+
+
+@dataclass(frozen=True)
+class ConstitutionalPipelineProvenanceExplanation:
+    """Deterministic explanation assembled from completed pipeline artifacts only."""
+
+    bounded_question_id: str
+    inquiry_provenance: str
+    operator_inquiry_testimony: str
+    question_selection_keys: tuple[str, ...]
+    available_capability_keys: tuple[tuple[str, tuple[str, ...]], ...]
+    matched_keys: tuple[str, ...]
+    unsupported_question_keys: tuple[str, ...]
+    selected_views: tuple[str, ...]
+    unselected_or_unavailable_views: tuple[str, ...]
+    selection_uncertainty: tuple[str, ...]
+    empty_selection_explanation: str
+    composition_contributors: tuple[str, ...]
+    composition_unknowns: tuple[str, ...]
+    composition_refusals: tuple[str, ...]
+    read_only: bool
+    writes_event_ledger: bool
+    mutates_cluster: bool
+    testimony_boundary: str = "operator testimony is preserved as evidence, not established fact"
+    explanation_boundary: str = (
+        "provenance explanation reports existing typed handoffs only; it does not "
+        "perform projection, selection, composition, verification, persistence, or mutation"
+    )
+
+
+def explain_constitutional_pipeline_provenance(
+    result: ConstitutionalPipelineResult,
+) -> ConstitutionalPipelineProvenanceExplanation:
+    """Explain why completed pipeline artifacts produced the selected views.
+
+    The explanation reads only the artifacts already present on one completed
+    ``ConstitutionalPipelineResult``. It performs no pipeline stages, capability
+    discovery, semantic matching, persistence, event-ledger write, or cluster
+    mutation.
+    """
+
+    question_keys = result.question_projection.selection_keys
+    capability_keys_by_view = tuple(
+        (capability.registered_view_name, capability.capability_keys)
+        for capability in result.capability_projection
+    )
+    flat_capability_keys = {
+        key
+        for capability in result.capability_projection
+        for key in capability.capability_keys
+    }
+    matched_keys = tuple(key for key in question_keys if key in flat_capability_keys)
+    unsupported_keys = tuple(key for key in question_keys if key not in flat_capability_keys)
+    unknown_capabilities = tuple(
+        capability.registered_view_name
+        for capability in result.capability_projection
+        if capability.compatibility_answer == "Unknown." and not capability.capability_keys
+    )
+
+    unselected_or_unavailable: list[str] = []
+    if not question_keys:
+        unselected_or_unavailable.append("absent: no explicit question selection key was supplied")
+    for key in unsupported_keys:
+        reason = f"unsupported: {key} did not match any projected capability key"
+        if unknown_capabilities:
+            reason += "; missing capability evidence: " + ", ".join(unknown_capabilities)
+        unselected_or_unavailable.append(reason)
+    for capability_name in unknown_capabilities:
+        unselected_or_unavailable.append(
+            f"unknown: {capability_name} projected no capability keys because capability evidence was Unknown"
+        )
+
+    empty_selection_explanation = ""
+    if not result.selection.selected_view_names:
+        if not question_keys:
+            empty_selection_explanation = "No explicit selection key was supplied; empty selection is not verified irrelevance."
+        elif unsupported_keys:
+            empty_selection_explanation = "No selected view was produced because explicit keys did not match projected capability keys; this is not verified irrelevance."
+        elif result.selection.selection_uncertainty:
+            empty_selection_explanation = "Selection preserved uncertainty and produced no selected view; this is not verified irrelevance."
+        else:
+            empty_selection_explanation = "Selection produced no selected view from the completed artifacts; this is not verified irrelevance."
+
+    stage_read_only = (
+        result.bounded_question.read_only,
+        result.question_projection.read_only,
+        *(capability.read_only for capability in result.capability_projection),
+        result.selection.read_only,
+        result.composition.read_only,
+    )
+    stage_writes_event_ledger = (
+        result.bounded_question.writes_event_ledger,
+        result.question_projection.writes_event_ledger,
+        *(capability.writes_event_ledger for capability in result.capability_projection),
+        result.selection.writes_event_ledger,
+        result.composition.writes_event_ledger,
+    )
+    stage_mutates_cluster = (
+        result.bounded_question.mutates_cluster,
+        result.question_projection.mutates_cluster,
+        *(capability.mutates_cluster for capability in result.capability_projection),
+        result.selection.mutates_cluster,
+        result.composition.mutates_cluster,
+    )
+
+    return ConstitutionalPipelineProvenanceExplanation(
+        bounded_question_id=result.bounded_question.bounded_question_id,
+        inquiry_provenance=result.bounded_question.inquiry_provenance,
+        operator_inquiry_testimony=result.bounded_question.operator_inquiry,
+        question_selection_keys=question_keys,
+        available_capability_keys=capability_keys_by_view,
+        matched_keys=matched_keys,
+        unsupported_question_keys=unsupported_keys,
+        selected_views=result.selection.selected_view_names,
+        unselected_or_unavailable_views=tuple(unselected_or_unavailable),
+        selection_uncertainty=result.selection.selection_uncertainty,
+        empty_selection_explanation=empty_selection_explanation,
+        composition_contributors=tuple(view.name for view in result.composition.contributing_views),
+        composition_unknowns=result.composition.preserved_unknowns,
+        composition_refusals=result.composition.preserved_refusals,
+        read_only=all(stage_read_only),
+        writes_event_ledger=any(stage_writes_event_ledger),
+        mutates_cluster=any(stage_mutates_cluster),
+    )
+
+
 @dataclass(frozen=True)
 class ConstitutionalPipelineResult:
     """Inspectable immutable result preserving each existing stage artifact."""
@@ -134,12 +260,15 @@ def constitutional_pipeline_result_json(
 ) -> dict[str, Any]:
     """Return deterministic JSON-ready data for the complete pipeline result."""
 
-    return to_plain(result)
+    payload = to_plain(result)
+    payload["provenance_explanation"] = to_plain(explain_constitutional_pipeline_provenance(result))
+    return payload
 
 
 def format_constitutional_pipeline_result(result: ConstitutionalPipelineResult) -> str:
     """Render the complete constitutional pipeline result for humans."""
 
+    explanation = explain_constitutional_pipeline_provenance(result)
     lines = [
         "Constitutional Pipeline",
         "",
@@ -194,6 +323,37 @@ def format_constitutional_pipeline_result(result: ConstitutionalPipelineResult) 
         f"Read-only: {str(result.composition.read_only).lower()}",
         f"Writes event ledger: {str(result.composition.writes_event_ledger).lower()}",
         f"Mutates cluster: {str(result.composition.mutates_cluster).lower()}",
+        "",
+        "Provenance explanation",
+        "",
+        "Why these views were selected",
+        f"Question selection keys: {', '.join(explanation.question_selection_keys) or 'none'}",
+        f"Available capability keys: {'; '.join(f'{name}=[{', '.join(keys) or 'none'}]' for name, keys in explanation.available_capability_keys) or 'none'}",
+        f"Matched keys: {', '.join(explanation.matched_keys) or 'none'}",
+        f"Selected views explained by exact matches: {', '.join(explanation.selected_views) or 'none'}",
+        "",
+        "Why requested keys were unsupported",
+    ])
+    lines.extend(f"* {item}" for item in explanation.unselected_or_unavailable_views)
+    if not explanation.unselected_or_unavailable_views:
+        lines.append("* none")
+    if explanation.empty_selection_explanation:
+        lines.append(f"* {explanation.empty_selection_explanation}")
+    lines.extend([
+        "",
+        "Remaining uncertainty",
+    ])
+    lines.extend(f"* {item}" for item in explanation.selection_uncertainty)
+    if not explanation.selection_uncertainty:
+        lines.append("* none")
+    lines.extend([
+        "",
+        "Composition contributors",
+    ])
+    lines.extend(f"* {item}" for item in explanation.composition_contributors)
+    if not explanation.composition_contributors:
+        lines.append("* none")
+    lines.extend([
         "",
         "Preserved Unknowns",
         "",
