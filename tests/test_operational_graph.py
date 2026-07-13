@@ -3,6 +3,12 @@ import json
 from scripts import seed_local
 from seed_runtime.events import EventLedger
 from seed_runtime.operational_graph import (
+    OperationalGraphEdge,
+    OperationalGraphEvidence,
+    OperationalGraphNode,
+    _add_operational_graph_edge,
+    _filter_aggregate_operational_graph_edges,
+    _operational_graph_node_id,
     build_operational_graph,
     build_operational_graph_confidence,
     build_operational_graph_taxonomy,
@@ -147,6 +153,73 @@ def test_operational_graph_preserves_consumer_dependency_audit_composition_bound
     assert graph.summary["confidence_counts"]["low"] > 0
 
 
+def test_operational_graph_node_registry_preserves_node_creation_boundary():
+    ledger = EventLedger()
+    before = ledger.list_events()
+    nodes = {}
+
+    first = _operational_graph_node_id(nodes, "surface", "views")
+    second = _operational_graph_node_id(nodes, "surface", "views")
+    diagnostic = _operational_graph_node_id(nodes, "diagnostic", "capability_needs")
+    graph = build_operational_graph()
+    after = ledger.list_events()
+    data = graph.to_json_dict()
+
+    assert first == second == "surface:views"
+    assert diagnostic == "diagnostic:capability_needs"
+    assert len(nodes) == 2
+    assert nodes[first] == OperationalGraphNode(
+        "surface:views", "surface", "views", "aggregate_surface"
+    )
+    assert nodes[diagnostic].classification == "concrete_diagnostic"
+    assert nodes[first].aggregate is True
+    assert before == after == []
+    assert {"summary", "nodes", "edges", "metadata"} <= data.keys()
+    assert graph.summary["nodes"] == len(graph.nodes)
+    assert graph.nodes == tuple(sorted(graph.nodes, key=lambda item: item.id))
+    assert graph.metadata["read_only"] is True
+    assert graph.metadata["writes_event_ledger"] is False
+    assert graph.metadata["mutates_cluster"] is False
+
+
+def test_operational_graph_edge_registry_preserves_duplicate_merge_boundary():
+    ledger = EventLedger()
+    before = ledger.list_events()
+    edges = {}
+    direct = OperationalGraphEvidence("direct", "a.py", "event emission literal")
+    reference = OperationalGraphEvidence("reference", "b.py", "source reference")
+
+    _add_operational_graph_edge(edges, "source", "target", "uses", (), "high")
+    assert edges == {}
+
+    _add_operational_graph_edge(edges, "source", "target", "uses", (direct,), "low")
+    _add_operational_graph_edge(
+        edges, "source", "target", "uses", (direct, reference), "high"
+    )
+    graph = build_operational_graph()
+    after = ledger.list_events()
+    data = graph.to_json_dict()
+
+    assert list(edges) == [("source", "target", "uses")]
+    assert edges[("source", "target", "uses")] == OperationalGraphEdge(
+        "source", "target", "uses", (direct, reference), "high"
+    )
+    assert before == after == []
+    assert {"summary", "nodes", "edges", "metadata"} <= data.keys()
+    assert graph.summary["edges"] == len(graph.edges)
+    assert graph.summary["relationship_types"] == {
+        key: graph.summary["relationship_types"][key]
+        for key in graph.summary["relationship_types"]
+    }
+    assert graph.summary["confidence_counts"]
+    assert graph.edges == tuple(
+        sorted(graph.edges, key=lambda item: (item.source, item.type, item.target))
+    )
+    assert graph.metadata["read_only"] is True
+    assert graph.metadata["writes_event_ledger"] is False
+    assert graph.metadata["mutates_cluster"] is False
+
+
 def test_operational_graph_empty_state_is_sane(tmp_path):
     (tmp_path / "seed_runtime").mkdir()
     (tmp_path / "scripts").mkdir()
@@ -271,6 +344,73 @@ def test_operational_graph_confidence_exclude_aggregate_filters_taxonomy_noise(c
     data = json.loads(capsys.readouterr().out)
     assert data["summary"]["exclude_aggregate"] is True
     assert data["summary"]["excluded_aggregate_edges"] > 0
+
+
+def test_operational_graph_confidence_aggregate_edge_filter_preserves_boundary():
+    aggregate = OperationalGraphNode(
+        "surface:views", "surface", "views", "aggregate_surface"
+    )
+    concrete = OperationalGraphNode(
+        "diagnostic:capability_needs",
+        "diagnostic",
+        "capability_needs",
+        "concrete_diagnostic",
+    )
+    aggregate_edge = OperationalGraphEdge(
+        aggregate.id,
+        concrete.id,
+        "consumes",
+        (OperationalGraphEvidence("reference", "seed_runtime/state.py", "reference"),),
+        "low",
+    )
+    concrete_edge = OperationalGraphEdge(
+        concrete.id,
+        "event:action_plan.created",
+        "emits",
+        (OperationalGraphEvidence("direct", "seed_runtime/action_plans.py", "literal"),),
+        "high",
+    )
+    nodes = {aggregate.id: aggregate, concrete.id: concrete}
+    edges = (aggregate_edge, concrete_edge)
+
+    assert (
+        _filter_aggregate_operational_graph_edges(
+            edges, nodes, exclude_aggregate=False
+        )
+        is edges
+    )
+    assert _filter_aggregate_operational_graph_edges(
+        edges, nodes, exclude_aggregate=True
+    ) == (concrete_edge,)
+
+    ledger = EventLedger()
+    before = ledger.list_events()
+    filtered = build_operational_graph_confidence(exclude_aggregate=True)
+    full = build_operational_graph_confidence(exclude_aggregate=False)
+    after = ledger.list_events()
+    data = json.loads(json.dumps(filtered))
+
+    assert before == after == []
+    assert filtered["summary"]["exclude_aggregate"] is True
+    assert full["summary"]["exclude_aggregate"] is False
+    assert filtered["summary"]["edges"] < full["summary"]["edges"]
+    assert filtered["summary"]["excluded_aggregate_edges"] > 0
+    assert filtered["summary"]["edges"] == sum(
+        tier["edge_count"] for tier in filtered["tiers"].values()
+    )
+    assert filtered["tiers"]["low"]["edge_count"] == filtered["summary"][
+        "confidence_counts"
+    ].get("low", 0)
+    assert filtered["important_low_confidence_edges"] == [
+        edge
+        for edge in full["important_low_confidence_edges"]
+        if edge in filtered["important_low_confidence_edges"]
+    ]
+    assert filtered["taxonomy"] == full["taxonomy"]
+    assert {"summary", "tiers", "taxonomy", "important_low_confidence_edges", "metadata"} <= data.keys()
+    assert filtered["summary"]["read_only"] is True
+    assert filtered["summary"]["writes_event_ledger"] is False
+    assert filtered["summary"]["mutates_cluster"] is False
 
 
 def test_operational_graph_confidence_filter_reports_selected_tier(capsys):

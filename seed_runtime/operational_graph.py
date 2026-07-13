@@ -133,14 +133,7 @@ def build_operational_graph(root: str | Path | None = None) -> OperationalGraph:
     edges: dict[tuple[str, str, str], OperationalGraphEdge] = {}
 
     def node(kind: str, label: str) -> str:
-        node_id = f"{kind}:{label}"
-        nodes.setdefault(
-            node_id,
-            OperationalGraphNode(
-                node_id, kind, label, _node_classification(kind, label)
-            ),
-        )
-        return node_id
+        return _operational_graph_node_id(nodes, kind, label)
 
     def add_edge(
         source: str,
@@ -149,22 +142,8 @@ def build_operational_graph(root: str | Path | None = None) -> OperationalGraph:
         evidence: tuple[OperationalGraphEvidence, ...],
         confidence: Confidence,
     ) -> None:
-        if not evidence:
-            return
-        key = (source, target, edge_type)
-        current = edges.get(key)
-        if current is None:
-            edges[key] = OperationalGraphEdge(
-                source, target, edge_type, evidence, confidence
-            )
-            return
-        merged_evidence = tuple(dict.fromkeys([*current.evidence, *evidence]))
-        edges[key] = OperationalGraphEdge(
-            source,
-            target,
-            edge_type,
-            merged_evidence,
-            _stronger(current.confidence, confidence),
+        _add_operational_graph_edge(
+            edges, source, target, edge_type, evidence, confidence
         )
 
     _compose_emitter_consumer_audit_graph(
@@ -187,6 +166,42 @@ def build_operational_graph(root: str | Path | None = None) -> OperationalGraph:
             "writes_event_ledger": False,
             "mutates_cluster": False,
         },
+    )
+
+
+def _operational_graph_node_id(
+    nodes: dict[str, OperationalGraphNode], kind: str, label: str
+) -> str:
+    node_id = f"{kind}:{label}"
+    nodes.setdefault(
+        node_id,
+        OperationalGraphNode(node_id, kind, label, _node_classification(kind, label)),
+    )
+    return node_id
+
+
+def _add_operational_graph_edge(
+    edges: dict[tuple[str, str, str], OperationalGraphEdge],
+    source: str,
+    target: str,
+    edge_type: str,
+    evidence: tuple[OperationalGraphEvidence, ...],
+    confidence: Confidence,
+) -> None:
+    if not evidence:
+        return
+    key = (source, target, edge_type)
+    current = edges.get(key)
+    if current is None:
+        edges[key] = OperationalGraphEdge(source, target, edge_type, evidence, confidence)
+        return
+    merged_evidence = tuple(dict.fromkeys([*current.evidence, *evidence]))
+    edges[key] = OperationalGraphEdge(
+        source,
+        target,
+        edge_type,
+        merged_evidence,
+        _stronger(current.confidence, confidence),
     )
 
 
@@ -257,14 +272,8 @@ def build_operational_graph_confidence(
 
     graph = build_operational_graph(root)
     nodes = {node.id: node for node in graph.nodes}
-    graph_edges = tuple(
-        edge
-        for edge in graph.edges
-        if not exclude_aggregate
-        or not (
-            (nodes.get(edge.source) and nodes[edge.source].aggregate)
-            or (nodes.get(edge.target) and nodes[edge.target].aggregate)
-        )
+    graph_edges = _filter_aggregate_operational_graph_edges(
+        graph.edges, nodes, exclude_aggregate=exclude_aggregate
     )
     selected = ("high", "medium", "low") if confidence is None else (confidence,)
     tiers = {
@@ -299,6 +308,24 @@ def build_operational_graph_confidence(
         "important_low_confidence_edges": important_low[:10],
         "metadata": dict(graph.metadata),
     }
+
+
+def _filter_aggregate_operational_graph_edges(
+    edges: tuple[OperationalGraphEdge, ...],
+    nodes: dict[str, OperationalGraphNode],
+    *,
+    exclude_aggregate: bool,
+) -> tuple[OperationalGraphEdge, ...]:
+    if not exclude_aggregate:
+        return edges
+    return tuple(
+        edge
+        for edge in edges
+        if not (
+            (nodes.get(edge.source) and nodes[edge.source].aggregate)
+            or (nodes.get(edge.target) and nodes[edge.target].aggregate)
+        )
+    )
 
 
 def _confidence_tier_summary(
