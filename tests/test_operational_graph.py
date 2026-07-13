@@ -8,6 +8,7 @@ from seed_runtime.operational_graph import (
     OperationalGraphNode,
     _add_operational_graph_edge,
     _filter_aggregate_operational_graph_edges,
+    _important_low_confidence_edge_examples,
     _operational_graph_node_id,
     build_operational_graph,
     build_operational_graph_confidence,
@@ -412,6 +413,76 @@ def test_operational_graph_confidence_aggregate_edge_filter_preserves_boundary()
     assert filtered["summary"]["writes_event_ledger"] is False
     assert filtered["summary"]["mutates_cluster"] is False
 
+
+def test_operational_graph_confidence_important_low_selection_preserves_boundary(capsys):
+    def edge(source, target, confidence="low"):
+        return OperationalGraphEdge(
+            source,
+            target,
+            "consumes",
+            (
+                OperationalGraphEvidence(
+                    "reference", "seed_runtime/example.py:1", "reference"
+                ),
+            ),
+            confidence,
+        )
+
+    already_filtered_edges = (
+        edge("diagnostic:zeta", "surface:diagnostics"),
+        edge("diagnostic:not_important", "surface:ordinary"),
+        edge("diagnostic:alpha", "surface:diagnostics"),
+        edge("diagnostic:medium", "surface:diagnostics", "medium"),
+        *(
+            edge(f"diagnostic:item_{index:02d}", "surface:pressure_audit")
+            for index in range(12)
+        ),
+    )
+
+    selected = _important_low_confidence_edge_examples(already_filtered_edges)
+
+    assert len(selected) == 10
+    assert [item["source"] for item in selected] == [
+        "diagnostic:alpha",
+        "diagnostic:item_00",
+        "diagnostic:item_01",
+        "diagnostic:item_02",
+        "diagnostic:item_03",
+        "diagnostic:item_04",
+        "diagnostic:item_05",
+        "diagnostic:item_06",
+        "diagnostic:item_07",
+        "diagnostic:item_08",
+    ]
+    assert all(item["confidence"] == "low" for item in selected)
+    assert all(item["importance"] for item in selected)
+    assert all("evidence" in item for item in selected)
+    assert "diagnostic:not_important" not in {item["source"] for item in selected}
+    assert "diagnostic:medium" not in {item["source"] for item in selected}
+
+    ledger = EventLedger()
+    before = ledger.list_events()
+    analysis = build_operational_graph_confidence(exclude_aggregate=True)
+    after = ledger.list_events()
+    data = json.loads(json.dumps(analysis))
+
+    assert before == after == []
+    assert "important_low_confidence_edges" in data
+    assert len(analysis["important_low_confidence_edges"]) <= 10
+    assert analysis["summary"]["read_only"] is True
+    assert analysis["summary"]["writes_event_ledger"] is False
+    assert analysis["summary"]["mutates_cluster"] is False
+    assert analysis["summary"]["edges"] == sum(
+        tier["edge_count"] for tier in analysis["tiers"].values()
+    )
+    assert analysis["summary"]["excluded_aggregate_edges"] > 0
+    assert analysis["taxonomy"]["summary"]["nodes"] > 0
+    assert analysis["tiers"]["low"]["reason"]
+
+    assert seed_local.main(["--operational-graph-confidence"]) == 0
+    out = capsys.readouterr().out
+    assert "Operationally relevant low-confidence edges:" in out
+    assert "Low Confidence" in out
 
 def test_operational_graph_confidence_filter_reports_selected_tier(capsys):
     assert seed_local.main(["--operational-graph-confidence", "low"]) == 0
