@@ -733,3 +733,258 @@ def test_reachability_candidate_evaluation_helper_preserves_rows_order_progress_
     assert payload["rows"][0]["candidate"] == public.rows[0].candidate
     assert "Knowledge Reachability Audit" in format_knowledge_reachability_table(public.rows, public.metadata)
     assert len(ledger.list_events("w")) == 1
+
+
+def test_reachability_metadata_assembly_helper_preserves_public_result_metadata(tmp_path):
+    from seed_runtime.knowledge_reachability import (
+        _assemble_knowledge_reachability_metadata,
+        _admit_knowledge_reachability_candidates,
+        _construct_knowledge_reachability_indexes,
+        _evaluate_knowledge_reachability_candidates,
+        _new_counters,
+        _ReachabilityTimer,
+        _TokenizationCache,
+        build_knowledge_reachability_audit_result,
+        format_knowledge_reachability_table,
+    )
+    from seed_runtime.state import StateProjector
+
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "reachability.md").write_text("storage topology\n")
+    (tmp_path / "seed_runtime").mkdir()
+    (tmp_path / "seed_runtime" / "metadata_symbol.py").write_text("class MetadataSymbol: pass\n")
+    ledger = EventLedger()
+    ledger.append("operator.note", "w", {"text": "metadata_candidate"})
+    ledger.append(
+        "fact.observed",
+        "w",
+        {"fact": _fact("f1", "node115", "defines", "MetadataSymbol", {"path": "seed_runtime/metadata_symbol.py"})},
+    )
+    before_events = len(ledger.list_events("w"))
+    events = ledger.list_events("w")
+    state = StateProjector(ledger).project("w")
+    counters = _new_counters()
+    token_cache = _TokenizationCache(counters)
+    admission = _admit_knowledge_reachability_candidates(
+        events,
+        state,
+        tmp_path,
+        counters,
+        token_cache=token_cache,
+        all_candidates=True,
+        limit=7,
+    )
+    index_timings = {}
+    timings = {"load_state": 0.1234567, "discover_candidates": 0.2, "render": 0.3, "total": 0.4}
+    indexes = _construct_knowledge_reachability_indexes(
+        events,
+        state,
+        timer=_ReachabilityTimer(None, timings),
+        index_timings=index_timings,
+        counters=counters,
+        token_cache=token_cache,
+    )
+    evaluation = _evaluate_knowledge_reachability_candidates(
+        admission.sorted_candidates,
+        admission.candidates,
+        indexes,
+        counters,
+        token_cache,
+        timer=_ReachabilityTimer(None, timings),
+        max_seconds=None,
+        skipped=admission.skipped,
+        truncated=admission.truncated,
+        reason=admission.reason,
+    )
+    counters["candidate_count"] = len(evaluation.rows)
+    counters["raw_candidates_discovered"] = admission.discovery.raw_seen
+    counters["candidates_evaluated"] = len(evaluation.rows)
+
+    metadata = _assemble_knowledge_reachability_metadata(
+        evaluation.rows,
+        admission=admission,
+        timings=timings,
+        counters=counters,
+        index_timings=index_timings,
+        cache={"state": "miss", "summary": "miss", "projection": "miss"},
+        skipped=evaluation.skipped,
+        truncated=evaluation.truncated,
+        reason=evaluation.reason,
+        max_seconds=None,
+    )
+    payload = knowledge_reachability_json(evaluation.rows, metadata)
+    table = format_knowledge_reachability_table(evaluation.rows, metadata)
+
+    assert metadata.timings["load_state"] == 0.123457
+    assert metadata.candidate_counts["raw_seen"] == admission.discovery.raw_seen
+    assert metadata.candidate_counts["used"] == len(admission.sorted_candidates)
+    assert metadata.candidate_counts["limit"] == 0
+    assert metadata.candidate_counts["evaluated"] == len(evaluation.rows)
+    assert metadata.candidate_kind_counts == payload["metadata"]["candidate_kind_counts"]
+    assert metadata.loss_stage_counts == payload["metadata"]["loss_stage_counts"]
+    assert metadata.algorithmic_counters["candidates_evaluated"] == len(evaluation.rows)
+    assert metadata.candidate_sources["event payloads"] > 0
+    assert metadata.scan_counts["event payloads scanned"] > 0
+    assert metadata.cache == {"state": "miss", "summary": "miss", "projection": "miss"}
+    assert "read_model" in metadata.indexes
+    assert metadata.truncated is evaluation.truncated
+    assert metadata.reason == evaluation.reason
+    assert metadata.limit is None
+    assert metadata.max_seconds is None
+    assert payload["metadata"]["timing"]["load state/cache"] == metadata.timings["load_state"]
+    assert payload["metadata"]["candidates"] == metadata.candidate_counts
+    assert "Knowledge Reachability Audit" in table
+    assert len(ledger.list_events("w")) == before_events
+
+    public = build_knowledge_reachability_audit_result(ledger, "w", repo_root=tmp_path, subject="node115")
+    public_payload = knowledge_reachability_json(public.rows, public.metadata)
+    assert public_payload["metadata"]["candidate_counts"]["evaluated"] == 1
+    assert "Knowledge Reachability Audit" in format_knowledge_reachability_table(public.rows, public.metadata)
+    assert len(ledger.list_events("w")) == before_events
+
+
+def test_reachability_json_payload_helper_preserves_aliases_shapes_and_read_only():
+    from seed_runtime.knowledge_reachability import (
+        KnowledgeReachabilityMetadata,
+        KnowledgeReachabilityRow,
+        _knowledge_reachability_json_payload,
+        build_knowledge_reachability_audit_result,
+    )
+
+    rows = [
+        KnowledgeReachabilityRow(
+            "runtime",
+            "runtime_value",
+            "node115",
+            True,
+            True,
+            False,
+            False,
+            False,
+            "read_model_loss",
+        )
+    ]
+    metadata = KnowledgeReachabilityMetadata(
+        timings={"load_state": 1.25, "total": 2.5},
+        candidate_counts={"evaluated": 1, "skipped": 0},
+        candidate_kind_counts={"runtime_value": 1},
+        loss_stage_counts={"read_model_loss": 1},
+        algorithmic_counters={"membership_checks": 1},
+        candidate_sources={"default seeds": 1},
+        scan_counts={"event payloads scanned": 0},
+        cache={"state": "miss"},
+        indexes={"read_model": 0.5},
+        truncated=True,
+        reason="limit",
+        limit=1,
+        max_seconds=9.0,
+    )
+    ledger = EventLedger()
+    before_events = len(ledger.list_events("w"))
+
+    row_only = _knowledge_reachability_json_payload(rows)
+    payload = _knowledge_reachability_json_payload(rows, metadata)
+    public_payload = knowledge_reachability_json(rows, metadata)
+    encoded = json.loads(json.dumps(payload))
+
+    assert row_only == [
+        {
+            "family": "runtime",
+            "candidate_kind": "runtime_value",
+            "candidate": "node115",
+            "preserved": True,
+            "projected": True,
+            "read_model": False,
+            "inquiry_orientation": False,
+            "rendered": False,
+            "first_loss": "read_model_loss",
+        }
+    ]
+    assert payload == public_payload
+    assert set(payload) == {"metadata", "rows"}
+    assert payload["rows"] == row_only
+    assert payload["metadata"]["timings"] == metadata.timings
+    assert payload["metadata"]["candidate_counts"] == metadata.candidate_counts
+    assert payload["metadata"]["timing"]["load_state"] == 1.25
+    assert payload["metadata"]["timing"]["load state/cache"] == 1.25
+    assert payload["metadata"]["candidates"] == metadata.candidate_counts
+    assert encoded["metadata"]["candidate_kind_counts"] == {"runtime_value": 1}
+    assert encoded["metadata"]["loss_stage_counts"] == {"read_model_loss": 1}
+    assert encoded["metadata"]["truncated"] is True
+    assert encoded["metadata"]["reason"] == "limit"
+    assert len(ledger.list_events("w")) == before_events
+
+    result = build_knowledge_reachability_audit_result(ledger, "w", subject="node115")
+    cli_like_json = json.dumps(knowledge_reachability_json(result.rows, result.metadata))
+    decoded = json.loads(cli_like_json)
+    assert decoded["metadata"]["timing"]["load state/cache"] == decoded["metadata"]["timings"]["load_state"]
+    assert decoded["metadata"]["candidates"] == decoded["metadata"]["candidate_counts"]
+    assert len(ledger.list_events("w")) == before_events
+
+
+def test_reachability_table_output_helper_preserves_human_format_and_read_only():
+    from seed_runtime.knowledge_reachability import (
+        KnowledgeReachabilityMetadata,
+        KnowledgeReachabilityRow,
+        _knowledge_reachability_table_output,
+        build_knowledge_reachability_audit_result,
+    )
+
+    rows = [
+        KnowledgeReachabilityRow(
+            "runtime",
+            "runtime_value",
+            "node115",
+            True,
+            False,
+            True,
+            False,
+            True,
+            "projected_loss",
+        ),
+        KnowledgeReachabilityRow(
+            "repository",
+            "presentation_label",
+            "source navigation",
+            False,
+            False,
+            False,
+            True,
+            True,
+            "visibility_only",
+        ),
+    ]
+    metadata = KnowledgeReachabilityMetadata(
+        timings={"load_state": 1.2345, "total": 2.0},
+        candidate_counts={"raw_seen": 2, "evaluated": 2},
+        candidate_kind_counts={"runtime_value": 1, "presentation_label": 1},
+        loss_stage_counts={"projected_loss": 1, "visibility_only": 1},
+        truncated=True,
+        reason="max_seconds",
+    )
+    ledger = EventLedger()
+    before_events = len(ledger.list_events("w"))
+
+    table_only = _knowledge_reachability_table_output(rows)
+    full_table = _knowledge_reachability_table_output(rows, metadata)
+    public_table = format_knowledge_reachability_table(rows, metadata)
+
+    assert public_table == full_table
+    assert table_only.splitlines()[0] == "Family     | Kind               | Candidate         | Preserved | Projected | Read Model | Inquiry Orientation | Rendered | First Loss     "
+    assert table_only.splitlines()[1] == "---------- | ------------------ | ----------------- | --------- | --------- | ---------- | ------------------- | -------- | ---------------"
+    assert "runtime    | runtime_value      | node115           | yes       | no        | yes        | no                  | yes      | projected_loss" in table_only
+    assert "repository | presentation_label | source navigation | no        | no        | no         | yes                 | yes      | visibility_only" in table_only
+    assert full_table.startswith("Knowledge Reachability Audit\nTiming:\n  load_state: 1.234s\n  total: 2.000s")
+    assert "\nCandidates:\n  raw_seen: 2\n  evaluated: 2" in full_table
+    assert "\nCandidate Kinds:\n  runtime_value: 1\n  presentation_label: 1" in full_table
+    assert "\nLoss Stages:\n  projected_loss: 1\n  visibility_only: 1" in full_table
+    assert "\nTruncated: true (max_seconds)\n\nFamily" in full_table
+    assert full_table.endswith(table_only)
+    assert len(ledger.list_events("w")) == before_events
+
+    result = build_knowledge_reachability_audit_result(ledger, "w", subject="node115")
+    cli_like_human = format_knowledge_reachability_table(result.rows, result.metadata)
+    assert "Knowledge Reachability Audit" in cli_like_human
+    assert "Family" in cli_like_human
+    assert "node115" in cli_like_human
+    assert len(ledger.list_events("w")) == before_events

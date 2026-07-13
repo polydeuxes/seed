@@ -433,15 +433,44 @@ def build_knowledge_reachability_audit_result(
     counters["candidates_evaluated"] = len(rows)
     for key in sorted(counters):
         timer.emit("counter", key, value=counters[key])
-    metadata = KnowledgeReachabilityMetadata(
-        timings={k: round(v, 6) for k, v in timer.timings.items()},
+    metadata = _assemble_knowledge_reachability_metadata(
+        rows,
+        admission=admission,
+        timings=timer.timings,
+        counters=counters,
+        index_timings=index_timings,
+        cache=cache,
+        skipped=skipped,
+        truncated=truncated,
+        reason=reason,
+        max_seconds=max_seconds,
+    )
+    return KnowledgeReachabilityAuditResult(rows, metadata)
+
+
+
+def _assemble_knowledge_reachability_metadata(
+    rows: list[KnowledgeReachabilityRow],
+    *,
+    admission: _CandidateAdmission,
+    timings: dict[str, float],
+    counters: dict[str, int],
+    index_timings: dict[str, float],
+    cache: dict[str, str],
+    skipped: int,
+    truncated: bool,
+    reason: str | None,
+    max_seconds: float | None = DEFAULT_MAX_SECONDS,
+) -> KnowledgeReachabilityMetadata:
+    return KnowledgeReachabilityMetadata(
+        timings={k: round(v, 6) for k, v in timings.items()},
         candidate_counts={
-            "raw_seen": discovery.raw_seen,
-            "used": len(sorted_candidates),
-            "limit": effective_limit if effective_limit is not None else 0,
-            "discovered": discovered,
-            "raw_candidates_discovered": discovery.raw_seen,
-            "capped": len(sorted_candidates),
+            "raw_seen": admission.discovery.raw_seen,
+            "used": len(admission.sorted_candidates),
+            "limit": admission.effective_limit if admission.effective_limit is not None else 0,
+            "discovered": admission.discovered,
+            "raw_candidates_discovered": admission.discovery.raw_seen,
+            "capped": len(admission.sorted_candidates),
             "candidates_evaluated": len(rows),
             "evaluated": len(rows),
             "skipped": skipped,
@@ -449,17 +478,15 @@ def build_knowledge_reachability_audit_result(
         candidate_kind_counts=_count_by(rows, "candidate_kind"),
         loss_stage_counts=_count_by(rows, "first_loss"),
         algorithmic_counters=dict(counters),
-        candidate_sources=source_counts,
-        scan_counts=scan_counts,
+        candidate_sources=admission.source_counts,
+        scan_counts=admission.scan_counts,
         cache=cache,
         indexes={k: round(v, 6) for k, v in index_timings.items()},
         truncated=truncated,
         reason=reason,
-        limit=effective_limit,
+        limit=admission.effective_limit,
         max_seconds=max_seconds,
     )
-    return KnowledgeReachabilityAuditResult(rows, metadata)
-
 
 
 def _admit_knowledge_reachability_candidates(
@@ -585,6 +612,13 @@ def format_knowledge_reachability_table(
     rows: list[KnowledgeReachabilityRow],
     metadata: KnowledgeReachabilityMetadata | None = None,
 ) -> str:
+    return _knowledge_reachability_table_output(rows, metadata)
+
+
+def _knowledge_reachability_table_output(
+    rows: list[KnowledgeReachabilityRow],
+    metadata: KnowledgeReachabilityMetadata | None = None,
+) -> str:
     headers = ["Family", "Kind", "Candidate", *STAGES, "First Loss"]
     body = [
         [
@@ -629,6 +663,13 @@ def format_knowledge_reachability_table(
 
 
 def knowledge_reachability_json(
+    rows: list[KnowledgeReachabilityRow],
+    metadata: KnowledgeReachabilityMetadata | None = None,
+) -> list[dict[str, Any]] | dict[str, Any]:
+    return _knowledge_reachability_json_payload(rows, metadata)
+
+
+def _knowledge_reachability_json_payload(
     rows: list[KnowledgeReachabilityRow],
     metadata: KnowledgeReachabilityMetadata | None = None,
 ) -> list[dict[str, Any]] | dict[str, Any]:
