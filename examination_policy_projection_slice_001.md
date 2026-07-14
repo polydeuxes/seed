@@ -1,0 +1,34 @@
+# Examination Policy Projection Slice 001
+
+1. **Recovered responsibility**: project explicit caller-supplied examination-resolution testimony into a typed, immutable, read-only policy for lawful movement through one existing `ExaminationFrontier`, without selecting work.
+2. **Producer**: `project_examination_policy(...)`.
+3. **Input artifacts**: existing `BoundedConstitutionalQuestion`, existing `ExaminationMethodApplicabilityProjection`, existing `ExaminationFrontier`, and explicit `ExaminationResolutionTestimony`.
+4. **Resolution-testimony convention**: immutable testimony carries stable testimony id, inquiry/frontier/applicability references, policy kind, parameters, candidate scope, prerequisite/tie/no-selection treatment, continuation/resource constraints, references, provenance, and unknowns.
+5. **Output artifact**: `ExaminationPolicyProjection`, plus the narrow `ExaminationPolicySelectorHandoff` for a future selector.
+6. **Policy identity rule**: `projection_id` is derived from bounded inquiry id, frontier id, method-applicability projection id, convention, ordered testimony ids, policy kind, and normalized policy parameters.
+7. **Supported policy forms**: `explicit_work_identity`, `all_eligible_no_order`, `prerequisite_first`, and `no_selection`.
+8. **Applicability model**: policy state is `applicable`, `inapplicable`, `unknown`, or `conflict`; mismatched inquiry testimony becomes Unknown, mismatched frontier/applicability references become inapplicable, and incompatible testimony is conflict.
+9. **Sufficiency model**: sufficiency is separate as `sufficient_for_selection`, `insufficient_for_selection`, `unknown`, or `conflict`.
+10. **Candidate-scope behavior**: projection records in-scope, eligible in-scope, and policy-excluded work references without removing or selecting frontier items.
+11. **Prerequisite treatment**: only explicit prerequisite evidence in testimony is used; missing prerequisite evidence remains Unknown.
+12. **Tie treatment**: testimony must preserve tie behavior; no lexical, insertion-order, hash-order, or arbitrary deterministic tie-break selects work.
+13. **No-selection conditions**: Unknown, conflict, inapplicable, insufficient policy, no eligible in-scope work, and explicit no-selection testimony are preserved as no-selection conditions, not campaign completion.
+14. **Conflict behavior**: conflicting policy kinds, parameters, or contradicting references produce `policy_state=conflict` and `policy_sufficiency=conflict`.
+15. **Unknown behavior**: absent or incomplete resolution testimony produces Unknown and cannot enable downstream selection.
+16. **Frontier relationship**: `ExaminationFrontier` remains the source of eligibility, examined, blocked, unsupported, deferred, failed, conflict, and Unknown classification.
+17. **Method-applicability relationship**: `ExaminationMethodApplicabilityProjection` remains the owner of methodological applicability; policy only intersects frontier eligibility with applicable candidate references.
+18. **Future selector handoff**: `ExaminationPolicySelectorHandoff` exposes frontier id, policy projection id, policy kind, sufficiency, eligible in-scope work ids, prerequisite references, tie treatment, and no-selection conditions; it exposes no selected item.
+19. **Explicit-work proving result**: focused tests show an explicit-work policy naming an existing eligible frontier work item is applicable and sufficient, while still exposing no selected-work field.
+20. **Applicable-but-insufficient proving result**: focused tests show `all_eligible_no_order` over multiple eligible work items is applicable but insufficient.
+21. **No-selection proving result**: focused tests show `no_selection`, no eligible in-scope work, Unknown, conflict, and inapplicable policy preserve no-selection conditions.
+22. **Caller-supplied policy evidence**: Seed requires explicit `ExaminationResolutionTestimony`; raw bounded-question prose is not treated as executable policy.
+23. **Seed-owned projection responsibilities**: bind testimony to inquiry/applicability/frontier, validate references, compute applicability and sufficiency, preserve scope/tie/no-selection observations, and provide a typed selector handoff.
+24. **Manual handoff eliminated**: campaign authors now supply explicit resolution testimony; Seed validates and projects policy applicability/sufficiency instead of requiring manual applicability and uniqueness checks.
+25. **Boundary notes**: human and JSON renderings preserve that the artifact does not select work, authorization/scheduling/execution are downstream, policy is not priority or knowledge, frontier and method owners remain unchanged, and the artifact is not Evidence or Fact.
+26. **Read-only guarantees**: `read_only=true`, `writes_event_ledger=false`, and `mutates_cluster=false`; projection/rendering do not append events, create pending actions, execute tools/providers, mutate state/frontier/applicability/corpus/cluster, or create Observations, Evidence, or Facts.
+27. **Compatibility answer**: Did this slice change any existing compatibility boundary? No.
+28. **Files changed**: `seed_runtime/examination_policy_projection.py`, `tests/test_examination_policy_projection.py`, and `examination_policy_projection_slice_001.md`.
+29. **LOC delta**: pending git numstat for this slice shows one canonical projection module, focused tests, and this report.
+30. **Tests executed**: `pytest -q tests/test_examination_policy_projection.py`; `pytest -q tests/test_examination_policy_projection.py tests/test_candidate_examination_work.py tests/test_examination_method_applicability.py tests/test_examination_frontier.py tests/test_tool_execution_policy.py tests/test_execution.py tests/test_execution_status.py tests/test_execution_proposals.py tests/test_pending_actions.py`; initial attempted `pytest -q tests/test_examination_policy_projection.py tests/test_candidate_examination_work.py tests/test_examination_method_applicability.py tests/test_examination_frontier.py tests/test_authorization.py tests/test_execution.py` failed because `tests/test_authorization.py` does not exist.
+31. **Remaining missing roads**: `ExaminationPolicyProjection + ExaminationFrontier -> selected work and preserved alternatives`; `selected work -> bounded probe request`; `probe request -> policy authorization -> execution`; `execution result -> frontier revision`; `revised frontier -> continued policy realization`.
+32. **Exact next bounded question**: Given an applicable and selection-sufficient `ExaminationPolicyProjection` and its immutable `ExaminationFrontier`, what smallest owner may select zero or one eligible work item while preserving the selection reason, every non-selected alternative, all frontier classifications, and the downstream authorization boundary?
