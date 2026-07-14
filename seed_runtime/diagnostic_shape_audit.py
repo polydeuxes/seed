@@ -463,6 +463,15 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         cli_flags=("--capability-needs",),
         diagnostic_fact_read_markers=("diagnostic_run:", "diagnostic_capability_need"),
     ),
+    "single_capability_state_projection": DiagnosticImplementationSpec(
+        name="single_capability_state_projection",
+        module_path="seed_runtime/single_capability_state_projection.py",
+        build_function="build_single_capability_state_projection",
+        format_function="format_single_capability_state_projection",
+        json_function="single_capability_state_projection_json",
+        cli_flags=("--single-capability-state",),
+        repo_file_markers=("CapabilityCatalog",),
+    ),
     "capability_relationship": DiagnosticImplementationSpec(
         name="capability_relationship",
         module_path="seed_runtime/capability_relationship.py",
