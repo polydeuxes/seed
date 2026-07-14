@@ -23,6 +23,14 @@ from seed_runtime.candidate_operational_realization import (
     format_candidate_operational_realization_set,
     project_candidate_operational_realizations,
 )
+from seed_runtime.capability_reachability_projection import (
+    CapabilityReachabilityProjection,
+    CapabilityReachabilityProjectionError,
+    FutureOperationalRealizationSelectionHandoff,
+    capability_reachability_projection_json,
+    format_capability_reachability_projection,
+    project_capability_reachability,
+)
 from seed_runtime.capability_inventory import (
     CapabilityEvidenceSummary,
     CapabilityInventoryEntry,
@@ -111,6 +119,12 @@ __all__ = [
     "candidate_operational_realization_json",
     "format_candidate_operational_realization_set",
     "project_candidate_operational_realizations",
+    "CapabilityReachabilityProjection",
+    "CapabilityReachabilityProjectionError",
+    "FutureOperationalRealizationSelectionHandoff",
+    "capability_reachability_projection_json",
+    "format_capability_reachability_projection",
+    "project_capability_reachability",
     "CapabilityInventoryEntry",
     "CapabilitySupportSummary",
     "build_capability_inventory",
