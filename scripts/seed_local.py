@@ -44,6 +44,13 @@ from seed_runtime.candidate_external_grammar import (
     candidate_external_grammar_json,
     format_candidate_external_grammar,
 )
+from seed_runtime.external_material_structural_projection import (
+    ExternalMaterialStructuralProjectionError,
+    external_material_structural_projection_json,
+    format_external_material_structural_projection,
+    input_from_json_dict as external_material_structure_input_from_json_dict,
+    project_external_material_structure,
+)
 from seed_runtime.external_material_testimony_binding import (
     ExternalMaterialTestimonyBindingValidationError,
     external_material_testimony_binding_json,
@@ -1352,6 +1359,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="show bounded read-only local listener endpoint authority reasoning",
     )
     parser.add_argument(
+        "--external-material-structure",
+        metavar="JSON_FILE",
+        help="project read-only mechanical lines and nonblank regions from caller-supplied exact external material text",
+    )
+    parser.add_argument(
         "--diagnostic-inventory",
         action="store_true",
         help="list diagnostic/test-like operational surfaces and their declared shape",
@@ -2594,7 +2606,7 @@ def validate_lifecycle_args(
             "--state-build, --state-build-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --ownership-discrepancies, "
-            "--documentation-structure, --diagnostic-shape-audit, --candidate-external-grammar, --external-material-testimony-bindings, --external-site-rule-testimony, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --single-capability-state, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
+            "--documentation-structure, --diagnostic-shape-audit, --candidate-external-grammar, --external-material-structure, --external-material-testimony-bindings, --external-site-rule-testimony, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --single-capability-state, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
             "or --events-only"
         )
     if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
@@ -2744,6 +2756,7 @@ def validate_lifecycle_args(
         or args.documentation_structure
         or args.diagnostic_shape_audit
         or args.candidate_external_grammar
+        or args.external_material_structure
         or args.external_material_testimony_bindings
         or args.external_site_rule_testimony
         or args.projected_state_consumers
@@ -2792,7 +2805,7 @@ def validate_lifecycle_args(
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --question-surface-inventory, --question-family-definition, --question-family-explanation, --documentation-structure, --diagnostic-shape-audit, --candidate-external-grammar, --external-material-testimony-bindings, --external-site-rule-testimony, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --single-capability-state, --correlation-audit, --inquiry-artifacts, --constitutional-pipeline, --constitutional-pipeline-diagnostic, --constitutional-process, --constitutional-governance, --constitutional-fidelity, --constitutional-view-composition, or --audit-compare, or --projection-shape, or --projection-stage-definition, or --projection-stage-explanation"
+            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --question-surface-inventory, --question-family-definition, --question-family-explanation, --documentation-structure, --diagnostic-shape-audit, --candidate-external-grammar, --external-material-structure, --external-material-testimony-bindings, --external-site-rule-testimony, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --single-capability-state, --correlation-audit, --inquiry-artifacts, --constitutional-pipeline, --constitutional-pipeline-diagnostic, --constitutional-process, --constitutional-governance, --constitutional-fidelity, --constitutional-view-composition, or --audit-compare, or --external-material-structure, or --projection-shape, or --projection-stage-definition, or --projection-stage-explanation"
         )
     if args.question_family_definition and args.message:
         parser.error(
@@ -7115,6 +7128,20 @@ def main(argv: list[str] | None = None) -> int:
             )
         else:
             print(format_candidate_external_grammar(artifact))
+        return 0
+
+    if args.external_material_structure:
+        try:
+            manifest, request = external_material_structure_input_from_json_dict(
+                json.loads(Path(args.external_material_structure).read_text())
+            )
+            artifact = project_external_material_structure(manifest, request)
+        except (OSError, json.JSONDecodeError, ExternalMaterialStructuralProjectionError) as exc:
+            parser.error(str(exc))
+        if args.json_output:
+            print(json.dumps(external_material_structural_projection_json(artifact), indent=2, sort_keys=True))
+        else:
+            print(format_external_material_structural_projection(artifact))
         return 0
 
     if args.external_material_testimony_bindings:
