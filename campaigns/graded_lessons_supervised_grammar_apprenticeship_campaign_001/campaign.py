@@ -204,6 +204,8 @@ def campaign_record() -> dict[str, Any]:
             "candidates": [c.to_json_dict() for c in candidate_input().candidates],
         },
         "testimony_binding_set": testimony_binding_set().to_json_dict(),
+        "structural_projection": structural_projection().to_json_dict(),
+        "structural_projection_boundary": "Seed projected lines and nonblank regions. Campaign author still identified heading, rule, example, exercise, contrast, support, and contradiction.",
         "candidate_output": candidate_outputs(),
     }
 
@@ -244,3 +246,19 @@ def testimony_binding_requests():
 def testimony_binding_set():
     from seed_runtime.external_material_testimony_binding import validate_external_material_testimony_bindings
     return validate_external_material_testimony_bindings(external_material_manifest(), testimony_binding_requests(), ("Campaign integration demonstrates reference binding only.",))
+
+
+def structural_projection():
+    from seed_runtime.external_material_structural_projection import ExternalMaterialStructuralProjectionRequest, project_external_material_structure
+    return project_external_material_structure(
+        external_material_manifest(),
+        ExternalMaterialStructuralProjectionRequest(
+            "gl001_lesson006_manifest",
+            "gl001_source_pg7010",
+            "gl001_selected_lesson_006",
+            EXPECTED_SHA256,
+            "utf-8",
+            selected_lesson_bytes().decode("utf-8"),
+            ("Campaign consumes mechanical projection only; semantic annotations remain campaign-author supplied.",),
+        ),
+    )
