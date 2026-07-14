@@ -93,6 +93,16 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         module_path="seed_runtime/state.py",
         cli_flags=("--graph-issue-summary",),
     ),
+    "candidate_external_grammar": DiagnosticImplementationSpec(
+        name="candidate_external_grammar",
+        module_path="seed_runtime/candidate_external_grammar.py",
+        build_function="assemble_candidate_external_grammar_set",
+        format_function="format_candidate_external_grammar",
+        json_function="candidate_external_grammar_json",
+        cli_flags=("--candidate-external-grammar",),
+        json_cli_flags=("--json",),
+        repo_file_markers=("from_json_dict",),
+    ),
     "knowledge_reachability": DiagnosticImplementationSpec(
         name="knowledge_reachability",
         module_path="seed_runtime/knowledge_reachability.py",

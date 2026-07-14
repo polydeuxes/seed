@@ -3096,3 +3096,14 @@ def test_diagnostic_surface_explanation_guardrails_are_presentation_only(capsys)
         "generic composition",
     ]:
         assert forbidden not in rendered
+
+
+def test_candidate_external_grammar_is_registered_read_only_diagnostic():
+    entry = next(e for e in DIAGNOSTIC_INVENTORY if e.name == "candidate_external_grammar")
+
+    assert entry.cli_flags == ("--candidate-external-grammar",)
+    assert entry.supports_json is True
+    assert entry.supports_record is False
+    assert entry.record_scope == "none"
+    assert entry.writes_event_ledger is False
+    assert entry.mutates_cluster is False
