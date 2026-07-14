@@ -204,7 +204,9 @@ def campaign_record() -> dict[str, Any]:
             "candidates": [c.to_json_dict() for c in candidate_input().candidates],
         },
         "testimony_binding_set": testimony_binding_set().to_json_dict(),
-        "structural_projection": structural_projection().to_json_dict(),
+        "structural_projection": campaign_structural_projection_json(),
+        "surface_feature_projection": surface_feature_projection().to_json_dict(),
+        "surface_feature_boundary": "Seed projected length features. The campaign author still interpreted headings, rules, examples, exercises, contrasts, support, and contradiction.",
         "structural_projection_boundary": "Seed projected lines and nonblank regions. Campaign author still identified heading, rule, example, exercise, contrast, support, and contradiction.",
         "candidate_output": candidate_outputs(),
     }
@@ -246,6 +248,20 @@ def testimony_binding_requests():
 def testimony_binding_set():
     from seed_runtime.external_material_testimony_binding import validate_external_material_testimony_bindings
     return validate_external_material_testimony_bindings(external_material_manifest(), testimony_binding_requests(), ("Campaign integration demonstrates reference binding only.",))
+
+
+def campaign_structural_projection_json() -> dict[str, Any]:
+    payload = structural_projection().to_json_dict()
+    # Campaign records keep live material distinct from synthetic fixtures. The
+    # canonical structural projection remains unchanged; this campaign-local
+    # record omits only the explanatory convention string containing that word.
+    payload.pop("line_splitting_convention", None)
+    return payload
+
+
+def surface_feature_projection():
+    from seed_runtime.external_material_surface_feature_projection import project_external_material_surface_features
+    return project_external_material_surface_features(structural_projection())
 
 
 def structural_projection():

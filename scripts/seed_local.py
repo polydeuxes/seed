@@ -51,6 +51,13 @@ from seed_runtime.external_material_structural_projection import (
     input_from_json_dict as external_material_structure_input_from_json_dict,
     project_external_material_structure,
 )
+from seed_runtime.external_material_surface_feature_projection import (
+    ExternalMaterialSurfaceFeatureProjectionError,
+    external_material_surface_feature_projection_json,
+    format_external_material_surface_feature_projection,
+    project_external_material_surface_features,
+    structural_projection_from_json_dict as external_material_surface_feature_input_from_json_dict,
+)
 from seed_runtime.external_material_testimony_binding import (
     ExternalMaterialTestimonyBindingValidationError,
     external_material_testimony_binding_json,
@@ -1362,6 +1369,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--external-material-structure",
         metavar="JSON_FILE",
         help="project read-only mechanical lines and nonblank regions from caller-supplied exact external material text",
+    )
+    parser.add_argument(
+        "--external-material-surface-features",
+        metavar="JSON_FILE",
+        help="project read-only line and region length features from a serialized external material structural projection",
     )
     parser.add_argument(
         "--diagnostic-inventory",
@@ -2757,6 +2769,7 @@ def validate_lifecycle_args(
         or args.diagnostic_shape_audit
         or args.candidate_external_grammar
         or args.external_material_structure
+        or args.external_material_surface_features
         or args.external_material_testimony_bindings
         or args.external_site_rule_testimony
         or args.projected_state_consumers
@@ -7142,6 +7155,20 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(external_material_structural_projection_json(artifact), indent=2, sort_keys=True))
         else:
             print(format_external_material_structural_projection(artifact))
+        return 0
+
+    if args.external_material_surface_features:
+        try:
+            structural_projection = external_material_surface_feature_input_from_json_dict(
+                json.loads(Path(args.external_material_surface_features).read_text())
+            )
+            artifact = project_external_material_surface_features(structural_projection)
+        except (OSError, json.JSONDecodeError, ExternalMaterialSurfaceFeatureProjectionError) as exc:
+            parser.error(str(exc))
+        if args.json_output:
+            print(json.dumps(external_material_surface_feature_projection_json(artifact), indent=2, sort_keys=True))
+        else:
+            print(format_external_material_surface_feature_projection(artifact))
         return 0
 
     if args.external_material_testimony_bindings:

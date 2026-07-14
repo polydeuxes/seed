@@ -113,6 +113,16 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         json_cli_flags=("--json",),
         repo_file_markers=("from_json_dict",),
     ),
+    "external_material_surface_features": DiagnosticImplementationSpec(
+        name="external_material_surface_features",
+        module_path="seed_runtime/external_material_surface_feature_projection.py",
+        build_function="project_external_material_surface_features",
+        format_function="format_external_material_surface_feature_projection",
+        json_function="external_material_surface_feature_projection_json",
+        cli_flags=("--external-material-surface-features",),
+        json_cli_flags=("--json",),
+        repo_file_markers=("structural_projection_from_json_dict",),
+    ),
     "external_material_testimony_bindings": DiagnosticImplementationSpec(
         name="external_material_testimony_bindings",
         module_path="seed_runtime/external_material_testimony_binding.py",
