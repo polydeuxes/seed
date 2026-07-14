@@ -103,6 +103,16 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         json_cli_flags=("--json",),
         repo_file_markers=("from_json_dict",),
     ),
+    "external_site_rule_testimony": DiagnosticImplementationSpec(
+        name="external_site_rule_testimony",
+        module_path="seed_runtime/external_site_rule_testimony.py",
+        build_function="assemble_external_site_rule_testimony_set",
+        format_function="format_external_site_rule_testimony",
+        json_function="external_site_rule_testimony_json",
+        cli_flags=("--external-site-rule-testimony",),
+        json_cli_flags=("--json",),
+        repo_file_markers=("from_json_dict",),
+    ),
     "knowledge_reachability": DiagnosticImplementationSpec(
         name="knowledge_reachability",
         module_path="seed_runtime/knowledge_reachability.py",

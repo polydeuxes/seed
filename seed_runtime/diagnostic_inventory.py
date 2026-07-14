@@ -596,6 +596,21 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         description="Builds and displays a caller-supplied immutable candidate external grammar set without evaluating testimony, selecting candidates, inferring semantics, writing events, or mutating cluster state.",
     ),
     DiagnosticInventoryEntry(
+        name="external_site_rule_testimony",
+        cli_flags=("--external-site-rule-testimony",),
+        uses_projected_state=False,
+        uses_repo_files=True,
+        supports_json=True,
+        supports_record=False,
+        record_scope="none",
+        emits_diagnostic_facts=False,
+        emits_cluster_facts=False,
+        writes_event_ledger=False,
+        mutates_cluster=False,
+        reads_diagnostic_facts=False,
+        description="Builds and displays a caller-supplied immutable external site-rule testimony set without acquisition, interpretation, authorization, event-ledger writes, or cluster mutation.",
+    ),
+    DiagnosticInventoryEntry(
         name="knowledge_reachability",
         cli_flags=(
             "--knowledge-reachability-audit",
