@@ -65,6 +65,13 @@ from seed_runtime.external_material_testimony_binding import (
     input_from_json_dict as external_material_binding_input_from_json_dict,
     validate_external_material_testimony_bindings,
 )
+from seed_runtime.examination_frontier import (
+    ExaminationFrontierError,
+    examination_frontier_json,
+    format_examination_frontier,
+    input_from_json_dict as examination_frontier_input_from_json_dict,
+    project_examination_frontier,
+)
 from seed_runtime.external_site_rule_testimony import (
     ExternalSiteRuleTestimonyInput,
     ExternalSiteRuleTestimonyValidationError,
@@ -1415,6 +1422,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--candidate-external-grammar",
         metavar="JSON_FILE",
         help="build and display a caller-supplied candidate external grammar set",
+    )
+    parser.add_argument(
+        "--examination-frontier",
+        metavar="JSON_FILE",
+        help="project an immutable read-only examination frontier from explicit bounded inquiry, corpus, and work visibility input",
     )
     parser.add_argument(
         "--external-material-testimony-bindings",
@@ -2771,6 +2783,7 @@ def validate_lifecycle_args(
         or args.external_material_structure
         or args.external_material_surface_features
         or args.external_material_testimony_bindings
+        or args.examination_frontier
         or args.external_site_rule_testimony
         or args.projected_state_consumers
         or args.implementation_trait_characterization
@@ -7169,6 +7182,20 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(external_material_surface_feature_projection_json(artifact), indent=2, sort_keys=True))
         else:
             print(format_external_material_surface_feature_projection(artifact))
+        return 0
+
+    if args.examination_frontier:
+        try:
+            q, corpus_id, corpus_label, members, works, unknowns = examination_frontier_input_from_json_dict(
+                json.loads(Path(args.examination_frontier).read_text())
+            )
+            artifact = project_examination_frontier(q, corpus_id, corpus_label, members, works, unknowns)
+        except (OSError, json.JSONDecodeError, ExaminationFrontierError, TypeError) as exc:
+            parser.error(str(exc))
+        if args.json_output:
+            print(json.dumps(examination_frontier_json(artifact), indent=2, sort_keys=True))
+        else:
+            print(format_examination_frontier(artifact))
         return 0
 
     if args.external_material_testimony_bindings:

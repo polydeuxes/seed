@@ -123,6 +123,16 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         json_cli_flags=("--json",),
         repo_file_markers=("structural_projection_from_json_dict",),
     ),
+    "examination_frontier": DiagnosticImplementationSpec(
+        name="examination_frontier",
+        module_path="seed_runtime/examination_frontier.py",
+        build_function="project_examination_frontier",
+        format_function="format_examination_frontier",
+        json_function="examination_frontier_json",
+        cli_flags=("--examination-frontier",),
+        json_cli_flags=("--json",),
+        repo_file_markers=("input_from_json_dict",),
+    ),
     "external_material_testimony_bindings": DiagnosticImplementationSpec(
         name="external_material_testimony_bindings",
         module_path="seed_runtime/external_material_testimony_binding.py",
