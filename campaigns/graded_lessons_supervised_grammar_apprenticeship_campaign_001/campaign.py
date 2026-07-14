@@ -203,5 +203,44 @@ def campaign_record() -> dict[str, Any]:
             "set_unknowns": list(candidate_input().set_unknowns),
             "candidates": [c.to_json_dict() for c in candidate_input().candidates],
         },
+        "testimony_binding_set": testimony_binding_set().to_json_dict(),
         "candidate_output": candidate_outputs(),
     }
+
+def external_material_manifest():
+    from seed_runtime.external_material_testimony_binding import ExternalMaterialAnnotationRecord, ExternalMaterialManifest, ExternalMaterialSelectedArtifactRecord, ExternalMaterialSourceRecord
+    identity = validate_source_identity()
+    return ExternalMaterialManifest(
+        manifest_id="gl001_lesson006_manifest",
+        sources=(ExternalMaterialSourceRecord(source_id="gl001_source_pg7010", source_identity="Project Gutenberg eBook #7010", source_kind="plain_text_excerpt_source", source_hash=EXPECTED_SHA256, source_location=str(SELECTED_LESSON), reported_title="Graded Lessons in English", reported_creator="Alonzo Reed and Brainerd Kellogg", provenance="campaign-local selected excerpt; source authority not verified"),),
+        selected_artifacts=(ExternalMaterialSelectedArtifactRecord(artifact_id="gl001_selected_lesson_006", parent_source_id="gl001_source_pg7010", artifact_hash=EXPECTED_SHA256, artifact_location=str(SELECTED_LESSON), line_count=4, character_count=len(selected_lesson_bytes().decode("utf-8")), selection_bounds="selected_lesson_006.txt lines 1-4"),),
+        annotations=(
+            ExternalMaterialAnnotationRecord("ann_rule_subject", "gl001_selected_lesson_006", 2, 2, supplied_by="campaign author supplied", annotation_kind="candidate_rule_statement", unknowns=("Correctness of the interpretation is not established.",)),
+            ExternalMaterialAnnotationRecord("ann_rule_predicate_analysis", "gl001_selected_lesson_006", 3, 3, supplied_by="campaign author supplied", annotation_kind="candidate_rule_statement", unknowns=("Correctness of the interpretation is not established.",)),
+            ExternalMaterialAnnotationRecord("ann_model_intemperance", "gl001_selected_lesson_006", 1, 3, supplied_by="campaign author supplied", annotation_kind="candidate_example"),
+            ExternalMaterialAnnotationRecord("ann_model_stars", "gl001_selected_lesson_006", 3, 3, supplied_by="campaign author supplied", annotation_kind="candidate_example"),
+            ExternalMaterialAnnotationRecord("ann_exercise_numbered", "gl001_selected_lesson_006", 4, 4, supplied_by="campaign author supplied", annotation_kind="candidate_exercise_instruction"),
+            ExternalMaterialAnnotationRecord("ann_label_subject_predicate", "gl001_selected_lesson_006", 2, 2, supplied_by="campaign author supplied", annotation_kind="candidate_label"),
+            ExternalMaterialAnnotationRecord("ann_ambiguous_models", "gl001_selected_lesson_006", 1, 3, supplied_by="campaign author supplied", annotation_kind="unknown"),
+        ),
+        manifest_unknowns=("Parent full-book byte hash is not represented by this selected artifact hash.",),
+    )
+
+
+def testimony_binding_requests():
+    from seed_runtime.external_material_testimony_binding import ExternalMaterialTestimonyBindingRequest
+    return (
+        ExternalMaterialTestimonyBindingRequest("source:gl001:selected_lesson_006:L1-L3#ann_model_intemperance", "gl001_lesson006_manifest", "gl001_source_pg7010", "gl001_selected_lesson_006", EXPECTED_SHA256, 1, 3, optional_annotation_id="ann_model_intemperance"),
+        ExternalMaterialTestimonyBindingRequest("source:gl001:selected_lesson_006:L2#ann_label_subject_predicate", "gl001_lesson006_manifest", "gl001_source_pg7010", "gl001_selected_lesson_006", EXPECTED_SHA256, 2, 2, optional_annotation_id="ann_label_subject_predicate"),
+        ExternalMaterialTestimonyBindingRequest("source:gl001:selected_lesson_006:L3#ann_model_stars", "gl001_lesson006_manifest", "gl001_source_pg7010", "gl001_selected_lesson_006", EXPECTED_SHA256, 3, 3, optional_annotation_id="ann_model_stars"),
+        ExternalMaterialTestimonyBindingRequest("source:gl001:selected_lesson_006:L2#ann_rule_subject", "gl001_lesson006_manifest", "gl001_source_pg7010", "gl001_selected_lesson_006", EXPECTED_SHA256, 2, 2, optional_annotation_id="ann_rule_subject"),
+        ExternalMaterialTestimonyBindingRequest("source:gl001:selected_lesson_006:L3#ann_rule_predicate_analysis", "gl001_lesson006_manifest", "gl001_source_pg7010", "gl001_selected_lesson_006", EXPECTED_SHA256, 3, 3, optional_annotation_id="ann_rule_predicate_analysis"),
+        ExternalMaterialTestimonyBindingRequest("source:gl001:selected_lesson_006:L4#ann_exercise_numbered", "gl001_lesson006_manifest", "gl001_source_pg7010", "gl001_selected_lesson_006", EXPECTED_SHA256, 4, 4, optional_annotation_id="ann_exercise_numbered"),
+        ExternalMaterialTestimonyBindingRequest("source:gl001:selected_lesson_006:L1-L3#ann_ambiguous_models", "gl001_lesson006_manifest", "gl001_source_pg7010", "gl001_selected_lesson_006", EXPECTED_SHA256, 1, 3, optional_annotation_id="ann_ambiguous_models"),
+        ExternalMaterialTestimonyBindingRequest("source:gl001:selected_lesson_006:L1-L4", "gl001_lesson006_manifest", "gl001_source_pg7010", "gl001_selected_lesson_006", EXPECTED_SHA256, 1, 4),
+    )
+
+
+def testimony_binding_set():
+    from seed_runtime.external_material_testimony_binding import validate_external_material_testimony_bindings
+    return validate_external_material_testimony_bindings(external_material_manifest(), testimony_binding_requests(), ("Campaign integration demonstrates reference binding only.",))

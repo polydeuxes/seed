@@ -103,6 +103,16 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         json_cli_flags=("--json",),
         repo_file_markers=("from_json_dict",),
     ),
+    "external_material_testimony_bindings": DiagnosticImplementationSpec(
+        name="external_material_testimony_bindings",
+        module_path="seed_runtime/external_material_testimony_binding.py",
+        build_function="validate_external_material_testimony_bindings",
+        format_function="format_external_material_testimony_binding",
+        json_function="external_material_testimony_binding_json",
+        cli_flags=("--external-material-testimony-bindings",),
+        json_cli_flags=("--json",),
+        repo_file_markers=("from_json_dict",),
+    ),
     "external_site_rule_testimony": DiagnosticImplementationSpec(
         name="external_site_rule_testimony",
         module_path="seed_runtime/external_site_rule_testimony.py",
