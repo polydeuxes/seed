@@ -37,6 +37,13 @@ from seed_runtime.candidate_requests import (
     inspect_candidate_requests,
     inspect_candidate_routes,
 )
+from seed_runtime.candidate_external_grammar import (
+    CandidateExternalGrammarInput,
+    CandidateExternalGrammarValidationError,
+    assemble_candidate_external_grammar_set,
+    candidate_external_grammar_json,
+    format_candidate_external_grammar,
+)
 from seed_runtime.capability_candidates import build_capability_candidates
 from seed_runtime.capability_catalog import CapabilityCatalog
 from seed_runtime.capabilities import normalize_capability
@@ -1367,6 +1374,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="compare diagnostic registry declarations with static implementation shape",
     )
     parser.add_argument(
+        "--candidate-external-grammar",
+        metavar="JSON_FILE",
+        help="build and display a caller-supplied candidate external grammar set",
+    )
+    parser.add_argument(
         "--projected-state-consumers",
         action="store_true",
         help="show which known surfaces consume projected state and other evidence sources",
@@ -2558,7 +2570,7 @@ def validate_lifecycle_args(
             "--state-build, --state-build-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --ownership-discrepancies, "
-            "--documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --single-capability-state, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
+            "--documentation-structure, --diagnostic-shape-audit, --candidate-external-grammar, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --single-capability-state, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
             "or --events-only"
         )
     if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
@@ -2707,6 +2719,7 @@ def validate_lifecycle_args(
         or args.listener_endpoint_authority
         or args.documentation_structure
         or args.diagnostic_shape_audit
+        or args.candidate_external_grammar
         or args.projected_state_consumers
         or args.implementation_trait_characterization
         or args.projection_shape
@@ -2753,7 +2766,7 @@ def validate_lifecycle_args(
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --question-surface-inventory, --question-family-definition, --question-family-explanation, --documentation-structure, --diagnostic-shape-audit, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --single-capability-state, --correlation-audit, --inquiry-artifacts, --constitutional-pipeline, --constitutional-pipeline-diagnostic, --constitutional-process, --constitutional-governance, --constitutional-fidelity, --constitutional-view-composition, or --audit-compare, or --projection-shape, or --projection-stage-definition, or --projection-stage-explanation"
+            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --question-surface-inventory, --question-family-definition, --question-family-explanation, --documentation-structure, --diagnostic-shape-audit, --candidate-external-grammar, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --single-capability-state, --correlation-audit, --inquiry-artifacts, --constitutional-pipeline, --constitutional-pipeline-diagnostic, --constitutional-process, --constitutional-governance, --constitutional-fidelity, --constitutional-view-composition, or --audit-compare, or --projection-shape, or --projection-stage-definition, or --projection-stage-explanation"
         )
     if args.question_family_definition and args.message:
         parser.error(
@@ -7058,6 +7071,24 @@ def main(argv: list[str] | None = None) -> int:
                     args.diagnostic_surface_explanation
                 )
             )
+        return 0
+
+    if args.candidate_external_grammar:
+        try:
+            supplied = CandidateExternalGrammarInput.from_json_dict(
+                json.loads(Path(args.candidate_external_grammar).read_text())
+            )
+            artifact = assemble_candidate_external_grammar_set(supplied)
+        except (OSError, json.JSONDecodeError, CandidateExternalGrammarValidationError) as exc:
+            parser.error(str(exc))
+        if args.json_output:
+            print(
+                json.dumps(
+                    candidate_external_grammar_json(artifact), indent=2, sort_keys=True
+                )
+            )
+        else:
+            print(format_candidate_external_grammar(artifact))
         return 0
 
     if args.question_surface_inventory:

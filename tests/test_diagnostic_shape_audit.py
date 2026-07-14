@@ -382,3 +382,11 @@ def test_diagnostic_surface_definition_checked_by_diagnostic_shape_audit():
     assert observed["supports_record"].status == "consistent"
     assert observed["record_scope"].status == "consistent"
     assert observed["mutates_cluster"].status == "consistent"
+
+
+def test_candidate_external_grammar_shape_audit_registration_is_consistent():
+    rows = build_diagnostic_shape_audit()
+
+    assert _row(rows, "candidate_external_grammar", "supports_json").status == "consistent"
+    assert _row(rows, "candidate_external_grammar", "writes_event_ledger").status == "consistent"
+    assert _row(rows, "candidate_external_grammar", "mutates_cluster").status == "consistent"

@@ -581,6 +581,21 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         description="Reports grouped projected graph validation issues.",
     ),
     DiagnosticInventoryEntry(
+        name="candidate_external_grammar",
+        cli_flags=("--candidate-external-grammar",),
+        uses_projected_state=False,
+        uses_repo_files=True,
+        supports_json=True,
+        supports_record=False,
+        record_scope="none",
+        emits_diagnostic_facts=False,
+        emits_cluster_facts=False,
+        writes_event_ledger=False,
+        mutates_cluster=False,
+        reads_diagnostic_facts=False,
+        description="Builds and displays a caller-supplied immutable candidate external grammar set without evaluating testimony, selecting candidates, inferring semantics, writing events, or mutating cluster state.",
+    ),
+    DiagnosticInventoryEntry(
         name="knowledge_reachability",
         cli_flags=(
             "--knowledge-reachability-audit",
