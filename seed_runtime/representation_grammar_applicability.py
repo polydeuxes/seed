@@ -112,6 +112,96 @@ def project_representation_grammar_applicability(recovery_projection: Representa
         hand=FutureCandidateOperationalRealizationHandoff(pid,recovered_grammar.grammar_id,recovery_projection.projection_id,handoff.probe_request_id,handoff.probe_request_id,handoff.capability_identity,mechanism_ref,invocation_contract.contract_id,demand_material.source_representation,demand_material.required_target_representation,_refs((*recovered_grammar.applicability_boundary,*demand_material.applicability_boundary_refs)),_refs((*recovered_grammar.lexical_support_refs,*demand_material.lexical_support_refs)),demand_material.fidelity_constraints,demand_material.attribution_constraints,demand_material.claim_treatment_constraints,demand_material.known_loss_refs,prov,all_unknowns,all_conflicts)
     return RepresentationGrammarApplicabilityProjection("RepresentationGrammarApplicabilityProjection",pid,recovery_projection.projection_id,recovered_grammar.grammar_id,handoff.probe_request_id,handoff.probe_request_id,handoff.capability_identity,mechanism_ref,invocation_contract.contract_id,demand_material.source_representation,demand_material.required_target_representation,demand_material.material_class_identity,state,reason,grammar_standing,material,source,target,contract,lex,boundary,fidelity,attribution,claim,_refs((*recovered_grammar.known_limitations,*demand_material.known_loss_refs)),_refs((*supporting_references,*recovered_grammar.supporting_comparison_refs,*recovered_grammar.lexical_support_refs)),prov,all_unknowns,all_conflicts,hand)
 
+
+EXPLANATION_CONVENTION = "representation_grammar_applicability_advancement_explanation_v1"
+
+@dataclass(frozen=True)
+class RepresentationGrammarApplicabilityAdvancementExplanation:
+    artifact_type: str
+    explanation_id: str
+    source_artifact_ref: str
+    source_artifact_type: str
+    producer: str
+    attempted_movement: str
+    examined_grammar: str
+    examined_demand: str
+    examined_mechanism: str
+    examined_contract: str
+    source_state: str
+    source_reason: str
+    established_applicability_evidence: tuple[str,...]
+    next_handoff_boundary: str
+    handoff_permitted: bool
+    reconsideration_evidence: tuple[str,...]
+    authority_treatment: str
+    prohibited_downstream_movement: tuple[str,...]
+    preserved_unknowns: tuple[str,...]
+    preserved_conflicts: tuple[str,...]
+    preserved_known_loss: tuple[str,...]
+    preserved_provenance: tuple[str,...]
+    explanation_boundary: str
+    compatibility_boundary_changed: bool=False
+    read_only: bool=True
+    writes_event_ledger: bool=False
+    mutates_cluster: bool=False
+    explanation_convention: str=EXPLANATION_CONVENTION
+    def to_json_dict(self):
+        d=asdict(self)
+        for k,v in d.items():
+            if isinstance(v, tuple): d[k]=list(v)
+        return d
+
+def _standing(label: str, value: str) -> str:
+    return f"{label}={value}"
+
+def explain_representation_grammar_applicability_advancement(p: RepresentationGrammarApplicabilityProjection) -> RepresentationGrammarApplicabilityAdvancementExplanation:
+    attempted="advance one recovered representation grammar applicability result toward the existing future candidate-realization handoff"
+    established=(
+        _standing("grammar_standing", p.grammar_standing),
+        _standing("material_compatibility", p.material_compatibility),
+        _standing("source_representation_compatibility", p.source_representation_compatibility),
+        _standing("target_representation_compatibility", p.target_representation_compatibility),
+        _standing("invocation_contract_compatibility", p.invocation_contract_compatibility),
+        _standing("lexical_support_standing", p.lexical_support_standing),
+        _standing("applicability_boundary_standing", p.applicability_boundary_standing),
+        _standing("fidelity_standing", p.fidelity_standing),
+        _standing("attribution_standing", p.attribution_standing),
+        _standing("claim_treatment_standing", p.claim_treatment_standing),
+    )
+    prohibited=("construct_candidate_realization", "select_or_warrant_realization", "authorize_emit_or_execute", "project_capability_reachability", "recover_or_broaden_grammar")
+    reconsideration=("none; the source artifact already permits only its existing future candidate-realization handoff",)
+    boundary="grammar applicability boundary permits the existing future candidate-realization handoff; explanation emits no handoff"
+    handoff_permitted=p.applicability_state=="applicable"
+    if p.applicability_state=="not_applicable":
+        bad=tuple(x for x in established if x.endswith("=incompatible")) or (p.applicability_reason,)
+        boundary="bounded positive applicability evidence establishes incompatibility; next candidate-realization handoff is not permitted"
+        reconsideration=tuple(f"changed source-artifact evidence for {x.split('=')[0]}" for x in bad)
+    elif p.applicability_state=="unknown":
+        missing=tuple(x for x in established if x.endswith("=unknown")) or p.unknowns or (p.applicability_reason,)
+        boundary="required bounded support is absent or unresolved; next candidate-realization handoff is not permitted"
+        reconsideration=tuple(f"bounded applicability evidence resolving {x.split('=')[0] if '=' in x else x}" for x in missing)
+    elif p.applicability_state=="conflict":
+        boundary="preserved applicability evidence supports incompatible conclusions; next candidate-realization handoff is not permitted"
+        reconsideration=("changed source-artifact evidence that removes the preserved applicability conflict without ordering, source count, preferred grammar, or mechanism availability",)
+    payload={"source":p.applicability_projection_id,"state":p.applicability_state,"reason":p.applicability_reason,"evidence":established,"boundary":boundary,"reconsideration":reconsideration,"unknowns":p.unknowns,"conflicts":p.conflicts,"convention":EXPLANATION_CONVENTION}
+    return RepresentationGrammarApplicabilityAdvancementExplanation(
+        "RepresentationGrammarApplicabilityAdvancementExplanation",
+        _stable("representation-grammar-applicability-advancement-explanation", payload),
+        p.applicability_projection_id, p.artifact_type, "RepresentationGrammarApplicabilityProjection", attempted,
+        p.recovered_grammar_ref, p.capability_demand_ref, p.mechanism_ref, p.invocation_contract_ref, p.applicability_state, p.applicability_reason,
+        established, boundary, handoff_permitted, reconsideration,
+        "additional operator authority is not a resolution for missing or incompatible applicability evidence",
+        prohibited, p.unknowns, p.conflicts, p.known_limitations_or_loss, p.provenance,
+        "Stage-local read-only explanation derived only from RepresentationGrammarApplicabilityProjection; it does not reclassify states, recover or broaden grammar, construct realization, emit a handoff, request authority, write events, or mutate cluster state.")
+
+def representation_grammar_applicability_advancement_explanation_json(e): return e.to_json_dict()
+
+def format_representation_grammar_applicability_advancement_explanation(e: RepresentationGrammarApplicabilityAdvancementExplanation) -> str:
+    lines=["Representation Grammar Applicability Advancement Explanation",f"explanation_id: {e.explanation_id}",f"source_artifact_ref: {e.source_artifact_ref}",f"producer: {e.producer}",f"attempted_movement: {e.attempted_movement}",f"examined_grammar: {e.examined_grammar}",f"examined_demand: {e.examined_demand}",f"examined_mechanism: {e.examined_mechanism}",f"examined_contract: {e.examined_contract}",f"source_state: {e.source_state}",f"source_reason: {e.source_reason}",f"next_handoff_boundary: {e.next_handoff_boundary}",f"handoff_permitted: {str(e.handoff_permitted).lower()}",f"authority_treatment: {e.authority_treatment}",f"compatibility_boundary_changed: {str(e.compatibility_boundary_changed).lower()}",f"read_only: {str(e.read_only).lower()}",f"writes_event_ledger: {str(e.writes_event_ledger).lower()}",f"mutates_cluster: {str(e.mutates_cluster).lower()}",f"explanation_boundary: {e.explanation_boundary}"]
+    for label, vals in (("established_applicability_evidence",e.established_applicability_evidence),("reconsideration_evidence",e.reconsideration_evidence),("prohibited_downstream_movement",e.prohibited_downstream_movement),("preserved_unknowns",e.preserved_unknowns),("preserved_conflicts",e.preserved_conflicts),("preserved_known_loss",e.preserved_known_loss),("preserved_provenance",e.preserved_provenance)):
+        lines.append(label+":"); lines += [f"- {x}" for x in vals] or ["- none"]
+    return "\n".join(lines)
+
 def representation_grammar_applicability_json(p): return p.to_json_dict()
 
 def format_representation_grammar_applicability(p: RepresentationGrammarApplicabilityProjection) -> str:
