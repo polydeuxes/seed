@@ -12,7 +12,7 @@ The actual construction boundary is the producer function `build_shared_explanat
 
 The produced artifact is `SharedExplanationMembershipEvidenceSet`.
 
-The artifact preserves:
+The artifact preserves only these collection and partition surfaces:
 
 - bounded inquiry reference;
 - bounded demand reference;
@@ -21,14 +21,15 @@ The artifact preserves:
 - every supplied `SharedExplanationMembershipEvidenceProjection` record in `membership_results`;
 - mechanical positive partition in `belongs_results`;
 - independent mechanical non-positive partitions in `does_not_belong_results`, `unknown_results`, and `conflict_results`;
-- legacy `belonging_results` compatibility alias documented as the complete supplied collection, not the positive partition;
 - mechanical state identity partitions;
 - duplicate identity occurrence visibility;
 - read-only/no-event/no-mutation guarantees.
 
+The obsolete alias formerly spelled as `belonging` + `_results` has been removed from the artifact, builder output, JSON rendering, human rendering, tests, and this corrected documentation. No compatibility alias, deprecated property, migration note, or duplicate field remains.
+
 ## Corrected general collection boundary
 
-`membership_results` is the general supplied membership-evidence collection boundary.
+`membership_results` is the only general supplied membership-evidence collection boundary.
 
 It preserves every supplied `SharedExplanationMembershipEvidenceProjection` exactly once, in supplied order, including records whose state is:
 
@@ -101,7 +102,7 @@ Both renderings expose the same bounded meaning:
 - read-only, no-event-ledger, and no-cluster-mutation guarantees;
 - non-selection boundary.
 
-JSON also includes `belonging_results` only as a deprecated compatibility alias for `membership_results`, accompanied by an explicit compatibility note that it is not the `belongs_results` partition.
+JSON now emits only the current field names. It does not emit the removed obsolete alias or any compatibility note for it.
 
 ## Read-only guarantees
 
@@ -111,11 +112,20 @@ The non-selection boundary explicitly stops before membership selection, eligibi
 
 ## Compatibility treatment
 
-Did this correction change an existing compatibility boundary?
+Did this correction change
+an existing compatibility boundary?
 
-No existing behavior outside this newly introduced set boundary was changed. Within the set boundary, the misleading general collection name was corrected to `membership_results` and the mechanical positive partition was exposed as `belongs_results`.
+No.
 
-Because `belonging_results` had already been exposed on the set artifact and JSON shape, it is retained only as a deprecated compatibility alias for the complete supplied collection. Its documented meaning is `membership_results`, not the positive `belongs_results` partition. This prevents silently maintaining two ambiguous meanings.
+The obsolete name had no established
+external or downstream consumer boundary
+and was removed before becoming compatibility.
+
+Repository evidence for this answer: the only uses were the immediately preceding implementation, tests, and slice report for this unreleased set surface. The correction removes that surface rather than preserving it as compatibility.
+
+## Repository search confirmation
+
+A repository search for the removed obsolete field spelling after this correction returns no implementation, rendered-output, test, or documentation uses. Tests construct the removed spelling from two fragments only to prove absence without reintroducing the spelling as a repository surface.
 
 ## Proving-case evidence
 
@@ -126,7 +136,10 @@ Focused tests prove a supplied four-result collection containing one result in e
 - exposes only the `does_not_belong` result in `does_not_belong_results`;
 - exposes only the `unknown` result in `unknown_results`;
 - exposes only the `conflict` result in `conflict_results`;
-- keeps `state_partitions` as a mechanical candidate-reference summary.
+- keeps `state_partitions` as a mechanical candidate-reference summary;
+- proves the artifact has no removed obsolete alias field;
+- proves JSON has no removed obsolete alias key;
+- proves human rendering does not emit the removed obsolete alias.
 
 The same focused test file also preserves:
 
@@ -169,13 +182,9 @@ This correction intentionally leaves unresolved and unimplemented:
 Given one lawful
 SharedExplanationMembershipEvidenceSet,
 
-what smallest membership-selection
-responsibility may identify projections
-eligible for later sequencing
+does membership_state == belongs
+directly establish admission
+to later presentation sequencing,
 
-while preserving non-members,
-Unknowns, conflicts, and duplicates
-
-without ranking blockers,
-deduplicating evidence,
-or composing the view?
+or is a separate bounded
+presentation-eligibility responsibility required?
