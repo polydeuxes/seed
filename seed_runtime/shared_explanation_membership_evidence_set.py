@@ -42,7 +42,11 @@ class SharedExplanationMembershipEvidenceSet:
     collection_empty: bool
     collection_partial: bool
     completeness_claim: str
-    belonging_results: tuple[SharedExplanationMembershipEvidenceProjection, ...]
+    membership_results: tuple[SharedExplanationMembershipEvidenceProjection, ...]
+    belongs_results: tuple[SharedExplanationMembershipEvidenceProjection, ...]
+    does_not_belong_results: tuple[SharedExplanationMembershipEvidenceProjection, ...]
+    unknown_results: tuple[SharedExplanationMembershipEvidenceProjection, ...]
+    conflict_results: tuple[SharedExplanationMembershipEvidenceProjection, ...]
     state_partitions: dict[str, tuple[str, ...]]
     duplicate_identity_occurrences: tuple[IdentityOccurrence, ...]
     set_boundary: str
@@ -52,8 +56,24 @@ class SharedExplanationMembershipEvidenceSet:
     mutates_cluster: bool = False
     set_convention: str = SET_CONVENTION
 
+    @property
+    def belonging_results(self) -> tuple[SharedExplanationMembershipEvidenceProjection, ...]:
+        """Deprecated compatibility alias for membership_results.
+
+        This alias preserves the original public attribute name for callers that
+        already consumed the set artifact. It means the complete supplied
+        membership-evidence collection, not the positive `belongs` partition.
+        New callers should use `membership_results` or `belongs_results`.
+        """
+        return self.membership_results
+
     def to_json_dict(self) -> dict[str, Any]:
         data = asdict(self)
+        data["belonging_results"] = self.belonging_results
+        data["belonging_results_compatibility_note"] = (
+            "Deprecated compatibility alias for membership_results; contains the complete supplied collection, "
+            "not the belongs_results partition."
+        )
         return _jsonable(data)
 
 
@@ -70,8 +90,12 @@ def build_shared_explanation_membership_evidence_set(
         if result.bounded_demand_ref != inquiry.demand_ref:
             raise ValueError("membership evidence set requires one bounded demand reference")
 
+    state_partition_results: dict[str, tuple[SharedExplanationMembershipEvidenceProjection, ...]] = {
+        state: tuple(r for r in preserved if r.membership_state == state)
+        for state in MEMBERSHIP_STATES
+    }
     partitions: dict[str, tuple[str, ...]] = {
-        state: tuple(r.candidate_projection_ref for r in preserved if r.membership_state == state)
+        state: tuple(r.candidate_projection_ref for r in state_partition_results[state])
         for state in MEMBERSHIP_STATES
     }
 
@@ -105,14 +129,18 @@ def build_shared_explanation_membership_evidence_set(
 
     return SharedExplanationMembershipEvidenceSet(
         artifact_type="SharedExplanationMembershipEvidenceSet",
-        producer="SharedExplanationMembershipEvidenceSet",
+        producer="build_shared_explanation_membership_evidence_set",
         bounded_inquiry_ref=inquiry.inquiry_ref,
         bounded_demand_ref=inquiry.demand_ref,
         supplied_result_count=len(preserved),
         collection_empty=not preserved,
         collection_partial=collection_partial,
         completeness_claim="none; supplied collection only",
-        belonging_results=preserved,
+        membership_results=preserved,
+        belongs_results=state_partition_results["belongs"],
+        does_not_belong_results=state_partition_results["does_not_belong"],
+        unknown_results=state_partition_results["unknown"],
+        conflict_results=state_partition_results["conflict"],
         state_partitions=partitions,
         duplicate_identity_occurrences=tuple(occurrences),
         set_boundary=(
@@ -153,7 +181,9 @@ def format_shared_explanation_membership_evidence_set(
         f"mutates_cluster: {str(s.mutates_cluster).lower()}",
         "all_supplied_result_identities:",
     ]
-    lines += [f"- {r.candidate_projection_ref}" for r in s.belonging_results] or ["- none"]
+    lines += [f"- {r.candidate_projection_ref}" for r in s.membership_results] or ["- none"]
+    lines.append("belongs_result_identities:")
+    lines += [f"- {r.candidate_projection_ref}" for r in s.belongs_results] or ["- none"]
     lines.append("state_partitions:")
     for state in MEMBERSHIP_STATES:
         lines.append(f"  {state}:")
