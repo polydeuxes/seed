@@ -31,6 +31,15 @@ from seed_runtime.capability_reachability_projection import (
     format_capability_reachability_projection,
     project_capability_reachability,
 )
+
+from seed_runtime.operational_realization_warrant import (
+    FutureBoundedEgressTranslationHandoff,
+    OperationalRealizationWarrant,
+    OperationalRealizationWarrantError,
+    format_operational_realization_warrant,
+    operational_realization_warrant_json,
+    project_operational_realization_warrant,
+)
 from seed_runtime.operational_realization_selection import (
     FutureOperationalRealizationWarrantHandoff,
     NonSelectedOperationalRealization,
@@ -143,6 +152,12 @@ __all__ = [
     "format_operational_realization_selection",
     "operational_realization_selection_json",
     "select_operational_realization",
+    "FutureBoundedEgressTranslationHandoff",
+    "OperationalRealizationWarrant",
+    "OperationalRealizationWarrantError",
+    "format_operational_realization_warrant",
+    "operational_realization_warrant_json",
+    "project_operational_realization_warrant",
     "CapabilityInventoryEntry",
     "CapabilitySupportSummary",
     "build_capability_inventory",
