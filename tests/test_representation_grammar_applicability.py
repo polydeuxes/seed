@@ -113,3 +113,51 @@ def test_non_applicable_unknown_conflict_emit_no_positive_handoff_and_do_not_mut
     assert proj(d=demand(required_structures=("imperative",))).future_candidate_realization_handoff is None
     assert proj(d=demand(required_structures=("coordination",))).future_candidate_realization_handoff is None
     assert proj(d=demand(conflicts=("conflict",))).future_candidate_realization_handoff is None
+
+
+def test_applicability_advancement_explanation_proving_cases_and_handoff_control():
+    from seed_runtime.representation_grammar_applicability import explain_representation_grammar_applicability_advancement
+
+    applicable = explain_representation_grammar_applicability_advancement(proj())
+    assert applicable.artifact_type == "RepresentationGrammarApplicabilityAdvancementExplanation"
+    assert applicable.source_artifact_type == "RepresentationGrammarApplicabilityProjection"
+    assert applicable.source_state == "applicable"
+    assert applicable.handoff_permitted is True
+    assert "permits the existing future candidate-realization handoff" in applicable.next_handoff_boundary
+    assert "construct_candidate_realization" in applicable.prohibited_downstream_movement
+    assert applicable.read_only and not applicable.writes_event_ledger and not applicable.mutates_cluster
+    assert applicable.compatibility_boundary_changed is False
+
+    not_applicable = explain_representation_grammar_applicability_advancement(proj(d=demand(required_structures=("imperative",))))
+    assert not_applicable.source_state == "not_applicable"
+    assert not_applicable.handoff_permitted is False
+    assert "material_compatibility=incompatible" in not_applicable.established_applicability_evidence
+    assert any("material_compatibility" in x for x in not_applicable.reconsideration_evidence)
+    assert "operator authority" in not_applicable.authority_treatment
+
+    unknown = explain_representation_grammar_applicability_advancement(proj(d=demand(required_structures=("coordination",))))
+    assert unknown.source_state == "unknown"
+    assert unknown.handoff_permitted is False
+    assert "material_compatibility=unknown" in unknown.established_applicability_evidence
+    assert any("material_compatibility" in x for x in unknown.reconsideration_evidence)
+
+    conflict = explain_representation_grammar_applicability_advancement(proj(d=demand(conflicts=("applicability-conflict",))))
+    assert conflict.source_state == "conflict"
+    assert conflict.handoff_permitted is False
+    assert conflict.preserved_conflicts == ("applicability-conflict",)
+    assert "without ordering" in conflict.reconsideration_evidence[0]
+
+
+def test_applicability_advancement_explanation_human_json_same_meaning():
+    from seed_runtime.representation_grammar_applicability import explain_representation_grammar_applicability_advancement, format_representation_grammar_applicability_advancement_explanation, representation_grammar_applicability_advancement_explanation_json
+
+    exp = explain_representation_grammar_applicability_advancement(proj(d=demand(required_lexical_refs=("lex-missing",))))
+    text = format_representation_grammar_applicability_advancement_explanation(exp)
+    js = representation_grammar_applicability_advancement_explanation_json(exp)
+    for key in ("source_state", "source_reason", "next_handoff_boundary", "handoff_permitted", "authority_treatment", "writes_event_ledger", "mutates_cluster"):
+        assert key in js
+        assert key + ":" in text
+    assert js["source_state"] == "unknown"
+    assert js["next_handoff_boundary"] in text
+    assert js["handoff_permitted"] is False
+    assert "lexical_support_standing=unknown" in js["established_applicability_evidence"]
