@@ -117,7 +117,24 @@ from seed_runtime.verification_evidence import (
     build_verification_evidence,
 )
 
+from seed_runtime.closed_choice_selection_binding import (
+    ClosedChoiceOption,
+    ClosedChoiceSelectionBinding,
+    ClosedChoiceSelectionBindingError,
+    OperatorSelectionTokenCapture,
+    PresentedClosedChoiceSet,
+    bind_closed_choice_selection,
+    closed_choice_selection_binding_json,
+)
+
 __all__ = [
+    "ClosedChoiceOption",
+    "ClosedChoiceSelectionBinding",
+    "ClosedChoiceSelectionBindingError",
+    "OperatorSelectionTokenCapture",
+    "PresentedClosedChoiceSet",
+    "bind_closed_choice_selection",
+    "closed_choice_selection_binding_json",
     "AnsibleInventoryObservationSource",
     "CapabilityCatalog",
     "CapabilityCandidate",
