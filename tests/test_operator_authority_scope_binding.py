@@ -98,3 +98,61 @@ def test_authority_language_identity_defaults_and_boundary_exclusions():
         assert term in text
     js=operator_authority_scope_binding_json(granted)
     assert js["read_only"] and not js["writes_event_ledger"] and not js["mutates_cluster"]
+
+def explain(text, **kw):
+    return explain_minimum_lawful_advancement(bind(text, **kw)[0])
+
+def test_minimum_lawful_advancement_explanation_proving_cases():
+    missing = explain("Run an active scan of node115 and show me JSON.", restrictions=("network_active_observation_not_granted",))
+    assert missing.source_artifact_type == "OperatorAuthorityScopeBindingProjection"
+    assert missing.movement_blocked and missing.authority_resolvable
+    assert "network_active_observation" in missing.first_missing_boundary
+    assert "one exact bounded operator authority grant" in missing.reconsideration_transition
+    assert missing.read_only and not missing.writes_event_ledger and not missing.mutates_cluster
+    assert "authorize_or_execute_movement" in missing.prohibited_downstream_movement
+
+    e,p,h=interp("Show ownership on node115.")
+    p=replace(p, scope_expressions=("every node",))
+    h=replace(h, scope_expressions=("every node",))
+    oi,wa,sb=ctx(activity=("constitutional_read",), scopes=("node115",))
+    outside=explain_minimum_lawful_advancement(bind_operator_authority_scope(p,h,e,oi,wa,sb))
+    assert outside.movement_blocked and not outside.authority_resolvable
+    assert "all-nodes" in outside.first_missing_boundary
+    assert "network_active_observation" not in outside.reconsideration_transition
+
+    unresolved = explain("Show ownership on node116 as JSON.")
+    assert unresolved.source_state == "unknown"
+    assert not unresolved.authority_resolvable
+    assert "node116" in unresolved.first_missing_boundary
+    assert "scope evidence or operator clarification" in unresolved.reconsideration_transition
+
+    unknown = explain("Run an active scan of node115 and show me JSON.", activity=(), unknowns=("network authority unresolved",))
+    assert unknown.source_state == "unknown"
+    assert "Unknown" in unknown.first_missing_boundary
+    assert unknown.preserved_unknowns == ("network authority unresolved",)
+
+    e,p,h=interp("Run an active scan of node115 and show me JSON.")
+    p=replace(p, operator_stated_effect_constraints=("do not use the network",))
+    oi,wa,sb=ctx(activity=("network_active_observation",), scopes=("node115",), sources=("standing network authority",))
+    conflict = explain_minimum_lawful_advancement(bind_operator_authority_scope(p,h,e,oi,wa,sb))
+    assert conflict.source_state == "conflict"
+    assert not conflict.authority_resolvable
+    assert "must change before reconsideration" in conflict.reconsideration_transition
+    assert conflict.preserved_conflicts
+
+    permitted = explain("Show ownership on node115 as JSON.")
+    assert permitted.source_state == "permitted"
+    assert not permitted.movement_blocked
+    assert permitted.first_missing_boundary == "none"
+    assert "formulate_bounded_constitutional_question" not in permitted.prohibited_downstream_movement
+
+
+def test_minimum_lawful_advancement_explanation_human_json_same_boundary():
+    exp = explain("Run an active scan of node115 and show me JSON.", restrictions=("network_active_observation_not_granted",))
+    text = format_minimum_lawful_advancement_explanation(exp)
+    js = minimum_lawful_advancement_explanation_json(exp)
+    for key in ("source_state", "source_reason", "first_missing_boundary", "authority_resolvable", "reconsideration_transition", "writes_event_ledger", "mutates_cluster"):
+        assert key in js
+        assert key + ":" in text
+    assert js["first_missing_boundary"] in text
+    assert js["authority_resolvable"] is True
