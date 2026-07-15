@@ -6,6 +6,7 @@ import hashlib, json
 from typing import Any
 
 from seed_runtime.examination_probe_request import OperationalRealizationHandoff
+from seed_runtime.representation_grammar_applicability import FutureCandidateOperationalRealizationHandoff
 
 CONVENTION = "candidate_operational_realization_projection_v1"
 BOUNDARY_NOTES = (
@@ -93,7 +94,7 @@ class CandidateOperationalRealizationSet:
     def to_future_capability_reachability_handoff(self):
         return FutureCapabilityReachabilityHandoff(self.set_id,self.probe_request_reference,self.capability_demand_reference,tuple(c.candidate_id for c in self.candidates),{c.candidate_id:c.candidate_standing for c in self.candidates},tuple(c.dependency_standing for c in self.candidates),tuple(c.authority_standing for c in self.candidates),self.unknowns,self.conflicts)
 
-def _projection_for(basis, contract, grammar, comps):
+def _projection_for(basis, contract, grammar, comps, representation_grammar_applicable=False):
     rep=basis.representation_compatibility if basis.representation_compatibility in COMPAT else "unknown"
     meth=basis.methodological_compatibility if basis.methodological_compatibility in METHOD else "cannot_establish"
     mech={"available":"available","unavailable":"unavailable","conflict":"conflict"}.get(basis.availability_evidence,"unknown")
@@ -103,8 +104,9 @@ def _projection_for(basis, contract, grammar, comps):
     elif any(c.result=="contradicted" for c in comps): beh="contradicted"
     elif any(c.result=="supported" for c in comps): beh="supported"
     elif comps: beh="unknown"
-    else: beh="not_required" if (not grammar and contract and contract.argument_grammar.startswith("opaque")) else "unknown"
-    if grammar and beh=="supported": gram="behaviorally_supported"
+    else: beh="not_required" if (representation_grammar_applicable or (not grammar and contract and contract.argument_grammar.startswith("opaque"))) else "unknown"
+    if representation_grammar_applicable: gram="recovered_only"
+    elif grammar and beh=="supported": gram="behaviorally_supported"
     elif grammar and beh=="contradicted": gram="behaviorally_contradicted"
     elif grammar: gram="recovered_only"
     elif contract and contract.argument_grammar: gram="declared_only"
@@ -123,7 +125,7 @@ def _projection_for(basis, contract, grammar, comps):
     else: standing="unknown"
     return mech, gram, beh, rep, meth, dep, auth, standing, tuple(reasons)
 
-def project_candidate_operational_realizations(handoff: OperationalRealizationHandoff, *, mechanism_observations: tuple[MechanismObservation,...]=(), attributed_claims: tuple[AttributedMechanismClaim,...]=(), invocation_contracts: tuple[InvocationContract,...]=(), recovered_grammars: tuple[RecoveredInvocationGrammar,...]=(), behavioral_observations: tuple[BehavioralObservation,...]=(), behavior_comparisons: tuple[BehaviorComparison,...]=(), bases: tuple[OperationalRealizationBasis,...]=(), shared_provenance: tuple[str,...]=(), set_unknowns: tuple[str,...]=()) -> CandidateOperationalRealizationSet:
+def project_candidate_operational_realizations(handoff: OperationalRealizationHandoff, *, mechanism_observations: tuple[MechanismObservation,...]=(), attributed_claims: tuple[AttributedMechanismClaim,...]=(), invocation_contracts: tuple[InvocationContract,...]=(), recovered_grammars: tuple[RecoveredInvocationGrammar,...]=(), representation_grammar_applicability_handoffs: tuple[FutureCandidateOperationalRealizationHandoff,...]=(), behavioral_observations: tuple[BehavioralObservation,...]=(), behavior_comparisons: tuple[BehaviorComparison,...]=(), bases: tuple[OperationalRealizationBasis,...]=(), shared_provenance: tuple[str,...]=(), set_unknowns: tuple[str,...]=()) -> CandidateOperationalRealizationSet:
     obs_by_mech={}
     for o in mechanism_observations: obs_by_mech.setdefault(o.mechanism_id,[]).append(o)
     claims_by_mech={}
@@ -132,27 +134,31 @@ def project_candidate_operational_realizations(handoff: OperationalRealizationHa
     for c in invocation_contracts: contracts_by_mech.setdefault(c.mechanism_id,[]).append(c)
     grammars_by_mech={}
     for g in recovered_grammars: grammars_by_mech.setdefault(g.mechanism_id,[]).append(g)
+    app_by_key={(h.mechanism_ref,h.invocation_contract_ref,h.recovered_grammar_ref):h for h in representation_grammar_applicability_handoffs if h.probe_request_ref==handoff.probe_request_id and h.capability_demand_ref==handoff.capability_identity}
     bobs={o.observation_id:o for o in behavioral_observations}; comps_by_ref={}
     for c in behavior_comparisons: comps_by_ref.setdefault(c.reference_id,[]).append(c)
     if not bases:
-        mechs=sorted(set(obs_by_mech)|set(claims_by_mech)|set(contracts_by_mech)|set(grammars_by_mech)|{o.mechanism_id for o in behavioral_observations})
+        mechs=sorted(set(obs_by_mech)|set(claims_by_mech)|set(contracts_by_mech)|set(grammars_by_mech)|{h.mechanism_ref for h in representation_grammar_applicability_handoffs}|{o.mechanism_id for o in behavioral_observations})
         tmp=[]
         for mid in mechs:
             obs=obs_by_mech.get(mid,()); ver=next((o.mechanism_version for o in obs if o.mechanism_version),"")
             contracts=contracts_by_mech.get(mid) or (InvocationContract("",mid,"unknown","unknown"),)
             grammars=grammars_by_mech.get(mid) or (None,)
+            app_hands=tuple(h for h in representation_grammar_applicability_handoffs if h.mechanism_ref==mid)
             for con in contracts:
-                for gr in grammars:
-                    bid=_stable("operational-realization-basis",{"probe":handoff.probe_request_id,"demand":handoff.capability_identity,"mechanism":mid,"version":ver,"contract":con.contract_id,"grammar":getattr(gr,"grammar_id","")})
+                expanded=(tuple(h for h in app_hands if h.invocation_contract_ref==con.contract_id) or grammars)
+                for gr in expanded:
+                    bid=_stable("operational-realization-basis",{"probe":handoff.probe_request_id,"demand":handoff.capability_identity,"mechanism":mid,"version":ver,"contract":con.contract_id,"grammar":getattr(gr,"grammar_id",getattr(gr,"recovered_grammar_ref",""))})
                     rep="compatible" if con.accepted_input_representation==handoff.required_input_representation and con.produced_output_representation==handoff.requested_output_representation else "unknown" if con.accepted_input_representation=="unknown" else "incompatible"
-                    tmp.append(OperationalRealizationBasis(bid,mid,ver,_refs(o.observation_id for o in obs),_refs(c.claim_id for c in claims_by_mech.get(mid,())),con.contract_id,getattr(gr,"grammar_id","") if gr else "",(),(),"available" if obs else "unknown","available" if obs else "unknown","reachable" if obs else "unknown",rep,"satisfies",tuple(x for o in obs for x in o.provenance)))
+                    tmp.append(OperationalRealizationBasis(bid,mid,ver,_refs(o.observation_id for o in obs),_refs(c.claim_id for c in claims_by_mech.get(mid,())),con.contract_id,getattr(gr,"grammar_id",getattr(gr,"recovered_grammar_ref","")) if gr else "",(),(),"available" if obs else "unknown","available" if obs else "unknown","reachable" if obs else "unknown",rep,"satisfies",tuple(x for o in obs for x in o.provenance)))
         bases=tuple(tmp)
     candidates=[]
     for b in sorted(bases,key=lambda x:x.basis_id):
         con=next((c for c in invocation_contracts if c.contract_id==b.invocation_contract_ref), None)
         gr=next((g for g in recovered_grammars if g.grammar_id==b.recovered_grammar_ref), None)
+        app_handoff=app_by_key.get((b.mechanism_id,b.invocation_contract_ref,b.recovered_grammar_ref))
         comps=tuple(c for ref in (b.behavior_comparison_refs or ((gr.grammar_id,) if gr else (con.contract_id if con else "",))) for c in comps_by_ref.get(ref,()) if (not c.behavioral_observation_id or c.behavioral_observation_id in bobs))
-        mech,gram,beh,rep,meth,dep,auth,standing,reasons=_projection_for(b,con,gr,comps)
+        mech,gram,beh,rep,meth,dep,auth,standing,reasons=_projection_for(b,con,gr,comps, bool(app_handoff))
         cid=_stable("candidate-operational-realization",{"probe":handoff.probe_request_id,"demand":handoff.capability_identity,"mechanism":b.mechanism_id,"version":b.mechanism_version,"contract":b.invocation_contract_ref,"grammar":b.recovered_grammar_ref,"input":con.accepted_input_representation if con else handoff.required_input_representation,"output":con.produced_output_representation if con else handoff.requested_output_representation,"method":handoff.method_constraint_reference,"basis":b.basis_id,"standing":standing,"comparison_ids":[c.comparison_id for c in comps],"convention":CONVENTION})
         candidates.append(CandidateOperationalRealization(cid,handoff.probe_request_id,handoff.capability_identity,b.mechanism_id,b.mechanism_version,b.invocation_contract_ref,b.recovered_grammar_ref,con.accepted_input_representation if con else handoff.required_input_representation,con.produced_output_representation if con else handoff.requested_output_representation,mech,gram,beh,rep,meth,dep,auth,(b.basis_id,),b.provenance,b.unknowns,b.conflicts,standing,reasons))
     candidates=tuple(sorted(candidates,key=lambda c:(c.mechanism_reference,c.invocation_contract_reference,c.recovered_grammar_reference,c.candidate_id)))
