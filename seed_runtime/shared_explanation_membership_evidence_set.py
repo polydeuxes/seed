@@ -56,25 +56,8 @@ class SharedExplanationMembershipEvidenceSet:
     mutates_cluster: bool = False
     set_convention: str = SET_CONVENTION
 
-    @property
-    def belonging_results(self) -> tuple[SharedExplanationMembershipEvidenceProjection, ...]:
-        """Deprecated compatibility alias for membership_results.
-
-        This alias preserves the original public attribute name for callers that
-        already consumed the set artifact. It means the complete supplied
-        membership-evidence collection, not the positive `belongs` partition.
-        New callers should use `membership_results` or `belongs_results`.
-        """
-        return self.membership_results
-
     def to_json_dict(self) -> dict[str, Any]:
-        data = asdict(self)
-        data["belonging_results"] = self.belonging_results
-        data["belonging_results_compatibility_note"] = (
-            "Deprecated compatibility alias for membership_results; contains the complete supplied collection, "
-            "not the belongs_results partition."
-        )
-        return _jsonable(data)
+        return _jsonable(asdict(self))
 
 
 def build_shared_explanation_membership_evidence_set(

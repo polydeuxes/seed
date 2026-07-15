@@ -35,7 +35,6 @@ def test_same_inquiry_and_demand_constructs_lawful_read_only_set():
     assert evidence_set.bounded_inquiry_ref == "inquiry:one"
     assert evidence_set.bounded_demand_ref == "demand:one"
     assert evidence_set.membership_results == (first, second)
-    assert evidence_set.belonging_results == (first, second)
     assert evidence_set.belongs_results == (first,)
     assert evidence_set.read_only is True
     assert evidence_set.writes_event_ledger is False
@@ -74,7 +73,6 @@ def test_every_supplied_result_and_duplicate_occurrence_remains_visible_without_
     )
 
     assert evidence_set.membership_results == (first, second)
-    assert evidence_set.belonging_results == (first, second)
     assert evidence_set.belongs_results == (first, second)
     candidate_occurrences = [
         o for o in evidence_set.duplicate_identity_occurrences if o.identity_kind == "candidate_projection_ref"
@@ -111,11 +109,20 @@ def test_general_collection_and_state_partitions_are_mechanical_over_existing_st
     )
 
     assert evidence_set.membership_results == (belongs, does_not, unknown, conflict)
-    assert evidence_set.belonging_results == (belongs, does_not, unknown, conflict)
     assert evidence_set.belongs_results == (belongs,)
     assert evidence_set.does_not_belong_results == (does_not,)
     assert evidence_set.unknown_results == (unknown,)
     assert evidence_set.conflict_results == (conflict,)
+    assert [r.membership_state for r in evidence_set.membership_results] == [
+        "belongs",
+        "does_not_belong",
+        "unknown",
+        "conflict",
+    ]
+    assert {r.membership_state for r in evidence_set.belongs_results} == {"belongs"}
+    assert {r.membership_state for r in evidence_set.does_not_belong_results} == {"does_not_belong"}
+    assert {r.membership_state for r in evidence_set.unknown_results} == {"unknown"}
+    assert {r.membership_state for r in evidence_set.conflict_results} == {"conflict"}
     assert evidence_set.state_partitions == {
         "belongs": ("candidate:belongs",),
         "does_not_belong": ("candidate:not",),
@@ -133,7 +140,6 @@ def test_empty_and_partial_collection_truth_makes_no_completeness_claim_and_fabr
     assert evidence_set.collection_partial is True
     assert evidence_set.supplied_result_count == 0
     assert evidence_set.membership_results == ()
-    assert evidence_set.belonging_results == ()
     assert evidence_set.belongs_results == ()
     assert evidence_set.state_partitions["unknown"] == ()
     assert evidence_set.completeness_claim == "none; supplied collection only"
@@ -155,6 +161,10 @@ def test_human_and_json_render_same_bounded_set_meaning():
     assert js["membership_results"][0]["candidate_projection_ref"] == "candidate:a"
     assert js["belongs_results"][0]["candidate_projection_ref"] == "candidate:a"
     assert js["state_partitions"]["belongs"] == ["candidate:a"]
-    assert js["belonging_results_compatibility_note"].startswith("Deprecated compatibility alias")
+    obsolete_alias = "belonging" + "_results"
+    assert not hasattr(evidence_set, obsolete_alias)
+    assert obsolete_alias not in js
+    assert obsolete_alias + "_compatibility_note" not in js
+    assert obsolete_alias not in text
     assert "Does not select rendering projections" in text
     assert js["writes_event_ledger"] is False
