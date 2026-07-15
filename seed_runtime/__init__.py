@@ -231,6 +231,14 @@ __all__ = [
     "interpret_operator_expression",
     "format_operator_expression_interpretation",
     "operator_expression_interpretation_json",
+    "OperatorIdentityContext",
+    "WorkspaceSessionAuthorityContext",
+    "ScopeBindingContext",
+    "FutureBoundedConstitutionalQuestionHandoff",
+    "OperatorAuthorityScopeBindingProjection",
+    "bind_operator_authority_scope",
+    "format_operator_authority_scope_binding",
+    "operator_authority_scope_binding_json",
 ]
 
 from .representation_grammar_recovery import (
@@ -255,4 +263,15 @@ from .operator_expression_interpretation import (
     format_operator_expression_interpretation,
     interpret_operator_expression,
     operator_expression_interpretation_json,
+)
+
+from .operator_authority_scope_binding import (
+    OperatorIdentityContext,
+    WorkspaceSessionAuthorityContext,
+    ScopeBindingContext,
+    FutureBoundedConstitutionalQuestionHandoff,
+    OperatorAuthorityScopeBindingProjection,
+    bind_operator_authority_scope,
+    format_operator_authority_scope_binding,
+    operator_authority_scope_binding_json,
 )
