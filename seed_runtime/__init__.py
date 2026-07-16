@@ -126,6 +126,14 @@ from seed_runtime.bounded_operator_goal_establishment import (
     establish_bounded_operator_goal_from_interpretation,
 )
 
+from seed_runtime.authority_need_projection import (
+    AuthorityNeedProjection,
+    AuthorityNeedProjectionItem,
+    AuthorityRequirementTestimony,
+    AuthorityStandingTestimony,
+    authority_need_projection_json,
+    project_authority_need,
+)
 
 from seed_runtime.inquiry_need_projection import (
     InquiryNeedProjection,
@@ -182,6 +190,12 @@ from seed_runtime.closed_choice_selection_binding import (
 )
 
 __all__ = [
+    "AuthorityNeedProjection",
+    "AuthorityNeedProjectionItem",
+    "AuthorityRequirementTestimony",
+    "AuthorityStandingTestimony",
+    "authority_need_projection_json",
+    "project_authority_need",
     "InquiryNeedProjection",
     "InquiryNeedProjectionItem",
     "RepositoryWorldUncertaintyTestimony",
