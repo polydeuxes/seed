@@ -127,6 +127,14 @@ from seed_runtime.bounded_operator_goal_establishment import (
 )
 
 
+from seed_runtime.inquiry_need_projection import (
+    InquiryNeedProjection,
+    InquiryNeedProjectionItem,
+    RepositoryWorldUncertaintyTestimony,
+    inquiry_need_projection_json,
+    project_inquiry_need,
+)
+
 from seed_runtime.clarification_need_projection import (
     ClarificationNeedProjection,
     ClarificationNeedProjectionItem,
@@ -174,6 +182,11 @@ from seed_runtime.closed_choice_selection_binding import (
 )
 
 __all__ = [
+    "InquiryNeedProjection",
+    "InquiryNeedProjectionItem",
+    "RepositoryWorldUncertaintyTestimony",
+    "inquiry_need_projection_json",
+    "project_inquiry_need",
     "ClarificationNeedProjection",
     "ClarificationNeedProjectionItem",
     "OperatorMeaningUncertaintyTestimony",
