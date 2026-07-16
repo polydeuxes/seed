@@ -137,6 +137,13 @@ from seed_runtime.goal_advancement_need_set import (
 
 
 
+
+from seed_runtime.bounded_inquiry_frontier import (
+    BoundedInquiryFrontier,
+    assemble_bounded_inquiry_frontier,
+    bounded_inquiry_frontier_json,
+)
+
 from seed_runtime.advancement_need_consideration_selection import (
     AdvancementNeedConsiderationSelection,
     NeedFocusEvidence,
@@ -242,6 +249,9 @@ from seed_runtime.closed_choice_selection_binding import (
 )
 
 __all__ = [
+    "BoundedInquiryFrontier",
+    "assemble_bounded_inquiry_frontier",
+    "bounded_inquiry_frontier_json",
     "AdvancementNeedConsiderationSelection",
     "NeedFocusEvidence",
     "advancement_need_consideration_selection_json",
