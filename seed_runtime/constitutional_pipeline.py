@@ -15,7 +15,6 @@ from typing import Any
 
 from seed_runtime.bounded_constitutional_question import (
     BoundedConstitutionalQuestion,
-    produce_bounded_constitutional_question,
 )
 from seed_runtime.constitutional_view_composition import (
     CompositionOutputFormat,
@@ -45,22 +44,14 @@ from seed_runtime.serialization import to_plain
 class ConstitutionalPipelineRequest:
     """Explicit immutable request for one constitutional pipeline invocation.
 
-    The request mirrors the bounded-question producer's explicit inputs and the
+    The request consumes one already-established bounded question and the
     existing composition adapter's explicit formatting inputs. Optional immutable
     capability sources are accepted for deterministic tests or callers that need
     to supply already-known registration evidence; the invocation does not
-    discover, repair, or infer capability evidence.
+    discover, repair, infer capability evidence, or originate questions.
     """
 
-    operator_inquiry: str
-    inquiry_provenance: str
-    bounded_question: str
-    constitutional_intent: str
-    scope_status: str
-    uncertainty: tuple[str, ...] = ()
-    unknowns: tuple[str, ...] = ()
-    bounded_question_id: str | None = None
-    caller_supplied_fields: tuple[tuple[str, str], ...] = ()
+    bounded_question: BoundedConstitutionalQuestion
     capability_contracts: tuple[ConstitutionalReadModelContract, ...] = CONSTITUTIONAL_READ_MODEL_CONTRACTS
     capability_registrations: tuple[ReadModelViewRegistration, ...] | None = None
     capability_view_builders: Mapping[str, Callable[[], ConstitutionalCapabilitySource]] | None = None
@@ -211,17 +202,7 @@ def invoke_constitutional_pipeline(
 ) -> ConstitutionalPipelineResult:
     """Invoke the existing constitutional stages in deterministic order."""
 
-    bounded_question = produce_bounded_constitutional_question(
-        operator_inquiry=request.operator_inquiry,
-        inquiry_provenance=request.inquiry_provenance,
-        bounded_question=request.bounded_question,
-        constitutional_intent=request.constitutional_intent,
-        scope_status=request.scope_status,
-        uncertainty=request.uncertainty,
-        unknowns=request.unknowns,
-        bounded_question_id=request.bounded_question_id,
-        caller_supplied_fields=dict(request.caller_supplied_fields),
-    )
+    bounded_question = request.bounded_question
     question_projection = project_constitutional_question(bounded_question)
     if request.capability_view_builders is None:
         capability_projection = project_constitutional_capabilities(

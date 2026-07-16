@@ -1,139 +1,51 @@
-import json
-
 import pytest
 
 from scripts import seed_local
-from seed_runtime import question_surface_inventory as qsi
-from seed_runtime.constitutional_pipeline import ConstitutionalPipelineRequest
+from seed_runtime.constitutional_pipeline import ConstitutionalPipelineRequest, invoke_constitutional_pipeline, constitutional_pipeline_result_json, format_constitutional_pipeline_result, explain_constitutional_pipeline_provenance
+from seed_runtime.constitutional_pipeline_diagnostic import build_constitutional_pipeline_diagnostic, constitutional_pipeline_diagnostic_json
+from tests.constitutional_pipeline_test_support import bounded_question
 
 
-def _surface_args(selection_key="process"):
-    return [
-        "Operator says process should be visible; testimony only.",
-        "operator:bounded-ask-integration-test",
-        "Which constitutional process surface is available?",
-        "caller supplied bounded constitutional inquiry",
-        "bounded",
-        selection_key,
-    ]
+def test_pipeline_diagnostic_helper_consumes_existing_question_without_raw_ingress():
+    supplied = bounded_question(bounded_question_id="bounded-question:diagnostic-supplied")
+    request = ConstitutionalPipelineRequest(bounded_question=supplied)
+    diagnostic = build_constitutional_pipeline_diagnostic(request)
+
+    assert diagnostic.pipeline_request.bounded_question is supplied
+    assert diagnostic.pipeline_result.bounded_question is supplied
+    assert diagnostic.stages[0].artifact_identity == "bounded-question:diagnostic-supplied"
+    assert diagnostic.pipeline_read_only is True
+    assert diagnostic.writes_event_ledger is False
+    assert diagnostic.mutates_cluster is False
+    assert constitutional_pipeline_diagnostic_json(diagnostic)["pipeline_result"]["bounded_question"]["bounded_question_id"] == "bounded-question:diagnostic-supplied"
 
 
-def test_bounded_ask_constitutional_pipeline_path_is_existing_inventory_backed():
-    rows = qsi.build_question_surface_inventory()
-    row = next(row for row in rows if row.question_family == "constitutional pipeline")
+def test_provenance_and_renderers_preserve_supplied_identity_and_output_behavior():
+    supplied = bounded_question(bounded_question_id="bounded-question:renderer-supplied")
+    result = invoke_constitutional_pipeline(ConstitutionalPipelineRequest(bounded_question=supplied))
+    explanation = explain_constitutional_pipeline_provenance(result)
+    payload = constitutional_pipeline_result_json(result)
+    rendered = format_constitutional_pipeline_result(result)
 
-    assert row.bounded_status == "eligible_with_parameters"
-    assert row.dispatch_surface == "constitutional_pipeline"
-    assert row.required_surface_args == (
-        "operator_inquiry",
-        "inquiry_source",
-        "bounded_question",
-        "constitutional_intent",
-        "scope_status",
-        "selection_key",
-    )
-    assert row.surface_flag == "--constitutional-pipeline"
-
-
-def test_bounded_ask_constructs_real_pipeline_request_invoked_once_and_preserves_provenance(monkeypatch, capsys):
-    calls = []
-    original = seed_local.invoke_constitutional_pipeline
-
-    def spy(request: ConstitutionalPipelineRequest):
-        calls.append(request)
-        return original(request)
-
-    monkeypatch.setattr(seed_local, "invoke_constitutional_pipeline", spy)
-
-    assert seed_local.main([
-        "ask",
-        "--question-family", "constitutional pipeline",
-        "--surface-args", *_surface_args("process"),
-        "--json",
-    ]) == 0
-
-    payload = json.loads(capsys.readouterr().out)
-    assert len(calls) == 1
-    request = calls[0]
-    assert isinstance(request, ConstitutionalPipelineRequest)
-    assert request.inquiry_provenance == "operator:bounded-ask-integration-test"
-    assert request.caller_supplied_fields == (("selection_key", "process"),)
-    assert payload["bounded_question"]["inquiry_provenance"] == request.inquiry_provenance
-    assert payload["bounded_question"]["operator_inquiry"] == request.operator_inquiry
-    assert payload["bounded_question"]["testimony_status"] == "operator testimony preserved as evidence, not established fact"
-    assert payload["question_projection"]["selection_keys"] == ["process"]
-    assert payload["selection"]["selected_view_names"] == ["constitutional_process"]
-    assert payload["provenance_explanation"]["selected_views"] == ["constitutional_process"]
-    assert payload["provenance_explanation"]["mutates_cluster"] is False
-    assert payload["provenance_explanation"]["writes_event_ledger"] is False
+    assert result.bounded_question is supplied
+    assert explanation.bounded_question_id == "bounded-question:renderer-supplied"
+    assert explanation.read_only is True
+    assert explanation.writes_event_ledger is False
+    assert explanation.mutates_cluster is False
+    assert payload["bounded_question"]["bounded_question_id"] == "bounded-question:renderer-supplied"
+    assert payload["provenance_explanation"]["bounded_question_id"] == "bounded-question:renderer-supplied"
+    assert "ID: bounded-question:renderer-supplied" in rendered
+    assert "no event-ledger writes" in rendered
+    assert "no cluster mutation" in rendered
 
 
-def test_bounded_ask_constitutional_pipeline_missing_key_is_not_inferred(capsys):
-    assert seed_local.main([
-        "ask",
-        "--question-family", "constitutional pipeline",
-        "--surface-args", *_surface_args(""),
-        "--json",
-    ]) == 0
-
-    payload = json.loads(capsys.readouterr().out)
-    assert payload["question_projection"]["selection_keys"] == []
-    assert payload["selection"]["selected_view_names"] == []
-    assert "No explicit selection key" in payload["provenance_explanation"]["empty_selection_explanation"]
-    assert payload["composition"]["preserved_unknowns"] == []
-
-
-def test_bounded_ask_constitutional_pipeline_unsupported_key_preserves_unknown_selection(capsys):
-    assert seed_local.main([
-        "ask",
-        "--question-family", "constitutional pipeline",
-        "--surface-args", *_surface_args("unsupported-explicit-key"),
-        "--json",
-    ]) == 0
-
-    payload = json.loads(capsys.readouterr().out)
-    assert payload["question_projection"]["selection_keys"] == ["unsupported-explicit-key"]
-    assert payload["selection"]["selected_view_names"] == []
-    assert payload["provenance_explanation"]["unsupported_question_keys"] == ["unsupported-explicit-key"]
-    assert "unsupported selection key: unsupported-explicit-key" in payload["selection"]["selection_uncertainty"]
-    assert "no registered constitutional view matched deterministic projection keys" in payload["selection"]["selection_uncertainty"]
-
-
-def test_bounded_ask_refusal_remains_owned_by_original_path(monkeypatch):
-    calls = []
-    monkeypatch.setattr(seed_local, "invoke_constitutional_pipeline", lambda request: calls.append(request))
-
+def test_cli_raw_pipeline_ingress_is_removed():
     with pytest.raises(SystemExit):
-        seed_local.main(["ask", "--question-family", "surface inventory"])
-
-    assert calls == []
-
-
-def test_unrelated_bounded_ask_path_is_not_redirected(monkeypatch, capsys):
-    calls = []
-    monkeypatch.setattr(seed_local, "invoke_constitutional_pipeline", lambda request: calls.append(request))
-
-    assert seed_local.main(["ask", "--question-family", "projection shape visibility", "--json"]) == 0
-
-    payload = json.loads(capsys.readouterr().out)
-    assert calls == []
-    assert "stages" in payload
+        seed_local.main(["--constitutional-pipeline", "--operator-inquiry", "raw", "--inquiry-provenance", "raw", "--bounded-question", "raw", "--constitutional-intent", "raw", "--scope-status", "raw"])
+    with pytest.raises(SystemExit):
+        seed_local.main(["--constitutional-pipeline-diagnostic", "--operator-inquiry", "raw", "--inquiry-provenance", "raw", "--bounded-question", "raw", "--constitutional-intent", "raw", "--scope-status", "raw"])
 
 
-def test_adapter_boundaries_do_not_own_admission_or_pipeline_stages():
-    rows = qsi.build_question_surface_inventory()
-    prepared = qsi._prepare_question_family_eligibility_input("constitutional pipeline", rows)
-    eligibility = qsi._bounded_work_eligibility_for_prepared_question_family(prepared)
-    surface_args = qsi.bounded_work_surface_args_for_eligibility(
-        "constitutional pipeline", eligibility, tuple(_surface_args("process"))
-    )
-    selection = qsi.bounded_work_selection_for_question_family(
-        "constitutional pipeline", eligibility, surface_args
-    )
-    request = qsi.bounded_work_dispatch_request_for_selection(selection)
-
-    assert prepared.question_family == "constitutional pipeline"
-    assert eligibility.permitted is True
-    assert request.dispatch_surface == "constitutional_pipeline"
-    assert request.surface_value["selection_key"] == ("process",)
-    assert selection.reason == "selected bounded ask dispatch surface"
+def test_request_shape_rejects_raw_question_fields():
+    with pytest.raises(TypeError):
+        ConstitutionalPipelineRequest(operator_inquiry="raw", inquiry_provenance="raw", bounded_question="raw", constitutional_intent="raw", scope_status="raw")
