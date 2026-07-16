@@ -135,6 +135,14 @@ from seed_runtime.goal_advancement_need_set import (
     goal_advancement_need_set_json,
 )
 
+
+from seed_runtime.goal_advancement_sufficiency_projection import (
+    GoalAdvancementSufficiencyProjection,
+    GoalAdvancementSufficiencyReason,
+    goal_advancement_sufficiency_projection_json,
+    project_goal_advancement_sufficiency,
+)
+
 from seed_runtime.advancement_need_family_coverage_set import (
     AdvancementNeedFamilyCoverageRecord,
     AdvancementNeedFamilyCoverageSet,
@@ -218,6 +226,10 @@ from seed_runtime.closed_choice_selection_binding import (
 )
 
 __all__ = [
+    "GoalAdvancementSufficiencyProjection",
+    "GoalAdvancementSufficiencyReason",
+    "goal_advancement_sufficiency_projection_json",
+    "project_goal_advancement_sufficiency",
     "AdvancementNeedFamilyCoverageRecord",
     "AdvancementNeedFamilyCoverageSet",
     "ExplicitComponentExclusion",
