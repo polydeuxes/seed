@@ -136,6 +136,15 @@ from seed_runtime.goal_advancement_need_set import (
 )
 
 
+
+from seed_runtime.advancement_need_reference_set import (
+    AdvancementNeedReference,
+    AdvancementNeedReferenceConflict,
+    AdvancementNeedReferenceSet,
+    advancement_need_reference_set_json,
+    project_advancement_need_reference_set,
+)
+
 from seed_runtime.goal_advancement_sufficiency_projection import (
     GoalAdvancementSufficiencyProjection,
     GoalAdvancementSufficiencyReason,
@@ -226,6 +235,11 @@ from seed_runtime.closed_choice_selection_binding import (
 )
 
 __all__ = [
+    "AdvancementNeedReference",
+    "AdvancementNeedReferenceConflict",
+    "AdvancementNeedReferenceSet",
+    "advancement_need_reference_set_json",
+    "project_advancement_need_reference_set",
     "GoalAdvancementSufficiencyProjection",
     "GoalAdvancementSufficiencyReason",
     "goal_advancement_sufficiency_projection_json",
