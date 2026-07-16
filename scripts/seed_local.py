@@ -8332,88 +8332,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.constitutional_pipeline:
-        missing = [
-            flag
-            for flag, value in (
-                ("--operator-inquiry", args.operator_inquiry),
-                ("--inquiry-provenance", args.inquiry_provenance),
-                ("--bounded-question", args.bounded_question),
-                ("--constitutional-intent", args.constitutional_intent),
-                ("--scope-status", args.scope_status),
-            )
-            if value is None
-        ]
-        if missing:
-            parser.error("--constitutional-pipeline requires " + ", ".join(missing))
-        request = ConstitutionalPipelineRequest(
-            operator_inquiry=args.operator_inquiry,
-            inquiry_provenance=args.inquiry_provenance,
-            bounded_question=args.bounded_question,
-            constitutional_intent=args.constitutional_intent,
-            scope_status=args.scope_status,
-            uncertainty=tuple(args.pipeline_uncertainty),
-            unknowns=tuple(args.pipeline_unknown),
-            caller_supplied_fields=tuple(
-                ("selection_key", key) for key in args.selection_key
-            ),
-            composition_purpose=args.composition_purpose,
-            output_format="json" if args.json_output else "human",
-        )
-        result = invoke_constitutional_pipeline(request)
-        if args.json_output:
-            print(
-                json.dumps(
-                    constitutional_pipeline_result_json(result),
-                    indent=2,
-                    sort_keys=True,
-                )
-            )
-        else:
-            print(format_constitutional_pipeline_result(result))
-        return 0
+        parser.error("--constitutional-pipeline no longer accepts raw question fields; pass an already-established BoundedConstitutionalQuestion to the API")
 
     if args.constitutional_pipeline_diagnostic:
-        missing = [
-            flag
-            for flag, value in (
-                ("--operator-inquiry", args.operator_inquiry),
-                ("--inquiry-provenance", args.inquiry_provenance),
-                ("--bounded-question", args.bounded_question),
-                ("--constitutional-intent", args.constitutional_intent),
-                ("--scope-status", args.scope_status),
-            )
-            if value is None
-        ]
-        if missing:
-            parser.error(
-                "--constitutional-pipeline-diagnostic requires " + ", ".join(missing)
-            )
-        request = ConstitutionalPipelineRequest(
-            operator_inquiry=args.operator_inquiry,
-            inquiry_provenance=args.inquiry_provenance,
-            bounded_question=args.bounded_question,
-            constitutional_intent=args.constitutional_intent,
-            scope_status=args.scope_status,
-            uncertainty=tuple(args.pipeline_uncertainty),
-            unknowns=tuple(args.pipeline_unknown),
-            caller_supplied_fields=tuple(
-                ("selection_key", key) for key in args.selection_key
-            ),
-            composition_purpose=args.composition_purpose,
-            output_format="json" if args.json_output else "human",
-        )
-        diagnostic = build_constitutional_pipeline_diagnostic(request)
-        if args.json_output:
-            print(
-                json.dumps(
-                    constitutional_pipeline_diagnostic_json(diagnostic),
-                    indent=2,
-                    sort_keys=True,
-                )
-            )
-        else:
-            print(format_constitutional_pipeline_diagnostic(diagnostic))
-        return 0
+        parser.error("--constitutional-pipeline-diagnostic no longer accepts raw question fields; use the API with an already-established BoundedConstitutionalQuestion")
 
     if args.constitutional_process:
         view = build_constitutional_process_view()
