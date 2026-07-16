@@ -135,6 +135,16 @@ from seed_runtime.goal_advancement_need_set import (
     goal_advancement_need_set_json,
 )
 
+from seed_runtime.advancement_need_family_coverage_set import (
+    AdvancementNeedFamilyCoverageRecord,
+    AdvancementNeedFamilyCoverageSet,
+    ExplicitComponentExclusion,
+    FamilyBoundedCandidateSpace,
+    FamilyCoverageTestimony,
+    assemble_advancement_need_family_coverage_set,
+    advancement_need_family_coverage_set_json,
+)
+
 from seed_runtime.operational_realization_need_projection import (
     OperationalRealizationNeedProjection,
     OperationalRealizationNeedProjectionItem,
@@ -208,6 +218,13 @@ from seed_runtime.closed_choice_selection_binding import (
 )
 
 __all__ = [
+    "AdvancementNeedFamilyCoverageRecord",
+    "AdvancementNeedFamilyCoverageSet",
+    "ExplicitComponentExclusion",
+    "FamilyBoundedCandidateSpace",
+    "FamilyCoverageTestimony",
+    "assemble_advancement_need_family_coverage_set",
+    "advancement_need_family_coverage_set_json",
     "GoalAdvancementNeedSet",
     "NeedFamilyAssemblyRecord",
     "NeedFamilyIdentityConflict",
