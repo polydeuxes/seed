@@ -126,6 +126,18 @@ from seed_runtime.bounded_operator_goal_establishment import (
     establish_bounded_operator_goal_from_interpretation,
 )
 
+
+from seed_runtime.goal_orientation_inventory import (
+    SUPPORTED_GOAL_DIMENSIONS,
+    GoalOrientationAssociation,
+    GoalOrientationArtifactView,
+    GoalOrientationDimensionEntry,
+    GoalOrientationInventory,
+    association_from_bounded_goal,
+    build_goal_orientation_inventory,
+    goal_orientation_inventory_json,
+)
+
 from seed_runtime.closed_choice_selection_binding import (
     ClosedChoiceOption,
     ClosedChoiceSelectionBinding,
@@ -137,6 +149,14 @@ from seed_runtime.closed_choice_selection_binding import (
 )
 
 __all__ = [
+    "SUPPORTED_GOAL_DIMENSIONS",
+    "GoalOrientationAssociation",
+    "GoalOrientationArtifactView",
+    "GoalOrientationDimensionEntry",
+    "GoalOrientationInventory",
+    "association_from_bounded_goal",
+    "build_goal_orientation_inventory",
+    "goal_orientation_inventory_json",
     "BoundedOperatorGoalEstablishment",
     "BoundedOperatorGoalEstablishmentError",
     "bounded_operator_goal_establishment_json",
