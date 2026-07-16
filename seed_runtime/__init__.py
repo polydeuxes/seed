@@ -126,6 +126,15 @@ from seed_runtime.bounded_operator_goal_establishment import (
     establish_bounded_operator_goal_from_interpretation,
 )
 
+
+from seed_runtime.goal_advancement_need_set import (
+    GoalAdvancementNeedSet,
+    NeedFamilyAssemblyRecord,
+    NeedFamilyIdentityConflict,
+    assemble_goal_advancement_need_set,
+    goal_advancement_need_set_json,
+)
+
 from seed_runtime.operational_realization_need_projection import (
     OperationalRealizationNeedProjection,
     OperationalRealizationNeedProjectionItem,
@@ -199,6 +208,11 @@ from seed_runtime.closed_choice_selection_binding import (
 )
 
 __all__ = [
+    "GoalAdvancementNeedSet",
+    "NeedFamilyAssemblyRecord",
+    "NeedFamilyIdentityConflict",
+    "assemble_goal_advancement_need_set",
+    "goal_advancement_need_set_json",
     "OperationalRealizationNeedProjection",
     "OperationalRealizationNeedProjectionItem",
     "OperationalRealizationRequirementTestimony",
