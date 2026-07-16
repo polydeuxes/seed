@@ -121,6 +121,7 @@ from seed_runtime.bounded_operator_goal_establishment import (
     BoundedOperatorGoalEstablishment,
     BoundedOperatorGoalEstablishmentError,
     bounded_operator_goal_establishment_json,
+    establish_bounded_operator_goal_from_admitted_interpretation,
     establish_bounded_operator_goal_from_closed_choice,
     establish_bounded_operator_goal_from_interpretation,
 )
@@ -139,6 +140,7 @@ __all__ = [
     "BoundedOperatorGoalEstablishment",
     "BoundedOperatorGoalEstablishmentError",
     "bounded_operator_goal_establishment_json",
+    "establish_bounded_operator_goal_from_admitted_interpretation",
     "establish_bounded_operator_goal_from_closed_choice",
     "establish_bounded_operator_goal_from_interpretation",
     "ClosedChoiceOption",
