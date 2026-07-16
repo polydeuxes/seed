@@ -7,7 +7,8 @@ import json
 from typing import Iterable
 
 from seed_runtime.closed_choice_selection_binding import ClosedChoiceSelectionBinding
-from seed_runtime.operator_expression_interpretation import OperatorExpressionInterpretationProjection
+from seed_runtime.operator_expression_interpretation import AttributedOperatorExpression, OperatorExpressionInterpretationProjection
+from seed_runtime.operator_authority_scope_binding import OperatorAuthorityScopeBindingProjection
 from seed_runtime.downstream_interpretation_admission import DownstreamInterpretationAdmission
 
 CONVENTION = "bounded_operator_goal_establishment_v1"
@@ -18,7 +19,7 @@ BOUNDARY_NOTES = (
     "Goal established is not inquiry opened, resources observed, constraints satisfied, work authorized, or goal satisfied.",
     "Corrections may establish a later bounded goal without rewriting the exact ingress lineage preserved here.",
 )
-LAWFUL_INGRESS_TYPES = ("ClosedChoiceSelectionBinding", "OperatorExpressionInterpretationProjection", "DownstreamInterpretationAdmission")
+LAWFUL_INGRESS_TYPES = ("ClosedChoiceSelectionBinding", "OperatorExpressionInterpretationProjection", "OperatorAuthorityScopeBindingProjection", "DownstreamInterpretationAdmission")
 BOUNDED_GOAL_ESTABLISHMENT_CONSUMER_REF = "consumer:bounded-operator-goal-establishment"
 BOUNDED_GOAL_ESTABLISHMENT_PURPOSE_REF = "purpose:bounded-operator-goal-establishment"
 
@@ -66,6 +67,7 @@ class BoundedOperatorGoalEstablishment:
     upstream_applicability_refs: tuple[str, ...] = ()
     upstream_admission_refs: tuple[str, ...] = ()
     consumed_admitted_meaning_snapshot: dict[str, object] | None = None
+    consumed_ingress_material_snapshot: dict[str, object] | None = None
     inquiry_opened: bool = False
     resources_observed: bool = False
     constraints_enforced: bool = False
@@ -221,6 +223,103 @@ def establish_bounded_operator_goal_from_interpretation(
         _refs(interpretation.conflicts),
         _refs(interpretation.known_loss),
         correction_of_goal_ref,
+    )
+
+
+def establish_bounded_operator_goal_from_authority_scope_binding(
+    binding: OperatorAuthorityScopeBindingProjection,
+    interpretation: OperatorExpressionInterpretationProjection,
+    expression: AttributedOperatorExpression,
+    *,
+    sufficiency_conditions: tuple[str, ...] = (),
+    stop_conditions: tuple[str, ...] = (),
+    correction_of_goal_ref: str = "",
+) -> BoundedOperatorGoalEstablishment:
+    """Establish one bounded operator goal from one permitted authority/scope binding.
+
+    The binding proves only that the interpreted external material may be consumed
+    under its preserved ingress authority and scope. This owner preserves the
+    exact expression, interpretation, binding, unresolved/excluded material,
+    unknowns, and conflicts; it does not formulate a question or authorize work.
+    """
+    if binding.artifact_type != "OperatorAuthorityScopeBindingProjection":
+        raise BoundedOperatorGoalEstablishmentError("authority/scope ingress must be an OperatorAuthorityScopeBindingProjection artifact")
+    if interpretation.artifact_type != "OperatorExpressionInterpretationProjection":
+        raise BoundedOperatorGoalEstablishmentError("matching interpretation must be an OperatorExpressionInterpretationProjection artifact")
+    if binding.interpretation_projection_ref != interpretation.interpretation_projection_id:
+        raise BoundedOperatorGoalEstablishmentError("authority/scope binding does not match interpretation")
+    if binding.attributed_expression_ref != expression.expression_id or interpretation.attributed_expression_ref != expression.expression_id:
+        raise BoundedOperatorGoalEstablishmentError("authority/scope binding does not match attributed expression")
+
+    orientation = _refs((
+        *interpretation.relation_or_focus_expressions,
+        *interpretation.subject_expressions,
+        *interpretation.object_expressions,
+        *binding.permitted_scope_refs,
+    ))
+    unresolved = _refs((
+        *binding.unresolved_scope_expressions,
+        *binding.excluded_scope_refs,
+        *interpretation.unresolved_references,
+        *interpretation.unresolved_lexical_bindings,
+        *(s.exact_text for s in interpretation.unsupported_residual_spans),
+    ))
+    unknowns = _refs((*expression.unknowns, *interpretation.unknowns, *binding.unknowns))
+    conflicts = _refs((*interpretation.conflicts, *binding.conflicts))
+
+    if binding.binding_state != "permitted":
+        state, reason = "refused", "authority_scope_binding_is_not_permitted"
+    elif interpretation.interpretation_state != "interpreted":
+        state, reason = "refused", "matching_interpretation_is_not_interpreted"
+    elif binding.conflicts or interpretation.conflicts:
+        state, reason = "refused", "permitted_material_has_conflicts"
+    elif binding.unresolved_scope_expressions:
+        state, reason = "refused", "permitted_material_has_unresolved_scope"
+    elif not binding.permitted_scope_refs and binding.requested_scope_expressions:
+        state, reason = "refused", "permitted_binding_lacks_permitted_scope"
+    elif not orientation:
+        state, reason = "refused", "permitted_material_does_not_support_bounded_goal_orientation"
+    else:
+        state = "established" if sufficiency_conditions and not unknowns else "provisional"
+        reason = "permitted_authority_scope_binding_supplies_bounded_operator_goal_orientation"
+
+    intended = "" if state == "refused" else "; ".join(_refs((*interpretation.relation_or_focus_expressions, *interpretation.subject_expressions, *interpretation.object_expressions)))
+    if not intended and state != "refused":
+        intended = interpretation.inquiry_or_request_kind or binding.requested_activity_class
+    snapshot = {
+        "expression": expression.to_json_dict(),
+        "interpretation": interpretation.to_json_dict(),
+        "authority_scope_binding": binding.to_json_dict(),
+    }
+    upstream_source_refs = _refs((expression.expression_id, interpretation.interpretation_projection_id, binding.binding_projection_id, *interpretation.provenance, *binding.provenance))
+    lineage = _refs((*upstream_source_refs, *binding.supporting_references, *binding.authority_source_refs))
+    payload = {
+        "ingress": binding.binding_projection_id,
+        "state": state,
+        "intended": intended,
+        "known_scope": orientation if state != "refused" else (),
+        "unresolved_scope": unresolved,
+        "sufficiency": sorted(sufficiency_conditions),
+        "stops": sorted(stop_conditions),
+        "constraints": sorted(binding.operator_stated_effect_constraints),
+        "presentation": binding.presentation_preference,
+        "unknowns": unknowns,
+        "conflicts": conflicts,
+        "known_loss": sorted(interpretation.known_loss),
+        "correction_of": correction_of_goal_ref,
+        "convention": CONVENTION,
+    }
+    return BoundedOperatorGoalEstablishment(
+        "BoundedOperatorGoalEstablishment", _stable("bounded-operator-goal-establishment", payload),
+        binding.artifact_type, binding.binding_projection_id, lineage, state, reason, intended,
+        "permitted interpreted external material" if state != "refused" else "none",
+        orientation if state != "refused" else (), unresolved, _refs(sufficiency_conditions),
+        "established" if state == "established" else ("provisional" if state == "provisional" else "unsupported"),
+        _refs(stop_conditions), _refs((expression.expression_id, binding.binding_projection_id, *binding.provenance)),
+        _refs(binding.operator_stated_effect_constraints), unknowns,
+        _refs(a.expression_form or a.inquiry_or_request_kind for a in interpretation.alternative_interpretations),
+        conflicts, _refs(interpretation.known_loss), correction_of_goal_ref, True,
+        upstream_source_refs, binding.authority_source_refs, (), (), (), None, snapshot,
     )
 
 

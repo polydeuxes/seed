@@ -124,6 +124,7 @@ from seed_runtime.bounded_operator_goal_establishment import (
     establish_bounded_operator_goal_from_admitted_interpretation,
     establish_bounded_operator_goal_from_closed_choice,
     establish_bounded_operator_goal_from_interpretation,
+    establish_bounded_operator_goal_from_authority_scope_binding,
 )
 
 
@@ -324,6 +325,7 @@ __all__ = [
     "establish_bounded_operator_goal_from_admitted_interpretation",
     "establish_bounded_operator_goal_from_closed_choice",
     "establish_bounded_operator_goal_from_interpretation",
+    "establish_bounded_operator_goal_from_authority_scope_binding",
     "ClosedChoiceOption",
     "ClosedChoiceSelectionBinding",
     "ClosedChoiceSelectionBindingError",
