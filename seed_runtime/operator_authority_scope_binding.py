@@ -39,19 +39,10 @@ class ScopeBindingContext:
     scope_context_ref:str; workspace_ref:str; resolved_scope_refs:tuple[tuple[str,str],...]=(); conflicting_scope_expressions:tuple[str,...]=(); unresolved_scope_expressions:tuple[str,...]=(); provenance:tuple[str,...]=(); unknowns:tuple[str,...]=(); conflicts:tuple[str,...]=()
 
 @dataclass(frozen=True)
-class FutureBoundedConstitutionalQuestionHandoff:
-    authority_scope_binding_ref:str; interpretation_projection_ref:str; attributed_expression_ref:str; operator_identity_ref:str; workspace_ref:str; session_ref:str; inquiry_or_request_kind:str; requested_activity_class:str; relation_or_focus_expressions:tuple[str,...]; subject_expressions:tuple[str,...]; object_expressions:tuple[str,...]; requested_scope_expressions:tuple[str,...]; bound_scope_refs:tuple[str,...]; excluded_scope_refs:tuple[str,...]; authority_source_refs:tuple[str,...]; operator_stated_effect_constraints:tuple[str,...]; presentation_preference:str; source_span_refs:tuple[str,...]; grammar_ref:str; grammar_applicability_ref:str; provenance:tuple[str,...]; known_loss:tuple[str,...]; unknowns:tuple[str,...]; conflicts:tuple[str,...]; read_only:bool=True; writes_event_ledger:bool=False; mutates_cluster:bool=False
+class OperatorAuthorityScopeBindingProjection:
+    artifact_type:str; binding_projection_id:str; interpretation_projection_ref:str; attributed_expression_ref:str; operator_identity_ref:str; workspace_ref:str; session_ref:str; inquiry_or_request_kind:str; requested_activity_class:str; requested_scope_expressions:tuple[str,...]; resolved_scope_refs:tuple[str,...]; permitted_scope_refs:tuple[str,...]; excluded_scope_refs:tuple[str,...]; unresolved_scope_expressions:tuple[str,...]; authority_bearing_expressions:tuple[str,...]; authority_source_refs:tuple[str,...]; required_authority_class:str; operator_stated_effect_constraints:tuple[str,...]; presentation_preference:str; binding_state:str; binding_reason:str; required_additional_authority:tuple[str,...]; supporting_references:tuple[str,...]; provenance:tuple[str,...]; unknowns:tuple[str,...]; conflicts:tuple[str,...]; boundary_notes:tuple[str,...]=BOUNDARY_NOTES; read_only:bool=True; writes_event_ledger:bool=False; mutates_cluster:bool=False; binding_convention:str=CONVENTION
     def to_json_dict(self):
         d=asdict(self)
-        for k,v in d.items():
-            if isinstance(v,tuple): d[k]=list(v)
-        return d
-
-@dataclass(frozen=True)
-class OperatorAuthorityScopeBindingProjection:
-    artifact_type:str; binding_projection_id:str; interpretation_projection_ref:str; attributed_expression_ref:str; operator_identity_ref:str; workspace_ref:str; session_ref:str; inquiry_or_request_kind:str; requested_activity_class:str; requested_scope_expressions:tuple[str,...]; resolved_scope_refs:tuple[str,...]; permitted_scope_refs:tuple[str,...]; excluded_scope_refs:tuple[str,...]; unresolved_scope_expressions:tuple[str,...]; authority_bearing_expressions:tuple[str,...]; authority_source_refs:tuple[str,...]; required_authority_class:str; operator_stated_effect_constraints:tuple[str,...]; presentation_preference:str; binding_state:str; binding_reason:str; required_additional_authority:tuple[str,...]; supporting_references:tuple[str,...]; provenance:tuple[str,...]; unknowns:tuple[str,...]; conflicts:tuple[str,...]; future_bounded_question_handoff:FutureBoundedConstitutionalQuestionHandoff|None; boundary_notes:tuple[str,...]=BOUNDARY_NOTES; read_only:bool=True; writes_event_ledger:bool=False; mutates_cluster:bool=False; binding_convention:str=CONVENTION
-    def to_json_dict(self):
-        d=asdict(self); d["future_bounded_question_handoff"]=self.future_bounded_question_handoff.to_json_dict() if self.future_bounded_question_handoff else None
         for k,v in d.items():
             if isinstance(v,tuple): d[k]=list(v)
         return d
@@ -93,10 +84,7 @@ def bind_operator_authority_scope(interpretation:OperatorExpressionInterpretatio
     sources=_refs((*workspace_session.authority_sources,*(("explicit_operator_grant",) if reason=="within_explicit_operator_grant" else ())))
     payload={"interpretation":interpretation.interpretation_projection_id,"expression":expression.expression_id,"operator":operator_identity.verified_identity_ref or operator_identity.operator_ref,"workspace":workspace_session.workspace_ref,"session":workspace_session.session_ref,"kind":interpretation.inquiry_or_request_kind,"activity":activity,"requested_scope":req_scopes,"resolved":resolved,"permitted":permitted,"excluded":excluded,"unresolved":unresolved,"authority_bearing":_refs(interpretation.authority_bearing_expressions),"sources":sources,"required":required,"constraints":_refs(interpretation.operator_stated_effect_constraints),"presentation":interpretation.presentation_preference,"supporting":_refs(supporting_references),"provenance":_refs((*provenance,*interpretation.provenance,*operator_identity.provenance,*workspace_session.provenance,*scope_binding.provenance)),"unknowns":all_unknowns,"conflicts":all_conflicts,"state":state,"reason":reason,"convention":CONVENTION}
     bid=_stable("operator-authority-scope-binding-projection",payload)
-    future=None
-    if state=="permitted":
-        future=FutureBoundedConstitutionalQuestionHandoff(bid,interpretation.interpretation_projection_id,expression.expression_id,operator_identity.verified_identity_ref or operator_identity.operator_ref,workspace_session.workspace_ref,workspace_session.session_ref,interpretation.inquiry_or_request_kind,activity,interpretation.relation_or_focus_expressions,interpretation.subject_expressions,interpretation.object_expressions,req_scopes,permitted,excluded,sources,_refs(interpretation.operator_stated_effect_constraints),interpretation.presentation_preference,tuple(f"{s.component}:{s.start}-{s.end}" for s in interpretation.source_span_bindings),interpretation.recovered_grammar_ref,interpretation.grammar_applicability_ref,_refs((*provenance,*interpretation.provenance,*scope_binding.provenance)),interpretation.known_loss,all_unknowns,all_conflicts)
-    return OperatorAuthorityScopeBindingProjection("OperatorAuthorityScopeBindingProjection",bid,interpretation.interpretation_projection_id,expression.expression_id,operator_identity.verified_identity_ref or operator_identity.operator_ref,workspace_session.workspace_ref,workspace_session.session_ref,interpretation.inquiry_or_request_kind,activity,req_scopes,resolved,permitted,excluded,unresolved,_refs(interpretation.authority_bearing_expressions),sources,required,_refs(interpretation.operator_stated_effect_constraints),interpretation.presentation_preference,state,reason,_refs(add),_refs(supporting_references),payload["provenance"],all_unknowns,all_conflicts,future)
+    return OperatorAuthorityScopeBindingProjection("OperatorAuthorityScopeBindingProjection",bid,interpretation.interpretation_projection_id,expression.expression_id,operator_identity.verified_identity_ref or operator_identity.operator_ref,workspace_session.workspace_ref,workspace_session.session_ref,interpretation.inquiry_or_request_kind,activity,req_scopes,resolved,permitted,excluded,unresolved,_refs(interpretation.authority_bearing_expressions),sources,required,_refs(interpretation.operator_stated_effect_constraints),interpretation.presentation_preference,state,reason,_refs(add),_refs(supporting_references),payload["provenance"],all_unknowns,all_conflicts)
 
 
 EXPLANATION_CONVENTION="minimum_lawful_advancement_explanation_v1"
@@ -131,18 +119,18 @@ class MinimumLawfulAdvancementExplanation:
         return d
 
 def explain_minimum_lawful_advancement(p:OperatorAuthorityScopeBindingProjection):
-    attempted="advance one interpreted operator request from authority/scope binding to bounded constitutional question formulation"
+    attempted="explain the authority/scope binding result for one interpreted operator request without originating a bounded constitutional question"
     established=(f"activity={p.requested_activity_class}; requested_scope={', '.join(p.requested_scope_expressions) or 'none'}; "
                  f"permitted_scope={', '.join(p.permitted_scope_refs) or 'none'}; excluded_scope={', '.join(p.excluded_scope_refs) or 'none'}; "
                  f"unresolved_scope={', '.join(p.unresolved_scope_expressions) or 'none'}; authority_sources={', '.join(p.authority_source_refs) or 'none'}; "
                  f"required_authority={p.required_authority_class}; constraints={', '.join(p.operator_stated_effect_constraints) or 'none'}")
-    prohibited=("formulate_bounded_constitutional_question", "select_diagnostic_view_capability_or_realization", "authorize_or_execute_movement")
+    prohibited=("originate_bounded_constitutional_question", "select_diagnostic_view_capability_or_realization", "authorize_or_execute_movement")
     movement_blocked=p.binding_state in ("blocked","conflict")
     authority_resolvable=False
     boundary="none"
-    transition="no transition required; binding may advance according to the existing permitted handoff"
+    transition="no transition required; permitted binding stops at authority/scope preservation in operator ingress"
     if p.binding_state=="permitted":
-        prohibited=("select_diagnostic_view_capability_or_realization", "authorize_or_execute_movement")
+        prohibited=("originate_bounded_constitutional_question", "select_diagnostic_view_capability_or_realization", "authorize_or_execute_movement")
     elif p.binding_reason in ("requested_activity_not_granted", f"{p.requested_activity_class}_not_granted"):
         boundary=f"required ingress authority not established: {', '.join(p.required_additional_authority) or p.required_authority_class}"
         authority_resolvable=True
@@ -163,7 +151,7 @@ def explain_minimum_lawful_advancement(p:OperatorAuthorityScopeBindingProjection
         boundary=p.binding_reason
         transition="narrow source-artifact evidence addressing the stated boundary could permit reconsideration"
     payload={"source":p.binding_projection_id,"state":p.binding_state,"reason":p.binding_reason,"boundary":boundary,"transition":transition,"unknowns":p.unknowns,"conflicts":p.conflicts,"convention":EXPLANATION_CONVENTION}
-    return MinimumLawfulAdvancementExplanation("MinimumLawfulAdvancementExplanation",_stable("minimum-lawful-advancement-explanation",payload),p.binding_projection_id,p.artifact_type,"OperatorAuthorityScopeBindingProjection",attempted,established,p.binding_state,p.binding_reason,boundary,movement_blocked,authority_resolvable,transition,prohibited,p.unknowns,p.conflicts,"Explains only the first ingress authority/scope boundary owned by the source projection; does not reclassify, grant authority, formulate a bounded question, select a realization, emit events, or mutate cluster state.")
+    return MinimumLawfulAdvancementExplanation("MinimumLawfulAdvancementExplanation",_stable("minimum-lawful-advancement-explanation",payload),p.binding_projection_id,p.artifact_type,"OperatorAuthorityScopeBindingProjection",attempted,established,p.binding_state,p.binding_reason,boundary,movement_blocked,authority_resolvable,transition,prohibited,p.unknowns,p.conflicts,"Explains only the first ingress authority/scope boundary owned by the source projection; does not reclassify, grant authority, originate or formulate a bounded question, select a realization, emit events, or mutate cluster state.")
 
 def minimum_lawful_advancement_explanation_json(e): return e.to_json_dict()
 def format_minimum_lawful_advancement_explanation(e):

@@ -447,14 +447,10 @@ __all__ = [
     "OperatorIdentityContext",
     "WorkspaceSessionAuthorityContext",
     "ScopeBindingContext",
-    "FutureBoundedConstitutionalQuestionHandoff",
     "OperatorAuthorityScopeBindingProjection",
     "bind_operator_authority_scope",
     "format_operator_authority_scope_binding",
     "operator_authority_scope_binding_json",
-    "BoundedConstitutionalQuestionFormulationError",
-    "FORMULATION_CONVENTION",
-    "formulate_bounded_constitutional_question",
     "format_bounded_constitutional_question",
 ]
 
@@ -486,7 +482,6 @@ from .operator_authority_scope_binding import (
     OperatorIdentityContext,
     WorkspaceSessionAuthorityContext,
     ScopeBindingContext,
-    FutureBoundedConstitutionalQuestionHandoff,
     OperatorAuthorityScopeBindingProjection,
     bind_operator_authority_scope,
     format_operator_authority_scope_binding,
@@ -494,8 +489,5 @@ from .operator_authority_scope_binding import (
 )
 
 from .bounded_constitutional_question import (
-    FORMULATION_CONVENTION,
-    BoundedConstitutionalQuestionFormulationError,
     format_bounded_constitutional_question,
-    formulate_bounded_constitutional_question,
 )

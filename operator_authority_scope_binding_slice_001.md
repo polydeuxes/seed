@@ -13,7 +13,7 @@ Inputs are one `OperatorExpressionInterpretationProjection`, its matching `Futur
 `OperatorAuthorityScopeBindingProjection` preserves interpretation and expression references, operator identity reference, workspace/session references, activity class, requested/resolved/permitted/excluded/unresolved scope, authority-bearing expressions, authority source references, required authority, constraints, state, reason, Unknowns, conflicts, and read-only flags.
 
 ## 5. Future bounded-question handoff
-A `FutureBoundedConstitutionalQuestionHandoff` is emitted only when binding state is `permitted`. It carries references and boundary material only; it does not contain a bounded question, constitutional intent conclusion, selection key, diagnostic/view identity, realization, authorization, pending action, or execution material.
+No future bounded-question handoff is emitted. A permitted binding stops at authority/scope preservation and does not contain a bounded question, constitutional intent conclusion, selection key, diagnostic/view identity, realization, authorization, pending action, or execution material.
 
 ## 6. Binding-state model
 The state model is `permitted`, `blocked`, `unknown`, and `conflict`.

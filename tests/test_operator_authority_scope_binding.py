@@ -28,7 +28,7 @@ def test_permitted_projection_identity_ordering_and_input_changes():
     a,*_=bind("Show ownership on node115 as JSON.")
     b,*_=bind("Show ownership on node115 as JSON.")
     assert a.artifact_type=="OperatorAuthorityScopeBindingProjection" and a.binding_state=="permitted"
-    assert a.binding_projection_id==b.binding_projection_id and a.future_bounded_question_handoff is not None
+    assert a.binding_projection_id==b.binding_projection_id
     variants=[
         bind("Why stronger service ownership on node115?")[0],
         bind("Show ownership on node116 as JSON.")[0],
@@ -55,7 +55,7 @@ def test_mismatches_and_non_interpreted_do_not_permit():
     e2,p2,h2=interp("Show me that."); assert h2 is None
     hfake=replace(h, interpretation_projection_id=p2.interpretation_projection_id, attributed_expression_ref=e2.expression_id)
     q=bind_operator_authority_scope(p2,hfake,e2,oi,wa,sb)
-    assert q.binding_state != "permitted" and q.future_bounded_question_handoff is None
+    assert q.binding_state != "permitted"
 
 def test_activity_scope_authority_and_constraints_states():
     assert bind("What owns storage on node115?")[0].binding_state=="permitted"
@@ -63,7 +63,7 @@ def test_activity_scope_authority_and_constraints_states():
     repo=bind("Inspect this repository, but do not modify anything.", activity=("local_passive_observation",), scopes=("repo:/workspace/seed",), sources=("standing local passive authority",))[0]
     assert repo.binding_state=="permitted" and repo.operator_stated_effect_constraints==("do not modify anything",) and "read_only_implementation" not in str(repo.to_json_dict())
     active=bind("Run an active scan of node115 and show me JSON.", restrictions=("network_active_observation_not_granted",))[0]
-    assert active.binding_state=="blocked" and active.future_bounded_question_handoff is None
+    assert active.binding_state=="blocked"
     unk=bind("Run an active scan of node115 and show me JSON.", activity=(), unknowns=("network authority unresolved",))[0]
     assert unk.binding_state=="unknown"
     e_priv,p_priv,h_base=interp("Show ownership on node115.")
@@ -144,7 +144,10 @@ def test_minimum_lawful_advancement_explanation_proving_cases():
     assert permitted.source_state == "permitted"
     assert not permitted.movement_blocked
     assert permitted.first_missing_boundary == "none"
-    assert "formulate_bounded_constitutional_question" not in permitted.prohibited_downstream_movement
+    assert "originate_bounded_constitutional_question" in permitted.prohibited_downstream_movement
+    assert "formulate_bounded_constitutional_question" not in permitted.attempted_movement
+    assert "bounded constitutional question formulation" not in permitted.attempted_movement
+    assert "permitted binding stops at authority/scope preservation" in permitted.reconsideration_transition
 
 
 def test_minimum_lawful_advancement_explanation_human_json_same_boundary():
@@ -156,3 +159,66 @@ def test_minimum_lawful_advancement_explanation_human_json_same_boundary():
         assert key + ":" in text
     assert js["first_missing_boundary"] in text
     assert js["authority_resolvable"] is True
+
+
+def test_operator_ingress_binding_stops_without_question_handoff_and_preserves_fields():
+    projection, expression, interpretation, _handoff, _oi, _wa, _sb = bind(
+        "Show ownership on node115 as JSON.",
+    )
+
+    assert projection.binding_state == "permitted"
+    assert not hasattr(projection, "future_bounded_question_handoff")
+    payload = projection.to_json_dict()
+    assert "future_bounded_question_handoff" not in payload
+    assert payload["attributed_expression_ref"] == expression.expression_id
+    assert payload["interpretation_projection_ref"] == interpretation.interpretation_projection_id
+    assert payload["authority_source_refs"] == ["standing constitutional-read authority"]
+    assert payload["permitted_scope_refs"] == ["node115"]
+    assert payload["requested_activity_class"] == "constitutional_read"
+    assert payload["presentation_preference"] == "JSON"
+    assert set(("bind", "identity", "input", "scope", "session")).issubset(set(payload["provenance"]))
+    assert payload["read_only"] is True
+    assert payload["writes_event_ledger"] is False
+    assert payload["mutates_cluster"] is False
+
+
+def test_operator_ingress_non_permitted_preserves_uncertainty_and_read_only_without_handoff():
+    projection = bind("Show ownership on node116 as JSON.", unknowns=("scope testimony missing",))[0]
+
+    assert projection.binding_state == "unknown"
+    assert not hasattr(projection, "future_bounded_question_handoff")
+    assert projection.unresolved_scope_expressions == ("node116",)
+    assert projection.unknowns == ("scope testimony missing",)
+    assert set(("bind", "identity", "input", "scope", "session")).issubset(set(projection.provenance))
+    assert projection.read_only is True
+    assert projection.writes_event_ledger is False
+    assert projection.mutates_cluster is False
+
+
+def test_operator_ingress_public_surface_has_no_question_origination_symbols():
+    import seed_runtime
+    import seed_runtime.operator_authority_scope_binding as binding_module
+    import seed_runtime.bounded_constitutional_question as question_module
+
+    deleted = (
+        "FutureBoundedConstitutionalQuestionHandoff",
+        "formulate_bounded_constitutional_question",
+        "BoundedConstitutionalQuestionFormulationError",
+        "FORMULATION_CONVENTION",
+    )
+    for name in deleted:
+        assert name not in seed_runtime.__all__
+        assert not hasattr(seed_runtime, name)
+    assert not hasattr(binding_module, "FutureBoundedConstitutionalQuestionHandoff")
+    assert not hasattr(question_module, "formulate_bounded_constitutional_question")
+
+
+def test_no_operator_ingress_function_can_produce_bounded_constitutional_question():
+    import seed_runtime.operator_authority_scope_binding as binding_module
+    from seed_runtime.bounded_constitutional_question import BoundedConstitutionalQuestion
+
+    projection = bind("Show ownership on node115 as JSON.")[0]
+    for name in ("bind_operator_authority_scope", "explain_minimum_lawful_advancement"):
+        assert "BoundedConstitutionalQuestion" not in getattr(binding_module, name).__annotations__.values()
+    assert not isinstance(projection, BoundedConstitutionalQuestion)
+    assert "BoundedConstitutionalQuestion" not in str(projection.to_json_dict())

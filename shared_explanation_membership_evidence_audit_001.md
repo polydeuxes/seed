@@ -12,7 +12,7 @@ Implementation and test evidence reviewed:
 
 - `seed_runtime/bounded_constitutional_question.py` and `tests/test_bounded_constitutional_question.py` for bounded inquiry identity, explicit caller-supplied fields, testimony treatment, read-only boundaries, and non-selection boundaries.
 - `seed_runtime/constitutional_view_selection.py` and `tests/test_constitutional_view_selection.py` for deterministic projection from bounded question identity and exact selection keys without raw-question consumption or semantic reasoning.
-- `seed_runtime/operator_authority_scope_binding.py` and `tests/test_operator_authority_scope_binding.py` for ingress demand/request identity, future bounded-question handoff references, source explanation identity, Unknown preservation, and conflict preservation.
+- `seed_runtime/operator_authority_scope_binding.py` and `tests/test_operator_authority_scope_binding.py` for ingress demand/request identity, authority/scope binding references, source explanation identity, Unknown preservation, and conflict preservation.
 - `seed_runtime/representation_grammar_applicability.py` and `tests/test_representation_grammar_applicability.py` for exact demand, probe request, handoff, recovered grammar, mechanism, invocation contract, provenance, Unknowns, conflicts, and stage-local explanation preservation.
 - `seed_runtime/shared_explanation_rendering_projection.py` and `tests/test_shared_explanation_rendering_projection.py` for one-to-one rendering of stage-local explanations, source explanation identity, source artifact owner/type, stage-owned material, Unknowns, conflicts, and the explicit single-explanation boundary.
 - `seed_runtime/capability_reachability_projection.py` and `tests/test_capability_reachability_projection.py` for demand-level reachability identity, probe/capability-demand/candidate-set handoff validation, positive unsupportedness, no-known-realization Unknown treatment, conflict preservation, and no selection among multiple support.
@@ -82,7 +82,7 @@ reachability explanation
 
 Inspection result: all may belong to one bounded inquiry when their source lineage refers to the same bounded inquiry, exact demand, handoff chain, probe/work identity, or provenance chain.
 
-Ingress evidence can include a future bounded-question handoff carrying authority/scope binding, interpretation, expression, operator, workspace, session, request kind, activity class, bound scope, authority sources, source spans, grammar applicability reference, provenance, Unknowns, and conflicts. The ingress explanation preserves the source binding projection identity as its source artifact reference.
+Ingress evidence can include authority/scope binding material carrying interpretation, expression, operator, workspace, session, request kind, activity class, permitted/excluded/unresolved scope, authority sources, provenance, Unknowns, and conflicts. The ingress explanation preserves the source binding projection identity as its source artifact reference.
 
 Grammar-applicability evidence can include exact `capability_demand_ref`, `probe_request_ref`, `operational_realization_handoff_ref`, recovered grammar, mechanism, invocation contract, provenance, Unknowns, and conflicts. Its explanation preserves the applicability projection identity and stage-owned demand/material references.
 
@@ -143,9 +143,9 @@ Membership conclusion: positive non-membership requires affirmative incompatible
 Recurring evidence across inspected implementation surfaces:
 
 - stable bounded inquiry identity: `bounded_question_id`, explicit inquiry provenance, caller-supplied fields, and bounded question contents;
-- inquiry/request/work lineage: attributed expression, interpretation projection, authority/scope binding, future bounded-question handoff, workspace/session/scope references, and provenance;
+- inquiry/request/work lineage: attributed expression, interpretation projection, authority/scope binding, workspace/session/scope references, and provenance;
 - exact demand identity: `capability_demand_ref` or `capability_demand_reference`;
-- handoff identity: future bounded-question handoff, operational realization handoff, future candidate-realization handoff, future capability-reachability handoff, and future selection handoff;
+- handoff identity: operational realization handoff, future candidate-realization handoff, future capability-reachability handoff, and future selection handoff;
 - source explanation identity: `source_explanation_identity` and source explanation `explanation_id`;
 - source artifact identity: source explanation `source_artifact_ref` and `source_artifact_type` where source artifact is available;
 - source artifact owner/type: source stage owner and explanation type;
