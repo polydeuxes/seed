@@ -137,6 +137,13 @@ from seed_runtime.goal_advancement_need_set import (
 
 
 
+from seed_runtime.advancement_need_consideration_selection import (
+    AdvancementNeedConsiderationSelection,
+    NeedFocusEvidence,
+    advancement_need_consideration_selection_json,
+    select_advancement_need_for_consideration,
+)
+
 from seed_runtime.advancement_need_reference_set import (
     AdvancementNeedReference,
     AdvancementNeedReferenceConflict,
@@ -235,6 +242,10 @@ from seed_runtime.closed_choice_selection_binding import (
 )
 
 __all__ = [
+    "AdvancementNeedConsiderationSelection",
+    "NeedFocusEvidence",
+    "advancement_need_consideration_selection_json",
+    "select_advancement_need_for_consideration",
     "AdvancementNeedReference",
     "AdvancementNeedReferenceConflict",
     "AdvancementNeedReferenceSet",
