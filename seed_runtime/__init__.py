@@ -127,6 +127,14 @@ from seed_runtime.bounded_operator_goal_establishment import (
 )
 
 
+from seed_runtime.clarification_need_projection import (
+    ClarificationNeedProjection,
+    ClarificationNeedProjectionItem,
+    OperatorMeaningUncertaintyTestimony,
+    clarification_need_projection_json,
+    project_clarification_need,
+)
+
 from seed_runtime.bounded_advancement_horizon import (
     BoundedAdvancementHorizon,
     EvidenceSnapshotReference,
@@ -166,6 +174,11 @@ from seed_runtime.closed_choice_selection_binding import (
 )
 
 __all__ = [
+    "ClarificationNeedProjection",
+    "ClarificationNeedProjectionItem",
+    "OperatorMeaningUncertaintyTestimony",
+    "clarification_need_projection_json",
+    "project_clarification_need",
     "BoundedAdvancementHorizon",
     "EvidenceSnapshotReference",
     "NeedFamilyExclusion",
