@@ -126,6 +126,15 @@ from seed_runtime.bounded_operator_goal_establishment import (
     establish_bounded_operator_goal_from_interpretation,
 )
 
+from seed_runtime.operational_realization_need_projection import (
+    OperationalRealizationNeedProjection,
+    OperationalRealizationNeedProjectionItem,
+    OperationalRealizationRequirementTestimony,
+    OperationalRealizationStandingTestimony,
+    operational_realization_need_projection_json,
+    project_operational_realization_need,
+)
+
 from seed_runtime.authority_need_projection import (
     AuthorityNeedProjection,
     AuthorityNeedProjectionItem,
@@ -190,6 +199,12 @@ from seed_runtime.closed_choice_selection_binding import (
 )
 
 __all__ = [
+    "OperationalRealizationNeedProjection",
+    "OperationalRealizationNeedProjectionItem",
+    "OperationalRealizationRequirementTestimony",
+    "OperationalRealizationStandingTestimony",
+    "operational_realization_need_projection_json",
+    "project_operational_realization_need",
     "AuthorityNeedProjection",
     "AuthorityNeedProjectionItem",
     "AuthorityRequirementTestimony",
