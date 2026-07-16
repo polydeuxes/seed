@@ -26,7 +26,7 @@ This evidence was sufficient; no broader implementation expansion was required.
 
 ### Source artifact owner
 
-The decision owner is `OperatorAuthorityScopeBindingProjection`. Its source projection preserves ingress authority/scope fields including operator identity, workspace/session authority, requested/resolved/permitted/excluded/unresolved scope, authority-bearing expressions, authority source references, required authority, operator-stated constraints, binding state, binding reason, Unknowns, conflicts, future bounded-question handoff, and read-only flags.
+The decision owner is `OperatorAuthorityScopeBindingProjection`. Its source projection preserves ingress authority/scope fields including operator identity, workspace/session authority, requested/resolved/permitted/excluded/unresolved scope, authority-bearing expressions, authority source references, required authority, operator-stated constraints, binding state, binding reason, Unknowns, conflicts, read-only flags.
 
 The explanation artifact is `MinimumLawfulAdvancementExplanation`. It is derived from the source projection and is not a new decision owner.
 
@@ -35,7 +35,7 @@ The explanation artifact is `MinimumLawfulAdvancementExplanation`. It is derived
 The explained movement is:
 
 ```text
-advance one interpreted operator request from authority/scope binding to bounded constitutional question formulation
+explain the authority/scope binding result without originating a bounded constitutional question
 ```
 
 That movement is ingress-local. It is not realization selection, diagnostic selection, execution, event emission, knowledge admission, or cluster mutation.
@@ -74,9 +74,9 @@ Ingress does not expose a generic `handoff_permitted` field. It exposes:
 
 - `movement_blocked`, which is true only for `blocked` and `conflict`;
 - `first_missing_boundary`, which is `none` for `permitted`;
-- a future bounded-question handoff on the source projection only when `binding_state == "permitted"`.
+- no future bounded-question handoff on the source projection.
 
-For a permitted result, the explanation removes `formulate_bounded_constitutional_question` from prohibited downstream movement while continuing to prohibit realization selection and execution.
+For a permitted result, the explanation states that the binding stops at authority/scope preservation and continues to prohibit question origination, realization selection, and execution.
 
 ### Reconsideration evidence preserved
 
@@ -94,7 +94,7 @@ This field is stage-owned because its lawful meaning depends on ingress authorit
 
 Ingress prohibits downstream movement through `prohibited_downstream_movement`. The list is stage-specific:
 
-- `formulate_bounded_constitutional_question` while the ingress handoff is not available;
+- bounded-question origination from operator ingress;
 - `select_diagnostic_view_capability_or_realization`;
 - `authorize_or_execute_movement`.
 
@@ -436,7 +436,7 @@ The strongest evidence that this boundary should be rendering-only is that both 
 
 The strongest counterevidence against one shared typed contract is that recurring outer shape hides incompatible constitutional meanings:
 
-- ingress explains authority/scope movement to bounded question formulation;
+- ingress explains authority/scope preservation without question origination;
 - grammar applicability explains compatibility movement toward a candidate-realization handoff;
 - ingress authority can sometimes be a lawful reconsideration transition;
 - grammar explicitly rejects additional operator authority as a resolution;

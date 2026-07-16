@@ -2,7 +2,7 @@
 
 ## Recovered responsibility
 
-This slice recovers one bounded, read-only responsibility: given one `OperatorAuthorityScopeBindingProjection`, Seed may explain the first ingress authority/scope boundary that prevents movement from the authority/scope binding stage to bounded constitutional question formulation.
+This slice recovers one bounded, read-only responsibility: given one `OperatorAuthorityScopeBindingProjection`, Seed may explain the first ingress authority/scope boundary that explains the authority/scope binding result without originating a bounded constitutional question.
 
 The responsibility is explanation only. It does not reclassify the source projection, grant authority, resolve scope, formulate a bounded constitutional question, select diagnostics, choose a realization, create pending actions, emit packets, write events, or mutate cluster state.
 
@@ -10,7 +10,7 @@ The responsibility is explanation only. It does not reclassify the source projec
 
 The source artifact is `OperatorAuthorityScopeBindingProjection`.
 
-The explanation derives only from the projection fields: requested activity, requested scope, resolved/permitted/excluded/unresolved scope, authority sources, required authority, required additional authority, operator-stated constraints, binding state, binding reason, Unknowns, conflicts, and future bounded-question handoff presence or absence.
+The explanation derives only from the projection fields: requested activity, requested scope, resolved/permitted/excluded/unresolved scope, authority sources, required authority, required additional authority, operator-stated constraints, binding state, binding reason, Unknowns, conflicts, and read-only boundary flags.
 
 ## Producer and output artifact
 
@@ -33,7 +33,7 @@ The explanation may state:
 - what downstream movement remains prohibited;
 - what Unknowns or conflicts remain preserved.
 
-The explanation may not reinterpret original operator prose, invent evidence, resolve Unknowns, convert conflicts into denials, request authority for unresolved scope, or formulate a bounded constitutional question.
+The explanation may not reinterpret original operator prose, invent evidence, resolve Unknowns, convert conflicts into denials, request authority for unresolved scope, or originate/formulate a bounded constitutional question.
 
 ## Proving-case results
 

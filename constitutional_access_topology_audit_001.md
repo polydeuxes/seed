@@ -10,7 +10,7 @@ Across repository, filesystem, service, network, internet, privileged-local, ext
 
 Primary implementation evidence reviewed:
 
-- `seed_runtime/operator_authority_scope_binding.py` for interpreted operator request, activity class, scope binding, required authority, effect constraints, and future bounded-question handoff.
+- `seed_runtime/operator_authority_scope_binding.py` for interpreted operator request, activity class, scope binding, required authority, effect constraints.
 - `seed_runtime/observation_permission.py` for observation classes and manual/reusable permission visibility.
 - `seed_runtime/repository_observation.py` for explicit repository observation of an arbitrary git-backed path without event-ledger writes or cluster mutation.
 - `seed_runtime/privilege_discovery.py` for privilege guidance, limiting reasons, Docker/root/systemd/listener boundaries, and visibility-only behavior.
@@ -307,7 +307,7 @@ This request names subject, activity, target, scope, boundary, authority class, 
 
 ## Strongest supporting evidence
 
-- Operator authority/scope binding already separates requested activity, requested scope, resolved/permitted/excluded scope, required authority class, operator constraints, additional authority, and future bounded-question handoff.
+- Operator authority/scope binding already separates requested activity, requested scope, resolved/permitted/excluded scope, required authority class, operator constraints, additional authority.
 - Observation permission already separates observation class from permission state and denies that manual invocation creates reusable permission.
 - Privilege discovery already distinguishes access level, implementation evidence, guidance status, and limiting reason.
 - Candidate realization/reachability/selection/warrant artifacts already split mechanism, grammar, behavior, dependency, authority, selection, warrant, and refusal to authorize/execute.
