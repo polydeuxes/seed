@@ -268,3 +268,135 @@ def test_admitted_interpretation_handoff_has_no_inquiry_authorization_execution_
     assert goal.read_only is True
     assert goal.writes_event_ledger is False
     assert goal.mutates_cluster is False
+
+from seed_runtime.bounded_operator_goal_establishment import establish_bounded_operator_goal_from_authority_scope_binding
+from seed_runtime.operator_expression_interpretation import AttributedOperatorExpression
+from seed_runtime.operator_authority_scope_binding import OperatorAuthorityScopeBindingProjection
+
+
+def _expression():
+    return AttributedOperatorExpression(
+        expression_id="attributed-expression:1",
+        exact_text="Show repository diagnostic inventory on this repository as JSON",
+        normalized_text="Show repository diagnostic inventory on this repository as JSON",
+        input_representation="operator text",
+        source_channel="external input",
+        workspace_ref="workspace:1",
+        session_ref="session:1",
+        operator_ref="operator:1",
+        provenance=("operator-message:1",),
+    )
+
+
+def _authority_binding(**overrides):
+    base = dict(
+        artifact_type="OperatorAuthorityScopeBindingProjection",
+        binding_projection_id="binding:1",
+        interpretation_projection_ref="interpretation:1",
+        attributed_expression_ref="attributed-expression:1",
+        operator_identity_ref="operator:1",
+        workspace_ref="workspace:1",
+        session_ref="session:1",
+        inquiry_or_request_kind="show",
+        requested_activity_class="constitutional_read",
+        requested_scope_expressions=("this repository",),
+        resolved_scope_refs=("repo:seed",),
+        permitted_scope_refs=("repo:seed",),
+        excluded_scope_refs=(),
+        unresolved_scope_expressions=(),
+        authority_bearing_expressions=(),
+        authority_source_refs=("session-authority:1",),
+        required_authority_class="constitutional_read",
+        operator_stated_effect_constraints=("do not modify anything",),
+        presentation_preference="JSON",
+        binding_state="permitted",
+        binding_reason="within_established_authority_and_scope",
+        required_additional_authority=(),
+        supporting_references=("scope-binding:1",),
+        provenance=("authority-context:1",),
+        unknowns=(),
+        conflicts=(),
+    )
+    base.update(overrides)
+    return OperatorAuthorityScopeBindingProjection(**base)
+
+
+def test_permitted_authority_scope_binding_establishes_goal_and_preserves_matching_material():
+    expression = _expression()
+    interpretation = _interpretation(presentation_preference="JSON")
+    binding = _authority_binding()
+
+    goal = establish_bounded_operator_goal_from_authority_scope_binding(
+        binding,
+        interpretation,
+        expression,
+        sufficiency_conditions=("one permitted binding matches one interpreted expression",),
+        stop_conditions=("stop before advancement diagnosis",),
+    )
+
+    assert goal.establishment_state == "established"
+    assert goal.ingress_artifact_type == "OperatorAuthorityScopeBindingProjection"
+    assert goal.ingress_artifact_ref == binding.binding_projection_id
+    assert goal.intended_outcome == "repository diagnostic inventory"
+    assert goal.known_scope == ("repo:seed", "repository diagnostic inventory")
+    assert goal.operator_constraints == ("do not modify anything",)
+    assert goal.consumed_ingress_material_snapshot["expression"]["exact_text"] == expression.exact_text
+    assert goal.consumed_ingress_material_snapshot["interpretation"]["presentation_preference"] == "JSON"
+    assert goal.consumed_ingress_material_snapshot["authority_scope_binding"]["permitted_scope_refs"] == ["repo:seed"]
+    assert "session-authority:1" in goal.upstream_warrant_refs
+    assert goal.inquiry_opened is False
+    assert goal.work_authorized is False
+    assert goal.writes_event_ledger is False
+    assert goal.mutates_cluster is False
+
+
+def test_authority_scope_goal_establishment_refuses_unresolved_conflicting_mixed_or_insufficient_material():
+    expression = _expression()
+    interpretation = _interpretation()
+
+    unresolved = establish_bounded_operator_goal_from_authority_scope_binding(
+        _authority_binding(binding_state="unknown", binding_reason="requested_scope_unresolved", permitted_scope_refs=(), unresolved_scope_expressions=("this repository",)),
+        interpretation,
+        expression,
+    )
+    assert unresolved.establishment_state == "refused"
+    assert unresolved.establishment_reason == "authority_scope_binding_is_not_permitted"
+    assert unresolved.unresolved_scope == ("this repository",)
+
+    mixed = establish_bounded_operator_goal_from_authority_scope_binding(
+        _authority_binding(permitted_scope_refs=("repo:seed",), excluded_scope_refs=("repo:other",)),
+        interpretation,
+        expression,
+    )
+    assert mixed.establishment_state == "provisional"
+    assert "repo:other" in mixed.unresolved_scope
+
+    conflict = establish_bounded_operator_goal_from_authority_scope_binding(
+        _authority_binding(conflicts=("scope conflict",)),
+        interpretation,
+        expression,
+    )
+    assert conflict.establishment_state == "refused"
+    assert conflict.establishment_reason == "permitted_material_has_conflicts"
+    assert conflict.conflicts == ("scope conflict",)
+
+    insufficient = establish_bounded_operator_goal_from_authority_scope_binding(
+        _authority_binding(permitted_scope_refs=(), requested_scope_expressions=("this repository",)),
+        interpretation,
+        expression,
+    )
+    assert insufficient.establishment_state == "refused"
+    assert insufficient.establishment_reason == "permitted_binding_lacks_permitted_scope"
+
+
+def test_authority_scope_goal_establishment_requires_exact_matching_expression_and_interpretation():
+    expression = _expression()
+    interpretation = _interpretation()
+    binding = _authority_binding(interpretation_projection_ref="interpretation:other")
+
+    try:
+        establish_bounded_operator_goal_from_authority_scope_binding(binding, interpretation, expression)
+    except Exception as exc:
+        assert "does not match interpretation" in str(exc)
+    else:
+        raise AssertionError("mismatched binding was not refused")
