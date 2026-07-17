@@ -185,3 +185,7 @@ No Book change is warranted. Pass 081 removes legacy and compatibility cache sta
 ## Pass 081 readiness update
 
 No Book projection is warranted. The correction is an implementation-backed cache authority boundary: disposable read-model caches no longer carry legacy or compatibility standing, while the event ledger remains authoritative.
+
+## Passes 082–084 readiness update
+
+No Book coverage change is ready. The derived fact-index boundary is implementation evidence for existing read-model and realization limits. It does not establish a general cache envelope, circulation topology, receipt proof, reliance proof, correction authority, or reopening authority.

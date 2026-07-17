@@ -103,3 +103,7 @@ Pass 081 removes the pass 075–077 boundary-testimony compatibility branch from
 ## Correction 078–081 update
 
 Pass 081 supersedes the legacy and compatibility cache handling left by passes 075–080. Projection, summary, and derived-index SQLite cache tables are disposable read models: incompatible cache schemas are dropped and recreated rather than interpreted, migrated, or repaired with `ALTER TABLE`. The event ledger remains authoritative and is not discarded. Rebuilt projections derive from surviving ledger events, preserve read-model-only cache standing and `mutates_cluster=false`, and append no false events.
+
+## Python–SQLite frontier update after passes 082–084
+
+The derived fact-index read model now has its own Python–SQLite handoff boundary. Python produces a `DerivedIndexSnapshot` with derived fact-index cache standing; SQLite preserves that testimony in `derived_index_snapshots`; Python consumes it only when both the source projection row and the derived-index row remain read-model-cache-only and non-mutating. A mismatch is a cache miss and rebuild from projected State, not a ledger event, cluster mutation, receipt, reliance, correction, reopening, or stronger truth.

@@ -107,3 +107,7 @@ Pass 081 supersedes the pass 075–077 cache-compatibility frontier. Migration-i
 ## Correction 078–081 frontier
 
 The active Python–SQLite frontier remains incomplete. Pass 081 removes legacy and compatibility cache standing: incompatible disposable cache schemas are reset and rebuilt from the authoritative ledger rather than migrated or interpreted. Remaining frontiers include event payload compression, production consumer maps, and complete ownership maps.
+
+## Python–SQLite frontier reorientation 082–084
+
+No Book projection is warranted. The implemented change is a local realization boundary for a disposable read-model cache: derived fact-index rows now testify to their own cache standing before Python consumes them. This reinforces existing non-promotion and realization-fidelity clauses rather than adding a new constitutional act or vocabulary.

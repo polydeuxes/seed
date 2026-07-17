@@ -104,3 +104,9 @@ The non-Book corpus recovers a constitutional grammar of conservative movement. 
 - [Python–SQLite realization pass 080 — Fact-index source boundary](python_sqlite_realization_pass_080_fact_index_source_boundary.md) recovered source-boundary gating for SQLite-derived fact-index cache consumption.
 
 - [Correction pass 081 — Disposable Cache Reset](python_sqlite_correction_pass_081_disposable_cache_reset.md) removes legacy and compatibility cache standing from SQLite disposable read-model caches; incompatible cache schemas are dropped, recreated, and rebuilt from the authoritative event ledger when requested.
+
+## Python–SQLite frontier reorientation passes 082–084
+
+- [Pass 082 — Orientation](python_sqlite_frontier_pass_082_orientation.md) maps remaining Python–SQLite pressures and classifies derived fact-index boundary testimony as the smallest unresolved concrete handoff.
+- [Pass 083 — Derived fact-index boundary](python_sqlite_frontier_pass_083_derived_fact_index_boundary.md) selects the Python fact-index producer → SQLite `derived_index_snapshots` row → Python cache consumer seam and stops neighboring candidates.
+- [Pass 084 — Derived fact-index boundary implementation](python_sqlite_frontier_pass_084_derived_fact_index_boundary.md) implements derived-index boundary testimony and consumer gating without changing ledger authority or public payload behavior.
