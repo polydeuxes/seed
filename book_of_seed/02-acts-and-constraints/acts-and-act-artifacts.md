@@ -7,13 +7,15 @@ The classification of acts and the artifacts that report, propose, or preserve t
 What establishes that an act occurred rather than that an act-shaped artifact exists?
 
 ## Bounded resolution
-An act is a bounded responsibility at which something constitutionally occurs: a choice is made, material is admitted, standing is established, or an operation is performed. It consumes the subject plus the warrant and conditions appropriate to that occurrence and produces or preserves an attributed result. An act artifact reports or preserves that assertion; constructing it does not prove the act. Occurrence must be evidenced by the responsible validated function and, for operational acts, the execution or recording boundary.
+An act is a bounded responsibility at which something constitutionally occurs: a choice is made, material is admitted, standing is established, or an operation is performed. It consumes the subject plus the warrant and conditions appropriate to that occurrence and produces or preserves an attributed result. An act artifact reports or preserves that assertion; constructing it does not prove the act. Occurrence must be evidenced by the responsible validated function and, for operational acts, the execution or recording boundary. Read-only and non-mutating boundaries prove side-effect limits; they do not by themselves prove that no constitutional occurrence happened. A read-only selector can still perform a bounded selection act, while its artifact remains insufficient unless produced through the responsible validation boundary.
 
 ## Important distinctions
 - act != artifact describing an act
 - classification of language != occurrence of the classified act
 - proposal != occurrence
 - intent classification != performance
+- read-only/non-mutating != no constitutional occurrence
+- selection artifact != act that produced it
 
 ## Representative repository anchors
 - `seed_runtime/input_inspector.py::InputAct`

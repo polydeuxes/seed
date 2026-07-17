@@ -7,11 +7,13 @@ The difference between observing constitutional material through a view and poss
 What makes a relationship a constitutional road rather than an informative lens or repository adjacency?
 
 ## Bounded resolution
-A lens consumes existing material and exposes, selects, projects, or composes a bounded representation without changing constitutional standing. Its assertion is about what the supplied sources expose under its declared method, warranted by source identity and faithful transformation. A constitutional road is instead a warranted producer-to-consumer relationship: the consumer accepts the producer's assertion for a declared purpose and validates the identities and invariants needed at that boundary. A lens may participate in a road, but neither call adjacency nor mechanical compatibility establishes one.
+A lens consumes existing material and exposes, selects, projects, or composes a bounded representation without changing the standing of the represented source material. Its assertion is about what the supplied sources expose under its declared method, warranted by source identity and faithful transformation. A constitutional road is instead a warranted producer-to-consumer relationship: the consumer accepts the producer's assertion for a declared purpose and validates the identities and invariants needed at that boundary. A lens may participate in a road, but neither call adjacency nor mechanical compatibility establishes one. Representation selection can be lens-like when it only chooses views for rendering or composition; standing-bearing selection is different and requires evidence that a subject, not merely a representation, was selected for a bounded downstream purpose.
 
 ## Important distinctions
 - lens != constitutional road
-- read-only selection or composition != constitutional movement
+- read-only representation selection or composition != constitutional road by itself
+- read-only selection != no constitutional occurrence
+- non-mutating act != lens automatically
 - repository adjacency != constitutional sequence
 - constructibility != producer-to-consumer warrant
 - visibility != transition warrant
@@ -25,7 +27,7 @@ A lens consumes existing material and exposes, selects, projects, or composes a 
 ## Counterexamples or failure modes
 - Reading a diagnostic display order as a lawful process order.
 - Inferring a road because one module imports another.
-- Treating the pipeline's projection-selection-composition call order as a universal constitutional sequence; each component is explicitly read-only and locally bounded.
+- Treating the pipeline's projection-selection-composition call order as a universal constitutional sequence; each component is explicitly read-only and locally bounded, but read-only status alone is not the reason no road is proven.
 
 ## Related chapters
 - [External and constitutional grammar](external-and-constitutional-grammar.md)
