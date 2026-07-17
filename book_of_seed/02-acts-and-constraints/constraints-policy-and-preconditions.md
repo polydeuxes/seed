@@ -9,6 +9,12 @@ Which constraints govern an act, and at which boundary must each be satisfied?
 ## Bounded resolution
 A constraint consumes a proposed act or relevant context and produces or preserves a permission, prohibition, requirement, or condition on whether or how that act may proceed. Its assertion is warranted by the applicable policy, bound identity and current evidence. Constraints may govern several different acts and may be checked at several boundaries; they are not thereby sequential movement stages. A constraint result can be consumed without performing the governed act.
 
+
+## Recovered clauses for access and capability boundaries
+
+### 02.Constraints.A — Access and capability do not authorize use
+An access state, visible route, available artifact, capability candidate, catalog entry, projected capability, or read-only surface may support only the bounded condition it preserves. It does not by itself authorize use, execution, mutation, reliance beyond its warrant, event-ledger admission, or cluster change. Lawful use requires a separate authority, constraint, warrant, and responsible act boundary appropriate to the exact movement claimed.
+
 ## Important distinctions
 - act != constraint on an act
 - constraint != sequential pipeline stage

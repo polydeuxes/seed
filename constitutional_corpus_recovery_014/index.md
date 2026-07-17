@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This directory recovers constitutional grammar already present across the wider repository corpus outside `book_of_seed/`. It inventories non-Book evidence, groups independently recurring findings into pressure families, examines each family separately, cross-examines family relationships, and only then compares coverage against the current Book without modifying it.
+This directory recovers constitutional grammar already present across the wider repository corpus outside `book_of_seed/`. It inventories non-Book evidence, groups independently recurring findings into pressure families, examines each family separately, cross-examines family relationships, and then compares coverage against the current Book. Passes 015–021 include later lawful Book projections where recovered evidence warranted them.
 
 ## Produced artifacts
 
@@ -17,6 +17,18 @@ This directory recovers constitutional grammar already present across the wider 
 - [Responsibility, Governance, Ownership, and Handoff](responsibility_governance_handoff.md) — local responsibility, governance, owner boundaries, handoff, and operator authority scope.
 - [Cross-examination](cross_examination.md) — overlaps, independence, constraints, disagreements, implementation compression, and missing relationships across families.
 - [Book coverage readiness](book_coverage_readiness.md) — coverage-only comparison against the current Book, recording adequate, partial, report-only, missing, and not-mature-enough material.
+
+
+
+## Later recovery and projection passes
+
+- [Projection pass 015 — Evidence, Unknown, Absence, and Boundary-Claim](book_projection_pass_015_evidence_unknown_boundary.md) projected bounded negative findings and preserved Unknowns.
+- [Projection pass 016 — Observation, Provider Translation, and External Source](book_projection_pass_016_observation_translation_external_sources.md) projected source grammar translation boundaries.
+- [Projection pass 017 — Implementation Visibility, Readiness, Projection, and Diagnostic](book_projection_pass_017_implementation_visibility_projection.md) projected projection and diagnostic visibility boundaries.
+- [Projection pass 018 — Responsibility, Governance, Ownership, and Handoff](book_projection_pass_018_responsibility_governance_handoff.md) projected explicit responsibility transfer.
+- [Recovery pass 019 — Access, Capability, and Use Boundary](corpus_recovery_pass_019_access_capability_use_boundary.md) and [projection pass 019](book_projection_pass_019_access_capability_use_boundary.md) projected the access/capability/use non-promotion boundary.
+- [Recovery pass 020 — Admission and Bounded Participation Boundary](corpus_recovery_pass_020_admission_participation_boundary.md) and [projection pass 020](book_projection_pass_020_admission_participation_boundary.md) projected admission as bounded participation rather than ratification.
+- [Recovery pass 021 — Artifact Reachability Without Promotion](corpus_recovery_pass_021_artifact_reachability_without_promotion.md) and [projection pass 021](book_projection_pass_021_artifact_reachability_without_promotion.md) projected reachability without promotion.
 
 ## Recovered corpus summary
 
