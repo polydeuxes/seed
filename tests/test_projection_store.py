@@ -10,6 +10,7 @@ from seed_runtime.models import Event
 from seed_runtime.projection_store import (
     InMemoryProjectionStore,
     ProjectionSnapshot,
+    ProjectionSnapshotBoundary,
     SQLiteProjectionStore,
     STATE_PROJECTION_NAME,
     STATE_PROJECTION_VERSION,
@@ -1020,10 +1021,10 @@ def test_sqlite_projection_snapshot_boundary_columns_migrate_existing_cache(tmp_
             "ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION
         )
         assert snapshot is not None
-        assert snapshot.boundary.artifact_standing == "derived_projection_snapshot"
-        assert (
-            snapshot.boundary.occurrence_evidence_kind == "snapshot_preservation_only"
-        )
+        assert snapshot.boundary.artifact_standing == "legacy_unverified_projection_snapshot"
+        assert not __import__(
+            "seed_runtime.projection_store", fromlist=["projection_snapshot_is_eligible_for_state_cache"]
+        ).projection_snapshot_is_eligible_for_state_cache(snapshot)
         with sqlite3.connect(db_path) as connection:
             columns = {
                 row[1]
@@ -1174,7 +1175,7 @@ def test_sqlite_summary_cache_preserves_source_limits_and_rejects_mismatch(tmp_p
         ledger.close()
 
 
-def test_sqlite_summary_legacy_rows_have_explicit_compatibility_boundary(tmp_path):
+def test_sqlite_summary_legacy_rows_are_safely_invalidated(tmp_path):
     from seed_runtime.projection_store import (
         STATE_SUMMARY_PROJECTION_NAME,
         STATE_SUMMARY_PROJECTION_VERSION,
@@ -1226,25 +1227,19 @@ def test_sqlite_summary_legacy_rows_have_explicit_compatibility_boundary(tmp_pat
         )
     store = SQLiteProjectionStore(str(db_path))
     try:
-        snapshot = store.load_summary_snapshot(
+        assert store.load_summary_snapshot(
             "ws",
             STATE_SUMMARY_PROJECTION_NAME,
             STATE_SUMMARY_PROJECTION_VERSION,
             state_projection_version=STATE_PROJECTION_VERSION,
             state_last_event_id=None,
-        )
-        assert snapshot is not None
-        assert (
-            snapshot.boundary.source_occurrence_evidence_kind
-            == "snapshot_preservation_only"
-        )
-        assert snapshot.boundary.mutates_cluster is False
+        ) is None
     finally:
         store.close()
 
 
-def test_sqlite_projection_boundary_origin_distinguishes_new_from_migrated_cache(tmp_path):
-    db_path = tmp_path / "origin-migration.sqlite"
+def test_sqlite_legacy_projection_rows_are_rebuilt_instead_of_reused(tmp_path):
+    db_path = tmp_path / "legacy-invalidation.sqlite"
     with sqlite3.connect(db_path) as connection:
         connection.execute("""
             CREATE TABLE projection_snapshots (
@@ -1261,53 +1256,49 @@ def test_sqlite_projection_boundary_origin_distinguishes_new_from_migrated_cache
         connection.execute(
             "INSERT INTO projection_snapshots VALUES (?, ?, ?, ?, ?, ?, ?)",
             (
-                "legacy",
+                "ws",
                 STATE_PROJECTION_NAME,
                 STATE_PROJECTION_VERSION,
                 None,
                 None,
-                '{"workspace_id":"legacy"}',
+                '{"workspace_id":"ws","projection_version":"state-v2"}',
                 datetime(2026, 1, 1, tzinfo=timezone.utc).isoformat(),
             ),
         )
 
-    store = SQLiteProjectionStore(str(db_path))
-    try:
-        migrated = store.load_snapshot(
-            "legacy", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION
-        )
-        store.save_snapshot(
-            ProjectionSnapshot(
-                workspace_id="new",
-                projection_name=STATE_PROJECTION_NAME,
-                projection_version=STATE_PROJECTION_VERSION,
-                last_event_id=None,
-                last_event_created_at=None,
-                state_payload=state_to_payload(State(workspace_id="new")),
-                created_at=datetime(2026, 1, 2, tzinfo=timezone.utc),
-            )
-        )
-        newly_saved = store.load_snapshot(
-            "new", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION
-        )
-    finally:
-        store.close()
-
-    assert migrated is not None
-    assert newly_saved is not None
-    assert migrated.boundary.artifact_standing == newly_saved.boundary.artifact_standing
-    assert migrated.boundary.producer_boundary == newly_saved.boundary.producer_boundary
-    assert migrated.boundary.boundary_testimony_origin == "migration_inferred_compatibility"
-    assert newly_saved.boundary.boundary_testimony_origin == "producer_recorded"
-
-
-def test_matching_boundary_strings_without_producer_origin_are_bounded_cache_miss(tmp_path):
-    from seed_runtime.projection_store import ProjectionSnapshotBoundary
-
-    db_path = tmp_path / "manual-origin.sqlite"
     ledger = SQLiteEventLedger(str(db_path))
     event = _append_fact(ledger, "ws", "fact_one", "docker")
     before = ledger.list_events("ws")
+    store = SQLiteProjectionStore(str(db_path))
+    try:
+        migrated = store.load_snapshot("ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION)
+        projector = CountingProjector(ledger)
+        state, status = project_state_with_cache(ledger, "ws", store, projector=projector)
+        rebuilt = store.load_snapshot("ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION)
+        derived_rows = store._connection.execute(
+            "SELECT COUNT(*) FROM derived_index_snapshots"
+        ).fetchone()[0]
+    finally:
+        store.close()
+        after = ledger.list_events("ws")
+        ledger.close()
+
+    assert migrated is not None
+    assert migrated.boundary.artifact_standing == "legacy_unverified_projection_snapshot"
+    assert status.cache_hit is False
+    assert projector.calls == 1
+    assert state.get_best_fact("svc", "runtime").value == "docker"
+    assert [item.id for item in after] == [item.id for item in before]
+    assert rebuilt is not None
+    assert rebuilt.boundary == ProjectionSnapshotBoundary()
+    assert rebuilt.last_event_id == event.id
+    assert derived_rows == 0
+
+
+def test_matching_boundary_strings_remain_eligible_without_origin_requirement(tmp_path):
+    db_path = tmp_path / "manual-boundary.sqlite"
+    ledger = SQLiteEventLedger(str(db_path))
+    event = _append_fact(ledger, "ws", "fact_one", "docker")
     store = SQLiteProjectionStore(str(db_path))
     try:
         store.save_snapshot(
@@ -1319,92 +1310,16 @@ def test_matching_boundary_strings_without_producer_origin_are_bounded_cache_mis
                 last_event_created_at=event.timestamp,
                 state_payload=state_to_payload(StateProjector(ledger).project("ws")),
                 created_at=datetime.now(timezone.utc),
-                boundary=ProjectionSnapshotBoundary(
-                    boundary_testimony_origin="administratively_supplied"
-                ),
             )
         )
         projector = CountingProjector(ledger)
         state, status = project_state_with_cache(
             ledger, "ws", store, projector=projector
         )
-        rebuilt = store.load_snapshot(
-            "ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION
-        )
-        derived_rows = store._connection.execute(
-            "SELECT COUNT(*) FROM derived_index_snapshots"
-        ).fetchone()[0]
     finally:
         store.close()
-        after = ledger.list_events("ws")
         ledger.close()
 
-    assert status.cache_hit is False
-    assert projector.calls == 1
+    assert status.cache_hit is True
+    assert projector.calls == 0
     assert state.get_best_fact("svc", "runtime").value == "docker"
-    assert [item.id for item in after] == [item.id for item in before]
-    assert rebuilt is not None
-    assert rebuilt.boundary.boundary_testimony_origin == "producer_recorded"
-    assert rebuilt.boundary.mutates_cluster is False
-    assert derived_rows == 0
-
-
-def test_sqlite_summary_legacy_compatibility_requires_matching_source_origin(tmp_path):
-    from seed_runtime.projection_store import (
-        STATE_SUMMARY_PROJECTION_NAME,
-        STATE_SUMMARY_PROJECTION_VERSION,
-        SummaryProjectionSnapshot,
-    )
-
-    db_path = tmp_path / "summary-origin.sqlite"
-    store = SQLiteProjectionStore(str(db_path))
-    try:
-        store.save_snapshot(
-            ProjectionSnapshot(
-                workspace_id="ws",
-                projection_name=STATE_PROJECTION_NAME,
-                projection_version=STATE_PROJECTION_VERSION,
-                last_event_id=None,
-                last_event_created_at=None,
-                state_payload=state_to_payload(State(workspace_id="ws")),
-                created_at=datetime.now(timezone.utc),
-            )
-        )
-        store.save_summary_snapshot(
-            SummaryProjectionSnapshot(
-                workspace_id="ws",
-                projection_name=STATE_SUMMARY_PROJECTION_NAME,
-                projection_version=STATE_SUMMARY_PROJECTION_VERSION,
-                last_event_id=None,
-                state_projection_version=STATE_PROJECTION_VERSION,
-                state_last_event_id=None,
-                summary_payload={"operator_summary": {}},
-                created_at=datetime.now(timezone.utc),
-            )
-        )
-        assert store.load_summary_snapshot(
-            "ws",
-            STATE_SUMMARY_PROJECTION_NAME,
-            STATE_SUMMARY_PROJECTION_VERSION,
-            state_projection_version=STATE_PROJECTION_VERSION,
-            state_last_event_id=None,
-        ) is not None
-
-        store._connection.execute(
-            """
-            UPDATE state_summary_snapshots
-            SET source_boundary_testimony_origin = 'migration_inferred_compatibility'
-            WHERE workspace_id = ?
-            """,
-            ("ws",),
-        )
-        store._connection.commit()
-        assert store.load_summary_snapshot(
-            "ws",
-            STATE_SUMMARY_PROJECTION_NAME,
-            STATE_SUMMARY_PROJECTION_VERSION,
-            state_projection_version=STATE_PROJECTION_VERSION,
-            state_last_event_id=None,
-        ) is None
-    finally:
-        store.close()

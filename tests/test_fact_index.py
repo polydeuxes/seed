@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from seed_runtime.events import EventLedger
+from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.execution_status import RecordingExecutionStatusConsumer
 from seed_runtime.fact_index import build_fact_index, load_or_build_fact_index
 from seed_runtime.facts import Fact
@@ -11,6 +11,7 @@ from seed_runtime.projection_store import (
     FACT_INDEX_NAME,
     FACT_INDEX_VERSION,
     InMemoryProjectionStore,
+    SQLiteProjectionStore,
     STATE_PROJECTION_NAME,
     STATE_PROJECTION_VERSION,
     project_state_with_cache,
@@ -230,3 +231,41 @@ def test_fact_index_build_starts_from_read_model_construction_inputs(monkeypatch
 
     assert observed == [state]
     assert index.state_last_event_id == state.last_event_id
+
+
+def test_sqlite_fact_index_cache_requires_bounded_source_projection(tmp_path):
+    db_path = tmp_path / "fact-index-source-boundary.sqlite"
+    ledger = SQLiteEventLedger(str(db_path))
+    store = SQLiteProjectionStore(str(db_path))
+    try:
+        _append_fact(ledger, "ws", _fact("fact_runtime", "svc", "runtime", "docker"))
+        state, _status = project_state_with_cache(ledger, "ws", store)
+        first = load_or_build_fact_index(state, workspace_id="ws", store=store)
+        cached = store.load_derived_index_snapshot(
+            "ws",
+            FACT_INDEX_NAME,
+            FACT_INDEX_VERSION,
+            state_projection_version=STATE_PROJECTION_VERSION,
+            state_last_event_id=state.last_event_id,
+        )
+        assert cached is not None
+
+        store._connection.execute(
+            "UPDATE projection_snapshots SET consumer_limit = 'cluster_truth' WHERE workspace_id = ?",
+            ("ws",),
+        )
+        store._connection.commit()
+
+        assert store.load_derived_index_snapshot(
+            "ws",
+            FACT_INDEX_NAME,
+            FACT_INDEX_VERSION,
+            state_projection_version=STATE_PROJECTION_VERSION,
+            state_last_event_id=state.last_event_id,
+        ) is None
+        rebuilt = load_or_build_fact_index(state, workspace_id="ws", store=store)
+    finally:
+        store.close()
+        ledger.close()
+
+    assert first.fact_ids_by_subject_predicate == rebuilt.fact_ids_by_subject_predicate

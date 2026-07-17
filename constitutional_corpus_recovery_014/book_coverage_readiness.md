@@ -177,3 +177,7 @@ The state-summary source boundary is implementation evidence, not new realizatio
 ## Hybrid boundary testimony readiness after passes 075–077
 
 No Book change is warranted. The implementation recovered a cache-local realization distinction: boundary value equality is not boundary testimony equivalence. Producer occurrence, persistence occurrence, migration inference, compatibility standing, consumer eligibility, cache uptake, and rebuilt testimony remain implementation-local distinctions that reinforce existing Book rules against silent strengthening. Remaining readiness gaps are implementation gaps, not realization-neutral constitutional omissions.
+
+## Correction 078–080 readiness note
+
+No Book change is warranted. The correction is implementation-local: legacy cache reuse was unsupported and has been narrowed to safe invalidation/rebuild, while fact-index source-boundary gating preserves existing realization-neutral limits that read-model caches do not strengthen source standing.
