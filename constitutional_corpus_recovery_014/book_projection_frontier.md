@@ -1,77 +1,60 @@
-# Book Projection Frontier after Pass 015
+# Book Projection Frontier after Pass 018
 
-This frontier is not a completion declaration. It records the state after one selected projection pass so that future passes can select another unresolved recovered family.
+This frontier is not a completion declaration. It records the state after sequential projection passes 016 through 018 so that future passes can select another unresolved recovered family without treating this sweep as corpus or Book completion.
 
-## Family selected in pass 015
+## Completed passes
 
-**Evidence, Unknown, Absence, and Boundary-Claim**.
+### Pass 015 — Evidence, Unknown, Absence, and Boundary-Claim
 
-## Why it carried the strongest pressure
+Book change made before this sweep: `05.Evidence.C — Bounded negative findings and preserved Unknowns` in `book_of_seed/05-evidence-and-knowledge/evidence-provenance-and-explanation.md`.
 
-This family was marked partially preserved in `book_coverage_readiness.md`, while several other families were marked adequately preserved. Its report-only components included absence-of-evidence stronger-claim analysis and legal/adjudicative boundary investigations. `cross_examination.md` also made this family foundational: evidence and Unknown constraints bind authority/reliance and prevent unsupported forms from crossing into authority, truth, mutation, ownership, Book law, or universal topology.
+### Pass 016 — Observation, Provider Translation, and External Source
 
-## Evidence examined
+Book change made in this sweep: `01.External.A — Source grammar translation boundary` in `book_of_seed/01-grammar-and-standing/external-and-constitutional-grammar.md`.
 
-- `constitutional_corpus_recovery_014/evidence_unknown_boundary.md`
-- `constitutional_corpus_recovery_014/cross_examination.md`
-- `constitutional_corpus_recovery_014/book_coverage_readiness.md`
-- `constitutional_absence_of_evidence_boundary_investigation.md`
-- `constitutional_boundary_mismatch_invalidity_boundary_investigation.md`
-- `constitutional_analytical_competence_adjudicative_authority_boundary_investigation.md`
-- Neighboring family reports for authority/reliance, observation/provider/external sources, and implementation visibility/projection/diagnostic.
+Result: mature source/provider translation grammar was projected. Provider/source taxonomy, provider-contract ownership, and external attachment implementation details remain report-only.
 
-## Book chapters examined
+### Pass 017 — Implementation Visibility, Readiness, Projection, and Diagnostic
 
-- `book_of_seed/05-evidence-and-knowledge/evidence-provenance-and-explanation.md`
-- `book_of_seed/05-evidence-and-knowledge/testimony-and-established-fact.md`
-- `book_of_seed/05-evidence-and-knowledge/recording-and-knowledge-extraction.md`
-- `book_of_seed/08-authority-communication-and-stopping/authority-scope.md`
-- `book_of_seed/06-state-and-projection/events-facts-and-state.md`
-- `book_of_seed/unresolved.md`
+Book change made in this sweep: `06.Projection.A — Projection and diagnostic visibility boundary` in `book_of_seed/06-state-and-projection/projection-and-current-state.md`.
 
-## Distinctions already preserved
+Result: mature projection/diagnostic visibility boundary was projected. Diagnostic inventory registry format, shape-audit specs, record-scope tests, mutation-boundary tests, and read-model owner maps remain report-only or operational evidence.
 
-- Evidence is not fact.
-- Explanation is not establishment.
-- Provenance representation is not verified provenance.
-- Testimony and diagnostic findings are not established fact or cluster truth.
-- Recording is not knowledge extraction.
-- Bounded reliance does not expand authority, prove truth, authorize implementation, or erase Unknown boundaries.
+### Pass 018 — Responsibility, Governance, Ownership, and Handoff
 
-## Distinctions projected in pass 015
+Book change made in this sweep: `08.Handoff.A — Explicit responsibility transfer` in `book_of_seed/08-authority-communication-and-stopping/communication-and-handoff.md`.
 
-- A missing, unmatched, unsupported, or unpreserved support result may be stated only as a bounded negative finding inside its corpus, surface, query or claim form, temporal boundary, authority boundary, and limitations.
-- Such a finding may preserve insufficiency, support loss, mismatch, comparison pressure, or Unknown standing.
-- Such a finding must not become falsehood, disproof, global nonexistence, legal invalidity, historical absence, operational absence, no-harm, no-event, no-authority, or established fact without separately preserved authority and evidence.
+Result: mature responsibility-transfer grammar was projected. Complete owner maps, governance implementation topology, exact handoff-form inventory, and operator-specific advancement mechanics remain report-only.
 
-## Findings intentionally left report-only
+## No-change results
 
-- Full absence-of-evidence checklist and search metadata requirements.
-- Stronger evidence-of-absence readiness analysis.
-- Legal-source, jurisdictional, procedural-posture, and adjudicative-authority mechanics.
-- Diagnostic command output details and shape-audit mechanics.
-- Implementation-local typed Unknown field taxonomy.
-- Any truth engine, legal validity engine, contradiction engine, absence engine, or implementation design.
-
-## Contradictions and Unknowns
-
-No Book contradiction was found. The remaining risk is compression: mature negative-claim grammar is now projected at a high level, but local investigations remain more detailed than the Book.
-
-Preserved Unknowns:
-
-- Whether stronger absence claims can be supported for any particular family, corpus, surface, or time window.
-- Which Unknown categories are constitutional kinds rather than implementation-local fields.
-- Whether boundary-confusion review becomes checklist grammar or remains report grammar.
-- Exact Book-readiness threshold for recurring negative laws.
+No no-change pass occurred in this sweep. Each selected family carried a mature projection boundary that warranted a small Book clause.
 
 ## Remaining unresolved families
 
 Future passes may select any unresolved family with incomplete, compressed, uncertain, or report-only Book coverage. Current candidates include:
 
-- **Observation, Provider Translation, and External Source** — partially preserved; provider-language translation responsibility and external attachment details remain report-heavy.
-- **Implementation Visibility, Readiness, Projection, and Diagnostic** — partially preserved; diagnostic inventory, shape audit, record scope, and mutates-cluster boundaries remain operational/report/test evidence more than Book law.
-- **Responsibility, Governance, Ownership, and Handoff** — partially preserved; local responsibility maps and governance implementation ownership remain report-only in places.
-- **Acts, Movement, Access, Capability, and Constraint** — generally preserved, but exact access-transition topology and access-state specifics remain partly unresolved.
-- **Authority, Reliance, Warrant, and Admission** — generally preserved, but admission-family edges remain partly report-only.
-- **Artifact Grammar, Kind, Standing, and Availability** — generally preserved, but availability details and exact closure of constitutional kinds remain partly report-only.
-- **Questions, Inquiry, Advancement, and Bounded Work** — generally preserved, but exact question-form kinds and inquiry ownership remain unresolved.
+- **Acts, Movement, Access, Capability, and Constraint** — generally preserved, but exact access-transition topology and access-state specifics remain partly unresolved. Further projection should avoid inventing a complete access topology unless repository evidence supplies it.
+- **Authority, Reliance, Warrant, and Admission** — generally preserved, but admission-family edges remain partly report-only. Future work should distinguish warrant, reliance, admission, authority, and implementation permission without collapsing them.
+- **Artifact Grammar, Kind, Standing, and Availability** — generally preserved, but availability details and exact closure of constitutional kinds remain partly report-only. Future work should avoid declaring the set of constitutional kinds closed.
+- **Questions, Inquiry, Advancement, and Bounded Work** — generally preserved, but exact question-form kinds and inquiry ownership remain unresolved. Future work should avoid promoting prompt vocabulary or presentation labels without implementation evidence.
+
+## Newly exposed pressure
+
+- The new source-grammar translation clause exposes pressure to decide, in future corpus recovery, whether translation responsibility has stable owner grammar or remains distributed by surface.
+- The new projection/diagnostic visibility clause exposes pressure to distinguish diagnostic-scope recording from state mutation across specific operational witnesses without canonizing registry mechanics.
+- The new responsibility-transfer clause exposes pressure to recover whether governance is a single constitutional implementation family or a distributed responsibility pattern.
+
+## Families requiring further corpus recovery
+
+- Provider/source taxonomy and provider-translation ownership.
+- Diagnostic inventory completeness, diagnostic shape-audit completeness, and diagnostic recording boundaries across current operational surfaces.
+- Complete responsibility/owner maps and governance implementation ownership.
+- Access-state and access-transition topology.
+- Admission-family edges.
+- Availability boundaries and constitutional-kind closure.
+- Question-form kinds and inquiry ownership.
+
+## Stopping reason
+
+The requested maximum of three sequential passes was completed. This frontier does not declare the corpus or Book projection complete.
