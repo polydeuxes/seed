@@ -106,7 +106,6 @@ The admitted corpus repeatedly recovers constitutional grammar around authority 
 | --- | --- | --- |
 | `hybrid_testimony_pass_075_boundary_provenance_audit.md` | Audit of boundary value entry paths | Orientation evidence; no runtime change |
 | `hybrid_testimony_pass_076_state_snapshot_boundary_origin.md` | Seam selection | Selects Python–SQLite state snapshot boundary-origin consumption |
-| `hybrid_testimony_pass_077_state_snapshot_boundary_origin.md` | Implemented boundary report | Records producer-recorded vs migration-inferred compatibility standing |
-| `ProjectionSnapshotBoundary.boundary_testimony_origin` | Python typed cache testimony | Distinguishes current producer-recorded standing from compatibility/admin/unknown origins for eligibility |
-| `projection_snapshots.boundary_testimony_origin` | SQLite durable cache testimony | Preserves producer-recorded current saves or migration-inferred compatibility for legacy rows |
-| `SummarySnapshotBoundary.source_boundary_testimony_origin` | Summary source testimony | Keeps summary cache uptake synchronized with state snapshot origin |
+| `projection_snapshots` legacy migration defaults | Python–SQLite correction 079 | Missing legacy boundary columns are marked `legacy_unverified_projection_snapshot`; rows are rebuildable cache misses, not compatibility truths. |
+| `state_summary_snapshots` legacy migration defaults | Python–SQLite correction 079 | Missing legacy summary/source boundary columns are marked unverified; summary cache misses rather than reusing unsupported legacy rows. |
+| `SQLiteProjectionStore.load_derived_index_snapshot` source-boundary gate | Python–SQLite pass 080 | Derived fact-index cache consumption now requires the joined state projection row to remain bounded, read-model-only, and non-mutating. |

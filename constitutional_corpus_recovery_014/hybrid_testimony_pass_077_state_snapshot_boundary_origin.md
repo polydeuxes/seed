@@ -44,3 +44,7 @@ Focused tests prove new producer origin, legacy migration distinction, matching 
 ## Remaining pressure
 
 Remaining provenance compression includes in-memory default origin ambiguity for administrative constructors. Remaining derived-index pressure is unchanged and deliberately paused. Remaining diagnostic pressure is limited because no diagnostic surface was added. Cross-realization Unknowns remain for complete owner maps, production witness-to-runtime consumption, and universal provenance envelopes.
+
+## Superseded by correction 078–079
+
+Passes 078–079 supersede this pass's compatibility-reuse claims. The `boundary_testimony_origin` / `source_boundary_testimony_origin` machinery and `migration_inferred_compatibility` reuse answer were based on an unsupported obligation to reuse legacy cache rows. The corrected implementation treats legacy cache rows as rebuildable projections: database migration remains safe, but migrated legacy rows are invalidated by unverified standing and rebuilt from ledger evidence rather than accepted as compatibility inputs.

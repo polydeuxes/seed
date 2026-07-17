@@ -69,9 +69,7 @@ class DerivedIndexSnapshot:
 @dataclass(frozen=True)
 class SummarySnapshotBoundary:
     artifact_standing: str = "derived_summary_snapshot"
-    boundary_testimony_origin: str = "producer_recorded"
     source_artifact_standing: str = "derived_projection_snapshot"
-    source_boundary_testimony_origin: str = "producer_recorded"
     source_producer_boundary: str = "python_state_projection"
     source_occurrence_evidence_kind: str = "snapshot_preservation_only"
     source_consumer_limit: str = "read_model_cache_only"
@@ -95,7 +93,6 @@ class SummaryProjectionSnapshot:
 @dataclass(frozen=True)
 class ProjectionSnapshotBoundary:
     artifact_standing: str = "derived_projection_snapshot"
-    boundary_testimony_origin: str = "producer_recorded"
     producer_boundary: str = "python_state_projection"
     occurrence_evidence_kind: str = "snapshot_preservation_only"
     consumer_limit: str = "read_model_cache_only"
@@ -276,7 +273,6 @@ class SQLiteProjectionStore:
                 state_json TEXT NOT NULL,
                 created_at TEXT NOT NULL,
                 artifact_standing TEXT NOT NULL DEFAULT 'derived_projection_snapshot',
-                boundary_testimony_origin TEXT NOT NULL DEFAULT 'producer_recorded',
                 producer_boundary TEXT NOT NULL DEFAULT 'python_state_projection',
                 occurrence_evidence_kind TEXT NOT NULL DEFAULT 'snapshot_preservation_only',
                 consumer_limit TEXT NOT NULL DEFAULT 'read_model_cache_only',
@@ -307,9 +303,7 @@ class SQLiteProjectionStore:
                 summary_json TEXT NOT NULL,
                 created_at TEXT NOT NULL,
                 artifact_standing TEXT NOT NULL DEFAULT 'derived_summary_snapshot',
-                boundary_testimony_origin TEXT NOT NULL DEFAULT 'producer_recorded',
                 source_artifact_standing TEXT NOT NULL DEFAULT 'derived_projection_snapshot',
-                source_boundary_testimony_origin TEXT NOT NULL DEFAULT 'producer_recorded',
                 source_producer_boundary TEXT NOT NULL DEFAULT 'python_state_projection',
                 source_occurrence_evidence_kind TEXT NOT NULL DEFAULT 'snapshot_preservation_only',
                 source_consumer_limit TEXT NOT NULL DEFAULT 'read_model_cache_only',
@@ -330,8 +324,7 @@ class SQLiteProjectionStore:
             )
         }
         additions = {
-            "artifact_standing": "TEXT NOT NULL DEFAULT 'derived_projection_snapshot'",
-            "boundary_testimony_origin": "TEXT NOT NULL DEFAULT 'migration_inferred_compatibility'",
+            "artifact_standing": "TEXT NOT NULL DEFAULT 'legacy_unverified_projection_snapshot'",
             "producer_boundary": "TEXT NOT NULL DEFAULT 'python_state_projection'",
             "occurrence_evidence_kind": "TEXT NOT NULL DEFAULT 'snapshot_preservation_only'",
             "consumer_limit": "TEXT NOT NULL DEFAULT 'read_model_cache_only'",
@@ -351,10 +344,8 @@ class SQLiteProjectionStore:
             )
         }
         additions = {
-            "artifact_standing": "TEXT NOT NULL DEFAULT 'derived_summary_snapshot'",
-            "boundary_testimony_origin": "TEXT NOT NULL DEFAULT 'migration_inferred_compatibility'",
-            "source_artifact_standing": "TEXT NOT NULL DEFAULT 'derived_projection_snapshot'",
-            "source_boundary_testimony_origin": "TEXT NOT NULL DEFAULT 'migration_inferred_compatibility'",
+            "artifact_standing": "TEXT NOT NULL DEFAULT 'legacy_unverified_summary_snapshot'",
+            "source_artifact_standing": "TEXT NOT NULL DEFAULT 'legacy_unverified_projection_snapshot'",
             "source_producer_boundary": "TEXT NOT NULL DEFAULT 'python_state_projection'",
             "source_occurrence_evidence_kind": "TEXT NOT NULL DEFAULT 'snapshot_preservation_only'",
             "source_consumer_limit": "TEXT NOT NULL DEFAULT 'read_model_cache_only'",
@@ -389,7 +380,6 @@ class SQLiteProjectionStore:
             created_at=_parse_datetime(row["created_at"]) or _utc_now(),
             boundary=ProjectionSnapshotBoundary(
                 artifact_standing=row["artifact_standing"],
-                boundary_testimony_origin=row["boundary_testimony_origin"],
                 producer_boundary=row["producer_boundary"],
                 occurrence_evidence_kind=row["occurrence_evidence_kind"],
                 consumer_limit=row["consumer_limit"],
@@ -403,8 +393,8 @@ class SQLiteProjectionStore:
             INSERT INTO projection_snapshots (
                 workspace_id, projection_name, projection_version, last_event_id,
                 last_event_created_at, state_json, created_at, artifact_standing,
-                boundary_testimony_origin, producer_boundary, occurrence_evidence_kind, consumer_limit, mutates_cluster
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                producer_boundary, occurrence_evidence_kind, consumer_limit, mutates_cluster
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(workspace_id, projection_name) DO UPDATE SET
                 projection_version = excluded.projection_version,
                 last_event_id = excluded.last_event_id,
@@ -412,7 +402,6 @@ class SQLiteProjectionStore:
                 state_json = excluded.state_json,
                 created_at = excluded.created_at,
                 artifact_standing = excluded.artifact_standing,
-                boundary_testimony_origin = excluded.boundary_testimony_origin,
                 producer_boundary = excluded.producer_boundary,
                 occurrence_evidence_kind = excluded.occurrence_evidence_kind,
                 consumer_limit = excluded.consumer_limit,
@@ -427,7 +416,6 @@ class SQLiteProjectionStore:
                 json.dumps(snapshot.state_payload, sort_keys=True),
                 _format_datetime(snapshot.created_at),
                 snapshot.boundary.artifact_standing,
-                snapshot.boundary.boundary_testimony_origin,
                 snapshot.boundary.producer_boundary,
                 snapshot.boundary.occurrence_evidence_kind,
                 snapshot.boundary.consumer_limit,
@@ -485,15 +473,12 @@ class SQLiteProjectionStore:
               AND state.projection_version = summary.state_projection_version
               AND state.last_event_id IS summary.state_last_event_id
               AND state.artifact_standing = 'derived_projection_snapshot'
-              AND state.boundary_testimony_origin IN ('producer_recorded', 'migration_inferred_compatibility')
               AND state.producer_boundary = 'python_state_projection'
               AND state.occurrence_evidence_kind = 'snapshot_preservation_only'
               AND state.consumer_limit = 'read_model_cache_only'
               AND state.mutates_cluster = 0
               AND summary.artifact_standing = 'derived_summary_snapshot'
-              AND summary.boundary_testimony_origin IN ('producer_recorded', 'migration_inferred_compatibility')
               AND summary.source_artifact_standing = state.artifact_standing
-              AND summary.source_boundary_testimony_origin = state.boundary_testimony_origin
               AND summary.source_producer_boundary = state.producer_boundary
               AND summary.source_occurrence_evidence_kind = state.occurrence_evidence_kind
               AND summary.source_consumer_limit = state.consumer_limit
@@ -522,9 +507,7 @@ class SQLiteProjectionStore:
             created_at=_parse_datetime(row["created_at"]) or _utc_now(),
             boundary=SummarySnapshotBoundary(
                 artifact_standing=row["artifact_standing"],
-                boundary_testimony_origin=row["boundary_testimony_origin"],
                 source_artifact_standing=row["source_artifact_standing"],
-                source_boundary_testimony_origin=row["source_boundary_testimony_origin"],
                 source_producer_boundary=row["source_producer_boundary"],
                 source_occurrence_evidence_kind=row["source_occurrence_evidence_kind"],
                 source_consumer_limit=row["source_consumer_limit"],
@@ -539,10 +522,10 @@ class SQLiteProjectionStore:
             INSERT INTO state_summary_snapshots (
                 workspace_id, projection_name, projection_version, last_event_id,
                 state_projection_version, state_last_event_id, summary_json, created_at,
-                artifact_standing, boundary_testimony_origin, source_artifact_standing,
-                source_boundary_testimony_origin, source_producer_boundary, source_occurrence_evidence_kind, source_consumer_limit, consumer_limit,
+                artifact_standing, source_artifact_standing,
+                source_producer_boundary, source_occurrence_evidence_kind, source_consumer_limit, consumer_limit,
                 mutates_cluster
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(workspace_id, projection_name) DO UPDATE SET
                 projection_version = excluded.projection_version,
                 last_event_id = excluded.last_event_id,
@@ -551,9 +534,7 @@ class SQLiteProjectionStore:
                 summary_json = excluded.summary_json,
                 created_at = excluded.created_at,
                 artifact_standing = excluded.artifact_standing,
-                boundary_testimony_origin = excluded.boundary_testimony_origin,
                 source_artifact_standing = excluded.source_artifact_standing,
-                source_boundary_testimony_origin = excluded.source_boundary_testimony_origin,
                 source_producer_boundary = excluded.source_producer_boundary,
                 source_occurrence_evidence_kind = excluded.source_occurrence_evidence_kind,
                 source_consumer_limit = excluded.source_consumer_limit,
@@ -570,9 +551,7 @@ class SQLiteProjectionStore:
                 json.dumps(snapshot.summary_payload, sort_keys=True),
                 _format_datetime(snapshot.created_at),
                 snapshot.boundary.artifact_standing,
-                snapshot.boundary.boundary_testimony_origin,
                 snapshot.boundary.source_artifact_standing,
-                snapshot.boundary.source_boundary_testimony_origin,
                 snapshot.boundary.source_producer_boundary,
                 snapshot.boundary.source_occurrence_evidence_kind,
                 snapshot.boundary.source_consumer_limit,
@@ -604,6 +583,11 @@ class SQLiteProjectionStore:
               AND derived.state_last_event_id IS ?
               AND state.projection_version = derived.state_projection_version
               AND state.last_event_id IS derived.state_last_event_id
+              AND state.artifact_standing = 'derived_projection_snapshot'
+              AND state.producer_boundary = 'python_state_projection'
+              AND state.occurrence_evidence_kind = 'snapshot_preservation_only'
+              AND state.consumer_limit = 'read_model_cache_only'
+              AND state.mutates_cluster = 0
             """,
             (
                 STATE_PROJECTION_NAME,
@@ -687,16 +671,11 @@ def _events_with_progress(
         )
 
 
-def _compatible_testimony_origin(origin: str) -> bool:
-    return origin in {"producer_recorded", "migration_inferred_compatibility"}
-
-
 def projection_snapshot_is_eligible_for_state_cache(snapshot: ProjectionSnapshot) -> bool:
     expected = ProjectionSnapshotBoundary()
     boundary = snapshot.boundary
     return (
         boundary.artifact_standing == expected.artifact_standing
-        and _compatible_testimony_origin(boundary.boundary_testimony_origin)
         and boundary.producer_boundary == expected.producer_boundary
         and boundary.occurrence_evidence_kind == expected.occurrence_evidence_kind
         and boundary.consumer_limit == expected.consumer_limit
@@ -709,9 +688,7 @@ def summary_snapshot_is_eligible_for_operator_cache(snapshot: SummaryProjectionS
     boundary = snapshot.boundary
     return (
         boundary.artifact_standing == expected.artifact_standing
-        and _compatible_testimony_origin(boundary.boundary_testimony_origin)
         and boundary.source_artifact_standing == expected.source_artifact_standing
-        and _compatible_testimony_origin(boundary.source_boundary_testimony_origin)
         and boundary.source_producer_boundary == expected.source_producer_boundary
         and boundary.source_occurrence_evidence_kind == expected.source_occurrence_evidence_kind
         and boundary.source_consumer_limit == expected.source_consumer_limit
