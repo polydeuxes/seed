@@ -165,3 +165,7 @@ Pass 065 made no Book change. The Book already preserves the circulation composi
 ## Circulation realization readiness after passes 066–068
 
 Implementation evidence now records a bounded Selection-to-Composition handoff for the constitutional view path. This does not require a Book change because it preserves already recovered local standing and limit-preservation clauses rather than adding a new constitutional act. Remaining readiness gaps are implementation topology gaps: delivery/receipt, response re-entry, correction, supersession, reopening, and universal owner topology remain unresolved.
+
+## Current-state reconciliation after Python–SQLite jurisdiction passes 069–071
+
+No Book change is warranted. The implementation recovered one realization-jurisdiction seam: Python forms the projected state, SQLite durably preserves a read-model cache snapshot with explicit boundary labels, and Python may rehydrate it only as cache input. This confirms existing Book distinctions between records, facts, projection, diagnostic/read-model visibility, lawful realization, and recording boundaries. Remaining gaps are implementation/topology gaps: complete owner maps, complete diagnostic recording proof, all read-model cache boundaries, SQLite witness production consumers, and occurrence-recording topology.

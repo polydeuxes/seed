@@ -81,3 +81,9 @@ The non-Book corpus recovers a constitutional grammar of conservative movement. 
 - [Constitutional circulation pass 064 — Cross-seam Fidelity](constitutional_circulation_pass_064_cross_seam_fidelity.md) and [projection pass 064](book_projection_pass_064_cross_seam_fidelity.md) recovered seam-specific invariant survival across evidenced circulation paths without creating a universal carrier schema, score, or envelope; no Book change was warranted.
 - [Constitutional circulation current state](constitutional_circulation_current_state.md), [pass 065 projection reconciliation](constitutional_circulation_pass_065_projection_reconciliation.md), and [projection pass 065](book_projection_pass_065_constitutional_circulation.md) recorded that the Book preserves the circulation compositionally and that no summary circulation clause is warranted.
 - [Circulation realization passes 066–068](circulation_realization_pass_066_implementation_witness_map.md) mapped implementation witnesses, audited the bounded question → projection → selection → composition path, and recovered the Selection-to-Composition handoff so bounded-question identity and unresolved selection uncertainty cross into Composition without strengthening authority.
+
+## Python–SQLite realization jurisdiction passes 069–071
+
+- `python_sqlite_jurisdiction_pass_069_realization_audit.md` audits current Python and SQLite jurisdiction across events, projections, read models, support-binding witnesses, selection/composition, and diagnostics.
+- `python_sqlite_jurisdiction_pass_070_cross_realization_seam.md` compares candidate seams and selects projection snapshot preservation as the smallest evidenced hybrid boundary.
+- `python_sqlite_jurisdiction_pass_071_projection_snapshot_boundary.md` records the implemented boundary, tests, compatibility answer, and remaining Unknowns.

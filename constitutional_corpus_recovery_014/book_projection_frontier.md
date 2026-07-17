@@ -91,3 +91,7 @@ The circulation frontier is narrowed but not complete. Current evidence supports
 ## Realization update after passes 066–068
 
 Passes 066–068 did not resume generic Book expansion and did not add a Book clause. They projected the recovered Constitutional Circulation grammar over implementation evidence, selected the bounded question → projection → selection → composition path, and recovered the implementation-local Selection-to-Composition handoff. The Book frontier remains unchanged: constitutional circulation is still compositionally preserved, while implementation realization gaps remain in delivery, receipt, response/re-entry, correction, supersession, reopening, and universal owner topology.
+
+## Python–SQLite realization jurisdiction frontier after passes 069–071
+
+The projection snapshot boundary is implementation-backed but does not create a new Book projection. It preserves constitutional responsibility, Python realization, SQLite realization, cross-realization handoff, tested preservation, durable occurrence evidence limits, derived projection standing, and implementation Unknowns inside current implementation evidence. Future Book projection would require realization-neutral constitutional evidence beyond the implemented cache seam.

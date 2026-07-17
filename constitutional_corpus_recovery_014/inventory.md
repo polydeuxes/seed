@@ -81,3 +81,13 @@ The admitted corpus repeatedly recovers constitutional grammar around authority 
 | `constitutional_circulation_current_state.md` | What is the self-contained current state of constitutional circulation? | Passes 063–064 and current Book projection reconciliation. | Circulation permits branches, bypasses, refusal, deferment, partial findings, lawful inactivity, Unknown, local completion, neighboring inquiry, and re-entry without silent reopening. | No Book change; no completion declaration. | Owner, envelope, runtime, proof, correction, supersession, reopening, and neighboring-inquiry topology. |
 | `constitutional_circulation_pass_065_projection_reconciliation.md` / `book_projection_pass_065_constitutional_circulation.md` | Does compositional circulation require a new Book clause? | Passes 063–064 and present-facing Book chapters. | No independently warranted act or authority boundary is missing from the Book; a summary clause would risk inventing a canonical pipeline. | No Book change. | Future independently warranted circulation acts remain possible but unsupported now. |
 | `circulation_realization_pass_066_implementation_witness_map.md` / `circulation_realization_pass_067_concrete_path_fidelity_audit.md` / `circulation_realization_pass_068_selection_composition_handoff.md` | Which R1–R9 circulation relations are implemented and which local boundary blocks faithful continuation? | Bounded question, constitutional view selection, composition implementation and tests. | Selected path is bounded question → projection → selection → composition; Selection-to-Composition needed a preserved-limits handoff. | Runtime code changed to preserve bounded-question identity and selection uncertainty in the composition request/result. | R8/R9 delivery, receipt, response, correction, reopening, universal owner topology. |
+
+## Python–SQLite realization jurisdiction inventory after passes 069–071
+
+| Artifact | Role | Standing |
+| --- | --- | --- |
+| `python_sqlite_jurisdiction_pass_069_realization_audit.md` | Orientation audit of current jurisdiction | Report-only implementation evidence |
+| `python_sqlite_jurisdiction_pass_070_cross_realization_seam.md` | Candidate seam recovery and selection | Report-only boundary selection evidence |
+| `python_sqlite_jurisdiction_pass_071_projection_snapshot_boundary.md` | Implemented seam record | Implementation-backed jurisdiction split |
+| `seed_runtime/projection_store.py` `ProjectionSnapshotBoundary` | Bounded crossing metadata for projection cache | Derived projection snapshot limits, not Book law |
+| `projection_snapshots` boundary columns | SQLite preservation of cache standing and occurrence limits | Durable preservation-only read-model cache evidence |
