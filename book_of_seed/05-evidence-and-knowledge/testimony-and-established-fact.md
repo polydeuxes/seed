@@ -10,6 +10,8 @@ Which source, support, reconciliation, and promotion conditions establish a fact
 Observations and specialized testimony preserve attributed claims. Fact standing requires explicit ingestion, support, normalization, and conflict-aware establishment rather than direct attachment of a finding to cluster truth. A consumer may use testimony as a source-relative or premise-relative input for a new local assertion, but coherence checks and copied lineage fields do not turn testimony into established fact or prove the testifying producer occurred.
 
 ## Important distinctions
+- observer-held occurrence evidence != preserved occurrence evidence
+- recorded testimony != established fact automatically
 - testimony != established fact
 - observation != belief
 - diagnostic finding != cluster truth

@@ -10,6 +10,9 @@ Which explicit process may extract, reconcile, and establish knowledge from a re
 Recording preserves attributable events and findings. Knowledge extraction is a separate process with normalization, evidence, reconciliation, and standing rules; diagnostic recording should remain scoped to its diagnostic run unless explicitly promoted.
 
 ## Important distinctions
+- act occurrence != recording occurrence
+- record exists != recorded assertion true automatically
+- extraction occurrence != original execution occurrence
 - recording != knowledge extraction
 - event ledger write != cluster mutation
 - durable record != established fact

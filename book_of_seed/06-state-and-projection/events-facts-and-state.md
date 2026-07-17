@@ -10,6 +10,8 @@ Which event kinds affect which portions of constitutional state, and through wha
 Events are immutable records of occurrences or assertions; facts carry supported claims; state is a replayed and reconciled projection. Their boundaries must remain visible even when one pipeline connects them.
 
 ## Important distinctions
+- event != explanation
+- event recording != required for every constitutional occurrence
 - event != fact
 - fact != entity
 - replay input != projected state

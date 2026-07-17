@@ -10,6 +10,8 @@ What evidence and provenance are sufficient to explain why Seed holds a claim at
 Evidence identifies source and collection context; fact support and explanations connect claims to their basis. Explanation exposes reasons and conflicts but does not itself create upstream truth. A provenance explanation may read preserved artifacts, reconstruct relationships among them, and make a bounded explanation assertion under its own warrant. That projection or explanation-construction act is not automatically a separate constitutional uptake kind and does not establish that upstream producer acts occurred.
 
 ## Important distinctions
+- provenance represented != provenance verified
+- event reference != occurrence seal
 - evidence != fact
 - explanation != establishment
 - provenance reference != independent support

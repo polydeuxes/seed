@@ -10,6 +10,9 @@ What establishes that an act occurred rather than that an act-shaped artifact ex
 Consumer validation is not producer occurrence: a downstream boundary may lawfully adopt, narrow, check coherence, project, preserve testimony, or establish a new downstream subject from an act artifact without proving that the original act occurred unless its own assertion requires that proof. An act is a bounded responsibility at which something constitutionally occurs: a choice is made, material is admitted, standing is established, or an operation is performed. It consumes the subject plus the warrant and conditions appropriate to that occurrence and produces or preserves an attributed result. An act artifact reports or preserves that assertion; constructing it does not prove the act. Occurrence must be evidenced by the responsible validated function and, for operational acts, the execution or recording boundary. Read-only and non-mutating boundaries prove side-effect limits; they do not by themselves prove that no constitutional occurrence happened. A read-only selector can still perform a bounded selection act, while its artifact remains insufficient unless produced through the responsible validation boundary.
 
 ## Important distinctions
+- boundary invocation != assertion-bearing branch != result construction != external effect
+- successful return != every claimed effect occurred
+- failed act != no occurrence automatically
 - act != artifact describing an act
 - classification of language != occurrence of the classified act
 - proposal != occurrence
