@@ -14,6 +14,9 @@ This is a lightweight navigation index. Aliases record repository or presentatio
 | act | Acts and Constraints | [Acts and act artifacts](02-acts-and-constraints/acts-and-act-artifacts.md) | input act, operation | proposal, execution |
 | constraint | Acts and Constraints | [Constraints, policy, and preconditions](02-acts-and-constraints/constraints-policy-and-preconditions.md) | policy gate, precondition | authority, refusal |
 | selection artifact | Acts and Constraints | [Selection artifacts and acts of selection](02-acts-and-constraints/selection-artifacts-and-selection-acts.md) | selection record, binding | candidate set, selection act |
+| representation selection | Acts and Constraints | [Selection artifacts and acts of selection](02-acts-and-constraints/selection-artifacts-and-selection-acts.md) | view selection, read-model selection | lens, composition, selection artifact |
+| consideration selection | Goals and Advancement | [Selection and authorization](03-goals-and-advancement/selection-and-authorization.md) | focus selection, need consideration selection | advancement need, orientation, authorization |
+| standing-bearing selection | Acts and Constraints | [Selection artifacts and acts of selection](02-acts-and-constraints/selection-artifacts-and-selection-acts.md) | focus-standing selection | consideration selection, act, artifact standing |
 | establishment | Goals and Advancement | [Construction and establishment](03-goals-and-advancement/construction-and-establishment.md) | bounded goal establishment | construction, standing |
 | orientation | Goals and Advancement | [Orientation and movement](03-goals-and-advancement/orientation-and-movement.md) | current work position, source navigation | movement, lens |
 | advancement need | Goals and Advancement | [Needs and opened movement](03-goals-and-advancement/needs-and-opened-movement.md) | need family, insufficiency | bounded horizon, movement |
