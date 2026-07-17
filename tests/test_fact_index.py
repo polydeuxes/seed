@@ -243,7 +243,7 @@ def test_fact_index_build_starts_from_read_model_construction_inputs(monkeypatch
     assert index.state_last_event_id == state.last_event_id
 
 
-def test_sqlite_fact_index_cache_requires_bounded_source_projection(tmp_path):
+def test_sqlite_fact_index_cache_requires_non_mutating_source_projection(tmp_path):
     db_path = tmp_path / "fact-index-source-boundary.sqlite"
     ledger = SQLiteEventLedger(str(db_path))
     store = SQLiteProjectionStore(str(db_path))
@@ -261,7 +261,7 @@ def test_sqlite_fact_index_cache_requires_bounded_source_projection(tmp_path):
         assert cached is not None
 
         store._connection.execute(
-            "UPDATE projection_snapshots SET consumer_limit = 'cluster_truth' WHERE workspace_id = ?",
+            "UPDATE projection_snapshots SET mutates_cluster = 1 WHERE workspace_id = ?",
             ("ws",),
         )
         store._connection.commit()
@@ -284,7 +284,7 @@ def test_sqlite_fact_index_cache_requires_bounded_source_projection(tmp_path):
     assert first.fact_ids_by_subject_predicate == rebuilt.fact_ids_by_subject_predicate
 
 
-def test_sqlite_fact_index_cache_requires_own_derived_boundary(tmp_path):
+def test_sqlite_fact_index_cache_requires_own_non_mutating_boundary(tmp_path):
     db_path = tmp_path / "fact-index-own-boundary.sqlite"
     ledger = SQLiteEventLedger(str(db_path))
     store = SQLiteProjectionStore(str(db_path))
@@ -301,10 +301,10 @@ def test_sqlite_fact_index_cache_requires_own_derived_boundary(tmp_path):
             state_last_event_id=state.last_event_id,
         )
         assert cached is not None
-        assert cached.boundary.consumer_limit == "fact_index_cache_only"
+        assert cached.boundary.mutates_cluster is False
 
         store._connection.execute(
-            "UPDATE derived_index_snapshots SET consumer_limit = 'cluster_truth', mutates_cluster = 1 WHERE workspace_id = ?",
+            "UPDATE derived_index_snapshots SET mutates_cluster = 1 WHERE workspace_id = ?",
             ("ws",),
         )
         store._connection.commit()

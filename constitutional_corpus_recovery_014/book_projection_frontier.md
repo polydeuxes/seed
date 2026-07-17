@@ -110,4 +110,8 @@ The active Python–SQLite frontier remains incomplete. Pass 081 removes legacy 
 
 ## Python–SQLite frontier reorientation 082–084
 
-No Book projection is warranted. The implemented change is a local realization boundary for a disposable read-model cache: derived fact-index rows now testify to their own cache standing before Python consumes them. This reinforces existing non-promotion and realization-fidelity clauses rather than adding a new constitutional act or vocabulary.
+Passes 085–086 supersede the former high-resolution derived fact-index testimony interpretation. No Book projection is warranted. The implemented boundary is now a local disposable read-model cache boundary: derived fact-index rows are consumed only through schema, identity, version, event-horizon, payload, source-join, and `mutates_cluster=false` checks. This reinforces existing non-promotion and realization-fidelity clauses rather than adding a new constitutional act or vocabulary.
+
+## Cache boundary reality frontier after passes 085–086
+
+No Book projection is warranted. The implemented cache boundary is now limited to repository-evidenced runtime requirements: schema validity, cache identity, version and event horizon, payload materialization, rebuild from ledger authority, and read-only admission through `mutates_cluster=false`. High-resolution cache testimony vocabulary from passes 069–084 is no longer current implementation standing. Remaining frontier pressure is concrete production consumer evidence, not replacement metadata or generalized cache-family doctrine.
