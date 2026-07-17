@@ -1,6 +1,6 @@
 PRAGMA foreign_keys = ON;
 
--- SQLite constitutional witness slice 001.
+-- SQLite constitutional witness slices 001-002.
 -- Boundary: deterministic side-by-side witness only; not production schema.
 
 CREATE TABLE book_clause_sources (
@@ -35,18 +35,101 @@ CREATE TABLE bounded_competencies (
   book_clause_id TEXT NOT NULL REFERENCES book_clause_sources(clause_id)
 );
 
-CREATE VIEW competency_change_examination AS
+CREATE TABLE represented_provenance_material (
+  provenance_id TEXT PRIMARY KEY,
+  source_attribution TEXT NOT NULL,
+  source_context TEXT,
+  applies_to_change_id TEXT,
+  applies_to_evidence_id TEXT,
+  authority_zone TEXT,
+  represented_lineage_status TEXT NOT NULL
+    CHECK (represented_lineage_status IN ('represented_lineage','internally_conflicting')),
+  verification_status TEXT NOT NULL
+    CHECK (verification_status IN ('not_independently_verified','independently_verified')),
+  producer_occurrence_status TEXT NOT NULL DEFAULT 'not_established'
+    CHECK (producer_occurrence_status IN ('not_established')),
+  book_clause_id TEXT NOT NULL REFERENCES book_clause_sources(clause_id)
+);
+
+CREATE TABLE represented_evidence_material (
+  evidence_id TEXT PRIMARY KEY,
+  evidence_kind TEXT NOT NULL,
+  source_attribution TEXT NOT NULL,
+  source_identity TEXT NOT NULL,
+  source_context TEXT,
+  responsibility_family TEXT,
+  observable_subject TEXT,
+  supported_change_id TEXT,
+  authority_zone TEXT,
+  preservation_horizon TEXT NOT NULL,
+  confidence_label TEXT NOT NULL DEFAULT 'represented_not_warrant',
+  provenance_ref TEXT,
+  book_clause_id TEXT NOT NULL REFERENCES book_clause_sources(clause_id)
+);
+
+CREATE VIEW support_binding_examination AS
 SELECT
   c.competency_id,
   r.change_id,
+  r.evidence_ref,
+  r.provenance_ref AS assertion_provenance_ref,
+  e.evidence_id AS bound_evidence_id,
+  e.provenance_ref AS evidence_provenance_ref,
+  COALESCE(e.provenance_ref, r.provenance_ref) AS effective_provenance_ref,
+  p.provenance_id AS bound_provenance_id,
+  CASE
+    WHEN c.requires_evidence = 0 THEN 'not_required'
+    WHEN r.evidence_ref IS NULL THEN 'missing_evidence_reference'
+    WHEN e.evidence_id IS NULL THEN 'dangling_evidence_reference'
+    WHEN e.responsibility_family IS NULL OR e.observable_subject IS NULL OR e.supported_change_id IS NULL THEN 'unknown_evidence_subject_or_claim_binding'
+    WHEN e.responsibility_family <> c.responsibility_family
+      OR e.observable_subject <> c.responsibility_subject
+      OR e.supported_change_id <> r.change_id THEN 'evidence_subject_or_claim_mismatch'
+    WHEN e.authority_zone IS NULL THEN 'unknown_evidence_authority_binding'
+    WHEN e.authority_zone <> c.authority_zone THEN 'evidence_authority_mismatch'
+    WHEN e.source_context IS NULL THEN 'unknown_evidence_source_context'
+    ELSE 'applicable_represented_evidence'
+  END AS evidence_standing,
+  CASE
+    WHEN c.requires_provenance = 0 THEN 'not_required'
+    WHEN COALESCE(e.provenance_ref, r.provenance_ref) IS NULL THEN 'missing_provenance_reference'
+    WHEN p.provenance_id IS NULL THEN 'dangling_provenance_reference'
+    WHEN p.represented_lineage_status = 'internally_conflicting' THEN 'conflicting_provenance_preserved'
+    WHEN p.applies_to_change_id IS NULL AND p.applies_to_evidence_id IS NULL THEN 'unknown_provenance_applicability'
+    WHEN NOT (p.applies_to_change_id = r.change_id OR p.applies_to_evidence_id = e.evidence_id) THEN 'provenance_applicability_mismatch'
+    WHEN p.authority_zone IS NULL THEN 'unknown_provenance_authority_binding'
+    WHEN p.authority_zone <> c.authority_zone THEN 'provenance_authority_mismatch'
+    WHEN p.verification_status = 'not_independently_verified' THEN 'represented_provenance_not_verified'
+    ELSE 'represented_provenance_independently_verified'
+  END AS provenance_standing,
+  CASE
+    WHEN p.provenance_id IS NULL THEN 'no_provenance_material_bound'
+    WHEN p.verification_status = 'independently_verified' THEN 'lineage_independently_verified_for_this_witness_only'
+    ELSE 'lineage_represented_not_independently_verified'
+  END AS provenance_verification_boundary,
+  'producer_occurrence_not_established' AS producer_occurrence_boundary,
+  'support_binding_not_truth_fact_execution_authorization_or_current_state' AS forbidden_inference
+FROM bounded_competencies c
+CROSS JOIN recorded_change_assertions r
+LEFT JOIN represented_evidence_material e ON e.evidence_id = r.evidence_ref
+LEFT JOIN represented_provenance_material p ON p.provenance_id = COALESCE(e.provenance_ref, r.provenance_ref);
+
+CREATE VIEW competency_change_examination AS
+SELECT
+  s.competency_id,
+  s.change_id,
   CASE
     WHEN r.change_family IS NULL OR r.observable_subject IS NULL THEN 'unknown_preserved'
     WHEN r.change_family <> c.responsibility_family
       OR r.observable_subject <> c.responsibility_subject THEN 'lawful_inactivity_irrelevant'
     WHEN r.authority_zone <> c.authority_zone THEN 'lawful_inactivity_authority_blocked'
-    WHEN (c.requires_provenance = 1 AND r.provenance_ref IS NULL)
-      OR (c.requires_evidence = 1 AND r.evidence_ref IS NULL)
-      THEN 'lawful_inactivity_insufficient_evidence'
+    WHEN s.evidence_standing = 'missing_evidence_reference' THEN 'lawful_inactivity_insufficient_evidence'
+    WHEN s.evidence_standing = 'dangling_evidence_reference' THEN 'lawful_inactivity_dangling_evidence'
+    WHEN s.provenance_standing = 'missing_provenance_reference' THEN 'lawful_inactivity_insufficient_provenance'
+    WHEN s.provenance_standing = 'dangling_provenance_reference' THEN 'lawful_inactivity_dangling_provenance'
+    WHEN s.evidence_standing LIKE 'unknown_%' OR s.provenance_standing LIKE 'unknown_%' THEN 'unknown_preserved'
+    WHEN s.evidence_standing LIKE '%mismatch' OR s.provenance_standing LIKE '%mismatch' THEN 'lawful_inactivity_support_mismatch'
+    WHEN s.provenance_standing = 'conflicting_provenance_preserved' THEN 'unknown_preserved'
     ELSE 'bounded_permission_for_further_examination'
   END AS lawful_posture,
   CASE
@@ -54,15 +137,40 @@ SELECT
     WHEN r.change_family <> c.responsibility_family
       OR r.observable_subject <> c.responsibility_subject THEN 'outside_bounded_responsibility'
     WHEN r.authority_zone <> c.authority_zone THEN 'outside_competency_authority_boundary'
-    WHEN (c.requires_provenance = 1 AND r.provenance_ref IS NULL)
-      OR (c.requires_evidence = 1 AND r.evidence_ref IS NULL)
-      THEN 'required_evidence_or_provenance_absent'
+    WHEN s.evidence_standing <> 'applicable_represented_evidence' THEN s.evidence_standing
+    WHEN s.provenance_standing NOT IN ('represented_provenance_not_verified','represented_provenance_independently_verified','not_required') THEN s.provenance_standing
+    WHEN s.provenance_standing = 'represented_provenance_not_verified' THEN 'family_subject_authority_and_represented_lineage_supported_without_truth_or_verification'
     ELSE 'family_subject_evidence_provenance_and_authority_supported'
   END AS standing_reason,
-  'relevance_result_not_execution_authorization_or_truth_establishment' AS forbidden_inference,
+  s.forbidden_inference,
   r.assertion_truth_status
-FROM bounded_competencies c
-CROSS JOIN recorded_change_assertions r;
+FROM support_binding_examination s
+JOIN bounded_competencies c ON c.competency_id = s.competency_id
+JOIN recorded_change_assertions r ON r.change_id = s.change_id;
+
+CREATE VIEW support_forbidden_inference_audit AS
+SELECT
+  competency_id,
+  change_id,
+  bound_evidence_id,
+  bound_provenance_id,
+  evidence_standing,
+  provenance_standing,
+  provenance_verification_boundary,
+  producer_occurrence_boundary,
+  forbidden_inference,
+  'row_or_reference_presence_does_not_create_constitutional_warrant' AS referential_integrity_boundary
+FROM support_binding_examination;
+
+CREATE VIEW support_source_independence_boundary AS
+SELECT
+  r.change_id,
+  COUNT(e.evidence_id) AS represented_support_rows,
+  COUNT(DISTINCT e.source_identity) AS represented_source_identities,
+  'multiple_rows_do_not_establish_independent_corroboration_or_fact_standing' AS independence_boundary
+FROM recorded_change_assertions r
+LEFT JOIN represented_evidence_material e ON e.supported_change_id = r.change_id
+GROUP BY r.change_id;
 
 CREATE VIEW recorded_assertion_truth_boundary AS
 SELECT

@@ -29,3 +29,17 @@ bounded competency rows against recorded change rows so verification can inspect
 every deterministic pair. That enumeration is not a broadcast, notification,
 subscription, polling cycle, or claim that every competency received, observed,
 or awakened to every recorded change.
+
+## Slice 002 support-binding continuity
+
+Slice 002 extends the same witness district rather than creating a duplicate
+schema. The same command above rebuilds a disposable database and verifies both
+Slice 001 posture cases and Slice 002 evidence/provenance support-binding cases.
+
+The witness intentionally leaves `recorded_change_assertions.evidence_ref`,
+`recorded_change_assertions.provenance_ref`, and evidence provenance references
+as textual claims rather than SQLite foreign keys. That permits deterministic
+verification of dangling references and preserves the boundary that referential
+integrity is an implementation check, not constitutional warrant. SQL views own
+all support-existence, subject-binding, authority-binding, provenance
+applicability, unknown-preservation, and forbidden-inference outcomes.
