@@ -311,6 +311,9 @@ def selected_constitutional_views_to_composition_request(
         requested_views=artifact.selected_view_names,
         composition_purpose=composition_purpose,
         output_format=output_format,
+        bounded_question_id=artifact.bounded_question_id,
+        selection_uncertainty=artifact.selection_uncertainty,
+        selection_read_only_boundaries=artifact.read_only_boundaries,
     )
 
 

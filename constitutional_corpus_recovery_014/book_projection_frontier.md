@@ -1,6 +1,6 @@
 # Book Projection Frontier after Pass 065
 
-This frontier is not a completion declaration. It records the current state after sequential projection passes 015 through 065, including Operator Ingress passes 057–059, Seed Egress passes 060–062, and Constitutional Circulation reconciliation passes 063–065 so future passes can select another unresolved constitutional pressure without treating this sweep as corpus, inquiry frontier, inquiry pipeline, or Book completion.
+This frontier is not a completion declaration. It records the current state after sequential projection passes 015 through 065, including Operator Ingress passes 057–059, Seed Egress passes 060–062, and completion of Constitutional Circulation reconciliation passes 063–065 so future passes can select implementation-realization pressure without treating this sweep as corpus, inquiry frontier, inquiry pipeline, circulation, or Book completion.
 
 ## What the Book now preserves from completed passes
 
@@ -88,3 +88,6 @@ The next lawful work must not declare Seed Egress complete. Remaining pressures 
 ## Constitutional Circulation frontier after passes 063–065
 
 The circulation frontier is narrowed but not complete. Current evidence supports compositional circulation through local standing changes and lawful stop points, with re-entry only as new ingress pressure. The next lawful work must not declare Constitutional Circulation complete and must not resume the generic Book frontier sweep from this reconciliation. Remaining pressures are owner topology, envelope topology, runtime topology, proof topology, correction/supersession/reopening authority, receipt/understanding/reliance/action evidence, complete branch and bypass topology, and complete neighboring-inquiry topology.
+## Realization update after passes 066–068
+
+Passes 066–068 did not resume generic Book expansion and did not add a Book clause. They projected the recovered Constitutional Circulation grammar over implementation evidence, selected the bounded question → projection → selection → composition path, and recovered the implementation-local Selection-to-Composition handoff. The Book frontier remains unchanged: constitutional circulation is still compositionally preserved, while implementation realization gaps remain in delivery, receipt, response/re-entry, correction, supersession, reopening, and universal owner topology.
