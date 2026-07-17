@@ -7,7 +7,7 @@ The support and lineage required to justify claims and explain current beliefs w
 What evidence and provenance are sufficient to explain why Seed holds a claim at a given time?
 
 ## Initial resolution
-Evidence identifies source and collection context; fact support and explanations connect claims to their basis. Explanation exposes reasons and conflicts but does not itself create truth.
+Evidence identifies source and collection context; fact support and explanations connect claims to their basis. Explanation exposes reasons and conflicts but does not itself create truth. Explanation projection may reconstruct relationships among preserved artifacts and establish an explanation assertion under its own warrant, while still not establishing that upstream producer acts occurred.
 
 ## Important distinctions
 - evidence != fact

@@ -7,7 +7,7 @@ The preservation of meaning, evidence, limits, and authority boundaries when mat
 What must a communication or handoff preserve, and what constitutional claims may it not imply?
 
 ## Initial resolution
-Communication can carry bounded requests, explanations, and references. A handoff records a boundary and required external responsibility; it does not imply provider trust, credentials, approval, registration, or execution.
+Communication can carry bounded requests, explanations, and references. Typed value transport and adapter handoff may lawfully create a smaller consumer request from an upstream artifact, but mechanical transport is not automatically assertion uptake or a constitutional road. A handoff records a boundary and required external responsibility; it does not imply provider trust, credentials, approval, registration, execution, or full adoption of upstream assertions.
 
 ## Important distinctions
 - communication != establishment
