@@ -22,6 +22,13 @@ A provenance reference may contribute represented lineage only when referenced p
 ### 05.Evidence.C — Bounded negative findings and preserved Unknowns
 A missing, unmatched, unsupported, or unpreserved support result may be stated only as a bounded negative finding inside the corpus, surface, query or claim form, temporal boundary, authority boundary, and limitations that produced it. That finding may preserve insufficiency, support loss, mismatch, comparison pressure, or Unknown standing for further examination. It must not be promoted into falsehood, disproof, global nonexistence, legal invalidity, historical absence, operational absence, no-harm, no-event, no-authority, or established fact without separately preserved authority and evidence for that stronger claim.
 
+
+### 05.Evidence.D — Correlation and sequence are not causation
+Correlation, association, co-occurrence, sequence, proximity, adjacency, pattern, trend, repeated linkage, diagnostic adjacency, log adjacency, source-attributed causation, or model-inferred causation may orient inquiry or support a bounded claim that such a relation was observed. They do not establish causation, explanation, conduct, responsibility, legal causation, root cause, or proof that one event produced another without claim-appropriate evidence, authority, provenance, confidence limits, Unknown preservation, and lawful stop.
+
+### 05.Evidence.E — Attribution is not responsibility
+Attribution, association, attachment, ownership candidate, source-reported blame, account relation, device relation, address relation, role relation, deployment relation, or event association may preserve provenance or inquiry pressure only within its claim form. It does not establish responsibility, accountability, fault, blame, intent, negligence, liability, legal responsibility, moral responsibility, implementation ownership, or implementation pressure without separately preserved evidence, authority, temporal provenance, support path, confidence limits, Unknowns, and lawful stop.
+
 ## Important distinctions
 - provenance represented != provenance verified
 - event reference != occurrence seal
@@ -34,6 +41,8 @@ A missing, unmatched, unsupported, or unpreserved support result may be stated o
 - not found in a bounded surface != does not exist
 - not preserved != false
 - comparison pressure != adjudicative authority
+- correlation or sequence != causation
+- attribution != responsibility
 
 ## Representative repository anchors
 - `seed_runtime/evidence.py::Evidence`
