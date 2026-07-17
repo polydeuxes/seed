@@ -38,32 +38,32 @@ possible inquiry
   [K] -> refusal, deferment, Unknown, lawful stop
 
 admitted inquiry movement
-  [R/I] -> individual bounded question where explicit bounded question artifact is produced
+  [R/U] -> individual bounded question only as constitutional correspondence or unrealized handoff unless separate admission-to-artifact evidence exists
   [C] -> bounded examination eligibility where local evidence warrants
-  [K] -/-> answer, execution, completion, mutation
+  [K] -/-> automatic bounded-question construction, answer, execution, completion, mutation
 
 typed Unknown
   [K] -> lawful question form, evidence posture, conclusion strength, permitted claims, forbidden inferences, next inquiry, stop
   [I/R] -> public generic unknown projection only as compatibility representation
-  [K] -/-> QuestionFamily selector, generic unresolved text, resolution
+  [K] -/-> public answer family selector, generic unresolved text, resolution
 
-Question Shape
-  [M] -> Survey Warrant Family when recurrence/form evidence supports survey warrant
-  [R/U] -> QuestionFamily only in explicitly registered cases
+question form
+  [M] -> methodological warrant when recurrence/form evidence supports survey warrant
+  [R/U] -> public answer family only in explicitly registered cases
   [K] -/-> registry, router, public answerability, ontology
 
-Survey Warrant Family
+methodological warrant
   [M] -> survey/investigation artifact warrant
-  [K] -/-> QuestionFamily admission or bounded ask eligibility
+  [K] -/-> public answer family admission or bounded ask eligibility
 
-QuestionFamily
+public answer family
   [I] -> exact-family lookup
   [I] -> eligibility
   [I] -> selected bounded work surface/value when permitted and required args are satisfied
   [I] -> dispatch or presentation handoff
   [R] -> answer responsibility and family-local answer surface
   [R/U] -> individual bounded question only through family-local contracts such as the constitutional-pipeline special case
-  [K] -/-> Question Shape, Survey Warrant authority, semantic routing, free-text admission
+  [K] -/-> question form, methodological-warrant authority, semantic routing, free-text admission
 
 individual bounded question
   [I] -> constitutional pipeline projection/selection/composition when already established
@@ -142,12 +142,12 @@ historical raw constitutional-pipeline field preparation
 | Bounded goal/current position | Inquiry Need | admitted goal/horizon | no automatic question | complete sufficiency topology |
 | Inquiry Need | bounded inquiry frontier; possible inquiry by translation | goal/current position | no opened inquiry/formulated question/authorization | direct question formation |
 | Possible inquiry | admitted movement | pressure/need translation | refusal/defer/Unknown | admission artifact owner |
-| Admitted movement | bounded question; examination eligibility | possible inquiry | no answer/execution/mutation | universal route |
+| Admitted movement | bounded-question correspondence/unrealized handoff; examination eligibility | possible inquiry | no automatic bounded-question construction/answer/execution/mutation | admission-to-artifact handoff |
 | Typed Unknown | question constraints; public unknown projection | unresolved evidence | not selector/resolution | ten-state executable mapping |
-| Question Shape | Survey Warrant Family; registered-family correspondence | reports | not registry/router | future admission |
-| Survey Warrant Family | survey artifact warrant | Question Shape/evidence | not QuestionFamily admission | complete family set |
-| QuestionFamily | eligibility/selection/dispatch/answer responsibility | inventory row | unknown/diagnostic-only/not-dispatchable/args refusal | registration lifecycle |
-| Individual bounded question | pipeline; examination frontier | explicit production/admitted movement | no fact/authority/family selection | all admitted inquiry representation |
+| question form | methodological warrant; public-answer-family correspondence where explicitly registered | reports | not registry/router | future admission |
+| methodological warrant | survey artifact warrant | question form/evidence | not public answer family admission | complete family set |
+| public answer family | eligibility/selection/dispatch/answer responsibility | inventory row | unknown/diagnostic-only/not-dispatchable/args refusal | registration lifecycle |
+| Individual bounded question | pipeline; examination frontier | explicit production; admitted-movement correspondence only if separately evidenced | no fact/authority/family selection/admission-standing proof | all admitted inquiry representation |
 | Bounded inquiry frontier | downstream consideration only | selected InquiryNeed/testimony | not formulation/opening/auth/execution | question bridge |
 | Candidate examination work | examination frontier | corpus/capability evidence | unsupported/deferred/blocked | complete capability map |
 | Examination frontier | method applicability/selection | bounded question/candidates | no-selection/lawful inactivity | universal performer |
@@ -157,7 +157,7 @@ historical raw constitutional-pipeline field preparation
 | Probe request | operational handoff if separate | selected work | no scheduling/execution/fact | provider/tool realization |
 | Performance/output | finding | probe/tool/test | failure/env limit | admission to knowledge |
 | Finding | answer/result | output/evidence | partial/Unknown | universal answer/result engine |
-| Answer responsibility | answer | QuestionFamily | no universal engine | family variations |
+| Answer responsibility | answer | public answer family | no universal engine | family variations |
 | Answer | sufficiency | answer surface | no completion | complete criteria |
 | Bounded result | representation | finding/sufficiency | partial/stop | result envelope |
 | Sufficiency | completion/result | answer/finding/criteria | insufficient/Unknown | universal criteria |
@@ -170,6 +170,6 @@ historical raw constitutional-pipeline field preparation
 
 ## Book coverage summary
 
-Directly preserved: bounded question standing, inquiry origination, inquiry frontier, examination frontier/method/probe, testimony/fact boundary, result/projection, lawful realization, egress handoff, delivery non-reliance, refusal and completion. Compositionally preserved: expression-to-pressure, pressure-to-possible-inquiry, possible-to-admitted movement, findings-to-result, response-to-new-pressure, edge-class discipline. Partially preserved before this recovery and projected now: question-resolution graph among Inquiry Need, typed Unknown, Question Shape, Survey Warrant Family, QuestionFamily, individual bounded question, answer responsibility, sufficiency, completion, and retirement. Preserved only negatively: direct pressure-to-InquiryNeed, Unknown-to-question generator, frontier-to-question formulation, delivery-to-reliance, completion-to-retirement, response-to-correction/reopening. Historical: raw constitutional-pipeline ingress. Unknown: complete owner maps, exact admission artifacts, family registration lifecycle, recipient proof and correction/reopening topology.
+Directly preserved: bounded question standing, inquiry origination, inquiry frontier, examination frontier/method/probe, testimony/fact boundary, result/projection, lawful realization, egress handoff, delivery non-reliance, refusal and completion. Compositionally preserved: expression-to-pressure, pressure-to-possible-inquiry, possible-to-admitted movement, findings-to-result, response-to-new-pressure, edge-class discipline. Partially preserved before this recovery and projected now: question-resolution graph among Inquiry Need, typed Unknown, question form, methodological warrant, public answer family, individual bounded question, answer responsibility, sufficiency, completion, and retirement. Preserved only negatively: direct pressure-to-InquiryNeed, Unknown-to-question generator, frontier-to-question formulation, delivery-to-reliance, completion-to-retirement, response-to-correction/reopening. Historical: raw constitutional-pipeline ingress. Unknown: complete owner maps, exact admission artifacts, family registration lifecycle, recipient proof and correction/reopening topology.
 
-Book of Seed constitutional question graph recovery complete.
+Question graph fidelity correction complete.

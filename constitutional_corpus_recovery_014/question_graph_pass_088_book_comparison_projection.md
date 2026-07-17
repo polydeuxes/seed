@@ -2,7 +2,7 @@
 
 ## Decision
 
-A small Book projection is warranted. Existing clauses already preserve most nodes and edges compositionally, but the Book does not directly preserve the present-facing graph distinctions among Question Shape, Survey Warrant Family, QuestionFamily, individual bounded question, typed Unknown constraints, Inquiry Need/frontier separation, family/instance boundaries, and completion/retirement as one readable question-graph relation set. Adding a constrained graph section to `04-inquiry-and-examination/questions-and-inquiry.md` is the smallest truthful projection. It avoids a new Book chapter and avoids creating a universal question engine.
+A small Book projection is warranted. Existing clauses already preserve most nodes and edges compositionally, but the Book does not directly preserve the present-facing graph distinctions among question form, methodological warrant, public answer family, individual bounded question, typed Unknown constraints, Inquiry Need/frontier separation, family/instance boundaries, and completion/retirement as one readable question-graph relation set. Adding a constrained graph section to `04-inquiry-and-examination/questions-and-inquiry.md` is the smallest truthful projection. It avoids a new Book chapter and avoids creating a universal question engine.
 
 ## Coverage classification by neighborhood
 
@@ -11,8 +11,8 @@ A small Book projection is warranted. Existing clauses already preserve most nod
 | Expression → pressure → possible inquiry → admitted movement | Direct/compositional through External Grammar, question origination, frontier, admission, refusal, stopping. | No new ingress clause needed. |
 | Bounded goal/current position → Inquiry Need | Partially preserved by goals/needs/frontiers, but graph distinction between Inquiry Need and question is under-projected. | Project distinction in question graph section. |
 | Typed Unknown → question/evidence/stop constraints | Compositional through Unknown/evidence/stop clauses; typed Unknown versus public generic unknowns under-projected in question graph. | Project non-collapse and constraint relation. |
-| Question Shape ↔ Survey Warrant Family ↔ QuestionFamily | Partially preserved by kind-label/no-ontology and question clauses; current relation/refusal boundaries under-projected. | Project relation/refusal boundaries. |
-| QuestionFamily ↔ individual bounded question | Partially preserved by question/answer boundary; current family/instance and pipeline special-case conflict under-projected. | Project family/instance boundary. |
+| question form ↔ methodological warrant ↔ public answer family | Partially preserved by kind-label/no-ontology and question clauses; current relation/refusal boundaries under-projected. | Project relation/refusal boundaries. |
+| public answer family ↔ individual bounded question | Partially preserved by question/answer boundary; current family/instance and pipeline special-case conflict under-projected. | Project family/instance boundary. |
 | Inquiry Need → bounded inquiry frontier | Direct in inquiry-frontiers; no universal formulation boundary already present. | Cross-reference in graph section. |
 | Individual bounded question → examination frontier/method/policy/selection/probe | Direct in examination chapters. | No new examination clause needed beyond graph cross-reference. |
 | Finding/answer/sufficiency/completion/retirement | Direct/compositional in evidence/stopping; family-local answer responsibility and completion/retirement distinction under-projected in question graph. | Project non-collapse boundary. |
@@ -25,7 +25,7 @@ A small Book projection is warranted. Existing clauses already preserve most nod
 - `01.Standing.B` already blocks class names, inventory rows, and report kinds from ontology closure. Adequate for not promoting implementation names; insufficient alone for the shape/warrant/family relation because those are question-specific.
 - `01.External.A/B/C` already cover external expression, addressability, translation, and limit-preserving consumption. Adequate for ingress and re-entry.
 - `01.Lenses/views/roads` already distinguishes lens, road, uptake, handoff, adjacency, and sequence. Adequate for edge-class discipline.
-- `04.Question.A/B` cover question standing and origination; they do not explicitly preserve Question Shape / Survey Warrant Family / QuestionFamily / individual bounded question as separate resolutions.
+- `04.Question.A/B` cover question standing and origination; they do not explicitly preserve question form / methodological warrant / public answer family / individual bounded question as separate resolutions.
 - `04.Frontier.A/B/C` cover frontier membership, exclusions, lawful inactivity, and missing/unknown/conflict. Adequate for frontier membership versus selection/execution; graph cross-reference helpful.
 - `04.Examination.A/B/C` cover applicability, selection, probe, output, findings, lawful inactivity, and cross-examination. Adequate.
 - `05` evidence and knowledge chapters cover testimony, fact establishment, provenance, recording, Unknowns, and no silent knowledge. Adequate for output/finding/knowledge boundaries.
