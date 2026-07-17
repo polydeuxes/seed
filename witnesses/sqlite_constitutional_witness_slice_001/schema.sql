@@ -93,6 +93,8 @@ SELECT
   CASE
     WHEN c.requires_provenance = 0 THEN 'not_required'
     WHEN COALESCE(e.provenance_ref, r.provenance_ref) IS NULL THEN 'missing_provenance_reference'
+    WHEN e.provenance_ref IS NOT NULL AND r.provenance_ref IS NOT NULL
+      AND e.provenance_ref <> r.provenance_ref THEN 'conflicting_provenance_references_preserved'
     WHEN p.provenance_id IS NULL THEN 'dangling_provenance_reference'
     WHEN p.represented_lineage_status = 'internally_conflicting' THEN 'conflicting_provenance_preserved'
     WHEN p.applies_to_change_id IS NULL AND p.applies_to_evidence_id IS NULL THEN 'unknown_provenance_applicability'
@@ -129,7 +131,7 @@ SELECT
     WHEN s.provenance_standing = 'dangling_provenance_reference' THEN 'lawful_inactivity_dangling_provenance'
     WHEN s.evidence_standing LIKE 'unknown_%' OR s.provenance_standing LIKE 'unknown_%' THEN 'unknown_preserved'
     WHEN s.evidence_standing LIKE '%mismatch' OR s.provenance_standing LIKE '%mismatch' THEN 'lawful_inactivity_support_mismatch'
-    WHEN s.provenance_standing = 'conflicting_provenance_preserved' THEN 'unknown_preserved'
+    WHEN s.provenance_standing IN ('conflicting_provenance_preserved','conflicting_provenance_references_preserved') THEN 'unknown_preserved'
     ELSE 'bounded_permission_for_further_examination'
   END AS lawful_posture,
   CASE
