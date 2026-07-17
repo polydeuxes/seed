@@ -49,3 +49,13 @@ Implementation mechanics, tests, SQLite witnesses, diagnostic registries, shape-
 ## Stopping reason
 
 The requested inquiry pipeline recovery 054–056 was completed after Fidelity projection reconciliation 044 and topology passes 045–047. Pass 048 projected addressability without assimilation, pass 049 preserved translation as limited claim standing without a new Book clause, and pass 050 projected refusal-condition-preserving cross-seam consumption. Passes 054–056 then narrowed the inquiry pipeline after inquiry frontier passes 051–053 without declaring the corpus, grammar seam, inquiry frontier, inquiry pipeline, or Book projection complete.
+
+## Operator Ingress frontier after passes 057–059
+
+The operator-ingress frontier is now narrowed by three report-only relations, none of which warrants a Book change under current evidence:
+
+1. **Addressable operator pressure.** Operator expression may be preserved as source-attributed pressure with provenance or provenance Unknown, scope, limits, refusal conditions, and Unknowns, but not as Constitutional Grammar, authority, evidence, inquiry identity, answer standing, dispatch, or mutation.
+2. **Translated need to possible inquiry.** Addressable pressure may become possible inquiry only through bounded translation that preserves need or uncertainty, evidence demand, authority limit, lawful stop, exclusions, negative authority, and Unknowns. Prompt restatement, clarification, or dispatchability is not admission.
+3. **Possible inquiry to admitted movement.** Possible inquiry may become admitted inquiry movement only through local admission authority over the preserved identity bundle. Admission is bounded participation, not answer standing, examination eligibility, execution, ownership, mutation, completion, or neighboring-inquiry retirement.
+
+The next lawful work must not declare Operator Ingress complete. Remaining pressures are exact owner maps, artifact vocabulary, runtime realization, dispatch maps, durable-record rules, clarification/refusal/admission ordering, complete stop topology, and downstream handoff inventories.
