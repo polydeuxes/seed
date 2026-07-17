@@ -6,11 +6,11 @@ The boundary between preserving events or diagnostic output and deriving knowled
 ## Core question
 Which explicit process may extract, reconcile, and establish knowledge from a record?
 
-## Initial resolution
+## Bounded resolution
 Recording creates a retrievable representation of attributable events and findings within the preservation horizon supplied by the recorder. Knowledge extraction is a separate process with normalization, evidence, reconciliation, and standing rules; diagnostic recording should remain scoped to its diagnostic run unless explicitly promoted.
 
 
-## Recovered clauses for recorded-change witnesses
+## Addressable boundaries for recorded-change witnesses
 
 ### 05.Recording.A — Recorded assertion standing
 A recording boundary may create retrievable assertion-bearing material within its declared preservation horizon. The produced standing is that a record exists and preserves an attributed assertion. The permitted reliance is examination of that recorded assertion as recorded material. The forbidden inference is that the represented external occurrence, current lawful state, or factual truth has been established merely because the record exists.

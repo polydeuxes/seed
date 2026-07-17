@@ -6,19 +6,19 @@ The boundary between grammar encountered in external material and grammar warran
 ## Core question
 What evidence permits an external vocabulary or representation grammar to become constitutional grammar?
 
-## Initial resolution
-External grammar can be recovered, compared, and attributed without thereby becoming Seed's constitutional grammar. `[UNRESOLVED]` The sufficient promotion warrant is not yet safely established.
+## Bounded resolution
+External grammar can be identified, compared, and attributed without thereby becoming Seed's constitutional grammar. `[UNRESOLVED]` The sufficient promotion warrant is not yet safely established.
 
-## Recovered clauses for external-source translation
+## Addressable boundaries for external-source translation
 
 ### 01.External.A — Source grammar translation boundary
-Provider vocabulary, external representations, and source confidence labels may be carried into Seed reasoning only as attributed source grammar until a bounded translation states the source, scope, provider or external context, translated Seed term or claim, uncertainty, and authority limit being used. Translation may create applicable evidence or examination standing for that bounded use, but it must not convert provider language, imported representation structure, external confidence, or attachment convenience into native constitutional grammar, cluster truth, repository authority, or adopted law. Unknown or unavailable provenance limits reliance until separately recovered.
+Provider vocabulary, external representations, and source confidence labels may be carried into Seed reasoning only as attributed source grammar until a bounded translation states the source, scope, provider or external context, translated Seed term or claim, uncertainty, and authority limit being used. Translation may create applicable evidence or examination standing for that bounded use, but it must not convert provider language, imported representation structure, external confidence, or attachment convenience into native constitutional grammar, cluster truth, repository authority, or adopted law. Unknown or unavailable provenance limits reliance until a separate bounded warrant is established.
 
 ## Important distinctions
 - source grammar translated for use != Seed-native grammar
 - external grammar != constitutional grammar
 - lexical recurrence != constitutional authority
-- recovered representation != adopted law
+- attributed representation != adopted law
 - attachment != adoption
 - provider confidence != repository authority
 

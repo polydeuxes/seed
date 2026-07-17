@@ -6,11 +6,11 @@ The support and lineage required to justify claims and explain current beliefs w
 ## Core question
 What evidence and provenance are sufficient to explain why Seed holds a claim at a given time?
 
-## Initial resolution
+## Bounded resolution
 Evidence identifies source and collection context; fact support and explanations connect claims to their basis. Explanation exposes reasons and conflicts but does not itself create upstream truth. A provenance explanation may read preserved artifacts, reconstruct relationships among them, and make a bounded explanation assertion under its own warrant. That projection or explanation-construction act is not automatically a separate constitutional uptake kind and does not establish that upstream producer acts occurred.
 
 
-## Recovered clauses for support-binding witnesses
+## Addressable boundaries for support-binding witnesses
 
 ### 05.Evidence.A — Evidence support binding
 Evidence-shaped material has standing for bounded examination only when the consumer can distinguish the named evidence identity from the material's existence and can represent the source attribution, evidence kind, source or collection context, bounded subject, supported claim, applicable authority boundary, preservation horizon, confidence or uncertainty label where used, and provenance relation required by that examination. The produced standing is applicable represented support for further examination. The forbidden inference is factual truth, independent corroboration, current lawful state, execution authorization, or universal evidence admission merely because an identifier, row, confidence value, or citation is present.

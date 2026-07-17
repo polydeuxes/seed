@@ -6,7 +6,7 @@ The role of orientation in describing where attention or concern lies without cl
 ## Core question
 What additional warrant turns orientation toward a goal into constitutional movement?
 
-## Initial resolution
+## Bounded resolution
 Orientation associates and presents goal dimensions; movement requires a separately warranted transition that changes lawful position or standing.
 
 ## Important distinctions

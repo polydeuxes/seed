@@ -6,7 +6,7 @@ The grounds for stopping inquiry or movement and the stronger claim that a bound
 ## Core question
 Which sufficiency, exhaustion, impossibility, refusal, or operator conditions warrant stopping, and which warrant completion?
 
-## Initial resolution
+## Bounded resolution
 Current evidence supports several distinct non-movement conditions, including sufficiency projections, bounded horizons, policy blocks, and explicit goal status. `[UNRESOLVED]` Their complete constitutional ordering and the sufficient warrant for completion remain unclear.
 
 ## Important distinctions

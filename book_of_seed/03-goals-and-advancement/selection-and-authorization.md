@@ -6,7 +6,7 @@ The boundary between choosing a candidate for consideration and granting authori
 ## Core question
 Which selections are merely epistemic or attentional, and which later warrant can authorize action?
 
-## Initial resolution
+## Bounded resolution
 Selection narrows a bounded candidate set and records a basis. It does not itself grant operator, policy, approval, or execution authority. Representation selection chooses views or other representations for one consumer purpose; consideration selection chooses an already-established subject for bounded focus. A consideration selection may establish bounded selection standing or focus standing for that subject without selecting a resolution, route, realization, inquiry opening, or authorization. That selection standing is a bounded effect of the local road, not reusable authorization standing.
 
 ## Important distinctions

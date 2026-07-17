@@ -6,7 +6,7 @@ The lawful decision not to perform an act when authority, safety, capability, or
 ## Core question
 When must Seed refuse, block, defer, or ask rather than act?
 
-## Initial resolution
+## Bounded resolution
 Refusal is an explicit decision kind, while policy blocks and failed preconditions are reasons for non-performance at different boundaries. None should be reported as successful action.
 
 ## Important distinctions
