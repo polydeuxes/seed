@@ -1,6 +1,6 @@
-# Book Projection Frontier after Pass 047
+# Book Projection Frontier after Pass 050
 
-This frontier is not a completion declaration. It records the current state after sequential projection passes 015 through 047 so future passes can select another unresolved constitutional pressure without treating this sweep as corpus or Book completion.
+This frontier is not a completion declaration. It records the current state after sequential projection passes 015 through 050 so future passes can select another unresolved constitutional pressure without treating this sweep as corpus or Book completion.
 
 ## What the Book now preserves from completed passes
 
@@ -12,12 +12,16 @@ Book change after reconciliation: `07.Realization.B` now preserves Fidelity dete
 
 The earlier no-change classification for passes 041–043 is superseded. Neighboring safeguards preserved required consequences, but did not expressly identify the determination actor/act, consumed evidence, constitutional question, produced finding, and bounded downstream consumption. Uniform warrant-carrier schemas, translation-audit topology, handoff inventories, public Fidelity diagnostics, canonical finding schemas, scores, runtime engines, complete inventories, and Fidelity completion declarations remain implementation or topology Unknowns.
 
+### Passes 048–050 — Constitutional and External Grammar seam
+
+Pass 048 projected addressability without assimilation: an external representation may be constitutionally addressable as source-attributed material for examination, comparison, quotation, attachment, or translation assessment without becoming Constitutional Grammar. Pass 049 made no Book change because bounded translation was already preserved as limited claim standing rather than source authority transfer. Pass 050 projected that downstream cross-seam consumption must preserve source role or Unknown, provenance or provenance Unknown, source grammar boundary, translated claim and scope when present, uncertainty, confidence limits, authority limits, negative authority, Unknowns, refusal conditions, and any tested-preservation boundary. Complete provider/source taxonomy, source-owner maps, translation-owner maps, canonical envelopes, runtime parsers, provider registries, translation engines, and complete cross-seam topology remain Unknown.
+
 ## Remaining unresolved families
 
 Future passes may select any unresolved family with independent evidence and a resolvable projection boundary. Current candidates include:
 
 - **Questions, Inquiry, Advancement, and Bounded Work** — question standing and inquiry origination are preserved, but exact question-form kinds, inquiry ownership, deletion/retirement ownership, and broader inquiry topology remain unresolved.
-- **Provider/source taxonomy and provider-translation ownership** — narrowed by passes 016 and 024; complete taxonomy and owner topology remain unresolved.
+- **Provider/source taxonomy and provider-translation ownership** — narrowed by passes 016, 024, and 048–050; complete taxonomy and owner topology remain unresolved.
 - **Diagnostic recording and shape completeness** — narrowed by passes 017 and 025; registry mechanics, shape-audit specs, record-scope proof, mutation-boundary proof, and full surface coverage remain operational/report-only.
 - **Governance and complete responsibility owner maps** — governance coordination is preserved as distinct from universal adjudication, attribution is distinct from responsibility, and analytical competence is not adjudicative authority, but complete owner maps, exact handoff-form inventory, and implementation topology remain unresolved.
 - **Access-transition topology and action/mutation vocabulary** — narrowed by passes 019 and 028; movement/mutation separation is preserved, but general action/mutation architecture and exact access-transition topology remain unresolved.
