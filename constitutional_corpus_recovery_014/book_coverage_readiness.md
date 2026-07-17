@@ -189,3 +189,9 @@ No Book projection is warranted. The correction is an implementation-backed cach
 ## Passes 082–084 readiness update
 
 No Book coverage change is ready. The derived fact-index boundary is implementation evidence for existing read-model and realization limits. It does not establish a general cache envelope, circulation topology, receipt proof, reliance proof, correction authority, or reopening authority.
+
+## Question graph recovery readiness after passes 087–089
+
+Pass 087 recovered a full current graph over question/inquiry/Unknown/frontier/examination/answer/completion/communication/re-entry terrain as presently supported by the repository. Pass 088 found existing Book clauses adequate for most local relations, but under-projecting the question-specific non-collapse graph among Inquiry Need, typed Unknown, Question Shape, Survey Warrant Family, QuestionFamily, individual bounded question, answer responsibility, sufficiency, completion, and retirement. The warranted projection is `04.Question.C`; it is a present-facing graph boundary, not a runtime owner, pipeline, registry, planner, or lifecycle.
+
+Remaining coverage limits: complete owner maps, exact admission artifacts, universal semantic parsing, Unknown-to-question generation, QuestionFamily registration lifecycle, proof of receipt/understanding/reliance, correction/supersession/reopening authority, retirement/deletion authority, and complete implementation topology remain Unknown or outside current evidence.

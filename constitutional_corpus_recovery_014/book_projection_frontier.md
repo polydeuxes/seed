@@ -115,3 +115,11 @@ Passes 085–086 supersede the former high-resolution derived fact-index testimo
 ## Cache boundary reality frontier after passes 085–086
 
 No Book projection is warranted. The implemented cache boundary is now limited to repository-evidenced runtime requirements: schema validity, cache identity, version and event horizon, payload materialization, rebuild from ledger authority, and read-only admission through `mutates_cluster=false`. High-resolution cache testimony vocabulary from passes 069–084 is no longer current implementation standing. Remaining frontier pressure is concrete production consumer evidence, not replacement metadata or generalized cache-family doctrine.
+
+## Question graph projection after passes 087–089
+
+Projection performed: `04.Question.C — Question graph relations are plural and non-collapsing` was added to `book_of_seed/04-inquiry-and-examination/questions-and-inquiry.md`.
+
+Projection rationale: existing clauses compose ingress, frontier, examination, evidence, realization, handoff, refusal, and stopping boundaries, but the Book lacked one present-facing question-graph clause preserving the distinct resolutions and negative authorities among Inquiry Need, typed Unknown, Question Shape, Survey Warrant Family, QuestionFamily, individual bounded question, answer, sufficiency, completion, retirement, representation, delivery, receipt, reliance, response, correction, and reopening.
+
+No further Book projection is ready. A dedicated graph chapter, universal lifecycle, runtime owner, registry, scheduler, or implementation edge would exceed current evidence.
