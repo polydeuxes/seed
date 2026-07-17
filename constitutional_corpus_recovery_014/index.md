@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This directory recovers constitutional grammar already present across the wider repository corpus outside `book_of_seed/`. It inventories non-Book evidence, groups independently recurring findings into pressure families, examines each family separately, cross-examines family relationships, and then compares coverage against the current Book. Passes 015–053 include later lawful Book projections, corrections, and no-change projection decisions where recovered evidence warranted them.
+This directory recovers constitutional grammar already present across the wider repository corpus outside `book_of_seed/`. It inventories non-Book evidence, groups independently recurring findings into pressure families, examines each family separately, cross-examines family relationships, and then compares coverage against the current Book. Passes 015–056 include later lawful Book projections, corrections, and no-change projection decisions where recovered evidence warranted them.
 
 ## Produced artifacts
 
@@ -64,6 +64,9 @@ This directory recovers constitutional grammar already present across the wider 
 - [Inquiry frontier pass 051 — Conjunctive Frontier Identity](inquiry_frontier_pass_051_conjunctive_frontier_identity.md) and [projection pass 051](book_projection_pass_051_conjunctive_frontier_identity.md) projected frontier identity as conjunctive and not wording-derived.
 - [Inquiry frontier pass 052 — Possible Inquiry Is Not Admitted Inquiry](inquiry_frontier_pass_052_possible_not_admitted_inquiry.md) and [projection pass 052](book_projection_pass_052_possible_not_admitted_inquiry.md) recovered possible inquiry as identity-preserved consideration standing rather than admitted inquiry movement; no Book change was warranted.
 - [Inquiry frontier pass 053 — Lawful Stop Preserves Neighboring Inquiry](inquiry_frontier_pass_053_lawful_stop_preserves_neighboring_inquiry.md) and [projection pass 053](book_projection_pass_053_lawful_stop_preserves_neighboring_inquiry.md) recovered that scoped stop/refusal/exhaustion/answer changes only authorized standing and does not erase neighboring inquiry; no Book change was warranted.
+- [Inquiry pipeline pass 054 — Admitted Inquiry to Bounded Examination](inquiry_pipeline_pass_054_admitted_inquiry_to_bounded_examination.md) and [projection pass 054](book_projection_pass_054_admitted_inquiry_to_bounded_examination.md) recovered that admitted inquiry participation may become bounded examination eligibility only through a local authority-preserving artifact; no Book change was warranted.
+- [Inquiry pipeline pass 055 — Examination Output to Comparison or Finding Standing](inquiry_pipeline_pass_055_examination_to_comparison_finding.md) and [projection pass 055](book_projection_pass_055_examination_to_comparison_finding.md) recovered that examination output may become scoped comparison or finding standing without truth, warrant, reliance, or completion; no Book change was warranted.
+- [Inquiry pipeline pass 056 — Scoped Finding to Bounded Result](inquiry_pipeline_pass_056_scoped_finding_to_bounded_result.md) and [projection pass 056](book_projection_pass_056_scoped_finding_to_bounded_result.md) recovered that scoped findings may support bounded result artifacts only through local sufficiency, warrant, reliance, explanation, handoff, refusal, Unknown, stop, or completion authority; no Book change was warranted.
 
 ## Recovered corpus summary
 
