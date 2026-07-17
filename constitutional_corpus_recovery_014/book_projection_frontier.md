@@ -1,6 +1,6 @@
-# Book Projection Frontier after Pass 062
+# Book Projection Frontier after Pass 065
 
-This frontier is not a completion declaration. It records the current state after sequential projection passes 015 through 062, including Operator Ingress passes 057–059 and Seed Egress passes 060–062 so future passes can select another unresolved constitutional pressure without treating this sweep as corpus, inquiry frontier, inquiry pipeline, or Book completion.
+This frontier is not a completion declaration. It records the current state after sequential projection passes 015 through 065, including Operator Ingress passes 057–059, Seed Egress passes 060–062, and Constitutional Circulation reconciliation passes 063–065 so future passes can select another unresolved constitutional pressure without treating this sweep as corpus, inquiry frontier, inquiry pipeline, or Book completion.
 
 ## What the Book now preserves from completed passes
 
@@ -30,6 +30,11 @@ Pass 054 made no Book change because current clauses already preserve the moveme
 
 Pass 060 projected egress representation as a bounded communication/handoff standing: a bounded result may become operator-facing or external only while preserving result identity, source inquiry or subject, evidence territory, provenance, authority scope, confidence or uncertainty, Unknowns, conflicts, negative authority, refusal conditions, neighboring-inquiry boundaries, and lawful stop or completion limits. Rendering, compression, delivery, acknowledgment, CLI/API emission, report inclusion, or convenience does not strengthen truth, authority, reliance, action, receipt, understanding, completion, or state mutation. Pass 061 made no further Book change because the new egress clause and existing communication, evidence, observability, reliance, refusal, and stopping clauses already preserve delivery without uptake proof. Pass 062 made no further Book change because operator response re-enters only as new ingress pressure through source-attributed pressure, bounded translation, and local admission; it does not silently reopen, mutate, correct, supersede, or complete the prior result. Canonical egress vocabulary, universal envelopes, runtime egress participants, proof mechanics, response taxonomy, correction/reopening owner maps, and complete neighboring-inquiry topology remain Unknown.
 
+
+### Passes 063–065 — Constitutional Circulation Reconciliation
+
+Pass 063 recovered the circulation as a relation graph rather than a mandatory pipeline: expression may become addressable pressure, translated need or possible inquiry, admitted movement, examination eligibility, scoped finding, bounded result, outward representation, delivered availability, and new ingress pressure only through local standing-changing acts that preserve inherited limits. Pass 064 recovered cross-seam Fidelity as boundary-specific invariant survival: later seams preserve source/provenance, identity, evidence demand, authority, confidence, Unknowns, refusal conditions, neighboring boundaries, and stop/completion limits while adding only local authority. Pass 065 made no Book change because the current Book preserves this compositionally; a summary clause would risk inventing a canonical route, owner, envelope, runtime, or reopening authority. Universal owner topology, canonical circulation/ingress/inquiry/result/egress/response envelopes, runtime orchestration, proof mechanics, correction/supersession/reopening authority, and complete neighboring-inquiry topology remain Unknown.
+
 ## Remaining unresolved families
 
 Future passes may select any unresolved family with independent evidence and a resolvable projection boundary. Current candidates include:
@@ -50,7 +55,7 @@ Future passes may select any unresolved family with independent evidence and a r
 
 ## Report-only material still not promoted
 
-Canonical egress envelopes, universal renderers, runtime egress participants, delivery/receipt/understanding/reliance proof mechanics, response taxonomies, correction/reopening owner maps, runtime threading, durable egress records, and recipient-specific action-authority rules remain outside the Book unless independently recovered and warranted.
+Canonical circulation, ingress, inquiry, result, egress, and response envelopes; universal renderers; runtime egress or circulation participants; delivery/receipt/understanding/reliance/action proof mechanics; response taxonomies; correction/supersession/reopening owner maps; runtime threading; durable egress records; and recipient-specific action-authority rules remain outside the Book unless independently recovered and warranted.
 
 Implementation mechanics, tests, SQLite witnesses, diagnostic registries, shape-audit specifications, runtime traces, execution logs, owner maps, exhaustive taxonomies, provider/source taxonomies, process engines, legal/adjudicative machinery, consensus/federation designs, prompt ontology, inquiry standing vocabulary, inquiry ownership maps, inquiry result envelopes, mandatory artifact grammar, bounded competency registry or actor grammar, producer-seal design, occurrence-recording topology, view-evaluation/activity topology, uniform warrant-carrier schemas, handoff eligibility inventories, public Fidelity diagnostics, canonical Fidelity finding schemas, fidelity scores, completion declarations, and speculative constitutional participants remain outside the Book unless independently recovered and warranted.
 
@@ -78,3 +83,8 @@ The Seed Egress frontier is narrowed but not complete:
 3. **Operator response as ingress pressure.** Operator response to an egressed result may create addressable pressure, possible inquiry, or admitted movement only through the ingress boundary; it does not silently mutate or reopen the prior result.
 
 The next lawful work must not declare Seed Egress complete. Remaining pressures are exact owner maps, egress artifact vocabulary, proof mechanics, runtime realization, response taxonomy, correction/supersession/reopening authority, durable records, and complete neighboring-inquiry topology.
+
+
+## Constitutional Circulation frontier after passes 063–065
+
+The circulation frontier is narrowed but not complete. Current evidence supports compositional circulation through local standing changes and lawful stop points, with re-entry only as new ingress pressure. The next lawful work must not declare Constitutional Circulation complete and must not resume the generic Book frontier sweep from this reconciliation. Remaining pressures are owner topology, envelope topology, runtime topology, proof topology, correction/supersession/reopening authority, receipt/understanding/reliance/action evidence, complete branch and bypass topology, and complete neighboring-inquiry topology.
