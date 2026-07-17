@@ -18,6 +18,10 @@ Evidence-shaped material has standing for bounded examination only when the cons
 ### 05.Evidence.B — Provenance representation and applicability
 A provenance reference may contribute represented lineage only when referenced provenance material exists and its source or lineage is applicable to the assertion or support material being examined. Representation, applicability, internal coherence, independent verification, verified causation, and producer occurrence are separate standings. A consumer may rely on represented lineage where that is the bounded requirement, but must not treat a string, foreign key, copied causation identifier, or internally coherent lineage as verified provenance, proof of producer occurrence, established fact, or independent support.
 
+
+### 05.Evidence.C — Bounded negative findings and preserved Unknowns
+A missing, unmatched, unsupported, or unpreserved support result may be stated only as a bounded negative finding inside the corpus, surface, query or claim form, temporal boundary, authority boundary, and limitations that produced it. That finding may preserve insufficiency, support loss, mismatch, comparison pressure, or Unknown standing for further examination. It must not be promoted into falsehood, disproof, global nonexistence, legal invalidity, historical absence, operational absence, no-harm, no-event, no-authority, or established fact without separately preserved authority and evidence for that stronger claim.
+
 ## Important distinctions
 - provenance represented != provenance verified
 - event reference != occurrence seal
@@ -27,6 +31,9 @@ A provenance reference may contribute represented lineage only when referenced p
 - explanation construction != upstream establishment
 - projection act != new constitutional kind automatically
 - source-relative explanation != occurrence-relative explanation
+- not found in a bounded surface != does not exist
+- not preserved != false
+- comparison pressure != adjudicative authority
 
 ## Representative repository anchors
 - `seed_runtime/evidence.py::Evidence`
