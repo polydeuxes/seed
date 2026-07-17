@@ -18,10 +18,15 @@ A downstream consumer may rely on warranted content only for the bounded role, p
 ### 08.Authority.B — Admission is bounded participation, not ratification
 A sufficiency, admissibility, readiness, warrant, reliance, or admission finding may let a supported subject participate in the next bounded constitutional posture only within its evidence, owner, purpose, authority, negative authority, confidence, and Unknown limits. It does not become truth, universal permission, implementation authority, mutation authority, Book ratification, or reusable approval unless a separate boundary grants that stronger status.
 
+
+### 08.Authority.C — Analytical competence is not adjudicative authority
+Seed may analyze source packets, support paths, source roles, boundary mismatches, pressure, confidence limits, temporal limits, and Unknowns under bounded repository authority. That competence does not become jurisdiction, legal authority, binding legal conclusion, validity determination, invalidity determination, enforceability determination, or institutional adjudication without separately preserved competent authority, source-of-law support, procedural posture, claim form, and lawful stop.
+
 ## Important distinctions
 - operator request != unbounded authority
 - scope binding != approval for every act in scope
 - internal recommendation != authority grant
+- analytical competence != adjudicative authority
 
 ## Representative repository anchors
 - `seed_runtime/operator_authority_scope_binding.py`
