@@ -169,3 +169,7 @@ Implementation evidence now records a bounded Selection-to-Composition handoff f
 ## Current-state reconciliation after Python–SQLite jurisdiction passes 069–071
 
 No Book change is warranted. The implementation recovered one realization-jurisdiction seam: Python forms the projected state, SQLite durably preserves a read-model cache snapshot with explicit boundary labels, and Python may rehydrate it only as cache input. This confirms existing Book distinctions between records, facts, projection, diagnostic/read-model visibility, lawful realization, and recording boundaries. Remaining gaps are implementation/topology gaps: complete owner maps, complete diagnostic recording proof, all read-model cache boundaries, SQLite witness production consumers, and occurrence-recording topology.
+
+## Hybrid cache consumption readiness after passes 072–074
+
+The state-summary source boundary is implementation evidence, not new realization-neutral Book evidence. It reinforces existing clauses that downstream consumption preserves tested boundaries and does not strengthen source standing. No Book change is warranted unless later work recovers a broader constitutional rule independent of this cache implementation.

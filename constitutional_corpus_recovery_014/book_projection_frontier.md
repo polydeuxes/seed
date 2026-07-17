@@ -95,3 +95,7 @@ Passes 066–068 did not resume generic Book expansion and did not add a Book cl
 ## Python–SQLite realization jurisdiction frontier after passes 069–071
 
 The projection snapshot boundary is implementation-backed but does not create a new Book projection. It preserves constitutional responsibility, Python realization, SQLite realization, cross-realization handoff, tested preservation, durable occurrence evidence limits, derived projection standing, and implementation Unknowns inside current implementation evidence. Future Book projection would require realization-neutral constitutional evidence beyond the implemented cache seam.
+
+## Hybrid cache consumption frontier after passes 072–074
+
+Passes 072–074 did not resume generic Book expansion. They narrowed the Python–SQLite implementation frontier by separating durable boundary testimony from consumer eligibility for the state-summary cache. Remaining frontier pressure includes derived-index source-limit preservation, richer cache rejection diagnostics, complete downstream consumer maps, and production witness-to-runtime consumption paths.
