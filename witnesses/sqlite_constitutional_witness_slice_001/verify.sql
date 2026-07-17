@@ -4,13 +4,13 @@
 
 CREATE TEMP TABLE expected_postures(competency_id TEXT, change_id TEXT, lawful_posture TEXT);
 INSERT INTO expected_postures VALUES
-('competency:eye-evidence-local','case_a_relevant_supported','bounded_permission_for_further_examination'),
-('competency:eye-evidence-local','case_b_irrelevant','lawful_inactivity_irrelevant'),
-('competency:eye-evidence-local','case_c_insufficient_evidence','lawful_inactivity_insufficient_evidence'),
-('competency:eye-evidence-local','case_d_unknown','unknown_preserved'),
-('competency:eye-evidence-local','case_e_authority_blocked','lawful_inactivity_authority_blocked'),
-('competency:eye-evidence-local','case_f_record_not_truth','bounded_permission_for_further_examination'),
-('competency:eye-evidence-local','case_g_unrelated_no_universal_activity','lawful_inactivity_irrelevant');
+('competency:evidence-boundary-local-observation','case_a_relevant_supported','bounded_permission_for_further_examination'),
+('competency:evidence-boundary-local-observation','case_b_irrelevant','lawful_inactivity_irrelevant'),
+('competency:evidence-boundary-local-observation','case_c_insufficient_evidence','lawful_inactivity_insufficient_evidence'),
+('competency:evidence-boundary-local-observation','case_d_unknown','unknown_preserved'),
+('competency:evidence-boundary-local-observation','case_e_authority_blocked','lawful_inactivity_authority_blocked'),
+('competency:evidence-boundary-local-observation','case_f_record_not_truth','bounded_permission_for_further_examination'),
+('competency:evidence-boundary-local-observation','case_g_unrelated_no_universal_activity','lawful_inactivity_irrelevant');
 
 CREATE TEMP TABLE assert_zero(label TEXT, failures INTEGER CHECK (failures = 0));
 

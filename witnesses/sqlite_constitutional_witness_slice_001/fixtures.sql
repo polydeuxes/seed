@@ -6,7 +6,7 @@ INSERT INTO book_clause_sources VALUES
 ('refusal.non-performance', 'book_of_seed/08-authority-communication-and-stopping/refusal-and-non-performance.md', 'Initial resolution', 'Non-performance reasons must remain distinguishable from successful action.');
 
 INSERT INTO bounded_competencies VALUES
-('competency:eye-evidence-local', 'constitutional_change', 'evidence_boundary', 'local_observation', 1, 1, 'inactive_when_irrelevant_unknown_unsupported_or_authority_blocked', 'competency.bounded-relevance'),
+('competency:evidence-boundary-local-observation', 'constitutional_change', 'evidence_boundary', 'local_observation', 1, 1, 'inactive_when_irrelevant_unknown_unsupported_or_authority_blocked', 'competency.bounded-relevance'),
 ('competency:projection-cache-local', 'constitutional_change', 'projection_cache', 'local_observation', 1, 1, 'inactive_when_irrelevant_unknown_unsupported_or_authority_blocked', 'competency.bounded-relevance'),
 ('competency:external-admin', 'constitutional_change', 'evidence_boundary', 'external_admin', 1, 1, 'inactive_when_irrelevant_unknown_unsupported_or_authority_blocked', 'authority.no-expansion');
 
