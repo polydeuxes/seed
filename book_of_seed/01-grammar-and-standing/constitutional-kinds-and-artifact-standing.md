@@ -7,7 +7,7 @@ The difference between representing a constitutional subject and possessing the 
 Which kinds are constitutionally recognized, and what establishes an artifact's standing as one of them?
 
 ## Bounded resolution
-An artifact is a preserved representation or record whose fields carry an assertion made by another responsibility. Its shape can preserve identity, provenance, result, uncertainty, and boundaries; it does not supply the warrant for those assertions. Standing depends on the kind-specific production or establishment boundary and its validated inputs. Act, constraint, testimony, constructor, and lens describe responsibilities or uses; road describes a warranted relationship. They are not mutually exclusive artifact shapes.
+An artifact is a preserved representation or record whose fields carry an assertion made by another responsibility. Its shape can preserve identity, provenance, result, uncertainty, and boundaries; it does not supply the warrant for those assertions. Standing depends on the kind-specific production or establishment boundary and its validated inputs. Act, constraint, testimony, constructor, lens, handoff structure, relationship mode, and standing effect describe different dimensions of repository responsibility; road describes a warranted assertion-preserving relationship. They are not mutually exclusive artifact shapes, and a dedicated dataclass or concordance entry does not by itself establish a durable constitutional kind.
 
 ## Important distinctions
 - artifact representation != constitutional standing
@@ -15,6 +15,9 @@ An artifact is a preserved representation or record whose fields carry an assert
 - schema validity != lawful provenance
 - public visibility != constitutional status
 - preserved assertion != warrant for the assertion
+- dedicated dataclass != durable constitutional kind
+- concordance entry != constitutional legitimacy
+- new downstream subject != upstream subject re-established
 
 ## Representative repository anchors
 - `seed_runtime/inquiry_artifacts.py::InquiryArtifactVisibility`
