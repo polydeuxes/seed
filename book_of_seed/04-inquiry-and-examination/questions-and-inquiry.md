@@ -6,7 +6,7 @@ The standing of questions and their role in initiating or shaping bounded inquir
 ## Core question
 What makes a question constitutionally admissible and connected to an established goal or uncertainty?
 
-## Initial resolution
+## Bounded resolution
 Question-shaped text is not automatically a constitutional inquiry. Bounded questions require identity, provenance, and an admissible relationship to the concern under examination.
 
 ## Important distinctions

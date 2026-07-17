@@ -6,7 +6,7 @@ The establishment and assembly of advancement needs and their relationship to po
 ## Core question
 When does an established need open a lawful next movement, if ever?
 
-## Initial resolution
+## Bounded resolution
 A need set characterizes what advancement may require within a bounded horizon. Need standing alone does not open or authorize movement.
 
 ## Important distinctions

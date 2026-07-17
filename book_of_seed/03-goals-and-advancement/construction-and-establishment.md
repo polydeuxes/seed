@@ -6,7 +6,7 @@ The transition from a constructed goal-shaped representation to an established b
 ## Core question
 Which ingress evidence and invariants establish a goal's constitutional standing?
 
-## Initial resolution
+## Bounded resolution
 Construction produces a representation; establishment binds admitted operator meaning, scope, provenance, and boundedness into a goal with standing.
 
 ## Important distinctions

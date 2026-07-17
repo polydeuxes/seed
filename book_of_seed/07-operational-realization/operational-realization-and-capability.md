@@ -6,7 +6,7 @@ The relationship between a required outcome, an observed or candidate capability
 ## Core question
 What establishes that a mechanism can lawfully and sufficiently realize a bounded operational need?
 
-## Initial resolution
+## Bounded resolution
 Catalog declarations and behavioral observations can support capability candidates. Operational realization requires attributed mechanism evidence, invocation grammar, and selection appropriate to the bounded need.
 
 ## Important distinctions

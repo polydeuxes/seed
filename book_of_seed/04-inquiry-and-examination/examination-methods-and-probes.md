@@ -6,11 +6,11 @@ The applicability, selection, and binding of examination work used to acquire bo
 ## Core question
 What warrants a probe request, and what standing can its result acquire?
 
-## Initial resolution
+## Bounded resolution
 Applicable examination methods become candidates; a bounded selection and handoff can bind a probe request. Probe output remains testimony or evidence until the relevant establishment boundary acts.
 
 
-## Recovered clauses for bounded examination witnesses
+## Addressable boundaries for bounded examination witnesses
 
 ### 04.Examination.A — Bounded relevance before movement
 A bounded examination responsibility may treat recorded material as relevant only when explicit record material supports the local responsibility, subject binding, evidence or provenance requirements, and authority boundary required by that responsibility. The produced standing is permission to examine further inside that boundary. The forbidden inference is selection, execution, mutation, truth establishment, or required action.

@@ -6,10 +6,10 @@ The preservation of meaning, evidence, limits, and authority boundaries when mat
 ## Core question
 What must a communication or handoff preserve, and what constitutional claims may it not imply?
 
-## Initial resolution
+## Bounded resolution
 Communication can carry bounded requests, explanations, and references. Typed value transport and adapter handoff may lawfully create a smaller consumer request from an upstream artifact, but the handoff structure is not automatically assertion uptake or a constitutional road. Uptake begins only where a consumer gives the transported material bounded constitutional use or standing, or makes an assertion materially warranted by it. A handoff records a boundary and required external responsibility; it does not imply provider trust, credentials, approval, registration, execution, or full adoption of upstream assertions.
 
-## Recovered clauses for responsibility transfer
+## Addressable boundaries for responsibility transfer
 
 ### 08.Handoff.A — Explicit responsibility transfer
 A responsibility, owner, or governance duty may be handed off only through a bounded transfer that preserves the affected subject, current holder where known, receiving holder where known, authority scope, evidence for the transition, and limits that survive the handoff. The transfer may establish local responsibility for the bounded subject, but it must not imply universal authority, silent adoption of upstream assertions, operational approval, implementation ownership, or future repository law merely because a report, operator goal, process surface, or adjacent implementation names a responsible party.

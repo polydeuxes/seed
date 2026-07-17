@@ -10,7 +10,7 @@ Which kinds are constitutionally recognized, and what establishes an artifact's 
 An artifact is a preserved representation or record whose fields carry an assertion made by another responsibility. Its shape can preserve identity, provenance, result, uncertainty, and boundaries; it does not supply the warrant for those assertions. Standing depends on the kind-specific production or establishment boundary and its validated inputs. Act, constraint, testimony, constructor, lens, handoff structure, relationship mode, and standing effect describe different dimensions of repository responsibility; road describes a warranted assertion-preserving relationship. They are not mutually exclusive artifact shapes, and a dedicated dataclass or concordance entry does not by itself establish a durable constitutional kind.
 
 
-## Recovered clauses for availability and reachability
+## Addressable boundaries for availability and reachability
 
 ### 01.Standing.A — Reachability without promotion
 A produced, preserved, rendered, indexed, or otherwise reachable artifact may become locally visible to a bounded consumer, observer, diagnostic, projection, or later inquiry without becoming accepted, admitted, relied upon, projected as truth, written to the event ledger, or authorized for mutation. Reachability can create a lawful possibility for a later act, but acceptance, reliance, admission, projection, recording, and operational action remain separate family-local boundaries.

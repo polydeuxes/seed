@@ -6,7 +6,7 @@ The roles of recorded events, established facts, relationships, and projected st
 ## Core question
 Which event kinds affect which portions of constitutional state, and through what lawful projection rules?
 
-## Initial resolution
+## Bounded resolution
 Events are immutable records that assert occurrences or other claims; an event records that an assertion was made, not that every asserted occurrence is true. Facts carry supported claims; state is a replayed and reconciled projection. Their boundaries must remain visible even when one pipeline connects them.
 
 ## Important distinctions

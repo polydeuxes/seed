@@ -10,7 +10,7 @@ Which source, support, reconciliation, and promotion conditions establish a fact
 Observations and specialized testimony preserve attributed claims. Fact standing requires explicit ingestion, support, normalization, and conflict-aware establishment rather than direct attachment of a finding to cluster truth. A consumer may use testimony as a source-relative or premise-relative input for a new local assertion, but coherence checks and copied lineage fields do not turn testimony into established fact or prove the testifying producer occurred.
 
 
-## Recovered clauses for support-binding witnesses
+## Addressable boundaries for support-binding witnesses
 
 ### 05.Testimony.A — Premise-relative testimony without fact standing
 A recorded claim, diagnostic finding, or evidence record may be consumed as attributed testimony or premise-relative input for a bounded examination. That consumption preserves attribution, source-relative limits, conflicts, and uncertainty; it does not establish the testified content as fact, prove the source producer occurred, or strengthen standing merely through repetition or copied lineage.

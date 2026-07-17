@@ -6,8 +6,8 @@ The characterization of current responsibility, competing ownership claims, inva
 ## Core question
 How should Seed distinguish lawful current ownership from implementation adjacency, stale claims, and compatibility residue?
 
-## Initial resolution
-Ownership is recovered by comparing implementation behavior, producers, consumers, declarations, and constitutional warrants. Discrepancies and residue should be projected findings, not manually frozen into this Book.
+## Bounded resolution
+Ownership is established by comparing implementation behavior, producers, consumers, declarations, and constitutional warrants. Discrepancies and residue should be projected findings, not manually frozen into this Book.
 
 ## Important distinctions
 - implementation ownership != constitutional authority
