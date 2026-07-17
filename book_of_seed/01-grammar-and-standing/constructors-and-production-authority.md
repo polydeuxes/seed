@@ -10,6 +10,8 @@ When is a constructor an authorized production boundary rather than a convenient
 A constructor consumes values or representations and produces another representation. Mechanical construction proves only that the output can be built. Live return from a responsible owner can add call-context occurrence standing that a directly constructed artifact with identical fields does not carry, unless that standing is separately represented or preserved. A directly constructed artifact can sometimes satisfy a later consumer's local type, registration, or identity-coherence checks, but that success proves only consumer-local admissibility. It does not prove the named producer function ran, that focus evidence was consumed, or that exact-key selection occurred. A production boundary may additionally assert selection, establishment, admission, or occurrence only when its body validates the required identity, provenance, state, and warrant. Public reachability does not provide that warrant.
 
 ## Important distinctions
+- live producer return != durable producer-to-result evidence unless recorded or represented
+- stable result identity != occurrence seal
 - public constructor != lawful production authority
 - constructability != admissibility
 - constructor != establishment act

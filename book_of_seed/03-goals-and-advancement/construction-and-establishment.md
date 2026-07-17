@@ -10,6 +10,8 @@ Which ingress evidence and invariants establish a goal's constitutional standing
 Construction produces a representation; establishment binds admitted operator meaning, scope, provenance, and boundedness into a goal with standing.
 
 ## Important distinctions
+- establishment assertion != artifact field named established
+- establishment lineage != proof that each upstream producer ran
 - construction != establishment
 - interpreted expression != established goal
 - valid fields != admitted meaning

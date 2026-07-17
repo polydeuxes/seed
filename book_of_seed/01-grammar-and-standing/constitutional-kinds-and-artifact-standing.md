@@ -10,6 +10,8 @@ Which kinds are constitutionally recognized, and what establishes an artifact's 
 An artifact is a preserved representation or record whose fields carry an assertion made by another responsibility. Its shape can preserve identity, provenance, result, uncertainty, and boundaries; it does not supply the warrant for those assertions. Standing depends on the kind-specific production or establishment boundary and its validated inputs. Act, constraint, testimony, constructor, lens, handoff structure, relationship mode, and standing effect describe different dimensions of repository responsibility; road describes a warranted assertion-preserving relationship. They are not mutually exclusive artifact shapes, and a dedicated dataclass or concordance entry does not by itself establish a durable constitutional kind.
 
 ## Important distinctions
+- occurrence evidence may be local to a producing or observing boundary and absent from the resulting artifact
+- represented provenance != verified producer occurrence
 - artifact representation != constitutional standing
 - artifact shape != constitutional kind
 - schema validity != lawful provenance

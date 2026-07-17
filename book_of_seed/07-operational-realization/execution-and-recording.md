@@ -10,6 +10,9 @@ What proves execution occurred, and what exactly may the resulting record claim?
 Execution is the bounded invocation and result boundary. Recording preserves the occurrence, lineage, and output; it does not retroactively authorize the act or automatically extract knowledge from the result.
 
 ## Important distinctions
+- proposal != authorization != invocation != completed execution != recorded execution
+- execution result != execution record
+- provider response != independently verified external effect
 - execution != recording
 - successful result != established fact
 - recorded authorization reference != authority grant
