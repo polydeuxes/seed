@@ -7,7 +7,7 @@ The classification of acts and the artifacts that report, propose, or preserve t
 What establishes that an act occurred rather than that an act-shaped artifact exists?
 
 ## Bounded resolution
-Consumer validation is not producer occurrence: a downstream boundary may lawfully adopt, narrow, revalidate, project, or re-establish from an act artifact without proving that the original act occurred unless its own assertion requires that proof. An act is a bounded responsibility at which something constitutionally occurs: a choice is made, material is admitted, standing is established, or an operation is performed. It consumes the subject plus the warrant and conditions appropriate to that occurrence and produces or preserves an attributed result. An act artifact reports or preserves that assertion; constructing it does not prove the act. Occurrence must be evidenced by the responsible validated function and, for operational acts, the execution or recording boundary. Read-only and non-mutating boundaries prove side-effect limits; they do not by themselves prove that no constitutional occurrence happened. A read-only selector can still perform a bounded selection act, while its artifact remains insufficient unless produced through the responsible validation boundary.
+Consumer validation is not producer occurrence: a downstream boundary may lawfully adopt, narrow, check coherence, project, preserve testimony, or establish a new downstream subject from an act artifact without proving that the original act occurred unless its own assertion requires that proof. An act is a bounded responsibility at which something constitutionally occurs: a choice is made, material is admitted, standing is established, or an operation is performed. It consumes the subject plus the warrant and conditions appropriate to that occurrence and produces or preserves an attributed result. An act artifact reports or preserves that assertion; constructing it does not prove the act. Occurrence must be evidenced by the responsible validated function and, for operational acts, the execution or recording boundary. Read-only and non-mutating boundaries prove side-effect limits; they do not by themselves prove that no constitutional occurrence happened. A read-only selector can still perform a bounded selection act, while its artifact remains insufficient unless produced through the responsible validation boundary.
 
 ## Important distinctions
 - act != artifact describing an act
@@ -16,6 +16,9 @@ Consumer validation is not producer occurrence: a downstream boundary may lawful
 - intent classification != performance
 - read-only/non-mutating != no constitutional occurrence
 - selection artifact != act that produced it
+- consumer act != consumer constraint
+- coherence validated != upstream assertion re-proven
+- establishment of a new downstream subject != re-establishment of the upstream subject
 
 ## Representative repository anchors
 - `seed_runtime/input_inspector.py::InputAct`

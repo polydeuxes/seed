@@ -7,12 +7,14 @@ The support and lineage required to justify claims and explain current beliefs w
 What evidence and provenance are sufficient to explain why Seed holds a claim at a given time?
 
 ## Initial resolution
-Evidence identifies source and collection context; fact support and explanations connect claims to their basis. Explanation exposes reasons and conflicts but does not itself create truth. Explanation projection may reconstruct relationships among preserved artifacts and establish an explanation assertion under its own warrant, while still not establishing that upstream producer acts occurred.
+Evidence identifies source and collection context; fact support and explanations connect claims to their basis. Explanation exposes reasons and conflicts but does not itself create upstream truth. A provenance explanation may read preserved artifacts, reconstruct relationships among them, and make a bounded explanation assertion under its own warrant. That projection or explanation-construction act is not automatically a separate constitutional uptake kind and does not establish that upstream producer acts occurred.
 
 ## Important distinctions
 - evidence != fact
 - explanation != establishment
 - provenance reference != independent support
+- explanation construction != upstream establishment
+- projection act != new constitutional kind automatically
 
 ## Representative repository anchors
 - `seed_runtime/evidence.py::Evidence`
