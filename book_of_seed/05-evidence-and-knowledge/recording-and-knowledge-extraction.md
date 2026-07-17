@@ -7,7 +7,7 @@ The boundary between preserving events or diagnostic output and deriving knowled
 Which explicit process may extract, reconcile, and establish knowledge from a record?
 
 ## Initial resolution
-Recording preserves attributable events and findings. Knowledge extraction is a separate process with normalization, evidence, reconciliation, and standing rules; diagnostic recording should remain scoped to its diagnostic run unless explicitly promoted.
+Recording creates a retrievable representation of attributable events and findings within the preservation horizon supplied by the recorder. Knowledge extraction is a separate process with normalization, evidence, reconciliation, and standing rules; diagnostic recording should remain scoped to its diagnostic run unless explicitly promoted.
 
 ## Important distinctions
 - act occurrence != recording occurrence
@@ -15,7 +15,8 @@ Recording preserves attributable events and findings. Knowledge extraction is a 
 - extraction occurrence != original execution occurrence
 - recording != knowledge extraction
 - event ledger write != cluster mutation
-- durable record != established fact
+- retrievable record != established fact
+- process-local record != cross-restart persistent record
 
 ## Representative repository anchors
 - `seed_runtime/events.py::EventLedger`
