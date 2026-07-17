@@ -1,22 +1,16 @@
-# Book Projection Frontier after Pass 043
+# Book Projection Frontier after Reconciliation 044
 
-This frontier is not a completion declaration. It records the current state after sequential projection passes 015 through 043 so future passes can select another unresolved constitutional pressure without treating this sweep as corpus or Book completion.
+This frontier is not a completion declaration. It records the current state after sequential projection passes 015 through 043 and Fidelity projection reconciliation 044 so future passes can select another unresolved constitutional pressure without treating this sweep as corpus or Book completion.
 
 ## What the Book now preserves from completed passes
 
 Passes 015 through 040 remain incorporated: bounded negative findings and preserved Unknowns; source grammar translation; projection and diagnostic visibility; explicit responsibility transfer; access/capability/use non-promotion; admission as bounded participation; reachability without promotion; temporal and semantic corrections; provider translation ownership no-change; diagnostic shape completeness no-change; question standing distinct from answer standing; governance coordination distinct from universal adjudication; movement distinct from mutation; correlation/sequence distinct from causation; attribution distinct from responsibility; analytical competence distinct from adjudicative authority; lawful realization preserving authority without structural symmetry; observability classification distinct from provenance; constitutional reality as bounded repository-governed standing; inquiry origination requiring bounded translation; constitutional kind labels without ontology closure; bounded competency declaration report-local; producer occurrence not proved by artifact shape; and calculated view evaluation not activity or uptake.
 
-### Pass 041 — Warrant Survival Through Translation
+### Passes 041–043 and Reconciliation 044 — Constitutional Fidelity Grammar
 
-Book change: none. Existing warrant, translation, diagnostic visibility, access/use, artifact reachability, movement/mutation, and lawful-realization clauses already preserve that faithful form change requires warrant survival and that compatibility alone does not prove preservation. Uniform warrant-carrier schemas and translation-audit topology remain report-only.
+Book change after reconciliation: `07.Realization.B` now preserves Fidelity determination as a bounded constitutional act. Passes 041 through 043 collectively recovered a grammar that consumes constitutional authority and implementation realization evidence, examines whether invariants survive translation, handoff, distribution, narrowing, compatibility, or changed form, distinguishes lawful implementation freedom from erasure, invention, mutation, or relocation of authority, and produces a scope-limited qualitative finding of faithful within scope, unfaithful boundary crossing, or Unknown.
 
-### Pass 042 — Consumer Eligibility Is Not Authority Transfer
-
-Book change: none. Existing responsibility-transfer, attribution/responsibility, reachability/no-promotion, question/answer, governance/adjudication, and realization clauses already preserve that boundary-crossing artifacts create bounded consumer eligibility rather than authority relocation. Complete handoff inventories and owner maps remain report-only.
-
-### Pass 043 — Scope-Limited Fidelity Finding
-
-Book change: none. Existing bounded evidence, Unknown, lawful stop, diagnostic visibility, no-promotion, responsibility-transfer, and realization clauses already preserve that a Fidelity determination is scope-limited rather than global certification. Public Fidelity diagnostics, canonical finding schemas, scores, complete inventories, and Fidelity completion declarations remain unsupported.
+The earlier no-change classification for passes 041–043 is superseded. Neighboring safeguards preserved required consequences, but did not expressly identify the determination actor/act, consumed evidence, constitutional question, produced finding, and bounded downstream consumption. Uniform warrant-carrier schemas, translation-audit topology, handoff inventories, public Fidelity diagnostics, canonical finding schemas, scores, runtime engines, complete inventories, and Fidelity completion declarations remain implementation or topology Unknowns.
 
 ## Remaining unresolved families
 
@@ -30,7 +24,7 @@ Future passes may select any unresolved family with independent evidence and a r
 - **Admission-family topology and ratification thresholds** — narrowed by pass 020 but not resolved.
 - **Constitutional-kind closure and artifact grammar formality** — narrowed by passes 021 and 037; exact kind taxonomy, mandatory artifact grammar, and full artifact-family inventory remain unresolved.
 - **Causation topology and legal/adjudicative machinery** — narrowed by passes 029 and 031; causation schemas, causal graphs, legal-source taxonomy, adjudication engines, validity machinery, and legal-advice systems remain report-only or unsupported.
-- **Fidelity and realization topology** — passes 032 and 041–043 preserve authority-preservation, warrant-survival, consumer-eligibility, and scope-limited-finding boundaries, but a Fidelity runtime participant, implementation engine, structural mapping table, complete lawful-realization topology, public diagnostic, canonical finding schema, fidelity score, and completion declaration remain report-only or unsupported.
+- **Constitutional Fidelity grammar and realization topology** — pass 032 preserves authority-preservation without structural symmetry, and reconciliation 044 projects the bounded Fidelity determination grammar recovered by passes 041–043. This constitutional grammar is distinct from Fidelity runtime implementation: a runtime participant, implementation engine, structural mapping table, complete lawful-realization topology, public diagnostic, canonical finding schema, fidelity score, and completion declaration remain report-only or unsupported.
 - **Observability and provenance coverage** — pass 033 preserves standings that do not establish provenance, while mature Constitutional Provenance, full lineage coverage, runtime traces, execution logs, complete observability taxonomy, and reconstruction mechanics remain report-only or unsupported.
 - **Constitutional reality, history, and convergence** — pass 034 preserves bounded repository-governed standing rather than objective reality, while federation/consensus topology, complete memory, canonical constitutional-reality object, future compaction authority, and global convergence remain unresolved.
 - **Bounded competency declaration, producer occurrence, and view-evaluation/activity topology** — passes 038–040 preserve non-promotion boundaries while complete registries, producer seals, occurrence-recording topology, and view/diagnostic occurrence grammar remain unresolved.
@@ -41,4 +35,4 @@ Implementation mechanics, tests, SQLite witnesses, diagnostic registries, shape-
 
 ## Stopping reason
 
-The requested three sequential Fidelity passes 041 through 043 were completed. All three passes made no Book change because the current Book already preserves the relevant constitutional consequences or because the remaining material is topology, schema, public-surface design, scoring, or unsupported completion. This frontier does not declare the corpus, Fidelity, or Book projection complete.
+The requested Fidelity projection reconciliation 044 was completed. It supersedes the previous no-change decision for passes 041 through 043 only at the grammar boundary: Constitutional Fidelity determination is now projected, while runtime implementation, topology, schema, public-surface design, scoring, and completion remain unresolved. This frontier does not declare the corpus, Fidelity, or Book projection complete.
