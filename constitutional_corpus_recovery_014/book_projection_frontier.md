@@ -1,6 +1,6 @@
-# Book Projection Frontier after Pass 021
+# Book Projection Frontier after Pass 025
 
-This frontier is not a completion declaration. It records the state after sequential projection passes 015 through 021 so that future passes can select another unresolved recovered pressure without treating this sweep as corpus or Book completion.
+This frontier is not a completion declaration. It records the state after sequential projection passes 015 through 025 so that future passes can select another unresolved recovered pressure without treating this sweep as corpus or Book completion.
 
 ## Completed passes
 
@@ -32,13 +32,29 @@ Book change: `08.Authority.B — Admission is bounded participation, not ratific
 
 Book change: `01.Standing.A — Reachability without promotion` in `book_of_seed/01-grammar-and-standing/constitutional-kinds-and-artifact-standing.md`. Artifact availability is not canonized as a standalone participant, constitutional kinds are not closed, and mandatory artifact grammar remains unresolved.
 
+### Pass 022 — Temporal-Neutrality Correction
+
+Book correction: backward-looking recovery chronology was removed from Book clauses while preserving the constitutional boundaries recorded by earlier passes. The correction did not reopen the corpus frontier.
+
+### Pass 023 — Ownership Comparison Semantic Correction
+
+Book correction: `book_of_seed/06-state-and-projection/ownership-discrepancy-and-residue.md` now treats comparison as evaluation of ownership claims and exposure of support, discrepancies, or residue, not as establishment of constitutional ownership by itself.
+
+### Pass 024 — Provider Translation Ownership Boundary
+
+No Book change. Provider/source taxonomy and provider-translation ownership remain report-only because the current Book already preserves the source-grammar translation boundary and the corpus still marks complete taxonomy and single-versus-local ownership as unresolved.
+
+### Pass 025 — Diagnostic Shape Completeness Boundary
+
+No Book change. Diagnostic inventory registry format, shape-audit specifications, command-level tests, record-scope proof, mutation-boundary proof, and full operational surface completeness remain operational/report-only. The current Book already preserves diagnostic visibility boundaries without freezing implementation mechanics.
+
 ## Remaining unresolved families
 
 Future passes may select any unresolved family with independent evidence and a resolvable projection boundary. Current candidates include:
 
 - **Questions, Inquiry, Advancement, and Bounded Work** — generally preserved, but exact question-form kinds and inquiry ownership remain unresolved. Future work should avoid promoting prompt vocabulary or presentation labels without implementation evidence.
-- **Provider/source taxonomy and provider-translation ownership** — exposed by pass 016; should not be absorbed into source-grammar translation without independent owner evidence.
-- **Diagnostic recording and shape completeness** — exposed by pass 017; registry mechanics and test obligations remain operational/report-only.
+- **Provider/source taxonomy and provider-translation ownership** — narrowed by passes 016 and 024; should not be absorbed into source-grammar translation without independent owner and taxonomy evidence.
+- **Diagnostic recording and shape completeness** — narrowed by passes 017 and 025; registry mechanics, shape-audit specs, record-scope proof, mutation-boundary proof, and full surface coverage remain operational/report-only.
 - **Governance and complete responsibility owner maps** — exposed by pass 018; a single governance implementation family remains unproven.
 - **Access-transition topology and action/mutation vocabulary** — narrowed by pass 019 but not resolved.
 - **Admission-family topology and ratification thresholds** — narrowed by pass 020 but not resolved.
@@ -46,4 +62,4 @@ Future passes may select any unresolved family with independent evidence and a r
 
 ## Stopping reason
 
-The requested maximum of three sequential passes for sweep 019–021 was completed. Another pass would require a new selection from the remaining frontier and independent evidence review. This frontier does not declare the corpus or Book projection complete.
+The requested maximum of three sequential passes for sweep 023–025 was completed. Pass 023 made a directly warranted semantic correction, while passes 024 and 025 lawfully produced no Book change after evidence review. Another pass would require a new selection from the remaining frontier and independent evidence review. This frontier does not declare the corpus or Book projection complete.

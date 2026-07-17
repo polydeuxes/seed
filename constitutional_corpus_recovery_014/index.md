@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This directory recovers constitutional grammar already present across the wider repository corpus outside `book_of_seed/`. It inventories non-Book evidence, groups independently recurring findings into pressure families, examines each family separately, cross-examines family relationships, and then compares coverage against the current Book. Passes 015–021 include later lawful Book projections where recovered evidence warranted them.
+This directory recovers constitutional grammar already present across the wider repository corpus outside `book_of_seed/`. It inventories non-Book evidence, groups independently recurring findings into pressure families, examines each family separately, cross-examines family relationships, and then compares coverage against the current Book. Passes 015–025 include later lawful Book projections, corrections, and no-change projection decisions where recovered evidence warranted them.
 
 ## Produced artifacts
 
@@ -29,7 +29,10 @@ This directory recovers constitutional grammar already present across the wider 
 - [Recovery pass 019 — Access, Capability, and Use Boundary](corpus_recovery_pass_019_access_capability_use_boundary.md) and [projection pass 019](book_projection_pass_019_access_capability_use_boundary.md) projected the access/capability/use non-promotion boundary.
 - [Recovery pass 020 — Admission and Bounded Participation Boundary](corpus_recovery_pass_020_admission_participation_boundary.md) and [projection pass 020](book_projection_pass_020_admission_participation_boundary.md) projected admission as bounded participation rather than ratification.
 - [Recovery pass 021 — Artifact Reachability Without Promotion](corpus_recovery_pass_021_artifact_reachability_without_promotion.md) and [projection pass 021](book_projection_pass_021_artifact_reachability_without_promotion.md) projected reachability without promotion.
+- [Book semantic correction pass 023 — Ownership Comparison Boundary](book_semantic_correction_pass_023.md) corrected ownership-comparison wording without promoting comparison alone into establishment.
+- [Recovery pass 024 — Provider Translation Ownership Boundary](corpus_recovery_pass_024_provider_translation_ownership_boundary.md) and [projection pass 024](book_projection_pass_024_provider_translation_ownership_boundary.md) kept provider/source taxonomy and translation ownership report-only.
+- [Recovery pass 025 — Diagnostic Shape Completeness Boundary](corpus_recovery_pass_025_diagnostic_shape_completeness_boundary.md) and [projection pass 025](book_projection_pass_025_diagnostic_shape_completeness_boundary.md) kept diagnostic registry and shape-audit mechanics operational/report-only.
 
 ## Recovered corpus summary
 
-The non-Book corpus recovers a constitutional grammar of conservative movement. Evidence may support movement, but authority bounds it. Artifacts may carry findings, but do not become law by existence. Questions bind work, but do not settle outcomes. Access and capability do not authorize use. Observations and provider outputs require translation before evidence. Implementation witnesses prove concrete surfaces, not universal truth. Responsibility and handoff must be explicit. Unknowns remain preserved standing rather than silent falsehood.
+The non-Book corpus recovers a constitutional grammar of conservative movement. Evidence may support movement, but authority bounds it. Artifacts may carry findings, but do not become law by existence. Questions bind work, but do not settle outcomes. Access and capability do not authorize use. Observations and provider outputs require translation before evidence. Implementation witnesses prove concrete surfaces, not universal truth. Responsibility and handoff must be explicit. Unknowns remain preserved standing rather than silent falsehood. Comparison may evaluate ownership claims but does not alone establish constitutional ownership; operational mechanics remain report-only unless independently warranted.

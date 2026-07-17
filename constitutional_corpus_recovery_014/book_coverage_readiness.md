@@ -2,7 +2,7 @@
 
 ## Boundary
 
-This comparison was performed only after the non-Book corpus recovery and family reports were produced. It uses the current `book_of_seed/` as coverage evidence only. The original comparison was coverage-only. Current-state reconciliation after passes 015–021 preserves those historical findings while recognizing later directly warranted Book projections.
+This comparison was performed only after the non-Book corpus recovery and family reports were produced. It uses the current `book_of_seed/` as coverage evidence only. The original comparison was coverage-only. Current-state reconciliation after passes 015–025 preserves those historical findings while recognizing later directly warranted Book projections.
 
 ## Coverage categories
 
@@ -40,10 +40,10 @@ No recovered family is contradicted by the current Book at this coverage level. 
 
 ## Readiness result
 
-The Book appears to preserve the largest stable constitutional distinctions, while several operational, legal-boundary, provider-translation, diagnostic, and owner-map refinements remain partially preserved or report-only. That historical no-change result is superseded by passes 015–021, each of which made only directly warranted Book changes while preserving report-only boundaries.
+The Book appears to preserve the largest stable constitutional distinctions, while several operational, legal-boundary, provider-translation, diagnostic, and owner-map refinements remain partially preserved or report-only. That historical no-change result is superseded by passes 015–025, which made directly warranted Book changes or no-change decisions while preserving report-only boundaries.
 
 
-## Current-state reconciliation after passes 015–021
+## Current-state reconciliation after passes 015–025
 
 The Book is no longer unchanged relative to the original recovery comparison. Passes 015–021 made small canonical projections for bounded negative findings, source-grammar translation, diagnostic/projection visibility, responsibility transfer, access/capability/use boundaries, admission-as-bounded-participation, and artifact reachability-without-promotion.
 
@@ -51,4 +51,11 @@ Historical report-only findings remain preserved where no projection was made: f
 
 ## Current readiness result
 
-The Book now preserves the largest stable distinctions recovered in passes 015–021. Remaining gaps are primarily topology, implementation mechanics, exhaustive inventories, owner maps, provider/source taxonomy, exact admission edges, question-form kinds, inquiry ownership, and kind closure. No declaration of corpus completion is warranted.
+The Book now preserves the largest stable distinctions recovered in passes 015–025. Remaining gaps are primarily topology, implementation mechanics, exhaustive inventories, owner maps, provider/source taxonomy and provider-translation ownership, diagnostic registry and shape-audit mechanics, exact admission edges, question-form kinds, inquiry ownership, and kind closure. No declaration of corpus completion is warranted.
+
+
+## Current-state reconciliation after passes 023–025
+
+Pass 023 corrected a semantic overstatement in the Book's ownership chapter: comparison evaluates ownership claims and can expose support, discrepancies, or residue, but comparison alone does not establish constitutional ownership.
+
+Pass 024 made no Book change because source-grammar translation is already preserved while complete provider/source taxonomy and provider-translation ownership remain report-only. Pass 025 made no Book change because diagnostic visibility boundaries are already preserved while registry format, shape-audit specifications, record-scope proof, mutation-boundary proof, and full operational surface coverage remain operational/report-only.
