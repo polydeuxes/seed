@@ -1,6 +1,6 @@
-# Book Projection Frontier after Pass 050
+# Book Projection Frontier after Pass 053
 
-This frontier is not a completion declaration. It records the current state after sequential projection passes 015 through 050 so future passes can select another unresolved constitutional pressure without treating this sweep as corpus or Book completion.
+This frontier is not a completion declaration. It records the current state after sequential projection passes 015 through 053 so future passes can select another unresolved constitutional pressure without treating this sweep as corpus or Book completion.
 
 ## What the Book now preserves from completed passes
 
@@ -16,11 +16,16 @@ The earlier no-change classification for passes 041–043 is superseded. Neighbo
 
 Pass 048 projected addressability without assimilation: an external representation may be constitutionally addressable as source-attributed material for examination, comparison, quotation, attachment, or translation assessment without becoming Constitutional Grammar. Pass 049 made no Book change because bounded translation was already preserved as limited claim standing rather than source authority transfer. Pass 050 projected that downstream cross-seam consumption must preserve source role or Unknown, provenance or provenance Unknown, source grammar boundary, translated claim and scope when present, uncertainty, confidence limits, authority limits, negative authority, Unknowns, refusal conditions, and any tested-preservation boundary. Complete provider/source taxonomy, source-owner maps, translation-owner maps, canonical envelopes, runtime parsers, provider registries, translation engines, and complete cross-seam topology remain Unknown.
 
+
+### Passes 051–053 — Constitutional Inquiry Frontier
+
+Pass 051 projected that frontier identity is conjunctive and not wording-derived: it requires the exact inquiry need or uncertainty, source and provenance, present movement boundary or consumer-local context, included and excluded scope, available evidence territory, sufficiency and lawful stopping conditions, Unknowns, conflicts, and negative authority. Pass 052 made no Book change because current clauses already preserve possible inquiry as identity-preserved consideration standing rather than admitted inquiry movement. Pass 053 made no Book change because current clauses already preserve scoped stop, refusal, exhaustion, answer, and Unknown standing without erasing neighboring inquiry absent broader authority and evidence. Exact standing vocabulary, universal inquiry ownership, deletion/retirement/reopening authority, multi-frontier topology, and runtime realization remain Unknown.
+
 ## Remaining unresolved families
 
 Future passes may select any unresolved family with independent evidence and a resolvable projection boundary. Current candidates include:
 
-- **Questions, Inquiry, Advancement, and Bounded Work** — question standing and inquiry origination are preserved, but exact question-form kinds, inquiry ownership, deletion/retirement ownership, and broader inquiry topology remain unresolved.
+- **Questions, Inquiry, Advancement, and Bounded Work** — question standing, inquiry origination, conjunctive frontier identity, possible/admitted inquiry separation, and neighbor-preserving lawful stop are preserved, but exact question-form kinds, inquiry ownership, deletion/retirement/reopening authority, complete standing vocabulary, and broader inquiry topology remain unresolved.
 - **Provider/source taxonomy and provider-translation ownership** — narrowed by passes 016, 024, and 048–050; complete taxonomy and owner topology remain unresolved.
 - **Diagnostic recording and shape completeness** — narrowed by passes 017 and 025; registry mechanics, shape-audit specs, record-scope proof, mutation-boundary proof, and full surface coverage remain operational/report-only.
 - **Governance and complete responsibility owner maps** — governance coordination is preserved as distinct from universal adjudication, attribution is distinct from responsibility, and analytical competence is not adjudicative authority, but complete owner maps, exact handoff-form inventory, and implementation topology remain unresolved.
@@ -35,8 +40,8 @@ Future passes may select any unresolved family with independent evidence and a r
 
 ## Report-only material still not promoted
 
-Implementation mechanics, tests, SQLite witnesses, diagnostic registries, shape-audit specifications, runtime traces, execution logs, owner maps, exhaustive taxonomies, provider/source taxonomies, process engines, legal/adjudicative machinery, consensus/federation designs, prompt ontology, inquiry ownership maps, mandatory artifact grammar, bounded competency registry or actor grammar, producer-seal design, occurrence-recording topology, view-evaluation/activity topology, uniform warrant-carrier schemas, handoff eligibility inventories, public Fidelity diagnostics, canonical Fidelity finding schemas, fidelity scores, completion declarations, and speculative constitutional participants remain outside the Book unless independently recovered and warranted.
+Implementation mechanics, tests, SQLite witnesses, diagnostic registries, shape-audit specifications, runtime traces, execution logs, owner maps, exhaustive taxonomies, provider/source taxonomies, process engines, legal/adjudicative machinery, consensus/federation designs, prompt ontology, inquiry standing vocabulary, inquiry ownership maps, mandatory artifact grammar, bounded competency registry or actor grammar, producer-seal design, occurrence-recording topology, view-evaluation/activity topology, uniform warrant-carrier schemas, handoff eligibility inventories, public Fidelity diagnostics, canonical Fidelity finding schemas, fidelity scores, completion declarations, and speculative constitutional participants remain outside the Book unless independently recovered and warranted.
 
 ## Stopping reason
 
-The requested Fidelity topology recovery 045–047 was completed after Fidelity projection reconciliation 044. It supersedes the previous no-change decision for passes 041 through 043 only at the grammar boundary: Constitutional Fidelity determination is now projected, while runtime implementation, topology, schema, public-surface design, scoring, and completion remain unresolved. Passes 045–047 made no Book changes because `07.Realization.B` already preserves their Book-level consequences. This frontier does not declare the corpus, Fidelity, or Book projection complete.
+The requested grammar seam recovery 048–050 was completed after Fidelity projection reconciliation 044 and topology passes 045–047. Pass 048 projected addressability without assimilation, pass 049 preserved translation as limited claim standing without a new Book clause, and pass 050 projected refusal-condition-preserving cross-seam consumption. The stale Fidelity-only stopping reason has been corrected to reflect completion of grammar seam passes 048–050 before inquiry frontier passes 051–053 began. Passes 051–053 then narrowed the inquiry frontier without declaring the corpus, grammar seam, inquiry frontier, or Book projection complete.
