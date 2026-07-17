@@ -15,6 +15,9 @@ An artifact is a preserved representation or record whose fields carry an assert
 ### 01.Standing.A — Reachability without promotion
 A produced, preserved, rendered, indexed, or otherwise reachable artifact may become locally visible to a bounded consumer, observer, diagnostic, projection, or later inquiry without becoming accepted, admitted, relied upon, projected as truth, written to the event ledger, or authorized for mutation. Reachability can create a lawful possibility for a later act, but acceptance, reliance, admission, projection, recording, and operational action remain separate family-local boundaries.
 
+### 01.Standing.B — Constitutional kind labels are not ontology closure
+A kind label, artifact form, characterization category, dataclass name, concordance entry, inventory row, or recurring report type may preserve a bounded standing distinction for the subject and consumer it names. It does not close Seed's constitutional ontology, make all similarly named materials equivalent, establish a mandatory artifact grammar, or supply kind-specific production authority without preserved evidence, provenance, scope, confidence limits, Unknowns, and the applicable establishment boundary.
+
 ## Important distinctions
 - occurrence evidence may be local to a producing or observing boundary and absent from the resulting artifact
 - represented provenance != verified producer occurrence
