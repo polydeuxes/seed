@@ -13,6 +13,8 @@ It is not a roadmap, API reference, generated topology, complete inventory, or s
 
 The first pass deliberately favors concise distinctions over comprehensive prose. The [concordance](concordance.md) is a navigation aid, not an ontology. Cross-cutting questions without a stable chapter home live in [unresolved.md](unresolved.md).
 
+Book numbers are stable citation addresses only. They do not prescribe reading order, dependency order, constitutional sequence, or implementation movement.
+
 ## Maintenance rule
 
 > Maintain the constitutional grammar.  

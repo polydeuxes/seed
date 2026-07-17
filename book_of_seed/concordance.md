@@ -6,6 +6,9 @@ This is a lightweight navigation index. Aliases record repository or presentatio
 |---|---|---|---|---|
 | external grammar | Grammar and Standing | [External and constitutional grammar](01-grammar-and-standing/external-and-constitutional-grammar.md) | candidate external grammar, recovered representation grammar | constitutional grammar, testimony |
 | constitutional kind | Grammar and Standing | [Constitutional kinds and artifact standing](01-grammar-and-standing/constitutional-kinds-and-artifact-standing.md) | kind, constitutional subject | artifact standing, establishment |
+| artifact | Grammar and Standing | [Constitutional kinds and artifact standing](01-grammar-and-standing/constitutional-kinds-and-artifact-standing.md) | record, representation | assertion, standing, provenance |
+| constructor | Grammar and Standing | [Constructors and production authority](01-grammar-and-standing/constructors-and-production-authority.md) | builder, factory | production authority, establishment |
+| lens | Grammar and Standing | [Lenses, views, and constitutional roads](01-grammar-and-standing/lenses-views-and-roads.md) | view, composition, read model | projection, constitutional road |
 | production authority | Grammar and Standing | [Constructors and production authority](01-grammar-and-standing/constructors-and-production-authority.md) | lawful constructor, ingress | standing, authority scope |
 | constitutional road | Grammar and Standing | [Lenses, views, and constitutional roads](01-grammar-and-standing/lenses-views-and-roads.md) | transition, path, active edge | lens, sequence, movement |
 | act | Acts and Constraints | [Acts and act artifacts](02-acts-and-constraints/acts-and-act-artifacts.md) | input act, operation | proposal, execution |
