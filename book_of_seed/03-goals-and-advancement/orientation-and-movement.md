@@ -9,6 +9,11 @@ What additional warrant turns orientation toward a goal into constitutional move
 ## Bounded resolution
 Orientation associates and presents goal dimensions; movement requires a separately warranted transition that changes lawful position or standing.
 
+## Addressable boundaries for movement
+
+### 03.Movement.A — Movement is not mutation
+Constitutional movement is a warranted transition in lawful position, standing, focus, or advancement posture. It may be conceptual, evidentiary, responsibility-bearing, or projection-bound without mutating runtime state, external systems, the event ledger, or cluster truth. Conversely, a runtime write, recorded event, route change, or projected state update is not constitutional movement unless the responsible boundary also preserves the warrant, subject, authority, evidence, and limits for the transition claimed.
+
 ## Important distinctions
 - orientation != movement
 - association != advancement

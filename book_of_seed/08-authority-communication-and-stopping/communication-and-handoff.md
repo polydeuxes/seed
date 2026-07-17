@@ -14,6 +14,9 @@ Communication can carry bounded requests, explanations, and references. Typed va
 ### 08.Handoff.A — Explicit responsibility transfer
 A responsibility, owner, or governance duty may be handed off only through a bounded transfer that preserves the affected subject, current holder where known, receiving holder where known, authority scope, evidence for the transition, and limits that survive the handoff. The transfer may establish local responsibility for the bounded subject, but it must not imply universal authority, silent adoption of upstream assertions, operational approval, implementation ownership, or future repository law merely because a report, operator goal, process surface, or adjacent implementation names a responsible party.
 
+### 08.Handoff.B — Governance coordination is not universal adjudication
+A governance or process surface may preserve responsibility, constraints, review posture, and transfer evidence for a bounded subject. That coordination does not by itself adjudicate truth, own every implementation surface, authorize future movement, settle all owner maps, or become a universal controller. Governance standing remains local to the evidenced duty, subject, authority scope, and surviving limits that the responsible boundary preserves.
+
 ## Important distinctions
 - responsibility != authority
 - handoff != silent transfer
