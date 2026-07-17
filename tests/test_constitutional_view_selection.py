@@ -100,7 +100,10 @@ def test_selected_views_wire_directly_into_existing_composition_contract():
         "constitutional_fidelity",
     )
     assert request.composition_purpose == "compatibility"
+    assert request.bounded_question_id == "bounded-question:composition"
+    assert request.selection_read_only_boundaries == selected.read_only_boundaries
     assert composition.compatibility_answer == "No."
+    assert composition.preserved_selection_uncertainty == selected.selection_uncertainty
     assert composition.request is request
 
 
@@ -126,3 +129,35 @@ def test_selected_views_json_contains_only_selection_artifact_fields():
     assert "contributing_views" not in payload
     assert "bounded_summary" not in payload
     assert "authority_claims" not in payload
+
+
+def test_selection_to_composition_handoff_preserves_uncertainty_without_strengthening():
+    selected = select_constitutional_views(
+        question_projection=ConstitutionalQuestionProjection(
+            bounded_question_id="bounded-question:partial",
+            selection_keys=("process", "missing"),
+            uncertainty=("caller scope remains partial",),
+        ),
+        capability_projections=(
+            ConstitutionalCapabilityProjection(
+                registered_view_name="constitutional_process",
+                capability_keys=("process",),
+            ),
+        ),
+    )
+
+    request = selected_constitutional_views_to_composition_request(selected)
+    composition = build_constitutional_view_composition(request)
+
+    assert request.bounded_question_id == selected.bounded_question_id
+    assert request.selection_uncertainty == (
+        "caller scope remains partial",
+        "unsupported selection key: missing",
+    )
+    assert composition.preserved_selection_uncertainty == request.selection_uncertainty
+    assert "caller scope remains partial" in composition.preserved_unknowns
+    assert "unsupported selection key: missing" in composition.preserved_unknowns
+    assert composition.compatibility_answer == "No."
+    assert composition.read_only is True
+    assert composition.writes_event_ledger is False
+    assert composition.mutates_cluster is False

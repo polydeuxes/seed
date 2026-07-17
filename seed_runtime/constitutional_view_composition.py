@@ -28,14 +28,17 @@ class ConstitutionalViewCompositionRequest:
     """Minimum explicit request for bounded constitutional view composition.
 
     The request owns only explicit registered-view selection, purpose labeling,
-    and output-format intent. It does not select views heuristically, discover
-    evidence, reason at runtime, recover authority, plan, orchestrate, or mutate
-    repository state.
+    output-format intent, and optional upstream selection limits. It does not
+    select views heuristically, discover evidence, reason at runtime, recover
+    authority, plan, orchestrate, or mutate repository state.
     """
 
     requested_views: tuple[str, ...]
     composition_purpose: str
     output_format: CompositionOutputFormat
+    bounded_question_id: str | None = None
+    selection_uncertainty: tuple[str, ...] = ()
+    selection_read_only_boundaries: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -61,6 +64,7 @@ class ConstitutionalViewCompositionArtifact:
     contributing_views: tuple[ConstitutionalContributingView, ...]
     bounded_summary: str
     correlated_existing_evidence: tuple[str, ...]
+    preserved_selection_uncertainty: tuple[str, ...]
     preserved_unknowns: tuple[str, ...]
     preserved_refusals: tuple[str, ...]
     compatibility_answer: str
@@ -82,6 +86,9 @@ def constitutional_view_composition_request(
     requested_views: tuple[str, ...],
     composition_purpose: str = "bounded_explanation",
     output_format: CompositionOutputFormat = "human",
+    bounded_question_id: str | None = None,
+    selection_uncertainty: tuple[str, ...] = (),
+    selection_read_only_boundaries: tuple[str, ...] = (),
 ) -> ConstitutionalViewCompositionRequest:
     """Build the bounded explicit composition request."""
 
@@ -89,6 +96,9 @@ def constitutional_view_composition_request(
         requested_views=tuple(requested_views),
         composition_purpose=composition_purpose,
         output_format=output_format,
+        bounded_question_id=bounded_question_id,
+        selection_uncertainty=tuple(selection_uncertainty),
+        selection_read_only_boundaries=tuple(selection_read_only_boundaries),
     )
 
 
@@ -148,12 +158,15 @@ def build_constitutional_view_composition(
             "discovering evidence, planning, orchestration, or repository mutation."
         ),
         correlated_existing_evidence=tuple(dict.fromkeys(evidence)),
-        preserved_unknowns=tuple(unknowns),
+        preserved_selection_uncertainty=request.selection_uncertainty,
+        preserved_unknowns=tuple((*request.selection_uncertainty, *unknowns)),
         preserved_refusals=tuple(refusals),
         compatibility_answer="No." if all(answer == "No." for answer in compatibility_answers) else "Unknown.",
         read_only_boundaries=(
             "registered constitutional read models only",
             "explicit requested view selection only",
+            "preserve upstream selection uncertainty without resolving it",
+            "preserve bounded question identity only when supplied by handoff",
             "immutable read-only artifacts only",
             "correlate existing evidence only",
             "preserve contributing Unknowns",
@@ -191,6 +204,7 @@ def format_constitutional_view_composition(
         f"Mutates cluster: {str(artifact.mutates_cluster).lower()}",
         f"Purpose: {artifact.request.composition_purpose}",
         f"Requested views: {', '.join(artifact.request.requested_views)}",
+        f"Bounded question id: {artifact.request.bounded_question_id or 'none'}",
         "",
         "Bounded summary",
         "",
@@ -203,6 +217,8 @@ def format_constitutional_view_composition(
         lines.append(f"* {view.name}: {view.cli_flag}; evidence: {', '.join(view.evidence)}")
     lines.extend(["", "Correlated existing evidence", ""])
     lines.extend(f"* {item}" for item in artifact.correlated_existing_evidence)
+    lines.extend(["", "Preserved selection uncertainty", ""])
+    lines.extend(f"* {item}" for item in artifact.preserved_selection_uncertainty)
     lines.extend(["", "Preserved Unknowns", ""])
     lines.extend(f"* {item}" for item in artifact.preserved_unknowns)
     lines.extend(["", "Preserved refusals", ""])
