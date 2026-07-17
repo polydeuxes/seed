@@ -259,10 +259,60 @@ class InMemoryProjectionStore:
 class SQLiteProjectionStore:
     """SQLite-backed ProjectionStore for local CLI state projection caching."""
 
+    _CACHE_TABLES = (
+        "projection_snapshots",
+        "derived_index_snapshots",
+        "state_summary_snapshots",
+    )
+
+    _EXPECTED_CACHE_COLUMNS = {
+        "projection_snapshots": (
+            "workspace_id",
+            "projection_name",
+            "projection_version",
+            "last_event_id",
+            "last_event_created_at",
+            "state_json",
+            "created_at",
+            "artifact_standing",
+            "producer_boundary",
+            "occurrence_evidence_kind",
+            "consumer_limit",
+            "mutates_cluster",
+        ),
+        "derived_index_snapshots": (
+            "workspace_id",
+            "index_name",
+            "index_version",
+            "state_projection_version",
+            "state_last_event_id",
+            "index_json",
+            "created_at",
+        ),
+        "state_summary_snapshots": (
+            "workspace_id",
+            "projection_name",
+            "projection_version",
+            "last_event_id",
+            "state_projection_version",
+            "state_last_event_id",
+            "summary_json",
+            "created_at",
+            "artifact_standing",
+            "source_artifact_standing",
+            "source_producer_boundary",
+            "source_occurrence_evidence_kind",
+            "source_consumer_limit",
+            "consumer_limit",
+            "mutates_cluster",
+        ),
+    }
+
     def __init__(self, database_path: str) -> None:
         self.database_path = database_path
         self._connection = sqlite3.connect(database_path)
         self._connection.row_factory = sqlite3.Row
+        self._reset_incompatible_cache_tables()
         self._connection.execute("""
             CREATE TABLE IF NOT EXISTS projection_snapshots (
                 workspace_id TEXT NOT NULL,
@@ -312,51 +362,32 @@ class SQLiteProjectionStore:
                 PRIMARY KEY (workspace_id, projection_name)
             )
             """)
-        self._ensure_projection_snapshot_boundary_columns()
-        self._ensure_state_summary_boundary_columns()
         self._connection.commit()
 
-    def _ensure_projection_snapshot_boundary_columns(self) -> None:
-        columns = {
-            row[1]
-            for row in self._connection.execute(
-                "PRAGMA table_info(projection_snapshots)"
-            )
+    def _reset_incompatible_cache_tables(self) -> None:
+        incompatible = {
+            table
+            for table in self._CACHE_TABLES
+            if self._cache_table_exists(table)
+            and self._cache_table_columns(table) != self._EXPECTED_CACHE_COLUMNS[table]
         }
-        additions = {
-            "artifact_standing": "TEXT NOT NULL DEFAULT 'legacy_unverified_projection_snapshot'",
-            "producer_boundary": "TEXT NOT NULL DEFAULT 'python_state_projection'",
-            "occurrence_evidence_kind": "TEXT NOT NULL DEFAULT 'snapshot_preservation_only'",
-            "consumer_limit": "TEXT NOT NULL DEFAULT 'read_model_cache_only'",
-            "mutates_cluster": "INTEGER NOT NULL DEFAULT 0",
-        }
-        for name, declaration in additions.items():
-            if name not in columns:
-                self._connection.execute(
-                    f"ALTER TABLE projection_snapshots ADD COLUMN {name} {declaration}"
-                )
+        if "projection_snapshots" in incompatible:
+            incompatible.update(("derived_index_snapshots", "state_summary_snapshots"))
+        for table in self._CACHE_TABLES:
+            if table in incompatible and self._cache_table_exists(table):
+                self._connection.execute(f"DROP TABLE {table}")
 
-    def _ensure_state_summary_boundary_columns(self) -> None:
-        columns = {
-            row[1]
-            for row in self._connection.execute(
-                "PRAGMA table_info(state_summary_snapshots)"
-            )
-        }
-        additions = {
-            "artifact_standing": "TEXT NOT NULL DEFAULT 'legacy_unverified_summary_snapshot'",
-            "source_artifact_standing": "TEXT NOT NULL DEFAULT 'legacy_unverified_projection_snapshot'",
-            "source_producer_boundary": "TEXT NOT NULL DEFAULT 'python_state_projection'",
-            "source_occurrence_evidence_kind": "TEXT NOT NULL DEFAULT 'snapshot_preservation_only'",
-            "source_consumer_limit": "TEXT NOT NULL DEFAULT 'read_model_cache_only'",
-            "consumer_limit": "TEXT NOT NULL DEFAULT 'operator_summary_cache_only'",
-            "mutates_cluster": "INTEGER NOT NULL DEFAULT 0",
-        }
-        for name, declaration in additions.items():
-            if name not in columns:
-                self._connection.execute(
-                    f"ALTER TABLE state_summary_snapshots ADD COLUMN {name} {declaration}"
-                )
+    def _cache_table_exists(self, table: str) -> bool:
+        row = self._connection.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+            (table,),
+        ).fetchone()
+        return row is not None
+
+    def _cache_table_columns(self, table: str) -> tuple[str, ...]:
+        return tuple(
+            row[1] for row in self._connection.execute(f"PRAGMA table_info({table})")
+        )
 
     def load_snapshot(
         self, workspace_id: str, projection_name: str, projection_version: str

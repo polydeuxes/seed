@@ -106,6 +106,10 @@ The admitted corpus repeatedly recovers constitutional grammar around authority 
 | --- | --- | --- |
 | `hybrid_testimony_pass_075_boundary_provenance_audit.md` | Audit of boundary value entry paths | Orientation evidence; no runtime change |
 | `hybrid_testimony_pass_076_state_snapshot_boundary_origin.md` | Seam selection | Selects Python–SQLite state snapshot boundary-origin consumption |
-| `projection_snapshots` legacy migration defaults | Python–SQLite correction 079 | Missing legacy boundary columns are marked `legacy_unverified_projection_snapshot`; rows are rebuildable cache misses, not compatibility truths. |
-| `state_summary_snapshots` legacy migration defaults | Python–SQLite correction 079 | Missing legacy summary/source boundary columns are marked unverified; summary cache misses rather than reusing unsupported legacy rows. |
+| `projection_snapshots` legacy migration defaults | Superseded by Python–SQLite correction 081 | Removed from current implementation standing; incompatible disposable cache schemas are dropped and recreated instead of migrated or interpreted. |
+| `state_summary_snapshots` legacy migration defaults | Superseded by Python–SQLite correction 081 | Removed from current implementation standing; incompatible disposable summary cache schemas are dropped and recreated instead of migrated or interpreted. |
 | `SQLiteProjectionStore.load_derived_index_snapshot` source-boundary gate | Python–SQLite pass 080 | Derived fact-index cache consumption now requires the joined state projection row to remain bounded, read-model-only, and non-mutating. |
+
+## Pass 081 disposable cache reset
+
+- `python_sqlite_correction_pass_081_disposable_cache_reset.md` records that legacy and compatibility cache reuse/migration claims from passes 075–080 are removed. Disposable projection, summary, and derived-index cache tables are reset to the current schema and rebuilt from ledger events when requested; authoritative event data is preserved.
