@@ -7,7 +7,7 @@ The performance of an authorized operation and the separate preservation of what
 What proves execution occurred, and what exactly may the resulting record claim?
 
 ## Initial resolution
-Execution is the bounded invocation and result boundary. Recording preserves the occurrence, lineage, and output; it does not retroactively authorize the act or automatically extract knowledge from the result.
+Execution is the bounded operation-performance and result boundary. In the current repository it is commonly realized by `ToolExecutor.execute(...)` invoking registered Python callables and emitting started/completed/failed events. Constitutionally, the requirement is a warranted execution boundary with observable or recordable result standing, not a local Python call topology. Recording preserves an assertion about occurrence, lineage, and output within its preservation horizon; it does not retroactively authorize the act, independently verify external effects, or automatically extract knowledge from the result.
 
 ## Important distinctions
 - proposal != authorization != invocation != completed execution != recorded execution
