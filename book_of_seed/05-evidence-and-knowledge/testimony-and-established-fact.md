@@ -6,8 +6,8 @@ The boundary between a source's claim or diagnostic finding and a fact with esta
 ## Core question
 Which source, support, reconciliation, and promotion conditions establish a fact?
 
-## Initial resolution
-Observations and specialized testimony preserve attributed claims. Fact standing requires explicit ingestion, support, normalization, and conflict-aware establishment rather than direct attachment of a finding to cluster truth.
+## Bounded resolution
+Observations and specialized testimony preserve attributed claims. Fact standing requires explicit ingestion, support, normalization, and conflict-aware establishment rather than direct attachment of a finding to cluster truth. A consumer may use testimony as a source-relative or premise-relative input for a new local assertion, but coherence checks and copied lineage fields do not turn testimony into established fact or prove the testifying producer occurred.
 
 ## Important distinctions
 - testimony != established fact
