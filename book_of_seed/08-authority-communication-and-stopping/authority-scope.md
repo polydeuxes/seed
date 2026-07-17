@@ -9,6 +9,11 @@ What grants authority for a bounded goal or act, and how is that authority preve
 ## Initial resolution
 Operator expressions and explicit approvals may contribute authority only after interpretation and scope binding. Internal models, selections, records, and provider handoffs cannot create or enlarge that authority.
 
+## Recovered clauses for bounded reliance witnesses
+
+### 08.Authority.A — Bounded reliance without standing expansion
+A downstream consumer may rely on warranted content only for the bounded role, purpose, source or provenance, evidence, authority, scope, confidence or uncertainty, and Unknown boundaries preserved by that warrant. Reliance consumes the warranted content without strengthening its standing, expanding its authority, proving truth or ownership, authorizing implementation, or erasing negative authority. When a completed examination would otherwise invite over-inference, it must preserve both the lawful reliance and the required non-reliance, and must stop where the warrant stops.
+
 ## Important distinctions
 - operator request != unbounded authority
 - scope binding != approval for every act in scope
