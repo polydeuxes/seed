@@ -7,7 +7,7 @@ The boundary between choosing a candidate for consideration and granting authori
 Which selections are merely epistemic or attentional, and which later warrant can authorize action?
 
 ## Initial resolution
-Selection narrows a bounded candidate set and records a basis. It does not itself grant operator, policy, approval, or execution authority. Representation selection chooses views or other representations for one consumer purpose; consideration selection chooses an already-established subject for bounded focus. A consideration selection may change focus standing for that subject without selecting a resolution, route, realization, inquiry opening, or authorization.
+Selection narrows a bounded candidate set and records a basis. It does not itself grant operator, policy, approval, or execution authority. Representation selection chooses views or other representations for one consumer purpose; consideration selection chooses an already-established subject for bounded focus. A consideration selection may establish bounded selection standing or focus standing for that subject without selecting a resolution, route, realization, inquiry opening, or authorization. That selection standing is a bounded effect of the local road, not reusable authorization standing.
 
 ## Important distinctions
 - selection != authorization
@@ -15,6 +15,8 @@ Selection narrows a bounded candidate set and records a basis. It does not itsel
 - selected advancement need != priority, route, inquiry opening, or realization
 - representation selection != consideration selection automatically
 - closed choice binding != execution approval
+- selection standing != authorization standing
+- representation standing != focus standing
 
 ## Representative repository anchors
 - `seed_runtime/advancement_need_consideration_selection.py`

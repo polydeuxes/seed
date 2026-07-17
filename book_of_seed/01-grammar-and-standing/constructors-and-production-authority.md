@@ -26,6 +26,7 @@ A constructor consumes values or representations and produces another representa
 - Treating every exported helper as a canonical ingress.
 - Bypassing an admission boundary because the target model can be instantiated directly.
 - Treating a dataclass instance returned by an arbitrary caller as proof that the named selection or establishment occurred.
+- Treating a directly constructed selection artifact as proof that the producer selected from the same candidate universe the consumer later receives.
 
 ## Related chapters
 - [Constitutional kinds and artifact standing](constitutional-kinds-and-artifact-standing.md)
