@@ -18,6 +18,9 @@ A bounded examination responsibility may treat recorded material as relevant onl
 ### 04.Examination.B — Positive lawful inactivity
 When recorded material is irrelevant, unsupported, insufficiently bound, or outside authority, lawful inactivity is a positive examination result rather than an absent result. The examination must preserve the distinguishable reason where the available material supports a reason, and must preserve unknown when the material is not bound enough to decide relevance.
 
+### 04.Examination.C — Cross-examination without source-local erasure
+Cross-examination may compare independently preserved testimony or findings only while preserving each input's attribution, provenance, support basis, subject, scope, authority, confidence or uncertainty, Unknowns, standing, and forbidden inferences. The produced standing is bounded comparison standing: agreement, disagreement, contradiction, conflict, refinement, insufficiency, or Unknown inside the comparison boundary. The forbidden inference is truth establishment, warrant, reliance, source independence, implementation permission, or reconciliation merely because material agrees, contradicts, repeats, or can be compared.
+
 ## Important distinctions
 - method applicability != method selection
 - probe request != probe execution
