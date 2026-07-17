@@ -110,3 +110,7 @@ The non-Book corpus recovers a constitutional grammar of conservative movement. 
 - [Pass 082 — Orientation](python_sqlite_frontier_pass_082_orientation.md) maps remaining Python–SQLite pressures and classifies derived fact-index boundary testimony as the smallest unresolved concrete handoff.
 - [Pass 083 — Derived fact-index boundary](python_sqlite_frontier_pass_083_derived_fact_index_boundary.md) selects the Python fact-index producer → SQLite `derived_index_snapshots` row → Python cache consumer seam and stops neighboring candidates.
 - [Pass 084 — Derived fact-index boundary implementation](python_sqlite_frontier_pass_084_derived_fact_index_boundary.md) implements derived-index boundary testimony and consumer gating without changing ledger authority or public payload behavior.
+
+- [Question graph pass 087 — whole-graph recovery](question_graph_pass_087_whole_graph_recovery.md) recovered the present constitutional question graph across inquiry, Unknown, frontier, examination, answer, completion, communication, and re-entry terrain.
+- [Question graph pass 088 — Book comparison and projection decision](question_graph_pass_088_book_comparison_projection.md) compared graph coverage against current Book clauses and projected the smallest warranted Book amendment.
+- [Question graph pass 089 — current-state graph artifact](question_graph_pass_089_current_state.md) preserves a self-contained current-state graph with node/edge coverage, adjacency, refusal, historical, disconnected, and Unknown boundaries.
