@@ -2,7 +2,7 @@
 
 ## Boundary
 
-This comparison was performed only after the non-Book corpus recovery and family reports were produced. It uses the current `book_of_seed/` as coverage evidence only. The original comparison was coverage-only. Current-state reconciliation after passes 015–025 preserves those historical findings while recognizing later directly warranted Book projections.
+This comparison was performed only after the non-Book corpus recovery and family reports were produced. It uses the current `book_of_seed/` as coverage evidence only. The original comparison was coverage-only. Current-state reconciliation after passes 015–028 preserves those historical findings while recognizing later directly warranted Book projections.
 
 ## Coverage categories
 
@@ -11,11 +11,11 @@ This comparison was performed only after the non-Book corpus recovery and family
 | Authority, Reliance, Warrant, and Admission | Adequately preserved after pass 020 | Earlier coverage preserved authority, warrants, refusal, and stopping while admission edges remained compressed. Pass 020 projected admission as bounded participation rather than truth, ratification, implementation authority, mutation authority, or reusable approval. Exact admission-family topology remains report-only. |
 | Evidence, Unknown, Absence, and Boundary-Claim | Partially preserved after pass 015 | Pass 015 projected bounded negative findings and preserved Unknowns. Absence-of-evidence checklists, full Unknown taxonomy, and legal/adjudicative boundary mechanics remain report-only. |
 | Artifact Grammar, Kind, Standing, and Availability | Adequately preserved after pass 021 | Earlier coverage preserved artifact standing while availability details remained compressed. Pass 021 projected reachability without promotion: visible, produced, rendered, indexed, or preserved artifacts do not thereby become accepted, admitted, relied upon, projected as truth, ledger-recorded, or mutation-authorized. Kind closure remains unresolved. |
-| Questions, Inquiry, Advancement, and Bounded Work | Adequately preserved | Questions/inquiry, inquiry frontiers, examination methods, needs/opened movement, and selection/authorization appear to preserve the main distinctions. |
-| Acts, Movement, Access, Capability, and Constraint | Adequately preserved after pass 019 | Earlier coverage preserved plural acts, constraints, movement, capability, and execution while access-state specifics remained compressed. Pass 019 projected that access state, route visibility, availability, capability candidates, catalog entries, and projected capability do not authorize use, execution, mutation, ledger admission, or reliance beyond warrant. Exact access-transition topology remains report-only. |
+| Questions, Inquiry, Advancement, and Bounded Work | Adequately preserved | Questions/inquiry, inquiry frontiers, examination methods, needs/opened movement, and selection/authorization preserve the main distinctions after pass 026, including that question standing is not answer standing. Exact question-form kinds and inquiry ownership remain report-only. |
+| Acts, Movement, Access, Capability, and Constraint | Adequately preserved after pass 019 | Earlier coverage preserved plural acts, constraints, movement, capability, and execution while access-state specifics remained compressed. Pass 019 projected that access state, route visibility, availability, capability candidates, catalog entries, and projected capability do not authorize use, execution, mutation, ledger admission, or reliance beyond warrant. Exact access-transition topology remains report-only. Pass 028 projected movement as distinct from mutation without promoting a general action/mutation architecture. |
 | Observation, Provider Translation, and External Source | Partially preserved after pass 016 | Pass 016 projected the source-grammar translation boundary. Complete provider/source taxonomy, provider-language translation ownership, and external attachment details remain report-only. |
 | Implementation Visibility, Readiness, Projection, and Diagnostic | Partially preserved after pass 017 | Pass 017 projected the projection/diagnostic visibility boundary. Diagnostic inventory registry format, shape-audit specs, record-scope tests, mutation-boundary tests, and read-model owner maps remain operational evidence or report-only. |
-| Responsibility, Governance, Ownership, and Handoff | Partially preserved after pass 018 | Pass 018 projected explicit responsibility transfer. Complete owner maps, governance implementation topology, exact handoff-form inventory, and operator-specific advancement mechanics remain report-only. |
+| Responsibility, Governance, Ownership, and Handoff | Partially preserved after pass 018 | Pass 018 projected explicit responsibility transfer. Pass 027 projected governance coordination as bounded responsibility/constraint coordination rather than universal adjudication. Complete owner maps, governance implementation topology, exact handoff-form inventory, and operator-specific advancement mechanics remain report-only. |
 
 ## Report-only findings
 
@@ -40,10 +40,10 @@ No recovered family is contradicted by the current Book at this coverage level. 
 
 ## Readiness result
 
-The Book appears to preserve the largest stable constitutional distinctions, while several operational, legal-boundary, provider-translation, diagnostic, and owner-map refinements remain partially preserved or report-only. That historical no-change result is superseded by passes 015–025, which made directly warranted Book changes or no-change decisions while preserving report-only boundaries.
+The Book appears to preserve the largest stable constitutional distinctions, while several operational, legal-boundary, provider-translation, diagnostic, and owner-map refinements remain partially preserved or report-only. That historical no-change result is superseded by passes 015–028, which made directly warranted Book changes or no-change decisions while preserving report-only boundaries.
 
 
-## Current-state reconciliation after passes 015–025
+## Current-state reconciliation after passes 015–028
 
 The Book is no longer unchanged relative to the original recovery comparison. Passes 015–021 made small canonical projections for bounded negative findings, source-grammar translation, diagnostic/projection visibility, responsibility transfer, access/capability/use boundaries, admission-as-bounded-participation, and artifact reachability-without-promotion.
 
@@ -51,7 +51,7 @@ Historical report-only findings remain preserved where no projection was made: f
 
 ## Current readiness result
 
-The Book now preserves the largest stable distinctions recovered in passes 015–025. Remaining gaps are primarily topology, implementation mechanics, exhaustive inventories, owner maps, provider/source taxonomy and provider-translation ownership, diagnostic registry and shape-audit mechanics, exact admission edges, question-form kinds, inquiry ownership, and kind closure. No declaration of corpus completion is warranted.
+The Book now preserves the largest stable distinctions recovered in passes 015–028. Remaining gaps are primarily topology, implementation mechanics, exhaustive inventories, owner maps, provider/source taxonomy and provider-translation ownership, diagnostic registry and shape-audit mechanics, exact admission edges, question-form kinds, inquiry ownership, and kind closure. No declaration of corpus completion is warranted.
 
 
 ## Current-state reconciliation after passes 023–025
@@ -59,3 +59,9 @@ The Book now preserves the largest stable distinctions recovered in passes 015�
 Pass 023 corrected a semantic overstatement in the Book's ownership chapter: comparison evaluates ownership claims and can expose support, discrepancies, or residue, but comparison alone does not establish constitutional ownership.
 
 Pass 024 made no Book change because source-grammar translation is already preserved while complete provider/source taxonomy and provider-translation ownership remain report-only. Pass 025 made no Book change because diagnostic visibility boundaries are already preserved while registry format, shape-audit specifications, record-scope proof, mutation-boundary proof, and full operational surface coverage remain operational/report-only.
+
+## Current-state reconciliation after passes 026–028
+
+Pass 026 projected the bounded-question boundary: question standing can organize inquiry without establishing answer standing, selection, authorization, or repository knowledge. Pass 027 projected the governance boundary: governance or process surfaces coordinate bounded responsibility and constraints without becoming universal adjudicators, complete owner maps, or implementation owners. Pass 028 projected the movement/mutation boundary: movement is a warranted constitutional transition and is not identical to runtime mutation, event recording, route change, or projected state update.
+
+The remaining gaps continue to be topology, implementation mechanics, exhaustive inventories, complete owner maps, provider/source taxonomy, provider-translation ownership, diagnostic registry and shape-audit mechanics, exact admission edges, exact question-form kinds, inquiry ownership, general action/mutation architecture, and kind closure. No declaration of corpus completion is warranted.

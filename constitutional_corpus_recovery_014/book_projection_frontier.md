@@ -1,6 +1,6 @@
-# Book Projection Frontier after Pass 025
+# Book Projection Frontier after Pass 028
 
-This frontier is not a completion declaration. It records the state after sequential projection passes 015 through 025 so that future passes can select another unresolved recovered pressure without treating this sweep as corpus or Book completion.
+This frontier is not a completion declaration. It records the state after sequential projection passes 015 through 028 so that future passes can select another unresolved recovered pressure without treating this sweep as corpus or Book completion.
 
 ## Completed passes
 
@@ -48,18 +48,34 @@ No Book change. Provider/source taxonomy and provider-translation ownership rema
 
 No Book change. Diagnostic inventory registry format, shape-audit specifications, command-level tests, record-scope proof, mutation-boundary proof, and full operational surface completeness remain operational/report-only. The current Book already preserves diagnostic visibility boundaries without freezing implementation mechanics.
 
+### Pass 026 — Question Standing and Answer Boundary
+
+Book change: `04.Question.A — Question standing is not answer standing` in `book_of_seed/04-inquiry-and-examination/questions-and-inquiry.md`. Exact question-form kinds, complete inquiry ownership, frontier implementation mechanics, and question surface inventories remain report-only.
+
+### Pass 027 — Governance Coordination Boundary
+
+Book change: `08.Handoff.B — Governance coordination is not universal adjudication` in `book_of_seed/08-authority-communication-and-stopping/communication-and-handoff.md`. Complete owner maps, governance implementation topology, exact handoff-form inventory, and operator-specific advancement mechanics remain report-only.
+
+### Pass 028 — Movement and Mutation Boundary
+
+Book change: `03.Movement.A — Movement is not mutation` in `book_of_seed/03-goals-and-advancement/orientation-and-movement.md`. General action/mutation architecture, exact access-transition topology, exhaustive act inventory, and runtime implementation mechanics remain report-only.
+
+## Screened pressures during sweep 026–028
+
+No pressure was screened without a completed pass during this sweep. The selected pressures each produced independent evidence and a direct projection boundary.
+
 ## Remaining unresolved families
 
 Future passes may select any unresolved family with independent evidence and a resolvable projection boundary. Current candidates include:
 
-- **Questions, Inquiry, Advancement, and Bounded Work** — generally preserved, but exact question-form kinds and inquiry ownership remain unresolved. Future work should avoid promoting prompt vocabulary or presentation labels without implementation evidence.
+- **Questions, Inquiry, Advancement, and Bounded Work** — question standing is now preserved as distinct from answer standing, but exact question-form kinds, inquiry ownership, and deletion/retirement ownership remain unresolved. Future work should avoid promoting prompt vocabulary or presentation labels without implementation evidence.
 - **Provider/source taxonomy and provider-translation ownership** — narrowed by passes 016 and 024; should not be absorbed into source-grammar translation without independent owner and taxonomy evidence.
 - **Diagnostic recording and shape completeness** — narrowed by passes 017 and 025; registry mechanics, shape-audit specs, record-scope proof, mutation-boundary proof, and full surface coverage remain operational/report-only.
-- **Governance and complete responsibility owner maps** — exposed by pass 018; a single governance implementation family remains unproven.
-- **Access-transition topology and action/mutation vocabulary** — narrowed by pass 019 but not resolved.
+- **Governance and complete responsibility owner maps** — governance coordination is now preserved as distinct from universal adjudication, but complete owner maps, exact handoff-form inventory, and implementation topology remain unresolved.
+- **Access-transition topology and action/mutation vocabulary** — narrowed by passes 019 and 028; movement/mutation separation is preserved, but general action/mutation architecture and exact access-transition topology remain unresolved.
 - **Admission-family topology and ratification thresholds** — narrowed by pass 020 but not resolved.
 - **Constitutional-kind closure and artifact grammar formality** — narrowed by pass 021 but not resolved.
 
 ## Stopping reason
 
-The requested maximum of three sequential passes for sweep 023–025 was completed. Pass 023 made a directly warranted semantic correction, while passes 024 and 025 lawfully produced no Book change after evidence review. Another pass would require a new selection from the remaining frontier and independent evidence review. This frontier does not declare the corpus or Book projection complete.
+The requested maximum of three sequential passes for sweep 026–028 was completed. Passes 026, 027, and 028 each made a directly warranted Book projection while preserving unresolved topology, implementation mechanics, exhaustive inventories, owner maps, and immature vocabularies as report-only. Another pass would require a new selection from the remaining frontier and independent evidence review. This frontier does not declare the corpus or Book projection complete.

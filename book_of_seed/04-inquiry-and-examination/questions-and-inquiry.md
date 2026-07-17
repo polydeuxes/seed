@@ -9,6 +9,11 @@ What makes a question constitutionally admissible and connected to an establishe
 ## Bounded resolution
 Question-shaped text is not automatically a constitutional inquiry. Bounded questions require identity, provenance, and an admissible relationship to the concern under examination.
 
+## Addressable boundaries for question standing
+
+### 04.Question.A — Question standing is not answer standing
+A bounded question may establish the identity, provenance, scope, evidence demand, and lawful stop conditions for an inquiry posture, but it does not establish the answer, select the outcome, authorize unbounded investigation, or convert the operator's wording into repository knowledge. Reformulation, frontier membership, or advancement need may carry the question forward only within preserved evidence, authority, uncertainty, and negative-authority limits.
+
 ## Important distinctions
 - question surface != inquiry standing
 - uncertainty statement != inquiry origination
