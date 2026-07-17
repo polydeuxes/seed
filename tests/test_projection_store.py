@@ -982,7 +982,31 @@ def test_projection_snapshot_rehydration_does_not_claim_new_event_occurrence(tmp
         ledger.close()
 
 
-def test_sqlite_projection_snapshot_boundary_columns_migrate_existing_cache(tmp_path):
+def test_sqlite_current_cache_schema_remains_usable(tmp_path):
+    db_path = tmp_path / "cache.sqlite"
+    ledger = SQLiteEventLedger(str(db_path))
+    event = _append_fact(ledger, "ws", "fact_one", "docker")
+    store = SQLiteProjectionStore(str(db_path))
+    try:
+        first_state, first_status = project_state_with_cache(ledger, "ws", store)
+        second_state, second_status = project_state_with_cache(ledger, "ws", store)
+        snapshot = store.load_snapshot(
+            "ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION
+        )
+    finally:
+        store.close()
+        ledger.close()
+
+    assert first_status.cache_hit is False
+    assert second_status.cache_hit is True
+    assert first_state.get_best_fact("svc", "runtime").value == "docker"
+    assert second_state.get_best_fact("svc", "runtime").value == "docker"
+    assert snapshot is not None
+    assert snapshot.last_event_id == event.id
+    assert snapshot.boundary == ProjectionSnapshotBoundary()
+
+
+def test_sqlite_incompatible_projection_cache_schema_is_replaced_not_interpreted(tmp_path):
     db_path = tmp_path / "cache.sqlite"
     with sqlite3.connect(db_path) as connection:
         connection.execute("""
@@ -998,12 +1022,7 @@ def test_sqlite_projection_snapshot_boundary_columns_migrate_existing_cache(tmp_
             )
             """)
         connection.execute(
-            """
-            INSERT INTO projection_snapshots (
-                workspace_id, projection_name, projection_version, last_event_id,
-                last_event_created_at, state_json, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
+            "INSERT INTO projection_snapshots VALUES (?, ?, ?, ?, ?, ?, ?)",
             (
                 "ws",
                 STATE_PROJECTION_NAME,
@@ -1017,21 +1036,22 @@ def test_sqlite_projection_snapshot_boundary_columns_migrate_existing_cache(tmp_
 
     store = SQLiteProjectionStore(str(db_path))
     try:
-        snapshot = store.load_snapshot(
-            "ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION
+        assert (
+            store.load_snapshot("ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION)
+            is None
         )
-        assert snapshot is not None
-        assert snapshot.boundary.artifact_standing == "legacy_unverified_projection_snapshot"
-        assert not __import__(
-            "seed_runtime.projection_store", fromlist=["projection_snapshot_is_eligible_for_state_cache"]
-        ).projection_snapshot_is_eligible_for_state_cache(snapshot)
         with sqlite3.connect(db_path) as connection:
-            columns = {
+            columns = tuple(
                 row[1]
                 for row in connection.execute("PRAGMA table_info(projection_snapshots)")
-            }
-        assert "artifact_standing" in columns
-        assert "mutates_cluster" in columns
+            )
+            row_count = connection.execute(
+                "SELECT COUNT(*) FROM projection_snapshots"
+            ).fetchone()[0]
+        assert columns == SQLiteProjectionStore._EXPECTED_CACHE_COLUMNS[
+            "projection_snapshots"
+        ]
+        assert row_count == 0
     finally:
         store.close()
 
@@ -1175,22 +1195,15 @@ def test_sqlite_summary_cache_preserves_source_limits_and_rejects_mismatch(tmp_p
         ledger.close()
 
 
-def test_sqlite_summary_legacy_rows_are_safely_invalidated(tmp_path):
+def test_sqlite_incompatible_summary_schema_is_replaced_and_recovers(tmp_path):
     from seed_runtime.projection_store import (
         STATE_SUMMARY_PROJECTION_NAME,
         STATE_SUMMARY_PROJECTION_VERSION,
+        SummaryProjectionSnapshot,
     )
 
-    db_path = tmp_path / "legacy-summary.sqlite"
+    db_path = tmp_path / "summary-reset.sqlite"
     with sqlite3.connect(db_path) as connection:
-        connection.execute("""
-            CREATE TABLE projection_snapshots (
-                workspace_id TEXT NOT NULL, projection_name TEXT NOT NULL,
-                projection_version TEXT NOT NULL, last_event_id TEXT,
-                last_event_created_at TEXT, state_json TEXT NOT NULL,
-                created_at TEXT NOT NULL, PRIMARY KEY (workspace_id, projection_name)
-            )
-            """)
         connection.execute("""
             CREATE TABLE state_summary_snapshots (
                 workspace_id TEXT NOT NULL, projection_name TEXT NOT NULL,
@@ -1200,18 +1213,6 @@ def test_sqlite_summary_legacy_rows_are_safely_invalidated(tmp_path):
                 PRIMARY KEY (workspace_id, projection_name)
             )
             """)
-        connection.execute(
-            "INSERT INTO projection_snapshots VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (
-                "ws",
-                STATE_PROJECTION_NAME,
-                STATE_PROJECTION_VERSION,
-                None,
-                None,
-                '{"workspace_id":"ws"}',
-                datetime.now(timezone.utc).isoformat(),
-            ),
-        )
         connection.execute(
             "INSERT INTO state_summary_snapshots VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             (
@@ -1225,21 +1226,45 @@ def test_sqlite_summary_legacy_rows_are_safely_invalidated(tmp_path):
                 datetime.now(timezone.utc).isoformat(),
             ),
         )
+
+    ledger = SQLiteEventLedger(str(db_path))
+    event = _append_fact(ledger, "ws", "fact_one", "docker")
+    before = ledger.list_events("ws")
     store = SQLiteProjectionStore(str(db_path))
     try:
-        assert store.load_summary_snapshot(
+        state, status = project_state_with_cache(ledger, "ws", store)
+        store.save_summary_snapshot(
+            SummaryProjectionSnapshot(
+                workspace_id="ws",
+                projection_name=STATE_SUMMARY_PROJECTION_NAME,
+                projection_version=STATE_SUMMARY_PROJECTION_VERSION,
+                last_event_id=event.id,
+                state_projection_version=STATE_PROJECTION_VERSION,
+                state_last_event_id=event.id,
+                summary_payload={"operator_summary": {"runtime": state.get_best_fact("svc", "runtime").value}},
+                created_at=datetime.now(timezone.utc),
+            )
+        )
+        recovered = store.load_summary_snapshot(
             "ws",
             STATE_SUMMARY_PROJECTION_NAME,
             STATE_SUMMARY_PROJECTION_VERSION,
             state_projection_version=STATE_PROJECTION_VERSION,
-            state_last_event_id=None,
-        ) is None
+            state_last_event_id=event.id,
+        )
     finally:
         store.close()
+        after = ledger.list_events("ws")
+        ledger.close()
+
+    assert status.cache_hit is False
+    assert recovered is not None
+    assert recovered.summary_payload == {"operator_summary": {"runtime": "docker"}}
+    assert [item.id for item in after] == [item.id for item in before]
 
 
-def test_sqlite_legacy_projection_rows_are_rebuilt_instead_of_reused(tmp_path):
-    db_path = tmp_path / "legacy-invalidation.sqlite"
+def test_sqlite_incompatible_projection_schema_is_rebuilt_from_surviving_ledger(tmp_path):
+    db_path = tmp_path / "projection-reset.sqlite"
     with sqlite3.connect(db_path) as connection:
         connection.execute("""
             CREATE TABLE projection_snapshots (
@@ -1271,7 +1296,6 @@ def test_sqlite_legacy_projection_rows_are_rebuilt_instead_of_reused(tmp_path):
     before = ledger.list_events("ws")
     store = SQLiteProjectionStore(str(db_path))
     try:
-        migrated = store.load_snapshot("ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION)
         projector = CountingProjector(ledger)
         state, status = project_state_with_cache(ledger, "ws", store, projector=projector)
         rebuilt = store.load_snapshot("ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION)
@@ -1283,8 +1307,6 @@ def test_sqlite_legacy_projection_rows_are_rebuilt_instead_of_reused(tmp_path):
         after = ledger.list_events("ws")
         ledger.close()
 
-    assert migrated is not None
-    assert migrated.boundary.artifact_standing == "legacy_unverified_projection_snapshot"
     assert status.cache_hit is False
     assert projector.calls == 1
     assert state.get_best_fact("svc", "runtime").value == "docker"
@@ -1293,6 +1315,71 @@ def test_sqlite_legacy_projection_rows_are_rebuilt_instead_of_reused(tmp_path):
     assert rebuilt.boundary == ProjectionSnapshotBoundary()
     assert rebuilt.last_event_id == event.id
     assert derived_rows == 0
+
+
+def test_sqlite_incompatible_derived_index_schema_is_replaced_and_recovers(tmp_path):
+    from seed_runtime.projection_store import (
+        DerivedIndexSnapshot,
+        FACT_INDEX_NAME,
+        FACT_INDEX_VERSION,
+    )
+
+    db_path = tmp_path / "derived-reset.sqlite"
+    with sqlite3.connect(db_path) as connection:
+        connection.execute("""
+            CREATE TABLE derived_index_snapshots (
+                workspace_id TEXT NOT NULL,
+                index_name TEXT NOT NULL,
+                index_version TEXT NOT NULL,
+                index_json TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                PRIMARY KEY (workspace_id, index_name)
+            )
+            """)
+        connection.execute(
+            "INSERT INTO derived_index_snapshots VALUES (?, ?, ?, ?, ?)",
+            (
+                "ws",
+                FACT_INDEX_NAME,
+                FACT_INDEX_VERSION,
+                '{"svc": {"runtime": ["old"]}}',
+                datetime.now(timezone.utc).isoformat(),
+            ),
+        )
+
+    ledger = SQLiteEventLedger(str(db_path))
+    event = _append_fact(ledger, "ws", "fact_one", "docker")
+    before = ledger.list_events("ws")
+    store = SQLiteProjectionStore(str(db_path))
+    try:
+        state, status = project_state_with_cache(ledger, "ws", store)
+        store.save_derived_index_snapshot(
+            DerivedIndexSnapshot(
+                workspace_id="ws",
+                index_name=FACT_INDEX_NAME,
+                index_version=FACT_INDEX_VERSION,
+                state_projection_version=STATE_PROJECTION_VERSION,
+                state_last_event_id=event.id,
+                index_payload={"svc": {"runtime": [state.get_best_fact("svc", "runtime").id]}},
+                created_at=datetime.now(timezone.utc),
+            )
+        )
+        recovered = store.load_derived_index_snapshot(
+            "ws",
+            FACT_INDEX_NAME,
+            FACT_INDEX_VERSION,
+            state_projection_version=STATE_PROJECTION_VERSION,
+            state_last_event_id=event.id,
+        )
+    finally:
+        store.close()
+        after = ledger.list_events("ws")
+        ledger.close()
+
+    assert status.cache_hit is False
+    assert recovered is not None
+    assert recovered.index_payload == {"svc": {"runtime": ["fact_one"]}}
+    assert [item.id for item in after] == [item.id for item in before]
 
 
 def test_matching_boundary_strings_remain_eligible_without_origin_requirement(tmp_path):

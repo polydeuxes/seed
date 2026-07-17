@@ -180,4 +180,8 @@ No Book change is warranted. The implementation recovered a cache-local realizat
 
 ## Correction 078–080 readiness note
 
-No Book change is warranted. The correction is implementation-local: legacy cache reuse was unsupported and has been narrowed to safe invalidation/rebuild, while fact-index source-boundary gating preserves existing realization-neutral limits that read-model caches do not strengthen source standing.
+No Book change is warranted. Pass 081 removes legacy and compatibility cache standing from current implementation authority: incompatible disposable cache schemas are reset and rebuilt from ledger evidence rather than invalidated through migration interpretation, while read-model caches still do not strengthen source standing.
+
+## Pass 081 readiness update
+
+No Book projection is warranted. The correction is an implementation-backed cache authority boundary: disposable read-model caches no longer carry legacy or compatibility standing, while the event ledger remains authoritative.

@@ -102,3 +102,5 @@ The non-Book corpus recovers a constitutional grammar of conservative movement. 
 - [Python–SQLite correction pass 078 — Compatibility assumption audit](python_sqlite_correction_pass_078_compatibility_audit.md) classified cache-compatibility obligations and found legacy cache reuse unsupported.
 - [Python–SQLite correction pass 079 — Legacy cache invalidation](python_sqlite_correction_pass_079_legacy_cache_invalidation.md) removed testimony-origin machinery and made migrated legacy cache rows safe misses/rebuilds.
 - [Python–SQLite realization pass 080 — Fact-index source boundary](python_sqlite_realization_pass_080_fact_index_source_boundary.md) recovered source-boundary gating for SQLite-derived fact-index cache consumption.
+
+- [Correction pass 081 — Disposable Cache Reset](python_sqlite_correction_pass_081_disposable_cache_reset.md) removes legacy and compatibility cache standing from SQLite disposable read-model caches; incompatible cache schemas are dropped, recreated, and rebuilt from the authoritative event ledger when requested.

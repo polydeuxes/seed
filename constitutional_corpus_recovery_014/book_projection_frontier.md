@@ -102,8 +102,8 @@ Passes 072–074 did not resume generic Book expansion. They narrowed the Python
 
 ## Hybrid boundary testimony frontier after passes 075–077
 
-Passes 075–077 did not resume generic Book expansion. They narrowed the Python–SQLite implementation frontier by separating producer-recorded cache testimony from migration-inferred compatibility and by making Python cache consumers apply bounded eligibility rather than row-existence acceptance. Remaining frontier pressure includes complete provenance compression for other caches, derived-index source-limit pressure, diagnostic visibility for richer rejection reasons, and production witness-to-runtime consumption maps.
+Pass 081 supersedes the pass 075–077 cache-compatibility frontier. Migration-inferred compatibility is not current standing for disposable caches; incompatible schemas are reset and rebuilt from the authoritative ledger. Remaining frontier pressure is not legacy cache preservation, but event payload compression, production consumer maps, and complete ownership maps.
 
-## Correction 078–080 frontier
+## Correction 078–081 frontier
 
-The active Python–SQLite frontier remains incomplete. Legacy cache rows are now disposable rebuild inputs rather than compatibility obligations. The next recovered boundary was fact-index source eligibility; remaining frontiers include other read-model consumers, event payload compression, and complete ownership maps.
+The active Python–SQLite frontier remains incomplete. Pass 081 removes legacy and compatibility cache standing: incompatible disposable cache schemas are reset and rebuilt from the authoritative ledger rather than migrated or interpreted. Remaining frontiers include event payload compression, production consumer maps, and complete ownership maps.
