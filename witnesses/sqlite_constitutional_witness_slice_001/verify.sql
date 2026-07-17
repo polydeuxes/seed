@@ -19,7 +19,8 @@ INSERT INTO expected_postures VALUES
 ('competency:evidence-boundary-local-observation','case_m_authority_mismatch','lawful_inactivity_support_mismatch'),
 ('competency:evidence-boundary-local-observation','case_n_represented_not_verified','bounded_permission_for_further_examination'),
 ('competency:evidence-boundary-local-observation','case_o_reference_name_only','lawful_inactivity_dangling_evidence'),
-('competency:evidence-boundary-local-observation','case_p_same_source_rows','bounded_permission_for_further_examination');
+('competency:evidence-boundary-local-observation','case_p_same_source_rows','bounded_permission_for_further_examination'),
+('competency:evidence-boundary-local-observation','case_q_conflicting_provenance_refs','unknown_preserved');
 
 CREATE TEMP TABLE assert_zero(label TEXT, failures INTEGER CHECK (failures = 0));
 
@@ -108,3 +109,15 @@ SELECT 'same source rows became corroboration', CASE WHEN EXISTS (
     AND independence_boundary='multiple_rows_do_not_establish_independent_corroboration_or_fact_standing'
 ) THEN 0 ELSE 1 END;
 SELECT 'same-source non-corroboration case passes';
+
+
+INSERT INTO assert_zero
+SELECT 'conflicting provenance references were collapsed by COALESCE', CASE WHEN EXISTS (
+  SELECT 1 FROM support_binding_examination
+  WHERE change_id='case_q_conflicting_provenance_refs'
+    AND assertion_provenance_ref='prov:q-assertion'
+    AND evidence_provenance_ref='prov:q-evidence'
+    AND effective_provenance_ref='prov:q-evidence'
+    AND provenance_standing='conflicting_provenance_references_preserved'
+) THEN 0 ELSE 1 END;
+SELECT 'conflicting provenance reference boundary passes';
