@@ -7,7 +7,7 @@ The boundary between a selection record and the bounded act that chooses from a 
 What evidence proves that a lawful selection occurred for a particular candidate set?
 
 ## Bounded resolution
-A selection act consumes a bounded candidate set plus selection evidence, exact comparison, or policy, validates the identity and applicability required by that owner, and chooses zero or more candidates or preserves a lawful non-selection. Its artifact asserts that bounded result and preserves the basis, alternatives, uncertainty, and non-effects. Direct construction proves only artifact constructibility. Selection does not itself authorize, execute, open inquiry, or establish every downstream subject unless the responsible boundary explicitly does so.
+A selection act consumes a bounded candidate set plus selection evidence, exact comparison, or policy, validates the identity and applicability required by that owner, and chooses zero or more candidates or preserves a lawful non-selection. Its artifact asserts that bounded result and preserves enough basis, identity, uncertainty, or refusal information for the intended consumer to distinguish lawful selection from unsupported omission. Preservation of all non-selected alternatives is selector-specific: consideration selection may need a visible/non-selected reference snapshot, while representation selection may be sufficient with selected registered names plus unsupported-key uncertainty. Direct construction proves only artifact constructibility. Selection does not itself authorize, execute, open inquiry, or establish every downstream subject unless the responsible boundary explicitly does so.
 
 Repository evidence supports a shared higher-order selection grammar with distinct subfamilies. Representation selection may choose registered read-model views by exact deterministic keys for one composition purpose. Consideration selection may choose one already-established subject, such as an advancement need, for bounded focus after identity and lineage checks. Meaning selection, closed-choice binding, policy/work selection, and operational-realization selection have their own candidate sets and downstream limits. Shared selection vocabulary does not collapse these into one constitutional act kind.
 
@@ -16,7 +16,12 @@ Repository evidence supports a shared higher-order selection grammar with distin
 - ranked candidate != selected candidate
 - selection record != authorization
 - selection != execution or authorization
-- representation selection != standing-bearing selection automatically
+- representation selection != consideration selection automatically
+- selected candidate identity != candidate-set identity
+- selected result != preserved selection basis
+- artifact preservation != consumer-side validation
+- consumer accepts artifact type != consumer lawfully relies on every assertion
+- selection standing != authorization standing
 - exact deterministic comparison != semantic judgment
 - candidate eligibility != selection
 - unique candidate != selected candidate
@@ -35,6 +40,8 @@ Repository evidence supports a shared higher-order selection grammar with distin
 - Reusing a selection artifact against a different candidate set.
 - Treating a uniquely eligible need as automatically selected when no exact focus evidence was supplied.
 - Reusing a representation-selection artifact as if it warranted consideration, authorization, or movement for another consumer.
+- Treating omitted non-selected alternatives as invalidating a selector whose intended consumer does not require them.
+- Treating preserved non-selected alternatives as completing the producer warrant when identity, basis, or consumer validation is still missing.
 
 ## Related chapters
 - [Selection and authorization](../03-goals-and-advancement/selection-and-authorization.md)

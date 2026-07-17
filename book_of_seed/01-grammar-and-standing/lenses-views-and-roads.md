@@ -7,7 +7,7 @@ The difference between observing constitutional material through a view and poss
 What makes a relationship a constitutional road rather than an informative lens or repository adjacency?
 
 ## Bounded resolution
-A lens consumes existing material and exposes, selects, projects, or composes a bounded representation without changing the standing of the represented source material. Its assertion is about what the supplied sources expose under its declared method, warranted by source identity and faithful transformation. A constitutional road is instead a warranted producer-to-consumer relationship: the consumer accepts the producer's assertion for a declared purpose and validates the identities and invariants needed at that boundary. A lens may participate in a road, but neither call adjacency nor mechanical compatibility establishes one. Representation selection can be lens-like when it only chooses views for rendering or composition; standing-bearing selection is different and requires evidence that a subject, not merely a representation, was selected for a bounded downstream purpose.
+A lens consumes existing material and exposes, selects, projects, or composes a bounded representation without changing the standing of the represented source material. Its assertion is about what the supplied sources expose under its declared method, warranted by source identity and faithful transformation. A constitutional road is instead a warranted producer-to-consumer relationship: the consumer accepts the producer's assertion for a declared purpose and validates the identities and invariants needed at that boundary. A lens may participate in a road, but neither call adjacency nor mechanical compatibility establishes one. Representation selection can be lens-like when it only chooses views for rendering or composition; a selection with subject standing is different and requires evidence that a subject, not merely a representation, was selected for a bounded downstream purpose. Road sufficiency is local: producer-side warrant, artifact preservation, and consumer-side validation are related but not interchangeable.
 
 ## Important distinctions
 - lens != constitutional road
@@ -17,6 +17,9 @@ A lens consumes existing material and exposes, selects, projects, or composes a 
 - repository adjacency != constitutional sequence
 - constructibility != producer-to-consumer warrant
 - visibility != transition warrant
+- producer validation != consumer validation automatically
+- composition compatibility != general selection standing
+- selection purpose != reusable authority
 
 ## Representative repository anchors
 - `seed_runtime/constitutional_view_selection.py`
