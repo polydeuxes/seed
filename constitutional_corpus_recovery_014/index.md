@@ -87,3 +87,9 @@ The non-Book corpus recovers a constitutional grammar of conservative movement. 
 - `python_sqlite_jurisdiction_pass_069_realization_audit.md` audits current Python and SQLite jurisdiction across events, projections, read models, support-binding witnesses, selection/composition, and diagnostics.
 - `python_sqlite_jurisdiction_pass_070_cross_realization_seam.md` compares candidate seams and selects projection snapshot preservation as the smallest evidenced hybrid boundary.
 - `python_sqlite_jurisdiction_pass_071_projection_snapshot_boundary.md` records the implemented boundary, tests, compatibility answer, and remaining Unknowns.
+
+## Hybrid cache consumption passes 072–074
+
+- [Hybrid cache pass 072 — Cache-consumption jurisdiction audit](hybrid_cache_pass_072_consumption_jurisdiction_audit.md) audited Python consumption of SQLite-backed state, summary, derived-index, cache-status, migration, stale, corrupt, and rebuild paths without runtime changes.
+- [Hybrid cache pass 073 — State-summary source boundary](hybrid_cache_pass_073_state_summary_source_boundary.md) selected the state snapshot → summary read-model seam as the smallest implementation-local Python/SQLite boundary.
+- [Hybrid cache pass 074 — State-summary source boundary implementation](hybrid_cache_pass_074_state_summary_source_boundary.md) implemented Python-owned summary cache eligibility over SQLite-preserved source-limit testimony without treating row existence as authority.

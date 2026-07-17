@@ -67,6 +67,17 @@ class DerivedIndexSnapshot:
 
 
 @dataclass(frozen=True)
+class SummarySnapshotBoundary:
+    artifact_standing: str = "derived_summary_snapshot"
+    source_artifact_standing: str = "derived_projection_snapshot"
+    source_producer_boundary: str = "python_state_projection"
+    source_occurrence_evidence_kind: str = "snapshot_preservation_only"
+    source_consumer_limit: str = "read_model_cache_only"
+    consumer_limit: str = "operator_summary_cache_only"
+    mutates_cluster: bool = False
+
+
+@dataclass(frozen=True)
 class SummaryProjectionSnapshot:
     workspace_id: str
     projection_name: str
@@ -76,6 +87,7 @@ class SummaryProjectionSnapshot:
     state_last_event_id: str | None
     summary_payload: dict[str, Any]
     created_at: datetime
+    boundary: SummarySnapshotBoundary = SummarySnapshotBoundary()
 
 
 @dataclass(frozen=True)
@@ -211,6 +223,8 @@ class InMemoryProjectionStore:
             return None
         if snapshot.state_last_event_id != state_last_event_id:
             return None
+        if not summary_snapshot_is_eligible_for_operator_cache(snapshot):
+            return None
         return snapshot
 
     def save_summary_snapshot(self, snapshot: SummaryProjectionSnapshot) -> None:
@@ -288,10 +302,18 @@ class SQLiteProjectionStore:
                 state_last_event_id TEXT,
                 summary_json TEXT NOT NULL,
                 created_at TEXT NOT NULL,
+                artifact_standing TEXT NOT NULL DEFAULT 'derived_summary_snapshot',
+                source_artifact_standing TEXT NOT NULL DEFAULT 'derived_projection_snapshot',
+                source_producer_boundary TEXT NOT NULL DEFAULT 'python_state_projection',
+                source_occurrence_evidence_kind TEXT NOT NULL DEFAULT 'snapshot_preservation_only',
+                source_consumer_limit TEXT NOT NULL DEFAULT 'read_model_cache_only',
+                consumer_limit TEXT NOT NULL DEFAULT 'operator_summary_cache_only',
+                mutates_cluster INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY (workspace_id, projection_name)
             )
             """)
         self._ensure_projection_snapshot_boundary_columns()
+        self._ensure_state_summary_boundary_columns()
         self._connection.commit()
 
     def _ensure_projection_snapshot_boundary_columns(self) -> None:
@@ -312,6 +334,28 @@ class SQLiteProjectionStore:
             if name not in columns:
                 self._connection.execute(
                     f"ALTER TABLE projection_snapshots ADD COLUMN {name} {declaration}"
+                )
+
+    def _ensure_state_summary_boundary_columns(self) -> None:
+        columns = {
+            row[1]
+            for row in self._connection.execute(
+                "PRAGMA table_info(state_summary_snapshots)"
+            )
+        }
+        additions = {
+            "artifact_standing": "TEXT NOT NULL DEFAULT 'derived_summary_snapshot'",
+            "source_artifact_standing": "TEXT NOT NULL DEFAULT 'derived_projection_snapshot'",
+            "source_producer_boundary": "TEXT NOT NULL DEFAULT 'python_state_projection'",
+            "source_occurrence_evidence_kind": "TEXT NOT NULL DEFAULT 'snapshot_preservation_only'",
+            "source_consumer_limit": "TEXT NOT NULL DEFAULT 'read_model_cache_only'",
+            "consumer_limit": "TEXT NOT NULL DEFAULT 'operator_summary_cache_only'",
+            "mutates_cluster": "INTEGER NOT NULL DEFAULT 0",
+        }
+        for name, declaration in additions.items():
+            if name not in columns:
+                self._connection.execute(
+                    f"ALTER TABLE state_summary_snapshots ADD COLUMN {name} {declaration}"
                 )
 
     def load_snapshot(
@@ -428,6 +472,18 @@ class SQLiteProjectionStore:
               AND summary.state_last_event_id IS ?
               AND state.projection_version = summary.state_projection_version
               AND state.last_event_id IS summary.state_last_event_id
+              AND state.artifact_standing = 'derived_projection_snapshot'
+              AND state.producer_boundary = 'python_state_projection'
+              AND state.occurrence_evidence_kind = 'snapshot_preservation_only'
+              AND state.consumer_limit = 'read_model_cache_only'
+              AND state.mutates_cluster = 0
+              AND summary.artifact_standing = 'derived_summary_snapshot'
+              AND summary.source_artifact_standing = state.artifact_standing
+              AND summary.source_producer_boundary = state.producer_boundary
+              AND summary.source_occurrence_evidence_kind = state.occurrence_evidence_kind
+              AND summary.source_consumer_limit = state.consumer_limit
+              AND summary.consumer_limit = 'operator_summary_cache_only'
+              AND summary.mutates_cluster = 0
             """,
             (
                 STATE_PROJECTION_NAME,
@@ -449,6 +505,15 @@ class SQLiteProjectionStore:
             state_last_event_id=row["state_last_event_id"],
             summary_payload=json.loads(row["summary_json"]),
             created_at=_parse_datetime(row["created_at"]) or _utc_now(),
+            boundary=SummarySnapshotBoundary(
+                artifact_standing=row["artifact_standing"],
+                source_artifact_standing=row["source_artifact_standing"],
+                source_producer_boundary=row["source_producer_boundary"],
+                source_occurrence_evidence_kind=row["source_occurrence_evidence_kind"],
+                source_consumer_limit=row["source_consumer_limit"],
+                consumer_limit=row["consumer_limit"],
+                mutates_cluster=bool(row["mutates_cluster"]),
+            ),
         )
 
     def save_summary_snapshot(self, snapshot: SummaryProjectionSnapshot) -> None:
@@ -456,15 +521,25 @@ class SQLiteProjectionStore:
             """
             INSERT INTO state_summary_snapshots (
                 workspace_id, projection_name, projection_version, last_event_id,
-                state_projection_version, state_last_event_id, summary_json, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                state_projection_version, state_last_event_id, summary_json, created_at,
+                artifact_standing, source_artifact_standing, source_producer_boundary,
+                source_occurrence_evidence_kind, source_consumer_limit, consumer_limit,
+                mutates_cluster
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(workspace_id, projection_name) DO UPDATE SET
                 projection_version = excluded.projection_version,
                 last_event_id = excluded.last_event_id,
                 state_projection_version = excluded.state_projection_version,
                 state_last_event_id = excluded.state_last_event_id,
                 summary_json = excluded.summary_json,
-                created_at = excluded.created_at
+                created_at = excluded.created_at,
+                artifact_standing = excluded.artifact_standing,
+                source_artifact_standing = excluded.source_artifact_standing,
+                source_producer_boundary = excluded.source_producer_boundary,
+                source_occurrence_evidence_kind = excluded.source_occurrence_evidence_kind,
+                source_consumer_limit = excluded.source_consumer_limit,
+                consumer_limit = excluded.consumer_limit,
+                mutates_cluster = excluded.mutates_cluster
             """,
             (
                 snapshot.workspace_id,
@@ -475,6 +550,13 @@ class SQLiteProjectionStore:
                 snapshot.state_last_event_id,
                 json.dumps(snapshot.summary_payload, sort_keys=True),
                 _format_datetime(snapshot.created_at),
+                snapshot.boundary.artifact_standing,
+                snapshot.boundary.source_artifact_standing,
+                snapshot.boundary.source_producer_boundary,
+                snapshot.boundary.source_occurrence_evidence_kind,
+                snapshot.boundary.source_consumer_limit,
+                snapshot.boundary.consumer_limit,
+                int(snapshot.boundary.mutates_cluster),
             ),
         )
         self._connection.commit()
@@ -584,6 +666,16 @@ def _events_with_progress(
         )
 
 
+def projection_snapshot_is_eligible_for_state_cache(snapshot: ProjectionSnapshot) -> bool:
+    expected = ProjectionSnapshotBoundary()
+    return snapshot.boundary == expected
+
+
+def summary_snapshot_is_eligible_for_operator_cache(snapshot: SummaryProjectionSnapshot) -> bool:
+    expected = SummarySnapshotBoundary()
+    return snapshot.boundary == expected
+
+
 def project_state_with_cache(
     ledger: EventLedger,
     workspace_id: str,
@@ -614,17 +706,20 @@ def project_state_with_cache(
             snapshot = None
         if snapshot is not None:
             snapshot_last_event_id = snapshot.last_event_id
-            try:
-                if diagnostics is not None:
-                    snapshot_state = diagnostics.timed(
-                        "cached projection load/materialize",
-                        lambda: state_from_payload(snapshot.state_payload),
-                    )
-                else:
-                    snapshot_state = state_from_payload(snapshot.state_payload)
-            except Exception:
-                snapshot_state = None
-            if (
+            if not projection_snapshot_is_eligible_for_state_cache(snapshot):
+                snapshot = None
+            else:
+                try:
+                    if diagnostics is not None:
+                        snapshot_state = diagnostics.timed(
+                            "cached projection load/materialize",
+                            lambda: state_from_payload(snapshot.state_payload),
+                        )
+                    else:
+                        snapshot_state = state_from_payload(snapshot.state_payload)
+                except Exception:
+                    snapshot_state = None
+            if snapshot is not None and (
                 snapshot_state is not None
                 and snapshot.last_event_id == current_last_event_id
             ):
@@ -641,7 +736,7 @@ def project_state_with_cache(
                     current_last_event_id=current_last_event_id,
                     events_applied=0,
                 )
-            if snapshot_state is not None and not snapshot_state.inferred_facts:
+            if snapshot is not None and snapshot_state is not None and not snapshot_state.inferred_facts:
                 remaining_events = _events_after_snapshot(
                     events, snapshot.last_event_id
                 )

@@ -1033,3 +1033,211 @@ def test_sqlite_projection_snapshot_boundary_columns_migrate_existing_cache(tmp_
         assert "mutates_cluster" in columns
     finally:
         store.close()
+
+
+def test_incompatible_projection_boundary_is_cache_miss_without_ledger_or_cluster_mutation():
+    from seed_runtime.projection_store import ProjectionSnapshotBoundary
+
+    ledger = EventLedger()
+    event = _append_fact(ledger, "ws", "fact_one", "docker")
+    store = InMemoryProjectionStore()
+    store.save_snapshot(
+        ProjectionSnapshot(
+            workspace_id="ws",
+            projection_name=STATE_PROJECTION_NAME,
+            projection_version=STATE_PROJECTION_VERSION,
+            last_event_id=event.id,
+            last_event_created_at=event.timestamp,
+            state_payload=state_to_payload(StateProjector(ledger).project("ws")),
+            created_at=datetime.now(timezone.utc),
+            boundary=ProjectionSnapshotBoundary(
+                producer_boundary="sqlite_self_authorized"
+            ),
+        )
+    )
+    projector = CountingProjector(ledger)
+    before = ledger.list_events("ws")
+
+    state, status = project_state_with_cache(ledger, "ws", store, projector=projector)
+
+    assert status.cache_hit is False
+    assert projector.calls == 1
+    assert state.get_best_fact("svc", "runtime").value == "docker"
+    assert ledger.list_events("ws") == before
+
+
+def test_incompatible_projection_standing_is_not_strengthened_by_materialization():
+    from seed_runtime.projection_store import ProjectionSnapshotBoundary
+
+    ledger = EventLedger()
+    event = _append_fact(ledger, "ws", "fact_one", "docker")
+    store = InMemoryProjectionStore()
+    store.save_snapshot(
+        ProjectionSnapshot(
+            workspace_id="ws",
+            projection_name=STATE_PROJECTION_NAME,
+            projection_version=STATE_PROJECTION_VERSION,
+            last_event_id=event.id,
+            last_event_created_at=event.timestamp,
+            state_payload=state_to_payload(StateProjector(ledger).project("ws")),
+            created_at=datetime.now(timezone.utc),
+            boundary=ProjectionSnapshotBoundary(artifact_standing="established_fact"),
+        )
+    )
+    projector = CountingProjector(ledger)
+
+    _state, status = project_state_with_cache(ledger, "ws", store, projector=projector)
+
+    assert status.cache_hit is False
+    assert projector.calls == 1
+
+
+def test_incompatible_consumer_limit_and_mutating_boundary_do_not_enter_read_only_consumer():
+    from seed_runtime.projection_store import ProjectionSnapshotBoundary
+
+    ledger = EventLedger()
+    event = _append_fact(ledger, "ws", "fact_one", "docker")
+    for boundary in [
+        ProjectionSnapshotBoundary(consumer_limit="cluster_truth"),
+        ProjectionSnapshotBoundary(mutates_cluster=True),
+    ]:
+        store = InMemoryProjectionStore()
+        store.save_snapshot(
+            ProjectionSnapshot(
+                workspace_id="ws",
+                projection_name=STATE_PROJECTION_NAME,
+                projection_version=STATE_PROJECTION_VERSION,
+                last_event_id=event.id,
+                last_event_created_at=event.timestamp,
+                state_payload=state_to_payload(StateProjector(ledger).project("ws")),
+                created_at=datetime.now(timezone.utc),
+                boundary=boundary,
+            )
+        )
+        projector = CountingProjector(ledger)
+
+        _state, status = project_state_with_cache(ledger, "ws", store, projector=projector)
+
+        assert status.cache_hit is False
+        assert projector.calls == 1
+
+
+def test_sqlite_summary_cache_preserves_source_limits_and_rejects_mismatch(tmp_path):
+    from seed_runtime.projection_store import (
+        STATE_SUMMARY_PROJECTION_NAME,
+        STATE_SUMMARY_PROJECTION_VERSION,
+        SummaryProjectionSnapshot,
+        SummarySnapshotBoundary,
+    )
+
+    db_path = tmp_path / "summary-boundary.sqlite"
+    ledger = SQLiteEventLedger(str(db_path))
+    store = SQLiteProjectionStore(str(db_path))
+    try:
+        event = _append_fact(ledger, "ws", "fact_one", "docker")
+        project_state_with_cache(ledger, "ws", store)
+        store.save_summary_snapshot(
+            SummaryProjectionSnapshot(
+                workspace_id="ws",
+                projection_name=STATE_SUMMARY_PROJECTION_NAME,
+                projection_version=STATE_SUMMARY_PROJECTION_VERSION,
+                last_event_id=event.id,
+                state_projection_version=STATE_PROJECTION_VERSION,
+                state_last_event_id=event.id,
+                summary_payload={"operator_summary": {"ok": True}},
+                created_at=datetime.now(timezone.utc),
+            )
+        )
+        assert store.load_summary_snapshot(
+            "ws",
+            STATE_SUMMARY_PROJECTION_NAME,
+            STATE_SUMMARY_PROJECTION_VERSION,
+            state_projection_version=STATE_PROJECTION_VERSION,
+            state_last_event_id=event.id,
+        ).boundary == SummarySnapshotBoundary()
+
+        with sqlite3.connect(db_path) as connection:
+            connection.execute(
+                "UPDATE state_summary_snapshots SET source_consumer_limit = ? WHERE workspace_id = ?",
+                ("cluster_truth", "ws"),
+            )
+        assert store.load_summary_snapshot(
+            "ws",
+            STATE_SUMMARY_PROJECTION_NAME,
+            STATE_SUMMARY_PROJECTION_VERSION,
+            state_projection_version=STATE_PROJECTION_VERSION,
+            state_last_event_id=event.id,
+        ) is None
+        assert [item.id for item in ledger.list_events("ws")] == [event.id]
+    finally:
+        store.close()
+        ledger.close()
+
+
+def test_sqlite_summary_legacy_rows_have_explicit_compatibility_boundary(tmp_path):
+    from seed_runtime.projection_store import (
+        STATE_SUMMARY_PROJECTION_NAME,
+        STATE_SUMMARY_PROJECTION_VERSION,
+    )
+
+    db_path = tmp_path / "legacy-summary.sqlite"
+    with sqlite3.connect(db_path) as connection:
+        connection.execute("""
+            CREATE TABLE projection_snapshots (
+                workspace_id TEXT NOT NULL, projection_name TEXT NOT NULL,
+                projection_version TEXT NOT NULL, last_event_id TEXT,
+                last_event_created_at TEXT, state_json TEXT NOT NULL,
+                created_at TEXT NOT NULL, PRIMARY KEY (workspace_id, projection_name)
+            )
+            """)
+        connection.execute("""
+            CREATE TABLE state_summary_snapshots (
+                workspace_id TEXT NOT NULL, projection_name TEXT NOT NULL,
+                projection_version TEXT NOT NULL, last_event_id TEXT,
+                state_projection_version TEXT NOT NULL, state_last_event_id TEXT,
+                summary_json TEXT NOT NULL, created_at TEXT NOT NULL,
+                PRIMARY KEY (workspace_id, projection_name)
+            )
+            """)
+        connection.execute(
+            "INSERT INTO projection_snapshots VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                "ws",
+                STATE_PROJECTION_NAME,
+                STATE_PROJECTION_VERSION,
+                None,
+                None,
+                '{"workspace_id":"ws"}',
+                datetime.now(timezone.utc).isoformat(),
+            ),
+        )
+        connection.execute(
+            "INSERT INTO state_summary_snapshots VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                "ws",
+                STATE_SUMMARY_PROJECTION_NAME,
+                STATE_SUMMARY_PROJECTION_VERSION,
+                None,
+                STATE_PROJECTION_VERSION,
+                None,
+                '{"operator_summary":{}}',
+                datetime.now(timezone.utc).isoformat(),
+            ),
+        )
+    store = SQLiteProjectionStore(str(db_path))
+    try:
+        snapshot = store.load_summary_snapshot(
+            "ws",
+            STATE_SUMMARY_PROJECTION_NAME,
+            STATE_SUMMARY_PROJECTION_VERSION,
+            state_projection_version=STATE_PROJECTION_VERSION,
+            state_last_event_id=None,
+        )
+        assert snapshot is not None
+        assert (
+            snapshot.boundary.source_occurrence_evidence_kind
+            == "snapshot_preservation_only"
+        )
+        assert snapshot.boundary.mutates_cluster is False
+    finally:
+        store.close()

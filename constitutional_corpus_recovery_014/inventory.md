@@ -91,3 +91,11 @@ The admitted corpus repeatedly recovers constitutional grammar around authority 
 | `python_sqlite_jurisdiction_pass_071_projection_snapshot_boundary.md` | Implemented seam record | Implementation-backed jurisdiction split |
 | `seed_runtime/projection_store.py` `ProjectionSnapshotBoundary` | Bounded crossing metadata for projection cache | Derived projection snapshot limits, not Book law |
 | `projection_snapshots` boundary columns | SQLite preservation of cache standing and occurrence limits | Durable preservation-only read-model cache evidence |
+
+## Hybrid cache consumption inventory after passes 072–074
+
+| Artifact | Role | Boundary |
+| --- | --- | --- |
+| `seed_runtime/projection_store.py` `SummarySnapshotBoundary` | Bounded crossing metadata for state-summary cache rows | Derived summary snapshot for operator-summary cache use only |
+| `state_summary_snapshots` boundary columns | SQLite preservation of summary source limits and consumer limit | Inherits projection snapshot limits; does not renew occurrence |
+| `SQLiteProjectionStore.load_summary_snapshot` | Python-owned consumer eligibility decision | Accepts only matching non-mutating source and summary testimony; otherwise cache miss |
