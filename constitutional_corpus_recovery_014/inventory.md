@@ -99,3 +99,14 @@ The admitted corpus repeatedly recovers constitutional grammar around authority 
 | `seed_runtime/projection_store.py` `SummarySnapshotBoundary` | Bounded crossing metadata for state-summary cache rows | Derived summary snapshot for operator-summary cache use only |
 | `state_summary_snapshots` boundary columns | SQLite preservation of summary source limits and consumer limit | Inherits projection snapshot limits; does not renew occurrence |
 | `SQLiteProjectionStore.load_summary_snapshot` | Python-owned consumer eligibility decision | Accepts only matching non-mutating source and summary testimony; otherwise cache miss |
+
+## Hybrid boundary testimony inventory after passes 075–077
+
+| Artifact | Role | Boundary testimony standing |
+| --- | --- | --- |
+| `hybrid_testimony_pass_075_boundary_provenance_audit.md` | Audit of boundary value entry paths | Orientation evidence; no runtime change |
+| `hybrid_testimony_pass_076_state_snapshot_boundary_origin.md` | Seam selection | Selects Python–SQLite state snapshot boundary-origin consumption |
+| `hybrid_testimony_pass_077_state_snapshot_boundary_origin.md` | Implemented boundary report | Records producer-recorded vs migration-inferred compatibility standing |
+| `ProjectionSnapshotBoundary.boundary_testimony_origin` | Python typed cache testimony | Distinguishes current producer-recorded standing from compatibility/admin/unknown origins for eligibility |
+| `projection_snapshots.boundary_testimony_origin` | SQLite durable cache testimony | Preserves producer-recorded current saves or migration-inferred compatibility for legacy rows |
+| `SummarySnapshotBoundary.source_boundary_testimony_origin` | Summary source testimony | Keeps summary cache uptake synchronized with state snapshot origin |

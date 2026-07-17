@@ -173,3 +173,7 @@ No Book change is warranted. The implementation recovered one realization-jurisd
 ## Hybrid cache consumption readiness after passes 072–074
 
 The state-summary source boundary is implementation evidence, not new realization-neutral Book evidence. It reinforces existing clauses that downstream consumption preserves tested boundaries and does not strengthen source standing. No Book change is warranted unless later work recovers a broader constitutional rule independent of this cache implementation.
+
+## Hybrid boundary testimony readiness after passes 075–077
+
+No Book change is warranted. The implementation recovered a cache-local realization distinction: boundary value equality is not boundary testimony equivalence. Producer occurrence, persistence occurrence, migration inference, compatibility standing, consumer eligibility, cache uptake, and rebuilt testimony remain implementation-local distinctions that reinforce existing Book rules against silent strengthening. Remaining readiness gaps are implementation gaps, not realization-neutral constitutional omissions.
