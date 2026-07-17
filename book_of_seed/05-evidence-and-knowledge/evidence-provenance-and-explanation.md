@@ -15,6 +15,7 @@ Evidence identifies source and collection context; fact support and explanations
 - provenance reference != independent support
 - explanation construction != upstream establishment
 - projection act != new constitutional kind automatically
+- source-relative explanation != occurrence-relative explanation
 
 ## Representative repository anchors
 - `seed_runtime/evidence.py::Evidence`

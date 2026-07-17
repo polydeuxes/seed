@@ -6,8 +6,8 @@ The bounded set of inquiry concerns that may be considered without claiming that
 ## Core question
 How are frontier membership, exclusions, dependencies, and operative coherence established?
 
-## Initial resolution
-The inquiry frontier assembles bounded, evidenced inquiry possibilities. Membership creates visibility for consideration, not selection, authorization, examination, or resolution.
+## Bounded resolution
+The inquiry frontier assembles bounded, evidenced inquiry possibilities. Membership creates visibility for consideration, not selection, authorization, examination, or resolution. Frontier establishment is consumer-local: it can establish identity coherence, required boundary-clause family coverage, and operative frontier standing from supplied selected-need and testimony artifacts without proving selected-need truth, testimony truth, producer occurrence, inquiry opening, execution, or result knowledge.
 
 ## Important distinctions
 - frontier membership != work selection

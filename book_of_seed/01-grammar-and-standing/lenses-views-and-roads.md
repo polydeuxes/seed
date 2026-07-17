@@ -27,6 +27,7 @@ Constitutional uptake is the broader consumer-side grammar for a warranted bound
 - handoff structure != constitutional relationship
 - typed values transported != constitutional uptake automatically
 - artifact fields read != assertion adopted
+- consumer-local warrant may coexist with weaker upstream standing
 
 ## Representative repository anchors
 - `seed_runtime/constitutional_view_selection.py`

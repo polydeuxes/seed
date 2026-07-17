@@ -18,6 +18,7 @@ An artifact is a preserved representation or record whose fields carry an assert
 - dedicated dataclass != durable constitutional kind
 - concordance entry != constitutional legitimacy
 - new downstream subject != upstream subject re-established
+- consumer-local standing != inherited producer standing
 
 ## Representative repository anchors
 - `seed_runtime/inquiry_artifacts.py::InquiryArtifactVisibility`
