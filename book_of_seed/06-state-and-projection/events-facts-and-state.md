@@ -9,12 +9,19 @@ Which event kinds affect which portions of constitutional state, and through wha
 ## Bounded resolution
 Events are immutable records that assert occurrences or other claims; an event records that an assertion was made, not that every asserted occurrence is true. Facts carry supported claims; state is a replayed and reconciled projection. Their boundaries must remain visible even when one pipeline connects them.
 
+
+## Addressable boundaries for current constitutional standing
+
+### 06.State.A — Constitutional reality is bounded repository-governed standing, not objective reality
+Append-only records, established facts, projected state, current lawful condition, context views, and candidate convergence may support a bounded current constitutional standing within the applicable Seed, workspace, corpus, question, authority, projection rule, confidence limit, and Unknown boundary. That standing is repository-governed and inspectable; it is not objective reality, complete memory, universal shared truth, mandatory convergence, verification of every recorded assertion, conflict resolution by existence alone, or an oracle about conditions outside preserved evidence and authority.
+
 ## Important distinctions
 - event != explanation
 - event recording != required for every constitutional occurrence
 - event != fact
 - fact != entity
 - replay input != projected state
+- constitutional standing != objective reality
 
 ## Representative repository anchors
 - `seed_runtime/models.py::Event`

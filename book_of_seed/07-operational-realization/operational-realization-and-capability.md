@@ -9,6 +9,12 @@ What establishes that a mechanism can lawfully and sufficiently realize a bounde
 ## Bounded resolution
 Catalog declarations and behavioral observations can support capability candidates. Operational realization requires attributed mechanism evidence, invocation grammar, and selection appropriate to the bounded need.
 
+
+## Addressable boundaries for lawful realization
+
+### 07.Realization.A — Lawful realization preserves authority without requiring structural symmetry
+An implementation mechanism may lawfully realize a constitutional responsibility when it preserves the recovered authority, evidence boundary, warrant, scope, Unknowns, handoff, recording boundary, and mutation boundary that govern the responsibility. One-to-one structural symmetry between constitutional vocabulary and implementation mechanics is neither required nor sufficient. Compatibility, orchestration, distribution, narrowing, naming, rendering, caching, or dispatch mechanics remain constitutionally neutral while they do not claim, erase, relocate, mutate, or decide constitutional authority.
+
 ## Important distinctions
 - declared capability != verified capability
 - capability != selected mechanism
