@@ -36,8 +36,14 @@ def _append_fact(ledger: EventLedger, workspace_id: str, fact: Fact):
 
 def _projected_state_with_store():
     ledger = EventLedger()
-    event = _append_fact(ledger, "ws", _fact("fact_runtime", "svc", "runtime", "docker"))
-    _append_fact(ledger, "ws", _fact("fact_package", "node", "package_installed", "openssh-client"))
+    event = _append_fact(
+        ledger, "ws", _fact("fact_runtime", "svc", "runtime", "docker")
+    )
+    _append_fact(
+        ledger,
+        "ws",
+        _fact("fact_package", "node", "package_installed", "openssh-client"),
+    )
     store = InMemoryProjectionStore()
     state, _status = project_state_with_cache(ledger, "ws", store)
     return ledger, store, state, event
@@ -132,9 +138,9 @@ def test_indexed_current_facts_lookup_matches_existing_path():
     _ledger, store, state, _event = _projected_state_with_store()
     index = load_or_build_fact_index(state, workspace_id="ws", store=store)
 
-    assert format_current_facts(state, "svc", "runtime", fact_index=index) == format_current_facts(
-        state, "svc", "runtime"
-    )
+    assert format_current_facts(
+        state, "svc", "runtime", fact_index=index
+    ) == format_current_facts(state, "svc", "runtime")
 
 
 def test_derived_index_creation_does_not_append_events_or_create_observations_or_facts():
@@ -159,8 +165,12 @@ def test_fact_index_status_reporting_does_not_alter_output():
     )
 
     assert format_current_facts(state, "svc", "runtime", fact_index=index) == "docker"
-    assert any(status.message == "Fact index cache: miss" for status in consumer.statuses)
-    assert any(status.message == "Saving fact index cache..." for status in consumer.statuses)
+    assert any(
+        status.message == "Fact index cache: miss" for status in consumer.statuses
+    )
+    assert any(
+        status.message == "Saving fact index cache..." for status in consumer.statuses
+    )
 
 
 def test_fact_index_does_not_change_projection_cache_semantics():
@@ -256,16 +266,64 @@ def test_sqlite_fact_index_cache_requires_bounded_source_projection(tmp_path):
         )
         store._connection.commit()
 
-        assert store.load_derived_index_snapshot(
-            "ws",
-            FACT_INDEX_NAME,
-            FACT_INDEX_VERSION,
-            state_projection_version=STATE_PROJECTION_VERSION,
-            state_last_event_id=state.last_event_id,
-        ) is None
+        assert (
+            store.load_derived_index_snapshot(
+                "ws",
+                FACT_INDEX_NAME,
+                FACT_INDEX_VERSION,
+                state_projection_version=STATE_PROJECTION_VERSION,
+                state_last_event_id=state.last_event_id,
+            )
+            is None
+        )
         rebuilt = load_or_build_fact_index(state, workspace_id="ws", store=store)
     finally:
         store.close()
         ledger.close()
 
     assert first.fact_ids_by_subject_predicate == rebuilt.fact_ids_by_subject_predicate
+
+
+def test_sqlite_fact_index_cache_requires_own_derived_boundary(tmp_path):
+    db_path = tmp_path / "fact-index-own-boundary.sqlite"
+    ledger = SQLiteEventLedger(str(db_path))
+    store = SQLiteProjectionStore(str(db_path))
+    try:
+        _append_fact(ledger, "ws", _fact("fact_runtime", "svc", "runtime", "docker"))
+        state, _status = project_state_with_cache(ledger, "ws", store)
+        before_events = ledger.list_events("ws")
+        first = load_or_build_fact_index(state, workspace_id="ws", store=store)
+        cached = store.load_derived_index_snapshot(
+            "ws",
+            FACT_INDEX_NAME,
+            FACT_INDEX_VERSION,
+            state_projection_version=STATE_PROJECTION_VERSION,
+            state_last_event_id=state.last_event_id,
+        )
+        assert cached is not None
+        assert cached.boundary.consumer_limit == "fact_index_cache_only"
+
+        store._connection.execute(
+            "UPDATE derived_index_snapshots SET consumer_limit = 'cluster_truth', mutates_cluster = 1 WHERE workspace_id = ?",
+            ("ws",),
+        )
+        store._connection.commit()
+
+        assert (
+            store.load_derived_index_snapshot(
+                "ws",
+                FACT_INDEX_NAME,
+                FACT_INDEX_VERSION,
+                state_projection_version=STATE_PROJECTION_VERSION,
+                state_last_event_id=state.last_event_id,
+            )
+            is None
+        )
+        rebuilt = load_or_build_fact_index(state, workspace_id="ws", store=store)
+        after_events = ledger.list_events("ws")
+    finally:
+        store.close()
+        ledger.close()
+
+    assert first.fact_ids_by_subject_predicate == rebuilt.fact_ids_by_subject_predicate
+    assert [event.id for event in after_events] == [event.id for event in before_events]

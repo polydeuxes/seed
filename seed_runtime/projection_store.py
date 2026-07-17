@@ -56,6 +56,17 @@ FACT_INDEX_VERSION = "fact-index-by-subject-predicate-v1"
 
 
 @dataclass(frozen=True)
+class DerivedIndexSnapshotBoundary:
+    artifact_standing: str = "derived_fact_index_snapshot"
+    source_artifact_standing: str = "derived_projection_snapshot"
+    source_producer_boundary: str = "python_state_projection"
+    source_occurrence_evidence_kind: str = "snapshot_preservation_only"
+    source_consumer_limit: str = "read_model_cache_only"
+    consumer_limit: str = "fact_index_cache_only"
+    mutates_cluster: bool = False
+
+
+@dataclass(frozen=True)
 class DerivedIndexSnapshot:
     workspace_id: str
     index_name: str
@@ -64,6 +75,7 @@ class DerivedIndexSnapshot:
     state_last_event_id: str | None
     index_payload: dict[str, Any]
     created_at: datetime
+    boundary: DerivedIndexSnapshotBoundary = DerivedIndexSnapshotBoundary()
 
 
 @dataclass(frozen=True)
@@ -248,6 +260,8 @@ class InMemoryProjectionStore:
             return None
         if snapshot.state_last_event_id != state_last_event_id:
             return None
+        if not derived_index_snapshot_is_eligible_for_fact_index_cache(snapshot):
+            return None
         return snapshot
 
     def save_derived_index_snapshot(self, snapshot: DerivedIndexSnapshot) -> None:
@@ -288,6 +302,13 @@ class SQLiteProjectionStore:
             "state_last_event_id",
             "index_json",
             "created_at",
+            "artifact_standing",
+            "source_artifact_standing",
+            "source_producer_boundary",
+            "source_occurrence_evidence_kind",
+            "source_consumer_limit",
+            "consumer_limit",
+            "mutates_cluster",
         ),
         "state_summary_snapshots": (
             "workspace_id",
@@ -339,6 +360,13 @@ class SQLiteProjectionStore:
                 state_last_event_id TEXT,
                 index_json TEXT NOT NULL,
                 created_at TEXT NOT NULL,
+                artifact_standing TEXT NOT NULL DEFAULT 'derived_fact_index_snapshot',
+                source_artifact_standing TEXT NOT NULL DEFAULT 'derived_projection_snapshot',
+                source_producer_boundary TEXT NOT NULL DEFAULT 'python_state_projection',
+                source_occurrence_evidence_kind TEXT NOT NULL DEFAULT 'snapshot_preservation_only',
+                source_consumer_limit TEXT NOT NULL DEFAULT 'read_model_cache_only',
+                consumer_limit TEXT NOT NULL DEFAULT 'fact_index_cache_only',
+                mutates_cluster INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY (workspace_id, index_name)
             )
             """)
@@ -619,6 +647,13 @@ class SQLiteProjectionStore:
               AND state.occurrence_evidence_kind = 'snapshot_preservation_only'
               AND state.consumer_limit = 'read_model_cache_only'
               AND state.mutates_cluster = 0
+              AND derived.artifact_standing = 'derived_fact_index_snapshot'
+              AND derived.source_artifact_standing = state.artifact_standing
+              AND derived.source_producer_boundary = state.producer_boundary
+              AND derived.source_occurrence_evidence_kind = state.occurrence_evidence_kind
+              AND derived.source_consumer_limit = state.consumer_limit
+              AND derived.consumer_limit = 'fact_index_cache_only'
+              AND derived.mutates_cluster = 0
             """,
             (
                 STATE_PROJECTION_NAME,
@@ -639,6 +674,15 @@ class SQLiteProjectionStore:
             state_last_event_id=row["state_last_event_id"],
             index_payload=json.loads(row["index_json"]),
             created_at=_parse_datetime(row["created_at"]) or _utc_now(),
+            boundary=DerivedIndexSnapshotBoundary(
+                artifact_standing=row["artifact_standing"],
+                source_artifact_standing=row["source_artifact_standing"],
+                source_producer_boundary=row["source_producer_boundary"],
+                source_occurrence_evidence_kind=row["source_occurrence_evidence_kind"],
+                source_consumer_limit=row["source_consumer_limit"],
+                consumer_limit=row["consumer_limit"],
+                mutates_cluster=bool(row["mutates_cluster"]),
+            ),
         )
 
     def save_derived_index_snapshot(self, snapshot: DerivedIndexSnapshot) -> None:
@@ -646,14 +690,24 @@ class SQLiteProjectionStore:
             """
             INSERT INTO derived_index_snapshots (
                 workspace_id, index_name, index_version, state_projection_version,
-                state_last_event_id, index_json, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                state_last_event_id, index_json, created_at, artifact_standing,
+                source_artifact_standing, source_producer_boundary,
+                source_occurrence_evidence_kind, source_consumer_limit, consumer_limit,
+                mutates_cluster
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(workspace_id, index_name) DO UPDATE SET
                 index_version = excluded.index_version,
                 state_projection_version = excluded.state_projection_version,
                 state_last_event_id = excluded.state_last_event_id,
                 index_json = excluded.index_json,
-                created_at = excluded.created_at
+                created_at = excluded.created_at,
+                artifact_standing = excluded.artifact_standing,
+                source_artifact_standing = excluded.source_artifact_standing,
+                source_producer_boundary = excluded.source_producer_boundary,
+                source_occurrence_evidence_kind = excluded.source_occurrence_evidence_kind,
+                source_consumer_limit = excluded.source_consumer_limit,
+                consumer_limit = excluded.consumer_limit,
+                mutates_cluster = excluded.mutates_cluster
             """,
             (
                 snapshot.workspace_id,
@@ -663,6 +717,13 @@ class SQLiteProjectionStore:
                 snapshot.state_last_event_id,
                 json.dumps(snapshot.index_payload, sort_keys=True),
                 _format_datetime(snapshot.created_at),
+                snapshot.boundary.artifact_standing,
+                snapshot.boundary.source_artifact_standing,
+                snapshot.boundary.source_producer_boundary,
+                snapshot.boundary.source_occurrence_evidence_kind,
+                snapshot.boundary.source_consumer_limit,
+                snapshot.boundary.consumer_limit,
+                int(snapshot.boundary.mutates_cluster),
             ),
         )
         self._connection.commit()
@@ -702,7 +763,9 @@ def _events_with_progress(
         )
 
 
-def projection_snapshot_is_eligible_for_state_cache(snapshot: ProjectionSnapshot) -> bool:
+def projection_snapshot_is_eligible_for_state_cache(
+    snapshot: ProjectionSnapshot,
+) -> bool:
     expected = ProjectionSnapshotBoundary()
     boundary = snapshot.boundary
     return (
@@ -714,14 +777,34 @@ def projection_snapshot_is_eligible_for_state_cache(snapshot: ProjectionSnapshot
     )
 
 
-def summary_snapshot_is_eligible_for_operator_cache(snapshot: SummaryProjectionSnapshot) -> bool:
+def derived_index_snapshot_is_eligible_for_fact_index_cache(
+    snapshot: DerivedIndexSnapshot,
+) -> bool:
+    expected = DerivedIndexSnapshotBoundary()
+    boundary = snapshot.boundary
+    return (
+        boundary.artifact_standing == expected.artifact_standing
+        and boundary.source_artifact_standing == expected.source_artifact_standing
+        and boundary.source_producer_boundary == expected.source_producer_boundary
+        and boundary.source_occurrence_evidence_kind
+        == expected.source_occurrence_evidence_kind
+        and boundary.source_consumer_limit == expected.source_consumer_limit
+        and boundary.consumer_limit == expected.consumer_limit
+        and boundary.mutates_cluster == expected.mutates_cluster
+    )
+
+
+def summary_snapshot_is_eligible_for_operator_cache(
+    snapshot: SummaryProjectionSnapshot,
+) -> bool:
     expected = SummarySnapshotBoundary()
     boundary = snapshot.boundary
     return (
         boundary.artifact_standing == expected.artifact_standing
         and boundary.source_artifact_standing == expected.source_artifact_standing
         and boundary.source_producer_boundary == expected.source_producer_boundary
-        and boundary.source_occurrence_evidence_kind == expected.source_occurrence_evidence_kind
+        and boundary.source_occurrence_evidence_kind
+        == expected.source_occurrence_evidence_kind
         and boundary.source_consumer_limit == expected.source_consumer_limit
         and boundary.consumer_limit == expected.consumer_limit
         and boundary.mutates_cluster == expected.mutates_cluster
@@ -788,7 +871,11 @@ def project_state_with_cache(
                     current_last_event_id=current_last_event_id,
                     events_applied=0,
                 )
-            if snapshot is not None and snapshot_state is not None and not snapshot_state.inferred_facts:
+            if (
+                snapshot is not None
+                and snapshot_state is not None
+                and not snapshot_state.inferred_facts
+            ):
                 remaining_events = _events_after_snapshot(
                     events, snapshot.last_event_id
                 )
