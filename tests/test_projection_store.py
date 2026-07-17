@@ -906,7 +906,7 @@ def test_short_projection_replay_does_not_spam_progress():
     assert progress[-1].completed is True
 
 
-def test_sqlite_projection_snapshot_boundary_metadata_preserves_limited_standing(
+def test_sqlite_projection_snapshot_boundary_preserves_read_only_cache_admission(
     tmp_path,
 ):
     db_path = tmp_path / "cache.sqlite"
@@ -922,30 +922,17 @@ def test_sqlite_projection_snapshot_boundary_metadata_preserves_limited_standing
         assert state.get_best_fact("svc", "runtime").value == "docker"
         assert status.cache_hit is False
         assert snapshot is not None
-        assert snapshot.boundary.artifact_standing == "derived_projection_snapshot"
-        assert snapshot.boundary.producer_boundary == "python_state_projection"
-        assert (
-            snapshot.boundary.occurrence_evidence_kind == "snapshot_preservation_only"
-        )
-        assert snapshot.boundary.consumer_limit == "read_model_cache_only"
         assert snapshot.boundary.mutates_cluster is False
         with sqlite3.connect(db_path) as connection:
             row = connection.execute(
                 """
-                SELECT artifact_standing, producer_boundary, occurrence_evidence_kind,
-                       consumer_limit, mutates_cluster
+                SELECT mutates_cluster
                 FROM projection_snapshots
                 WHERE workspace_id = ? AND projection_name = ?
                 """,
                 ("ws", STATE_PROJECTION_NAME),
             ).fetchone()
-        assert row == (
-            "derived_projection_snapshot",
-            "python_state_projection",
-            "snapshot_preservation_only",
-            "read_model_cache_only",
-            0,
-        )
+        assert row == (0,)
     finally:
         store.close()
         ledger.close()
@@ -971,11 +958,6 @@ def test_projection_snapshot_rehydration_does_not_claim_new_event_occurrence(tmp
         assert [item.id for item in after_events] == [event.id]
         assert loaded_state.last_event_id == event.id
         assert snapshot is not None
-        assert (
-            snapshot.boundary.occurrence_evidence_kind == "snapshot_preservation_only"
-        )
-        assert snapshot.boundary.artifact_standing == "derived_projection_snapshot"
-        assert snapshot.boundary.artifact_standing != "established_fact"
         assert snapshot.boundary.mutates_cluster is False
     finally:
         store.close()
@@ -1056,7 +1038,7 @@ def test_sqlite_incompatible_projection_cache_schema_is_replaced_not_interpreted
         store.close()
 
 
-def test_incompatible_projection_boundary_is_cache_miss_without_ledger_or_cluster_mutation():
+def test_mutating_projection_boundary_is_cache_miss_without_ledger_or_cluster_mutation():
     from seed_runtime.projection_store import ProjectionSnapshotBoundary
 
     ledger = EventLedger()
@@ -1071,9 +1053,7 @@ def test_incompatible_projection_boundary_is_cache_miss_without_ledger_or_cluste
             last_event_created_at=event.timestamp,
             state_payload=state_to_payload(StateProjector(ledger).project("ws")),
             created_at=datetime.now(timezone.utc),
-            boundary=ProjectionSnapshotBoundary(
-                producer_boundary="sqlite_self_authorized"
-            ),
+            boundary=ProjectionSnapshotBoundary(mutates_cluster=True),
         )
     )
     projector = CountingProjector(ledger)
@@ -1087,63 +1067,7 @@ def test_incompatible_projection_boundary_is_cache_miss_without_ledger_or_cluste
     assert ledger.list_events("ws") == before
 
 
-def test_incompatible_projection_standing_is_not_strengthened_by_materialization():
-    from seed_runtime.projection_store import ProjectionSnapshotBoundary
-
-    ledger = EventLedger()
-    event = _append_fact(ledger, "ws", "fact_one", "docker")
-    store = InMemoryProjectionStore()
-    store.save_snapshot(
-        ProjectionSnapshot(
-            workspace_id="ws",
-            projection_name=STATE_PROJECTION_NAME,
-            projection_version=STATE_PROJECTION_VERSION,
-            last_event_id=event.id,
-            last_event_created_at=event.timestamp,
-            state_payload=state_to_payload(StateProjector(ledger).project("ws")),
-            created_at=datetime.now(timezone.utc),
-            boundary=ProjectionSnapshotBoundary(artifact_standing="established_fact"),
-        )
-    )
-    projector = CountingProjector(ledger)
-
-    _state, status = project_state_with_cache(ledger, "ws", store, projector=projector)
-
-    assert status.cache_hit is False
-    assert projector.calls == 1
-
-
-def test_incompatible_consumer_limit_and_mutating_boundary_do_not_enter_read_only_consumer():
-    from seed_runtime.projection_store import ProjectionSnapshotBoundary
-
-    ledger = EventLedger()
-    event = _append_fact(ledger, "ws", "fact_one", "docker")
-    for boundary in [
-        ProjectionSnapshotBoundary(consumer_limit="cluster_truth"),
-        ProjectionSnapshotBoundary(mutates_cluster=True),
-    ]:
-        store = InMemoryProjectionStore()
-        store.save_snapshot(
-            ProjectionSnapshot(
-                workspace_id="ws",
-                projection_name=STATE_PROJECTION_NAME,
-                projection_version=STATE_PROJECTION_VERSION,
-                last_event_id=event.id,
-                last_event_created_at=event.timestamp,
-                state_payload=state_to_payload(StateProjector(ledger).project("ws")),
-                created_at=datetime.now(timezone.utc),
-                boundary=boundary,
-            )
-        )
-        projector = CountingProjector(ledger)
-
-        _state, status = project_state_with_cache(ledger, "ws", store, projector=projector)
-
-        assert status.cache_hit is False
-        assert projector.calls == 1
-
-
-def test_sqlite_summary_cache_preserves_source_limits_and_rejects_mismatch(tmp_path):
+def test_sqlite_summary_cache_rejects_mutating_boundary(tmp_path):
     from seed_runtime.projection_store import (
         STATE_SUMMARY_PROJECTION_NAME,
         STATE_SUMMARY_PROJECTION_VERSION,
@@ -1179,8 +1103,8 @@ def test_sqlite_summary_cache_preserves_source_limits_and_rejects_mismatch(tmp_p
 
         with sqlite3.connect(db_path) as connection:
             connection.execute(
-                "UPDATE state_summary_snapshots SET source_consumer_limit = ? WHERE workspace_id = ?",
-                ("cluster_truth", "ws"),
+                "UPDATE state_summary_snapshots SET mutates_cluster = 1 WHERE workspace_id = ?",
+                ("ws",),
             )
         assert store.load_summary_snapshot(
             "ws",
