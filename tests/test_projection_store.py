@@ -903,3 +903,133 @@ def test_short_projection_replay_does_not_spam_progress():
     ]
     assert [item.current for item in progress] == [0, 1]
     assert progress[-1].completed is True
+
+
+def test_sqlite_projection_snapshot_boundary_metadata_preserves_limited_standing(
+    tmp_path,
+):
+    db_path = tmp_path / "cache.sqlite"
+    ledger = SQLiteEventLedger(str(db_path))
+    store = SQLiteProjectionStore(str(db_path))
+    try:
+        _append_fact(ledger, "ws", "fact_one", "docker")
+        state, status = project_state_with_cache(ledger, "ws", store)
+        snapshot = store.load_snapshot(
+            "ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION
+        )
+
+        assert state.get_best_fact("svc", "runtime").value == "docker"
+        assert status.cache_hit is False
+        assert snapshot is not None
+        assert snapshot.boundary.artifact_standing == "derived_projection_snapshot"
+        assert snapshot.boundary.producer_boundary == "python_state_projection"
+        assert (
+            snapshot.boundary.occurrence_evidence_kind == "snapshot_preservation_only"
+        )
+        assert snapshot.boundary.consumer_limit == "read_model_cache_only"
+        assert snapshot.boundary.mutates_cluster is False
+        with sqlite3.connect(db_path) as connection:
+            row = connection.execute(
+                """
+                SELECT artifact_standing, producer_boundary, occurrence_evidence_kind,
+                       consumer_limit, mutates_cluster
+                FROM projection_snapshots
+                WHERE workspace_id = ? AND projection_name = ?
+                """,
+                ("ws", STATE_PROJECTION_NAME),
+            ).fetchone()
+        assert row == (
+            "derived_projection_snapshot",
+            "python_state_projection",
+            "snapshot_preservation_only",
+            "read_model_cache_only",
+            0,
+        )
+    finally:
+        store.close()
+        ledger.close()
+
+
+def test_projection_snapshot_rehydration_does_not_claim_new_event_occurrence(tmp_path):
+    db_path = tmp_path / "cache.sqlite"
+    ledger = SQLiteEventLedger(str(db_path))
+    store = SQLiteProjectionStore(str(db_path))
+    try:
+        event = _append_fact(ledger, "ws", "fact_one", "docker")
+        project_state_with_cache(ledger, "ws", store)
+        before_events = ledger.list_events("ws")
+
+        loaded_state, status = project_state_with_cache(ledger, "ws", store)
+        after_events = ledger.list_events("ws")
+        snapshot = store.load_snapshot(
+            "ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION
+        )
+
+        assert status.cache_hit is True
+        assert [item.id for item in before_events] == [event.id]
+        assert [item.id for item in after_events] == [event.id]
+        assert loaded_state.last_event_id == event.id
+        assert snapshot is not None
+        assert (
+            snapshot.boundary.occurrence_evidence_kind == "snapshot_preservation_only"
+        )
+        assert snapshot.boundary.artifact_standing == "derived_projection_snapshot"
+        assert snapshot.boundary.artifact_standing != "established_fact"
+        assert snapshot.boundary.mutates_cluster is False
+    finally:
+        store.close()
+        ledger.close()
+
+
+def test_sqlite_projection_snapshot_boundary_columns_migrate_existing_cache(tmp_path):
+    db_path = tmp_path / "cache.sqlite"
+    with sqlite3.connect(db_path) as connection:
+        connection.execute("""
+            CREATE TABLE projection_snapshots (
+                workspace_id TEXT NOT NULL,
+                projection_name TEXT NOT NULL,
+                projection_version TEXT NOT NULL,
+                last_event_id TEXT,
+                last_event_created_at TEXT,
+                state_json TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                PRIMARY KEY (workspace_id, projection_name)
+            )
+            """)
+        connection.execute(
+            """
+            INSERT INTO projection_snapshots (
+                workspace_id, projection_name, projection_version, last_event_id,
+                last_event_created_at, state_json, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "ws",
+                STATE_PROJECTION_NAME,
+                STATE_PROJECTION_VERSION,
+                None,
+                None,
+                '{"workspace_id":"ws"}',
+                datetime(2026, 1, 1, tzinfo=timezone.utc).isoformat(),
+            ),
+        )
+
+    store = SQLiteProjectionStore(str(db_path))
+    try:
+        snapshot = store.load_snapshot(
+            "ws", STATE_PROJECTION_NAME, STATE_PROJECTION_VERSION
+        )
+        assert snapshot is not None
+        assert snapshot.boundary.artifact_standing == "derived_projection_snapshot"
+        assert (
+            snapshot.boundary.occurrence_evidence_kind == "snapshot_preservation_only"
+        )
+        with sqlite3.connect(db_path) as connection:
+            columns = {
+                row[1]
+                for row in connection.execute("PRAGMA table_info(projection_snapshots)")
+            }
+        assert "artifact_standing" in columns
+        assert "mutates_cluster" in columns
+    finally:
+        store.close()

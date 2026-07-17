@@ -79,6 +79,15 @@ class SummaryProjectionSnapshot:
 
 
 @dataclass(frozen=True)
+class ProjectionSnapshotBoundary:
+    artifact_standing: str = "derived_projection_snapshot"
+    producer_boundary: str = "python_state_projection"
+    occurrence_evidence_kind: str = "snapshot_preservation_only"
+    consumer_limit: str = "read_model_cache_only"
+    mutates_cluster: bool = False
+
+
+@dataclass(frozen=True)
 class ProjectionSnapshot:
     workspace_id: str
     projection_name: str
@@ -87,6 +96,7 @@ class ProjectionSnapshot:
     last_event_created_at: datetime | None
     state_payload: dict[str, Any]
     created_at: datetime
+    boundary: ProjectionSnapshotBoundary = ProjectionSnapshotBoundary()
 
 
 class ProjectionStore(Protocol):
@@ -248,6 +258,11 @@ class SQLiteProjectionStore:
                 last_event_created_at TEXT,
                 state_json TEXT NOT NULL,
                 created_at TEXT NOT NULL,
+                artifact_standing TEXT NOT NULL DEFAULT 'derived_projection_snapshot',
+                producer_boundary TEXT NOT NULL DEFAULT 'python_state_projection',
+                occurrence_evidence_kind TEXT NOT NULL DEFAULT 'snapshot_preservation_only',
+                consumer_limit TEXT NOT NULL DEFAULT 'read_model_cache_only',
+                mutates_cluster INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY (workspace_id, projection_name)
             )
             """)
@@ -276,7 +291,28 @@ class SQLiteProjectionStore:
                 PRIMARY KEY (workspace_id, projection_name)
             )
             """)
+        self._ensure_projection_snapshot_boundary_columns()
         self._connection.commit()
+
+    def _ensure_projection_snapshot_boundary_columns(self) -> None:
+        columns = {
+            row[1]
+            for row in self._connection.execute(
+                "PRAGMA table_info(projection_snapshots)"
+            )
+        }
+        additions = {
+            "artifact_standing": "TEXT NOT NULL DEFAULT 'derived_projection_snapshot'",
+            "producer_boundary": "TEXT NOT NULL DEFAULT 'python_state_projection'",
+            "occurrence_evidence_kind": "TEXT NOT NULL DEFAULT 'snapshot_preservation_only'",
+            "consumer_limit": "TEXT NOT NULL DEFAULT 'read_model_cache_only'",
+            "mutates_cluster": "INTEGER NOT NULL DEFAULT 0",
+        }
+        for name, declaration in additions.items():
+            if name not in columns:
+                self._connection.execute(
+                    f"ALTER TABLE projection_snapshots ADD COLUMN {name} {declaration}"
+                )
 
     def load_snapshot(
         self, workspace_id: str, projection_name: str, projection_version: str
@@ -298,6 +334,13 @@ class SQLiteProjectionStore:
             last_event_created_at=_parse_datetime(row["last_event_created_at"]),
             state_payload=json.loads(row["state_json"]),
             created_at=_parse_datetime(row["created_at"]) or _utc_now(),
+            boundary=ProjectionSnapshotBoundary(
+                artifact_standing=row["artifact_standing"],
+                producer_boundary=row["producer_boundary"],
+                occurrence_evidence_kind=row["occurrence_evidence_kind"],
+                consumer_limit=row["consumer_limit"],
+                mutates_cluster=bool(row["mutates_cluster"]),
+            ),
         )
 
     def save_snapshot(self, snapshot: ProjectionSnapshot) -> None:
@@ -305,14 +348,20 @@ class SQLiteProjectionStore:
             """
             INSERT INTO projection_snapshots (
                 workspace_id, projection_name, projection_version, last_event_id,
-                last_event_created_at, state_json, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                last_event_created_at, state_json, created_at, artifact_standing,
+                producer_boundary, occurrence_evidence_kind, consumer_limit, mutates_cluster
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(workspace_id, projection_name) DO UPDATE SET
                 projection_version = excluded.projection_version,
                 last_event_id = excluded.last_event_id,
                 last_event_created_at = excluded.last_event_created_at,
                 state_json = excluded.state_json,
-                created_at = excluded.created_at
+                created_at = excluded.created_at,
+                artifact_standing = excluded.artifact_standing,
+                producer_boundary = excluded.producer_boundary,
+                occurrence_evidence_kind = excluded.occurrence_evidence_kind,
+                consumer_limit = excluded.consumer_limit,
+                mutates_cluster = excluded.mutates_cluster
             """,
             (
                 snapshot.workspace_id,
@@ -322,6 +371,11 @@ class SQLiteProjectionStore:
                 _format_datetime(snapshot.last_event_created_at),
                 json.dumps(snapshot.state_payload, sort_keys=True),
                 _format_datetime(snapshot.created_at),
+                snapshot.boundary.artifact_standing,
+                snapshot.boundary.producer_boundary,
+                snapshot.boundary.occurrence_evidence_kind,
+                snapshot.boundary.consumer_limit,
+                int(snapshot.boundary.mutates_cluster),
             ),
         )
         self._connection.commit()
