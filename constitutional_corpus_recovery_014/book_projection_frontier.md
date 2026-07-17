@@ -99,3 +99,7 @@ The projection snapshot boundary is implementation-backed but does not create a 
 ## Hybrid cache consumption frontier after passes 072–074
 
 Passes 072–074 did not resume generic Book expansion. They narrowed the Python–SQLite implementation frontier by separating durable boundary testimony from consumer eligibility for the state-summary cache. Remaining frontier pressure includes derived-index source-limit preservation, richer cache rejection diagnostics, complete downstream consumer maps, and production witness-to-runtime consumption paths.
+
+## Hybrid boundary testimony frontier after passes 075–077
+
+Passes 075–077 did not resume generic Book expansion. They narrowed the Python–SQLite implementation frontier by separating producer-recorded cache testimony from migration-inferred compatibility and by making Python cache consumers apply bounded eligibility rather than row-existence acceptance. Remaining frontier pressure includes complete provenance compression for other caches, derived-index source-limit pressure, diagnostic visibility for richer rejection reasons, and production witness-to-runtime consumption maps.

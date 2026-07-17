@@ -93,3 +93,9 @@ The non-Book corpus recovers a constitutional grammar of conservative movement. 
 - [Hybrid cache pass 072 — Cache-consumption jurisdiction audit](hybrid_cache_pass_072_consumption_jurisdiction_audit.md) audited Python consumption of SQLite-backed state, summary, derived-index, cache-status, migration, stale, corrupt, and rebuild paths without runtime changes.
 - [Hybrid cache pass 073 — State-summary source boundary](hybrid_cache_pass_073_state_summary_source_boundary.md) selected the state snapshot → summary read-model seam as the smallest implementation-local Python/SQLite boundary.
 - [Hybrid cache pass 074 — State-summary source boundary implementation](hybrid_cache_pass_074_state_summary_source_boundary.md) implemented Python-owned summary cache eligibility over SQLite-preserved source-limit testimony without treating row existence as authority.
+
+## Hybrid boundary testimony passes 075–077
+
+- [Hybrid testimony pass 075 — Boundary provenance audit](hybrid_testimony_pass_075_boundary_provenance_audit.md) audited producer construction, dataclass defaults, SQLite INSERT/default/migration paths, legacy rows, in-memory artifacts, rebuild/rewrite, summary derivation, and rehydration without runtime changes.
+- [Hybrid testimony pass 076 — State snapshot boundary-origin seam](hybrid_testimony_pass_076_state_snapshot_boundary_origin.md) selected the state projection snapshot boundary-origin seam as the smallest Python–SQLite consumer-reliance seam.
+- [Hybrid testimony pass 077 — State snapshot boundary-origin implementation](hybrid_testimony_pass_077_state_snapshot_boundary_origin.md) implemented testimony-origin preservation and bounded cache eligibility for projection and synchronized summary cache consumption.

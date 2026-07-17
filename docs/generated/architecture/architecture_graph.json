@@ -28,26 +28,8 @@
     },
     {
       "from": "Runtime",
-      "label": "projects current state",
+      "label": "projects current state for deterministic callers",
       "to": "StateProjector"
-    },
-    {
-      "from": "Runtime",
-      "label": "call_tool only",
-      "path": "call_tool",
-      "to": "ToolExecutor"
-    },
-    {
-      "from": "Runtime",
-      "label": "request_tool",
-      "path": "request_tool",
-      "to": "ToolNeedService"
-    },
-    {
-      "from": "Runtime",
-      "label": "recommend providers",
-      "path": "request_tool",
-      "to": "ToolRecommendationService"
     },
     {
       "from": "StateProjector",
@@ -212,7 +194,7 @@
       "id": "ProjectionStore",
       "kind": "class",
       "layer": "state",
-      "line": 92,
+      "line": 117,
       "owner": "projection_cache",
       "routes": [],
       "summary": "Stores reusable projected-state snapshots derived from the event ledger."
@@ -244,140 +226,26 @@
     {
       "ast_calls": [
         {
-          "method": "_decision_intent_retry_input",
-          "receiver": ""
-        },
-        {
-          "method": "_decision_parse_failed_payload",
-          "receiver": ""
-        },
-        {
-          "method": "_decision_parse_retry_input",
-          "receiver": ""
-        },
-        {
-          "method": "_decision_retry_input",
-          "receiver": ""
-        },
-        {
-          "method": "_parse_failure_classification",
-          "receiver": ""
-        },
-        {
-          "method": "_parse_failure_classification",
-          "receiver": ""
-        },
-        {
-          "method": "_route",
-          "receiver": ""
-        },
-        {
-          "method": "compose",
-          "receiver": "decision_input_composer"
-        },
-        {
-          "method": "decide",
-          "receiver": "decision_producer"
-        },
-        {
-          "method": "validate",
-          "receiver": "decision_validator"
-        },
-        {
           "method": "append",
           "receiver": "ledger"
         },
         {
           "method": "append",
           "receiver": "ledger"
-        },
-        {
-          "method": "append",
-          "receiver": "ledger"
-        },
-        {
-          "method": "append",
-          "receiver": "ledger"
-        },
-        {
-          "method": "append",
-          "receiver": "ledger"
-        },
-        {
-          "method": "append",
-          "receiver": "ledger"
-        },
-        {
-          "method": "append",
-          "receiver": "ledger"
-        },
-        {
-          "method": "append",
-          "receiver": "ledger"
-        },
-        {
-          "method": "append",
-          "receiver": "ledger"
-        },
-        {
-          "method": "project",
-          "receiver": "projector"
-        },
-        {
-          "method": "project",
-          "receiver": "projector"
-        },
-        {
-          "method": "apply",
-          "receiver": "state_patch_service"
-        },
-        {
-          "method": "execute",
-          "receiver": "tool_executor"
-        },
-        {
-          "method": "validate",
-          "receiver": "tool_intent_guard"
-        },
-        {
-          "method": "create_from_decision",
-          "receiver": "tool_need_service"
-        },
-        {
-          "method": "resolve_capability",
-          "receiver": "tool_need_service"
-        },
-        {
-          "method": "recommend_for",
-          "receiver": "tool_recommendation_service"
         }
       ],
       "events": [
         "input.user_message",
-        "model.decision.proposed",
-        "response.answer",
-        "response.question",
-        "response.refusal"
+        "runtime.decision_authority_unsupported"
       ],
       "file": "seed_runtime/runtime.py",
       "id": "Runtime",
       "kind": "class",
       "layer": "runtime",
-      "line": 37,
-      "owner": "runtime_orchestration",
-      "routes": [
-        {
-          "decision": "request_tool",
-          "label": "request_tool",
-          "target": "ToolNeedService"
-        },
-        {
-          "decision": "call_tool",
-          "label": "call_tool only",
-          "target": "ToolExecutor"
-        }
-      ],
-      "summary": "Routes validated model decisions to owner services without owning their behavior."
+      "line": 45,
+      "owner": "runtime_input_boundary",
+      "routes": [],
+      "summary": "Records user input and refuses to route model-produced Decisions as Seed authority."
     },
     {
       "ast_calls": [],
@@ -415,7 +283,7 @@
       "id": "StateProjector",
       "kind": "class",
       "layer": "state",
-      "line": 782,
+      "line": 893,
       "owner": "state_projection",
       "routes": [],
       "summary": "Rebuilds inspectable state by applying ledger events and deriving projection indexes."
@@ -572,18 +440,6 @@
       "owner": "tool_need_capability_resolution",
       "routes": [],
       "summary": "Owns capability-gap creation and read-only capability resolution for request_tool decisions."
-    },
-    {
-      "ast_calls": [],
-      "events": [],
-      "file": null,
-      "id": "ToolRecommendationService",
-      "kind": "external",
-      "layer": "runtime_service",
-      "line": null,
-      "owner": "provider_recommendation_ranking",
-      "routes": [],
-      "summary": "Ranks capability provider recommendations for tool needs."
     },
     {
       "ast_calls": [

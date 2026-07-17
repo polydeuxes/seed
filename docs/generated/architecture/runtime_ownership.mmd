@@ -7,12 +7,11 @@ flowchart LR
   ProjectionStore["ProjectionStore\nowner: projection_cache"]
   ProviderRecommendation["ProviderRecommendation\nowner: capability_metadata"]
   RegisteredOperation["RegisteredOperation\nowner: registered_tool_implementation"]
-  Runtime["Runtime\nowner: runtime_orchestration"]
+  Runtime["Runtime\nowner: runtime_input_boundary"]
   State["State\nowner: projected_state_model"]
   StateProjector["StateProjector\nowner: state_projection"]
   ToolExecutor["ToolExecutor\nowner: registered_tool_execution"]
   ToolNeedService["ToolNeedService\nowner: tool_need_capability_resolution"]
-  ToolRecommendationService["ToolRecommendationService\nowner: provider_recommendation_ranking"]
   ToolRegistry["ToolRegistry\nowner: registered_operation_catalog"]
 
   CapabilityCatalog -->|may suggest handoff| HandoffCandidate
@@ -20,10 +19,7 @@ flowchart LR
   EventLedger -->|feeds projection| StateProjector
   ProjectionStore -->|loads/saves projected snapshot| State
   ProjectionStore -->|used when snapshot is stale| StateProjector
-  Runtime -->|projects current state| StateProjector
-  Runtime -->|call_tool only (call_tool)| ToolExecutor
-  Runtime -->|request_tool (request_tool)| ToolNeedService
-  Runtime -->|recommend providers (request_tool)| ToolRecommendationService
+  Runtime -->|projects current state for deterministic callers| StateProjector
   StateProjector -->|reads append-only events| EventLedger
   StateProjector -->|validates projected graph| GraphValidator
   StateProjector -->|produces projected state| State
