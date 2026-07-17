@@ -14,6 +14,9 @@ Question-shaped text is not automatically a constitutional inquiry. Bounded ques
 ### 04.Question.A — Question standing is not answer standing
 A bounded question may establish the identity, provenance, scope, evidence demand, and lawful stop conditions for an inquiry posture, but it does not establish the answer, select the outcome, authorize unbounded investigation, or convert the operator's wording into repository knowledge. Reformulation, frontier membership, or advancement need may carry the question forward only within preserved evidence, authority, uncertainty, and negative-authority limits.
 
+### 04.Question.B — Inquiry origination requires bounded translation
+An operator ask, prompt phrase, uncertainty statement, reformulation, or presentation label may initiate work only after it is translated into a bounded inquiry with preserved identity, source, scope, evidence demand, authority limit, uncertainty, and lawful stop. That translation may establish an inquiry posture for the bounded question, but it does not make the operator's wording repository knowledge, assign universal inquiry ownership, retire neighboring questions, establish an answer, or authorize investigation beyond the translated boundary.
+
 ## Important distinctions
 - question surface != inquiry standing
 - uncertainty statement != inquiry origination

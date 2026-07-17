@@ -13,7 +13,7 @@ Catalog declarations and behavioral observations can support capability candidat
 ## Addressable boundaries for lawful realization
 
 ### 07.Realization.A — Lawful realization preserves authority without requiring structural symmetry
-An implementation mechanism may lawfully realize a constitutional responsibility when it preserves the recovered authority, evidence boundary, warrant, scope, Unknowns, handoff, recording boundary, and mutation boundary that govern the responsibility. One-to-one structural symmetry between constitutional vocabulary and implementation mechanics is neither required nor sufficient. Compatibility, orchestration, distribution, narrowing, naming, rendering, caching, or dispatch mechanics remain constitutionally neutral while they do not claim, erase, relocate, mutate, or decide constitutional authority.
+An implementation mechanism may lawfully realize a constitutional responsibility when it preserves the authority, evidence boundary, warrant, scope, Unknowns, handoff, recording boundary, and mutation boundary that govern the responsibility. One-to-one structural symmetry between constitutional vocabulary and implementation mechanics is neither required nor sufficient. Compatibility, orchestration, distribution, narrowing, naming, rendering, caching, or dispatch mechanics remain constitutionally neutral while they do not claim, erase, relocate, mutate, or decide constitutional authority.
 
 ## Important distinctions
 - declared capability != verified capability
