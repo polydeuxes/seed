@@ -15,6 +15,7 @@ from seed_runtime.question_surface_inventory import (
     _prepare_question_family_eligibility_input,
     apply_bounded_work_dispatch_namespace_update,
     apply_bounded_work_dispatch_result,
+    apply_knowledge_reachability_json_dispatch_compatibility,
     apply_bounded_work_presentation_handoff,
     bounded_work_dispatch_request_for_selection,
     bounded_work_dispatch_result_for_request,
@@ -563,6 +564,59 @@ def test_execute_bounded_work_dispatch_consumes_request_and_mutates_namespace():
     assert result.dispatch_surface == "observation_permission"
     assert result.surface_value == "__all__"
 
+
+
+def test_apply_knowledge_reachability_json_dispatch_compatibility_is_narrow():
+    parser = seed_local.build_parser()
+    args = parser.parse_args([
+        "ask",
+        "--question-family",
+        "knowledge reachability",
+        "--json",
+    ])
+    eligibility = bounded_work_eligibility_for_question_family("knowledge reachability")
+    selection = bounded_work_selection_for_question_family(
+        "knowledge reachability", eligibility
+    )
+    dispatch_request = bounded_work_dispatch_request_for_selection(selection)
+    dispatch_result = execute_bounded_work_dispatch(args, dispatch_request)
+
+    result = apply_knowledge_reachability_json_dispatch_compatibility(
+        args, dispatch_result
+    )
+
+    assert result is dispatch_result
+    assert args.knowledge_reachability_audit_json is True
+    assert args.json_output is False
+    assert "required_surface_args" not in dispatch_result.__dataclass_fields__
+    assert "bounded_status" not in dispatch_result.__dataclass_fields__
+    assert "permitted" not in dispatch_result.__dataclass_fields__
+
+    non_compatibility_args = parser.parse_args([
+        "ask",
+        "--question-family",
+        "observation domain coverage",
+        "--json",
+    ])
+    non_compatibility_eligibility = bounded_work_eligibility_for_question_family(
+        "observation domain coverage"
+    )
+    non_compatibility_selection = bounded_work_selection_for_question_family(
+        "observation domain coverage", non_compatibility_eligibility
+    )
+    non_compatibility_request = bounded_work_dispatch_request_for_selection(
+        non_compatibility_selection
+    )
+    non_compatibility_result = execute_bounded_work_dispatch(
+        non_compatibility_args, non_compatibility_request
+    )
+
+    returned = apply_knowledge_reachability_json_dispatch_compatibility(
+        non_compatibility_args, non_compatibility_result
+    )
+
+    assert returned is non_compatibility_result
+    assert non_compatibility_args.json_output is True
 
 def test_apply_bounded_work_dispatch_result_consumes_dispatch_result_only():
     parser = seed_local.build_parser()
