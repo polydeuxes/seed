@@ -1126,8 +1126,8 @@ def test_bounded_ask_presentation_rejects_free_text_routing(capsys):
     assert "--question-family can only be used" in capsys.readouterr().err
 
 
-def test_bounded_ask_presentation_parameterized_family_still_requires_surface_args(capsys):
-    with pytest.raises(SystemExit) as exc:
+def test_bounded_ask_presentation_parameterized_family_does_not_require_surface_args(capsys):
+    assert (
         seed_local.main(
             [
                 "ask",
@@ -1137,9 +1137,16 @@ def test_bounded_ask_presentation_parameterized_family_still_requires_surface_ar
                 "--json",
             ]
         )
+        == 0
+    )
 
-    assert exc.value.code == 2
-    assert "requires --surface-args" in capsys.readouterr().err
+    payload = json.loads(capsys.readouterr().out)
+    explanation = payload["composed_question_family_explanation"]
+    assert payload["question_family"] == "derivation explanation"
+    assert explanation["status"] == "known"
+    assert explanation["sections"][0]["value"]["bounded_status"] == (
+        "eligible_with_parameters"
+    )
 
 
 def test_bounded_ask_presentation_does_not_select_other_subject_compositions(capsys):
