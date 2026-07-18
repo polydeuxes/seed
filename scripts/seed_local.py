@@ -402,7 +402,7 @@ from seed_runtime.evidence_graph import (
     FactEvidenceView,
     build_evidence_graph,
     build_evidence_summary,
-    find_evidence_for_fact,
+    find_evidence_graph_material_for_fact,
     unsupported_fact_views,
 )
 from seed_runtime.explanations import (
@@ -8008,7 +8008,7 @@ def main(argv: list[str] | None = None) -> int:
         subject, predicate, *maybe_object = args.why_fact
         print(
             format_why_fact(
-                find_evidence_for_fact(
+                find_evidence_graph_material_for_fact(
                     projected_state_from_args(args),
                     subject,
                     predicate,
