@@ -14,6 +14,7 @@ from seed_runtime.goal_inquiry_consideration_selection import GoalInquiryConside
 InquiryNeedStanding = Literal[
     "established", "unsupported", "unknown", "conflicting", "excluded_family"
 ]
+PressureStanding = Literal["recognized", "unsupported", "unavailable"]
 EvidenceFreshness = Literal["current", "stale", "unknown"]
 EvidenceAvailability = Literal["available", "unavailable", "unknown"]
 UnclassifiedReason = Literal[
@@ -33,6 +34,7 @@ BOUNDARY_NOTES: tuple[str, ...] = (
     "InquiryNeedProjection consumes only explicit component-bounded repository/world uncertainty testimony.",
     "Generic Unknowns, observations, unsupported facts, stale evidence, absent artifacts, and mixed unresolved material are not inquiry-need evidence.",
     "Inquiry standing is preserved separately from evidence freshness and evidence availability.",
+    "Goal-relative inquiry pressure is a separate handoff from bounded-question formation.",
     "Inquiry need established is not inquiry opened, question selected, observation authorized, action selected, sufficiency judged, execution, recording, event-ledger writing, or cluster mutation.",
 )
 
@@ -58,6 +60,45 @@ class RepositoryWorldUncertaintyTestimony:
     evidence_availability: EvidenceAvailability = "available"
     notes: tuple[str, ...] = ()
 
+
+
+
+@dataclass(frozen=True)
+class GoalRelativeInquiryPressure:
+    """Private handoff from goal-relative need recognition to question formation.
+
+    The artifact preserves standing for possible bounded-question formation
+    without question wording and without treating operator testimony as a
+    constitutional question.
+    """
+
+    pressure_id: str
+    selection_id: str
+    goal_establishment_id: str
+    horizon_id: str
+    source_projection_id: str
+    source_finding_refs: tuple[str, ...]
+    examined_evidence_refs: tuple[str, ...]
+    recognized_standing: PressureStanding
+    recognized_pressure_refs: tuple[str, ...] = ()
+    recognized_pressure_kinds: tuple[str, ...] = ()
+    why_matters_relative_to_goal: tuple[str, ...] = ()
+    authority_limits: tuple[str, ...] = (
+        "operator testimony is not a constitutional question",
+        "goal-relative pressure is not bounded-question wording",
+        "pressure recognition does not select a question",
+    )
+    provenance_refs: tuple[str, ...] = ()
+    unknowns: tuple[str, ...] = ()
+    conflicts: tuple[str, ...] = ()
+    standing_for_question_formation: bool = False
+    question_wording: None = None
+    read_only: bool = True
+    writes_event_ledger: bool = False
+    mutates_cluster: bool = False
+
+    def to_json_dict(self) -> dict[str, object]:
+        return asdict(self)
 
 @dataclass(frozen=True)
 class InquiryNeedProjectionItem:
@@ -201,6 +242,76 @@ def project_inquiry_need(
         tuple(buckets["unclassified"]),
     )
 
+
+
+def recognize_goal_relative_inquiry_pressure(
+    selection: GoalInquiryConsiderationSelection,
+    goal: BoundedOperatorGoalEstablishment,
+    horizon: BoundedAdvancementHorizon,
+    projection: InquiryNeedProjection,
+) -> GoalRelativeInquiryPressure:
+    """Recognize bounded inquiry pressure from an existing goal/evidence projection.
+
+    This owner consumes established goal standing plus already examined inquiry
+    need findings. It does not inspect raw operator wording, invent missing
+    evidence, or formulate a bounded question.
+    """
+    evidence_refs = _horizon_evidence_refs(horizon)
+    identity_matches = (
+        selection.selection_state == "selected"
+        and selection.selected_goal_establishment_id == goal.goal_establishment_id
+        and projection.selection_id == selection.selection_id
+        and projection.goal_establishment_id == goal.goal_establishment_id
+        and projection.horizon_id == horizon.horizon_id
+    )
+    recognized_items = projection.established + projection.unknown + projection.conflicting
+    if not identity_matches:
+        standing: PressureStanding = "unsupported"
+        refs: tuple[str, ...] = ()
+        kinds: tuple[str, ...] = ()
+        why: tuple[str, ...] = ()
+    elif not recognized_items:
+        standing = "unavailable"
+        refs = ()
+        kinds = ()
+        why = ()
+    else:
+        standing = "recognized"
+        refs = tuple(item.testimony_ref for item in recognized_items)
+        kinds = tuple(dict.fromkeys(item.standing or "unknown" for item in recognized_items))
+        why = tuple(
+            f"{item.repository_world_subject_ref} is {item.standing or 'unknown'} for goal {goal.goal_establishment_id} via {item.evidence_ref}"
+            for item in recognized_items
+        )
+    payload = {
+        "selection": selection.selection_id,
+        "goal": goal.goal_establishment_id,
+        "horizon": horizon.horizon_id,
+        "projection": projection.projection_id,
+        "standing": standing,
+        "refs": refs,
+    }
+    return GoalRelativeInquiryPressure(
+        pressure_id=_stable("goal-relative-inquiry-pressure", payload),
+        selection_id=selection.selection_id,
+        goal_establishment_id=goal.goal_establishment_id,
+        horizon_id=horizon.horizon_id,
+        source_projection_id=projection.projection_id,
+        source_finding_refs=refs,
+        examined_evidence_refs=evidence_refs if identity_matches else (),
+        recognized_standing=standing,
+        recognized_pressure_refs=refs,
+        recognized_pressure_kinds=kinds,
+        why_matters_relative_to_goal=why,
+        provenance_refs=tuple(item.source_ref for item in recognized_items) if identity_matches else (),
+        unknowns=tuple(item.testimony_ref for item in projection.unknown) if identity_matches else (),
+        conflicts=tuple(item.testimony_ref for item in projection.conflicting) if identity_matches else (),
+        standing_for_question_formation=standing == "recognized",
+    )
+
+
+def goal_relative_inquiry_pressure_json(pressure: GoalRelativeInquiryPressure) -> dict[str, object]:
+    return pressure.to_json_dict()
 
 def inquiry_need_projection_json(projection: InquiryNeedProjection) -> dict[str, object]:
     return projection.to_json_dict()

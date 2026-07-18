@@ -42,6 +42,7 @@ class BoundedConstitutionalQuestion:
         "no authoritative capability creation",
         "no constitutional view selection",
         "no QuestionProjection production",
+        "goal-relative inquiry pressure required for pressure-based formation",
         "no event-ledger writes",
         "no cluster mutation",
     )
@@ -106,6 +107,46 @@ def produce_bounded_constitutional_question(
         caller_supplied_fields=caller_fields_tuple,
     )
 
+
+
+def produce_bounded_constitutional_question_from_inquiry_pressure(
+    *,
+    pressure: Any,
+    bounded_question: str,
+    constitutional_intent: str,
+    scope_status: str,
+    bounded_question_id: str | None = None,
+) -> BoundedConstitutionalQuestion:
+    """Form a bounded question only from a recognized pressure handoff.
+
+    Compatibility-oriented callers may still use
+    `produce_bounded_constitutional_question` with explicit fields. This helper
+    is the implementation-local handoff consumer for goal-relative inquiry
+    pressure and refuses raw operator testimony by requiring the pressure
+    artifact's standing fields.
+    """
+    if getattr(pressure, "standing_for_question_formation", False) is not True:
+        raise ValueError("recognized goal-relative inquiry pressure is required")
+    if getattr(pressure, "question_wording", None) is not None:
+        raise ValueError("pressure artifact must not already contain question wording")
+    pressure_id = getattr(pressure, "pressure_id", None)
+    if not pressure_id:
+        raise ValueError("pressure artifact identity is required")
+    return produce_bounded_constitutional_question(
+        operator_inquiry=f"goal-relative inquiry pressure:{pressure_id}",
+        inquiry_provenance=str(pressure_id),
+        bounded_question=bounded_question,
+        constitutional_intent=constitutional_intent,
+        scope_status=scope_status,
+        uncertainty=tuple(getattr(pressure, "unknowns", ())),
+        unknowns=tuple(getattr(pressure, "unknowns", ())),
+        bounded_question_id=bounded_question_id,
+        caller_supplied_fields={
+            "pressure_id": pressure_id,
+            "goal_establishment_id": getattr(pressure, "goal_establishment_id", "Unknown"),
+            "source_projection_id": getattr(pressure, "source_projection_id", "Unknown"),
+        },
+    )
 
 def bounded_constitutional_question_json(
     artifact: BoundedConstitutionalQuestion,
