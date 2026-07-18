@@ -582,6 +582,29 @@ def clear_bounded_ask_presentation_message(
     )
 
 
+def apply_knowledge_reachability_json_dispatch_compatibility(
+    args: object,
+    dispatch_result: BoundedWorkDispatchResult,
+) -> BoundedWorkDispatchResult:
+    """Apply the existing knowledge-reachability JSON dispatch compatibility.
+
+    This recovers only the local compatibility toggle used after bounded work
+    dispatch has already executed. It does not decide QuestionFamily lookup,
+    eligibility, selection, dispatch request construction, dispatch execution,
+    dispatch result production, general JSON handling, answer composition,
+    rendering, diagnostics, schema, event ledger, evidence interpretation, or
+    semantic routing.
+    """
+
+    if (
+        dispatch_result.question_family == "knowledge reachability"
+        and getattr(args, "json_output", False)
+    ):
+        setattr(args, "knowledge_reachability_audit_json", True)
+        setattr(args, "json_output", False)
+    return dispatch_result
+
+
 def apply_bounded_work_dispatch_result(
     args: object,
     dispatch_result: BoundedWorkDispatchResult,
@@ -595,13 +618,9 @@ def apply_bounded_work_dispatch_result(
     semantic routing.
     """
 
-    if (
-        dispatch_result.question_family == "knowledge reachability"
-        and getattr(args, "json_output", False)
-    ):
-        setattr(args, "knowledge_reachability_audit_json", True)
-        setattr(args, "json_output", False)
-    return dispatch_result
+    return apply_knowledge_reachability_json_dispatch_compatibility(
+        args, dispatch_result
+    )
 
 
 
