@@ -314,7 +314,7 @@ def test_unresolved_evidence_reference_does_not_invent_contradiction_supporting_
 
     assert (
         contradiction.evidence_by_fact_id["fact-1"]
-        .represented_references[0]
+        .represented_graph_references[0]
         .reference_id
         == "evd-missing"
     )

@@ -333,7 +333,7 @@ Partially implemented structures:
 - Unsupported facts are explicit Evidence Graph facts with no linked evidence.
 - `build_fact_evidence_view(state, fact_id)` returns `None` when the fact ID does
   not exist and a view with no evidence when it exists without evidence.
-- `find_evidence_for_fact(...)` can return no matching evidence-backed fact view.
+- `find_evidence_graph_material_for_fact(...)` can return no matching Evidence Graph fact-material view.
 
 Summary relevance:
 
@@ -426,7 +426,7 @@ new runtime behavior:
   fact support and current belief.
 - `State.get_fact_conflicts(...)` for projection-level conflicts.
 - `build_evidence_summary(state)`, `build_evidence_graph(state)`,
-  `build_fact_evidence_view(state, fact_id)`, `find_evidence_for_fact(...)`, and
+  `build_fact_evidence_view(state, fact_id)`, `find_evidence_graph_material_for_fact(...)`, and
   `unsupported_fact_views(state)` for evidence support and unsupported facts.
 - `build_contradictions(...)`, `build_contradiction_summary(...)`, and
   `find_contradictions_for_fact(...)` for conservative contradictions.

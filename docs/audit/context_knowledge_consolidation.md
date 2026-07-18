@@ -70,7 +70,7 @@ as canonical data.
 | CLI / component | Backing code | Status |
 | --- | --- | --- |
 | `--why ENTITY PREDICATE` | `ExplanationBuilder.why` in `seed_runtime.explanations` | Canonical belief explanation over current and competing projected `FactSupport`; includes recursive inferred-fact provenance. Keep distinct. |
-| `--why-fact SUBJECT PREDICATE [OBJECT]` | `find_evidence_for_fact` / `FactEvidenceView` in `seed_runtime.evidence_graph` | Evidence-centric fact provenance view. Overlaps with `--why` but answers a narrower fact/evidence question. Keep, document as evidence graph explanation rather than separate engine. |
+| `--why-fact SUBJECT PREDICATE [OBJECT]` | `find_evidence_graph_material_for_fact` / `FactEvidenceView` in `seed_runtime.evidence_graph` | Evidence-centric fact provenance view. Overlaps with `--why` but answers a narrower fact/evidence question. Keep, document as evidence graph explanation rather than separate engine. |
 | `--evidence` | `build_evidence_graph`, `build_evidence_summary` | Whole-graph provenance summary. Keep distinct from belief explanation. |
 | `--trace-run RUN_ID` | `RuntimeTraceReader` / `RuntimeTrace` | Runtime event reconstruction. Not a knowledge explanation engine. Keep distinct. |
 | `--why-run RUN_ID` | `RuntimeTrace` summary formatter | Human summary of the same runtime trace. Keep distinct from `--why`; it explains a runtime decision, not a projected belief. |

@@ -89,7 +89,7 @@ They use existing projected State structures and do not duplicate storage or cre
 - `build_evidence_graph(state)`
 - `build_fact_evidence_view(state, fact_id)`
 - `build_evidence_summary(state)`
-- `find_evidence_for_fact(state, subject, predicate, object=None)`
+- `find_evidence_graph_material_for_fact(state, subject, predicate, object=None)`
 
 The Evidence Graph is derived from projected `State`, especially existing `Fact`, `FactSupport`, and `Evidence` records. It prefers projected State as its source and does not create a mutable evidence database. The flow is:
 

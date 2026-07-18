@@ -36,8 +36,8 @@
 | Material | Owner | Artifact or representation | Standing |
 | --- | --- | --- | --- |
 | Resolved `State.evidence[evidence_id]` | Evidence Graph | `EvidenceNode` plus ordinary `supports` link | Admitted evidence support |
-| Missing `Fact.evidence_ids` entry | Evidence Graph | `EvidenceReference(standing="unresolved_evidence_reference")` | Visible unresolved reference only |
-| Source-fact/projection fallback | Evidence Graph | `EvidenceReference(standing="derivation_reference")` | Visible derivation reference only |
+| Missing `Fact.evidence_ids` entry | Evidence Graph | `EvidenceGraphReference(standing="unresolved_evidence_reference")` | Visible unresolved reference only |
+| Source-fact/projection fallback | Evidence Graph | `EvidenceGraphReference(standing="derivation_reference")` | Visible derivation reference only |
 
 ## consumers
 

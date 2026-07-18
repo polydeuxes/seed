@@ -12,7 +12,7 @@ from seed_runtime.evidence_graph import (
     build_evidence_graph,
     build_evidence_summary,
     build_fact_evidence_view,
-    find_evidence_for_fact,
+    find_evidence_graph_material_for_fact,
     unsupported_fact_views,
 )
 from seed_runtime.facts import Fact, FactSupport
@@ -127,13 +127,20 @@ def test_fact_evidence_view_explains_supported_fact_and_reports_unsupported():
     assert [view.fact_id for view in unsupported] == ["fact_unsupported"]
 
 
-def test_find_evidence_for_fact_matches_optional_object():
+def test_find_evidence_graph_material_for_fact_matches_optional_object():
     state = _state_with_supported_and_unsupported_facts()
 
-    matches = find_evidence_for_fact(state, "service", "runs_on", "example_host_b")
+    matches = find_evidence_graph_material_for_fact(
+        state, "service", "runs_on", "example_host_b"
+    )
 
     assert [view.fact_id for view in matches] == ["fact_supported"]
-    assert find_evidence_for_fact(state, "service", "runs_on", "example_host_c") == []
+    assert (
+        find_evidence_graph_material_for_fact(
+            state, "service", "runs_on", "example_host_c"
+        )
+        == []
+    )
 
 
 def test_evidence_graph_ordering_is_deterministic_and_state_is_not_mutated():
@@ -246,8 +253,13 @@ def test_unresolved_evidence_reference_is_visible_but_not_admitted_support():
 
     assert graph.evidence_nodes == []
     assert graph.evidence_links == []
-    assert [ref.reference_id for ref in view.represented_references] == ["evd_missing"]
-    assert view.represented_references[0].standing == "unresolved_evidence_reference"
+    assert [ref.reference_id for ref in view.represented_graph_references] == [
+        "evd_missing"
+    ]
+    reference = view.represented_graph_references[0]
+    assert reference.standing == "unresolved_evidence_reference"
+    assert reference.referencing_fact_id == "fact_missing_evidence"
+    assert reference.source_fact_id is None
     assert view.evidence == []
     assert view.supporting_event_ids == []
     assert "no resolved supporting evidence" in view.explanation
@@ -286,8 +298,16 @@ def test_source_fact_fallback_is_derivation_reference_not_evidence_node():
     assert view is not None
     assert view.evidence == []
     assert [
-        (ref.reference_id, ref.standing) for ref in view.represented_references
-    ] == [("fact_source", "derivation_reference")]
+        (
+            ref.reference_id,
+            ref.standing,
+            ref.referencing_fact_id,
+            ref.source_fact_id,
+        )
+        for ref in view.represented_graph_references
+    ] == [
+        ("fact_source", "derivation_reference", "fact_projection", "fact_source")
+    ]
     assert graph.evidence_nodes == []
     assert graph.evidence_links == []
     assert view.supporting_event_ids == []
