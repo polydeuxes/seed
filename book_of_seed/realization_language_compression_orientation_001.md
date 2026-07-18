@@ -10,7 +10,7 @@ The operative constraint is:
 
 The operative evidentiary posture is:
 
-> The compensations required by a realization are evidence of the constitutional dimensions that realization cannot naturally preserve.
+> The compensations required in the examined realization are evidence of constitutional distinctions that current realization practice did not preserve without added boundaries; they are not, by themselves, proof of inherent language incapacity.
 
 ## Evidence posture
 
@@ -28,7 +28,7 @@ For each realization, the quiet Fidelity question is not only whether the implem
 What does this realization express naturally?
 What does it force Seed to compress?
 What distinctions must be added back manually?
-Which compensations reveal constitutional dimensions that the language cannot represent faithfully by default?
+Which compensations reveal constitutional distinctions that this realization, as currently used, did not preserve without added boundaries?
 ```
 
 A coherent representation can be operationally useful while remaining constitutionally under-specified. A table may preserve a relation without proving standing. An object may carry fields without proving responsible production. A cache may provide availability without proving renewed occurrence. A successful rehydration may satisfy a consumer's local shape without re-establishing the producer boundary.
@@ -160,4 +160,4 @@ Later passes should quietly ask:
 
 The constitutional lesson of the Python, SQL, and Python-SQLite witnesses is contrastive rather than canonical. Python shows how object coherence can hide responsibility, occurrence, and standing inside construction and lifecycle grammar. SQL shows how relational clarity can hide Unknowns, warrant, occurrence, and uptake inside row and predicate grammar. The crossing shows how serialization, durability, and rehydration can masquerade as uninterrupted production or renewed authority unless compensations are explicit.
 
-Those compensations are not incidental implementation details. They are evidence of the constitutional dimensions that the realization cannot naturally preserve.
+Those compensations are not incidental implementation details. They are evidence of constitutional distinctions that the examined realization pressured or compressed without added boundaries, not proof that the realization language is inherently incapable of preserving them.

@@ -102,7 +102,7 @@ The witness repeatedly compensates for SQLite's relational compression by adding
 ## Unresolved mismatches
 
 - `[MISSING BOOK GRAMMAR]` A general bounded competency declaration remains only partly named by Book grammar; the witness uses a row with responsibility, authority, evidence/provenance requirements, and stop condition, but the Book has not made that row shape a constitutional type.
-- `[SQLITE GRAMMAR LIMIT]` View availability cannot represent examination occurrence, responsible act recording, consumer receipt, or lawful reliance without additional occurrence and uptake grammar.
+- `[SQLITE GRAMMAR LIMIT]` In this witness, view availability does not represent examination occurrence, responsible act recording, consumer receipt, or lawful reliance without additional occurrence and uptake grammar; that is a bounded grammar-pressure finding, not a proof of inherent SQL incapacity.
 - `[SQLITE GRAMMAR LIMIT]` `NULL` cannot by itself distinguish unknown, omitted, not applicable, unobserved, withheld, or outside-authority absence.
 - `[MISSING BOOK GRAMMAR]` Source independence requires a relation stronger than distinct source identity strings; the current Book supports the negative boundary, not an algorithm for positive independence.
 
