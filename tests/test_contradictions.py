@@ -72,8 +72,12 @@ def _evidence(evidence_id: str, event_id: str, fact: Fact) -> Evidence:
 
 def _contradictory_state() -> State:
     state = State(workspace_id="ws", last_event_id="evt-2")
-    fact_1 = _fact("fact-1", "example_host_d", "status", "healthy", evidence_ids=["evd-1"])
-    fact_2 = _fact("fact-2", "example_host_d", "status", "degraded", evidence_ids=["evd-2"])
+    fact_1 = _fact(
+        "fact-1", "example_host_d", "status", "healthy", evidence_ids=["evd-1"]
+    )
+    fact_2 = _fact(
+        "fact-2", "example_host_d", "status", "degraded", evidence_ids=["evd-2"]
+    )
     state.facts = {fact_2.id: fact_2, fact_1.id: fact_1}
     state.evidence = {
         "evd-1": _evidence("evd-1", "evt-1", fact_1),
@@ -118,7 +122,9 @@ def test_does_not_flag_non_exclusive_predicates_by_default():
     }
 
     assert build_contradictions(state) == []
-    assert build_contradictions(state, exclusive_predicates={"tag"})[0].predicate == "tag"
+    assert (
+        build_contradictions(state, exclusive_predicates={"tag"})[0].predicate == "tag"
+    )
 
 
 def test_attaches_evidence_per_conflicting_fact_when_graph_is_supplied():
@@ -128,8 +134,14 @@ def test_attaches_evidence_per_conflicting_fact_when_graph_is_supplied():
     contradiction = build_contradictions(state, graph)[0]
 
     assert sorted(contradiction.evidence_by_fact_id) == ["fact-1", "fact-2"]
-    assert contradiction.evidence_by_fact_id["fact-1"].supporting_event_ids == ["evd-1", "evt-1"]
-    assert contradiction.evidence_by_fact_id["fact-2"].supporting_event_ids == ["evd-2", "evt-2"]
+    assert contradiction.evidence_by_fact_id["fact-1"].supporting_event_ids == [
+        "evd-1",
+        "evt-1",
+    ]
+    assert contradiction.evidence_by_fact_id["fact-2"].supporting_event_ids == [
+        "evd-2",
+        "evt-2",
+    ]
     assert contradiction.supporting_event_ids == ["evd-1", "evd-2", "evt-1", "evt-2"]
 
 
@@ -151,7 +163,9 @@ def test_summary_counts_contradictions_and_severity_buckets_correctly():
 def test_find_contradictions_for_fact_returns_relevant_contradictions():
     state = _contradictory_state()
 
-    assert [item.subject for item in find_contradictions_for_fact(state, "fact-1")] == ["example_host_d"]
+    assert [item.subject for item in find_contradictions_for_fact(state, "fact-1")] == [
+        "example_host_d"
+    ]
     assert find_contradictions_for_fact(state, "missing") == []
 
 
@@ -197,8 +211,18 @@ def test_contradiction_detection_uses_projected_state_and_evidence_graph_not_raw
 def test_cli_contradictions_prints_summary_and_conflict_details(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
-    assert seed_local.main(["--db", str(db_path), "--observe", "example_host_d", "status", "healthy"]) == 0
-    assert seed_local.main(["--db", str(db_path), "--observe", "example_host_d", "status", "degraded"]) == 0
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--observe", "example_host_d", "status", "healthy"]
+        )
+        == 0
+    )
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--observe", "example_host_d", "status", "degraded"]
+        )
+        == 0
+    )
     capsys.readouterr()
 
     assert seed_local.main(["--db", str(db_path), "--contradictions"]) == 0
@@ -216,11 +240,23 @@ def test_cli_contradictions_prints_summary_and_conflict_details(tmp_path, capsys
     assert "supporting events:" in output
 
 
-def test_cli_contradiction_command_does_not_append_events(tmp_path, capsys, monkeypatch):
+def test_cli_contradiction_command_does_not_append_events(
+    tmp_path, capsys, monkeypatch
+):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
-    assert seed_local.main(["--db", str(db_path), "--observe", "example_host_d", "status", "healthy"]) == 0
-    assert seed_local.main(["--db", str(db_path), "--observe", "example_host_d", "status", "degraded"]) == 0
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--observe", "example_host_d", "status", "healthy"]
+        )
+        == 0
+    )
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--observe", "example_host_d", "status", "degraded"]
+        )
+        == 0
+    )
     capsys.readouterr()
     before_count = _event_count(db_path)
 
@@ -239,8 +275,18 @@ def test_cli_contradiction_command_does_not_invoke_runtime_provider_policy_or_to
 ):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
-    assert seed_local.main(["--db", str(db_path), "--observe", "example_host_d", "status", "healthy"]) == 0
-    assert seed_local.main(["--db", str(db_path), "--observe", "example_host_d", "status", "degraded"]) == 0
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--observe", "example_host_d", "status", "healthy"]
+        )
+        == 0
+    )
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--observe", "example_host_d", "status", "degraded"]
+        )
+        == 0
+    )
     capsys.readouterr()
 
     def fail_execution(*args, **kwargs):  # pragma: no cover - should never be called
@@ -254,3 +300,23 @@ def test_cli_contradiction_command_does_not_invoke_runtime_provider_policy_or_to
     assert seed_local.main(["--db", str(db_path), "--contradictions"]) == 0
     output = capsys.readouterr().out
     assert "Contradictions" in output
+
+
+def test_unresolved_evidence_reference_does_not_invent_contradiction_supporting_event():
+    state = State(workspace_id="ws")
+    fact_1 = _fact(
+        "fact-1", "example_host_d", "status", "healthy", evidence_ids=["evd-missing"]
+    )
+    fact_2 = _fact("fact-2", "example_host_d", "status", "degraded")
+    state.facts = {fact_1.id: fact_1, fact_2.id: fact_2}
+
+    contradiction = build_contradictions(state)[0]
+
+    assert (
+        contradiction.evidence_by_fact_id["fact-1"]
+        .represented_references[0]
+        .reference_id
+        == "evd-missing"
+    )
+    assert contradiction.evidence_by_fact_id["fact-1"].supporting_event_ids == []
+    assert contradiction.supporting_event_ids == []

@@ -113,22 +113,16 @@ def build_contradictions(
             if fact_id in evidence_by_fact_id
         }
         supporting_event_ids = _dedupe_sorted(
-            [
-                event_id
-                for view in attached_evidence.values()
-                for event_id in view.supporting_event_ids
-            ]
-            or [
-                event_id
-                for fact in conflicting_facts
-                for event_id in [*fact.evidence_ids, fact.source_fact_id]
-                if event_id
-            ]
+            event_id
+            for view in attached_evidence.values()
+            for event_id in view.supporting_event_ids
         )
         severity, reason = _classify_conflict(predicate, values)
         contradictions.append(
             Contradiction(
-                contradiction_id=_contradiction_id(subject, predicate, fact_ids, values),
+                contradiction_id=_contradiction_id(
+                    subject, predicate, fact_ids, values
+                ),
                 subject=subject,
                 predicate=predicate,
                 fact_ids=fact_ids,
@@ -148,7 +142,9 @@ def build_contradiction_summary(
 ) -> ContradictionSummary:
     """Return aggregate counts for the contradiction projection view."""
 
-    items = contradictions if contradictions is not None else build_contradictions(state)
+    items = (
+        contradictions if contradictions is not None else build_contradictions(state)
+    )
     affected_fact_ids = {
         fact_id for contradiction in items for fact_id in contradiction.fact_ids
     }
