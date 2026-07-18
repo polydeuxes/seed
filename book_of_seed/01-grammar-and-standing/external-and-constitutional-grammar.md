@@ -7,7 +7,7 @@ The boundary between grammar encountered in external material and grammar warran
 What evidence permits an external vocabulary or representation grammar to become constitutional grammar?
 
 ## Bounded resolution
-External grammar can be identified, compared, and attributed without thereby becoming Seed's constitutional grammar. `[UNRESOLVED]` The sufficient promotion warrant is not yet safely established.
+External grammar can be identified, compared, and attributed without thereby becoming Seed's constitutional grammar. Realization languages, including programming, database, serialization, persistence, cache, and hybrid implementation grammars, are external grammar until a bounded constitutional warrant states what distinction survived and what remains limited or Unknown. `[UNRESOLVED]` The sufficient promotion warrant is not yet safely established.
 
 ## Addressable boundaries for external-source translation
 
