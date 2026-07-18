@@ -197,13 +197,10 @@ from seed_runtime.authority_need_projection import (
 
 from seed_runtime.inquiry_need_projection import (
     InquiryNeedProjection,
-    GoalRelativeInquiryPressure,
     InquiryNeedProjectionItem,
     RepositoryWorldUncertaintyTestimony,
-    goal_relative_inquiry_pressure_json,
     inquiry_need_projection_json,
     project_inquiry_need,
-    recognize_goal_relative_inquiry_pressure,
 )
 
 from seed_runtime.clarification_need_projection import (
@@ -294,13 +291,10 @@ __all__ = [
     "authority_need_projection_json",
     "project_authority_need",
     "InquiryNeedProjection",
-    "GoalRelativeInquiryPressure",
     "InquiryNeedProjectionItem",
     "RepositoryWorldUncertaintyTestimony",
-    "goal_relative_inquiry_pressure_json",
     "inquiry_need_projection_json",
     "project_inquiry_need",
-    "recognize_goal_relative_inquiry_pressure",
     "ClarificationNeedProjection",
     "ClarificationNeedProjectionItem",
     "OperatorMeaningUncertaintyTestimony",
