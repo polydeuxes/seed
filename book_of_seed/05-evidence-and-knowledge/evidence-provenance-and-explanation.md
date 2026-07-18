@@ -23,6 +23,9 @@ A provenance reference may contribute represented lineage only when referenced p
 A missing, unmatched, unsupported, or unpreserved support result may be stated only as a bounded negative finding inside the corpus, surface, query or claim form, temporal boundary, authority boundary, and limitations that produced it. That finding may preserve insufficiency, support loss, mismatch, comparison pressure, or Unknown standing for further examination. It must not be promoted into falsehood, disproof, global nonexistence, legal invalidity, historical absence, operational absence, no-harm, no-event, no-authority, or established fact without separately preserved authority and evidence for that stronger claim.
 
 
+When a question asks for provenance and the examined evidence does not preserve the required provenance dimensions, no lens, projection, explanation, correlation, or rearrangement can recover that provenance from the same material. The original answer remains Unknown. The inquiry may still produce a new bounded evidentiary finding: within the identified corpus, surface, question form, observation boundary, and authority limit, the required provenance dimensions were absent or insufficient for answer recovery. That finding may orient later questions about which dimensions, observers, acts, preservation forms, consumers, standings, or Unknowns are required, but it must not be treated as the missing provenance itself.
+
+
 ### 05.Evidence.D — Correlation and sequence are not causation
 Correlation, association, co-occurrence, sequence, proximity, adjacency, pattern, trend, repeated linkage, diagnostic adjacency, log adjacency, source-attributed causation, or model-inferred causation may orient inquiry or support a bounded claim that such a relation was observed. They do not establish causation, explanation, conduct, responsibility, legal causation, root cause, or proof that one event produced another without claim-appropriate evidence, authority, provenance, confidence limits, Unknown preservation, and lawful stop.
 
@@ -43,6 +46,8 @@ A surface may make a claim, artifact, boundary, output, or relation directly obs
 - source-relative explanation != occurrence-relative explanation
 - not found in a bounded surface != does not exist
 - not preserved != false
+- evidence absence within a boundary != global absence
+- answer not recoverable != inquiry produced nothing
 - comparison pressure != adjudicative authority
 - correlation or sequence != causation
 - attribution != responsibility
