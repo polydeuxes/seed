@@ -9,7 +9,7 @@ What makes a relationship a constitutional road rather than an informative lens 
 ## Bounded resolution
 A lens consumes existing material and exposes, selects, projects, or composes a bounded representation without changing the standing of the represented source material. Its assertion is about what the supplied sources expose under its declared method, warranted by source identity and faithful transformation.
 
-Constitutional uptake is the broader consumer-side grammar for a warranted boundary that gives upstream material bounded constitutional use or standing, or makes an assertion whose warrant materially depends on that material. The uptake vocabulary is dimensional rather than a list of sibling kinds: assertion adoption or narrowing describes the upstream-material relation; coherence checks are consumer constraints; projection, request formation, testimony preservation, composition, explanation construction, and establishment describe consumer acts; and typed request handoff describes a handoff structure. A constitutional road is the assertion-preserving subfamily of uptake: the consumer accepts the producer's assertion for a declared purpose and validates the identities and invariants needed at that boundary. A lens may participate in uptake or a road, but neither call adjacency nor mechanical compatibility establishes one. Representation selection can be lens-like when it only chooses views for rendering or composition; a selection with subject standing is different and requires evidence that a subject, not merely a representation, was selected for a bounded downstream purpose. Road sufficiency is local: producer-side warrant, artifact preservation, and consumer-side validation are related but not interchangeable.
+Constitutional uptake names a consumer-side relation family, not a universal act or stage. When a responsible consumer has prior standing to consume upstream material, and when the preserved evidence, warrant, identity, scope, authority, confidence, and Unknown limits are sufficient for that consumer boundary, upstream material may receive bounded constitutional use, bounded standing for that consumer, or may materially warrant a consumer assertion. The uptake vocabulary is dimensional rather than a list of sibling kinds: assertion adoption or narrowing describes the upstream-material relation; coherence checks are consumer constraints; projection, request formation, testimony preservation, composition, explanation construction, and establishment describe consumer acts; and typed request handoff describes a handoff structure. A constitutional road is the assertion-preserving subfamily of uptake: the consumer accepts the producer's assertion for a declared purpose and validates the identities and invariants needed at that boundary. A lens may participate in uptake or a road, but neither call adjacency, repeated co-occurrence, mechanical compatibility, nor the noun ``uptake`` establishes one. Representation selection can be lens-like when it only chooses views for rendering or composition; a selection with subject standing is different and requires evidence that a subject, not merely a representation, was selected for a bounded downstream purpose. Road sufficiency is local: producer-side warrant, artifact preservation, and consumer-side validation are related but not interchangeable.
 
 ## Important distinctions
 - lens != constitutional road
@@ -26,6 +26,7 @@ Constitutional uptake is the broader consumer-side grammar for a warranted bound
 - consumer act != consumer constraint
 - handoff structure != constitutional relationship
 - typed values transported != constitutional uptake automatically
+- constitutional uptake != universal stage
 - artifact fields read != assertion adopted
 - consumer-local warrant may coexist with weaker upstream standing
 
@@ -39,6 +40,7 @@ Constitutional uptake is the broader consumer-side grammar for a warranted bound
 - Reading a diagnostic display order as a lawful process order.
 - Inferring a road because one module imports another.
 - Treating the pipeline's projection-selection-composition call order as a universal constitutional sequence; each component is explicitly read-only and locally bounded, but read-only status alone is not the reason no road is proven.
+- Replacing discarded root or relevance-recognition vocabulary with constitutional uptake as another universal noun.
 
 ## Related chapters
 - [External and constitutional grammar](external-and-constitutional-grammar.md)
