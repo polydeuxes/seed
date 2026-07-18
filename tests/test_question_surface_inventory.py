@@ -14,6 +14,7 @@ from seed_runtime.question_surface_inventory import (
     _lookup_exact_question_family,
     _prepare_question_family_eligibility_input,
     apply_bounded_work_dispatch_namespace_update,
+    apply_bounded_ask_dispatch_handoff,
     apply_bounded_work_dispatch_result,
     apply_knowledge_reachability_json_dispatch_compatibility,
     apply_bounded_work_presentation_handoff,
@@ -664,6 +665,33 @@ def test_apply_bounded_work_dispatch_result_preserves_non_compatibility_json():
 
     assert args.observation_domains == "__all__"
     assert args.json_output is True
+
+
+def test_apply_bounded_ask_dispatch_handoff_consumes_dispatch_result_only():
+    parser = seed_local.build_parser()
+    args = parser.parse_args([
+        "ask",
+        "--question-family",
+        "knowledge reachability",
+        "--json",
+    ])
+    eligibility = bounded_work_eligibility_for_question_family("knowledge reachability")
+    selection = bounded_work_selection_for_question_family(
+        "knowledge reachability", eligibility
+    )
+    dispatch_request = bounded_work_dispatch_request_for_selection(selection)
+    dispatch_result = execute_bounded_work_dispatch(args, dispatch_request)
+
+    result = apply_bounded_ask_dispatch_handoff(args, dispatch_result)
+
+    assert args.knowledge_reachability_audit_json is True
+    assert args.json_output is False
+    assert args.message == []
+    assert result.question_family == "knowledge reachability"
+    assert result.reason == "cleared bounded ask message after dispatch handoff"
+    assert "dispatch_surface" not in result.__dataclass_fields__
+    assert "surface_value" not in result.__dataclass_fields__
+    assert "required_surface_args" not in result.__dataclass_fields__
 
 
 def test_clear_bounded_ask_dispatch_message_consumes_dispatch_result_only():

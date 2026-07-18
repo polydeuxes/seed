@@ -232,10 +232,9 @@ from seed_runtime.diagnostic_shape_audit import (
 from seed_runtime.question_surface_inventory import (
     _bounded_work_eligibility_for_prepared_question_family,
     _prepare_question_family_eligibility_input,
-    apply_bounded_work_dispatch_result,
+    apply_bounded_ask_dispatch_handoff,
     apply_bounded_work_presentation_handoff,
     bounded_work_dispatch_request_for_selection,
-    clear_bounded_ask_dispatch_message,
     clear_bounded_ask_presentation_message,
     bounded_work_presentation_handoff_for_eligibility,
     bounded_work_refusal_for_eligibility,
@@ -2471,8 +2470,7 @@ def apply_bounded_ask_dispatch(
         )
         dispatch_request = bounded_work_dispatch_request_for_selection(selection)
         dispatch_result = execute_bounded_work_dispatch(args, dispatch_request)
-        apply_bounded_work_dispatch_result(args, dispatch_result)
-        clear_bounded_ask_dispatch_message(args, dispatch_result)
+        apply_bounded_ask_dispatch_handoff(args, dispatch_result)
         return
 
     if not eligibility.permitted:
@@ -2494,8 +2492,7 @@ def apply_bounded_ask_dispatch(
     )
     dispatch_request = bounded_work_dispatch_request_for_selection(selection)
     dispatch_result = execute_bounded_work_dispatch(args, dispatch_request)
-    apply_bounded_work_dispatch_result(args, dispatch_result)
-    clear_bounded_ask_dispatch_message(args, dispatch_result)
+    apply_bounded_ask_dispatch_handoff(args, dispatch_result)
 
 
 def normalize_confidence_args(
