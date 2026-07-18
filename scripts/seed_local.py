@@ -2443,6 +2443,13 @@ def apply_bounded_ask_dispatch(
         parser.error(str(exc))
 
     eligibility = _bounded_work_eligibility_for_prepared_question_family(prepared_input)
+    if eligibility.permitted and args.presentation:
+        presentation_handoff = bounded_work_presentation_handoff_for_eligibility(
+            family, eligibility
+        )
+        apply_bounded_ask_presentation_handoff(args, presentation_handoff)
+        return
+
     surface_args_result = None
     if eligibility.permitted:
         try:
@@ -2455,12 +2462,6 @@ def apply_bounded_ask_dispatch(
             parser.error(str(exc))
 
     if eligibility.bounded_status == "eligible_with_parameters":
-        if args.presentation:
-            presentation_handoff = bounded_work_presentation_handoff_for_eligibility(
-                family, eligibility
-            )
-            apply_bounded_ask_presentation_handoff(args, presentation_handoff)
-            return
         selection = bounded_work_selection_for_question_family(
             family, eligibility, surface_args_result
         )
