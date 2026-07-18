@@ -105,7 +105,7 @@ The crossing and witnesses require a restrained vocabulary:
 - **Occurrence** requires evidence that the relevant responsible boundary happened. A preserved artifact may assert occurrence without proving it.
 - **Standing** depends on the applicable production, establishment, admission, or consumer-local boundary. Shape or reachability alone is insufficient.
 - **Authority** remains attached to the constitutional responsibility and its warrant. It is not transferred by row ownership, object ownership, file ownership, query success, or cache possession.
-- **Consumer uptake** is a later bounded act of receipt, reliance, refusal, or use. A consumer that can deserialize or query a representation has not thereby constitutionally adopted it.
+- **Consumer uptake** remains only partly resolved. Receipt, reliance, refusal, and use are distinct consumer-side acts or relations; deserialization is not receipt, and query availability is not reliance. A consumer that can deserialize or query a representation has not thereby constitutionally adopted it.
 
 These distinctions must travel through realization crossings or remain explicitly Unknown.
 
