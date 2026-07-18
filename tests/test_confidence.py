@@ -105,7 +105,9 @@ def test_unsupported_fact_with_no_explicit_confidence_has_zero_confidence():
 
 
 def test_one_evidence_node_has_at_least_half_confidence():
-    fact = _fact("fact-1", "example_host_d", "status", "degraded", evidence_ids=["evd-1"])
+    fact = _fact(
+        "fact-1", "example_host_d", "status", "degraded", evidence_ids=["evd-1"]
+    )
 
     confidence = build_fact_confidence(_state(fact), fact.id)
 
@@ -117,7 +119,11 @@ def test_one_evidence_node_has_at_least_half_confidence():
 
 def test_two_evidence_nodes_have_strong_confidence():
     fact = _fact(
-        "fact-1", "example_host_d", "status", "degraded", evidence_ids=["evd-1", "evd-2"]
+        "fact-1",
+        "example_host_d",
+        "status",
+        "degraded",
+        evidence_ids=["evd-1", "evd-2"],
     )
 
     confidence = build_fact_confidence(_state(fact), fact.id)
@@ -145,8 +151,16 @@ def test_explicit_fact_confidence_is_preserved_when_higher_than_evidence():
 
 
 def test_contradicted_fact_is_marked_and_confidence_is_reduced_without_resolution():
-    fact_1 = _fact("fact-1", "example_host_d", "status", "healthy", evidence_ids=["evd-1", "evd-2"])
-    fact_2 = _fact("fact-2", "example_host_d", "status", "degraded", evidence_ids=["evd-3", "evd-4"])
+    fact_1 = _fact(
+        "fact-1", "example_host_d", "status", "healthy", evidence_ids=["evd-1", "evd-2"]
+    )
+    fact_2 = _fact(
+        "fact-2",
+        "example_host_d",
+        "status",
+        "degraded",
+        evidence_ids=["evd-3", "evd-4"],
+    )
     state = _state(fact_2, fact_1)
     before_fact_ids = sorted(state.facts)
 
@@ -155,7 +169,10 @@ def test_contradicted_fact_is_marked_and_confidence_is_reduced_without_resolutio
     assert confidences["fact-1"].contradicted is True
     assert confidences["fact-1"].contradiction_count == 1
     assert confidences["fact-1"].confidence == 0.5625
-    assert "confidence reduced because fact is contradicted" in confidences["fact-1"].reasons
+    assert (
+        "confidence reduced because fact is contradicted"
+        in confidences["fact-1"].reasons
+    )
     assert sorted(state.facts) == before_fact_ids
     assert len(state.facts) == 2
 
@@ -173,7 +190,9 @@ def test_summary_counts_strong_weak_unsupported_and_contradicted_facts():
     strong = _fact("strong", "a", "tag", "x", evidence_ids=["evd-1", "evd-2"])
     weak = _fact("weak", "b", "tag", "y", evidence_ids=["evd-3"])
     unsupported = _fact("unsupported", "c", "tag", "z")
-    contradicted_a = _fact("contr-a", "d", "status", "up", evidence_ids=["evd-4", "evd-5"])
+    contradicted_a = _fact(
+        "contr-a", "d", "status", "up", evidence_ids=["evd-4", "evd-5"]
+    )
     contradicted_b = _fact("contr-b", "d", "status", "down", evidence_ids=["evd-6"])
     state = _state(strong, weak, unsupported, contradicted_a, contradicted_b)
 
@@ -208,7 +227,9 @@ def test_output_ordering_is_deterministic_and_state_is_not_mutated():
 
 
 def test_aggregation_uses_projected_state_evidence_graph_and_contradictions_not_raw_ledger_replay():
-    fact = _fact("fact-1", "example_host_d", "status", "degraded", evidence_ids=["evd-1"])
+    fact = _fact(
+        "fact-1", "example_host_d", "status", "degraded", evidence_ids=["evd-1"]
+    )
     state = _state(fact)
     graph = build_evidence_graph(state)
     contradictions = build_contradictions(state, graph)
@@ -222,17 +243,27 @@ def test_aggregation_uses_projected_state_evidence_graph_and_contradictions_not_
 
 
 def test_find_fact_confidence_matches_optional_object():
-    fact = _fact("fact-1", "service", "runs_on", "example_host_b", evidence_ids=["evd-1"])
+    fact = _fact(
+        "fact-1", "service", "runs_on", "example_host_b", evidence_ids=["evd-1"]
+    )
     state = _state(fact)
 
-    assert [item.fact_id for item in find_fact_confidence(state, "service", "runs_on", "example_host_b")] == ["fact-1"]
+    assert [
+        item.fact_id
+        for item in find_fact_confidence(state, "service", "runs_on", "example_host_b")
+    ] == ["fact-1"]
     assert find_fact_confidence(state, "service", "runs_on", "example_host_c") == []
 
 
 def test_cli_confidence_prints_summary_and_fact_list(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
-    assert seed_local.main(["--db", str(db_path), "--observe", "service", "runs_on", "example_host_b"]) == 0
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--observe", "service", "runs_on", "example_host_b"]
+        )
+        == 0
+    )
     capsys.readouterr()
 
     assert seed_local.main(["--db", str(db_path), "--confidence"]) == 0
@@ -245,13 +276,32 @@ def test_cli_confidence_prints_summary_and_fact_list(tmp_path, capsys):
     assert "service runs_on example_host_b" in output
 
 
-def test_cli_confidence_fact_prints_details_for_match_and_missing_fact(tmp_path, capsys):
+def test_cli_confidence_fact_prints_details_for_match_and_missing_fact(
+    tmp_path, capsys
+):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
-    assert seed_local.main(["--db", str(db_path), "--observe", "service", "runs_on", "example_host_b"]) == 0
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--observe", "service", "runs_on", "example_host_b"]
+        )
+        == 0
+    )
     capsys.readouterr()
 
-    assert seed_local.main(["--db", str(db_path), "--confidence-fact", "service", "runs_on", "example_host_b"]) == 0
+    assert (
+        seed_local.main(
+            [
+                "--db",
+                str(db_path),
+                "--confidence-fact",
+                "service",
+                "runs_on",
+                "example_host_b",
+            ]
+        )
+        == 0
+    )
     output = capsys.readouterr().out
     assert "Fact" in output
     assert "service runs_on example_host_b" in output
@@ -260,7 +310,12 @@ def test_cli_confidence_fact_prints_details_for_match_and_missing_fact(tmp_path,
     assert "Reasons" in output
     assert "Supporting Events" in output
 
-    assert seed_local.main(["--db", str(db_path), "--confidence-fact", "missing", "runs_on"]) == 0
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--confidence-fact", "missing", "runs_on"]
+        )
+        == 0
+    )
     assert "No matching fact found for missing runs_on." in capsys.readouterr().out
 
 
@@ -269,7 +324,12 @@ def test_cli_confidence_commands_do_not_append_or_invoke_runtime_provider_policy
 ):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
-    assert seed_local.main(["--db", str(db_path), "--observe", "service", "runs_on", "example_host_b"]) == 0
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--observe", "service", "runs_on", "example_host_b"]
+        )
+        == 0
+    )
     capsys.readouterr()
     before_count = _event_count(db_path)
 
@@ -283,6 +343,31 @@ def test_cli_confidence_commands_do_not_append_or_invoke_runtime_provider_policy
     monkeypatch.setattr(seed_local.ToolExecutor, "execute", fail_execution)
 
     assert seed_local.main(["--db", str(db_path), "--confidence"]) == 0
-    assert seed_local.main(["--db", str(db_path), "--confidence-fact", "service", "runs_on"]) == 0
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--confidence-fact", "service", "runs_on"]
+        )
+        == 0
+    )
     capsys.readouterr()
     assert _event_count(db_path) == before_count
+
+
+def test_unresolved_evidence_reference_does_not_raise_confidence_or_support_count():
+    fact = _fact(
+        "fact-missing",
+        "example_host_d",
+        "status",
+        "degraded",
+        evidence_ids=["evd-missing"],
+    )
+    state = State(workspace_id="ws")
+    state.facts = {fact.id: fact}
+
+    confidence = build_fact_confidence(state, fact.id)
+
+    assert confidence is not None
+    assert confidence.support_count == 0
+    assert confidence.confidence == 0.0
+    assert confidence.unsupported is True
+    assert confidence.supporting_event_ids == []

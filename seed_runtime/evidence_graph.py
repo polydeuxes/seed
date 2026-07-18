@@ -24,9 +24,17 @@ EvidenceType = Literal[
     "unknown",
 ]
 EvidenceRelationship = Literal["supports", "contradicts", "mentions", "derived_from"]
+ReferenceStanding = Literal["unresolved_evidence_reference", "derivation_reference"]
 
 EVIDENCE_TYPES: frozenset[str] = frozenset(
-    {"user_input", "runtime_decision", "tool_result", "observation", "projection", "unknown"}
+    {
+        "user_input",
+        "runtime_decision",
+        "tool_result",
+        "observation",
+        "projection",
+        "unknown",
+    }
 )
 EVIDENCE_RELATIONSHIPS: frozenset[str] = frozenset(
     {"supports", "contradicts", "mentions", "derived_from"}
@@ -53,6 +61,14 @@ class EvidenceLink:
 
 
 @dataclass(frozen=True)
+class EvidenceReference:
+    reference_id: str
+    standing: ReferenceStanding
+    summary: str
+    source_fact_id: str | None = None
+
+
+@dataclass(frozen=True)
 class FactEvidenceView:
     fact_id: str
     subject: str
@@ -60,6 +76,7 @@ class FactEvidenceView:
     object: Any
     confidence: float
     evidence: list[EvidenceNode] = field(default_factory=list)
+    represented_references: list[EvidenceReference] = field(default_factory=list)
     supporting_event_ids: list[str] = field(default_factory=list)
     explanation: str = ""
 
@@ -89,7 +106,7 @@ def build_evidence_graph(state: State) -> EvidenceGraph:
     views: list[FactEvidenceView] = []
 
     for fact in _ordered_facts(state):
-        fact_nodes = _nodes_for_fact(state, fact)
+        fact_nodes, fact_references = _evidence_for_fact(state, fact)
         for node in fact_nodes:
             nodes_by_id.setdefault(node.evidence_id, node)
             links_by_key.setdefault(
@@ -101,7 +118,7 @@ def build_evidence_graph(state: State) -> EvidenceGraph:
                     strength=_link_strength(fact, node),
                 ),
             )
-        views.append(_fact_view(fact, fact_nodes))
+        views.append(_fact_view(fact, fact_nodes, fact_references))
 
     return EvidenceGraph(
         evidence_nodes=sorted(nodes_by_id.values(), key=_node_key),
@@ -116,7 +133,8 @@ def build_fact_evidence_view(state: State, fact_id: str) -> FactEvidenceView | N
     fact = state.facts.get(fact_id)
     if fact is None:
         return None
-    return _fact_view(fact, _nodes_for_fact(state, fact))
+    nodes, references = _evidence_for_fact(state, fact)
+    return _fact_view(fact, nodes, references)
 
 
 def build_evidence_summary(state: State) -> EvidenceSummary:
@@ -127,7 +145,8 @@ def build_evidence_summary(state: State) -> EvidenceSummary:
     unsupported = [view for view in graph.fact_evidence if not view.evidence]
     average = (
         round(
-            sum(node.confidence for node in graph.evidence_nodes) / len(graph.evidence_nodes),
+            sum(node.confidence for node in graph.evidence_nodes)
+            / len(graph.evidence_nodes),
             6,
         )
         if graph.evidence_nodes
@@ -161,44 +180,75 @@ def find_evidence_for_fact(
 def unsupported_fact_views(state: State) -> list[FactEvidenceView]:
     """Return deterministic fact views that have no supporting evidence."""
 
-    return [view for view in build_evidence_graph(state).fact_evidence if not view.evidence]
+    return [
+        view for view in build_evidence_graph(state).fact_evidence if not view.evidence
+    ]
 
 
-def _nodes_for_fact(state: State, fact: Fact) -> list[EvidenceNode]:
+def _evidence_for_fact(
+    state: State, fact: Fact
+) -> tuple[list[EvidenceNode], list[EvidenceReference]]:
     nodes: dict[str, EvidenceNode] = {}
-    for evidence_id in fact.evidence_ids:
-        evidence = state.evidence.get(evidence_id)
-        node = _node_from_evidence(evidence) if evidence else _node_from_fact_reference(fact, evidence_id)
-        nodes.setdefault(node.evidence_id, node)
+    references: dict[tuple[str, str, str | None], EvidenceReference] = {}
+
+    def add_fact_material(material_fact: Fact) -> None:
+        for evidence_id in material_fact.evidence_ids:
+            evidence = state.evidence.get(evidence_id)
+            if evidence is not None:
+                nodes.setdefault(evidence.id, _node_from_evidence(evidence))
+            else:
+                reference = _unresolved_reference(material_fact, evidence_id)
+                references.setdefault(
+                    (
+                        reference.standing,
+                        reference.reference_id,
+                        reference.source_fact_id,
+                    ),
+                    reference,
+                )
+
+    add_fact_material(fact)
+    if not fact.evidence_ids and fact.source_fact_id:
+        reference = EvidenceReference(
+            reference_id=fact.source_fact_id,
+            standing="derivation_reference",
+            summary=f"derived from source fact {fact.source_fact_id}",
+            source_fact_id=fact.source_fact_id,
+        )
+        references.setdefault(
+            (reference.standing, reference.reference_id, reference.source_fact_id),
+            reference,
+        )
 
     for support in _supports_for_fact(state, fact):
         for supporting_fact_id in support.supporting_fact_ids:
             supporting_fact = state.facts.get(supporting_fact_id)
             if supporting_fact is None:
                 continue
-            for evidence_id in supporting_fact.evidence_ids:
-                evidence = state.evidence.get(evidence_id)
-                node = (
-                    _node_from_evidence(evidence)
-                    if evidence
-                    else _node_from_fact_reference(supporting_fact, evidence_id)
+            add_fact_material(supporting_fact)
+            if (
+                not supporting_fact.evidence_ids
+                and supporting_fact.id == fact.id
+                and fact.source_fact_id
+            ):
+                reference = EvidenceReference(
+                    reference_id=fact.source_fact_id,
+                    standing="derivation_reference",
+                    summary=f"derived from source fact {fact.source_fact_id}",
+                    source_fact_id=fact.source_fact_id,
                 )
-                nodes.setdefault(node.evidence_id, node)
-            if not supporting_fact.evidence_ids and supporting_fact.id == fact.id and fact.source_fact_id:
-                nodes.setdefault(
-                    fact.source_fact_id,
-                    EvidenceNode(
-                        evidence_id=fact.source_fact_id,
-                        evidence_type="projection",
-                        summary=f"derived from source fact {fact.source_fact_id}",
-                        source_event_id=fact.source_fact_id,
-                        source_run_id=None,
-                        confidence=fact.confidence,
-                        created_at=fact.observed_at,
+                references.setdefault(
+                    (
+                        reference.standing,
+                        reference.reference_id,
+                        reference.source_fact_id,
                     ),
+                    reference,
                 )
 
-    return sorted(nodes.values(), key=_node_key)
+    return sorted(nodes.values(), key=_node_key), sorted(
+        references.values(), key=_reference_key
+    )
 
 
 def _supports_for_fact(state: State, fact: Fact) -> list[FactSupport]:
@@ -227,21 +277,25 @@ def _node_from_evidence(evidence: Evidence) -> EvidenceNode:
     )
 
 
-def _node_from_fact_reference(fact: Fact, evidence_id: str) -> EvidenceNode:
-    return EvidenceNode(
-        evidence_id=evidence_id,
-        evidence_type=_source_type_to_evidence_type(fact.source_type),
-        summary=f"{fact.subject_id} {fact.predicate} {_stable_value(fact.value)}",
-        source_event_id=evidence_id,
-        source_run_id=None,
-        confidence=fact.confidence,
-        created_at=fact.observed_at,
+def _unresolved_reference(fact: Fact, evidence_id: str) -> EvidenceReference:
+    return EvidenceReference(
+        reference_id=evidence_id,
+        standing="unresolved_evidence_reference",
+        summary=f"unresolved evidence reference for {fact.subject_id} {fact.predicate} {_stable_value(fact.value)}",
+        source_fact_id=fact.id,
     )
 
 
-def _fact_view(fact: Fact, nodes: list[EvidenceNode]) -> FactEvidenceView:
+def _fact_view(
+    fact: Fact, nodes: list[EvidenceNode], references: list[EvidenceReference]
+) -> FactEvidenceView:
     supporting_ids = sorted(
-        {item for node in nodes for item in [node.source_event_id, node.evidence_id] if item}
+        {
+            item
+            for node in nodes
+            for item in [node.source_event_id, node.evidence_id]
+            if item
+        }
     )
     return FactEvidenceView(
         fact_id=fact.id,
@@ -250,13 +304,21 @@ def _fact_view(fact: Fact, nodes: list[EvidenceNode]) -> FactEvidenceView:
         object=fact.value,
         confidence=fact.confidence,
         evidence=nodes,
+        represented_references=references,
         supporting_event_ids=supporting_ids,
-        explanation=_explanation(fact, nodes),
+        explanation=_explanation(fact, nodes, references),
     )
 
 
-def _explanation(fact: Fact, nodes: list[EvidenceNode]) -> str:
+def _explanation(
+    fact: Fact, nodes: list[EvidenceNode], references: list[EvidenceReference]
+) -> str:
     if not nodes:
+        if references:
+            return (
+                "Seed has this fact in projected State with represented references, "
+                "but no resolved supporting evidence is linked."
+            )
         return "Seed has this fact in projected State, but no supporting evidence is linked."
     type_counts: dict[str, int] = {}
     for node in nodes:
@@ -330,12 +392,21 @@ def _link_strength(fact: Fact, node: EvidenceNode) -> float:
 def _ordered_facts(state: State) -> list[Fact]:
     return sorted(
         state.facts.values(),
-        key=lambda fact: (fact.subject_id, fact.predicate, _stable_value(fact.value), fact.id),
+        key=lambda fact: (
+            fact.subject_id,
+            fact.predicate,
+            _stable_value(fact.value),
+            fact.id,
+        ),
     )
 
 
 def _node_key(node: EvidenceNode) -> tuple[str, str]:
     return (node.evidence_type, node.evidence_id)
+
+
+def _reference_key(reference: EvidenceReference) -> tuple[str, str, str]:
+    return (reference.standing, reference.reference_id, reference.source_fact_id or "")
 
 
 def _link_key(link: EvidenceLink) -> tuple[str, str, str]:

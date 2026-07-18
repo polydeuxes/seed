@@ -26,7 +26,9 @@ SCRIPT_PATH = Path("scripts/seed_local.py")
 
 
 def load_seed_local_module():
-    spec = importlib.util.spec_from_file_location("seed_local_context_views", SCRIPT_PATH)
+    spec = importlib.util.spec_from_file_location(
+        "seed_local_context_views", SCRIPT_PATH
+    )
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     assert spec.loader is not None
@@ -46,7 +48,9 @@ def _evidence(evidence_id: str, event_id: str) -> Evidence:
     )
 
 
-def _fact(fact_id: str, subject: str, predicate: str, value, evidence_ids=None, **extra) -> Fact:
+def _fact(
+    fact_id: str, subject: str, predicate: str, value, evidence_ids=None, **extra
+) -> Fact:
     return Fact(
         id=fact_id,
         subject_id=subject,
@@ -134,7 +138,9 @@ def test_confidence_values_preserved_from_confidence_aggregation():
     view = build_decision_context_view(state)
     facts_by_id = {fact.fact_id: fact for fact in view.facts}
 
-    assert facts_by_id["fact_high"].confidence == confidence_by_id["fact_high"].confidence
+    assert (
+        facts_by_id["fact_high"].confidence == confidence_by_id["fact_high"].confidence
+    )
     assert (
         facts_by_id["fact_status_active"].confidence
         == confidence_by_id["fact_status_active"].confidence
@@ -295,3 +301,16 @@ def test_cli_decision_context_does_not_invoke_runtime_provider_policy_or_tools(
     monkeypatch.setattr(seed_local.Runtime, "handle_user_message", explode)
 
     assert seed_local.main(["--db", str(db_path), "--decision-context"]) == 0
+
+
+def test_unresolved_evidence_reference_is_unsupported_in_decision_context():
+    state = State(workspace_id="ws")
+    fact = _fact("fact_missing", "service-missing", "available", True, ["evd_missing"])
+    state.facts = {fact.id: fact}
+
+    default_view = build_decision_context_view(state)
+    included_view = build_decision_context_view(state, include_unsupported=True)
+
+    assert default_view.facts == []
+    assert included_view.facts[0].evidence_count == 0
+    assert included_view.summary.unsupported_count == 1

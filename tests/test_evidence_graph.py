@@ -98,9 +98,10 @@ def test_evidence_graph_builds_nodes_and_support_links_from_fact_support_data():
     assert [node.evidence_id for node in graph.evidence_nodes] == ["evd_obs_1"]
     assert graph.evidence_nodes[0].evidence_type == "observation"
     assert graph.evidence_nodes[0].source_event_id == "evt_123"
-    assert [(link.source_evidence_id, link.target_fact_id, link.relationship) for link in graph.evidence_links] == [
-        ("evd_obs_1", "fact_supported", "supports")
-    ]
+    assert [
+        (link.source_evidence_id, link.target_fact_id, link.relationship)
+        for link in graph.evidence_links
+    ] == [("evd_obs_1", "fact_supported", "supports")]
 
 
 def test_evidence_summary_counts_nodes_linked_facts_and_unsupported_facts():
@@ -153,7 +154,9 @@ def test_state_snapshot_serialization_preserves_evidence_related_fields():
     graph = build_evidence_graph(restored)
 
     assert [node.evidence_id for node in graph.evidence_nodes] == ["evd_obs_1"]
-    restored_view = next(view for view in graph.fact_evidence if view.fact_id == "fact_supported")
+    restored_view = next(
+        view for view in graph.fact_evidence if view.fact_id == "fact_supported"
+    )
     assert restored_view.supporting_event_ids == ["evd_obs_1", "evt_123"]
 
 
@@ -162,10 +165,17 @@ def _event_count(db_path: Path) -> int:
         return connection.execute("SELECT COUNT(*) FROM events").fetchone()[0]
 
 
-def test_cli_evidence_commands_are_read_only_and_print_expected_output(tmp_path, capsys, monkeypatch):
+def test_cli_evidence_commands_are_read_only_and_print_expected_output(
+    tmp_path, capsys, monkeypatch
+):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
-    assert seed_local.main(["--db", str(db_path), "--observe", "service", "runs_on", "example_host_b"]) == 0
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--observe", "service", "runs_on", "example_host_b"]
+        )
+        == 0
+    )
     capsys.readouterr()
     before_count = _event_count(db_path)
 
@@ -181,7 +191,12 @@ def test_cli_evidence_commands_are_read_only_and_print_expected_output(tmp_path,
     assert "Evidence Nodes: 1" in evidence_output
     assert _event_count(db_path) == before_count
 
-    assert seed_local.main(["--db", str(db_path), "--why-fact", "service", "runs_on", "example_host_b"]) == 0
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--why-fact", "service", "runs_on", "example_host_b"]
+        )
+        == 0
+    )
     why_output = capsys.readouterr().out
     assert "Fact" in why_output
     assert "service runs_on example_host_b" in why_output
@@ -198,9 +213,81 @@ def test_cli_evidence_commands_are_read_only_and_print_expected_output(tmp_path,
 def test_cli_why_fact_handles_missing_fact(tmp_path, capsys):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "seed.sqlite"
-    assert seed_local.main(["--db", str(db_path), "--observe", "service", "runs_on", "example_host_b"]) == 0
+    assert (
+        seed_local.main(
+            ["--db", str(db_path), "--observe", "service", "runs_on", "example_host_b"]
+        )
+        == 0
+    )
     capsys.readouterr()
 
-    assert seed_local.main(["--db", str(db_path), "--why-fact", "missing", "runs_on"]) == 0
+    assert (
+        seed_local.main(["--db", str(db_path), "--why-fact", "missing", "runs_on"]) == 0
+    )
 
     assert "No matching fact found for missing runs_on." in capsys.readouterr().out
+
+
+def test_unresolved_evidence_reference_is_visible_but_not_admitted_support():
+    fact = Fact(
+        id="fact_missing_evidence",
+        subject_id="service",
+        predicate="runs_on",
+        value="host-x",
+        evidence_ids=["evd_missing"],
+        source_type="discovery",
+        observed_at=_ts(),
+    )
+    state = State(workspace_id="ws")
+    state.facts = {fact.id: fact}
+
+    graph = build_evidence_graph(state)
+    view = graph.fact_evidence[0]
+
+    assert graph.evidence_nodes == []
+    assert graph.evidence_links == []
+    assert [ref.reference_id for ref in view.represented_references] == ["evd_missing"]
+    assert view.represented_references[0].standing == "unresolved_evidence_reference"
+    assert view.evidence == []
+    assert view.supporting_event_ids == []
+    assert "no resolved supporting evidence" in view.explanation
+    assert "supported by 1 evidence record" not in view.explanation
+    assert [item.fact_id for item in unsupported_fact_views(state)] == [
+        "fact_missing_evidence"
+    ]
+
+
+def test_source_fact_fallback_is_derivation_reference_not_evidence_node():
+    source = Fact(
+        id="fact_source",
+        subject_id="service",
+        predicate="runs_on",
+        value="host-a",
+        evidence_ids=[],
+        source_type="imported",
+        observed_at=_ts(),
+    )
+    projected = Fact(
+        id="fact_projection",
+        subject_id="host-a",
+        predicate="hosts",
+        value="service",
+        evidence_ids=[],
+        source_type="inferred",
+        source_fact_id=source.id,
+        observed_at=_ts(1),
+    )
+    state = State(workspace_id="ws")
+    state.facts = {source.id: source, projected.id: projected}
+
+    view = build_fact_evidence_view(state, projected.id)
+    graph = build_evidence_graph(state)
+
+    assert view is not None
+    assert view.evidence == []
+    assert [
+        (ref.reference_id, ref.standing) for ref in view.represented_references
+    ] == [("fact_source", "derivation_reference")]
+    assert graph.evidence_nodes == []
+    assert graph.evidence_links == []
+    assert view.supporting_event_ids == []
