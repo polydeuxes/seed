@@ -25,10 +25,17 @@ An Inquiry Need is not a formed question. A typed Unknown is not generic unresol
 
 Frontier membership is not selection. Eligibility is not selection. Selection is not dispatch. Dispatch is not evidence gathering. A probe request is not performed examination. Examination output is not understanding, knowledge, answer, or fact without the applicable establishment boundary. An answer is not sufficiency, sufficiency is not completion, completion is not retirement, representation is not delivery, delivery is not receipt, receipt is not reliance, and response is not correction or reopening. Lawful outcomes include zero, one, or many local outputs; no-selection; refusal; deferment; conflict; Unknown preservation; lawful inactivity; partial finding; local completion; neighboring inquiry preservation; and re-entry as new pressure without mutating the prior artifact.
 
+
+### 04.Question.D — Questions constrain evidence demand without becoming lenses
+A bounded question may require dimensions, observation boundaries, and lawful stop conditions, and may constrain which lens family or examination method is applicable. It does not by itself force one canonical lens, supply the evidence it demands, or make a lens output into an answer. Some questions may be answered or lawfully stopped from already-preserved evidence without constructing a new lens; others may require selecting, composing, or requesting a bounded examination method. Question applicability, lens applicability, and evidence sufficiency remain separate standings that must be preserved at the local boundary.
+
 ## Important distinctions
 - question surface != inquiry standing
 - uncertainty statement != inquiry origination
 - answer request != authority to investigate without bounds
+- question != lens
+- question applicability != lens applicability
+- lens applicability != evidence sufficiency
 
 ## Representative repository anchors
 - `seed_runtime/bounded_constitutional_question.py`

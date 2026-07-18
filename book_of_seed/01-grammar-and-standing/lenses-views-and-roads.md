@@ -11,8 +11,14 @@ A lens consumes existing material and exposes, selects, projects, or composes a 
 
 Constitutional uptake names a consumer-side relation family, not a universal act or stage. When a responsible consumer has prior standing to consume upstream material, and when the preserved evidence, warrant, identity, scope, authority, confidence, and Unknown limits are sufficient for that consumer boundary, upstream material may receive bounded constitutional use, bounded standing for that consumer, or may materially warrant a consumer assertion. The uptake vocabulary is dimensional rather than a list of sibling kinds: assertion adoption or narrowing describes the upstream-material relation; coherence checks are consumer constraints; projection, request formation, testimony preservation, composition, explanation construction, and establishment describe consumer acts; and typed request handoff describes a handoff structure. A constitutional road is the assertion-preserving subfamily of uptake: the consumer accepts the producer's assertion for a declared purpose and validates the identities and invariants needed at that boundary. A lens may participate in uptake or a road, but neither call adjacency, repeated co-occurrence, mechanical compatibility, nor the noun ``uptake`` establishes one. Representation selection can be lens-like when it only chooses views for rendering or composition; a selection with subject standing is different and requires evidence that a subject, not merely a representation, was selected for a bounded downstream purpose. Road sufficiency is local: producer-side warrant, artifact preservation, and consumer-side validation are related but not interchangeable.
 
+
+A lens output is a bounded representation of what the supplied sources expose under the lens method. It is not automatically the answer to the question that motivated the lens, not proof that the evidence is sufficient for that question, and not recovery of dimensions that the supplied evidence did not preserve. Where required dimensions are absent from the examined material, a lens may make that bounded absence distinguishable; it may not manufacture the missing provenance, authority, occurrence, or standing.
+
 ## Important distinctions
 - lens != constitutional road
+- lens != evidence
+- lens output != answer
+- lens output != evidence sufficiency
 - read-only representation selection or composition != constitutional road by itself
 - read-only selection != no constitutional occurrence
 - non-mutating act != lens automatically
