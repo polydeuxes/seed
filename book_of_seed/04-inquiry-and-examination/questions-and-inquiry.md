@@ -29,6 +29,35 @@ Frontier membership is not selection. Eligibility is not selection. Selection is
 ### 04.Question.D — Questions constrain evidence demand without becoming lenses
 A bounded question may require dimensions, observation boundaries, and lawful stop conditions, and may constrain which lens family or examination method is applicable. It does not by itself force one canonical lens, supply the evidence it demands, or make a lens output into an answer. Some questions may be answered or lawfully stopped from already-preserved evidence without constructing a new lens; others may require selecting, composing, or requesting a bounded examination method. Question applicability, lens applicability, and evidence sufficiency remain separate standings that must be preserved at the local boundary.
 
+### 04.Question.E — Normal interactive questioning is Seed-owned after bounded testimony
+Completed constitutional evidence from `constitutional_interactive_question_ownership_investigation_001.md` is consumed here as a bounded reconciliation in the questions-and-inquiry neighborhood. It creates projection pressure only because existing Book grammar did not state in one place the relationship among operator testimony, Seed-owned normal inquiry, Question Family exposure, view composition, public presentation, and public ask compatibility.
+
+The corrected relation is:
+
+```text
+operator material
+↓
+Seed-side interpretation and bounded goal establishment
+↓
+advancement / inquiry need / frontier standing
+↓
+Seed-owned question formation
+↓
+Seed-owned view applicability, selection, and composition
+↓
+bounded Seed question
+↓
+operator response as further testimony
+```
+
+Before this clarification, question-shaped operator text and public `ask --question-family` compatibility could be misread as operator ownership of normal inquiry machinery. After this clarification, the operator remains the source of attributed testimony, goals, constraints, corrections, and responses; Seed owns normal inquiry origination, normal constitutional question formation, constitutional Question Family applicability, and internal view selection and composition when those standings are supported by the required bounded evidence.
+
+Negative authority: operator testimony is not inquiry origination; operator expression is not constitutional question standing; Question Family exposure is not constitutional applicability; implementation eligibility is not constitutional applicability; public presentation is not operator ownership of view composition; view visibility is not view-selection authority; dispatch is not inquiry origination; and compatibility access is not canonical normal interaction.
+
+Fidelity classification: public ask compatibility behavior is faithful within its bounded compatibility scope; canonical interactive realization remains incomplete or Unknown; operator-owned normal inquiry origination is negatively bounded. Files changed for this projection: this Book clause only. The future implementation treatment of public `ask --question-family` remains Unknown, but its promotion into operator-owned normal inquiry origination is closed unless stronger constitutional evidence overturns this relation.
+
+Preserved Unknowns: whether the complete executable default dialogue loop exists, whether public ask should later be canonized, deprecated, renamed, hidden, or rehomed, and whether particular Question Families apply to particular goals without separate goal, need, frontier, or applicability evidence. Implementation pressure for any public ask classification, diagnostic inventory update, view/presentation refactor, or executable dialogue-loop work is left for later and is not authorized by this Book projection.
+
 ## Important distinctions
 - question surface != inquiry standing
 - uncertainty statement != inquiry origination
