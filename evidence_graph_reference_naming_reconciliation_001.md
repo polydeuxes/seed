@@ -34,7 +34,7 @@ The reconciliation separates these roles mechanically:
 | unresolved-reference `source_fact_id` | `referencing_fact_id` | The fact carrying the unresolved evidence reference. |
 | derivation-reference `source_fact_id` | `source_fact_id` | The actual upstream source fact named by the derivation relation. |
 | `_evidence_for_fact(...)` | `_evidence_graph_material_for_fact(...)` | Helper returns mixed Evidence Graph material: admitted Evidence nodes plus represented graph references. |
-| `find_evidence_for_fact(...)` | `find_evidence_graph_material_for_fact(...)` | Query returns Evidence Graph fact-material views, not only Evidence-backed material. |
+| `find_evidence_for_fact(...)` | `find_evidence_graph_material_for_fact(...)` | Query returns Evidence Graph fact-material views, not only Evidence-backed material; the old public function is retained only as a compatibility alias. |
 
 ## Why each rename is now mature rather than premature
 
@@ -45,18 +45,24 @@ The reconciliation separates these roles mechanically:
 
 ## Compatibility treatment
 
-No compatibility aliases were added. These names were introduced by the recent Evidence Graph admission work and repository search did not show an established external consumer that required retaining the misleading names. The change intentionally updates in-repository call sites and tests rather than preserving speculative aliases.
+`find_evidence_graph_material_for_fact(...)` is the canonical truthful name.
+
+`find_evidence_for_fact(...)` is retained as a compatibility-only alias because its prior public exposure cannot be disproven by absence of in-repository callers. The alias is a bounded handoff to the canonical implementation and does not restore misleading internal usage.
+
+All graph-local classes, fields, and private helpers keep the reconciled names above; no broader compatibility framework or registry is introduced.
+
+## Bounded correction report
+
+- Unproven compatibility crossing: absence of current in-repository callers does not prove absence of external consumers.
+- Prior public surface: `find_evidence_for_fact(...)`.
+- Canonical function: `find_evidence_graph_material_for_fact(...)`.
+- Compatibility alias: `find_evidence_for_fact(...)` delegates directly to the canonical function.
+- Negative authority: compatibility is not canonical standing, and this alias does not authorize reverting graph-local truthful names or changing Evidence admission semantics.
 
 ## Files changed
 
 - `seed_runtime/evidence_graph.py`
-- `scripts/seed_local.py`
 - `tests/test_evidence_graph.py`
-- `tests/test_contradictions.py`
-- `docs/state.md`
-- `docs/projection_integrity_summary_characterization.md`
-- `docs/audit/context_knowledge_consolidation.md`
-- `evidence_graph_admission_fidelity_slice_001.md`
 - `evidence_graph_reference_naming_reconciliation_001.md`
 
 ## Tests executed

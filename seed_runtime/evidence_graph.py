@@ -182,6 +182,14 @@ def find_evidence_graph_material_for_fact(
     return matches
 
 
+def find_evidence_for_fact(
+    state: State, subject: str, predicate: str, object: Any | None = None
+) -> list[FactEvidenceView]:
+    """Compatibility alias for find_evidence_graph_material_for_fact(...)."""
+
+    return find_evidence_graph_material_for_fact(state, subject, predicate, object)
+
+
 def unsupported_fact_views(state: State) -> list[FactEvidenceView]:
     """Return deterministic fact views that have no supporting evidence."""
 
