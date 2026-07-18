@@ -233,9 +233,8 @@ from seed_runtime.question_surface_inventory import (
     _bounded_work_eligibility_for_prepared_question_family,
     _prepare_question_family_eligibility_input,
     apply_bounded_ask_dispatch_handoff,
-    apply_bounded_work_presentation_handoff,
+    apply_bounded_ask_presentation_handoff,
     bounded_work_dispatch_request_for_selection,
-    clear_bounded_ask_presentation_message,
     bounded_work_presentation_handoff_for_eligibility,
     bounded_work_refusal_for_eligibility,
     bounded_work_selection_for_question_family,
@@ -2460,10 +2459,7 @@ def apply_bounded_ask_dispatch(
             presentation_handoff = bounded_work_presentation_handoff_for_eligibility(
                 family, eligibility
             )
-            presentation_result = apply_bounded_work_presentation_handoff(
-                args, presentation_handoff
-            )
-            clear_bounded_ask_presentation_message(args, presentation_result)
+            apply_bounded_ask_presentation_handoff(args, presentation_handoff)
             return
         selection = bounded_work_selection_for_question_family(
             family, eligibility, surface_args_result
@@ -2481,10 +2477,7 @@ def apply_bounded_ask_dispatch(
         presentation_handoff = bounded_work_presentation_handoff_for_eligibility(
             family, eligibility
         )
-        presentation_result = apply_bounded_work_presentation_handoff(
-            args, presentation_handoff
-        )
-        clear_bounded_ask_presentation_message(args, presentation_result)
+        apply_bounded_ask_presentation_handoff(args, presentation_handoff)
         return
 
     selection = bounded_work_selection_for_question_family(

@@ -582,6 +582,27 @@ def clear_bounded_ask_presentation_message(
     )
 
 
+def apply_bounded_ask_presentation_handoff(
+    args: object,
+    presentation_handoff: BoundedWorkPresentationHandoff,
+) -> BoundedAskPresentationMessageClearResult:
+    """Apply the existing bounded ask presentation compatibility handoff.
+
+    This recovers only the local handoff that consumes an already prepared
+    bounded work presentation handoff by applying it to the CLI namespace and
+    clearing the bounded ask message. It does not decide QuestionFamily lookup,
+    eligibility, selected dispatch surface, selected surface value, dispatch
+    request construction, dispatch execution, dispatch result handling, answer
+    composition, diagnostics, schema, event ledger, evidence interpretation, or
+    semantic routing.
+    """
+
+    presentation_result = apply_bounded_work_presentation_handoff(
+        args, presentation_handoff
+    )
+    return clear_bounded_ask_presentation_message(args, presentation_result)
+
+
 def apply_knowledge_reachability_json_dispatch_compatibility(
     args: object,
     dispatch_result: BoundedWorkDispatchResult,
