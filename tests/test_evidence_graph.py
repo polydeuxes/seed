@@ -12,6 +12,7 @@ from seed_runtime.evidence_graph import (
     build_evidence_graph,
     build_evidence_summary,
     build_fact_evidence_view,
+    find_evidence_for_fact,
     find_evidence_graph_material_for_fact,
     unsupported_fact_views,
 )
@@ -141,6 +142,47 @@ def test_find_evidence_graph_material_for_fact_matches_optional_object():
         )
         == []
     )
+
+
+def test_find_evidence_for_fact_compatibility_alias_matches_canonical_without_mutation():
+    evidence = Evidence(
+        id="evd_obs_compat",
+        workspace_id="ws",
+        source="observation:compat",
+        kind="observation",
+        observed_at=_ts(),
+        payload={"source_event_id": "evt_compat", "summary": "compat observation"},
+        confidence=0.82,
+    )
+    fact = Fact(
+        id="fact_compat",
+        subject_id="service",
+        predicate="runs_on",
+        value="host-compat",
+        evidence_ids=[evidence.id, "evd_missing_compat"],
+        source_type="discovery",
+        confidence=0.82,
+        observed_at=_ts(),
+    )
+    state = State(workspace_id="ws")
+    state.evidence = {evidence.id: evidence}
+    state.facts = {fact.id: fact}
+    before = copy.deepcopy(state)
+
+    canonical = find_evidence_graph_material_for_fact(
+        state, "service", "runs_on", "host-compat"
+    )
+    alias = find_evidence_for_fact(state, "service", "runs_on", "host-compat")
+
+    assert alias == canonical
+    assert [view.fact_id for view in alias] == ["fact_compat"]
+    assert [node.evidence_id for node in alias[0].evidence] == ["evd_obs_compat"]
+    assert [ref.reference_id for ref in alias[0].represented_graph_references] == [
+        "evd_missing_compat"
+    ]
+    assert alias[0].supporting_event_ids == ["evd_obs_compat", "evt_compat"]
+    assert "supported by 1 evidence record" in alias[0].explanation
+    assert state == before
 
 
 def test_evidence_graph_ordering_is_deterministic_and_state_is_not_mutated():
