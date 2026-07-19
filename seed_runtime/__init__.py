@@ -147,6 +147,7 @@ from seed_runtime.bounded_inquiry_frontier import (
 
 from seed_runtime.advancement_need_consideration_selection import (
     AdvancementNeedConsiderationSelection,
+    AdvancementNeedConsiderationEvidence,
     NeedFocusEvidence,
     advancement_need_consideration_selection_json,
     select_advancement_need_for_consideration,
@@ -254,6 +255,7 @@ __all__ = [
     "assemble_bounded_inquiry_frontier",
     "bounded_inquiry_frontier_json",
     "AdvancementNeedConsiderationSelection",
+    "AdvancementNeedConsiderationEvidence",
     "NeedFocusEvidence",
     "advancement_need_consideration_selection_json",
     "select_advancement_need_for_consideration",

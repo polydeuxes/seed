@@ -12,7 +12,7 @@ from seed_runtime.advancement_need_reference_set import (
 )
 from seed_runtime.goal_advancement_need_set import NeedFamily
 
-FocusEvidenceState = Literal[
+AdvancementNeedConsiderationEvidenceState = Literal[
     "exact_reference",
     "missing_identity",
     "ambiguous",
@@ -40,7 +40,12 @@ BOUNDARY_NOTES: tuple[str, ...] = (
 
 
 @dataclass(frozen=True)
-class NeedFocusEvidence:
+class AdvancementNeedConsiderationEvidence:
+    """Testimony supplied for advancement-need consideration selection.
+
+    This artifact is not proof that focus standing already exists; the selector
+    validates it against the visible reference set before selection.
+    """
     evidence_ref: str
     source_ref: str
     reference_id: str | None = None
@@ -51,10 +56,14 @@ class NeedFocusEvidence:
     family: NeedFamily | None = None
     native_projection_id: str | None = None
     native_lineage: tuple[str, ...] = ()
-    evidence_state: FocusEvidenceState = "exact_reference"
+    evidence_state: AdvancementNeedConsiderationEvidenceState = "exact_reference"
     candidate_reference_ids: tuple[str, ...] = ()
     unknowns: tuple[str, ...] = ()
     conflicts: tuple[str, ...] = ()
+
+
+# Compatibility alias only; production code should use AdvancementNeedConsiderationEvidence.
+NeedFocusEvidence = AdvancementNeedConsiderationEvidence
 
 
 @dataclass(frozen=True)
@@ -98,7 +107,7 @@ class AdvancementNeedConsiderationSelection:
         return asdict(self)
 
 
-def _selection_id(reference_set: AdvancementNeedReferenceSet, evidence: tuple[NeedFocusEvidence, ...]) -> str:
+def _selection_id(reference_set: AdvancementNeedReferenceSet, evidence: tuple[AdvancementNeedConsiderationEvidence, ...]) -> str:
     lines = [reference_set.reference_set_id]
     lines.extend(
         "\0".join((item.evidence_ref, item.source_ref, item.evidence_state, item.reference_id or "", item.need_set_id or "", item.selection_id or "", item.goal_establishment_id or "", item.horizon_id or "", item.family or "", item.native_projection_id or "", "|".join(item.native_lineage)))
@@ -109,9 +118,9 @@ def _selection_id(reference_set: AdvancementNeedReferenceSet, evidence: tuple[Ne
 
 def select_advancement_need_for_consideration(
     reference_set: AdvancementNeedReferenceSet,
-    focus_evidence: Iterable[NeedFocusEvidence] = (),
+    focus_evidence: Iterable[AdvancementNeedConsiderationEvidence] = (),
 ) -> AdvancementNeedConsiderationSelection:
-    """Select one advancement need only from exact selectable reference focus evidence."""
+    """Select one advancement need only from exact selectable consideration evidence."""
     evidence = tuple(focus_evidence)
     focus_refs = tuple(item.evidence_ref for item in evidence)
     provenance_refs = tuple(item.source_ref for item in evidence)

@@ -120,10 +120,10 @@ Evidence that is not lawful by itself:
 
 ## How focus evidence binds to goal, horizon, family, native projection, and need identity
 
-A lawful `NeedFocusEvidence` shape should preserve all bindings explicitly:
+A lawful `AdvancementNeedConsiderationEvidence` shape should preserve all bindings explicitly:
 
 ```text
-NeedFocusEvidence
+AdvancementNeedConsiderationEvidence
 - evidence_ref
 - source_ref
 - need_set_id
@@ -300,7 +300,7 @@ Yes, one narrow read-only implementation slice is warranted if Seed needs this b
 The slice should be smaller than a planner, priority queue, inquiry opener, clarification requester, authority requester, realization selector, or movement authorizer. It should add only:
 
 - a stable native need item identity or precise fingerprinting rule for the four native projection item types;
-- `NeedFocusEvidence` records that can carry exact item identity plus need-set, selected-goal, horizon, family, and native-projection binding;
+- `AdvancementNeedConsiderationEvidence` records that can carry exact item identity plus need-set, selected-goal, horizon, family, and native-projection binding;
 - an `AdvancementNeedConsiderationSelection` artifact;
 - a selector over one `GoalAdvancementNeedSet` and explicit focus evidence;
 - tests proving exact established need selection;
