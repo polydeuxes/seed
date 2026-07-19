@@ -7,7 +7,7 @@ The warrants and bounded proposals that may connect a selected realization to an
 Which evidence, authority, policy, and preconditions are required before execution may begin?
 
 ## Bounded resolution
-An operational realization warrant supports the fitness of a selected mechanism; an execution proposal binds a contemplated call. Neither is proof of execution, and neither can manufacture missing operator or approval authority.
+An operational realization warrant is a local mechanism-fitness warrant: it supports the fitness of a selected mechanism for a bounded operational purpose. It is not the universal form of warrant. Selection standing, mechanism fitness, proposal readiness, operator authority, approval authority, and execution remain distinct; an execution proposal binds a contemplated call. Neither a mechanism-fitness warrant nor an execution proposal is proof of execution, and neither can manufacture missing operator or approval authority.
 
 ## Important distinctions
 - warrant != execution
