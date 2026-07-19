@@ -119,5 +119,9 @@ def test_pipeline_insufficient_information_does_not_guess_question_or_capability
     assert result.question_projection.selection_keys == ()
     assert result.capability_projection == (ConstitutionalCapabilityProjection(registered_view_name="constitutional_display_only", capability_keys=(), compatibility_answer="Unknown."),)
     assert result.selection.selected_view_names == ()
+    assert result.selection.compatibility_answer == "Unknown."
     assert result.composition_request.requested_views == ()
-    assert result.composition.compatibility_answer == "No."
+    assert result.composition_request.selection_uncertainty == result.selection.selection_uncertainty
+    assert result.composition.contributing_views == ()
+    assert result.composition.preserved_selection_uncertainty == result.selection.selection_uncertainty
+    assert result.composition.compatibility_answer == "Unknown."
