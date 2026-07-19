@@ -69,7 +69,9 @@ class BoundedInquiryFrontier:
     mixed_clause_refs: tuple[str, ...]
     adjacent_family_clause_refs: tuple[str, ...]
     stale_clause_refs: tuple[str, ...]
+    unknown_currency_clause_refs: tuple[str, ...]
     unavailable_clause_refs: tuple[str, ...]
+    unknown_availability_clause_refs: tuple[str, ...]
     out_of_scope_clause_refs: tuple[str, ...]
     clauses: tuple[InquiryFrontierBoundaryClause, ...]
     read_only: bool = True
@@ -101,17 +103,22 @@ def _is_operatively_coherent(clause: InquiryFrontierBoundaryClause) -> bool:
         return False
     if clause.family_disposition != "inquiry":
         return False
-    if clause.evidence_currency in {"conflicting", "stale", "unknown"}:
+    if clause.evidence_currency == "conflicting":
         return False
-    if clause.evidence_availability in {"conflicting", "unavailable", "unknown"}:
+    if clause.evidence_availability == "conflicting":
         return False
     if clause.clause_family == "included_excluded_inquiry_scope":
         return clause.scope_disposition == "included"
     if clause.clause_family == "eligible_ineligible_evidence_territory":
+        if clause.evidence_currency != "current":
+            return False
+        if clause.evidence_availability != "available":
+            return False
         # No repository-local witness currently establishes claim-relative
         # territory eligibility for the selected need, frontier boundary, and
-        # reliance purpose. Preserve supplied refs, but do not count tuple
-        # non-emptiness as positive required-family support.
+        # reliance purpose. Preserve supplied refs and the presently insufficient
+        # standing, but do not count tuple non-emptiness as positive
+        # required-family support or as proof that future warrant is impossible.
         return False
     return True
 
@@ -193,8 +200,10 @@ def assemble_bounded_inquiry_frontier(
         tuple(c.clause_ref for c in clauses if c.clause_standing == "conflicting"),
         tuple(c.clause_ref for c in clauses if c.family_disposition == "mixed"),
         tuple(c.clause_ref for c in clauses if c.family_disposition == "adjacent_family"),
-        tuple(c.clause_ref for c in clauses if c.evidence_currency in {"stale", "unknown"}),
-        tuple(c.clause_ref for c in clauses if c.evidence_availability in {"unavailable", "unknown"}),
+        tuple(c.clause_ref for c in clauses if c.evidence_currency == "stale"),
+        tuple(c.clause_ref for c in clauses if c.evidence_currency == "unknown"),
+        tuple(c.clause_ref for c in clauses if c.evidence_availability == "unavailable"),
+        tuple(c.clause_ref for c in clauses if c.evidence_availability == "unknown"),
         tuple(c.clause_ref for c in clauses if c.scope_disposition == "outside_current_scope"),
         clauses,
     )

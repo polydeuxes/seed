@@ -91,7 +91,9 @@ def test_unsupported_unknown_mixed_adjacent_stale_unavailable_and_out_of_scope_a
     assert frontier.mixed_clause_refs == ("clause:mixed",)
     assert frontier.adjacent_family_clause_refs == ("clause:adjacent",)
     assert frontier.stale_clause_refs == ("clause:stale",)
+    assert frontier.unknown_currency_clause_refs == ()
     assert frontier.unavailable_clause_refs == ("clause:unavailable",)
+    assert frontier.unknown_availability_clause_refs == ()
     assert frontier.out_of_scope_clause_refs == ("clause:outside",)
 
 
@@ -200,9 +202,9 @@ def test_positive_dispositions_and_family_label_do_not_repair_missing_eligible_t
 def test_non_empty_eligible_territory_ref_with_limited_availability_or_currency_is_preserved_non_operative():
     cases = (
         ("clause:evidence-unavailable", {"evidence_availability": "unavailable"}, "unavailable_clause_refs"),
-        ("clause:evidence-unknown-availability", {"evidence_availability": "unknown"}, "unavailable_clause_refs"),
+        ("clause:evidence-unknown-availability", {"evidence_availability": "unknown"}, "unknown_availability_clause_refs"),
         ("clause:evidence-stale", {"evidence_currency": "stale"}, "stale_clause_refs"),
-        ("clause:evidence-unknown-currency", {"evidence_currency": "unknown"}, "stale_clause_refs"),
+        ("clause:evidence-unknown-currency", {"evidence_currency": "unknown"}, "unknown_currency_clause_refs"),
     )
 
     for clause_ref, overrides, limitation_field in cases:
@@ -232,3 +234,35 @@ def test_non_empty_eligible_territory_ref_with_limited_availability_or_currency_
         assert not frontier.starts_recording
         assert not frontier.writes_event_ledger
         assert not frontier.mutates_cluster
+
+
+def test_unknown_currency_and_availability_are_not_reported_as_stale_or_unavailable():
+    clauses = list(_required_clauses())
+    clauses.extend([
+        _clause("clause:unknown-currency", "eligible_ineligible_evidence_territory", evidence_currency="unknown"),
+        _clause("clause:unknown-availability", "eligible_ineligible_evidence_territory", evidence_availability="unknown"),
+    ])
+
+    _, _, frontier = _frontier(*clauses)
+
+    assert "clause:unknown-currency" in frontier.unknown_currency_clause_refs
+    assert "clause:unknown-currency" not in frontier.stale_clause_refs
+    assert "clause:unknown-availability" in frontier.unknown_availability_clause_refs
+    assert "clause:unknown-availability" not in frontier.unavailable_clause_refs
+
+
+def test_currency_and_availability_do_not_apply_as_unsupported_global_gates_to_neighboring_families():
+    clauses = [
+        _clause("clause:scope", "included_excluded_inquiry_scope", evidence_currency="unknown", evidence_availability="unknown"),
+        _clause("clause:evidence", "eligible_ineligible_evidence_territory", eligible_evidence_territory_refs=("territory:repo-world",)),
+        _clause("clause:resolution", "sufficient_resolution_conditions", evidence_currency="unknown"),
+        _clause("clause:stop", "lawful_stopping_conditions", evidence_availability="unknown"),
+    ]
+
+    _, _, frontier = _frontier(*clauses)
+
+    assert "clause:scope" in frontier.operative_clause_refs
+    assert "clause:resolution" in frontier.operative_clause_refs
+    assert "clause:stop" in frontier.operative_clause_refs
+    assert "clause:evidence" not in frontier.operative_clause_refs
+    assert frontier.missing_required_clause_families == ("eligible_ineligible_evidence_territory",)
