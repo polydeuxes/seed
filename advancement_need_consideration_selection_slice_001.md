@@ -5,7 +5,7 @@ This slice adds one read-only `AdvancementNeedConsiderationSelection` boundary.
 ```text
 AdvancementNeedReferenceSet
 +
-explicit NeedFocusEvidence(exact reference)
+explicit AdvancementNeedConsiderationEvidence(exact reference)
 -> AdvancementNeedConsiderationSelection
 ```
 

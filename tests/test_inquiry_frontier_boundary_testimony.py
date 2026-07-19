@@ -1,4 +1,4 @@
-from seed_runtime.advancement_need_consideration_selection import NeedFocusEvidence, select_advancement_need_for_consideration
+from seed_runtime.advancement_need_consideration_selection import AdvancementNeedConsiderationEvidence, select_advancement_need_for_consideration
 from seed_runtime.advancement_need_reference_set import project_advancement_need_reference_set
 from seed_runtime.inquiry_frontier_boundary_testimony import (
     FrontierBoundaryClauseInput,
@@ -10,7 +10,7 @@ from tests.test_advancement_need_reference_set import _need_set
 def _selected_inquiry_need():
     reference_set = project_advancement_need_reference_set(_need_set())
     ref = next(r for r in reference_set.references if r.family == "inquiry" and r.native_bucket == "established")
-    focus = NeedFocusEvidence(
+    focus = AdvancementNeedConsiderationEvidence(
         evidence_ref="focus:inquiry-frontier-boundary",
         source_ref="operator:focus",
         reference_id=ref.reference_id,

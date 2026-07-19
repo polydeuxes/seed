@@ -1,5 +1,7 @@
 from seed_runtime.advancement_need_consideration_selection import (
+    AdvancementNeedConsiderationEvidence,
     NeedFocusEvidence,
+    advancement_need_consideration_selection_json,
     select_advancement_need_for_consideration,
 )
 from seed_runtime.advancement_need_reference_set import project_advancement_need_reference_set
@@ -29,7 +31,49 @@ def _focus(ref, *, evidence_ref="focus:1", **overrides):
         native_lineage=ref.native_lineage,
     )
     data.update(overrides)
-    return NeedFocusEvidence(**data)
+    return AdvancementNeedConsiderationEvidence(**data)
+
+
+def test_canonical_evidence_drives_selector_and_serialized_output_remains_stable():
+    reference_set = _reference_set()
+    ref = _established_inquiry_ref(reference_set)
+
+    selection = select_advancement_need_for_consideration(reference_set, [_focus(ref)])
+    payload = advancement_need_consideration_selection_json(selection)
+
+    assert selection.selection_state == "selected"
+    assert selection.selected_reference == ref
+    assert payload["focus_evidence_refs"] == ("focus:1",)
+    assert payload["focus_provenance_refs"] == ("operator:focus",)
+    assert "consideration_evidence_refs" not in payload
+    assert "consideration_provenance_refs" not in payload
+
+
+def test_compatibility_alias_constructs_the_same_evidence_artifact_and_selector_result():
+    reference_set = _reference_set()
+    ref = _established_inquiry_ref(reference_set)
+    data = dict(
+        evidence_ref="focus:alias",
+        source_ref="operator:focus",
+        reference_id=ref.reference_id,
+        need_set_id=ref.need_set_id,
+        selection_id=ref.selection_id,
+        goal_establishment_id=ref.goal_establishment_id,
+        horizon_id=ref.horizon_id,
+        family=ref.family,
+        native_projection_id=ref.native_projection_id,
+        native_lineage=ref.native_lineage,
+    )
+
+    canonical = AdvancementNeedConsiderationEvidence(**data)
+    compatibility = NeedFocusEvidence(**data)
+    canonical_selection = select_advancement_need_for_consideration(reference_set, [canonical])
+    compatibility_selection = select_advancement_need_for_consideration(reference_set, [compatibility])
+
+    assert NeedFocusEvidence is AdvancementNeedConsiderationEvidence
+    assert compatibility == canonical
+    assert compatibility_selection == canonical_selection
+    assert advancement_need_consideration_selection_json(compatibility_selection) == advancement_need_consideration_selection_json(canonical_selection)
 
 
 def test_exact_reference_selection_validates_full_identity_and_preserves_others_visible_unchanged():
@@ -70,8 +114,8 @@ def test_missing_ambiguous_conflicting_absent_duplicate_lineage_and_mismatched_f
     duplicate_ref = next(r for r in reference_set.references if r.conflict)
 
     missing = select_advancement_need_for_consideration(reference_set, [])
-    missing_identity = select_advancement_need_for_consideration(reference_set, [NeedFocusEvidence("focus:missing", "src", evidence_state="missing_identity")])
-    ambiguous = select_advancement_need_for_consideration(reference_set, [NeedFocusEvidence("focus:amb", "src", evidence_state="ambiguous", candidate_reference_ids=(ref.reference_id, duplicate_ref.reference_id))])
+    missing_identity = select_advancement_need_for_consideration(reference_set, [AdvancementNeedConsiderationEvidence("focus:missing", "src", evidence_state="missing_identity")])
+    ambiguous = select_advancement_need_for_consideration(reference_set, [AdvancementNeedConsiderationEvidence("focus:amb", "src", evidence_state="ambiguous", candidate_reference_ids=(ref.reference_id, duplicate_ref.reference_id))])
     conflicting = select_advancement_need_for_consideration(reference_set, [_focus(ref), _focus(duplicate_ref, evidence_ref="focus:2")])
     absent = select_advancement_need_for_consideration(reference_set, [_focus(ref, reference_id="advancement-need-reference/absent")])
     duplicate = select_advancement_need_for_consideration(reference_set, [_focus(duplicate_ref)])

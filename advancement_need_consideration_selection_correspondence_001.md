@@ -19,10 +19,10 @@ authorization, or execution
 
 ## Implementation role
 
-Examining only `AdvancementNeedReferenceSet`, `NeedFocusEvidence`, `select_advancement_need_for_consideration(...)`, and `AdvancementNeedConsiderationSelection`:
+Examining only `AdvancementNeedReferenceSet`, `AdvancementNeedConsiderationEvidence`, `select_advancement_need_for_consideration(...)`, and `AdvancementNeedConsiderationSelection`:
 
 - The reference set supplies the bounded visible candidate universe. It preserves references for native projection items and marks selectability only for established native records while refusing to reclassify, select, prioritize, route, authorize, execute, record, write the event ledger, or mutate cluster state.
-- `NeedFocusEvidence` is explicit focus testimony. It can name a reference and carry the matching need set, selected goal, goal establishment, horizon, family, native projection, native lineage, state, candidates, unknowns, and conflicts.
+- `AdvancementNeedConsiderationEvidence` is explicit focus testimony. It can name a reference and carry the matching need set, selected goal, goal establishment, horizon, family, native projection, native lineage, state, candidates, unknowns, and conflicts.
 - The selector consumes exactly that reference set plus the supplied focus evidence. It validates absence, missing identity, Unknown, ambiguity, conflict, single named reference identity, same need set, selected goal, goal establishment, horizon, family, native projection, native lineage, reference visibility, duplicate-lineage conflict, and selectability.
 - On non-selection it preserves visible references, non-selected references, focus evidence refs, provenance refs, unknowns, conflicts, and the specific refusal state: no focus evidence, missing identity, ambiguity, conflict, reference mismatch, absent reference, duplicate lineage conflict, or non-selectable reference.
 - On selection it establishes one `AdvancementNeedConsiderationSelection` whose `selection_state` is `selected` and whose `selected_reference` is the one visible selectable reference named by exact matching focus evidence.
@@ -41,3 +41,6 @@ Neither witness warrants calling this **Seed self-orientation**. The Book gramma
 The current selector faithfully realizes
 bounded advancement-need consideration selection,
 but not Seed self-orientation.
+
+
+Compatibility note: `NeedFocusEvidence` remains only as a runtime compatibility alias for `AdvancementNeedConsiderationEvidence`; it is not canonical constitutional grammar and should not be used by new production code or implementation-facing documentation.
