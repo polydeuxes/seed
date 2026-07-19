@@ -110,3 +110,85 @@ def test_no_scope_invention_question_opening_source_selection_authorization_exec
     assert not frontier.writes_event_ledger
     assert not frontier.mutates_cluster
     assert not frontier.result_known
+
+
+def test_eligible_evidence_territory_support_remains_lawfully_operative_for_that_family():
+    selected, testimony, frontier = _frontier(*_required_clauses())
+
+    evidence_clause = next(c for c in testimony.clauses if c.clause_ref == "clause:evidence")
+    assert evidence_clause.clause_family == "eligible_ineligible_evidence_territory"
+    assert evidence_clause.eligible_evidence_territory_refs == ("territory:repo-world",)
+    assert evidence_clause.producer_ref == "stage:frontier-boundary"
+    assert evidence_clause.ownership_basis == "stage_producer_lineage"
+    assert "clause:evidence" in frontier.operative_clause_refs
+    assert "eligible_ineligible_evidence_territory" not in frontier.missing_required_clause_families
+    assert frontier.frontier_state == "established"
+
+
+def test_eligible_evidence_territory_label_without_territory_warrant_is_preserved_but_not_operative():
+    clauses = list(_required_clauses())
+    clauses[1] = _clause(
+        "clause:evidence-unwarranted",
+        "eligible_ineligible_evidence_territory",
+        eligible_evidence_territory_refs=(),
+    )
+
+    _, testimony, frontier = _frontier(*clauses)
+
+    evidence_clause = next(c for c in testimony.clauses if c.clause_ref == "clause:evidence-unwarranted")
+    assert evidence_clause.clause_standing == "established"
+    assert evidence_clause.family_disposition == "inquiry"
+    assert evidence_clause.scope_disposition == "included"
+    assert evidence_clause.evidence_currency == "current"
+    assert evidence_clause.evidence_availability == "available"
+    assert evidence_clause.clause_family == "eligible_ineligible_evidence_territory"
+    assert evidence_clause.eligible_evidence_territory_refs == ()
+    assert testimony.to_json_dict()["clauses"][1]["clause_ref"] == "clause:evidence-unwarranted"
+    assert "clause:evidence-unwarranted" in frontier.preserved_clause_refs
+    assert "clause:evidence-unwarranted" in frontier.non_operative_clause_refs
+    assert "clause:evidence-unwarranted" not in frontier.operative_clause_refs
+    assert frontier.missing_required_clause_families == ("eligible_ineligible_evidence_territory",)
+    assert frontier.frontier_state == "missing_required_clause_family"
+
+
+def test_positive_dispositions_and_family_label_do_not_repair_missing_eligible_territory_warrant_or_create_operations():
+    clauses = list(_required_clauses())
+    clauses[1] = _clause(
+        "clause:evidence-positive-no-territory",
+        "eligible_ineligible_evidence_territory",
+        eligible_evidence_territory_refs=(),
+        source_lineage=("source-lineage:stage-owned-frontier-boundary", "adapter:copied-positive-coordinates"),
+        already_visible_evidence_refs=("visible:evidence:copied",),
+    )
+
+    _, testimony, frontier = _frontier(*clauses)
+
+    evidence_clause = next(c for c in frontier.clauses if c.clause_ref == "clause:evidence-positive-no-territory")
+    assert evidence_clause.producer_ref == "stage:frontier-boundary"
+    assert evidence_clause.source_lineage == ("source-lineage:stage-owned-frontier-boundary", "adapter:copied-positive-coordinates")
+    assert evidence_clause.already_visible_evidence_refs == ("visible:evidence:copied",)
+    assert evidence_clause.eligible_evidence_territory_refs == ()
+    assert evidence_clause.clause_standing == "established"
+    assert evidence_clause.family_disposition == "inquiry"
+    assert evidence_clause.evidence_currency == "current"
+    assert evidence_clause.evidence_availability == "available"
+    assert frontier.frontier_state == "missing_required_clause_family"
+    assert frontier.missing_required_clause_families == ("eligible_ineligible_evidence_territory",)
+    assert "clause:evidence-positive-no-territory" in frontier.preserved_clause_refs
+    assert "clause:evidence-positive-no-territory" in frontier.non_operative_clause_refs
+    assert not testimony.opens_inquiry
+    assert not testimony.selects_sources
+    assert not testimony.selects_observations
+    assert not testimony.authorizes_access
+    assert not testimony.starts_execution
+    assert not testimony.starts_recording
+    assert not testimony.writes_event_ledger
+    assert not testimony.mutates_cluster
+    assert not frontier.opens_inquiry
+    assert not frontier.selects_sources
+    assert not frontier.selects_observations
+    assert not frontier.authorizes_access
+    assert not frontier.starts_execution
+    assert not frontier.starts_recording
+    assert not frontier.writes_event_ledger
+    assert not frontier.mutates_cluster

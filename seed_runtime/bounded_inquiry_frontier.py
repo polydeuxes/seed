@@ -105,6 +105,8 @@ def _is_operatively_coherent(clause: InquiryFrontierBoundaryClause) -> bool:
         return False
     if clause.clause_family == "included_excluded_inquiry_scope":
         return clause.scope_disposition == "included"
+    if clause.clause_family == "eligible_ineligible_evidence_territory":
+        return bool(clause.eligible_evidence_territory_refs)
     return True
 
 
