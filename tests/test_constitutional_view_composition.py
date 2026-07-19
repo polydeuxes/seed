@@ -3,6 +3,7 @@ import json
 import pytest
 
 import scripts.seed_local as seed_local
+from seed_runtime import constitutional_view_composition as composition_module
 from seed_runtime.constitutional_view_composition import (
     build_constitutional_view_composition,
     constitutional_view_composition_json,
@@ -56,6 +57,59 @@ def test_constitutional_view_composition_preserves_unknowns_refusals_and_boundar
     assert artifact.writes_event_ledger is False
     assert artifact.mutates_cluster is False
 
+
+def test_constitutional_view_composition_empty_requested_views_preserves_unknown_standing():
+    artifact = build_constitutional_view_composition(
+        constitutional_view_composition_request(requested_views=())
+    )
+
+    payload = constitutional_view_composition_json(artifact)
+    rendered = format_constitutional_view_composition(artifact)
+
+    assert artifact.request.requested_views == ()
+    assert artifact.contributing_views == ()
+    assert artifact.compatibility_answer == "Unknown."
+    assert payload["compatibility_answer"] == "Unknown."
+    assert payload["contributing_views"] == ()
+    assert "Compatibility answer: Unknown." in rendered
+    assert "Requested views: " in rendered
+    assert artifact.read_only is True
+    assert artifact.writes_event_ledger is False
+    assert artifact.mutates_cluster is False
+
+
+def test_constitutional_view_composition_unknown_contribution_preserves_non_no(monkeypatch):
+    def build_view():
+        return object()
+
+    def render_view(_view):
+        return {
+            "name": "Constitutional Process View",
+            "composition": ("constitutional_process_reconciliation.md",),
+            "unknowns": ("compatibility testimony unavailable",),
+            "explicit_refusals": (),
+        }
+
+    monkeypatch.setitem(
+        composition_module._BUILDERS,
+        "constitutional_process",
+        (build_view, render_view),
+    )
+
+    artifact = build_constitutional_view_composition(
+        constitutional_view_composition_request(requested_views=("constitutional_process",))
+    )
+
+    assert [view.name for view in artifact.contributing_views] == ["constitutional_process"]
+    assert artifact.contributing_views[0].evidence == ("constitutional_process_reconciliation.md",)
+    assert artifact.preserved_unknowns == (
+        "constitutional_process: compatibility testimony unavailable",
+    )
+    assert artifact.preserved_refusals == ()
+    assert artifact.compatibility_answer == "Unknown."
+    assert artifact.read_only is True
+    assert artifact.writes_event_ledger is False
+    assert artifact.mutates_cluster is False
 
 def test_constitutional_view_composition_refuses_unregistered_views():
     with pytest.raises(ValueError, match="registered constitutional views"):

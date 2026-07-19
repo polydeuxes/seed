@@ -161,7 +161,11 @@ def build_constitutional_view_composition(
         preserved_selection_uncertainty=request.selection_uncertainty,
         preserved_unknowns=tuple((*request.selection_uncertainty, *unknowns)),
         preserved_refusals=tuple(refusals),
-        compatibility_answer="No." if all(answer == "No." for answer in compatibility_answers) else "Unknown.",
+        compatibility_answer=(
+            "No."
+            if compatibility_answers and all(answer == "No." for answer in compatibility_answers)
+            else "Unknown."
+        ),
         read_only_boundaries=(
             "registered constitutional read models only",
             "explicit requested view selection only",
