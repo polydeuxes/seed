@@ -13,6 +13,8 @@ Selection-to-consumer uptake is not singular. A consumer may adopt selected-subj
 
 Repository evidence supports a shared higher-order selection grammar with distinct subfamilies. Representation selection may choose registered read-model views by exact deterministic keys for one composition purpose. Consideration selection may choose one already-established subject, such as an advancement need, for bounded focus after identity and lineage checks. Meaning selection, closed-choice binding, policy/work selection, and operational-realization selection have their own candidate sets and downstream limits. Shared selection vocabulary does not collapse these into one constitutional act kind.
 
+For the local advancement-need road recovered by `advancement_need_consideration_selection_correspondence_001.md`, advancement-need consideration selection consumes a bounded visible/selectable advancement-need reference set plus exact candidate-selection testimony and performs bounded consideration selection. It establishes selected-for-consideration standing and, where locally stated, bounded focus standing. It does not establish priority, primary blocker standing, next required act, route, next inquiry, self-orientation, authorization, or execution.
+
 ## Important distinctions
 - selection artifact != act of selection
 - ranked candidate != selected candidate
