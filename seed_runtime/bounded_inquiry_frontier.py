@@ -101,12 +101,18 @@ def _is_operatively_coherent(clause: InquiryFrontierBoundaryClause) -> bool:
         return False
     if clause.family_disposition != "inquiry":
         return False
-    if clause.evidence_currency == "conflicting" or clause.evidence_availability == "conflicting":
+    if clause.evidence_currency in {"conflicting", "stale", "unknown"}:
+        return False
+    if clause.evidence_availability in {"conflicting", "unavailable", "unknown"}:
         return False
     if clause.clause_family == "included_excluded_inquiry_scope":
         return clause.scope_disposition == "included"
     if clause.clause_family == "eligible_ineligible_evidence_territory":
-        return bool(clause.eligible_evidence_territory_refs)
+        # No repository-local witness currently establishes claim-relative
+        # territory eligibility for the selected need, frontier boundary, and
+        # reliance purpose. Preserve supplied refs, but do not count tuple
+        # non-emptiness as positive required-family support.
+        return False
     return True
 
 
@@ -187,8 +193,8 @@ def assemble_bounded_inquiry_frontier(
         tuple(c.clause_ref for c in clauses if c.clause_standing == "conflicting"),
         tuple(c.clause_ref for c in clauses if c.family_disposition == "mixed"),
         tuple(c.clause_ref for c in clauses if c.family_disposition == "adjacent_family"),
-        tuple(c.clause_ref for c in clauses if c.evidence_currency == "stale"),
-        tuple(c.clause_ref for c in clauses if c.evidence_availability == "unavailable"),
+        tuple(c.clause_ref for c in clauses if c.evidence_currency in {"stale", "unknown"}),
+        tuple(c.clause_ref for c in clauses if c.evidence_availability in {"unavailable", "unknown"}),
         tuple(c.clause_ref for c in clauses if c.scope_disposition == "outside_current_scope"),
         clauses,
     )

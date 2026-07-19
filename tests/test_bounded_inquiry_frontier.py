@@ -18,11 +18,11 @@ def _required_clauses():
     )
 
 
-def test_established_frontier_binds_exact_selected_need_native_item_goal_horizon_and_testimony_identity():
+def test_frontier_binds_exact_selected_need_native_item_goal_horizon_and_testimony_identity_while_missing_unwarranted_evidence_family():
     selected, testimony, frontier = _frontier(*_required_clauses())
     ref = selected.selected_reference
 
-    assert frontier.frontier_state == "established"
+    assert frontier.frontier_state == "missing_required_clause_family"
     assert frontier.selected_need_selection_id == selected.selection_id
     assert frontier.selected_need_reference_id == ref.reference_id
     assert frontier.native_projection_id == ref.native_projection_id
@@ -35,14 +35,15 @@ def test_established_frontier_binds_exact_selected_need_native_item_goal_horizon
     assert frontier.horizon_id == ref.horizon_id
     assert frontier.testimony_id == testimony.testimony_id
     assert frontier.preserved_clause_refs == tuple(c.clause_ref for c in testimony.clauses)
-    assert frontier.operative_clause_refs == frontier.preserved_clause_refs
+    assert frontier.operative_clause_refs == ("clause:scope", "clause:resolution", "clause:stop")
+    assert frontier.missing_required_clause_families == ("eligible_ineligible_evidence_territory",)
 
 
 def test_establishment_requires_all_four_coherent_clause_families_and_missing_remain_explicit():
     _, _, frontier = _frontier(*_required_clauses()[:3])
 
     assert frontier.frontier_state == "missing_required_clause_family"
-    assert frontier.missing_required_clause_families == ("lawful_stopping_conditions",)
+    assert frontier.missing_required_clause_families == ("eligible_ineligible_evidence_territory", "lawful_stopping_conditions")
     assert frontier.material_conflict_clause_refs == ()
 
 
@@ -74,7 +75,7 @@ def test_unsupported_unknown_mixed_adjacent_stale_unavailable_and_out_of_scope_a
 
     _, _, frontier = _frontier(*clauses)
 
-    assert frontier.frontier_state == "established"
+    assert frontier.frontier_state == "missing_required_clause_family"
     for ref in (
         "clause:unsupported",
         "clause:unknown",
@@ -112,7 +113,7 @@ def test_no_scope_invention_question_opening_source_selection_authorization_exec
     assert not frontier.result_known
 
 
-def test_eligible_evidence_territory_support_remains_lawfully_operative_for_that_family():
+def test_eligible_evidence_territory_reference_is_preserved_but_not_positive_family_support_without_warrant():
     selected, testimony, frontier = _frontier(*_required_clauses())
 
     evidence_clause = next(c for c in testimony.clauses if c.clause_ref == "clause:evidence")
@@ -120,9 +121,11 @@ def test_eligible_evidence_territory_support_remains_lawfully_operative_for_that
     assert evidence_clause.eligible_evidence_territory_refs == ("territory:repo-world",)
     assert evidence_clause.producer_ref == "stage:frontier-boundary"
     assert evidence_clause.ownership_basis == "stage_producer_lineage"
-    assert "clause:evidence" in frontier.operative_clause_refs
-    assert "eligible_ineligible_evidence_territory" not in frontier.missing_required_clause_families
-    assert frontier.frontier_state == "established"
+    assert "clause:evidence" in frontier.preserved_clause_refs
+    assert "clause:evidence" in frontier.non_operative_clause_refs
+    assert "clause:evidence" not in frontier.operative_clause_refs
+    assert frontier.missing_required_clause_families == ("eligible_ineligible_evidence_territory",)
+    assert frontier.frontier_state == "missing_required_clause_family"
 
 
 def test_eligible_evidence_territory_label_without_territory_warrant_is_preserved_but_not_operative():
@@ -192,3 +195,40 @@ def test_positive_dispositions_and_family_label_do_not_repair_missing_eligible_t
     assert not frontier.starts_recording
     assert not frontier.writes_event_ledger
     assert not frontier.mutates_cluster
+
+
+def test_non_empty_eligible_territory_ref_with_limited_availability_or_currency_is_preserved_non_operative():
+    cases = (
+        ("clause:evidence-unavailable", {"evidence_availability": "unavailable"}, "unavailable_clause_refs"),
+        ("clause:evidence-unknown-availability", {"evidence_availability": "unknown"}, "unavailable_clause_refs"),
+        ("clause:evidence-stale", {"evidence_currency": "stale"}, "stale_clause_refs"),
+        ("clause:evidence-unknown-currency", {"evidence_currency": "unknown"}, "stale_clause_refs"),
+    )
+
+    for clause_ref, overrides, limitation_field in cases:
+        clauses = list(_required_clauses())
+        clauses[1] = _clause(
+            clause_ref,
+            "eligible_ineligible_evidence_territory",
+            eligible_evidence_territory_refs=("territory:repo-world",),
+            **overrides,
+        )
+
+        _, testimony, frontier = _frontier(*clauses)
+        evidence_clause = next(c for c in testimony.clauses if c.clause_ref == clause_ref)
+
+        assert evidence_clause.eligible_evidence_territory_refs == ("territory:repo-world",)
+        assert clause_ref in frontier.preserved_clause_refs
+        assert clause_ref in frontier.non_operative_clause_refs
+        assert clause_ref not in frontier.operative_clause_refs
+        assert clause_ref in getattr(frontier, limitation_field)
+        assert frontier.missing_required_clause_families == ("eligible_ineligible_evidence_territory",)
+        assert frontier.frontier_state == "missing_required_clause_family"
+        assert not frontier.opens_inquiry
+        assert not frontier.selects_sources
+        assert not frontier.selects_observations
+        assert not frontier.authorizes_access
+        assert not frontier.starts_execution
+        assert not frontier.starts_recording
+        assert not frontier.writes_event_ledger
+        assert not frontier.mutates_cluster

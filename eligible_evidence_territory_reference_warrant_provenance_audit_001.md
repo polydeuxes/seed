@@ -26,7 +26,7 @@ The directly recoverable upstream territory reference is the test-supplied value
 
 The concrete repository witness creates the reference in the test helper `_required_clauses()`. The helper calls `_clause(...)` with `eligible_evidence_territory_refs=("territory:repo-world",)`. `_clause(...)` then constructs `FrontierBoundaryClauseInput` with default producer testimony naming `producer_ref="stage:frontier-boundary"`, producer lineage, source lineage, evidence classes, provenance roles, `clause_standing="established"`, `evidence_currency="current"`, `evidence_availability="available"`, and `family_disposition="inquiry"`.
 
-The constructor of `FrontierBoundaryClauseInput` is therefore not treated as the constitutional producer. It is a payload shape. The only producer occurrence preserved by current evidence is the caller-supplied `producer_ref`/`producer_lineage` tuple, and in the test fixture that tuple names `stage:frontier-boundary`.
+The constructor of `FrontierBoundaryClauseInput` is therefore not treated as the constitutional producer. It is a payload shape. The maximum producer standing preserved by current evidence is caller-attributed producer or adapter lineage from the supplied `producer_ref`/`producer_lineage` tuple, and in the test fixture that tuple names `stage:frontier-boundary`; that tuple is not producer occurrence evidence by itself.
 
 ### What subject the reference identifies
 
@@ -52,7 +52,7 @@ Preservation binds each preserved clause to the selected inquiry need's `referen
 
 The preserved producer witness owns only stage-producer lineage when both `producer_ref` and `producer_lineage` are present. `_ownership(...)` classifies such a clause as `stage_producer_lineage`; it classifies adapter lineage separately; otherwise the clause is unowned. The test fixture proves payload ownership flags alone do not create ownership.
 
-The producer/adaptor occurrence is preserved, but current code does not make the producer own eligibility, availability, or currency as a validated relation. Those dimensions remain copied clause testimony unless a consumer explicitly validates them.
+The caller-attributed producer/adapter lineage is preserved, but current code does not make the producer own eligibility, availability, or currency as a validated relation. Those dimensions remain copied clause testimony unless a consumer explicitly validates them.
 
 ## 2. Preservation witness
 
