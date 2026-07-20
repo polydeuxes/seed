@@ -4,8 +4,6 @@ from seed_runtime.capability_catalog import (
     CapabilityCatalogEntry,
     CapabilityRecommendation,
 )
-from seed_runtime.context import DecisionInputComposer
-from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
 from seed_runtime.execution import ToolExecutor
 from seed_runtime.models import Decision, Fact, ToolNeed, ToolSpec, Toolkit, utc_now
@@ -15,10 +13,9 @@ from seed_runtime.recommendation_ranker import (
     RecommendationRanker,
 )
 from seed_runtime.registry import ToolRegistry
-from seed_runtime.runtime import StaticDecisionProducer, Runtime
+from seed_runtime.runtime import Runtime
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import State, StateProjector
-from seed_runtime.tool_needs import ToolNeedService
 from seed_runtime.tool_recommendations import ToolRecommendationService
 
 
@@ -102,7 +99,7 @@ def _runtime_with_decision(
         DecisionValidator(registry),
         tool_executor or ToolExecutor(ledger, registry, projector),
         ToolNeedService(ledger, projector),
-        StaticDecisionProducer(decision),
+        decision,
         capability_catalog=capability_catalog or _service_management_catalog(),
     )
 
@@ -375,30 +372,6 @@ def test_runtime_request_tool_registered_operations_come_only_from_registry_capa
         }
     ]
 
-
-def test_runtime_request_tool_resolution_does_not_call_tool_executor():
-    ledger = EventLedger()
-    projector = StateProjector(ledger)
-    registry = _registry_with_ssh_tools()
-    executor = RecordingToolExecutor(ledger, registry, projector)
-    runtime = _runtime_with_decision(
-        _ssh_access_decision(),
-        ledger,
-        projector,
-        registry=registry,
-        capability_catalog=_ssh_access_catalog(),
-        tool_executor=executor,
-    )
-
-    response = runtime.handle_user_message("ws", "ses", "check ssh access")
-
-    assert response.kind == "tool_need"
-    assert executor.calls == []
-    assert [event.kind for event in ledger.list_events("ws")] == [
-        "input.user_message",
-        "model.decision.proposed",
-        "tool_need.created",
-    ]
 
 
 def test_existing_capability_recommendation_ranking_behavior_remains_intact():

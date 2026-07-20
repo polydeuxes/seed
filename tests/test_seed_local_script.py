@@ -10,7 +10,7 @@ from seed_runtime.models import ToolNeed
 from seed_runtime.recommendation_ranker import RankedRecommendation
 from seed_runtime.state import State
 
-from seed_runtime.intent_classifier import IntentDecisionProducer, IntentPromptModelClient
+from seed_runtime.intent_classifier import RuntimeLoopIntentProducer, IntentPromptModelClient
 from seed_runtime.runtime import Runtime
 
 SCRIPT_PATH = Path("scripts/seed_local.py")
@@ -262,7 +262,7 @@ def test_build_local_app_uses_intent_classifier_path_and_loads_echo_toolkit():
 
     assert isinstance(app.model_client, IntentPromptModelClient)
     assert isinstance(app.runtime, Runtime)
-    assert isinstance(app.runtime.decision_producer, IntentDecisionProducer)
+    assert not hasattr(app.runtime, "decision_producer")
     assert [tool.name for tool in app.decision_input_composer.registry.list_tools()] == [
         "echo"
     ]
@@ -285,7 +285,7 @@ def test_one_shot_echo_uses_deterministic_fallback_without_ollama():
     assert result["response"]["payload"]["output"]["message"] == "hello"
     assert [event["kind"] for event in result["events"]] == [
         "input.user_message",
-        "model.decision.proposed",
+        "runtime.decision_authority_unsupported",
         "tool.call.started",
         "tool.call.completed",
         "evidence.observed",
@@ -328,7 +328,7 @@ def test_normal_cli_answer_uses_runtime():
     assert "Docker" in result["response"]["message"]
     assert [event["kind"] for event in result["events"]] == [
         "input.user_message",
-        "model.decision.proposed",
+        "runtime.decision_authority_unsupported",
         "response.answer",
     ]
 
@@ -472,7 +472,7 @@ def test_cli_events_includes_full_event_ledger(capsys):
     assert "Tool echo completed." in output
     assert "Events:" in output
     assert "tool.call.completed" in output
-    assert "model.decision.proposed" in output
+    assert "runtime.decision_authority_unsupported" in output
 
 
 def test_cli_raw_continues_through_runtime(monkeypatch, capsys):
