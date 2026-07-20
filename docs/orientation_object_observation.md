@@ -157,11 +157,9 @@ Documents and surfaces inspected included at least:
 - `docs/handoff_and_continuation_lineage_frontier.md`
 - `docs/handoff_pressure_transition_observation.md`
 - `seed_runtime/context_selection.py`
-- `seed_runtime/intent_classifier.py`
 - `seed_runtime/input_inspector.py`
 - `seed_runtime/state_views.py`
 - `tests/test_context_selection.py`
-- `tests/test_intent_classifier.py`
 - `tests/test_state_views.py`
 
 The review did not implement runtime changes.

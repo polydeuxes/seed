@@ -103,7 +103,6 @@ V1 orientation must not by default render:
 - recommendation;
 - action plan;
 - work-shape classification;
-- intent classification.
 
 ## 4. Explicit Deferrals From Original Plan
 
@@ -363,7 +362,6 @@ Before implementing V1, confirm:
 - [ ] Output includes raw note, potentially related material, support / why
       related, uncertainty, and authority boundary.
 - [ ] Output excludes candidate active concern, next safe move, recommendation,
-      action plan, work-shape classification, and intent classification by
       default.
 - [ ] Related-material matching is deterministic and supportable.
 - [ ] No LLM, provider, tool, plan, proposal, or action path is invoked.

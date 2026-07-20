@@ -38,7 +38,6 @@ Required repository-wide searches were run over `seed_runtime/`, `scripts/`,
 - `seed_runtime/context_views.py`
 - `scripts/seed_local.py`
 - `tests/test_context_views.py`
-- `tests/test_intent_classifier.py`
 - `tests/test_runtime_loop.py`
 - `docs/context_composition_reconciliation.md`
 - `docs/capability_ownership_matrix.md`
@@ -58,7 +57,6 @@ Required repository-wide searches were run over `seed_runtime/`, `scripts/`,
   JSON output.
 - `tests/test_runtime_loop.py`, with no further in-file reference found by the
   required symbol search.
-- `tests/test_intent_classifier.py`, with no further in-file reference found by
   the required symbol search.
 
 `build_decision_context_view` is imported by:
@@ -71,7 +69,6 @@ Required repository-wide searches were run over `seed_runtime/`, `scripts/`,
 
 `ContextCapability`, `ContextFact`, `ContextIssue`, `ContextRequirement`,
 `ContextSummary`, and `DecisionContextView` are imported by
-`tests/test_intent_classifier.py`, but the required symbol search found no
 non-import usage in that file.
 
 ### Calls
@@ -156,7 +153,6 @@ execution.
 - CLI `--decision-context` output and its no-runtime/provider/policy/tool
   boundary.
 
-`tests/test_intent_classifier.py` currently asserts that the legacy context
 packet prompt does not include `decision_context`. Its Context View imports are
 not used by the current test body according to the required symbol search.
 

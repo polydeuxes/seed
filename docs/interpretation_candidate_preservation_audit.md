@@ -11,7 +11,6 @@ Natural language should produce candidates, not commands.
 and:
 
 ```text
-The implementation contains intent classification,
 capability selection behavior, and execution surfaces,
 but preserves little after interpretation occurs.
 ```

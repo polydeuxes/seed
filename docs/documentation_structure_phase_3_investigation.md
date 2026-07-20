@@ -674,7 +674,6 @@ NLP
 LLM analysis
 semantic similarity
 concept clustering
-document intent classification
 required-section enforcement
 workflow recommendations
 ```

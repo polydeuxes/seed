@@ -2,7 +2,6 @@
 
 ## Purpose
 
-Recent language audits found that Seed currently has implementation surfaces for raw user-message capture, context composition, intent classification, structured decisions, tool-intent guard behavior, policy evaluation, and tool execution.
 
 They also found missing explicit stages for:
 
@@ -327,7 +326,6 @@ The inventory audit found existing implementation surfaces around:
 ```text
 raw user-message capture
 context composition
-intent classification
 structured decision kinds
 runtime decision routing
 tool-intent guard behavior

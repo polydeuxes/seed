@@ -29,7 +29,6 @@ Primary supporting documents reviewed:
 - `docs/input_inspection_reconciliation.md`
 - `docs/input_act_decision_bridge.md`
 
-Implementation surfaces reviewed include `seed_runtime/runtime.py`, `seed_runtime/intent_classifier.py`, `seed_runtime/input_inspector.py`, `seed_runtime/context.py`, `seed_runtime/decisions.py`, `seed_runtime/tool_intent.py`, `seed_runtime/tool_needs.py`, `seed_runtime/capability_catalog.py`, `seed_runtime/tool_recommendations.py`, `seed_runtime/recommendation_ranker.py`, `seed_runtime/registry.py`, `seed_runtime/tool_execution_policy.py`, `seed_runtime/tool_validation.py`, `seed_runtime/policy.py`, and `seed_runtime/execution.py`.
 
 ## Chain Under Inventory
 
@@ -61,7 +60,6 @@ The repository currently contains:
 
 - a raw user-message event surface;
 - deterministic fixture-level input-act classification;
-- an intent-classifier adapter that converts compact intent labels into runtime `Decision` objects;
 - a context packet containing visible tools and open tool needs;
 - structured decision validation and runtime routing;
 - a narrow deterministic tool-intent guard for `echo`;
@@ -98,7 +96,6 @@ The classifier explicitly states that it does not call an LLM, choose a decision
 
 ### Intent Classification
 
-`seed_runtime/intent_classifier.py` contains the most direct implementation of natural-language-to-decision behavior. It defines compact intent labels:
 
 ```text
 echo
@@ -108,7 +105,6 @@ clarify
 refuse
 ```
 
-It has deterministic fallbacks, prompt construction for an intent-only classifier, strict JSON parsing, normalization rules, and a `DecisionBuilder` that turns classifications into runtime `Decision` objects.
 
 This is an intent path, but it is not equivalent to the full chain from language observation through candidate request routing. The implemented labels are coarse, and the builder directly constructs decisions from labels.
 
@@ -116,7 +112,6 @@ This is an intent path, but it is not equivalent to the full chain from language
 
 ### Tool Need Generation
 
-A `missing_tool` intent is converted by `DecisionBuilder` into a `request_tool` decision with a normalized tool need containing `name`, `summary`, and `capability`. The normalization uses patterns and slugification to derive categories such as weather lookup, finance lookup, disk inspection, Docker inspection, Docker installation, service management, installation, and inspection.
 
 This is candidate-like generation for absent capability/tool support. It produces a tool-need object, not a general language-derived candidate set.
 
@@ -189,7 +184,6 @@ Ambiguity exists in implementation primarily through coarse outcomes rather than
 
 - `ask_question` is a valid decision kind and Runtime returns a question response.
 - The intent classifier includes a `clarify` intent label that builds an `ask_question` decision.
-- If no classifier is configured and no deterministic fallback matches, `IntentDecisionProducer` builds a default clarification question.
 - Invalid model decisions, parse failures, and tool-intent rejections can trigger retry contexts that ask for corrected decisions.
 - Input inspection preserves a deterministic input-act label but not alternate labels.
 
@@ -199,11 +193,9 @@ The implementation does not currently preserve multiple candidate meanings for a
 
 ### Language Observation vs Intent Classification
 
-Current runtime records raw input as `input.user_message`. `input_inspector.py` can classify input acts, and `intent_classifier.py` can classify compact runtime intents. There is no general separate language-observation object that owns communicative-act preservation and candidate meaning derivation before intent classification.
 
 ### Intent Classification vs Capability Selection
 
-`IntentDecisionProducer` can convert `missing_tool` into a `request_tool` decision with a normalized capability. For visible tools, the model can choose `call_tool` directly from context. There is no standalone capability-selection boundary that first receives candidate requests and then selects among capability surfaces before execution decisions.
 
 ### Capability Selection vs Execution
 
@@ -233,8 +225,6 @@ The implementation does not simply hard-code `Language -> Nearest Capability -> 
 
 However, partial collapses or compression points exist:
 
-- `IntentDecisionProducer` compresses intent classification and decision construction into one adapter path.
-- `DecisionBuilder` can convert `echo` directly into a `call_tool` decision.
 - A model can choose a visible `call_tool` from context without an explicit intermediate candidate-routing artifact.
 - `missing_tool` converts language-derived need into a normalized capability string without preserving alternate capability candidates.
 - Runtime routing treats validated `call_tool` decisions as ready for executor policy/validation rather than as candidates requiring separate capability selection.
@@ -245,7 +235,6 @@ These are implementation compression points, not necessarily architectural viola
 
 The repository evidence leaves these inventory questions unresolved:
 
-- whether `intent_classifier.py` is intended as canonical natural-language routing or as a small/local model adapter;
 - whether `input_inspector.py` is intended to remain fixture-level only or later feed runtime interpretation;
 - whether direct model selection of visible tools is considered acceptable capability selection or a temporary prototype shortcut;
 - how natural-language operator clarification should be represented if ambiguity concerns capability selection rather than general conversation;
