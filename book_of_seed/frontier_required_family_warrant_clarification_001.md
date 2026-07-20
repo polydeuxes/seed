@@ -1,34 +1,45 @@
-# Frontier Required-Family Warrant Clarification 001
+# Frontier Positive-Support Warrant Clarification 001
+
+## Correction
+This note previously treated implementation-defined clause families, including `eligible_ineligible_evidence_territory`, as though they were independently recovered constitutional subjects. That claim is withdrawn. A realization label, opaque reference, test fixture, or recurring implementation field does not establish Book grammar.
 
 ## Existing clauses examined
-- `04.Frontier.A` states that bounded inquiry frontier identity is conjunctive and must preserve the exact inquiry need or uncertainty, source and provenance, present movement or consumer-local boundary, included and excluded scope, available evidence territory, sufficiency and lawful stopping conditions, Unknowns, conflicts, and negative authority.
-- `05.Testimony.A` states that recorded claims and findings may be consumed as attributed testimony or premise-relative input without becoming established fact, proving source producer occurrence, or gaining strength through repetition or copied lineage.
+- `04.Frontier.A` bounds frontier identity to the exact inquiry need or uncertainty, source and provenance, present movement boundary or consumer-local context, scope, sufficiency and lawful stopping conditions, Unknowns, conflicts, and negative authority.
+- `05.Testimony.A` permits recorded claims and findings to be consumed as attributed testimony or premise-relative input without becoming established fact, proving producer occurrence, or gaining strength through repetition or copied lineage.
 - `05.Evidence.A` and `05.Evidence.B` distinguish represented support and lineage from truth, independent corroboration, verified provenance, producer occurrence, and universal admission.
 - The roads and uptake grammar distinguishes consumer-local applicability, admission, consumption, warrant, and standing, and states that producer-side warrant, artifact preservation, and consumer-side validation are related but not interchangeable.
 - `08.Authority.A` and `08.Authority.B` bound reliance to the role, purpose, evidence, authority, scope, confidence, Unknowns, and negative authority preserved by the warrant, without strengthening standing or expanding authority.
 
-## Exact missing distinction
-The Book did not explicitly say, inside the inquiry-frontier boundary itself, that a clause satisfying a local acceptance predicate is not the same as a clause carrying sufficient consumer-local warrant for frontier reliance, and that required-family labels being covered is not the same as the frontier being constitutionally established.
+## Exact supported distinction
+A preserved frontier-boundary claim satisfying a local acceptance predicate is not thereby warranted for frontier reliance. Mechanical grouping, labeling, local predicate satisfaction, absence of explicit conflict, or apparent aggregate completeness does not establish the claim or the whole frontier.
 
-## Why current wording was insufficient
-`04.Frontier.A` already prevented frontier establishment from wording similarity, labels, stale or unavailable evidence, or a selected need by itself. It also required conjunctive identity preservation. But it did not make the counting step explicit enough: a realization could preserve or locally accept caller-described positive coordinates, observe that the required family labels were present, and then treat that mechanical coverage as positive frontier-establishing support.
+## Canonical clarification
+`04.Frontier.B — Positive frontier support requires claim-relative warrant` states only the supported invariant:
 
-## Small canonical clarification made
-A new bounded frontier clause, `04.Frontier.B — Required-family coverage requires claim-relative warrant`, was added to `inquiry-frontiers.md`.
+> Preserved testimony may contribute positive frontier support only when the consumer has warrant sufficient for the exact claim, inquiry need, frontier boundary, and reliance purpose.
+
+This law does not canonize any implementation-defined clause family, territory subject, required-family inventory, fixed frontier schema, or universal support coordinate.
 
 ## What the clarification requires
-For one exact bounded inquiry frontier, a boundary-clause family contributes positive support toward required-family coverage only when the clause testimony carries consumer-local warrant sufficient for that family, inquiry need, frontier boundary, and reliance purpose. Missing, insufficient, conflicting, stale, unavailable, Unknown, or otherwise claim-limited support, provenance, standing, scope, currentness, availability, conflict handling, or warrant must remain preserved under that limitation and must not silently become positive frontier-establishing support.
+Missing, insufficient, conflicting, stale, unavailable, Unknown, or otherwise claim-limited support, provenance, standing, scope, currentness, availability, conflict handling, or warrant remains preserved under that limitation and must not silently become positive frontier-establishing support.
 
 ## What the clarification does not require
-The clarification does not require recognized original producer ownership for every clause, canonical Evidence for every clause, a universal admission artifact, a universal warrant object, identical support coordinates, a fixed warrant stage, an implementation pipeline, an admission layer, a standing engine, a clause lifecycle, or a frontier architecture. It also does not turn support into sufficiency, sufficiency into warrant, warrant into authority, or consumer-local operativity into intrinsic clause truth.
-
-## Family-relative Unknowns preserved
-Different clause families may require different local warrant. Scope-family warrant may differ from evidence-territory warrant, and resolution-condition warrant may differ from lawful-stopping warrant. This pass does not decide whether stale, unavailable, unowned, or otherwise limited testimony can ever support a particular family. Where the family-relative warrant remains missing, insufficient, conflicting, stale, unavailable, or Unknown, the limitation remains preserved and non-establishment remains lawful.
+The clarification does not require recognized original producer ownership for every claim, canonical Evidence for every claim, a universal admission artifact, a universal warrant object, identical support coordinates, a fixed warrant stage, an implementation pipeline, an admission layer, a standing engine, a clause lifecycle, a required-family model, or a frontier architecture. It does not turn support into sufficiency, sufficiency into warrant, warrant into authority, or consumer-local operativity into intrinsic truth.
 
 ## Realization asymmetry preserved
-The clarification is realization-invariant. A faithful realization may preserve the distinction through responsible producer boundaries, consumer validation, relational constraints, queries, typed artifacts, separate findings, composed local responsibilities, or another lawful form. The invariant is only that the warrant for counting a clause remains distinguishable from the mechanics that recognize, accept, label, or aggregate it.
+A faithful realization may preserve the distinction through responsible producer boundaries, consumer validation, relational constraints, queries, typed artifacts, separate findings, composed local responsibilities, or another lawful form. The invariant is only that warrant for positive reliance remains distinguishable from the mechanics that recognize, preserve, label, group, or aggregate testimony.
+
+## Withdrawn claims
+This note no longer asserts that:
+
+- `eligible_ineligible_evidence_territory` names an independently recovered constitutional subject;
+- a fixed inventory of required clause families constitutes frontier law;
+- implementation refs or test fixtures establish the existence of an evidence territory;
+- family-relative warrant topology has been recovered merely because family labels exist in code.
+
+Those remain implementation testimony until independently recovered.
 
 ## Bounded answer
-What permits one frontier-boundary clause to count as positive support toward required-family frontier establishment?
+What permits preserved frontier-boundary testimony to contribute positive support toward frontier establishment?
 
-Mechanical recognition, preservation, consideration, predicate satisfaction, family labeling, absence of explicit conflict, or aggregate family coverage does not permit the count by itself. One frontier-boundary clause may count as positive support only when its testimony carries consumer-local warrant sufficient for the exact clause claim: the exact required family, inquiry need, frontier boundary, and reliance purpose, with its support, provenance, standing, scope, currentness, availability, conflict handling, Unknowns, and other claim-relative limits preserved rather than erased.
+Mechanical recognition, preservation, consideration, predicate satisfaction, labeling, grouping, absence of explicit conflict, or apparent aggregate completeness does not permit the count by itself. Positive support requires consumer-local warrant sufficient for the exact claim and reliance purpose, with support, provenance, standing, scope, currentness, availability, conflict handling, Unknowns, and other claim-relative limits preserved rather than erased.
