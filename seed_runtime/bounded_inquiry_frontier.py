@@ -1,10 +1,12 @@
-"""Read-only bounded inquiry frontier assembly.
+"""Read-only implementation-local inquiry-frontier compatibility assessment.
 
-The assembler consumes one exact selected inquiry need plus its preserved
-frontier-boundary testimony. It only determines whether the already supplied
-boundary clauses coherently establish a bounded inquiry frontier; it does not
-invent scope, admit evidence, formulate a question, open inquiry, authorize,
-execute, record, write the event ledger, or mutate state.
+The assembler consumes one exact selected inquiry need plus preserved
+implementation-defined boundary testimony. It reports the current realization's
+local coherence result. Clause families, required-family coverage, territory
+references, and derived warrant labels in this module are compatibility
+vocabulary, not canonical Book grammar or proof that the named constitutional
+subjects exist. The assembler does not formulate a question, open inquiry,
+authorize, execute, record, write the event ledger, or mutate state.
 """
 
 from __future__ import annotations
@@ -21,6 +23,8 @@ from seed_runtime.inquiry_frontier_boundary_testimony import (
     InquiryFrontierBoundaryTestimony,
 )
 
+# Legacy diagnostic vocabulary retained for compatibility only. These values do
+# not represent an independently produced constitutional warrant standing.
 EligibleEvidenceTerritoryWarrantStanding = Literal[
     "not_supplied",
     "insufficient",
@@ -36,6 +40,8 @@ FrontierState = Literal[
     "not_selected_inquiry_need",
 ]
 
+# Implementation-local completeness inventory retained for public compatibility.
+# It is not a canonical constitutional family inventory.
 REQUIRED_CLAUSE_FAMILIES: tuple[ClauseFamily, ...] = (
     "included_excluded_inquiry_scope",
     "eligible_ineligible_evidence_territory",
@@ -44,10 +50,10 @@ REQUIRED_CLAUSE_FAMILIES: tuple[ClauseFamily, ...] = (
 )
 
 BOUNDARY_NOTES: tuple[str, ...] = (
-    "BoundedInquiryFrontier assembles only from already-preserved boundary testimony for one exact selected inquiry need.",
-    "Frontier establishment requires included inquiry scope, eligible evidence territory, sufficient-resolution condition, lawful stopping condition, and no material binding conflict.",
-    "Eligible evidence territory is not source selection or observation selection.",
-    "Frontier established is not inquiry executed and not result known.",
+    "BoundedInquiryFrontier reports compatibility coherence over already-preserved implementation-defined clauses for one exact selected inquiry need.",
+    "Its established state is implementation-local compatibility standing, not proof of a canonical frontier, fixed family inventory, evidence territory, or constitutional inquiry opening.",
+    "Opaque territory references and derived territory-warrant buckets are legacy diagnostic testimony and do not establish eligibility, admission, source selection, or constitutional warrant standing.",
+    "Frontier compatibility established is not inquiry executed and not result known.",
 )
 
 
@@ -100,6 +106,7 @@ class BoundedInquiryFrontier:
     writes_event_ledger: bool = False
     mutates_cluster: bool = False
     result_known: bool = False
+    constitutional_frontier_standing: Literal["unknown"] = "unknown"
     boundary_notes: tuple[str, ...] = BOUNDARY_NOTES
 
     def to_json_dict(self) -> dict[str, object]:
@@ -114,8 +121,9 @@ def _stable(prefix: str, payload: object) -> str:
 def _eligible_territory_warrant_standing(
     clause: InquiryFrontierBoundaryClause,
 ) -> EligibleEvidenceTerritoryWarrantStanding:
+    """Return a legacy diagnostic classification, not constitutional standing."""
     if clause.clause_family != "eligible_ineligible_evidence_territory":
-        raise ValueError("eligible-territory warrant standing only applies to eligible evidence territory clauses")
+        raise ValueError("legacy territory diagnostic applies only to its compatibility family")
     if (
         clause.clause_standing == "conflicting"
         or clause.evidence_currency == "conflicting"
@@ -130,12 +138,10 @@ def _eligible_territory_warrant_standing(
         return "unknown"
     if not clause.eligible_evidence_territory_refs:
         return "not_supplied"
-    # Existing testimony preserves eligible territory references, clause standing,
-    # currentness, and availability, but no repository-local producer currently
-    # asserts the bounded claim-relative relation: this territory is eligible for
-    # this selected inquiry need at this frontier boundary for this reliance
-    # purpose.  Treat the preserved witness as presently insufficient rather
-    # than as a permanent family impossibility.
+    # The implementation preserves an opaque reference plus neighboring
+    # coordinates but has no independent producer for the claim that the named
+    # constitutional subject exists or is warranted. Keep this legacy bucket
+    # non-positive and constitutionally Unknown.
     return "insufficient"
 
 
@@ -151,7 +157,7 @@ def _is_operatively_coherent(clause: InquiryFrontierBoundaryClause) -> bool:
     if clause.clause_family == "included_excluded_inquiry_scope":
         return clause.scope_disposition == "included"
     if clause.clause_family == "eligible_ineligible_evidence_territory":
-        return _eligible_territory_warrant_standing(clause) == "sufficient"
+        return False
     return True
 
 
@@ -159,7 +165,7 @@ def assemble_bounded_inquiry_frontier(
     selected_need: AdvancementNeedConsiderationSelection,
     testimony: InquiryFrontierBoundaryTestimony,
 ) -> BoundedInquiryFrontier:
-    """Assemble a read-only frontier only from coherent required testimony."""
+    """Report implementation-local compatibility coherence read-only."""
     clauses = testimony.clauses
     preserved_refs = tuple(c.clause_ref for c in clauses)
     identity_conflict = selected_need.selection_state != "selected" or selected_need.selected_reference is None
@@ -188,7 +194,11 @@ def assemble_bounded_inquiry_frontier(
         or c.evidence_currency == "conflicting"
         or c.evidence_availability == "conflicting"
     )
-    material_conflicts = tuple(dict.fromkeys((*(('identity:selection-testimony',) if identity_conflict else ()), *explicit_conflicts)))
+    material_conflicts = tuple(
+        dict.fromkeys(
+            (*(("identity:selection-testimony",) if identity_conflict else ()), *explicit_conflicts)
+        )
+    )
 
     if selected_need.selection_state != "selected" or ref is None or ref.family != "inquiry":
         state: FrontierState = "not_selected_inquiry_need"
