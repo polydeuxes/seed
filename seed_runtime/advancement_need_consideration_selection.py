@@ -21,7 +21,7 @@ AdvancementNeedConsiderationEvidenceState = Literal[
 ]
 SelectionState = Literal[
     "selected",
-    "no_focus_evidence",
+    "no_consideration_evidence",
     "missing_identity",
     "ambiguous",
     "conflict",
@@ -32,8 +32,8 @@ SelectionState = Literal[
 ]
 
 BOUNDARY_NOTES: tuple[str, ...] = (
-    "AdvancementNeedConsiderationSelection consumes explicit focus evidence naming exact visible advancement-need references only.",
-    "The focused need must match the same need set, selected goal, bounded horizon, need family, native projection, and native record lineage.",
+    "AdvancementNeedConsiderationSelection consumes explicit consideration evidence naming exact visible advancement-need references only.",
+    "The testified need must match the same need set, selected goal, bounded horizon, need family, native projection, and native record lineage.",
     "Need selected for consideration is not highest-priority need, primary blocker, resolution selected, next action selected, realization selected, inquiry opened, authority requested, authorization, execution, recording, event-ledger write, or mutation.",
     "Uniqueness, sufficiency reasons, standing labels, presentation order, family, wording similarity, severity, and selectable count do not select a need.",
 )
@@ -41,11 +41,8 @@ BOUNDARY_NOTES: tuple[str, ...] = (
 
 @dataclass(frozen=True)
 class AdvancementNeedConsiderationEvidence:
-    """Testimony supplied for advancement-need consideration selection.
+    """Attributed testimony for one advancement-need consideration selection."""
 
-    This artifact is not proof that focus standing already exists; the selector
-    validates it against the visible reference set before selection.
-    """
     evidence_ref: str
     source_ref: str
     reference_id: str | None = None
@@ -62,10 +59,6 @@ class AdvancementNeedConsiderationEvidence:
     conflicts: tuple[str, ...] = ()
 
 
-# Compatibility alias only; production code should use AdvancementNeedConsiderationEvidence.
-NeedFocusEvidence = AdvancementNeedConsiderationEvidence
-
-
 @dataclass(frozen=True)
 class AdvancementNeedConsiderationSelection:
     selection_id: str
@@ -73,8 +66,8 @@ class AdvancementNeedConsiderationSelection:
     need_set_id: str
     selected_goal_id: str
     horizon_id: str
-    focus_evidence_refs: tuple[str, ...]
-    focus_provenance_refs: tuple[str, ...]
+    consideration_evidence_refs: tuple[str, ...]
+    consideration_provenance_refs: tuple[str, ...]
     selection_state: SelectionState
     selected_reference: AdvancementNeedReference | None = None
     visible_references: tuple[AdvancementNeedReference, ...] = ()
@@ -107,27 +100,48 @@ class AdvancementNeedConsiderationSelection:
         return asdict(self)
 
 
-def _selection_id(reference_set: AdvancementNeedReferenceSet, evidence: tuple[AdvancementNeedConsiderationEvidence, ...]) -> str:
+def _selection_id(
+    reference_set: AdvancementNeedReferenceSet,
+    evidence: tuple[AdvancementNeedConsiderationEvidence, ...],
+) -> str:
     lines = [reference_set.reference_set_id]
     lines.extend(
-        "\0".join((item.evidence_ref, item.source_ref, item.evidence_state, item.reference_id or "", item.need_set_id or "", item.selection_id or "", item.goal_establishment_id or "", item.horizon_id or "", item.family or "", item.native_projection_id or "", "|".join(item.native_lineage)))
+        "\0".join(
+            (
+                item.evidence_ref,
+                item.source_ref,
+                item.evidence_state,
+                item.reference_id or "",
+                item.need_set_id or "",
+                item.selection_id or "",
+                item.goal_establishment_id or "",
+                item.horizon_id or "",
+                item.family or "",
+                item.native_projection_id or "",
+                "|".join(item.native_lineage),
+            )
+        )
         for item in evidence
     )
-    return "advancement_need_consideration_selection:" + sha256("\n".join(lines).encode()).hexdigest()
+    return "advancement_need_consideration_selection:" + sha256(
+        "\n".join(lines).encode()
+    ).hexdigest()
 
 
 def select_advancement_need_for_consideration(
     reference_set: AdvancementNeedReferenceSet,
-    focus_evidence: Iterable[AdvancementNeedConsiderationEvidence] = (),
+    consideration_evidence: Iterable[AdvancementNeedConsiderationEvidence] = (),
 ) -> AdvancementNeedConsiderationSelection:
-    """Select one advancement need only from exact selectable consideration evidence."""
-    evidence = tuple(focus_evidence)
-    focus_refs = tuple(item.evidence_ref for item in evidence)
+    """Select one need only from exact, fully bound consideration evidence."""
+    evidence = tuple(consideration_evidence)
+    evidence_refs = tuple(item.evidence_ref for item in evidence)
     provenance_refs = tuple(item.source_ref for item in evidence)
     selection_id = _selection_id(reference_set, evidence)
     visible = reference_set.references
 
-    def result(state: SelectionState, **kwargs: object) -> AdvancementNeedConsiderationSelection:
+    def result(
+        state: SelectionState, **kwargs: object
+    ) -> AdvancementNeedConsiderationSelection:
         selected = kwargs.get("selected_reference")
         non_selected = tuple(ref for ref in visible if ref != selected)
         return AdvancementNeedConsiderationSelection(
@@ -136,31 +150,67 @@ def select_advancement_need_for_consideration(
             reference_set.need_set_id,
             reference_set.selection_id,
             reference_set.horizon_id,
-            focus_refs,
+            evidence_refs,
             provenance_refs,
             state,
             visible_references=visible,
-            non_selected_references=tuple(kwargs.pop("non_selected_references", non_selected)),
-            unknowns=tuple(dict.fromkeys(unknown for item in evidence for unknown in item.unknowns)),
-            conflicts=tuple(dict.fromkeys(conflict for item in evidence for conflict in item.conflicts)),
+            non_selected_references=tuple(
+                kwargs.pop("non_selected_references", non_selected)
+            ),
+            unknowns=tuple(
+                dict.fromkeys(
+                    unknown for item in evidence for unknown in item.unknowns
+                )
+            ),
+            conflicts=tuple(
+                dict.fromkeys(
+                    conflict for item in evidence for conflict in item.conflicts
+                )
+            ),
             **kwargs,
         )
 
     if not evidence:
-        return result("no_focus_evidence")
+        return result("no_consideration_evidence")
     if any(item.evidence_state == "conflict" for item in evidence):
-        return result("conflict", ambiguous_reference_ids=tuple(dict.fromkeys(r for item in evidence for r in ((item.reference_id,) + item.candidate_reference_ids) if r)))
+        return result(
+            "conflict",
+            ambiguous_reference_ids=tuple(
+                dict.fromkeys(
+                    ref
+                    for item in evidence
+                    for ref in ((item.reference_id,) + item.candidate_reference_ids)
+                    if ref
+                )
+            ),
+        )
     if any(item.evidence_state in {"missing_identity", "Unknown"} for item in evidence):
-        return result("missing_identity", missing_identity_evidence_refs=tuple(item.evidence_ref for item in evidence if item.evidence_state in {"missing_identity", "Unknown"}))
+        return result(
+            "missing_identity",
+            missing_identity_evidence_refs=tuple(
+                item.evidence_ref
+                for item in evidence
+                if item.evidence_state in {"missing_identity", "Unknown"}
+            ),
+        )
     if any(item.evidence_state == "ambiguous" for item in evidence):
-        return result("ambiguous", ambiguous_reference_ids=tuple(dict.fromkeys(r for item in evidence for r in item.candidate_reference_ids)))
+        return result(
+            "ambiguous",
+            ambiguous_reference_ids=tuple(
+                dict.fromkeys(
+                    ref for item in evidence for ref in item.candidate_reference_ids
+                )
+            ),
+        )
 
     exact = tuple(item for item in evidence if item.evidence_state == "exact_reference")
     if not exact or any(not item.reference_id for item in exact):
-        return result("missing_identity", missing_identity_evidence_refs=focus_refs)
+        return result("missing_identity", missing_identity_evidence_refs=evidence_refs)
     named_ids = tuple(item.reference_id for item in exact if item.reference_id)
     if len(set(named_ids)) != 1:
-        return result("conflict", ambiguous_reference_ids=tuple(dict.fromkeys(named_ids)))
+        return result(
+            "conflict", ambiguous_reference_ids=tuple(dict.fromkeys(named_ids))
+        )
 
     mismatched = tuple(
         item.evidence_ref
@@ -174,24 +224,50 @@ def select_advancement_need_for_consideration(
         or not item.native_lineage
     )
     if mismatched:
-        return result("reference_mismatch", reference_mismatch_evidence_refs=mismatched)
+        return result(
+            "reference_mismatch", reference_mismatch_evidence_refs=mismatched
+        )
 
     matches = tuple(ref for ref in visible if ref.reference_id == named_ids[0])
     if not matches:
         return result("absent_reference", absent_reference_ids=(named_ids[0],))
     if len(matches) != 1:
         if any(ref.conflict for ref in matches):
-            return result("duplicate_lineage_conflict", duplicate_lineage_reference_ids=tuple(dict.fromkeys(ref.reference_id for ref in matches)))
-        return result("ambiguous", ambiguous_reference_ids=tuple(ref.reference_id for ref in matches))
+            return result(
+                "duplicate_lineage_conflict",
+                duplicate_lineage_reference_ids=tuple(
+                    dict.fromkeys(ref.reference_id for ref in matches)
+                ),
+            )
+        return result(
+            "ambiguous",
+            ambiguous_reference_ids=tuple(ref.reference_id for ref in matches),
+        )
     ref = matches[0]
-    if any((item.family, item.native_projection_id, item.native_lineage) != (ref.family, ref.native_projection_id, ref.native_lineage) for item in exact):
-        return result("reference_mismatch", reference_mismatch_evidence_refs=tuple(item.evidence_ref for item in exact))
+    if any(
+        (item.family, item.native_projection_id, item.native_lineage)
+        != (ref.family, ref.native_projection_id, ref.native_lineage)
+        for item in exact
+    ):
+        return result(
+            "reference_mismatch",
+            reference_mismatch_evidence_refs=tuple(
+                item.evidence_ref for item in exact
+            ),
+        )
     if ref.conflict:
-        return result("duplicate_lineage_conflict", duplicate_lineage_reference_ids=(ref.reference_id,))
+        return result(
+            "duplicate_lineage_conflict",
+            duplicate_lineage_reference_ids=(ref.reference_id,),
+        )
     if not ref.selectable:
-        return result("non_selectable", non_selectable_reference_ids=(ref.reference_id,))
+        return result(
+            "non_selectable", non_selectable_reference_ids=(ref.reference_id,)
+        )
     return result("selected", selected_reference=ref)
 
 
-def advancement_need_consideration_selection_json(selection: AdvancementNeedConsiderationSelection) -> dict[str, object]:
+def advancement_need_consideration_selection_json(
+    selection: AdvancementNeedConsiderationSelection,
+) -> dict[str, object]:
     return selection.to_json_dict()

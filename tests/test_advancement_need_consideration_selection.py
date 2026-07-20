@@ -1,6 +1,5 @@
 from seed_runtime.advancement_need_consideration_selection import (
     AdvancementNeedConsiderationEvidence,
-    NeedFocusEvidence,
     advancement_need_consideration_selection_json,
     select_advancement_need_for_consideration,
 )
@@ -14,13 +13,17 @@ def _reference_set():
 
 def _established_inquiry_ref(reference_set=None):
     reference_set = reference_set or _reference_set()
-    return next(ref for ref in reference_set.references if ref.family == "inquiry" and ref.native_bucket == "established")
+    return next(
+        ref
+        for ref in reference_set.references
+        if ref.family == "inquiry" and ref.native_bucket == "established"
+    )
 
 
-def _focus(ref, *, evidence_ref="focus:1", **overrides):
+def _evidence(ref, *, evidence_ref="consideration:1", **overrides):
     data = dict(
         evidence_ref=evidence_ref,
-        source_ref="operator:focus",
+        source_ref="operator:testimony",
         reference_id=ref.reference_id,
         need_set_id=ref.need_set_id,
         selection_id=ref.selection_id,
@@ -34,91 +37,134 @@ def _focus(ref, *, evidence_ref="focus:1", **overrides):
     return AdvancementNeedConsiderationEvidence(**data)
 
 
-def test_canonical_evidence_drives_selector_and_serialized_output_remains_stable():
+def test_exact_consideration_evidence_drives_selection_and_serialization():
     reference_set = _reference_set()
     ref = _established_inquiry_ref(reference_set)
 
-    selection = select_advancement_need_for_consideration(reference_set, [_focus(ref)])
+    selection = select_advancement_need_for_consideration(
+        reference_set, [_evidence(ref)]
+    )
     payload = advancement_need_consideration_selection_json(selection)
 
     assert selection.selection_state == "selected"
     assert selection.selected_reference == ref
-    assert payload["focus_evidence_refs"] == ("focus:1",)
-    assert payload["focus_provenance_refs"] == ("operator:focus",)
-    assert "consideration_evidence_refs" not in payload
-    assert "consideration_provenance_refs" not in payload
+    assert payload["consideration_evidence_refs"] == ("consideration:1",)
+    assert payload["consideration_provenance_refs"] == ("operator:testimony",)
 
 
-def test_compatibility_alias_constructs_the_same_evidence_artifact_and_selector_result():
+def test_exact_reference_selection_validates_full_identity_and_preserves_others():
     reference_set = _reference_set()
     ref = _established_inquiry_ref(reference_set)
-    data = dict(
-        evidence_ref="focus:alias",
-        source_ref="operator:focus",
-        reference_id=ref.reference_id,
-        need_set_id=ref.need_set_id,
-        selection_id=ref.selection_id,
-        goal_establishment_id=ref.goal_establishment_id,
-        horizon_id=ref.horizon_id,
-        family=ref.family,
-        native_projection_id=ref.native_projection_id,
-        native_lineage=ref.native_lineage,
+
+    selection = select_advancement_need_for_consideration(
+        reference_set, [_evidence(ref)]
     )
-
-    canonical = AdvancementNeedConsiderationEvidence(**data)
-    compatibility = NeedFocusEvidence(**data)
-    canonical_selection = select_advancement_need_for_consideration(reference_set, [canonical])
-    compatibility_selection = select_advancement_need_for_consideration(reference_set, [compatibility])
-
-    assert NeedFocusEvidence is AdvancementNeedConsiderationEvidence
-    assert compatibility == canonical
-    assert compatibility_selection == canonical_selection
-    assert advancement_need_consideration_selection_json(compatibility_selection) == advancement_need_consideration_selection_json(canonical_selection)
-
-
-def test_exact_reference_selection_validates_full_identity_and_preserves_others_visible_unchanged():
-    reference_set = _reference_set()
-    ref = _established_inquiry_ref(reference_set)
-
-    selection = select_advancement_need_for_consideration(reference_set, [_focus(ref)])
 
     assert selection.selection_state == "selected"
     assert selection.selected_reference == ref
     assert selection.selected_reference.need_set_id == reference_set.need_set_id
     assert selection.selected_reference.selection_id == reference_set.selection_id
-    assert selection.selected_reference.goal_establishment_id == reference_set.goal_establishment_id
+    assert (
+        selection.selected_reference.goal_establishment_id
+        == reference_set.goal_establishment_id
+    )
     assert selection.selected_reference.horizon_id == reference_set.horizon_id
     assert selection.selected_reference.family == "inquiry"
     assert selection.selected_reference.native_projection_id == ref.native_projection_id
     assert selection.selected_reference.native_lineage == ref.native_lineage
     assert selection.visible_references == reference_set.references
-    assert tuple(sorted((r.reference_id, r.native_bucket, r.selectable) for r in selection.non_selected_references)) == tuple(sorted((r.reference_id, r.native_bucket, r.selectable) for r in reference_set.references if r != ref))
+    assert set(selection.non_selected_references) == {
+        item for item in reference_set.references if item != ref
+    }
 
 
-def test_unsupported_unknown_conflicting_excluded_outside_scope_and_unclassified_remain_visible_non_selectable():
+def test_non_selectable_standings_remain_visible_and_unselected():
     reference_set = _reference_set()
-    non_selectable_buckets = {"unsupported", "unknown", "conflicting", "excluded_family", "outside_current_scope", "unclassified_here", "unclassified"}
-    refs = [ref for ref in reference_set.references if ref.native_bucket in non_selectable_buckets]
+    non_selectable_buckets = {
+        "unsupported",
+        "unknown",
+        "conflicting",
+        "excluded_family",
+        "outside_current_scope",
+        "unclassified_here",
+        "unclassified",
+    }
+    refs = [
+        ref
+        for ref in reference_set.references
+        if ref.native_bucket in non_selectable_buckets
+    ]
     assert refs
+
     for ref in refs:
-        selection = select_advancement_need_for_consideration(reference_set, [_focus(ref, evidence_ref=f"focus:{ref.native_bucket}:{ref.reference_id}")])
+        selection = select_advancement_need_for_consideration(
+            reference_set,
+            [
+                _evidence(
+                    ref,
+                    evidence_ref=f"consideration:{ref.native_bucket}:{ref.reference_id}",
+                )
+            ],
+        )
         assert ref in selection.visible_references
         assert not ref.selectable
-        assert selection.selection_state in {"non_selectable", "duplicate_lineage_conflict"}
+        assert selection.selection_state in {
+            "non_selectable",
+            "duplicate_lineage_conflict",
+        }
         assert selection.selected_reference is None
 
 
-def test_missing_ambiguous_conflicting_absent_duplicate_lineage_and_mismatched_focus_unresolved():
+def test_unresolved_evidence_states_remain_unresolved():
     reference_set = _reference_set()
     ref = _established_inquiry_ref(reference_set)
-    duplicate_ref = next(r for r in reference_set.references if r.conflict)
+    duplicate_ref = next(item for item in reference_set.references if item.conflict)
 
     missing = select_advancement_need_for_consideration(reference_set, [])
-    missing_identity = select_advancement_need_for_consideration(reference_set, [AdvancementNeedConsiderationEvidence("focus:missing", "src", evidence_state="missing_identity")])
-    ambiguous = select_advancement_need_for_consideration(reference_set, [AdvancementNeedConsiderationEvidence("focus:amb", "src", evidence_state="ambiguous", candidate_reference_ids=(ref.reference_id, duplicate_ref.reference_id))])
-    conflicting = select_advancement_need_for_consideration(reference_set, [_focus(ref), _focus(duplicate_ref, evidence_ref="focus:2")])
-    absent = select_advancement_need_for_consideration(reference_set, [_focus(ref, reference_id="advancement-need-reference/absent")])
-    duplicate = select_advancement_need_for_consideration(reference_set, [_focus(duplicate_ref)])
+    missing_identity = select_advancement_need_for_consideration(
+        reference_set,
+        [
+            AdvancementNeedConsiderationEvidence(
+                "consideration:missing",
+                "src",
+                evidence_state="missing_identity",
+            )
+        ],
+    )
+    ambiguous = select_advancement_need_for_consideration(
+        reference_set,
+        [
+            AdvancementNeedConsiderationEvidence(
+                "consideration:ambiguous",
+                "src",
+                evidence_state="ambiguous",
+                candidate_reference_ids=(ref.reference_id, duplicate_ref.reference_id),
+            )
+        ],
+    )
+    conflicting = select_advancement_need_for_consideration(
+        reference_set,
+        [_evidence(ref), _evidence(duplicate_ref, evidence_ref="consideration:2")],
+    )
+    absent = select_advancement_need_for_consideration(
+        reference_set,
+        [_evidence(ref, reference_id="advancement-need-reference/absent")],
+    )
+    duplicate = select_advancement_need_for_consideration(
+        reference_set, [_evidence(duplicate_ref)]
+    )
+
+    assert missing.selection_state == "no_consideration_evidence"
+    assert missing_identity.selection_state == "missing_identity"
+    assert ambiguous.selection_state == "ambiguous"
+    assert conflicting.selection_state == "conflict"
+    assert absent.selection_state == "absent_reference"
+    assert duplicate.selection_state == "duplicate_lineage_conflict"
+
+
+def test_identity_mismatches_refuse_selection():
+    reference_set = _reference_set()
+    ref = _established_inquiry_ref(reference_set)
 
     for field, value in [
         ("need_set_id", "other-need-set"),
@@ -129,24 +175,18 @@ def test_missing_ambiguous_conflicting_absent_duplicate_lineage_and_mismatched_f
         ("native_projection_id", "other-projection"),
         ("native_lineage", ("other-lineage",)),
     ]:
-        mismatch = select_advancement_need_for_consideration(reference_set, [_focus(ref, **{field: value})])
+        mismatch = select_advancement_need_for_consideration(
+            reference_set, [_evidence(ref, **{field: value})]
+        )
         assert mismatch.selection_state == "reference_mismatch"
         assert mismatch.selected_reference is None
 
-    assert missing.selection_state == "no_focus_evidence"
-    assert missing_identity.selection_state == "missing_identity"
-    assert ambiguous.selection_state == "ambiguous"
-    assert conflicting.selection_state == "conflict"
-    assert absent.selection_state == "absent_reference"
-    assert duplicate.selection_state == "duplicate_lineage_conflict"
-    assert all(item.selected_reference is None for item in (missing, missing_identity, ambiguous, conflicting, absent, duplicate))
 
-
-def test_uniqueness_and_sufficiency_do_not_select_and_boundary_has_no_side_effects():
+def test_uniqueness_does_not_select_and_boundary_has_no_side_effects():
     reference_set = _reference_set()
     selection = select_advancement_need_for_consideration(reference_set, [])
 
-    assert selection.selection_state == "no_focus_evidence"
+    assert selection.selection_state == "no_consideration_evidence"
     assert selection.selected_reference is None
     assert any(ref.selectable for ref in selection.visible_references)
     assert not selection.selects_need

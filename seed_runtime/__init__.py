@@ -127,7 +127,6 @@ from seed_runtime.bounded_operator_goal_establishment import (
     establish_bounded_operator_goal_from_authority_scope_binding,
 )
 
-
 from seed_runtime.goal_advancement_need_set import (
     GoalAdvancementNeedSet,
     NeedFamilyAssemblyRecord,
@@ -135,9 +134,6 @@ from seed_runtime.goal_advancement_need_set import (
     assemble_goal_advancement_need_set,
     goal_advancement_need_set_json,
 )
-
-
-
 
 from seed_runtime.bounded_inquiry_frontier import (
     BoundedInquiryFrontier,
@@ -148,7 +144,6 @@ from seed_runtime.bounded_inquiry_frontier import (
 from seed_runtime.advancement_need_consideration_selection import (
     AdvancementNeedConsiderationSelection,
     AdvancementNeedConsiderationEvidence,
-    NeedFocusEvidence,
     advancement_need_consideration_selection_json,
     select_advancement_need_for_consideration,
 )
@@ -220,13 +215,13 @@ from seed_runtime.bounded_advancement_horizon import (
     establish_bounded_advancement_horizon,
 )
 
-from seed_runtime.goal_inquiry_consideration_selection import (
-    GoalFocusEvidence,
-    GoalInquiryConsiderationSelection,
-    goal_inquiry_consideration_selection_json,
-    goal_inventory_candidate_set_id,
-    select_goal_for_inquiry_consideration,
-    visible_bounded_goals,
+from seed_runtime.goal_consideration_candidate_resolution import (
+    GoalConsiderationCandidateResolution,
+    GoalConsiderationCandidateTestimony,
+    goal_consideration_candidate_resolution_json,
+    goal_consideration_candidate_set_id,
+    resolve_goal_consideration_candidate,
+    visible_bounded_goal_candidates,
 )
 
 from seed_runtime.goal_orientation_inventory import (
@@ -256,7 +251,6 @@ __all__ = [
     "bounded_inquiry_frontier_json",
     "AdvancementNeedConsiderationSelection",
     "AdvancementNeedConsiderationEvidence",
-    "NeedFocusEvidence",
     "advancement_need_consideration_selection_json",
     "select_advancement_need_for_consideration",
     "AdvancementNeedReference",
@@ -307,12 +301,12 @@ __all__ = [
     "NeedFamilyExclusion",
     "bounded_advancement_horizon_json",
     "establish_bounded_advancement_horizon",
-    "GoalFocusEvidence",
-    "GoalInquiryConsiderationSelection",
-    "goal_inquiry_consideration_selection_json",
-    "goal_inventory_candidate_set_id",
-    "select_goal_for_inquiry_consideration",
-    "visible_bounded_goals",
+    "GoalConsiderationCandidateResolution",
+    "GoalConsiderationCandidateTestimony",
+    "goal_consideration_candidate_resolution_json",
+    "goal_consideration_candidate_set_id",
+    "resolve_goal_consideration_candidate",
+    "visible_bounded_goal_candidates",
     "SUPPORTED_GOAL_DIMENSIONS",
     "GoalOrientationAssociation",
     "GoalOrientationArtifactView",

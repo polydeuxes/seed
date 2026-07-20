@@ -4,28 +4,31 @@
 The boundary between choosing a candidate for consideration and granting authority for consequential movement or execution.
 
 ## Core question
-Which selections are merely epistemic or attentional, and which later warrant can authorize action?
+Which selections establish only a bounded selected-for-consideration result, and which later warrant can authorize action?
 
 ## Bounded resolution
-Selection narrows a bounded candidate set and records a basis. It does not itself grant operator, policy, approval, or execution authority. Representation selection chooses views or other representations for one consumer purpose; consideration selection chooses an already-established subject for bounded focus. A consideration selection may establish bounded selection standing or focus standing for that subject without selecting a resolution, route, realization, inquiry opening, or authorization. That selection standing is a bounded effect of the local road, not reusable authorization standing.
+Selection narrows a bounded candidate set through a responsible selection act and records its basis. It does not itself grant operator, policy, approval, or execution authority. Representation selection chooses views or other representations for one consumer purpose. Consideration selection chooses an already-established subject for bounded present consideration only where the responsible owner validates the evidence required for that selection. A selected-for-consideration result does not select a resolution, route, realization, inquiry opening, or authorization, and it is not reusable authorization standing.
+
+Exact candidate-identity resolution is smaller than selection. A resolver may prove that attributed testimony names exactly one visible candidate without establishing that Seed selected that candidate, that it should receive present consideration, or that advancement should proceed through it.
 
 ## Important distinctions
+- candidate identity resolved != candidate selected
 - selection != authorization
 - consideration != permission
 - selected advancement need != priority, route, inquiry opening, or realization
 - representation selection != consideration selection automatically
 - closed choice binding != execution approval
-- selection standing != authorization standing
-- representation standing != focus standing
+- selected-for-consideration standing != authorization standing
 
 ## Representative repository anchors
+- `seed_runtime/goal_consideration_candidate_resolution.py`
 - `seed_runtime/advancement_need_consideration_selection.py`
-- `seed_runtime/goal_inquiry_consideration_selection.py`
 - `seed_runtime/constitutional_view_selection.py`
 - `seed_runtime/operational_realization_selection.py`
 - `seed_runtime/operator_authority_scope_binding.py`
 
 ## Counterexamples or failure modes
+- Treating a resolved goal identity as Seed-owned goal selection.
 - Executing a selected operational realization without its warrant.
 - Treating a user choice among labels as unlimited authority.
 - Treating exact view-key matching as semantic judgment or as authority to move work.

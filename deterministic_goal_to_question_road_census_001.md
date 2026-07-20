@@ -1,58 +1,82 @@
 # Deterministic goal-to-question road census 001
 
-## Scope and stop condition
+## Correction status
 
-This is one read-only deterministic road census from bounded operator goal establishment toward Seed-owned constitutional question formation. It does not modify runtime code or the Book, and it does not propose new owners, artifacts, stages, engines, selectors, or architecture.
+This census supersedes its earlier classification of caller-supplied goal identity testimony as Seed-owned goal selection. The implementation formerly named that testimony `GoalFocusEvidence` and named its exact-identity resolver `GoalInquiryConsiderationSelection`. Those names asserted constitutional effects that the implementation did not perform.
 
-Stop condition reached: the road first becomes unresolved at bounded advancement horizon construction because `present_movement_boundary` and `potentially_relevant_need_families` are caller-supplied bounded configuration/compatibility inputs preserved by `establish_bounded_advancement_horizon`, not repository-produced standing selected or characterized by an upstream executable owner.
+The active boundary is now:
 
-## Edge census until first unresolved edge
+```text
+GoalOrientationInventory
++
+attributed candidate testimony
+→ GoalConsiderationCandidateResolution
+```
 
-| Edge | Producer function or constructor | Input artifact | Decisive fields | Where decisive fields originate | Validation performed | Result artifact | Actual consumer | Classification |
-|---|---|---|---|---|---|---|---|---|
-| Attributed operator material -> bounded operator goal establishment | `establish_bounded_operator_goal_from_interpretation`; also closed-choice, authority/scope, and admitted-interpretation variants exist | `OperatorExpressionInterpretationProjection` or other lawful ingress artifact | `artifact_type`, `interpretation_state`, relation/focus/subject/object/scope expressions, unresolved references, sufficiency/stop conditions, constraints, unknowns/conflicts | Repository-produced interpretation/admission/binding artifacts plus caller-provided sufficiency/stop parameters | Requires exact ingress artifact type; refuses if interpretation is not interpreted or lacks orientation; preserves unknowns/conflicts and lineage | `BoundedOperatorGoalEstablishment` | `association_from_bounded_goal` can consume the goal for orientation inventory evidence | A. repository-produced and consumer-validated |
-| Bounded operator goal establishment -> goal-orientation association | `association_from_bounded_goal` | `BoundedOperatorGoalEstablishment` | `goal_establishment_id`, `ingress_artifact_ref`, `intended_outcome`, `conflicts`, `dimension_refs` | Goal fields originate in goal establishment; `dimension_refs` originate from caller-supplied explicit association evidence | No derivation of dimensions; empty dimensions become `association_state="Unknown"`; dimensions themselves are not validated here | `GoalOrientationAssociation` | `build_goal_orientation_inventory` | D. caller-supplied decisive standing treated as produced for `dimension_refs`; otherwise C. caller-supplied testimony preserved and validated by later inventory bucketing |
-| Goal-orientation association -> goal orientation inventory | `build_goal_orientation_inventory` | Iterable of `GoalOrientationAssociation` | `artifact_kind`, `artifact_ref`, `source_ref`, `dimension_refs`, `association_state`, `conflict_refs` | Association evidence, including caller-supplied dimension refs | Buckets only supported dimensions; unsupported dimension refs become unmatched; Unknown/empty dimensions remain unknown; conflict refs become conflicting material | `GoalOrientationInventory` | `select_goal_for_inquiry_consideration` | A for inventory bucketing over supplied association evidence; the inventory is read-only representation, not a constitutional advancement owner |
-| Goal orientation inventory -> goal consideration selection | `select_goal_for_inquiry_consideration` | `GoalOrientationInventory` plus `GoalFocusEvidence` | Visible bounded goals; `GoalFocusEvidence.evidence_state`; exact `goal_establishment_id`; candidate refs; unknowns/conflicts | Visible candidates originate from inventory; focus evidence is caller-supplied selection testimony | Refuses no evidence, missing/Unknown identity, ambiguity, conflict, inventory mismatch; selects only one exact visible bounded-goal identity | `GoalInquiryConsiderationSelection` | `establish_bounded_advancement_horizon` | C. caller-supplied testimony preserved and validated |
-| Goal consideration selection -> bounded advancement horizon | `establish_bounded_advancement_horizon` | `GoalInquiryConsiderationSelection` and matching `BoundedOperatorGoalEstablishment` | `selection_state`, `selected_goal_establishment_id`, goal artifact/state, `present_movement_boundary`, scopes, evidence snapshots, time/current-state bounds, `potentially_relevant_need_families`, exclusions, unknowns/conflicts | Selection and goal are repository-produced; `present_movement_boundary`, scopes, snapshots, bounds, and need families are caller-supplied parameters | Validates selected state, exact selected-goal/goal identity, goal artifact type and non-refused state, non-empty `present_movement_boundary`, exclusion reasons | `BoundedAdvancementHorizon` when bounded; refusal artifact otherwise | Family-local need projections and need-set assemblers can consume the horizon | G. standing remains Unknown for the source of `present_movement_boundary` and `potentially_relevant_need_families`; stop here |
+Candidate resolution proves at most that attributed testimony names exactly one visible bounded-goal identity. It does not select that goal, establish priority, determine present applicability, originate advancement, or require inquiry.
 
-## Required transition table
+## Deterministic road
 
-| Last repository-produced artifact | First caller-injected decisive input | Deterministic consumer | Claimed transition | Maximum transition actually supported |
-|---|---|---|---|---|
-| `BoundedOperatorGoalEstablishment` | `dimension_refs` supplied to `association_from_bounded_goal` | `build_goal_orientation_inventory` | established bounded goal -> constitutional orientation dimension standing | established bounded goal -> explicit association testimony bucketed into read-only orientation inventory; dimension standing is not produced from goal content |
-| `GoalOrientationInventory` | `GoalFocusEvidence.goal_establishment_id` and state supplied to `select_goal_for_inquiry_consideration` | `select_goal_for_inquiry_consideration` | orientation inventory -> selected present goal | visible bounded-goal candidates + exact focus testimony -> validated goal consideration selection; not priority, movement, activation, or inquiry opening |
-| `GoalInquiryConsiderationSelection` | `present_movement_boundary` supplied to `establish_bounded_advancement_horizon` | `establish_bounded_advancement_horizon` | selected goal -> bounded advancement horizon | selected goal + matching goal artifact + non-empty caller-supplied boundary -> horizon preserving boundary; no executable producer for boundary standing found on this road |
-| `GoalInquiryConsiderationSelection` | `potentially_relevant_need_families` supplied to `establish_bounded_advancement_horizon` | `establish_bounded_advancement_horizon` | selected goal -> family-local need projection space | horizon can preserve possible need-family configuration; it does not produce family relevance or classify needs |
-| `AdvancementNeedReferenceSet` | `AdvancementNeedConsiderationEvidence` exact reference, identity tuple, native projection, and native lineage | `select_advancement_need_for_consideration` | advancement need set -> selected advancement need | exact caller-supplied need-focus evidence validated against visible reference set -> consideration selection; not priority, blocker, resolution, or next action |
-| `AdvancementNeedConsiderationSelection` | `FrontierBoundaryClauseInput` clause text, family, producer/adapter lineage, eligible territory refs, standing/currency/availability | `preserve_inquiry_frontier_boundary_testimony` | selected inquiry need -> inquiry frontier compatibility assembly | selected inquiry need + unordered caller/stage compatibility clause inputs -> preserved testimony; not frontier assembly or question formulation |
-| `InquiryFrontierBoundaryTestimony` | `produce_bounded_constitutional_question` requires explicit `operator_inquiry`, `bounded_question`, `constitutional_intent`, `scope_status` | `produce_bounded_constitutional_question` | frontier-boundary testimony -> Seed-owned constitutional question | no executable edge; bounded constitutional question production preserves explicit caller inputs only |
+| Edge | Executable occurrence | Maximum supported result | Unresolved crossing |
+|---|---|---|---|
+| attributed operator material → bounded operator goal | interpretation/admission plus goal-establishment constructor | bounded operator goal artifact; establishment sufficiency remains limited by supplied conditions | producer and warrant for establishment sufficiency |
+| bounded operator goal → orientation association | caller supplies `dimension_refs`; inventory buckets them | explicit association testimony represented in a read-only inventory | Seed-produced constitutional dimension applicability |
+| orientation inventory + candidate testimony → candidate resolution | exact identity comparison, uniqueness, conflict and mismatch checks | one testified goal identity resolved against one inventory snapshot | Seed-owned act choosing a goal for present advancement consideration |
+| candidate resolution + matching goal + supplied movement boundary → bounded horizon | identity coherence and non-empty boundary checks | read-only horizon preserving supplied boundary/configuration | producer and constitutional standing of `present_movement_boundary` and need-family relevance |
+| horizon + family-local testimony → need projections and need set | family-local projection and deterministic assembly | preserved need testimony and assembled referenceable needs | full producer sufficiency varies by family |
+| advancement-need reference set + exact consideration evidence → need consideration selection | exact reference, lineage and selectability checks | one advancement need selected for bounded consideration | priority, route, inquiry opening, authority and execution remain unestablished |
+| selected inquiry need → constitutional frontier | compatibility testimony and assembly only | constitutional frontier standing remains Unknown | responsible frontier-establishing act |
+| frontier → Seed-owned constitutional question | no complete executable edge | no internal constitutional question is produced by external prose | Seed-owned question-forming realization |
 
-## Focus-field classifications
+## First abrupt endings
 
-| Field or surface | Classification in this census | Reason |
-|---|---|---|
-| `dimension_refs` | Unsupported standing injection when treated as Seed-produced dimension standing; otherwise explicit association testimony | The goal-association helper accepts dimensions and does not derive them from the bounded goal; the inventory only buckets and marks unsupported dimensions unmatched. |
-| `GoalFocusEvidence` | Validated selection evidence | It is caller-supplied testimony, but the selector validates exact identity, uniqueness, inventory presence, conflict, ambiguity, and missing identity before selection. |
-| `present_movement_boundary` | Bounded configuration / compatibility input; not repository-produced standing | The horizon constructor requires it to be non-empty but does not produce it or constitutionally characterize it. |
-| `potentially_relevant_need_families` | Bounded configuration / compatibility input | The horizon preserves the tuple as potentially relevant family visibility; it does not classify need existence or relevance. |
-| `AdvancementNeedConsiderationEvidence` | Validated selection evidence | The selector checks exact reference, need set, goal, horizon, family, native projection, native lineage, selectable status, duplicates, and conflicts. |
-| Frontier-boundary clause inputs | Compatibility input / attributed testimony | `preserve_inquiry_frontier_boundary_testimony` preserves clause inputs and ownership lineage if supplied; it does not assemble a frontier or formulate a question. |
+The road does not have one clean continuous endpoint. It contains earlier unsupported crossings:
 
-## Answers to required questions
+```text
+admitted/interpreted operator meaning
+→ caller-supplied sufficiency conditions
+→ claimed established goal standing
+```
 
-1. Seed possesses only bounded operator purpose under constitutional law on this road. The goal-establishment boundary explicitly says bounded operator goal establishment is not constitutional meta-target establishment.
-2. The repository does not implement any Seed-owned goal distinct from bounded operator goals on this road. The live executable artifact is `BoundedOperatorGoalEstablishment`, with read-only flags and no inquiry opening, authorization, execution, recording, or satisfaction judgment.
-3. `GoalOrientationInventory` is only a read-only representation here, not the constitutional advancement road owner. Its notes deny registry, planner, queue, priority order, activation, scheduling, authorization, execution, recording, ledger writes, and mutation.
-4. The exact act selecting a bounded goal for present advancement consideration is `select_goal_for_inquiry_consideration` consuming `GoalFocusEvidence` that names one exact visible bounded-goal identity.
-5. No executable producer was found for the present movement boundary consumed by `BoundedAdvancementHorizon`. It is a required parameter to `establish_bounded_advancement_horizon`, validated only for non-emptiness after selection/goal identity checks.
-6. The act selecting one advancement need for present consideration is `select_advancement_need_for_consideration`, consuming exact `AdvancementNeedConsiderationEvidence` and validating it against an `AdvancementNeedReferenceSet`.
-7. The executable road toward a Seed-owned constitutional question first ends at `establish_bounded_advancement_horizon` because the present movement boundary and potentially relevant need-family standing are not repository-produced by a prior executable owner. If one continues past the stop as preserved testimony only, the later road ends again before constitutional question formation: `produce_bounded_constitutional_question` preserves explicit caller inputs rather than forming a Seed-owned question from frontier-boundary testimony.
+and:
 
-## Exact road ending
+```text
+bounded operator goal
+→ caller-supplied dimension_refs
+→ claimed orientation association
+```
 
-`GoalInquiryConsiderationSelection` as the last lawfully produced standing
-→ unsupported transition to repository-produced `present_movement_boundary` / repository-produced `potentially_relevant_need_families`
-→ intended downstream standing: `BoundedAdvancementHorizon` as the bounded advancement horizon for family-local need projection.
+The former goal-candidate seam is now characterized honestly:
 
-The road ends because of caller-injected decisive standing and missing implementation for producing the present movement boundary / need-family relevance standing before horizon construction. No repair is made.
+```text
+GoalOrientationInventory
+→ attributed exact candidate identity
+→ GoalConsiderationCandidateResolution
+```
+
+not:
+
+```text
+orientation inventory
+→ Seed-owned goal selection
+→ inquiry consideration
+```
+
+## Answers
+
+1. Seed has one bounded purpose source on this road: operator purpose established under constitutional law. The constitution is law, not a second goal.
+2. No separate Seed-owned goal artifact is implemented here.
+3. `GoalOrientationInventory` is a read-only representation, not a planner or advancement owner.
+4. No executable Seed-owned act currently chooses a bounded goal for present advancement consideration. The repository resolves attributed candidate identity only.
+5. No executable producer establishes the present movement boundary consumed by `BoundedAdvancementHorizon`.
+6. `select_advancement_need_for_consideration` selects one exact advancement-need reference from fully bound consideration evidence, without priority or action authority.
+7. No complete executable road forms a Seed-owned constitutional question from the preceding standings.
+
+## Exact local ending
+
+```text
+GoalOrientationInventory
+→ GoalConsiderationCandidateResolution
+→ missing Seed-owned present-goal selection act
+→ intended bounded advancement orientation remains unresolved
+```
