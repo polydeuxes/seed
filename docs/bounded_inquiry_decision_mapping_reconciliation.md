@@ -2,13 +2,11 @@
 
 ## Scope
 
-This reconciliation is observational. It inspects only the current implementation surfaces for `Decision`, `DecisionProducer`, `DecisionValidator`, canonical Runtime routing, `request_tool`, `ask_question`, `call_tool`, `answer`, and `refuse`, plus the current inquiry-style implementations `container_ownership_authority`, `service_ownership_authority`, and `privilege_discovery` for comparison.
 
 It does not introduce planning, an inquiry engine, a new Runtime, or new `Decision` kinds.
 
 ## Executive answer
 
-A bounded inquiry can produce an existing `Decision` today if it implements the existing `DecisionProducer.decide(decision_input) -> Decision` protocol and returns a `Decision` that satisfies `DecisionValidator`. Runtime already accepts any object with that protocol shape, validates the returned `Decision`, applies the existing tool-intent guard, and routes valid decisions through existing response, tool-need, tool-execution, state-patch, or refusal branches.
 
 The current `Decision` vocabulary is sufficient for the observed inquiry-driven runtime bridge for these bounded outcomes:
 
@@ -106,7 +104,6 @@ Implementation-backed outcomes:
 
 ### `answer`
 
-`answer` corresponds to a bounded inquiry that can report its computed result without needing clarification, capability acquisition, or execution. `DecisionValidator` requires only `decision.answer`; Runtime records `response.answer` and returns an answer response.
 
 This can express:
 
@@ -119,7 +116,6 @@ It does not execute observations or acquire authority.
 
 ### `ask_question`
 
-`ask_question` corresponds to a bounded inquiry that cannot decide the next valid response because operator input is ambiguous or missing. `DecisionValidator` requires `decision.question`; Runtime records `response.question` and returns a question response.
 
 This can express:
 
@@ -131,7 +127,6 @@ It is not a capability-acquisition or execution path.
 
 ### `request_tool`
 
-`request_tool` corresponds to a bounded inquiry that identifies a missing capability or capability-like need. `DecisionValidator` requires a `tool_need` with valid `name`, `summary`, and `capability`. Runtime routes it to `ToolNeedService.create_from_decision`, computes recommendations and read-only capability resolution, and returns a `tool_need` response. Architecture invariant tests assert that this path records a capability need without invoking the tool executor.
 
 This can express:
 
@@ -143,7 +138,6 @@ It does not itself execute the observation, authorize permission, mutate the clu
 
 ### `call_tool`
 
-`call_tool` corresponds to already-determined work using a visible registered tool. `DecisionValidator` requires `tool_name` and validates input against the registry and state through `ToolValidationService`. Runtime then calls `ToolExecutor.execute`; tests assert this is the branch that invokes the tool executor.
 
 This can express:
 
@@ -154,7 +148,6 @@ It should not be used for missing authority, missing capability, or speculative 
 
 ### `refuse`
 
-`refuse` corresponds to a bounded inquiry that determines the requested output or action should not proceed. `DecisionValidator` requires a non-empty reason; Runtime records `response.refusal` and returns a refusal response.
 
 This can express:
 
@@ -196,7 +189,6 @@ No new `Decision` kind is required by the current implementation evidence.
 
 Implementation support:
 
-- `DecisionValidator` validates `request_tool` by requiring `tool_need.name`, `tool_need.summary`, and `tool_need.capability`.
 - `ToolNeedService` is explicitly summarized as owning capability-gap creation and read-only capability resolution for `request_tool` decisions.
 - Runtime routes `request_tool` to `ToolNeedService`, recommendations, and capability resolution, returning `kind="tool_need"`.
 - `ToolNeedService.resolve_capability` documents that it does not execute tools, authorize actions, create pending actions, or mutate registry/catalog state.
@@ -255,8 +247,6 @@ Responsibilities that remain outside the inquiry:
 
 | Responsibility | Current owner |
 | --- | --- |
-| decision shape validation | `DecisionValidator` |
-| registered tool input/schema validation | `DecisionValidator` via `ToolValidationService` |
 | tool-intent guard | `Runtime` via `ToolIntentGuard` |
 | runtime routing | `Runtime._route` |
 | capability-gap persistence and capability resolution | `ToolNeedService` plus recommendation/catalog/registry helpers |
@@ -293,7 +283,6 @@ A particularly small bounded slice would use `container_ownership_authority`:
 - constrained profile returns `outcome="blocked"` with Docker/root remaining observations;
 - inquiry adapter returns `Decision(kind="request_tool", tool_need={"name": "container_runtime_visibility", "summary": "Provide Docker or root-backed read-only container runtime visibility", "capability": "container_inventory"})` or an `answer` reporting the blocked boundary;
 - existing Runtime records `model.decision.proposed`;
-- `DecisionValidator` validates the `tool_need`;
 - `Runtime` routes to `ToolNeedService`;
 - `ToolNeedService` records `tool_need.created` and returns read-only capability resolution.
 
@@ -314,7 +303,6 @@ Constraints:
 - implement the existing `DecisionProducer` protocol;
 - call one existing inquiry evaluator;
 - map exactly one implementation-backed result to exactly one current `Decision` kind;
-- rely on current `DecisionValidator`, `Runtime`, `ToolNeedService`, and `ToolExecutor` boundaries;
 - test with canonical Runtime that the produced decision validates and routes through the existing branch.
 
 ## Commands executed
@@ -325,7 +313,6 @@ rg --files -g 'AGENTS.md' -g '!**/.git/**'
 find .. -name AGENTS.md -print
 cat AGENTS.md
 git status --short
-rg "class Decision|DecisionKind|DecisionProducer|DecisionValidator|request_tool|ask_question|call_tool|refuse|def answer|container_ownership_authority|service_ownership_authority|privilege_discovery" -n .
 sed -n '1,220p' seed_runtime/models.py
 sed -n '1,220p' seed_runtime/decisions.py
 sed -n '1,380p' seed_runtime/runtime.py

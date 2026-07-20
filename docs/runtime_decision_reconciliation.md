@@ -9,7 +9,6 @@ This report is observational. It identifies what the current implementation demo
 ```text
 python - <<'PY'
 from seed_runtime.context import DecisionInputComposer
-from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
 from seed_runtime.execution import ToolExecutor
 from seed_runtime.models import Decision
@@ -80,7 +79,6 @@ Directly supporting files inspected:
 
 The current `Decision` model does not choose inquiry strategy. Its type permits a fixed set of kinds: `answer`, `ask_question`, `call_tool`, `request_tool`, `propose_action_plan`, `propose_handoff_plan`, `propose_state_patch`, and `refuse`. The model fields are payload fields for one of those selected kinds.
 
-`DecisionValidator` gives the bounded responsibility more precise meaning: it checks whether an already-proposed decision is structurally valid against the current runtime state. It requires answer text for `answer`, question text for `ask_question`, validates the shape of `request_tool`, validates registered tool input for `call_tool`, requires a state patch for `propose_state_patch`, and requires a reason for `refuse`.
 
 The strongest implementation-backed conclusion is that `Decision` means "what has already been selected for the runtime to route," not "a reasoning process that determines what evidence is needed next."
 
@@ -91,7 +89,6 @@ The strongest implementation-backed conclusion is that `Decision` means "what ha
 Runtime is separate from the other responsibilities:
 
 - It does not define the decision schema; `Decision` does.
-- It does not perform decision validation; `DecisionValidator` does.
 - It does not execute registered tools; `ToolExecutor` does.
 - It does not decide policy outcomes; `PolicyGate` and `ToolExecutionPolicyService` do.
 - It does not own tool registration; `ToolRegistry` does.
@@ -130,7 +127,6 @@ The execution boundary begins when a valid `call_tool` decision reaches `ToolExe
 
 ### 1. What bounded responsibility does the current Decision model actually own?
 
-It owns the structured representation of a model-proposed next runtime outcome. It is a typed envelope for an already-selected outcome and its payload. Validation is externalized to `DecisionValidator`, which checks that the selected kind has the required payload and that a `call_tool` decision names a valid registered tool with valid input.
 
 ### 2. What bounded responsibility does Runtime own?
 
@@ -161,7 +157,6 @@ The current implementation reveals that no reviewed component owns the full `rea
 Existing components own narrower transitions:
 
 - External/model reasoning to structured proposal: `DecisionProducer.decide(decision_input)` boundary.
-- Structured proposal to deterministic route: `Runtime` plus `DecisionValidator` and `ToolIntentGuard`.
 - Valid tool call to execution/preflight: `ToolExecutor` plus `ToolExecutionPolicyService` and `PolicyGate`.
 
 Those are not the same as a responsibility that determines what additional evidence bounded inquiry requires before execution. The repository currently relies on model/CLI selection, runtime validation/routing, tool intent guardrails, policy checks, and registered execution.
@@ -180,7 +175,6 @@ Strongest contradictory evidence: `Runtime` has an architecture summary that say
 
 - `Runtime.__seed_arch__` explicitly identifies the owner as `runtime_orchestration` and summarizes Runtime as routing validated model decisions to owner services.
 - `Runtime._route` branches on the already-present `decision.kind` and delegates `request_tool` to `ToolNeedService`, `call_tool` to `ToolExecutor`, and state patches to `StatePatchService`.
-- `DecisionValidator` validates decisions but does not choose them.
 - `ToolExecutor.__seed_arch__` identifies the owner as `registered_tool_execution` and the layer as `execution`.
 - `ToolExecutionPolicyService` explicitly states it does not execute tools, append events, create pending actions, or collapse non-allow policy outcomes.
 - Tests assert routing behavior, validation retries, parse retries, policy outcomes, blocked execution, schema failure before execution, successful execution, and that execution proposals do not start tool calls.

@@ -47,14 +47,11 @@ Repository-wide searches run:
 
 ### `DecisionModel`
 
-`DecisionModel` is currently a runtime protocol seam. Its only owned contract is `decide(context: ContextPacket) -> Decision`. The protocol does not own routing, validation, policy, tool execution, state projection, event recording, or schema validation; those remain in `Runtime`, `DecisionValidator`, `ToolIntentGuard`, `ToolExecutor`, and related services.
 
 Implementation evidence:
 
-- `Runtime` imports `ContextComposer`, `ContextPacket`, `DecisionValidator`, `EventLedger`, `ToolExecutor`, and service dependencies separately, then defines `DecisionModel` as a `Protocol` with a single `decide` method.
 - `FakeDecisionModel` stores the last input packet and returns a preconfigured `Decision`, proving the seam can be deterministic and non-LLM.
 - `Runtime.handle_user_message` appends input, projects state, composes a packet, calls `self.model.decide(...)`, records `model.decision.proposed`, validates the returned `Decision`, and routes only after validation.
-- `DecisionValidator` validates the structured `Decision` object independently of any model implementation.
 
 Answer to Question 1: `DecisionModel` owns only production of a proposed `Decision` from the current decision input packet. It does not own decision truth, runtime authority, routing, validation, execution, or policy.
 

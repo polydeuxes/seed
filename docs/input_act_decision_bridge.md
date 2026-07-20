@@ -84,7 +84,6 @@ A `command_request` is the only initial input act in this vocabulary that natura
 
 It may support `request_tool` when a capability is missing, `propose_action_plan` when a text-only plan is appropriate, `call_tool` when a visible registered tool is valid and guarded, `ask_question` when the command is underspecified, or `refuse` when policy blocks the action.
 
-It must not bypass `DecisionValidator`, `ToolIntentGuard`, pending-action handling, approval gates, policy gates, or registered-operation boundaries.
 
 ### `user_observation`
 

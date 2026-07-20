@@ -39,7 +39,6 @@ The answer is mixed:
 
 ### Validation and guard surfaces
 
-- `DecisionValidator` validates required fields for `answer`, `ask_question`, `request_tool`, `call_tool`, `propose_state_patch`, and `refuse`.
 - `ToolIntentGuard` adds deterministic checks for `call_tool` decisions:
   - non-`call_tool` decisions pass through.
   - the tool must be visible to the model.
@@ -58,7 +57,6 @@ The answer is mixed:
 ### Documentation surfaces already present
 
 - `docs/invariants.md` states that `Runtime` is canonical, `request_tool` records/resolves a capability gap and does not execute, and `call_tool` is the only `Runtime` path to `ToolExecutor`.
-- `docs/function_blocks.md` draws the execution boundary from `DecisionValidator` to runtime branches and states that only `call_tool` may enter `ToolExecutor`.
 - `docs/response_vocabulary.md` maps runtime `answer`, `ask_question`, `refuse`, `tool_need`, `tool_result`, invalid-decision, and state-update responses into response categories.
 - `docs/state_patch_inventory.md` already summarizes the `Runtime.handle_user_message` validation/routing sequence.
 
@@ -128,7 +126,6 @@ raw user text
   -> DecisionProducer.decide
         -> _normalize_classification_for_input
   -> model.decision.proposed event
-  -> DecisionValidator.validate
   -> ToolIntentGuard.validate for call_tool intent constraints
   -> Runtime._route
      -> answer response, question response, ToolNeed/capability-resolution response,
@@ -140,7 +137,6 @@ Important boundaries in this flow:
 - `request_tool` is capability-gap intake, not execution.
 - `call_tool` is the only canonical runtime path into `ToolExecutor`.
 - `ToolIntentGuard` does not replace the classifier; it only applies deterministic checks to tool-call decisions.
-- The prompt/classifier may choose labels, but routing remains constrained by `DecisionValidator`, `ToolIntentGuard`, `Runtime._route`, and policy/execution services downstream of `ToolExecutor`.
 
 ## What Already Works
 
@@ -200,7 +196,6 @@ This audit preserves the current boundaries:
 
 - `Runtime` remains the canonical route owner.
 - `DecisionInputComposer` owns composition of current input and relevant state into `DecisionInputPacket`.
-- `DecisionValidator` owns structured decision validation.
 - `ToolIntentGuard` owns deterministic tool-call intent checks.
 - `ToolNeedService` owns `request_tool` capability-gap creation and resolution support.
 - `ToolExecutor` owns registered-operation execution only after a valid `call_tool` route.
@@ -216,7 +211,6 @@ This audit does not recommend or introduce:
 - a new `RuntimeLoop`;
 - default `ToolExecutor` integration for `request_tool`;
 - LLM-only routing;
-- bypassing `DecisionValidator`, `ToolIntentGuard`, policy gates, pending-action gates, or registered-tool boundaries.
 
 These would duplicate or bypass existing surfaces rather than addressing the smallest documented gap.
 

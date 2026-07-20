@@ -393,7 +393,6 @@ This audit preserves current ownership boundaries:
 - `ContextComposer` owns context packets.
 - `InputAct` vocabulary classifies utterance type, not authority.
 - `DecisionKind` remains runtime-route vocabulary.
-- `DecisionValidator` remains decision validation owner.
 - `ToolIntentGuard` remains deterministic tool-call intent guard owner.
 - `ToolExecutor` remains registered-operation execution owner.
 - Policy, approval, and pending-action paths must remain explicit gates and must not be bypassed by channel metadata.
@@ -411,7 +410,6 @@ This audit does not recommend or introduce:
 - making `InputAct` carry authorization;
 - making `DecisionKind` carry authentication;
 - adding `AuthEngine`, `IdentityEngine`, `ChannelEngine`, or a new `RuntimeLoop`;
-- bypassing `DecisionValidator`, `ToolIntentGuard`, policy gates, approval gates, pending-action gates, or registered-tool boundaries;
 - making `request_tool` executable;
 - using source metadata as implicit approval for side effects.
 

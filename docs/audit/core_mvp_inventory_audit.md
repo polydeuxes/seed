@@ -19,7 +19,6 @@ Raw input / observations
       -> handoff_candidates
 ```
 
-The canonical live user-message runtime is `Runtime`: it appends the user input event, projects state, composes model context, validates a model decision through `DecisionValidator`, applies the deterministic tool-intent guard, and routes only the supported canonical decision branches.
 
 For `request_tool`, canonical Runtime records/deduplicates a `ToolNeed`, ranks provider recommendations, and returns read-only `capability_resolution` metadata. It does **not** create an `ActionPlan`, `HandoffPlan`, `ExecutionProposal`, `ExecutionAuthorization`, workflow, job, retry system, secret flow, or provider execution.
 
@@ -40,7 +39,6 @@ LocalSeedApp.run
       -> StateProjector.project
       -> ContextComposer.compose
       -> model.decide(ContextPacket)
-      -> DecisionValidator.validate
           -> ToolValidationService.validate_tool_input for call_tool
       -> ToolIntentGuard.validate for call_tool
       -> Runtime._route
@@ -127,8 +125,6 @@ Legend:
 |---|---|---|---|---|---:|---:|---:|---:|---:|---|---|
 | `Runtime` | `seed_runtime/runtime.py` | Canonical user-message routing, event append, decision validation loop, request-tool/call-tool routing. | `build_local_app` | CLI/API/local app | Yes | Indirect | No | Yes | Indirect | **Core MVP** | Single active runtime path. |
 | `RuntimeResponse` | `seed_runtime/models.py` | Canonical response envelope. | `Runtime._route` | CLI/API | Yes | Indirect | No | Yes | No | **Core MVP** | Duplicates `RuntimeResult` naming from quarantined RuntimeLoop. |
-| `Decision` | `seed_runtime/models.py` | Canonical model decision shape. | Model adapter / tests | `DecisionValidator`, `Runtime._route` | Yes | Indirect | No | Yes | No | **Core MVP** | Contains legacy fields `action_plan`/`handoff_plan`, but validator rejects unsupported decision kinds. |
-| `DecisionValidator` | `seed_runtime/decisions.py` | Validates canonical model decisions and tool-call inputs. | Runtime wiring | `Runtime.handle_user_message` | Yes | Indirect | No | Yes | No | **Core MVP** | No branches for `propose_action_plan` or `propose_handoff_plan`; those fall to unsupported. |
 | `ToolIntentGuard` | `seed_runtime/tool_intent.py` | Deterministic intent guard for tool calls. | `Runtime.__init__` | `Runtime.handle_user_message` | Yes | No | No | No | No | **Supporting infrastructure** | Guardrail against schema-valid but intent-mismatched tool calls. |
 | `ContextComposer` / `ContextPacket` | `seed_runtime/context.py` | Runtime decision context, visible tools, facts/evidence budget. | Runtime wiring | Runtime model | Yes | No | No | Indirect | Indirect | **Supporting infrastructure** | Its decision schema lists current canonical kinds only: answer, ask_question, call_tool, request_tool, refuse. |
 | `EventLedger` | `seed_runtime/events.py` | Append-only events and workspace-scoped listing. | Runtime/CLI/tests | Runtime, projector, executor, ingestors | Yes | Yes | Yes | Yes | Yes | **Supporting infrastructure** | Also validates historical `execution_authorization.granted` events for compatibility. |
@@ -144,7 +140,6 @@ Legend:
 | `Toolkit` | `seed_runtime/models.py` | Collection of `ToolSpec`s. | Manifest loader | Registry/API | Yes | Yes | No | Yes | No | **Supporting infrastructure** | Contract packaging for registered operation inventory. |
 | `ToolExecutor` | `seed_runtime/execution.py` | Registered-operation execution, policy outcome routing, pending-action creation/resume, events, output validation. | Runtime app builder | Runtime `call_tool`; external callers may resume | Yes | Yes | No | No | Indirect via tool result extraction | **Supporting infrastructure** | Canonical executor for registered tools only; not provider/handoff execution. |
 | `ToolContext` | `seed_runtime/execution.py` | Execution context passed to registered operation function. | ToolExecutor | Registered implementation function | Via call_tool | Yes | No | No | No | **Supporting infrastructure** | Should stay narrowly scoped to registered operations. |
-| `ToolValidationService` | `seed_runtime/tool_validation.py` | Tool existence/status/input/output schema validation. | DecisionValidator, ToolExecutor, policy service | Runtime/executor | Yes | Yes | No | Indirect | No | **Supporting infrastructure** | Correctly validates registered operation contracts, not provider recommendations. |
 | `ToolExecutionPolicyService` | `seed_runtime/tool_execution_policy.py` | Validation-before-policy preflight and raw policy result. | ToolExecutor | ToolExecutor | Via call_tool | Yes | No | No | No | **Supporting infrastructure** | Explicitly non-executing/non-eventing; good boundary. |
 | `PolicyGate` / `PolicyDecision` | `seed_runtime/policy.py`, `seed_runtime/models.py` | Operation policy outcome metadata. | ToolExecutionPolicyService | ToolExecutor | Via call_tool | Yes | No | No | No | **Supporting infrastructure** | Naming concern: policy “approval” creates pending action, not `ExecutionAuthorization`. |
 | `PendingAction` | `seed_runtime/models.py` | Pending registered tool call awaiting confirmation/approval. | PendingActionService | StateProjector, ToolExecutor resume | Via call_tool policy outcome | Yes | Yes, projected | No | No | **Supporting infrastructure** | Must remain distinct from `ExecutionAuthorization`. |
@@ -176,7 +171,6 @@ Legend:
 | `RuntimeLoop` | `seed_runtime/runtime_loop.py` | Deprecated deterministic orchestration prototype. | Experimental tests only | RuntimeLoop tests/trace compatibility | No | No | Historical trace only | No | No | **Experimental/quarantined** | Must not be wired into CLI/API/default/canonical tests per module doc. |
 | `RuntimeInput` / `RuntimeResult` / loop `Decision` / `RuntimeContext` | `seed_runtime/runtime_loop.py` | RuntimeLoop-specific request/result/context/decision models. | RuntimeLoop tests | RuntimeLoop | No | No | No | No | No | **Experimental/quarantined** | Naming collision with canonical Runtime response/result concepts. |
 | `RuntimeTool` / `EchoTool` | `seed_runtime/runtime_loop.py` | RuntimeLoop in-memory handler protocol/test tool. | Tests | RuntimeLoop | No | No canonical executor | No | No | No | **Experimental/quarantined** | Duplicate execution concept vs registered `ToolSpec`/`ToolExecutor`. |
-| `RuntimeLoopDecisionValidator` | `seed_runtime/runtime_loop_decisions.py` | RuntimeLoop-only decision validation. | RuntimeLoop | RuntimeLoop | No | No | No | No | No | **Experimental/quarantined** | Duplicate decision validator. |
 | `RuntimeLoopToolRequestHandler` | `seed_runtime/runtime_loop_tool_requests.py` | RuntimeLoop request_tool branch. | RuntimeLoop | RuntimeLoop | No | No | No | No | No | **Experimental/quarantined** | Duplicate ToolNeed/recommendation path. |
 | `ActionPlan` | `seed_runtime/models.py` | Text-only legacy plan model. | ActionPlanService / legacy CLI | Projection/legacy CLI/tests | No | No | Historical projection | No | No | **Experimental/quarantined + historical compatibility** | Non-executable by model contract. |
 | `ActionPlanService` | `seed_runtime/action_plans.py` | Legacy text-only plan creation/lifecycle/authorization helper. | CLI `--plan` and lifecycle flags/tests | Legacy CLI/tests | No | No | Legacy side path | No | No | **Experimental/quarantined** | Explicitly read-only/non-executing. |
@@ -203,7 +197,6 @@ Canonical Runtime reaches these active models/services:
 2. `EventLedger` for input, decision, response, tool, and state-patch events.
 3. `StateProjector` for current state before context/validation and during tool need dedupe/ranking.
 4. `ContextComposer` / `ContextPacket`.
-5. `DecisionValidator` and `ToolValidationService` for `call_tool` validation.
 6. `ToolIntentGuard`.
 7. `ToolNeedService`, `ToolNeed`, `CapabilityCatalog`, `ToolRecommendationService`, `RecommendationRanker`, `ToolRegistry`, and `ToolSpec` for request-tool capability resolution.
 8. `ToolExecutor` for `call_tool` decisions only.
@@ -288,7 +281,6 @@ The following are quarantined and should not be treated as current-core:
 
 1. **RuntimeLoop cluster**
    - `RuntimeLoop`, `RuntimeInput`, `RuntimeResult`, RuntimeLoop `Decision`, `RuntimeContext`, `RuntimeTool`, `EchoTool`.
-   - `RuntimeLoopDecisionValidator`.
    - `RuntimeLoopToolRequestHandler`.
 
 2. **Planning/execution artifact cluster**
@@ -345,8 +337,6 @@ These remain primarily to project/read old events or support old traces:
    - Risk: both sound like current runtime result objects; only `RuntimeResponse` is canonical.
 
 5. **Duplicate decision models / validators**
-   - Canonical `Decision` / `DecisionValidator` are in `models.py` and `decisions.py`.
-   - RuntimeLoop has its own `Decision` and `RuntimeLoopDecisionValidator`.
 
 6. **Documentation drift remains in older audit docs**
    - Historical audit finding: `docs/runtime_reassessment.md` previously said default CLI/HTTP paths use RuntimeLoop, which contradicted current `build_local_app` wiring to `Runtime`; the cleanup now marks that wording stale/quarantined.
@@ -460,7 +450,6 @@ Primary files inspected:
 
 - `pwd && rg --files -g 'AGENTS.md' -g '!**/.git/**' | sort && git status --short`
 - `find .. -name AGENTS.md -print; printf '\nTop files:\n'; rg --files | sed -n '1,200p'; printf '\nStatus:\n'; git status --short`
-- `rg -n "class Runtime|def handle_user_message|def _route|class DecisionValidator|class ToolExecutor|def execute|resume_approved|class ToolNeedService|class ToolRecommendationService|class CapabilityCatalog|class ToolRegistry|class ToolSpec|class ToolValidationService|class ToolExecutionPolicyService|class StateProjector|def project_state_with_cache|class ProjectionStore|class InputInspector|class ObservationSource|class ObservationNormalizer|class ObservationIngestor|class ActionPlan|class HandoffPlan|class ExecutionProposal|class ExecutionAuthorization|RuntimeLoop|RuntimeInput|RuntimeResult|RuntimeTool|--plan|--handoff|--proposal|--authorize-proposal|state-summary|impact|relationships|graph-issues|entity-types|current-facts|unhealthy|down" seed_runtime scripts tests docs README.md *.md`
 - `sed -n '1,340p' seed_runtime/runtime.py`
 - `sed -n '120,330p' seed_runtime/runtime.py`
 - `sed -n '330,430p' seed_runtime/runtime.py`

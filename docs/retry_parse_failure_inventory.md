@@ -32,7 +32,6 @@ This inventory is source-file based and records current behavior only. It does n
 ### Validation failure handling
 
 - After a model returns a `Decision`, the runtime always records `model.decision.proposed` with `{"decision": to_plain(decision), "attempt": attempt}` before validation. [`seed_runtime/runtime.py:110-118`](../seed_runtime/runtime.py#L110-L118)
-- `DecisionValidator.validate()` handles the legacy decision kinds `answer`, `ask_question`, `request_tool`, `call_tool`, `propose_state_patch`, and `refuse`, and reports `unsupported decision kind ...` for anything else that reaches it. [`seed_runtime/decisions.py:31-62`](../seed_runtime/decisions.py#L31-L62)
 - Validation failures append `model.decision.invalid` with `errors` and `attempt`, actor `system`, and causation id set to the proposed-decision event id. [`seed_runtime/runtime.py:150-159`](../seed_runtime/runtime.py#L150-L159)
 - If validation failures are exhausted, the final response is `RuntimeResponse(kind="invalid_decision", message="Model decision failed validation.", payload={"errors": validation_errors})`. [`seed_runtime/runtime.py:150-171`](../seed_runtime/runtime.py#L150-L171)
 - If another attempt remains, `retry_prompt` contains a correction instruction, `retry_number`, `max_retries`, `invalid_event_id`, `validation_errors`, and `invalid_decision` serialized through `to_plain()`. [`seed_runtime/runtime.py:173-191`](../seed_runtime/runtime.py#L173-L191)

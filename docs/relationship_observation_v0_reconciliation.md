@@ -217,7 +217,6 @@ Examples:
 - `Runtime imports ToolExecutor` does not prove `Runtime calls ToolExecutor`.
 - `Runtime imports ToolExecutor` does not prove `Runtime routes decisions to ToolExecutor`.
 - `Projection code imports ProjectionStore` does not prove that it stores snapshots.
-- `Runtime imports DecisionValidator` does not prove that it validates decisions.
 - `A module imports an event class` does not prove that it emits or records that event.
 - `A package imports an owner-like component` does not prove ownership, boundary control, or responsibility.
 
