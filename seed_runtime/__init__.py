@@ -103,7 +103,7 @@ from seed_runtime.input_inspector import (
     InputInspector,
     classify_input_act,
 )
-from seed_runtime.models import Event, PendingAction, ToolNeed, ToolSpec, Toolkit
+from seed_runtime.models import Event, ToolNeed
 from seed_runtime.state import EntityRelationship, EntityTypeAssertion
 from seed_runtime.verification_evidence import (
     VerificationEvidence,
@@ -410,10 +410,7 @@ __all__ = [
     "build_projection_integrity_summary",
     "InputInspector",
     "classify_input_act",
-    "PendingAction",
     "ToolNeed",
-    "ToolSpec",
-    "Toolkit",
     "AttributedGrammarClaim",
     "CandidateRecoveryMaterial",
     "FutureRepresentationGrammarBindingHandoff",

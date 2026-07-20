@@ -1,1 +1,0 @@
-"""Generated environment inventory toolkit."""

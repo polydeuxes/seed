@@ -8,8 +8,7 @@ from typing import Any
 from seed_runtime.events import EventLedger
 from seed_runtime.capability_catalog import CapabilityCatalog
 from seed_runtime.capabilities import slugify
-from seed_runtime.models import ToolNeed, ToolSpec
-from seed_runtime.registry import ToolRegistry
+from seed_runtime.models import ToolNeed
 from seed_runtime.state import StateProjector
 
 
@@ -22,7 +21,6 @@ class ToolNeedService:
             {"to": "EventLedger", "label": "records tool_need events", "path": "request_tool"},
             {"to": "StateProjector", "label": "checks existing needs", "path": "request_tool"},
             {"to": "CapabilityCatalog", "label": "may suggest providers/handoffs", "path": "request_tool"},
-            {"to": "ToolRegistry", "label": "may expose registered operations", "path": "request_tool"},
         ],
         "events": ["tool_need.created", "tool_need.status_changed"],
     }
@@ -36,22 +34,18 @@ class ToolNeedService:
         tool_need: ToolNeed,
         *,
         capability_catalog: CapabilityCatalog,
-        tool_registry: ToolRegistry,
         provider_recommendations: list[Any] | None = None,
     ) -> dict[str, object]:
         """Return read-only capability resolution metadata for a ToolNeed.
 
         Capability resolution keeps Seed's boundaries explicit: catalog entries
         describe known capabilities and non-executable provider/handoff
-        suggestions, while registered operation candidates come only from the
-        ToolRegistry capability lookup. This method does not execute tools,
-        authorize actions, create pending actions, or mutate registry/catalog
-        state.
+        suggestions. This method does not execute tools, authorize actions,
+        create pending actions, or mutate catalog state.
         """
         resolution = _CapabilityResolution(
             tool_need=tool_need,
             capability_catalog=capability_catalog,
-            tool_registry=tool_registry,
             provider_recommendations=provider_recommendations or [],
         )
         return resolution.to_payload()
@@ -75,25 +69,17 @@ class ToolNeedService:
 
 
 class _CapabilityResolution:
-    """Read-only capability resolution with catalog and registry boundaries split.
-
-    Provider recommendations and handoff candidates are catalog-derived advisory
-    metadata. Registered operation candidates are registry-derived callable
-    inventory. Keeping these paths separate makes the recovered boundary explicit
-    without changing the request_tool response shape.
-    """
+    """Read-only capability resolution from catalog-derived advisory metadata."""
 
     def __init__(
         self,
         *,
         tool_need: ToolNeed,
         capability_catalog: CapabilityCatalog,
-        tool_registry: ToolRegistry,
         provider_recommendations: list[Any],
     ) -> None:
         self.tool_need = tool_need
         self.capability_catalog = capability_catalog
-        self.tool_registry = tool_registry
         self.provider_recommendations = provider_recommendations
         self.catalog_entry = capability_catalog.get(tool_need.capability)
 
@@ -106,12 +92,7 @@ class _CapabilityResolution:
         }
 
     def _registered_operation_candidates(self) -> list[dict[str, object]]:
-        return [
-            _registered_operation_candidate(tool)
-            for tool in self.tool_registry.list_tools_for_capability(
-                self.tool_need.capability, visible_only=True
-            )
-        ]
+        return []
 
     def _provider_recommendation_payload(self) -> list[dict[str, object]]:
         return [
@@ -134,19 +115,6 @@ class _CapabilityResolution:
             for recommendation in catalog_recommendations
             if recommendation.backend_type is not None or recommendation.operation
         ]
-
-
-def _registered_operation_candidate(tool: ToolSpec) -> dict[str, object]:
-    return {
-        "name": tool.name,
-        "summary": tool.summary,
-        "toolkit_id": tool.toolkit_id,
-        "policy_action": tool.policy_action,
-        "risk_class": tool.risk_class,
-        "visibility": tool.visibility,
-        "status": tool.status,
-        "capabilities": list(tool.capabilities),
-    }
 
 
 def _handoff_candidate(recommendation: object) -> dict[str, object]:

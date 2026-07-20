@@ -161,7 +161,6 @@ def test_handoff_service_creates_plan_from_accepted_action_plan_and_catalog_meta
     assert handoff.action_plan_id not in projected.handoff_plans
     assert "approval.granted" not in kinds
     assert "execution_authorization.granted" not in kinds
-    assert "tool.call.started" not in kinds
     assert projected.approvals == {}
     assert projected.execution_authorizations == {}
     assert projected.execution_proposals == {}

@@ -26,8 +26,6 @@ STRUCTURE = "structure"
 _PROJECTION_STORE_SYMBOLS = frozenset(
     {"ProjectionStore", "SQLiteProjectionStore", "InMemoryProjectionStore"}
 )
-_TOOL_EXECUTOR_SYMBOLS = frozenset({"ToolExecutor"})
-
 
 @dataclass(frozen=True)
 class DocumentationClaim:
@@ -118,24 +116,6 @@ def _reconcile_ownership_claim(
             outcome=MISSING_SUPPORT,
             rule_id="ownership.projection_store.missing_support",
             reason="No ProjectionStore artifact fact supports the ownership claim.",
-        )
-
-    if "ToolExecutor" in claim.claim:
-        matches = _artifact_facts_matching_symbols(artifact_facts, _TOOL_EXECUTOR_SYMBOLS)
-        if matches:
-            return AlignmentRecord(
-                claim=claim,
-                artifact_facts=matches,
-                outcome=SUPPORTED,
-                rule_id="ownership.tool_executor.supported",
-                reason="A ToolExecutor artifact fact supports the ownership claim.",
-            )
-        return AlignmentRecord(
-            claim=claim,
-            artifact_facts=(),
-            outcome=MISSING_SUPPORT,
-            rule_id="ownership.tool_executor.missing_support",
-            reason="No ToolExecutor artifact fact supports the ownership claim.",
         )
 
     return AlignmentRecord(

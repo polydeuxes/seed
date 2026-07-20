@@ -191,9 +191,6 @@ def test_create_plan_does_not_execute_tools_or_register_tools_or_approve():
 
     kinds = [event.kind for event in ledger.list_events("ws")]
     assert kinds == ["action_plan.created"]
-    assert "tool.call.started" not in kinds
-    assert "tool.call.completed" not in kinds
-    assert "tool.registered" not in kinds
     assert "approval.granted" not in kinds
 
 
@@ -457,9 +454,5 @@ def test_approve_plan_does_not_execute_tools_register_tools_or_approve_tool_call
         "action_plan.accepted",
         "action_plan.approved",
     ]
-    assert "tool.call.started" not in kinds
-    assert "tool.call.completed" not in kinds
-    assert "tool.registered" not in kinds
     assert "approval.granted" not in kinds
-    assert "pending_action.approved" not in kinds
     assert StateProjector(ledger).project("ws").tools == {}

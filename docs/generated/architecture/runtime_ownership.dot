@@ -7,13 +7,10 @@ digraph runtime_ownership {
   "HandoffCandidate" [label="HandoffCandidate\\nowner: capability_metadata"];
   "ProjectionStore" [label="ProjectionStore\\nowner: projection_cache"];
   "ProviderRecommendation" [label="ProviderRecommendation\\nowner: capability_metadata"];
-  "RegisteredOperation" [label="RegisteredOperation\\nowner: registered_tool_implementation"];
   "Runtime" [label="Runtime\\nowner: runtime_input_boundary"];
   "State" [label="State\\nowner: projected_state_model"];
   "StateProjector" [label="StateProjector\\nowner: state_projection"];
-  "ToolExecutor" [label="ToolExecutor\\nowner: registered_tool_execution"];
   "ToolNeedService" [label="ToolNeedService\\nowner: tool_need_capability_resolution"];
-  "ToolRegistry" [label="ToolRegistry\\nowner: registered_operation_catalog"];
   "CapabilityCatalog" -> "HandoffCandidate" [label="may suggest handoff"];
   "CapabilityCatalog" -> "ProviderRecommendation" [label="may suggest provider"];
   "EventLedger" -> "StateProjector" [label="feeds projection"];
@@ -23,13 +20,7 @@ digraph runtime_ownership {
   "StateProjector" -> "EventLedger" [label="reads append-only events"];
   "StateProjector" -> "GraphValidator" [label="validates projected graph"];
   "StateProjector" -> "State" [label="produces projected state"];
-  "ToolExecutor" -> "EventLedger" [label="records tool call events"];
-  "ToolExecutor" -> "RegisteredOperation" [label="may execute registered operation"];
-  "ToolExecutor" -> "StateProjector" [label="state factory for policy"];
-  "ToolExecutor" -> "ToolRegistry" [label="requires registered operation"];
   "ToolNeedService" -> "CapabilityCatalog" [label="may suggest providers/handoffs (request_tool)"];
   "ToolNeedService" -> "EventLedger" [label="records tool_need events (request_tool)"];
   "ToolNeedService" -> "StateProjector" [label="checks existing needs (request_tool)"];
-  "ToolNeedService" -> "ToolRegistry" [label="may expose registered operations (request_tool)"];
-  "ToolRegistry" -> "RegisteredOperation" [label="may expose registered operation"];
 }

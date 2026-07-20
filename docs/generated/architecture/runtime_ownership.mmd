@@ -6,13 +6,10 @@ flowchart LR
   HandoffCandidate["HandoffCandidate\nowner: capability_metadata"]
   ProjectionStore["ProjectionStore\nowner: projection_cache"]
   ProviderRecommendation["ProviderRecommendation\nowner: capability_metadata"]
-  RegisteredOperation["RegisteredOperation\nowner: registered_tool_implementation"]
   Runtime["Runtime\nowner: runtime_input_boundary"]
   State["State\nowner: projected_state_model"]
   StateProjector["StateProjector\nowner: state_projection"]
-  ToolExecutor["ToolExecutor\nowner: registered_tool_execution"]
   ToolNeedService["ToolNeedService\nowner: tool_need_capability_resolution"]
-  ToolRegistry["ToolRegistry\nowner: registered_operation_catalog"]
 
   CapabilityCatalog -->|may suggest handoff| HandoffCandidate
   CapabilityCatalog -->|may suggest provider| ProviderRecommendation
@@ -23,12 +20,6 @@ flowchart LR
   StateProjector -->|reads append-only events| EventLedger
   StateProjector -->|validates projected graph| GraphValidator
   StateProjector -->|produces projected state| State
-  ToolExecutor -->|records tool call events| EventLedger
-  ToolExecutor -->|may execute registered operation| RegisteredOperation
-  ToolExecutor -->|state factory for policy| StateProjector
-  ToolExecutor -->|requires registered operation| ToolRegistry
   ToolNeedService -->|may suggest providers/handoffs (request_tool)| CapabilityCatalog
   ToolNeedService -->|records tool_need events (request_tool)| EventLedger
   ToolNeedService -->|checks existing needs (request_tool)| StateProjector
-  ToolNeedService -->|may expose registered operations (request_tool)| ToolRegistry
-  ToolRegistry -->|may expose registered operation| RegisteredOperation
