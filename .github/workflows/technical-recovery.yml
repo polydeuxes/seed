@@ -1,0 +1,94 @@
+name: Complete post-1864 technical recovery
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  recover:
+    if: github.head_ref == 'agent/technical-recovery-direct'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/technical-recovery-direct
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Apply validated recovery
+        run: |
+          base64 -d .github/technical-recovery.patch.gz.b64 | gzip -d > /tmp/recovery.patch
+          patch -p1 < /tmp/recovery.patch
+          cat > .github/workflows/python-compatibility.yml <<'EOF'
+          name: Python compatibility
+
+          on:
+            push:
+            pull_request:
+
+          jobs:
+            python-compatibility:
+              name: Python ${{ matrix.python-version }} compatibility
+              runs-on: ubuntu-latest
+              strategy:
+                fail-fast: false
+                matrix:
+                  python-version: ["3.11", "3.14"]
+              steps:
+                - uses: actions/checkout@v4
+                - uses: actions/setup-python@v5
+                  with:
+                    python-version: ${{ matrix.python-version }}
+                - name: Install package and test runner
+                  run: python -m pip install -e . pytest
+                - name: Compile production code
+                  run: python -m compileall -q seed_runtime scripts
+                - name: Run constitutional pipeline compatibility tests
+                  run: >-
+                    python -m pytest -q
+                    tests/test_bounded_constitutional_question.py
+                    tests/test_constitutional_question_projection.py
+                    tests/test_constitutional_capability_projection.py
+                    tests/test_constitutional_view_selection.py
+                    tests/test_constitutional_view_composition.py
+                    tests/test_constitutional_pipeline.py
+                    tests/test_constitutional_pipeline_public_surface.py
+                    tests/test_constitutional_pipeline_diagnostic.py
+                    tests/test_constitutional_pipeline_provenance_explanation.py
+                    tests/test_constitutional_pipeline_integration_wiring.py
+          EOF
+          sed -i 's/^          //' .github/workflows/python-compatibility.yml
+          rm .github/technical-recovery.patch.gz.b64 .github/workflows/technical-recovery.yml
+      - name: Validate recovered road
+        run: |
+          python -m pip install -e . pytest
+          python -m compileall -q seed_runtime scripts
+          python -m pytest -q \
+            tests/test_goal_consideration_candidate_resolution.py \
+            tests/test_bounded_advancement_horizon.py \
+            tests/test_authority_need_projection.py \
+            tests/test_inquiry_need_projection.py \
+            tests/test_clarification_need_projection.py \
+            tests/test_operational_realization_need_projection.py \
+            tests/test_advancement_need_family_coverage_set.py \
+            tests/test_goal_advancement_need_set.py \
+            tests/test_goal_advancement_sufficiency_projection.py \
+            tests/test_advancement_need_reference_set.py \
+            tests/test_advancement_need_consideration_selection.py \
+            tests/test_inquiry_frontier_boundary_testimony.py \
+            tests/test_bounded_inquiry_frontier.py
+          ! grep -RIlE 'goal_inquiry_consideration_selection|GoalInquiryConsiderationSelection|GoalFocusEvidence|NeedFocusEvidence|focus_evidence_refs|focus_provenance_refs|no_focus_evidence' seed_runtime tests
+          test "$(sed -n '1p' .github/workflows/python-compatibility.yml)" = 'name: Python compatibility'
+          ! grep -q 'contents: write' .github/workflows/python-compatibility.yml
+      - name: Commit recovered tree
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m 'Complete post-1864 technical recovery'
+          git push origin HEAD:agent/technical-recovery-direct
