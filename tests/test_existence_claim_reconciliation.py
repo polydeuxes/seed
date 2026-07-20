@@ -39,7 +39,7 @@ def _single_record(
     return reconcile_claims([claim], facts)[0]
 
 
-def test_tool_executor_exists_with_tool_executor_class_is_supported():
+def test_explicit_component_existence_with_matching_artifact_is_supported():
     record = _single_record(
         _claim("ExampleComponent exists."),
         [_fact("ExampleComponent")],
@@ -50,9 +50,9 @@ def test_tool_executor_exists_with_tool_executor_class_is_supported():
     assert [fact.symbol for fact in record.artifact_facts] == ["ExampleComponent"]
 
 
-def test_magic_executor_exists_without_magic_executor_class_is_missing_support():
+def test_existence_claim_without_matching_artifact_is_missing_support():
     record = _single_record(
-        _claim("MagicExecutor exists."),
+        _claim("MissingComponent exists."),
         [_fact("ProjectionStore")],
     )
 

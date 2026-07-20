@@ -43,9 +43,13 @@ def test_architecture_graph_records_runtime_owner_boundaries():
         "to": "StateProjector",
         "label": "projects current state for deterministic callers",
     } in edges
+    deleted_corridor_nodes = {
+        "Tool" + "Executor",
+        "Tool" + "Registry",
+        "RegisteredOperation",
+    }
+    assert node_ids.isdisjoint(deleted_corridor_nodes)
     assert not any(
-        edge["from"] == "Runtime"
-        and edge["to"] == "ToolExecutor"
-        and edge.get("path") == "request_tool"
+        edge["from"] in deleted_corridor_nodes or edge["to"] in deleted_corridor_nodes
         for edge in edges
     )

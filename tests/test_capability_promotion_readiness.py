@@ -141,7 +141,7 @@ def test_promotion_readiness_does_not_create_capability_verified_facts_or_write_
     assert "no_capability_verified_fact_creation" in inspection.notes
 
 
-def test_promotion_readiness_invokes_no_tool_executor_or_policy(monkeypatch, tmp_path):
+def test_promotion_readiness_invokes_no_policy_or_execution(monkeypatch, tmp_path):
     import seed_runtime.policy as policy_module
 
     git = tmp_path / "git"

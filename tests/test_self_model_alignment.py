@@ -49,7 +49,7 @@ def test_projection_store_ownership_without_matching_artifact_is_missing_support
     assert _single_outcome(claim, facts) == "missing_support"
 
 
-def test_tool_executor_ownership_with_tool_executor_artifact_is_supported():
+def test_component_ownership_with_matching_artifact_is_supported():
     claim = _claim("ProjectionStore owns cached projected-state snapshots.", "ownership")
     facts = [_fact("ExampleComponent class exists.", symbol="ProjectionStore")]
 
