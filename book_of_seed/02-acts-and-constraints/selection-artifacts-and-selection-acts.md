@@ -11,9 +11,9 @@ A selection act consumes a bounded candidate set plus selection evidence, exact 
 
 Selection-to-consumer uptake is not singular. A consumer may adopt selected-subject standing for a new bounded purpose, narrow representation selection to selected registered names, or revalidate coherence between a selected subject and other testimony. Consumer acceptance of one of those smaller assertions does not accept every producer assertion, and selected names suitable for composition do not prove exact-key selection occurrence.
 
-Repository evidence supports a shared higher-order selection grammar with distinct subfamilies. Representation selection may choose registered read-model views by exact deterministic keys for one composition purpose. Consideration selection may choose one already-established subject, such as an advancement need, for bounded focus after identity and lineage checks. Meaning selection, closed-choice binding, policy/work selection, and operational-realization selection have their own candidate sets and downstream limits. Shared selection vocabulary does not collapse these into one constitutional act kind.
+Repository evidence supports a shared higher-order selection grammar with distinct subfamilies. Representation selection may choose registered read-model views by exact deterministic keys for one composition purpose. Consideration selection may choose one already-established subject, such as an advancement need, for bounded present consideration after identity and lineage checks. Meaning selection, closed-choice binding, policy/work selection, and operational-realization selection have their own candidate sets and downstream limits. Shared selection vocabulary does not collapse these into one constitutional act kind.
 
-For the local advancement-need road recovered by `advancement_need_consideration_selection_correspondence_001.md`, advancement-need consideration selection consumes a bounded visible/selectable advancement-need reference set plus exact candidate-selection testimony and performs bounded consideration selection. It establishes selected-for-consideration standing and, where locally stated, bounded focus standing. It does not establish priority, primary blocker standing, next required act, route, next inquiry, self-orientation, authorization, or execution.
+For the local advancement-need road recovered by `advancement_need_consideration_selection_correspondence_001.md`, advancement-need consideration selection consumes a bounded visible/selectable advancement-need reference set plus exact candidate-selection testimony and performs bounded consideration selection. It establishes selected-for-consideration standing. The implementation may retain `focus` vocabulary in evidence fields and compatibility names, but that vocabulary does not establish a separate constitutional focus subject or standing without independent evidence. The selection does not establish priority, primary blocker standing, next required act, route, next inquiry, self-orientation, authorization, or execution.
 
 ## Important distinctions
 - selection artifact != act of selection
@@ -26,6 +26,8 @@ For the local advancement-need road recovered by `advancement_need_consideration
 - artifact preservation != consumer-side validation
 - consumer accepts artifact type != consumer lawfully relies on every assertion
 - selection standing != authorization standing
+- selected for consideration != independent focus standing
+- implementation focus vocabulary != constitutional focus subject
 - exact deterministic comparison != semantic judgment
 - candidate eligibility != selection
 - unique candidate != selected candidate
@@ -42,8 +44,9 @@ For the local advancement-need road recovered by `advancement_need_consideration
 ## Counterexamples or failure modes
 - Taking the first displayed candidate as selected.
 - Reusing a selection artifact against a different candidate set.
-- Treating a uniquely eligible need as automatically selected when no exact focus evidence was supplied.
+- Treating a uniquely eligible need as automatically selected when no exact selection testimony was supplied.
 - Reusing a representation-selection artifact as if it warranted consideration, authorization, or movement for another consumer.
+- Treating a field or alias containing `focus` as proof that constitutional focus standing exists.
 - Treating omitted non-selected alternatives as invalidating a selector whose intended consumer does not require them.
 - Treating preserved non-selected alternatives as completing the producer warrant when identity, basis, or consumer validation is still missing.
 
