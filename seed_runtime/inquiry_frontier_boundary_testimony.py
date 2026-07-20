@@ -1,9 +1,10 @@
 """Read-only inquiry frontier-boundary testimony preservation.
 
-This module preserves stage-owned frontier-boundary clauses for one exact
-selected inquiry need.  It does not assemble a frontier, formulate a question,
-open inquiry, authorize access, execute, record, write the event ledger, or
-mutate cluster state.
+This module preserves implementation-defined frontier-boundary clauses for one
+exact selected inquiry need. Its clause-family vocabulary is realization
+compatibility testimony, not canonical Book grammar. It does not assemble a
+frontier, formulate a question, open inquiry, authorize access, execute, record,
+write the event ledger, or mutate cluster state.
 """
 
 from __future__ import annotations
@@ -29,8 +30,9 @@ FamilyDisposition = Literal["inquiry", "adjacent_family", "mixed", "unclassified
 OwnershipBasis = Literal["stage_producer_lineage", "adapter_lineage", "unowned"]
 
 BOUNDARY_NOTES: tuple[str, ...] = (
-    "InquiryFrontierBoundaryTestimony preserves unordered stage-owned clauses for one exact selected inquiry need.",
-    "Goal-horizon scope is not inquiry scope; visible evidence is not eligible evidence territory and is not selected source evidence.",
+    "InquiryFrontierBoundaryTestimony preserves unordered implementation-defined clauses for one exact selected inquiry need.",
+    "Clause-family labels and opaque references remain realization testimony and do not establish constitutional subjects or Book law.",
+    "Goal-horizon scope is not inquiry scope; visible evidence and caller-supplied territory references do not establish eligibility or selected-source standing.",
     "Uncertainty subject is not sufficient-resolution condition; stale or unavailable evidence is not a stopping condition.",
     "Boundary testimony is not frontier assembly, constitutional question formulation, inquiry opening, authorization, execution, recording, event-ledger write, or cluster mutation.",
 )
@@ -141,7 +143,7 @@ def preserve_inquiry_frontier_boundary_testimony(
     selected_need: AdvancementNeedConsiderationSelection,
     clauses: Iterable[FrontierBoundaryClauseInput] = (),
 ) -> InquiryFrontierBoundaryTestimony:
-    """Preserve unordered boundary clauses for the exact selected inquiry need."""
+    """Preserve unordered compatibility clauses for the exact selected inquiry need."""
     clause_inputs = tuple(clauses)
     ref = selected_need.selected_reference if selected_need.selection_state == "selected" else None
     if ref is None or ref.family != "inquiry":
