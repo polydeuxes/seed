@@ -6,9 +6,7 @@ This inventory is source-file based and records current behavior only. It does n
 
 ## 1. Models
 
-### Legacy `seed_runtime.models.Decision`
 
-- The shared legacy `DecisionKind` literal includes `answer`, `ask_question`, `call_tool`, `request_tool`, `propose_action_plan`, `propose_handoff_plan`, `propose_state_patch`, and `refuse`. [`seed_runtime/models.py:42-51`](../seed_runtime/models.py#L42-L51)
 - `Decision` stores the common `kind` and required `reason` fields plus optional per-kind payload fields: `answer`, `question`, `tool_name`, `tool_arguments`, `tool_need`, `action_plan`, `handoff_plan`, and `state_patch`. [`seed_runtime/models.py:205-215`](../seed_runtime/models.py#L205-L215)
 - `ask_question` uses `kind="ask_question"`, `reason`, and `question`. The validator requires `decision.question` to be truthy and reports `ask_question decisions require question` when missing or empty. [`seed_runtime/decisions.py:47-49`](../seed_runtime/decisions.py#L47-L49)
 - `refuse` uses `kind="refuse"` and `reason`. There is no separate refusal-message field on the legacy model; the routed user-visible message is the same `reason`. The validator requires `decision.reason` to be truthy and reports `refuse decisions require reason` when missing or empty. [`seed_runtime/decisions.py:57-59`](../seed_runtime/decisions.py#L57-L59)
@@ -16,7 +14,6 @@ This inventory is source-file based and records current behavior only. It does n
 
 ### `seed_runtime.runtime_loop.Decision`
 
-- RuntimeLoop's local `DecisionKind` is only `Literal["answer", "call_tool", "request_tool"]`. [`seed_runtime/runtime_loop.py:32`](../seed_runtime/runtime_loop.py#L32)
 - RuntimeLoop's `Decision` dataclass has `kind`, `text`, `tool_name`, `tool_args`, `tool_need`, and `reason`; it has no `question`, `answer`, or refusal-specific field. [`seed_runtime/runtime_loop.py:60-68`](../seed_runtime/runtime_loop.py#L60-L68)
 - RuntimeLoop validation rejects any kind outside `answer`, `call_tool`, and `request_tool` with `decision kind must be 'answer', 'call_tool', or 'request_tool'`. [`seed_runtime/runtime_loop.py:725-729`](../seed_runtime/runtime_loop.py#L725-L729)
 
@@ -62,7 +59,6 @@ This inventory is source-file based and records current behavior only. It does n
 
 ### Covered today
 
-- Old Runtime ask-question route: `tests/test_runtime_loop.py::test_routes_question` verifies `Decision(kind="ask_question", question="Which host?")` returns response kind `question`. [`tests/test_runtime_loop.py:54-59`](../tests/test_runtime_loop.py#L54-L59)
 - Old Runtime refusal route: `tests/test_runtime_loop.py::test_routes_refuse` verifies response kind `refusal`, response message `unsafe request`, and events `input.user_message`, `model.decision.proposed`, `response.refusal`. [`tests/test_runtime_loop.py:92-105`](../tests/test_runtime_loop.py#L92-L105)
 - Old decision validation: `tests/test_decisions.py::test_ask_question_requires_question` and `tests/test_decisions.py::test_refuse_requires_reason` cover the required question/reason validation errors. [`tests/test_decisions.py:18-27`](../tests/test_decisions.py#L18-L27) [`tests/test_decisions.py:118-125`](../tests/test_decisions.py#L118-L125)
 - Old Runtime invalid-decision retry behavior includes missing-answer followed by missing-question and checks final invalid-decision payload plus deterministic invalid-event payloads. [`tests/test_runtime_loop.py:213-262`](../tests/test_runtime_loop.py#L213-L262)

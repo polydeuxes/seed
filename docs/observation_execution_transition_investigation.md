@@ -183,7 +183,6 @@ The strongest contradictory evidence is that the repository architecture documen
 | Requested item | Current implementation-backed answer |
 | --- | --- |
 | Bounded execution responsibility | Observation-source execution is bounded by `ObservationCollectionService.collect()` plus concrete `ObservationSource.collect()` adapters. Runtime registered-operation execution is bounded by `ToolExecutor`. |
-| Reasoning boundary | CLI source flags or runtime `Decision(kind="call_tool")` are already-determined work; execution begins when `source.collect()` or `ToolExecutor.execute()` is called. |
 | Execution boundary | Source collection precedes normalization/ingestion/event append. Tool execution follows registry validation, schema validation, and policy allow. |
 | Authority boundary | Observation sources encode read-only/provider constraints; `ToolExecutor` uses registry, validation, and `PolicyGate`; external host automation remains outside Seed. |
 | Execution refusal | Unknown/unregistered tools, schema violations, policy outcomes, provider unavailability, unsupported Prometheus queries, and source file failures refuse or fail execution before durable success. |

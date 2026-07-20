@@ -94,7 +94,6 @@ Recent Strategy B extractions moved duplicated infrastructure into shared servic
 
 ## Decision Systems
 
-### `seed_runtime.models.Decision`
 
 
 
@@ -146,7 +145,6 @@ Recent Strategy B extractions moved duplicated infrastructure into shared servic
 
 | Event | Runtime | RuntimeLoop | Source |
 | --- | --- | --- | --- |
-| `model.decision.proposed` | Present | Missing | Runtime records the model's proposed `seed_runtime.models.Decision` and attempt. [`seed_runtime/runtime.py:105-112`](../seed_runtime/runtime.py#L105-L112) |
 | `model.decision.invalid` | Present | Missing | Runtime records validator errors and attempt. [`seed_runtime/runtime.py:147-154`](../seed_runtime/runtime.py#L147-L154) |
 | `model.decision.intent_rejected` | Present | Missing | Runtime records tool-intent rejection errors and attempt. [`seed_runtime/runtime.py:125-132`](../seed_runtime/runtime.py#L125-L132) |
 | `model.decision.parse_failed` | Present | Missing | Runtime records parse failure and optional raw-failure classification. [`seed_runtime/runtime.py:85-92`](../seed_runtime/runtime.py#L85-L92) [`seed_runtime/runtime.py:227-245`](../seed_runtime/runtime.py#L227-L245) |

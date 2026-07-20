@@ -5,9 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from seed_runtime.models import Decision
-
-
 @dataclass(frozen=True)
 class ToolIntentValidation:
     """Result of checking whether a tool call matches the user's intent."""
@@ -27,7 +24,7 @@ class ToolIntentGuard:
     def validate(
         self,
         current_input_text: str,
-        decision: Decision,
+        decision: Any,
         visible_tools: list[dict[str, Any]],
     ) -> ToolIntentValidation:
         if decision.kind != "call_tool":
@@ -50,7 +47,7 @@ class ToolIntentGuard:
         return ToolIntentValidation(ok=True, errors=[])
 
     def _validate_echo(
-        self, current_input_text: str, decision: Decision
+        self, current_input_text: str, decision: Any
     ) -> ToolIntentValidation:
         if not current_input_text.startswith("echo "):
             return ToolIntentValidation(

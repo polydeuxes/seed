@@ -31,7 +31,6 @@ InputEnvelope
         ↓
 InputInspection / InputAct
         ↓
-DecisionKind
         ↓
 Policy / capability / execution boundaries
 ```
@@ -327,7 +326,6 @@ InputEnvelope
         ↓
 InputInspection / InputAct
         ↓
-DecisionKind
         ↓
 Policy / capability / execution boundaries
 ```
@@ -336,7 +334,6 @@ Where:
 
 - `InputEnvelope` describes source, channel, principal, authentication, and authority context.
 - `InputAct` describes the utterance type.
-- `DecisionKind` describes Seed's next route.
 - Policy and execution gates decide whether side effects are allowed.
 
 ## Source Authority Gap
@@ -392,7 +389,6 @@ This audit preserves current ownership boundaries:
 - `EventLedger` owns append-only event history.
 - `ContextComposer` owns context packets.
 - `InputAct` vocabulary classifies utterance type, not authority.
-- `DecisionKind` remains runtime-route vocabulary.
 - `ToolIntentGuard` remains deterministic tool-call intent guard owner.
 - `ToolExecutor` remains registered-operation execution owner.
 - Policy, approval, and pending-action paths must remain explicit gates and must not be bypassed by channel metadata.
@@ -408,7 +404,6 @@ This audit does not recommend or introduce:
 - treating webcam/OCR input as command authority;
 - treating browser input as trusted without a verified session/principal;
 - making `InputAct` carry authorization;
-- making `DecisionKind` carry authentication;
 - adding `AuthEngine`, `IdentityEngine`, `ChannelEngine`, or a new `RuntimeLoop`;
 - making `request_tool` executable;
 - using source metadata as implicit approval for side effects.
@@ -433,7 +428,6 @@ That vocabulary should distinguish at least:
 - authorization scope;
 - source trust;
 - payload kind;
-- relationship to `InputAct` and `DecisionKind`.
 
 Any later implementation should remain narrow and metadata-only before it influences policy or execution.
 

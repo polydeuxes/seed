@@ -271,7 +271,6 @@ This shape has useful architectural properties:
 Potential weaknesses:
 
 - `subject` and `object` may need stable identity rules beyond display symbols;
-- some relationships are ternary or contextual, such as `Runtime routes Decision(kind=call_tool) to ToolExecutor`;
 - some objects are not repository artifacts, such as event names, operation names, route labels, or state concepts;
 - static evidence may overstate dynamic behavior unless the evidence kind is preserved;
 - relationship direction must be explicit and consistent;

@@ -1,13 +1,7 @@
 from pathlib import Path
 
 from seed_runtime.capability_catalog import CapabilityCatalog
-from seed_runtime.context import DecisionInputComposer
-from seed_runtime.events import EventLedger
-from seed_runtime.execution import ToolExecutor
-from seed_runtime.models import Decision
-from seed_runtime.registry import ToolRegistry
-from seed_runtime.state import StateProjector
-from seed_runtime.tool_needs import ToolNeedService
+from seed_runtime.models import ToolNeed
 
 
 def test_loads_checked_in_catalog_entries():
@@ -35,19 +29,13 @@ def test_loads_checked_in_catalog_entries():
 
 
 def test_recommend_for_matches_tool_need_capability():
-    ledger = EventLedger()
-    service = ToolNeedService(ledger, StateProjector(ledger))
-    need = service.create_from_decision(
-        "ws",
-        Decision(
-            kind="request_tool",
-            reason="missing current weather",
-            tool_need={
-                "name": "weather_lookup",
-                "summary": "Look up the current weather for a location",
-                "capability": "weather_lookup",
-            },
-        ),
+    need = ToolNeed(
+        id="need_weather",
+        workspace_id="ws",
+        name="weather_lookup",
+        summary="Look up the current weather for a location",
+        capability="weather_lookup",
+        reason="missing current weather",
     )
 
     recommendations = CapabilityCatalog.load("capability_catalog").recommend_for(need)
@@ -61,19 +49,13 @@ def test_recommend_for_matches_tool_need_capability():
 
 
 def test_returns_no_recommendations_for_unknown_capability():
-    ledger = EventLedger()
-    service = ToolNeedService(ledger, StateProjector(ledger))
-    need = service.create_from_decision(
-        "ws",
-        Decision(
-            kind="request_tool",
-            reason="missing custom workflow",
-            tool_need={
-                "name": "custom_workflow",
-                "summary": "Run a custom workflow that is not in the catalog",
-                "capability": "custom_workflow",
-            },
-        ),
+    need = ToolNeed(
+        id="need_custom",
+        workspace_id="ws",
+        name="custom_workflow",
+        summary="Run a custom workflow that is not in the catalog",
+        capability="custom_workflow",
+        reason="missing custom workflow",
     )
 
     assert CapabilityCatalog.load("capability_catalog").recommend_for(need) == []

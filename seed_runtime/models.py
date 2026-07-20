@@ -40,16 +40,6 @@ ToolNeedStatus = Literal[
     "registered",
     "rejected",
 ]
-DecisionKind = Literal[
-    "answer",
-    "ask_question",
-    "call_tool",
-    "request_tool",
-    "propose_action_plan",
-    "propose_handoff_plan",
-    "propose_state_patch",
-    "refuse",
-]
 PolicyOutcome = Literal["allow", "block", "require_confirmation", "require_approval"]
 RiskClass = Literal["L1", "L2", "L3", "L4"]
 PendingActionStatus = Literal["pending", "approved", "completed", "cancelled"]
@@ -205,20 +195,6 @@ def _reject_handoff_approval_claims(data: dict[str, Any]) -> None:
             "credential availability, provider trust, or tool registration: "
             + ", ".join(sorted(claim_fields))
         )
-
-
-class Decision(SeedModel):
-    kind: DecisionKind
-    reason: str
-    answer: str | None = None
-    question: str | None = None
-    tool_name: str | None = None
-    tool_arguments: dict[str, Any] = Field(default_factory=dict)
-    tool_need: dict[str, Any] | None = None
-    action_plan: dict[str, Any] | None = None
-    handoff_plan: dict[str, Any] | None = None
-    state_patch: dict[str, Any] | None = None
-
 
 class PolicyDecision(SeedModel):
     outcome: PolicyOutcome
