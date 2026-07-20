@@ -79,8 +79,6 @@ Additional response, formatter, output, summary, inventory, explanation, and CLI
 - `seed_runtime/integrity_summary.py`
 - `seed_runtime/context_budget.py`
 - `seed_runtime/context_selection.py`
-- `seed_runtime/model_client.py`
-- `seed_runtime/model_clients.py`
 - `seed_runtime/runtime_trace.py`
 - `seed_runtime/tool_needs.py`
 - `seed_runtime/tool_recommendations.py`

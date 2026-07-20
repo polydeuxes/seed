@@ -32,7 +32,6 @@ python scripts/seed_local.py --projection-shape --json | python -m json.tool | s
 python scripts/seed_local.py --knowledge-reachability-audit --knowledge-reachability-audit-family inquiry --knowledge-reachability-audit-json | python -m json.tool | sed -n '1,160p'
 sed -n '1,220p' seed_runtime/question_surface_inventory.py
 sed -n '1,220p' seed_runtime/diagnostic_inventory.py
-sed -n '1,140p' seed_runtime/evaluations.py
 rg -n "SeedRuntime|seed_runtime|runtime observation|process_thread|ObservationProvider|Runtime" seed_runtime tests/test_runtime_self_observation.py docs/runtime_self_observation_investigation.md docs/self_observation_ordinary_domain_reconciliation.md -S
 sed -n '3140,3275p' seed_runtime/observation_sources.py
 sed -n '1,120p' tests/test_runtime_self_observation.py
@@ -54,7 +53,6 @@ pytest -q tests/test_diagnostic_inventory.py tests/test_diagnostic_shape_audit.p
 - `seed_runtime/diagnostic_shape_audit.py`
 - `seed_runtime/documentation_structure.py`
 - `seed_runtime/projection_shape.py`
-- `seed_runtime/evaluations.py`
 - `seed_runtime/observation_sources.py`
 - `seed_runtime/runtime.py`
 - `seed_runtime/models.py`

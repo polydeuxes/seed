@@ -15,8 +15,6 @@ This inventory is source-file based and describes the existing state patch behav
 - Runtime response values are represented by `RuntimeResponse(kind: str, message: str, payload: dict[str, Any])`.
   [`seed_runtime/models.py:318-321`](../seed_runtime/models.py#L318-L321)
 - Legacy model-client prompt schemas/examples include `propose_state_patch` with `state_patch: {}` as a decision shape, and include `state_patch` among known decision fields.
-  [`seed_runtime/model_client.py:195-221`](../seed_runtime/model_client.py#L195-L221)
-  [`seed_runtime/model_clients.py:42-60`](../seed_runtime/model_clients.py#L42-L60)
 
 ### Patch payload shape
 
@@ -214,7 +212,6 @@ If canonical `Runtime` were removed before state patch parity exists, these beha
 
 - The legacy model decision kind `propose_state_patch` would no longer have a runtime route, even though the shared `Decision` model and legacy prompt schemas still describe it.
   [`seed_runtime/models.py:42-51`](../seed_runtime/models.py#L42-L51)
-  [`seed_runtime/model_client.py:214-218`](../seed_runtime/model_client.py#L214-L218)
 - Model-proposed writes of entities, evidence, facts, and goals through `StatePatchService` would no longer be reachable through a runtime decision.
   [`seed_runtime/runtime.py:311-340`](../seed_runtime/runtime.py#L311-L340)
   [`seed_runtime/state_patches.py:82-142`](../seed_runtime/state_patches.py#L82-L142)

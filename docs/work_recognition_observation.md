@@ -129,8 +129,6 @@ cross-reference, adjacency, broad search, and implementation-facing review:
 - `seed_runtime/context_selection.py`
 - `seed_runtime/context_views.py`
 - `seed_runtime/input_inspector.py`
-- `seed_runtime/model_client.py`
-- `seed_runtime/model_clients.py`
 - `seed_runtime/source_navigation.py`
 - `seed_runtime/state_summary_views.py`
 - `seed_runtime/state_views.py`

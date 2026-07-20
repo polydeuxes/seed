@@ -19,16 +19,12 @@ Required files inspected:
 
 Additional directly relevant implementation and docs inspected for blast radius:
 
-- `seed_runtime/model_client.py`
-- `seed_runtime/model_clients.py`
-- `seed_runtime/evaluations.py`
 - `scripts/seed_local.py`
 - `tests/test_context.py`
 - `tests/test_context_budget.py`
 - `tests/test_context_selection.py`
 - `tests/test_model_client.py`
 - `tests/test_model_clients.py`
-- `tests/test_evaluations.py`
 - `tests/test_architecture_invariants.py`
 - `tests/test_tool_recommendations.py`
 - `tests/test_state_patches.py`
@@ -136,9 +132,6 @@ A rename would likely touch:
 
 - `seed_runtime/runtime.py`: protocol, fake/static implementation, constructor type, `self.model` naming if desired, local variables `context`/`retry_context`, retry helper signatures, and `context_composer` property if renamed.
 - `seed_runtime/context.py`: class names `ContextPacket` and `ContextComposer`, module docstring, method return annotation, perhaps `retry_prompt` later.
-- `seed_runtime/evaluations.py`: imports and type annotations for `ContextComposer` and `DecisionModel`.
-- `seed_runtime/model_client.py`: prompt renderer and `ParsedDecisionModel` adapter imports/annotations.
-- `seed_runtime/model_clients.py`: local model clients and prompt builder imports/annotations/docs.
 - `scripts/seed_local.py`: app wiring imports, app fields, local runtime wrappers, CLI app construction.
 
 ### Tests
@@ -151,7 +144,6 @@ At minimum, test imports and helper classes would be touched in:
 - `tests/test_context_selection.py`
 - `tests/test_model_client.py`
 - `tests/test_model_clients.py`
-- `tests/test_evaluations.py`
 - `tests/test_architecture_invariants.py`
 - `tests/test_tool_recommendations.py`
 - `tests/test_state_patches.py`
@@ -175,7 +167,6 @@ Answer to Question 5: the rename touches runtime protocol/composer modules, prov
    - introduce `DecisionProducer = DecisionModel` or define `DecisionProducer` as the new protocol and retain `DecisionModel` as an alias;
    - introduce `DecisionInputPacket = ContextPacket` and `DecisionInputComposer = ContextComposer` aliases, or invert with new classes plus old aliases;
    - introduce `StaticDecisionProducer` while retaining `FakeDecisionModel` as an alias.
-2. Update internal implementation imports and annotations in `seed_runtime/runtime.py`, `seed_runtime/evaluations.py`, model clients, intent classifier, and scripts to prefer the new names while keeping old names importable.
 3. Update tests to prefer the new names and add explicit compatibility tests proving old imports still work temporarily.
 4. Update only current API/architecture docs that would otherwise misstate the seam. Leave historical audits alone unless refreshed.
 5. In a later release/slice, deprecate old names with clear removal criteria after inquiry/runtime integration consumes the new names.
@@ -201,7 +192,6 @@ Answer to Question 8: compatibility aliases should remain temporarily for all pu
 A rename implementation slice should run at least:
 
 - `pytest -q tests/test_runtime_loop.py tests/test_context.py tests/test_context_budget.py tests/test_context_selection.py`
-- `pytest -q tests/test_model_client.py tests/test_model_clients.py tests/test_evaluations.py`
 - `pytest -q tests/test_architecture_invariants.py tests/test_tool_recommendations.py tests/test_state_patches.py tests/test_capability_catalog.py tests/test_evidence_facts.py tests/test_fact_extraction.py tests/test_tool_intent.py tests/test_tool_validation.py`
 - `pytest -q tests/test_execution.py tests/test_policy.py tests/test_execution_proposals.py` as non-regression boundary checks proving execution/policy/proposal behavior was not changed.
 
