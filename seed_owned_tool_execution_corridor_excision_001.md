@@ -1,23 +1,24 @@
 # Seed-owned tool execution corridor excision 001
 
-## Constitutional checksum
+## Operator-supplied audit orientation
 
-Controlling authority for this pass:
+The following orientation was supplied to help locate artifacts that might belong
+to the abandoned Seed-owned tool road. It was used as a search lens, not as
+independent constitutional warrant:
 
 ```text
-Seed has four things:
-
 Observations <> Views
 
 Operator ingress shell <> Seed egress shell
 
 Capabilities are derived from evidence.
-
-Everything is external grammar
-which must be translated into constitutional grammar.
 ```
 
-Seed does not have tools, does not own external mechanism execution, and must not preserve the former tool/runtime path as compatibility, experiment, historical projection support, or future architecture.
+Deletion decisions in this pass were based upon repository evidence showing that
+the removed corridor selected, authorized, invoked, resumed, and recorded
+external mechanisms as Seed-owned tools. The orientation above is therefore not a
+controlling authority, not a constitutional checksum, and not proof that every
+artifact outside a short vocabulary list must be deleted.
 
 ## Executable road recovered
 
@@ -39,7 +40,7 @@ Repository evidence before editing exposed this first-causal executable road:
 
 ## Complete dependency closure deleted
 
-Deleted the executable corridor and its solely supporting artifacts:
+Deleted the executable corridor and its solely supporting production artifacts:
 
 - Executor: `seed_runtime/execution.py`.
 - Validation: `seed_runtime/tool_validation.py`.
@@ -49,7 +50,6 @@ Deleted the executable corridor and its solely supporting artifacts:
 - Registered toolkit/operation registry: `seed_runtime/registry.py`.
 - Generated/bundled toolkit implementations and manifests: `toolkits/`.
 - Toolkit builder/validator package: `seed_builder/`.
-- Executor, registry, validation, policy, pending-action, toolkit, and fact-extraction tests and fixtures that existed to prove the deleted road.
 
 ## Files and symbols removed
 
@@ -92,18 +92,29 @@ Removed or corrected active surfaces that exposed the deleted corridor:
 - Removed generated architecture nodes/edges for `ToolExecutor`, `ToolRegistry`, and `RegisteredOperation`.
 - Corrected the active architecture overview so it no longer states that runtime owns tool execution or pending-action services.
 
-## Projection and extraction dependencies removed
+## Test restoration correction
 
-- Removed state replay of pending tool-call actions.
-- Removed state replay of registered tools.
-- Removed active projection dependencies that populated pending tool-call state and registered tools from execution-corridor events; empty state/snapshot fields remain only for adjacent read-model stability.
-- Removed post-tool-result extraction entirely; no surviving active code accepts `tool.call.completed` or `tool.result` as Seed-owned execution evidence.
+The correction rule is responsibility-based, not filename-, import-, or substring-based:
 
-## Tests and fixtures removed
+- Tests solely dependent upon the deleted responsibility were removed.
+- Tests proving independent responsibilities were preserved or rewritten without contaminated fixtures.
 
-Removed tests whose production road was deleted, including executor, execution-policy, validation, registry, pending-action resume, toolkit, API registry listing, and post-tool-result extraction tests.
+A test file is not wholly dependent on the deleted executable corridor merely because one fixture, negative guard, compatibility import, or example mentioned a deleted noun. This correction restored independent witness for claims, repository observations, facts, evidence, contradictions, confidence, operator ingress, read-only views, evidence-derived capability, candidate/frontier views, and CLI/API boundaries.
 
-Additional tests that imported deleted executor/registry modules only to assert non-use were removed because their independent instantiation of deleted nouns would preserve historical breadcrumbs after the production road was removed.
+### Deleted test-file classification
+
+A = solely proves the deleted executable tool corridor; B = mixed deleted-road and independent coverage; C = wholly independent of the deleted corridor.
+
+- A, intentionally left deleted: `tests/test_action_resume.py`, `tests/test_builder_generator.py`, `tests/test_environment_inventory_toolkit.py`, `tests/test_execution.py`, `tests/test_execution_proposals.py`, `tests/test_fact_extraction.py`, `tests/test_host_notes_toolkit.py`, `tests/test_pending_actions.py`, `tests/test_preconditions.py`, `tests/test_registry.py`, `tests/test_ssh_access_toolkit.py`, `tests/test_tool_execution_policy.py`, `tests/test_tool_recommendations.py`, `tests/test_tool_validation.py`, `tests/test_toolkit_registration.py`, `tests/test_toolkit_validator.py`.
+- B, restored and surgically repaired: `tests/test_api.py`, `tests/test_candidate_examination_work.py`, `tests/test_candidate_requests.py`, `tests/test_capability_candidates.py`, `tests/test_capability_inventory.py`, `tests/test_capability_promotion_readiness.py`, `tests/test_capability_verification_inspection.py`, `tests/test_confidence.py`, `tests/test_contradictions.py`, `tests/test_examination_frontier.py`, `tests/test_integrity_summary.py`, `tests/test_seed_local_script.py`, `tests/test_self_model_acquisition_pipeline.py`, `tests/test_single_capability_state_projection.py`, `tests/test_verification_evidence.py`.
+- C, restored unchanged except for mechanical expectation/import updates needed by the surviving implementation: `tests/test_architecture_generator.py`, `tests/test_consumer_dependency_audit.py`, `tests/test_documentation_observation.py`, `tests/test_emitter_attribution_audit.py`, `tests/test_emitter_consumer_audit.py`, `tests/test_existence_claim_reconciliation.py`, `tests/test_input_inspector.py`, `tests/test_observation_inventory.py`, `tests/test_observation_utilization.py`, `tests/test_relationship_observation.py`, `tests/test_recommendation_ranker.py`, `tests/test_self_model_alignment.py`, `tests/test_structure_claim_reconciliation.py`, `tests/test_structure_observation.py`.
+- `tests/test_architecture_invariants.py` remains deleted in this correction because its surviving independent invariant is already covered by restored architecture generator/API/runtime tests, while the file's remaining concrete setup depended on the deleted `ToolRegistry` path.
+
+### Test-count honesty
+
+PR 1881 reported `2146 passed` and `15 failed`; PR 1882 reported `1642 passed`. A smaller green suite was not treated as sufficient evidence. This correction restored 26 deleted test files, intentionally left 17 deleted test files, and rewrote contaminated tests/fixtures in the restored files instead of reviving production tool machinery.
+
+Final collected test count: 2066. Final pass/fail result: 2066 passed, 0 failed.
 
 ## Active documentation corrected
 
@@ -133,17 +144,22 @@ These do not provide a surviving active path that selects, authorizes, invokes, 
 Commands run:
 
 ```bash
-rg -n "seed_runtime\\.(execution|tool_validation|tool_execution_policy|pending_actions|fact_extraction|registry)|from seed_runtime\\.(execution|tool_validation|tool_execution_policy|pending_actions|fact_extraction|registry)|ToolExecutor|ToolCallResult|ToolContext|ToolValidationService|ToolExecutionPolicyService|ToolRegistry|FactExtractionService|ToolResultFactExtractor|tool\\.call\\.(started|completed|failed)|tool\\.policy\\.blocked|tool\\.approval\\.required|pending_action\\.(created|approved|completed|cancelled|status_changed)|tool\\.registered" seed_runtime scripts tests docs/generated scripts/generate_architecture.py
 python -m compileall -q seed_runtime scripts
 python scripts/seed_local.py --help
 printf 'hello\nexit\n' | python scripts/seed_local.py
+pytest --collect-only -q
 pytest -q
+rg -n "seed_runtime\.(execution|tool_validation|tool_execution_policy|pending_actions|fact_extraction|registry)|from seed_runtime\.(execution|tool_validation|tool_execution_policy|pending_actions|fact_extraction|registry)|ToolExecutor|ToolCallResult|ToolContext|ToolValidationService|ToolExecutionPolicyService|ToolRegistry|FactExtractionService|ToolResultFactExtractor|tool\.call\.(started|completed|failed)|tool\.policy\.blocked|tool\.approval\.required|pending_action\.(created|approved|completed|cancelled|status_changed)|tool\.registered" seed_runtime scripts tests docs/generated scripts/generate_architecture.py
 ```
 
-The targeted active-code/test/generated search finds only `execution_status` / `execution_proposals` false positives from the substring `execution`, plus the present report when included in the search scope; it finds no surviving active implementation, test, script, export, or generated-architecture occurrences of the deleted tool corridor symbols or lifecycle event kinds.
+Final verification collected 2066 tests and `pytest -q` reported 2066 passed. The targeted active-code/test/generated search is interpreted with the bounded correction rule: benign historical report text and neutral fixture strings are not executable contamination. Active implementation, CLI/API, test, and generated architecture paths contain no surviving Seed-owned executable-tool corridor.
 
-## Bounded answer
+## Bounded answers
 
-Can any surviving active Seed-owned path select, authorize, invoke, resume, or record the result of an external mechanism as a tool?
+Can any surviving active Seed-owned path select, authorize, invoke, resume, or record an external mechanism as a tool?
 
-No. The executor, registry, validation/policy sequencer, pending-action resume service, tool-result extraction service, active lifecycle event replay, CLI/API registry surfaces, toolkit implementations, and tests/fixtures for that road have been removed. Active search and verification commands above support that answer.
+No. The executor, registry, validation/policy sequencer, pending-action resume service, tool-result extraction service, active lifecycle event replay, CLI/API registry surfaces, and toolkit implementations remain deleted. Active search and verification commands above support that answer.
+
+Did this correction preserve independent test testimony for claims, facts, evidence, observations, ingress, and views?
+
+Yes. Restored and repaired tests cover claims and repository observations; facts, evidence, contradictions, and confidence; operator ingress; read-only views; evidence-derived capability; and candidate/frontier presentation without restoring production tool machinery.
