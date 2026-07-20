@@ -81,7 +81,6 @@ The knowledge layer projects current belief from immutable observations rather t
 - `DecisionProvider` = proposes structured decisions; it may be deterministic code, a model adapter, or another provider. LLMs are optional, not required.
 - `PolicyEngine` = authorization/safety boundary for valid operation-call decisions.
 - `ToolRegistry` = registered operation inventory; only registered operation handlers may run, and Seed does not execute shell commands or arbitrary provider text.
-- `DecisionJournal` = append-only audit/explanation trail that records why a decision was made and what happened afterward.
 
 ## Ownership boundary
 
@@ -97,7 +96,6 @@ Seed owns:
 - Legacy ActionPlans/HandoffPlans only for historical projection and explicit experimental CLI side paths
 - Policy metadata
 - Audit trail
-- DecisionJournal events for why/outcome explanations
 - State Views that answer what Seed currently knows without reading raw events or invoking runtime behavior
 
 Seed delegates:

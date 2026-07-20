@@ -116,38 +116,6 @@ Use when the request is unsafe, impossible, or prohibited.
 }
 ```
 
-## Decision Journal
-
-Decision Journal is an append-only event layer, not a separate mutable decision database. It records a `decision.recorded` event containing:
-
-- `decision_id` and `run_id`
-- workspace and decision kind
-- provider reason
-- deterministic `context_hash` of the context the provider saw
-- selected operation/tool name and arguments when present
-- policy allowed/denied status
-- final outcome: `answered`, `tool_succeeded`, `tool_failed`, `tool_unknown`, `policy_denied`, or `malformed_decision`
-- error details when a decision is malformed, a tool is unknown, policy denies, or a handler fails
-
-This journal explains why a path was chosen and what happened afterward. It prepares Seed for `--why`, `--impact`, `--state-build`, `--relationships`, `--graph-issues`, audit/explain views, and verification commands while preserving `EventLedger` as the source of truth. If an outcome changes after a proposal, Seed appends another event instead of mutating a prior event.
-
-## Runtime Trace
-
-`RuntimeTrace` is a read-only view over one historical/experimental RuntimeLoop run. Given a `workspace_id` and `run_id`, the trace reader loads matching `EventLedger` events, preserves append order, snapshots their payloads, and reconstructs the user input, `decision.recorded` journal record, policy denial event, tool result/failure/unknown event, assistant answer, and errors. It does not replay the runtime and does not call `DecisionProvider`, `PolicyEngine`, registered operations/tools, projectors, shell commands, subprocesses, network clients, generated toolkit operations, LLMs, or host-mutating code.
-
-Trace summaries expose the operator-facing facts needed for audit and explanation surfaces: input text, decision kind and reason, outcome, selected operation/tool, policy allowed/denied status, final response text, and any error. Missing run IDs return an empty trace with `summary.found = false`, rather than inventing or replaying state.
-
-Runtime responsibilities stay separated:
-
-- `Runtime` is the canonical coordinator and appends canonical runtime events through `EventLedger` and owned services.
-- `ToolExecutor` owns registered tool execution and its events.
-- `PendingActionService` owns pending-action lifecycle events.
-- `DecisionJournal` records historical experimental RuntimeLoop decision intent, context hash, selected operation/tool, policy status, outcome, and errors.
-- `RuntimeTrace` reconstructs one run from those events only.
-- CLI `--trace-run RUN_ID` renders the full ordered trace without mutating history.
-- CLI `--why-run RUN_ID` renders a concise human explanation from the same read-only trace.
-- Future `--audit`, `--explain`, and `--impact` views can render the trace without mutating history.
-
 ## Runtime algorithm
 
 ```python
@@ -176,7 +144,6 @@ def handle_input(workspace_id: str, session_id: str, input_payload: dict) -> Res
         causation_id=input_event.id,
     )
 
-    context_hash = decision_journal.context_hash(context)
     decision = decision_provider.decide(context)
 
     decision_event = ledger.append(
@@ -194,18 +161,9 @@ def handle_input(workspace_id: str, session_id: str, input_payload: dict) -> Res
             payload=validated.error_payload(),
             causation_id=decision_event.id,
         )
-        decision_journal.append_record(
-            decision_kind=decision.kind,
-            reason=decision.reason,
-            context_hash=context_hash,
-            policy_allowed=False,
-            outcome="malformed_decision",
-            error=validated.error_text,
-            causation_id=invalid_event.id,
-        )
         return response_composer.invalid_decision(validated)
 
-    result = runtime.route_valid_decision(validated.decision, state, context_hash, causation_id=decision_event.id)
+    result = runtime.route_valid_decision(validated.decision, state, causation_id=decision_event.id)
 
     final_state = projector.project(workspace_id)
     return response_composer.compose(result, final_state)
@@ -342,7 +300,6 @@ Never silently coerce a dangerous invalid decision into an action.
 - Decision validation happens before policy or operation implementation execution.
 - PolicyEngine denial prevents operation implementation execution.
 - ToolRegistry dispatches only registered operation handlers; raw provider output, shell commands, subprocesses, generated toolkit operations, and arbitrary host mutation are not execution paths.
-- DecisionJournal records reasoning and outcomes as append-only events only.
 - No credentials, retries, scheduling, or long-running job lifecycle in Seed.
 - No HandoffPlan without CapabilityCatalog metadata and policy summary.
 - No generated capability metadata before validation and registration.
