@@ -12,8 +12,6 @@ Yes: the repository already exposes a bounded composition seam between inquiry a
 - `rg -n "Inquiry|inquiry|QuestionFamily|Question Family|bounded" seed_runtime tests docs | head -300`
 - `rg -n "bounded_ask|Question.*Family|question.*family|QUESTION" seed_runtime scripts tests/test_question_surface_inventory.py | head -250`
 - `sed -n '1,420p' seed_runtime/question_surface_inventory.py && sed -n '2100,2180p' scripts/seed_local.py`
-- `sed -n '2180,2215p' scripts/seed_local.py && sed -n '90,130p' seed_runtime/evaluations.py && sed -n '1,120p' seed_runtime/model_client.py`
-- `sed -n '120,260p' seed_runtime/model_client.py && rg -n "class Fact|class Evidence|open_questions|question_answered|evidence_ids|ToolNeed" seed_runtime/models.py seed_runtime/state.py seed_runtime/*.py | head -200`
 - `python scripts/seed_local.py ask --question-surface-inventory --json | head -80`
 
 ## Files inspected
@@ -21,8 +19,6 @@ Yes: the repository already exposes a bounded composition seam between inquiry a
 - `AGENTS.md`
 - `seed_runtime/context.py`
 - `seed_runtime/runtime.py`
-- `seed_runtime/model_client.py`
-- `seed_runtime/evaluations.py`
 - `seed_runtime/question_surface_inventory.py`
 - `scripts/seed_local.py`
 - `seed_runtime/models.py`
