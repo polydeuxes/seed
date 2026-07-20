@@ -41,8 +41,6 @@ Events -> projected State -> Evidence Graph -> Contradiction Detection -> Confid
 - **Runtime** is the single canonical runtime orchestration path. Runtime owns input handling, context composition, decision validation/routing, and delegation to the services below.
 - **ToolExecutor** owns registered tool execution and emits canonical tool execution events.
 - **PendingActionService** owns pending-action lifecycle events such as creation, approval, and completion.
-- **DecisionJournal** records why historical experimental RuntimeLoop decisions were made and what happened afterward.
-- **RuntimeTrace** reconstructs historical/experimental RuntimeLoop runs for audit/explanation without replaying execution.
 - **RuntimeLoop** is deprecated and experimental. It is not wired into CLI, API, or default production paths and must not define canonical runtime behavior.
 
 State Views, the Evidence Graph, Contradiction Detection, and Confidence Aggregation are projections and are not second state stores. They do not append events, invoke a runtime loop, call a DecisionProvider, evaluate policy, execute operation implementations, run shell commands, mutate hosts, perform network calls, call LLMs, or create separate persistence layers.

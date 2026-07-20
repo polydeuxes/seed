@@ -2,9 +2,7 @@
 
 ## Implementation summary
 
-This investigation started from existing bounded question surfaces and then used implementation only as supporting evidence. The repository already exposes a question-to-surface pattern through `question_surface_inventory`: question families have example questions, answering surfaces, answer responsibilities, authority boundaries, bounded ask status, dispatch surfaces, and diagnostic registry/spec linkage. Execution-specific answers are present, but not as a new execution question family. They are distributed across registered tool execution, runtime trace reconstruction, transient status rendering, projection shape visibility, reasoning/selection explanation, knowledge reachability, and diagnostic inventory/shape audit.
 
-The smallest truthful model is therefore not an implementation inventory. It is a bounded inquiry model in which current execution questions are answered by existing operational and diagnostic surfaces, while concrete execution answers remain owned by implementation services such as `ToolExecutor`, `RuntimeTraceReader`, `StateProjector`, projection caches, and read-only audit surfaces.
 
 ## Bounded execution questions recovered
 
@@ -12,7 +10,6 @@ The smallest truthful model is therefore not an implementation inventory. It is 
 | --- | --- | --- | --- | --- |
 | How did this registered tool call execute? | `ToolExecutor` result and event sequence. | Tool registry, input/output validation, policy evaluation, event ledger, fact extraction. | Executes only registered operations after validation and policy checks; writes tool call events as execution records. | `seed_runtime.execution.ToolExecutor`, `ToolExecutionPolicyService`, `ToolValidationService`, `PolicyGate`, `EventLedger`, `FactExtractionService`. |
 | Why did this tool call end this way? | `ToolCallResult` plus policy/failure/completion event payloads. | Policy decision, validation phase, exception capture, pending action creation for confirmation/approval paths. | Policy may block or require approval before execution; validation failures and execution failures are represented as failed results/events. | `ToolExecutor.execute`, `_policy_denied`, `_failed`, `_execute_allowed_tool_call`, pending action service. |
-| What happened during this runtime run? | `RuntimeTraceReader`/runtime trace surface. | User input event, decision record, policy event, tool event, assistant event, error events, summary. | Read-only reconstruction from append-only events; no replay and no mutation. | `seed_runtime.runtime_trace.RuntimeTraceReader`, `RuntimeTrace`, event reader/list API. |
 | What execution activity is visible to the operator right now? | Execution status consumer/rendering surface. | Observation lifecycle phases, progress cadence, CLI rendering, in-memory recording for tests. | Transient, renderer-independent, non-authoritative activity visibility; does not own execution state. | `ExecutionStatus`, `CliExecutionStatusConsumer`, `RecordingExecutionStatusConsumer`, `ObservationProducerLifecycle`, `emit_status`. |
 | How did observations become projected state? | Projection shape visibility and state projection implementation. | Event replay, alias projection, measurement retention, inference, fact support, relationship/entity projection, finalization. | Read-only projection-shape view; projection stages derive from event ledger and do not write the event ledger. | `seed_runtime.projection_shape`, `StateProjector`, `ProjectionStore`, `State`, projection diagnostics. |
 | Why was or was not projection/cache reuse possible? | Projection cache/store implementation and projection diagnostics. | Snapshot version, last event id, state projection version, dependent summary/index snapshot keys. | Event ledgers own append-only history; projection stores own reusable derived snapshots. | `ProjectionStore`, `ProjectionSnapshot`, `SummaryProjectionSnapshot`, `DerivedIndexSnapshot`, cached projector/store methods. |
@@ -24,7 +21,6 @@ The smallest truthful model is therefore not an implementation inventory. It is 
 ## Execution question to answer-owner mappings
 
 1. **Concrete registered execution** is owned by `ToolExecutor`, not by question inventory. The executor advertises ownership as registered tool execution and records started/completed/failed tool call events.
-2. **Runtime-run reconstruction** is owned by `RuntimeTraceReader`, which reconstructs a single run from event history and returns a summary with input, decision, policy, tool, assistant, and error information.
 3. **Operator-visible progress** is owned by execution-status consumers, but these consumers explicitly do not own execution state.
 4. **Projection transformation questions** are owned by projection shape/state projection surfaces, with event replay and projection stages as supporting contributors.
 5. **Derivation and selection questions** are owned by bounded question surfaces (`reasoning_path` and `selection_path`) rather than by low-level execution concepts.
@@ -67,7 +63,6 @@ Current execution inquiry boundaries are explicit and conservative:
 | `ToolExecutionPolicyService` / `PolicyGate` | Producing allow/block/approval outcomes. | Supporting contributor to “why ended this way.” |
 | `ToolValidationService` | Checking registered tool status, input schema, output schema. | Supporting contributor to execution outcome questions. |
 | `EventLedger` | Preserving append-only execution/runtime/projection source events. | Shared supporting evidence. |
-| `RuntimeTraceReader` | Reconstructing a runtime run from matching events. | Answer owner for runtime-run questions. |
 | `ExecutionStatusConsumer` implementations | Rendering or recording transient progress/status updates. | Presentation/supporting evidence, not execution authority. |
 | `StateProjector` / projection shape | Transforming event history into projected state and exposing stage shape. | Answer owner for projection transformation questions. |
 | `ProjectionStore` | Saving/loading reusable state, summary, and derived index snapshots. | Implementation detail for cache-reuse questions. |
@@ -78,8 +73,6 @@ Current execution inquiry boundaries are explicit and conservative:
 
 - The repository already contains a `Question -> Bounded Surface -> Supporting Contributors -> Implementation Evidence -> Answer` pattern for operational questions through `question_surface_inventory`.
 - Execution questions are partially represented in that pattern through projection shape, derivation explanation, selection explanation, knowledge reachability, and surface inventory/shape validation.
-- Concrete command/tool execution is not represented as a new question family; it is owned by `ToolExecutor` and can be explained through event history, results, policy, validation, runtime trace, reasoning path, and selection path.
-- Multiple concepts naturally compose into bounded answers: runtime trace composes input, decision, policy, tool, assistant, and errors; projection shape composes projection stages; execution outcome composes validation, policy, ledger, registered operation, result/failure, and optional pending action.
 - Inquiry can own the question orientation only where an existing bounded surface exists. Implementation still owns the actual execution answer.
 
 ## Implementation-oriented findings
@@ -98,7 +91,6 @@ Current execution inquiry boundaries are explicit and conservative:
 
 ## Agreements with previous investigations
 
-- Event history, observation ingestion, state projection, projection diagnostics, projection cache, dependent read-model caches, runtime trace, execution status, audit snapshots, and formatters all remain implementation evidence.
 - The investigation agrees that these concepts make execution explainable.
 - The correction is role-oriented: several concepts are evidence or contributors, not necessarily answer owners.
 
@@ -122,7 +114,6 @@ Bounded execution question
 For current execution, the smallest implied model is:
 
 1. **Registered execution answer**: `ToolExecutor` answers how a registered tool call executed and why it completed, failed, blocked, or required approval.
-2. **Runtime-run answer**: `RuntimeTraceReader` answers what happened during a recorded runtime run.
 3. **Projection answer**: projection shape/state projection answers how event history becomes projected state.
 4. **Cache answer**: projection store/snapshot metadata answers cache reuse boundaries.
 5. **Operational why/selection answer**: reasoning and selection path surfaces answer derivation and selection questions for operational conclusions.

@@ -29,7 +29,6 @@ Execution evidence is strongest for the shared projection/cache/snapshot layer a
 - **Shared projection cache eligibility** recurs for surfaces using `projected_state_from_args`: persisted `--db`, no custom predicate catalog, default measurement-history limit.
 - **ProjectionStore snapshot load/save and incremental replay** recur in the shared `project_state_with_cache` layer and are visible most clearly through state-build and current-facts debug surfaces.
 - **Read model / formatter separation** recurs: builders return structured objects or dictionaries and formatters render text/JSON.
-- **Runtime trace is adjacent rather than recurring in these inquiry surfaces**: CLI supports `--trace-run` and `--why-run` as read-only trace loaders, but representative inquiry surfaces do not call runtime trace loading.
 
 ## Surface-specific execution relationships
 
@@ -82,7 +81,6 @@ Execution characterization appears to be an **emerging implementation-backed cap
 ## Commands executed
 
 - `pwd && rg --files -g 'AGENTS.md' -g '!**/.git/**' .. /workspace 2>/dev/null | head -50 && git status --short`
-- `cat AGENTS.md && rg -n "ops_brief|operational_story|knowledge_reachability|service_ownership_authority|reasoning_path|selection_path|projection_shape|state_build_cache_debug|current_facts_cache_debug|snapshot|projection|runtime trace|timing|cache" -S .`
 - `rg -n "def main|argparse|ops-brief|operational-story|knowledge-reachability|service-ownership|reasoning-path|selection-path|projection-shape|state-build-cache|current-facts-cache|runtime-trace|diagnostic-inventory" seed_runtime tests -S`
 - `rg --files | rg '(^|/)seed(_local)?(\.py)?$|cli|local' | head -50`
 - `sed -n '1,220p' scripts/seed_local.py && sed -n '220,520p' scripts/seed_local.py && sed -n '520,900p' scripts/seed_local.py`

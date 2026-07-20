@@ -96,8 +96,6 @@ Separate from observations, `ExecutionStatus` can describe transient activity ph
 For completed or currently emitted bounded operations, yes in fragments:
 
 - Runtime events reconstruct a user-triggered run: input, decision proposal, validation failures, response events, tool starts/completions/failures, policy blocks, and pending-action creation.
-- `RuntimeTraceReader` reconstructs a single recorded runtime run from append-only events without replaying or mutating execution.
-- `DecisionJournal` can append decision audit records with `run_id`, decision kind, reason, selected tool, policy result, outcome, and error.
 - `ExecutionStatus` exposes transient progress for observation collection and ingestion without becoming persisted state.
 - `SeedRuntimeObservationSource` exposes read-only process/resource observations about the Seed process.
 
