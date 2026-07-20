@@ -107,7 +107,6 @@ Selection Rationale is now a completed audit sequence with the following status:
 Current rationale surfaces are sufficient for most concrete Selection Rationale questions:
 
 - `ContextComposer` and context ordering helpers make deterministic context ordering and inclusion recoverable from current rules.
-- `DecisionContextView` and `ContextSummary` expose included facts, issues, contradiction flags, support strength counts, requirements, capabilities, projection version, and last event ID.
 - `State`, `FactSupport`, confidence aggregation, Evidence Graph, contradictions, and stale views expose support, evidence, conflict, current/competing, confidence, expiry, and stale rationale.
 - Capability Inventory explains verified, provider-reported, stale, unverified, and unknown capability states without executing verifiers.
 - Explanation surfaces answer fact-level why questions and expose current/competing beliefs, support, provenance, conflicts, inference, and alias-resolution signals.

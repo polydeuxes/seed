@@ -224,7 +224,6 @@ docs/foo.md status active
 Example unsupported prose-claim fact shape unless separately evaluated by a prose-claim pathway:
 
 ```text
-docs/foo.md claims RuntimeLoop uses DecisionContextView
 ```
 
 A metadata field can be observed as authored structure. A prose sentence remains prose unless a separate deterministic claim extractor or support rule evaluates it within its own boundary.

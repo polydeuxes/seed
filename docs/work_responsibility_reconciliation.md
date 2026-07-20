@@ -144,7 +144,6 @@ This reconciliation therefore rejects promoting the recent operator discussion v
 | `blocked/pending work` | pending action, tool need, capability gap, policy denied, approval required, unknowns/limitations |
 | `current_mode` | no repository-backed current runtime state found |
 | `current_owner` | responsibility owner, answer owner, service owner, or actor/event owner only when implemented evidence supports it |
-| `runtime_context` | `ContextPacket`, `RuntimeContext`, projected state, or decision-context view only in their specific implementation scopes |
 | `idle` / `unscheduled` / `no-current-work` | absence of implementation-backed state; do not infer as fact |
 
 ## Agreements between old and recent work

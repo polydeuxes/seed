@@ -98,7 +98,6 @@ Important properties:
 ### 2. Decision context views
 
 `seed_runtime/context_views.py` defines read-only Context View projections for
-"decision-ready knowledge." It explicitly says Context Views are derived from
 already-projected `State`, the Evidence Graph, Contradiction Detection, and
 Confidence Aggregation, and that they do not read the event ledger, append
 events, mutate state, execute runtime behavior, call providers, evaluate policy,
@@ -221,7 +220,6 @@ selection or semantic relevance.
 
 ### Decision Context Views
 
-`build_decision_context_view(...)` consumes projected `State`, Evidence Graph,
 Contradiction Detection, and Confidence Aggregation. It selects context facts,
 issues, requirements, and capabilities, then emits a summary with projection
 metadata.
@@ -246,7 +244,6 @@ answering why a selected fact matters.
 ### Conflicts and Graph Issues
 
 `State` carries projected `FactConflict` records and graph validation issues.
-`context_views.py` converts contradictions and graph issues into `ContextIssue`
 items. `explanations.py` attaches matching conflicts to fact explanations.
 
 Architectural fit: **implemented issue surfaces**.
@@ -596,7 +593,6 @@ names:
    FactSupport, contradictions/conflicts, graph issues, explanations,
    requirements, capabilities, ToolNeeds, temporal freshness/expiry metadata,
    and current input;
-   `context_selection`, `DecisionContextView`, `StateViews`,
    `ExplanationBuilder`, `CapabilityInventory`, and read-only capability
    resolution;
 4. its boundaries: no execution, planning, orchestration, provider calls,

@@ -38,7 +38,6 @@ Additional directly relevant implementation and docs inspected for blast radius:
 Repository-wide searches run:
 
 - `rg -n "DecisionModel|ContextComposer|Context\b|context\b|decide\(context\)" . -g '!*.pyc'`
-- `rg -n "DecisionModel|ContextComposer|ContextPacket|decide\(context\)|def decide\(|context_composer|last_context|Decision Context|decision-context" seed_runtime tests scripts docs -g '*.py' -g '*.md'`
 
 ## Current Responsibility
 
@@ -83,7 +82,6 @@ Answer to Question 4: `context` is mostly structured operational state, not a fr
 | `DecisionModel` | Partly stale | It implies the producer is a model, but runtime only requires a `decide(ContextPacket) -> Decision` protocol. Deterministic and intent-classifier implementations already satisfy the same seam. |
 | `FakeDecisionModel` | Stale if the seam is renamed | It is a test decision source, not a fake model in any required architectural sense. |
 | `ContextComposer` | Partly stale but less urgent | It accurately composes context, but `Context` can imply prompt/input blob or an old context-engine framing. The implementation composes bounded decision input from projected operational state. |
-| `ContextPacket` | Partly stale | It is structured and budgeted, but `Context` alone is broad and collides with `ToolContext`, `DecisionContextView`, `RuntimeContext`, docs, and many presentation surfaces. |
 | `context` parameter in `decide(context)` | Partly stale | It is structured decision input, not necessarily an LLM prompt, but prompt clients still consume it. |
 | `retry_prompt` | More stale than `ContextComposer` | Runtime retry metadata is currently embedded in the packet under a prompt-specific name even though the runtime needs a retry instruction/advice section, not necessarily a prompt. |
 

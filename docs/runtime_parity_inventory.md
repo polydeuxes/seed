@@ -48,7 +48,6 @@ Recent Strategy B extractions moved duplicated infrastructure into shared servic
 
 **Entry point and responsibilities.** `RuntimeLoop` is described in its module docstring as a small deterministic coordinator that does not call LLMs, providers, shells, subprocesses, network clients, or generated toolkit operations; it coordinates `EventLedger`, `ProjectionStore`, `ToolRegistry`, `PolicyEngine`, and `DecisionProvider`. [`seed_runtime/runtime_loop.py:1-8`](../seed_runtime/runtime_loop.py#L1-L8) It is constructed with an `EventLedger`, optional `ProjectionStore`, `ToolRegistry`, optional `PolicyEngine`, `DecisionProvider`, optional tool handlers, and optional `StateProjector`; it creates a `DecisionJournal` and `FactExtractionService`. [`seed_runtime/runtime_loop.py:121-140`](../seed_runtime/runtime_loop.py#L121-L140) Its public entry point is `run(RuntimeInput)`. [`seed_runtime/runtime_loop.py:142-256`](../seed_runtime/runtime_loop.py#L142-L256)
 
-**Dependencies.** RuntimeLoop depends on `DecisionContextView`/`build_decision_context_view`, `DecisionJournal`/`context_hash`, `FactExtractionService`, `PolicyGate`, `ProjectionStore`/`project_state_with_cache`, `ToolRegistry`, `StateProjector`, `slugify`, and domain models for policy/ToolNeeds/tool specs. [`seed_runtime/runtime_loop.py:15-26`](../seed_runtime/runtime_loop.py#L15-L26) Its provider protocol accepts a `RuntimeContext` and returns a `runtime_loop.Decision`; `FakeDecisionProvider` and `EchoTool` provide deterministic test doubles. [`seed_runtime/runtime_loop.py:75-116`](../seed_runtime/runtime_loop.py#L75-L116)
 
 **Decision flow.** RuntimeLoop appends `input.user_message`, uses `project_state_with_cache`, composes `RuntimeContext`, hashes the context, asks the provider for a decision, then validates it with `_validate_decision`. [`seed_runtime/runtime_loop.py:142-163`](../seed_runtime/runtime_loop.py#L142-L163) Malformed decisions append `runtime.decision.rejected`, write a `decision.recorded` journal record with `outcome="malformed_decision"`, and return an error-bearing `RuntimeResult`. [`seed_runtime/runtime_loop.py:163-200`](../seed_runtime/runtime_loop.py#L163-L200) Valid `answer` decisions append `assistant.answer` and journal `answered`; `request_tool` delegates to `_run_request_tool_decision`; every other valid kind is a `call_tool` and delegates to `_run_tool_decision`. [`seed_runtime/runtime_loop.py:202-256`](../seed_runtime/runtime_loop.py#L202-L256)
 
@@ -85,7 +84,6 @@ Recent Strategy B extractions moved duplicated infrastructure into shared servic
 ### `RuntimeContext`
 
 
-### `DecisionContextView`
 
 
 ## Decision Systems
@@ -205,7 +203,6 @@ Recent Strategy B extractions moved duplicated infrastructure into shared servic
 
 | Test file | Major behaviors covered |
 | --- | --- |
-| `tests/test_runtime_loop.py` | RuntimeLoop answer events/journal, provider context and `DecisionContextView`, operation implementation execution, evidence extraction, request-tool creation and projection, malformed request-tool payload rejection, unknown tool, policy denial, malformed decisions, handler exceptions, projection/cache boundaries, and no shell/subprocess/network behavior. [`tests/test_runtime_loop.py:392-847`](../tests/test_runtime_loop.py#L392-L847) |
 | `tests/test_api.py` | API `post_user_message` answer and request-tool paths return `RuntimeResult`. [`tests/test_api.py:37-66`](../tests/test_api.py#L37-L66) |
 | `tests/test_runtime_trace.py` | Trace reconstruction for answer, tool success, unknown tool, policy denial, malformed decision, tool failure, event ordering, read-only behavior, and no provider/policy/tool calls during trace. [`tests/test_runtime_trace.py:76-252`](../tests/test_runtime_trace.py#L76-L252) |
 | `tests/test_cli_trace.py` | CLI trace and why-run output for answer, tool success, policy denial, malformed decision, not-found trace, read-only trace commands, and no provider/policy/tool calls. [`tests/test_cli_trace.py:84-238`](../tests/test_cli_trace.py#L84-L238) |
@@ -235,6 +232,5 @@ Continue Strategy B: do not delete `Runtime`, do not migrate the CLI yet, and ch
 
 - Default local CLI execution and API user-message posting already call RuntimeLoop. [`scripts/seed_local.py:236-251`](../scripts/seed_local.py#L236-L251) [`seed_runtime/api.py:15-32`](../seed_runtime/api.py#L15-L32)
 - RuntimeLoop covers user input event recording, state projection through projection-cache plumbing, provider decision, answer responses, tool-need creation, registered-tool lookup, policy denial, supplied-handler execution, handler exception capture, successful tool results, evidence extraction, decision journaling, context hashes, and `RuntimeResult` output metadata. [`seed_runtime/runtime_loop.py:142-256`](../seed_runtime/runtime_loop.py#L142-L256) [`seed_runtime/runtime_loop.py:258-548`](../seed_runtime/runtime_loop.py#L258-L548)
-- RuntimeLoop embeds `DecisionContextView`, giving RuntimeLoop providers direct access to the canonical decision-ready knowledge projection. [`seed_runtime/runtime_loop.py:550-573`](../seed_runtime/runtime_loop.py#L550-L573) [`seed_runtime/context_views.py:90-130`](../seed_runtime/context_views.py#L90-L130)
 - RuntimeLoop is covered by RuntimeTrace reconstruction and CLI trace/why-run commands. [`seed_runtime/runtime_trace.py:1-45`](../seed_runtime/runtime_trace.py#L1-L45) [`tests/test_runtime_trace.py:76-252`](../tests/test_runtime_trace.py#L76-L252) [`tests/test_cli_trace.py:84-238`](../tests/test_cli_trace.py#L84-L238)
 - RuntimeLoop end-to-end clarify/refuse tests lock down that mapped clarify/refuse emits `assistant.answer`, journals `decision_kind="answer"`, and records `outcome="answered"`; dedicated direct-kind tests lock down rejection of unsupported `ask_question` and `refuse` RuntimeLoop decisions. [`tests/test_runtime_loop.py:428-489`](../tests/test_runtime_loop.py#L428-L489) [`tests/test_runtime_loop.py:934-979`](../tests/test_runtime_loop.py#L934-L979)

@@ -154,7 +154,6 @@ A **Response Artifact** is the concrete output produced by a surface.
 
 Examples include a `RuntimeResponse`, an `Explanation`, a
 `ProjectionIntegritySummary`, a `CapabilityInventoryEntry` list, a
-`StateSummary`, a `DecisionContextView`, formatted CLI text, deterministic JSON,
 or an issue/contradiction/evidence output.
 
 ## Response Category
@@ -516,7 +515,6 @@ ownership.
 | Response Surface | CLI output, RuntimeResponse envelopes, Decision outputs, Explanation outputs, Integrity Summary, Capability Inventory, State Summary, Issue outputs, Observation outputs, Evidence Graph output, Decision Context View |
 | Response Producer | `Runtime._route(...)`, `ExplanationBuilder`, `build_projection_integrity_summary(...)`, `build_capability_inventory(...)`, `build_state_summary(...)`, state-view builders, contradiction builders, evidence graph builders, context-view builders, CLI formatter functions |
 | Response Consumer | User, CLI caller, local HTTP/API caller, operator, model consumer, decision-making code consuming context views, documentation/audit reader |
-| Response Artifact | `RuntimeResponse`, `Explanation`, `ProjectionIntegritySummary`, `CapabilityInventoryEntry` list, `StateSummary`, `DecisionContextView`, formatted CLI text, deterministic JSON, issue lists |
 | Response Content | facts, evidence, supporting fact IDs, contradictions, capabilities, capability-resolution payloads, graph issues, stale facts, unsupported facts, confidence values, observations, requirements, current context facts, event IDs |
 | Response Limitation | unsupported facts, stale facts, unverified capabilities, unknown capabilities, provider-reported-only capabilities, contradictions, graph issues, ambiguous/no-current-belief explanation status, context budget drops, surface scope |
 | Response Caveat | Projection Integrity Summary caveats, CLI impact caveats that listener or mount facts do not imply health/reachability, verification caveats, no-execution caveats |
@@ -529,7 +527,6 @@ Important existing structures:
   and refusal decision shapes. Runtime routes those decisions to response
 envelopes or delegated execution paths, but Runtime should not be promoted to a
 universal Response owner.
-- `ContextComposer` and `DecisionContextView` are selection and decision-context
   surfaces. They may be communicated as responses, but they are not Response
   engines.
 - `ExplanationBuilder` produces explanation artifacts from projected `State`.
@@ -676,12 +673,10 @@ surfaces. A surface may belong to more than one category.
 | CLI `--entity-types` output | State Response, Inventory Response | Communicates current entity type assertions. |
 | CLI `--impact` output | State Response, Uncertainty Response | Communicates entity impact and caveats about not inferring health/reachability. |
 | CLI observation outputs | Observation Response, State Response | Communicate observation-derived facts or observation inventory diffs. |
-| CLI `--decision-context` output | Selection Rationale Response, State Response, Inventory Response | Communicates selected decision-ready context and summary. |
 | `ExplanationBuilder.why(...)` | Explanation Response, Why-Not Response, Uncertainty Response | Produces explanation artifacts from projected state. |
 | `build_projection_integrity_summary(...)` | Integrity Response, Response Summary | Aggregates existing integrity signals and caveats. |
 | `build_capability_inventory(...)` | Capability Response, Inventory Response, Integrity Response | Lists registered/provider capability states derived from projected state. |
 | `build_state_summary(...)` and state views | State Response, Response Summary, Inventory Response, Issue Response | Expose facts, observations, requirements, capabilities, issues, and summary. |
-| `build_decision_context_view(...)` | Selection Rationale Response, State Response | Selects decision-ready knowledge and summary without runtime/provider/tool behavior. |
 
 # Proposed Vocabulary Shape
 

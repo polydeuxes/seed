@@ -190,7 +190,6 @@ which objective was being served. Therefore goals are best classified as:
 
 ```text
 operator-owned objectives that may be represented at Seed's interface,
-advisory, and decision-context boundaries
 ```
 
 ## 2. What Is Policy?

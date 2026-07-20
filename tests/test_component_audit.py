@@ -7,17 +7,17 @@ from seed_runtime.diagnostic_shape_audit import build_diagnostic_shape_audit
 
 
 def test_component_audit_renders(capsys):
-    assert seed_local.main(["--component-audit", "context_selector"]) == 0
+    assert seed_local.main(["--component-audit", "selection_path"]) == 0
     out = capsys.readouterr().out
     assert "Component Audit" in out
-    assert "context_selector" in out
+    assert "selection_path" in out
     assert "Boundary:" in out
 
 
 def test_component_audit_json_is_valid(capsys):
-    assert seed_local.main(["--component-audit", "context_selector", "--json"]) == 0
+    assert seed_local.main(["--component-audit", "selection_path", "--json"]) == 0
     payload = json.loads(capsys.readouterr().out)
-    assert payload["component"] == "context_selector"
+    assert payload["component"] == "selection_path"
     assert payload["boundary"] == {
         "read_only": True,
         "writes_event_ledger": False,
@@ -26,15 +26,15 @@ def test_component_audit_json_is_valid(capsys):
 
 
 def test_component_audit_surfaces_definitions_references_and_tests():
-    audit = build_component_audit("context_selector")
+    audit = build_component_audit("selection_path")
     assert audit.definitions
-    assert any("context_selector" in path or "context_selection" in path for path in audit.definitions)
+    assert any("selection_path" in path for path in audit.definitions)
     assert audit.references
     assert any(path.startswith("tests/") for path in audit.tests)
 
 
 def test_component_audit_surfaces_consumers_or_absence_and_graph_absence():
-    audit = build_component_audit("context_selector")
+    audit = build_component_audit("selection_path")
     assert isinstance(audit.consumers, tuple)
     assert audit.operational_graph["observed"] in {True, False}
     text = format_component_audit(audit)
@@ -49,14 +49,14 @@ def test_component_audit_weak_evidence_is_unknown(tmp_path):
 
 
 def test_component_audit_emits_no_lifecycle_recommendation():
-    text = format_component_audit(build_component_audit("context_selector"))
+    text = format_component_audit(build_component_audit("selection_path"))
     lowered = text.lower()
     forbidden = ["recommend deletion", "recommend removal", "recommend replacement", "recommend reconnection", "recommend redesign", "deprecate this"]
     assert not any(term in lowered for term in forbidden)
 
 
 def test_component_audit_does_not_write_event_ledger_or_mutate_cluster():
-    audit = build_component_audit("context_selector")
+    audit = build_component_audit("selection_path")
     assert audit.boundary["writes_event_ledger"] is False
     assert audit.boundary["mutates_cluster"] is False
 

@@ -5,7 +5,6 @@
 Seed already performs selection in several read-only places, but the reason for
 selection is mostly implicit in code paths, ordering keys, projection fields, and
 budget traces. The current system can usually answer **what was selected**: a
-context packet section, a decision-context fact, a current fact, a representative
 support group, a stale fact view, a capability inventory entry, or an
 explanation belief.
 
@@ -131,17 +130,13 @@ excluded candidates.
 Rationale status: these helpers encode ordering rationale, but the rationale is
 implicit in sort keys rather than exposed as stable reason records.
 
-### DecisionContextView
 
-`build_decision_context_view(...)` builds a deterministic read-only context view
 from projected `State`, the Evidence Graph, Contradiction Detection, and
 Confidence Aggregation. It selects facts, issues, requirements, and
 capabilities, and carries projection metadata.
 
 Current selected outputs include:
 
-- `ContextFact` records;
-- `ContextIssue` records from contradictions and graph issues;
 - requirement views;
 - capability views;
 - summary counts;
@@ -152,9 +147,7 @@ Rationale status: the view exposes confidence, contradicted status,
 evidence-count, issue severity, and projection metadata. It does not preserve a
 candidate comparison record or an explicit selected-because reason.
 
-### select_context_facts
 
-`select_context_facts(...)` filters `FactConfidence` items. Unsupported facts are
 excluded by default unless `include_unsupported=True`. Selected facts are ordered
 by support presence, descending confidence, subject, predicate, stable object
 value, and fact ID.

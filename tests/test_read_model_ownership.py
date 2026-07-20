@@ -164,7 +164,6 @@ def test_existing_read_model_view_registrations_expose_consumable_cli_flags():
     assert "--current-requirements" in flags
     assert "--current-capabilities" in flags
     assert "--current-issues" in flags
-    assert "--decision-context" in flags
     assert all(registration.read_only for registration in READ_MODEL_VIEW_REGISTRATIONS)
 
 
