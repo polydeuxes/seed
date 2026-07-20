@@ -355,6 +355,19 @@ class StrictJSONDecisionParser:
         return Decision(**data)
 
 
+class ParsedDecisionProducer:
+    """DecisionProducer adapter around a text-generating model client."""
+
+    def __init__(
+        self, client: ModelClient, parser: StrictJSONDecisionParser | None = None
+    ) -> None:
+        self.client = client
+        self.parser = parser or StrictJSONDecisionParser()
+
+    def decide(self, decision_input: DecisionInputPacket) -> Decision:
+        return self.parser.parse(self.client.complete(decision_input))
+
+
 def _stable_json(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"))
 

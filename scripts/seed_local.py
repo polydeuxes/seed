@@ -202,6 +202,7 @@ from seed_runtime.contradictions import (
     build_contradiction_summary,
     build_contradictions,
 )
+from seed_runtime.decisions import DecisionValidator
 from seed_runtime.diagnostic_inventory import (
     diagnostic_inventory_json,
     diagnostic_surface_definition_json,
@@ -566,6 +567,7 @@ class LocalSeedApp:
     runtime: Runtime
     ledger: EventLedger
     projector: StateProjector
+    decision_input_composer: DecisionInputComposer
     model_client: IntentPromptModelClient | None
     workspace_id: str = DEFAULT_WORKSPACE
     session_id: str = DEFAULT_SESSION
@@ -990,7 +992,15 @@ def build_local_app(
     registry.load_manifest(REPO_ROOT / "toolkits/core/echo/toolkit.yaml")
     projector = StateProjector(ledger)
     decision_input_composer = DecisionInputComposer(registry)
-    runtime = Runtime(ledger, projector)
+    runtime = Runtime(
+        ledger,
+        projector,
+        decision_input_composer,
+        DecisionValidator(registry),
+        ToolExecutor(ledger, registry, projector),
+        ToolNeedService(ledger, projector),
+        max_decision_retries=max_decision_retries,
+    )
     return LocalSeedApp(
         runtime=runtime,
         ledger=ledger,
