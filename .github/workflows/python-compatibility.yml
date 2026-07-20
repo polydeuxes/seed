@@ -47,3 +47,12 @@ jobs:
         with:
           name: compatibility-failure-${{ matrix.python-version }}
           path: compatibility-pytest.log
+      - name: Archive branch checkout
+        if: matrix.python-version == '3.11'
+        run: tar --exclude=.git -czf branch-checkout.tar.gz .
+      - name: Upload branch checkout
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: branch-checkout
+          path: branch-checkout.tar.gz
