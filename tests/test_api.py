@@ -2,32 +2,20 @@ import ast
 from pathlib import Path
 
 from seed_runtime.api import SeedAPI
-from seed_runtime.context import DecisionInputComposer
-from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
-from seed_runtime.execution import ToolExecutor
 from seed_runtime.models import Decision, RuntimeResponse
 from seed_runtime.registry import ToolRegistry
-from seed_runtime.runtime import StaticDecisionProducer, Runtime
+from seed_runtime.runtime import Runtime
 from seed_runtime.state import StateProjector
-from seed_runtime.tool_needs import ToolNeedService
 
 
-def make_api(decision: Decision) -> tuple[SeedAPI, EventLedger, StaticDecisionProducer]:
+def make_api(decision: Decision) -> tuple[SeedAPI, EventLedger, Decision]:
     ledger = EventLedger()
     registry = ToolRegistry()
     registry.load_manifest("toolkits/core/echo/toolkit.yaml")
     projector = StateProjector(ledger)
-    provider = StaticDecisionProducer(decision)
-    runtime = Runtime(
-        ledger,
-        projector,
-        DecisionInputComposer(registry),
-        DecisionValidator(registry),
-        ToolExecutor(ledger, registry, projector),
-        ToolNeedService(ledger, projector),
-        provider,
-    )
+    provider = decision
+    runtime = Runtime(ledger, projector)
     return SeedAPI(runtime, projector, registry), ledger, provider
 
 
@@ -39,10 +27,8 @@ def test_post_user_message_answer_path_returns_runtime_response():
     result = api.post_user_message("ws", "ses", "hello")
 
     assert isinstance(result, RuntimeResponse)
-    assert result.kind == "answer"
-    assert result.message == "done"
-    assert provider.last_decision_input is not None
-    assert provider.last_decision_input.current_input["text"] == "hello"
+    assert result.kind == "unsupported"
+    assert result.payload["reason"] == "model_decision_authority_excised"
     input_event = ledger.list_events("ws")[0]
     assert input_event.kind == "input.user_message"
     assert input_event.session_id == "ses"
@@ -66,13 +52,10 @@ def test_post_user_message_request_tool_path_returns_runtime_response():
     result = api.post_user_message("ws", "ses", "what is the weather?")
 
     assert isinstance(result, RuntimeResponse)
-    assert result.kind == "tool_need"
-    assert result.message == "Recorded tool need weather_lookup."
-    assert result.payload["tool_need"]["capability"] == "weather_lookup"
+    assert result.kind == "unsupported"
     assert [event.kind for event in ledger.list_events("ws")] == [
         "input.user_message",
-        "model.decision.proposed",
-        "tool_need.created",
+        "runtime.decision_authority_unsupported",
     ]
 
 
