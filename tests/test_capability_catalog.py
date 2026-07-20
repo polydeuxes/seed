@@ -1,13 +1,10 @@
 from pathlib import Path
 
 from seed_runtime.capability_catalog import CapabilityCatalog
-from seed_runtime.context import DecisionInputComposer
-from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
-from seed_runtime.execution import ToolExecutor
 from seed_runtime.models import Decision
 from seed_runtime.registry import ToolRegistry
-from seed_runtime.runtime import StaticDecisionProducer, Runtime
+from seed_runtime.runtime import Runtime
 from seed_runtime.state import StateProjector
 from seed_runtime.tool_needs import ToolNeedService
 
@@ -81,84 +78,6 @@ def test_returns_no_recommendations_for_unknown_capability():
     assert CapabilityCatalog.load("capability_catalog").recommend_for(need) == []
 
 
-def test_runtime_tool_need_response_includes_recommendations_without_registering_tools():
-    ledger = EventLedger()
-    registry = ToolRegistry()
-    registry.load_manifest("toolkits/core/echo/toolkit.yaml")
-    projector = StateProjector(ledger)
-    runtime = Runtime(
-        ledger,
-        projector,
-        DecisionInputComposer(registry),
-        DecisionValidator(registry),
-        ToolExecutor(ledger, registry, projector),
-        ToolNeedService(ledger, projector),
-        StaticDecisionProducer(
-            Decision(
-                kind="request_tool",
-                reason="missing weather capability",
-                tool_need={
-                    "name": "weather_lookup",
-                    "summary": "Look up the current weather for a location",
-                    "capability": "weather_lookup",
-                },
-            )
-        ),
-        capability_catalog=CapabilityCatalog.load("capability_catalog"),
-    )
-
-    response = runtime.handle_user_message("ws", "ses", "what is the weather?")
-
-    assert response.kind == "tool_need"
-    assert response.payload["tool_need"]["capability"] == "weather_lookup"
-    assert [
-        recommendation["provider"]
-        for recommendation in response.payload["recommendations"]
-    ] == ["open_meteo", "wttr"]
-    assert set(response.payload["recommendations"][0]) == {
-        "provider",
-        "score",
-        "reasons",
-    }
-    assert isinstance(response.payload["recommendations"][0]["score"], int)
-    assert response.payload["recommendations"][0]["reasons"]
-    assert [tool.name for tool in registry.list_tools()] == ["echo"]
-    assert projector.project("ws").tools == {}
-
-
-def test_runtime_tool_need_response_uses_empty_recommendations_for_unknown_capability():
-    ledger = EventLedger()
-    registry = ToolRegistry()
-    registry.load_manifest("toolkits/core/echo/toolkit.yaml")
-    projector = StateProjector(ledger)
-    runtime = Runtime(
-        ledger,
-        projector,
-        DecisionInputComposer(registry),
-        DecisionValidator(registry),
-        ToolExecutor(ledger, registry, projector),
-        ToolNeedService(ledger, projector),
-        StaticDecisionProducer(
-            Decision(
-                kind="request_tool",
-                reason="missing custom workflow",
-                tool_need={
-                    "name": "custom_workflow",
-                    "summary": "Run a custom workflow that is not in the catalog",
-                    "capability": "custom_workflow",
-                },
-            )
-        ),
-        capability_catalog=CapabilityCatalog.load("capability_catalog"),
-    )
-
-    response = runtime.handle_user_message("ws", "ses", "run custom workflow")
-
-    assert response.kind == "tool_need"
-    assert response.payload["tool_need"]["capability"] == "custom_workflow"
-    assert response.payload["recommendations"] == []
-    assert [tool.name for tool in registry.list_tools()] == ["echo"]
-    assert projector.project("ws").tools == {}
 
 
 def test_loads_yaml_catalog_entries_from_supplied_directory(tmp_path: Path):

@@ -12,10 +12,10 @@ from seed_runtime.context_views import (
     DecisionContextView,
 )
 from seed_runtime.intent_classifier import (
-    DecisionBuilder,
+    RuntimeLoopIntentDecisionBuilder,
     FakeIntentClassifier,
     IntentClassification,
-    IntentDecisionProducer,
+    RuntimeLoopIntentProducer,
     IntentPromptModelClient,
     StrictJSONIntentParser,
     TextIntentClassifier,
@@ -59,7 +59,7 @@ def test_echo_prefix_uses_deterministic_fallback_without_model():
             arguments={},
         )
     )
-    model = IntentDecisionProducer(classifier)
+    model = RuntimeLoopIntentProducer(classifier)
 
     decision = model.decide(context_for("echo hello"))
 
@@ -77,7 +77,7 @@ def test_informational_questions_prefer_answer_without_requesting_tools():
             arguments={"name": "what_is_docker"},
         )
     )
-    model = IntentDecisionProducer(classifier)
+    model = RuntimeLoopIntentProducer(classifier)
 
     for text, topic in (
         ("What is Docker?", "Docker"),
@@ -94,7 +94,7 @@ def test_informational_questions_prefer_answer_without_requesting_tools():
 
 
 def test_external_action_search_and_observation_requests_are_missing_tool():
-    model = IntentDecisionProducer()
+    model = RuntimeLoopIntentProducer()
 
     examples = (
         ("What is the weather in Jacksonville?", "weather_lookup"),
@@ -122,7 +122,7 @@ def test_missing_tool_intent_requests_install_docker_tool():
             },
         )
     )
-    model = IntentDecisionProducer(classifier)
+    model = RuntimeLoopIntentProducer(classifier)
 
     decision = model.decide(context_for("install docker"))
 
@@ -135,7 +135,7 @@ def test_missing_tool_intent_requests_install_docker_tool():
 
 
 def test_missing_tool_empty_arguments_derive_install_need_from_input():
-    decision = DecisionBuilder().build(
+    decision = RuntimeLoopIntentDecisionBuilder().build(
         context_for("install docker"),
         IntentClassification(
             intent="missing_tool",
@@ -153,7 +153,7 @@ def test_missing_tool_empty_arguments_derive_install_need_from_input():
 
 
 def test_missing_tool_empty_arguments_recognize_weather_lookup():
-    decision = DecisionBuilder().build(
+    decision = RuntimeLoopIntentDecisionBuilder().build(
         context_for("what is the weather in Jacksonville?"),
         IntentClassification(
             intent="missing_tool",
@@ -171,7 +171,7 @@ def test_missing_tool_empty_arguments_recognize_weather_lookup():
 
 
 def test_missing_tool_empty_arguments_use_broad_categories_and_fallback():
-    builder = DecisionBuilder()
+    builder = RuntimeLoopIntentDecisionBuilder()
 
     setup_decision = builder.build(
         context_for("setup"),
@@ -204,7 +204,7 @@ def test_missing_tool_empty_arguments_use_broad_categories_and_fallback():
 
 
 def test_missing_tool_examples_normalize_to_catalog_capabilities():
-    builder = DecisionBuilder()
+    builder = RuntimeLoopIntentDecisionBuilder()
 
     examples = (
         ("restart web_service", "service_management"),
@@ -226,7 +226,7 @@ def test_missing_tool_examples_normalize_to_catalog_capabilities():
 
 
 def test_clarify_intent_asks_question_for_unknown_vague_input():
-    decision = DecisionBuilder().build(
+    decision = RuntimeLoopIntentDecisionBuilder().build(
         context_for("unknown vague input"),
         IntentClassification(
             intent="clarify",

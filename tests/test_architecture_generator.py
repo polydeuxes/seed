@@ -40,19 +40,11 @@ def test_architecture_graph_records_runtime_owner_boundaries():
     edges = graph["edges"]
     assert {
         "from": "Runtime",
-        "to": "ToolExecutor",
-        "label": "call_tool only",
-        "path": "call_tool",
-    } in edges
-    assert {
-        "from": "Runtime",
-        "to": "ToolNeedService",
-        "label": "request_tool",
-        "path": "request_tool",
+        "to": "StateProjector",
+        "label": "projects current state for deterministic callers",
     } in edges
     assert not any(
         edge["from"] == "Runtime"
-        and edge["to"] == "ToolExecutor"
-        and edge.get("path") == "request_tool"
+        and edge["to"] in {"ToolExecutor", "ToolNeedService"}
         for edge in edges
     )
