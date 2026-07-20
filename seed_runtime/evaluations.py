@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Iterable
+from typing import Any, Iterable, Protocol
 
 from seed_runtime.context import DecisionInputComposer
 from seed_runtime.decisions import DecisionValidator
@@ -20,9 +20,14 @@ from seed_runtime.models import (
     utc_now,
 )
 from seed_runtime.registry import ToolRegistry
-from seed_runtime.runtime import DecisionProducer
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
+
+
+class DecisionProducer(Protocol):
+    """Evaluation-local producer residue; canonical Runtime no longer consumes this."""
+
+    def decide(self, decision_input: DecisionInputPacket) -> Decision: ...
 
 
 @dataclass(frozen=True)

@@ -92,10 +92,68 @@ A model-produced `Decision` could initiate:
 ## Implementation changes
 
 - Replaced the old routing runtime with an input boundary that records `input.user_message`, emits `runtime.decision_authority_unsupported`, and returns an unsupported response rather than asking any producer to decide.
-- Left `DecisionProducer` as an import-only compatibility protocol and made `StaticDecisionProducer.decide(...)` explicitly unsupported.
-- Kept the `Runtime.__init__` `decision_producer` keyword as inert compatibility residue; it is ignored and cannot restore routing authority.
-- Updated the canonical local app constructor so it no longer creates an `IntentPromptModelClient`, `TextIntentClassifier`, or `IntentDecisionProducer`, and no longer passes a producer to `Runtime`.
-- Added focused tests proving model-shaped `Decision` artifacts are inert at the runtime boundary and that the static compatibility alias cannot restore `decide(...)` movement.
+- Narrowed `Runtime.__init__` to the surviving executable boundary: `EventLedger` plus `StateProjector`. The constructor no longer accepts or stores `DecisionInputComposer`, `DecisionValidator`, `ToolExecutor`, `ToolNeedService`, `DecisionProducer`, `CapabilityCatalog`, or retry configuration.
+- Updated `LocalSeedApp` and `build_local_app(...)` as one boundary: the app no longer has `decision_input_composer` or `model_client`, and the builder no longer creates an intent prompt client, classifier, registry-backed decision composer, validator, executor, tool-need service, or producer for the default runtime path.
+- Deleted `LocalSeedApp.raw(...)` and `LocalSeedApp.create_action_plan(...)` because both depended on the withdrawn model/tool-agent corridor.
+- Removed the `--raw`, `--raw-only`, `--plan`, `--model`, `--endpoint`, and `--timeout` local CLI options from the canonical message path. Existing explicit action-plan lifecycle commands remain where they are directly invoked by flags such as `--preconditions`, `--proposal`, `--handoff`, and plan acceptance/approval/rejection flags.
+- Deleted `DecisionBuilder` and `IntentDecisionProducer` from `seed_runtime.intent_classifier`; their executable purpose was to turn intent/model output into authoritative `Decision` artifacts.
+- Kept intent prompt rendering, strict intent JSON parsing, and text intent classification as still-imported parsing residue only. They are not consumed by canonical `Runtime` or `LocalSeedApp`.
+- Regenerated the architecture graph so the `Runtime` node line number reflects the narrowed runtime implementation.
+
+## What was actually deleted in this repair
+
+- The `LocalSeedApp.raw(...)` raw model-preview path.
+- The `LocalSeedApp.create_action_plan(...)` recommendation-to-plan side path.
+- Canonical CLI flags for raw model output, model endpoint/name/timeout, and automatic top-recommendation plan printing from a message response.
+- Runtime constructor dependencies that allowed callers to pass model-decision, validation, tool execution, tool-need, capability, or retry collaborators into the canonical runtime boundary.
+- `DecisionProducer` and `StaticDecisionProducer` from `seed_runtime.runtime`.
+- `DecisionBuilder` and `IntentDecisionProducer` from `seed_runtime.intent_classifier`.
+- Stale tests whose only live proof was model-shaped answer/question/refusal/tool-need/tool-call/state-patch routing through `Runtime`.
+
+## Executable CLI surface that remains
+
+- `python scripts/seed_local.py --help` constructs the parser and describes the local CLI as a deterministic input boundary, not an Ollama or intent-classification runtime.
+- `python scripts/seed_local.py hello` constructs `LocalSeedApp`, records the input boundary events, prints `No Seed-owned runtime decision authority is configured for free-text input.`, and exits without traceback.
+- The no-message shell path constructs `LocalSeedApp`, accepts operator input, returns the same deterministic unsupported response, and exits on `exit`/EOF.
+- Explicit non-message operational/read-only surfaces remain directly flag-invoked where tests still cover them, including fact/observation ingestion, architecture generation, diagnostics, read models, and explicit action-plan lifecycle commands.
+
+## Renamed residue also deleted
+
+The surviving code no longer contains the old intent-to-decision artifacts under either their old names or a `RuntimeLoop`-branded replacement. No alias or wrapper was created for `DecisionBuilder` or `IntentDecisionProducer`.
+
+## Tool-shaped residue that remains
+
+Tool-shaped modules remain still executable, still imported, or still directly consumed outside the deleted free-text model-decision corridor:
+
+- `ToolRegistry`, `ToolValidationService`, `ToolExecutionPolicyService`, and `ToolExecutor` remain independently tested service substrates.
+- `ToolNeedService`, `CapabilityCatalog`, `RecommendationRanker`, and `ToolRecommendationService` remain as directly invoked substrate/residue tests and action/handoff metadata support.
+- `ActionPlanService` and `HandoffPlanService` remain reachable through explicit CLI lifecycle flags, not through a free-text model decision.
+- `DecisionValidator`, `Decision`, prompt/model-client adapters, and the evaluation harness remain unresolved compatibility or experiment residue unless directly invoked by their own tests.
+
+This report does not describe those retained artifacts as independently lawful Seed ontology; it records only that they are still executable, still imported, still directly consumed, or unresolved.
+
+## What remains unverified
+
+- The repository still contains historical documents and compatibility tests for model-client/evaluation/parsing surfaces. This repair did not globally rewrite those broad reports.
+- The lawful future boundary for LLM testimony remains unresolved.
+- The Prometheus observation-inventory predicate failures remain independent of this PR and were not repaired here.
+- Tool-shaped residue requires a later bounded pass to classify each remaining direct consumer.
+
+## CLI transcript captured for next frontier
+
+Command:
+
+```bash
+printf 'hello\nexit\n' | python scripts/seed_local.py
+```
+
+Exact output captured:
+
+```text
+Seed local shell. Press Ctrl-D or type 'exit' to quit.
+seed> No Seed-owned runtime decision authority is configured for free-text input.
+seed>
+```
 
 ## Removed routes
 
@@ -131,33 +189,47 @@ No broad new external-grammar framework was added. Existing model/provider adapt
 
 | Public symbol or behavior | Previous authority | Compatibility status | Consequence |
 | --- | --- | --- | --- |
-| `Runtime(..., decision_producer=...)` | Producer output controlled runtime routing | Keyword remains inert; `runtime.decision_producer is None` | Callers receive unsupported free-text runtime response instead of model-selected movement. |
-| `StaticDecisionProducer.decide(...)` | Test helper could feed authoritative decisions | Alias remains, but `decide` raises `RuntimeError` | Tests/callers must stop using model-shaped Decisions as runtime authority. |
-| `build_local_app(...)` model-backed setup | Installed intent-classifier-backed producer | Constructor still returns `LocalSeedApp`, but with `model_client=None` | Local free-text app no longer calls an LLM/provider for movement. |
+| `Runtime(..., decision_producer=...)` and other old collaborators | Producer output controlled runtime routing | Removed from the canonical constructor | Callers must construct `Runtime(ledger, projector)` and receive unsupported free-text responses. |
+| `DecisionProducer` / `StaticDecisionProducer` from `seed_runtime.runtime` | Test/helper path could feed authoritative decisions | Removed | Tests/callers must stop using model-shaped Decisions as runtime authority. |
+| `DecisionBuilder` / `IntentDecisionProducer` | Intent/model output became authoritative `Decision` artifacts | Removed | Intent parsing residue can no longer build runtime routing decisions. |
+| `LocalSeedApp.raw(...)` and raw-model CLI flags | Previewed model output and bypassed normal runtime | Removed | The local CLI no longer exposes raw model output. |
+| `LocalSeedApp.create_action_plan(...)` and message `--plan` | Derived a plan from a tool-need/recommendation response | Removed | Plans remain only through explicit lifecycle surfaces, not default message routing. |
 | `model.decision.proposed` in canonical runtime | Model event caused downstream routing | No longer emitted by `Runtime` | Trace/tests relying on that event must migrate to non-LLM explicit services or unsupported boundary records. |
 
 ## Test changes
 
-Added `tests/test_internal_llm_authority_excision.py` with proof that answer, question, refusal, request_tool, call_tool, and propose_state_patch `Decision` objects supplied through the removed boundary produce only input and unsupported-boundary events.
+- Replaced runtime/API/CLI free-text routing tests with narrow input-boundary proofs.
+- Deleted stale model-routing assertions in tool intent, tool validation, capability catalog, tool recommendation, architecture invariant, runtime-loop, and state-patch tests where their only live proof was the removed `Runtime` corridor.
+- Retained deterministic service tests for tool validation, state patch application, capability catalog loading, and tool recommendation ranking where they are invoked directly without runtime/model authority assumptions.
+- Retained intent prompt/parser tests without `DecisionBuilder` or `IntentDecisionProducer`.
 
 ## Tests executed
 
-- `python -m black seed_runtime/runtime.py scripts/seed_local.py tests/test_internal_llm_authority_excision.py`
-- `pytest -q tests/test_internal_llm_authority_excision.py`
-- `python -m scripts.seed_local --question-surface-inventory --json`
-- `python - <<'PY' ... import seed_runtime ... PY`
-- `rg -n "decision_producer\.decide\(|self\.decision_producer\.decide\(|model\.decision\.proposed" seed_runtime scripts tests/test_internal_llm_authority_excision.py -S`
+- `python scripts/seed_local.py --help`
+- `printf 'hello\nexit\n' | python scripts/seed_local.py`
+- `python -m compileall -q seed_runtime scripts`
+- `pytest -q tests/test_internal_llm_authority_excision.py tests/test_seed_local_script.py tests/test_api.py tests/test_runtime_loop.py`
+- `pytest -q tests/test_intent_classifier.py`
+- `pytest -q tests/test_architecture_generator.py`
+- `pytest -q tests/test_architecture_invariants.py tests/test_tool_validation.py tests/test_tool_recommendations.py tests/test_state_patches.py`
+- `pytest -q` (fails only on existing Prometheus/observation-inventory predicate expectations and was not repaired in this PR)
 
-## Files changed
+## Files changed in this repair
 
 - `seed_runtime/runtime.py`
 - `scripts/seed_local.py`
+- `seed_runtime/intent_classifier.py`
+- `seed_runtime/evaluations.py`
+- `docs/generated/architecture/architecture_graph.json`
 - `tests/test_internal_llm_authority_excision.py`
+- `tests/test_seed_local_script.py`
+- `tests/test_api.py`
+- `tests/test_runtime_loop.py`
+- `tests/test_intent_classifier.py`
+- `tests/test_evaluations.py`
+- `tests/test_architecture_generator.py`
+- service/residue tests narrowed after deleting stale runtime assertions
 - `internal_llm_authority_excision_campaign_001.md`
-
-## LOC delta
-
-Final staged delta before commit: 398 insertions and 355 deletions across four files. Per-file numstat: `internal_llm_authority_excision_campaign_001.md` +207/-0, `scripts/seed_local.py` +56/-33, `seed_runtime/runtime.py` +43/-322, and `tests/test_internal_llm_authority_excision.py` +92/-0.
 
 ## Required questions answered
 

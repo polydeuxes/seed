@@ -1,31 +1,8 @@
 import pytest
 
-from seed_runtime.context import DecisionInputComposer
-from seed_runtime.decisions import DecisionValidator
 from seed_runtime.events import EventLedger
-from seed_runtime.execution import ToolExecutor
-from seed_runtime.models import Decision
-from seed_runtime.registry import ToolRegistry
-from seed_runtime.runtime import StaticDecisionProducer, Runtime
 from seed_runtime.state import StateProjector
 from seed_runtime.state_patches import StatePatchError, StatePatchService
-from seed_runtime.tool_needs import ToolNeedService
-
-
-def make_runtime(decision):
-    ledger = EventLedger()
-    registry = ToolRegistry()
-    projector = StateProjector(ledger)
-    runtime = Runtime(
-        ledger,
-        projector,
-        DecisionInputComposer(registry),
-        DecisionValidator(registry),
-        ToolExecutor(ledger, registry, projector),
-        ToolNeedService(ledger, projector),
-        StaticDecisionProducer(decision),
-    )
-    return runtime, ledger
 
 
 def test_state_patch_service_applies_minimum_supported_ops():
@@ -137,76 +114,6 @@ def test_state_patch_service_rejects_unknown_op():
         raise AssertionError("expected StatePatchError")
 
     assert ledger.list_events("ws") == []
-
-
-def test_runtime_routes_propose_state_patch_to_state_updated_response():
-    runtime, ledger = make_runtime(
-        Decision(
-            kind="propose_state_patch",
-            reason="remember host status",
-            state_patch={
-                "ops": [
-                    {
-                        "op": "upsert_entity",
-                        "entity": {
-                            "id": "ent_node_1",
-                            "kind": "host",
-                            "name": "example_host",
-                        },
-                    },
-                    {
-                        "op": "create_goal",
-                        "goal": {
-                            "id": "goal_check_ssh",
-                            "summary": "Check SSH status on example_host",
-                        },
-                    },
-                ]
-            },
-        )
-    )
-
-    response = runtime.handle_user_message("ws", "ses", "remember example_host")
-
-    assert response.kind == "state_updated"
-    assert response.message == "Applied 2 state patch operation(s)."
-    assert [event.kind for event in ledger.list_events("ws")] == [
-        "input.user_message",
-        "model.decision.proposed",
-        "entity.upserted",
-        "goal.created",
-    ]
-    state = runtime.projector.project("ws")
-    assert state.entities["ent_node_1"].name == "example_host"
-    assert state.goals["goal_check_ssh"].summary == "Check SSH status on example_host"
-
-
-def test_runtime_routes_state_patch_service_rejection_to_invalid_response():
-    invalid_patch = {"ops": [{"op": "unknown_op"}]}
-    runtime, ledger = make_runtime(
-        Decision(
-            kind="propose_state_patch",
-            reason="remember host status",
-            state_patch=invalid_patch,
-        )
-    )
-
-    response = runtime.handle_user_message("ws", "ses", "remember example_host")
-
-    assert response.kind == "invalid_state_patch"
-    assert response.message == "State patch failed validation."
-    assert response.payload == {"errors": ["unsupported state patch op 'unknown_op'"]}
-    events = ledger.list_events("ws")
-    assert [event.kind for event in events] == [
-        "input.user_message",
-        "model.decision.proposed",
-        "state.patch.rejected",
-    ]
-    rejected_event = events[-1]
-    assert rejected_event.payload == {
-        "error": "unsupported state patch op 'unknown_op'",
-        "state_patch": invalid_patch,
-    }
 
 
 def test_state_patch_service_rejects_non_list_ops():

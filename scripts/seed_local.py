@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local Seed runtime CLI backed by Ollama-compatible intent classification."""
+"""Local Seed runtime CLI with a deterministic input boundary."""
 
 from __future__ import annotations
 
@@ -125,7 +125,6 @@ from seed_runtime.single_capability_state_projection import (
     single_capability_state_projection_json,
 )
 from seed_runtime.verification_evidence import build_verification_evidence
-from seed_runtime.context import DecisionInputComposer
 from seed_runtime.context_views import (
     DecisionContextView,
     build_decision_context_view,
@@ -202,7 +201,6 @@ from seed_runtime.contradictions import (
     build_contradiction_summary,
     build_contradictions,
 )
-from seed_runtime.decisions import DecisionValidator
 from seed_runtime.diagnostic_inventory import (
     diagnostic_inventory_json,
     diagnostic_surface_definition_json,
@@ -373,7 +371,6 @@ from seed_runtime.facts import (
     is_fact_expired,
     is_measurement_predicate,
 )
-from seed_runtime.execution import ToolExecutor
 from seed_runtime.execution_status import (
     CliExecutionStatusConsumer,
     ExecutionStatusConsumer,
@@ -444,8 +441,7 @@ from seed_runtime.integrity_summary import (
     ProjectionIntegritySummary,
     build_projection_integrity_summary,
 )
-from seed_runtime.intent_classifier import IntentPromptModelClient
-from seed_runtime.models import Event, Observation, ToolNeed, ToolSpec, utc_now
+from seed_runtime.models import Event, Observation, ToolSpec, utc_now
 from seed_runtime.observation_normalizers import (
     EndpointAliasNormalizer,
     EndpointIdentityNormalizer,
@@ -453,6 +449,7 @@ from seed_runtime.observation_normalizers import (
 )
 from seed_runtime.predicate_catalog import PredicateCatalog
 from seed_runtime.predicate_normalizers import PredicateNormalizer
+from seed_runtime.registry import ToolRegistry
 from seed_runtime.projection_store import (
     ProjectionStore,
     SQLiteProjectionStore,
@@ -483,7 +480,6 @@ from seed_runtime.ownership_discrepancies import (
     format_ownership_discrepancies,
     ownership_discrepancies_json,
 )
-from seed_runtime.registry import ToolRegistry
 from seed_runtime.rule_inventory import collect_rule_inventory
 from seed_runtime.runtime import Runtime
 from seed_runtime.runtime_trace import RuntimeTrace, load_runtime_trace
@@ -518,10 +514,7 @@ from seed_runtime.state_views import (
     build_requirement_view,
     build_state_summary,
 )
-from seed_runtime.tool_needs import ToolNeedService
 
-DEFAULT_ENDPOINT = "http://localhost:11434/api/generate"
-DEFAULT_MODEL = "qwen2.5:3b"
 DEFAULT_WORKSPACE = "local"
 DEFAULT_SESSION = "local"
 
@@ -567,8 +560,6 @@ class LocalSeedApp:
     runtime: Runtime
     ledger: EventLedger
     projector: StateProjector
-    decision_input_composer: DecisionInputComposer
-    model_client: IntentPromptModelClient | None
     workspace_id: str = DEFAULT_WORKSPACE
     session_id: str = DEFAULT_SESSION
 
@@ -582,63 +573,6 @@ class LocalSeedApp:
                 to_plain(event) for event in self.ledger.list(self.workspace_id)
             ],
         }
-
-    def create_action_plan(self, result: dict[str, Any]) -> dict[str, Any] | None:
-        """Create a safe, text-only plan for the top tool recommendation, if any."""
-
-        response = result.get("response")
-        if not isinstance(response, dict) or response.get("kind") != "tool_need":
-            return None
-
-        payload = response.get("payload")
-        if not isinstance(payload, dict):
-            return None
-
-        tool_need_payload = payload.get("tool_need")
-        recommendations = payload.get("recommendations")
-        if not isinstance(tool_need_payload, dict):
-            return None
-        if not isinstance(recommendations, list) or not recommendations:
-            return None
-
-        top_recommendation = recommendations[0]
-        if not isinstance(top_recommendation, dict):
-            return None
-        top_provider = top_recommendation.get("provider")
-        if not isinstance(top_provider, str) or not top_provider:
-            return None
-
-        tool_need = ToolNeed(**tool_need_payload)
-        state = self.projector.project(self.workspace_id)
-        ranked_recommendations = self.runtime.recommendation_ranker.rank(
-            tool_need.capability,
-            self.runtime.capability_catalog.recommend_for(tool_need),
-            state,
-        )
-        full_recommendation = next(
-            (
-                recommendation
-                for recommendation in ranked_recommendations
-                if recommendation.provider == top_provider
-            ),
-            None,
-        )
-        if full_recommendation is None:
-            return None
-
-        plan = ActionPlanService(self.ledger).create_plan(
-            tool_need,
-            full_recommendation,
-            state,
-            session_id=self.session_id,
-            causation_id=tool_need.requested_by_event_id,
-        )
-        plain_plan = to_plain(plan)
-        payload["action_plan_id"] = plan.id
-        result["events"] = [
-            to_plain(event) for event in self.ledger.list(self.workspace_id)
-        ]
-        return plain_plan
 
     def seed_facts(self, facts: list[DevFactSeed]) -> list[Fact]:
         """Ingest local development fact shorthand through observations."""
@@ -682,20 +616,6 @@ class LocalSeedApp:
             session_id=self.session_id,
         )
 
-    def raw(self, text: str) -> str:
-        input_event = Event(
-            id=new_id("evt"),
-            kind="input.user_message",
-            workspace_id=self.workspace_id,
-            actor="user",
-            payload={"text": text},
-            session_id=self.session_id,
-        )
-        state = self.projector.project(self.workspace_id)
-        decision_input = self.decision_input_composer.compose(
-            self.workspace_id, self.session_id, input_event, state
-        )
-        return self.model_client.complete(decision_input)
 
 
 def seed_dev_facts(
@@ -975,12 +895,8 @@ def seed_dev_registered_providers(
 
 def build_local_app(
     *,
-    endpoint: str = DEFAULT_ENDPOINT,
-    model: str = DEFAULT_MODEL,
-    timeout_seconds: float = 30.0,
     workspace_id: str = DEFAULT_WORKSPACE,
     session_id: str = DEFAULT_SESSION,
-    max_decision_retries: int = 1,
     database_path: str | None = None,
 ) -> LocalSeedApp:
     """Construct a local Seed runtime without model-backed decision authority."""
@@ -988,25 +904,12 @@ def build_local_app(
     ledger: EventLedger = (
         SQLiteEventLedger(database_path) if database_path else EventLedger()
     )
-    registry = ToolRegistry()
-    registry.load_manifest(REPO_ROOT / "toolkits/core/echo/toolkit.yaml")
     projector = StateProjector(ledger)
-    decision_input_composer = DecisionInputComposer(registry)
-    runtime = Runtime(
-        ledger,
-        projector,
-        decision_input_composer,
-        DecisionValidator(registry),
-        ToolExecutor(ledger, registry, projector),
-        ToolNeedService(ledger, projector),
-        max_decision_retries=max_decision_retries,
-    )
+    runtime = Runtime(ledger, projector)
     return LocalSeedApp(
         runtime=runtime,
         ledger=ledger,
         projector=projector,
-        decision_input_composer=decision_input_composer,
-        model_client=None,
         workspace_id=workspace_id,
         session_id=session_id,
     )
@@ -1020,7 +923,7 @@ def _confidence_arg(value: str) -> float | str:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run Seed locally with Ollama /api/generate intent classification.",
+        description="Run Seed locally with a deterministic input boundary.",
         epilog=(
             "Examples:\n"
             "  python scripts/seed_local.py --fact web_service host example_host "
@@ -1073,7 +976,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--db",
         help=(
             "SQLite event ledger path for sharing local state across runs; "
-            "use this with state/query commands; --plan lifecycle side paths are experimental/legacy"
+            "use this with state/query commands and explicit action-plan lifecycle flags"
         ),
     )
     parser.add_argument(
@@ -1097,25 +1000,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--events-only",
         action="store_true",
         help="list persisted event summaries and exit",
-    )
-    parser.add_argument(
-        "--raw",
-        action="store_true",
-        help="print raw model output before running the normal runtime",
-    )
-    parser.add_argument(
-        "--raw-only",
-        action="store_true",
-        help="print raw model output and exit without running the runtime",
-    )
-    parser.add_argument(
-        "--plan",
-        action="store_true",
-        help=(
-            "experimental/legacy side path: when a tool need has ranked "
-            "recommendations, print a safe, non-executable plan for the top "
-            "recommendation; not Core MVP runtime routing"
-        ),
     )
     parser.add_argument(
         "--preconditions",
@@ -1717,15 +1601,6 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         default=60.0,
         help="soft maximum evaluation seconds before rendering partial results (default: 60)",
-    )
-    parser.add_argument("--model", default=DEFAULT_MODEL, help="Ollama model name")
-    parser.add_argument(
-        "--endpoint",
-        default=DEFAULT_ENDPOINT,
-        help="Ollama-compatible generate endpoint",
-    )
-    parser.add_argument(
-        "--timeout", type=float, default=30.0, help="model request timeout in seconds"
     )
     parser.add_argument("--workspace", default=DEFAULT_WORKSPACE, help="workspace id")
     parser.add_argument("--session", default=DEFAULT_SESSION, help="session id")
@@ -6692,11 +6567,7 @@ def run_http(app: LocalSeedApp, host: str, port: int) -> None:
                 text = payload.get("message", payload.get("text"))
                 if not isinstance(text, str) or not text.strip():
                     raise ValueError("POST JSON requires non-empty 'message' or 'text'")
-                result = app.raw(text) if payload.get("raw") else app.run(text)
-                if isinstance(result, str):
-                    self._write_json(200, {"response": result, "events": []})
-                else:
-                    self._write_json(200, result)
+                self._write_json(200, app.run(text))
             except Exception as exc:  # keep local dev server dependency-light
                 self._write_json(500, {"error": str(exc)})
 
@@ -6732,10 +6603,7 @@ def run_http(app: LocalSeedApp, host: str, port: int) -> None:
 def run_shell(
     app: LocalSeedApp,
     *,
-    raw: bool = False,
-    raw_only: bool = False,
     events: bool = False,
-    plan: bool = False,
 ) -> None:
     print("Seed local shell. Press Ctrl-D or type 'exit' to quit.", file=sys.stderr)
     while True:
@@ -6748,20 +6616,8 @@ def run_shell(
             return
         if not text:
             continue
-        if raw_only:
-            print(app.raw(text))
-            continue
-        raw_output = app.raw(text) if raw else None
         result = app.run(text)
-        action_plan = app.create_action_plan(result) if plan else None
-        print(
-            format_cli_output(
-                result,
-                include_events=events,
-                raw_output=raw_output,
-                action_plan=action_plan,
-            )
-        )
+        print(format_cli_output(result, include_events=events))
 
 
 def format_predicate_catalog(catalog: PredicateCatalog) -> str:
@@ -8459,9 +8315,6 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     app = build_local_app(
-        endpoint=args.endpoint,
-        model=args.model,
-        timeout_seconds=args.timeout,
         workspace_id=args.workspace,
         session_id=args.session,
         database_path=args.db,
@@ -8474,25 +8327,11 @@ def main(argv: list[str] | None = None) -> int:
 
     message = " ".join(args.message).strip()
     if message:
-        if args.raw_only:
-            print(app.raw(message))
-            return 0
-        raw_output = app.raw(message) if args.raw else None
         result = app.run(message)
-        action_plan = app.create_action_plan(result) if args.plan else None
-        print(
-            format_cli_output(
-                result,
-                include_events=args.events,
-                raw_output=raw_output,
-                action_plan=action_plan,
-            )
-        )
+        print(format_cli_output(result, include_events=args.events))
         return 0
 
-    run_shell(
-        app, raw=args.raw, raw_only=args.raw_only, events=args.events, plan=args.plan
-    )
+    run_shell(app, events=args.events)
     return 0
 
 

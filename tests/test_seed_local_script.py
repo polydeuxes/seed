@@ -10,7 +10,6 @@ from seed_runtime.models import ToolNeed
 from seed_runtime.recommendation_ranker import RankedRecommendation
 from seed_runtime.state import State
 
-from seed_runtime.intent_classifier import IntentDecisionProducer, IntentPromptModelClient
 from seed_runtime.runtime import Runtime
 
 SCRIPT_PATH = Path("scripts/seed_local.py")
@@ -255,95 +254,30 @@ def test_cli_state_summary_rejects_precomputed_storage_topology_counts():
     _assert_default_state_summary_has_no_storage_detail(output)
 
 
-def test_build_local_app_uses_intent_classifier_path_and_loads_echo_toolkit():
+def test_build_local_app_constructs_without_model_decision_corridor():
     seed_local = load_seed_local_module()
 
-    app = seed_local.build_local_app(model="qwen2.5:3b", timeout_seconds=12.0)
+    app = seed_local.build_local_app()
 
-    assert isinstance(app.model_client, IntentPromptModelClient)
     assert isinstance(app.runtime, Runtime)
-    assert isinstance(app.runtime.decision_producer, IntentDecisionProducer)
-    assert [tool.name for tool in app.decision_input_composer.registry.list_tools()] == [
-        "echo"
-    ]
-    assert app.model_client.transport.extra_payload == {
-        "model": "qwen2.5:3b",
-        "stream": False,
-        "format": "json",
-    }
-    assert app.model_client.transport.url == "http://localhost:11434/api/generate"
-    assert app.model_client.transport.timeout_seconds == 12.0
+    assert not hasattr(app, "decision_input_composer")
+    assert not hasattr(app, "model_client")
+    assert not hasattr(app.runtime, "decision_producer")
 
 
-def test_one_shot_echo_uses_deterministic_fallback_without_ollama():
+def test_one_shot_input_returns_unsupported_boundary_response():
     seed_local = load_seed_local_module()
     app = seed_local.build_local_app()
 
-    result = app.run("echo hello")
+    result = app.run("hello")
 
-    assert result["response"]["kind"] == "tool_result"
-    assert result["response"]["payload"]["output"]["message"] == "hello"
+    assert result["response"]["kind"] == "unsupported"
+    assert result["response"]["payload"]["reason"] == "model_decision_authority_excised"
     assert [event["kind"] for event in result["events"]] == [
         "input.user_message",
-        "model.decision.proposed",
-        "tool.call.started",
-        "tool.call.completed",
-        "evidence.observed",
+        "runtime.decision_authority_unsupported",
     ]
     assert result["events"][0]["session_id"] == app.session_id
-
-
-def test_normal_cli_missing_tool_records_open_tool_need_and_recommendations(
-    monkeypatch,
-):
-    seed_local = load_seed_local_module()
-    app = seed_local.build_local_app()
-
-    monkeypatch.setattr(
-        app.model_client,
-        "complete",
-        lambda context: (
-            '{"intent":"missing_tool","reason":"needs service tool","arguments":{}}'
-        ),
-    )
-
-    result = app.run("restart web_service?")
-
-    assert result["response"]["kind"] == "tool_need"
-    assert (
-        result["response"]["payload"]["tool_need"]["capability"] == "service_management"
-    )
-    assert isinstance(result["response"]["payload"]["recommendations"], list)
-    state = app.projector.project(app.workspace_id)
-    assert [need.capability for need in state.open_tool_needs] == ["service_management"]
-
-
-def test_normal_cli_answer_uses_runtime():
-    seed_local = load_seed_local_module()
-    app = seed_local.build_local_app()
-
-    result = app.run("What is Docker?")
-
-    assert result["response"]["kind"] == "answer"
-    assert "Docker" in result["response"]["message"]
-    assert [event["kind"] for event in result["events"]] == [
-        "input.user_message",
-        "model.decision.proposed",
-        "response.answer",
-    ]
-
-
-def test_runtime_tool_output_evidence_appears_in_projected_state():
-    seed_local = load_seed_local_module()
-    app = seed_local.build_local_app()
-
-    app.run("echo evidence")
-
-    state = app.projector.project(app.workspace_id)
-    assert len(state.evidence) == 1
-    evidence = next(iter(state.evidence.values()))
-    assert evidence.source == "tool:echo"
-    assert evidence.payload["message"] == "evidence"
 
 
 def test_old_runtime_module_remains_available():
@@ -353,35 +287,29 @@ def test_old_runtime_module_remains_available():
     assert Path("seed_runtime/runtime.py").exists()
 
 
-def test_parser_supports_required_modes_and_model_selection():
+def test_parser_supports_required_modes_without_model_selection():
     seed_local = load_seed_local_module()
     args = seed_local.build_parser().parse_args(
         [
             "--http",
             "--events",
-            "--raw",
-            "--raw-only",
-            "--plan",
             "--preconditions",
             "plan_cli",
             "--db",
             ".seed-local.sqlite",
-            "--model",
-            "qwen2.5:3b",
-            "install",
-            "docker",
+            "hello",
         ]
     )
 
     assert args.http is True
     assert args.events is True
-    assert args.raw is True
-    assert args.raw_only is True
-    assert args.plan is True
     assert args.preconditions == "plan_cli"
     assert args.db == ".seed-local.sqlite"
-    assert args.model == "qwen2.5:3b"
-    assert args.message == ["install", "docker"]
+    assert args.message == ["hello"]
+    assert not hasattr(args, "raw")
+    assert not hasattr(args, "raw_only")
+    assert not hasattr(args, "plan")
+    assert not hasattr(args, "model")
 
 
 def test_parser_supports_execution_proposal_generation():
@@ -394,17 +322,16 @@ def test_parser_supports_execution_proposal_generation():
     assert args.proposal == "plan_cli"
 
 
-def test_cli_default_prints_concise_summary_without_event_ledger(capsys):
+def test_cli_default_prints_concise_input_boundary_without_event_ledger(capsys):
     seed_local = load_seed_local_module()
 
-    assert seed_local.main(["echo hello"]) == 0
+    assert seed_local.main(["hello"]) == 0
 
     output = capsys.readouterr().out
-    assert "Tool echo completed." in output
-    assert "Output:" in output
-    assert "tool.call.started" not in output
+    assert "No Seed-owned runtime decision authority is configured" in output
     assert "Events:" not in output
-
+    assert "runtime.decision_authority_unsupported" not in output
+    assert "model.decision.proposed" not in output
 
 def test_format_response_summary_lists_tool_need_recommendations():
     seed_local = load_seed_local_module()
@@ -463,54 +390,17 @@ def test_format_response_summary_omits_empty_recommendations_for_unknown_capabil
     assert summary == "Recorded tool need custom_workflow."
 
 
-def test_cli_events_includes_full_event_ledger(capsys):
+def test_cli_events_includes_input_boundary_ledger(capsys):
     seed_local = load_seed_local_module()
 
-    assert seed_local.main(["--events", "echo hello"]) == 0
+    assert seed_local.main(["--events", "hello"]) == 0
 
     output = capsys.readouterr().out
-    assert "Tool echo completed." in output
+    assert "No Seed-owned runtime decision authority is configured" in output
     assert "Events:" in output
-    assert "tool.call.completed" in output
-    assert "model.decision.proposed" in output
-
-
-def test_cli_raw_continues_through_runtime(monkeypatch, capsys):
-    seed_local = load_seed_local_module()
-
-    monkeypatch.setattr(seed_local.LocalSeedApp, "raw", lambda self, text: "RAW INTENT")
-
-    assert seed_local.main(["--raw", "echo hello"]) == 0
-
-    output = capsys.readouterr().out
-    assert "Raw model output:\nRAW INTENT" in output
-    assert "Tool echo completed." in output
-    assert "Output:" in output
-
-
-def test_cli_raw_only_prints_raw_output_and_exits(monkeypatch, capsys):
-    seed_local = load_seed_local_module()
-
-    monkeypatch.setattr(seed_local.LocalSeedApp, "raw", lambda self, text: "RAW INTENT")
-
-    def fail_run(self, text):
-        pytest.fail("--raw-only should not run the runtime")
-
-    monkeypatch.setattr(seed_local.LocalSeedApp, "run", fail_run)
-
-    assert seed_local.main(["--raw-only", "echo hello"]) == 0
-
-    assert capsys.readouterr().out == "RAW INTENT\n"
-
-
-def test_raw_preview_does_not_append_to_runtime_ledger(monkeypatch):
-    seed_local = load_seed_local_module()
-    app = seed_local.build_local_app()
-
-    monkeypatch.setattr(app.model_client, "complete", lambda context: "RAW INTENT")
-
-    assert app.raw("install docker") == "RAW INTENT"
-    assert app.ledger.list(app.workspace_id) == []
+    assert "input.user_message" in output
+    assert "runtime.decision_authority_unsupported" in output
+    assert "model.decision.proposed" not in output
 
 
 def test_fact_seed_ingests_observation_evidence_and_fact_before_user_message():
@@ -595,71 +485,6 @@ def test_observe_and_fact_produce_equivalent_projected_facts():
     assert fact_support.value == observe_support.value == "docker"
     assert fact_support.confidence == observe_support.confidence == 0.85
     assert fact_support.source_types == observe_support.source_types == ["user"]
-
-
-def test_cli_fact_seed_influences_service_recommendation_ranking(monkeypatch, capsys):
-    seed_local = load_seed_local_module()
-
-    monkeypatch.setattr(
-        seed_local.IntentPromptModelClient,
-        "complete",
-        lambda self, context: (
-            '{"intent":"missing_tool","reason":"needs service tool","arguments":{}}'
-        ),
-    )
-
-    assert (
-        seed_local.main(
-            ["--fact", "web_service", "runtime", "docker", "restart web_service?"]
-        )
-        == 0
-    )
-
-    output = capsys.readouterr().out
-    assert "1. docker_container_lifecycle" in output
-    assert "2. systemctl_cli" in output
-    assert output.index("1. docker_container_lifecycle") < output.index(
-        "2. systemctl_cli"
-    )
-    assert "known runtime: docker" in output
-
-
-def test_cli_plan_prints_non_executable_top_recommendation_plan(monkeypatch, capsys):
-    seed_local = load_seed_local_module()
-
-    monkeypatch.setattr(
-        seed_local.IntentPromptModelClient,
-        "complete",
-        lambda self, context: (
-            '{"intent":"missing_tool","reason":"needs service tool","arguments":{}}'
-        ),
-    )
-
-    assert (
-        seed_local.main(
-            [
-                "--fact",
-                "web_service",
-                "runtime",
-                "docker",
-                "--plan",
-                "restart web_service?",
-            ]
-        )
-        == 0
-    )
-
-    output = capsys.readouterr().out
-    assert "1. docker_container_lifecycle" in output
-    assert "Plan:\nPropose using docker_container_lifecycle" in output
-    assert "action_plan_id: plan_" in output
-    assert "- Identify target host for service." in output
-    assert "- Confirm container name." in output
-    assert "- Verify Docker access." in output
-    assert "- Request approval before restart." in output
-    assert "tool.call.started" not in output
-    assert "action_plan.created" not in output
-    assert "approved" not in output.lower()
 
 
 def test_parser_accepts_observation_ingestion_options():
