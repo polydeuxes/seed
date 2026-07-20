@@ -5,9 +5,8 @@
 This document defines vocabulary and invariants for capability verification
 reasoning. Capability Verification Inventory v1 is now implemented as an
 inventory-only read model over projected facts and evidence. It does not execute
-verification, change `Runtime`, change `ToolExecutor`, execute operations, add
-host checks, add network checks, schedule work, call providers, mutate hosts, or
-cause capability resolution to produce a verified capability.
+verification, add host checks, add network checks, schedule work, call providers,
+mutate hosts, or cause capability resolution to produce a verified capability.
 
 Capability verification is a reasoning concept identified by the capability
 verification audit and roadmap reconciliation. The terms below keep that concept
@@ -50,8 +49,10 @@ or verified.
 
 A **candidate capability** is a possible way to satisfy or investigate a
 capability before verification. Candidate capabilities may be inferred from
-registered operation metadata, catalog lookup, provider metadata, handoff
-metadata, or other future discovery sources.
+observation-derived facts, linked Evidence, catalog lookup, provider reports
+admitted as testimony, operator-supplied testimony, freshness or expiry
+boundaries, bounded verification status projections, or other future discovery
+sources.
 
 A candidate capability is only a possibility. It is not verified until future
 verification semantics explicitly attach an acceptable verification status to a
@@ -79,7 +80,7 @@ A verified capability must eventually include at least:
 
 - the capability being verified;
 - the verification target or scope, such as workspace, host, provider, tenant,
-  registered operation, or environment;
+  environment, or externally reported service boundary;
 - the positive verification status;
 - the evidence class or evidence references that support the status;
 - the time, event id, or observation boundary for which the status is current;
@@ -147,8 +148,8 @@ The inventory is derived from:
 - projected `Fact` records using `capability_verified`;
 - projected `FactSupport`;
 - `PredicateCatalog` membership for the predicate;
-- existing projected capability surfaces (`ToolNeed` capability names, registered
-  tool names, and capability verification fact subjects);
+- existing projected capability surfaces (`ToolNeed` capability names and
+  capability verification fact subjects);
 - existing evidence/explanation structures for supporting fact evidence.
 
 Inventory states are:
@@ -162,9 +163,9 @@ Inventory states are:
 - `unknown`: a current `capability_verified` value exists but is outside the
   implemented value vocabulary.
 
-The inventory is read-only. It appends no events, executes no tools, calls no
-providers, mutates no state, and does not route through `Runtime` or
-`ToolExecutor`.
+Verification views are read-only. The inventory is read-only. It appends no
+events, executes no tools, calls no providers, mutates no state, and does not
+route through runtime execution.
 
 ## What is not a verified capability
 
@@ -172,21 +173,17 @@ The following current Seed objects and fields are not verified capabilities:
 
 - `ToolNeed`: records a requested capability gap.
 - `ToolNeed.capability`: names the requested capability.
-- `ToolSpec.capabilities`: inert registered-operation discovery metadata.
 - `CapabilityCatalogEntry`: static known-capability metadata.
 - `CapabilityCatalog` recommendation: static provider or handoff metadata.
 - `CapabilityRecommendation.operation`: provider or handoff metadata, not a
-  registered operation invocation and not a verification result.
-- `ToolRegistry.list_tools_for_capability(...)`: registered operation discovery,
-  not proof that the operation can satisfy the capability in the current scope.
-- A registered operation candidate: a possible operation match, not verified
-  availability or verified success.
-- A `verify_*` operation name: a name alone is not proof. Only a future accepted
-  verification result, interpreted by a future verification model, could support
-  verification.
-- An observation, fact, evidence item, confidence score, expiry timestamp, or
-  tool result by itself: each may become evidence input, but none is a verified
-  capability without a scoped verification status model.
+  verification result.
+- Provider-reported status by itself: testimony that may be admitted as evidence,
+  not automatic proof or Seed's own verification conclusion.
+- Operator-supplied testimony by itself: evidence input that still needs accepted
+  scope, freshness, and status interpretation.
+- An observation, observation-derived fact, linked Evidence item, confidence
+  score, or expiry timestamp by itself: each may become evidence input, but none
+  is a verified capability without a scoped verification status model.
 
 ## Future evidence classes
 
@@ -206,19 +203,17 @@ external backend, operator, or handoff channel. It could eventually support
 verification if Seed records the provider identity, report semantics, freshness,
 and trust policy.
 
-### Verification operation result
+### Linked Evidence
 
-A **verification operation result** is the result of an operation whose purpose
-is to check a scoped capability target. It could eventually support verification
-only if a future policy accepts that operation, its output schema, its execution
-context, and its evidence freshness.
+**Linked Evidence** is an evidence record associated with a verification-relevant
+fact or testimony. It could eventually support verification only if its source,
+subject, freshness, confidence, and boundary satisfy the verification policy.
 
-### Local inventory or registration evidence
+### Freshness or expiry boundary
 
-**Local inventory or registration evidence** describes local metadata, such as a
-registered operation, installed toolkit, manifest, or configuration file. This
-may eventually help identify candidates, but it should not by itself imply
-positive verification.
+A **freshness or expiry boundary** describes whether evidence remains current
+for a bounded verification status projection. It may limit or stale a conclusion,
+but it should not by itself create positive verification.
 
 ### Negative evidence
 
@@ -234,17 +229,15 @@ future verification design replaces them:
 1. Capability resolution never implies verification.
 2. ToolNeed creation never implies verification.
 3. Known capability catalog metadata never implies verification.
-4. ToolSpec capability metadata never implies verification.
-5. Provider recommendation never implies verification.
-6. CapabilityRecommendation operation metadata never implies verification.
-7. Registered operation candidate discovery never implies verification.
-8. A `verify_*` operation name never implies verification.
-9. Evidence-like objects are not verified capabilities without a scoped
+4. Provider recommendation never implies verification.
+5. CapabilityRecommendation operation metadata never implies verification.
+6. A `verify_*` operation name never implies verification.
+7. Evidence-like objects are not verified capabilities without a scoped
    verification status model.
-10. Unverified is the default state for requested, known, candidate, and
+8. Unverified is the default state for requested, known, candidate, and
     provider-recommended capabilities.
-11. Stale verification must not be treated as current positive verification.
-12. Failed verification requires accepted negative evidence; it is not merely
+9. Stale verification must not be treated as current positive verification.
+10. Failed verification requires accepted negative evidence; it is not merely
     absence of positive evidence.
 
 ## Future model boundaries
@@ -255,25 +248,19 @@ runtime execution and capability recommendation concerns.
 Recommended future boundaries:
 
 - **Verification target model**: identifies the capability plus scope being
-  verified, such as workspace, host, provider, registered operation, or
-  environment.
+  verified, such as workspace, host, provider, environment, or externally
+  reported service boundary.
 - **Verification status vocabulary**: represents states such as `verified`,
-  `unverified`, `stale`, and `failed` without overloading catalog or registry
+  `unverified`, `stale`, and `failed` without overloading catalog metadata
   fields.
 - **Verification evidence policy**: defines which evidence classes can support
   positive, stale, failed, or unknown statuses.
 - **Verification read model**: projects verification conclusions for query and
   explanation without automatically executing checks.
-- **Verification operation boundary**: keeps operations that gather evidence
-  distinct from interpretation that marks a capability verified.
 - **Provider status boundary**: separates provider-reported status from Seed's
   own verification conclusion.
-- **Runtime boundary**: `Runtime` should continue to record requests and call
-  explicitly requested tools; verification should not be added as implicit
-  behavior inside capability resolution.
-- **ToolExecutor boundary**: `ToolExecutor` should execute registered
-  operations when called; it should not silently interpret capability metadata
-  as verification.
+- **Runtime boundary**: verification should not be added as implicit behavior
+  inside capability resolution.
 - **Catalog boundary**: `CapabilityCatalog` should remain read-only metadata;
   catalog presence or recommendation should not become verification.
 
@@ -281,4 +268,4 @@ Recommended future boundaries:
 
 This document does not define executable verification algorithms, verification
 schemas, new predicates, new events, automatic checks, host mutation, network
-calls, provider calls, runtime orchestration, or ToolExecutor behavior.
+calls, provider calls, runtime orchestration, or operation execution behavior.

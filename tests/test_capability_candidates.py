@@ -99,7 +99,7 @@ def test_capability_candidates_do_not_become_execution_decisions():
     assert state.action_plans == {}
 
 
-def test_capability_candidates_do_not_invoke_tool_executor_or_policy(monkeypatch):
+def test_capability_candidates_do_not_invoke_policy_or_execution(monkeypatch):
     import seed_runtime.policy as policy_module
 
     monkeypatch.setattr(

@@ -136,7 +136,7 @@ def test_verification_does_not_become_selection_permission_or_execution_authorit
     assert state.action_plans == {}
 
 
-def test_verification_invokes_no_tool_executor_or_policy(monkeypatch):
+def test_verification_invokes_no_policy_or_execution(monkeypatch):
     import seed_runtime.policy as policy_module
 
     monkeypatch.setattr(
