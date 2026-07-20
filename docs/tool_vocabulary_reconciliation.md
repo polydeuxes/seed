@@ -2,7 +2,6 @@
 
 ## Scope
 
-This is an observational reconciliation of what `tool` means in the repository today. It inspects only the implementation paths needed to understand `ToolExecutor`, `ToolNeedService`, `ToolValidationService`, the tool registry, tool recommendations, tool intent, `call_tool`, `request_tool`, and registered operations.
 
 This report does not recommend renaming, runtime redesign, execution redesign, or tool redesign.
 
@@ -12,9 +11,7 @@ Repository authority wins over naming expectations.
 
 ```text
 pwd && rg --files -g 'AGENTS.md' -g '!**/.git/**' && git status --short
-cat AGENTS.md && rg -n "ToolExecutor|ToolNeedService|ToolValidationService|request_tool|call_tool|tool registry|tool recommendation|tool intent|registered operations|register.*tool|tool" -S .
 rg -n "class ToolExecutor|class ToolNeedService|class ToolValidationService|class ToolRegistry|def execute|def register|call_tool|request_tool|tool_intent|recommend" seed_runtime tests toolkits -S
-sed -n '1,220p' seed_runtime/execution.py; sed -n '1,220p' seed_runtime/registry.py; sed -n '1,220p' seed_runtime/tool_needs.py; sed -n '1,220p' seed_runtime/tool_validation.py; sed -n '1,120p' seed_runtime/tool_intent.py; sed -n '1,390p' seed_runtime/runtime.py
 sed -n '120,320p' seed_runtime/execution.py; sed -n '1,140p' seed_runtime/decisions.py; sed -n '1,130p' seed_runtime/models.py; sed -n '1,180p' seed_runtime/context.py; sed -n '1,170p' seed_runtime/capability_catalog.py; sed -n '1,170p' seed_runtime/tool_recommendations.py; sed -n '1,190p' seed_runtime/tool_execution_policy.py
 sed -n '190,320p' seed_runtime/execution.py; sed -n '130,230p' seed_runtime/models.py; find toolkits -maxdepth 4 -type f | sort | sed -n '1,80p'; sed -n '1,140p' toolkits/core/echo/toolkit.yaml; sed -n '1,160p' toolkits/core/echo/operations.py; sed -n '1,200p' toolkits/generated/ssh_access/toolkit.yaml; sed -n '1,220p' toolkits/generated/ssh_access/operations.py
 ```
@@ -25,7 +22,6 @@ sed -n '190,320p' seed_runtime/execution.py; sed -n '130,230p' seed_runtime/mode
 - `seed_runtime/registry.py`
 - `seed_runtime/tool_needs.py`
 - `seed_runtime/tool_validation.py`
-- `seed_runtime/tool_intent.py`
 - `seed_runtime/runtime.py`
 - `seed_runtime/decisions.py`
 - `seed_runtime/models.py`
@@ -75,7 +71,6 @@ The responsibility that actually owns execution is `ToolExecutor`, but only for 
 | `ToolExecutionPolicyService` | Resolves, validates, and policy-checks a proposed tool call without executing or appending events. | Class docstring says it does not execute, append events, create pending actions, or collapse non-allow outcomes; `_evaluate()` checks existence, status, input schema, then policy. | It returns `allowed_to_execute`, so it is adjacent to execution and can look like part of execution ownership, but the implementation leaves actual invocation to callers. |
 | `ToolNeedService` | Owns capability-gap creation and read-only capability resolution for `request_tool`. | `__seed_arch__` owner is `tool_need_capability_resolution`; `create_from_decision()` appends `tool_need.created`; `resolve_capability()` returns `known_capability`, `registered_operations`, `provider_recommendations`, and `handoff_candidates`. | The service name says `ToolNeed`, but the normalized field driving resolution is `capability`, not executable presence alone. |
 | Tool recommendations | Read-only provider/handoff metadata for a capability need, ranked against state. | `CapabilityCatalog` maps capabilities to `CapabilityRecommendation`; `ToolRecommendationService.recommend_for()` ranks catalog recommendations. | Some recommendations can carry an `operation` string and `backend_type`, which may resemble executable operations; however they are not registered `ToolSpec` entries and are returned as handoff metadata. |
-| Tool intent | Deterministic guard for whether a proposed `call_tool` matches visible model affordances and input-specific rules. | `ToolIntentGuard.validate()` is a no-op unless `decision.kind == "call_tool"`; it rejects non-visible tool names and checks echo-specific input matching. | It does not validate capability, policy, registration status, or host executability; those responsibilities are elsewhere. |
 | Decision input `tools` | Model-visible operation affordances for the decision producer. | `DecisionInputComposer.compose()` serializes only `registry.list_tools(visible_only=True)` into `tools` with schemas, policy action, and risk. | Visible tools are context, not execution. Listing a tool does not execute it or imply capability verification. |
 | Event names such as `tool.call.started`, `tool.call.completed`, `tool.call.failed`, `tool_need.created` | Ledger vocabulary for runtime call lifecycle and capability-need lifecycle. | `ToolExecutor` appends call events; `ToolNeedService` appends need events. | Shared event prefix `tool` spans different lifecycles: call execution and capability request creation. |
 
@@ -105,7 +100,6 @@ Decision input exposes visible registry entries as `tools`. This is not the full
 
 ### 6. Intent-checked proposed invocation
 
-Tool intent is only about whether a proposed `call_tool` is visible and matches deterministic input rules. It is neither registry ownership nor execution.
 
 ## Evaluation of adjacent concepts
 
@@ -218,11 +212,9 @@ Current meanings of `tool` are:
 - capability need in `ToolNeed` and `request_tool`;
 - model-visible affordance in decision input;
 - validation subject in `ToolValidationService`;
-- intent subject in `ToolIntentGuard`;
 - provider/handoff recommendation context in capability resolution;
 - event vocabulary for call and need lifecycles.
 
-The bounded responsibility that owns execution is `ToolExecutor`, specifically for registered implementations. Registration is owned by `ToolRegistry`. Capability-gap creation and resolution are owned by `ToolNeedService`. Provider/handoff recommendation metadata is owned by `CapabilityCatalog`, `ToolRecommendationService`, and ranking. Intent checking is owned by `ToolIntentGuard`. Runtime owns routing, not the behavior of those services.
 
 ## Recommended bounded implementation slice
 

@@ -328,7 +328,6 @@ raw user-message capture
 context composition
 structured decision kinds
 runtime decision routing
-tool-intent guard behavior
 validation and policy gates
 ToolExecutor
 ```

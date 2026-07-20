@@ -14,7 +14,6 @@ The answer is mixed:
 
 ### Runtime input and route surfaces
 
-- `Runtime.handle_user_message` is the canonical intake for user text. It appends an `input.user_message` event, projects state, composes context, asks the configured model for a `Decision`, records `model.decision.proposed`, validates, applies the tool-intent guard, and routes the valid decision.
   - Code: `seed_runtime/runtime.py`.
 - `Runtime._route` maps valid decisions to response surfaces or owner services:
   - `answer` -> `response.answer` event and `RuntimeResponse(kind="answer")`.
@@ -38,9 +37,7 @@ The answer is mixed:
 
 ### Validation and guard surfaces
 
-- `ToolIntentGuard` adds deterministic checks for `call_tool` decisions:
   - non-`call_tool` decisions pass through.
-  - the tool must be visible to the model.
   - the built-in `echo` tool must only be called when input starts with `echo ` and the argument must exactly match the text after that prefix.
 - Runtime retries invalid parsed decisions, invalid decisions, and intent-rejected tool calls through retry context instead of bypassing validation.
 
@@ -123,7 +120,6 @@ raw user text
   -> DecisionProducer.decide
         -> _normalize_classification_for_input
   -> model.decision.proposed event
-  -> ToolIntentGuard.validate for call_tool intent constraints
   -> Runtime._route
      -> answer response, question response, ToolNeed/capability-resolution response,
         ToolExecutor execution, state-patch service, or refusal response
@@ -133,7 +129,6 @@ Important boundaries in this flow:
 
 - `request_tool` is capability-gap intake, not execution.
 - `call_tool` is the only canonical runtime path into `ToolExecutor`.
-- `ToolIntentGuard` does not replace the classifier; it only applies deterministic checks to tool-call decisions.
 
 ## What Already Works
 
@@ -193,7 +188,6 @@ This audit preserves the current boundaries:
 
 - `Runtime` remains the canonical route owner.
 - `DecisionInputComposer` owns composition of current input and relevant state into `DecisionInputPacket`.
-- `ToolIntentGuard` owns deterministic tool-call intent checks.
 - `ToolNeedService` owns `request_tool` capability-gap creation and resolution support.
 - `ToolExecutor` owns registered-operation execution only after a valid `call_tool` route.
 - Policy gates and pending-action handling remain downstream execution boundaries and must not be bypassed.

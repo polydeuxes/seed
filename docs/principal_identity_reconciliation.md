@@ -147,7 +147,6 @@ This audit preserves existing owners and boundaries:
 - `Runtime` owns canonical user-message intake and decision routing.
 - `EventLedger` owns append-only event history.
 - `ContextComposer` owns context packet construction from current input and projected state.
-- `ToolIntentGuard` owns deterministic checks that a tool call matches user intent.
 - `ToolExecutionPolicyService` and `PolicyGate` own registered-tool policy evaluation.
 - `PendingActionService` owns pending-action lifecycle events.
 - `ObservationIngestor` owns observation-to-evidence-to-fact provenance ingestion.

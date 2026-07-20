@@ -40,7 +40,6 @@ LocalSeedApp.run
       -> ContextComposer.compose
       -> model.decide(ContextPacket)
           -> ToolValidationService.validate_tool_input for call_tool
-      -> ToolIntentGuard.validate for call_tool
       -> Runtime._route
           -> answer/refuse/ask_question response events
           -> request_tool
@@ -125,7 +124,6 @@ Legend:
 |---|---|---|---|---|---:|---:|---:|---:|---:|---|---|
 | `Runtime` | `seed_runtime/runtime.py` | Canonical user-message routing, event append, decision validation loop, request-tool/call-tool routing. | `build_local_app` | CLI/API/local app | Yes | Indirect | No | Yes | Indirect | **Core MVP** | Single active runtime path. |
 | `RuntimeResponse` | `seed_runtime/models.py` | Canonical response envelope. | `Runtime._route` | CLI/API | Yes | Indirect | No | Yes | No | **Core MVP** | Duplicates `RuntimeResult` naming from quarantined RuntimeLoop. |
-| `ToolIntentGuard` | `seed_runtime/tool_intent.py` | Deterministic intent guard for tool calls. | `Runtime.__init__` | `Runtime.handle_user_message` | Yes | No | No | No | No | **Supporting infrastructure** | Guardrail against schema-valid but intent-mismatched tool calls. |
 | `ContextComposer` / `ContextPacket` | `seed_runtime/context.py` | Runtime decision context, visible tools, facts/evidence budget. | Runtime wiring | Runtime model | Yes | No | No | Indirect | Indirect | **Supporting infrastructure** | Its decision schema lists current canonical kinds only: answer, ask_question, call_tool, request_tool, refuse. |
 | `EventLedger` | `seed_runtime/events.py` | Append-only events and workspace-scoped listing. | Runtime/CLI/tests | Runtime, projector, executor, ingestors | Yes | Yes | Yes | Yes | Yes | **Supporting infrastructure** | Also validates historical `execution_authorization.granted` events for compatibility. |
 | `SQLiteEventLedger` | `seed_runtime/events.py` | SQLite-backed ledger compatibility/local persistence. | CLI with `--db` | CLI/runtime/projection | Yes if `--db` | Yes if `--db` | Yes | Yes | Yes | **Supporting infrastructure / historical compatibility** | Retains ID prefixes for old payload IDs including `plan`, `handoff`, `auth`. |
@@ -197,7 +195,6 @@ Canonical Runtime reaches these active models/services:
 2. `EventLedger` for input, decision, response, tool, and state-patch events.
 3. `StateProjector` for current state before context/validation and during tool need dedupe/ranking.
 4. `ContextComposer` / `ContextPacket`.
-6. `ToolIntentGuard`.
 7. `ToolNeedService`, `ToolNeed`, `CapabilityCatalog`, `ToolRecommendationService`, `RecommendationRanker`, `ToolRegistry`, and `ToolSpec` for request-tool capability resolution.
 8. `ToolExecutor` for `call_tool` decisions only.
 9. `StatePatchService` for `propose_state_patch`; this is reachable but outside the strict ToolNeed/capability-resolution MVP.

@@ -255,7 +255,6 @@ This vocabulary does not recommend or introduce:
 - adding `InputEngine`, `ConversationEngine`, `CommandEngine`, or a new `RuntimeLoop`;
 - rewriting `Runtime`;
 - changing `ToolExecutor`, `EventLedger`, or `ProjectionStore`;
-- bypassing `ToolIntentGuard`;
 - bypassing policy, pending-action, capability, or registered-tool boundaries;
 - treating all natural language as `command_request`;
 - treating all non-commands as `answer`;

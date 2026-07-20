@@ -93,7 +93,6 @@ Projection is replay-based. `StateProjector.project()` reads ledger events for a
 | Decision input composition | No event | None | Equivalent source evidence exists in input event plus projected state at that point, but not the budgeted packet itself | `DecisionInputPacket`, context budget trace, selected tools/facts/evidence | Partially: source state can be reconstructed, exact budgeted packet only if deterministically recomposed with same code/config | `DecisionInputComposer.compose()` returns a packet from the input event, projected state, registry tools, and budgeted sections | No ledger append occurs in composer; `StaticDecisionProducer` keeps only `last_decision_input` in memory |
 | Decision produced | `model.decision.proposed` | No direct projection branch | Full serialized decision and attempt number, causally linked to input event | Validator object/result unless failure recorded | Yes for what the model proposed | Runtime appends `model.decision.proposed` before validation | Projection ignores `model.decision.proposed` |
 | Decision schema validation failure | `model.decision.invalid` | No direct projection branch | Validation errors and attempt number, causally linked to decision event | `validation` result object and retry packet | Yes for failed validation and retry attempts that produced events | Runtime appends `model.decision.invalid` and builds retry input | Final `RuntimeResponse(kind="invalid_decision")` is not appended |
-| Tool-intent validation rejection | `model.decision.intent_rejected` | No direct projection branch | Intent errors and attempt number | Guard internals and retry packet | Yes for rejection; no for full transient guard context | Runtime appends `model.decision.intent_rejected` on intent mismatch | Projection ignores it |
 | Answer response | `response.answer` | No direct projection branch | Answer text, session, causation to decision | Returned `RuntimeResponse` object | Yes from ledger, but not from projected domain state | `_route()` appends `response.answer` | Projection ignores response events |
 | Question response | `response.question` | No direct projection branch | Question text, session, causation to decision | Returned `RuntimeResponse` object | Yes from ledger, but not from projected domain state | `_route()` appends `response.question` | Projection ignores response events |
 | Refusal response | `response.refusal` | No direct projection branch | Refusal reason, session, causation to decision | Returned `RuntimeResponse` object | Yes from ledger, but not from projected domain state | `_route()` appends `response.refusal` | Projection ignores response events |
@@ -120,7 +119,6 @@ The implementation appends events for these runtime categories:
 2. Model decision proposals: `model.decision.proposed`.
 3. Decision parse failures: `model.decision.parse_failed`.
 4. Decision validation failures: `model.decision.invalid`.
-5. Tool-intent rejections: `model.decision.intent_rejected`.
 6. Response emissions for answer, question, and refusal: `response.answer`, `response.question`, `response.refusal`.
 7. Tool needs and status changes: `tool_need.created`, `tool_need.status_changed`.
 8. Tool execution lifecycle: `tool.call.started`, `tool.call.completed`, `tool.call.failed`.
@@ -174,7 +172,6 @@ Failure is durable when implementation appends failure events:
 
 - Decision parse failure: `model.decision.parse_failed`.
 - Decision schema validation failure: `model.decision.invalid`.
-- Tool-intent rejection: `model.decision.intent_rejected`.
 - Tool execution or validation/status failure after a tool is resolved: `tool.call.failed`.
 - Tool policy block/approval requirement: `tool.policy.blocked` / `tool.approval.required`.
 - State patch rejection: `state.patch.rejected`.

@@ -67,7 +67,6 @@ This means the ownership split is:
 
 ### 3. Runtime role
 
-Runtime does not interpret inquiry in the observed path. Runtime appends the user input event, projects state, asks `DecisionInputComposer` to compose the packet, calls `decision_producer.decide(packet)`, validates, applies a tool-intent guard, and routes validated decisions to response, tool-need, tool-execution, state-patch, or refusal branches. Its own architecture metadata describes it as routing validated model decisions to owner services without owning their behavior.
 
 Runtime can add retry prompts to the already composed `DecisionInputPacket` after parse, schema, validation, or intent failures. That is correction context for decision production, not inquiry interpretation.
 

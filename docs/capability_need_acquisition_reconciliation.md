@@ -57,7 +57,6 @@ stable need.
 | Reconciliation | Documentation audits that identify architectural gaps and proposed lifecycle terms. | A legitimate source of evidence/signals, but not currently machine-modeled as need evidence. |
 | Gap detection / missing capability handling | Current `request_tool` path records a requested capability gap and resolves possible catalog/registered/handoff candidates. | Exists for explicit requests, not for repeated failures or repeated manual work. |
 | Runtime routing | `request_tool` creates a `ToolNeed`; `call_tool` executes registered operations through `ToolExecutor`. | Runtime is the current router, not the architectural owner of long-term need acquisition. |
-| `ToolIntentGuard` | Deterministic guard that rejects schema-valid tool calls that do not match current input intent. | Protects execution intent; it is not a need-acquisition mechanism. |
 | Policy / approval | Controls execution outcomes and grants; adoption docs propose policy/operator authority for adoption. | Can authorize need acceptance or adoption decisions, but should not invent needs without evidence. |
 | Provider handoff | Non-executable external-provider boundary and catalog metadata. | A handoff may produce evidence of an unmet or recurring capability, but handoff is not itself a durable need. |
 | Builder service / `ToolkitCandidate` | Generates toolkit artifact candidates for a `ToolNeed`. | Downstream of a need; generation success is not proof the need was justified or resolved. |

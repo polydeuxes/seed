@@ -116,7 +116,6 @@ operator input event
   -> projected state
   -> composed decision input
   -> model decision
-  -> validation / intent guard
   -> owner-specific route
 ```
 

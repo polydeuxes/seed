@@ -37,7 +37,6 @@ This inventory is source-file based and records current behavior only. It does n
 ### `refuse`
 
 - When a `refuse` decision validates, `_route` appends `response.refusal` with payload `{"reason": decision.reason}` and returns `RuntimeResponse(kind="refusal", message=decision.reason)`. [`seed_runtime/runtime.py:342-351`](../seed_runtime/runtime.py#L342-L351)
-- `ToolIntentGuard` is run after decision validation and before routing. It mainly guards `call_tool` decisions, so ask/refuse validation failures are the decision validator's responsibility. [`seed_runtime/runtime.py:118-147`](../seed_runtime/runtime.py#L118-L147)
 
 ## 4. RuntimeLoop behavior
 

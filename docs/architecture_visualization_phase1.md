@@ -170,7 +170,6 @@ Runtime.handle_user_message
   -> StateProjector.project
   -> DecisionInputComposer.compose
   -> DecisionProducer.decide
-  -> ToolIntentGuard.validate
   -> Runtime._route
 ```
 

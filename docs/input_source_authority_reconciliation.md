@@ -22,7 +22,6 @@ This document is documentation-only. It does not modify runtime behavior, event 
 
 ## Review Finding
 
-The current source-authority gap is best understood as a missing envelope around input, not as a missing runtime route. Seed already has runtime intake, event authorship, workspace/session scoping, input-act classification, decision validation, and tool-intent guarding. What it does not yet have is a first-class way to preserve the source context that tells Seed whether an input came from a trusted local CLI, authenticated browser session, uncertain voice transcript, automation event, webhook, uploaded document, or another system.
 
 The smallest stable concept is therefore:
 
@@ -79,7 +78,6 @@ workspace_id=<workspace_id>
 session_id=<session_id>
 ```
 
-Then it projects state, composes context, asks the decision model, validates the decision, applies the tool-intent guard for `call_tool`, and routes through `Runtime._route`.
 
 Current meaning:
 
@@ -226,7 +224,6 @@ text from caller
   -> ContextPacket.current_input contains event id + text
   -> decision model / classifier
   -> validation
-  -> ToolIntentGuard for call_tool
   -> Runtime._route
 ```
 
@@ -389,7 +386,6 @@ This audit preserves current ownership boundaries:
 - `EventLedger` owns append-only event history.
 - `ContextComposer` owns context packets.
 - `InputAct` vocabulary classifies utterance type, not authority.
-- `ToolIntentGuard` remains deterministic tool-call intent guard owner.
 - `ToolExecutor` remains registered-operation execution owner.
 - Policy, approval, and pending-action paths must remain explicit gates and must not be bypassed by channel metadata.
 

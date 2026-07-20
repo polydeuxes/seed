@@ -38,8 +38,6 @@ This inventory is source-file based and records current behavior only. It does n
 
 ### Intent rejection handling
 
-- Validation success is followed by `ToolIntentGuard.validate(text, decision, context.tools)` before routing. [`seed_runtime/runtime.py:118-126`](../seed_runtime/runtime.py#L118-L126)
-- Intent failures append `model.decision.intent_rejected` with `errors` and `attempt`, actor `system`, and causation id set to the proposed-decision event id. [`seed_runtime/runtime.py:128-147`](../seed_runtime/runtime.py#L128-L147)
 - If intent rejections are exhausted, the final response is `RuntimeResponse(kind="invalid_decision", message="Model decision failed intent validation.", payload={"errors": validation_errors})`. [`seed_runtime/runtime.py:128-171`](../seed_runtime/runtime.py#L128-L171)
 - If another attempt remains, `retry_prompt` contains an intent-specific correction instruction, `retry_number`, `max_retries`, `rejected_event_id`, `intent_errors`, and `rejected_decision`. [`seed_runtime/runtime.py:193-211`](../seed_runtime/runtime.py#L193-L211)
 
@@ -111,7 +109,6 @@ Source files inspected: `seed_runtime/runtime_loop.py`, `seed_runtime/decision_j
 - Old Runtime parse-failure retry with a corrected decision is covered by `test_retries_parse_failed_first_decision_with_valid_decision`. [`tests/test_runtime_loop.py:265-310`](../tests/test_runtime_loop.py#L265-L310)
 - Old Runtime exhausted parse failures, final response shape, and `raw_failure_classification` propagation are covered by `test_exhausted_parse_failures_return_invalid_decision_and_record_events`. [`tests/test_runtime_loop.py:313-340`](../tests/test_runtime_loop.py#L313-L340)
 - Old Runtime validation failures from tool validation are covered by `test_runtime_still_rejects_unknown_tool_during_decision_validation`. [`tests/test_tool_validation.py:132-152`](../tests/test_tool_validation.py#L132-L152)
-- Old Runtime intent rejection without retry is covered by `test_install_docker_echo_rejected` and `test_echo_wrong_message_rejected`. [`tests/test_tool_intent.py:57-75`](../tests/test_tool_intent.py#L57-L75) [`tests/test_tool_intent.py:78-91`](../tests/test_tool_intent.py#L78-L91)
 - Strict local decision parsing rejects wrappers/fences and missing `kind`/`reason` in `tests/test_model_clients.py`. [`tests/test_model_clients.py:115-139`](../tests/test_model_clients.py#L115-L139)
 - RuntimeLoop rejection of unsupported returned objects is covered by `test_loop_malformed_decision_is_rejected_before_policy_and_tool_execution`. [`tests/test_runtime_loop.py:799-829`](../tests/test_runtime_loop.py#L799-L829)
 - RuntimeLoop rejection of unsupported direct `ask_question`, `refuse`, and `propose_state_patch` decision kinds is covered by dedicated tests. [`tests/test_runtime_loop.py:934-958`](../tests/test_runtime_loop.py#L934-L958) [`tests/test_runtime_loop.py:961-985`](../tests/test_runtime_loop.py#L961-L985) [`tests/test_runtime_loop.py:988-1024`](../tests/test_runtime_loop.py#L988-L1024)
@@ -121,7 +118,6 @@ Source files inspected: `seed_runtime/runtime_loop.py`, `seed_runtime/decision_j
 
 ### Missing or not directly covered
 
-- No test appears to cover canonical Runtime (called old in this historical audit) intent rejection followed by a successful retry using `_decision_intent_retry_decision_input()`; existing intent tests configure `max_decision_retries=0`. [`tests/test_tool_intent.py:13-29`](../tests/test_tool_intent.py#L13-L29)
 - No test appears to cover RuntimeLoop retry after a provider exception; existing provider exception coverage asserts the single-attempt `provider_failed` outcome. [`tests/test_runtime_loop.py:448-508`](../tests/test_runtime_loop.py#L448-L508)
 - RuntimeLoop malformed-decision tests cover unsupported returned objects and unsupported kinds, but not every answer/call-tool field-validation branch in `_validate_decision()`.
 

@@ -222,7 +222,6 @@ Once a decision exists, Runtime already provides:
 4. decision production call;
 5. proposed-decision event recording;
 6. decision validation;
-7. tool-intent guard validation;
 8. routing for `answer`, `ask_question`, `request_tool`, `call_tool`, `propose_state_patch`, and `refuse`;
 9. invalid-decision parse/validation retry handling;
 10. response, tool-need, execution, state-patch, or refusal event paths according to branch.
@@ -247,7 +246,6 @@ Responsibilities that remain outside the inquiry:
 
 | Responsibility | Current owner |
 | --- | --- |
-| tool-intent guard | `Runtime` via `ToolIntentGuard` |
 | runtime routing | `Runtime._route` |
 | capability-gap persistence and capability resolution | `ToolNeedService` plus recommendation/catalog/registry helpers |
 | registered operation execution | `ToolExecutor` through the `call_tool` branch only |

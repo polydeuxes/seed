@@ -45,7 +45,6 @@ The current runtime implementation defines `DecisionProducer.decide(decision_inp
 |---|---:|---|---|
 | `ContextComposer`, `ContextPacket` alias imports/assertions | `tests/test_runtime_loop.py:398-409` | test compatibility | Test proves legacy input imports remain aliases to preferred names. |
 | `DecisionModel`, `FakeDecisionModel` alias imports/assertions and construction | `tests/test_runtime_loop.py:412-437` | test compatibility | Test proves legacy producer imports remain aliases and `last_context` compatibility still mirrors `last_decision_input`. |
-| `model.decision.*` assertions | `tests/test_api.py:74`; `tests/test_runtime_loop.py:96-381`; `tests/test_seed_local_script.py:288,331,475`; `tests/test_state_patches.py:175,202`; `tests/test_tool_intent.py:50-90`; `tests/test_tool_recommendations.py:399`; `tests/test_tool_validation.py:126-218` | test compatibility | Tests preserve existing event vocabulary and should remain until event compatibility is intentionally changed. |
 | `retry_prompt` assertions | `tests/test_model_client.py:165-178`; `tests/test_runtime_loop.py:243-356` | test compatibility | Tests preserve current retry metadata field and rendered correction section. |
 
 ### Active implementation
@@ -68,7 +67,6 @@ The current runtime implementation defines `DecisionProducer.decide(decision_inp
 |---|---:|---|---|
 | `model.decision.proposed` | `seed_runtime/runtime.py:56,116` | event vocabulary | Runtime emits the existing event name for proposed decisions. |
 | `model.decision.parse_failed` | `seed_runtime/runtime.py:92` | event vocabulary | Runtime emits the existing event name for parse failures. |
-| `model.decision.intent_rejected` | `seed_runtime/runtime.py:136` | event vocabulary | Runtime emits the existing event name for tool-intent rejection. |
 | `model.decision.invalid` | `seed_runtime/runtime.py:156` | event vocabulary | Runtime emits the existing event name for validation failure. |
 | `model.decision.*` in tests and current docs | files listed in the search output above | event vocabulary / test compatibility / current documentation | These document and test the emitted ledger vocabulary; they do not prove preferred architecture vocabulary. |
 
