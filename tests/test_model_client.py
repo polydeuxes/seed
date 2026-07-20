@@ -5,6 +5,7 @@ from seed_runtime.model_client import (
     CommandTransport,
     DecisionParseError,
     DecisionPromptModelClient,
+    ParsedDecisionProducer,
     StrictJSONDecisionParser,
     render_decision_prompt,
     serialize_decision_prompt,
@@ -192,6 +193,18 @@ def test_decision_prompt_model_client_sends_serialized_context_to_transport():
     assert "CURRENT INPUT" in transport.prompts[0]
     assert "ALLOWED JSON DECISION SHAPES" in transport.prompts[0]
 
+
+def test_decision_prompt_model_client_is_injectable_into_parsed_decision_model():
+    transport = FakeTransport(
+        '{"kind":"call_tool","reason":"visible tool matches","tool_name":"docker_storage_summary","tool_arguments":{"host":"example_host"}}'
+    )
+    model = ParsedDecisionProducer(DecisionPromptModelClient(transport))
+
+    decision = model.decide(sample_context())
+
+    assert decision.kind == "call_tool"
+    assert decision.tool_name == "docker_storage_summary"
+    assert decision.tool_arguments == {"host": "example_host"}
 
 
 def test_command_transport_writes_prompt_to_stdin_and_returns_stdout():

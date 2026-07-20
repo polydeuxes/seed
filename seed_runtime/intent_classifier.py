@@ -370,8 +370,8 @@ def _render_intent_context_for_prompt(decision_input: IntentContext) -> dict[str
     return _render_intent_context(to_plain(decision_input))
 
 
-class RuntimeLoopIntentDecisionBuilder:
-    """Build runtime-loop decisions from compact intent classifications when given RuntimeContext; legacy external DecisionInputPacket parsing remains testimony-only."""
+class DecisionBuilder:
+    """Build full runtime decisions from compact intent classifications."""
 
     def build(
         self, decision_input: IntentContext, classification: IntentClassification
@@ -407,16 +407,16 @@ class RuntimeLoopIntentDecisionBuilder:
         raise ValueError(f"unsupported intent {classification.intent!r}")
 
 
-class RuntimeLoopIntentProducer:
-    """Intent-label adapter for explicit RuntimeLoop callers, not Runtime authority."""
+class IntentDecisionProducer:
+    """DecisionProducer that asks for an intent label, then builds a Decision locally."""
 
     def __init__(
         self,
         classifier: IntentClassifier | None = None,
-        builder: RuntimeLoopIntentDecisionBuilder | None = None,
+        builder: DecisionBuilder | None = None,
     ) -> None:
         self.classifier = classifier
-        self.builder = builder or RuntimeLoopIntentDecisionBuilder()
+        self.builder = builder or DecisionBuilder()
 
     def decide(self, decision_input: IntentContext) -> IntentDecision:
         text = _input_text(decision_input)

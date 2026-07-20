@@ -242,7 +242,7 @@
       "id": "Runtime",
       "kind": "class",
       "layer": "runtime",
-      "line": 10,
+      "line": 45,
       "owner": "runtime_input_boundary",
       "routes": [],
       "summary": "Records user input and refuses to route model-produced Decisions as Seed authority."
