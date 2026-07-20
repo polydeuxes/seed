@@ -21,7 +21,6 @@ Additional directly relevant implementation and docs inspected for blast radius:
 
 - `seed_runtime/model_client.py`
 - `seed_runtime/model_clients.py`
-- `seed_runtime/intent_classifier.py`
 - `seed_runtime/evaluations.py`
 - `scripts/seed_local.py`
 - `tests/test_context.py`
@@ -140,7 +139,6 @@ A rename would likely touch:
 - `seed_runtime/evaluations.py`: imports and type annotations for `ContextComposer` and `DecisionModel`.
 - `seed_runtime/model_client.py`: prompt renderer and `ParsedDecisionModel` adapter imports/annotations.
 - `seed_runtime/model_clients.py`: local model clients and prompt builder imports/annotations/docs.
-- `seed_runtime/intent_classifier.py`: `IntentContext = ContextPacket`, `IntentDecisionModel`, and `decide` parameter naming.
 - `scripts/seed_local.py`: app wiring imports, app fields, local runtime wrappers, CLI app construction.
 
 ### Tests
@@ -220,7 +218,6 @@ The smallest safe implementation-backed slice is:
 1. Introduce new names and aliases only.
 2. Update runtime wiring and tests to use `DecisionProducer`, `DecisionInputComposer`, and `DecisionInputPacket`.
 3. Leave packet fields and event names unchanged.
-4. Leave model-client class names (`OllamaDecisionModel`, `LlamaCppDecisionModel`, `ParsedDecisionModel`, `IntentDecisionModel`) for a second pass, or rename them only to `...DecisionProducer` with old aliases if the first slice has enough bandwidth.
 5. Add alias/import tests.
 6. Run the targeted tests listed above.
 

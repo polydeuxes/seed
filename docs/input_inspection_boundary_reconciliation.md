@@ -175,9 +175,7 @@ What survives inspection:
 What is discarded or compressed in current implementation surfaces:
 
 - many possible meanings after a single `Decision` is selected;
-- rejected alternatives after intent classification;
 - the full interpretation space behind a selected route or response;
-- communicative-act nuance when compact intent labels are used.
 
 What remains unresolved:
 

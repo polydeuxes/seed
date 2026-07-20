@@ -15,7 +15,6 @@ This inventory is source-file based and records current behavior only. It does n
 
 ## 1. Canonical `Runtime` retry loop (called legacy in this historical inventory)
 
-Source files inspected: `seed_runtime/runtime.py`, `seed_runtime/model_client.py`, `seed_runtime/model_clients.py`, `seed_runtime/intent_classifier.py`, `seed_runtime/decisions.py`, and legacy-runtime tests in `tests/test_runtime_loop.py`, `tests/test_tool_validation.py`, `tests/test_tool_intent.py`, and `tests/test_model_client.py`.
 
 ### Retry bound
 
@@ -74,9 +73,6 @@ The legacy text prompt renderer appends `CORRECTION REQUIRED` when `DecisionInpu
 
 ### Intent parser
 
-- `StrictJSONIntentParser.parse()` raises `DecisionParseError` for invalid JSON, non-object JSON, missing `intent`/`reason`, unexpected fields, non-object `arguments`, and `IntentClassification` validation failures. [`seed_runtime/intent_classifier.py:139-171`](../seed_runtime/intent_classifier.py#L139-L171)
-- `TextIntentClassifier.classify()` directly returns `self.parser.parse(self.client.complete(context))`; it does not catch parser or transport exceptions. [`seed_runtime/intent_classifier.py:216-274`](../seed_runtime/intent_classifier.py#L216-L274)
-- `IntentDecisionProducer.decide()` invokes `self.classifier.classify(context)` only when deterministic fallback did not produce a classification and a classifier is configured; it does not catch `DecisionParseError`. [`seed_runtime/intent_classifier.py:477-493`](../seed_runtime/intent_classifier.py#L477-L493)
 
 ## 3. `RuntimeLoop` malformed-decision and provider-failure behavior
 
@@ -118,9 +114,6 @@ Source files inspected: `seed_runtime/runtime_loop.py`, `seed_runtime/decision_j
 
 ## 4. Intent classifier behavior and risks
 
-- `IntentDecisionProducer` supports both legacy `DecisionInputPacket` and RuntimeLoop `RuntimeContext`. The builder returns legacy `Decision` objects for `DecisionInputPacket`, but RuntimeLoop `Decision` objects for `RuntimeContext`. [`seed_runtime/intent_classifier.py:35-37`](../seed_runtime/intent_classifier.py#L35-L37) [`seed_runtime/intent_classifier.py:411-463`](../seed_runtime/intent_classifier.py#L411-L463)
-- Deterministic fallback paths do not parse JSON and therefore do not raise `DecisionParseError`. They can return direct echo, general informational answer, a missing-tool classification, or a default clarify classification when no classifier is configured. [`seed_runtime/intent_classifier.py:477-513`](../seed_runtime/intent_classifier.py#L477-L513)
-- RuntimeContext intent parsing can raise when a configured `TextIntentClassifier` is needed and its transport/parser fails. `TextIntentClassifier.classify()` and `IntentDecisionProducer.decide()` do not catch these exceptions. [`seed_runtime/intent_classifier.py:273-274`](../seed_runtime/intent_classifier.py#L273-L274) [`seed_runtime/intent_classifier.py:477-493`](../seed_runtime/intent_classifier.py#L477-L493)
 - In canonical `Runtime` (called old in this historical audit), a `DecisionParseError` raised by an intent-backed `DecisionProducer` is caught by the canonical Runtime retry loop. [`seed_runtime/runtime.py:86-108`](../seed_runtime/runtime.py#L86-L108)
 - In `RuntimeLoop`, the same `DecisionParseError` is handled as a provider exception: it becomes `runtime.decision.provider_failed`, a `decision.recorded` journal entry with `outcome="provider_failed"`, and a `RuntimeResult` with `decision_outcome="provider_failed"`. [`seed_runtime/runtime_loop.py:177-215`](../seed_runtime/runtime_loop.py#L177-L215)
 - The remaining risk is retry-loop parity, not provider exception observability: parser/model exceptions from the provider path are observed and converted into a deterministic result, but RuntimeLoop still does not create a retry prompt or make a second provider attempt after that failure. [`seed_runtime/runtime_loop.py:177-215`](../seed_runtime/runtime_loop.py#L177-L215) [`seed_runtime/runtime.py:86-108`](../seed_runtime/runtime.py#L86-L108)
@@ -142,13 +135,11 @@ Source files inspected: `seed_runtime/runtime_loop.py`, `seed_runtime/decision_j
 - RuntimeLoop per-kind malformed payload coverage exists for request-tool malformed payloads and forbidden fields. [`tests/test_runtime_loop.py:698-741`](../tests/test_runtime_loop.py#L698-L741)
 - RuntimeLoop provider failure observability is covered by tests that assert provider exceptions return `provider_failed`, append `runtime.decision.provider_failed` plus `decision.recorded`, preserve causation/correlation ids, and avoid `runtime.decision.rejected`. [`tests/test_runtime_loop.py:448-508`](../tests/test_runtime_loop.py#L448-L508)
 - Runtime trace support for provider failures is covered by a trace test that expects `provider_failed` summary/error fields and `runtime.decision.provider_failed` in error events. [`tests/test_runtime_trace.py:184-209`](../tests/test_runtime_trace.py#L184-L209)
-- Intent parser failure behavior is covered for non-object `arguments`, invalid intent validation wrapping, and unexpected fields through `TextIntentClassifier`. [`tests/test_intent_classifier.py:338-381`](../tests/test_intent_classifier.py#L338-L381)
 
 ### Missing or not directly covered
 
 - No test appears to cover canonical Runtime (called old in this historical audit) intent rejection followed by a successful retry using `_decision_intent_retry_decision_input()`; existing intent tests configure `max_decision_retries=0`. [`tests/test_tool_intent.py:13-29`](../tests/test_tool_intent.py#L13-L29)
 - No test appears to cover RuntimeLoop retry after a provider exception; existing provider exception coverage asserts the single-attempt `provider_failed` outcome. [`tests/test_runtime_loop.py:448-508`](../tests/test_runtime_loop.py#L448-L508)
-- No test appears to exercise a RuntimeLoop provider backed by `IntentDecisionProducer` with `TextIntentClassifier` raising `DecisionParseError` from `StrictJSONIntentParser`; the generic provider exception path is covered, but this integration shape is not directly covered. [`tests/test_runtime_loop.py:448-508`](../tests/test_runtime_loop.py#L448-L508) [`tests/test_intent_classifier.py:338-381`](../tests/test_intent_classifier.py#L338-L381)
 - RuntimeLoop malformed-decision tests cover unsupported returned objects and unsupported kinds, but not every answer/call-tool field-validation branch in `_validate_decision()`.
 
 ## 6. Migration risk if canonical `Runtime` (called old in this historical audit) were removed before retry/parse parity
@@ -167,4 +158,3 @@ These are possible future choices only; this inventory does not recommend or imp
 2. Add a bounded retry loop to RuntimeLoop with RuntimeLoop-native retry context and event/journal semantics.
 3. Extend provider exception handling with retry prompts for retryable provider/parser exceptions while preserving the deterministic `provider_failed` outcome after exhaustion.
 4. Add a retry policy service shared by canonical Runtime (called legacy in this historical audit) and RuntimeLoop so retry bounds, retry prompts, and retryable error classes are configured outside either loop.
-5. Adapt intent classification so parser/model failures are converted into RuntimeLoop retry inputs or another RuntimeLoop-native failure shape rather than relying only on the generic provider-failed path.

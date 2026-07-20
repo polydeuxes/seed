@@ -178,7 +178,6 @@ If added, that helper should be advisory only. It should not:
 - bypass validation;
 - bypass `ToolIntentGuard`;
 - bypass policy or approval gates;
-- replace `IntentDecisionModel`, `TextIntentClassifier`, or `DecisionBuilder`;
 - rewrite `Runtime`;
 - make `request_tool` executable.
 
@@ -189,7 +188,6 @@ A later implementation may also add tests that ensure the bridge remains conserv
 This bridge rejects:
 
 - treating `InputAct` as a runtime route;
-- treating `InputAct` as a replacement for compact intent labels;
 - treating `InputAct` as an execution permission;
 - treating `command_request` as automatic `call_tool`;
 - treating `casual_answer` as implicit approval;

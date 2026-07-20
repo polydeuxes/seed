@@ -331,7 +331,6 @@ sed -n '1,220p' seed_runtime/decisions.py
 sed -n '1,380p' seed_runtime/runtime.py
 sed -n '380,520p' seed_runtime/runtime.py
 sed -n '1,260p' seed_runtime/tool_needs.py
-sed -n '1,520p' seed_runtime/intent_classifier.py
 sed -n '1,260p' seed_runtime/container_ownership_authority.py
 sed -n '1,520p' seed_runtime/service_ownership_authority.py
 sed -n '1,420p' seed_runtime/privilege_discovery.py
@@ -346,7 +345,6 @@ sed -n '1,230p' tests/test_runtime_loop.py
 - `seed_runtime/decisions.py`
 - `seed_runtime/runtime.py`
 - `seed_runtime/tool_needs.py`
-- `seed_runtime/intent_classifier.py`
 - `seed_runtime/container_ownership_authority.py`
 - `seed_runtime/service_ownership_authority.py`
 - `seed_runtime/privilege_discovery.py`

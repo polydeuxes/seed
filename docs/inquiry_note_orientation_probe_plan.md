@@ -532,7 +532,6 @@ Likely test locations after acceptance:
 - Related State Summary rows may be misread as importance unless the State
   Summary authority boundary is displayed.
 - Lexical matching may miss useful relations, but adding semantic inference too
-  early risks intent classification.
 - Reusing runtime trace events may blur note preservation with runtime decision
   traces unless event kind and reader boundaries are explicit.
 - Adding CLI semantics in `scripts/seed_local.py` could repeat the State Summary

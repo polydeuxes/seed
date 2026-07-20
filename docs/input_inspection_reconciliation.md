@@ -24,19 +24,12 @@ The answer is mixed:
   - `propose_state_patch` -> `StatePatchService.apply`.
   - `refuse` -> `response.refusal` event and `RuntimeResponse(kind="refusal")`.
 
-### Decision model and compact intent surfaces
 
 - `DecisionKind` in `seed_runtime/models.py` contains the runtime decision vocabulary.
 - `Decision` stores the selected `kind`, `reason`, and kind-specific fields such as `answer`, `question`, `tool_name`, `tool_arguments`, `tool_need`, and `state_patch`.
-- `IntentDecisionProducer` adapts compact intent classification into full runtime `Decision` objects.
-- `TextIntentClassifier` wraps an `IntentPromptModelClient` and parses strict JSON into an `IntentClassification`.
-- `IntentPromptModelClient` renders a provider-neutral intent prompt and delegates completion to a text transport.
-- `StrictJSONIntentParser` only accepts JSON objects containing `intent`, `reason`, and optional object-valued `arguments`.
-- `DecisionBuilder` maps compact intent labels into full `Decision` kinds.
 
 ### Deterministic fallback and normalization surfaces
 
-- `deterministic_intent_fallback` handles high-confidence local cases before calling a classifier:
   - `echo ...` -> compact `echo` intent.
   - inputs matching missing-tool patterns are left for classifier/fallback missing-tool handling.
   - informational patterns such as `what is ...`, `who is ...`, `explain ...`, and `define ...` become compact `answer` intents.
@@ -57,13 +50,10 @@ The answer is mixed:
 
 - `DecisionInputComposer.compose` includes the current input event payload, active goal, entities, recent facts, recent evidence, visible tools, open tool needs, a decision schema, and context-budget trace in a `DecisionInputPacket`.
 - The context decision schema currently advertises only `answer`, `ask_question`, `call_tool`, `request_tool`, and `refuse` to the composed context, even though the broader `DecisionKind` type also includes proposal/state-patch legacy or side-path kinds.
-- `build_intent_prompt` narrows compact classifier output to `echo`, `answer`, `missing_tool`, `clarify`, and `refuse` and includes guidance for general informational questions, visible tools, missing capabilities, external/current information, actions, and observations of the world.
 
 ### Local CLI intent path
 
-- `scripts/seed_local.py` constructs the local app with `DecisionInputComposer`, `IntentPromptModelClient.for_endpoint`, `TextIntentClassifier`, `IntentDecisionProducer`, `DecisionValidator`, `ToolExecutor`, `ToolNeedService`, and canonical `Runtime`.
 - One-shot CLI messages are joined into a single string and passed through `LocalSeedApp.run`, which calls `Runtime.handle_user_message`.
-- The CLI description explicitly says it runs Seed locally with Ollama `/api/generate` intent classification.
 
 ### Documentation surfaces already present
 
@@ -136,12 +126,7 @@ raw user text
   -> StateProjector.project
   -> DecisionInputComposer.compose(DecisionInputPacket)
   -> DecisionProducer.decide
-     -> IntentDecisionProducer.decide for the local CLI path
-        -> deterministic_intent_fallback, or TextIntentClassifier.classify
-        -> IntentPromptModelClient.complete(build_intent_prompt(context))
-        -> StrictJSONIntentParser.parse
         -> _normalize_classification_for_input
-        -> DecisionBuilder.build
   -> model.decision.proposed event
   -> DecisionValidator.validate
   -> ToolIntentGuard.validate for call_tool intent constraints
@@ -208,7 +193,6 @@ More specifically:
 2. **Classifier behavior is under-specified for conversational setup**: the prompt says to use `answer` for conversational replies or directly answerable questions, but it does not define how to treat prefaces like `I have a question`, user corrections, claims, or observations.
 3. **Routing behavior mostly exists for the current vocabulary**: `answer`, `ask_question`, `request_tool`, `call_tool`, and `refuse` are routed, validated, and documented elsewhere.
 4. **Observation/claim intake is missing from this path**: user-provided observations and documentation claims are not accepted as explicit input kinds before decision routing.
-5. **Docs were incomplete for this exact reconciliation question**: existing docs document routing and response boundaries, but not the full relationship between input inspection, compact intent labels, decision kinds, and conversational naturalness.
 
 ## Ownership Boundaries
 
@@ -216,7 +200,6 @@ This audit preserves the current boundaries:
 
 - `Runtime` remains the canonical route owner.
 - `DecisionInputComposer` owns composition of current input and relevant state into `DecisionInputPacket`.
-- `IntentDecisionProducer`, `TextIntentClassifier`, `IntentPromptModelClient`, `StrictJSONIntentParser`, and `DecisionBuilder` own the local compact-intent-to-decision adaptation path.
 - `DecisionValidator` owns structured decision validation.
 - `ToolIntentGuard` owns deterministic tool-call intent checks.
 - `ToolNeedService` owns `request_tool` capability-gap creation and resolution support.
@@ -243,7 +226,6 @@ See `docs/input_act_vocabulary.md` for the documentation-only first-class vocabu
 
 ## Recommended Next Step
 
-Add a small, explicit input-inspection vocabulary only if a future behavior change is approved. The likely next design task is to define how current compact intent labels should relate to user input acts such as operator query, task request, user-provided observation, documentation claim, correction, and casual answer.
 
 The next implementation should remain narrow:
 

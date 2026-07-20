@@ -37,7 +37,6 @@ Current terms such as:
 - `missing_tool`;
 - `clarify`.
 
-mostly describe output, routing, compact intent, or decision behavior. They say what Seed should emit or route toward, not what kind of user input was received.
 
 That creates ambiguity:
 
@@ -239,7 +238,6 @@ This vocabulary should extend that existing input-inspection vocabulary rather t
 
 - `Runtime.handle_user_message` remains the canonical intake and routing entry point.
 - `Runtime._route` remains the runtime route owner for validated decisions.
-- `DecisionKind`, `Decision`, `IntentDecisionProducer`, `TextIntentClassifier`, `IntentPromptModelClient`, `StrictJSONIntentParser`, `DecisionBuilder`, deterministic fallback, normalization, `DecisionValidator`, `ToolIntentGuard`, `DecisionInputComposer`, and `scripts/seed_local.py` remain existing components of the current path.
 - Input-act vocabulary should give Seed words for the user utterance before output/routing decisions are made.
 - Input-act vocabulary should not turn natural language into LLM-only routing, policy bypass, or direct tool execution.
 

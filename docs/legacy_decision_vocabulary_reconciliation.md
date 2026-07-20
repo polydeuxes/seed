@@ -40,7 +40,6 @@ The current runtime implementation defines `DecisionProducer.decide(decision_inp
 | `ContextComposer = DecisionInputComposer` | `seed_runtime/context.py:141` | compatibility alias | Kept as former public decision-input composer name. |
 | `ParsedDecisionModel = ParsedDecisionProducer` | `seed_runtime/model_client.py:402` | compatibility alias | Kept for the former parsed decision adapter name. |
 | `OllamaDecisionModel = OllamaDecisionProducer` / `LlamaCppDecisionModel = LlamaCppDecisionProducer` | `seed_runtime/model_clients.py:294-295` | compatibility alias | Kept for former model-client class names. |
-| `IntentDecisionModel = IntentDecisionProducer` | `seed_runtime/intent_classifier.py:630` | compatibility alias | Kept for former intent adapter name. |
 
 ### Test compatibility
 
@@ -48,7 +47,6 @@ The current runtime implementation defines `DecisionProducer.decide(decision_inp
 |---|---:|---|---|
 | `ContextComposer`, `ContextPacket` alias imports/assertions | `tests/test_runtime_loop.py:398-409` | test compatibility | Test proves legacy input imports remain aliases to preferred names. |
 | `DecisionModel`, `FakeDecisionModel` alias imports/assertions and construction | `tests/test_runtime_loop.py:412-437` | test compatibility | Test proves legacy producer imports remain aliases and `last_context` compatibility still mirrors `last_decision_input`. |
-| `context_packet` fixture variable | `tests/test_context.py:9`; `tests/test_intent_classifier.py:381` | test compatibility | Local test vocabulary around packet instances; not production architecture. |
 | `model.decision.*` assertions | `tests/test_api.py:74`; `tests/test_runtime_loop.py:96-381`; `tests/test_seed_local_script.py:288,331,475`; `tests/test_state_patches.py:175,202`; `tests/test_tool_intent.py:50-90`; `tests/test_tool_recommendations.py:399`; `tests/test_tool_validation.py:126-218` | test compatibility | Tests preserve existing event vocabulary and should remain until event compatibility is intentionally changed. |
 | `retry_prompt` assertions | `tests/test_model_client.py:165-178`; `tests/test_runtime_loop.py:243-356` | test compatibility | Tests preserve current retry metadata field and rendered correction section. |
 
@@ -59,8 +57,6 @@ The current runtime implementation defines `DecisionProducer.decide(decision_inp
 | `last_context` on `StaticDecisionProducer` | `seed_runtime/runtime.py:31,35` | active implementation | Runtime test helper stores both preferred `last_decision_input` and legacy `last_context`; this is active code, but the legacy member exists only for compatibility. |
 | `context` local variables / annotations in runtime retry helpers | `seed_runtime/runtime.py:84,200,220,240` | active implementation | Local variable names still use generic `context` while the types are `DecisionInputPacket`; this is naming debt only, not a runtime behavior difference. |
 | `ModelClient.complete(self, context: DecisionInputPacket)` and prompt renderer `context` parameter | `seed_runtime/model_client.py:17,26,72,318` | active implementation | Model-client/prompt adapter vocabulary still names the decision input as `context`; this is active implementation vocabulary in the prompt-rendering boundary. |
-| `IntentClassifier.classify(context: str)` | `seed_runtime/intent_classifier.py:212,273,280` | active implementation | This is not the renamed decision packet seam; it is text-classifier context and remains current implementation vocabulary for intent classification. |
-| `DecisionBuilder.build(self, context: IntentContext, ...)` and intent helper contexts | `seed_runtime/intent_classifier.py:371,379,443,505` | active implementation | Adapter still uses `context` for either `DecisionInputPacket` or RuntimeLoop `RuntimeContext`; some of this remains active generic context vocabulary. |
 | `runtime.py` constructor parameter `model: DecisionProducer` and `self.model.decide(...)` | `seed_runtime/runtime.py:68,83` | active implementation | Preferred type is `DecisionProducer`, but the member name remains model-centric. |
 | `retry_prompt` dataclass field and retry construction/rendering | `seed_runtime/context.py:40`; `seed_runtime/runtime.py:208,228,245-255`; `seed_runtime/model_client.py:67-68` | active implementation | The packet schema and prompt renderer actively depend on this field. |
 
@@ -100,7 +96,6 @@ Intentional compatibility surfaces are: all explicit aliases, `StaticDecisionPro
 Every occurrence from the required searches falls into one of the categories above:
 
 - active implementation: local `context`/`model` vocabulary in runtime, model-client, intent-classifier, and retry helpers; `last_context`; `retry_prompt` construction/rendering.
-- compatibility alias: explicit alias assignments in `seed_runtime/runtime.py`, `seed_runtime/context.py`, `seed_runtime/model_client.py`, `seed_runtime/model_clients.py`, and `seed_runtime/intent_classifier.py`.
 - test compatibility: alias, event-name, and retry-schema assertions under `tests/`.
 - current documentation: current inventories/reconciliations that describe live runtime behavior.
 - historical documentation: pseudocode, build-plan, naming-plan, and historical audit documents.
@@ -124,7 +119,6 @@ No cleanup is performed in this report.
 The following should remain until an explicit compatibility window because implementation or tests prove consumers depend on them:
 
 - `DecisionModel`, `FakeDecisionModel`, `ContextComposer`, and `ContextPacket` aliases.
-- Provider aliases `ParsedDecisionModel`, `OllamaDecisionModel`, `LlamaCppDecisionModel`, and `IntentDecisionModel`.
 - `StaticDecisionProducer.last_context`.
 - `retry_prompt`, because it is a serialized `DecisionInputPacket` field and rendered by the model-client prompt path.
 - `model.decision.*` event names, because runtime emits them and many tests assert them.
@@ -186,7 +180,6 @@ A safe next slice would rename only internal runtime/model-client parameter and 
 - `seed_runtime/context.py`
 - `seed_runtime/model_client.py`
 - `seed_runtime/model_clients.py`
-- `seed_runtime/intent_classifier.py`
 - `tests/test_runtime_loop.py`
 - `tests/test_model_client.py`
 - Documentation files returned by the required repository-wide searches.

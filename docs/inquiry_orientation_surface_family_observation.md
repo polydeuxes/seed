@@ -16,7 +16,6 @@ related:
 
 Exploratory observation only.
 
-This document does not propose implementation, V2 design, command changes, orientation authority, view-selection mechanisms, intent classification, concern detection, recommendations, or next-safe-move generation.
 
 ## Background
 
@@ -135,7 +134,6 @@ This observation intentionally preserves:
 ```text
 orientation
     !=
-intent classification
 ```
 
 ```text
