@@ -35,13 +35,11 @@ This inventory is source-file based and records current behavior only. It does n
 
 - Old `Runtime.handle_user_message` appends `input.user_message`, projects state, composes a `ContextPacket`, and then loops through model decision attempts. Each parsed decision is appended as `model.decision.proposed` before validation. [`seed_runtime/runtime.py:68-118`](../seed_runtime/runtime.py#L68-L118)
 - When an `ask_question` decision validates, `_route` appends `response.question` with payload `{"question": decision.question}` and returns `RuntimeResponse(kind="question", message=decision.question or "")`. [`seed_runtime/runtime.py:265-274`](../seed_runtime/runtime.py#L265-L274)
-- If `question` is missing or empty, `DecisionValidator` returns `ask_question decisions require question`; Runtime appends `model.decision.invalid` with the errors and attempt number, retries until `max_decision_retries` is exhausted, and then returns `RuntimeResponse(kind="invalid_decision", message="Model decision failed validation.", payload={"errors": validation_errors})`. [`seed_runtime/decisions.py:47-49`](../seed_runtime/decisions.py#L47-L49) [`seed_runtime/runtime.py:150-170`](../seed_runtime/runtime.py#L150-L170)
 - Parse failures are handled before decision validation: Runtime appends `model.decision.parse_failed`, retries with a JSON correction prompt if retries remain, and returns `RuntimeResponse(kind="invalid_decision", message="Model decision failed parsing.", payload={"errors": [str(exc)]})` when parse retries are exhausted. [`seed_runtime/runtime.py:86-108`](../seed_runtime/runtime.py#L86-L108) [`seed_runtime/runtime.py:213-230`](../seed_runtime/runtime.py#L213-L230)
 
 ### `refuse`
 
 - When a `refuse` decision validates, `_route` appends `response.refusal` with payload `{"reason": decision.reason}` and returns `RuntimeResponse(kind="refusal", message=decision.reason)`. [`seed_runtime/runtime.py:342-351`](../seed_runtime/runtime.py#L342-L351)
-- If `reason` is missing or empty, `DecisionValidator` returns `refuse decisions require reason`; Runtime handles it through the same `model.decision.invalid` retry loop and final `invalid_decision` response used for other validation failures. [`seed_runtime/decisions.py:57-59`](../seed_runtime/decisions.py#L57-L59) [`seed_runtime/runtime.py:150-170`](../seed_runtime/runtime.py#L150-L170)
 - `ToolIntentGuard` is run after decision validation and before routing. It mainly guards `call_tool` decisions, so ask/refuse validation failures are the decision validator's responsibility. [`seed_runtime/runtime.py:118-147`](../seed_runtime/runtime.py#L118-L147)
 
 ## 4. RuntimeLoop behavior

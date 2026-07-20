@@ -55,7 +55,6 @@ All emitted state patch events use actor `system`, carry the provided `session_i
 
 There are two validation layers:
 
-1. `DecisionValidator` only checks that `propose_state_patch` has a truthy `decision.state_patch`; it does not inspect operations or entity/fact/evidence/goal fields.
    [`seed_runtime/decisions.py:42-62`](../seed_runtime/decisions.py#L42-L62)
 2. `StatePatchService` validates the patch shape and operations during application:
    - `ops`/`operations`, if present, must be a list.
@@ -92,10 +91,8 @@ Operation-specific defaults and required fields:
 
 ### Validation and routing
 
-`Runtime.handle_user_message` appends `input.user_message`, projects state, composes context, asks the model for a `Decision`, appends `model.decision.proposed`, runs `DecisionValidator`, runs `ToolIntentGuard`, and only then routes by decision kind.
 [`seed_runtime/runtime.py:68-126`](../seed_runtime/runtime.py#L68-L126)
 
-For `propose_state_patch`, the initial validation is only the `DecisionValidator` truthiness check for `state_patch`.
 [`seed_runtime/decisions.py:54-56`](../seed_runtime/decisions.py#L54-L56)
 If validation passes, `_route` dispatches to `self.state_patch_service.apply(workspace_id, decision.state_patch or {}, session_id=session_id, causation_id=decision_event.id)`.
 [`seed_runtime/runtime.py:311-318`](../seed_runtime/runtime.py#L311-L318)
@@ -185,7 +182,6 @@ There is no RuntimeLoop branch that routes `propose_state_patch`, and RuntimeLoo
 
 ## 6. Test coverage
 
-- `tests/test_decisions.py::test_propose_state_patch_requires_state_patch` verifies that `DecisionValidator` accepts a `propose_state_patch` decision with a truthy `state_patch` and rejects one with no `state_patch` using the exact validation error.
   [`tests/test_decisions.py:100-115`](../tests/test_decisions.py#L100-L115)
 - `tests/test_state_patches.py::test_state_patch_service_applies_minimum_supported_ops` covers all four supported operations, verifies emitted event kinds and causation ids, verifies defaulted `observed_at`, verifies evidence workspace defaulting, verifies fact evidence ids, and verifies goal `created_from_event_id` projection.
   [`tests/test_state_patches.py:29-99`](../tests/test_state_patches.py#L29-L99)
@@ -230,7 +226,6 @@ No implementation is proposed here. If state patches are later ported, the clean
 [`seed_runtime/state_patches.py:26-51`](../seed_runtime/state_patches.py#L26-L51)
 A shared route-level boundary could preserve the current separation:
 
-- `DecisionValidator` remains responsible only for decision-level presence checks.
   [`seed_runtime/decisions.py:54-56`](../seed_runtime/decisions.py#L54-L56)
 - `StatePatchService` remains responsible for patch expansion, operation validation/defaulting, and domain event appends.
   [`seed_runtime/state_patches.py:53-159`](../seed_runtime/state_patches.py#L53-L159)

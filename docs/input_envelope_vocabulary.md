@@ -212,7 +212,6 @@ service_limited
 unknown
 ```
 
-It is not the final execution decision and is not a substitute for `DecisionValidator`, `ToolIntentGuard`, policy gates, approvals, or pending-action handling.
 
 ### `source_trust`
 
@@ -523,7 +522,6 @@ It should not:
 - choose final `DecisionKind`;
 - execute tools;
 - authorize side effects;
-- bypass `DecisionValidator`;
 - bypass `ToolIntentGuard`;
 - bypass policy, approval, pending-action, or registered-tool boundaries;
 - make `request_tool` executable;

@@ -98,7 +98,6 @@ Classification: **response surface** for runtime communication. Runtime is not a
 
 ## Decision output shape
 
-`Decision` contains response-relevant fields: `kind`, `reason`, `answer`, `question`, tool-call fields, tool-need fields, plan fields, handoff fields, and state-patch fields. `DecisionValidator` validates answer, question, request-tool, call-tool, state-patch, and refusal requirements.
 
 Classification: **data source and response precursor**. A `Decision` is not itself a final response until routed or formatted.
 
@@ -207,7 +206,6 @@ Composition ownership is distributed by surface. There is no central Response co
 | --- | --- | --- |
 | Runtime response routing | `Runtime` | Owns routing validated decisions into runtime envelopes and appending answer/question/refusal events. Does not own explanation, integrity, projection, tool execution, or CLI presentation. |
 | Runtime response shape | `RuntimeResponse` | Minimal envelope of `kind`, `message`, and `payload`; not a full response contract. |
-| Decision requirements | `Decision` / `DecisionValidator` | Own decision output shape and validation, not user-facing formatting. |
 | Context composition | `ContextComposer` / context budget and selection helpers | Own decision-input context packets, not final response presentation. |
 | Decision-ready context view | `context_views.py` | Owns deterministic context view composition from integrity/evidence/confidence/state sources. |
 | Explanation composition | `ExplanationBuilder` | Owns why-oriented fact/belief explanation over projected State. |

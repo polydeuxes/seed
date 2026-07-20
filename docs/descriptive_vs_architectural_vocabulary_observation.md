@@ -145,7 +145,6 @@ reader-facing metaphors. They define boundaries, fields, validation roles,
 projection relationships, execution boundaries, and explanatory obligations.
 
 The runtime document provides another cluster. `Runtime`, `DecisionProvider`,
-`DecisionValidator`, `PolicyEngine`, `ToolExecutor`, `EventLedger`,
 `StateProjector`, `DecisionJournal`, and `RuntimeTrace` participate in a concrete
 flow. Their vocabulary is architectural because behavior and authority attach to
 them: raw provider output is not executed, only registered operations can enter

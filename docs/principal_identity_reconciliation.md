@@ -147,7 +147,6 @@ This audit preserves existing owners and boundaries:
 - `Runtime` owns canonical user-message intake and decision routing.
 - `EventLedger` owns append-only event history.
 - `ContextComposer` owns context packet construction from current input and projected state.
-- `DecisionValidator` owns decision structure validation.
 - `ToolIntentGuard` owns deterministic checks that a tool call matches user intent.
 - `ToolExecutionPolicyService` and `PolicyGate` own registered-tool policy evaluation.
 - `PendingActionService` owns pending-action lifecycle events.
@@ -174,7 +173,6 @@ This audit rejects the following solutions:
 - treating `source_type="user"` as a verified principal;
 - treating `approved_by` or `granted_by` as a generic input principal;
 - treating `authorization_scope` as execution approval;
-- bypassing `DecisionValidator`, `ToolIntentGuard`, policy, approval, pending-action, or registered-tool boundaries.
 
 ## Recommended Vocabulary
 

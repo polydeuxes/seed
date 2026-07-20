@@ -29,7 +29,6 @@ The current `RuntimeLoop` still contains business logic that should be owned by
 services over time:
 
 - `_validate_decision`: RuntimeLoop-specific validation rules for provider
-  decisions. This PR extracts it to `RuntimeLoopDecisionValidator`.
 - `_build_tool_need`: request-tool payload normalization and `ToolNeed` creation.
 - `_run_tool_decision`: tool-call dispatch behavior, policy result handling,
   handler execution, output validation, evidence extraction, and result shaping.
@@ -44,7 +43,6 @@ Only decision validation moves in this PR.
 New owner:
 
 - `seed_runtime/runtime_loop_decisions.py`
-- `RuntimeLoopDecisionValidator.validate_decision(...)`
 
 `RuntimeLoop` delegates validation to the service and preserves the existing
 malformed-decision path exactly. The validator keeps the same accepted decision

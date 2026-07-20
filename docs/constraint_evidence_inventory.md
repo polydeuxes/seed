@@ -66,7 +66,6 @@ Discovery commands used:
 ```text
 rg --files docs
 rg --files -g '!docs/**' -g '!target' -g '!node_modules'
-rg -n "rejected|reject|must not|not justified|not implemented|must|only|never|cannot|forbidden|non-goal|out of scope|LLM|RuntimeLoop|bypass|ownership inference|behavior inference|guard|validator|DecisionValidator|ToolIntentGuard|policy|boundary|ConstraintFact|InvariantFact|PolicyFact" docs/*.md docs/audit/*.md seed_runtime tests -g '*.md' -g '*.py'
 rg -n "^def test_.*(request_tool|call_tool|intent|policy|registered|unknown|ProjectionStore|EventLedger|RuntimeLoop|read_only|read-only|must_not|does_not|reject|invalid|only|ownership|verification|invariant|boundary|append|snapshot|execute)" tests -g '*.py'
 ```
 
@@ -109,7 +108,6 @@ The following evidence categories are supported by repository findings.
 | Non-goals | Reconciliation, status, protocol, and architecture documents | Explicitly reject production code, Runtime integration, ToolExecutor integration, repository scanning expansion, LLM extraction/reasoning, projection mutation, and new engines. |
 | Rejected concepts | `docs/self_model_and_alignment_architecture_reconciliation.md`, `docs/architectural_findings_preservation.md`, status/frontier docs, claim-support design docs | Narrow future owner candidates and preserve negative boundaries such as no `RuntimeLoop` revival as canonical runtime, no TruthEngine, no ResponseEngine, no runtime-owned self model, and no automatic claim-to-claim reasoning. |
 | Design constraints | `docs/function_blocks.md`, `docs/architecture.md`, `docs/architecture_principles.md`, capability extension and observation docs | Encode intended flow and component roles, such as only `call_tool` entering `ToolExecutor`, EventLedger as source of truth, ProjectionStore as cache, and state views as read-only. |
-| Validation rules | `DecisionValidator`, `ToolValidationService`, `ToolExecutionPolicyService` | Deterministically reject malformed decisions, invalid tool needs, missing tool names, unknown/unregistered tools, schema violations, and non-allow policy outcomes. |
 | Guards | `ToolIntentGuard`, runtime retry/rejection paths, policy gate paths | Preserve intent and visibility boundaries around model-proposed tool calls. |
 | Boundary tests | Tests named around `does_not`, `rejects`, `only`, `read_only`, `policy`, `request_tool`, `call_tool`, and capability verification invariants | Preserve negative guarantees and scoped non-execution / non-mutation behavior. |
 | Architecture documents | `docs/architecture.md`, `docs/function_blocks.md`, architecture principles and lifecycle docs | State canonical owners, boundary-oriented flows, read-only projection layers, and deprecated RuntimeLoop status. |
@@ -222,7 +220,6 @@ Rejected concepts are already a major form of constraint evidence in Seed. They 
 | --- | --- | --- |
 | RuntimeLoop revival as canonical runtime | `docs/invariants.md`, `docs/architecture.md`, runtime/status docs | Strong boundary evidence. RuntimeLoop is deprecated/experimental and must not exist in active runtime paths or define canonical runtime behavior. |
 | LLM-only or LLM semantic reasoning for reconciliation | Boundary/ownership/self-model/claim-support docs | Strong policy evidence. LLM extraction or semantic reasoning is rejected for current reconciliation support; deterministic rules remain the safe path. |
-| Validation bypass | Runtime, DecisionValidator, ToolIntentGuard, ToolValidationService, ToolExecutionPolicyService, tests | Strong guard evidence. Existing paths validate decisions, visibility/intent, tool existence/status/schema, and policy before execution. |
 | Ownership inference from behavior, relationship, call site, containment, names, or absence | Ownership and boundary reconciliation docs | Strong reconciliation constraint evidence. These documents explicitly reject automatic ownership inference from lower layers. |
 | Behavior inference from structure/containment | Behavior and relationship reconciliation docs | Strong layer-boundary evidence. Structure does not prove behavior; method containment does not prove calls, routing, execution, or ownership. |
 | New engines such as `ReasoningEngine`, `TruthEngine`, `ResponseEngine`, `ContextEngine`, `IntegrityEngine`, `ExplainabilityEngine`, `SelectionEngine`, `SelfModelEngine`, `RepositoryEngine`, and `DocumentationEngine` | Self-model reconciliation, architectural findings preservation, status/frontier docs | Strong negative architecture evidence. Engine creation is repeatedly rejected unless future evidence proves a specific unmet need. |
@@ -240,7 +237,6 @@ Existing mechanisms that represent policy or constraint evidence include:
 
 ### Decision validation
 
-`DecisionValidator` validates structured model decisions. It requires:
 
 - answer decisions to include answers;
 - ask-question decisions to include questions;
@@ -264,7 +260,6 @@ This is policy/guard evidence. It shows Seed already has deterministic non-LLM g
 
 ### Tool validation
 
-`ToolValidationService` checks that tools exist, are registered, and satisfy input/output schemas. `DecisionValidator` uses it for call-tool validation, and execution policy evaluation also uses it before policy evaluation.
 
 This is constraint evidence for registered-operation and schema boundaries.
 

@@ -51,13 +51,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    Runtime --> DecisionValidator
 
-    DecisionValidator --> RequestTool[request_tool]
-    DecisionValidator --> CallTool[call_tool]
-    DecisionValidator --> Answer[answer]
-    DecisionValidator --> Question[question]
-    DecisionValidator --> Refusal[refusal]
 
     CallTool --> ToolExecutor
 

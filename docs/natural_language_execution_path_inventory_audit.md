@@ -147,7 +147,6 @@ For `request_tool` decisions, Runtime creates a tool need, ranks recommendations
 
 ### Structured Decision Kinds
 
-`Decision` supports decision kinds including `answer`, `ask_question`, `call_tool`, `request_tool`, `propose_state_patch`, and `refuse`, while the model type also lists legacy or side-path proposal kinds. `DecisionValidator` validates required fields and registered tool input for tool calls.
 
 ### Runtime Routing
 
