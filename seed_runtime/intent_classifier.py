@@ -1,9 +1,4 @@
-"""Intent-classifier adapter for small/local decision models.
-
-Small models can return a compact intent label plus lightweight arguments. Seed then
-builds the full runtime Decision deterministically so the model does not have to
-hand-author every Decision field.
-"""
+"""Intent-classifier parsing residue for small/local model experiments."""
 
 from __future__ import annotations
 
@@ -11,8 +6,6 @@ import json
 import re
 from importlib.util import find_spec
 from typing import Any, Literal, Protocol, Sequence
-
-from seed_runtime.capability_catalog import CapabilityCatalog
 
 from seed_runtime.base import SeedModel
 from seed_runtime.context import DecisionInputPacket
@@ -22,7 +15,6 @@ from seed_runtime.model_client import (
     EndpointTransport,
     TextCompletionTransport,
 )
-from seed_runtime.models import Decision
 from seed_runtime.serialization import to_plain
 
 if find_spec("pydantic") is not None:
@@ -32,7 +24,6 @@ else:
 
 IntentLabel = Literal["echo", "answer", "missing_tool", "clarify", "refuse"]
 IntentContext = DecisionInputPacket
-IntentDecision = Decision
 
 _VALID_TOOL_NAME_CHARS = re.compile(r"[^a-z0-9]+")
 _CATEGORY_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
@@ -368,73 +359,6 @@ def _render_intent_context(packet: dict[str, Any]) -> dict[str, Any]:
 
 def _render_intent_context_for_prompt(decision_input: IntentContext) -> dict[str, Any]:
     return _render_intent_context(to_plain(decision_input))
-
-
-class DecisionBuilder:
-    """Build full runtime decisions from compact intent classifications."""
-
-    def build(
-        self, decision_input: IntentContext, classification: IntentClassification
-    ) -> IntentDecision:
-        arguments = classification.arguments
-        reason = classification.reason or f"classified as {classification.intent}"
-        if classification.intent == "echo":
-            message = str(
-                arguments.get("message") or _echo_message(_input_text(decision_input))
-            )
-            return Decision(
-                kind="call_tool",
-                reason=reason,
-                tool_name="echo",
-                tool_arguments={"message": message},
-            )
-        if classification.intent == "answer":
-            answer = str(arguments.get("answer") or arguments.get("message") or "")
-            return Decision(kind="answer", reason=reason, answer=answer)
-        if classification.intent == "missing_tool":
-            tool_need = _normalize_tool_need(arguments, _input_text(decision_input))
-            return Decision(
-                kind="request_tool",
-                reason=reason,
-                tool_need=tool_need,
-            )
-        if classification.intent == "clarify":
-            question = str(arguments.get("question") or "What would you like me to do?")
-            return Decision(kind="ask_question", reason=reason, question=question)
-        if classification.intent == "refuse":
-            refusal = str(arguments.get("refusal") or arguments.get("message") or reason)
-            return Decision(kind="refuse", reason=reason)
-        raise ValueError(f"unsupported intent {classification.intent!r}")
-
-
-class IntentDecisionProducer:
-    """DecisionProducer that asks for an intent label, then builds a Decision locally."""
-
-    def __init__(
-        self,
-        classifier: IntentClassifier | None = None,
-        builder: DecisionBuilder | None = None,
-    ) -> None:
-        self.classifier = classifier
-        self.builder = builder or DecisionBuilder()
-
-    def decide(self, decision_input: IntentContext) -> IntentDecision:
-        text = _input_text(decision_input)
-        classification = deterministic_intent_fallback(decision_input)
-        if classification is None:
-            if self.classifier is None:
-                if _requires_missing_tool(text):
-                    classification = _missing_tool_classification()
-                else:
-                    classification = IntentClassification(
-                        intent="clarify",
-                        reason="No intent classifier was configured and no deterministic fallback matched.",
-                        arguments={"question": "What would you like me to do?"},
-                    )
-            else:
-                classification = self.classifier.classify(decision_input)
-        classification = _normalize_classification_for_input(text, classification)
-        return self.builder.build(decision_input, classification)
 
 
 def deterministic_intent_fallback(

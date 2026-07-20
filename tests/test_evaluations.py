@@ -12,7 +12,14 @@ from seed_runtime.evaluations import (
 from seed_runtime.model_client import DecisionParseError
 from seed_runtime.models import Decision
 from seed_runtime.registry import ToolRegistry
-from seed_runtime.runtime import StaticDecisionProducer
+
+
+class StaticDecisionProducer:
+    def __init__(self, decision: Decision) -> None:
+        self.decision = decision
+
+    def decide(self, context: DecisionInputPacket) -> Decision:
+        return self.decision
 
 
 class SmallModelMvpDecisionProducer:
