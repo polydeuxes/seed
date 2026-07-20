@@ -152,7 +152,6 @@ Documents and surfaces inspected included at least:
 - `docs/runtime_reassessment.md`
 - `docs/runtime_loop_thin_runtime_plan.md`
 - `seed_runtime/candidate_requests.py`
-- `seed_runtime/context_selection.py`
 - `seed_runtime/runtime_trace.py`
 - `seed_runtime/events.py`
 - tests surfaced by search, including candidate request, action resume, temporal

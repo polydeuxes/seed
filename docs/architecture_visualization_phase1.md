@@ -168,7 +168,6 @@ git diff --exit-code docs/generated/architecture
 Runtime.handle_user_message
   -> EventLedger.append(input.user_message)
   -> StateProjector.project
-  -> DecisionInputComposer.compose
   -> DecisionProducer.decide
   -> Runtime._route
 ```

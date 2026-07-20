@@ -88,7 +88,6 @@ READ_MODEL_PATHS = (
     "seed_runtime/state_views.py",
     "seed_runtime/context_views.py",
     "seed_runtime/state_summary_views.py",
-    "seed_runtime/context_selection.py",
 )
 DIAGNOSTIC_PATHS = (
     "seed_runtime/ownership_discrepancies.py",

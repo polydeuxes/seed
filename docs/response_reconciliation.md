@@ -54,7 +54,6 @@ Minimum requested files inspected:
 - `docs/backlog_and_status_reconciliation.md`
 - `docs/knowledge_classification_vocabulary.md`
 - `docs/knowledge_lifecycle_reconciliation.md`
-- `seed_runtime/context.py`
 - `seed_runtime/context_views.py`
 - `seed_runtime/explanations.py`
 - `seed_runtime/capability_inventory.py`
@@ -77,8 +76,6 @@ Additional response, formatter, output, summary, inventory, explanation, and CLI
 - `seed_runtime/evidence_graph.py`
 - `seed_runtime/confidence.py`
 - `seed_runtime/integrity_summary.py`
-- `seed_runtime/context_budget.py`
-- `seed_runtime/context_selection.py`
 - `seed_runtime/runtime_trace.py`
 - `seed_runtime/tool_needs.py`
 - `seed_runtime/tool_recommendations.py`
@@ -183,7 +180,6 @@ Decision input
 Runtime response envelope
 ```
 
-Ownership: ContextComposer and ContextBudget own context composition and selection traces. Response consumes or exposes these artifacts but does not own their selection rules.
 
 ## Context views to decision-ready summary
 
@@ -221,7 +217,6 @@ Ownership: CLI formatters own presentation, not source semantics or projection t
 | --- | --- | --- |
 | Runtime response envelope | `Runtime` and `RuntimeResponse` | Implemented for answer/question/tool_need/tool result/state patch/refusal/invalid/unsupported outcomes. |
 | Response event append for answer/question/refusal | `Runtime` | Implemented but partial; not every runtime response kind maps to a `response.*` event. |
-| Context selection and budgeted packet | `ContextComposer`, `ContextBudget`, context selection helpers | Implemented and not owned by Response. |
 | Decision-context composition | `context_views.py` | Implemented as read-only view composition. |
 | Explanation content | `ExplanationBuilder` | Implemented for why fact/explanation surfaces. |
 | Explanation presentation | CLI `format_explanation`, `format_why_fact` | Implemented in CLI. |
@@ -486,7 +481,6 @@ Implementation might only become justifiable if a future audit identifies a conc
 
 - **`ResponseEngine`**: would centralize a concern that currently works through local owners. It risks duplicating Runtime, CLI formatting, ExplanationBuilder, Integrity Summary, Capability Inventory, Context Views, and State Views.
 - **`ReasoningEngine`**: would confuse communication with model reasoning or inference. Response communicates selected characterized knowledge; it does not reason globally.
-- **`ContextEngine`**: would duplicate ContextComposer, ContextBudget, context selection helpers, and Context Views. Selection is already bounded and read-only where needed.
 - **Planner / WorkflowEngine**: would turn response communication into orchestration. Existing docs repeatedly reject planners/workflow engines as default solutions.
 - **Universal Formatter**: would erase source-specific semantics and caveats. CLI formatters are intentionally narrow and tied to existing artifacts.
 - **Runtime integration as default solution**: Runtime owns routing and response envelopes, not all explanation, integrity, inventory, uncertainty, or presentation semantics.

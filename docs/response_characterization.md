@@ -51,7 +51,6 @@ Minimum requested files inspected:
 - `docs/backlog_and_status_reconciliation.md`
 - `docs/knowledge_classification_vocabulary.md`
 - `docs/knowledge_lifecycle_reconciliation.md`
-- `seed_runtime/context.py`
 - `seed_runtime/context_views.py`
 - `seed_runtime/explanations.py`
 - `seed_runtime/capability_inventory.py`

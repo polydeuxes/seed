@@ -260,7 +260,6 @@ path="seed_runtime/runtime.py"
 artifact_kind="field"
 symbol="current_input"
 parent_symbol="ContextPacket"
-path="seed_runtime/context.py"
 ```
 
 ```text

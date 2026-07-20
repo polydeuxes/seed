@@ -136,7 +136,6 @@ This is evidence for capability availability and verification-state interpretati
 
 Relevant evidence:
 
-- `DecisionInputComposer.compose()` sends current input, active goals, entities, recent facts, recent evidence, tools, and open tool needs through a budgeted context packet.
 - `Runtime._route()` appends answer or question responses after a decision is already selected.
 
 This is evidence for context packaging, decision validation, and routing. It is not evidence for a repository-owned process that determines the required knowledge before answer composition.

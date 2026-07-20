@@ -71,7 +71,6 @@ Out of scope:
 - adding rationale inventories, read models, routes, adapters, schema classes, or
   metadata;
 - changing `Runtime`, `ToolExecutor`, `EventLedger`, `ProjectionStore`,
-  `ContextComposer`, `ContextBudget`, selection ordering, current fact
   selection, capability inventory, explanations, execution behavior, provider
   behavior, or projection behavior;
 - appending events, mutating projections, or creating engines.
@@ -95,9 +94,6 @@ Documentation inspected:
 
 Runtime files inspected:
 
-- `seed_runtime/context.py`
-- `seed_runtime/context_budget.py`
-- `seed_runtime/context_selection.py`
 - `seed_runtime/context_views.py`
 - `seed_runtime/state.py`
 - `seed_runtime/explanations.py`
@@ -114,7 +110,6 @@ single rationale object.
 
 | Question | Existing answerability | Existing surfaces |
 | --- | --- | --- |
-| Why was this fact selected for a model-visible context packet? | Partially answerable. Facts are ordered by freshness, observation recency, confidence, and id, then admitted by `ContextBudget` section/global limits. The packet contains section-level budget trace, but not per-fact reason text. | `ContextComposer`, `order_facts(...)`, `ContextBudget`, `BudgetTrace` |
 | Why was this fact selected for `DecisionContextView`? | Answerable. Confidence records are filtered for unsupported facts by default, then sorted by support presence, confidence, subject, predicate, stable object value, and fact id. | `select_context_facts(...)`, `FactConfidence`, `ContextSummary` |
 | Why was this fact not selected for `DecisionContextView`? | Answerable for unsupported facts because the default selector excludes unsupported records unless `include_unsupported=True`. | `select_context_facts(...)`, `FactConfidence`, Evidence Graph unsupported views |
 | Why was this fact not selected as the current fact? | Partially answerable. Single-cardinality current selection uses the unambiguous strongest support group, then chooses a representative supporting fact by confidence, observed-vs-inferred status, observation time, and id. Ties can produce ambiguity. | `State.get_fact_support(...)`, `State.get_best_fact(...)`, `ExplanationBuilder.why(...)` |
@@ -122,8 +117,6 @@ single rationale object.
 | Why was this capability surfaced? | Answerable within the capability inventory universe. Capabilities come from registered tools, tool needs, and `capability_verified` fact subjects; entries include state, reason, support summary, facts, evidence, and age. | `build_capability_inventory(...)`, `CapabilityInventoryEntry` |
 | Why was this issue surfaced? | Answerable. Contradiction issues are produced by contradiction detection over exclusive-predicate multi-value conflicts; graph issues come from projected state validation and carry reason/severity. | `Contradiction`, `ContradictionSummary`, `State.graph_issues`, `DecisionContextView` issues |
 | Why was this stale fact surfaced? | Answerable. Stale facts are expired facts, sorted by expiry and id; refresh recommendations map predicates to deterministic refresh capabilities and include reason text. | `State.get_stale_facts()`, `State.get_stale_fact_refresh_recommendations()` |
-| Why was this context item included? | Partially answerable. Section priorities, section limits, global budget, section ordering, and deterministic within-section ordering identify inclusion conditions. | `ContextComposer`, `ContextBudget`, `BudgetTrace`, `context_selection.py` |
-| Why was this context item excluded? | Partially answerable. Section-level dropped counts and deterministic ordered inputs identify suffix drops, but no per-item excluded-because record exists. | `BudgetTrace`, ordered input sections, `ContextBudget` |
 | Why is this belief current, competing, ambiguous, or absent? | Answerable for fact queries. The explanation builder reports current beliefs, competing beliefs, ambiguity/no-current status, conflicts, supporting facts, evidence ids, source types, inference chains, and alias resolution. | `ExplanationBuilder.why(...)`, `FactSupport`, `FactConflict` |
 
 # Existing Questions Not Easily Answerable
@@ -136,10 +129,8 @@ stream.
 Supported examples from the audit:
 
 - **How many context items were dropped due to budget constraints across many
-  packets?** `BudgetTrace.dropped_counts` exists for one budget pass, but there is
   no aggregate store or historical summary across packets.
 - **How many exclusions occurred because of section limits versus global
-  `max_items`?** `BudgetTrace` exposes selected and dropped counts, limits, max
   items, and section order, but it does not classify each drop by precise cause
   when both section and global limits can interact.
 - **How many selected context facts relied on temporal ordering?** `order_facts`
@@ -171,10 +162,7 @@ inventing a parallel rationale system.
 
 | Surface | Existing summary information | Existing aggregate information | Existing rationale information | Assessment |
 | --- | --- | --- | --- | --- |
-| `ContextBudget` | Section priorities, section limits, optional `max_items`. | Per-pass `selected_counts` and `dropped_counts` via `BudgetTrace`. | Explains section admission order and section/global cap effects. | Strong section-level rationale; not per-item. |
-| `BudgetTrace` | Per-pass budget trace dictionary. | Selected and dropped counts per section. | Effective priorities, limits, max items, selected counts, dropped counts, section order. | Strongest existing context-packet summary-like rationale surface. |
 | `ContextComposer` | Composed `ContextPacket` with `context_budget`. | None beyond attached trace. | Uses ordering helpers, budgeted sections, selected evidence inclusion for facts, and visible tool listing. | Rationale is recoverable from composition rules. |
-| `context_selection.py` helpers | None as output. | None. | Deterministic ordering by freshness/recency/confidence/status/id/name. | Strong implicit ordering rationale. |
 | `DecisionContextView` | `ContextSummary` counts facts, issues, contradicted facts, strong/weak/unsupported included facts. | Included fact and issue counts. | Fact confidence, contradiction flags, evidence counts, issues, requirements, capabilities, projection metadata. | Existing partial rationale summary for decision context only. |
 | `select_context_facts(...)` | None as standalone output. | None. | Unsupported filtering and deterministic ordering by support presence/confidence/stable identifiers. | Direct rule but no reason records. |
 | Fact Support | Individual support groups. | None across all supports. | Supporting fact ids, source types, confidence, observation range, expiry, predicate semantics, support kind. | Strong current-state rationale surface. |
@@ -217,7 +205,6 @@ none is a general Selection Rationale Summary.
   summary. It summarizes facts and issues included in a `DecisionContextView`,
   including contradicted, strongly supported, weakly supported, and unsupported
   included facts. It does not summarize exclusions or cross-surface rationale.
-- **`BudgetTrace`.** This is the closest implemented context-packet rationale
   summary. It summarizes priorities, limits, selected counts, dropped counts, and
   section order for one budget pass. It does not include item identifiers or
   reason classifications.
@@ -313,7 +300,6 @@ Selection rationale is distributed, fragmented, and partially unified.
 Evidence of distribution:
 
 - context-packet rationale is split across `ContextComposer`, ordering helpers,
-  `ContextBudget`, and `BudgetTrace`;
 - decision-context rationale is split across confidence aggregation, Evidence
   Graph, contradictions, unsupported filtering, context issue formatting, and
   `ContextSummary`;
@@ -328,7 +314,6 @@ Evidence of distribution:
 
 Evidence of partial unification:
 
-- `BudgetTrace` unifies context-budget accounting for one budget pass;
 - `DecisionContextView` composes facts, issues, requirements, capabilities, and
   summary counts;
 - `ExplanationBuilder.why(...)` composes support, current/competing beliefs,
@@ -406,7 +391,6 @@ Selection Rationale Summary should **not** exist as an implementation when any o
 the following hold:
 
 - existing surfaces answer the concrete user/operator question;
-- the only benefit is renaming existing `BudgetTrace`, `ContextSummary`,
   `FactSupport`, capability inventory, or explanation outputs;
 - the summary would duplicate Why-Not absence/exclusion explanations;
 - no unanswered user/operator question is strong enough to justify cross-surface
@@ -433,7 +417,6 @@ Avoid these traps:
 2. **ReasoningEngine.** Rationale describes why existing surfaces selected or
    excluded known candidates. It is not a new reasoning subsystem.
 3. **ContextEngine.** Context composition already has `ContextComposer`,
-   `ContextBudget`, ordering helpers, `BudgetTrace`, and `DecisionContextView`.
 4. **Planner or WorkflowEngine.** Selection rationale does not plan work,
    schedule actions, or orchestrate execution.
 5. **Runtime integration.** Existing rationale signals are read-only over
@@ -468,7 +451,6 @@ Justification:
 - Selection rationale information is already present across existing surfaces.
 - Most concrete per-item questions are already answerable by the owning surface.
 - Existing summary-like surfaces already summarize their own domains:
-  `BudgetTrace` for budget passes, `ContextSummary` for decision context,
   confidence/evidence/contradiction summaries for integrity inputs, capability
   inventory for capability verification, and explanations for fact queries.
 - The primary remaining gaps are cross-surface aggregate/statistical questions,
@@ -501,7 +483,6 @@ This characterization does not:
 - change `EventLedger` ownership;
 - change `ProjectionStore` ownership;
 - change `ContextComposer` behavior;
-- change `ContextBudget` behavior;
 - change selection ordering;
 - change current fact selection;
 - change capability inventory behavior;

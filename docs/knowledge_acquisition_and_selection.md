@@ -157,7 +157,6 @@ Acquisition responsibilities include:
 - deriving support, conflicts, relationships, entity types, graph issues, and
   other projected read-model structures from events and facts.
 
-Acquisition does not include response wording, model-visible context packet
 formatting, explanation generation, capability execution, provider calls, or
 LLM-driven reasoning.
 
@@ -376,7 +375,6 @@ selection responsibilities.
 ### Context Composition Reconciliation
 
 The reconciliation found that Seed already has context-composition foundations:
-model-visible context packets, decision context views, current-state selection,
 explanation selection, budget traces, ordering helpers, and read-only views over
 projected State. It also found that missing work was vocabulary/boundary
 documentation rather than a new context engine.

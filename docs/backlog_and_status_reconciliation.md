@@ -106,7 +106,6 @@ Selection Rationale is now a completed audit sequence with the following status:
 
 Current rationale surfaces are sufficient for most concrete Selection Rationale questions:
 
-- `ContextBudget` and `BudgetTrace` explain section priorities, limits, selected counts, dropped counts, max item effects, and section order.
 - `ContextComposer` and context ordering helpers make deterministic context ordering and inclusion recoverable from current rules.
 - `DecisionContextView` and `ContextSummary` expose included facts, issues, contradiction flags, support strength counts, requirements, capabilities, projection version, and last event ID.
 - `State`, `FactSupport`, confidence aggregation, Evidence Graph, contradictions, and stale views expose support, evidence, conflict, current/competing, confidence, expiry, and stale rationale.
@@ -182,7 +181,6 @@ Major architecture/status/handoff documents should carry a small handoff note so
 Recommended handoff text:
 
 ```text
-Selection Rationale audit sequence is complete. Selection Rationale exists and is distributed across Context Budget/BudgetTrace, ContextComposer/order helpers, DecisionContextView/ContextSummary, State/FactSupport, Evidence Graph, confidence, contradictions, stale views, Capability Inventory, and explanations. Existing rationale surfaces are sufficient for current concrete questions. Selection Rationale Summary, Inventory, Navigation, Drilldown, engines, read models, routes, adapters, runtime integration, ToolExecutor integration, LLM ranking, and parallel truth systems are not currently justified. Future work is documentation-only unless new evidence identifies a concrete unanswered operator question.
 ```
 
 Recommended destinations:

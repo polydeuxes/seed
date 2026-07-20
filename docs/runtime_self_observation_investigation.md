@@ -195,7 +195,6 @@ This slice would provide evidence that inquiry could inspect. It would not make 
 - `rg -n "runtime|event ledger|ledger|continuous|observation|measurement|resource|state build|diagnostic inventory|diagnostic-inventory|diagnostic_shape|queue|projection cache|database size|disk free|memory|CPU|thread|process" . --glob '!*.pyc' --glob '!__pycache__/*'`
 - `rg --files seed_runtime tests docs | rg '(runtime|events|local_host|observation|measurement|resource|state|projection|diagnostic_inventory|diagnostic_shape|inquiry|execution|pressure|repository_observation)'`
 - `sed -n '1,240p' seed_runtime/observation_sources.py; sed -n '1,220p' seed_runtime/events.py; sed -n '1,260p' seed_runtime/models.py; sed -n '1,220p' seed_runtime/facts.py`
-- `rg -n "class Local|disk_free|filesystem|memory|cpu|process|thread|database|ledger|queue|duration|projection" seed_runtime/observation_sources.py seed_runtime/predicate_catalog.py seed_runtime/runtime.py seed_runtime/state.py seed_runtime/projection_store.py seed_runtime/diagnostic_inventory.py seed_runtime/pressure_audit.py seed_runtime/inquiry_orientation.py seed_runtime/context.py`
 - `sed -n '240,520p' seed_runtime/observation_sources.py; sed -n '700,820p' seed_runtime/observation_sources.py; sed -n '1,140p' seed_runtime/runtime.py; sed -n '1240,1275p' seed_runtime/state.py; sed -n '1,120p' seed_runtime/observations.py`
 - `sed -n '120,260p' seed_runtime/observations.py; sed -n '260,360p' seed_runtime/observations.py; sed -n '220,420p' seed_runtime/events.py; sed -n '140,260p' seed_runtime/runtime.py; sed -n '260,410p' seed_runtime/runtime.py`
 - `python scripts/seed_local.py --diagnostic-inventory | head -60 && python scripts/seed_local.py --observation-inventory | head -80 && python scripts/seed_local.py --knowledge-reachability-audit --candidate runtime --candidate "projection cache" --candidate "state build" | head -80`
@@ -215,7 +214,6 @@ This slice would provide evidence that inquiry could inspect. It would not make 
 - `seed_runtime/diagnostic_inventory.py`
 - `seed_runtime/pressure_audit.py`
 - `seed_runtime/inquiry_orientation.py`
-- `seed_runtime/context.py`
 - Selected test and documentation paths discovered by ripgrep as supporting surface inventory.
 
 ## Files changed

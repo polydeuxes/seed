@@ -42,7 +42,6 @@ It answers:
 This is an audit and characterization document only.
 
 It covers read-only selection over already-projected or already-known knowledge,
-including model-visible context packets, context budget traces, deterministic
 ordering helpers, decision context views, current-state fact selection,
 fact-support views, stale fact views, capability inventory entries, and
 explanation belief selection.
@@ -65,9 +64,6 @@ Documentation inspected:
 
 Runtime files inspected:
 
-- `seed_runtime/context.py`
-- `seed_runtime/context_budget.py`
-- `seed_runtime/context_selection.py`
 - `seed_runtime/context_views.py`
 - `seed_runtime/state.py`
 - `seed_runtime/explanations.py`
@@ -89,7 +85,6 @@ Adjacent repository checks:
 `ContextComposer.compose(...)` builds model-visible `ContextPacket`s from the
 current input event, projected state, registry-visible tools, open tool needs,
 ordered goals, entities, facts, and evidence. It delegates ordering to
-`context_selection.py` helpers and section limiting to `ContextBudget`.
 
 Current selected outputs include:
 
@@ -107,13 +102,10 @@ Rationale status: the surface exposes what was included and includes a budget
 trace, but it does not attach per-item selected-because or excluded-because
 records.
 
-### ContextBudget
 
-`ContextBudget.select_sections(...)` selects items by cross-section priority,
 per-section limits, and optional global `max_items`. It assumes each section is
 already ordered from most to least useful.
 
-Current selected outputs include the selected sections and a `BudgetTrace` with:
 
 - effective priorities;
 - section limits;
@@ -129,7 +121,6 @@ excluded candidates.
 
 ### context_selection ordering helpers
 
-`context_selection.py` provides deterministic intra-section ordering helpers:
 
 - facts: fresh/unexpired before expired, then newer observations, higher
   confidence, and ID tie-break;
@@ -420,7 +411,6 @@ Context Composition is the read-only selection and formatting boundary that
 assembles decision-ready or model-visible knowledge from already-known state.
 Selection Rationale is the account of the selection result at that boundary.
 
-Existing ContextBudget traces and `context_selection.py` ordering helpers are
 important rationale signals, but they are not a full rationale contract. They
 describe section priorities, limits, selected/dropped counts, section order, and
 intra-section ordering keys. They do not provide stable per-item selected-because

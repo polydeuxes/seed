@@ -111,7 +111,6 @@ Additional documents and surfaces inspected through broad search and adjacency:
 - `docs/situatedness_and_pressure_observation.md`
 - `docs/state_summary_performance_inquiry_lineage_report.md`
 - `docs/surviving_pressure_after_decomposition_observation.md`
-- `seed_runtime/context.py`
 - `seed_runtime/context_views.py`
 - `seed_runtime/state_summary_views.py`
 - `seed_runtime/explanations.py`

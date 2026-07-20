@@ -125,8 +125,6 @@ cross-reference, adjacency, broad search, and implementation-facing review:
 - `docs/working_state_activation_observation.md`
 - `docs/working_state_activation_artifact_audit.md`
 - `docs/working_state_activation_failure_observation.md`
-- `seed_runtime/context.py`
-- `seed_runtime/context_selection.py`
 - `seed_runtime/context_views.py`
 - `seed_runtime/input_inspector.py`
 - `seed_runtime/source_navigation.py`

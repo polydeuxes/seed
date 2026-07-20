@@ -21,7 +21,6 @@ This inventory is source-file based and records current behavior only. It does n
 
 ### Legacy decision prompts
 
-- `ContextComposer` exposes a legacy `decision_schema` whose kinds are `answer`, `ask_question`, `call_tool`, `request_tool`, and `refuse`. It does not include `propose_state_patch` in this composer-provided schema. [`seed_runtime/context.py:125-132`](../seed_runtime/context.py#L125-L132)
 
 ### Intent classifier mapping
 

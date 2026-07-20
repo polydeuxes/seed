@@ -1,4 +1,3 @@
-from seed_runtime.context import DecisionInputComposer
 from seed_runtime.events import EventLedger
 from seed_runtime.execution import ToolExecutor
 from seed_runtime.fact_extraction import FactExtractionError, FactExtractionService
@@ -11,11 +10,11 @@ def make_executor():
     registry = ToolRegistry()
     registry.load_manifest("toolkits/core/echo/toolkit.yaml")
     projector = StateProjector(ledger)
-    return ToolExecutor(ledger, registry, projector), ledger, registry, projector
+    return ToolExecutor(ledger, registry, projector), ledger, projector
 
 
-def test_completed_tool_call_extracts_tool_output_evidence_into_state_and_context():
-    executor, ledger, registry, projector = make_executor()
+def test_completed_tool_call_extracts_tool_output_evidence_into_state():
+    executor, ledger, projector = make_executor()
 
     executor.execute("ws_1", "ses_1", "echo", {"message": "hello"})
 
@@ -41,10 +40,6 @@ def test_completed_tool_call_extracts_tool_output_evidence_into_state_and_contex
     evidence = next(iter(state.evidence.values()))
     assert evidence.source == "tool:echo"
     assert state.facts == {}
-
-    input_event = ledger.append("input.user_message", "ws_1", {"text": "what happened?"})
-    context = DecisionInputComposer(registry).compose("ws_1", "ses_1", input_event, state)
-    assert context.evidence == [evidence.__dict__]
 
 
 def test_fact_extraction_service_rejects_non_successful_tool_result_events():

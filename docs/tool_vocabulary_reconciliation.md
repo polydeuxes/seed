@@ -12,7 +12,6 @@ Repository authority wins over naming expectations.
 ```text
 pwd && rg --files -g 'AGENTS.md' -g '!**/.git/**' && git status --short
 rg -n "class ToolExecutor|class ToolNeedService|class ToolValidationService|class ToolRegistry|def execute|def register|call_tool|request_tool|tool_intent|recommend" seed_runtime tests toolkits -S
-sed -n '120,320p' seed_runtime/execution.py; sed -n '1,140p' seed_runtime/decisions.py; sed -n '1,130p' seed_runtime/models.py; sed -n '1,180p' seed_runtime/context.py; sed -n '1,170p' seed_runtime/capability_catalog.py; sed -n '1,170p' seed_runtime/tool_recommendations.py; sed -n '1,190p' seed_runtime/tool_execution_policy.py
 sed -n '190,320p' seed_runtime/execution.py; sed -n '130,230p' seed_runtime/models.py; find toolkits -maxdepth 4 -type f | sort | sed -n '1,80p'; sed -n '1,140p' toolkits/core/echo/toolkit.yaml; sed -n '1,160p' toolkits/core/echo/operations.py; sed -n '1,200p' toolkits/generated/ssh_access/toolkit.yaml; sed -n '1,220p' toolkits/generated/ssh_access/operations.py
 ```
 
@@ -25,7 +24,6 @@ sed -n '190,320p' seed_runtime/execution.py; sed -n '130,230p' seed_runtime/mode
 - `seed_runtime/runtime.py`
 - `seed_runtime/decisions.py`
 - `seed_runtime/models.py`
-- `seed_runtime/context.py`
 - `seed_runtime/capability_catalog.py`
 - `seed_runtime/tool_recommendations.py`
 - `seed_runtime/tool_execution_policy.py`
@@ -71,7 +69,6 @@ The responsibility that actually owns execution is `ToolExecutor`, but only for 
 | `ToolExecutionPolicyService` | Resolves, validates, and policy-checks a proposed tool call without executing or appending events. | Class docstring says it does not execute, append events, create pending actions, or collapse non-allow outcomes; `_evaluate()` checks existence, status, input schema, then policy. | It returns `allowed_to_execute`, so it is adjacent to execution and can look like part of execution ownership, but the implementation leaves actual invocation to callers. |
 | `ToolNeedService` | Owns capability-gap creation and read-only capability resolution for `request_tool`. | `__seed_arch__` owner is `tool_need_capability_resolution`; `create_from_decision()` appends `tool_need.created`; `resolve_capability()` returns `known_capability`, `registered_operations`, `provider_recommendations`, and `handoff_candidates`. | The service name says `ToolNeed`, but the normalized field driving resolution is `capability`, not executable presence alone. |
 | Tool recommendations | Read-only provider/handoff metadata for a capability need, ranked against state. | `CapabilityCatalog` maps capabilities to `CapabilityRecommendation`; `ToolRecommendationService.recommend_for()` ranks catalog recommendations. | Some recommendations can carry an `operation` string and `backend_type`, which may resemble executable operations; however they are not registered `ToolSpec` entries and are returned as handoff metadata. |
-| Decision input `tools` | Model-visible operation affordances for the decision producer. | `DecisionInputComposer.compose()` serializes only `registry.list_tools(visible_only=True)` into `tools` with schemas, policy action, and risk. | Visible tools are context, not execution. Listing a tool does not execute it or imply capability verification. |
 | Event names such as `tool.call.started`, `tool.call.completed`, `tool.call.failed`, `tool_need.created` | Ledger vocabulary for runtime call lifecycle and capability-need lifecycle. | `ToolExecutor` appends call events; `ToolNeedService` appends need events. | Shared event prefix `tool` spans different lifecycles: call execution and capability request creation. |
 
 ## Distinct meanings of `tool` today
@@ -80,7 +77,6 @@ The responsibility that actually owns execution is `ToolExecutor`, but only for 
 
 A registered tool is a `ToolSpec` loaded from a toolkit manifest and stored in `ToolRegistry`. Its defining fields are schemas, policy action, implementation import path, status, visibility, risk class, and capabilities. The registry exposes it to the model and to capability lookup.
 
-This is the strongest implementation meaning behind “tool” in `ToolRegistry`, `ToolValidationService`, `DecisionInputComposer`, and most `call_tool` paths.
 
 ### 2. Execution target
 

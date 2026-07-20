@@ -86,7 +86,6 @@ Additional caveat-, confidence-, integrity-, explanation-, capability-, issue-, 
 - `seed_runtime/facts.py`
 - `seed_runtime/integrity_summary.py`
 - `seed_runtime/state.py`
-- `seed_runtime/context.py`
 - `seed_runtime/runtime.py`
 - `seed_runtime/models.py`
 - `seed_runtime/decisions.py`

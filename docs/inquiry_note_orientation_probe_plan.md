@@ -79,7 +79,6 @@ Existing implementation surfaces relevant to the probe include:
 - `seed_runtime/state_summary_views.py`, which owns State Summary semantic
   aggregation for operator overview rather than requiring CLI code to decide
   State Summary meaning.
-- `seed_runtime/context.py`, which composes compact model-decision context from
   projected state, current input, active goals, facts, tools, open tool needs,
   and recent evidence.
 - `seed_runtime/context_views.py`, which provides read-only deterministic

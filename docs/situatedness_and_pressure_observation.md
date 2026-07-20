@@ -103,7 +103,6 @@ The strongest inspected documentation evidence included:
   vocabulary documents.
 
 Runtime and test surfaces were inspected for vocabulary overlap, especially
-`seed_runtime/context.py`, `seed_runtime/context_selection.py`,
 `seed_runtime/state_views.py`, `seed_runtime/observations.py`, and tests around
 context selection, state views, explanations, source navigation, and observation.
 Those surfaces use `context`, `subject`, selection, support, and decision

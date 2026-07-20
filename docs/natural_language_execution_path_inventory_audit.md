@@ -76,7 +76,6 @@ The repository does not currently contain an explicit, general natural-language 
 
 ### Context Composition
 
-`DecisionInputComposer.compose` includes the current input text, active goal, selected entities, facts, evidence, visible tools, open tool needs, and a decision schema in a `DecisionInputPacket`. This gives the decision model language-adjacent context and capability visibility, but it is context assembly rather than interpretation ownership.
 
 ### Input Act Inspection
 
@@ -126,7 +125,6 @@ The models for action plans and handoff plans explicitly mark those artifacts as
 
 ### Visible Tool Inventory In Context
 
-`DecisionInputComposer` exposes visible registered tools to the decision model with names, summaries, schemas, policy actions, and risk classes. This lets the model choose a tool name in a `call_tool` decision, but the selection itself is model behavior plus validation rather than a separate deterministic capability-selection component.
 
 ### Tool Registry Capability Mapping
 
@@ -199,7 +197,6 @@ Capability catalog, provider recommendation, registry listing, validation, polic
 
 ### Capability Inventory vs Operator Meaning
 
-The repository contains capability inventories in registry manifests and capability catalogs. Those inventories can inform model context, recommendations, and capability resolution. They do not prove operator meaning. The implementation does not contain a general mechanism that compares operator language candidates against inventory while preserving ambiguity and avoiding silent nearest-capability collapse.
 
 ## Missing Boundaries Observed
 

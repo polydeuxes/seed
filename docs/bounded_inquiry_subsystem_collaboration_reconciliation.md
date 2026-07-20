@@ -73,7 +73,6 @@ Observation names what evidence would be needed.
 Capability names the observation affordances.
 Authority decides whether those affordances can be used under the current profile.
 Diagnostics make the surface visible and audit its operational promises.
-Projection and State Build provide current read-model context without becoming source truth.
 Orientation relates the inquiry to existing material without interpreting intent.
 Continuation preserves the live boundary and residual pressure across handoff.
 Answer-responsible surfaces communicate the result with uncertainty and boundary intact.

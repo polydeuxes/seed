@@ -281,7 +281,6 @@ Avoid for now:
 - `seed_runtime/pending_actions.py`
 - `seed_runtime/runtime.py`
 - `seed_runtime/decisions.py`
-- `seed_runtime/context.py`
 - `seed_runtime/api.py`
 - `seed_runtime/events.py`
 - `seed_runtime/projection_store.py`

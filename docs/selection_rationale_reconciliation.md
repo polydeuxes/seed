@@ -10,7 +10,6 @@ reasons, and context-budget trace accounting. These signals answer many
 "why included," "why ordered," and "why current" questions when a reader knows
 which surface owns the selection.
 
-The weakest area is exclusion rationale. `ContextBudget` exposes section-level
 `dropped_counts`, and `select_context_facts(...)` has an explicit unsupported
 filter. Most other exclusions remain implicit: a candidate is not current because
 another support group is unambiguously strongest, because a predicate is
@@ -50,7 +49,6 @@ This document is an audit, not an implementation plan.
 
 In scope:
 
-- model-visible context packet selection;
 - context budget priorities, limits, and accounting;
 - deterministic ordering helpers;
 - decision-context fact, issue, requirement, and capability views;
@@ -65,7 +63,6 @@ Out of scope:
 - implementing selection rationale;
 - adding inventories, read models, routes, engines, adapters, schema classes, or
   rationale metadata;
-- adding traces beyond existing `BudgetTrace` and explanation/projection fields;
 - mutating projections or appending events;
 - integrating with `Runtime`, `ToolExecutor`, providers, policy, planners,
   workflows, LLM rankers, or execution systems.
@@ -88,9 +85,6 @@ Documentation inspected:
 
 Runtime files inspected:
 
-- `seed_runtime/context.py`
-- `seed_runtime/context_budget.py`
-- `seed_runtime/context_selection.py`
 - `seed_runtime/context_views.py`
 - `seed_runtime/state.py`
 - `seed_runtime/explanations.py`
@@ -107,12 +101,6 @@ reason string that can explain selection without inventing new behavior.
 
 | Source | Existing rationale information | Role | Status |
 | --- | --- | --- | --- |
-| `ContextBudget` priorities | Cross-section priority values for current input, goals, tool needs, facts, evidence, entities, and historical events. | Source and consumer: applies admission order. | Implemented |
-| `ContextBudget` section limits | Per-section caps such as one current input, one active goal, bounded facts, evidence, entities, and historical events. | Source and consumer: applies section truncation. | Implemented |
-| `ContextBudget.max_items` | Optional global cap across all budgeted sections. | Source and consumer: applies global truncation. | Implemented |
-| `BudgetTrace.selected_counts` | Counts selected per section. | Output: section-level inclusion accounting. | Implemented |
-| `BudgetTrace.dropped_counts` | Counts dropped per section. | Output: section-level exclusion accounting. | Partial because it is not per-item. |
-| `BudgetTrace.section_order` | Effective cross-section order after priority and name tie-break. | Output: ordering accounting. | Implemented |
 | `order_facts(...)` | Fresh/unexpired facts before expired facts, then newer observations, higher confidence, and fact id. | Source and consumer for context fact ordering. | Implemented, implicit per item |
 | `order_evidence(...)` | Newer evidence, higher confidence, and evidence id. | Source and consumer for evidence ordering. | Implemented, implicit per item |
 | `order_goals(...)` | Active goals before inactive goals, then goal id. | Source and consumer for goal ordering. | Implemented, implicit per item |
@@ -135,12 +123,10 @@ reason string that can explain selection without inventing new behavior.
 
 ## Source, Consumer, Output Classification
 
-- **Primary rationale sources:** `ContextBudget`, `BudgetTrace`,
   `context_selection` ordering helpers, `FactSupport`, predicate cardinality,
   measurement semantics, confidence aggregation, contradiction detection,
   Evidence Graph, stale fact handling, graph issues, and capability verification
   facts.
-- **Primary rationale consumers:** `ContextComposer`, `ContextBudget`,
   `select_context_facts(...)`, `build_decision_context_view(...)`,
   `State.get_best_fact(...)`, `State.get_current_facts(...)`,
   `State.get_fact_support(...)`, `build_capability_inventory(...)`, and
@@ -159,7 +145,6 @@ visible to callers.
 | Surface | Direct rationale exposed | Indirect rationale exposed | No rationale / gap |
 | --- | --- | --- | --- |
 | `ContextPacket` | `context_budget` trace exposes priorities, limits, selected counts, dropped counts, and section order. | Included facts may carry selected evidence only when that evidence survived the same budget pass. | No per-item included-because or excluded-because. |
-| `BudgetTrace` | Direct section-level rationale accounting. | Per-item exclusion can be inferred only from ordered inputs and counts. | No candidate identifiers. |
 | `DecisionContextView` | Fact confidence, contradicted flag, evidence count, issues, summary counts, requirements, capabilities, projection metadata. | Unsupported filtering can be inferred when default `include_unsupported=False` is known. | Does not expose per-fact selection reason strings. |
 | `ContextSummary` | Direct counts for included fact quality and issues. | Implies what quality categories survived selection. | Summary only; no candidate-level records. |
 | `CapabilityInventoryEntry` | Direct `state`, supporting facts/evidence, support summary, age, and reason. | Capability inclusion can be inferred from the inventory universe. | No explicit excluded capabilities outside the universe. |
@@ -177,8 +162,6 @@ Can Seed already explain why candidate A was included?
 
 | Candidate / surface | Finding | Classification |
 | --- | --- | --- |
-| Current input in `ContextPacket` | Included because `ContextComposer` always provides the input event in the `current_input` section and `ContextBudget` gives that section highest default priority with a limit of one. | Implemented |
-| Active goal in `ContextPacket` | Goals are ordered active-first and `ContextBudget` admits one `active_goals` item by default. Inclusion is explainable by section priority, section limit, and ordering. | Partial because the packet does not attach per-goal rationale. |
 | Fact in `ContextPacket` | Facts are ordered by freshness, observation recency, confidence, and id, then admitted by the `recent_facts` section limit/global budget. | Partial because item-level rationale is implicit. |
 | Evidence in `ContextPacket` | Evidence is ordered by recency, confidence, and id, then admitted by the `recent_evidence` section limit/global budget. | Partial |
 | Entity in `ContextPacket` | Entities are ordered by confidence/name/id, then admitted by the `entities` section limit/global budget. | Partial |
@@ -202,7 +185,6 @@ Can Seed already explain why candidate B was excluded?
 
 | Candidate / surface | Finding | Classification |
 | --- | --- | --- |
-| Fact dropped from `ContextPacket` by budget | `BudgetTrace.dropped_counts[recent_facts]` can show that facts were dropped, and the ordered input plus section/global limits explain which suffix candidates were omitted. | Partial |
 | Evidence dropped from `ContextPacket` by budget | Same as facts: section/global budget counts exist, but no per-evidence dropped reason exists. | Partial |
 | Entity dropped from `ContextPacket` by budget | Same section-level accounting exists. | Partial |
 | Goal not selected in `ContextPacket` | Only one goal is admitted by default; inactive goals sort behind active ones. Exclusion can be inferred from ordering and limit. | Partial |
@@ -224,11 +206,6 @@ Can Seed explain why candidate A appears before candidate B?
 
 | Ordering area | Existing rule | Classification |
 | --- | --- | --- |
-| Context sections | Higher `ContextBudget` priority first, with section name as deterministic tie-break. | Implemented |
-| Facts in model context | Fresh/unexpired first, then newer `observed_at`, higher confidence, and id. | Implemented, implicit per item |
-| Evidence in model context | Newer `observed_at`, higher confidence, and id. | Implemented, implicit per item |
-| Goals in model context | Active status before inactive status, then id. | Implemented, implicit per item |
-| Entities in model context | Higher confidence, name, then id. | Implemented, implicit per item |
 | Decision-context facts | Supported before unsupported, then higher confidence, subject, predicate, stable value, and fact id. | Implemented |
 | Current support groups | Measurements prefer latest observation, then confidence and support count; durable supports prefer confidence and support count. | Implemented, implicit |
 | Representative current facts | Higher confidence, observed facts before inferred facts, newer observation time, then id. | Implemented, implicit |
@@ -339,7 +316,6 @@ Why-Not and Selection Rationale overlap, but they are not the same concern.
 
 ## Shared signals
 
-- `BudgetTrace.dropped_counts` for dropped context sections;
 - unsupported fact flags and unsupported fact views;
 - `FactSupport` groups and support tie keys;
 - current and competing beliefs in explanation outputs;
@@ -402,8 +378,6 @@ summary, navigation view, or explanation endpoint.
 It is not wholly missing. The repository already contains substantial rationale
 information:
 
-- context surfaces: `ContextPacket`, `ContextComposer`, `ContextBudget`, and
-  `BudgetTrace`;
 - ordering surfaces: `order_facts(...)`, `order_evidence(...)`,
   `order_goals(...)`, and `order_entities(...)`;
 - decision context surfaces: `DecisionContextView`, `ContextFact`,
@@ -429,13 +403,11 @@ information:
   query.
 - `CapabilityInventoryEntry` already composes verification facts, support,
   evidence, staleness, age, and reason for capabilities.
-- `ContextBudget` already composes priorities, limits, selected counts, dropped
   counts, and section order for context packet selection.
 
 ## Evidence of fragmentation
 
 - Context selection rationale is separated between `ContextComposer`, ordering
-  helpers, `ContextBudget`, and `BudgetTrace`.
 - Decision-context fact rationale is separated between confidence aggregation,
   evidence graph, contradiction handling, unsupported filtering, and summary
   counts.
@@ -497,7 +469,6 @@ without creating a runtime inventory:
 
 - signals by domain: budget, ordering, support, confidence, integrity,
   staleness, capability, explanation;
-- surfaces by output: `ContextPacket`, `BudgetTrace`, `DecisionContextView`,
   `FactSupport`, `FactConfidence`, `Contradiction`, `EvidenceGraph`,
   `CapabilityInventoryEntry`, `Explanation`;
 - explicit vs implicit rationale coverage.
@@ -528,7 +499,6 @@ The audit does not support creating any of the following:
 - **ReasoningEngine.** Rationale is descriptive over projected knowledge; it is
   not a new reasoning subsystem.
 - **ContextEngine.** Context composition already exists as `ContextComposer`,
-  `ContextBudget`, ordering helpers, and `DecisionContextView`. A new engine
   would duplicate existing context boundaries.
 - **Planner or WorkflowEngine.** Selection rationale does not plan actions,
   schedule work, or orchestrate execution.
@@ -606,7 +576,6 @@ This reconciliation does not:
 - change `EventLedger` ownership;
 - change `ProjectionStore` ownership;
 - change `ContextComposer` behavior;
-- change `ContextBudget` behavior;
 - change selection ordering;
 - change current fact selection;
 - change capability inventory behavior;

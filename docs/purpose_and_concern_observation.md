@@ -154,7 +154,6 @@ cross-reference, or adjacency:
 - `docs/architectural_knowledge_map.md`
 - `docs/seed.md`
 - `seed_runtime/input_inspector.py`
-- `seed_runtime/context_selection.py`
 - `seed_runtime/context_views.py`
 - `seed_runtime/state_summary_views.py`
 - `seed_runtime/explanations.py`

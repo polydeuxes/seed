@@ -20,7 +20,6 @@ This inventory is source-file based and records current behavior only. It does n
 
 - `Runtime.__init__()` accepts `max_decision_retries` with a default of `1` and stores `max(0, max_decision_retries)`, so negative values are coerced to zero retries. [`seed_runtime/runtime.py:37-66`](../seed_runtime/runtime.py#L37-L66)
 - `handle_user_message()` runs `for attempt in range(self.max_decision_retries + 1)`, meaning the configured value is the number of retries after the first attempt, not the total attempt count. With the default, the model can be called twice. [`seed_runtime/runtime.py:86-108`](../seed_runtime/runtime.py#L86-L108)
-- Every retry reuses the original composed `DecisionInputPacket` plus a replacement `retry_prompt`; state and visible operations/tools are not recomposed between attempts. The original input event remains the causation root for parse failures and proposed decisions. [`seed_runtime/runtime.py:71-88`](../seed_runtime/runtime.py#L71-L88)
 
 ### Parse failure handling
 

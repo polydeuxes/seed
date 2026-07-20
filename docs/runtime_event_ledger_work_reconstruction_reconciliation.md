@@ -33,7 +33,6 @@ pwd
 rg --files -g 'AGENTS.md' -g '!tmp' -g '!venv'
 git status --short
 cat AGENTS.md
-rg -n "event ledger|EventLedger|append|DecisionInputPacket|projection|observation|runtime|tool execution|state patch|response" -S .
 sed -n '1,240p' seed_runtime/events.py
 sed -n '1,260p' seed_runtime/runtime.py
 sed -n '1,220p' seed_runtime/execution.py
@@ -45,7 +44,6 @@ sed -n '760,1110p' seed_runtime/state.py
 sed -n '1,180p' seed_runtime/state_patches.py
 sed -n '1,190p' seed_runtime/tool_needs.py
 sed -n '130,190p' seed_runtime/observations.py
-sed -n '1,220p' seed_runtime/context.py
 rg -n "class Event|class RuntimeResponse|class Decision|class Observation|class Fact" seed_runtime/models.py
 sed -n '1,120p' seed_runtime/models.py
 sed -n '220,360p' seed_runtime/models.py
@@ -62,7 +60,6 @@ sed -n '1,120p' seed_runtime/projection_store.py
 - `seed_runtime/state_patches.py`
 - `seed_runtime/tool_needs.py`
 - `seed_runtime/observations.py`
-- `seed_runtime/context.py`
 - `seed_runtime/models.py`
 - `seed_runtime/projection_store.py`
 
@@ -88,9 +85,7 @@ Projection is replay-based. `StateProjector.project()` reads ledger events for a
 
 | Runtime activity | Event generated | Projection impact | Durable evidence | Transient evidence | Reconstructable from ledger/projection/observations? | Strongest supporting evidence | Strongest contradictory evidence |
 |---|---|---|---|---|---|---|---|
-| Operator input | `input.user_message` | No direct `StateProjector.apply()` branch | User text, actor `user`, session id, event id | The composed `DecisionInputPacket` built after projection | Yes for submitted input; no for the exact composed context unless inferred from surrounding state | `Runtime.handle_user_message()` appends `input.user_message` before projection and decision composition | `StateProjector.apply()` has no branch for `input.user_message`, so projected `State` does not expose it as domain state |
 | State projection before decision | No event | Projection is computed by replay; `last_event_id` recorded in the in-memory state/snapshot | Durable only if a projection snapshot is saved elsewhere; event ledger remains authority | Local `state` object and projection diagnostics | Reconstructable by replaying ledger; snapshot can justify current projected state when available | `project_from_state()` materializes events, applies each, and finalizes derived indexes | Projection timing diagnostics are optional and non-authoritative |
-| Decision input composition | No event | None | Equivalent source evidence exists in input event plus projected state at that point, but not the budgeted packet itself | `DecisionInputPacket`, context budget trace, selected tools/facts/evidence | Partially: source state can be reconstructed, exact budgeted packet only if deterministically recomposed with same code/config | `DecisionInputComposer.compose()` returns a packet from the input event, projected state, registry tools, and budgeted sections | No ledger append occurs in composer; `StaticDecisionProducer` keeps only `last_decision_input` in memory |
 | Decision produced | `model.decision.proposed` | No direct projection branch | Full serialized decision and attempt number, causally linked to input event | Validator object/result unless failure recorded | Yes for what the model proposed | Runtime appends `model.decision.proposed` before validation | Projection ignores `model.decision.proposed` |
 | Decision schema validation failure | `model.decision.invalid` | No direct projection branch | Validation errors and attempt number, causally linked to decision event | `validation` result object and retry packet | Yes for failed validation and retry attempts that produced events | Runtime appends `model.decision.invalid` and builds retry input | Final `RuntimeResponse(kind="invalid_decision")` is not appended |
 | Answer response | `response.answer` | No direct projection branch | Answer text, session, causation to decision | Returned `RuntimeResponse` object | Yes from ledger, but not from projected domain state | `_route()` appends `response.answer` | Projection ignores response events |
@@ -133,7 +128,6 @@ The implementation appends events for these runtime categories:
 
 These omissions are implementation-backed rather than speculative:
 
-1. Decision input composition does not append an event. It returns a `DecisionInputPacket` built from the current input event, projected state, registry tools, and budget-selected sections.
 2. Projection replay and finalization do not append events. Projection reads events, applies known kinds to state, and finalizes derived indexes. Projection diagnostics are optional counters/timings, not ledger records.
 3. Projection cache save/load does not append ledger events. Projection stores are explicitly derived snapshot stores; the event ledger remains authoritative history.
 4. Capability resolution and provider recommendation do not append events. `resolve_capability()` states that it is read-only and does not execute tools, authorize actions, create pending actions, or mutate registry/catalog state; runtime returns this metadata in the response payload.
@@ -198,7 +192,6 @@ Other incompleteness is not directly durable:
 
 The following evidence exists during execution but disappears unless equivalent source evidence is available elsewhere:
 
-- `DecisionInputPacket`: not stored; equivalent ingredients are partly durable through input event and projected state, but exact budget selection depends on code/config and registry state.
 - Validation context: only errors and attempts are stored on failure; successful validation has no separate event.
 - Retry context: retry prompt is a replacement packet in memory; failure event ids and errors are durable, but the exact next packet is not stored.
 - Policy evaluation context: final block/approval policy payload is durable, but state factory output and evaluation internals are transient.
@@ -230,7 +223,6 @@ Supported reconstruction cases:
 
 Unsupported or only partial reconstruction cases:
 
-- Interrupted during decision input composition before model decision: no `DecisionInputPacket` event exists.
 - Interrupted during capability resolution/recommendation after tool need creation: created need is durable; recommendation payload is not.
 - Interrupted before tool call start while evaluating policy: no durable event records the in-progress policy evaluation unless it reaches policy-denied event or allowed start.
 - Interrupted during projection replay/finalization: event ledger can be replayed again, but projection progress/status is not durable.
@@ -240,7 +232,6 @@ Unsupported or only partial reconstruction cases:
 
 The strongest evidence against full reconstruction of Seed's own work is that several important runtime surfaces are deliberately computed and returned without corresponding ledger events or projection branches:
 
-1. `DecisionInputPacket` is central to decision production but is not appended. Exact selected context and budget trace are transient.
 2. Many appended runtime events are ignored by projection: user input, model decisions, responses, tool lifecycle, validation failures, policy blocks, and state-patch rejections do not become projected domain state.
 3. Capability resolution/recommendation metadata is returned to the caller but not persisted.
 4. Successful state patch application lacks a wrapper event tying all operation events into one accepted patch boundary.

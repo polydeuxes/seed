@@ -112,7 +112,6 @@ Documents inspected included:
 - `docs/handoff_and_continuation_lineage_frontier.md`
 - `docs/architectural_findings_preservation.md`
 - `docs/documentation_boundary_enforcement_reconciliation.md`
-- `seed_runtime/context_selection.py`
 - `seed_runtime/local_host_mounts.py`
 - `seed_runtime/state_summary_views.py`
 
