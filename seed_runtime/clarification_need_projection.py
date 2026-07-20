@@ -11,15 +11,15 @@ from seed_runtime.bounded_advancement_horizon import BoundedAdvancementHorizon
 from seed_runtime.bounded_operator_goal_establishment import (
     BoundedOperatorGoalEstablishment,
 )
-from seed_runtime.goal_inquiry_consideration_selection import (
-    GoalInquiryConsiderationSelection,
+from seed_runtime.goal_consideration_candidate_resolution import (
+    GoalConsiderationCandidateResolution,
 )
 
 ClarificationNeedStanding = Literal[
     "established", "unsupported", "unknown", "conflicting", "excluded_family"
 ]
 UnclassifiedReason = Literal[
-    "selection_identity_mismatch",
+    "candidate_resolution_identity_mismatch",
     "goal_identity_mismatch",
     "horizon_identity_mismatch",
     "evidence_identity_mismatch",
@@ -42,7 +42,7 @@ BOUNDARY_NOTES: tuple[str, ...] = (
 class OperatorMeaningUncertaintyTestimony:
     testimony_ref: str
     source_ref: str
-    selection_id: str
+    candidate_resolution_id: str
     goal_establishment_id: str
     horizon_id: str
     evidence_ref: str
@@ -71,7 +71,7 @@ class ClarificationNeedProjectionItem:
 @dataclass(frozen=True)
 class ClarificationNeedProjection:
     projection_id: str
-    selection_id: str
+    candidate_resolution_id: str
     goal_establishment_id: str
     horizon_id: str
     evidence_refs: tuple[str, ...]
@@ -117,13 +117,13 @@ def _excluded_clarification_family(horizon: BoundedAdvancementHorizon) -> bool:
 
 def _unclassified_reason(
     testimony: OperatorMeaningUncertaintyTestimony,
-    selection: GoalInquiryConsiderationSelection,
+    candidate_resolution: GoalConsiderationCandidateResolution,
     goal: BoundedOperatorGoalEstablishment,
     horizon: BoundedAdvancementHorizon,
     evidence_refs: tuple[str, ...],
 ) -> UnclassifiedReason | None:
-    if testimony.selection_id != selection.selection_id:
-        return "selection_identity_mismatch"
+    if testimony.candidate_resolution_id != candidate_resolution.resolution_id:
+        return "candidate_resolution_identity_mismatch"
     if testimony.goal_establishment_id != goal.goal_establishment_id:
         return "goal_identity_mismatch"
     if testimony.horizon_id != horizon.horizon_id:
@@ -147,7 +147,7 @@ def _unclassified_reason(
 
 
 def project_clarification_need(
-    selection: GoalInquiryConsiderationSelection,
+    candidate_resolution: GoalConsiderationCandidateResolution,
     goal: BoundedOperatorGoalEstablishment,
     horizon: BoundedAdvancementHorizon,
     testimony: Iterable[OperatorMeaningUncertaintyTestimony] = (),
@@ -165,7 +165,7 @@ def project_clarification_need(
     }
     excluded = _excluded_clarification_family(horizon)
     for item in testimony_items:
-        reason = _unclassified_reason(item, selection, goal, horizon, evidence_refs)
+        reason = _unclassified_reason(item, candidate_resolution, goal, horizon, evidence_refs)
         projection_item = ClarificationNeedProjectionItem(
             testimony_ref=item.testimony_ref,
             source_ref=item.source_ref,
@@ -182,14 +182,14 @@ def project_clarification_need(
         else:
             buckets[projection_item.standing or "unclassified"].append(projection_item)
     payload = {
-        "selection": selection.selection_id,
+        "candidate_resolution": candidate_resolution.resolution_id,
         "goal": goal.goal_establishment_id,
         "horizon": horizon.horizon_id,
         "testimony": [item.testimony_ref for item in testimony_items],
     }
     return ClarificationNeedProjection(
         _stable("clarification-need-projection", payload),
-        selection.selection_id,
+        candidate_resolution.resolution_id,
         goal.goal_establishment_id,
         horizon.horizon_id,
         evidence_refs,

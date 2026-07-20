@@ -26,7 +26,7 @@ def _evidence(ref, *, evidence_ref="consideration:1", **overrides):
         source_ref="operator:testimony",
         reference_id=ref.reference_id,
         need_set_id=ref.need_set_id,
-        selection_id=ref.selection_id,
+        candidate_resolution_id=ref.candidate_resolution_id,
         goal_establishment_id=ref.goal_establishment_id,
         horizon_id=ref.horizon_id,
         family=ref.family,
@@ -63,7 +63,7 @@ def test_exact_reference_selection_validates_full_identity_and_preserves_others(
     assert selection.selection_state == "selected"
     assert selection.selected_reference == ref
     assert selection.selected_reference.need_set_id == reference_set.need_set_id
-    assert selection.selected_reference.selection_id == reference_set.selection_id
+    assert selection.selected_reference.candidate_resolution_id == reference_set.candidate_resolution_id
     assert (
         selection.selected_reference.goal_establishment_id
         == reference_set.goal_establishment_id
@@ -168,7 +168,7 @@ def test_identity_mismatches_refuse_selection():
 
     for field, value in [
         ("need_set_id", "other-need-set"),
-        ("selection_id", "other-selection"),
+        ("candidate_resolution_id", "other-candidate-resolution"),
         ("goal_establishment_id", "other-goal"),
         ("horizon_id", "other-horizon"),
         ("family", "authority"),

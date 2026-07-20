@@ -34,7 +34,7 @@ def _part(value: str) -> str:
 class AdvancementNeedReference:
     reference_id: str
     need_set_id: str
-    selection_id: str
+    candidate_resolution_id: str
     goal_establishment_id: str
     horizon_id: str
     family: NeedFamily
@@ -66,7 +66,7 @@ class AdvancementNeedReferenceSet:
     reference_set_id: str
     artifact_type: str
     need_set_id: str
-    selection_id: str
+    candidate_resolution_id: str
     goal_establishment_id: str
     horizon_id: str
     references: tuple[AdvancementNeedReference, ...]
@@ -150,7 +150,7 @@ def project_advancement_need_reference_set(need_set: GoalAdvancementNeedSet) -> 
                     AdvancementNeedReference(
                         _reference_id(need_set.need_set_id, record.family, projection.projection_id, lineage),
                         need_set.need_set_id,
-                        need_set.selection_id,
+                        need_set.candidate_resolution_id,
                         need_set.goal_establishment_id,
                         need_set.horizon_id,
                         record.family,
@@ -176,7 +176,7 @@ def project_advancement_need_reference_set(need_set: GoalAdvancementNeedSet) -> 
     conflict_keys = {(c.family, c.native_projection_id, c.native_lineage) for c in conflicts}
     marked = tuple(
         AdvancementNeedReference(
-            ref.reference_id, ref.need_set_id, ref.selection_id, ref.goal_establishment_id, ref.horizon_id,
+            ref.reference_id, ref.need_set_id, ref.candidate_resolution_id, ref.goal_establishment_id, ref.horizon_id,
             ref.family, ref.native_projection_id, ref.native_lineage, ref.native_bucket, ref.native_standing,
             ref.evidence_refs, ref.evidence_quality, ref.visible, ref.selectable,
             (ref.family, ref.native_projection_id, ref.native_lineage) in conflict_keys,
@@ -188,7 +188,7 @@ def project_advancement_need_reference_set(need_set: GoalAdvancementNeedSet) -> 
         _reference_set_id(need_set),
         "AdvancementNeedReferenceSet",
         need_set.need_set_id,
-        need_set.selection_id,
+        need_set.candidate_resolution_id,
         need_set.goal_establishment_id,
         need_set.horizon_id,
         marked,

@@ -15,10 +15,10 @@ from seed_runtime.inquiry_need_projection import InquiryNeedProjection
 from seed_runtime.operational_realization_need_projection import (
     OperationalRealizationNeedProjection,
 )
-from tests.test_clarification_need_projection import _goal, _selection
+from tests.test_clarification_need_projection import _candidate_resolution, _goal
 
 
-def _horizon(selection, goal, **overrides):
+def _horizon(candidate_resolution, goal, **overrides):
     base = dict(
         present_movement_boundary="assemble preserved need families for this selected goal only",
         evidence_snapshot_refs=(EvidenceSnapshotReference("evidence:need-set", "snapshot:need-set"),),
@@ -32,13 +32,13 @@ def _horizon(selection, goal, **overrides):
         conflicts=("horizon conflict preserved",),
     )
     base.update(overrides)
-    return establish_bounded_advancement_horizon(selection, goal, **base)
+    return establish_bounded_advancement_horizon(candidate_resolution, goal, **base)
 
 
-def _clarification(selection, goal, horizon):
+def _clarification(candidate_resolution, goal, horizon):
     return ClarificationNeedProjection(
         "projection:clarification",
-        selection.selection_id,
+        candidate_resolution.resolution_id,
         goal.goal_establishment_id,
         horizon.horizon_id,
         ("evidence:need-set",),
@@ -51,10 +51,10 @@ def _clarification(selection, goal, horizon):
     )
 
 
-def _inquiry(selection, goal, horizon):
+def _inquiry(candidate_resolution, goal, horizon):
     return InquiryNeedProjection(
         "projection:inquiry",
-        selection.selection_id,
+        candidate_resolution.resolution_id,
         goal.goal_establishment_id,
         horizon.horizon_id,
         ("evidence:need-set",),
@@ -67,10 +67,10 @@ def _inquiry(selection, goal, horizon):
     )
 
 
-def _authority(selection, goal, horizon):
+def _authority(candidate_resolution, goal, horizon):
     return AuthorityNeedProjection(
         "projection:authority",
-        selection.selection_id,
+        candidate_resolution.resolution_id,
         goal.goal_establishment_id,
         horizon.horizon_id,
         ("evidence:need-set",),
@@ -83,10 +83,10 @@ def _authority(selection, goal, horizon):
     )
 
 
-def _realization(selection, goal, horizon):
+def _realization(candidate_resolution, goal, horizon):
     return OperationalRealizationNeedProjection(
         "projection:realization",
-        selection.selection_id,
+        candidate_resolution.resolution_id,
         goal.goal_establishment_id,
         horizon.horizon_id,
         ("evidence:need-set",),
@@ -105,11 +105,11 @@ def _records(need_set):
 
 def test_requires_exact_selected_goal_and_horizon_identity_and_preserves_conflict_without_repair():
     goal = _goal()
-    selection = _selection(goal)
-    horizon = _horizon(selection, goal)
+    candidate_resolution = _candidate_resolution(goal)
+    horizon = _horizon(candidate_resolution, goal)
     mismatched = replace(
-        _clarification(selection, goal, horizon),
-        selection_id="selection:other",
+        _clarification(candidate_resolution, goal, horizon),
+        candidate_resolution_id="candidate_resolution:other",
         goal_establishment_id="goal:other",
         horizon_id="horizon:other",
     )
@@ -120,18 +120,18 @@ def test_requires_exact_selected_goal_and_horizon_identity_and_preserves_conflic
     assert record.disposition == "supplied"
     assert record.projection is mismatched
     assert tuple(conflict.conflict_kind for conflict in record.identity_conflicts) == (
-        "selection_identity_mismatch",
+        "candidate_resolution_identity_mismatch",
         "goal_identity_mismatch",
         "horizon_identity_mismatch",
     )
-    assert record.projection.selection_id == "selection:other"
+    assert record.projection.candidate_resolution_id == "candidate_resolution:other"
 
 
 def test_can_refuse_mismatched_projection_without_repairing_it():
     goal = _goal()
-    selection = _selection(goal)
-    horizon = _horizon(selection, goal)
-    mismatched = replace(_inquiry(selection, goal, horizon), horizon_id="horizon:other")
+    candidate_resolution = _candidate_resolution(goal)
+    horizon = _horizon(candidate_resolution, goal)
+    mismatched = replace(_inquiry(candidate_resolution, goal, horizon), horizon_id="horizon:other")
 
     need_set = assemble_goal_advancement_need_set(
         horizon, inquiry=mismatched, refuse_mismatched_projection=True
@@ -147,12 +147,12 @@ def test_can_refuse_mismatched_projection_without_repairing_it():
 
 def test_preserves_all_four_native_projection_types_without_reinterpretation():
     goal = _goal()
-    selection = _selection(goal)
-    horizon = _horizon(selection, goal)
-    clarification = _clarification(selection, goal, horizon)
-    inquiry = _inquiry(selection, goal, horizon)
-    authority = _authority(selection, goal, horizon)
-    realization = _realization(selection, goal, horizon)
+    candidate_resolution = _candidate_resolution(goal)
+    horizon = _horizon(candidate_resolution, goal)
+    clarification = _clarification(candidate_resolution, goal, horizon)
+    inquiry = _inquiry(candidate_resolution, goal, horizon)
+    authority = _authority(candidate_resolution, goal, horizon)
+    realization = _realization(candidate_resolution, goal, horizon)
 
     need_set = assemble_goal_advancement_need_set(
         horizon,
@@ -178,13 +178,13 @@ def test_preserves_all_four_native_projection_types_without_reinterpretation():
 
 def test_coexisting_needs_are_unordered_records_not_priority_or_blocker():
     goal = _goal()
-    selection = _selection(goal)
-    horizon = _horizon(selection, goal)
+    candidate_resolution = _candidate_resolution(goal)
+    horizon = _horizon(candidate_resolution, goal)
 
     need_set = assemble_goal_advancement_need_set(
         horizon,
-        clarification=_clarification(selection, goal, horizon),
-        authority=_authority(selection, goal, horizon),
+        clarification=_clarification(candidate_resolution, goal, horizon),
+        authority=_authority(candidate_resolution, goal, horizon),
     )
 
     assert isinstance(need_set.family_records, frozenset)
@@ -200,9 +200,9 @@ def test_coexisting_needs_are_unordered_records_not_priority_or_blocker():
 
 def test_supplied_absent_and_excluded_families_remain_distinct():
     goal = _goal()
-    selection = _selection(goal)
+    candidate_resolution = _candidate_resolution(goal)
     horizon = _horizon(
-        selection,
+        candidate_resolution,
         goal,
         potentially_relevant_need_families=("clarification", "authority"),
         explicitly_excluded_need_families=(
@@ -211,7 +211,7 @@ def test_supplied_absent_and_excluded_families_remain_distinct():
     )
 
     need_set = assemble_goal_advancement_need_set(
-        horizon, clarification=_clarification(selection, goal, horizon)
+        horizon, clarification=_clarification(candidate_resolution, goal, horizon)
     )
     records = _records(need_set)
 
@@ -224,9 +224,9 @@ def test_supplied_absent_and_excluded_families_remain_distinct():
 
 def test_preserves_horizon_unknowns_conflicts_exclusions_and_is_read_only_non_mutating():
     goal = _goal()
-    selection = _selection(goal)
+    candidate_resolution = _candidate_resolution(goal)
     horizon = _horizon(
-        selection,
+        candidate_resolution,
         goal,
         explicitly_excluded_need_families=(
             NeedFamilyExclusion("authority", "no authority movement in this horizon"),

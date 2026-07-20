@@ -23,7 +23,8 @@ def test_frontier_binds_exact_selected_need_native_item_goal_horizon_and_testimo
     ref = selected.selected_reference
 
     assert frontier.frontier_state == "missing_required_clause_family"
-    assert frontier.selected_need_selection_id == selected.selection_id
+    assert frontier.advancement_need_selection_id == selected.selection_id
+    assert frontier.candidate_resolution_id == ref.candidate_resolution_id
     assert frontier.selected_need_reference_id == ref.reference_id
     assert frontier.native_projection_id == ref.native_projection_id
     assert frontier.native_lineage == ref.native_lineage

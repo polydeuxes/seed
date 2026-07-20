@@ -23,7 +23,7 @@ NeedFamily = Literal[
 ]
 NeedFamilyDisposition = Literal["supplied", "absent", "excluded"]
 IdentityConflictKind = Literal[
-    "selection_identity_mismatch",
+    "candidate_resolution_identity_mismatch",
     "goal_identity_mismatch",
     "horizon_identity_mismatch",
 ]
@@ -71,7 +71,7 @@ class NeedFamilyAssemblyRecord:
 class GoalAdvancementNeedSet:
     need_set_id: str
     artifact_type: str
-    selection_id: str
+    candidate_resolution_id: str
     goal_establishment_id: str
     horizon_id: str
     family_records: frozenset[NeedFamilyAssemblyRecord]
@@ -103,7 +103,7 @@ class GoalAdvancementNeedSet:
         return {
             "need_set_id": self.need_set_id,
             "artifact_type": self.artifact_type,
-            "selection_id": self.selection_id,
+            "candidate_resolution_id": self.candidate_resolution_id,
             "goal_establishment_id": self.goal_establishment_id,
             "horizon_id": self.horizon_id,
             "family_records": tuple(asdict(record) for record in records),
@@ -159,7 +159,7 @@ def _identity_conflicts(
 ) -> tuple[NeedFamilyIdentityConflict, ...]:
     conflicts: list[NeedFamilyIdentityConflict] = []
     expected = (
-        ("selection_identity_mismatch", horizon.selection_id, projection.selection_id),
+        ("candidate_resolution_identity_mismatch", horizon.candidate_resolution_id, projection.candidate_resolution_id),
         (
             "goal_identity_mismatch",
             horizon.goal_establishment_id,
@@ -253,7 +253,7 @@ def assemble_goal_advancement_need_set(
     return GoalAdvancementNeedSet(
         _stable("goal-advancement-need-set", payload),
         "GoalAdvancementNeedSet",
-        horizon.selection_id,
+        horizon.candidate_resolution_id,
         horizon.goal_establishment_id,
         horizon.horizon_id,
         frozenset(records),
