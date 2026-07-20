@@ -28,7 +28,6 @@ Core architecture and implementation-facing surfaces inspected:
 - `seed_runtime/events.py`
 - `seed_runtime/state.py`
 - `seed_runtime/projection_store.py`
-- `seed_runtime/context.py`
 - `seed_runtime/state_views.py`
 - `seed_runtime/state_summary_views.py`
 - `seed_runtime/source_navigation.py`

@@ -137,7 +137,6 @@ Execution is coupled to registered implementations, not to capabilities directly
 
 `ToolExecutor.execute()` takes `tool_name` and `arguments`, not a capability. `ToolExecutionPolicyService` validates a named registered tool. `_execute_allowed_tool_call()` receives a `ToolSpec`, imports `tool.implementation`, and calls it. Capability fields are useful before execution for candidate discovery and model visibility, but the execution boundary is a registered implementation path.
 
-Contradictory evidence: `ToolSpec` carries `capabilities`, and the model-visible context can expose tools with capability metadata. That creates indirect coupling between capability reasoning and available execution targets, but execution itself is name/spec/implementation based.
 
 Confidence: high.
 

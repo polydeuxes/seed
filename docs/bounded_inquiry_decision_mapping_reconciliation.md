@@ -252,7 +252,6 @@ Responsibilities that remain outside the inquiry:
 | response/refusal/question event recording | `Runtime` |
 | tool-need event recording | `ToolNeedService` |
 | state projection before decision | `StateProjector` |
-| context composition | `DecisionInputComposer` |
 | policy and execution checks for tools | existing execution/policy services behind `ToolExecutor` and validation paths |
 
 ## 8. Smallest implementation-backed demonstration

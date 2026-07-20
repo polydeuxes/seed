@@ -107,7 +107,6 @@ A candidate that was available to a selection surface but did not appear in the
 selected output.
 
 Exclusion may be explicit when an existing trace or status exposes it, such as a
-`BudgetTrace.dropped_counts` count or `include_unsupported=False` filtering in
 `select_context_facts(...)`. Exclusion may also be implicit when a candidate is
 not selected because another support group was unambiguous best support, because
 a fact expired and expired facts were not included, or because a section limit
@@ -123,7 +122,6 @@ A concrete place where Seed selects, orders, limits, or formats already-known
 candidates for a current use.
 
 Existing selection surfaces include `ContextPacket`, `ContextComposer`,
-`ContextBudget`, `context_selection` ordering helpers,
 `DecisionContextView`, `select_context_facts(...)`, `State.get_fact_support(...)`,
 `State.get_best_fact(...)`, `State.get_current_facts(...)`,
 `State.get_stale_facts()`, `State.get_stale_fact_refresh_recommendations(...)`,
@@ -153,7 +151,6 @@ selection; it does not invent new signals or modify existing behavior.
 A surface-owned rule that determines or contributes to selection, ordering,
 inclusion, exclusion, or representative choice.
 
-Examples include `ContextBudget` section priorities and limits,
 `context_selection.order_facts(...)` ordering keys,
 `select_context_facts(...)` unsupported filtering and confidence ordering,
 `State.get_fact_support(...)` unambiguous best-support selection,
@@ -242,7 +239,6 @@ ordering; it should not be treated as semantic superiority.
 A relative weight that determines which section or candidate category is
 considered before another category.
 
-The current repository has explicit section priorities in `ContextBudget` through
 `DEFAULT_SECTION_PRIORITIES` and configurable `priorities`. Priority is a
 selection signal, not a truth signal.
 
@@ -251,7 +247,6 @@ selection signal, not a truth signal.
 A cap on how many candidates from a section, category, or surface may be
 selected.
 
-The current repository has explicit section limits in `ContextBudget` through
 `DEFAULT_SECTION_LIMITS` and configurable `section_limits`, plus optional global
 `max_items`. A limit can explain dropped or excluded candidates without implying
 that dropped candidates are false.
@@ -261,7 +256,6 @@ that dropped candidates are false.
 The combined priority, limit, and count accounting used to select bounded
 context.
 
-The current repository exposes `BudgetTrace` with priorities, section limits,
 `max_items`, selected counts, dropped counts, and section order. Budget is a
 section-level rationale signal; it is not a full per-item rationale contract.
 
@@ -415,8 +409,6 @@ Use these words to classify repository support for selection-rationale concepts:
 The selection behavior or signal exists in code or documentation today and is
 observable through an existing surface.
 
-Example: `ContextBudget` implements section priorities, section limits, selected
-counts, dropped counts, and section order in `BudgetTrace`.
 
 ### Partial
 
@@ -457,7 +449,6 @@ The vocabulary maps to existing repository structures as follows:
 | Vocabulary term | Existing repository concept | Relationship |
 | --- | --- | --- |
 | Selection Surface | `ContextPacket` | Model-visible context output containing selected current input, active goal, entities, facts, tools, open tool needs, decision schema, evidence, and context budget trace. |
-| Selection Surface | `ContextComposer` | Builds `ContextPacket` from projected `State`, current input, visible tools, ordering helpers, and `ContextBudget`. |
 | Selection Surface | `DecisionContextView` | Read-only decision context over facts, issues, requirements, capabilities, summary counts, projection version, and last event ID. |
 | Selection Surface | Capability inventory | `build_capability_inventory(...)` selects/report capability verification beliefs from tools, `ToolNeed`s, and `capability_verified` facts. |
 | Selection Surface | Current fact queries | `State.get_fact_support(...)`, `State.get_best_fact(...)`, and `State.get_current_facts(...)` select current support and representative facts. |
@@ -465,9 +456,6 @@ The vocabulary maps to existing repository structures as follows:
 | Candidate | `FactSupport` | Aggregate current-support group used by current-state selection, explanation selection, and capability inventory. |
 | Candidate | `FactConflict` / `Contradiction` / `GraphValidationIssue` | Integrity candidates that may be surfaced as issues or used as rationale signals. |
 | Candidate | `CapabilityInventoryEntry` | Capability status candidate selected into inventory output. |
-| Priority | `ContextBudget.priority_for(...)` and `DEFAULT_SECTION_PRIORITIES` | Section-level priority signal for context selection. |
-| Limit | `ContextBudget.limit_for(...)`, `DEFAULT_SECTION_LIMITS`, and `max_items` | Section-level and optional global caps for selected context items. |
-| Budget | `BudgetTrace` | Trace containing priorities, section limits, `max_items`, selected counts, dropped counts, and section order. |
 | Ordering Rationale | `context_selection.order_facts(...)` | Fresh/unexpired facts before expired facts, then newer observations, higher confidence, and fact ID tie-break. |
 | Ordering Rationale | `context_selection.order_evidence(...)` | Newer evidence before older evidence, then higher confidence and evidence ID tie-break. |
 | Ordering Rationale | `context_selection.order_goals(...)` | Active goals before inactive goals, then goal ID tie-break. |
@@ -530,7 +518,6 @@ signals:
 
 - `ContextComposer` chooses and formats packet sections;
 - `context_selection` helpers provide deterministic intra-section ordering;
-- `ContextBudget` applies section priorities, section limits, optional global
   limits, and trace accounting;
 - `DecisionContextView` selects decision-ready facts, issues, requirements, and
   capabilities from read-only projected inputs.
@@ -751,7 +738,6 @@ Selection Rationale Vocabulary v1 does not:
 - change `ProjectionStore` ownership;
 - change `StateProjector` semantics;
 - change `ContextComposer` behavior;
-- change `ContextBudget` behavior;
 - change selection ordering;
 - change current fact selection;
 - change explanation behavior;

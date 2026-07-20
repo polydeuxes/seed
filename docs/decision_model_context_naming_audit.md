@@ -8,7 +8,6 @@ This report audits whether `DecisionModel`, `ContextComposer`, `ContextPacket`, 
 
 Required files inspected:
 
-- `seed_runtime/context.py`
 - `seed_runtime/runtime.py`
 - `seed_runtime/models.py`
 - `seed_runtime/decisions.py`
@@ -22,7 +21,6 @@ Additional directly relevant implementation and docs inspected for blast radius:
 - `scripts/seed_local.py`
 - `tests/test_context.py`
 - `tests/test_context_budget.py`
-- `tests/test_context_selection.py`
 - `tests/test_model_client.py`
 - `tests/test_model_clients.py`
 - `tests/test_architecture_invariants.py`
@@ -101,8 +99,6 @@ Answer to Question 4: `context` is mostly structured operational state, not a fr
 | --- | --- | --- |
 | `DecisionModel` | `DecisionProducer` | Most precise minimal name. It produces proposed `Decision` objects without claiming planning, inquiry, reasoning, orchestration, or LLM ownership. |
 | `FakeDecisionModel` | `StaticDecisionProducer` or `FakeDecisionProducer` | `StaticDecisionProducer` best describes test behavior. `FakeDecisionProducer` is a low-friction alias during transition. |
-| `ContextComposer` | `DecisionInputComposer` | It composes input for decision production. This is narrower and safer than `OperationalStateComposer`, which overstates that it composes all operational state. |
-| `ContextPacket` | `DecisionInputPacket` | Makes the boundary explicit: this is the packet consumed by a decision producer. |
 | `context` parameter in producer protocol | `decision_input` | Avoids implying a prompt blob while keeping the method signature semantics obvious. |
 | `retry_prompt` | Later: `retry_instruction` or `retry_feedback` | This is implementation-backed, but changing it touches packet schema/tests and should be a separate compatibility-aware slice. |
 
@@ -115,10 +111,8 @@ Answer to Question 4: `context` is mostly structured operational state, not a fr
 | `DecisionProposer` | Acceptable but slightly weaker | Captures proposed-decision status, but sounds like a higher-level proposal subsystem and overlaps with execution proposals. |
 | `RuntimeInputComposer` | Not preferred | Too broad; the packet is not all runtime input, only decision-producer input. |
 | `OperationalStateComposer` | Not preferred | Overclaims: composer includes current input, tool inventory, schema, and budget trace, not complete operational state. |
-| `DecisionInputComposer` | Prefer | Precise and narrow. |
 | `Planner`, `ReasoningEngine`, `InquiryEngine`, `AutonomousOrchestrator` | Reject | The implementation does not support these responsibilities. |
 
-Answer to Question 6: the safest replacement names are `DecisionProducer`, `DecisionInputComposer`, and `DecisionInputPacket`, with `decision_input` as the method parameter name. These names match current implementation without claiming future inquiry architecture.
 
 ## Blast Radius
 
@@ -127,7 +121,6 @@ Answer to Question 6: the safest replacement names are `DecisionProducer`, `Deci
 A rename would likely touch:
 
 - `seed_runtime/runtime.py`: protocol, fake/static implementation, constructor type, `self.model` naming if desired, local variables `context`/`retry_context`, retry helper signatures, and `context_composer` property if renamed.
-- `seed_runtime/context.py`: class names `ContextPacket` and `ContextComposer`, module docstring, method return annotation, perhaps `retry_prompt` later.
 - `scripts/seed_local.py`: app wiring imports, app fields, local runtime wrappers, CLI app construction.
 
 ### Tests
@@ -137,7 +130,6 @@ At minimum, test imports and helper classes would be touched in:
 - `tests/test_runtime_loop.py`
 - `tests/test_context.py`
 - `tests/test_context_budget.py`
-- `tests/test_context_selection.py`
 - `tests/test_model_client.py`
 - `tests/test_model_clients.py`
 - `tests/test_architecture_invariants.py`
@@ -160,7 +152,6 @@ Answer to Question 5: the rename touches runtime protocol/composer modules, prov
 
 1. Add compatibility names without behavior changes:
    - introduce `DecisionProducer = DecisionModel` or define `DecisionProducer` as the new protocol and retain `DecisionModel` as an alias;
-   - introduce `DecisionInputPacket = ContextPacket` and `DecisionInputComposer = ContextComposer` aliases, or invert with new classes plus old aliases;
    - introduce `StaticDecisionProducer` while retaining `FakeDecisionModel` as an alias.
 3. Update tests to prefer the new names and add explicit compatibility tests proving old imports still work temporarily.
 4. Update only current API/architecture docs that would otherwise misstate the seam. Leave historical audits alone unless refreshed.
@@ -175,8 +166,6 @@ Recommended aliases:
 
 - `DecisionModel` remains an alias for `DecisionProducer` for at least one integration cycle.
 - `FakeDecisionModel` remains an alias or subclass of `StaticDecisionProducer` until tests and external imports settle.
-- `ContextPacket` remains an alias for `DecisionInputPacket`.
-- `ContextComposer` remains an alias/subclass of `DecisionInputComposer`.
 
 Avoid changing serialized packet field names in the first slice. In particular, keep `current_input`, `active_goal`, `open_tool_needs`, `decision_schema`, `context_budget`, and `retry_prompt` stable until a separate compatibility decision is made.
 
@@ -186,7 +175,6 @@ Answer to Question 8: compatibility aliases should remain temporarily for all pu
 
 A rename implementation slice should run at least:
 
-- `pytest -q tests/test_runtime_loop.py tests/test_context.py tests/test_context_budget.py tests/test_context_selection.py`
 - `pytest -q tests/test_execution.py tests/test_policy.py tests/test_execution_proposals.py` as non-regression boundary checks proving execution/policy/proposal behavior was not changed.
 
 If any diagnostic or audit surface is modified during a future implementation, also run:
@@ -200,14 +188,12 @@ No diagnostic surfaces are modified by this report.
 The smallest safe implementation-backed slice is:
 
 1. Introduce new names and aliases only.
-2. Update runtime wiring and tests to use `DecisionProducer`, `DecisionInputComposer`, and `DecisionInputPacket`.
 3. Leave packet fields and event names unchanged.
 5. Add alias/import tests.
 6. Run the targeted tests listed above.
 
 ## Should This Happen Before Inquiry/Runtime Integration?
 
-Yes, but only as a compatibility-preserving naming slice. The current names are not catastrophically wrong, but `DecisionModel` and bare `context` are stale enough to confuse deeper inquiry integration by implying that an LLM owns the decision and that context is a prompt blob. Renaming the seam to `DecisionProducer` and the packet/composer to `DecisionInputPacket` / `DecisionInputComposer` before deeper integration would reduce conceptual debt without changing behavior.
 
 Do not rename toward inquiry-specific terms yet. The current implementation supports bounded decision input and proposed decision production; it does not yet support a planner, inquiry engine, reasoning engine, or autonomous orchestrator.
 
@@ -235,8 +221,6 @@ Yes, partly. `DecisionModel` is the more stale name because the protocol is now 
 
 - `DecisionModel` -> `DecisionProducer`
 - `FakeDecisionModel` -> `StaticDecisionProducer` with `FakeDecisionModel` retained temporarily
-- `ContextComposer` -> `DecisionInputComposer`
-- `ContextPacket` -> `DecisionInputPacket`
 - `decide(context)` parameter -> `decide(decision_input)`
 
 ### Should the rename happen before deeper inquiry integration?

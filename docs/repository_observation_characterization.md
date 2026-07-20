@@ -157,7 +157,6 @@ Examples:
 
 ```text
 seed_runtime.runtime is a module.
-seed_runtime.context is a module or package.
 seed_runtime.state is a module or package.
 seed_runtime.ledger is a module or package.
 ```

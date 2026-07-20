@@ -451,7 +451,6 @@ intentionally not promoted to `provides` when Prometheus-sourced.
 The relationship catalog can project `provides` to capability for supported
 non-Prometheus facts. Capability inventory and verification concepts describe
 status and support; they do not imply that any endpoint label owns the
-capability. Tool ownership in repository/self-model contexts is also narrower:
 source structure, registrations, and tests may support existence or behavior,
 but not broad architectural ownership without explicit rules.
 

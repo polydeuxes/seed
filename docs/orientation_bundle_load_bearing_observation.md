@@ -140,8 +140,6 @@ cross-reference, and broad search:
 - `docs/surviving_pressure_after_decomposition_observation.md`
 - `docs/understanding_navigation_observation.md`
 - `docs/working_state_activation_artifact_audit.md`
-- `seed_runtime/context.py`
-- `seed_runtime/context_selection.py`
 - `seed_runtime/context_views.py`
 - `seed_runtime/state_summary_views.py`
 - `seed_runtime/explanations.py`

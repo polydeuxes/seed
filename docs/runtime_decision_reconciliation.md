@@ -8,7 +8,6 @@ This report is observational. It identifies what the current implementation demo
 
 ```text
 python - <<'PY'
-from seed_runtime.context import DecisionInputComposer
 from seed_runtime.events import EventLedger
 from seed_runtime.execution import ToolExecutor
 from seed_runtime.registry import ToolRegistry

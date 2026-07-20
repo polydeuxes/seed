@@ -43,7 +43,6 @@ The answer is mixed:
 
 ### Context-composition surfaces
 
-- `DecisionInputComposer.compose` includes the current input event payload, active goal, entities, recent facts, recent evidence, visible tools, open tool needs, a decision schema, and context-budget trace in a `DecisionInputPacket`.
 
 ### Local CLI intent path
 
@@ -73,7 +72,6 @@ The answer is mixed:
 
 ### Context-advertised decision vocabulary
 
-`DecisionInputComposer` currently advertises this narrower schema to model context:
 
 - `answer`
 - `ask_question`
@@ -116,7 +114,6 @@ raw user text
   -> Runtime.handle_user_message
   -> input.user_message event
   -> StateProjector.project
-  -> DecisionInputComposer.compose(DecisionInputPacket)
   -> DecisionProducer.decide
         -> _normalize_classification_for_input
   -> model.decision.proposed event
@@ -187,7 +184,6 @@ More specifically:
 This audit preserves the current boundaries:
 
 - `Runtime` remains the canonical route owner.
-- `DecisionInputComposer` owns composition of current input and relevant state into `DecisionInputPacket`.
 - `ToolNeedService` owns `request_tool` capability-gap creation and resolution support.
 - `ToolExecutor` owns registered-operation execution only after a valid `call_tool` route.
 - Policy gates and pending-action handling remain downstream execution boundaries and must not be bypassed.

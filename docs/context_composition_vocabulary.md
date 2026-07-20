@@ -36,9 +36,6 @@ runtime surfaces:
 - `docs/state.md`
 - `docs/reasoning_roadmap.md`
 - `docs/generated/architecture/architecture_graph.json`
-- `seed_runtime/context.py`
-- `seed_runtime/context_budget.py`
-- `seed_runtime/context_selection.py`
 - `seed_runtime/context_views.py`
 - `seed_runtime/state_views.py`
 - `seed_runtime/explanations.py`
@@ -154,7 +151,6 @@ Priority is not correctness. A higher-priority context item is surfaced earlier
 or admitted under a budget before a lower-priority item; it is not made more true,
 more verified, more executable, or more authoritative by that priority.
 
-The existing `ContextBudget` demonstrates category-level priority for
 model-visible packet sections. The existing ordering helpers demonstrate
 within-section deterministic ordering. This vocabulary does not turn either into
 a semantic relevance engine.

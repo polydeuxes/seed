@@ -25,7 +25,6 @@ Primary implementation evidence reviewed:
 - `seed_runtime/capability_catalog.py`
 - `seed_runtime/tool_execution_policy.py`
 - `seed_runtime/tool_validation.py`
-- `seed_runtime/context.py`
 - `seed_runtime/recommendation_ranker.py`
 - prior execution, tool-vocabulary, natural-language-routing, and capability/execution recovery documents listed in the prompt
 

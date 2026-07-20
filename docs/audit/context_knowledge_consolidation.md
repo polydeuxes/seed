@@ -7,7 +7,6 @@ fact, confidence, contradiction, state-view, and runtime-trace paths. It found
 several intentionally distinct read-only views over the same canonical projected
 `State`, plus two provider-facing context shapes that were ambiguous:
 
-- `seed_runtime.context.ContextPacket` / `ContextComposer`, used by the older
   `Runtime` path.
 - `seed_runtime.runtime_loop.RuntimeContext`, used by `RuntimeLoop` v1.
 - `seed_runtime.context_views.DecisionContextView`, introduced as the knowledge
@@ -37,10 +36,8 @@ execution, or runtime safety boundaries were added.
 
 | Concept | Component(s) | Canonical status |
 | --- | --- | --- |
-| Legacy compact provider packet | `ContextPacket`, `ContextComposer` in `seed_runtime.context` | Existing provider-facing shape for the older `Runtime` path. Keep for compatibility. It composes current input, active goal, entities, facts with selected evidence, visible operations/tools, open ToolNeeds / capability gaps, schema, and budget trace. |
 | RuntimeLoop provider context | `RuntimeContext` in `seed_runtime.runtime_loop` | Canonical provider input for `RuntimeLoop` v1. It now contains `workspace_id`, `run_id`, raw projected `state`, current input, visible operations/tools, and the explicit `decision_context`. |
 | Decision-ready knowledge view | `DecisionContextView` in `seed_runtime.context_views` | Canonical knowledge boundary for decision-making. It is a deterministic read-only projection from `State` plus Evidence Graph, Contradiction Detection, and Confidence Aggregation. It should not be folded into `State` because it is a selected provider view, not durable world state. |
-| Context selection / budget | `seed_runtime.context_selection`, `seed_runtime.context_budget` | Support code for `ContextComposer`; not a competing knowledge model. |
 
 Decision: `RuntimeLoop` should consume / expose `DecisionContextView` directly as
 part of `RuntimeContext`. `DecisionContextView` should not be folded into
@@ -168,10 +165,7 @@ safely removed under the current test coverage.
 
 ### Context and runtime
 
-- `seed_runtime/context.py`
 - `seed_runtime/context_views.py`
-- `seed_runtime/context_budget.py`
-- `seed_runtime/context_selection.py`
 - `seed_runtime/runtime.py`
 - `seed_runtime/runtime_loop.py`
 - `seed_runtime/decision_journal.py`

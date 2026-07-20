@@ -145,8 +145,6 @@ cross-reference, broad search, and implementation-facing read-model review:
 - `docs/understanding_navigation_observation.md`
 - `docs/understanding_visibility_existing_surface_audit.md`
 - `docs/working_state_activation_artifact_audit.md`
-- `seed_runtime/context.py`
-- `seed_runtime/context_selection.py`
 - `seed_runtime/context_views.py`
 - `seed_runtime/source_navigation.py`
 - `seed_runtime/state_summary_views.py`

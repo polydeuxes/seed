@@ -115,7 +115,6 @@ Additional repository surfaces inspected or used for routing:
 - `docs/selection_and_attention_frontier.md`
 - `docs/knowledge_acquisition_and_selection.md`
 - implementation-facing read-model and projection surfaces surfaced by search,
-  including `seed_runtime/context_selection.py`, `seed_runtime/context_views.py`,
   `seed_runtime/state_summary_views.py`, and capability/candidate boundary files.
 
 ## Authority Boundary

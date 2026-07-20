@@ -59,10 +59,7 @@ Minimum requested files inspected:
 - `docs/capability_extension_methodology.md`
 - `seed_runtime/state.py`
 - `seed_runtime/state_views.py`
-- `seed_runtime/context.py`
 - `seed_runtime/context_views.py`
-- `seed_runtime/context_selection.py`
-- `seed_runtime/context_budget.py`
 - `seed_runtime/explanations.py`
 - `seed_runtime/tool_needs.py`
 - `seed_runtime/capability_inventory.py`
@@ -80,10 +77,8 @@ Seed already has three overlapping but distinct context foundations.
 
 ### 1. Model-visible context packets
 
-`seed_runtime/context.py` defines `ContextPacket` and `ContextComposer`.
 `ContextComposer.compose(...)` selects from the current input, active goals,
 entities, facts, evidence, registered tools, and open tool needs. It applies a
-`ContextBudget` after ordering goals, entities, facts, and evidence.
 
 This is the closest existing implementation to context composition for model
 input. It is compact and operationally adjacent to runtime prompting, but its
@@ -205,7 +200,6 @@ knowledge classes and explanation surfaces.
 
 ### Context Budget
 
-`ContextBudget` provides priority-based section selection. It deliberately does
 not estimate tokens; it answers which categories are allowed into the next model
 context first as state grows.
 
@@ -216,7 +210,6 @@ reasoning, planning, or LLM ranking.
 
 ### Context Selection Ordering
 
-`context_selection.py` orders facts by freshness, recency, confidence, and ID;
 evidence by recency, confidence, and ID; goals with active goals first; and
 entities by confidence, name, and ID.
 
@@ -331,7 +324,6 @@ not yet a context-selection algorithm and should not silently become one.
 ### Requirements and ToolNeeds
 
 Requirements already appear in state views and decision context views. Open
-`ToolNeed`s are selected into model-visible context packets and capability
 resolution consumes them as capability gaps.
 
 Architectural fit: **implemented as context contributors**.
@@ -359,7 +351,6 @@ future context vocabulary belongs.
 
 Seed already has context-related behavior in these forms:
 
-- compact model-visible context packets;
 - context section budgets and traces;
 - deterministic ordering of facts, evidence, goals, and entities;
 - decision context views over projected state, evidence graph, contradictions,
@@ -526,7 +517,6 @@ concepts are smaller:
 
 7. **A smallest-next-step characterization.**
    Before code, document how existing `context.py`, `context_views.py`,
-   `context_selection.py`, `context_budget.py`, `state_views.py`,
    `explanations.py`, and `capability_inventory.py` relate to one another.
 
 ## Concepts That Should Never Be Added As Context Composition
@@ -591,7 +581,6 @@ before reconciliation.
 
 ### Trap 7: Letting model needs mutate architecture boundaries
 
-Model-visible packets are useful, but model context does not own projection,
 evidence, capability resolution, policy, execution, or provider behavior.
 
 ## Recommended Smallest Next Step
@@ -607,7 +596,6 @@ names:
    FactSupport, contradictions/conflicts, graph issues, explanations,
    requirements, capabilities, ToolNeeds, temporal freshness/expiry metadata,
    and current input;
-3. its current implemented surfaces: `ContextComposer`, `ContextBudget`,
    `context_selection`, `DecisionContextView`, `StateViews`,
    `ExplanationBuilder`, `CapabilityInventory`, and read-only capability
    resolution;
@@ -633,7 +621,6 @@ Seed should continue to model knowledge acquisition as:
 Observation -> Evidence -> Fact -> Projection
 ```
 
-Seed should model context composition as:
 
 ```text
 Projected knowledge + current input + open needs + issues + explanations

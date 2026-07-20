@@ -79,7 +79,6 @@ CONSUMER_PATHS = {
         "seed_runtime/state_views.py",
         "seed_runtime/context_views.py",
         "seed_runtime/state_summary_views.py",
-        "seed_runtime/context_selection.py",
         "seed_runtime/facts.py",
     ),
     "diagnostics": (

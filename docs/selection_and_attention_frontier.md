@@ -652,7 +652,6 @@ Working state is selected, but not every selected state is working state.
 ```
 
 Working state is selected for continuation and safe current work. A context
-packet is selected for model-visible context. A projection is selected for
 communication. A decision selects under authority. These selection types should
 not be collapsed.
 

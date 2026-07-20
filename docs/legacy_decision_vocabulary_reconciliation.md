@@ -4,7 +4,6 @@ Date: 2026-06-25
 
 ## Scope and boundary
 
-This is an observational audit after the compatibility rename from `DecisionModel`/`ContextComposer`/`ContextPacket`/`FakeDecisionModel` to `DecisionProducer`/`DecisionInputComposer`/`DecisionInputPacket`/`StaticDecisionProducer`. It does not remove aliases, rename events, rename serialized packet fields, rewrite historical documents, or change runtime behavior.
 
 ## Repository searches performed
 
@@ -26,7 +25,6 @@ The detailed occurrence inventory below is based on those searches plus targeted
 
 ## Active architectural vocabulary
 
-The current runtime implementation defines `DecisionProducer.decide(decision_input: DecisionInputPacket) -> Decision`, `StaticDecisionProducer`, `DecisionInputPacket`, and `DecisionInputComposer`. `Runtime.__init__` accepts `decision_input_composer: DecisionInputComposer` and `model: DecisionProducer`; `Runtime.handle_user_message` composes a decision input packet and passes retry packets to `self.model.decide(...)`. The remaining `model` attribute and `model.decision.*` events are compatibility vocabulary rather than the preferred type vocabulary.
 
 ## Occurrence classification
 
@@ -36,8 +34,6 @@ The current runtime implementation defines `DecisionProducer.decide(decision_inp
 |---|---:|---|---|
 | `DecisionModel = DecisionProducer` | `seed_runtime/runtime.py:391` | compatibility alias | Kept as former public decision producer name. |
 | `FakeDecisionModel = StaticDecisionProducer` | `seed_runtime/runtime.py:392` | compatibility alias | Kept as former public static producer name. |
-| `ContextPacket = DecisionInputPacket` | `seed_runtime/context.py:140` | compatibility alias | Kept as former public decision-input packet name. |
-| `ContextComposer = DecisionInputComposer` | `seed_runtime/context.py:141` | compatibility alias | Kept as former public decision-input composer name. |
 
 ### Test compatibility
 
@@ -52,7 +48,6 @@ The current runtime implementation defines `DecisionProducer.decide(decision_inp
 | Occurrence | Files / lines | Classification | Support |
 |---|---:|---|---|
 | `last_context` on `StaticDecisionProducer` | `seed_runtime/runtime.py:31,35` | active implementation | Runtime test helper stores both preferred `last_decision_input` and legacy `last_context`; this is active code, but the legacy member exists only for compatibility. |
-| `context` local variables / annotations in runtime retry helpers | `seed_runtime/runtime.py:84,200,220,240` | active implementation | Local variable names still use generic `context` while the types are `DecisionInputPacket`; this is naming debt only, not a runtime behavior difference. |
 | `runtime.py` constructor parameter `model: DecisionProducer` and `self.model.decide(...)` | `seed_runtime/runtime.py:68,83` | active implementation | Preferred type is `DecisionProducer`, but the member name remains model-centric. |
 
 ### Serialized/runtime schema
@@ -99,8 +94,6 @@ Every occurrence from the required searches falls into one of the categories abo
 Safe immediate migrations are limited to internal variable/member names that do not alter public imports, event names, packet fields, or serialized shapes:
 
 1. `Runtime.__init__(..., model: DecisionProducer)` / `self.model` can migrate to `decision_producer` / `self.decision_producer`, optionally keeping `self.model` as a temporary alias if external tests or integrations access it.
-2. Local variables named `context` / `retry_context` in `Runtime.handle_user_message` and retry helper parameters can migrate to `decision_input` / `retry_decision_input` because the type is already `DecisionInputPacket`.
-4. Current documentation that is not historical and not compatibility documentation can be updated opportunistically to say `DecisionProducer` / `DecisionInputPacket` first and legacy aliases second.
 
 No cleanup is performed in this report.
 
@@ -110,7 +103,6 @@ The following should remain until an explicit compatibility window because imple
 
 - `DecisionModel`, `FakeDecisionModel`, `ContextComposer`, and `ContextPacket` aliases.
 - `StaticDecisionProducer.last_context`.
-- `retry_prompt`, because it is a serialized `DecisionInputPacket` field and rendered by the model-client prompt path.
 - `model.decision.*` event names, because runtime emits them and many tests assert them.
 
 ### 4. Occurrences that should never be migrated
@@ -155,7 +147,6 @@ The `model.decision.*` names are mildly misleading as architectural vocabulary b
 
 ## Findings
 
-Legacy vocabulary still participates in active implementation through local/member names (`self.model`, `context` parameters), event names (`model.decision.*`), test-helper compatibility (`last_context`), and the serialized retry field (`retry_prompt`). The compatibility rename has shifted the core runtime's type vocabulary to `DecisionProducer` and `DecisionInputPacket`, but meaningful naming debt remains in the runtime boundary, prompt adapter, event vocabulary, and retry metadata.
 
 ## Recommended bounded implementation slice
 
@@ -164,7 +155,6 @@ A safe next slice would rename only internal runtime/model-client parameter and 
 ## Files inspected
 
 - `seed_runtime/runtime.py`
-- `seed_runtime/context.py`
 - `tests/test_runtime_loop.py`
 - `tests/test_model_client.py`
 - Documentation files returned by the required repository-wide searches.
