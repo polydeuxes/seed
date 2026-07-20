@@ -47,26 +47,6 @@
       "to": "State"
     },
     {
-      "from": "ToolExecutor",
-      "label": "records tool call events",
-      "to": "EventLedger"
-    },
-    {
-      "from": "ToolExecutor",
-      "label": "may execute registered operation",
-      "to": "RegisteredOperation"
-    },
-    {
-      "from": "ToolExecutor",
-      "label": "state factory for policy",
-      "to": "StateProjector"
-    },
-    {
-      "from": "ToolExecutor",
-      "label": "requires registered operation",
-      "to": "ToolRegistry"
-    },
-    {
       "from": "ToolNeedService",
       "label": "may suggest providers/handoffs",
       "path": "request_tool",
@@ -83,17 +63,6 @@
       "label": "checks existing needs",
       "path": "request_tool",
       "to": "StateProjector"
-    },
-    {
-      "from": "ToolNeedService",
-      "label": "may expose registered operations",
-      "path": "request_tool",
-      "to": "ToolRegistry"
-    },
-    {
-      "from": "ToolRegistry",
-      "label": "may expose registered operation",
-      "to": "RegisteredOperation"
     }
   ],
   "nodes": [
@@ -194,7 +163,7 @@
       "id": "ProjectionStore",
       "kind": "class",
       "layer": "state",
-      "line": 110,
+      "line": 108,
       "owner": "projection_cache",
       "routes": [],
       "summary": "Stores reusable projected-state snapshots derived from the event ledger."
@@ -210,18 +179,6 @@
       "owner": "capability_metadata",
       "routes": [],
       "summary": "A non-executable provider suggestion from capability metadata."
-    },
-    {
-      "ast_calls": [],
-      "events": [],
-      "file": null,
-      "id": "RegisteredOperation",
-      "kind": "external",
-      "layer": "execution",
-      "line": null,
-      "owner": "registered_tool_implementation",
-      "routes": [],
-      "summary": "A registered toolkit function that ToolExecutor may execute."
     },
     {
       "ast_calls": [
@@ -283,135 +240,10 @@
       "id": "StateProjector",
       "kind": "class",
       "layer": "state",
-      "line": 893,
+      "line": 889,
       "owner": "state_projection",
       "routes": [],
       "summary": "Rebuilds inspectable state by applying ledger events and deriving projection indexes."
-    },
-    {
-      "ast_calls": [
-        {
-          "method": "_execute_allowed_tool_call",
-          "receiver": ""
-        },
-        {
-          "method": "_execute_allowed_tool_call",
-          "receiver": ""
-        },
-        {
-          "method": "_extract_post_execution_knowledge",
-          "receiver": ""
-        },
-        {
-          "method": "_failed",
-          "receiver": ""
-        },
-        {
-          "method": "_load_registered",
-          "receiver": ""
-        },
-        {
-          "method": "_policy_denied",
-          "receiver": ""
-        },
-        {
-          "method": "_realize_registered_operation",
-          "receiver": ""
-        },
-        {
-          "method": "_record_completed_tool_call",
-          "receiver": ""
-        },
-        {
-          "method": "_resume_event_context",
-          "receiver": ""
-        },
-        {
-          "method": "observe_tool_result",
-          "receiver": "fact_extraction"
-        },
-        {
-          "method": "append",
-          "receiver": "ledger"
-        },
-        {
-          "method": "append",
-          "receiver": "ledger"
-        },
-        {
-          "method": "append",
-          "receiver": "ledger"
-        },
-        {
-          "method": "append",
-          "receiver": "ledger"
-        },
-        {
-          "method": "append",
-          "receiver": "ledger"
-        },
-        {
-          "method": "get",
-          "receiver": "ledger"
-        },
-        {
-          "method": "get",
-          "receiver": "ledger"
-        },
-        {
-          "method": "list_events",
-          "receiver": "ledger"
-        },
-        {
-          "method": "create_tool_call",
-          "receiver": "pending_actions"
-        },
-        {
-          "method": "mark_completed",
-          "receiver": "pending_actions"
-        },
-        {
-          "method": "project",
-          "receiver": "projector"
-        },
-        {
-          "method": "project",
-          "receiver": "projector"
-        },
-        {
-          "method": "get",
-          "receiver": "registry"
-        },
-        {
-          "method": "require",
-          "receiver": "registry"
-        },
-        {
-          "method": "require",
-          "receiver": "registry"
-        },
-        {
-          "method": "evaluate_with_state_factory",
-          "receiver": "tool_execution_policy"
-        },
-        {
-          "method": "validate_output_schema",
-          "receiver": "tool_validation"
-        }
-      ],
-      "events": [
-        "tool.call.started",
-        "tool.call.completed",
-        "tool.call.failed"
-      ],
-      "file": "seed_runtime/execution.py",
-      "id": "ToolExecutor",
-      "kind": "class",
-      "layer": "execution",
-      "line": 55,
-      "owner": "registered_tool_execution",
-      "routes": [],
-      "summary": "Executes only registered tool operations after validation and policy checks."
     },
     {
       "ast_calls": [
@@ -428,59 +260,16 @@
       "id": "ToolNeedService",
       "kind": "class",
       "layer": "runtime_service",
-      "line": 16,
+      "line": 15,
       "owner": "tool_need_capability_resolution",
       "routes": [],
       "summary": "Owns capability-gap creation and read-only capability resolution for request_tool decisions."
-    },
-    {
-      "ast_calls": [
-        {
-          "method": "get",
-          "receiver": ""
-        },
-        {
-          "method": "register_toolkit",
-          "receiver": ""
-        },
-        {
-          "method": "add_toolkit",
-          "receiver": "_index"
-        },
-        {
-          "method": "get",
-          "receiver": "_index"
-        },
-        {
-          "method": "list_toolkits",
-          "receiver": "_index"
-        },
-        {
-          "method": "list_tools",
-          "receiver": "_index"
-        },
-        {
-          "method": "list_tools_for_capability",
-          "receiver": "_index"
-        }
-      ],
-      "events": [],
-      "file": "seed_runtime/registry.py",
-      "id": "ToolRegistry",
-      "kind": "class",
-      "layer": "registry",
-      "line": 54,
-      "owner": "registered_operation_catalog",
-      "routes": [],
-      "summary": "Exposes registered model-visible operations and capability mappings."
     }
   ],
   "source": "Python AST scan of selected seed_runtime files; runtime modules are not imported.",
   "sources": [
     "seed_runtime/runtime.py",
     "seed_runtime/tool_needs.py",
-    "seed_runtime/execution.py",
-    "seed_runtime/registry.py",
     "seed_runtime/capability_catalog.py",
     "seed_runtime/state.py",
     "seed_runtime/projection_store.py",

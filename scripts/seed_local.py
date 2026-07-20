@@ -437,7 +437,7 @@ from seed_runtime.integrity_summary import (
     ProjectionIntegritySummary,
     build_projection_integrity_summary,
 )
-from seed_runtime.models import Event, Observation, ToolSpec, utc_now
+from seed_runtime.models import Event, Observation, utc_now
 from seed_runtime.observation_normalizers import (
     EndpointAliasNormalizer,
     EndpointIdentityNormalizer,
@@ -445,7 +445,6 @@ from seed_runtime.observation_normalizers import (
 )
 from seed_runtime.predicate_catalog import PredicateCatalog
 from seed_runtime.predicate_normalizers import PredicateNormalizer
-from seed_runtime.registry import ToolRegistry
 from seed_runtime.projection_store import (
     ProjectionStore,
     SQLiteProjectionStore,
@@ -541,13 +540,6 @@ class DevObservationSeed:
     ingested_by: str = "scripts.seed_local --observe"
 
 
-@dataclass(frozen=True)
-class DevRegisteredProviderSeed:
-    """Local development provider/tool registration supplied from the CLI."""
-
-    provider_name: str
-
-
 @dataclass
 class LocalSeedApp:
     """Container for a locally configured Seed runtime and its event ledger."""
@@ -596,18 +588,6 @@ class LocalSeedApp:
             self.ledger,
             self.workspace_id,
             path,
-            session_id=self.session_id,
-        )
-
-    def seed_registered_providers(
-        self, providers: list[DevRegisteredProviderSeed]
-    ) -> None:
-        """Append dev-only tool registration events into the ledger."""
-
-        seed_dev_registered_providers(
-            self.ledger,
-            self.workspace_id,
-            providers,
             session_id=self.session_id,
         )
 
@@ -852,41 +832,6 @@ def build_prometheus_observation_source(args: argparse.Namespace) -> Any:
     )
 
 
-def seed_dev_registered_providers(
-    ledger: EventLedger,
-    workspace_id: str,
-    providers: list[DevRegisteredProviderSeed],
-    *,
-    session_id: str | None = None,
-) -> None:
-    """Append dev-only registered-tool state without loading or registering tools."""
-
-    for seed in providers:
-        provider_name = seed.provider_name.strip()
-        if not provider_name:
-            continue
-        tool = ToolSpec(
-            name=provider_name,
-            summary=f"Dev-only seeded provider registration for {provider_name}.",
-            toolkit_id=provider_name,
-            input_schema={},
-            output_schema={},
-            policy_action=provider_name,
-            implementation="scripts.seed_local:dev_only_noop",
-            risk_class="L1",
-        )
-        ledger.append(
-            "tool.registered",
-            workspace_id,
-            {
-                "tool": to_plain(tool),
-                "source": "scripts.seed_local --registered-provider",
-                "dev_only": True,
-            },
-            actor="system",
-            session_id=session_id,
-        )
-
 
 def build_local_app(
     *,
@@ -923,9 +868,6 @@ def build_parser() -> argparse.ArgumentParser:
             "Examples:\n"
             "  python scripts/seed_local.py --fact web_service host example_host "
             "--fact web_service runtime docker 'restart web_service?'\n"
-            "  python scripts/seed_local.py --db .seed-local.sqlite "
-            "--registered-provider docker_container_lifecycle "
-            "--fact web_service host example_host --preconditions plan_000001\n"
             "  python scripts/seed_local.py --db .seed-local.sqlite "
             "--proposal plan_000001\n"
             "  python scripts/seed_local.py --db .seed-local.sqlite "
@@ -1765,17 +1707,6 @@ def build_parser() -> argparse.ArgumentParser:
             "print confidence aggregation when used without a value; with a numeric "
             "value, set confidence for --observe entries from 0.0 to 1.0 "
             "(default: 1.0)"
-        ),
-    )
-    parser.add_argument(
-        "--registered-provider",
-        action="append",
-        metavar="PROVIDER_NAME",
-        default=[],
-        help=(
-            "dev-only provider/tool registration state to append before "
-            "precondition reports; records inspectable state only and does not "
-            "load, register, approve, or execute real tools"
         ),
     )
     parser.add_argument(
@@ -2774,9 +2705,6 @@ def parse_alias(args: list[str]) -> DevObservationSeed:
     )
 
 
-def parse_registered_provider(provider_name: str) -> DevRegisteredProviderSeed:
-    return DevRegisteredProviderSeed(provider_name=provider_name)
-
 
 def _parse_fact_value(value: str) -> Any:
     try:
@@ -2942,18 +2870,6 @@ def seed_dev_state_from_args(args: argparse.Namespace, ledger: EventLedger) -> N
             session_id=args.session,
         )
 
-    provider_seeds = [
-        parse_registered_provider(provider_name)
-        for provider_name in args.registered_provider
-    ]
-    if provider_seeds:
-        seed_dev_registered_providers(
-            ledger,
-            args.workspace,
-            provider_seeds,
-            session_id=args.session,
-        )
-
 
 def _format_fact_value(value: Any) -> str:
     if isinstance(value, str):
@@ -3016,11 +2932,6 @@ def _event_payload_summary(event: Event) -> str:
         kind = data.get("kind")
         if evidence_id is not None:
             return f"evidence_id={evidence_id} evidence_kind={kind}"
-    if event.kind == "tool.registered":
-        data = payload.get("tool", payload)
-        tool_name = data.get("name")
-        if tool_name is not None:
-            return f"tool={tool_name}"
     return ""
 
 

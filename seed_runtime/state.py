@@ -1236,10 +1236,6 @@ class StateProjector:
             data = payload.get("handoff_plan", payload)
             handoff_plan = HandoffPlan(**data)
             state.handoff_plans[handoff_plan.id] = handoff_plan
-        elif event.kind == "pending_action.created":
-            data = payload.get("pending_action", payload)
-            pending_action = PendingAction(**data)
-            state.pending_actions[pending_action.id] = pending_action
         elif event.kind == "action_plan.approved":
             state.action_plan_approvals[payload["action_plan_id"]] = event.id
         elif event.kind == "action_plan.created":
@@ -1267,23 +1263,6 @@ class StateProjector:
                     update["rejection_reason"] = None
                     update["replacement_plan_id"] = None
                 state.action_plans[action_plan_id] = current.model_copy(update=update)
-        elif event.kind in {
-            "pending_action.status_changed",
-            "pending_action.approved",
-            "pending_action.completed",
-            "pending_action.cancelled",
-        }:
-            pending_action_id = payload["pending_action_id"]
-            status = payload.get("status", event.kind.rsplit(".", 1)[-1])
-            if pending_action_id in state.pending_actions:
-                current = state.pending_actions[pending_action_id]
-                state.pending_actions[pending_action_id] = current.model_copy(
-                    update={"status": status}
-                )
-        elif event.kind == "tool.registered":
-            data = payload.get("tool", payload)
-            tool = ToolSpec(**data)
-            state.tools[tool.name] = tool
 
 
 def _recover_affected_scope(event: Event) -> _AffectedScope | None:
@@ -1329,17 +1308,6 @@ def _recover_affected_scope(event: Event) -> _AffectedScope | None:
         data = payload.get("handoff_plan", payload)
         return _AffectedScope("handoff_plans", data.get("id"))
     if event.kind in {
-        "pending_action.created",
-        "pending_action.status_changed",
-        "pending_action.approved",
-        "pending_action.completed",
-        "pending_action.cancelled",
-    }:
-        data = payload.get("pending_action", payload)
-        return _AffectedScope(
-            "pending_actions", data.get("id") or payload.get("pending_action_id")
-        )
-    if event.kind in {
         "action_plan.created",
         "action_plan.approved",
         "action_plan.accepted",
@@ -1350,9 +1318,6 @@ def _recover_affected_scope(event: Event) -> _AffectedScope | None:
         return _AffectedScope(
             "action_plans", data.get("id") or payload.get("action_plan_id")
         )
-    if event.kind == "tool.registered":
-        data = payload.get("tool", payload)
-        return _AffectedScope("tools", data.get("name"))
     return None
 
 

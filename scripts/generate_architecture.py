@@ -25,8 +25,6 @@ BANNER = "generated; do not edit"
 SOURCE_FILES = [
     Path("seed_runtime/runtime.py"),
     Path("seed_runtime/tool_needs.py"),
-    Path("seed_runtime/execution.py"),
-    Path("seed_runtime/registry.py"),
     Path("seed_runtime/capability_catalog.py"),
     Path("seed_runtime/state.py"),
     Path("seed_runtime/projection_store.py"),
@@ -38,11 +36,6 @@ SYNTHETIC_NODES: dict[str, dict[str, str]] = {
         "owner": "provider_recommendation_ranking",
         "layer": "runtime_service",
         "summary": "Ranks capability provider recommendations for tool needs.",
-    },
-    "RegisteredOperation": {
-        "owner": "registered_tool_implementation",
-        "layer": "execution",
-        "summary": "A registered toolkit function that ToolExecutor may execute.",
     },
     "ProviderRecommendation": {
         "owner": "capability_metadata",
