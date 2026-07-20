@@ -9,7 +9,7 @@ from typing import Iterable, Literal
 
 from seed_runtime.bounded_advancement_horizon import BoundedAdvancementHorizon
 from seed_runtime.bounded_operator_goal_establishment import BoundedOperatorGoalEstablishment
-from seed_runtime.goal_inquiry_consideration_selection import GoalInquiryConsiderationSelection
+from seed_runtime.goal_consideration_candidate_resolution import GoalConsiderationCandidateResolution
 
 RequirementStanding = Literal["required", "not_required", "unknown", "conflicting"]
 AuthorityStanding = Literal["available", "unavailable", "unknown", "conflicting", "outside_current_scope"]
@@ -17,7 +17,7 @@ AuthorityNeedStanding = Literal["established", "unsupported", "unknown", "confli
 ScopeApplicability = Literal["applicable", "outside_current_scope", "unknown", "conflicting"]
 HorizonMateriality = Literal["material", "not_material", "unknown", "conflicting"]
 UnclassifiedReason = Literal[
-    "selection_identity_mismatch",
+    "candidate_resolution_identity_mismatch",
     "goal_identity_mismatch",
     "horizon_identity_mismatch",
     "evidence_identity_mismatch",
@@ -42,7 +42,7 @@ BOUNDARY_NOTES: tuple[str, ...] = (
 class AuthorityRequirementTestimony:
     testimony_ref: str
     source_ref: str
-    selection_id: str
+    candidate_resolution_id: str
     goal_establishment_id: str
     horizon_id: str
     evidence_ref: str
@@ -61,7 +61,7 @@ class AuthorityRequirementTestimony:
 class AuthorityStandingTestimony:
     testimony_ref: str
     source_ref: str
-    selection_id: str
+    candidate_resolution_id: str
     goal_establishment_id: str
     horizon_id: str
     evidence_ref: str
@@ -96,7 +96,7 @@ class AuthorityNeedProjectionItem:
 @dataclass(frozen=True)
 class AuthorityNeedProjection:
     projection_id: str
-    selection_id: str
+    candidate_resolution_id: str
     goal_establishment_id: str
     horizon_id: str
     evidence_refs: tuple[str, ...]
@@ -127,8 +127,8 @@ def _stable(prefix: str, payload: object) -> str:
 def _horizon_evidence_refs(horizon: BoundedAdvancementHorizon) -> tuple[str, ...]:
     return tuple(item.evidence_ref for item in horizon.evidence_snapshot_refs)
 
-def _base_reason(t, selection, goal, horizon, evidence_refs, expected_family: str) -> UnclassifiedReason | None:
-    if t.selection_id != selection.selection_id: return "selection_identity_mismatch"
+def _base_reason(t, candidate_resolution, goal, horizon, evidence_refs, expected_family: str) -> UnclassifiedReason | None:
+    if t.candidate_resolution_id != candidate_resolution.resolution_id: return "candidate_resolution_identity_mismatch"
     if t.goal_establishment_id != goal.goal_establishment_id: return "goal_identity_mismatch"
     if t.horizon_id != horizon.horizon_id: return "horizon_identity_mismatch"
     if t.evidence_ref not in evidence_refs: return "evidence_identity_mismatch"
@@ -159,17 +159,17 @@ def _conclude(requirement: RequirementStanding, authority: AuthorityStanding) ->
     if authority == "conflicting": return "conflicting"
     return "outside_current_scope"
 
-def project_authority_need(selection: GoalInquiryConsiderationSelection, goal: BoundedOperatorGoalEstablishment, horizon: BoundedAdvancementHorizon, requirements: Iterable[AuthorityRequirementTestimony] = (), standings: Iterable[AuthorityStandingTestimony] = ()) -> AuthorityNeedProjection:
+def project_authority_need(candidate_resolution: GoalConsiderationCandidateResolution, goal: BoundedOperatorGoalEstablishment, horizon: BoundedAdvancementHorizon, requirements: Iterable[AuthorityRequirementTestimony] = (), standings: Iterable[AuthorityStandingTestimony] = ()) -> AuthorityNeedProjection:
     reqs = tuple(requirements); auths = tuple(standings); evidence_refs = _horizon_evidence_refs(horizon)
     buckets: dict[str, list[AuthorityNeedProjectionItem]] = {k: [] for k in ("established","unsupported","unknown","conflicting","outside_current_scope","unclassified")}
     used_auth: set[str] = set()
     for req in reqs:
-        reason = _base_reason(req, selection, goal, horizon, evidence_refs, "authority_requirement")
+        reason = _base_reason(req, candidate_resolution, goal, horizon, evidence_refs, "authority_requirement")
         matches = [a for a in auths if a.bounded_authority_component_ref == req.bounded_authority_component_ref and a.required_authority_class_ref == req.required_authority_class_ref and a.applicable_scope_ref == req.applicable_scope_ref]
         auth = matches[0] if matches else None
         if auth is not None:
             used_auth.add(auth.testimony_ref)
-            reason = reason or _base_reason(auth, selection, goal, horizon, evidence_refs, "authority_standing") or _join_reason(req, auth)
+            reason = reason or _base_reason(auth, candidate_resolution, goal, horizon, evidence_refs, "authority_standing") or _join_reason(req, auth)
         else:
             reason = reason or "not_authority_standing_component"
         need = None if reason else _conclude(req.requirement_standing, auth.authority_standing)  # type: ignore[union-attr]
@@ -177,10 +177,10 @@ def project_authority_need(selection: GoalInquiryConsiderationSelection, goal: B
         buckets[need or "unclassified"].append(item)
     for auth in auths:
         if auth.testimony_ref in used_auth: continue
-        reason = _base_reason(auth, selection, goal, horizon, evidence_refs, "authority_standing") or "not_authority_requirement_component"
+        reason = _base_reason(auth, candidate_resolution, goal, horizon, evidence_refs, "authority_standing") or "not_authority_requirement_component"
         buckets["unclassified"].append(AuthorityNeedProjectionItem("", auth.testimony_ref, auth.bounded_authority_component_ref, auth.required_authority_class_ref, auth.applicable_scope_ref, auth.owning_stage, None, None, None, None, None, (auth.evidence_ref,), reason))
-    payload = {"selection": selection.selection_id, "goal": goal.goal_establishment_id, "horizon": horizon.horizon_id, "requirements": [r.testimony_ref for r in reqs], "standings": [a.testimony_ref for a in auths]}
-    return AuthorityNeedProjection(_stable("authority-need-projection", payload), selection.selection_id, goal.goal_establishment_id, horizon.horizon_id, evidence_refs, *(tuple(buckets[k]) for k in ("established","unsupported","unknown","conflicting","outside_current_scope","unclassified")))
+    payload = {"candidate_resolution": candidate_resolution.resolution_id, "goal": goal.goal_establishment_id, "horizon": horizon.horizon_id, "requirements": [r.testimony_ref for r in reqs], "standings": [a.testimony_ref for a in auths]}
+    return AuthorityNeedProjection(_stable("authority-need-projection", payload), candidate_resolution.resolution_id, goal.goal_establishment_id, horizon.horizon_id, evidence_refs, *(tuple(buckets[k]) for k in ("established","unsupported","unknown","conflicting","outside_current_scope","unclassified")))
 
 def authority_need_projection_json(projection: AuthorityNeedProjection) -> dict[str, object]:
     return projection.to_json_dict()

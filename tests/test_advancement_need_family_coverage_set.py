@@ -12,12 +12,12 @@ from seed_runtime.bounded_advancement_horizon import (
     NeedFamilyExclusion,
     establish_bounded_advancement_horizon,
 )
-from tests.test_clarification_need_projection import _goal, _selection
+from tests.test_clarification_need_projection import _candidate_resolution, _goal
 
 FAMILIES = ("clarification", "inquiry", "authority", "operational_realization")
 
 
-def _horizon(selection, goal, **overrides):
+def _horizon(candidate_resolution, goal, **overrides):
     base = dict(
         present_movement_boundary="family coverage for exact selected goal and horizon",
         evidence_snapshot_refs=(
@@ -26,14 +26,14 @@ def _horizon(selection, goal, **overrides):
         potentially_relevant_need_families=FAMILIES,
     )
     base.update(overrides)
-    return establish_bounded_advancement_horizon(selection, goal, **base)
+    return establish_bounded_advancement_horizon(candidate_resolution, goal, **base)
 
 
-def _space(family, selection, goal, horizon, components=("component:1", "component:2")):
+def _space(family, candidate_resolution, goal, horizon, components=("component:1", "component:2")):
     return FamilyBoundedCandidateSpace(
         family,
         f"candidate-space:{family}",
-        selection.selection_id,
+        candidate_resolution.resolution_id,
         goal.goal_establishment_id,
         horizon.horizon_id,
         f"projection:{family}",
@@ -42,11 +42,11 @@ def _space(family, selection, goal, horizon, components=("component:1", "compone
     )
 
 
-def _testimony(family, selection, goal, horizon, **overrides):
+def _testimony(family, candidate_resolution, goal, horizon, **overrides):
     base = dict(
         family=family,
         testimony_id=f"testimony:{family}",
-        selection_id=selection.selection_id,
+        candidate_resolution_id=candidate_resolution.resolution_id,
         goal_establishment_id=goal.goal_establishment_id,
         horizon_id=horizon.horizon_id,
         native_projection_id=f"projection:{family}",
@@ -65,11 +65,11 @@ def _records(coverage_set):
 
 def test_exact_identity_matching_for_goal_horizon_evidence_projection_and_candidate_space():
     goal = _goal()
-    selection = _selection(goal)
-    horizon = _horizon(selection, goal)
+    candidate_resolution = _candidate_resolution(goal)
+    horizon = _horizon(candidate_resolution, goal)
     testimony = _testimony(
         "clarification",
-        selection,
+        candidate_resolution,
         goal,
         horizon,
         covered_component_refs=("component:1", "component:2"),
@@ -77,12 +77,12 @@ def test_exact_identity_matching_for_goal_horizon_evidence_projection_and_candid
     )
     coverage_set = assemble_advancement_need_family_coverage_set(
         horizon,
-        candidate_spaces=(_space("clarification", selection, goal, horizon),),
+        candidate_spaces=(_space("clarification", candidate_resolution, goal, horizon),),
         testimonies=(testimony,),
     )
     record = _records(coverage_set)["clarification"]
 
-    assert record.selection_id == selection.selection_id
+    assert record.candidate_resolution_id == candidate_resolution.resolution_id
     assert record.goal_establishment_id == goal.goal_establishment_id
     assert record.horizon_id == horizon.horizon_id
     assert record.native_projection_id == "projection:clarification"
@@ -93,9 +93,9 @@ def test_exact_identity_matching_for_goal_horizon_evidence_projection_and_candid
 
 def test_scope_disposition_is_separate_from_coverage_standing_and_excluded_is_not_evaluated():
     goal = _goal()
-    selection = _selection(goal)
+    candidate_resolution = _candidate_resolution(goal)
     horizon = _horizon(
-        selection,
+        candidate_resolution,
         goal,
         explicitly_excluded_need_families=(
             NeedFamilyExclusion("inquiry", "outside this horizon"),
@@ -103,8 +103,8 @@ def test_scope_disposition_is_separate_from_coverage_standing_and_excluded_is_no
     )
     coverage_set = assemble_advancement_need_family_coverage_set(
         horizon,
-        candidate_spaces=(_space("clarification", selection, goal, horizon),),
-        testimonies=(_testimony("clarification", selection, goal, horizon),),
+        candidate_spaces=(_space("clarification", candidate_resolution, goal, horizon),),
+        testimonies=(_testimony("clarification", candidate_resolution, goal, horizon),),
     )
     records = _records(coverage_set)
 
@@ -117,11 +117,11 @@ def test_scope_disposition_is_separate_from_coverage_standing_and_excluded_is_no
 
 def test_complete_requires_bounded_candidate_space_and_complete_accounting_with_reasoned_exclusions():
     goal = _goal()
-    selection = _selection(goal)
-    horizon = _horizon(selection, goal)
+    candidate_resolution = _candidate_resolution(goal)
+    horizon = _horizon(candidate_resolution, goal)
     testimony = _testimony(
         "authority",
-        selection,
+        candidate_resolution,
         goal,
         horizon,
         covered_component_refs=("component:1",),
@@ -137,7 +137,7 @@ def test_complete_requires_bounded_candidate_space_and_complete_accounting_with_
     )
     with_space = assemble_advancement_need_family_coverage_set(
         horizon,
-        candidate_spaces=(_space("authority", selection, goal, horizon),),
+        candidate_spaces=(_space("authority", candidate_resolution, goal, horizon),),
         testimonies=(testimony,),
     )
 
@@ -147,31 +147,31 @@ def test_complete_requires_bounded_candidate_space_and_complete_accounting_with_
 
 def test_partial_absent_stale_unavailable_unknown_and_conflicting_testimony_cannot_become_complete():
     goal = _goal()
-    selection = _selection(goal)
-    horizon = _horizon(selection, goal)
+    candidate_resolution = _candidate_resolution(goal)
+    horizon = _horizon(candidate_resolution, goal)
     cases = [
         (
             "clarification",
-            _testimony("clarification", selection, goal, horizon),
+            _testimony("clarification", candidate_resolution, goal, horizon),
             "partial",
         ),
         ("inquiry", None, "unknown"),
         (
             "authority",
-            _testimony("authority", selection, goal, horizon, stale=True),
+            _testimony("authority", candidate_resolution, goal, horizon, stale=True),
             "partial",
         ),
         (
             "operational_realization",
             _testimony(
-                "operational_realization", selection, goal, horizon, unavailable=True
+                "operational_realization", candidate_resolution, goal, horizon, unavailable=True
             ),
             "unknown",
         ),
     ]
     coverage_set = assemble_advancement_need_family_coverage_set(
         horizon,
-        candidate_spaces=tuple(_space(f, selection, goal, horizon) for f in FAMILIES),
+        candidate_spaces=tuple(_space(f, candidate_resolution, goal, horizon) for f in FAMILIES),
         testimonies=tuple(t for _, t, _ in cases if t),
     )
     records = _records(coverage_set)
@@ -179,14 +179,14 @@ def test_partial_absent_stale_unavailable_unknown_and_conflicting_testimony_cann
         assert records[family].coverage_standing == expected
 
     conflicted = replace(
-        _testimony("authority", selection, goal, horizon),
+        _testimony("authority", candidate_resolution, goal, horizon),
         conflicts=("material coverage conflict",),
     )
     assert (
         _records(
             assemble_advancement_need_family_coverage_set(
                 horizon,
-                candidate_spaces=(_space("authority", selection, goal, horizon),),
+                candidate_spaces=(_space("authority", candidate_resolution, goal, horizon),),
                 testimonies=(conflicted,),
             )
         )["authority"].coverage_standing
@@ -196,12 +196,12 @@ def test_partial_absent_stale_unavailable_unknown_and_conflicting_testimony_cann
 
 def test_supplied_or_empty_projection_identity_does_not_imply_complete_coverage():
     goal = _goal()
-    selection = _selection(goal)
-    horizon = _horizon(selection, goal)
-    space = _space("clarification", selection, goal, horizon, components=())
+    candidate_resolution = _candidate_resolution(goal)
+    horizon = _horizon(candidate_resolution, goal)
+    space = _space("clarification", candidate_resolution, goal, horizon, components=())
     testimony = _testimony(
         "clarification",
-        selection,
+        candidate_resolution,
         goal,
         horizon,
         covered_component_refs=(),
@@ -220,12 +220,12 @@ def test_supplied_or_empty_projection_identity_does_not_imply_complete_coverage(
 
 def test_all_four_family_records_coexist_without_priority_sufficiency_or_mutation():
     goal = _goal()
-    selection = _selection(goal)
-    horizon = _horizon(selection, goal)
+    candidate_resolution = _candidate_resolution(goal)
+    horizon = _horizon(candidate_resolution, goal)
     coverage_set = assemble_advancement_need_family_coverage_set(
         horizon,
-        candidate_spaces=tuple(_space(f, selection, goal, horizon) for f in FAMILIES),
-        testimonies=tuple(_testimony(f, selection, goal, horizon) for f in FAMILIES),
+        candidate_spaces=tuple(_space(f, candidate_resolution, goal, horizon) for f in FAMILIES),
+        testimonies=tuple(_testimony(f, candidate_resolution, goal, horizon) for f in FAMILIES),
     )
     payload = advancement_need_family_coverage_set_json(coverage_set)
 
@@ -249,12 +249,12 @@ def test_all_four_family_records_coexist_without_priority_sufficiency_or_mutatio
 
 def test_mismatched_stale_identity_is_conflicting_not_complete():
     goal = _goal()
-    selection = _selection(goal)
-    horizon = _horizon(selection, goal)
+    candidate_resolution = _candidate_resolution(goal)
+    horizon = _horizon(candidate_resolution, goal)
     mismatched = replace(
         _testimony(
             "clarification",
-            selection,
+            candidate_resolution,
             goal,
             horizon,
             covered_component_refs=("component:1", "component:2"),
@@ -265,7 +265,7 @@ def test_mismatched_stale_identity_is_conflicting_not_complete():
     record = _records(
         assemble_advancement_need_family_coverage_set(
             horizon,
-            candidate_spaces=(_space("clarification", selection, goal, horizon),),
+            candidate_spaces=(_space("clarification", candidate_resolution, goal, horizon),),
             testimonies=(mismatched,),
         )
     )["clarification"]

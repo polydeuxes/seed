@@ -15,7 +15,7 @@ def _selected_inquiry_need():
         source_ref="operator:focus",
         reference_id=ref.reference_id,
         need_set_id=ref.need_set_id,
-        selection_id=ref.selection_id,
+        candidate_resolution_id=ref.candidate_resolution_id,
         goal_establishment_id=ref.goal_establishment_id,
         horizon_id=ref.horizon_id,
         family=ref.family,
@@ -61,7 +61,8 @@ def test_clauses_bind_exact_selected_need_native_item_component_subject_goal_hor
     assert testimony.bounded_uncertainty_component_ref == ref.native_lineage[1]
     assert testimony.repository_world_subject_ref == ref.native_lineage[2]
     assert testimony.need_set_id == ref.need_set_id
-    assert testimony.selected_need_selection_id == ref.selection_id
+    assert testimony.candidate_resolution_id == ref.candidate_resolution_id
+    assert testimony.advancement_need_selection_id == selected.selection_id
     assert testimony.selected_need_goal_id == ref.goal_establishment_id
     assert testimony.horizon_id == ref.horizon_id
     assert clause.selected_need_reference_id == ref.reference_id

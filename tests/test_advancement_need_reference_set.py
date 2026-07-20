@@ -72,7 +72,7 @@ def test_references_bind_to_exact_need_set_goal_horizon_family_and_projection_an
     assert refs
     for ref in refs:
         assert ref.need_set_id == "need-set:immutable"
-        assert ref.selection_id == "sel:1"
+        assert ref.candidate_resolution_id == "sel:1"
         assert ref.goal_establishment_id == "goal:1"
         assert ref.horizon_id == "horizon:1"
         assert ref.native_projection_id.startswith("proj:")

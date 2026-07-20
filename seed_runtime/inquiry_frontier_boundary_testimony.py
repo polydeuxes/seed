@@ -69,7 +69,8 @@ class InquiryFrontierBoundaryClause:
     native_projection_id: str
     native_lineage: tuple[str, ...]
     need_set_id: str
-    selected_need_selection_id: str
+    candidate_resolution_id: str
+    advancement_need_selection_id: str
     selected_need_goal_id: str
     horizon_id: str
     source_testimony_ref: str
@@ -99,7 +100,8 @@ class InquiryFrontierBoundaryTestimony:
     native_projection_id: str | None
     native_lineage: tuple[str, ...]
     need_set_id: str
-    selected_need_selection_id: str
+    candidate_resolution_id: str
+    advancement_need_selection_id: str
     selected_need_goal_id: str
     horizon_id: str
     source_testimony_ref: str | None
@@ -151,7 +153,7 @@ def preserve_inquiry_frontier_boundary_testimony(
         return InquiryFrontierBoundaryTestimony(
             _stable("inquiry-frontier-boundary-testimony", payload),
             None, None, (), selected_need.reference_set_id, selected_need.need_set_id,
-            selected_need.selected_goal_id, selected_need.horizon_id, None, None, None, (), (),
+            "", selected_need.selection_id, selected_need.selected_goal_id, selected_need.horizon_id, None, None, None, (), (),
             tuple(c.clause_ref for c in clause_inputs if _ownership(c) == "unowned"),
         )
 
@@ -163,7 +165,7 @@ def preserve_inquiry_frontier_boundary_testimony(
             InquiryFrontierBoundaryClause(
                 item.clause_ref, item.clause_family, item.clause_text,
                 ref.reference_id, ref.native_projection_id, ref.native_lineage,
-                ref.need_set_id, ref.selection_id, ref.goal_establishment_id, ref.horizon_id,
+                ref.need_set_id, ref.candidate_resolution_id, selected_need.selection_id, ref.goal_establishment_id, ref.horizon_id,
                 source_testimony_ref, component_ref, subject_ref,
                 item.producer_ref, tuple(item.producer_lineage), item.adapter_ref, tuple(item.adapter_lineage), _ownership(item),
                 tuple(item.source_lineage), tuple(item.evidence_classes), tuple(item.provenance_roles),
@@ -175,7 +177,7 @@ def preserve_inquiry_frontier_boundary_testimony(
     return InquiryFrontierBoundaryTestimony(
         _stable("inquiry-frontier-boundary-testimony", payload),
         ref.reference_id, ref.native_projection_id, ref.native_lineage,
-        ref.need_set_id, ref.selection_id, ref.goal_establishment_id, ref.horizon_id,
+        ref.need_set_id, ref.candidate_resolution_id, selected_need.selection_id, ref.goal_establishment_id, ref.horizon_id,
         source_testimony_ref, component_ref, subject_ref, visible_refs, tuple(preserved),
         tuple(c.clause_ref for c in preserved if c.ownership_basis == "unowned"),
     )

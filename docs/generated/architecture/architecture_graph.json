@@ -194,7 +194,7 @@
       "id": "ProjectionStore",
       "kind": "class",
       "layer": "state",
-      "line": 117,
+      "line": 110,
       "owner": "projection_cache",
       "routes": [],
       "summary": "Stores reusable projected-state snapshots derived from the event ledger."

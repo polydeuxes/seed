@@ -11,9 +11,9 @@ from seed_runtime.clarification_need_projection import (
     clarification_need_projection_json,
     project_clarification_need,
 )
-from seed_runtime.goal_inquiry_consideration_selection import (
-    GoalFocusEvidence,
-    select_goal_for_inquiry_consideration,
+from seed_runtime.goal_consideration_candidate_resolution import (
+    GoalConsiderationCandidateTestimony,
+    resolve_goal_consideration_candidate,
 )
 from seed_runtime.goal_orientation_inventory import (
     association_from_bounded_goal,
@@ -28,7 +28,7 @@ def _goal(**overrides):
     )
 
 
-def _selection(goal):
+def _candidate_resolution(goal):
     inventory = build_goal_orientation_inventory(
         [
             association_from_bounded_goal(
@@ -38,10 +38,10 @@ def _selection(goal):
             )
         ]
     )
-    return select_goal_for_inquiry_consideration(
+    return resolve_goal_consideration_candidate(
         inventory,
         [
-            GoalFocusEvidence(
+            GoalConsiderationCandidateTestimony(
                 "focus:clarification",
                 "operator-focus:clarification",
                 goal.goal_establishment_id,
@@ -50,7 +50,7 @@ def _selection(goal):
     )
 
 
-def _horizon(selection, goal, **overrides):
+def _horizon(candidate_resolution, goal, **overrides):
     base = dict(
         present_movement_boundary="decide whether explicit operator-meaning uncertainty is material before movement",
         evidence_snapshot_refs=(
@@ -59,14 +59,14 @@ def _horizon(selection, goal, **overrides):
         potentially_relevant_need_families=("clarification",),
     )
     base.update(overrides)
-    return establish_bounded_advancement_horizon(selection, goal, **base)
+    return establish_bounded_advancement_horizon(candidate_resolution, goal, **base)
 
 
-def _testimony(selection, goal, horizon, **overrides):
+def _testimony(candidate_resolution, goal, horizon, **overrides):
     base = dict(
         testimony_ref="testimony:meaning:1",
         source_ref="stage-testimony:clarification",
-        selection_id=selection.selection_id,
+        candidate_resolution_id=candidate_resolution.resolution_id,
         goal_establishment_id=goal.goal_establishment_id,
         horizon_id=horizon.horizon_id,
         evidence_ref="evidence:meaning:1",
@@ -78,40 +78,40 @@ def _testimony(selection, goal, horizon, **overrides):
     return OperatorMeaningUncertaintyTestimony(**base)
 
 
-def test_projection_requires_exact_selection_goal_horizon_and_evidence_identity_matching():
+def test_projection_requires_exact_candidate_resolution_goal_horizon_and_evidence_identity_matching():
     goal = _goal()
-    selection = _selection(goal)
-    horizon = _horizon(selection, goal)
+    candidate_resolution = _candidate_resolution(goal)
+    horizon = _horizon(candidate_resolution, goal)
 
     projection = project_clarification_need(
-        selection,
+        candidate_resolution,
         goal,
         horizon,
         [
-            _testimony(selection, goal, horizon),
+            _testimony(candidate_resolution, goal, horizon),
             _testimony(
-                selection,
+                candidate_resolution,
                 goal,
                 horizon,
-                testimony_ref="bad-selection",
-                selection_id="selection:other",
+                testimony_ref="bad-candidate_resolution",
+                candidate_resolution_id="candidate-resolution:other",
             ),
             _testimony(
-                selection,
+                candidate_resolution,
                 goal,
                 horizon,
                 testimony_ref="bad-goal",
                 goal_establishment_id="goal:other",
             ),
             _testimony(
-                selection,
+                candidate_resolution,
                 goal,
                 horizon,
                 testimony_ref="bad-horizon",
                 horizon_id="horizon:other",
             ),
             _testimony(
-                selection,
+                candidate_resolution,
                 goal,
                 horizon,
                 testimony_ref="bad-evidence",
@@ -124,7 +124,7 @@ def test_projection_requires_exact_selection_goal_horizon_and_evidence_identity_
         "testimony:meaning:1",
     )
     assert tuple(item.unclassified_reason for item in projection.unclassified) == (
-        "selection_identity_mismatch",
+        "candidate_resolution_identity_mismatch",
         "goal_identity_mismatch",
         "horizon_identity_mismatch",
         "evidence_identity_mismatch",
@@ -133,38 +133,38 @@ def test_projection_requires_exact_selection_goal_horizon_and_evidence_identity_
 
 def test_established_requires_operator_meaning_stage_ownership_component_bound_and_materiality():
     goal = _goal()
-    selection = _selection(goal)
-    horizon = _horizon(selection, goal)
+    candidate_resolution = _candidate_resolution(goal)
+    horizon = _horizon(candidate_resolution, goal)
 
     projection = project_clarification_need(
-        selection,
+        candidate_resolution,
         goal,
         horizon,
         [
-            _testimony(selection, goal, horizon),
+            _testimony(candidate_resolution, goal, horizon),
             _testimony(
-                selection,
+                candidate_resolution,
                 goal,
                 horizon,
                 testimony_ref="repo-uncertainty",
                 uncertainty_family="repository_state",
             ),
             _testimony(
-                selection,
+                candidate_resolution,
                 goal,
                 horizon,
                 testimony_ref="family-hint",
                 stage_owns_operator_meaning=False,
             ),
             _testimony(
-                selection,
+                candidate_resolution,
                 goal,
                 horizon,
                 testimony_ref="generic-ambiguity",
                 component_bounded=False,
             ),
             _testimony(
-                selection,
+                candidate_resolution,
                 goal,
                 horizon,
                 testimony_ref="not-material",
@@ -187,10 +187,10 @@ def test_generic_ambiguity_and_unresolved_goal_fields_are_not_inferred_as_clarif
         unresolved_references=("what is enough is unresolved",),
         unresolved_lexical_bindings=("ambiguous wording",),
     )
-    selection = _selection(goal)
-    horizon = _horizon(selection, goal)
+    candidate_resolution = _candidate_resolution(goal)
+    horizon = _horizon(candidate_resolution, goal)
 
-    projection = project_clarification_need(selection, goal, horizon, [])
+    projection = project_clarification_need(candidate_resolution, goal, horizon, [])
 
     assert projection.established == ()
     assert projection.unclassified == ()
@@ -199,19 +199,19 @@ def test_generic_ambiguity_and_unresolved_goal_fields_are_not_inferred_as_clarif
 
 def test_mixed_or_non_clarification_components_remain_unclassified():
     goal = _goal()
-    selection = _selection(goal)
-    horizon = _horizon(selection, goal)
+    candidate_resolution = _candidate_resolution(goal)
+    horizon = _horizon(candidate_resolution, goal)
 
     projection = project_clarification_need(
-        selection,
+        candidate_resolution,
         goal,
         horizon,
         [
             _testimony(
-                selection, goal, horizon, mixed_or_non_clarification_component=True
+                candidate_resolution, goal, horizon, mixed_or_non_clarification_component=True
             ),
             _testimony(
-                selection,
+                candidate_resolution,
                 goal,
                 horizon,
                 testimony_ref="authority-gap",
@@ -229,26 +229,26 @@ def test_mixed_or_non_clarification_components_remain_unclassified():
 
 def test_non_established_standings_are_preserved_and_excluded_family_overrides_classification():
     goal = _goal()
-    selection = _selection(goal)
-    horizon = _horizon(selection, goal)
+    candidate_resolution = _candidate_resolution(goal)
+    horizon = _horizon(candidate_resolution, goal)
 
     projection = project_clarification_need(
-        selection,
+        candidate_resolution,
         goal,
         horizon,
         [
             _testimony(
-                selection,
+                candidate_resolution,
                 goal,
                 horizon,
                 testimony_ref="unsupported",
                 standing="unsupported",
             ),
             _testimony(
-                selection, goal, horizon, testimony_ref="unknown", standing="unknown"
+                candidate_resolution, goal, horizon, testimony_ref="unknown", standing="unknown"
             ),
             _testimony(
-                selection,
+                candidate_resolution,
                 goal,
                 horizon,
                 testimony_ref="conflicting",
@@ -266,7 +266,7 @@ def test_non_established_standings_are_preserved_and_excluded_family_overrides_c
     )
 
     excluded_horizon = _horizon(
-        selection,
+        candidate_resolution,
         goal,
         potentially_relevant_need_families=(),
         explicitly_excluded_need_families=(
@@ -274,10 +274,10 @@ def test_non_established_standings_are_preserved_and_excluded_family_overrides_c
         ),
     )
     excluded = project_clarification_need(
-        selection,
+        candidate_resolution,
         goal,
         excluded_horizon,
-        [_testimony(selection, goal, excluded_horizon)],
+        [_testimony(candidate_resolution, goal, excluded_horizon)],
     )
     assert tuple(item.standing for item in excluded.excluded_family) == (
         "excluded_family",
@@ -286,11 +286,11 @@ def test_non_established_standings_are_preserved_and_excluded_family_overrides_c
 
 def test_projection_is_read_only_and_does_not_request_open_act_authorize_execute_record_or_mutate():
     goal = _goal()
-    selection = _selection(goal)
-    horizon = _horizon(selection, goal)
+    candidate_resolution = _candidate_resolution(goal)
+    horizon = _horizon(candidate_resolution, goal)
 
     projection = project_clarification_need(
-        selection, goal, horizon, [_testimony(selection, goal, horizon)]
+        candidate_resolution, goal, horizon, [_testimony(candidate_resolution, goal, horizon)]
     )
     payload = clarification_need_projection_json(projection)
 
