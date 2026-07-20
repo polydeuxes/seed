@@ -10,7 +10,6 @@ reasons, and context-budget trace accounting. These signals answer many
 "why included," "why ordered," and "why current" questions when a reader knows
 which surface owns the selection.
 
-`dropped_counts`, and `select_context_facts(...)` has an explicit unsupported
 filter. Most other exclusions remain implicit: a candidate is not current because
 another support group is unambiguously strongest, because a predicate is
 single-cardinality, because it expired, because a goal is inactive and sorted
@@ -51,7 +50,6 @@ In scope:
 
 - context budget priorities, limits, and accounting;
 - deterministic ordering helpers;
-- decision-context fact, issue, requirement, and capability views;
 - fact support, current fact, stale fact, conflict, confidence, contradiction,
   evidence graph, and capability inventory projections;
 - explanation outputs that separate current and competing beliefs;
@@ -105,8 +103,6 @@ reason string that can explain selection without inventing new behavior.
 | `order_evidence(...)` | Newer evidence, higher confidence, and evidence id. | Source and consumer for evidence ordering. | Implemented, implicit per item |
 | `order_goals(...)` | Active goals before inactive goals, then goal id. | Source and consumer for goal ordering. | Implemented, implicit per item |
 | `order_entities(...)` | Higher confidence, entity name, and entity id. | Source and consumer for entity ordering. | Implemented, implicit per item |
-| `select_context_facts(...)` | Unsupported facts are filtered by default; selected facts are sorted by support presence, confidence, subject, predicate, value, and fact id. | Source and consumer for decision-context facts. | Implemented |
-| `ContextSummary` | Counts contradicted, strongly supported, weakly supported, and unsupported facts among included facts. | Output summary. | Implemented |
 | `FactSupport` | Supporting fact ids, source types, aggregate confidence, observation range, latest observation, expiry, predicate semantics, and support kind. | Source and output. | Implemented |
 | Predicate cardinality | Single-cardinality predicates select one representative; multi-cardinality predicates allow multiple current facts. | Source and consumer in current-state selection. | Implemented |
 | Measurement semantics | Measurement predicates select the latest current sample rather than aggregating repeated values. | Source and consumer in support projection. | Implemented |
@@ -127,12 +123,10 @@ reason string that can explain selection without inventing new behavior.
   measurement semantics, confidence aggregation, contradiction detection,
   Evidence Graph, stale fact handling, graph issues, and capability verification
   facts.
-  `select_context_facts(...)`, `build_decision_context_view(...)`,
   `State.get_best_fact(...)`, `State.get_current_facts(...)`,
   `State.get_fact_support(...)`, `build_capability_inventory(...)`, and
   `ExplanationBuilder.why(...)`.
 - **Primary rationale outputs:** `ContextPacket.context_budget`,
-  `DecisionContextView`, `ContextSummary`, `FactSupport`, `FactConflict`, stale
   fact and refresh recommendation views, `FactConfidence`, `Contradiction`,
   `EvidenceGraph` / `FactEvidenceView`, `CapabilityInventoryEntry`, and
   `Explanation`.
@@ -145,8 +139,6 @@ visible to callers.
 | Surface | Direct rationale exposed | Indirect rationale exposed | No rationale / gap |
 | --- | --- | --- | --- |
 | `ContextPacket` | `context_budget` trace exposes priorities, limits, selected counts, dropped counts, and section order. | Included facts may carry selected evidence only when that evidence survived the same budget pass. | No per-item included-because or excluded-because. |
-| `DecisionContextView` | Fact confidence, contradicted flag, evidence count, issues, summary counts, requirements, capabilities, projection metadata. | Unsupported filtering can be inferred when default `include_unsupported=False` is known. | Does not expose per-fact selection reason strings. |
-| `ContextSummary` | Direct counts for included fact quality and issues. | Implies what quality categories survived selection. | Summary only; no candidate-level records. |
 | `CapabilityInventoryEntry` | Direct `state`, supporting facts/evidence, support summary, age, and reason. | Capability inclusion can be inferred from the inventory universe. | No explicit excluded capabilities outside the universe. |
 | `FactSupport` | Direct support group fields and support kind. | Current-state selection can be inferred by comparing support tie keys. | Does not state "selected because" directly. |
 | Current fact queries | Returned current facts. | Current rationale recoverable from support group, cardinality, expiry, and representative tie keys. | Competing facts not returned by `get_best_fact(...)`. |
@@ -167,9 +159,6 @@ Can Seed already explain why candidate A was included?
 | Entity in `ContextPacket` | Entities are ordered by confidence/name/id, then admitted by the `entities` section limit/global budget. | Partial |
 | Open tool need in `ContextPacket` | Open needs are selected from `State.open_tool_needs`, sorted by name, and budgeted under the open-tool-needs section. | Partial |
 | Visible tool in `ContextPacket` | Registered tools are included if `ToolRegistry.list_tools(visible_only=True)` returns them. This is visibility rationale, not selection-rationale metadata. | Implicit |
-| Fact in `DecisionContextView` | Included if selected from confidence records and not filtered as unsupported unless `include_unsupported=True`; ordered by support presence, confidence, subject, predicate, value, and id. | Implemented, with implicit ordering rationale |
-| Unsupported fact in `DecisionContextView` | Included only when the caller opts into `include_unsupported=True`; summary then counts unsupported included facts. | Implemented |
-| Contradiction issue in `DecisionContextView` | Included because contradiction detection surfaced an exclusive-predicate multi-value conflict and `_context_issues(...)` formats it. | Implemented |
 | Graph issue in issue views | Included because the projected state contains graph validation warnings/errors and issue surfaces include them. | Implemented |
 | Capability in inventory | Included when it appears in the inventory universe: registered tool capability, open/known tool need capability, or `capability_verified` fact subject. | Implemented |
 | Stale fact in stale view | Included because `is_fact_expired(...)` returns true; stale refresh recommendation adds a predicate-to-capability reason. | Implemented |
@@ -188,7 +177,6 @@ Can Seed already explain why candidate B was excluded?
 | Evidence dropped from `ContextPacket` by budget | Same as facts: section/global budget counts exist, but no per-evidence dropped reason exists. | Partial |
 | Entity dropped from `ContextPacket` by budget | Same section-level accounting exists. | Partial |
 | Goal not selected in `ContextPacket` | Only one goal is admitted by default; inactive goals sort behind active ones. Exclusion can be inferred from ordering and limit. | Partial |
-| Unsupported fact filtered from `DecisionContextView` | Explicit: `include_unsupported=False` filters unsupported confidence records. | Implemented |
 | Unsupported fact surfaced elsewhere | Evidence Graph exposes unsupported fact views and confidence records expose unsupported reasons, so exclusion from one surface can coexist with visibility elsewhere. | Implemented as integrity surface, not as context exclusion trace |
 | Expired fact excluded from support/current selection | Normal support projection skips expired facts unless `include_expired=True`; stale views expose expired facts separately. | Implemented |
 | Competing support not selected as current | If a single-cardinality predicate has an unambiguous strongest support, lower-ranked supports become competing rather than current. | Partial because comparison is implicit. |
@@ -287,7 +275,6 @@ Integrity signals already participate in selection, but with clear boundaries.
 
 | Integrity signal | Participation in selection | Boundary | Classification |
 | --- | --- | --- | --- |
-| Unsupported | Confidence records mark unsupported facts; decision-context fact selection filters unsupported by default; Evidence Graph exposes unsupported views; summaries count them when included. | Unsupported does not delete facts or prove falsehood. | Implemented |
 | Conflicted / contradicted | Contradiction detection and fact conflicts identify multi-value disagreements; confidence aggregation penalizes contradicted facts; decision context surfaces contradicted flags and issues; explanations include conflict. | Contradictions do not resolve truth or mutate facts. | Implemented |
 | Stale / expired | Expired facts are normally excluded from support/current selection and context ordering places expired facts after fresh ones; stale views expose them separately with refresh recommendations. | Staleness does not refresh facts or call tools. | Implemented |
 | Graph-invalid | Graph validation issues are stored on `State`, queryable by severity, and surfaced as context issues. | Graph issues do not repair graph structure. | Implemented |
@@ -380,8 +367,6 @@ information:
 
 - ordering surfaces: `order_facts(...)`, `order_evidence(...)`,
   `order_goals(...)`, and `order_entities(...)`;
-- decision context surfaces: `DecisionContextView`, `ContextFact`,
-  `ContextIssue`, `ContextSummary`, requirements, and capabilities;
 - current-state surfaces: `FactSupport`, `get_fact_supports(...)`,
   `get_fact_support(...)`, `get_best_fact(...)`, `get_current_facts(...)`, and
   fact conflicts;
@@ -396,7 +381,6 @@ information:
 
 ## Evidence of partial unification
 
-- `DecisionContextView` already composes State, Evidence Graph, Contradiction
   Detection, and Confidence Aggregation into one read-only decision surface.
 - `ExplanationBuilder.why(...)` already composes support, current-vs-competing
   belief status, conflict, provenance, inference, and alias resolution for a
@@ -427,7 +411,6 @@ information:
 The audit found **conceptual overlap** more than direct duplication:
 
 - contradiction/conflict concepts appear in contradiction views, fact conflicts,
-  decision-context issues, confidence penalties, and explanations;
 - unsupported concepts appear in Evidence Graph, Confidence, Decision Context,
   and Why-Not vocabulary;
 - stale concepts appear in context ordering, support/current selection, stale
@@ -589,7 +572,6 @@ Seed can already explain selection in many cases, but explanation is distributed
 across existing surfaces rather than centralized.
 
 The repository can explain inclusion best where the surface has explicit
-selection rules: context budget admission, decision-context unsupported
 filtering, support/current-state selection, stale views, contradiction issues,
 graph issues, and capability inventory entries. It can explain ordering well
 because ordering keys are deterministic. It can explain current-state rationale

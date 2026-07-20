@@ -3,7 +3,6 @@
 A Selection Rationale Summary would be a documentation-level composition of
 existing selection-rationale signals, not a new runtime feature. The repository
 already exposes substantial rationale information through context budgets,
-context ordering helpers, decision-context views, fact support, confidence
 aggregation, contradiction and graph issue views, stale fact views, capability
 inventory entries, and explanation outputs.
 
@@ -56,7 +55,6 @@ In scope:
 - existing Why-Not characterization and vocabulary documents;
 - existing Projection Integrity Summary and Drilldown characterization documents;
 - context composition documents;
-- runtime context composition, budgeting, ordering, decision-context views,
   current-fact selection, fact support, stale fact handling, capability
   inventory, confidence aggregation, contradictions, Evidence Graph, and
   explanations;
@@ -110,12 +108,9 @@ single rationale object.
 
 | Question | Existing answerability | Existing surfaces |
 | --- | --- | --- |
-| Why was this fact selected for `DecisionContextView`? | Answerable. Confidence records are filtered for unsupported facts by default, then sorted by support presence, confidence, subject, predicate, stable object value, and fact id. | `select_context_facts(...)`, `FactConfidence`, `ContextSummary` |
-| Why was this fact not selected for `DecisionContextView`? | Answerable for unsupported facts because the default selector excludes unsupported records unless `include_unsupported=True`. | `select_context_facts(...)`, `FactConfidence`, Evidence Graph unsupported views |
 | Why was this fact not selected as the current fact? | Partially answerable. Single-cardinality current selection uses the unambiguous strongest support group, then chooses a representative supporting fact by confidence, observed-vs-inferred status, observation time, and id. Ties can produce ambiguity. | `State.get_fact_support(...)`, `State.get_best_fact(...)`, `ExplanationBuilder.why(...)` |
 | Why is this current fact current? | Answerable. Fact support exposes support kind, support confidence, supporting fact ids, source types, observation range, latest observation time, expiry, and predicate semantics; explanations expose current and competing beliefs. | `FactSupport`, `State.get_fact_supports(...)`, `State.get_fact_support(...)`, `State.get_current_facts(...)`, `ExplanationBuilder.why(...)` |
 | Why was this capability surfaced? | Answerable within the capability inventory universe. Capabilities come from registered tools, tool needs, and `capability_verified` fact subjects; entries include state, reason, support summary, facts, evidence, and age. | `build_capability_inventory(...)`, `CapabilityInventoryEntry` |
-| Why was this issue surfaced? | Answerable. Contradiction issues are produced by contradiction detection over exclusive-predicate multi-value conflicts; graph issues come from projected state validation and carry reason/severity. | `Contradiction`, `ContradictionSummary`, `State.graph_issues`, `DecisionContextView` issues |
 | Why was this stale fact surfaced? | Answerable. Stale facts are expired facts, sorted by expiry and id; refresh recommendations map predicates to deterministic refresh capabilities and include reason text. | `State.get_stale_facts()`, `State.get_stale_fact_refresh_recommendations()` |
 | Why is this belief current, competing, ambiguous, or absent? | Answerable for fact queries. The explanation builder reports current beliefs, competing beliefs, ambiguity/no-current status, conflicts, supporting facts, evidence ids, source types, inference chains, and alias resolution. | `ExplanationBuilder.why(...)`, `FactSupport`, `FactConflict` |
 
@@ -163,8 +158,6 @@ inventing a parallel rationale system.
 | Surface | Existing summary information | Existing aggregate information | Existing rationale information | Assessment |
 | --- | --- | --- | --- | --- |
 | `ContextComposer` | Composed `ContextPacket` with `context_budget`. | None beyond attached trace. | Uses ordering helpers, budgeted sections, selected evidence inclusion for facts, and visible tool listing. | Rationale is recoverable from composition rules. |
-| `DecisionContextView` | `ContextSummary` counts facts, issues, contradicted facts, strong/weak/unsupported included facts. | Included fact and issue counts. | Fact confidence, contradiction flags, evidence counts, issues, requirements, capabilities, projection metadata. | Existing partial rationale summary for decision context only. |
-| `select_context_facts(...)` | None as standalone output. | None. | Unsupported filtering and deterministic ordering by support presence/confidence/stable identifiers. | Direct rule but no reason records. |
 | Fact Support | Individual support groups. | None across all supports. | Supporting fact ids, source types, confidence, observation range, expiry, predicate semantics, support kind. | Strong current-state rationale surface. |
 | Capability Inventory | Inventory entries with state and reason. | No explicit aggregate summary in inspected file. | Capability universe, verification state, support summary, evidence summaries, age, stale/unverified reasons. | Strong capability-specific rationale surface. |
 | Issue Views | Context issue summaries; contradiction and graph issue records. | Contradiction summary counts; graph issue counts exist through state/summary-like integrity surfaces. | Reasons, severity, affected facts, values, evidence/supporting events. | Strong issue rationale, not selection-wide. |
@@ -201,8 +194,6 @@ none is a general Selection Rationale Summary.
   conflicts, current/competing beliefs, inference, and alias resolution for one
   query. They are the strongest answer to fact-level "why" questions, but they do
   not summarize context budgets, capability inventories, or issue inclusion.
-- **`ContextSummary`.** This is the closest implemented selection-adjacent
-  summary. It summarizes facts and issues included in a `DecisionContextView`,
   including contradicted, strongly supported, weakly supported, and unsupported
   included facts. It does not summarize exclusions or cross-surface rationale.
   summary. It summarizes priorities, limits, selected counts, dropped counts, and
@@ -300,9 +291,7 @@ Selection rationale is distributed, fragmented, and partially unified.
 Evidence of distribution:
 
 - context-packet rationale is split across `ContextComposer`, ordering helpers,
-- decision-context rationale is split across confidence aggregation, Evidence
   Graph, contradictions, unsupported filtering, context issue formatting, and
-  `ContextSummary`;
 - current-state rationale is split across `FactSupport`, predicate cardinality,
   measurement semantics, support tie keys, representative fact tie keys, and
   explanations;
@@ -314,7 +303,6 @@ Evidence of distribution:
 
 Evidence of partial unification:
 
-- `DecisionContextView` composes facts, issues, requirements, capabilities, and
   summary counts;
 - `ExplanationBuilder.why(...)` composes support, current/competing beliefs,
   conflicts, provenance, inference, and alias resolution for one query;
@@ -365,7 +353,6 @@ No runtime inventory is justified.
 Documentation can describe drill paths:
 
 - context item -> budget trace -> ordering helper -> owning state collection;
-- decision-context fact -> confidence record -> Evidence Graph -> contradiction
   record;
 - current fact -> support groups -> competing beliefs -> explanation output;
 - stale fact -> expiry -> refresh recommendation;

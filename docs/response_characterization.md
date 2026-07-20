@@ -1,6 +1,5 @@
 # Executive Summary
 
-Seed's Response concern is partially present and intentionally distributed. The repository already contains response behavior in the Runtime decision route, CLI formatters, explanation outputs, state/integrity summaries, capability and issue views, contradiction and evidence outputs, and decision-context views. Those surfaces communicate selected or projected knowledge, but they do not share a first-class Response vocabulary, composition contract, or ownership map.
 
 Response in Seed is best characterized as the communication and presentation layer over selected projected knowledge and its limitations. It includes answer/question/refusal output construction, terminal formatting, presentation of explanation and integrity signals, and summary-like composition. It does not own knowledge acquisition, truth selection, projection mutation, provider execution, tool execution, or model reasoning.
 
@@ -19,7 +18,6 @@ This is an audit, not an implementation plan. It documents existing behavior and
 In scope:
 
 - runtime answer, question, refusal, invalid-decision, tool-need, tool-call-result, and state-patch response envelopes;
-- context packets and decision-context views as response-adjacent selected-knowledge surfaces;
 - explanation, evidence, contradiction, confidence, integrity, state, capability, issue, and CLI output surfaces;
 - existing documentation for explainability, context composition, selection rationale, integrity summaries/navigation, knowledge lifecycle, and backlog/status reconciliation;
 - ownership and fragmentation assessment.
@@ -79,7 +77,6 @@ Response is the concern responsible for communicating selected projected knowled
 - formatting and presentation of read-only views through CLI surfaces;
 - caveat and limitation communication when knowledge is unsupported, stale, contradicted, ambiguous, absent, or not actionable.
 
-Response is not the same as answer generation alone. The Runtime supports direct answer responses, questions, refusals, tool-need responses, tool-call-result envelopes, state-update envelopes, and invalid-decision responses. The CLI also surfaces many non-answer responses, including summaries, evidence explanations, contradictions, capability inventories, graph issues, and decision-context JSON.
 
 Response is not the same as Explainability. Explainability owns why-oriented provenance, support, evidence, and conflict explanation surfaces. Response owns how those outputs are communicated and presented. Current evidence supports the distinction, but no dedicated Response vocabulary exists to make it uniform.
 
@@ -108,7 +105,6 @@ Classification: **data source / response-adjacent composition**. It can influenc
 
 ## Decision Context View
 
-`DecisionContextView` composes selected facts, issues, requirements, capabilities, and summary counts from projected State, Evidence Graph, Contradiction Detection, and Confidence Aggregation. The CLI can format it as deterministic JSON.
 
 Classification: **response-adjacent surface** and **summary-like response surface** when printed. It is also a selection/composition artifact for decision-making.
 
@@ -150,7 +146,6 @@ Classification: **documented response composition/navigation**, implemented thro
 
 ## CLI output surfaces
 
-`scripts/seed_local.py` owns many response-formatting surfaces, including response summaries, event summaries, evidence graph output, why-fact output, unsupported facts, contradictions, confidence summaries/details, state-view summaries, fact/requirement/capability/issue views, capability inventory JSON, integrity summary, decision-context JSON, graph issues, unhealthy output, relationships, fact supports, best facts, stale facts, refreshes, and observation inventory diffs.
 
 Classification: **presentation/formatting response surfaces**.
 
@@ -190,7 +185,6 @@ Seed already composes response-like outputs in several places:
 
 1. **Runtime path**: user input is appended, projected State is composed into a `ContextPacket`, the model returns a `Decision`, validation occurs, and Runtime routes the decision into `RuntimeResponse` envelopes or owner services. This is the answer/question/refusal response path.
 2. **Context composition path**: `ContextComposer` orders goals, entities, facts, evidence, and open tool needs, applies a context budget, attaches selected evidence to facts, includes tools, and emits a decision schema. This composes selected knowledge for downstream decision output, not final user presentation.
-3. **Decision Context View path**: `build_decision_context_view` composes Evidence Graph, contradictions, confidence aggregation, facts, issues, requirements, capabilities, and summary counts into deterministic decision-ready knowledge.
 4. **Explanation path**: `ExplanationBuilder.why` composes FactSupport, FactConflict, Fact records, evidence IDs, confidence, inference metadata, and entity resolution into a structured why response.
 5. **Evidence path**: Evidence Graph builders compose evidence nodes, fact evidence views, unsupported facts, and summary counts; CLI formatters turn them into human-readable output.
 6. **Integrity Summary path**: `build_projection_integrity_summary` composes existing integrity signals and capability inventory counts into a read-only summary with caveats and drill-down-oriented CLI formatting.
@@ -253,7 +247,6 @@ Existing response surfaces can already answer:
 - **Which facts are unsupported?** Evidence Graph unsupported fact views and Integrity Summary unsupported counts answer this.
 - **Why was this fact contradicted?** Contradiction output gives conflicting values, facts, evidence, severity, reason, and supporting event IDs; confidence output also lists contradiction-related reasons.
 - **Why was this selected for context?** Partially answerable through context budget traces and Decision Context View ordering/summaries, but explicit narrative selection rationale remains partial.
-- **What decision-visible knowledge exists?** `ContextPacket` and `DecisionContextView` expose decision-ready facts, evidence, tools, issues, requirements, capabilities, and summary counts.
 
 # Existing Questions Not Easily Answerable
 
@@ -288,7 +281,6 @@ The distinction should not collapse. A Response Vocabulary may reference explana
 
 Selection owns choosing relevant projected knowledge for a current decision or context. Context composition and selection-rationale documents characterize ordering, budgeting, selected facts/evidence/entities/tools, decision context, and rationale gaps.
 
-Response owns communication of selected knowledge. Runtime answer responses, CLI summaries, and decision-context JSON all communicate selected or summarized knowledge, but selection itself remains upstream.
 
 Validated distinction:
 
@@ -406,7 +398,6 @@ Recommended outcome: **B. Response partially present**.
 
 Justification:
 
-- Response behavior already exists in Runtime envelopes, CLI formatters, explanations, evidence outputs, contradictions, state summaries, integrity summaries, capability inventories, issue views, and decision-context views.
 - Response composition exists locally but is distributed across owners.
 - Missing pieces are primarily vocabulary, cross-surface composition guidance, and ownership clarification.
 - Major concepts are not missing enough to justify a Response engine or Runtime integration.
@@ -442,7 +433,6 @@ This characterization does not:
 
 # Conclusion
 
-Response in Seed is already present as a distributed communication and presentation concern over selected projected knowledge. It appears in runtime answer/question/refusal envelopes, CLI formatting, explanation outputs, evidence/fact explanations, integrity summaries, contradiction and issue outputs, state summaries, capability inventories, and decision-context views.
 
 The repository evidence supports a narrow definition: **Response communicates selected projected knowledge, explanations, integrity signals, and limitations to a consumer.** Response does not create knowledge, choose truth, select context, mutate projections, execute tools, or own explainability/integrity semantics.
 

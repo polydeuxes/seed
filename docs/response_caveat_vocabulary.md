@@ -82,7 +82,6 @@ A Caveat may originate from:
 - **Observation status** signals such as observation source, local observation
   status, and observation-derived fact summaries;
 - **Selection status** signals such as included, excluded, priority-limited,
-  budget-limited, unsupported-excluded, and decision-context admission;
 - **Response limitations** such as no-current-belief, ambiguous explanation
   status, invalid decision envelopes, read-only CLI output, and runtime response
   envelope limitations.
@@ -123,7 +122,6 @@ caveat-producing condition originates.
 Examples include projected `State`, `FactSupport`, `FactConflict`,
 `Contradiction`, `EvidenceSummary`, `FactEvidenceView`, `FactConfidence`,
 `CapabilityInventoryEntry`, `GraphValidationIssue`, `Explanation`,
-`DecisionContextView`, `ProjectionIntegritySummary`, CLI formatters, and runtime
 response envelopes.
 
 A Caveat Source owns its local semantics. This vocabulary does not transfer
@@ -163,7 +161,6 @@ view that produces caveat signals or caveat-bearing output.
 
 Examples include `build_projection_integrity_summary`,
 `build_contradictions`, `build_fact_confidences`, `build_capability_inventory`,
-`build_state_summary`, `build_issue_view`, `build_decision_context_view`,
 `ExplanationBuilder.why`, and CLI formatters.
 
 A Caveat Producer is not a new engine. It is an existing owner of existing
@@ -483,7 +480,6 @@ This vocabulary maps to existing repository structures as follows.
 
 | Vocabulary term | Existing concepts | Caveat categories |
 | --- | --- | --- |
-| Caveat Source | `State`, `Fact`, `FactSupport`, `FactConflict`, `EvidenceSummary`, `FactEvidenceView`, `Contradiction`, `FactConfidence`, `CapabilityInventoryEntry`, `GraphValidationIssue`, `Explanation`, `DecisionContextView`, `ProjectionIntegritySummary`, CLI output, runtime envelopes | All |
 | Caveat Signal | `unsupported`, `contradicted`, `conflicted`, `expired`, `expires_at`, `stale`, `confidence`, `support_count`, `reason`, `severity`, `status`, `state`, `projection_version`, `last_event_id` | All |
 | Caveat Surface | Projection Integrity Summary, Integrity Navigation/CLI drill-downs, Explanation outputs, Capability Inventory, State Views, Issue Views, Contradiction outputs, Confidence outputs, Decision Context View, CLI outputs, runtime response envelopes | All |
 | Integrity Caveat | unsupported facts, fact conflicts, contradictions, graph issues, stale facts, refresh recommendations, integrity summary caveats | Integrity, Evidence, Graph, Temporal |
@@ -737,7 +733,6 @@ Caveat
 
 The existing caveat source, such as `FactConfidence`, `Contradiction`,
 `CapabilityInventoryEntry`, `ProjectionIntegritySummary`, `Explanation`,
-`DecisionContextView`, or a CLI/runtime surface.
 
 ## category
 

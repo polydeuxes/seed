@@ -180,12 +180,6 @@ READ_MODEL_VIEW_REGISTRATIONS: tuple[ReadModelViewRegistration, ...] = tuple(
             builder="seed_runtime.state_views.build_issue_view",
             renderer="scripts.seed_local.format_issue_views",
         ),
-        read_model_view_registration(
-            name="decision_context",
-            cli_flag="--decision-context",
-            builder="seed_runtime.context_views.build_decision_context_view",
-            renderer="scripts.seed_local.format_decision_context_view",
-        ),
         *(
             constitutional_read_model_registration(contract)
             for contract in CONSTITUTIONAL_READ_MODEL_CONTRACTS

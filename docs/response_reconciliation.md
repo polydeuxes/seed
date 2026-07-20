@@ -18,7 +18,6 @@ In scope:
 
 - existing Runtime response envelopes and decision outputs;
 - existing CLI output builders and formatters;
-- existing explanation, evidence, contradiction, confidence, integrity, capability, state, issue, observation, and decision-context surfaces;
 - existing vocabulary and characterization documents for Response, Explainability, Context Composition, Selection Rationale, Knowledge Lifecycle, Knowledge Classification, Projection Integrity, and backlog/status reconciliation;
 - operator-facing questions already answered or not consistently answered by existing surfaces;
 - ownership and composition boundaries.
@@ -92,7 +91,6 @@ A Response Producer is an existing component that constructs response content, r
 | `Runtime` | Response producer and response router | Produces `RuntimeResponse` values for answer, question, tool need, tool-call result, state patch result, refusal, invalid decision, invalid state patch, and unsupported decision outcomes. It also appends explicit `response.answer`, `response.question`, and `response.refusal` events for some response kinds. |
 | `DecisionModel` / model client | Response-adjacent producer | Produces `Decision` objects, not final responses. Response Characterization's boundary is validated: model decisions are inputs to Response, not the whole Response concern. |
 | `ContextComposer` | Selection producer and response-adjacent artifact producer | Composes `ContextPacket` from current input, goals, tool needs, facts, evidence, entities, tools, schema, and context budget trace. This is context/selection composition, not final user response composition. |
-| `build_decision_context_view(...)` | Response-adjacent view producer | Produces a read-only `DecisionContextView` with facts, issues, requirements, capabilities, and summary. It can expose selected knowledge for decision and operator inspection. |
 | `ExplanationBuilder` | Explanation Response producer | Produces `Explanation` objects with beliefs, evidence summaries, limitations, and contradictions for a subject/predicate query. |
 | Evidence Graph helpers | Evidence/Integrity Response producers | `build_evidence_graph`, `build_fact_evidence_view`, `build_evidence_summary`, and `unsupported_fact_views` produce evidence-backed communication surfaces. |
 | Contradiction helpers | Issue/Integrity Response producers | `build_contradictions` and `build_contradiction_summary` produce conflict records and counts with reasons and fact ids. |
@@ -116,7 +114,6 @@ Response artifacts include:
 
 - `RuntimeResponse`;
 - runtime response events for answer/question/refusal;
-- `ContextPacket` and `DecisionContextView`;
 - `Explanation`;
 - `EvidenceGraph`, `FactEvidenceView`, and `EvidenceSummary`;
 - `Contradiction` and `ContradictionSummary`;
@@ -183,9 +180,7 @@ Runtime response envelope
 
 ## Context views to decision-ready summary
 
-`build_decision_context_view(...)` composes facts, issues, requirements, capabilities, and a context summary from existing state, evidence graph, contradictions, confidence, and state views. This is existing response-adjacent composition over selected knowledge and integrity signals.
 
-Ownership: Context Views own read-only decision-context composition. They explicitly do not own event reading, mutation, runtime behavior, provider calls, policy, tool execution, LLM calls, or separate stores.
 
 ## Explanation to response
 
@@ -270,7 +265,6 @@ Communication capability audit:
 Existing surfaces can answer the following operator questions today:
 
 - **What does Seed know?** Fact views, current facts, state summary, state views, observation views, and context packets expose projected facts and observations.
-- **What did Seed select for decision-making?** `ContextPacket`, context budget traces, and `DecisionContextView` expose selected facts, issues, requirements, capabilities, and summary.
 - **Why does Seed know or believe a fact?** `ExplanationBuilder`, why-fact output, evidence graph, fact support output, and confidence reasons expose evidence and support.
 - **What evidence supports facts?** Evidence graph and fact evidence views expose evidence nodes, links, supporting event ids, and fact evidence views.
 - **What facts are unsupported?** Unsupported fact views, evidence summary, confidence summary, and integrity summary expose unsupported facts and counts.
@@ -339,7 +333,6 @@ Selection owns:
 - candidate inclusion/exclusion where implemented;
 - ordering and budget constraints;
 - context packet composition;
-- decision-context views;
 - capability/recommendation ranking and context/current-state selection where those surfaces already exist.
 
 Response owns, conceptually:
@@ -349,7 +342,6 @@ Response owns, conceptually:
 
 Overlap:
 
-- `ContextPacket` and `DecisionContextView` are both selection artifacts and response-adjacent surfaces.
 - Selection rationale can become response content when an operator asks why something was included or ordered.
 
 Boundary:
@@ -389,7 +381,6 @@ Boundary:
 | Projection Integrity Summary | Yes | Yes | Aggregates existing integrity counts and caveats. Strongest existing summary-like Response surface. |
 | Capability Inventory | Yes | Inventory-like summary | Composes capability status, support, confidence, expiry, evidence, and caveats by capability. |
 | State Summary | Yes | Yes | Summarizes current projected state counts for facts, observations, requirements, capabilities, issues, and events. |
-| Context Summary / DecisionContextView | Yes | Yes | Summarizes decision-ready facts, issues, requirements, capabilities, support, contradictions, and unsupported counts. |
 | Evidence Summary | Yes | Yes | Summarizes evidence count, linked fact count, unsupported facts, average confidence, projection version, and last event id. |
 | Contradiction Summary | Yes | Yes | Summarizes contradiction counts and severity buckets. |
 | Confidence Summary | Yes | Yes | Summarizes confidence buckets, unsupported count, contradicted count, average confidence, projection metadata. |
@@ -496,7 +487,6 @@ Implementation might only become justifiable if a future audit identifies a conc
 Evidence supporting this outcome:
 
 - Response behavior already exists in Runtime response envelopes and CLI output.
-- Response communication already exists across explanation, evidence, contradiction, confidence, integrity, capability, state, observation, issue, decision-context, and trace surfaces.
 - Response composition already exists locally in Runtime routing, ContextComposer, Context Views, ExplanationBuilder, Projection Integrity Summary, Capability Inventory, and CLI formatters.
 - Response ownership is intentionally distributed and usually belongs to the producer nearest the source semantics.
 - Many operator questions are already answerable.

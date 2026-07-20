@@ -125,10 +125,6 @@ from seed_runtime.single_capability_state_projection import (
     single_capability_state_projection_json,
 )
 from seed_runtime.verification_evidence import build_verification_evidence
-from seed_runtime.context_views import (
-    DecisionContextView,
-    build_decision_context_view,
-)
 from seed_runtime.classification_coverage import (
     build_classification_coverage_diagnostic,
     format_classification_coverage,
@@ -2132,11 +2128,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="print read-only projected Issue views and exit",
     )
     parser.add_argument(
-        "--decision-context",
-        action="store_true",
-        help="print the read-only Decision Context View and exit",
-    )
-    parser.add_argument(
         "--constitutional-process",
         action="store_true",
         help="print the read-only Constitutional Process View and exit",
@@ -2423,7 +2414,6 @@ def validate_lifecycle_args(
         bool(args.single_capability_state),
         bool(args.capability_promotion_readiness),
         bool(args.current_issues),
-        bool(args.decision_context),
         bool(args.candidate_requests),
         bool(args.candidate_routes),
         bool(args.inquiry_artifacts),
@@ -2492,7 +2482,7 @@ def validate_lifecycle_args(
             "--current-capabilities, --capability-status, --capability-candidates, "
             "--verification-evidence, --capability-verification, "
             "--capability-promotion-readiness, --current-issues, "
-            "--decision-context, --candidate-requests, --candidate-routes, --inquiry-artifacts, "
+            "--candidate-requests, --candidate-routes, --inquiry-artifacts, "
             "--state-build, --state-build-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
             "--stale-fact-refreshes, --ownership-discrepancies, "
@@ -5196,12 +5186,6 @@ def format_issue_views(views: list[IssueView]) -> str:
     if not views:
         lines.append("(none)")
     return "\n".join(lines)
-
-
-def format_decision_context_view(view: DecisionContextView) -> str:
-    """Format the exact read-only Decision Context View as deterministic JSON."""
-
-    return json.dumps(to_plain(view), sort_keys=True, indent=2)
 
 
 def _format_view_value(value: Any) -> str:
@@ -8170,13 +8154,6 @@ def main(argv: list[str] | None = None) -> int:
         print(format_issue_views(build_issue_view(projected_state_from_args(args))))
         return 0
 
-    if args.decision_context:
-        print(
-            format_decision_context_view(
-                build_decision_context_view(projected_state_from_args(args))
-            )
-        )
-        return 0
 
     if args.constitutional_pipeline:
         parser.error("--constitutional-pipeline no longer accepts raw question fields; pass an already-established BoundedConstitutionalQuestion to the API")

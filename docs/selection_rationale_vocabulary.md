@@ -96,8 +96,6 @@ candidates.
 
 A candidate that appears in the selected output of a selection surface.
 
-Examples include a fact in `ContextPacket.facts`, a `ContextFact` in
-`DecisionContextView.facts`, a fact returned by `State.get_best_fact(...)`, a
 fact returned by `State.get_current_facts(...)`, or a
 `CapabilityInventoryEntry` returned by `build_capability_inventory(...)`.
 
@@ -107,7 +105,6 @@ A candidate that was available to a selection surface but did not appear in the
 selected output.
 
 Exclusion may be explicit when an existing trace or status exposes it, such as a
-`select_context_facts(...)`. Exclusion may also be implicit when a candidate is
 not selected because another support group was unambiguous best support, because
 a fact expired and expired facts were not included, or because a section limit
 was reached.
@@ -122,7 +119,6 @@ A concrete place where Seed selects, orders, limits, or formats already-known
 candidates for a current use.
 
 Existing selection surfaces include `ContextPacket`, `ContextComposer`,
-`DecisionContextView`, `select_context_facts(...)`, `State.get_fact_support(...)`,
 `State.get_best_fact(...)`, `State.get_current_facts(...)`,
 `State.get_stale_facts()`, `State.get_stale_fact_refresh_recommendations(...)`,
 `build_capability_inventory(...)`, and `ExplanationBuilder.why(...)`.
@@ -152,7 +148,6 @@ A surface-owned rule that determines or contributes to selection, ordering,
 inclusion, exclusion, or representative choice.
 
 `context_selection.order_facts(...)` ordering keys,
-`select_context_facts(...)` unsupported filtering and confidence ordering,
 `State.get_fact_support(...)` unambiguous best-support selection,
 `State.get_best_fact(...)` representative fact tie-breaks,
 measurement latest-current sample semantics, predicate cardinality handling, and
@@ -330,7 +325,6 @@ availability, authorization, reachability, or tool execution.
 ### Context Selection Rationale
 
 Context Selection Rationale explains why a candidate was included in or excluded
-from a context-facing surface such as `ContextPacket` or `DecisionContextView`.
 It is concerned with what was surfaced now for a model-visible packet,
 decision-ready view, answer, capability-gap discussion, or explanation context.
 
@@ -449,7 +443,6 @@ The vocabulary maps to existing repository structures as follows:
 | Vocabulary term | Existing repository concept | Relationship |
 | --- | --- | --- |
 | Selection Surface | `ContextPacket` | Model-visible context output containing selected current input, active goal, entities, facts, tools, open tool needs, decision schema, evidence, and context budget trace. |
-| Selection Surface | `DecisionContextView` | Read-only decision context over facts, issues, requirements, capabilities, summary counts, projection version, and last event ID. |
 | Selection Surface | Capability inventory | `build_capability_inventory(...)` selects/report capability verification beliefs from tools, `ToolNeed`s, and `capability_verified` facts. |
 | Selection Surface | Current fact queries | `State.get_fact_support(...)`, `State.get_best_fact(...)`, and `State.get_current_facts(...)` select current support and representative facts. |
 | Candidate | Projected `Fact` | Can be selected into context, support groups, current fact results, stale views, evidence-aware views, or explanations. |
@@ -460,7 +453,6 @@ The vocabulary maps to existing repository structures as follows:
 | Ordering Rationale | `context_selection.order_evidence(...)` | Newer evidence before older evidence, then higher confidence and evidence ID tie-break. |
 | Ordering Rationale | `context_selection.order_goals(...)` | Active goals before inactive goals, then goal ID tie-break. |
 | Ordering Rationale | `context_selection.order_entities(...)` | Higher confidence entities first, then name and ID tie-breaks. |
-| Context Rationale | `select_context_facts(...)` | Excludes unsupported facts by default unless requested, then orders by support presence, confidence, subject, predicate, object, and fact ID. |
 | Current-State Rationale | `State.get_fact_support(...)` | Returns one unambiguous best support group or `None` when current support is ambiguous. |
 | Current-State Rationale | `State.get_best_fact(...)` | Selects a representative fact from the best support using confidence, observed-vs-inferred preference, observed time, and ID. |
 | Current-State Rationale | `State.get_current_facts(...)` | Uses predicate cardinality: single-cardinality returns one best fact; multi-cardinality returns one representative per support group. |
@@ -519,7 +511,6 @@ signals:
 - `ContextComposer` chooses and formats packet sections;
 - `context_selection` helpers provide deterministic intra-section ordering;
   limits, and trace accounting;
-- `DecisionContextView` selects decision-ready facts, issues, requirements, and
   capabilities from read-only projected inputs.
 
 Selection Rationale should use these signals as vocabulary. It should not create

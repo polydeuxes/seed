@@ -471,7 +471,6 @@ Primary files inspected:
 - `sed -n '1,180p' seed_runtime/evidence.py`
 - `sed -n '1,220p' seed_runtime/facts.py`
 - `rg -n "class .*ObservationSource|class ObservationCollectionService|def collect|def ingest|def ingest_input" seed_runtime/observation_sources.py seed_runtime/ansible_inventory_source.py scripts/seed_local.py`
-- `rg -n "state_summary|state-summary|impact|why|relationships|graph-issues|entity-types|current-facts|unhealthy|down|decision-context|project_state_with_cache|SQLiteProjectionStore|format_" scripts/seed_local.py`
 - `sed -n '1,220p' seed_runtime/runtime_loop.py`
 - `sed -n '1,220p' seed_runtime/runtime_loop_decisions.py`
 - `sed -n '1,180p' seed_runtime/runtime_loop_tool_requests.py`

@@ -373,7 +373,6 @@ Caveat sources are distributed by legitimate ownership:
 - State owns fact supports, conflicts, stale facts, graph issues, and current-state helpers.
 - Capability Inventory owns capability verification caveats from projected facts.
 - Explanation owns why/current/ambiguous/no-current communication.
-- Context Views own selected decision-context caveat-adjacent summaries.
 - CLI owns presentation.
 
 This distribution is appropriate because each owner preserves source semantics.

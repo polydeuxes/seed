@@ -260,7 +260,6 @@ Before archiving, perform a small promotion review. Do not move files until this
 | `docs/roadmap_reconciliation.md` | `docs/reasoning_roadmap.md` and `docs/knowledge_acquisition_status.md` | Active open roadmap items and completed-item status. |
 | `docs/recommendation_selection_boundary.md` | `docs/capability_verification_vocabulary.md` or `docs/architecture.md` | Recommendation/capability-resolution selection terms if they remain accepted architecture. |
 | `docs/audit/capability_operation_vocabulary_audit.md` | `README.md`, `docs/architecture.md`, `docs/capability_verification_vocabulary.md` | Durable capability vs operation vs provider/handoff operation vocabulary and non-execution boundaries. |
-| `docs/audit/context_knowledge_consolidation.md` | `docs/architecture.md`, `docs/state.md`, `docs/function_blocks.md` | Canonical decision-ready knowledge view, distinction between context packet/view/state/evidence/explanation surfaces. |
 
 No promotion was performed in this audit because the task is inventory-only and the safe next step is to reconcile into a documentation index first.
 

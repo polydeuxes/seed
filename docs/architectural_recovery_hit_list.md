@@ -152,7 +152,6 @@ answer/presentation surfaces.
 
 - `seed_runtime.state_views` and `seed_runtime.state_summary_views` expose
   read-only state/summary views.
-- `seed_runtime.context_views` exposes context-oriented views.
 - `seed_runtime.projection_shape` and `seed_runtime.projected_state_consumers`
   describe projection shapes and consumers.
 - `seed_runtime.projection_store` stores read-compatible projection snapshots and

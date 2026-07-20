@@ -82,7 +82,6 @@ Existing implementation surfaces relevant to the probe include:
   projected state, current input, active goals, facts, tools, open tool needs,
   and recent evidence.
 - `seed_runtime/context_views.py`, which provides read-only deterministic
-  decision-context projections and explicitly avoids ledger reads, event
   appends, state mutation, provider calls, policy evaluation, tool execution,
   LLM calls, and separate context persistence.
 - `seed_runtime/source_navigation.py`, which builds a read-only navigation view
