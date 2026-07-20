@@ -11,7 +11,6 @@ python - <<'PY'
 from seed_runtime.context import DecisionInputComposer
 from seed_runtime.events import EventLedger
 from seed_runtime.execution import ToolExecutor
-from seed_runtime.models import Decision
 from seed_runtime.registry import ToolRegistry
 from seed_runtime.runtime import FakeDecisionProducer, Runtime
 from seed_runtime.state import StateProjector

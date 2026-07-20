@@ -69,7 +69,6 @@ Source files inspected: `seed_runtime/runtime_loop.py`, `seed_runtime/decision_j
 ### Accepted provider return types
 
 - The `DecisionProvider` protocol declares `decide(context: RuntimeContext) -> Decision`, but `FakeDecisionProvider` accepts and returns `object` in tests. Runtime validation is therefore the effective boundary. [`seed_runtime/runtime_loop.py:80-103`](../seed_runtime/runtime_loop.py#L80-L103)
-- `_validate_decision()` accepts only instances of `seed_runtime.runtime_loop.Decision`; dictionaries, legacy `seed_runtime.models.Decision`, strings, `None`, or other objects are malformed with `decision provider must return a runtime_loop.Decision`. [`seed_runtime/runtime_loop.py:763-765`](../seed_runtime/runtime_loop.py#L763-L765)
 - `_safe_decision_payload()` serializes a RuntimeLoop `Decision`, passes dictionaries through `to_plain()`, and otherwise records only `{"type": type(proposed).__name__}`. [`seed_runtime/runtime_loop.py:797-809`](../seed_runtime/runtime_loop.py#L797-L809)
 
 ### Unsupported object and unsupported kind handling

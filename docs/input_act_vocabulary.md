@@ -12,17 +12,14 @@ The motivation comes from `docs/input_inspection_reconciliation.md`: Seed alread
 
 > What kind of thing did the user say?
 
-`DecisionKind` answers:
 
 > What should Seed do next?
 
 These are related, but they are not the same thing.
 
-**InputAct != DecisionKind.**
 
 An input act classifies the user's utterance as input. A decision kind classifies Seed's next runtime behavior after context composition, model or classifier decision-making, validation, guard checks, policy, and capability constraints. The same input act can lead to different decision kinds depending on evidence, policy, available tools, missing capabilities, ambiguity, and safety. Conversely, the same decision kind can be an appropriate response to several different input acts.
 
-For example, `Install Docker on example_host_b.` is a `command_request` because the user is asking for an action. Its possible downstream `DecisionKind` may be `request_tool`, `propose_action_plan`, `call_tool`, or `refuse` depending on capability, policy, and validation. The input act should not pre-authorize execution.
 
 ## Why Existing Vocabulary Is Insufficient
 
@@ -71,7 +68,6 @@ Likely downstream handling is to answer from existing context, ask a clarifying 
 - It is not a `documentation_claim` unless the user is asserting what documentation says.
 - It is not a `user_observation` unless the user is reporting a fact about the world.
 
-#### Relationship to existing `DecisionKind` values
 
 An `operator_query` often maps to `answer`. It may map to `ask_question` when clarification is needed, `request_tool` when the query requires unavailable capability, or `refuse` if answering would violate policy. The input act does not guarantee any specific route.
 
@@ -98,7 +94,6 @@ Likely downstream handling is capability and policy evaluation, followed by a sa
 - It is not the correct label for every sentence that mentions infrastructure or operations.
 - It is not the same as `request_tool`; `request_tool` is one possible runtime decision when Seed lacks an available capability.
 
-#### Relationship to existing `DecisionKind` values
 
 A `command_request` may map to `request_tool`, `propose_action_plan`, `call_tool`, or `refuse` depending on policy and capability. It may also map to `ask_question` if the requested action is underspecified. It should never imply direct `ToolExecutor` access without the existing `call_tool` route and guard/validation path.
 
@@ -125,7 +120,6 @@ Likely downstream handling is acknowledgment, clarification, reconciliation with
 - It is not a documentation claim unless the observation specifically asserts what documentation says.
 - It is not automatically a durable fact without whatever future validation, evidence, or state-update path is explicitly implemented.
 
-#### Relationship to existing `DecisionKind` values
 
 A `user_observation` may map to `answer` for acknowledgment or explanation. It may map to `ask_question` if Seed needs clarification. A future implementation may route it toward explicit observation intake, but this document does not add that behavior.
 
@@ -151,7 +145,6 @@ Likely downstream handling is to compare the claim against available documentati
 - It is not a `user_observation` about runtime state unless the claim is separately verified against the system.
 - It is not a `command_request` unless the user asks Seed to update, verify, rewrite, or act on the documentation.
 
-#### Relationship to existing `DecisionKind` values
 
 A `documentation_claim` may map to `answer` when Seed can evaluate or contextualize the claim. It may map to `ask_question` when the referenced document or claim is ambiguous. It may map to `request_tool` if documentation access requires unavailable capability, or `refuse` if policy prevents the requested handling.
 
@@ -178,7 +171,6 @@ Likely downstream handling is acknowledgment, conflict identification, clarifica
 - It is not merely a casual answer just because it starts conversationally.
 - It is not a command unless the user asks Seed to apply, record, patch, or propagate the correction.
 
-#### Relationship to existing `DecisionKind` values
 
 A `correction` may map to `answer` for acknowledgment or explanation, `ask_question` when the correction target is unclear, `propose_state_patch` if a future or existing route explicitly proposes a state change, or `refuse` if the requested correction handling is unsafe or disallowed. The correction itself should not bypass validation or policy.
 
@@ -205,13 +197,11 @@ Likely downstream handling is a brief conversational answer, acknowledgment, or 
 - It is not a `correction` unless it revises prior information.
 - It is not an `operator_query` unless it asks a question.
 
-#### Relationship to existing `DecisionKind` values
 
 A `casual_answer` usually maps to `answer`. It may map to `ask_question` if the conversational context remains ambiguous. It must not be treated as implicit approval to execute tools or bypass pending-action policy.
 
 ## Example Mapping Table
 
-| User text | InputAct | Possible `DecisionKind` |
 | --- | --- | --- |
 | `What does Seed know about ProjectionStore?` | `operator_query` | `answer` |
 | `web_service is running on example_host_b.` | `user_observation` | `answer` or `ask_question` |
@@ -220,7 +210,6 @@ A `casual_answer` usually maps to `answer`. It may map to `ask_question` if the 
 | `Install Docker on example_host_b.` | `command_request` | `request_tool`, `propose_action_plan`, `call_tool`, or `refuse` depending on policy and capability |
 | `Thanks, that makes sense.` | `casual_answer` | `answer` |
 
-The table is illustrative, not a routing specification. The `InputAct` column describes the user input. The `DecisionKind` column describes possible downstream runtime choices after existing decision, validation, guard, policy, and capability logic.
 
 ## Relationship To Existing Input Inspection
 

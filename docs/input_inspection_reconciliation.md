@@ -25,7 +25,6 @@ The answer is mixed:
   - `refuse` -> `response.refusal` event and `RuntimeResponse(kind="refusal")`.
 
 
-- `DecisionKind` in `seed_runtime/models.py` contains the runtime decision vocabulary.
 - `Decision` stores the selected `kind`, `reason`, and kind-specific fields such as `answer`, `question`, `tool_name`, `tool_arguments`, `tool_need`, and `state_patch`.
 
 ### Deterministic fallback and normalization surfaces
@@ -48,7 +47,6 @@ The answer is mixed:
 ### Context-composition surfaces
 
 - `DecisionInputComposer.compose` includes the current input event payload, active goal, entities, recent facts, recent evidence, visible tools, open tool needs, a decision schema, and context-budget trace in a `DecisionInputPacket`.
-- The context decision schema currently advertises only `answer`, `ask_question`, `call_tool`, `request_tool`, and `refuse` to the composed context, even though the broader `DecisionKind` type also includes proposal/state-patch legacy or side-path kinds.
 
 ### Local CLI intent path
 
@@ -64,7 +62,6 @@ The answer is mixed:
 
 ### Runtime decision vocabulary
 
-`DecisionKind` currently includes:
 
 | Decision kind | Current meaning in code |
 | --- | --- |
@@ -216,7 +213,6 @@ These would duplicate or bypass existing surfaces rather than addressing the sma
 
 ## Follow-up
 
-See `docs/input_act_vocabulary.md` for the documentation-only first-class vocabulary that distinguishes user input acts from downstream `DecisionKind` routing decisions.
 
 ## Recommended Next Step
 

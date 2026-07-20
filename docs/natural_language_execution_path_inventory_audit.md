@@ -214,7 +214,6 @@ The following boundaries from the conceptual chain are not explicit general-purp
 - candidate request set with alternatives and ambiguity metadata;
 - routing boundary that dispatches candidates before promotion or decision;
 - capability-selection boundary that is independent of model-selected tool names;
-- execution-decision artifact distinct from a `Decision(kind="call_tool")`;
 - bounded-assumption record for ambiguous natural-language requests;
 - operator clarification lifecycle specifically tied to ambiguous capability selection.
 
@@ -250,7 +249,6 @@ Interpretation             partially: input-act and intent classifiers
 Candidate Request          partially: tool_need generation; no general candidate set
 Routing                    partially: Runtime routes structured Decisions
 Capability Selection       partially: registry/catalog/recommendations; no standalone selection boundary
-Execution Decision         partially: Decision(kind="call_tool") plus validation/policy
 Execution                  yes: ToolExecutor for registered tools
 ```
 

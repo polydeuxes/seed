@@ -267,11 +267,6 @@ one inquiry adapter implementing DecisionProducer
 call evaluate_service_ownership_authority_slice or evaluate_container_ownership_authority_slice
 ↓
 map the result to one of:
-  - Decision(kind="answer", ...)
-  - Decision(kind="ask_question", ...)
-  - Decision(kind="request_tool", tool_need={...})
-  - Decision(kind="call_tool", tool_name=..., tool_arguments={...})
-  - Decision(kind="refuse", ...)
 ↓
 pass that producer to current Runtime
 ↓
@@ -281,7 +276,6 @@ Runtime validates and routes through existing branches
 A particularly small bounded slice would use `container_ownership_authority`:
 
 - constrained profile returns `outcome="blocked"` with Docker/root remaining observations;
-- inquiry adapter returns `Decision(kind="request_tool", tool_need={"name": "container_runtime_visibility", "summary": "Provide Docker or root-backed read-only container runtime visibility", "capability": "container_inventory"})` or an `answer` reporting the blocked boundary;
 - existing Runtime records `model.decision.proposed`;
 - `Runtime` routes to `ToolNeedService`;
 - `ToolNeedService` records `tool_need.created` and returns read-only capability resolution.

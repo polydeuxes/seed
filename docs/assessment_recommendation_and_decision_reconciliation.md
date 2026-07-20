@@ -646,7 +646,6 @@ new tests
 ```
 
 It also does not require renaming existing runtime `Decision` or
-`DecisionKind` vocabulary. Existing runtime decisions may remain implementation
 artifacts. This document defines conceptual architectural boundaries that future
 work should respect when naming or extending behavior.
 

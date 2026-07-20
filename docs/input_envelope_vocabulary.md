@@ -2,7 +2,6 @@
 
 ## Purpose
 
-This document defines first-class vocabulary for describing the source context of input before Seed classifies the utterance as an `InputAct` or chooses a downstream `DecisionKind`.
 
 It is documentation-only. It does not modify runtime behavior, event storage, authentication, authorization, policy, tool execution, projection behavior, package exports, or local CLI behavior.
 
@@ -18,7 +17,6 @@ The motivation comes from `docs/input_source_authority_reconciliation.md`: Seed 
 
 > What kind of thing did the user say?
 
-`DecisionKind` answers:
 
 > What should Seed do next?
 
@@ -26,7 +24,6 @@ These are related, but they are not the same thing.
 
 ```text
 InputEnvelope != InputAct
-InputAct != DecisionKind
 InputEnvelope != Authorization
 ```
 
@@ -41,7 +38,6 @@ InputEnvelope
         ↓
 InputInspection / InputAct
         ↓
-DecisionKind
         ↓
 Validation / guard / policy / capability boundaries
         ↓
@@ -54,7 +50,6 @@ Each layer answers a different question:
 | --- | --- |
 | `InputEnvelope` | Where did the input come from and what source context surrounds it? |
 | `InputAct` | What kind of utterance was received? |
-| `DecisionKind` | What route should Seed take next? |
 | Validation / guard / policy | Is that route structurally valid and allowed? |
 | Runtime route | Which owner service handles the valid decision? |
 
@@ -420,7 +415,6 @@ InputEnvelope(channel=voice, authenticated_principal=none, source_trust=low)
         ↓
 InputAct(command_request)
         ↓
-DecisionKind(refuse or ask_question)
 ```
 
 The same text through a different envelope may have a different safe downstream route:
@@ -430,14 +424,11 @@ InputEnvelope(channel=cli, authenticated_principal=operator:john, source_trust=h
         ↓
 InputAct(command_request)
         ↓
-DecisionKind(request_tool, propose_action_plan, call_tool, ask_question, or refuse)
 ```
 
 The input act is the same. The authority context is different.
 
-## Relationship To DecisionKind
 
-`InputEnvelope` should not choose `DecisionKind` directly. It should constrain or inform later decisions.
 
 Examples:
 
@@ -519,7 +510,6 @@ It should not:
 - rewrite `Runtime`;
 - replace `InputInspection`;
 - replace `InputAct`;
-- choose final `DecisionKind`;
 - execute tools;
 - authorize side effects;
 - bypass `ToolIntentGuard`;
@@ -540,7 +530,6 @@ This vocabulary rejects:
 - treating Home Assistant automation as a human operator;
 - treating browser input as trusted without a verified session/principal;
 - treating `InputAct` as authorization;
-- treating `DecisionKind` as authentication;
 - adding `AuthEngine`, `IdentityEngine`, `ChannelEngine`, or a new `RuntimeLoop`;
 - bypassing validation, guard, policy, approval, pending-action, or registered-tool boundaries;
 - using source metadata as implicit approval for side effects.

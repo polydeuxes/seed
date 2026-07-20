@@ -8,9 +8,7 @@ This inventory is source-file based and describes the existing state patch behav
 
 ### Decision fields involved
 
-- The legacy `seed_runtime.models.DecisionKind` includes `"propose_state_patch"` alongside `answer`, `ask_question`, `call_tool`, `request_tool`, `propose_action_plan`, `propose_handoff_plan`, and `refuse`.
   [`seed_runtime/models.py:42-51`](../seed_runtime/models.py#L42-L51)
-- `seed_runtime.models.Decision` carries `kind`, required `reason`, and optional per-kind payload fields. State patch decisions use the optional `state_patch: dict[str, Any] | None` field.
   [`seed_runtime/models.py:205-215`](../seed_runtime/models.py#L205-L215)
 - Runtime response values are represented by `RuntimeResponse(kind: str, message: str, payload: dict[str, Any])`.
   [`seed_runtime/models.py:318-321`](../seed_runtime/models.py#L318-L321)
@@ -172,7 +170,6 @@ Because RuntimeLoop lacks a state patch decision kind today, the API path does n
 
 ## 5. RuntimeLoop behavior
 
-RuntimeLoop's local `DecisionKind` is `Literal["answer", "call_tool", "request_tool"]`; its `Decision` dataclass has no `state_patch` field.
 [`seed_runtime/runtime_loop.py:32-68`](../seed_runtime/runtime_loop.py#L32-L68)
 Its validation rejects every proposed decision whose kind is not one of `answer`, `call_tool`, or `request_tool` with the error `decision kind must be 'answer', 'call_tool', or 'request_tool'`.
 [`seed_runtime/runtime_loop.py:725-729`](../seed_runtime/runtime_loop.py#L725-L729)

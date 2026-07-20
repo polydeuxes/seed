@@ -2,14 +2,12 @@
 
 ## Purpose
 
-This document characterizes how first-class input acts should relate to Seed's existing `DecisionKind` vocabulary. It is documentation-only and does not change runtime behavior, classifier behavior, validation, guard behavior, policy behavior, tool execution, event storage, projection behavior, or local CLI behavior.
 
 The goal is to preserve the distinction introduced by `docs/input_act_vocabulary.md` while making the next design boundary explicit:
 
 ```text
 InputAct
         ↓
-advises possible DecisionKind values
         ↓
 existing decision, validation, guard, policy, and routing path remains authoritative
 ```
@@ -18,7 +16,6 @@ existing decision, validation, guard, policy, and routing path remains authorita
 
 `InputAct` is advisory.
 
-`DecisionKind` remains authoritative for runtime routing.
 
 An input act describes what kind of user utterance Seed received. It should help the classifier, prompt, future inspection records, and tests preserve the user's act before routing. It must not execute tools, authorize side effects, bypass policy, or replace decision validation.
 
@@ -27,20 +24,17 @@ A decision kind describes what Seed will do next after context composition, mode
 Therefore:
 
 ```text
-InputAct != DecisionKind
 ```
 
 and:
 
 ```text
-InputAct does not pre-authorize DecisionKind.
 ```
 
 ## Existing Runtime Vocabulary
 
 `seed_runtime/models.py` currently defines these runtime decision kinds:
 
-| DecisionKind | Current role |
 | --- | --- |
 | `answer` | Return direct answer text. |
 | `ask_question` | Ask the user for missing information. |
@@ -57,7 +51,6 @@ This bridge document does not change that split.
 
 ## Bridge Table
 
-| InputAct | Possible DecisionKind values | Bridge meaning |
 | --- | --- | --- |
 | `operator_query` | `answer`, `ask_question`, `request_tool`, `refuse` | The user is asking for information. Seed may answer, clarify, request unavailable capability, or refuse. |
 | `command_request` | `ask_question`, `request_tool`, `propose_action_plan`, `call_tool`, `refuse` | The user is asking Seed to do something. Capability, policy, validation, and guard checks determine whether anything can proceed. |
@@ -122,13 +115,10 @@ It must not be treated as implicit approval to execute a tool or commit a pendin
 The bridge is many-to-many:
 
 ```text
-one InputAct -> many possible DecisionKind values
-one DecisionKind -> many possible InputAct sources
 ```
 
 Examples:
 
-| User text | InputAct | Plausible DecisionKind | Why |
 | --- | --- | --- | --- |
 | `What does Seed know about ProjectionStore?` | `operator_query` | `answer` | The user wants an explanation/report. |
 | `Which host runs web_service?` | `operator_query` | `ask_question` | Clarification may be needed if multiple workspaces or sources exist. |
@@ -166,12 +156,10 @@ Instead, it defines how a future `InputInspection` record or classifier helper c
 A later implementation may add a small deterministic helper such as:
 
 ```text
-suggest_decision_kinds_for_input_act(input_act: InputAct) -> tuple[DecisionKind, ...]
 ```
 
 If added, that helper should be advisory only. It should not:
 
-- choose the final `DecisionKind`;
 - execute tools;
 - authorize side effects;
 - bypass validation;
@@ -180,7 +168,6 @@ If added, that helper should be advisory only. It should not:
 - rewrite `Runtime`;
 - make `request_tool` executable.
 
-A later implementation may also add tests that ensure the bridge remains conservative and that every advertised decision suggestion is already represented in the current `DecisionKind` vocabulary.
 
 ## Rejected Interpretations
 

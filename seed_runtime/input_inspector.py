@@ -229,7 +229,7 @@ _OPERATOR_QUERY_PREFIXES = (
 def classify_input_act(raw_text: str) -> InputInspection:
     """Classify raw user text using deterministic fixture-level rules only.
 
-    This helper deliberately does not call an LLM, choose a DecisionKind, execute a
+    This helper deliberately does not call an LLM, execute a
     tool, or integrate with Runtime routing.  It only preserves the raw text and a
     high-confidence local input-act label for narrow conversational fixtures.
     """

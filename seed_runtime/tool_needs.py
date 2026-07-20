@@ -6,13 +6,11 @@ from dataclasses import replace
 from typing import Any
 
 from seed_runtime.events import EventLedger
-from seed_runtime.ids import new_id
 from seed_runtime.capability_catalog import CapabilityCatalog
-from seed_runtime.models import Decision, ToolNeed, ToolSpec
-from seed_runtime.registry import ToolRegistry
-from seed_runtime.serialization import to_plain
-from seed_runtime.state import StateProjector
 from seed_runtime.capabilities import slugify
+from seed_runtime.models import ToolNeed, ToolSpec
+from seed_runtime.registry import ToolRegistry
+from seed_runtime.state import StateProjector
 
 
 class ToolNeedService:
@@ -32,37 +30,6 @@ class ToolNeedService:
     def __init__(self, ledger: EventLedger, projector: StateProjector) -> None:
         self.ledger = ledger
         self.projector = projector
-
-    def create_from_decision(
-        self, workspace_id: str, decision: Decision, causation_id: str | None = None
-    ) -> ToolNeed:
-        payload = decision.tool_need or {}
-        name = slugify(payload["name"])
-        capability = slugify(payload.get("capability", name))
-        state = self.projector.project(workspace_id)
-        for existing in state.open_tool_needs:
-            if existing.name == name or existing.capability == capability:
-                return existing
-        need = ToolNeed(
-            id=new_id("need"),
-            workspace_id=workspace_id,
-            name=name,
-            capability=capability,
-            summary=payload["summary"],
-            reason=decision.reason,
-            requested_by_event_id=causation_id,
-            risk_hint=payload.get("risk_hint"),
-            desired_inputs=payload.get("desired_inputs", []),
-            desired_outputs=payload.get("desired_outputs", []),
-        )
-        self.ledger.append(
-            "tool_need.created",
-            workspace_id,
-            {"tool_need": to_plain(need)},
-            actor="system",
-            causation_id=causation_id,
-        )
-        return need
 
     def resolve_capability(
         self,

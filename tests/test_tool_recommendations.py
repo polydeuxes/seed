@@ -4,15 +4,13 @@ from seed_runtime.capability_catalog import (
     CapabilityCatalogEntry,
     CapabilityRecommendation,
 )
-from seed_runtime.events import EventLedger
-from seed_runtime.models import Decision, Fact, ToolNeed, ToolSpec, Toolkit, utc_now
+from seed_runtime.models import Fact, ToolNeed, ToolSpec, Toolkit, utc_now
 from seed_runtime.recommendation_ranker import (
     RankedRecommendation,
     RecommendationRanker,
 )
 from seed_runtime.registry import ToolRegistry
-from seed_runtime.state import State, StateProjector
-from seed_runtime.tool_needs import ToolNeedService
+from seed_runtime.state import State
 from seed_runtime.tool_recommendations import ToolRecommendationService
 
 
@@ -43,22 +41,14 @@ def _service_management_catalog() -> CapabilityCatalog:
     )
 
 
-def _request_tool_decision() -> Decision:
-    return Decision(
-        kind="request_tool",
+def _tool_need() -> ToolNeed:
+    return ToolNeed(
+        id="need_service_management",
+        workspace_id="ws",
+        name="manage_service",
+        summary="Manage the web_service service",
+        capability="service_management",
         reason="missing service management capability",
-        tool_need={
-            "name": "manage_service",
-            "summary": "Manage the web_service service",
-            "capability": "service_management",
-        },
-    )
-
-
-def _tool_need(ledger: EventLedger | None = None) -> ToolNeed:
-    ledger = ledger or EventLedger()
-    return ToolNeedService(ledger, StateProjector(ledger)).create_from_decision(
-        "ws", _request_tool_decision()
     )
 
 

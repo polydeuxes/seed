@@ -418,14 +418,6 @@
         {
           "method": "append",
           "receiver": "ledger"
-        },
-        {
-          "method": "append",
-          "receiver": "ledger"
-        },
-        {
-          "method": "project",
-          "receiver": "projector"
         }
       ],
       "events": [
@@ -436,7 +428,7 @@
       "id": "ToolNeedService",
       "kind": "class",
       "layer": "runtime_service",
-      "line": 18,
+      "line": 16,
       "owner": "tool_need_capability_resolution",
       "routes": [],
       "summary": "Owns capability-gap creation and read-only capability resolution for request_tool decisions."
