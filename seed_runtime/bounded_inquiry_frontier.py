@@ -21,6 +21,14 @@ from seed_runtime.inquiry_frontier_boundary_testimony import (
     InquiryFrontierBoundaryTestimony,
 )
 
+EligibleEvidenceTerritoryWarrantStanding = Literal[
+    "not_supplied",
+    "insufficient",
+    "unknown",
+    "conflicting",
+    "sufficient",
+]
+
 FrontierState = Literal[
     "established",
     "missing_required_clause_family",
@@ -73,6 +81,11 @@ class BoundedInquiryFrontier:
     unavailable_clause_refs: tuple[str, ...]
     unknown_availability_clause_refs: tuple[str, ...]
     out_of_scope_clause_refs: tuple[str, ...]
+    eligible_territory_warrant_not_supplied_clause_refs: tuple[str, ...]
+    eligible_territory_warrant_insufficient_clause_refs: tuple[str, ...]
+    eligible_territory_warrant_unknown_clause_refs: tuple[str, ...]
+    eligible_territory_warrant_conflicting_clause_refs: tuple[str, ...]
+    eligible_territory_warrant_sufficient_clause_refs: tuple[str, ...]
     clauses: tuple[InquiryFrontierBoundaryClause, ...]
     read_only: bool = True
     invents_scope: bool = False
@@ -98,6 +111,34 @@ def _stable(prefix: str, payload: object) -> str:
     return prefix + ":" + sha256(encoded).hexdigest()
 
 
+def _eligible_territory_warrant_standing(
+    clause: InquiryFrontierBoundaryClause,
+) -> EligibleEvidenceTerritoryWarrantStanding:
+    if clause.clause_family != "eligible_ineligible_evidence_territory":
+        raise ValueError("eligible-territory warrant standing only applies to eligible evidence territory clauses")
+    if (
+        clause.clause_standing == "conflicting"
+        or clause.evidence_currency == "conflicting"
+        or clause.evidence_availability == "conflicting"
+    ):
+        return "conflicting"
+    if (
+        clause.clause_standing == "unknown"
+        or clause.evidence_currency == "unknown"
+        or clause.evidence_availability == "unknown"
+    ):
+        return "unknown"
+    if not clause.eligible_evidence_territory_refs:
+        return "not_supplied"
+    # Existing testimony preserves eligible territory references, clause standing,
+    # currentness, and availability, but no repository-local producer currently
+    # asserts the bounded claim-relative relation: this territory is eligible for
+    # this selected inquiry need at this frontier boundary for this reliance
+    # purpose.  Treat the preserved witness as presently insufficient rather
+    # than as a permanent family impossibility.
+    return "insufficient"
+
+
 def _is_operatively_coherent(clause: InquiryFrontierBoundaryClause) -> bool:
     if clause.clause_standing != "established":
         return False
@@ -110,16 +151,7 @@ def _is_operatively_coherent(clause: InquiryFrontierBoundaryClause) -> bool:
     if clause.clause_family == "included_excluded_inquiry_scope":
         return clause.scope_disposition == "included"
     if clause.clause_family == "eligible_ineligible_evidence_territory":
-        if clause.evidence_currency != "current":
-            return False
-        if clause.evidence_availability != "available":
-            return False
-        # No repository-local witness currently establishes claim-relative
-        # territory eligibility for the selected need, frontier boundary, and
-        # reliance purpose. Preserve supplied refs and the presently insufficient
-        # standing, but do not count tuple non-emptiness as positive
-        # required-family support or as proof that future warrant is impossible.
-        return False
+        return _eligible_territory_warrant_standing(clause) == "sufficient"
     return True
 
 
@@ -168,6 +200,11 @@ def assemble_bounded_inquiry_frontier(
         state = "established"
 
     non_operative = tuple(c.clause_ref for c in clauses if c not in operative)
+    eligible_warrant_standings = {
+        c.clause_ref: _eligible_territory_warrant_standing(c)
+        for c in clauses
+        if c.clause_family == "eligible_ineligible_evidence_territory"
+    }
     payload = {
         "selection": selected_need.selection_id,
         "testimony": testimony.testimony_id,
@@ -205,6 +242,11 @@ def assemble_bounded_inquiry_frontier(
         tuple(c.clause_ref for c in clauses if c.evidence_availability == "unavailable"),
         tuple(c.clause_ref for c in clauses if c.evidence_availability == "unknown"),
         tuple(c.clause_ref for c in clauses if c.scope_disposition == "outside_current_scope"),
+        tuple(ref for ref, standing in eligible_warrant_standings.items() if standing == "not_supplied"),
+        tuple(ref for ref, standing in eligible_warrant_standings.items() if standing == "insufficient"),
+        tuple(ref for ref, standing in eligible_warrant_standings.items() if standing == "unknown"),
+        tuple(ref for ref, standing in eligible_warrant_standings.items() if standing == "conflicting"),
+        tuple(ref for ref, standing in eligible_warrant_standings.items() if standing == "sufficient"),
         clauses,
     )
 

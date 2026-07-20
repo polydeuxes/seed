@@ -266,3 +266,66 @@ def test_currency_and_availability_do_not_apply_as_unsupported_global_gates_to_n
     assert "clause:stop" in frontier.operative_clause_refs
     assert "clause:evidence" not in frontier.operative_clause_refs
     assert frontier.missing_required_clause_families == ("eligible_ineligible_evidence_territory",)
+
+
+def test_eligible_territory_warrant_standing_distinguishes_absent_insufficient_unknown_and_conflicting_without_positive_recovery():
+    clauses = [
+        _clause("clause:scope", "included_excluded_inquiry_scope", scope_disposition="included"),
+        _clause("clause:no-warrant", "eligible_ineligible_evidence_territory", eligible_evidence_territory_refs=()),
+        _clause(
+            "clause:insufficient",
+            "eligible_ineligible_evidence_territory",
+            eligible_evidence_territory_refs=("territory:repo-world",),
+        ),
+        _clause(
+            "clause:unknown-standing",
+            "eligible_ineligible_evidence_territory",
+            clause_standing="unknown",
+            eligible_evidence_territory_refs=("territory:repo-world",),
+        ),
+        _clause(
+            "clause:unknown-currency-local",
+            "eligible_ineligible_evidence_territory",
+            evidence_currency="unknown",
+            eligible_evidence_territory_refs=("territory:repo-world",),
+        ),
+        _clause(
+            "clause:conflicting-local",
+            "eligible_ineligible_evidence_territory",
+            clause_standing="conflicting",
+            eligible_evidence_territory_refs=("territory:repo-world",),
+        ),
+        _clause("clause:resolution", "sufficient_resolution_conditions"),
+        _clause("clause:stop", "lawful_stopping_conditions"),
+    ]
+
+    _, _, frontier = _frontier(*clauses)
+
+    assert frontier.frontier_state == "material_binding_conflict"
+    assert frontier.eligible_territory_warrant_not_supplied_clause_refs == ("clause:no-warrant",)
+    assert frontier.eligible_territory_warrant_insufficient_clause_refs == ("clause:insufficient",)
+    assert frontier.eligible_territory_warrant_unknown_clause_refs == (
+        "clause:unknown-standing",
+        "clause:unknown-currency-local",
+    )
+    assert frontier.eligible_territory_warrant_conflicting_clause_refs == ("clause:conflicting-local",)
+    assert frontier.eligible_territory_warrant_sufficient_clause_refs == ()
+    for ref in (
+        "clause:no-warrant",
+        "clause:insufficient",
+        "clause:unknown-standing",
+        "clause:unknown-currency-local",
+        "clause:conflicting-local",
+    ):
+        assert ref in frontier.preserved_clause_refs
+        assert ref in frontier.non_operative_clause_refs
+        assert ref not in frontier.operative_clause_refs
+
+
+def test_current_available_eligible_territory_ref_remains_insufficient_not_permanently_impossible():
+    _, _, frontier = _frontier(*_required_clauses())
+
+    assert frontier.eligible_territory_warrant_insufficient_clause_refs == ("clause:evidence",)
+    assert frontier.eligible_territory_warrant_sufficient_clause_refs == ()
+    assert "clause:evidence" in frontier.non_operative_clause_refs
+    assert frontier.missing_required_clause_families == ("eligible_ineligible_evidence_territory",)
