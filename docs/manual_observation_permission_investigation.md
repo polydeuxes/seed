@@ -37,7 +37,6 @@ record, authenticated principal, or durable permission grant.
 `Runtime.handle_user_message` appends an `input.user_message` event with
 `payload={"text": text}`, `actor="user"`, `workspace_id`, and `session_id`, then
 projects state, composes context, obtains a model decision, validates it, applies
-the tool-intent guard for tool calls, and routes the result.
 
 Existing evidence supports this conclusion:
 

@@ -339,7 +339,6 @@ It should remain only a `call_tool` suggestion by default.
 Reason:
 
 - `ActionPlanService` is designed around a chosen provider recommendation and creates a non-executable proposal for satisfying a ToolNeed / capability gap.
-- Registered operations are already model-visible tools that the runtime can expose in context.
 - Actual tool execution is already isolated under the `call_tool` decision branch in canonical `Runtime`, which invokes `ToolExecutor.execute`.
 
 Creating an `ActionPlan` for a registered operation would blur two boundaries:

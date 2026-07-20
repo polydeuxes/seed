@@ -25,12 +25,10 @@ Observed runtime routes:
 answer => answer ['input.user_message', 'model.decision.proposed', 'response.answer']
 ask_question => question ['input.user_message', 'model.decision.proposed', 'response.question']
 request_tool => tool_need ['input.user_message', 'model.decision.proposed', 'tool_need.created']
-call_tool => invalid_decision ['input.user_message', 'model.decision.proposed', 'model.decision.intent_rejected']
 refuse => refusal ['input.user_message', 'model.decision.proposed', 'response.refusal']
 invalid_call_tool => invalid_decision {'errors': ['$.message must be a string']} ['input.user_message', 'model.decision.proposed', 'model.decision.invalid']
 ```
 
-The `call_tool` observation used input text that did not satisfy the deterministic echo intent guard. Existing tests cover the successful echo path when the user input is exactly `echo <message>`.
 
 ```text
 pytest -q tests/test_runtime_loop.py tests/test_execution.py tests/test_policy.py tests/test_execution_proposals.py
@@ -56,7 +54,6 @@ Directly supporting files inspected:
 
 - `seed_runtime/models.py`
 - `seed_runtime/decisions.py`
-- `seed_runtime/tool_intent.py`
 - `tests/test_runtime_loop.py`
 - `tests/test_execution.py`
 - `tests/test_policy.py`
@@ -83,7 +80,6 @@ The strongest implementation-backed conclusion is that `Decision` means "what ha
 
 ### Runtime responsibility
 
-`Runtime` owns the session loop boundary around a user message. It records the input, projects state, composes context, asks the decision model for a `Decision`, records the proposed decision, validates it, applies deterministic tool-intent checks, retries parse/validation/intent failures within its configured retry budget, and routes valid decisions to the owning service.
 
 Runtime is separate from the other responsibilities:
 
@@ -108,7 +104,6 @@ It does not decide inquiry strategy. It receives a tool name and arguments that 
 
 ### Registry responsibility
 
-`ToolRegistry` is the registered operation catalog. It loads manifests, registers toolkits, resolves tools by name, lists model-visible tools, lists tools by capability, and raises for unknown tools. It owns discoverability and registered operation identity, not reasoning or execution.
 
 ### Reasoning boundary
 
@@ -158,7 +153,6 @@ Existing components own narrower transitions:
 - External/model reasoning to structured proposal: `DecisionProducer.decide(decision_input)` boundary.
 - Valid tool call to execution/preflight: `ToolExecutor` plus `ToolExecutionPolicyService` and `PolicyGate`.
 
-Those are not the same as a responsibility that determines what additional evidence bounded inquiry requires before execution. The repository currently relies on model/CLI selection, runtime validation/routing, tool intent guardrails, policy checks, and registered execution.
 
 Strongest contradictory evidence: `Runtime` has an architecture summary that says it routes validated model decisions to owner services; it includes `request_tool` and `call_tool` paths, and its retry prompts can ask the model for corrected decisions. That is a real transition from a model decision to execution. However, it is a routing and validation transition, not an implementation-backed responsibility for inquiry strategy selection.
 
@@ -180,7 +174,6 @@ Strongest contradictory evidence: `Runtime` has an architecture summary that say
 
 ## Strongest contradictory evidence
 
-The strongest contradictory evidence is that Runtime already contains a deterministic bridge from model decision to owner service. It records `model.decision.proposed`, validates the decision, applies a deterministic tool-intent guard, retries invalid decisions, and then dispatches to tool need creation or tool execution. This is a real `decision -> execution` bridge for `call_tool`.
 
 However, the bridge begins after a model has already emitted a concrete `Decision`. It does not determine what evidence bounded inquiry requires, and it does not choose whether observation or execution is the right next inquiry step except by routing the already-selected `decision.kind`.
 

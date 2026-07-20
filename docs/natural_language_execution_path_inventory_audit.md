@@ -62,7 +62,6 @@ The repository currently contains:
 - deterministic fixture-level input-act classification;
 - a context packet containing visible tools and open tool needs;
 - structured decision validation and runtime routing;
-- a narrow deterministic tool-intent guard for `echo`;
 - tool-need creation and capability/provider recommendation surfaces;
 - registered tool inventory and capability mapping surfaces;
 - tool-call validation, policy evaluation, pending-action handling, and execution.
@@ -163,7 +162,6 @@ This is an execution-decision routing surface after a structured decision exists
 
 ### Tool Intent Guard
 
-`ToolIntentGuard` rejects schema-valid tool calls that violate deterministic intent rules. Currently its concrete semantic guard is narrow: `echo` calls must correspond to input beginning with `echo ` and the message must match the remaining input. Other visible tool calls pass this guard after visibility checking.
 
 ### Tool Validation And Policy Evaluation
 
@@ -183,7 +181,6 @@ Ambiguity exists in implementation primarily through coarse outcomes rather than
 
 - `ask_question` is a valid decision kind and Runtime returns a question response.
 - The intent classifier includes a `clarify` intent label that builds an `ask_question` decision.
-- Invalid model decisions, parse failures, and tool-intent rejections can trigger retry contexts that ask for corrected decisions.
 - Input inspection preserves a deterministic input-act label but not alternate labels.
 
 The implementation does not currently preserve multiple candidate meanings for ambiguous phrases such as `Show me summary`. No general candidate set, ambiguity score, bounded assumption record, or operator clarification record was found for natural-language capability selection.
@@ -219,7 +216,6 @@ The following boundaries from the conceptual chain are not explicit general-purp
 
 ## Boundary Collapses Observed
 
-The implementation does not simply hard-code `Language -> Nearest Capability -> Execution` across the repository. It has validation, visibility, intent guardrails, policy gates, and executor ownership.
 
 However, partial collapses or compression points exist:
 

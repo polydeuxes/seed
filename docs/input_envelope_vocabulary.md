@@ -512,7 +512,6 @@ It should not:
 - replace `InputAct`;
 - execute tools;
 - authorize side effects;
-- bypass `ToolIntentGuard`;
 - bypass policy, approval, pending-action, or registered-tool boundaries;
 - make `request_tool` executable;
 - store secrets.

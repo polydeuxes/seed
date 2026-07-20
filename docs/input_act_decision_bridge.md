@@ -19,7 +19,6 @@ existing decision, validation, guard, policy, and routing path remains authorita
 
 An input act describes what kind of user utterance Seed received. It should help the classifier, prompt, future inspection records, and tests preserve the user's act before routing. It must not execute tools, authorize side effects, bypass policy, or replace decision validation.
 
-A decision kind describes what Seed will do next after context composition, model/classifier behavior, deterministic fallback, validation, tool-intent guard checks, capability boundaries, and policy constraints.
 
 Therefore:
 
@@ -145,7 +144,6 @@ raw user text
   -> context composition
   -> decision model / compact classifier / fallback
   -> validation
-  -> ToolIntentGuard for call_tool
   -> Runtime._route
 ```
 
@@ -163,7 +161,6 @@ If added, that helper should be advisory only. It should not:
 - execute tools;
 - authorize side effects;
 - bypass validation;
-- bypass `ToolIntentGuard`;
 - bypass policy or approval gates;
 - rewrite `Runtime`;
 - make `request_tool` executable.
@@ -185,4 +182,3 @@ This bridge rejects:
 
 ## Documentation-Only Status
 
-This document characterizes a bridge only. It does not modify runtime behavior, classifier behavior, decision validation, tool-intent guarding, policy handling, event storage, projection behavior, execution behavior, package exports, or local CLI behavior.

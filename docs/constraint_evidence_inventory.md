@@ -48,12 +48,10 @@ Additional directly relevant architecture, preservation, boundary, design, code,
 - `docs/codex_prompt_protocol.md`
 - `seed_runtime/runtime.py`
 - `seed_runtime/decisions.py`
-- `seed_runtime/tool_intent.py`
 - `seed_runtime/tool_validation.py`
 - `seed_runtime/tool_execution_policy.py`
 - `seed_runtime/execution.py`
 - `tests/test_decisions.py`
-- `tests/test_tool_intent.py`
 - `tests/test_tool_execution_policy.py`
 - `tests/test_execution.py`
 - `tests/test_pending_actions.py`
@@ -108,7 +106,6 @@ The following evidence categories are supported by repository findings.
 | Non-goals | Reconciliation, status, protocol, and architecture documents | Explicitly reject production code, Runtime integration, ToolExecutor integration, repository scanning expansion, LLM extraction/reasoning, projection mutation, and new engines. |
 | Rejected concepts | `docs/self_model_and_alignment_architecture_reconciliation.md`, `docs/architectural_findings_preservation.md`, status/frontier docs, claim-support design docs | Narrow future owner candidates and preserve negative boundaries such as no `RuntimeLoop` revival as canonical runtime, no TruthEngine, no ResponseEngine, no runtime-owned self model, and no automatic claim-to-claim reasoning. |
 | Design constraints | `docs/function_blocks.md`, `docs/architecture.md`, `docs/architecture_principles.md`, capability extension and observation docs | Encode intended flow and component roles, such as only `call_tool` entering `ToolExecutor`, EventLedger as source of truth, ProjectionStore as cache, and state views as read-only. |
-| Guards | `ToolIntentGuard`, runtime retry/rejection paths, policy gate paths | Preserve intent and visibility boundaries around model-proposed tool calls. |
 | Boundary tests | Tests named around `does_not`, `rejects`, `only`, `read_only`, `policy`, `request_tool`, `call_tool`, and capability verification invariants | Preserve negative guarantees and scoped non-execution / non-mutation behavior. |
 | Architecture documents | `docs/architecture.md`, `docs/function_blocks.md`, architecture principles and lifecycle docs | State canonical owners, boundary-oriented flows, read-only projection layers, and deprecated RuntimeLoop status. |
 | Reconciliation documents | Boundary, ownership, behavior, relationship, self-model, documentation-boundary docs | Record evaluated distinctions and non-goals; useful documentation evidence but not enforcement by themselves. |
@@ -247,12 +244,9 @@ Existing mechanisms that represent policy or constraint evidence include:
 
 This is constraint evidence for decision-shape boundaries. It is not itself ownership proof for Runtime, but Runtime's use of it provides boundary-supporting behavior evidence for decision validation before routing.
 
-### Tool intent guard
 
-`ToolIntentGuard` rejects schema-valid tool calls that violate deterministic intent and visibility rules:
 
 - non-`call_tool` decisions pass through;
-- `call_tool` decisions must target a tool visible to the model;
 - the `echo` tool is constrained to current input beginning with `echo `;
 - the `echo` argument must equal the text after `echo `.
 
@@ -271,7 +265,6 @@ This is policy evidence and execution-boundary evidence. It also separates polic
 
 ### Runtime routing and rejection paths
 
-`Runtime` validates model decisions before routing them. For valid decisions it applies `ToolIntentGuard` before `_route`. It records invalid or intent-rejected model decisions and returns invalid decision responses when retries are exhausted. Runtime architecture metadata also states `call_tool only` as the ToolExecutor route.
 
 This is behavior-plus-guard evidence for the decision-validation and call-tool boundary. It is not evidence that Runtime owns execution.
 
@@ -290,7 +283,6 @@ Representative test evidence categories:
 | Test evidence category | Representative tests / files | What it preserves |
 | --- | --- | --- |
 | Decision-shape validation | `tests/test_decisions.py` | `answer`, `ask_question`, `request_tool`, and `call_tool` decisions require the expected fields and registered/schema-valid tool calls. |
-| Tool-intent rejection | `tests/test_tool_intent.py` | Tool calls can be rejected for invisible tools or intent/argument mismatch even when structurally valid. |
 | Tool execution policy | `tests/test_tool_execution_policy.py` | Unknown tools, unregistered tools, invalid input, and non-allow policy outcomes are represented before execution; the policy service appends no events. |
 | Execution gating | `tests/test_execution.py`, `tests/test_pending_actions.py` | Invalid input fails before execution, policy blocks prevent execution, approval-required tools do not execute immediately, and approved pending actions are resumed through controlled paths. |
 | Runtime/request-tool separation | `tests/test_capability_catalog.py`, API/runtime tests by name | `request_tool` paths create or resolve capability gaps rather than executing registered tools. |
@@ -495,7 +487,6 @@ They revealed existing evidence in these kinds:
 - negative findings;
 - architecture diagrams and owner statements;
 - validation rules;
-- intent guards;
 - policy-evaluation paths;
 - boundary-preserving tests;
 - read-only projection/query guarantees;

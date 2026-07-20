@@ -31,7 +31,6 @@ Additional directly relevant implementation and docs inspected for blast radius:
 - `tests/test_capability_catalog.py`
 - `tests/test_evidence_facts.py`
 - `tests/test_fact_extraction.py`
-- `tests/test_tool_intent.py`
 - `tests/test_tool_validation.py`
 - `docs/audit/context_knowledge_consolidation.md`
 - `docs/runtime_runtime_loop_responsibility_audit.md`
@@ -147,7 +146,6 @@ At minimum, test imports and helper classes would be touched in:
 - `tests/test_capability_catalog.py`
 - `tests/test_evidence_facts.py`
 - `tests/test_fact_extraction.py`
-- `tests/test_tool_intent.py`
 - `tests/test_tool_validation.py`
 
 The required review files `tests/test_execution.py`, `tests/test_policy.py`, and `tests/test_execution_proposals.py` are not primary rename blast-radius files for `DecisionModel`/`ContextComposer`; they are useful boundary checks because execution and policy should remain unaffected.
@@ -189,7 +187,6 @@ Answer to Question 8: compatibility aliases should remain temporarily for all pu
 A rename implementation slice should run at least:
 
 - `pytest -q tests/test_runtime_loop.py tests/test_context.py tests/test_context_budget.py tests/test_context_selection.py`
-- `pytest -q tests/test_architecture_invariants.py tests/test_tool_recommendations.py tests/test_state_patches.py tests/test_capability_catalog.py tests/test_evidence_facts.py tests/test_fact_extraction.py tests/test_tool_intent.py tests/test_tool_validation.py`
 - `pytest -q tests/test_execution.py tests/test_policy.py tests/test_execution_proposals.py` as non-regression boundary checks proving execution/policy/proposal behavior was not changed.
 
 If any diagnostic or audit surface is modified during a future implementation, also run:
