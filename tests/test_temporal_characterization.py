@@ -449,3 +449,16 @@ def test_temporal_characterization_projection_store_does_not_change_temporal_sem
     assert cached_state_again.get_fact_support("svc", "up").supporting_fact_ids == [
         latest_by_observation.id
     ]
+
+
+def test_book_temporal_view_disclosure_amendment_preserves_current_view_limits():
+    amendment = (
+        __import__("pathlib")
+        .Path("book_of_seed/temporal_standing_and_view_disclosure_amendment_001.md")
+        .read_text()
+    )
+
+    assert "Latest support or latest measurement sample is not sufficient" in amendment
+    assert "not a complete current-standing View by itself" in amendment
+    assert "observation navigation index" in amendment
+    assert "A View must disclose temporal distinctions constitutive" in amendment

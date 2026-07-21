@@ -41,3 +41,11 @@ Append-only records, established facts, projected material, current lawful condi
 - [Recording and knowledge extraction](../05-evidence-and-knowledge/recording-and-knowledge-extraction.md)
 - [Projection and current state](projection-and-current-state.md)
 - [Execution and recording](../07-operational-realization/execution-and-recording.md)
+
+## Temporal preservation, replay, and projection amendment 001
+
+Event timestamp and ledger order are distinct. Ledger order is the append sequence a projector replays; event timestamp is event-carried metadata that may be supplied out of sequence. Chronology is not causation: causal or correlation fields can preserve local linkage evidence, but earlier time or earlier append position does not by itself prove production, reliance, or response.
+
+Projection may select, aggregate, rank, suppress, or characterize preserved material under its projection method. Projection does not create upstream source time, Fact-establishment time, recording time, verification time, or consumer uptake time. A cached projection snapshot's `created_at` is projection-local snapshot time, `last_event_id` is an as-of boundary by ledger append sequence, and `last_event_created_at` is only a timestamp clue from the last input event. Direct projection without a cached snapshot may not expose an independent projection creation time.
+
+Current selection is projection-local unless and until a responsible consumer uses it under a bounded purpose. Non-expired material is eligible under the local expiry rule; it is not automatically sufficient. Latest measurement sample selection chooses the greatest observed sample under predicate semantics; it is not recurrence, freshness sufficiency, or durable present applicability. Repeated durable support can strengthen or preserve support without creating indefinite currentness unless a predicate- and consumer-warranted rule says so.
