@@ -89,96 +89,114 @@ The following grammar survives without relying on the abandoned Seed-owned tool 
 
 ## Candidate directional topology
 
-These are candidate rivers, not a single universal pipeline.
+These are candidate branches, crossings, and lawful stops, not one universal constitutional sequence. Edge labels distinguish supported roads, purpose-relative lenses/projections, consumer-local standing boundaries, candidate crossings, current-producer gaps, external realization, and Unknowns.
 
-### River A: external material to admitted standing
+### Branch A: external or operator material to Observation / testimony
 
 ```text
-external material
-    ↓ external grammar translation [supported road when bounded translation exists]
-attributed testimony / Observation
-    ↓ evidence applicability [supported road when evidence owner preserves source and limits]
-evidence / support
-    ↓ fact establishment or bounded standing [supported road only with support/admission warrant]
-established fact or bounded standing
+external or operator material
+    ↓ ingress translation [supported constitutional road when bounded translation and attribution exist]
+Observation / testimony
 ```
 
-Forbidden inference: a successful external call, provider label, or imported representation is not automatically an admitted Observation, fact, or Seed constitutional grammar.
+Forbidden inference: external wording, provider labels, shell syntax, imported representation, or operator expression becomes Seed law, fact, current standing, capability standing, or implementation ownership by identity.
 
-### River B: records to View
+### Branch B: Observation-facing View without fact promotion
+
+```text
+Observation / testimony
+    ↓ projection / ObservationView formation [purpose-relative lens/projection]
+Observation-facing View
+    ↓ optional consumer use [consumer-local standing boundary only if separately warranted]
+testimony remains testimony
+```
+
+Current repository evidence supports this branch: `ObservationView` is a separate read-only projection over projected Observations, and it is not `FactView`. This path does not require evidence conversion, fact establishment, or current-standing establishment before the Observation can be exposed as testimony. View formation is not promotion, visibility is not stronger standing, and the same source material may support several bounded views.
+
+### Branch C: Observation to Evidence, optional Fact or standing, and bounded Views
+
+```text
+Observation / testimony
+    ↓ evidence preservation [supported constitutional road where source and limits are preserved]
+Evidence / support material
+    ├→ evidence-facing View [purpose-relative lens/projection; standing remains evidence/support]
+    │
+    └→ bounded establishment [supported road only with support/admission warrant]
+        Fact or current standing
+            ↓ fact- or standing-facing View [purpose-relative lens/projection]
+```
+
+Observation ingestion currently preserves distinct Observation and Evidence records and only an optional Fact record. Fact promotion may be suppressed while Observation and Evidence remain available. A View over Evidence may expose support material without establishing fact. A View over Facts may expose fact standing without strengthening it. A current-standing View may require a separate responsible consumer boundary.
+
+### Branch D: records, facts, and repository evidence to Views
 
 ```text
 constitutional records / established facts / repository evidence
-    ↓ projection or view formation [supported road for projected material; lens only until consumer uptake]
+    ↓ projection or view formation [purpose-relative lens/projection]
 projected material / View
     ↓ responsible consumer standing boundary [supported road only when consumer preserves limits]
 bounded current standing or presentation-ready result
 ```
 
-Forbidden inference: View output is not current standing by identity and is not a constitutional source of law.
+Forbidden inference: View output is not current standing by identity and is not a constitutional source of law. The purpose-relative rule is: constitutional material may be exposed through a bounded View preserving that material's existing standing.
 
-### River C: standing to egress representation
+### Branch E: standing or result to egress representation
 
 ```text
 bounded result or current standing
     ↓ egress representation / communication [supported handoff]
 operator-facing or external representation
-    ↓ external realization / receipt / action [external realization; Seed road stops]
+    ↓ external realization / receipt / action [external realization or Unknown owner depending on evidenced boundary]
 external material or response
 ```
 
-Forbidden inference: rendered/delivered material is not proof of receipt, understanding, lawful reliance, external action, or stronger truth.
+Forbidden inference: rendered or delivered material is not proof of receipt, understanding, lawful reliance, external action, or stronger truth.
 
-### River D: bounded requirement to external request
+### Branch F: bounded requirement or exposed insufficiency to candidate external request
 
 ```text
-bounded requirement / need / question
-    ↓ scope, authority, precondition, and representation checks [supported road where evidenced]
-bounded egress request expression
-    ↓ external realization [external boundary]
-external response or non-response
+View / bounded requirement / exposed insufficiency
+    ↓ candidate request-formation boundary [constitutionally supported candidate; current producer Unknown]
+bounded external expression
+    ↓ current Seed-local producer and occurrence road: Unknown
+local or external realization boundaries
+    ↓ ownership varies by evidenced boundary
+returned material
+    ↓ new ingress translation [supported road only when attributed and bounded]
+new Observation / testimony candidate
 ```
 
-Forbidden inference: a bounded request is not occurrence, execution, response, or capability proof.
+The surviving Book permits or anticipates a bounded egress-expression/request boundary. Current implementation constructibility is distinct from current witnessed producer occurrence. No current responsible Seed-local producer was recovered that consumes a bounded requirement or View, forms a bounded external request, and establishes occurrence of that egress act. The surviving Runtime records operator input and refuses internal decision routing; it does not establish the missing egress-request road.
 
-### River E: returned material to new ingress
+### Branch G: returned material to new ingress
 
 ```text
 external response / returned material
-    ↓ ingress translation [supported road when attributed and bounded]
+    ↓ ingress translation [supported constitutional road when attributed and bounded]
 returned testimony / Observation candidate
-    ↓ evidence and admission boundaries [supported road only with support]
+    ↓ evidence and optional admission boundaries [supported road only with support]
 new evidence, fact, standing, or Unknown
 ```
 
-Forbidden inference: returned material continues the old Seed road automatically. It may begin a new ingress-side road.
-
-### River F: View to missing testimony request
-
-```text
-View / projected gap / bounded need
-    ↓ requirement formulation [supported road where consumer establishes need]
-bounded egress expression or request
-    ↓ external realization [external boundary]
-returned testimony
-    ↓ new ingress [new road]
-```
-
-Forbidden inference: a View internally produces an Observation. At most it can support a bounded request for missing testimony unless a separate internal observation producer is evidenced.
+Forbidden inference: returned material continues an old Seed road automatically. It may begin a new ingress-side road.
 
 ## Supported and unsupported crossings
 
 | Upstream subject | Upstream standing | Responsible boundary | Required evidence | Required warrant/authority | Preserved provenance and Unknowns | Downstream subject | Downstream standing | Forbidden inference | Edge type |
 |---|---|---|---|---|---|---|---|---|---|
-| External expression/material | External grammar, source-attributed at most | Ingress translation | source identity or Unknown, representation, context, confidence limits | translation warrant for bounded use | source role, provenance/Unknown, source grammar, scope | Attributed testimony/Observation candidate | testimony/evidence candidate | external wording becomes Seed law | supported road when translation exists |
+| External expression/material | External grammar, source-attributed at most | Ingress translation | source identity or Unknown, representation, context, confidence limits | translation warrant for bounded use | source role, provenance/Unknown, source grammar, scope | Attributed testimony/Observation candidate | testimony/evidence candidate | external wording becomes Seed law | supported constitutional road when translation exists |
 | Operator expression | External/operator testimony | Interpretation and scope binding | exact expression, channel, authority evidence, interpretation evidence | operator authority after binding | ingress lineage, uncertainty, correction possibility | bounded goal/question/authority scope | bounded standing if established | operator request grants unbounded authority | supported road where established |
-| Observation/testimony | Preserved claim | Evidence conversion/applicability | observed_at, source_type, subject, predicate, value, confidence, metadata | evidence owner warrant | source, observation id, confidence, dimensions, expiry | Evidence | support candidate | observation is fact by identity | supported road in implementation, constitutional support general |
+| Observation/testimony | Preserved claim | Observation-facing projection | observation record in projected State, declared projection method | projection/view warrant, not fact warrant | observation id, source type, observed_at, confidence, metadata, dimensions, expiry | Observation-facing View | testimony exposed as testimony | ObservationView is FactView; view formation promotes fact | purpose-relative lens/projection |
+| Observation/testimony | Preserved claim | Evidence conversion/applicability | observed_at, source_type, subject, predicate, value, confidence, metadata | evidence owner warrant | source, observation id, confidence, dimensions, expiry | Evidence | support candidate | observation is fact by identity | supported road in implementation; constitutional support general |
+| Evidence | Support candidate | Evidence-facing projection | evidence record, scope, confidence, source limits | projection/view warrant, not fact warrant | evidence ids, source limits, Unknowns | Evidence-facing View | support material exposed as support | evidence view establishes truth | purpose-relative lens/projection |
 | Evidence | Support candidate | Fact establishment/admission | support basis, provenance, confidence, non-conflict or conflict handling | fact/admission warrant | evidence ids, limits, Unknowns | Fact or bounded standing | supported claim | evidence proves objective truth | supported road only with establishment |
-| Recorded event | Assertion was recorded | Projection/replay | event scope, replay rule, freshness | projection rule | event lineage, record limits | Projected material/View | projected material | event payload is current truth | supported projection road/lens |
-| Projected material/View | Recoverable view, not standing by identity | Consumer standing boundary | projection inputs, completeness, Unknowns, consumer purpose | bounded reliance/admission warrant | freshness, confidence, negative authority | Current lawful condition/standing | bounded standing | projection output is source law | supported road only at consumer uptake |
-| Bounded standing/result | Established or warranted within limits | Egress representation | identity, evidence/support, authority scope, conflicts, Unknowns | communication/handoff authority | provenance, limitations, lawful stop | External/operator-facing representation | presentation/communication standing | summary strengthens truth or proves receipt | handoff only |
-| Bounded requirement | Need/question/insufficiency | Egress request formation | scope, authority, preconditions, external grammar mapping | request authority, not execution authority | requirement identity, limits, Unknowns | External request expression | request standing | request proves occurrence/result | handoff to external boundary |
-| Egress request | Seed-formed external expression | External system/operator/service | Not Seed-owned; external evidence required | outside Seed unless separately authorized | Unknown receipt/realization until returned evidence | External realization/result/non-response | external material only when returned/evidenced | Seed owns execution | external realization |
+| Fact or bounded standing | Established or warranted within limits | Fact- or standing-facing projection | fact/standing identity, support, freshness, conflicts | projection/view warrant preserving standing | support ids, confidence, Unknowns | Fact- or standing-facing View | represented fact/standing, not strengthened | visibility strengthens standing | purpose-relative lens/projection; consumer boundary if relied upon |
+| Recorded event | Assertion was recorded | Projection/replay | event scope, replay rule, freshness | projection rule | event lineage, record limits | Projected material/View | projected material | event payload is current truth | supported projection/lens |
+| Projected material/View | Recoverable view, not standing by identity | Consumer standing boundary | projection inputs, completeness, Unknowns, consumer purpose | bounded reliance/admission warrant | freshness, confidence, negative authority | Current lawful condition/standing | bounded standing | projection output is source law | consumer-local standing boundary |
+| Bounded standing/result | Established or warranted within limits | Egress representation | identity, evidence/support, authority scope, conflicts, Unknowns | communication/handoff authority | provenance, limitations, lawful stop | External/operator-facing representation | presentation/communication standing | summary strengthens truth or proves receipt | supported handoff |
+| Bounded requirement / View-exposed insufficiency | Need/question/insufficiency | Egress request formation | scope, authority, preconditions, external grammar mapping | request authority, not execution authority | requirement identity, limits, Unknowns | Bounded external expression | request-expression candidate | constitutional possibility proves current producer occurrence | candidate crossing; current producer missing |
+| Bounded external expression | Seed-formed expression if producer later recovered; otherwise candidate only | Occurrence boundary for Seed-local request act | responsible producer, consumed input, emitted expression, event/record of occurrence | producer authority and occurrence warrant | request identity, Unknown receipt/realization | Established egress-request occurrence | Unknown currently | constructibility proves occurrence | current producer missing / occurrence road not established |
+| External expression using shell grammar | external grammar or possible Seed-emitted realization language | Local realization-language emission / process realization / target response | evidence for each owner and boundary | evidence-dependent; Unknown until recovered | grammar, process owner, target, response limits | local process result, remote effect, or returned material | varies/Unknown | shell grammar means shell capability or external ownership | Unknown; ownership varies by evidenced boundary |
 | External response | External material | Returned-material ingress | response content, source/provenance, time, channel, integrity/Unknown | translation/admission warrant | response provenance, Unknowns, confidence | Returned testimony/Observation | new testimony candidate | response automatically updates state | supported road only as new ingress |
 | View | projected material | Internal Observation production | No canonical support recovered for direct production | Unknown | Unknown | Observation | Unknown | View produces Observation internally | Unknown / unsupported |
 
@@ -186,15 +204,20 @@ Forbidden inference: a View internally produces an Observation. At most it can s
 
 | Before | Boundary | Why movement may occur | After | Preserved limits | Forbidden inference |
 |---|---|---|---|---|---|
-| External material | Source grammar translation | Book I allows attributed external grammar to become bounded translated material without assimilation. | Attributed testimony or examination material | source role, provenance/Unknown, source grammar, uncertainty, authority limit | external vocabulary becomes constitutional grammar |
+| External material | Source grammar translation | Book I allows attributed external grammar to become bounded translated material without assimilation. | Attributed testimony or examination material | source role, provenance/Unknown, source grammar, uncertainty, authority limit | external vocabulary becomes constitutional grammar or ownership assignment |
 | Operator expression | Ingress interpretation and authority binding | Book VIII allows operator expressions/approvals to contribute authority only after interpretation and scope binding. | Bounded goal, question, or authority scope | exact expression, lineage, permitted scope, Unknowns | inferred intent expands authority |
+| Observation | Observation-facing projection/View formation | Current read-only projection can expose projected Observations as `ObservationView` without requiring Fact standing. | Observation-facing View | observation id, source type, time, confidence, metadata, dimensions, expiry | ObservationView is FactView; visibility promotes standing |
 | Observation | Evidence preservation | Book V distinction and current implementation support observation-to-evidence with provenance. | Evidence | observation id, source type, time, confidence, metadata | Observation becomes established fact automatically |
+| Evidence | Evidence-facing projection/View formation | A lens may expose support material while preserving evidence standing. | Evidence-facing View | evidence id, source, confidence, support limits, Unknowns | evidence exposure establishes fact |
 | Evidence | Fact/standing establishment | Evidence can support facts only through separate establishment/admission. | Fact or current standing | support basis, confidence, conflicts, Unknowns | support is objective truth |
-| Events/facts | Projection/View formation | Book VI allows replay/projection under declared rules. | Projected material/View | replay scope, freshness, input completeness, Unknowns | projected material is standing by identity |
+| Fact or bounded standing | Fact- or standing-facing projection/View formation | Book I/VI allow bounded projection over existing standing. | Fact- or standing-facing View | fact/standing identity, support, freshness, conflicts, Unknowns | view strengthens fact or standing |
+| Events/facts/observations | Projection/View formation | Book VI allows replay/projection under declared rules. | Projected material/View | replay scope, freshness, input completeness, Unknowns | projected material is standing by identity |
 | View/projected material | Consumer uptake | Book I/VI/VIII require bounded consumer use with preserved limits. | Consumer-local standing | consumer purpose, evidence, negative authority | consumer standing proves producer occurrence beyond representation |
 | Bounded result | Egress representation | Book VIII permits communication/handoff preserving standing and limits. | External/operator-facing representation | identity, support, conflicts, Unknowns, stop conditions | egress representation is stronger truth or action permission |
-| Egress request | External realization | Seed can form a bounded expression/request, but realization is external unless another owner is recovered. | External response, non-response, or Unknown | request identity and Unknown receipt/realization | Seed constitutionally owns execution |
-| External response | Returned ingress translation | Returned material may be attributed and translated as new testimony. | New Observation/testimony candidate | source, channel, response time, integrity Unknowns | returned material mutates cluster truth automatically |
+| Bounded requirement / exposed insufficiency | Candidate egress request formation | Book VIII permits bounded requests, but current responsible producer and occurrence road were not recovered. | Bounded external expression candidate | requirement identity, authority scope, preconditions, Unknowns | constitutional possibility or implementation constructibility proves current occurrence |
+| Bounded external expression | Local realization-language emission | Seed-local competence to form or emit shell/programming/HTTP/serialization grammar is candidate and evidence-dependent. | Emitted local realization-language expression if evidenced | expression identity, owner, process boundary Unknowns | external grammar determines ownership |
+| Local realization-language expression | Process realization | Ownership of shell-process realization and similar local process boundaries remains Unknown unless separately evidenced. | Process output, failure, or Unknown | process owner, command/process limits, target limits | shell grammar competence is shell process ownership |
+| Process output or external target response | Returned ingress translation | Returned material may be attributed and translated as new testimony. | New Observation/testimony candidate | source, channel, response time, integrity Unknowns | returned material mutates cluster truth automatically |
 
 ## Book district assessment
 
@@ -264,12 +287,12 @@ Forbidden inference: a View internally produces an Observation. At most it can s
 
 - Does Seed constitutionally own operational realization? **Unknown / not established after excision.** The surviving Book supports bounded realization/fidelity distinctions, but not a general Seed-owned execution road.
 - Does Seed own only formation of a bounded egress expression or request? **Supported candidate.** Book VIII supports communication/handoff and egress representation. Book VII does not currently express this cleanly.
-- Does external realization occur beyond Seed's constitutional boundary? **Supported candidate for most external mechanisms.** Current Prometheus witness makes HTTP realization external to Seed while Seed forms request and translates response.
+- Does external realization occur beyond Seed's constitutional boundary? **Supported candidate for remote services, remote conditions, and external effects.** Current Prometheus source is an implementation witness for allowlisted HTTP request construction, provider HTTP behavior, returned JSON, and ingress translation, but this report does not recover a general current egress-request producer road from it.
 - Does execution remain a Seed constitutional act? **Not established.** Current Book VII execution claim depended on removed executor grammar unless a new non-tool execution owner is recovered.
 - Does recording an external response belong to execution, ingress, testimony preservation, or another responsibility? **Unknown by universal rule; candidate placement is ingress/testimony/evidence/event recording depending on boundary.**
 - Is Book VII one district, several misplaced distinctions, or a tool-shaped container around valid grammar? **Structurally unresolved; likely a tool-shaped container around valid cross-cutting grammar plus a still-useful fidelity/capability district.**
 
-## Observation/View nesting assessment
+## Observation/View branching assessment
 
 The operator hypothesis was:
 
@@ -283,15 +306,42 @@ nested within:
 ingress → egress
 ```
 
-### What the Book supports
+### What the Book and repository support
 
 - Observation/testimony is ingress-side or source-attributed standing when produced from external/operator/returned material through an ingress or observation boundary.
-- Evidence and fact establishment are intermediate responsibilities between Observation and standing.
-- View/projection is an internal recoverable representation over records/facts/repository evidence, not standing by identity.
+- Current implementation projects Observations directly into `ObservationView` as a read-only Observation-facing View. That branch does not require prior Fact standing.
+- Evidence and fact establishment are possible intermediate responsibilities for fact- or standing-facing Views, not mandatory stages for every View.
+- Observation ingestion preserves an Observation event, an Evidence event, and only an optional Fact event. Fact promotion may be suppressed while Observation and Evidence remain available.
+- View/projection is an internal recoverable representation over bounded material, not standing by identity.
 - View can also be an egress-side artifact when represented or communicated to an operator/external consumer.
 - A bounded View may support a request for missing testimony, but it does not thereby produce an Observation internally.
 
-### Necessary intermediate responsibilities
+### Separate supported branches
+
+```text
+Observation / testimony
+    ↓ projection / ObservationView formation
+Observation-facing View
+    standing remains testimony
+```
+
+and:
+
+```text
+Observation / testimony
+    ↓ evidence preservation
+Evidence
+    ├→ evidence-facing View
+    │     standing remains evidence/support material
+    │
+    └→ optional support, admission, or fact/current-standing establishment
+        Fact / bounded standing
+            ↓ fact- or standing-facing View
+```
+
+### Necessary correction to the earlier linear reading
+
+The earlier linear reading was too strong:
 
 ```text
 Observation / testimony
@@ -301,21 +351,22 @@ Evidence
 Fact / bounded standing
     ↓ projection / view formation
 View
-    ↓ egress representation or consumer uptake
-External/operator-facing representation or current standing
 ```
+
+That sequence remains valid for some fact- or standing-facing Views. It is not the universal path from Observation to View. `ObservationView != FactView`; view formation is not promotion; visibility is not stronger standing; and the same source material may support several bounded views.
 
 ### Can a View produce an Observation internally?
 
-No direct constitutional road was recovered. A View may expose a gap, selected standing, or bounded requirement that leads to egress request formation. If returned material comes back, it must cross external realization and ingress translation before becoming new testimony/Observation candidate.
+No direct constitutional road was recovered. A View may expose a gap, selected standing, or bounded requirement that leads to candidate egress request formation. If returned material comes back, it must cross realization and ingress translation before becoming new testimony/Observation candidate unless a separate internal observation producer is evidenced.
 
 ### Does a View express current standing or form a bounded request?
 
 Both are possible depending on consumer and warrant:
 
-- A View may express projected material or support current standing after a responsible consumer boundary.
+- A View may expose testimony, evidence, fact standing, or current standing while preserving the material's existing standing.
 - A View may support formulation of a bounded request for missing testimony.
-- Neither use proves external realization, returned testimony, or fact standing.
+- A current-standing View may require a separate responsible consumer boundary.
+- Neither use proves external realization, returned testimony, fact standing, current producer occurrence, or ownership beyond the evidenced boundary.
 
 ## Prometheus observer realization assessment
 
@@ -357,9 +408,11 @@ Provisional hypothesis tested:
 - Capability may depend on subordinate capabilities, but this remains a candidate relation; current Book does not establish a universal decomposition law.
 - Several mechanisms may faithfully realize one capability if they preserve required boundaries, authority, evidence, Unknowns, mutation limits, and returned-material handling.
 - Mechanism presence does not establish capability.
-- Shell grammar competence establishes expression competence at most unless evidence also supports external realization and returned-material ingress.
-- Inside Seed: bounded requirement formation, egress expression/request formation, representation of limits, returned-material translation, evidence/standing decisions.
-- Outside Seed: external service/action, provider behavior, network/server execution, operator reliance/action, and external effects unless separately evidenced as Seed-owned.
+- Shell grammar competence establishes expression competence at most; it does not establish shell capability, shell-process ownership, remote target behavior, or external effect.
+- Seed-local competence to form or emit shell/programming/HTTP/serialization grammar is a candidate and evidence-dependent, not proved merely by Book I classifying realization language as external grammar.
+- Ownership of shell-process realization remains Unknown on current evidence; remote service behavior, remote condition, and external effect are outside Seed unless separately evidenced otherwise.
+- Inside Seed where evidenced: bounded requirement formation, candidate egress expression/request formation, representation of limits, returned-material translation, evidence/standing decisions. Current witnessed producer occurrence for egress-request formation was not recovered.
+- Outside Seed unless separately evidenced: external service/action, provider behavior, network/server execution, operator reliance/action, remote effects, and possibly process realization depending on the recovered owner.
 - Evidence is required at each boundary: request formation evidence before egress, external response/provenance evidence on return, translation evidence at ingress, support/admission evidence before fact/current standing.
 
 ### Implications for later `ToolNeed` investigation
@@ -374,16 +427,16 @@ Only the following are directly supported for later work:
 
 These findings survive changes among Python observer, shell expression, HTTP client, external service, provider adapter, or future recovered realization:
 
-- External grammar must be translated and attributed; it does not become constitutional grammar by use.
+- External grammar must be translated and attributed; it does not become constitutional grammar or ownership proof by use.
 - Observation/testimony is not fact.
 - Evidence support is not objective truth.
 - Recording is not knowledge establishment.
 - Projection/View is not standing by identity.
 - Egress representation is not stronger truth, proof of receipt, or proof of external reliance.
-- Bounded request is not occurrence or result.
+- Bounded request is not occurrence or result; a constitutionally supported request boundary is not a current witnessed producer occurrence.
 - Returned material must re-enter through ingress/translation/admission boundaries.
-- Mechanism presence, provider registration, or successful external call does not establish capability or admitted Observation automatically.
-- Lawful realization requires preserved authority, scope, evidence, Unknowns, recording boundary, and mutation boundary, not structural symmetry.
+- Mechanism presence, provider registration, shell presence, or successful external call does not establish capability, process ownership, or admitted Observation automatically.
+- Lawful realization requires preserved authority, scope, evidence, Unknowns, recording boundary, mutation boundary, and owner evidence at each realization boundary, not structural symmetry or grammar classification.
 
 ## Remaining Unknowns
 
@@ -422,56 +475,72 @@ Yes, materially but not totally. Book VII is structurally shaped by the abandone
 
 ### After separating contamination from independent grammar, what directional topology does the surviving Book actually support?
 
-The surviving Book supports local rivers with lawful stops:
+The surviving Book supports branching crossings with lawful stops, not a universal trunk:
 
 ```text
-external material
+external or operator material
     ↓ ingress translation
-attributed testimony / Observation
-    ↓ evidence applicability
-evidence/support
-    ↓ fact establishment or bounded standing
-fact / standing
-    ↓ projection
-View / projected material
-    ↓ consumer uptake or egress representation
-bounded current standing or external representation
+Observation / testimony
+    ├→ Observation-facing projection / View
+    │     standing remains testimony
+    │
+    └→ Evidence
+          ├→ evidence-facing View
+          │     standing remains evidence/support material
+          │
+          └→ bounded establishment
+                Fact or current standing
+                    → fact- or standing-facing View
 ```
 
 And separately:
 
 ```text
-bounded requirement or View-exposed gap
-    ↓ egress request formation
-external request expression
-    ↓ external realization beyond Seed
+View / bounded requirement / exposed insufficiency
+    ↓ candidate egress-request formation
+bounded external expression
+    ↓ current Seed-local producer and occurrence: Unknown
+local or external realization boundaries
+    ↓ ownership varies by evidenced boundary
 returned material
     ↓ new ingress translation
-new testimony / Observation candidate
+new Observation / testimony candidate
 ```
 
-It does not support a universal internal model-decision-to-tool-execution-to-fact road after excision.
+It does not support a universal internal model-decision-to-tool-execution-to-fact road after excision. It also does not support a universal Observation-to-Evidence-to-Fact-to-View sequence. Constitutional material may be exposed through a bounded View preserving that material's existing standing.
 
 ### Does the surviving Book support Observation → View as an inner span within ingress → egress, and with what intermediate boundaries and Unknowns?
 
-Yes as a candidate inner span, but only with intermediate boundaries:
+Yes as one supported branch when the View is Observation-facing:
+
+```text
+Observation/testimony
+    ↓ projection / ObservationView formation
+Observation-facing View
+```
+
+This branch preserves testimony standing and does not require Fact establishment. A different branch supports Evidence, optional Fact or current-standing establishment, and fact-, evidence-, or standing-facing Views:
 
 ```text
 Observation/testimony
     ↓ evidence preservation
 Evidence
-    ↓ support/admission/fact establishment
-Fact or bounded standing
-    ↓ projection/View formation
-View
-    ↓ consumer uptake or egress representation
+    ↓ optional support/admission/fact or standing establishment
+Fact, bounded standing, or preserved evidence
+    ↓ purpose-relative View
 ```
 
-Unknowns remain around whether every View is egress-side, whether some Views are only internal projections, and whether any direct View-to-Observation internal road exists. Current evidence does not support direct View-to-Observation production; returned Observation requires egress, external realization, returned material, and ingress translation unless a separate internal producer is recovered.
+Unknowns remain around whether every View is egress-side, whether some Views are only internal projections, the exact consumer boundary for current-standing Views, and whether any direct View-to-Observation internal road exists. Current evidence does not support direct View-to-Observation production; returned Observation requires egress, realization, returned material, and ingress translation unless a separate internal producer is recovered.
 
 ### Where does Seed's constitutional movement stop and external realization begin?
 
-On current evidence, Seed movement can reach bounded egress expression/request formation and representation of preserved limits. External realization begins where an external service, operator, provider, shell environment, HTTP server, or other non-Seed actor/system must perform, receive, understand, rely, respond, or create an external effect. Returned material may re-enter Seed only through ingress translation and testimony/evidence/admission boundaries.
+The corrected standing distinguishes three questions:
+
+- **Constitutional possibility:** the surviving Book permits or anticipates bounded egress-expression/request formation.
+- **Current implementation constructibility:** current code may contain ingredients that could be used to construct bounded expressions under evidence-dependent limits.
+- **Current witnessed producer occurrence:** no current responsible Seed-local producer was recovered that consumes a bounded requirement or View, forms a bounded external request, and establishes occurrence of that egress act.
+
+Therefore this report must not claim active current movement to bounded egress-request formation. The current Runtime records operator input and refuses internal decision routing; it does not establish the missing producer-to-consumer road. External realization begins only at a boundary whose owner is evidenced. Remote service behavior, remote condition, and external effect are outside Seed unless separately evidenced otherwise. Shell grammar competence, shell-process ownership, remote target behavior, and capability standing remain distinct and Unknown where not evidenced.
 
 ### What is the smallest Book repair now warranted by the recovered topology?
 
@@ -481,9 +550,23 @@ Repair Book VII and stale anchors first. Remove constitutional dependence on See
 
 Stop here. Do not begin temporal repair or temporal canonization.
 
+Required supported answers before the temporal investigation:
+
+> Does every Observation-to-View crossing require Evidence and Fact establishment?
+
+No.
+
+> Does the current repository establish a Seed-local producer for bounded egress-request formation?
+
+No; the constitutional boundary is a supported candidate, but the current producer and occurrence road remain Unknown.
+
+> Does the fact that shell is external grammar establish that all shell-mediated realization is externally owned?
+
+No; grammar classification and responsibility ownership are distinct.
+
 Next bounded question:
 
-> Which temporal standings and relations govern lawful movement across the recovered topology?
+> Which temporal standings and relations govern each distinct crossing in the corrected branching topology, and which temporal standing may or may not pass across each boundary?
 
 Candidate temporal dimensions to name but not yet resolve:
 
