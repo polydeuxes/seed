@@ -216,7 +216,8 @@ def test_format_fact_views_prints_dimensions_compactly_when_present():
     )
 
     assert output.splitlines() == [
-        "Current Facts",
+        "Projected Fact-Support Inventory Diagnostic",
+        "Contract: reports fact-shaped support artifacts visible in the projection; does not establish Fact standing or current applicability.",
         "",
         "* example_host mount_option rw (mount_point=/)",
         "* example_host interface_mtu 1500 (interface=eth0)",
@@ -237,7 +238,11 @@ def test_format_fact_views_omits_parentheses_for_dimensionless_facts():
                 confidence=1.0,
             )
         ]
-    ) == "Current Facts\n\n* example_host alias example_host.local"
+    ) == (
+        "Projected Fact-Support Inventory Diagnostic\n"
+        "Contract: reports fact-shaped support artifacts visible in the projection; does not establish Fact standing or current applicability.\n\n"
+        "* example_host alias example_host.local"
+    )
 
 
 def test_format_fact_views_keeps_same_value_facts_with_different_dimensions_distinguishable():
@@ -495,8 +500,8 @@ def test_cli_state_view_commands_do_not_append_events(tmp_path, capsys):
 
     output = capsys.readouterr().out
     assert "State Build" in output
-    assert "Current Facts" in output
-    assert "Current Observations" in output
+    assert "Projected Fact-Support Inventory Diagnostic" in output
+    assert "Projected Observation-Record Inventory Diagnostic" in output
     assert "Current Requirements" in output
     assert "Current Capabilities" in output
     assert "Current Issues" in output
@@ -533,3 +538,27 @@ def test_state_summary_starts_from_read_model_construction_inputs(monkeypatch):
 
     assert observed == [state]
     assert summary.last_event_id == state.last_event_id
+
+
+def test_recovered_current_fact_surfaces_expose_bounded_diagnostic_contracts():
+    seed_local = load_seed_local_module()
+    state = State(workspace_id="ws")
+    state.facts["fact_runtime"] = Fact(
+        id="fact_runtime",
+        subject_id="svc",
+        predicate="runtime",
+        value="docker",
+        observed_at=utc_now(),
+    )
+
+    inventory = seed_local.format_fact_views(build_fact_view(state))
+    selection = seed_local.format_current_facts(state, "svc", "runtime")
+    support, _hidden = seed_local.fact_support_query(state, "svc", "runtime")
+    support_output = seed_local.format_fact_supports(support, "svc", "runtime")
+
+    assert inventory.startswith("Projected Fact-Support Inventory Diagnostic\n")
+    assert "does not establish Fact standing or current applicability" in inventory
+    assert selection.startswith("Current-Selection Diagnostic\n")
+    assert "does not establish present-facing applicability" in selection
+    assert support_output.startswith("Projected-Support Diagnostic\n")
+    assert "does not establish Fact standing or current applicability" in support_output

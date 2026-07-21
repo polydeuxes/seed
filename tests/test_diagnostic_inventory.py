@@ -3107,3 +3107,15 @@ def test_candidate_external_grammar_is_registered_read_only_diagnostic():
     assert entry.record_scope == "none"
     assert entry.writes_event_ledger is False
     assert entry.mutates_cluster is False
+
+
+def test_recovered_current_fact_family_registered_as_diagnostics():
+    names = {entry.name for entry in diagnostic_inventory.DIAGNOSTIC_INVENTORY}
+
+    assert {
+        "projected_observation_record_inventory",
+        "projected_fact_support_inventory",
+        "current_selection_diagnostic",
+        "projected_support_diagnostic",
+        "selection_explanation_diagnostic",
+    } <= names
