@@ -23,7 +23,38 @@ The current repository compresses Observation intake, Evidence construction, cla
 ### 05.Testimony.A — Premise-relative testimony without fact standing
 A recorded claim, diagnostic finding, or evidence record may be consumed as attributed testimony or premise-relative input for a bounded examination. That consumption preserves attribution, source-relative limits, conflicts, and uncertainty; it does not establish the testified content as fact, prove the source producer occurred, or strengthen standing merely through repetition or copied lineage.
 
+
+### 05.Testimony.B — Operational measurement production
+An operational measurement is bounded testimony about the observed behavior of a particular operation instance under declared conditions and measurement method. The measurement-production responsibility produces that operation-instance testimony; recording is only one possible later preservation boundary. A measurement may identify operation, instance scope, phase, duration or resource behavior, clock or method, input scale, cache condition, environment or authority context, completion condition, and observation time as needed by its consumer, but no implementation must possess every dimension. Measuring a projection, cache lookup, query, rendering, observation collection, read-model construction, fact-index construction, diagnostic comparison, external realization, or other bounded operation does not make it execution by measurement alone. Diagnostic rendering may expose measurement testimony, but diagnostic rendering != measurement production and diagnostic rendering != measurement preservation. A measurement occurrence may exist transiently without ever becoming a recorded measurement; that does not make the measurement unreal and does not automatically make preservation mandatory. Measurement occurrence != recorded measurement, and recording measurement testimony != producing measurement testimony.
+
+### 05.Testimony.C — Runtime/resource observation production
+Operation-instance measurement and ambient runtime/resource observation are not identical. Operation-instance measurement attributes behavior to a scoped operation instance. Ordinary runtime/resource observation is testimony about a process or runtime condition at an observed time, such as process resident memory, thread count, process runtime duration, database size, or ledger size, without necessarily attributing the value to one bounded operation instance. Runtime/resource observation may be produced through ordinary observation grammar and may exist without a recording boundary. Runtime/resource observation is not an operational baseline by identity and may support an operational measurement or baseline only through an explicit attribution and establishment boundary; recording is not its producer merely because a recorded observation can survive process exit.
+
+### 05.Testimony.D — Operational baseline, comparison, deviation, and transition establishment
+An operational baseline is retained, scoped, evidence-supported understanding of ordinary operational behavior under declared conditions. Baseline establishment consumes sufficient measurement testimony, attributed runtime/resource observations where authorized, scope, context, temporal evidence, comparison method, conflicts, and uncertainty; baseline recording may preserve the resulting standing but does not establish ordinary behavior merely by retaining samples or a summary. An operational baseline is not a database table, raw timing history, retained measurement series, recorded summary, average, threshold, fixed artifact, runtime/resource observation, or predicted future duration by identity. It must preserve enough context to prevent comparison across constitutionally different subjects, such as cache hit and cache miss, full rebuild and incremental replay, fact-view inventory construction and subject/predicate selection, small and large inputs, or distinct environment and authority conditions. A comparison consumes an applicable baseline or other authorized comparison boundary and a measurement within a declared purpose and scope; comparison occurrence != recorded comparison. A tolerance or comparison boundary requires bounded authority: the baseline applied, the operation and conditions covered, the purpose of comparison, permitted variation, and the method by which that boundary was established. Difference from one prior sample is not material deviation. Material deviation recognition is an establishment decision that a difference is constitutionally material within the comparison authority; deviation recognition != deviation recording, and a recorded difference does not establish material deviation. A material deviation preserves enough measurement and comparison context to retain the challenge to prior understanding, including operation, applicable baseline or comparison standing, context, observed difference, comparison authority and purpose, and remaining uncertainty; it is not automatically an operation failure, lost capability, cause, or consequence. A baseline transition is evidence-supported establishment that ordinary operational behavior materially changed from one bounded regime to another; baseline transition establishment is distinct from transition recording, and baseline transition establishment != transition recording. One unusual sample is insufficient, and repeated samples are not sufficient merely by count without scope, conditions, comparison method, evidence sufficiency, conflict awareness, and temporal standing.
+
 ## Important distinctions
+- operational measurement != recording
+- operational measurement != execution
+- operational measurement != execution record
+- operational measurement != operation result
+- operation-instance measurement != ambient runtime observation
+- runtime/resource observation != operational baseline
+- operation measurement != operational baseline
+- baseline establishment != baseline recording
+- retained measurement series != operational baseline
+- recorded summary != established ordinary behavior
+- operational baseline != predicted future duration
+- comparison != recording
+- comparison occurrence != recorded comparison
+- difference from one sample != material deviation
+- material deviation recognition != deviation recording
+- deviation != operation failure
+- deviation != capability loss
+- one unusual sample != changed ordinary behavior
+- baseline transition establishment != transition recording
+- ExecutionStatus cadence != operation timing testimony
+- execution status != operational measurement
 - claim expression != claim interpretation
 - claim interpretation != normalization
 - normalization != support

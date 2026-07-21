@@ -9,7 +9,7 @@ def _read(relative: str) -> str:
 
 
 def test_operation_measurement_baseline_and_deviation_non_equivalences():
-    text = _read("book_of_seed/05-evidence-and-knowledge/recording-and-knowledge-extraction.md")
+    text = _read("book_of_seed/05-evidence-and-knowledge/testimony-and-established-fact.md")
 
     assert "operation measurement != operational baseline" in text
     assert "operational baseline != predicted future duration" in text
@@ -36,22 +36,23 @@ def test_operational_measurement_preservation_and_discard_rule():
 
 
 def test_operational_measurement_topology_non_equivalences_in_canonical_clauses():
+    testimony = _read("book_of_seed/05-evidence-and-knowledge/testimony-and-established-fact.md")
     recording = _read("book_of_seed/05-evidence-and-knowledge/recording-and-knowledge-extraction.md")
     execution = _read("book_of_seed/07-operational-realization/execution-and-recording.md")
 
     assert "bounded operation != execution" in execution
-    assert "operational measurement != execution" in recording
-    assert "operational measurement != execution record" in recording
-    assert "operational measurement != operation result" in recording
-    assert "operation-instance measurement != ambient runtime observation" in recording
-    assert "runtime/resource observation != operational baseline" in recording
-    assert "execution status != operational measurement" in recording
+    assert "operational measurement != execution" in testimony
+    assert "operational measurement != execution record" in testimony
+    assert "operational measurement != operation result" in testimony
+    assert "operation-instance measurement != ambient runtime observation" in testimony
+    assert "runtime/resource observation != operational baseline" in testimony
+    assert "execution status != operational measurement" in testimony
     assert "diagnostic rendering != measurement ownership" in recording
     assert "non-rebuildable != preservation-required" in recording
 
 
 def test_runtime_resource_observation_is_separate_from_operation_instance_measurement():
-    text = _read("book_of_seed/05-evidence-and-knowledge/recording-and-knowledge-extraction.md")
+    text = _read("book_of_seed/05-evidence-and-knowledge/testimony-and-established-fact.md")
 
     assert "Operation-instance measurement and ambient runtime/resource observation are not identical" in text
     assert "Ordinary runtime/resource observation is testimony about a process or runtime condition at an observed time" in text
@@ -73,8 +74,10 @@ def test_execution_chapter_no_longer_owns_operational_measurement_or_stale_execu
 def test_concordance_indexes_measurement_without_equating_execution_or_runtime_observation():
     text = _read("book_of_seed/concordance.md")
 
-    assert "| operational measurement | Evidence and Knowledge | [Recording and knowledge extraction]" in text
-    assert "| runtime/resource observation | Evidence and Knowledge | [Recording and knowledge extraction]" in text
+    assert "| operational measurement | Evidence and Knowledge | [Testimony and established fact]" in text
+    assert "| runtime/resource observation | Evidence and Knowledge | [Testimony and established fact]" in text
+    assert "| execution | Operational Realization | [Execution and recording]" in text
+    assert "tool call" not in next(line for line in text.splitlines() if line.startswith("| execution |"))
     assert "timing sample, elapsed duration, runtime/resource observation" not in text
     measurement_line = next(
         line for line in text.splitlines() if line.startswith("| operational measurement |")
@@ -132,10 +135,11 @@ def test_amendment_and_correction_records_required_answers_and_absent_implementa
 
 
 def test_recording_boundary_does_not_own_measurement_or_standing_establishment():
-    text = _read("book_of_seed/05-evidence-and-knowledge/recording-and-knowledge-extraction.md")
+    text = _read("book_of_seed/05-evidence-and-knowledge/testimony-and-established-fact.md")
+    recording = _read("book_of_seed/05-evidence-and-knowledge/recording-and-knowledge-extraction.md")
 
     assert "operational measurement != recording" in text
-    assert "measurement occurrence != recorded measurement" in text
+    assert "Measurement occurrence != recorded measurement" in text
     assert "recording measurement testimony != producing measurement testimony" in text
     assert "diagnostic rendering != measurement production" in text
     assert "diagnostic rendering != measurement preservation" in text
@@ -144,15 +148,16 @@ def test_recording_boundary_does_not_own_measurement_or_standing_establishment()
     assert "comparison != recording" in text
     assert "deviation recognition != deviation recording" in text
     assert "baseline transition establishment != transition recording" in text
-    assert "record exists != recorded standing lawfully established" in text
-    assert "non-rebuildable != preservation-required" in text
+    assert "record exists != recorded standing lawfully established" in recording
+    assert "non-rebuildable != preservation-required" in recording
 
 
 def test_canonical_clauses_protect_transient_measurement_and_record_limits():
-    text = _read("book_of_seed/05-evidence-and-knowledge/recording-and-knowledge-extraction.md")
+    text = _read("book_of_seed/05-evidence-and-knowledge/testimony-and-established-fact.md")
+    recording = _read("book_of_seed/05-evidence-and-knowledge/recording-and-knowledge-extraction.md")
 
-    assert "Recording may preserve already produced measurement testimony" in text
-    assert "does not produce the upstream measurement" in text
+    assert "Recording may preserve already produced measurement testimony" in recording
+    assert "does not produce the testimony" in recording
     assert "measurement-production responsibility produces that operation-instance testimony" in text
     assert "A measurement occurrence may exist transiently without ever becoming a recorded measurement" in text
     assert "baseline recording may preserve the resulting standing but does not establish ordinary behavior" in text
@@ -160,7 +165,37 @@ def test_canonical_clauses_protect_transient_measurement_and_record_limits():
     assert "Comparison occurrence != recorded comparison" in text or "comparison occurrence != recorded comparison" in text
     assert "Material deviation recognition is an establishment decision" in text
     assert "recorded difference does not establish material deviation" in text
-    assert "Preservation decision != standing-establishment decision" in text
+    assert "Preservation decision != standing-establishment decision" in recording
+
+
+def test_production_and_establishment_are_not_structurally_recording_addresses():
+    testimony = _read("book_of_seed/05-evidence-and-knowledge/testimony-and-established-fact.md")
+    recording = _read("book_of_seed/05-evidence-and-knowledge/recording-and-knowledge-extraction.md")
+    concordance = _read("book_of_seed/concordance.md")
+
+    assert "### 05.Testimony.B — Operational measurement production" in testimony
+    assert "### 05.Testimony.C — Runtime/resource observation production" in testimony
+    assert "### 05.Testimony.D — Operational baseline, comparison, deviation, and transition establishment" in testimony
+    assert "### 05.Recording.C — Operational measurement production" not in recording
+    assert "### 05.Recording.D — Runtime/resource observation boundary" not in recording
+    assert "### 05.Recording.E — Operational baseline, comparison, deviation, and transition establishment" not in recording
+    assert "| operational measurement | Evidence and Knowledge | [Recording and knowledge extraction]" not in concordance
+    assert "| operational baseline | Evidence and Knowledge | [Recording and knowledge extraction]" not in concordance
+    assert "| material deviation | Evidence and Knowledge | [Recording and knowledge extraction]" not in concordance
+    assert "| baseline transition | Evidence and Knowledge | [Recording and knowledge extraction]" not in concordance
+
+
+def test_responsibility_topology_correction_record_required_answers_and_absences():
+    text = _read("book_of_seed/operational_measurement_responsibility_topology_correction_001.md")
+
+    assert "Does recording produce operational measurement testimony? No." in text
+    assert "Does recording a measurement series establish an operational baseline? No." in text
+    assert "Does recording a difference establish material deviation? No." in text
+    assert "Does recording repeated samples establish a baseline transition? No." in text
+    assert "May recording preserve already produced testimony or already established standing? Yes" in text
+    assert "Does the recording chapter currently provide a constitutionally honest structural home for measurement production and operational-standing establishment? No." in text
+    assert "Does this correction invalidate PR 1895's preservation rule, PR 1896's execution correction, or PR 1897's semantic distinctions? No." in text
+    assert "Are baseline, tolerance, deviation, transition, or timing-driven consumers now implemented? No." in text
 
 
 def test_boundary_correction_record_required_answers_and_absences():

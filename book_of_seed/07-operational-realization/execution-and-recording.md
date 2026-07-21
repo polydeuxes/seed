@@ -39,8 +39,8 @@ An execution record is testimony that an execution boundary reported an occurren
 - `seed_runtime/execution_status.py`
 
 ## Counterexamples or failure modes
-- Treating an execution-request event as a successful result.
-- Promoting tool output directly into state because it was recorded.
+- Treating a requested execution or operation request record as a successful result.
+- Promoting returned output directly into state because it was recorded.
 - Calling every measured projection, cache lookup, query, or rendering operation execution because it has timing testimony.
 
 ## Related chapters
