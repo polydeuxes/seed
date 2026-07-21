@@ -861,8 +861,18 @@ def _confidence_arg(value: str) -> float | str:
     return float(value)
 
 
+
+class SeedArgumentParser(argparse.ArgumentParser):
+    def parse_args(self, args=None, namespace=None):  # type: ignore[override]
+        arg_list = list(args) if args is not None else None
+        if arg_list is not None and "--current-facts" in arg_list:
+            self.error("unrecognized arguments: --current-facts")
+        return super().parse_args(args, namespace)
+
+
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    parser = SeedArgumentParser(
+        allow_abbrev=False,
         description="Run Seed locally with a deterministic input boundary.",
         epilog=(
             "Examples:\n"
@@ -1943,12 +1953,13 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
-        "--current-facts",
-        nargs="*",
+        "--current-selection",
+        nargs=2,
         metavar=("SUBJECT", "PREDICATE"),
         help=(
-            "print projection-local fact-support inventory; optionally pass "
-            "SUBJECT PREDICATE for the distinct selected-value diagnostic"
+            "print a read-only diagnostic of values selected by the projection-local "
+            "current selection path for SUBJECT PREDICATE; does not establish Fact "
+            "standing, operator truth, or present-facing applicability"
         ),
     )
     parser.add_argument(
@@ -2138,7 +2149,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help=(
             "include expired facts in --fact-support, --best-fact, "
-            "--current-facts, and --fact-conflicts query output"
+            "--current-selection, and --fact-conflicts query output"
         ),
     )
     parser.add_argument(
@@ -2313,8 +2324,8 @@ def validate_lifecycle_args(
         bool(args.confidence_fact),
         bool(args.fact_support),
         bool(args.best_fact),
-        bool(args.current_facts is not None),
-        bool(args.current_facts_cache_debug and args.current_facts is None),
+        bool(args.current_selection is not None),
+        bool(args.current_facts_cache_debug and args.current_selection is None),
         bool(args.source_navigation),
         bool(args.current_observations),
         bool(args.current_requirements),
@@ -2389,7 +2400,7 @@ def validate_lifecycle_args(
             "--evidence, --why-fact, --unsupported-facts, --contradictions, "
             "--confidence, --confidence-fact, "
             "--fact-support, --best-fact, "
-            "--current-facts, --current-facts-cache-debug, "
+            "--current-selection, --current-facts-cache-debug, "
             "--current-observations, --current-requirements, "
             "--current-capabilities, --capability-status, --capability-candidates, "
             "--verification-evidence, --capability-verification, "
@@ -2401,8 +2412,6 @@ def validate_lifecycle_args(
             "--documentation-structure, --diagnostic-shape-audit, --candidate-external-grammar, --external-material-structure, --external-material-testimony-bindings, --external-site-rule-testimony, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --single-capability-state, --correlation-audit, --audit-snapshot, --audit-snapshots, --audit-compare, --rebuild-state-cache, --state-cache-status, "
             "or --events-only"
         )
-    if args.current_facts is not None and len(args.current_facts) not in {0, 2}:
-        parser.error("--current-facts accepts either no values or SUBJECT PREDICATE")
     # Cache-debug surfaces are standalone read-only views.  A cache-debug flag
     # owns dispatch for its underlying view and may also be combined with the
     # legacy view flag when that view accepts additional query arguments.
@@ -2440,11 +2449,11 @@ def validate_lifecycle_args(
     if args.replacement_plan and not args.supersede_plan:
         parser.error("--replacement-plan can only be used with --supersede-plan")
     if args.include_expired and not (
-        args.fact_support or args.best_fact or args.current_facts or args.fact_conflicts
+        args.fact_support or args.best_fact or args.current_selection or args.fact_conflicts
     ):
         parser.error(
             "--include-expired can only be used with --fact-support, "
-            "--best-fact, --current-facts, or --fact-conflicts"
+            "--best-fact, --current-selection, or --fact-conflicts"
         )
     if args.include_history and not args.fact_support:
         parser.error("--include-history can only be used with --fact-support")
@@ -4094,7 +4103,7 @@ def _format_mount_impact(mount_facts: list[Fact]) -> list[str]:
     for group in MOUNT_COLLAPSE_GROUP_ORDER:
         if collapsed_counts[group]:
             lines.append(f"- {group}: {collapsed_counts[group]} collapsed")
-    lines.append("- full mount evidence: use --current-facts")
+    lines.append("- full mount evidence: use --fact-support")
     lines.append("- health/availability/reachability: not inferred from mount facts")
     return lines
 
@@ -4344,7 +4353,7 @@ def _format_local_network_impact(network_facts: list[Fact]) -> list[str]:
         count_text = ", ".join(f"{role}={counts[role]}" for role in sorted(counts))
         lines.append(
             f"- virtual/container/vpn interfaces: {len(collapsed)} collapsed ({count_text}); "
-            "use --current-facts for full local facts"
+            "use --fact-support for full local facts"
         )
 
     dns_resolver_lines = _format_dns_resolver_impact_lines(by_predicate)
@@ -5610,7 +5619,7 @@ def _current_facts_timing_from_args(
         _TimingProjectionStore(raw_store, timings) if raw_store is not None else None
     )
     try:
-        current_facts_args = args.current_facts or []
+        current_facts_args = args.current_selection or []
         if len(current_facts_args) != 0:
             seed_dev_state_from_args(args, ledger)
         history_limit = 1
@@ -5713,7 +5722,7 @@ def format_current_facts(
         )
     lines = [
         "Current-Selection Diagnostic",
-        "Contract: reports values selected by the projection current-fact getter; does not establish present-facing applicability.",
+        "Contract: reports values selected by the projection-local current selection path; does not establish Fact standing, operator truth, verified current state, permission to act, or present-facing applicability.",
         "",
     ]
     if not facts:
@@ -7741,19 +7750,8 @@ def main(argv: list[str] | None = None) -> int:
         print(_format_current_facts_timing_report(report))
         return 0
 
-    if args.current_facts is not None:
-        if len(args.current_facts) == 0:
-            print(
-                format_fact_views(
-                    build_fact_view(
-                        projected_state_from_args(
-                            args, status_consumer=CliExecutionStatusConsumer()
-                        )
-                    )
-                )
-            )
-            return 0
-        subject, predicate = args.current_facts
+    if args.current_selection is not None:
+        subject, predicate = args.current_selection
         status_consumer = CliExecutionStatusConsumer()
         state = fact_query_state(args, status_consumer=status_consumer)
         fact_index = _load_or_build_fact_index_from_args(

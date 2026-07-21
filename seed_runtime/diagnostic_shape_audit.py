@@ -605,19 +605,12 @@ IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
         format_function="format_observation_views",
         cli_flags=("--current-observations",),
     ),
-    "projected_fact_support_inventory": DiagnosticImplementationSpec(
-        name="projected_fact_support_inventory",
-        module_path="scripts/seed_local.py",
-        build_function="projected_state_from_args",
-        format_function="format_fact_views",
-        cli_flags=("--current-facts",),
-    ),
     "current_selection_diagnostic": DiagnosticImplementationSpec(
         name="current_selection_diagnostic",
         module_path="scripts/seed_local.py",
         build_function="fact_query_state",
         format_function="format_current_facts",
-        cli_flags=("--current-facts",),
+        cli_flags=("--current-selection",),
     ),
     "projected_support_diagnostic": DiagnosticImplementationSpec(
         name="projected_support_diagnostic",

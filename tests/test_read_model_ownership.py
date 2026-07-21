@@ -159,7 +159,6 @@ def test_existing_read_model_view_registrations_expose_consumable_cli_flags():
 
     flags = read_model_view_registration_flags(READ_MODEL_VIEW_REGISTRATIONS)
 
-    assert "--current-facts" in flags
     assert "--current-observations" in flags
     assert "--current-requirements" in flags
     assert "--current-capabilities" in flags

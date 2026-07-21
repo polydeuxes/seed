@@ -64,6 +64,7 @@ def test_matching_registry_declarations_report_consistent_for_current_diagnostic
         _row(rows, "current_facts_cache_debug", "mutates_cluster").status
         == "consistent"
     )
+    assert _row(rows, "current_selection_diagnostic", "uses_projected_state").status == "consistent"
     assert _row(rows, "investigation_path", "supports_json").status == "consistent"
     assert (
         _row(rows, "investigation_path", "writes_event_ledger").status == "consistent"
@@ -397,7 +398,6 @@ def test_recovered_current_fact_family_shape_audited_as_read_only():
 
     for diagnostic in [
         "projected_observation_record_inventory",
-        "projected_fact_support_inventory",
         "current_selection_diagnostic",
         "projected_support_diagnostic",
         "selection_explanation_diagnostic",

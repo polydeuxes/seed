@@ -151,12 +151,6 @@ READ_MODEL_VIEW_REGISTRATIONS: tuple[ReadModelViewRegistration, ...] = tuple(
             renderer="scripts.seed_local.format_state_build",
         ),
         read_model_view_registration(
-            name="current_facts",
-            cli_flag="--current-facts",
-            builder="seed_runtime.state_views.build_fact_view",
-            renderer="scripts.seed_local.format_fact_views",
-        ),
-        read_model_view_registration(
             name="current_observations",
             cli_flag="--current-observations",
             builder="seed_runtime.state_views.build_observation_view",

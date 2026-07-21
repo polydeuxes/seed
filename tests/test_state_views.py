@@ -488,7 +488,7 @@ def test_cli_state_view_commands_do_not_append_events(tmp_path, capsys):
 
     commands = [
         ["--state-build"],
-        ["--current-facts"],
+        ["--current-selection", "docker", "available"],
         ["--current-observations"],
         ["--current-requirements"],
         ["--current-capabilities"],
@@ -500,7 +500,7 @@ def test_cli_state_view_commands_do_not_append_events(tmp_path, capsys):
 
     output = capsys.readouterr().out
     assert "State Build" in output
-    assert "Projected Fact-Support Inventory Diagnostic" in output
+    assert "Current-Selection Diagnostic" in output
     assert "Projected Observation-Record Inventory Diagnostic" in output
     assert "Current Requirements" in output
     assert "Current Capabilities" in output
@@ -518,7 +518,7 @@ def test_cli_state_view_commands_do_not_invoke_runtime_provider_policy_or_tools(
     monkeypatch.setattr(seed_local, "build_local_app", explode)
 
     assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
-    assert seed_local.main(["--db", str(db_path), "--current-facts"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--current-selection", "example_host", "alias"]) == 0
 
 
 def test_state_summary_starts_from_read_model_construction_inputs(monkeypatch):
@@ -559,6 +559,6 @@ def test_recovered_current_fact_surfaces_expose_bounded_diagnostic_contracts():
     assert inventory.startswith("Projected Fact-Support Inventory Diagnostic\n")
     assert "does not establish Fact standing or current applicability" in inventory
     assert selection.startswith("Current-Selection Diagnostic\n")
-    assert "does not establish present-facing applicability" in selection
+    assert "does not establish Fact standing" in selection
     assert support_output.startswith("Projected-Support Diagnostic\n")
     assert "does not establish Fact standing or current applicability" in support_output

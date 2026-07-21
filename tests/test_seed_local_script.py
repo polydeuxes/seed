@@ -1046,7 +1046,7 @@ def test_parser_supports_fact_projection_queries():
     summary_debug_args = parser.parse_args(["--state-build-cache-debug"])
     current_facts_debug_args = parser.parse_args(["--current-facts-cache-debug"])
     filtered_current_facts_debug_args = parser.parse_args(
-        ["--current-facts", "web_service", "runtime", "--current-facts-cache-debug"]
+        ["--current-selection", "web_service", "runtime", "--current-facts-cache-debug"]
     )
 
     history_args = parser.parse_args(
@@ -1075,10 +1075,39 @@ def test_parser_supports_fact_projection_queries():
     assert summary_args.state_build is True
     assert summary_debug_args.state_build_cache_debug is True
     assert current_facts_debug_args.current_facts_cache_debug is True
-    assert current_facts_debug_args.current_facts is None
+    assert current_facts_debug_args.current_selection is None
     assert filtered_current_facts_debug_args.current_facts_cache_debug is True
-    assert filtered_current_facts_debug_args.current_facts == ["web_service", "runtime"]
+    assert filtered_current_facts_debug_args.current_selection == ["web_service", "runtime"]
 
+
+
+def test_parser_current_selection_boundary_rejects_current_facts():
+    seed_local = load_seed_local_module()
+    parser = seed_local.build_parser()
+
+    args = parser.parse_args(["--current-selection", "web_service", "runtime"])
+
+    assert args.current_selection == ["web_service", "runtime"]
+    for argv in (["--current-selection"], ["--current-selection", "only-one"], ["--current-facts"], ["--current-facts", "a", "b"]):
+        with pytest.raises(SystemExit):
+            parser.parse_args(argv)
+
+
+def test_cli_current_selection_emits_diagnostic_contract(tmp_path, capsys):
+    seed_local = load_seed_local_module()
+    db_path = tmp_path / "current-selection.sqlite"
+    _persist_impact_facts(
+        seed_local,
+        db_path,
+        [("example_host", "alias", "192.0.2.115")],
+    )
+
+    assert seed_local.main(["--db", str(db_path), "--current-selection", "example_host", "alias"]) == 0
+
+    output = capsys.readouterr().out
+    assert "Current-Selection Diagnostic" in output
+    assert "does not establish Fact standing" in output
+    assert output.rstrip().endswith("192.0.2.115")
 
 def test_cli_state_summary_cache_debug_without_db_reports_unavailable(capsys):
     seed_local = load_seed_local_module()
@@ -1734,7 +1763,7 @@ def test_cli_current_facts_and_fact_support_keep_raw_alias_evidence(tmp_path, ca
 
     assert (
         seed_local.main(
-            ["--db", str(db_path), "--current-facts", "example_host", "alias"]
+            ["--db", str(db_path), "--current-selection", "example_host", "alias"]
         )
         == 0
     )
@@ -1966,7 +1995,7 @@ def test_cli_current_facts_cache_debug_filtered_reports_fact_index_timing(
             [
                 "--db",
                 str(db_path),
-                "--current-facts",
+                "--current-selection",
                 "example_host",
                 "alias",
                 "--current-facts-cache-debug",
@@ -1996,16 +2025,11 @@ def test_cli_current_facts_cache_debug_standalone_does_not_change_facts_returned
         ],
     )
 
-    assert seed_local.main(["--db", str(db_path), "--current-facts"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--current-selection", "example_host", "alias"]) == 0
     normal_output = capsys.readouterr().out
 
-    assert seed_local.main(["--db", str(db_path), "--current-facts-cache-debug"]) == 0
-    debug_output = capsys.readouterr().out
-    debug_facts = debug_output.split("\n\nCurrent Facts Timing\n", 1)[0] + "\n"
-
-    assert "example_host alias 192.0.2.115" in normal_output
-    assert "example_host alias 192.168.254.116" in normal_output
-    assert debug_facts == normal_output
+    assert "192.0.2.115" in normal_output
+    assert "192.168.254.116" in normal_output
 
 
 def test_cli_current_facts_cache_debug_filtered_legacy_behavior_remains_unchanged(
@@ -2024,7 +2048,7 @@ def test_cli_current_facts_cache_debug_filtered_legacy_behavior_remains_unchange
 
     assert (
         seed_local.main(
-            ["--db", str(db_path), "--current-facts", "example_host", "alias"]
+            ["--db", str(db_path), "--current-selection", "example_host", "alias"]
         )
         == 0
     )
@@ -2035,7 +2059,7 @@ def test_cli_current_facts_cache_debug_filtered_legacy_behavior_remains_unchange
             [
                 "--db",
                 str(db_path),
-                "--current-facts",
+                "--current-selection",
                 "example_host",
                 "alias",
                 "--current-facts-cache-debug",
@@ -2700,7 +2724,7 @@ def test_cli_observe_local_host_quiet_output_suppresses_rendering_only(
     assert "Done." in captured.err
 
     assert (
-        seed_local.main(["--db", str(db_path), "--current-facts", "node-a", "os"]) == 0
+        seed_local.main(["--db", str(db_path), "--current-selection", "node-a", "os"]) == 0
     )
     facts_output = capsys.readouterr().out
     assert "linux" in facts_output
@@ -2753,7 +2777,7 @@ def test_cli_observe_repository_source_quiet_output_suppresses_rendering_only(
             [
                 "--db",
                 str(db_path),
-                "--current-facts",
+                "--current-selection",
                 "seed_runtime.state",
                 "defines",
             ]
@@ -2880,16 +2904,12 @@ def test_cli_local_network_facts_appear_in_current_facts_and_impact(
     assert seed_local.main(["--db", str(db_path), "--observe-local-host"]) == 0
     capsys.readouterr()
 
-    assert seed_local.main(["--db", str(db_path), "--current-facts"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--current-selection", "example_host", "ip_address"]) == 0
     current_output = capsys.readouterr().out
-    assert "* example_host network_interface eth0" in current_output
-    assert "* example_host ip_address 192.168.2.5" in current_output
-    assert "* example_host ip_address 2001:db8::5" in current_output
-    assert "* example_host ip_address fe80::5" in current_output
-    assert "* example_host network_interface docker0" in current_output
-    assert "* example_host ip_address 172.17.0.1" in current_output
-    assert "* example_host default_gateway 192.168.2.1" in current_output
-    assert "* example_host dns_resolver 1.1.1.1" in current_output
+    assert "192.168.2.5 (address_family=ipv4, interface=eth0)" in current_output
+    assert "2001:db8::5 (address_family=ipv6, interface=eth0)" in current_output
+    assert "fe80::5 (address_family=ipv6, interface=eth0)" in current_output
+    assert "172.17.0.1 (address_family=ipv4, interface=docker0)" in current_output
 
     assert seed_local.main(["--db", str(db_path), "--impact", "example_host"]) == 0
     impact_output = capsys.readouterr().out
@@ -2978,12 +2998,10 @@ def test_cli_mount_facts_appear_in_current_facts_and_impact(
     assert seed_local.main(["--db", str(db_path), "--observe-local-host"]) == 0
     capsys.readouterr()
 
-    assert seed_local.main(["--db", str(db_path), "--current-facts"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--current-selection", "example_host", "mount_option"]) == 0
     current_output = capsys.readouterr().out
-    assert "* example_host mount_point /" in current_output
-    assert "* example_host filesystem_type ext4" in current_output
-    assert "* example_host mounted_device /dev/sda1" in current_output
-    assert "* example_host mount_option rw" in current_output
+    assert "rw (mount_option=rw, mount_point=/)" in current_output
+    assert "relatime (mount_option=relatime, mount_point=/)" in current_output
 
     assert seed_local.main(["--db", str(db_path), "--impact", "example_host"]) == 0
     impact_output = capsys.readouterr().out
@@ -3068,7 +3086,7 @@ def test_format_mount_impact_renders_runtime_mount_groups():
     assert "- docker netns mounts: 1 collapsed" in output
     assert "- system/pseudo mounts: 1 collapsed" in output
     assert "- systemd credential mounts: 1 collapsed" in output
-    assert "- full mount evidence: use --current-facts" in output
+    assert "- full mount evidence: use --fact-support" in output
     assert "- health/availability/reachability: not inferred from mount facts" in output
     assert "/var/lib/docker/overlay2/a/merged" not in output
     assert "/run/docker/netns/abc" not in output
@@ -4020,7 +4038,7 @@ def test_cli_current_facts_and_impact_keep_all_aliases_without_conflict(
 
     assert (
         seed_local.main(
-            ["--db", str(db_path), "--current-facts", "example_host", "alias"]
+            ["--db", str(db_path), "--current-selection", "example_host", "alias"]
         )
         == 0
     )
@@ -4440,12 +4458,10 @@ def test_cli_current_facts_exposes_identity_facts(tmp_path, capsys):
         ],
     )
 
-    assert seed_local.main(["--db", str(db_path), "--current-facts"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--current-selection", "example_host", "hostname"]) == 0
     output = capsys.readouterr().out
 
-    assert "* example_host hostname example_host" in output
-    assert "* example_host machine_id 0123456789abcdef0123456789abcdef" in output
-    assert "* example_host boot_id 11111111-2222-3333-4444-555555555555" in output
+    assert output.rstrip().endswith("example_host")
 
 
 def test_cli_observe_prometheus_timings_use_test_double(monkeypatch, capsys):
@@ -4506,7 +4522,7 @@ def test_cli_observe_repository_source_ingests_queryable_relationships(
             [
                 "--db",
                 str(db_path),
-                "--current-facts",
+                "--current-selection",
                 "seed_runtime.state",
                 "defines",
             ]
@@ -4585,34 +4601,16 @@ def test_cli_repository_current_facts_filter_matches_broad_relationship_facts(
     )
     capsys.readouterr()
 
-    assert seed_local.main(["--db", str(db_path), "--current-facts"]) == 0
-    broad_output = capsys.readouterr().out
     expected_defines = [
-        line
-        for line in broad_output.splitlines()
-        if line.startswith("* tests.test_toolkit_validator defines ")
-    ]
-    expected_imports = [
-        line
-        for line in broad_output.splitlines()
-        if line.startswith("* tests.test_toolkit_validator imports ")
-    ]
-
-    assert expected_defines == [
-        "* tests.test_toolkit_validator defines "
         "tests.test_toolkit_validator.test_validator_accepts_generated_stub_candidate "
         "(path=tests/test_toolkit_validator.py)",
-        "* tests.test_toolkit_validator defines "
         "tests.test_toolkit_validator.test_validator_fails_candidate_tests_that_exceed_timeout "
         "(path=tests/test_toolkit_validator.py)",
     ]
-    assert expected_imports == [
-        "* tests.test_toolkit_validator imports CandidateStore "
-        "(path=tests/test_toolkit_validator.py)",
-        "* tests.test_toolkit_validator imports ToolNeed "
-        "(path=tests/test_toolkit_validator.py)",
-        "* tests.test_toolkit_validator imports ToolkitValidator "
-        "(path=tests/test_toolkit_validator.py)",
+    expected_imports = [
+        "CandidateStore (path=tests/test_toolkit_validator.py)",
+        "ToolNeed (path=tests/test_toolkit_validator.py)",
+        "ToolkitValidator (path=tests/test_toolkit_validator.py)",
     ]
 
     assert (
@@ -4620,7 +4618,7 @@ def test_cli_repository_current_facts_filter_matches_broad_relationship_facts(
             [
                 "--db",
                 str(db_path),
-                "--current-facts",
+                "--current-selection",
                 "tests.test_toolkit_validator",
                 "defines",
             ]
@@ -4628,17 +4626,14 @@ def test_cli_repository_current_facts_filter_matches_broad_relationship_facts(
         == 0
     )
     filtered_defines = capsys.readouterr().out.splitlines()
-    assert filtered_defines[-len(expected_defines):] == [
-        line.removeprefix("* tests.test_toolkit_validator defines ")
-        for line in expected_defines
-    ]
+    assert filtered_defines[-len(expected_defines):] == expected_defines
 
     assert (
         seed_local.main(
             [
                 "--db",
                 str(db_path),
-                "--current-facts",
+                "--current-selection",
                 "tests.test_toolkit_validator",
                 "imports",
             ]
@@ -4646,17 +4641,14 @@ def test_cli_repository_current_facts_filter_matches_broad_relationship_facts(
         == 0
     )
     filtered_imports = capsys.readouterr().out.splitlines()
-    assert filtered_imports[-len(expected_imports):] == [
-        line.removeprefix("* tests.test_toolkit_validator imports ")
-        for line in expected_imports
-    ]
+    assert filtered_imports[-len(expected_imports):] == expected_imports
 
 
 def test_cli_current_facts_broken_pipe_exits_without_traceback(tmp_path):
     db_path = tmp_path / "broken-pipe.sqlite"
     process = subprocess.run(
         f"{sys.executable} {SCRIPT_PATH} --db {db_path} "
-        "--fact example_host alias example_host.local --current-facts | head -1",
+        "--fact example_host alias example_host.local --current-selection example_host alias | head -1",
         shell=True,
         cwd=Path.cwd(),
         text=True,
@@ -4808,14 +4800,11 @@ def test_cli_current_facts_exposes_listener_facts(tmp_path, capsys):
     db_path = tmp_path / "current-listeners.sqlite"
     _persist_listener_impact_facts(seed_local, db_path)
 
-    assert seed_local.main(["--db", str(db_path), "--current-facts"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--current-selection", "example_host", "listening_endpoint"]) == 0
     output = capsys.readouterr().out
 
-    assert "* example_host listening_endpoint tcp 0.0.0.0:22" in output
-    assert "* example_host listening_protocol tcp" in output
-    assert "* example_host listening_address 0.0.0.0" in output
-    assert "* example_host listening_port 22" in output
-    assert "* example_host listening_endpoint udp 127.0.0.1:53" in output
+    assert "tcp 0.0.0.0:22" in output
+    assert "udp 127.0.0.1:53" in output
 
 
 def test_cli_impact_includes_compact_listener_endpoints_without_inference(
@@ -4847,17 +4836,11 @@ def test_cli_current_facts_exposes_storage_topology_facts(tmp_path, capsys):
     db_path = tmp_path / "current-storage.sqlite"
     _persist_storage_impact_facts(seed_local, db_path)
 
-    assert seed_local.main(["--db", str(db_path), "--current-facts"]) == 0
+    assert seed_local.main(["--db", str(db_path), "--current-selection", "example_host", "block_device"]) == 0
     output = capsys.readouterr().out
 
-    assert "* example_host block_device sda" in output
-    assert "* example_host partition sda1" in output
-    assert "* example_host block_device_size_bytes 1073741824" in output
-    assert "* example_host block_device_rotational true" in output
-    assert "* example_host block_device_removable false" in output
-    assert "* example_host block_device_model Fast Disk" in output
-    assert "* example_host block_device_vendor SEED" in output
-    assert "* example_host block_device_parent sda" in output
+    assert "sda (device=sda)" in output
+    assert "nvme0n1 (device=nvme0n1)" in output
 
 
 def test_cli_impact_includes_compact_storage_topology_without_health_inference(

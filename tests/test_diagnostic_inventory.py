@@ -208,6 +208,7 @@ def test_cli_diagnostic_inventory_lists_known_diagnostics(capsys):
         "consumer_audit",
         "emitter_attribution_audit",
         "current_facts_cache_debug",
+        "current_selection_diagnostic",
         "investigation_path",
     ]:
         assert name in output
@@ -234,6 +235,7 @@ def test_cli_diagnostic_inventory_json_emits_valid_json(capsys):
         "consumer_audit",
         "emitter_attribution_audit",
         "current_facts_cache_debug",
+        "current_selection_diagnostic",
         "investigation_path",
     }
     assert payload[0]["cli_flags"]
@@ -298,6 +300,12 @@ def test_current_diagnostic_shapes_match_implementation_authority():
     )
     assert not _entry("current_facts_cache_debug").writes_event_ledger
     assert not _entry("current_facts_cache_debug").mutates_cluster
+    assert _entry("current_selection_diagnostic").cli_flags == (
+        "--current-selection SUBJECT PREDICATE",
+    )
+    assert not _entry("current_selection_diagnostic").writes_event_ledger
+    assert not _entry("current_selection_diagnostic").mutates_cluster
+    assert "does not establish Fact standing" in _entry("current_selection_diagnostic").description
     assert _entry("investigation_path").cli_flags == ("--investigation-path",)
     assert _entry("investigation_path").supports_json
     assert not _entry("investigation_path").writes_event_ledger
@@ -3114,7 +3122,6 @@ def test_recovered_current_fact_family_registered_as_diagnostics():
 
     assert {
         "projected_observation_record_inventory",
-        "projected_fact_support_inventory",
         "current_selection_diagnostic",
         "projected_support_diagnostic",
         "selection_explanation_diagnostic",
