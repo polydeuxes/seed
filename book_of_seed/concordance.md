@@ -35,8 +35,10 @@ This is a lightweight navigation index. Aliases record repository or presentatio
 | knowledge extraction | Evidence and Knowledge | [Recording and knowledge extraction](05-evidence-and-knowledge/recording-and-knowledge-extraction.md) | fact extraction, promotion | recording, reconciliation |
 | state | State and Projection | [Events, facts, and state](06-state-and-projection/events-facts-and-state.md) | cluster state, belief state | event, fact, projection |
 | projection | State and Projection | [Projection and current state](06-state-and-projection/projection-and-current-state.md) | read model, view, projection cache, state build | replay, source record |
-| ObservationView | State and Projection | [Projection and current state](06-state-and-projection/projection-and-current-state.md) | observation view | testimony, FactView |
-| FactView | State and Projection | [Projection and current state](06-state-and-projection/projection-and-current-state.md) | fact view, current fact view | projection, Fact standing, ObservationView |
+| View emission | Grammar and Standing | [Lenses, views, and constitutional roads](01-grammar-and-standing/lenses-views-and-roads.md) | egress view, operator-facing view | warrant, reliance, handoff |
+| ObservationView | State and Projection | [Projection and current state](06-state-and-projection/projection-and-current-state.md) | observation view, attributed testimony view | testimony occurrence, FactView |
+| FactView | State and Projection | [Projection and current state](06-state-and-projection/projection-and-current-state.md) | fact view | Fact standing, ObservationView, current-facing Fact View |
+| current-facing Fact View | State and Projection | [Projection and current state](06-state-and-projection/projection-and-current-state.md) | current fact view, present-facing Fact View | current standing, projection, Fact standing |
 | ownership discrepancy | State and Projection | [Ownership, discrepancy, and residue](06-state-and-projection/ownership-discrepancy-and-residue.md) | responsibility mismatch, historical residue | authority, canonical path |
 | operational realization | Operational Realization | [Operational realization and capability](07-operational-realization/operational-realization-and-capability.md) | mechanism, provider realization | capability, need |
 | warrant | Operational Realization | [Warrants and execution proposals](07-operational-realization/warrants-and-execution-proposals.md) | execution basis, realization warrant | proposal, authority |
