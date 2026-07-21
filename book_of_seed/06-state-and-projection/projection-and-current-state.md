@@ -17,6 +17,10 @@ A projection, read model, diagnostic, audit, or inventory surface may expose bou
 ### 06.Projection.B — Purpose-relative lossless projection and package standing
 A projection, view, package, set, or handoff is lossless for a declared bounded consumer purpose only when its responsible formation preserves the distinctions needed for that consumer to recover the exact bounded standing it may rely on without reopening the producer, inventing missing standing, strengthening the upstream claim, or erasing surviving limits. Such compression need not duplicate every upstream implementation detail, but it must not collapse formation standing, contents, cardinality, availability, completeness, Unknowns, conflicts, refusals, known loss, negative authority, or aggregate judgment where those distinctions are required by the declared purpose. Empty contents, unavailable input, incomplete input, Unknown input, conflicting input, omitted material, null representation, no testimony, and negative testimony remain distinct unless a local warranted rule intentionally relates them. Aggregation over supplied contents produces only a bounded judgment over those contents and does not by itself establish that the input package existed, was complete, was available, or carried negative authority.
 
+
+### 06.Projection.C — Rebuildability and prior invocation boundary
+A derived artifact need not be preserved when the understanding it carries can be faithfully rebuilt from retained evidence. Projection snapshots are generally rebuildable from ledger-supported evidence; summary snapshots are generally rebuildable from projected State; fact-index snapshots are generally rebuildable from projected State. Rebuildability is bounded by the retained evidence, projection rules, and declared purpose, and does not mean rerunning an operation reconstructs a prior operation instance. Rebuildable projection is not prior invocation reconstruction. The elapsed duration of one invocation and the cache condition at that historical invocation may be irrecoverable after process exit even when current condition can be reconstructed or the operation can be rerun.
+
 ## Important distinctions
 - projection != constitutional source
 - projected material != current constitutional standing
@@ -30,6 +34,9 @@ A projection, view, package, set, or handoff is lossless for a declared bounded 
 - visibility != uptake
 - diagnostic finding != cluster mutation
 - implementation visibility != implementation authority
+- rebuildable derived artifact != required retained artifact
+- rebuildable projection != prior invocation reconstruction
+- reconstructable current condition != irrecoverable historical invocation
 
 ## Representative repository anchors
 - `seed_runtime/state.py::ProjectionBuildDiagnostics`

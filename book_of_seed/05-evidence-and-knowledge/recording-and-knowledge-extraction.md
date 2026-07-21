@@ -7,7 +7,7 @@ The boundary between preserving events or diagnostic output and deriving knowled
 Which bounded responsibility may examine recorded material, and what standing, if any, may it establish?
 
 ## Bounded resolution
-A recording boundary may create a retrievable representation of attributed events or findings within the preservation horizon supplied by the recorder. Examination or extraction from recorded material is a separate constitutional responsibility with its own evidence, reconciliation, and standing limits; successful extraction does not itself establish knowledge. Diagnostic recording should remain scoped to its diagnostic run unless a separate establishment boundary supplies additional standing.
+A recording boundary may create a retrievable representation of attributed events or findings within the preservation horizon supplied by the recorder. Examination or extraction from recorded material is a separate constitutional responsibility with its own evidence, reconciliation, and standing limits; successful extraction does not itself establish knowledge. Diagnostic recording should remain scoped to its diagnostic run unless a separate establishment boundary supplies additional standing. Diagnostic rendering, metrics output, CLI report text, and operator capture are not Seed preservation by identity; Seed preservation, when warranted, belongs to the retained testimony or compressed standing and not to the external surface that displayed it.
 
 
 ## Addressable boundaries for recorded-change witnesses
@@ -19,6 +19,10 @@ A recording boundary may create retrievable assertion-bearing material within it
 When recorded material is admitted only for diagnostic or examination purposes, consumers must preserve the scoped subject of that recording unless a separate establishment boundary supplies additional standing. The produced effect is bounded availability for examination, not mutation of cluster truth, universal state, reliance, or receipt.
 
 ## Important distinctions
+- diagnostic rendering != Seed-consumable knowledge
+- operator capture != Seed preservation
+- operator omission != permission for Seed to forget
+- Seed preservation != obligation to expose every sample externally
 - act occurrence != recording occurrence
 - record exists != recorded assertion true automatically
 - extraction occurrence != original execution occurrence
