@@ -164,7 +164,7 @@ def test_fact_index_status_reporting_does_not_alter_output():
         state, workspace_id="ws", store=store, status_consumer=consumer
     )
 
-    assert format_current_facts(state, "svc", "runtime", fact_index=index) == "docker"
+    assert format_current_facts(state, "svc", "runtime", fact_index=index).endswith("\n\ndocker")
     assert any(
         status.message == "Fact index cache: miss" for status in consumer.statuses
     )

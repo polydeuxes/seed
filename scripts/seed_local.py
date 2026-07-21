@@ -1873,7 +1873,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--why",
         nargs=2,
         metavar=("ENTITY", "PREDICATE"),
-        help="explain why Seed holds, rejects, or considers a current belief ambiguous",
+        help="diagnose why the projection selected, rejected, or found ambiguous supported values",
     )
     parser.add_argument(
         "--evidence",
@@ -1887,12 +1887,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--why-fact",
         nargs="+",
         metavar="ARG",
-        help="explain evidence for SUBJECT PREDICATE [OBJECT] from projected State",
+        help="diagnose evidence linked to SUBJECT PREDICATE [OBJECT] from projected State",
     )
     parser.add_argument(
         "--unsupported-facts",
         action="store_true",
-        help="print projected facts with no linked supporting evidence",
+        help="diagnose projected fact-shaped artifacts with no linked supporting evidence",
     )
     parser.add_argument(
         "--contradictions",
@@ -1932,7 +1932,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--best-fact",
         nargs=2,
         metavar=("SUBJECT", "PREDICATE"),
-        help="print the projected current belief for a subject/predicate",
+        help="print the projection-local selected support for a subject/predicate",
     )
     parser.add_argument(
         "--source-navigation",
@@ -1947,8 +1947,8 @@ def build_parser() -> argparse.ArgumentParser:
         nargs="*",
         metavar=("SUBJECT", "PREDICATE"),
         help=(
-            "print all projected Fact views; optionally pass SUBJECT PREDICATE "
-            "for the legacy current-fact query"
+            "print projection-local fact-support inventory; optionally pass "
+            "SUBJECT PREDICATE for the distinct selected-value diagnostic"
         ),
     )
     parser.add_argument(
@@ -1962,7 +1962,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--current-observations",
         action="store_true",
-        help="print read-only projected Observation views and exit",
+        help="print read-only projected observation-record inventory diagnostic and exit",
     )
     parser.add_argument(
         "--current-requirements",
@@ -4983,7 +4983,11 @@ def format_state_view_summary(summary: StateSummary) -> str:
 
 
 def format_fact_views(views: list[FactView]) -> str:
-    lines = ["Current Facts", ""]
+    lines = [
+        "Projected Fact-Support Inventory Diagnostic",
+        "Contract: reports fact-shaped support artifacts visible in the projection; does not establish Fact standing or current applicability.",
+        "",
+    ]
     lines.extend(
         f"* {view.subject} {view.predicate} {_format_view_value(view.object)}"
         f"{_format_view_dimensions(view.dimensions)}"
@@ -4995,7 +4999,11 @@ def format_fact_views(views: list[FactView]) -> str:
 
 
 def format_observation_views(views: list[ObservationView]) -> str:
-    lines = ["Current Observations", ""]
+    lines = [
+        "Projected Observation-Record Inventory Diagnostic",
+        "Contract: reports observation records visible in projected State; does not by itself emit attributed-testimony standing.",
+        "",
+    ]
     lines.extend(f"* {view.summary}" for view in views)
     if not views:
         lines.append("(none)")
@@ -5273,8 +5281,13 @@ def format_fact_supports(
     *,
     historical_samples_hidden: bool = False,
 ) -> str:
+    header = [
+        "Projected-Support Diagnostic",
+        "Contract: reports aggregate projected support groups; does not establish Fact standing or current applicability.",
+        "",
+    ]
     if not supports:
-        return f"no fact support for {subject} {predicate}"
+        return "\n".join([*header, f"no fact support for {subject} {predicate}"])
 
     sections: list[str] = []
     for support in supports:
@@ -5301,7 +5314,7 @@ def format_fact_supports(
                 ]
             )
         )
-    output = "\n\n".join(sections)
+    output = "\n".join(header) + "\n" + "\n\n".join(sections)
     if historical_samples_hidden:
         output += "\n\nhistorical samples hidden; use --include-history"
     return output
@@ -5698,12 +5711,19 @@ def format_current_facts(
         facts = state.get_current_facts(
             subject, predicate, include_expired=include_expired
         )
+    lines = [
+        "Current-Selection Diagnostic",
+        "Contract: reports values selected by the projection current-fact getter; does not establish present-facing applicability.",
+        "",
+    ]
     if not facts:
-        return f"no current facts for {subject} {predicate}"
-    return "\n".join(
+        lines.append(f"no selected values for {subject} {predicate}")
+        return "\n".join(lines)
+    lines.extend(
         f"{_format_fact_value(fact.value)}{_format_fact_dimensions(fact.dimensions)}"
         for fact in _sort_facts_for_display(facts)
     )
+    return "\n".join(lines)
 
 
 def _format_fact_expiry_statuses(fact_ids: list[str], facts: dict[str, Fact]) -> str:
@@ -5722,7 +5742,10 @@ def _format_fact_expiry_statuses(fact_ids: list[str], facts: dict[str, Fact]) ->
 def format_explanation(explanation: Explanation) -> str:
     """Render a deterministic operator-facing why explanation."""
 
-    sections: list[str] = []
+    sections: list[str] = [
+        "Selection Explanation Diagnostic",
+        "Contract: explains projected support selection; does not establish Fact warrant or current applicability.",
+    ]
     if explanation.current_beliefs:
         sections.append("Current belief:")
         sections.extend(

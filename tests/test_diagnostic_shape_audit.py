@@ -390,3 +390,17 @@ def test_candidate_external_grammar_shape_audit_registration_is_consistent():
     assert _row(rows, "candidate_external_grammar", "supports_json").status == "consistent"
     assert _row(rows, "candidate_external_grammar", "writes_event_ledger").status == "consistent"
     assert _row(rows, "candidate_external_grammar", "mutates_cluster").status == "consistent"
+
+
+def test_recovered_current_fact_family_shape_audited_as_read_only():
+    rows = build_diagnostic_shape_audit()
+
+    for diagnostic in [
+        "projected_observation_record_inventory",
+        "projected_fact_support_inventory",
+        "current_selection_diagnostic",
+        "projected_support_diagnostic",
+        "selection_explanation_diagnostic",
+    ]:
+        assert _row(rows, diagnostic, "writes_event_ledger").status == "consistent"
+        assert _row(rows, diagnostic, "mutates_cluster").status == "consistent"
