@@ -9,3 +9,4 @@ Only questions without a clean single-chapter home belong here.
 - `[UNRESOLVED]` Which conflict-awareness mechanics are required before Fact production, during support aggregation, during projection, and at consumer uptake for each claim strength?
 - `[UNRESOLVED]` Which authority or corroboration thresholds, if any, are required for stronger Fact claims, live-state claims, and verification claims?
 - `[UNRESOLVED]` Under the amended Book grammar, which temporal standings and relations govern Claim expression, normalization, Fact production or establishment, projection, and consumer uptake?
+- `[UNRESOLVED]` Which current public Views fail the temporal assertion/disclosure contract now amended into the Book, and which repair mode is smallest for each: narrowed assertion, direct disclosure, split surface, explanation/navigation, or preserved shape?

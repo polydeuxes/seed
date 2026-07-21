@@ -48,3 +48,9 @@ A bounded result may become operator-facing or external only through a represent
 - [Authority scope](authority-scope.md)
 - [Evidence, provenance, and explanation](../05-evidence-and-knowledge/evidence-provenance-and-explanation.md)
 - [Execution and recording](../07-operational-realization/execution-and-recording.md)
+
+## Temporal handoff and uptake amendment 001
+
+Consumer uptake is temporally local. A consumer may need to judge purpose fit, freshness threshold, expiry meaning, conflict tolerance, authority, scope, verification duration, and time of reliance before using the same preserved material. Two consumers may therefore lawfully assign different current applicability to the same projected or preserved material without changing the historical record.
+
+Returned testimony and external handoff do not inherit the temporal standing of the initiating requirement or View. Requirement time, request-formation time, emission time, external receipt time, realization time, response-production time, response-receipt time, ingress time, and any new Observation time remain distinct and Unknown unless a responsible producer records them.
