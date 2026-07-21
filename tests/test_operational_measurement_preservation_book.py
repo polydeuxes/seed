@@ -129,3 +129,52 @@ def test_amendment_and_correction_records_required_answers_and_absent_implementa
     assert "No baseline-transition artifact is implemented" in correction
     assert "No timing-based lawful-movement consumer is implemented" in correction
     assert "does not invalidate PR 1895's preservation rule" in correction
+
+
+def test_recording_boundary_does_not_own_measurement_or_standing_establishment():
+    text = _read("book_of_seed/05-evidence-and-knowledge/recording-and-knowledge-extraction.md")
+
+    assert "operational measurement != recording" in text
+    assert "measurement occurrence != recorded measurement" in text
+    assert "recording measurement testimony != producing measurement testimony" in text
+    assert "diagnostic rendering != measurement production" in text
+    assert "diagnostic rendering != measurement preservation" in text
+    assert "baseline establishment != baseline recording" in text
+    assert "retained measurement series != operational baseline" in text
+    assert "comparison != recording" in text
+    assert "deviation recognition != deviation recording" in text
+    assert "baseline transition establishment != transition recording" in text
+    assert "record exists != recorded standing lawfully established" in text
+    assert "non-rebuildable != preservation-required" in text
+
+
+def test_canonical_clauses_protect_transient_measurement_and_record_limits():
+    text = _read("book_of_seed/05-evidence-and-knowledge/recording-and-knowledge-extraction.md")
+
+    assert "Recording may preserve already produced measurement testimony" in text
+    assert "does not produce the upstream measurement" in text
+    assert "measurement-production responsibility produces that operation-instance testimony" in text
+    assert "A measurement occurrence may exist transiently without ever becoming a recorded measurement" in text
+    assert "baseline recording may preserve the resulting standing but does not establish ordinary behavior" in text
+    assert "recorded summary" in text
+    assert "Comparison occurrence != recorded comparison" in text or "comparison occurrence != recorded comparison" in text
+    assert "Material deviation recognition is an establishment decision" in text
+    assert "recorded difference does not establish material deviation" in text
+    assert "Preservation decision != standing-establishment decision" in text
+
+
+def test_boundary_correction_record_required_answers_and_absences():
+    text = _read("book_of_seed/operational_measurement_recording_boundary_correction_001.md")
+
+    assert "Producing operational measurement testimony is not constitutionally identical to recording it" in text
+    assert "Operational measurement testimony may exist transiently without a recording boundary" in text
+    assert "Recording a set of measurements does not establish an operational baseline" in text
+    assert "Recording a difference does not establish material deviation" in text
+    assert "Recording repeated measurements does not establish a baseline transition" in text
+    assert "Recording may preserve already established measurement, baseline, deviation, or transition standing" in text
+    assert "does not invalidate PR 1895's preservation rule or PR 1896's execution correction" in text
+    assert "No operational timing baseline is implemented" in text
+    assert "No tolerance comparison is implemented" in text
+    assert "No deviation artifact is implemented" in text
+    assert "No baseline-transition artifact is implemented" in text
+    assert "No timing-based lawful-movement consumer is implemented" in text
