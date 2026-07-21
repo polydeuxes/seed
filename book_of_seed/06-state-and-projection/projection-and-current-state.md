@@ -7,7 +7,7 @@ The derivation of projected material, current lawful condition, and possible cur
 Which projected material may support a question-facing current lawful condition or current constitutional standing, and how are scope, freshness, lineage, authority limits, and Unknowns exposed?
 
 ## Bounded resolution
-Projected material is a recoverable view shaped by replay scope and projection rules. It may support current understanding, a current lawful condition, or bounded current constitutional standing only through a responsible consumer boundary that preserves evidence, warrant, authority, freshness, confidence, conflicts, expiry, mutation limits, and Unknowns. ObservationView exposes source-attributed observation testimony and its supporting ids; it does not assert promotion, current selection, verification, or Fact standing. FactView exposes projected normalized fact/support material, usually from FactSupport and sometimes from raw fact-shaped rows for fallback callers; it may display material whose standing was lawfully established, but the view itself is not the establishment boundary and is not universal truth, verified state, or exhaustive history. A view or cache does not become a new constitutional source of law, and projection is not standing by identity.
+Projected material is a recoverable view shaped by replay scope and projection rules. It may support current understanding, a current lawful condition, or bounded current constitutional standing only through a responsible consumer boundary that preserves evidence, warrant, authority, freshness, confidence, conflicts, expiry, mutation limits, and Unknowns. ObservationView exposes source-attributed observation testimony and its supporting ids; it does not assert promotion, current selection, verification, or Fact standing. A true FactView exposes a proposition with bounded Fact standing, not merely any projected support or fact-shaped material. The current implementation named `FactView` exposes projected normalized fact/support material, usually from `FactSupport` and sometimes from raw fact-shaped rows for fallback callers; this is an implementation inventory that may contain lawfully established Fact material but does not itself prove establishment, current applicability, universal truth, verified state, or exhaustive history. PR 1890 was therefore correct to recover the current implementation surface as compact projected normalized fact/support inventory, but overbroad if that phrase is treated as the constitutional definition of a FactView. A current-facing Fact View is a further standing-bearing emission that warrants present applicability under a declared projection, scope, purpose, as-of boundary, freshness/expiry treatment, conflict treatment, and Unknowns. A view or cache does not become a new constitutional source of law, and projection is not standing by identity.
 
 ## Addressable boundaries for implementation visibility
 
@@ -20,6 +20,9 @@ A projection, view, package, set, or handoff is lossless for a declared bounded 
 ## Important distinctions
 - projection != constitutional source
 - projected material != current constitutional standing
+- input artifact kind != View kind automatically
+- projected FactSupport != FactView automatically
+- FactView != current-facing Fact View
 - ObservationView != FactView
 - FactView != Fact establishment boundary
 - read model != underlying record
