@@ -7,7 +7,7 @@ The roles of recorded events, established facts, relationships, projected materi
 From which recorded material and established facts may a responsible projection act expose support for a current lawful condition or current constitutional standing, and what authority remains absent?
 
 ## Bounded resolution
-Events are immutable records that assert occurrences or other claims; an event records that an assertion was made, not that every asserted occurrence is true. Facts carry supported claims. A projection replays bounded recorded material under declared rules and may expose projected material that supports a current lawful condition or bounded current constitutional standing only when the responsible consumer also preserves subject, evidence, warrant, authority, confidence, and Unknown limits. Projected material is not standing by identity, and current standing is not a constitutional State object. These boundaries must remain visible even when one pipeline connects them.
+Events are immutable records that assert occurrences or other claims; an event records that an assertion was made, not that every asserted occurrence is true. Facts carry supported normalized claims when their producer established bounded Fact standing, and may otherwise be fact-shaped recorded material whose original standing must be recovered from provenance and producer evidence. A projection replays bounded recorded material under declared rules and may expose projected material that supports a current lawful condition or bounded current constitutional standing only when the responsible consumer also preserves subject, evidence, warrant, authority, confidence, freshness, conflict, expiry, and Unknown limits. Projected material is not standing by identity, and current standing is not a constitutional State object. Contradicted, stale, expired, historical, unselected, or superseded Facts may remain preserved fact material while losing current selection or receiving weaker confidence for a consumer. These boundaries must remain visible even when one pipeline connects them.
 
 
 ## Addressable boundaries for current constitutional standing
@@ -20,6 +20,9 @@ Append-only records, established facts, projected material, current lawful condi
 - event recording != required for every constitutional occurrence
 - event != fact
 - fact != entity
+- Fact artifact != Fact standing
+- Fact standing != current constitutional standing
+- current constitutional standing != verified standing
 - replay input != projected material
 - projected material != current constitutional standing
 - current lawful condition != recorded history

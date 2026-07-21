@@ -25,11 +25,16 @@ This is a lightweight navigation index. Aliases record repository or presentatio
 | constitutional question | Inquiry and Examination | [Questions and inquiry](04-inquiry-and-examination/questions-and-inquiry.md) | bounded question, question surface | uncertainty, inquiry |
 | inquiry frontier | Inquiry and Examination | [Inquiry frontiers](04-inquiry-and-examination/inquiry-frontiers.md) | bounded frontier, inquiry artifacts | boundary testimony, examination |
 | examination | Inquiry and Examination | [Examination methods and probes](04-inquiry-and-examination/examination-methods-and-probes.md) | probe, examination work | applicability, testimony |
-| testimony | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | observation, finding, claim | fact, evidence |
+| testimony | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | observation, finding, claim expression, source claim | claim, fact, evidence |
+| Claim | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | claim, semantic claim, proposition | testimony, normalization, Fact |
+| normalization | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | normalized claim, canonical claim form | Claim, Fact, support |
+| Fact standing | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | established fact, bounded fact standing | Fact artifact, evidence, current standing, verified standing |
 | evidence | Evidence and Knowledge | [Evidence, provenance, and explanation](05-evidence-and-knowledge/evidence-provenance-and-explanation.md) | support, provenance | fact, explanation |
 | knowledge extraction | Evidence and Knowledge | [Recording and knowledge extraction](05-evidence-and-knowledge/recording-and-knowledge-extraction.md) | fact extraction, promotion | recording, reconciliation |
 | state | State and Projection | [Events, facts, and state](06-state-and-projection/events-facts-and-state.md) | cluster state, belief state | event, fact, projection |
 | projection | State and Projection | [Projection and current state](06-state-and-projection/projection-and-current-state.md) | read model, view, projection cache, state build | replay, source record |
+| ObservationView | State and Projection | [Projection and current state](06-state-and-projection/projection-and-current-state.md) | observation view | testimony, FactView |
+| FactView | State and Projection | [Projection and current state](06-state-and-projection/projection-and-current-state.md) | fact view, current fact view | projection, Fact standing, ObservationView |
 | ownership discrepancy | State and Projection | [Ownership, discrepancy, and residue](06-state-and-projection/ownership-discrepancy-and-residue.md) | responsibility mismatch, historical residue | authority, canonical path |
 | operational realization | Operational Realization | [Operational realization and capability](07-operational-realization/operational-realization-and-capability.md) | mechanism, provider realization | capability, need |
 | warrant | Operational Realization | [Warrants and execution proposals](07-operational-realization/warrants-and-execution-proposals.md) | execution basis, realization warrant | proposal, authority |
