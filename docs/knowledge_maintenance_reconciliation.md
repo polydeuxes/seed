@@ -65,9 +65,6 @@ Minimum requested files inspected:
 Adjacent architecture, generated documentation, and tests inspected where
 relevant:
 
-- `docs/generated/architecture/architecture_graph.json`
-- `docs/generated/architecture/runtime_ownership.dot`
-- `docs/generated/architecture/runtime_ownership.mmd`
 - `tests/test_contradictions.py`
 - `tests/test_temporal_characterization.py`
 - `tests/test_graph_validation.py`

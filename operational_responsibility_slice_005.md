@@ -13,7 +13,6 @@ The selected boundary follows the current registered-operation call path after a
 - `ToolExecutionPolicyService.evaluate_with_state_factory` is the transition point used by `ToolExecutor.execute` before any tool-call event is recorded or registered implementation is realized.
 - Before this slice, `ToolExecutionPolicyService._evaluate` performed existence validation, status validation, input validation, lazy state projection, and policy evaluation in one method.
 - `ToolExecutor.execute` already treated non-valid validation as failure and non-allow policy as denial/pending routing, so behavior did not require semantic changes.
-- `scripts/generate_architecture.py` detected a stale generated architecture graph while the full test suite ran; the generated graph was refreshed without changing runtime behavior.
 
 ## Before
 
@@ -75,7 +74,6 @@ Preserved boundaries:
 - `tests/test_tool_execution_policy.py`
   - Added tests proving registered-operation validation stops before policy authorization.
   - Added tests proving policy authorization consumes a validated operation and still produces the same allow result.
-- `docs/generated/architecture/architecture_graph.json`
   - Refreshed generated architecture graph output so `tests/test_architecture_generator.py` remains stable after running the generator.
 
 ## LOC changed
@@ -83,7 +81,6 @@ Preserved boundaries:
 From `git diff --stat` before commit:
 
 ```text
-docs/generated/architecture/architecture_graph.json |  24 ++--
 operational_responsibility_slice_005.md            | 137 +++++++++++++++++++++
 seed_runtime/tool_execution_policy.py              | 111 +++++++++++++++--
 tests/test_tool_execution_policy.py                |  37 ++++++

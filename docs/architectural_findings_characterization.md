@@ -127,9 +127,6 @@ future-work documentation inspected or discovered during repository inspection:
 - `docs/audit/context_knowledge_consolidation.md`
 - `docs/audit/capability_operation_vocabulary_audit.md`
 - `docs/audit/core_mvp_inventory_audit.md`
-- `docs/generated/architecture/architecture_graph.json`
-- `docs/generated/architecture/runtime_ownership.dot`
-- `docs/generated/architecture/runtime_ownership.mmd`
 
 Repository discovery commands used during inspection:
 

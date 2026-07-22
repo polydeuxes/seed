@@ -10,10 +10,6 @@ code, change `Runtime`, or add execution behavior.
 
 Architecture and ownership sources:
 
-- `scripts/generate_architecture.py`
-- `docs/generated/architecture/architecture_graph.json`
-- `docs/generated/architecture/runtime_ownership.mmd`
-- `docs/generated/architecture/runtime_ownership.dot`
 - `docs/architecture_visualization_phase1.md`
 - `docs/invariants.md`
 - `docs/rule_inventory.md`
@@ -66,14 +62,10 @@ into the canonical observation pipeline as repository observations.
 
 ### Architecture generator
 
-`scripts/generate_architecture.py` is the strongest current self-observation
 asset. It performs a static Python AST scan over a selected set of runtime files,
 extracts class-local `__seed_arch__` metadata, extracts limited `self.*` calls,
 and emits three generated artifacts:
 
-- `docs/generated/architecture/architecture_graph.json`
-- `docs/generated/architecture/runtime_ownership.mmd`
-- `docs/generated/architecture/runtime_ownership.dot`
 
 Important properties:
 
@@ -297,7 +289,6 @@ include both code entities and architecture-domain entities.
 | service | `ToolNeedService`, `ToolExecutionPolicyService` | Architecture role over classes. |
 | runtime component | `Runtime`, `EventLedger`, `ProjectionStore` | Higher-level component identity. |
 | catalog | `CapabilityCatalog`, `PredicateCatalog`, `RelationshipCatalog` | Read-only metadata owners. |
-| generated artifact | `architecture_graph.json`, `runtime_ownership.mmd` | Useful for generation freshness. |
 | invariant | `runtime_loop_absent`, `call_tool_only_path` | Expected architecture truths. |
 | rule inventory entry | `capability_resolution.registered_operation_candidates` | Deterministic rule metadata. |
 | capability | `weather_lookup`, `ssh_access` | Already cataloged as capability metadata. |

@@ -53,9 +53,6 @@ Inventory scope: `README.md`, root historical markdown files discovered during t
 | `docs/explainability_reconciliation.md` | Historical Reconciliation | Historical reconciliation | No | Yes, after promotion review | Reconciles explainability docs into contract vocabulary. |
 | `docs/explanation_contract_vocabulary.md` | Vocabulary | Current | Yes | No | Canonical explanation-contract vocabulary. |
 | `docs/function_blocks.md` | Canonical | Current | Yes | No | Functional decomposition of Seed's architecture. |
-| `docs/generated/architecture/architecture_graph.json` | Generated | Current if regenerated from code | Yes, as generated source artifact | No | Machine-readable generated architecture graph; edit generator/source metadata instead of this file. |
-| `docs/generated/architecture/runtime_ownership.dot` | Generated | Current if regenerated from code | Yes, as generated render artifact | No | Generated Graphviz DOT ownership graph; do not edit manually. |
-| `docs/generated/architecture/runtime_ownership.mmd` | Generated | Current if regenerated from code | Yes, as generated render artifact | No | Generated Mermaid ownership graph; do not edit manually. |
 | `docs/invariants.md` | Canonical | Current | Yes | No | Canonical invariant list paired with tests. |
 | `docs/knowledge_acquisition_status.md` | Status | Current | Yes | No | Active board for known, missing, inferred, recommended, and unverified knowledge. |
 | `docs/knowledge_classification_vocabulary.md` | Vocabulary | Current | Yes | No | Canonical knowledge-status/classification vocabulary. |
@@ -98,11 +95,7 @@ Canonical documents define Seed today and should be kept small, current, and int
 
 Generated documents are authoritative outputs of code and metadata, but they are not hand-authored source documents. Current generated documents are:
 
-- `docs/generated/architecture/architecture_graph.json`
-- `docs/generated/architecture/runtime_ownership.mmd`
-- `docs/generated/architecture/runtime_ownership.dot`
 
-The authoritative human-editable source for these outputs is `scripts/generate_architecture.py` plus the `__seed_arch__` metadata in runtime source files. The generated files should never be edited manually.
 
 ### Roadmap
 
@@ -188,16 +181,10 @@ The smallest practical canonical set is:
 
 Generated architecture documentation currently consists of:
 
-- `docs/generated/architecture/architecture_graph.json`
-- `docs/generated/architecture/runtime_ownership.mmd`
-- `docs/generated/architecture/runtime_ownership.dot`
 
 Findings:
 
 1. The generated files are authoritative as generated artifacts because they are derived from runtime source metadata and the generator.
-2. The generated files are not authoritative hand-edit surfaces. If a generated file is wrong, fix the source metadata or `scripts/generate_architecture.py`, then regenerate.
-3. `runtime_ownership.mmd` and `runtime_ownership.dot` explicitly start with generated/do-not-edit banners.
-4. `architecture_graph.json` carries generated metadata and should be treated the same way even though it is machine-readable.
 5. Generated documentation should be grouped under a clearly labelled generated section in any future documentation index.
 6. Generated output should be checked by tests that ensure the generator is deterministic, includes expected canonical ownership edges, and excludes quarantined `RuntimeLoop` nodes.
 
@@ -301,9 +288,6 @@ docs/
 
   generated/
     architecture/
-      architecture_graph.json
-      runtime_ownership.mmd
-      runtime_ownership.dot
 
   archive/
     audits/

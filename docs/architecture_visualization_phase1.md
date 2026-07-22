@@ -79,7 +79,6 @@ A minimal Phase 1 pipeline should generate diagrams from code and code-embedded 
 
 ```text
 AST scan + ownership metadata
-  -> architecture_graph.json
   -> Mermaid .mmd
   -> optional DOT
   -> optional SVG
@@ -135,7 +134,6 @@ Example shape:
 
 #### Step 4: Generate Mermaid
 
-Emit `docs/generated/architecture/runtime_ownership.mmd` with subgraphs for:
 
 - runtime orchestration;
 - ToolNeed and capability resolution;
@@ -148,7 +146,6 @@ Emit `docs/generated/architecture/runtime_ownership.mmd` with subgraphs for:
 Emit DOT from the same JSON model and render with Graphviz when available:
 
 ```bash
-dot -Tsvg docs/generated/architecture/runtime_ownership.dot -o docs/generated/architecture/runtime_ownership.svg
 ```
 
 #### Step 6: Validate in CI
@@ -156,7 +153,6 @@ dot -Tsvg docs/generated/architecture/runtime_ownership.dot -o docs/generated/ar
 CI should regenerate artifacts and fail on drift:
 
 ```bash
-python scripts/generate_architecture.py
 git diff --exit-code docs/generated/architecture
 ```
 
@@ -267,10 +263,6 @@ Guardrails:
 A future implementation could add:
 
 ```text
-scripts/generate_architecture.py
-docs/generated/architecture/architecture_graph.json
-docs/generated/architecture/runtime_ownership.mmd
-docs/generated/architecture/runtime_ownership.dot
 docs/generated/architecture/runtime_ownership.svg
 ```
 

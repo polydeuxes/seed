@@ -47,9 +47,6 @@ Minimum requested files inspected:
 
 Relevant generated and adjacent architecture documentation inspected:
 
-- `docs/generated/architecture/architecture_graph.json`
-- `docs/generated/architecture/runtime_ownership.dot`
-- `docs/generated/architecture/runtime_ownership.mmd`
 - `docs/knowledge_acquisition_status.md`
 - `docs/canonicalization_pass_v1.md`
 - `docs/self_observation_reconciliation.md`

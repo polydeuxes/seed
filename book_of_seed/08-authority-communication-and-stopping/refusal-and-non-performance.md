@@ -16,7 +16,6 @@ Refusal, policy blocks, failed preconditions, and requests for clarification rem
 
 ## Representative repository anchors
 - `seed_runtime/policy.py::PolicyGate`
-- `seed_runtime/execution_proposals.py::ExecutionProposalFailure`
 
 ## Counterexamples or failure modes
 - Silently dropping a prohibited request instead of preserving the reason.

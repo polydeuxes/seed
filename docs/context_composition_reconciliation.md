@@ -63,7 +63,6 @@ Minimum requested files inspected:
 - `seed_runtime/explanations.py`
 - `seed_runtime/tool_needs.py`
 - `seed_runtime/capability_inventory.py`
-- `docs/generated/architecture/architecture_graph.json`
 
 Additional adjacent context considered:
 

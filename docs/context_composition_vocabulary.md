@@ -35,7 +35,6 @@ runtime surfaces:
 - `docs/invariants.md`
 - `docs/state.md`
 - `docs/reasoning_roadmap.md`
-- `docs/generated/architecture/architecture_graph.json`
 - `seed_runtime/context_views.py`
 - `seed_runtime/state_views.py`
 - `seed_runtime/explanations.py`

@@ -384,7 +384,6 @@ self-modification or a special internal executor.
 
 - Architecture generator
 - AST metadata
-- `architecture_graph.json`
 - `ObservationSource` pattern
 - Facts, relationships, and entity types
 

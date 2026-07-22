@@ -116,7 +116,6 @@ Final collected test count for this follow-up: 2067. Final pass/fail result: 206
 
 ## Active documentation corrected
 
-- Regenerated `docs/generated/architecture/architecture_graph.json`, `docs/generated/architecture/runtime_ownership.mmd`, and `docs/generated/architecture/runtime_ownership.dot` without the deleted executor/registry nodes.
 - Corrected `docs/architecture.md` present-tense runtime ownership text.
 - Corrected `docs/invariants.md`, `docs/capability_verification_vocabulary.md`, and `tests/test_capability_verification_invariants.py` so active invariants, capability-verification vocabulary, and documentation tests no longer warrant runtime tool routing, executor/policy/pending-action services, registry/spec exposure, or registered-operation execution as current Seed architecture.
 
@@ -148,7 +147,6 @@ python scripts/seed_local.py --help
 printf 'hello\nexit\n' | python scripts/seed_local.py
 pytest --collect-only -q
 pytest -q
-rg -n "seed_runtime\.(execution|tool_validation|tool_execution_policy|pending_actions|fact_extraction|registry)|from seed_runtime\.(execution|tool_validation|tool_execution_policy|pending_actions|fact_extraction|registry)|ToolExecutor|ToolCallResult|ToolContext|ToolValidationService|ToolExecutionPolicyService|ToolRegistry|FactExtractionService|ToolResultFactExtractor|tool\.call\.(started|completed|failed)|tool\.policy\.blocked|tool\.approval\.required|pending_action\.(created|approved|completed|cancelled|status_changed)|tool\.registered" seed_runtime scripts tests docs/generated scripts/generate_architecture.py
 ```
 
 Final verification collected 2067 tests and `pytest -q` reported 2067 passed. The targeted active-code/test/generated search is interpreted with the bounded correction rule: benign historical report text and neutral fixture strings are not executable contamination. Active implementation, CLI/API, test, and generated architecture paths contain no surviving Seed-owned executable-tool corridor.
