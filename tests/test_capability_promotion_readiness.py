@@ -142,18 +142,9 @@ def test_promotion_readiness_does_not_create_capability_verified_facts_or_write_
 
 
 def test_promotion_readiness_invokes_no_policy_or_execution(monkeypatch, tmp_path):
-    import seed_runtime.policy as policy_module
-
     git = tmp_path / "git"
     git.write_text("stub", encoding="utf-8")
     git.chmod(0o755)
-    monkeypatch.setattr(
-        policy_module.PolicyGate,
-        "evaluate",
-        lambda *args, **kwargs: (_ for _ in ()).throw(
-            AssertionError("policy evaluated")
-        ),
-    )
     ledger = EventLedger()
     ledger.append("fact.observed", "ws", {"fact": to_plain(_package_fact("git"))})
 

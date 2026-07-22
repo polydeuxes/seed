@@ -33,7 +33,6 @@ from seed_runtime.relationship_catalog import (
     RelationshipKind,
 )
 from seed_runtime.models import (
-    ActionPlan,
     Approval,
     Entity,
     Event,
@@ -41,9 +40,7 @@ from seed_runtime.models import (
     FactConflict,
     FactSupport,
     Goal,
-    HandoffPlan,
     Observation,
-    PendingAction,
     ToolNeed,
     ToolSpec,
 )
@@ -478,10 +475,6 @@ class State:
     goals: dict[str, Goal] = field(default_factory=dict)
     tool_needs: dict[str, ToolNeed] = field(default_factory=dict)
     approvals: dict[str, Approval] = field(default_factory=dict)
-    action_plan_approvals: dict[str, str] = field(default_factory=dict)
-    pending_actions: dict[str, PendingAction] = field(default_factory=dict)
-    action_plans: dict[str, ActionPlan] = field(default_factory=dict)
-    handoff_plans: dict[str, HandoffPlan] = field(default_factory=dict)
     tools: dict[str, ToolSpec] = field(default_factory=dict)
 
     def get_entity_type_assertions(
@@ -1202,37 +1195,6 @@ class StateProjector:
             data["expires_at"] = _parse_dt(data.get("expires_at"))
             approval = Approval(**data)
             state.approvals[approval.id] = approval
-        elif event.kind == "handoff_plan.created":
-            data = payload.get("handoff_plan", payload)
-            handoff_plan = HandoffPlan(**data)
-            state.handoff_plans[handoff_plan.id] = handoff_plan
-        elif event.kind == "action_plan.approved":
-            state.action_plan_approvals[payload["action_plan_id"]] = event.id
-        elif event.kind == "action_plan.created":
-            data = payload.get("action_plan", payload)
-            action_plan = ActionPlan(**data)
-            state.action_plans[action_plan.id] = action_plan
-        elif event.kind in {
-            "action_plan.accepted",
-            "action_plan.rejected",
-            "action_plan.superseded",
-        }:
-            action_plan_id = payload["action_plan_id"]
-            if action_plan_id in state.action_plans:
-                current = state.action_plans[action_plan_id]
-                update = {
-                    "status": payload.get("status", event.kind.rsplit(".", 1)[-1])
-                }
-                if event.kind == "action_plan.rejected":
-                    update["rejection_reason"] = payload.get("reason")
-                    update["replacement_plan_id"] = None
-                elif event.kind == "action_plan.superseded":
-                    update["rejection_reason"] = None
-                    update["replacement_plan_id"] = payload.get("replacement_plan_id")
-                elif event.kind == "action_plan.accepted":
-                    update["rejection_reason"] = None
-                    update["replacement_plan_id"] = None
-                state.action_plans[action_plan_id] = current.model_copy(update=update)
 
 
 def _recover_affected_scope(event: Event) -> _AffectedScope | None:
@@ -1268,20 +1230,6 @@ def _recover_affected_scope(event: Event) -> _AffectedScope | None:
     if event.kind == "approval.granted":
         data = payload.get("approval", payload)
         return _AffectedScope("approvals", data.get("id"), data.get("scope"))
-    if event.kind == "handoff_plan.created":
-        data = payload.get("handoff_plan", payload)
-        return _AffectedScope("handoff_plans", data.get("id"))
-    if event.kind in {
-        "action_plan.created",
-        "action_plan.approved",
-        "action_plan.accepted",
-        "action_plan.rejected",
-        "action_plan.superseded",
-    }:
-        data = payload.get("action_plan", payload)
-        return _AffectedScope(
-            "action_plans", data.get("id") or payload.get("action_plan_id")
-        )
     return None
 
 

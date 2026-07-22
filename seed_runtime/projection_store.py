@@ -22,12 +22,9 @@ from seed_runtime.execution_status import (
 from seed_runtime.evidence import Evidence
 from seed_runtime.facts import Fact, FactConflict, FactSupport
 from seed_runtime.models import (
-    ActionPlan,
     Approval,
     Entity,
     Goal,
-    HandoffPlan,
-    PendingAction,
     ToolNeed,
     ToolSpec,
 )
@@ -935,10 +932,6 @@ def state_to_payload(state: State) -> dict[str, Any]:
             "goals": state.goals,
             "tool_needs": state.tool_needs,
             "approvals": state.approvals,
-            "action_plan_approvals": state.action_plan_approvals,
-            "pending_actions": state.pending_actions,
-            "action_plans": state.action_plans,
-            "handoff_plans": state.handoff_plans,
             "tools": state.tools,
         }
     )
@@ -974,10 +967,6 @@ def state_from_payload(payload: dict[str, Any]) -> State:
     state.goals = _model_dict(payload, "goals", Goal)
     state.tool_needs = _model_dict(payload, "tool_needs", ToolNeed)
     state.approvals = _model_dict(payload, "approvals", Approval)
-    state.action_plan_approvals = dict(payload.get("action_plan_approvals", {}))
-    state.pending_actions = _model_dict(payload, "pending_actions", PendingAction)
-    state.action_plans = _model_dict(payload, "action_plans", ActionPlan)
-    state.handoff_plans = _model_dict(payload, "handoff_plans", HandoffPlan)
     state.tools = _model_dict(payload, "tools", ToolSpec)
     return state
 

@@ -301,31 +301,6 @@ def test_project_from_state_publishes_same_consumer_visible_projection():
     assert projected.workspace_id == workspace_id
 
 
-def test_affected_scope_recovery_covers_update_events_without_applying_them():
-    ledger = EventLedger()
-    workspace_id = "ws_scope_updates"
-
-    need_event = ledger.append(
-        "tool_need.status_changed",
-        workspace_id,
-        {"tool_need_id": "need_scope", "status": "satisfied"},
-    )
-    plan_event = ledger.append(
-        "action_plan.accepted",
-        workspace_id,
-        {"action_plan_id": "plan_scope", "status": "accepted"},
-    )
-
-    assert state_module._recover_affected_scope(
-        need_event
-    ) == state_module._AffectedScope(collection="tool_needs", identity="need_scope")
-    assert state_module._recover_affected_scope(
-        plan_event
-    ) == state_module._AffectedScope(collection="action_plans", identity="plan_scope")
-    assert StateProjector(ledger).project(workspace_id).tool_needs == {}
-    assert StateProjector(ledger).project(workspace_id).action_plans == {}
-
-
 def test_projector_rebuilds_state_deterministically():
     ledger = EventLedger()
     workspace_id = "ws_1"

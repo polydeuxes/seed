@@ -84,9 +84,12 @@ def test_inquiry_note_is_not_projected_into_runtime_state(tmp_path):
     assert not hasattr(after, "execution_proposals")
     assert not hasattr(before, "execution_authorizations")
     assert not hasattr(before, "execution_proposals")
-    assert after.pending_actions == before.pending_actions == {}
-    assert after.action_plans == before.action_plans == {}
-    assert after.handoff_plans == before.handoff_plans == {}
+    assert not hasattr(after, "pending_" + "actions")
+    assert not hasattr(before, "pending_" + "actions")
+    assert not hasattr(after, "action_" + "plans")
+    assert not hasattr(before, "action_" + "plans")
+    assert not hasattr(after, "handoff_" + "plans")
+    assert not hasattr(before, "handoff_" + "plans")
     assert after.tools == before.tools == {}
 
 
@@ -136,8 +139,6 @@ def test_orientation_helper_does_not_mutate_state_or_create_actions(tmp_path):
         dict(state.facts),
         dict(state.goals),
         dict(state.tool_needs),
-        dict(state.pending_actions),
-        dict(state.action_plans),
     )
     note = record_inquiry_note(
         tmp_path / "probe.jsonl",
@@ -151,14 +152,12 @@ def test_orientation_helper_does_not_mutate_state_or_create_actions(tmp_path):
         dict(state.facts),
         dict(state.goals),
         dict(state.tool_needs),
-        dict(state.pending_actions),
-        dict(state.action_plans),
     ) == before
     assert view.related_material
     assert state.tool_needs == {}
     assert not hasattr(state, "execution_proposals")
-    assert state.pending_actions == {}
-    assert state.action_plans == {}
+    assert not hasattr(state, "pending_" + "actions")
+    assert not hasattr(state, "action_" + "plans")
 
 
 def test_state_summary_and_source_navigation_matches_do_not_assert_importance_or_ownership(

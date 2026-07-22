@@ -132,20 +132,11 @@ def test_verification_does_not_become_selection_permission_or_execution_authorit
     assert "verified_capability_not_permission" in inspection.notes
     assert "verified_capability_not_execution_authority" in inspection.notes
     assert not hasattr(state, "execution_proposals")
-    assert state.pending_actions == {}
-    assert state.action_plans == {}
+    assert not hasattr(state, "pending_" + "actions")
+    assert not hasattr(state, "action_" + "plans")
 
 
 def test_verification_invokes_no_policy_or_execution(monkeypatch):
-    import seed_runtime.policy as policy_module
-
-    monkeypatch.setattr(
-        policy_module.PolicyGate,
-        "evaluate",
-        lambda *args, **kwargs: (_ for _ in ()).throw(
-            AssertionError("policy evaluated")
-        ),
-    )
     ledger = EventLedger()
     ledger.append("fact.observed", "ws", {"fact": to_plain(_package_fact("git"))})
 

@@ -39,10 +39,7 @@ ToolNeedStatus = Literal[
     "registered",
     "rejected",
 ]
-PolicyOutcome = Literal["allow", "block", "require_confirmation", "require_approval"]
 RiskClass = Literal["L1", "L2", "L3", "L4"]
-PendingActionStatus = Literal["pending", "approved", "completed", "cancelled"]
-ActionPlanStatus = Literal["proposed", "accepted", "rejected", "superseded"]
 HandoffBackendType = Literal["ansible", "mcp", "temporal", "manual"]
 
 
@@ -112,109 +109,6 @@ class ToolNeed(SeedModel):
     desired_outputs: list[str] = Field(default_factory=list)
 
 
-class ActionPlan(SeedModel):
-    """Legacy/experimental, text-only proposal for satisfying a tool need.
-
-    Action plans are intentionally non-executable. They do not grant approval,
-    register tools, or carry callable code. They are retained for historical
-    projection compatibility and explicit side-path tests only; they are not
-    canonical Runtime behavior and are not part of the Core MVP.
-    """
-
-    id: str
-    tool_need_id: str
-    provider: str
-    capability: str
-    summary: str
-    steps: list[str]
-    risk_class: RiskClass
-    requires_approval: bool
-    status: ActionPlanStatus = "proposed"
-    rejection_reason: str | None = None
-    replacement_plan_id: str | None = None
-    executable: Literal[False] = False
-
-
-class HandoffPlan(SeedModel):
-    """Legacy/experimental external-provider handoff for an ActionPlan.
-
-    Handoff plans are retained for historical projection compatibility and
-    explicit side-path tests only; they are not canonical Runtime behavior and
-    are not part of the Core MVP. Seed records the handoff boundary but does
-    not execute the operation, grant user approval or execution authorization,
-    assert provider trust, register a tool, ask for credentials, retry,
-    schedule, or manage long-running provider jobs.
-    """
-
-    def __init__(self, **data: Any) -> None:
-        reject_secret_fields(data, "handoff_plan")
-        _reject_handoff_approval_claims(data)
-        if data.get("executable", False) is not False:
-            raise ValueError("handoff plan executable must be false")
-        super().__init__(**data)
-
-    id: str = Field(default_factory=lambda: new_id("handoff"))
-    action_plan_id: str
-    provider: str
-    backend_type: HandoffBackendType
-    operation: str
-    target: str
-    policy_summary: str
-    secret_boundary: str
-    requires_external_approval: bool = False
-    executable: Literal[False] = False
-
-
-_HANDOFF_APPROVAL_CLAIM_FIELDS = frozenset(
-    {
-        "approved",
-        "approval_id",
-        "user_approval",
-        "user_approved",
-        "execution_authorization",
-        "execution_authorization_id",
-        "credentials_available",
-        "credential_available",
-        "provider_trusted",
-        "tool_registered",
-        "registration_id",
-    }
-)
-
-
-def _reject_handoff_approval_claims(data: dict[str, Any]) -> None:
-    claim_fields = {
-        key
-        for key in data
-        if normalize_field_name(key) in _HANDOFF_APPROVAL_CLAIM_FIELDS
-    }
-    if claim_fields:
-        raise ValueError(
-            "handoff plan may not imply approval, execution authorization, "
-            "credential availability, provider trust, or tool registration: "
-            + ", ".join(sorted(claim_fields))
-        )
-
-class PolicyDecision(SeedModel):
-    outcome: PolicyOutcome
-    action: str
-    reason: str
-    risk_class: RiskClass
-    approval_id: str | None = None
-
-
-class PendingAction(SeedModel):
-    id: str
-    workspace_id: str = "default"
-    action: str
-    tool_name: str
-    arguments: dict[str, Any] = Field(default_factory=dict)
-    scope: str | None = None
-    status: PendingActionStatus = "pending"
-    created_from_event_id: str | None = None
-    causation_id: str | None = None
-
-
 class ToolSpec(SeedModel):
     def __init__(self, **data: Any) -> None:
         if "capabilities" in data:
@@ -242,16 +136,6 @@ class Toolkit(SeedModel):
     tools: list[ToolSpec]
     status: str = "registered"
     source: str = "core"
-
-
-class ToolkitCandidate(SeedModel):
-    id: str
-    tool_need_id: str
-    workspace_id: str
-    artifact_path: str
-    generator: str = "seed-builder-v1"
-    status: str = "generated"
-    validation_report_id: str | None = None
 
 
 class Approval(SeedModel):

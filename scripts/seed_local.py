@@ -18,7 +18,6 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from seed_runtime.action_plans import ActionPlanService, ActionPlanTransitionError
 from seed_runtime.architecture_conformance_audit import (
     architecture_conformance_audit_json,
     build_architecture_conformance_audit,
@@ -402,11 +401,6 @@ from seed_runtime.explanations import (
     Explanation,
     ExplanationBuilder,
     FactExplanation,
-)
-from seed_runtime.handoff_plans import (
-    HandoffPlanNotFoundError,
-    HandoffPlanService,
-    HandoffPlanStatusError,
 )
 from seed_runtime.ids import new_id
 from seed_runtime.inference_catalog import InferenceCatalog
@@ -800,8 +794,6 @@ def build_parser() -> argparse.ArgumentParser:
             "Examples:\n"
             "  python scripts/seed_local.py --fact web_service host example_host "
             "--fact web_service runtime docker 'restart web_service?'\n"
-            "  python scripts/seed_local.py --db .seed-local.sqlite "
-            "--handoff plan_000001\n"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -841,7 +833,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--db",
         help=(
             "SQLite event ledger path for sharing local state across runs; "
-            "use this with state/query commands and explicit action-plan lifecycle flags"
+            "use this with state/query commands"
         ),
     )
     parser.add_argument(
@@ -854,53 +846,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="list persisted event summaries and exit",
     )
-    parser.add_argument(
-        "--preconditions",
-        metavar="PLAN_ID",
-        help=(
-            "experimental/legacy side path: print an inspect-only execution "
-            "precondition report for an action plan without executing or "
-            "approving it"
-        ),
-    )
-    parser.add_argument(
-        "--handoff",
-        metavar="PLAN_ID",
-        help=(
-            "experimental/legacy side path: create and print a non-executable "
-            "provider handoff plan for an accepted action plan; never executes "
-            "or approves; not Core MVP runtime routing"
-        ),
-    )
-    parser.add_argument(
-        "--accept-plan",
-        metavar="PLAN_ID",
-        help="accept a previously created action plan without executing it",
-    )
-    parser.add_argument(
-        "--approve-plan",
-        metavar="PLAN_ID",
-        help="approve an accepted action plan without executing it",
-    )
-    parser.add_argument(
-        "--reject-plan",
-        metavar="PLAN_ID",
-        help="reject a previously created action plan without executing it",
-    )
-    parser.add_argument(
-        "--reason",
-        help="human-readable reason required by --reject-plan",
-    )
-    parser.add_argument(
-        "--supersede-plan",
-        metavar="PLAN_ID",
-        help="mark a previously created action plan as superseded without executing it",
-    )
-    parser.add_argument(
-        "--replacement-plan",
-        metavar="REPLACEMENT_ID",
-        help="replacement action plan id required by --supersede-plan",
-    )
+
 
     parser.add_argument(
         "--audit-snapshot",
@@ -2162,12 +2108,6 @@ def validate_lifecycle_args(
 ) -> None:
     normalize_confidence_args(args, parser)
     lifecycle_flags = [
-        bool(args.preconditions),
-        bool(args.handoff),
-        bool(args.accept_plan),
-        bool(args.approve_plan),
-        bool(args.reject_plan),
-        bool(args.supersede_plan),
         bool(args.impact),
         bool(args.unhealthy),
         bool(args.why),
@@ -2249,9 +2189,7 @@ def validate_lifecycle_args(
     ]
     if sum(lifecycle_flags) > 1:
         parser.error(
-            "choose only one of --preconditions, --handoff, "
-            "--accept-plan, --approve-plan, "
-            "--reject-plan, --supersede-plan, --impact, --unhealthy, --why, "
+            "choose only one of --impact, --unhealthy, --why, "
             "--evidence, --why-fact, --unsupported-facts, --contradictions, "
             "--confidence, --confidence-fact, "
             "--fact-support, --best-fact, "
@@ -2278,16 +2216,6 @@ def validate_lifecycle_args(
         parser.error("--rebuild-state-cache requires --db")
     if (args.rebuild_state_cache or args.state_cache_status) and args.predicate_catalog:
         parser.error("state cache commands require the built-in predicate catalog")
-    if args.handoff and not args.db:
-        parser.error("--handoff requires --db")
-    if args.reject_plan and not args.reason:
-        parser.error("--reject-plan requires --reason")
-    if args.reason and not args.reject_plan:
-        parser.error("--reason can only be used with --reject-plan")
-    if args.supersede_plan and not args.replacement_plan:
-        parser.error("--supersede-plan requires --replacement-plan")
-    if args.replacement_plan and not args.supersede_plan:
-        parser.error("--replacement-plan can only be used with --supersede-plan")
     if args.include_expired and not (
         args.fact_support or args.best_fact or args.current_selection or args.fact_conflicts
     ):
@@ -5831,256 +5759,6 @@ def format_stale_fact_refresh_recommendations(
     return "\n\n".join(sections)
 
 
-def precondition_report(args: argparse.Namespace) -> dict[str, Any]:
-    """Return an inspect-only precondition report for a stored action plan."""
-
-    ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
-    try:
-        seed_dev_state_from_args(args, ledger)
-        state = StateProjector(ledger).project(args.workspace)
-        plan = state.action_plans.get(args.preconditions)
-        if plan is None:
-            raise ValueError(
-                f"action plan not found in workspace {args.workspace!r}: "
-                f"{args.preconditions}"
-            )
-        report = ActionPlanService(ledger).precondition_report(plan, state)
-        return to_plain(report)
-    finally:
-        close = getattr(ledger, "close", None)
-        if close is not None:
-            close()
-
-
-def handoff_plan(args: argparse.Namespace) -> dict[str, Any]:
-    """Create a non-executable handoff plan for an accepted action plan."""
-
-    ledger: EventLedger = SQLiteEventLedger(args.db)
-    try:
-        seed_dev_state_from_args(args, ledger)
-        state = StateProjector(ledger).project(args.workspace)
-        service = HandoffPlanService(ledger)
-        try:
-            plan = service.create_handoff_plan(
-                state,
-                args.handoff,
-                session_id=args.session,
-                causation_id=args.handoff,
-            )
-        except HandoffPlanNotFoundError as exc:
-            return {
-                "handoff_failure": {
-                    "action_plan_id": args.handoff,
-                    "missing_reason": "plan not found",
-                    "detail": str(exc),
-                }
-            }
-        except HandoffPlanStatusError as exc:
-            return {
-                "handoff_failure": {
-                    "action_plan_id": args.handoff,
-                    "missing_reason": "plan not accepted",
-                    "detail": str(exc),
-                }
-            }
-        return {"handoff_plan": to_plain(plan)}
-    finally:
-        close = getattr(ledger, "close", None)
-        if close is not None:
-            close()
-
-
-def format_handoff_plan(result: dict[str, Any]) -> str:
-    failure = result.get("handoff_failure")
-    if isinstance(failure, dict):
-        lines = [
-            f"action_plan_id: {failure.get('action_plan_id')}",
-            f"missing_reason: {failure.get('missing_reason')}",
-        ]
-        detail = failure.get("detail")
-        if detail:
-            lines.append(f"detail: {detail}")
-        return "\n".join(lines)
-
-    plan = result.get("handoff_plan")
-    if not isinstance(plan, dict):
-        raise ValueError("handoff plan result is missing")
-    return "\n".join(
-        [
-            f"handoff_plan_id: {plan.get('id')}",
-            f"action_plan_id: {plan.get('action_plan_id')}",
-            f"provider: {plan.get('provider')}",
-            f"backend_type: {plan.get('backend_type')}",
-            f"operation: {plan.get('operation')}",
-            f"target: {plan.get('target')}",
-            f"policy_summary: {plan.get('policy_summary')}",
-            f"secret_boundary: {plan.get('secret_boundary')}",
-        ]
-    )
-
-
-def format_missing_preconditions(report: dict[str, Any]) -> str:
-    lines = [
-        f"action_plan_id: {report.get('action_plan_id')}",
-        f"missing_reason: {report.get('missing_reason', 'preconditions missing')}",
-        f"plan_ready: {str(bool(report.get('plan_ready'))).lower()}",
-        f"executable: {str(bool(report.get('executable'))).lower()}",
-        "missing:",
-    ]
-    missing_preconditions = report.get("missing_preconditions")
-    if isinstance(missing_preconditions, list) and missing_preconditions:
-        for precondition in missing_preconditions:
-            if isinstance(precondition, dict):
-                lines.append(f"- {precondition.get('id')}")
-            else:
-                lines.append(f"- {precondition}")
-    else:
-        lines.append("- none")
-    return "\n".join(lines)
-
-
-def format_precondition_report(report: dict[str, Any]) -> str:
-    lines = [
-        f"action_plan_id: {report.get('action_plan_id')}",
-        f"plan_ready: {str(bool(report.get('plan_ready'))).lower()}",
-        f"executable: {str(bool(report.get('executable'))).lower()}",
-        "missing:",
-    ]
-
-    missing_preconditions = report.get("missing_preconditions")
-    if isinstance(missing_preconditions, list) and missing_preconditions:
-        for precondition in missing_preconditions:
-            if isinstance(precondition, dict):
-                lines.append(f"- {precondition.get('id')}")
-            else:
-                lines.append(f"- {precondition}")
-    else:
-        lines.append("- none")
-
-    lines.append("preconditions:")
-    preconditions = report.get("preconditions")
-    if isinstance(preconditions, list) and preconditions:
-        for precondition in preconditions:
-            if isinstance(precondition, dict):
-                lines.extend(
-                    [
-                        f"- id: {precondition.get('id')}",
-                        "  satisfied: "
-                        f"{str(bool(precondition.get('satisfied'))).lower()}",
-                        f"  reason: {precondition.get('reason')}",
-                    ]
-                )
-            else:
-                lines.append(f"- {precondition}")
-    else:
-        lines.append("- none")
-    return "\n".join(lines)
-
-
-def format_action_plan_status(plan: dict[str, Any]) -> str:
-    lines = [
-        f"action_plan_id: {plan.get('id')}",
-        f"status: {plan.get('status')}",
-    ]
-    error = plan.get("error")
-    if error:
-        lines.append(f"error: {error}")
-    rejection_reason = plan.get("rejection_reason")
-    if rejection_reason:
-        lines.append(f"rejection_reason: {rejection_reason}")
-    if plan.get("approved") is True:
-        lines.append("approved: true")
-    replacement_plan_id = plan.get("replacement_plan_id")
-    if replacement_plan_id:
-        lines.append(f"replacement_plan_id: {replacement_plan_id}")
-    return "\n".join(lines)
-
-
-def update_action_plan_lifecycle(args: argparse.Namespace) -> dict[str, Any] | None:
-    plan_id = (
-        args.accept_plan or args.approve_plan or args.reject_plan or args.supersede_plan
-    )
-    if not plan_id:
-        return None
-
-    ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
-    service = ActionPlanService(ledger)
-    try:
-        try:
-            if args.accept_plan:
-                plan = service.accept_plan(
-                    args.workspace, args.accept_plan, session_id=args.session
-                )
-            elif args.approve_plan:
-                plan = service.approve_plan(
-                    args.workspace, args.approve_plan, session_id=args.session
-                )
-                approved_plan = to_plain(plan)
-                approved_plan["approved"] = True
-                return approved_plan
-            elif args.reject_plan:
-                plan = service.reject_plan(
-                    args.workspace,
-                    args.reject_plan,
-                    args.reason,
-                    session_id=args.session,
-                )
-            else:
-                plan = service.supersede_plan(
-                    args.workspace,
-                    args.supersede_plan,
-                    args.replacement_plan,
-                    session_id=args.session,
-                )
-        except ActionPlanTransitionError:
-            return _format_transition_error_plan(args, ledger, plan_id)
-        return to_plain(plan)
-    finally:
-        close = getattr(ledger, "close", None)
-        if close is not None:
-            close()
-
-
-def _format_transition_error_plan(
-    args: argparse.Namespace, ledger: EventLedger, plan_id: str
-) -> dict[str, Any]:
-    state = StateProjector(ledger).project(args.workspace)
-    plan = state.action_plans.get(plan_id)
-    status = plan.status if plan is not None else "unknown"
-    target_status = _lifecycle_target_status(args)
-    return {
-        "id": plan_id,
-        "status": status,
-        "error": f"invalid transition {status} -> {target_status}",
-    }
-
-
-def _lifecycle_target_status(args: argparse.Namespace) -> str:
-    if args.accept_plan:
-        return "accepted"
-    if args.approve_plan:
-        return "approved"
-    if args.reject_plan:
-        return "rejected"
-    return "superseded"
-
-
-def format_action_plan(plan: dict[str, Any]) -> str:
-    lines = ["Plan:"]
-    summary = str(plan.get("summary") or "").strip()
-    if summary:
-        lines.append(summary)
-    plan_id = str(plan.get("id") or "").strip()
-    if plan_id:
-        lines.append(f"action_plan_id: {plan_id}")
-    steps = plan.get("steps")
-    if isinstance(steps, list):
-        for step in steps:
-            if step is not None:
-                lines.append(f"- {step}")
-    return "\n".join(lines)
-
-
 def format_predicate_catalog(catalog: PredicateCatalog) -> str:
     """Format canonical predicates and raw-provider mappings for debugging."""
 
@@ -7155,23 +6833,6 @@ def main(argv: list[str] | None = None) -> int:
         print(format_state_cache_status_from_args(args))
         return 0
 
-    if args.preconditions:
-        print(format_precondition_report(precondition_report(args)))
-        return 0
-
-    if args.handoff:
-        result = handoff_plan(args)
-        output = format_handoff_plan(result)
-        if "handoff_failure" in result:
-            print(output, file=sys.stderr)
-            return 1
-        print(output)
-        return 0
-
-    updated_plan = update_action_plan_lifecycle(args)
-    if updated_plan is not None:
-        print(format_action_plan_status(updated_plan))
-        return 0
 
     if args.why:
         subject, predicate = args.why
