@@ -133,8 +133,6 @@ class SQLiteEventLedger(EventLedger):
     """SQLite-backed ledger with the same public API as EventLedger."""
 
     _PERSISTED_ID_PREFIXES = (
-        "plan",
-        "handoff",
         "obs",
         "obs_local_host",
         "evd",
@@ -142,7 +140,6 @@ class SQLiteEventLedger(EventLedger):
         "fact",
         "fact_obs",
         "need",
-        "auth",
     )
 
     def __init__(self, database_path: str) -> None:

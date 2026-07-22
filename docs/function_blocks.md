@@ -1,3 +1,5 @@
+> **Historical/stale after PR 1918.** This document is preserved as historical testimony only. Its Runtime, RuntimeLoop, Decision, Policy, Execution, ActionPlan, HandoffPlan, ExecutionProposal, ExecutionAuthorization, PendingAction, request_tool, call_tool, and builder-candidate language is not current architecture or operator instruction.
+
 # Function Blocks
 
 These function-block diagrams document the current core Seed architecture. They are guardrails for ownership, not implementation tasks.

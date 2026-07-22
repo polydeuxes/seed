@@ -1,3 +1,5 @@
+> **Historical note after PR 1918.** This reconciliation records an earlier witness and is preserved as historical testimony only. Current active architecture and invariants must not treat its Runtime, request-tool, call-tool, planning, handoff, proposal, authorization, pending-action, policy-routing, or model-decision-route language as current implementation instruction.
+
 # Input Source Authority Reconciliation
 
 ## Purpose

@@ -30,3 +30,18 @@ def test_event_ledger_rejects_secret_fields_in_payloads():
             assert "secret field" in str(exc)
         else:
             raise AssertionError(f"{field} must be rejected")
+
+
+def test_sqlite_persisted_id_prefixes_exclude_deleted_planning_artifacts():
+    assert "plan" not in SQLiteEventLedger._PERSISTED_ID_PREFIXES
+    assert "handoff" not in SQLiteEventLedger._PERSISTED_ID_PREFIXES
+    assert "auth" not in SQLiteEventLedger._PERSISTED_ID_PREFIXES
+    assert SQLiteEventLedger._PERSISTED_ID_PREFIXES == (
+        "obs",
+        "obs_local_host",
+        "evd",
+        "evd_obs",
+        "fact",
+        "fact_obs",
+        "need",
+    )

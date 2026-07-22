@@ -1,3 +1,5 @@
+> **Historical/stale after PR 1918.** This document is preserved as historical testimony only. Its Runtime, RuntimeLoop, Decision, Policy, Execution, ActionPlan, HandoffPlan, ExecutionProposal, ExecutionAuthorization, PendingAction, request_tool, call_tool, and builder-candidate language is not current architecture or operator instruction.
+
 # Pending-action lifecycle and approved-action resume inventory
 
 > **Stale/quarantined RuntimeLoop-era inventory.** Current architecture treats `Runtime` as canonical and `RuntimeLoop` as deprecated/experimental, not CLI/API/default behavior. References to legacy/old Runtime or RuntimeLoop migration are historical audit wording, not current-core guidance; current architecture treats Runtime as canonical.

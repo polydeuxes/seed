@@ -87,3 +87,36 @@ def test_read_only_verification_views_do_not_create_capability_standing():
     assert "The inventory is read-only." in text
     assert "appends no\nevents" in text
     assert "cause capability resolution to produce a verified capability" in text
+
+
+def test_active_invariants_do_not_preserve_deleted_runtime_roads():
+    text = _read(INVARIANTS_DOC)
+
+    forbidden = [
+        "`Runtime` is canonical",
+        "request_tool records and resolves a capability gap",
+        "ActionPlan may be retained",
+        "HandoffPlan may be retained",
+        "ExecutionProposal may be retained",
+        "ExecutionAuthorization may be retained",
+        "If retained, `ActionPlan`, `HandoffPlan`, `ExecutionProposal`, and",
+    ]
+
+    for phrase in forbidden:
+        assert phrase not in text
+
+
+def test_active_architecture_doc_does_not_claim_deleted_runtime_pipeline():
+    text = Path("docs/architecture.md").read_text(encoding="utf-8")
+
+    forbidden = [
+        "Runtime is the canonical",
+        "Runtime is canonical",
+        "Input -> Events -> State -> Context -> Decision -> Policy -> Execution -> Events",
+        "Context -> Decision",
+        "Decision -> Policy",
+        "Policy -> Execution",
+    ]
+
+    for phrase in forbidden:
+        assert phrase not in text
