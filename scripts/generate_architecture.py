@@ -23,7 +23,6 @@ DOT_PATH = OUTPUT_DIR / "runtime_ownership.dot"
 BANNER = "generated; do not edit"
 
 SOURCE_FILES = [
-    Path("seed_runtime/runtime.py"),
     Path("seed_runtime/tool_needs.py"),
     Path("seed_runtime/capability_catalog.py"),
     Path("seed_runtime/state.py"),

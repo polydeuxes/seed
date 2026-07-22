@@ -7,7 +7,7 @@ The lawful decision not to perform an act when authority, safety, capability, or
 When must Seed refuse, block, defer, or ask rather than act?
 
 ## Bounded resolution
-Refusal is an explicit decision kind, while policy blocks and failed preconditions are reasons for non-performance at different boundaries. None should be reported as successful action.
+Refusal, policy blocks, failed preconditions, and requests for clarification remain distinct stopping or non-performance outcomes at different boundaries. None should be reported as successful action.
 
 ## Important distinctions
 - refusal != execution failure
@@ -15,7 +15,6 @@ Refusal is an explicit decision kind, while policy blocks and failed preconditio
 - request for clarification != abandonment
 
 ## Representative repository anchors
-- `seed_runtime/models.py::Decision`
 - `seed_runtime/policy.py::PolicyGate`
 - `seed_runtime/execution_proposals.py::ExecutionProposalFailure`
 

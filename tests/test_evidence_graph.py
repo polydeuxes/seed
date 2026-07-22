@@ -231,8 +231,6 @@ def test_cli_evidence_commands_are_read_only_and_print_expected_output(
     def fail_runtime(*args, **kwargs):  # pragma: no cover - should never be called
         raise AssertionError("evidence commands must not enter Runtime")
 
-    monkeypatch.setattr(seed_local, "build_local_app", fail_runtime)
-    monkeypatch.setattr(seed_local, "run_shell", fail_runtime)
 
     assert seed_local.main(["--db", str(db_path), "--evidence"]) == 0
     evidence_output = capsys.readouterr().out

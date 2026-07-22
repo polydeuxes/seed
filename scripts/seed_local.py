@@ -11,7 +11,6 @@ import sys
 import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Literal
 
@@ -476,7 +475,6 @@ from seed_runtime.ownership_discrepancies import (
     ownership_discrepancies_json,
 )
 from seed_runtime.rule_inventory import collect_rule_inventory
-from seed_runtime.runtime import Runtime
 from seed_runtime.serialization import to_plain
 from seed_runtime.secrets import (
     SECRET_FIELD_NAMES,
@@ -538,59 +536,6 @@ class DevObservationSeed:
     expires_at: datetime | None = None
     ttl_seconds: int | None = None
     ingested_by: str = "scripts.seed_local --observe"
-
-
-@dataclass
-class LocalSeedApp:
-    """Container for a locally configured Seed runtime and its event ledger."""
-
-    runtime: Runtime
-    ledger: EventLedger
-    projector: StateProjector
-    workspace_id: str = DEFAULT_WORKSPACE
-    session_id: str = DEFAULT_SESSION
-
-    def run(self, text: str) -> dict[str, Any]:
-        response = self.runtime.handle_user_message(
-            self.workspace_id, self.session_id, text
-        )
-        return {
-            "response": to_plain(response),
-            "events": [
-                to_plain(event) for event in self.ledger.list(self.workspace_id)
-            ],
-        }
-
-    def seed_facts(self, facts: list[DevFactSeed]) -> list[Fact]:
-        """Ingest local development fact shorthand through observations."""
-
-        return seed_dev_facts(
-            self.ledger,
-            self.workspace_id,
-            facts,
-            session_id=self.session_id,
-        )
-
-    def observe(self, observations: list[DevObservationSeed]) -> list[Fact]:
-        """Append external observations and derived facts into the ledger."""
-
-        return ingest_observations(
-            self.ledger,
-            self.workspace_id,
-            observations,
-            session_id=self.session_id,
-        )
-
-    def observe_json(self, path: str | Path) -> list[Fact]:
-        """Append observations from a local JSON inventory file."""
-
-        return ingest_json_observations(
-            self.ledger,
-            self.workspace_id,
-            path,
-            session_id=self.session_id,
-        )
-
 
 
 def seed_dev_facts(
@@ -833,28 +778,6 @@ def build_prometheus_observation_source(args: argparse.Namespace) -> Any:
 
 
 
-def build_local_app(
-    *,
-    workspace_id: str = DEFAULT_WORKSPACE,
-    session_id: str = DEFAULT_SESSION,
-    database_path: str | None = None,
-) -> LocalSeedApp:
-    """Construct a local Seed runtime without model-backed decision authority."""
-
-    ledger: EventLedger = (
-        SQLiteEventLedger(database_path) if database_path else EventLedger()
-    )
-    projector = StateProjector(ledger)
-    runtime = Runtime(ledger, projector)
-    return LocalSeedApp(
-        runtime=runtime,
-        ledger=ledger,
-        projector=projector,
-        workspace_id=workspace_id,
-        session_id=session_id,
-    )
-
-
 def _confidence_arg(value: str) -> float | str:
     if value == "__report__":
         return value
@@ -873,7 +796,7 @@ class SeedArgumentParser(argparse.ArgumentParser):
 def build_parser() -> argparse.ArgumentParser:
     parser = SeedArgumentParser(
         allow_abbrev=False,
-        description="Run Seed locally with a deterministic input boundary.",
+        description="Run explicit Seed local operations.",
         epilog=(
             "Examples:\n"
             "  python scripts/seed_local.py --fact web_service host example_host "
@@ -891,8 +814,8 @@ def build_parser() -> argparse.ArgumentParser:
         "message",
         nargs="*",
         help=(
-            "message to send in one-shot mode; use `ask --question-family "
-            "<exact-question-family>` for bounded question-family presentation dispatch"
+            "reserved positional tokens for explicit `ask --question-family "
+            "<exact-question-family>` dispatch only; free-form message mode is not supported"
         ),
     )
     parser.add_argument(
@@ -927,21 +850,9 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
-        "--http", action="store_true", help="serve a small local HTTP API"
-    )
-    parser.add_argument(
-        "--host", default="127.0.0.1", help="HTTP bind host when using --http"
-    )
-    parser.add_argument(
-        "--port", type=int, default=8765, help="HTTP bind port when using --http"
-    )
-    parser.add_argument(
         "--events",
         action="store_true",
-        help=(
-            "include the full event ledger with message output; when provided "
-            "without a message, list persisted event summaries and exit"
-        ),
+        help="list persisted event summaries and exit",
     )
     parser.add_argument(
         "--events-only",
@@ -1703,9 +1614,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--source-type",
-        choices=["user", "discovery", "provider", "imported"],
-        default="user",
-        help="source type for --observe entries (default: user)",
+        choices=["discovery", "provider", "imported", "user"],
+        default="imported",
+        help="source type for --observe entries (default: imported; user retained only for legacy imported observation data)",
     )
     parser.add_argument(
         "--confidence",
@@ -2720,84 +2631,6 @@ def _parse_fact_value(value: str) -> Any:
         return json.loads(value)
     except json.JSONDecodeError:
         return value
-
-
-def format_response_summary(result: dict[str, Any]) -> str:
-    response = result.get("response", {})
-    if not isinstance(response, dict):
-        return str(response)
-
-    message = str(response.get("message") or "").strip()
-    payload = (
-        response.get("payload") if isinstance(response.get("payload"), dict) else {}
-    )
-    output = payload.get("output")
-
-    lines = []
-    if message:
-        lines.append(message)
-    else:
-        lines.append(str(response.get("kind") or "response"))
-    if output is not None:
-        lines.append("Output: " + json.dumps(output, sort_keys=True))
-
-    recommendations = payload.get("recommendations")
-    if isinstance(recommendations, list) and recommendations:
-        lines.append("Recommendations:")
-        formatted_recommendations = _format_recommendations(recommendations)
-        if formatted_recommendations:
-            lines.extend(formatted_recommendations)
-    return "\n".join(lines)
-
-
-def _format_recommendations(recommendations: list[Any]) -> list[str]:
-    lines: list[str] = []
-    for index, recommendation in enumerate(recommendations, start=1):
-        if lines:
-            lines.append("")
-        if isinstance(recommendation, dict):
-            provider = recommendation.get("provider")
-            if provider is None:
-                lines.append(f"{index}. {recommendation}")
-                continue
-            score = recommendation.get("score")
-            if score is None:
-                lines.append(f"{index}. {provider}")
-            else:
-                lines.append(f"{index}. {provider} (score={score})")
-            reasons = recommendation.get("reasons")
-            if not isinstance(reasons, list):
-                reasons = recommendation.get("reasoning")
-            if isinstance(reasons, list):
-                for reason in reasons:
-                    if reason is not None:
-                        lines.append(f"   - {reason}")
-        elif recommendation is not None:
-            lines.append(f"{index}. {recommendation}")
-    return lines
-
-
-def format_cli_output(
-    result: dict[str, Any],
-    *,
-    include_events: bool = False,
-    raw_output: str | None = None,
-    action_plan: dict[str, Any] | None = None,
-) -> str:
-    sections: list[str] = []
-    if raw_output is not None:
-        sections.extend(["Raw model output:", raw_output])
-    sections.append(format_response_summary(result))
-    if action_plan is not None:
-        sections.append(format_action_plan(action_plan))
-    if include_events:
-        sections.extend(
-            [
-                "Events:",
-                json.dumps(result.get("events", []), indent=2, sort_keys=True),
-            ]
-        )
-    return "\n".join(sections)
 
 
 def seed_dev_state_from_args(args: argparse.Namespace, ledger: EventLedger) -> None:
@@ -6457,77 +6290,6 @@ def format_action_plan(plan: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def run_http(app: LocalSeedApp, host: str, port: int) -> None:
-    class Handler(BaseHTTPRequestHandler):
-        def do_GET(self) -> None:  # noqa: N802 - stdlib handler API
-            if self.path != "/health":
-                self._write_json(404, {"error": "not found"})
-                return
-            self._write_json(200, {"ok": True})
-
-        def do_POST(self) -> None:  # noqa: N802 - stdlib handler API
-            if self.path not in {"/", "/message"}:
-                self._write_json(404, {"error": "not found"})
-                return
-            try:
-                payload = self._read_json()
-                reject_secret_fields(payload, "http_request")
-                text = payload.get("message", payload.get("text"))
-                if not isinstance(text, str) or not text.strip():
-                    raise ValueError("POST JSON requires non-empty 'message' or 'text'")
-                self._write_json(200, app.run(text))
-            except Exception as exc:  # keep local dev server dependency-light
-                self._write_json(500, {"error": str(exc)})
-
-        def log_message(self, format: str, *args: object) -> None:
-            return
-
-        def _read_json(self) -> dict[str, Any]:
-            length = int(self.headers.get("Content-Length", "0"))
-            body = self.rfile.read(length).decode("utf-8") if length else "{}"
-            data = json.loads(body)
-            if not isinstance(data, dict):
-                raise ValueError("request body must be a JSON object")
-            return data
-
-        def _write_json(self, status: int, payload: dict[str, Any]) -> None:
-            body = json.dumps(payload, indent=2, sort_keys=True).encode("utf-8")
-            self.send_response(status)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
-
-    server = ThreadingHTTPServer((host, port), Handler)
-    print(f"Seed local HTTP server listening on http://{host}:{port}", flush=True)
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        print("\nStopping Seed local HTTP server.", file=sys.stderr)
-    finally:
-        server.server_close()
-
-
-def run_shell(
-    app: LocalSeedApp,
-    *,
-    events: bool = False,
-) -> None:
-    print("Seed local shell. Press Ctrl-D or type 'exit' to quit.", file=sys.stderr)
-    while True:
-        try:
-            text = input("seed> ").strip()
-        except EOFError:
-            print(file=sys.stderr)
-            return
-        if text in {"exit", "quit"}:
-            return
-        if not text:
-            continue
-        result = app.run(text)
-        print(format_cli_output(result, include_events=events))
-
-
 def format_predicate_catalog(catalog: PredicateCatalog) -> str:
     """Format canonical predicates and raw-provider mappings for debugging."""
 
@@ -8041,7 +7803,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     message = " ".join(args.message).strip()
-    if args.events_only or (args.events and not message and not args.http):
+    if args.events_only or (args.events and not message):
         print(format_event_summaries(list_events_from_args(args)))
         return 0
 
@@ -8057,7 +7819,7 @@ def main(argv: list[str] | None = None) -> int:
             or args.observe_repository_source
         )
         and not message
-        and not args.http
+
     ):
         status_consumer = CliExecutionStatusConsumer()
         diagnostics: list[ObservationIngestionDiagnostics] = []
@@ -8079,25 +7841,18 @@ def main(argv: list[str] | None = None) -> int:
             print(format_observation_ingestion_diagnostics(diagnostics))
         return 0
 
-    app = build_local_app(
-        workspace_id=args.workspace,
-        session_id=args.session,
-        database_path=args.db,
-    )
-    seed_dev_state_from_args(args, app.ledger)
-
-    if args.http:
-        run_http(app, args.host, args.port)
+    ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
+    try:
+        seed_dev_state_from_args(args, ledger)
+        message = " ".join(args.message).strip()
+        if message:
+            parser.error("free-form message mode is not supported; use an explicit Seed operation")
+        parser.print_help()
         return 0
-
-    message = " ".join(args.message).strip()
-    if message:
-        result = app.run(message)
-        print(format_cli_output(result, include_events=args.events))
-        return 0
-
-    run_shell(app, events=args.events)
-    return 0
+    finally:
+        close = getattr(ledger, "close", None)
+        if close is not None:
+            close()
 
 
 if __name__ == "__main__":

@@ -67,10 +67,6 @@ def test_rules_cli_outputs_json_without_appending_ledger_events(tmp_path, capsys
 
 
 def test_rules_cli_does_not_build_runtime_or_tool_executor(monkeypatch, capsys):
-    def fail_build_local_app(*args, **kwargs):  # pragma: no cover - guard callback
-        raise AssertionError("--rules must not construct runtime or tool executor")
-
-    monkeypatch.setattr(seed_local, "build_local_app", fail_build_local_app)
 
     exit_code = seed_local.main(["--rules"])
 

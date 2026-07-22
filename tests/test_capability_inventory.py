@@ -91,21 +91,6 @@ def test_capability_inventory_is_read_only():
     assert state.facts == before_facts
 
 
-def test_capability_inventory_uses_no_runtime(monkeypatch):
-    import seed_runtime.runtime as runtime_module
-
-    monkeypatch.setattr(
-        runtime_module.Runtime,
-        "__init__",
-        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("Runtime used")),
-    )
-    ledger = EventLedger()
-    ledger.append("tool_need.created", "ws", {"tool_need": to_plain(_need("web_search"))})
-    state = _project(ledger)
-
-    assert build_capability_inventory(state)[0].state == "unverified"
-
-
 def test_verified_capability_inventory_derives_from_facts_and_evidence():
     ledger = EventLedger()
     ledger.append("evidence.observed", "ws", {"evidence": to_plain(_evidence("web_search"))})
@@ -209,11 +194,6 @@ def test_capability_status_cli_is_read_only_json_and_avoids_runtime(monkeypatch,
     finally:
         ledger.close()
 
-    monkeypatch.setattr(
-        seed_local,
-        "build_local_app",
-        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("Runtime path used")),
-    )
 
     assert seed_local.main(["--db", str(db_path), "--capability-status"]) == 0
 

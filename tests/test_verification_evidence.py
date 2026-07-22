@@ -64,18 +64,6 @@ def test_verification_evidence_remains_inspectable_and_supports_verification_ins
     assert "verification_evidence_not_capability_verification" in verification.acquired_verification_evidence[0].boundary_notes
 
 
-def test_verification_evidence_does_not_enter_runtime(monkeypatch, tmp_path):
-    import seed_runtime.runtime as runtime_module
-
-    monkeypatch.setattr(runtime_module.Runtime, "__init__", lambda *a, **k: (_ for _ in ()).throw(AssertionError("Runtime used")))
-    state = _project(EventLedger())
-
-    inspection = build_verification_evidence(state, path_env=str(tmp_path))
-
-    assert inspection.evidence == []
-    assert inspection.boundary == "verification_evidence_acquisition_only"
-
-
 def test_verification_evidence_cli_is_read_only_and_survives_absent_execution(monkeypatch, tmp_path, capsys):
     seed_local = load_seed_local_module()
     binary_dir = tmp_path / "bin"
@@ -91,7 +79,6 @@ def test_verification_evidence_cli_is_read_only_and_survives_absent_execution(mo
         before = len(ledger.list_events("local"))
     finally:
         ledger.close()
-    monkeypatch.setattr(seed_local, "build_local_app", lambda *a, **k: (_ for _ in ()).throw(AssertionError("Runtime used")))
 
     assert seed_local.main(["--db", str(db_path), "--verification-evidence", "ssh"]) == 0
 

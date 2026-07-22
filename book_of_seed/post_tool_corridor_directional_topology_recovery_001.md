@@ -166,7 +166,7 @@ returned material
 new Observation / testimony candidate
 ```
 
-The surviving Book permits or anticipates a bounded egress-expression/request boundary. Current implementation constructibility is distinct from current witnessed producer occurrence. No current responsible Seed-local producer was recovered that consumes a bounded requirement or View, forms a bounded external request, and establishes occurrence of that egress act. The surviving Runtime records operator input and refuses internal decision routing; it does not establish the missing egress-request road.
+The surviving Book permits or anticipates a bounded egress-expression/request boundary. Current implementation constructibility is distinct from current witnessed producer occurrence. No current responsible Seed-local producer was recovered that consumes a bounded requirement or View, forms a bounded external request, and establishes occurrence of that egress act. No current Seed-local producer establishes the missing egress-request road.
 
 ### Branch G: returned material to new ingress
 
@@ -540,7 +540,7 @@ The corrected standing distinguishes three questions:
 - **Current implementation constructibility:** current code may contain ingredients that could be used to construct bounded expressions under evidence-dependent limits.
 - **Current witnessed producer occurrence:** no current responsible Seed-local producer was recovered that consumes a bounded requirement or View, forms a bounded external request, and establishes occurrence of that egress act.
 
-Therefore this report must not claim active current movement to bounded egress-request formation. The current Runtime records operator input and refuses internal decision routing; it does not establish the missing producer-to-consumer road. External realization begins only at a boundary whose owner is evidenced. Remote service behavior, remote condition, and external effect are outside Seed unless separately evidenced otherwise. Shell grammar competence, shell-process ownership, remote target behavior, and capability standing remain distinct and Unknown where not evidenced.
+Therefore this report must not claim active current movement to bounded egress-request formation. External realization begins only at a boundary whose owner is evidenced. Remote service behavior, remote condition, and external effect are outside Seed unless separately evidenced otherwise. Shell grammar competence, shell-process ownership, remote target behavior, and capability standing remain distinct and Unknown where not evidenced.
 
 ### What is the smallest Book repair now warranted by the recovered topology?
 

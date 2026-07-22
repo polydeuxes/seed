@@ -515,7 +515,6 @@ def test_cli_state_view_commands_do_not_invoke_runtime_provider_policy_or_tools(
     def explode(*args, **kwargs):  # pragma: no cover - must not be called
         raise AssertionError("state view CLI must not build or invoke runtime behavior")
 
-    monkeypatch.setattr(seed_local, "build_local_app", explode)
 
     assert seed_local.main(["--db", str(db_path), "--state-build"]) == 0
     assert seed_local.main(["--db", str(db_path), "--current-selection", "example_host", "alias"]) == 0

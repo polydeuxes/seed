@@ -292,9 +292,6 @@ def test_cli_contradiction_command_does_not_invoke_runtime_provider_policy_or_to
     def fail_execution(*args, **kwargs):  # pragma: no cover - should never be called
         raise AssertionError("--contradictions must be read-only")
 
-    monkeypatch.setattr(seed_local, "build_local_app", fail_execution)
-    monkeypatch.setattr(seed_local, "run_shell", fail_execution)
-    monkeypatch.setattr(seed_local.Runtime, "handle_user_message", fail_execution)
 
     assert seed_local.main(["--db", str(db_path), "--contradictions"]) == 0
     output = capsys.readouterr().out

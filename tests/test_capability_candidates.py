@@ -200,19 +200,6 @@ def test_capability_candidate_index_path_is_read_only():
     assert state.facts == before_facts
 
 
-def test_capability_observation_survives_absent_execution_systems(monkeypatch):
-    import seed_runtime.runtime as runtime_module
-
-    monkeypatch.setattr(runtime_module, "Runtime", None)
-    ledger = EventLedger()
-    ledger.append("fact.observed", "ws", {"fact": to_plain(_package_fact("git"))})
-
-    assert (
-        build_capability_candidates(_project(ledger)).candidates[0].candidate
-        == "git_client"
-    )
-
-
 def test_capability_candidates_cli_is_read_only_json_and_avoids_runtime(
     monkeypatch, tmp_path, capsys
 ):
@@ -229,13 +216,6 @@ def test_capability_candidates_cli_is_read_only_json_and_avoids_runtime(
     finally:
         ledger.close()
 
-    monkeypatch.setattr(
-        seed_local,
-        "build_local_app",
-        lambda *args, **kwargs: (_ for _ in ()).throw(
-            AssertionError("Runtime path used")
-        ),
-    )
 
     assert (
         seed_local.main(["--db", str(db_path), "--capability-candidates", "ssh"])

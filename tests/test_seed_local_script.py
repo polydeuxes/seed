@@ -10,7 +10,6 @@ from seed_runtime.models import ToolNeed
 from seed_runtime.recommendation_ranker import RankedRecommendation
 from seed_runtime.state import State
 
-from seed_runtime.runtime import Runtime
 
 SCRIPT_PATH = Path("scripts/seed_local.py")
 
@@ -254,58 +253,25 @@ def test_cli_state_summary_rejects_precomputed_storage_topology_counts():
     _assert_default_state_summary_has_no_storage_detail(output)
 
 
-def test_build_local_app_constructs_without_model_decision_corridor():
-    seed_local = load_seed_local_module()
-
-    app = seed_local.build_local_app()
-
-    assert isinstance(app.runtime, Runtime)
-    assert not hasattr(app, "decision_input_composer")
-    assert not hasattr(app, "model_client")
-    assert not hasattr(app.runtime, "decision_producer")
-
-
-def test_one_shot_input_returns_unsupported_boundary_response():
-    seed_local = load_seed_local_module()
-    app = seed_local.build_local_app()
-
-    result = app.run("hello")
-
-    assert result["response"]["kind"] == "unsupported"
-    assert result["response"]["payload"]["reason"] == "model_decision_authority_excised"
-    assert [event["kind"] for event in result["events"]] == [
-        "input.user_message",
-        "runtime.decision_authority_unsupported",
-    ]
-    assert result["events"][0]["session_id"] == app.session_id
-
-
-def test_old_runtime_module_remains_available():
-    seed_local = load_seed_local_module()
-
-    assert seed_local.Runtime is Runtime
-    assert Path("seed_runtime/runtime.py").exists()
-
-
-def test_parser_supports_required_modes_without_model_selection():
+def test_parser_no_longer_exposes_generic_http_or_model_selection():
     seed_local = load_seed_local_module()
     args = seed_local.build_parser().parse_args(
         [
-            "--http",
             "--events",
             "--preconditions",
             "plan_cli",
             "--db",
             ".seed-local.sqlite",
-            "hello",
         ]
     )
 
-    assert args.http is True
     assert args.events is True
     assert args.preconditions == "plan_cli"
     assert args.db == ".seed-local.sqlite"
-    assert args.message == ["hello"]
+    assert args.message == []
+    assert not hasattr(args, "http")
+    assert not hasattr(args, "host")
+    assert not hasattr(args, "port")
     assert not hasattr(args, "raw")
     assert not hasattr(args, "raw_only")
     assert not hasattr(args, "plan")
@@ -322,125 +288,6 @@ def test_parser_supports_execution_proposal_generation():
     assert args.proposal == "plan_cli"
 
 
-def test_cli_default_prints_concise_input_boundary_without_event_ledger(capsys):
-    seed_local = load_seed_local_module()
-
-    assert seed_local.main(["hello"]) == 0
-
-    output = capsys.readouterr().out
-    assert "No Seed-owned runtime decision authority is configured" in output
-    assert "Events:" not in output
-    assert "runtime.decision_authority_unsupported" not in output
-    assert "model.decision.proposed" not in output
-
-def test_format_response_summary_lists_tool_need_recommendations():
-    seed_local = load_seed_local_module()
-
-    summary = seed_local.format_response_summary(
-        {
-            "response": {
-                "kind": "tool_need",
-                "message": "Recorded tool need weather_lookup.",
-                "payload": {
-                    "tool_need": {"capability": "weather_lookup"},
-                    "recommendations": [
-                        {
-                            "provider": "open_meteo",
-                            "score": 55,
-                            "reasons": ["catalog default"],
-                        },
-                        {
-                            "provider": "wttr",
-                            "score": 50,
-                            "reasons": ["provider matches known runtime: api"],
-                        },
-                    ],
-                },
-            }
-        }
-    )
-
-    assert summary == (
-        "Recorded tool need weather_lookup.\n"
-        "Recommendations:\n"
-        "1. open_meteo (score=55)\n"
-        "   - catalog default\n"
-        "\n"
-        "2. wttr (score=50)\n"
-        "   - provider matches known runtime: api"
-    )
-
-
-def test_format_response_summary_omits_empty_recommendations_for_unknown_capability():
-    seed_local = load_seed_local_module()
-
-    summary = seed_local.format_response_summary(
-        {
-            "response": {
-                "kind": "tool_need",
-                "message": "Recorded tool need custom_workflow.",
-                "payload": {
-                    "tool_need": {"capability": "custom_workflow"},
-                    "recommendations": [],
-                },
-            }
-        }
-    )
-
-    assert summary == "Recorded tool need custom_workflow."
-
-
-def test_cli_events_includes_input_boundary_ledger(capsys):
-    seed_local = load_seed_local_module()
-
-    assert seed_local.main(["--events", "hello"]) == 0
-
-    output = capsys.readouterr().out
-    assert "No Seed-owned runtime decision authority is configured" in output
-    assert "Events:" in output
-    assert "input.user_message" in output
-    assert "runtime.decision_authority_unsupported" in output
-    assert "model.decision.proposed" not in output
-
-
-def test_fact_seed_ingests_observation_evidence_and_fact_before_user_message():
-    seed_local = load_seed_local_module()
-    app = seed_local.build_local_app()
-
-    app.seed_facts([seed_local.DevFactSeed("web_service", "runtime", "docker")])
-    result = app.run("echo hello")
-
-    event_kinds = [event["kind"] for event in result["events"]]
-    assert event_kinds[:4] == [
-        "observation.observed",
-        "evidence.observed",
-        "fact.observed",
-        "input.user_message",
-    ]
-
-    state = app.projector.project(app.workspace_id)
-    observation = next(iter(state.observations.values()))
-    fact = next(iter(state.facts.values()))
-    evidence = next(iter(state.evidence.values()))
-    assert fact.subject_id == "web_service"
-    assert fact.predicate == "runtime"
-    assert fact.value == "docker"
-    assert fact.evidence_ids == [evidence.id]
-    assert fact.source_type == "user"
-    assert fact.confidence == 1.0
-    assert fact.observed_at == observation.observed_at
-    assert evidence.payload == {
-        "observation_id": observation.id,
-        "source_type": "user",
-        "subject": "web_service",
-        "predicate": "runtime",
-        "value": "docker",
-        "metadata": {"ingested_by": "scripts.seed_local --fact"},
-        "dimensions": {},
-        "expires_at": None,
-    }
-
-
 def test_cli_fact_creates_observation_fact_through_ingestor(capsys):
     seed_local = load_seed_local_module()
 
@@ -453,38 +300,6 @@ def test_cli_fact_creates_observation_fact_through_ingestor(capsys):
     assert "value: docker" in output
     assert "source_type: user" in output
     assert "confidence: 1.0" in output
-
-
-def test_observe_and_fact_produce_equivalent_projected_facts():
-    seed_local = load_seed_local_module()
-
-    fact_app = seed_local.build_local_app()
-    observe_app = seed_local.build_local_app()
-
-    fact_app.seed_facts([seed_local.DevFactSeed("web_service", "runtime", "docker")])
-    observe_app.observe(
-        [seed_local.DevObservationSeed("web_service", "runtime", "docker")]
-    )
-
-    fact_state = fact_app.projector.project(fact_app.workspace_id)
-    observe_state = observe_app.projector.project(observe_app.workspace_id)
-    fact_best = fact_state.get_best_fact("web_service", "runtime")
-    observe_best = observe_state.get_best_fact("web_service", "runtime")
-    fact_support = fact_state.get_fact_support("web_service", "runtime")
-    observe_support = observe_state.get_fact_support("web_service", "runtime")
-
-    assert fact_best is not None
-    assert observe_best is not None
-    assert fact_best.subject_id == observe_best.subject_id == "web_service"
-    assert fact_best.predicate == observe_best.predicate == "runtime"
-    assert fact_best.value == observe_best.value == "docker"
-    assert fact_best.source_type == observe_best.source_type == "user"
-    assert fact_best.confidence == observe_best.confidence == 1.0
-    assert fact_support is not None
-    assert observe_support is not None
-    assert fact_support.value == observe_support.value == "docker"
-    assert fact_support.confidence == observe_support.confidence == 0.85
-    assert fact_support.source_types == observe_support.source_types == ["user"]
 
 
 def test_parser_accepts_observation_ingestion_options():
@@ -1149,11 +964,6 @@ def test_cli_state_summary_cache_debug_does_not_ingest_or_execute(
         "seed_dev_state_from_args",
         lambda args, ledger: pytest.fail("state-build cache debug must not ingest"),
     )
-    monkeypatch.setattr(
-        seed_local,
-        "build_local_app",
-        lambda *args, **kwargs: pytest.fail("state-build cache debug must not execute"),
-    )
 
     assert (
         seed_local.main(
@@ -1578,11 +1388,6 @@ def test_cli_state_summary_reports_projected_world_model_without_ingestion(
         lambda args, ledger: pytest.fail("state summary must not ingest"),
     )
 
-    monkeypatch.setattr(
-        seed_local,
-        "build_local_app",
-        lambda *args, **kwargs: pytest.fail("state summary must not execute"),
-    )
 
     assert (
         seed_local.main(
@@ -3113,12 +2918,6 @@ def test_cli_events_without_message_lists_persisted_events_and_exits(
     )
     capsys.readouterr()
 
-    def fail_shell(*args, **kwargs):
-        pytest.fail(
-            "--events without a message should list events instead of shell mode"
-        )
-
-    monkeypatch.setattr(seed_local, "run_shell", fail_shell)
 
     assert seed_local.main(["--db", str(db_path), "--events"]) == 0
 
@@ -4161,11 +3960,6 @@ def test_cli_impact_collapses_duplicate_monitored_by_warnings(tmp_path, capsys):
 def test_cli_impact_does_not_ingest_or_execute(tmp_path, capsys, monkeypatch):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "impact-read-only.sqlite"
-    monkeypatch.setattr(
-        seed_local,
-        "build_local_app",
-        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("runtime was built")),
-    )
 
     assert (
         seed_local.main(
@@ -4387,11 +4181,6 @@ def test_cli_graph_issue_output_prints_hint_when_present(tmp_path, capsys):
 def test_cli_unhealthy_does_not_ingest_or_execute(tmp_path, capsys, monkeypatch):
     seed_local = load_seed_local_module()
     db_path = tmp_path / "unhealthy-read-only.sqlite"
-    monkeypatch.setattr(
-        seed_local,
-        "build_local_app",
-        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("runtime was built")),
-    )
 
     assert (
         seed_local.main(

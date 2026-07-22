@@ -7,7 +7,6 @@ digraph runtime_ownership {
   "HandoffCandidate" [label="HandoffCandidate\\nowner: capability_metadata"];
   "ProjectionStore" [label="ProjectionStore\\nowner: projection_cache"];
   "ProviderRecommendation" [label="ProviderRecommendation\\nowner: capability_metadata"];
-  "Runtime" [label="Runtime\\nowner: runtime_input_boundary"];
   "State" [label="State\\nowner: projected_state_model"];
   "StateProjector" [label="StateProjector\\nowner: state_projection"];
   "ToolNeedService" [label="ToolNeedService\\nowner: tool_need_capability_resolution"];
@@ -16,7 +15,6 @@ digraph runtime_ownership {
   "EventLedger" -> "StateProjector" [label="feeds projection"];
   "ProjectionStore" -> "State" [label="loads/saves projected snapshot"];
   "ProjectionStore" -> "StateProjector" [label="used when snapshot is stale"];
-  "Runtime" -> "StateProjector" [label="projects current state for deterministic callers"];
   "StateProjector" -> "EventLedger" [label="reads append-only events"];
   "StateProjector" -> "GraphValidator" [label="validates projected graph"];
   "StateProjector" -> "State" [label="produces projected state"];

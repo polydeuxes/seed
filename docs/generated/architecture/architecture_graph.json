@@ -27,11 +27,6 @@
       "to": "StateProjector"
     },
     {
-      "from": "Runtime",
-      "label": "projects current state for deterministic callers",
-      "to": "StateProjector"
-    },
-    {
       "from": "StateProjector",
       "label": "reads append-only events",
       "to": "EventLedger"
@@ -181,30 +176,6 @@
       "summary": "A non-executable provider suggestion from capability metadata."
     },
     {
-      "ast_calls": [
-        {
-          "method": "append",
-          "receiver": "ledger"
-        },
-        {
-          "method": "append",
-          "receiver": "ledger"
-        }
-      ],
-      "events": [
-        "input.user_message",
-        "runtime.decision_authority_unsupported"
-      ],
-      "file": "seed_runtime/runtime.py",
-      "id": "Runtime",
-      "kind": "class",
-      "layer": "runtime",
-      "line": 12,
-      "owner": "runtime_input_boundary",
-      "routes": [],
-      "summary": "Records user input and refuses to route model-produced Decisions as Seed authority."
-    },
-    {
       "ast_calls": [],
       "events": [],
       "file": null,
@@ -268,7 +239,6 @@
   ],
   "source": "Python AST scan of selected seed_runtime files; runtime modules are not imported.",
   "sources": [
-    "seed_runtime/runtime.py",
     "seed_runtime/tool_needs.py",
     "seed_runtime/capability_catalog.py",
     "seed_runtime/state.py",

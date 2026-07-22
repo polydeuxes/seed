@@ -244,8 +244,6 @@ def test_integrity_summary_cli_output_is_read_only_and_concise(tmp_path, capsys,
     def fail_runtime(*args, **kwargs):  # pragma: no cover - should never be called
         raise AssertionError("integrity summary must not enter Runtime")
 
-    monkeypatch.setattr(seed_local, "build_local_app", fail_runtime)
-    monkeypatch.setattr(seed_local, "run_shell", fail_runtime)
 
     assert seed_local.main(["--db", str(db_path), "--integrity-summary"]) == 0
 
