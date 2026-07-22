@@ -131,7 +131,7 @@ def test_verification_does_not_become_selection_permission_or_execution_authorit
     assert "verified_capability_not_capability_selection" in inspection.notes
     assert "verified_capability_not_permission" in inspection.notes
     assert "verified_capability_not_execution_authority" in inspection.notes
-    assert state.execution_proposals == {}
+    assert not hasattr(state, "execution_proposals")
     assert state.pending_actions == {}
     assert state.action_plans == {}
 

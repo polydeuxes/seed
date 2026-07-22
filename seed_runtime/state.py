@@ -37,7 +37,6 @@ from seed_runtime.models import (
     Approval,
     Entity,
     Event,
-    ExecutionAuthorization,
     Fact,
     FactConflict,
     FactSupport,
@@ -480,10 +479,6 @@ class State:
     tool_needs: dict[str, ToolNeed] = field(default_factory=dict)
     approvals: dict[str, Approval] = field(default_factory=dict)
     action_plan_approvals: dict[str, str] = field(default_factory=dict)
-    execution_authorizations: dict[str, ExecutionAuthorization] = field(
-        default_factory=dict
-    )
-    execution_proposals: dict[str, Any] = field(default_factory=dict)
     pending_actions: dict[str, PendingAction] = field(default_factory=dict)
     action_plans: dict[str, ActionPlan] = field(default_factory=dict)
     handoff_plans: dict[str, HandoffPlan] = field(default_factory=dict)
@@ -1207,31 +1202,6 @@ class StateProjector:
             data["expires_at"] = _parse_dt(data.get("expires_at"))
             approval = Approval(**data)
             state.approvals[approval.id] = approval
-        elif event.kind == "execution_authorization.granted":
-            data = payload.get("execution_authorization", payload).copy()
-            data["expires_at"] = _parse_dt(data.get("expires_at")) or event.timestamp
-            authorization = ExecutionAuthorization(**data)
-            state.execution_authorizations[authorization.id] = authorization
-            proposal = state.execution_proposals.get(
-                authorization.execution_proposal_id
-            )
-            if (
-                proposal is not None
-                and proposal.action_plan_id == authorization.action_plan_id
-                and proposal.tool_name == authorization.tool_name
-                and proposal.arguments_fingerprint
-                == authorization.arguments_fingerprint
-                and authorization.expires_at >= datetime.now(timezone.utc)
-            ):
-                state.execution_proposals[proposal.id] = proposal.model_copy(
-                    update={"authorized": True, "executable": True}
-                )
-        elif event.kind == "execution_proposal.created":
-            from seed_runtime.execution_proposals import ExecutionProposal
-
-            data = payload.get("execution_proposal", payload)
-            proposal = ExecutionProposal(**data)
-            state.execution_proposals[proposal.id] = proposal
         elif event.kind == "handoff_plan.created":
             data = payload.get("handoff_plan", payload)
             handoff_plan = HandoffPlan(**data)
@@ -1298,12 +1268,6 @@ def _recover_affected_scope(event: Event) -> _AffectedScope | None:
     if event.kind == "approval.granted":
         data = payload.get("approval", payload)
         return _AffectedScope("approvals", data.get("id"), data.get("scope"))
-    if event.kind == "execution_authorization.granted":
-        data = payload.get("execution_authorization", payload)
-        return _AffectedScope("execution_authorizations", data.get("id"))
-    if event.kind == "execution_proposal.created":
-        data = payload.get("execution_proposal", payload)
-        return _AffectedScope("execution_proposals", data.get("id"))
     if event.kind == "handoff_plan.created":
         data = payload.get("handoff_plan", payload)
         return _AffectedScope("handoff_plans", data.get("id"))

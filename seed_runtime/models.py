@@ -18,7 +18,6 @@ from seed_runtime.facts import (
 )
 from seed_runtime.ids import new_id
 from seed_runtime.secrets import (
-    SECRET_FREE_GRANT_METADATA_FIELDS,
     normalize_field_name,
     reject_secret_fields,
 )
@@ -262,42 +261,3 @@ class Approval(SeedModel):
     approved_by: str
     expires_at: datetime | None = None
     constraints: dict[str, Any] = Field(default_factory=dict)
-
-
-class ExecutionAuthorization(SeedModel):
-    """Legacy/experimental, non-core authorization metadata.
-
-    This model is retained for historical projection compatibility and explicit
-    side-path tests only; it is not canonical Runtime behavior and is not part
-    of the Core MVP. It must not be used to add internal execution lifecycle,
-    credential prompts, retries, scheduling, or long-running job management.
-    """
-
-    def __init__(self, **data: Any) -> None:
-        reject_secret_fields(
-            data,
-            "execution_authorization",
-            allowed_fields=SECRET_FREE_GRANT_METADATA_FIELDS,
-        )
-        unknown_fields = set(data) - set(type(self).__annotations__)
-        if unknown_fields:
-            raise ValueError(
-                "execution authorization may only store secret-free grant "
-                f"metadata fields: {', '.join(sorted(unknown_fields))}"
-            )
-        if data.get("secret_seen_by_seed", False) is not False:
-            raise ValueError("execution authorization secret_seen_by_seed must be false")
-        super().__init__(**data)
-
-    id: str
-    execution_proposal_id: str
-    action_plan_id: str
-    tool_name: str
-    arguments_fingerprint: str
-    granted_by: str
-    expires_at: datetime
-    interactive_prompt: bool = False
-    ssh_agent: str | None = None
-    sudo_timestamp: str | None = None
-    external_vault_token_ref: str | None = None
-    secret_seen_by_seed: Literal[False] = False

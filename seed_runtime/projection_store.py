@@ -25,7 +25,6 @@ from seed_runtime.models import (
     ActionPlan,
     Approval,
     Entity,
-    ExecutionAuthorization,
     Goal,
     HandoffPlan,
     PendingAction,
@@ -937,8 +936,6 @@ def state_to_payload(state: State) -> dict[str, Any]:
             "tool_needs": state.tool_needs,
             "approvals": state.approvals,
             "action_plan_approvals": state.action_plan_approvals,
-            "execution_authorizations": state.execution_authorizations,
-            "execution_proposals": state.execution_proposals,
             "pending_actions": state.pending_actions,
             "action_plans": state.action_plans,
             "handoff_plans": state.handoff_plans,
@@ -978,10 +975,6 @@ def state_from_payload(payload: dict[str, Any]) -> State:
     state.tool_needs = _model_dict(payload, "tool_needs", ToolNeed)
     state.approvals = _model_dict(payload, "approvals", Approval)
     state.action_plan_approvals = dict(payload.get("action_plan_approvals", {}))
-    state.execution_authorizations = _model_dict(
-        payload, "execution_authorizations", ExecutionAuthorization
-    )
-    state.execution_proposals = dict(payload.get("execution_proposals", {}))
     state.pending_actions = _model_dict(payload, "pending_actions", PendingAction)
     state.action_plans = _model_dict(payload, "action_plans", ActionPlan)
     state.handoff_plans = _model_dict(payload, "handoff_plans", HandoffPlan)

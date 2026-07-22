@@ -278,15 +278,23 @@ def test_parser_no_longer_exposes_generic_http_or_model_selection():
     assert not hasattr(args, "model")
 
 
-def test_parser_supports_execution_proposal_generation():
+
+def test_parser_excludes_execution_proposal_and_authorization_surfaces():
     seed_local = load_seed_local_module()
-    args = seed_local.build_parser().parse_args(
-        ["--db", ".seed-local.sqlite", "--proposal", "plan_cli"]
-    )
+    parser = seed_local.build_parser()
+    args = parser.parse_args(["--db", ".seed-local.sqlite", "--preconditions", "plan_cli"])
 
-    assert args.db == ".seed-local.sqlite"
-    assert args.proposal == "plan_cli"
+    assert not hasattr(args, "proposal")
+    assert not hasattr(args, "authorize_proposal")
+    assert not hasattr(args, "authorize_execution")
+    assert not hasattr(args, "grant_method")
+    assert not hasattr(args, "ttl_seconds")
 
+    help_text = parser.format_help()
+    assert "--proposal" not in help_text
+    assert "--authorize-proposal" not in help_text
+    assert "execution proposal" not in help_text
+    assert "execution authorization" not in help_text
 
 def test_cli_fact_creates_observation_fact_through_ingestor(capsys):
     seed_local = load_seed_local_module()
@@ -465,45 +473,6 @@ def seed_cli_action_plan(
     ledger.close()
 
 
-def test_parser_supports_execution_proposal_authorization_grant():
-    seed_local = load_seed_local_module()
-    args = seed_local.build_parser().parse_args(
-        [
-            "--db",
-            ".seed-local.sqlite",
-            "--authorize-proposal",
-            "eprop_cli",
-            "--grant-method",
-            "interactive_prompt",
-            "--ttl-seconds",
-            "300",
-        ]
-    )
-
-    assert args.db == ".seed-local.sqlite"
-    assert args.authorize_proposal == "eprop_cli"
-    assert args.grant_method == "interactive_prompt"
-    assert args.ttl_seconds == 300
-
-
-def test_cli_authorize_proposal_rejects_direct_tool_arguments(tmp_path):
-    seed_local = load_seed_local_module()
-    db_path = tmp_path / "seed-local.sqlite"
-    seed_cli_action_plan(seed_local, db_path)
-
-    with pytest.raises(SystemExit):
-        seed_local.main(
-            [
-                "--db",
-                str(db_path),
-                "--authorize-proposal",
-                "eprop_cli",
-                "--tool-arguments-json",
-                '{"token": "not-accepted"}',
-            ]
-        )
-
-
 def test_cli_preconditions_prints_inspect_only_report_without_registering_tools(
     monkeypatch, tmp_path, capsys
 ):
@@ -523,10 +492,8 @@ def test_cli_preconditions_prints_inspect_only_report_without_registering_tools(
     output = capsys.readouterr().out
     assert "action_plan_id: plan_cli" in output
     assert "executable: false" in output
-    assert (
-        "missing:\n- target_host_known\n- provider_registered\n- execution_authorization_present"
-        in output
-    )
+    assert "missing:\n- target_host_known\n- provider_registered" in output
+    assert "execution_authorization_present" not in output
     assert "preconditions:" in output
     assert "- id: target_host_known\n  satisfied: false" in output
     assert (
@@ -535,74 +502,6 @@ def test_cli_preconditions_prints_inspect_only_report_without_registering_tools(
     )
     assert "tool.call" not in output
     assert "approved" not in output.lower()
-
-
-def test_cli_proposal_missing_plan_prints_reason_without_traceback(tmp_path, capsys):
-    seed_local = load_seed_local_module()
-    db_path = tmp_path / "seed-local.sqlite"
-
-    assert seed_local.main(["--db", str(db_path), "--proposal", "plan_missing"]) == 1
-
-    captured = capsys.readouterr()
-    assert captured.out == ""
-    assert "missing_reason: plan not found" in captured.err
-    assert "action_plan_id: plan_missing" in captured.err
-    assert "Traceback" not in captured.err
-
-
-def test_cli_proposal_reports_provider_tool_not_registered(tmp_path, capsys):
-    seed_local = load_seed_local_module()
-    db_path = tmp_path / "seed-local.sqlite"
-    seed_cli_action_plan(
-        seed_local,
-        db_path,
-        provider="docker_container_lifecycle",
-        capability="service_management",
-        risk_class="L1",
-        requires_approval=False,
-    )
-
-    assert seed_local.main(["--db", str(db_path), "--proposal", "plan_cli"]) == 0
-
-    output = capsys.readouterr().out
-    assert "missing_reason: provider/tool not registered" in output
-    assert "provider_registered" in output
-
-
-def test_cli_proposal_prints_missing_preconditions_without_creating_proposal(
-    monkeypatch, tmp_path, capsys
-):
-    seed_local = load_seed_local_module()
-    db_path = tmp_path / "seed-local.sqlite"
-    seed_cli_action_plan(
-        seed_local,
-        db_path,
-        provider="docker_container_lifecycle",
-        capability="service_management",
-        risk_class="L3",
-        requires_approval=True,
-    )
-
-    assert seed_local.main(["--db", str(db_path), "--proposal", "plan_cli"]) == 0
-
-    output = capsys.readouterr().out
-    assert "action_plan_id: plan_cli" in output
-    assert "executable: false" in output
-    assert (
-        "missing:\n- target_host_known\n- provider_registered\n"
-        "- execution_authorization_present" in output
-    )
-    assert "execution_proposal_id:" not in output
-    assert "tool.call" not in output
-
-    ledger = seed_local.SQLiteEventLedger(str(db_path))
-    try:
-        kinds = [event.kind for event in ledger.list_events("local")]
-    finally:
-        ledger.close()
-    assert "execution_proposal.created" not in kinds
-    assert "tool.call.started" not in kinds
-    assert "tool.call.completed" not in kinds
 
 
 def test_cli_accept_plan_prints_accepted_without_registering_tools(
@@ -722,7 +621,7 @@ def test_cli_preconditions_target_host_fact_satisfies_host_requirement(
     assert "- id: target_host_known\n  satisfied: true" in output
     assert "target host fact is present" in output
     assert "- provider_registered" in output
-    assert "- execution_authorization_present" in output
+    assert "- execution_authorization_present" not in output
 
 
 def test_cli_approve_plan_prints_approved_without_executing_or_registering(

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
 from typing import Iterable, cast
 
 from seed_runtime.events import EventLedger
@@ -11,7 +10,6 @@ from seed_runtime.models import (
     ActionPlan,
     ActionPlanStatus,
     Actor,
-    ExecutionAuthorization,
     RiskClass,
     ToolNeed,
 )
@@ -21,8 +19,6 @@ from seed_runtime.state import State, StateProjector
 from seed_runtime.tool_needs import slugify
 
 _MUTATING_RISK_CLASSES: set[str] = {"L3", "L4"}
-_MAX_EXECUTION_AUTHORIZATION_TTL_SECONDS = 900
-
 
 class ActionPlanNotFoundError(ValueError):
     """Raised when a lifecycle event targets a missing action plan."""
@@ -170,78 +166,6 @@ class ActionPlanService:
             correlation_id=correlation_id,
         )
         return plan
-
-    def grant_execution_authorization(
-        self,
-        workspace_id: str,
-        execution_proposal_id: str,
-        *,
-        granted_by: str,
-        interactive_prompt: bool = False,
-        ssh_agent: str | None = None,
-        sudo_timestamp: str | None = None,
-        external_vault_token_ref: str | None = None,
-        session_id: str | None = None,
-        ttl_seconds: int = 300,
-        actor: Actor = "approver",
-        causation_id: str | None = None,
-        correlation_id: str | None = None,
-    ) -> ExecutionAuthorization:
-        """Record a short-lived authorization for one concrete proposal.
-
-        This does not execute anything and does not persist credentials. The
-        stored event binds an accepted action plan to an existing execution
-        proposal by ID and copies only the proposal's secret-free tool name and
-        argument fingerprint. Raw tool arguments are never accepted by this
-        authorization path or stored in the authorization event.
-        """
-        state = StateProjector(self._require_ledger()).project(workspace_id)
-        proposal = state.execution_proposals.get(execution_proposal_id)
-        if proposal is None:
-            raise ValueError(
-                f"execution proposal not found in workspace {workspace_id!r}: "
-                f"{execution_proposal_id}"
-            )
-        plan = self._require_plan(workspace_id, proposal.action_plan_id)
-        if plan.status != "accepted":
-            raise ActionPlanTransitionError(
-                "only accepted action plans can receive execution authorization "
-                f"({plan.id} is {plan.status!r})"
-            )
-        if ttl_seconds <= 0:
-            raise ValueError("execution authorization ttl_seconds must be positive")
-        if ttl_seconds > _MAX_EXECUTION_AUTHORIZATION_TTL_SECONDS:
-            raise ValueError(
-                "execution authorization ttl_seconds must be <= "
-                f"{_MAX_EXECUTION_AUTHORIZATION_TTL_SECONDS}"
-            )
-
-        authorization = ExecutionAuthorization(
-            id=new_id("auth"),
-            execution_proposal_id=proposal.id,
-            action_plan_id=proposal.action_plan_id,
-            tool_name=proposal.tool_name,
-            arguments_fingerprint=proposal.arguments_fingerprint,
-            granted_by=granted_by,
-            expires_at=datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds),
-            interactive_prompt=interactive_prompt,
-            ssh_agent=ssh_agent,
-            sudo_timestamp=sudo_timestamp,
-            external_vault_token_ref=external_vault_token_ref,
-            secret_seen_by_seed=False,
-        )
-        from seed_runtime.serialization import to_plain
-
-        self._require_ledger().append(
-            "execution_authorization.granted",
-            workspace_id,
-            {"execution_authorization": to_plain(authorization)},
-            actor=actor,
-            session_id=session_id,
-            causation_id=causation_id,
-            correlation_id=correlation_id,
-        )
-        return authorization
 
     def reject_plan(
         self,

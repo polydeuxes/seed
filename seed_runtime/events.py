@@ -15,7 +15,7 @@ from seed_runtime.execution_status import (
     emit_status,
 )
 from seed_runtime.ids import new_id, reserve_id_prefix
-from seed_runtime.models import Actor, Event, ExecutionAuthorization
+from seed_runtime.models import Actor, Event
 
 
 class EventLedger:
@@ -114,7 +114,6 @@ class EventLedger:
         self.append_many(events)
 
     def _store(self, event: Event) -> None:
-        _validate_execution_authorization_event(event)
         if event.id in self._by_id:
             raise ValueError(f"event id already exists: {event.id}")
         self._events.append(event)
@@ -124,7 +123,6 @@ class EventLedger:
     def _validate_batch(self, events: list[Event]) -> None:
         seen: set[str] = set()
         for event in events:
-            _validate_execution_authorization_event(event)
             if event.id in self._by_id or event.id in seen:
                 raise ValueError(f"event id already exists: {event.id}")
             seen.add(event.id)
@@ -263,7 +261,6 @@ class SQLiteEventLedger(EventLedger):
         self._reserve_payload_ids(event.payload)
 
     def _insert_without_commit(self, event: Event) -> None:
-        _validate_execution_authorization_event(event)
         self._connection.execute(
             """
             INSERT INTO events (id, kind, workspace_id, actor, timestamp, payload, session_id, causation_id, correlation_id)
@@ -285,7 +282,6 @@ class SQLiteEventLedger(EventLedger):
     def _validate_sqlite_batch(self, events: list[Event]) -> None:
         seen: set[str] = set()
         for event in events:
-            _validate_execution_authorization_event(event)
             if event.id in seen:
                 raise ValueError(f"event id already exists: {event.id}")
             seen.add(event.id)
@@ -361,15 +357,6 @@ def _walk_values(value: Any) -> Iterable[Any]:
             yield from _walk_values(nested)
     else:
         yield value
-
-
-def _validate_execution_authorization_event(event: Event) -> None:
-    if event.kind != "execution_authorization.granted":
-        return
-    payload = event.payload.get("execution_authorization", event.payload)
-    if not isinstance(payload, dict):
-        raise ValueError("execution_authorization.granted requires an object payload")
-    ExecutionAuthorization(**payload)
 
 
 def _numeric_suffix(value: str, prefix: str) -> int | None:
