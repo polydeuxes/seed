@@ -93,3 +93,113 @@ def test_capability_interaction_outcome_and_adaptation_invariants_are_canonical(
 
     for invariant in required:
         assert invariant in text
+
+
+def test_constrained_movement_grammar_invariants_are_canonical():
+    text = _read("book_of_seed/03-goals-and-advancement/orientation-and-movement.md")
+
+    required = [
+        "Constitutional movement is a warranted transition in lawful position, standing, or advancement posture",
+        "Movement is not mutation by identity",
+        "Standing is not a durable object by identity",
+        "a named constitutional subject does not require a dedicated artifact",
+        "changed standing does not automatically open later movement",
+        "Does constitutional movement require runtime mutation? No.",
+    ]
+
+    for invariant in required:
+        assert invariant in text
+
+
+def test_constrained_constraint_invariants_are_canonical():
+    text = _read("book_of_seed/02-acts-and-constraints/constraints-policy-and-preconditions.md")
+
+    required = [
+        "A constraint is not the governed movement",
+        "a constraint result is not performance of the governed movement",
+        "a constraint is not a sequential pipeline stage",
+        "which movement remains admissible",
+        "which standing may be relied upon",
+        "Does a constraint result perform the movement it governs? No.",
+    ]
+
+    for invariant in required:
+        assert invariant in text
+
+
+def test_constrained_evidence_learning_and_causation_invariants_are_canonical():
+    text = _read("book_of_seed/05-evidence-and-knowledge/testimony-and-established-fact.md")
+
+    required = [
+        "Sensing produces testimony that may support later evidentiary movement",
+        "it is not advancement",
+        "Observation produced is not testimony admitted",
+        "Remembering preserves recoverability across time",
+        "Remembering does not perform later reliance",
+        "Trajectory establishment may be understood, where warranted, as constrained movement from occurrence history to bounded temporal understanding",
+        "Retained history is not trajectory establishment",
+        "Learning establishment may be understood as constrained constitutional movement in retained understanding",
+        "Learning establishment is not storage mutation",
+        "or adaptive reliance",
+        "Adaptive reliance is later movement constrained by the result of earlier movement in understanding",
+        "adaptive reliance is not automatic execution",
+        "Association standing is not causal standing",
+    ]
+
+    for invariant in required:
+        assert invariant in text
+
+
+def test_constrained_need_gap_and_demand_invariants_are_canonical():
+    text = _read("book_of_seed/03-goals-and-advancement/needs-and-opened-movement.md")
+
+    required = [
+        "Need and gap are disciplines governing possible advancement, not permission to advance",
+        "Gap established does not perform movement",
+        "Gap family names are not a subclass hierarchy",
+        "Evidence gap constrains establishment movement",
+        "Knowledge gap constrains answer or explanation movement",
+        "Capability demand is a constraint on candidate formation and realization inquiry",
+        "capability demand established is not capability exists",
+        "Gap revision may be understood as constrained movement in insufficiency standing",
+        "Gap revision is not movement authorization",
+        "Is gap primarily one universal object family? Not by default",
+        "Does an established gap itself perform movement? No.",
+    ]
+
+    for invariant in required:
+        assert invariant in text
+
+
+def test_constrained_capability_interaction_outcome_invariants_are_canonical():
+    text = _read("book_of_seed/07-operational-realization/operational-realization-and-capability.md")
+
+    required = [
+        "Capability standing constrains possible realization movement",
+        "Capability standing is not selected movement",
+        "Capability revision may be understood as constrained movement in possible-realization standing",
+        "one success is not universal capability standing",
+        "capability revision is not mechanism selection",
+        "Movement-linked interaction is best understood as an evidentiary road",
+        "Selection is not realization",
+        "Outcome evaluation is a constraint on later standing movement",
+        "outcome evaluation is not automatic gap revision",
+        "Does capability standing itself select movement? No.",
+    ]
+
+    for invariant in required:
+        assert invariant in text
+
+
+def test_constrained_stopping_invariants_are_canonical():
+    text = _read("book_of_seed/08-authority-communication-and-stopping/stopping-and-completion.md")
+
+    required = [
+        "Stopping may be constrained by evidence gap, capability Unknown, authority gap, resource insufficiency, unresolved causation, preservation failure",
+        "may require stop, defer, narrow, return to inquiry, expose insufficiency, or refuse reliance",
+        "Stopping is not failure",
+        "Unknown is not permission to invent movement",
+    ]
+
+    for invariant in required:
+        assert invariant in text

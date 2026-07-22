@@ -33,3 +33,11 @@ Constitutional movement is a warranted transition in lawful position, standing, 
 - [Lenses, views, and constitutional roads](../01-grammar-and-standing/lenses-views-and-roads.md)
 - [Needs and opened movement](needs-and-opened-movement.md)
 - [Stopping and completion](../08-authority-communication-and-stopping/stopping-and-completion.md)
+
+## Constrained movement grammar correction 001
+
+Constitutional movement is a warranted transition in lawful position, standing, or advancement posture. Movement is not mutation by identity. A changed record, projection, cache, external system, runtime value, or displayed label is not constitutional movement unless the responsible transition preserves its warrant, subject, evidence, authority, scope, and limits.
+
+Movement may be conceptual, evidentiary, temporal, responsibility-bearing, selection-bearing, authorization-bearing, projection-bound, or externally realized. These dimensions do not make movement a method call, executor event, or implementation mutation. Standing is not a durable object by identity, a constitutional subject is not a class, a named constitutional subject does not require a dedicated artifact, and changed standing does not automatically open later movement.
+
+Direct answers preserved by this clause: Is every constitutional standing best understood as an object? No. Does every named constitutional subject require a dedicated artifact? No. Does constitutional movement require runtime mutation? No. Does changed standing automatically open later movement? No.

@@ -37,3 +37,11 @@ An access state, visible route, available artifact, capability candidate, catalo
 - [Acts and act artifacts](acts-and-act-artifacts.md)
 - [Selection and authorization](../03-goals-and-advancement/selection-and-authorization.md)
 - [Refusal and non-performance](../08-authority-communication-and-stopping/refusal-and-non-performance.md)
+
+## Constrained movement constraint correction 001
+
+A constraint is not the governed movement, a constraint result is not performance of the governed movement, and a constraint is not a sequential pipeline stage. A constraint may govern whether movement may occur, which movement remains admissible, how far movement may proceed, under which scope movement remains lawful, which standing may be relied upon, or when movement must stop. Passing one constraint does not establish complete authority, complete movement warrant, selection, handoff, realization, or reliance beyond the result's scope.
+
+A constraint result can lawfully admit, block, narrow, redirect, defer, or leave unchanged a later movement considered by a responsible consumer. It does not perform the governed movement, mutate cluster truth, create an executor, or turn policy vocabulary into implementation machinery.
+
+Direct answer preserved by this clause: Does a constraint result perform the movement it governs? No.
