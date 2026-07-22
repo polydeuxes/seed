@@ -192,7 +192,7 @@ The required crossing elements are not all present:
 1. A producer preserving standing S exists as a callable function, but no current non-test production path is evidenced.
 2. No current non-test consumer is evidenced as receiving the produced artifact instance.
 3. No current consumer consequence is evidenced in which S is treated as stronger standing S+.
-4. Possible consumer functions contain boundary checks and notes that generally prevent attribution from becoming authority, addressability from becoming interpretation, and interpretation from becoming authorization.
+4. Possible consumer functions contain boundary checks and notes that generally prevent attribution alone from becoming authority, addressability from becoming interpretation, and interpretation from becoming authorization.
 
 ## False or stronger assertions actually evidenced
 
