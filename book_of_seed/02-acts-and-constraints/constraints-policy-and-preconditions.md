@@ -25,8 +25,6 @@ An access state, visible route, available artifact, capability candidate, catalo
 ## Representative repository anchors
 - `seed_runtime/policy.py::PolicyGate`
 - `seed_runtime/preconditions.py::PreconditionEvaluator.report`
-- `seed_runtime/tool_execution_policy.py::ToolExecutionPolicyService`
-- `seed_runtime/execution.py::ToolExecutor.execute`
 
 ## Counterexamples or failure modes
 - Recording that approval is required as though approval was granted.

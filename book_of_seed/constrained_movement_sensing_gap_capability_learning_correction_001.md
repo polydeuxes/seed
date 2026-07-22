@@ -163,7 +163,9 @@ Evidence gap, capability Unknown, authority gap, resource insufficiency, unresol
 
 ## False current-repository anchors removed, if any
 
-None. This correction did not encounter a false current-repository anchor that directly corrupted the clauses required for this bounded Book correction.
+PR 1901 initially reported that no false current-repository anchors were encountered. A subsequent direct repository check established that `ToolExecutionPolicyService` and `ToolExecutor.execute` were still listed as representative anchors despite their modules being absent from current main. The stale anchors were removed in this bounded follow-up.
+
+Historical report mistake != constitutional grammar invalid. Stale implementation witness != constitutional responsibility invalid. Deleted executor != constraint grammar deleted.
 
 ## Implementation boundary
 

@@ -120,7 +120,34 @@ def test_constrained_constraint_invariants_are_canonical():
         "a constraint is not a sequential pipeline stage",
         "which movement remains admissible",
         "which standing may be relied upon",
+        "A constraint result can lawfully admit, block, narrow, redirect, defer, or leave unchanged a later movement",
         "Does a constraint result perform the movement it governs? No.",
+    ]
+
+    stale_anchors = [
+        "ToolExecutionPolicyService",
+        "ToolExecutor.execute",
+        "seed_runtime/tool_execution_policy.py",
+        "seed_runtime/execution.py",
+    ]
+
+    for invariant in required:
+        assert invariant in text
+
+    for stale_anchor in stale_anchors:
+        assert stale_anchor not in text
+
+
+def test_constrained_movement_correction_records_stale_anchor_follow_up():
+    text = _read("book_of_seed/constrained_movement_sensing_gap_capability_learning_correction_001.md")
+
+    required = [
+        "PR 1901 initially reported that no false current-repository anchors were encountered",
+        "A subsequent direct repository check established that `ToolExecutionPolicyService` and `ToolExecutor.execute` were still listed as representative anchors despite their modules being absent from current main",
+        "The stale anchors were removed in this bounded follow-up",
+        "Historical report mistake != constitutional grammar invalid",
+        "Stale implementation witness != constitutional responsibility invalid",
+        "Deleted executor != constraint grammar deleted",
     ]
 
     for invariant in required:
