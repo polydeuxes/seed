@@ -27,6 +27,21 @@ def interp(text, **kw):
     expr=attribute_operator_expression(exact_text=text,workspace_ref="ws",session_ref="sess",operator_ref="actor",provenance=("input",))
     return interpret_operator_expression(expr,rec,g,app,interpretation_mechanism_ref=MECH,invocation_contract_ref=c.contract_id,lexical_support_refs=kw.pop("lexical_support_refs",("lex-operator",)),**kw)
 
+
+def test_attributed_operator_expression_preserves_boundary_unknowns_without_inventing_source():
+    expr = attribute_operator_expression(exact_text=".")
+
+    assert expr.exact_text == "."
+    assert expr.source_channel == "external input"
+    assert "operator source role unknown" in expr.unknowns
+    assert "operator expression provenance unknown" in expr.unknowns
+    assert (
+        "operator expression production, route, ownership, representation grammar, "
+        "completeness, and prehistory not established"
+    ) in expr.unknowns
+    assert expr.provenance == ()
+    assert expr.read_only and not expr.writes_event_ledger and not expr.mutates_cluster
+
 def test_projection_shape_deterministic_identity_and_read_only_handoff():
     a=interp("Show ownership on node115 as JSON."); b=interp("Show ownership on node115 as JSON.")
     assert a.artifact_type=="OperatorExpressionInterpretationProjection"

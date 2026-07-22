@@ -47,8 +47,9 @@ class AttributedOperatorExpression:
 
 def attribute_operator_expression(*, exact_text:str, input_representation:str="operator text", source_channel:str="external input", workspace_ref:str="", session_ref:str="", operator_ref:str="", provenance:tuple[str,...]=(), received_scope_context:tuple[str,...]=(), uncertainty:tuple[str,...]=(), unknowns:tuple[str,...]=()):
     norm=" ".join(exact_text.strip().split())
-    payload={"exact_text":exact_text,"normalized_text":norm,"input_representation":input_representation,"source_channel":source_channel,"workspace_ref":workspace_ref,"session_ref":session_ref,"operator_ref":operator_ref,"provenance":sorted(provenance),"scope":sorted(received_scope_context),"uncertainty":sorted(uncertainty),"unknowns":sorted(unknowns),"convention":CONVENTION}
-    return AttributedOperatorExpression(_stable("attributed-operator-expression",payload), exact_text,norm,input_representation,source_channel,workspace_ref,session_ref,operator_ref,_refs(provenance),_refs(received_scope_context),_refs(uncertainty),_refs(unknowns))
+    boundary_unknowns=(*unknowns,*(() if operator_ref else ("operator source role unknown",)),*(() if provenance else ("operator expression provenance unknown",)),"operator expression production, route, ownership, representation grammar, completeness, and prehistory not established")
+    payload={"exact_text":exact_text,"normalized_text":norm,"input_representation":input_representation,"source_channel":source_channel,"workspace_ref":workspace_ref,"session_ref":session_ref,"operator_ref":operator_ref,"provenance":sorted(provenance),"scope":sorted(received_scope_context),"uncertainty":sorted(uncertainty),"unknowns":sorted(boundary_unknowns),"convention":CONVENTION}
+    return AttributedOperatorExpression(_stable("attributed-operator-expression",payload), exact_text,norm,input_representation,source_channel,workspace_ref,session_ref,operator_ref,_refs(provenance),_refs(received_scope_context),_refs(uncertainty),_refs(boundary_unknowns))
 
 @dataclass(frozen=True)
 class SourceSpan:
