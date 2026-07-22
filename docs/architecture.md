@@ -1,10 +1,6 @@
 # Seed Architecture
 
-Seed follows this boundary-oriented flow:
-
-```text
-Input -> Events -> State -> Context -> Decision -> Policy -> Execution -> Events
-```
+Seed documents its active architecture through bounded implementation witnesses rather than a universal runtime pipeline. Current implemented responsibilities include append-only event recording, state projection, observation, evidence, facts, relationships, read-only views, diagnostics, bounded inquiry, selection, and capability testimony where supported by code.
 
 The canonical knowledge acquisition and selection relationship is documented in
 [Knowledge Acquisition and Selection](knowledge_acquisition_and_selection.md):
@@ -38,10 +34,8 @@ Events -> projected State -> Evidence Graph -> Contradiction Detection -> Confid
 - **Evidence Graph** is a read-only explanation layer derived from projected State. It links Evidence records to Facts so Seed can explain why a fact exists, which projected evidence supports it, and which facts remain unsupported.
 - **Contradiction Detection** is a read-only projection view derived from projected facts and the Evidence Graph. It reports conservative conflicts such as exclusive predicates with multiple values, includes evidence and supporting event IDs for each side, and never decides which fact is correct.
 - **Confidence Aggregation** is a read-only projection view derived from projected State, Evidence Graph, and Contradiction Detection. It estimates support strength for each fact, but confidence is not truth and does not resolve contradictions.
-- **Runtime** is the canonical input boundary. It records user input and deterministically refuses Seed-owned model-decision authority for free-text movement.
-- **RuntimeLoop** is deprecated and experimental. It is not wired into CLI, API, or default production paths and must not define canonical runtime behavior.
 
-State Views, the Evidence Graph, Contradiction Detection, and Confidence Aggregation are projections and are not second state stores. They do not append events, invoke a runtime loop, call a DecisionProvider, evaluate policy, execute operation implementations, run shell commands, mutate hosts, perform network calls, call LLMs, or create separate persistence layers.
+State Views, the Evidence Graph, Contradiction Detection, and Confidence Aggregation are projections and are not second state stores. They do not append events, run shell commands, mutate hosts, perform network calls, call LLMs, or create separate persistence layers.
 
 Evidence Graph v1 keeps the model intentionally small: projected evidence nodes support, contradict, mention, or derive from facts, with `supports` as the initial relationship emitted for fact evidence. Facts should become explainable through linked evidence rather than existing as unsupported assertions; unsupported facts are still shown explicitly so operators can identify knowledge gaps.
 

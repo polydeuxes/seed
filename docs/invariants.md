@@ -3,12 +3,6 @@
 These invariants describe the accepted Seed architecture. They are intended to be
 readable documentation today and executable architecture checks over time.
 
-## Runtime invariants
-
-- `Runtime` is canonical.
-- `RuntimeLoop` must not exist in active runtime paths.
-- `request_tool` records and resolves a capability gap; it does not execute.
-
 ## Execution invariants
 
 - `CapabilityCatalog` is read-only capability/provider metadata; it does not
@@ -103,12 +97,3 @@ readable documentation today and executable architecture checks over time.
   explicit status, evidence, target, freshness, and boundary semantics.
 - `CapabilityCatalog` remains read-only metadata and must not become a
   verification authority by catalog presence alone.
-
-## Historical/quarantine invariants
-
-- `ActionPlan`, `HandoffPlan`, `ExecutionProposal`, and
-  `ExecutionAuthorization` are not Core MVP artifacts.
-- If retained, `ActionPlan`, `HandoffPlan`, `ExecutionProposal`, and
-  `ExecutionAuthorization` are historical or legacy compatibility artifacts only.
-- Historical planning artifacts must not become active runtime orchestration,
-  scheduling, retry, selection, or execution systems.

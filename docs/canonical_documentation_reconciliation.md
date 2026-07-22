@@ -77,11 +77,11 @@ The canonical review focuses on documents that currently define Seed for contrib
 | Document | Classification | Rationale |
 | --- | --- | --- |
 | `README.md` | KEEP | Active product thesis and top-level knowledge-first architecture. Mostly current. Contains a document map that still points readers to some audit/reconciliation documents as current reading, so it has minor lifecycle/outdated-framing risk. |
-| `docs/architecture.md` | KEEP | Active concise component boundary document. It accurately identifies Runtime as canonical, ToolExecutor as execution owner, EventLedger as historical source of truth, ProjectionStore as projection cache, and RuntimeLoop as deprecated/experimental. |
-| `docs/invariants.md` | KEEP | Active test-backed invariant document. It is still central for runtime, projection, execution, capability, observation, and verification constraints. |
+| `docs/architecture.md` | KEEP | Active concise component boundary document. It identifies EventLedger as historical source of truth, ProjectionStore as projection cache, State projection, evidence-backed facts, views, diagnostics, bounded inquiry, selection, and capability testimony; it no longer defines a canonical Runtime/Decision/Policy/Execution pipeline. |
+| `docs/invariants.md` | KEEP | Active test-backed invariant document. It is still central for projection, capability, observation, and verification constraints. |
 | `docs/state.md` | KEEP | Active state/read-model semantics for State Views, Evidence Graph, contradiction detection, and confidence aggregation. No later document fully supersedes it. |
 | `docs/logic_model.md` | KEEP | Active logic-layer description. It includes current architecture drift warnings and explicitly rejects RuntimeLoop/planning artifacts as current-core architecture. |
-| `docs/function_blocks.md` | KEEP | Active functional decomposition bridging architecture and implementation. It still carries useful ownership structure. |
+| `docs/function_blocks.md` | ARCHIVE | Historical/stale functional decomposition carrying deleted Runtime/Decision/Policy/Execution route language; preserved as testimony, not current instruction. |
 | `docs/architecture_principles.md` | KEEP | Active secondary principles document. It overlaps with README and architecture, but still captures direction and boundaries. Candidate for future consolidation, not archival. |
 | `docs/capability_extension_methodology.md` | KEEP | Active methodology for safe capability growth from gap to narrow fact to observation/evidence/projection. Later work reinforces rather than supersedes it. |
 | `docs/capability_verification_vocabulary.md` | KEEP | Active vocabulary. Conclusions from verification audits/reconciliation have been promoted here. |
@@ -96,7 +96,7 @@ The canonical review focuses on documents that currently define Seed for contrib
 Findings:
 
 - Current canonical architecture is no longer tool-first. It is knowledge-first: observations, evidence, facts, projected state, explanation, and only then capability resolution or execution.
-- RuntimeLoop-era framing is actively quarantined/deprecated in the canonical architecture, but several historical documents still include RuntimeLoop detail and can appear current without lifecycle labels.
+- RuntimeLoop-era framing is historical and not active canonical architecture, but several historical documents still include RuntimeLoop detail and can appear current without lifecycle labels.
 - Planner/workflow/action-plan framing is not current-core architecture. Where it appears, it should remain historical unless explicitly reintroduced through canonical architecture.
 - Capability-first framing has mostly been corrected: capability resolution is downstream of projected knowledge and does not imply execution, verification, or availability.
 - README's document map is useful but may over-promote audit/reconciliation documents by listing them in the current reading order. This is a promotion/planning issue, not an emergency.
@@ -119,8 +119,8 @@ Audit-family documents are mostly historical evidence. Some conclusions are alre
 | `docs/local_network_observation_audit.md` | PROMOTE THEN ARCHIVE | Local network observation boundaries are partly reflected in knowledge status and methodology. Detailed local-source constraints may need promotion before archive. |
 | `docs/local_observation_roadmap_audit.md` | PROMOTE COMPLETE → ARCHIVE CANDIDATE | Observation roadmap conclusions appear in knowledge acquisition status and local observation reconciliation. Archive only after confirming no unique planned-slice constraints remain. |
 | `docs/tool_execution_ownership_audit.md` | PROMOTE COMPLETE → ARCHIVE CANDIDATE | Ownership conclusion is promoted into architecture and invariants: ToolExecutor owns execution. Historical RuntimeLoop overlap details are not canonical. |
-| `docs/runtime_runtime_loop_responsibility_audit.md` | ARCHIVE | Historical Runtime/RuntimeLoop responsibility duplication audit. Current canonical docs already deprecate RuntimeLoop. |
-| `docs/runtime_reassessment.md` | ARCHIVE | Historical Runtime vs RuntimeLoop reassessment. Current architecture supersedes it. |
+| `docs/runtime_runtime_loop_responsibility_audit.md` | ARCHIVE | Historical Runtime/RuntimeLoop responsibility duplication audit. Current canonical docs no longer preserve a Runtime/RuntimeLoop control-shell route. |
+| `docs/runtime_reassessment.md` | ARCHIVE | Historical Runtime vs RuntimeLoop reassessment. Current bounded architecture supersedes it. |
 | `docs/runtime_parity_inventory.md` | ARCHIVE | Historical parity inventory with RuntimeLoop-era assumptions. Useful only as evidence. |
 | `docs/runtime_loop_thin_runtime_plan.md` | ARCHIVE | Historical plan for RuntimeLoop extraction. Superseded by canonical Runtime ownership. |
 | `docs/capability_ownership_matrix.md` | ARCHIVE | Explicit stale/quarantined RuntimeLoop-era ownership matrix. |
@@ -355,7 +355,7 @@ Recommended conservative next step:
 1. Create a small documentation lifecycle index that lists each document as `canonical`, `generated`, `roadmap/status`, `historical`, or `archive candidate`.
 2. Use the promotion table in this reconciliation to run targeted, source-by-source promotion checks.
 3. Promote only short durable facts into canonical docs, not whole audit narratives.
-4. Label RuntimeLoop-era records as historical/archive candidates so they do not compete with current Runtime architecture.
+4. Label RuntimeLoop-era records as historical/archive candidates so they do not compete with current bounded architecture.
 5. Treat generated architecture artifacts as generated-only and document the regeneration path instead of editing them by hand.
 6. After the index and promotion checks, humans can decide whether to move/archive files in a later, separate change.
 
