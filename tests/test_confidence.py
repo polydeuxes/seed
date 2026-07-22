@@ -337,9 +337,6 @@ def test_cli_confidence_commands_do_not_append_or_invoke_runtime_provider_policy
         raise AssertionError("confidence commands must be read-only")
 
     monkeypatch.setattr(seed_local.SQLiteEventLedger, "append", fail_execution)
-    monkeypatch.setattr(seed_local, "build_local_app", fail_execution)
-    monkeypatch.setattr(seed_local, "run_shell", fail_execution)
-    monkeypatch.setattr(seed_local.Runtime, "handle_user_message", fail_execution)
 
     assert seed_local.main(["--db", str(db_path), "--confidence"]) == 0
     assert (

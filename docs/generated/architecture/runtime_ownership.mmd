@@ -6,7 +6,6 @@ flowchart LR
   HandoffCandidate["HandoffCandidate\nowner: capability_metadata"]
   ProjectionStore["ProjectionStore\nowner: projection_cache"]
   ProviderRecommendation["ProviderRecommendation\nowner: capability_metadata"]
-  Runtime["Runtime\nowner: runtime_input_boundary"]
   State["State\nowner: projected_state_model"]
   StateProjector["StateProjector\nowner: state_projection"]
   ToolNeedService["ToolNeedService\nowner: tool_need_capability_resolution"]
@@ -16,7 +15,6 @@ flowchart LR
   EventLedger -->|feeds projection| StateProjector
   ProjectionStore -->|loads/saves projected snapshot| State
   ProjectionStore -->|used when snapshot is stale| StateProjector
-  Runtime -->|projects current state for deterministic callers| StateProjector
   StateProjector -->|reads append-only events| EventLedger
   StateProjector -->|validates projected graph| GraphValidator
   StateProjector -->|produces projected state| State

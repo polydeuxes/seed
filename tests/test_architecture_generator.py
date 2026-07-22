@@ -38,11 +38,7 @@ def test_architecture_graph_records_runtime_owner_boundaries():
     assert "RuntimeLoop" not in node_ids
 
     edges = graph["edges"]
-    assert {
-        "from": "Runtime",
-        "to": "StateProjector",
-        "label": "projects current state for deterministic callers",
-    } in edges
+    assert not any(edge["from"] == "Runtime" or edge["to"] == "Runtime" for edge in edges)
     deleted_corridor_nodes = {
         "Tool" + "Executor",
         "Tool" + "Registry",

@@ -75,7 +75,7 @@ def test_classify_input_act_fixture_examples():
     examples = (
         ("What does Seed know about ProjectionStore?", InputAct.OPERATOR_QUERY),
         ("Install Docker on example_host_b.", InputAct.COMMAND_REQUEST),
-        ("web_service is running on example_host_b.", InputAct.USER_OBSERVATION),
+        ("web_service is running on example_host_b.", InputAct.OBSERVATION_CLAIM),
         ("README says ExampleComponent owns execution.", InputAct.DOCUMENTATION_CLAIM),
         ("No, example_host_b is not the web_service host anymore.", InputAct.CORRECTION),
         ("Thanks, that makes sense.", InputAct.CASUAL_ANSWER),

@@ -301,9 +301,3 @@ class ExecutionAuthorization(SeedModel):
     sudo_timestamp: str | None = None
     external_vault_token_ref: str | None = None
     secret_seen_by_seed: Literal[False] = False
-
-
-class RuntimeResponse(SeedModel):
-    kind: str
-    message: str
-    payload: dict[str, Any] = Field(default_factory=dict)

@@ -90,7 +90,7 @@ def inspect_candidate_requests(text: str) -> CandidateRequestInspection:
 
     The intentionally small first slice recognizes summary-shaped language only.
     Unknown language is preserved as an unresolved low-confidence candidate rather
-    than promoted to a command, capability, Decision, policy check, or tool call.
+    than promoted to a command, capability, policy check, or tool call.
     """
 
     raw_text = text

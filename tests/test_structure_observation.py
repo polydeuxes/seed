@@ -72,7 +72,6 @@ def test_repository_artifact_observation_is_structure_observation_adapter():
 
 def test_repository_artifact_public_extractor_delegates_without_shape_change():
     source = """import os
-from seed_runtime.runtime import Runtime
 
 class ExampleComponent:
     def inspect(self):
@@ -91,7 +90,6 @@ async def observe():
     assert [(fact.artifact_kind, fact.symbol, fact.parent_symbol) for fact in facts] == [
         ("module", None, None),
         ("import", "os", None),
-        ("import", "seed_runtime.runtime.Runtime", None),
         ("class", "ExampleComponent", None),
         ("method", "inspect", "ExampleComponent"),
         ("function", "observe", None),

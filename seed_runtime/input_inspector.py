@@ -18,11 +18,11 @@ else:
 
 
 class InputAct(str, Enum):
-    """Deterministic fixture-level classification for raw user input acts."""
+    """Deterministic fixture-level classification for raw text acts."""
 
     OPERATOR_QUERY = "operator_query"
     COMMAND_REQUEST = "command_request"
-    USER_OBSERVATION = "user_observation"
+    OBSERVATION_CLAIM = "observation_claim"
     DOCUMENTATION_CLAIM = "documentation_claim"
     CORRECTION = "correction"
     CASUAL_ANSWER = "casual_answer"
@@ -227,7 +227,7 @@ _OPERATOR_QUERY_PREFIXES = (
 
 
 def classify_input_act(raw_text: str) -> InputInspection:
-    """Classify raw user text using deterministic fixture-level rules only.
+    """Classify raw text using deterministic fixture-level rules only.
 
     This helper deliberately does not call an LLM, execute a
     tool, or integrate with Runtime routing.  It only preserves the raw text and a
@@ -272,10 +272,10 @@ def classify_input_act(raw_text: str) -> InputInspection:
             reason="deterministic_casual_acknowledgment_marker",
         )
 
-    if _is_user_observation(text):
+    if _is_observation_claim(text):
         return InputInspection(
             raw_text=raw_text,
-            input_act=InputAct.USER_OBSERVATION,
+            input_act=InputAct.OBSERVATION_CLAIM,
             reason="deterministic_declarative_observation_marker",
         )
 
@@ -304,7 +304,7 @@ def _is_documentation_claim(text: str) -> bool:
     )
 
 
-def _is_user_observation(text: str) -> bool:
+def _is_observation_claim(text: str) -> bool:
     return bool(_OBSERVATION_PATTERN.search(text))
 
 

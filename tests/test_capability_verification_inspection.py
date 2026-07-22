@@ -156,23 +156,6 @@ def test_verification_invokes_no_policy_or_execution(monkeypatch):
     assert "no_policy_evaluation" in inspection.notes
 
 
-def test_verification_is_read_only_and_survives_absent_execution_systems(monkeypatch):
-    import seed_runtime.runtime as runtime_module
-
-    monkeypatch.setattr(runtime_module, "Runtime", None)
-    ledger = EventLedger()
-    ledger.append("fact.observed", "ws", {"fact": to_plain(_package_fact("git"))})
-    state = _project(ledger)
-    before_events = [event.id for event in ledger.list_events("ws")]
-    before_facts = dict(state.facts)
-
-    inspection = build_capability_verification_inspection(state)
-
-    assert inspection.verifications[0].verification_status == "unverified"
-    assert [event.id for event in ledger.list_events("ws")] == before_events
-    assert state.facts == before_facts
-
-
 def test_capability_verification_cli_is_read_only_json_and_avoids_runtime(
     monkeypatch, tmp_path, capsys
 ):
@@ -194,13 +177,6 @@ def test_capability_verification_cli_is_read_only_json_and_avoids_runtime(
     finally:
         ledger.close()
 
-    monkeypatch.setattr(
-        seed_local,
-        "build_local_app",
-        lambda *args, **kwargs: (_ for _ in ()).throw(
-            AssertionError("Runtime path used")
-        ),
-    )
 
     assert (
         seed_local.main(["--db", str(db_path), "--capability-verification", "ssh"]) == 0

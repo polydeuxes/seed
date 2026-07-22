@@ -167,21 +167,6 @@ def test_promotion_readiness_invokes_no_policy_or_execution(monkeypatch, tmp_pat
     assert "no_policy_evaluation" in inspection.notes
 
 
-def test_promotion_readiness_survives_absent_execution_systems(monkeypatch, tmp_path):
-    import seed_runtime.runtime as runtime_module
-
-    monkeypatch.setattr(runtime_module, "Runtime", None)
-    ledger = EventLedger()
-    ledger.append("fact.observed", "ws", {"fact": to_plain(_package_fact("python3"))})
-
-    inspection = build_capability_promotion_readiness_inspection(
-        _project(ledger), filter_text="python", path_env=str(tmp_path)
-    )
-
-    assert inspection.readiness[0].candidate == "python_runtime"
-    assert inspection.readiness[0].promotion_readiness == "unsupported"
-
-
 def test_promotion_readiness_cli_is_read_only_json_and_avoids_runtime(
     monkeypatch, tmp_path, capsys
 ):
@@ -203,11 +188,6 @@ def test_promotion_readiness_cli_is_read_only_json_and_avoids_runtime(
         before = len(ledger.list_events("local"))
     finally:
         ledger.close()
-    monkeypatch.setattr(
-        seed_local,
-        "build_local_app",
-        lambda *a, **k: (_ for _ in ()).throw(AssertionError("Runtime used")),
-    )
 
     assert (
         seed_local.main(

@@ -46,11 +46,6 @@ def test_candidate_request_inspection_does_not_perform_downstream_authority_step
 def test_candidate_requests_cli_is_read_only_and_does_not_build_runtime(capsys, monkeypatch):
     seed_local = load_seed_local_module()
 
-    def fail_build_local_app(*args, **kwargs):  # pragma: no cover - guard callback
-        raise AssertionError("candidate request inspection must not build runtime")
-
-
-    monkeypatch.setattr(seed_local, "build_local_app", fail_build_local_app)
 
     assert seed_local.main(["--candidate-requests", "show me summary"]) == 0
 
@@ -126,11 +121,6 @@ def test_candidate_routing_does_not_perform_downstream_authority_steps():
 def test_candidate_routes_cli_is_read_only_and_does_not_build_runtime(capsys, monkeypatch):
     seed_local = load_seed_local_module()
 
-    def fail_build_local_app(*args, **kwargs):  # pragma: no cover - guard callback
-        raise AssertionError("candidate route inspection must not build runtime")
-
-
-    monkeypatch.setattr(seed_local, "build_local_app", fail_build_local_app)
 
     assert seed_local.main(["--candidate-routes", "show me summary"]) == 0
 
