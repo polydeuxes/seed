@@ -27,3 +27,9 @@ Current evidence supports several distinct non-movement conditions, including su
 - [Orientation and movement](../03-goals-and-advancement/orientation-and-movement.md)
 - [Needs and opened movement](../03-goals-and-advancement/needs-and-opened-movement.md)
 - [Refusal and non-performance](refusal-and-non-performance.md)
+
+## Constrained movement stopping correction 001
+
+Stopping may be constrained by evidence gap, capability Unknown, authority gap, resource insufficiency, unresolved causation, preservation failure, satisfied scope, operator boundary, or refusal. Such standings may require stop, defer, narrow, return to inquiry, expose insufficiency, or refuse reliance without making stopping a failure or completion by identity. Unknown is not permission to invent movement, and a constraint result that requires stopping does not perform the movement it governs.
+
+Stopping is not failure.
