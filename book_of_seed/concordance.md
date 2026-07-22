@@ -53,3 +53,14 @@ This is a lightweight navigation index. Aliases record repository or presentatio
 | handoff | Authority, Communication, and Stopping | [Communication and handoff](08-authority-communication-and-stopping/communication-and-handoff.md) | external handoff, presentation | authority, explanation |
 | refusal | Authority, Communication, and Stopping | [Refusal and non-performance](08-authority-communication-and-stopping/refusal-and-non-performance.md) | block, non-performance | policy, failure |
 | stopping | Authority, Communication, and Stopping | [Stopping and completion](08-authority-communication-and-stopping/stopping-and-completion.md) | exhaustion, sufficiency, completion | advancement, refusal |
+
+## Sensing, gap, capability, and learning
+
+- **Sensing**: bounded testimony production through declared acquisition and interpretation; not provider material, environment truth, recording, current standing, remembering, or learning.
+- **Remembering**: preservation of sufficient testimony or standing for later recovery; not current projection and not learning by retained history alone.
+- **Gap**: scoped insufficiency relative to a declared reference condition; not need by identity, permission, authorization, or automatic capability demand.
+- **Capability demand**: bounded transformation or outcome requirement addressing a declared need or gap; not capability, mechanism, selected mechanism, or authorization.
+- **Capability standing**: bounded support that a transformation can be realized under declared conditions; not mechanism, reachability, authority, reliance warrant, or selection.
+- **Learning establishment**: provenance-bearing revision of retained understanding because prior evidence, comparison, probe, measurement, or interaction warranted revised standing; not model training, changed stored data, retained history, or changed movement by identity.
+- **Adaptive reliance**: later warranted consumption of revised standing; not learning establishment and not automatic execution.
+- **Causal standing**: distinct establishment that a movement caused an outcome; not proven by sequence, gap reduction, or capability revision alone.
