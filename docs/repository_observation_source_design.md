@@ -43,9 +43,6 @@ Minimum requested sources inspected:
 
 Relevant generated architecture documentation inspected:
 
-- `docs/generated/architecture/architecture_graph.json`
-- `docs/generated/architecture/runtime_ownership.dot`
-- `docs/generated/architecture/runtime_ownership.mmd`
 
 Additional nearby architecture documentation considered where it clarified
 repository-local knowledge shape:
@@ -97,8 +94,6 @@ Candidate sources:
 
 | Source | Natural evidence | Appropriate use | Boundary |
 | --- | --- | --- | --- |
-| Generated architecture graph | `docs/generated/architecture/architecture_graph.json` nodes, edges, owners, layers, summaries, routes | Component identity, architecture ownership, declared route topology, generated artifact identity | Generated artifact content is evidence, not proof that code still matches it. |
-| Generated architecture diagrams | `runtime_ownership.dot`, `runtime_ownership.mmd` | Human-readable generated ownership/topology corroboration | Diagram existence does not imply freshness or enforcement. |
 | Canonical architecture docs | `docs/architecture.md`, `docs/architecture_principles.md`, `docs/invariants.md` | Declared architecture boundaries and invariants | Documentation claims are declarations, not runtime verification. |
 | Knowledge vocabulary docs | knowledge acquisition, lifecycle, classification, context, and explanation vocabulary docs | Declared vocabulary ownership and conceptual boundaries | Vocabulary existence does not add behavior. |
 | Capability methodology docs | `docs/capability_extension_methodology.md` and capability verification vocabulary docs | Question/evidence/fact methodology and capability non-inference boundaries | Capability methodology does not authorize execution. |
@@ -394,7 +389,6 @@ Potential non-inferences:
 Question: Which components, layers, owners, and route labels are declared by the
 architecture artifact?
 
-Evidence: `docs/generated/architecture/architecture_graph.json` node and edge
 records, plus generated diagrams as secondary documentation evidence.
 
 Potential fact: `architecture_component_declared(component_id)`;
@@ -631,7 +625,6 @@ least volatile evidence toward less structured evidence only after vocabulary an
 boundaries remain stable.
 
 1. **Generated architecture ownership metadata** — ask which component has which
-   declared owner/layer/summary in `architecture_graph.json`. This is the
    narrowest, strongest first target because the artifact is structured and
    already close to the architecture vocabulary.
 2. **Generated architecture edge metadata** — ask which declared route or edge
@@ -665,7 +658,6 @@ code, should be:
 Recommended shape:
 
 - Source: a single explicitly named generated artifact,
-  `docs/generated/architecture/architecture_graph.json`.
 - Input: a named component ID only; no repository scan and no free-form code
   search.
 - Evidence: graph node ID, owner label, layer, summary, artifact path, and JSON

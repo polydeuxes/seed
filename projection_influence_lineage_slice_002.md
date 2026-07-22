@@ -87,7 +87,6 @@ No CLI, JSON, event, ledger, cache, schema, projection version, projection algor
 
 - `seed_runtime/state.py`
 - `tests/test_state_projector.py`
-- `docs/generated/architecture/architecture_graph.json`
 - `projection_influence_lineage_slice_002.md`
 
 ## LOC changed
@@ -95,7 +94,6 @@ No CLI, JSON, event, ledger, cache, schema, projection version, projection algor
 From `git diff --stat` before this report was added:
 
 ```text
-.../generated/architecture/architecture_graph.json |  2 +-
 seed_runtime/state.py                              | 52 +++++++++++++++++-----
 tests/test_state_projector.py                      | 45 +++++++++++++++----
 3 files changed, 79 insertions(+), 20 deletions(-)

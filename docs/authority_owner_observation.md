@@ -90,7 +90,6 @@ Files and areas inspected for this observation include:
 - `seed_runtime/source_navigation.py`
 - `seed_runtime/inquiry_orientation.py`
 - `seed_runtime/state_summary_views.py`
-- `scripts/generate_architecture.py`
 - `scripts/seed_local.py`
 - `10-build-plan.md`
 - `13-knowledge-and-evidence.md`

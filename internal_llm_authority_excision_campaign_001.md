@@ -220,7 +220,6 @@ No broad new external-grammar framework was added. Existing model/provider adapt
 - `scripts/seed_local.py`
 - `seed_runtime/intent_classifier.py`
 - `seed_runtime/evaluations.py`
-- `docs/generated/architecture/architecture_graph.json`
 - `tests/test_internal_llm_authority_excision.py`
 - `tests/test_seed_local_script.py`
 - `tests/test_api.py`

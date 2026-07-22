@@ -36,9 +36,6 @@ Recommended next step: add a small documentation index or lifecycle register tha
 | `docs/reasoning_roadmap.md` | KEEP | Active reasoning roadmap. |
 | `docs/rule_inventory.md` | KEEP | Active inventory of deterministic rules and catalogs. |
 | `docs/codex_prompt_protocol.md` | KEEP | Active protocol for Seed work prompts; documentation-only guardrail against architecture drift. |
-| `docs/generated/architecture/architecture_graph.json` | GENERATED | Generated architecture graph; do not edit manually. |
-| `docs/generated/architecture/runtime_ownership.dot` | GENERATED | Generated DOT ownership graph; do not edit manually. |
-| `docs/generated/architecture/runtime_ownership.mmd` | GENERATED | Generated Mermaid ownership graph; do not edit manually. |
 | `docs/architecture_visualization_phase1.md` | PROMOTE THEN ARCHIVE | Design record for generated architecture infrastructure; promote durable generated-artifact lifecycle rules first. |
 | `docs/documentation_architecture_audit.md` | PROMOTE THEN ARCHIVE | Its canonical-set and lifecycle findings remain active until represented in a lifecycle index/register. |
 | `docs/availability_vocabulary_audit.md` | PROMOTE THEN ARCHIVE | Mostly promoted, but confirm availability/reachability/local-observability vocabulary completeness. |
@@ -95,9 +92,6 @@ The canonical review focuses on documents that currently define Seed for contrib
 | `docs/rule_inventory.md` | KEEP | Active inventory of deterministic rules. It is referenced by explanation/roadmap work and is not merely historical. |
 | `docs/codex_prompt_protocol.md` | KEEP | Active documentation-only work-prompt protocol that helps prevent Seed architecture drift during future changes. |
 | `docs/architecture_visualization_phase1.md` | PROMOTE THEN ARCHIVE | Current design record for generated architecture artifacts. It still contains methodology and generator rationale; promote durable generation policy into a documentation index or generated-artifacts section before archiving. |
-| `docs/generated/architecture/architecture_graph.json` | GENERATED | Code-derived architecture graph with an explicit generated/do-not-edit banner. Must remain generated rather than manually edited. |
-| `docs/generated/architecture/runtime_ownership.dot` | GENERATED | Code-derived DOT graph with generated/do-not-edit banner. Must remain generated rather than manually edited. |
-| `docs/generated/architecture/runtime_ownership.mmd` | GENERATED | Code-derived Mermaid graph with generated/do-not-edit banner. Must remain generated rather than manually edited. |
 
 Findings:
 
@@ -234,9 +228,6 @@ Characterization findings:
 | `docs/reasoning_roadmap.md` | Must Remain Active | Active roadmap. |
 | `docs/rule_inventory.md` | Must Remain Active | Active deterministic-rule inventory. |
 | `docs/codex_prompt_protocol.md` | Must Remain Active | Active prompt protocol/guardrail for future Seed work. |
-| `docs/generated/architecture/architecture_graph.json` | Generated Artifact | Code-derived; do not edit manually. |
-| `docs/generated/architecture/runtime_ownership.dot` | Generated Artifact | Code-derived; do not edit manually. |
-| `docs/generated/architecture/runtime_ownership.mmd` | Generated Artifact | Code-derived; do not edit manually. |
 | `docs/documentation_architecture_audit.md` | Needs Promotion First | Lifecycle/index recommendation remains active until represented elsewhere. |
 | `docs/architecture_visualization_phase1.md` | Needs Promotion First | Generated-artifact lifecycle policy should be promoted before archive. |
 | `docs/availability_vocabulary_audit.md` | Ready To Archive after confirmation | Conclusions mostly promoted; confirm no unique terminology remains. |
@@ -297,7 +288,6 @@ Rules:
 - Generated documents should be regenerated in CI or by a documented command.
 - Generated documents can be canonical references, but their lifecycle is separate from hand-authored docs.
 
-Examples: `docs/generated/architecture/architecture_graph.json`, `docs/generated/architecture/runtime_ownership.dot`, and `docs/generated/architecture/runtime_ownership.mmd`.
 
 ## Historical
 

@@ -74,9 +74,6 @@ Related roadmap, status, architecture, and reconciliation documents inspected:
 - `docs/local_network_observation_audit.md`
 - `docs/storage_topology_observation.md`
 - `docs/listening_port_observation.md`
-- `docs/generated/architecture/architecture_graph.json`
-- `docs/generated/architecture/runtime_ownership.dot`
-- `docs/generated/architecture/runtime_ownership.mmd`
 
 ## Methodology Findings
 

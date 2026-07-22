@@ -75,7 +75,6 @@ Preserved boundaries:
   - Preserved the existing call order and result payload.
 - `tests/test_execution.py`
   - Added a regression test proving post-execution knowledge extraction receives an already-recorded `tool.call.completed` event while preserving the historical event sequence.
-- `docs/generated/architecture/architecture_graph.json`
   - Refreshed generated architecture graph output so the implementation-local calls are visible to the architecture generator.
 
 ## LOC changed
@@ -83,7 +82,6 @@ Preserved boundaries:
 From `git diff --stat` before commit:
 
 ```text
-docs/generated/architecture/architecture_graph.json |  8 +++++
 seed_runtime/execution.py                          | 40 ++++++++++++++++++----
 tests/test_execution.py                            | 25 ++++++++++++++
 3 files changed, 66 insertions(+), 7 deletions(-)
@@ -93,7 +91,6 @@ tests/test_execution.py                            | 25 ++++++++++++++
 
 ```text
 pytest -q tests/test_execution.py
-python scripts/generate_architecture.py
 pytest -q tests/test_fact_extraction.py tests/test_execution.py tests/test_architecture_generator.py
 ```
 

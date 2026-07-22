@@ -35,7 +35,6 @@ Minimum requested sources inspected:
 Additional relevant sources inspected:
 
 - `docs/local_observation_roadmap_reconciliation.md`
-- `docs/generated/architecture/architecture_graph.json`
 
 ## Current state
 
@@ -67,7 +66,6 @@ ordinary Seed knowledge.
 | --- | --- | --- |
 | Architecture ownership | `__seed_arch__` metadata, architecture docs, invariants | Visible to humans and generated architecture artifacts; not projected as facts |
 | Runtime boundaries | `docs/invariants.md`, `docs/architecture.md`, generated graph | Visible as docs/tests/artifacts; not queryable as evidence-backed repository facts |
-| Generated architecture graph | `docs/generated/architecture/architecture_graph.json` | Visible as committed artifact; not in `EventLedger` or `State` |
 | Predicate vocabulary | `PredicateCatalog` and related catalog documentation | Visible through catalog mechanisms; not observed as repository self-facts |
 | Entity type vocabulary | entity type catalog and rule inventory docs | Visible as metadata; not modeled as repository facts about Seed |
 | Relationship vocabulary | relationship catalog and rule inventory docs | Visible as metadata; not modeled as repository facts about Seed |
