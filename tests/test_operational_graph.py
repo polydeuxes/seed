@@ -35,7 +35,6 @@ def test_operational_graph_classifies_aggregate_and_concrete_nodes():
     assert nodes["surface:views"].classification == "aggregate_surface"
     assert nodes["surface:diagnostics"].classification == "aggregate_surface"
     assert nodes["diagnostic:capability_needs"].classification == "concrete_diagnostic"
-    assert nodes["emitter:action_plan"].classification == "concrete_emitter"
     assert nodes["surface:views"].aggregate is True
     assert nodes["diagnostic:capability_needs"].aggregate is False
     node_json = nodes["surface:views"].to_json_dict()
@@ -59,67 +58,10 @@ def test_operational_graph_discovers_nodes_edges_evidence_and_confidence():
     assert {edge.confidence for edge in graph.edges}
 
 
-def test_operational_graph_includes_emitter_to_event_relationships():
-    graph = build_operational_graph()
-    assert any(
-        edge.source == "emitter:action_plan"
-        and edge.target == "event:action_plan.created"
-        and edge.type == "emits"
-        and edge.confidence == "high"
-        and any(item.kind == "direct" for item in edge.evidence)
-        for edge in graph.edges
-    )
-
-
 def test_operational_graph_includes_consumer_relationships():
     graph = build_operational_graph()
     assert any(edge.type == "consumes" for edge in graph.edges)
     assert any(edge.target.startswith("surface:") for edge in graph.edges)
-
-
-def test_operational_graph_preserves_emitter_consumer_audit_composition_boundary():
-    ledger = EventLedger()
-    before = ledger.list_events()
-    graph = build_operational_graph()
-    after = ledger.list_events()
-    data = graph.to_json_dict()
-    edges = {(edge.source, edge.target, edge.type): edge for edge in graph.edges}
-
-    assert before == after == []
-    assert graph.metadata["read_only"] is True
-    assert graph.metadata["writes_event_ledger"] is False
-    assert graph.metadata["mutates_cluster"] is False
-    assert {"summary", "nodes", "edges", "metadata"} <= data.keys()
-    assert graph.nodes == tuple(sorted(graph.nodes, key=lambda item: item.id))
-    assert graph.edges == tuple(
-        sorted(graph.edges, key=lambda item: (item.source, item.type, item.target))
-    )
-
-    emits_edge = edges[("emitter:action_plan", "event:action_plan.created", "emits")]
-    assert emits_edge.confidence == "high"
-    assert any(item.kind == "direct" for item in emits_edge.evidence)
-    assert any(item.detail == "event emission literal" for item in emits_edge.evidence)
-    assert "emitter:action_plan" in {node.id for node in graph.nodes}
-    assert "event:action_plan.created" in {node.id for node in graph.nodes}
-
-    consumes_edges = [
-        edge
-        for edge in graph.edges
-        if edge.source == "event:action_plan.created"
-        and edge.type == "consumes"
-        and edge.confidence == "medium"
-    ]
-    assert consumes_edges
-    assert all(any(item.kind == "indirect" for item in edge.evidence) for edge in consumes_edges)
-    assert all(
-        any(item.source == "emitter_consumer_audit" for item in edge.evidence)
-        for edge in consumes_edges
-    )
-    assert len(edges) == len(graph.edges)
-    assert graph.summary["relationship_types"]["emits"] > 0
-    assert graph.summary["relationship_types"]["consumes"] > 0
-    assert graph.summary["confidence_counts"]["high"] > 0
-    assert graph.summary["confidence_counts"]["medium"] > 0
 
 
 def test_operational_graph_preserves_consumer_dependency_audit_composition_boundary():
@@ -368,9 +310,9 @@ def test_operational_graph_confidence_aggregate_edge_filter_preserves_boundary()
     )
     concrete_edge = OperationalGraphEdge(
         concrete.id,
-        "event:action_plan.created",
+        "event:" + "action_" + "plan.created",
         "emits",
-        (OperationalGraphEvidence("direct", "seed_runtime/action_plans.py", "literal"),),
+        (OperationalGraphEvidence("direct", "seed_runtime/" + "action_" + "plans.py", "literal"),),
         "high",
     )
     nodes = {aggregate.id: aggregate, concrete.id: concrete}

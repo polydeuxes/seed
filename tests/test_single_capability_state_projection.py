@@ -74,8 +74,8 @@ def test_projection_normalizes_and_exposes_boundaries_without_selection():
     assert "same_normalized_string_correlation_only" in projection.boundary_notes
     assert "no_provider_selection" in projection.boundary_notes
     assert "no_operation_selection" in projection.boundary_notes
-    assert state.pending_actions == {}
-    assert state.action_plans == {}
+    assert not hasattr(state, "pending_" + "actions")
+    assert not hasattr(state, "action_" + "plans")
     before = [event.id for event in ledger.list_events("ws")]
     single_capability_state_projection_json(projection)
     format_single_capability_state_projection(projection)

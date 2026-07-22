@@ -429,8 +429,6 @@ def _reference_category(rel: str) -> EvidenceCategory:
         return "diagnostic_reference"
     if rel in {"seed_runtime/state.py", "seed_runtime/projection_store.py"}:
         return "projection_consumer"
-    if "action_plans.py" in rel or "pending_actions.py" in rel:
-        return "indirect_emitter"
     return "string_reference"
 
 

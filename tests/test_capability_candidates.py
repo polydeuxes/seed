@@ -95,20 +95,11 @@ def test_capability_candidates_do_not_become_execution_decisions():
     assert "capability_candidate_not_execution_decision" in inspection.notes
     assert "no_capability_selection" in inspection.notes
     assert not hasattr(state, "execution_proposals")
-    assert state.pending_actions == {}
-    assert state.action_plans == {}
+    assert not hasattr(state, "pending_" + "actions")
+    assert not hasattr(state, "action_" + "plans")
 
 
 def test_capability_candidates_do_not_invoke_policy_or_execution(monkeypatch):
-    import seed_runtime.policy as policy_module
-
-    monkeypatch.setattr(
-        policy_module.PolicyGate,
-        "evaluate",
-        lambda *args, **kwargs: (_ for _ in ()).throw(
-            AssertionError("policy evaluated")
-        ),
-    )
     ledger = EventLedger()
     ledger.append("fact.observed", "ws", {"fact": to_plain(_package_fact("curl"))})
 

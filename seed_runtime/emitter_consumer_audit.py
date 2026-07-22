@@ -31,11 +31,6 @@ CONSUMER_GROUPS = {
     ),
     "diagnostics and audits": ("seed_runtime",),
     "CLI surfaces": ("scripts/seed_local.py",),
-    "action workflows": (
-        "seed_runtime/action_plans.py",
-        "seed_runtime/pending_actions.py",
-        "seed_runtime/handoff_plans.py",
-    ),
 }
 
 
