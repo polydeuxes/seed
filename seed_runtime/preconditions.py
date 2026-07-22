@@ -36,8 +36,6 @@ class PreconditionReport(SeedModel):
     action_plan_id: str
     executable: bool
     plan_ready: bool
-    authorization_required: bool
-    proposal_authorized: bool
     missing_preconditions: list[Precondition]
     preconditions: list[Precondition] = Field(default_factory=list)
 
@@ -49,7 +47,6 @@ _PRECONDITION_NAMES: dict[str, str] = {
     "target_host_known": "Target host known",
     "provider_registered": "Provider registered",
     "approval_present": "Plan approval present",
-    "execution_authorization_present": "Execution authorization present",
 }
 
 
@@ -83,29 +80,10 @@ class PreconditionEvaluator:
             for precondition in preconditions
             if not precondition.satisfied
         ]
-        auth_required = _requires_execution_authorization(action_plan)
-        non_auth_missing = [
-            precondition
-            for precondition in missing
-            if precondition.id != "execution_authorization_present"
-        ]
-        auth_precondition = next(
-            (
-                precondition
-                for precondition in preconditions
-                if precondition.id == "execution_authorization_present"
-            ),
-            None,
-        )
-        proposal_authorized = (
-            auth_precondition.satisfied if auth_precondition is not None else not auth_required
-        )
         return PreconditionReport(
             action_plan_id=action_plan.id,
             executable=not missing,
-            plan_ready=not non_auth_missing,
-            authorization_required=auth_required,
-            proposal_authorized=proposal_authorized,
+            plan_ready=not missing,
             missing_preconditions=missing,
             preconditions=preconditions,
         )
@@ -133,17 +111,7 @@ def declared_preconditions(capability: str) -> tuple[str, ...]:
 
 
 def _declared_for_plan(action_plan: ActionPlan) -> tuple[str, ...]:
-    baseline = _CAPABILITY_PRECONDITIONS.get(action_plan.capability, ())
-    if not _requires_execution_authorization(action_plan):
-        return baseline
-    return tuple(
-        "execution_authorization_present" if item == "approval_present" else item
-        for item in baseline
-    )
-
-
-def _requires_execution_authorization(action_plan: ActionPlan) -> bool:
-    return action_plan.requires_approval or action_plan.risk_class in {"L3", "L4"}
+    return _CAPABILITY_PRECONDITIONS.get(action_plan.capability, ())
 
 
 def evaluate_preconditions(
@@ -183,36 +151,6 @@ def _provider_registered(action_plan: ActionPlan, state: State) -> tuple[bool, s
     return False, f"provider is not registered: {provider}"
 
 
-def _execution_authorization_present(
-    action_plan: ActionPlan, state: State
-) -> tuple[bool, str]:
-    now = datetime.now(timezone.utc)
-    for authorization in state.execution_authorizations.values():
-        if authorization.action_plan_id != action_plan.id:
-            continue
-        if authorization.expires_at < now:
-            continue
-        proposal = state.execution_proposals.get(authorization.execution_proposal_id)
-        if proposal is None:
-            continue
-        if proposal.action_plan_id != action_plan.id:
-            continue
-        if proposal.tool_name != authorization.tool_name:
-            continue
-        if proposal.arguments_fingerprint != authorization.arguments_fingerprint:
-            continue
-        return (
-            True,
-            "execution authorization is present for proposal "
-            f"{proposal.id}: {authorization.id} for {authorization.tool_name}",
-        )
-    return (
-        False,
-        "no current execution authorization is present for a concrete proposal "
-        "on this plan",
-    )
-
-
 def _approval_present(action_plan: ActionPlan, state: State) -> tuple[bool, str]:
     approval_event_id = state.action_plan_approvals.get(action_plan.id)
     if approval_event_id is not None:
@@ -237,5 +175,4 @@ _CHECKS: dict[str, CheckFn] = {
     "target_host_known": _target_host_known,
     "provider_registered": _provider_registered,
     "approval_present": _approval_present,
-    "execution_authorization_present": _execution_authorization_present,
 }

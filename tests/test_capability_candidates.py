@@ -94,7 +94,7 @@ def test_capability_candidates_do_not_become_execution_decisions():
 
     assert "capability_candidate_not_execution_decision" in inspection.notes
     assert "no_capability_selection" in inspection.notes
-    assert state.execution_proposals == {}
+    assert not hasattr(state, "execution_proposals")
     assert state.pending_actions == {}
     assert state.action_plans == {}
 

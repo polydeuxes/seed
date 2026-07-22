@@ -403,7 +403,6 @@ from seed_runtime.explanations import (
     ExplanationBuilder,
     FactExplanation,
 )
-from seed_runtime.execution_proposals import ExecutionProposalService
 from seed_runtime.handoff_plans import (
     HandoffPlanNotFoundError,
     HandoffPlanService,
@@ -802,11 +801,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  python scripts/seed_local.py --fact web_service host example_host "
             "--fact web_service runtime docker 'restart web_service?'\n"
             "  python scripts/seed_local.py --db .seed-local.sqlite "
-            "--proposal plan_000001\n"
-            "  python scripts/seed_local.py --db .seed-local.sqlite "
             "--handoff plan_000001\n"
-            "  python scripts/seed_local.py --db .seed-local.sqlite "
-            "--authorize-proposal eprop_000001  # experimental/legacy"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -869,15 +864,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
-        "--proposal",
-        metavar="PLAN_ID",
-        help=(
-            "experimental/legacy side path: create and print a concrete "
-            "inspect-only execution proposal for an action plan when "
-            "preconditions are satisfied; never executes tools"
-        ),
-    )
-    parser.add_argument(
         "--handoff",
         metavar="PLAN_ID",
         help=(
@@ -885,46 +871,6 @@ def build_parser() -> argparse.ArgumentParser:
             "provider handoff plan for an accepted action plan; never executes "
             "or approves; not Core MVP runtime routing"
         ),
-    )
-    parser.add_argument(
-        "--authorize-proposal",
-        metavar="PROPOSAL_ID",
-        help=(
-            "experimental/legacy side path: grant short-lived execution "
-            "authorization metadata for an exact concrete execution proposal; "
-            "never executes tools"
-        ),
-    )
-    parser.add_argument(
-        "--authorize-execution",
-        metavar="PROPOSAL_ID",
-        help=argparse.SUPPRESS,
-    )
-    parser.add_argument(
-        "--tool-name",
-        metavar="TOOL",
-        help=argparse.SUPPRESS,
-    )
-    parser.add_argument(
-        "--tool-arguments-json",
-        metavar="JSON",
-        help=argparse.SUPPRESS,
-    )
-    parser.add_argument(
-        "--grant-method",
-        choices=[
-            "interactive_prompt",
-            "ssh_agent",
-            "sudo_timestamp",
-            "external_vault_token_ref",
-        ],
-        help=("optional secret-free grant metadata marker for " "--authorize-proposal"),
-    )
-    parser.add_argument(
-        "--ttl-seconds",
-        type=int,
-        default=300,
-        help="execution authorization time-to-live in seconds (default: 300)",
     )
     parser.add_argument(
         "--accept-plan",
@@ -2217,9 +2163,7 @@ def validate_lifecycle_args(
     normalize_confidence_args(args, parser)
     lifecycle_flags = [
         bool(args.preconditions),
-        bool(args.proposal),
         bool(args.handoff),
-        bool(args.authorize_proposal or args.authorize_execution),
         bool(args.accept_plan),
         bool(args.approve_plan),
         bool(args.reject_plan),
@@ -2305,8 +2249,8 @@ def validate_lifecycle_args(
     ]
     if sum(lifecycle_flags) > 1:
         parser.error(
-            "choose only one of --preconditions, --proposal, --handoff, "
-            "--authorize-proposal, --accept-plan, --approve-plan, "
+            "choose only one of --preconditions, --handoff, "
+            "--accept-plan, --approve-plan, "
             "--reject-plan, --supersede-plan, --impact, --unhealthy, --why, "
             "--evidence, --why-fact, --unsupported-facts, --contradictions, "
             "--confidence, --confidence-fact, "
@@ -2334,23 +2278,8 @@ def validate_lifecycle_args(
         parser.error("--rebuild-state-cache requires --db")
     if (args.rebuild_state_cache or args.state_cache_status) and args.predicate_catalog:
         parser.error("state cache commands require the built-in predicate catalog")
-    if args.proposal and not args.db:
-        parser.error("--proposal requires --db")
     if args.handoff and not args.db:
         parser.error("--handoff requires --db")
-    authorization_requested = args.authorize_proposal or args.authorize_execution
-    if authorization_requested and not args.db:
-        parser.error("--authorize-proposal requires --db")
-    if args.tool_name:
-        parser.error("--tool-name is no longer accepted; authorize a proposal ID")
-    if args.tool_arguments_json:
-        parser.error(
-            "--tool-arguments-json is no longer accepted; authorize a proposal ID"
-        )
-    if args.grant_method and not authorization_requested:
-        parser.error("--grant-method can only be used with --authorize-proposal")
-    if args.ttl_seconds != 300 and not authorization_requested:
-        parser.error("--ttl-seconds can only be used with --authorize-proposal")
     if args.reject_plan and not args.reason:
         parser.error("--reject-plan requires --reason")
     if args.reason and not args.reject_plan:
@@ -5923,63 +5852,6 @@ def precondition_report(args: argparse.Namespace) -> dict[str, Any]:
             close()
 
 
-def execution_proposal(args: argparse.Namespace) -> dict[str, Any]:
-    """Create an inspect-only execution proposal for a stored action plan."""
-
-    ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
-    try:
-        seed_dev_state_from_args(args, ledger)
-        state = StateProjector(ledger).project(args.workspace)
-        plan = state.action_plans.get(args.proposal)
-        if plan is None:
-            return {
-                "proposal_failure": {
-                    "action_plan_id": args.proposal,
-                    "missing_reason": "plan not found",
-                    "detail": (
-                        f"action plan not found in workspace {args.workspace!r}: "
-                        f"{args.proposal}"
-                    ),
-                }
-            }
-
-        report = ActionPlanService(ledger).precondition_report(plan, state)
-        if not report.plan_ready:
-            failure = ExecutionProposalService().diagnose_failure(plan, state)
-            report_payload = to_plain(report)
-            if failure is not None:
-                report_payload["missing_reason"] = failure.missing_reason
-                report_payload["missing_detail"] = failure.detail
-            return {"precondition_report": report_payload}
-
-        proposal_service = ExecutionProposalService(ledger)
-        proposal = proposal_service.create_proposal(
-            plan,
-            state,
-            session_id=args.session,
-            causation_id=plan.id,
-        )
-        if proposal is None:
-            failure = proposal_service.diagnose_failure(plan, state)
-            if failure is None:
-                failure_payload = {
-                    "action_plan_id": plan.id,
-                    "missing_reason": "proposal builder returned None",
-                    "detail": (
-                        "execution proposal could not be generated for action plan: "
-                        f"{plan.id}"
-                    ),
-                }
-            else:
-                failure_payload = to_plain(failure)
-            return {"proposal_failure": failure_payload}
-        return {"execution_proposal": to_plain(proposal)}
-    finally:
-        close = getattr(ledger, "close", None)
-        if close is not None:
-            close()
-
-
 def handoff_plan(args: argparse.Namespace) -> dict[str, Any]:
     """Create a non-executable handoff plan for an accepted action plan."""
 
@@ -6021,7 +5893,14 @@ def handoff_plan(args: argparse.Namespace) -> dict[str, Any]:
 def format_handoff_plan(result: dict[str, Any]) -> str:
     failure = result.get("handoff_failure")
     if isinstance(failure, dict):
-        return format_proposal_failure(failure)
+        lines = [
+            f"action_plan_id: {failure.get('action_plan_id')}",
+            f"missing_reason: {failure.get('missing_reason')}",
+        ]
+        detail = failure.get("detail")
+        if detail:
+            lines.append(f"detail: {detail}")
+        return "\n".join(lines)
 
     plan = result.get("handoff_plan")
     if not isinstance(plan, dict):
@@ -6040,98 +5919,11 @@ def format_handoff_plan(result: dict[str, Any]) -> str:
     )
 
 
-def grant_execution_authorization(args: argparse.Namespace) -> dict[str, Any]:
-    """Grant JIT execution authorization for an exact proposal without executing."""
-
-    ledger: EventLedger = SQLiteEventLedger(args.db)
-    try:
-        proposal_id = args.authorize_proposal or args.authorize_execution
-        grant_metadata: dict[str, Any] = {}
-        if args.grant_method == "interactive_prompt":
-            grant_metadata["interactive_prompt"] = True
-        elif args.grant_method == "ssh_agent":
-            grant_metadata["ssh_agent"] = "SSH_AUTH_SOCK"
-        elif args.grant_method == "sudo_timestamp":
-            grant_metadata["sudo_timestamp"] = "sudo_timestamp"
-        elif args.grant_method == "external_vault_token_ref":
-            grant_metadata["external_vault_token_ref"] = (
-                f"external_vault_token_ref:{proposal_id}"
-            )
-
-        authorization = ActionPlanService(ledger).grant_execution_authorization(
-            args.workspace,
-            proposal_id,
-            granted_by="seed_local_cli",
-            session_id=args.session,
-            ttl_seconds=args.ttl_seconds,
-            **grant_metadata,
-        )
-        return to_plain(authorization)
-    finally:
-        close = getattr(ledger, "close", None)
-        if close is not None:
-            close()
-
-
-def format_execution_authorization(authorization: dict[str, Any]) -> str:
-    return "\n".join(
-        [
-            f"execution_authorization_id: {authorization.get('id')}",
-            f"execution_proposal_id: {authorization.get('execution_proposal_id')}",
-            f"action_plan_id: {authorization.get('action_plan_id')}",
-            f"tool_name: {authorization.get('tool_name')}",
-            f"arguments_fingerprint: {authorization.get('arguments_fingerprint')}",
-            f"expires_at: {authorization.get('expires_at')}",
-            "secret_seen_by_seed: false",
-        ]
-    )
-
-
-def format_execution_proposal(result: dict[str, Any]) -> str:
-    failure = result.get("proposal_failure")
-    if isinstance(failure, dict):
-        return format_proposal_failure(failure)
-
-    report = result.get("precondition_report")
-    if isinstance(report, dict):
-        return format_missing_preconditions(report)
-
-    proposal = result.get("execution_proposal")
-    if not isinstance(proposal, dict):
-        raise ValueError("execution proposal result is missing")
-
-    return "\n".join(
-        [
-            f"execution_proposal_id: {proposal.get('id')}",
-            f"action_plan_id: {proposal.get('action_plan_id')}",
-            f"provider: {proposal.get('provider')}",
-            f"tool_name: {proposal.get('tool_name')}",
-            "tool_arguments: "
-            + json.dumps(proposal.get("tool_arguments", {}), sort_keys=True),
-            f"arguments_fingerprint: {proposal.get('arguments_fingerprint')}",
-            f"authorized: {str(bool(proposal.get('authorized'))).lower()}",
-            f"executable: {str(bool(proposal.get('executable'))).lower()}",
-        ]
-    )
-
-
-def format_proposal_failure(failure: dict[str, Any]) -> str:
-    lines = [
-        f"action_plan_id: {failure.get('action_plan_id')}",
-        f"missing_reason: {failure.get('missing_reason')}",
-    ]
-    detail = failure.get("detail")
-    if detail:
-        lines.append(f"detail: {detail}")
-    return "\n".join(lines)
-
-
 def format_missing_preconditions(report: dict[str, Any]) -> str:
     lines = [
         f"action_plan_id: {report.get('action_plan_id')}",
         f"missing_reason: {report.get('missing_reason', 'preconditions missing')}",
         f"plan_ready: {str(bool(report.get('plan_ready'))).lower()}",
-        f"proposal_authorized: {str(bool(report.get('proposal_authorized'))).lower()}",
         f"executable: {str(bool(report.get('executable'))).lower()}",
         "missing:",
     ]
@@ -6151,7 +5943,6 @@ def format_precondition_report(report: dict[str, Any]) -> str:
     lines = [
         f"action_plan_id: {report.get('action_plan_id')}",
         f"plan_ready: {str(bool(report.get('plan_ready'))).lower()}",
-        f"proposal_authorized: {str(bool(report.get('proposal_authorized'))).lower()}",
         f"executable: {str(bool(report.get('executable'))).lower()}",
         "missing:",
     ]
@@ -7368,15 +7159,6 @@ def main(argv: list[str] | None = None) -> int:
         print(format_precondition_report(precondition_report(args)))
         return 0
 
-    if args.proposal:
-        result = execution_proposal(args)
-        output = format_execution_proposal(result)
-        if "proposal_failure" in result:
-            print(output, file=sys.stderr)
-            return 1
-        print(output)
-        return 0
-
     if args.handoff:
         result = handoff_plan(args)
         output = format_handoff_plan(result)
@@ -7384,10 +7166,6 @@ def main(argv: list[str] | None = None) -> int:
             print(output, file=sys.stderr)
             return 1
         print(output)
-        return 0
-
-    if args.authorize_proposal or args.authorize_execution:
-        print(format_execution_authorization(grant_execution_authorization(args)))
         return 0
 
     updated_plan = update_action_plan_lifecycle(args)

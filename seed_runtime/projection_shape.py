@@ -45,8 +45,6 @@ PROJECTION_SHAPE_STAGES: tuple[ProjectionShapeStage, ...] = (
             "goals",
             "tool_needs",
             "approvals",
-            "execution_authorizations",
-            "execution_proposals",
             "pending_actions",
             "action_plans",
             "handoff_plans",
