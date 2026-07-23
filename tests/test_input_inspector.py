@@ -1,6 +1,6 @@
 import hashlib
 
-from seed_runtime.input_inspector import InputAct, InputInspector, classify_input_act
+from seed_runtime.input_inspector import InputInspector
 
 
 def test_ini_extension_containing_yaml_is_detected_from_content(tmp_path):
@@ -69,33 +69,3 @@ def test_unknown_text_is_unknown_with_warning(tmp_path):
 
     assert artifact.detected_format == "unknown"
     assert "unknown_format" in artifact.warnings
-
-
-def test_classify_input_act_fixture_examples():
-    examples = (
-        ("What does Seed know about ProjectionStore?", InputAct.OPERATOR_QUERY),
-        ("Install Docker on example_host_b.", InputAct.COMMAND_REQUEST),
-        ("web_service is running on example_host_b.", InputAct.OBSERVATION_CLAIM),
-        ("README says ExampleComponent owns execution.", InputAct.DOCUMENTATION_CLAIM),
-        ("No, example_host_b is not the web_service host anymore.", InputAct.CORRECTION),
-        ("Thanks, that makes sense.", InputAct.CASUAL_ANSWER),
-    )
-
-    for raw_text, input_act in examples:
-        inspection = classify_input_act(raw_text)
-
-        assert inspection.raw_text == raw_text
-        assert inspection.input_act == input_act
-        assert inspection.input_act.value == input_act.value
-        assert inspection.reason.startswith("deterministic_")
-
-
-def test_input_inspection_record_is_immutable():
-    inspection = classify_input_act("What does Seed know about ProjectionStore?")
-
-    try:
-        inspection.input_act = InputAct.CASUAL_ANSWER
-    except (TypeError, ValueError):
-        pass
-    else:  # pragma: no cover - defensive across pydantic implementations
-        raise AssertionError("InputInspection should be immutable")

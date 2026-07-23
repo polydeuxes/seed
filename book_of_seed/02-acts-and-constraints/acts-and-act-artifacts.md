@@ -25,7 +25,6 @@ Consumer validation is not producer occurrence: a downstream boundary may lawful
 - producer occurrence != assertion truth automatically
 
 ## Representative repository anchors
-- `seed_runtime/input_inspector.py::InputAct`
 - `seed_runtime/advancement_need_consideration_selection.py::select_advancement_need_for_consideration`
 
 ## Counterexamples or failure modes
