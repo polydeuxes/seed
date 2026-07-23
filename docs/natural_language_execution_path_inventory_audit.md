@@ -27,7 +27,6 @@ Primary supporting documents reviewed:
 - `docs/capability_verification_reconciliation.md`
 - `docs/execution_status_and_operator_feedback_reconciliation.md`
 - `docs/input_inspection_reconciliation.md`
-- `docs/input_act_decision_bridge.md`
 
 
 ## Chain Under Inventory

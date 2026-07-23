@@ -105,8 +105,6 @@ Related but non-equivalent concepts found:
 - `input.user_message.payload.text` can contain arbitrary identity assertions such as `I am John`, but Seed stores the text as text and does not extract a principal claim.
 - `Actor` can be `user`, but this is a coarse event-author category rather than a claimed human/service identity.
 - `Observation.source_type="user"` can mark user-provided observations, but it does not preserve which principal was claimed.
-- `docs/input_source_authority_reconciliation.md` recommends `claimed_principal` as future vocabulary.
-- `docs/input_envelope_vocabulary.md` currently defines the closely related term `principal_claim`, not runtime `claimed_principal`.
 
 Finding: Seed has conceptual documentation for the idea of a claimed principal, but it does not have a first-class implemented `claimed_principal` surface for generic input.
 
@@ -121,7 +119,6 @@ Related but non-equivalent concepts found:
 - `actor="approver"` records an event-author category, not the authenticated approver principal.
 - `workspace_id` and `session_id` are scoping identifiers, not authentication records.
 - `SeedAPI.post_user_message(...)` and local CLI paths pass workspace/session/text without authentication metadata.
-- `docs/input_envelope_vocabulary.md` defines `authenticated_principal` as documentation-only future vocabulary.
 
 Finding: Seed has documentation-only vocabulary and downstream grant identity fields, but it does not have a first-class current `authenticated_principal` attached to input.
 

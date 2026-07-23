@@ -137,8 +137,6 @@ Documents and surfaces inspected included at least:
 - `docs/situatedness_preservation_and_failure_observation.md`
 - `docs/object_role_and_operation_frontier.md`
 - `docs/object_role_operation_relation_cluster_observation.md`
-- `docs/input_act_vocabulary.md`
-- `docs/input_envelope_vocabulary.md`
 - `docs/natural_language_observation_and_intent_derivation_reconciliation.md`
 - `docs/operator_intent_question_and_claim_interface_reconciliation.md`
 - `docs/interpretation_candidate_preservation_audit.md`

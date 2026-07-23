@@ -60,39 +60,9 @@ def test_need_gap_and_capability_demand_invariants_are_canonical():
         assert invariant in text
 
 
-def test_capability_interaction_outcome_and_adaptation_invariants_are_canonical():
-    text = _read("book_of_seed/07-operational-realization/operational-realization-and-capability.md")
-
-    required = [
-        "declared capability != verified capability",
-        "capability is not mechanism, reachability, authority, reliance warrant, movement selection, or selected mechanism",
-        "one successful observation does not establish general capability",
-        "one successful episode does not verify a general capability",
-        "one failed episode does not establish capability absence",
-        "selection is not realization",
-        "handoff is not realization",
-        "realization report is not verified effect",
-        "after-observation is not attributed result",
-        "interaction episode is not causal proof or learning automatically",
-        "Movement occurred is not gap reduced",
-        "gap reduction is not complete need satisfaction or causal proof",
-        "local outcome is not universal capability",
-        "failed outcome is not capability absence automatically",
-        "learned capability is not selected movement",
-        "learned gap is not permission to act",
-        "adaptive reliance is not automatic execution",
-        "Is a capability identical to a mechanism? No.",
-        "Does one successful interaction verify a general capability? No.",
-        "Does one failed interaction establish that a capability is absent? No.",
-        "Does gap reduction prove that the selected movement caused the result? No.",
-        "Must a later selector consume raw historical episodes directly? No.",
-        "Does a selector changing its answer prove learning? No.",
-        "Is learning constitutionally identical to model training? No.",
-        "Are trajectory, interaction-outcome, gap-revision, capability-revision, learning, adaptive-reliance, or causal-standing implementations complete today? No.",
-    ]
-
-    for invariant in required:
-        assert invariant in text
+def test_book_vii_capability_chapter_remains_absent():
+    assert not (ROOT / "book_of_seed/07-operational-realization/operational-realization-and-capability.md").exists()
+    assert not (ROOT / "book_of_seed/07-operational-realization").exists()
 
 
 def test_constrained_movement_grammar_invariants_are_canonical():
@@ -198,24 +168,9 @@ def test_constrained_need_gap_and_demand_invariants_are_canonical():
         assert invariant in text
 
 
-def test_constrained_capability_interaction_outcome_invariants_are_canonical():
-    text = _read("book_of_seed/07-operational-realization/operational-realization-and-capability.md")
-
-    required = [
-        "Capability standing constrains possible realization movement",
-        "Capability standing is not selected movement",
-        "Capability revision may be understood as constrained movement in possible-realization standing",
-        "one success is not universal capability standing",
-        "capability revision is not mechanism selection",
-        "Movement-linked interaction is best understood as an evidentiary road",
-        "Selection is not realization",
-        "Outcome evaluation is a constraint on later standing movement",
-        "outcome evaluation is not automatic gap revision",
-        "Does capability standing itself select movement? No.",
-    ]
-
-    for invariant in required:
-        assert invariant in text
+def test_constrained_book_vii_capability_chapter_remains_absent():
+    assert not (ROOT / "book_of_seed/07-operational-realization/operational-realization-and-capability.md").exists()
+    assert not (ROOT / "book_of_seed/07-operational-realization").exists()
 
 
 def test_constrained_stopping_invariants_are_canonical():

@@ -146,7 +146,6 @@ Use these papers for alignment-sensitive work, handoffs, and broad architecture 
 * [`finding_applicability_index.md`](finding_applicability_index.md) — applicability index for architectural findings.
 * [`self_model_and_alignment_architecture_reconciliation.md`](self_model_and_alignment_architecture_reconciliation.md) — self-model and alignment architecture.
 * [`implementation_prompt_alignment_reconciliation.md`](implementation_prompt_alignment_reconciliation.md) — implementation prompt alignment.
-* [`handoff_alignment_guardrails_reconciliation.md`](handoff_alignment_guardrails_reconciliation.md) — handoff guardrails.
 
 ---
 

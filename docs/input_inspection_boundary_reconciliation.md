@@ -51,8 +51,6 @@ boundary work, including:
 - `docs/learning_as_lens_observation.md`
 - `docs/observation_surface_and_blind_spot_audit.md`
 - `docs/input_inspection_reconciliation.md`
-- `docs/input_act_vocabulary.md`
-- `docs/input_envelope_vocabulary.md`
 - `docs/natural_language_observation_and_intent_derivation_reconciliation.md`
 - `docs/natural_language_request_routing_audit.md`
 - `docs/natural_language_execution_path_inventory_audit.md`

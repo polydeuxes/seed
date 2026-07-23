@@ -96,7 +96,6 @@ Documents inspected included:
 - `docs/handoff_consumption_activation_reconciliation.md`
 - `docs/handoff_bootstrap_and_summary_reconciliation.md`
 - `docs/handoff_and_continuation_lineage_frontier.md`
-- `docs/handoff_alignment_guardrails_reconciliation.md`
 - `docs/continuation_context_and_working_state_reconciliation.md`
 - `docs/handoff_template_and_continuation_protocol_reconciliation.md`
 - `docs/inquiry_frontier.md`

@@ -110,7 +110,6 @@ This reconciliation builds on existing architectural documentation, especially:
 - `docs/operator_interface_and_projection_authority_reconciliation.md`
 - `docs/impact_overview_authority_reconciliation.md`
 - `docs/state_summary_authority_reconciliation.md`
-- `docs/input_act_vocabulary.md`
 - `docs/operation_support_boundary_reconciliation.md`
 - `docs/policy_pending_action_inventory.md`
 - `docs/pending_action_lifecycle_inventory.md`

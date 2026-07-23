@@ -174,7 +174,6 @@ Use this file to find the right document family before reading specific document
 - `defines_authority_reconciliation_observation.md`
 - `defines_relationship_reconciliation_audit.md`
 - `source_navigation_entity_typing_graph_issue_audit.md`
-- `input_source_authority_reconciliation.md`
 - `documentation_observation_design.md`
 - `documentation_observation_frontier.md`
 - `documentation_prose_as_language_bearing_source_reconciliation.md`
@@ -193,10 +192,7 @@ Use this file to find the right document family before reading specific document
 - `language_candidate_routing_and_promotion_reconciliation.md`
 - `candidate_meaning_and_ambiguity_reconciliation.md`
 - `operator_intent_question_and_claim_interface_reconciliation.md`
-- `input_envelope_vocabulary.md`
-- `input_act_vocabulary.md`
 - `input_inspection_reconciliation.md`
-- `input_act_decision_bridge.md`
 - `agency_and_attribution_reconciliation.md`
 - `assessment_recommendation_and_decision_reconciliation.md`
 - `goal_relevance_and_recommendation_generation_reconciliation.md`
@@ -293,11 +289,9 @@ Use this file to find the right document family before reading specific document
 - `execution_status_emission_and_consumption_reconciliation.md`
 - `execution_status_producer_contract_reconciliation.md`
 - `execution_boundary_inventory_and_status_emission_audit.md`
-- `operator_investigation_workflow_reconciliation.md`
 - `operator_navigation_reconciliation.md`
 - `operator_pain_as_frontier_signal.md`
 - `operator_entrypoint_pressure_audit.md`
-- `operator_trial_plan.md`
 
 ## Handoff And Continuation
 
@@ -305,7 +299,6 @@ Use this file to find the right document family before reading specific document
 - `handoff_document_boundary_reconciliation.md`
 - `handoff_bootstrap_and_summary_reconciliation.md`
 - `handoff_consumption_activation_reconciliation.md`
-- `handoff_alignment_guardrails_reconciliation.md`
 - `continuation_context_and_working_state_reconciliation.md`
 - `continuation_constraints_and_consumer_capabilities_reconciliation.md`
 - `active_context_and_working_set_reconciliation.md`

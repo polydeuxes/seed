@@ -95,7 +95,6 @@ This reconciliation builds on existing architectural documentation, especially:
 - `docs/claim_strength_and_assertion_semantics_reconciliation.md`
 - `docs/read_model_inventory_and_authority_reconciliation.md`
 - `docs/conclusion_taxonomy_reconciliation.md`
-- `docs/input_act_vocabulary.md`
 - `docs/operation_support_boundary_reconciliation.md`
 - `docs/adoption_decision_authority_reconciliation.md`
 - `docs/recommendation_selection_boundary.md`

@@ -83,7 +83,6 @@ This reconciliation builds on existing architectural documentation, especially:
 - `docs/view_authority_and_surface_responsibility_reconciliation.md`
 - `docs/recommendation_selection_boundary.md`
 - `docs/operator_navigation_reconciliation.md`
-- `docs/operator_investigation_workflow_reconciliation.md`
 - `docs/knowledge_representation_reconciliation.md`
 - `docs/relationship_fact_reconciliation.md`
 - `docs/evidence_trust_and_source_authority_reconciliation.md`
