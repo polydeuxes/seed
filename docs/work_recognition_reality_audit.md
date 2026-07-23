@@ -117,9 +117,9 @@ Completed investigation and repository-history documents inspected:
 - `docs/README.md`
 - `README.md`
 - `IMPLEMENTATION.md`
-- `03-runtime-loop.md`
-- `06-context-engine.md`
-- `13-knowledge-and-evidence.md`
+- `docs/archive/original_book_of_seed/03-runtime-loop.md`
+- `docs/archive/original_book_of_seed/06-context-engine.md`
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`
 
 ## Search Terms Used
 

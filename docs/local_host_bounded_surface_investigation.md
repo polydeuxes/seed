@@ -26,7 +26,7 @@
 - `seed_runtime/state_views.py`
 - `seed_runtime/context_views.py`
 - `scripts/seed_local.py`
-- `13-knowledge-and-evidence.md`
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`
 - `docs/host_observation_reconciliation.md`
 - `docs/participant_orientation_view_selection_observation.md`
 - `docs/capability_ownership_matrix.md`

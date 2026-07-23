@@ -71,9 +71,9 @@ The strongest inspected evidence included:
 
 - `README.md`
 - `docs/README.md`
-- `01-architecture.md`
-- `02-domain-model.md`
-- `13-knowledge-and-evidence.md`
+- `docs/archive/original_book_of_seed/01-architecture.md`
+- `docs/archive/original_book_of_seed/02-domain-model.md`
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`
 - `docs/architectural_status_and_next_frontier.md`
 - `docs/architectural_knowledge_map.md`
 - `docs/pressure_visibility_and_preservation_observation.md`

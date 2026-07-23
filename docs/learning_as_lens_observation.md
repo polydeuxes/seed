@@ -21,7 +21,7 @@ related:
   - learning_and_knowledge_change_reconciliation.md
   - claim_support_design.md
   - claim_support_frontier.md
-  - 13-knowledge-and-evidence.md
+  - docs/archive/original_book_of_seed/13-knowledge-and-evidence.md
 ---
 
 # Learning As Lens Observation
@@ -61,7 +61,7 @@ underlying repository changes appear to be doing the work?
 The review inspected repository documentation directly, including:
 
 - `docs/seed.md`;
-- `13-knowledge-and-evidence.md`;
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`;
 - `docs/support_change_and_learning_observation.md`;
 - `docs/understanding_claim_and_decompression_observation.md`;
 - `docs/knowledge_and_understanding_distinction_observation.md`;
@@ -216,7 +216,7 @@ Participants could reasonably describe an `Observation -> Derivation` movement a
 learning when preserved observations enable an additional represented claim or
 relationship.
 
-The endpoint identity normalization example in `13-knowledge-and-evidence.md` is
+The endpoint identity normalization example in `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md` is
 strong. A batch containing inventory and metrics identity material allows an
 alias observation to be derived so endpoint-scoped facts can be queried through a
 stable node name. In learning language, Seed learned how the endpoint relates to

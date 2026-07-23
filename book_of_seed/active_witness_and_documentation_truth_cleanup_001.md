@@ -59,8 +59,8 @@ Examined at minimum:
 
 - `docs/architecture.md`;
 - `docs/invariants.md`;
-- `01-architecture.md`;
-- `03-runtime-loop.md`;
+- `docs/archive/original_book_of_seed/01-architecture.md`;
+- `docs/archive/original_book_of_seed/03-runtime-loop.md`;
 - `docs/input_source_authority_reconciliation.md`;
 - current README/documentation search results returned by the required `rg` command.
 
@@ -87,8 +87,8 @@ Specific corrections included:
 - `docs/architecture.md` no longer claims RuntimeLoop is a deprecated active comparison point.
 - `docs/invariants.md` no longer contains a Runtime invariants section claiming Runtime is canonical or request_tool is current.
 - `docs/invariants.md` no longer retains compatibility clauses for ActionPlan, HandoffPlan, ExecutionProposal, or ExecutionAuthorization.
-- `01-architecture.md` was reduced toward current bounded event/projection/observation/evidence/fact/view/diagnostic/capability-testimony responsibilities, but PR 1919 left an overstrong active `ToolRegistry` ownership claim that was corrected by the later active architecture/domain document truth correction operation.
-- `03-runtime-loop.md` was converted to a historical placeholder, not an active RuntimeLoop instruction document.
+- At the time, root `01-architecture.md` was reduced toward current bounded event/projection/observation/evidence/fact/view/diagnostic/capability-testimony responsibilities, but PR 1919 left an overstrong active `ToolRegistry` ownership claim that was corrected by the later active architecture/domain document truth correction operation.
+- At the time, root `03-runtime-loop.md` was converted to a historical placeholder, not an active RuntimeLoop instruction document.
 - `docs/canonical_documentation_reconciliation.md` was corrected where it described `docs/architecture.md` as actively identifying Runtime as canonical.
 
 ## Historical documents preserved
@@ -160,7 +160,7 @@ The next operation is reserved for a full Book contamination lint over `book_of_
 
 ## Lawful stopping point
 
-This PR 1919 operation stopped after removing deleted ID reservations, dead imports, stale active architecture/invariant claims, and selected directly active stale documentation anchors. Its conclusion that active documentation was complete was overstrong: additional active contamination remained in `01-architecture.md` and `02-domain-model.md` and was corrected later. It did not invent replacement architecture, did not create migrations or compatibility mechanisms, did not rename mixed models, and did not perform Book-wide lint.
+This PR 1919 operation stopped after removing deleted ID reservations, dead imports, stale active architecture/invariant claims, and selected directly active stale documentation anchors. Its conclusion that active documentation was complete was overstrong: additional active contamination remained in then-root `01-architecture.md` and `02-domain-model.md` and was corrected later. It did not invent replacement architecture, did not create migrations or compatibility mechanisms, did not rename mixed models, and did not perform Book-wide lint.
 
 ## Final direct answers
 
@@ -181,6 +181,18 @@ This PR 1919 operation stopped after removing deleted ID reservations, dead impo
 15. Were any historical reports rewritten merely because their implementation was deleted? No; active-looking stale anchors were marked historical/stale or minimally corrected, but historical testimony was not mechanically purged.
 16. Were mixed `ToolNeed`, `ToolSpec`, `Approval`, `RiskClass`, recommendation, provider, backend, or Actor surfaces changed? No.
 17. Was a new architecture invented? No.
-18. What active-documentation residue remains? PR 1919 incorrectly concluded that no known active document still asserted deleted roads as current. Later inspection found additional active contamination in `01-architecture.md` and `02-domain-model.md`; the active architecture/domain document truth correction operation completed that bounded correction. Historical/stale documents still contain preserved former vocabulary by design.
+18. What active-documentation residue remains? PR 1919 incorrectly concluded that no known active document still asserted deleted roads as current. Later inspection found additional active contamination in `docs/archive/original_book_of_seed/01-architecture.md` and `docs/archive/original_book_of_seed/02-domain-model.md`; the active architecture/domain document truth correction operation completed that bounded correction. Historical/stale documents still contain preserved former vocabulary by design.
 19. What exact scope is reserved for the next Book contamination lint? A repository-wide Book-focused contamination lint over `book_of_seed/` and Book-referenced canonical claims, including historical/current classification beyond this single added report.
 20. Where must this operation stop? It stops at active witness and active documentation truth cleanup, leaving historical testimony, mixed-boundary recovery, and Book-wide contamination lint for later operations.
+## Later archival conclusion after PR 1920
+
+The numbered root documents were subsequently classified together as the
+formative original Seed corpus and archived as historical testimony.
+
+Their active-document corrections were bounded intermediate repairs, not a
+final decision that the family should remain a second active canon.
+
+Sequence preserved: PR 1919 corrected implementation residue and selected
+active docs; PR 1920 corrected additional numbered active claims; the later
+original numbered Seed corpus archival operation recovered the numbered
+family's proper standing as one historical corpus.

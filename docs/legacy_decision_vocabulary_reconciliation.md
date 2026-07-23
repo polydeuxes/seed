@@ -71,7 +71,7 @@ Current documentation that describes live implementation still contains legacy t
 
 ### Historical documentation
 
-Historical or planning documents preserve repository evidence and should not be rewritten for this slice: `03-runtime-loop.md`, `08-small-model-strategy.md`, `09-pseudocode.md`, `10-build-plan.md`, `11-naming.md`, `docs/decision_model_context_naming_audit.md`, `docs/runtime_decision_reconciliation.md`, and the older characterization/reconciliation/audit documents under `docs/` and `docs/audit/`. Their legacy vocabulary is historical evidence of the prior architecture and migration rationale.
+Historical or planning documents preserve repository evidence and should not be rewritten for this slice: `docs/archive/original_book_of_seed/03-runtime-loop.md`, `docs/archive/original_book_of_seed/08-small-model-strategy.md`, `docs/archive/original_book_of_seed/09-pseudocode.md`, `docs/archive/original_book_of_seed/10-build-plan.md`, `docs/archive/original_book_of_seed/11-naming.md`, `docs/decision_model_context_naming_audit.md`, `docs/runtime_decision_reconciliation.md`, and the older characterization/reconciliation/audit documents under `docs/` and `docs/audit/`. Their legacy vocabulary is historical evidence of the prior architecture and migration rationale.
 
 ### Intentional legacy compatibility
 
@@ -107,7 +107,7 @@ The following should remain until an explicit compatibility window because imple
 
 ### 4. Occurrences that should never be migrated
 
-Historical evidence should remain in historical documents and plans: `03-runtime-loop.md`, `08-small-model-strategy.md`, `09-pseudocode.md`, `10-build-plan.md`, `11-naming.md`, `docs/decision_model_context_naming_audit.md`, `docs/runtime_decision_reconciliation.md`, and older characterization/audit records. Rewriting those would erase the repository's evidence of how the rename was evaluated and why compatibility was retained.
+Historical evidence should remain in historical documents and plans: `docs/archive/original_book_of_seed/03-runtime-loop.md`, `docs/archive/original_book_of_seed/08-small-model-strategy.md`, `docs/archive/original_book_of_seed/09-pseudocode.md`, `docs/archive/original_book_of_seed/10-build-plan.md`, `docs/archive/original_book_of_seed/11-naming.md`, `docs/decision_model_context_naming_audit.md`, `docs/runtime_decision_reconciliation.md`, and older characterization/audit records. Rewriting those would erase the repository's evidence of how the rename was evaluated and why compatibility was retained.
 
 ### 5. Does active implementation still imply LLM ownership, prompt context, or model-centric architecture?
 

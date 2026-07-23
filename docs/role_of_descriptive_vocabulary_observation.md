@@ -71,7 +71,7 @@ stable, final, successful, or separate from architecture in every case.
 Representative evidence reviewed:
 
 - `README.md`
-- `02-domain-model.md`
+- `docs/archive/original_book_of_seed/02-domain-model.md`
 - `docs/ontology.md`
 - `docs/descriptive_vs_architectural_vocabulary_observation.md`
 - `docs/promotion_and_reconciliation_observation.md`

@@ -18,7 +18,7 @@ The boundary was selected because the request-tool capability resolution path al
 
 Repository evidence supporting this boundary already existed before this slice:
 
-- `02-domain-model.md` states that the Core MVP path stops at ToolNeed, capability resolution, registered operation candidates, and provider/handoff recommendations, preserving provider/handoff recommendation metadata separately from registered operation execution.
+- `docs/archive/original_book_of_seed/02-domain-model.md` states that the Core MVP path stops at ToolNeed, capability resolution, registered operation candidates, and provider/handoff recommendations, preserving provider/handoff recommendation metadata separately from registered operation execution.
 - `tool_vocabulary_orientation_recovery_investigation.md` identifies `CapabilityRecommendation` as suggested provider metadata and `ToolRegistry` / `ToolSpec` as registered operation inventory.
 - `operational_responsibility_slice_001.md` left `ToolNeedService` as a consumer that may expose registered operation candidates through `ToolRegistry.list_tools_for_capability()` while keeping capability/provider/handoff recommendation metadata separate.
 - `tests/test_tool_recommendations.py` already proves that registered operations come only from registry capability lookup even when catalog handoff metadata names an operation.

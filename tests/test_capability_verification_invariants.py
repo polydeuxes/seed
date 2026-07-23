@@ -122,27 +122,46 @@ def test_active_architecture_doc_does_not_claim_deleted_runtime_pipeline():
         assert phrase not in text
 
 
-def test_numbered_active_architecture_and_domain_docs_do_not_claim_deleted_owners():
-    active_docs = [Path("01-architecture.md"), Path("02-domain-model.md")]
+def test_original_numbered_seed_corpus_is_archived_not_root_active_docs():
+    numbered_files = [
+        "01-architecture.md",
+        "02-domain-model.md",
+        "03-runtime-loop.md",
+        "04-toolkit-system.md",
+        "05-policy-and-safety.md",
+        "06-context-engine.md",
+        "07-builder-service.md",
+        "08-small-model-strategy.md",
+        "09-pseudocode.md",
+        "10-build-plan.md",
+        "11-naming.md",
+        "12-open-questions.md",
+        "13-knowledge-and-evidence.md",
+    ]
+    archive = Path("docs/archive/original_book_of_seed")
 
-    forbidden = [
-        "ToolRegistry is registered operation inventory",
-        "ToolExecutor executes",
-        "RuntimeTool",
-        "RuntimeLoop",
-        "canonical Runtime",
-        "choose visible tools",
-        "through registry",
-        "ActionPlan",
-        "HandoffPlan",
-        "ToolkitCandidate",
-        "seed-builder-v1",
-        "canonical call_tool",
-        "model-visible tool selection",
-        "model_visible",
+    for name in numbered_files:
+        assert not Path(name).exists(), f"root active copy remains: {name}"
+        assert (archive / name).is_file(), f"archived corpus file missing: {name}"
+
+
+def test_original_numbered_seed_corpus_readme_denies_current_authority():
+    text = _read(Path("docs/archive/original_book_of_seed/README.md"))
+
+    required = [
+        "This directory preserves the original numbered Seed design corpus.",
+        "They are not:",
+        "current Seed architecture",
+        "canonical constitutional grammar",
+        "current domain vocabulary",
+        "implementation ownership evidence",
+        "an operator guide",
+        "an invariant source",
+        "authority to retain or recreate an implementation artifact",
+        "The canonical constitutional corpus is:",
+        "book_of_seed/",
+        "Current implementation standing must be recovered from the current witness",
     ]
 
-    for path in active_docs:
-        text = _read(path)
-        for phrase in forbidden:
-            assert phrase not in text, f"{path} still contains {phrase!r}"
+    for phrase in required:
+        assert phrase in text

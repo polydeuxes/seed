@@ -60,7 +60,7 @@ language?
 The review inspected repository documentation directly, including:
 
 - `docs/seed.md`;
-- `13-knowledge-and-evidence.md`;
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`;
 - `docs/claim_support_characterization.md`;
 - `docs/claim_support_design.md`;
 - `docs/reality_fact_and_claim_reconciliation.md`;
@@ -121,7 +121,7 @@ correction, and safe continuation.
 ### Evidence can change
 
 The clearest support change occurs when additional evidence enters the system.
-`13-knowledge-and-evidence.md` describes evidence as immutable raw observation,
+`docs/archive/original_book_of_seed/13-knowledge-and-evidence.md` describes evidence as immutable raw observation,
 facts as projected interpretations of evidence, and fact support aggregation as
 multiple evidence-backed facts supporting or conflicting with a value. In that
 case the changed support is additional preserved provenance: a new source,
@@ -150,7 +150,7 @@ The preserved artifact can remain the same while its support role changes.
 
 Derivation-related documents describe a movement from preserved support to
 additional represented knowledge. The endpoint-identity normalization example in
-`13-knowledge-and-evidence.md` is concrete: when a batch contains explicit
+`docs/archive/original_book_of_seed/13-knowledge-and-evidence.md` is concrete: when a batch contains explicit
 identity material such as `ip_address`, `alias`, or `ansible_host`, the
 normalizer derives an alias observation that lets endpoint-scoped facts be found
 through a stable node name. The support change is not merely another raw fact.

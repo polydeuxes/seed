@@ -365,9 +365,9 @@ Observed contradiction:
 
 Implementation evidence:
 
-- `01-architecture.md` describes `EventLedger` as append-only facts about what
+- `docs/archive/original_book_of_seed/01-architecture.md` describes `EventLedger` as append-only facts about what
   happened and `ProjectionStore` as cached projected state derived from events.
-- `02-domain-model.md` says `ProjectionStore` is a deterministic cache of
+- `docs/archive/original_book_of_seed/02-domain-model.md` says `ProjectionStore` is a deterministic cache of
   current projected state, cache not source of truth.
 - `tests/test_architecture_invariants.py` checks that projection store protocols
   do not own event methods and event ledgers do not own projection snapshot
@@ -597,8 +597,8 @@ rg -n "recurrence|contradiction|contradictions|missing visibility|missing relati
 - `docs/ontology.md`
 - `docs/contradiction_discovery_and_visibility_reconciliation.md`
 - `docs/repository_self_explanation_investigation.md`
-- `01-architecture.md`
-- `02-domain-model.md`
+- `docs/archive/original_book_of_seed/01-architecture.md`
+- `docs/archive/original_book_of_seed/02-domain-model.md`
 - `seed_runtime/projection_shape.py`
 - `seed_runtime/execution_status.py`
 - `seed_runtime/events.py`

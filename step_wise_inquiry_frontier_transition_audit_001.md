@@ -36,7 +36,7 @@ Implementation and repository evidence reviewed:
 - `inquiry_lineage_slice_004.md`
 - `bounded_inquiry_recovery_characterization.md`
 - `inquiry_completion_evaluation_audit.md`
-- `12-open-questions.md`
+- `docs/archive/original_book_of_seed/12-open-questions.md`
 
 Commands used during the audit:
 

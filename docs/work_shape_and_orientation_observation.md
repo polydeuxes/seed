@@ -83,14 +83,14 @@ Additional documents and surfaces inspected through maps, adjacency,
 cross-reference, broad search, and implementation-facing read-model review:
 
 - `README.md`
-- `01-architecture.md`
-- `03-runtime-loop.md`
-- `05-policy-and-safety.md`
-- `06-context-engine.md`
-- `07-builder-service.md`
-- `09-pseudocode.md`
-- `11-naming.md`
-- `13-knowledge-and-evidence.md`
+- `docs/archive/original_book_of_seed/01-architecture.md`
+- `docs/archive/original_book_of_seed/03-runtime-loop.md`
+- `docs/archive/original_book_of_seed/05-policy-and-safety.md`
+- `docs/archive/original_book_of_seed/06-context-engine.md`
+- `docs/archive/original_book_of_seed/07-builder-service.md`
+- `docs/archive/original_book_of_seed/09-pseudocode.md`
+- `docs/archive/original_book_of_seed/11-naming.md`
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`
 - `docs/README.md`
 - `docs/index.md`
 - `docs/architectural_knowledge_map.md`

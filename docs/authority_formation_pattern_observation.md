@@ -38,7 +38,7 @@ readings where repository evidence does not support reconciliation.
 
 Reviewed evidence included:
 
-- `01-architecture.md`, especially catalog boundaries, knowledge projection,
+- `docs/archive/original_book_of_seed/01-architecture.md`, especially catalog boundaries, knowledge projection,
   current belief, relationship projection, inference projection, and
   `EventLedger`/`ProjectionStore` ownership.
 - `docs/measurement_ownership_boundary_audit.md`, especially endpoint

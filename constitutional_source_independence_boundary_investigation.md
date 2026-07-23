@@ -40,7 +40,7 @@ App-visible findings used only within their boundary:
 Reviewed repository evidence included:
 
 - `AGENTS.md`
-- `13-knowledge-and-evidence.md`
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`
 - `constitutional_external_source_role_boundary_investigation.md`
 - `constitutional_repetition_proof_boundary_investigation.md`
 - `constitutional_authority_volume_boundary_investigation.md`

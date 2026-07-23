@@ -92,11 +92,11 @@ this`, `current concern`, `active concern`, `current work`, `active edge`,
 Documents inspected included:
 
 - `README.md`
-- `01-architecture.md`
-- `02-domain-model.md`
-- `05-policy-and-safety.md`
-- `06-context-engine.md`
-- `13-knowledge-and-evidence.md`
+- `docs/archive/original_book_of_seed/01-architecture.md`
+- `docs/archive/original_book_of_seed/02-domain-model.md`
+- `docs/archive/original_book_of_seed/05-policy-and-safety.md`
+- `docs/archive/original_book_of_seed/06-context-engine.md`
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`
 - `docs/README.md`
 - `docs/index.md`
 - `docs/architectural_knowledge_map.md`

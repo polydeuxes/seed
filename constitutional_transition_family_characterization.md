@@ -25,7 +25,7 @@ This investigation reviewed implementation and repository evidence rather than t
 - `scripts/seed_local.py --record-inquiry-note "."` followed by `scripts/seed_local.py --inquiry-orientation` demonstrated the specific `.` probe: the app preserved the note, found no deterministic related material, and denied truth/authority promotion.
 - `seed_runtime/question_surface_inventory.py` and `seed_runtime/bounded_ask.py` implement exact Question Family eligibility, required-argument checks, diagnostic-only and non-dispatchable stops, dispatch request construction, and dispatch execution.
 - `scripts/seed_local.py --question-surface-inventory --json` showed distinct bounded statuses such as `eligible_now`, `eligible_with_parameters`, `diagnostic_only`, and `not_dispatchable`.
-- `02-domain-model.md` distinguishes immutable Evidence from projected Facts, FactSupport aggregates, best/current beliefs, and the rebuildable ProjectionStore cache.
+- `docs/archive/original_book_of_seed/02-domain-model.md` distinguishes immutable Evidence from projected Facts, FactSupport aggregates, best/current beliefs, and the rebuildable ProjectionStore cache.
 - `candidate_inquiry_reconciliation.md` rejects first-class raw-token Candidate Interpretation for `.`, but supports a narrower constitutional pattern in which ambiguous observations can frame candidate bounded inquiries that gather or compose evidence and stop safely when unsupported.
 - `question_to_inquiry_transition_characterization.md` narrows possible questions into exact registered Question Families, preserved inquiry notes, eligibility checks, map-backed selection, surface execution, and surface-local evidence collection.
 - `observation_transition_recovery_characterization.md` distinguishes discussion/orientation from evidence-bearing observation or bounded evidence-bearing interpretation.
@@ -197,7 +197,7 @@ Capability verification, promotion readiness, architecture recovery, fact projec
 
 **Status:** independently recurring and implementation-backed, but not identical to generic inquiry movement.
 
-`02-domain-model.md` states that raw observations may support Evidence, Evidence is immutable, Facts are interpretations of Evidence, FactSupport is rebuilt from Facts, and ProjectionStore is a deterministic cache rather than source of truth.
+`docs/archive/original_book_of_seed/02-domain-model.md` states that raw observations may support Evidence, Evidence is immutable, Facts are interpretations of Evidence, FactSupport is rebuilt from Facts, and ProjectionStore is a deterministic cache rather than source of truth.
 
 **What changes?**
 

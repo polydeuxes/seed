@@ -47,7 +47,7 @@ Primary recurring evidence reviewed for topology only:
 - `projection_diagnostics_investigation.md`
 - `timing_visibility_current_facts_completion_audit.md`
 - `narrative_neighborhood_methodology_characterization.md`
-- `13-knowledge-and-evidence.md`
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`
 
 Secondary evidence was used only where it repeated already visible boundaries. Expansion stopped once recurring adjacency, bridges, boundaries, unsupported candidates, and unknowns were visible enough to answer the bounded question.
 
