@@ -38,7 +38,6 @@ A fidelity determination examines a specific realization boundary by consuming t
 
 ## Related chapters
 - [Needs and opened movement](../03-goals-and-advancement/needs-and-opened-movement.md)
-- [Warrants and execution proposals](warrants-and-execution-proposals.md)
 - [Representation, emission, and consumer boundaries](../08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md)
 - [Evidence, provenance, and explanation](../05-evidence-and-knowledge/evidence-provenance-and-explanation.md)
 - [External and constitutional grammar](../01-grammar-and-standing/external-and-constitutional-grammar.md)
@@ -70,3 +69,9 @@ Movement-linked interaction is best understood as an evidentiary road among sepa
 Outcome evaluation is a constraint on later standing movement. Resulting testimony plus declared purpose, gap, or capability demand plus a comparison method may establish a bounded outcome finding. That finding may constrain gap standing, capability standing, stopping, further inquiry, or later candidate consideration, but outcome evaluation is not automatic gap revision, automatic capability revision, causal standing, or proof that completed means successful movement.
 
 Direct answers preserved by this clause: Does capability standing itself select movement? No. Can capability revision be understood as movement in realization standing? Yes, when bounded by prior capability standing, new evidence, examination method, warrant, conditions, scope, conflict, and Unknowns.
+
+## Mechanism-fitness warrant correction 001
+
+A warrant is a general bounded support relation for a claim, standing, reliance, mechanism fitness, selection, or other local conclusion. It is not a reusable blanket permission, not an execution corridor, and not authority to perform the act whose support it helps examine.
+
+An operational realization warrant may remain only as bounded mechanism-fitness support: evidence that a candidate or selected mechanism can fit a declared operational purpose under stated conditions, scope, capability standing, constraints, provenance, temporal limits, negative authority, and Unknowns. Mechanism-fitness support does not establish candidate selection, selected mechanism standing, authorization, approval, request representation formation, emission, invocation, performance, result testimony, recording, or verified external effect. A candidate mechanism remains distinct from a selected mechanism, and mechanism capability remains distinct from mechanism fitness.

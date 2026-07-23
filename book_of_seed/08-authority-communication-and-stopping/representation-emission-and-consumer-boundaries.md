@@ -75,3 +75,9 @@ An external response is not verified external effect. Transport, delivery indica
 - [Authority scope](authority-scope.md)
 - [Evidence, provenance, and explanation](../05-evidence-and-knowledge/evidence-provenance-and-explanation.md)
 - [Execution and recording](../07-operational-realization/execution-and-recording.md)
+
+## Request-shaped representation correction 001
+
+A request-shaped representation may preserve a requested subject or act, declared purpose, target, scope, inputs or arguments, source standing, selection basis where applicable, authority references, constraints, provenance, limits, negative authority, and Unknowns. Its shape does not establish constitutional request standing by identity, and the Book does not require a universal request artifact.
+
+Request representation formation remains distinct from emission. Emission remains distinct from delivery, receipt, invocation, completed performance, result testimony, and recording. A responsible producer may form a bounded representation, a responsible boundary may emit that representation, a separately evidenced mechanism may receive or invoke it, and a separately evidenced performance boundary may report occurrence, refusal, or non-occurrence; these are local relations, not a universal planning-and-execution sequence.

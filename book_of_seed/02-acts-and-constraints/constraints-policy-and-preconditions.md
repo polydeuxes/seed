@@ -24,12 +24,11 @@ An access state, visible route, available artifact, capability candidate, catalo
 
 ## Representative repository anchors
 - `seed_runtime/policy.py::PolicyGate`
-- `seed_runtime/preconditions.py::PreconditionEvaluator.report`
 
 ## Counterexamples or failure modes
 - Recording that approval is required as though approval was granted.
 - Treating a passing schema validation as sufficient execution authority.
-- Treating `PreconditionReport.plan_ready` as proof of execution; the module is explicitly inspect-only.
+- Treating a local precondition finding as proof of execution.
 
 ## Related chapters
 - [Acts and act artifacts](acts-and-act-artifacts.md)
@@ -43,3 +42,9 @@ A constraint is not the governed movement, a constraint result is not performanc
 A constraint result can lawfully admit, block, narrow, redirect, defer, or leave unchanged a later movement considered by a responsible consumer. It does not perform the governed movement, mutate cluster truth, create an executor, or turn policy vocabulary into implementation machinery.
 
 Direct answer preserved by this clause: Does a constraint result perform the movement it governs? No.
+
+## Readiness decomposition correction 001
+
+Constraint findings and precondition testimony preserve only the condition examined at the boundary that produced them. A passing policy check, schema check, precondition check, reachability observation, or feasibility finding does not establish complete readiness for every purpose, authority, approval, selected mechanism standing, representation fitness, recipient availability, emission, invocation, performance, result recording, or temporal applicability beyond the finding's scope.
+
+Readiness must not be treated as a scalar permission that silently compresses constraint satisfaction, capability standing, reachability, resource sufficiency, authority, approval, representation fitness, recipient availability, and temporal applicability. When a consumer relies on condition testimony, unevidenced coordinates remain Unknown, and the consumer must preserve the condition's source, subject, scope, examined requirement, result, temporal standing, limits, and remaining Unknowns.
