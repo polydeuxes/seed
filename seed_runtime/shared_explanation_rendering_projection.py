@@ -4,7 +4,6 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from seed_runtime.operator_authority_scope_binding import MinimumLawfulAdvancementExplanation
 PROJECTION_CONVENTION = "shared_explanation_rendering_projection_v1"
 
 
@@ -55,38 +54,9 @@ def _tuple(xs: tuple[str, ...]) -> tuple[str, ...]:
 
 
 def project_shared_explanation_rendering(
-    explanation: MinimumLawfulAdvancementExplanation,
+    explanation: Any,
 ) -> SharedExplanationRenderingProjection:
-    if isinstance(explanation, MinimumLawfulAdvancementExplanation):
-        stage_owned_material: dict[str, Any] = {
-            "established": explanation.established,
-            "first_missing_boundary": explanation.first_missing_boundary,
-            "movement_blocked": explanation.movement_blocked,
-            "authority_resolvable": explanation.authority_resolvable,
-            "reconsideration_transition": explanation.reconsideration_transition,
-        }
-    else:
-        raise TypeError("shared rendering projection requires one known stage-local explanation")
-
-    return SharedExplanationRenderingProjection(
-        artifact_type="SharedExplanationRenderingProjection",
-        source_explanation_identity=explanation.explanation_id,
-        source_artifact_owner=explanation.producer,
-        source_explanation_type=explanation.artifact_type,
-        producer="SharedExplanationRenderingProjection",
-        attempted_movement=explanation.attempted_movement,
-        source_state=explanation.source_state,
-        source_reason=explanation.source_reason,
-        preserved_unknowns=_tuple(explanation.preserved_unknowns),
-        preserved_conflicts=_tuple(explanation.preserved_conflicts),
-        prohibited_downstream_movement=_tuple(explanation.prohibited_downstream_movement),
-        explanation_boundary=explanation.explanation_boundary,
-        stage_owned_material=stage_owned_material,
-        read_only=explanation.read_only,
-        writes_event_ledger=explanation.writes_event_ledger,
-        mutates_cluster=explanation.mutates_cluster,
-    )
-
+    raise TypeError("shared rendering projection requires one known stage-local explanation")
 
 def shared_explanation_rendering_json(p: SharedExplanationRenderingProjection) -> dict[str, Any]:
     return p.to_json_dict()

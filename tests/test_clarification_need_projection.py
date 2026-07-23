@@ -4,7 +4,7 @@ from seed_runtime.bounded_advancement_horizon import (
     establish_bounded_advancement_horizon,
 )
 from seed_runtime.bounded_operator_goal_establishment import (
-    establish_bounded_operator_goal_from_interpretation,
+    establish_bounded_operator_goal_from_closed_choice,
 )
 from seed_runtime.clarification_need_projection import (
     OperatorMeaningUncertaintyTestimony,
@@ -19,12 +19,13 @@ from seed_runtime.goal_orientation_inventory import (
     association_from_bounded_goal,
     build_goal_orientation_inventory,
 )
-from tests.test_bounded_operator_goal_establishment import _interpretation
+from tests.test_bounded_operator_goal_establishment import _choice_binding
 
 
 def _goal(**overrides):
-    return establish_bounded_operator_goal_from_interpretation(
-        _interpretation(**overrides), stop_conditions=("stop before clarification",)
+    token = overrides.pop("token", "2" if overrides else "1")
+    return establish_bounded_operator_goal_from_closed_choice(
+        _choice_binding(token), stop_conditions=("stop before clarification",)
     )
 
 

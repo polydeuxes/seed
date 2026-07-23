@@ -70,8 +70,6 @@ from seed_runtime.bounded_operator_goal_establishment import (
     bounded_operator_goal_establishment_json,
     establish_bounded_operator_goal_from_admitted_interpretation,
     establish_bounded_operator_goal_from_closed_choice,
-    establish_bounded_operator_goal_from_interpretation,
-    establish_bounded_operator_goal_from_authority_scope_binding,
 )
 
 from seed_runtime.goal_advancement_need_set import (
@@ -267,8 +265,6 @@ __all__ = [
     "bounded_operator_goal_establishment_json",
     "establish_bounded_operator_goal_from_admitted_interpretation",
     "establish_bounded_operator_goal_from_closed_choice",
-    "establish_bounded_operator_goal_from_interpretation",
-    "establish_bounded_operator_goal_from_authority_scope_binding",
     "ClosedChoiceOption",
     "ClosedChoiceSelectionBinding",
     "ClosedChoiceSelectionBindingError",
@@ -339,20 +335,6 @@ __all__ = [
     "format_representation_grammar_recovery",
     "recover_representation_grammars",
     "representation_grammar_recovery_json",
-    "AttributedOperatorExpression",
-    "OperatorExpressionInterpretationProjection",
-    "FutureOperatorAuthorityScopeBindingHandoff",
-    "attribute_operator_expression",
-    "interpret_operator_expression",
-    "format_operator_expression_interpretation",
-    "operator_expression_interpretation_json",
-    "OperatorIdentityContext",
-    "WorkspaceSessionAuthorityContext",
-    "ScopeBindingContext",
-    "OperatorAuthorityScopeBindingProjection",
-    "bind_operator_authority_scope",
-    "format_operator_authority_scope_binding",
-    "operator_authority_scope_binding_json",
     "format_bounded_constitutional_question",
 ]
 
@@ -368,26 +350,6 @@ from .representation_grammar_recovery import (
     format_representation_grammar_recovery,
     recover_representation_grammars,
     representation_grammar_recovery_json,
-)
-
-from .operator_expression_interpretation import (
-    AttributedOperatorExpression,
-    FutureOperatorAuthorityScopeBindingHandoff,
-    OperatorExpressionInterpretationProjection,
-    attribute_operator_expression,
-    format_operator_expression_interpretation,
-    interpret_operator_expression,
-    operator_expression_interpretation_json,
-)
-
-from .operator_authority_scope_binding import (
-    OperatorIdentityContext,
-    WorkspaceSessionAuthorityContext,
-    ScopeBindingContext,
-    OperatorAuthorityScopeBindingProjection,
-    bind_operator_authority_scope,
-    format_operator_authority_scope_binding,
-    operator_authority_scope_binding_json,
 )
 
 from .bounded_constitutional_question import (

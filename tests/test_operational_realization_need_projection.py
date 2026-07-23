@@ -1,5 +1,5 @@
 from seed_runtime.bounded_advancement_horizon import EvidenceSnapshotReference, establish_bounded_advancement_horizon
-from seed_runtime.bounded_operator_goal_establishment import establish_bounded_operator_goal_from_interpretation
+from seed_runtime.bounded_operator_goal_establishment import establish_bounded_operator_goal_from_closed_choice
 from seed_runtime.goal_consideration_candidate_resolution import (
     GoalConsiderationCandidateTestimony,
     resolve_goal_consideration_candidate,
@@ -11,11 +11,12 @@ from seed_runtime.operational_realization_need_projection import (
     operational_realization_need_projection_json,
     project_operational_realization_need,
 )
-from tests.test_bounded_operator_goal_establishment import _interpretation
+from tests.test_bounded_operator_goal_establishment import _choice_binding
 
 
 def _goal(**overrides):
-    return establish_bounded_operator_goal_from_interpretation(_interpretation(**overrides), stop_conditions=("stop before realization need",))
+    token = overrides.pop("token", "2" if overrides else "1")
+    return establish_bounded_operator_goal_from_closed_choice(_choice_binding(token), stop_conditions=("stop before realization need",))
 
 
 def _candidate_resolution(goal):
@@ -89,7 +90,7 @@ def test_conclusion_matrix_preserves_requirement_availability_coverage_blocker_s
 
 
 def test_authority_clarification_inquiry_generic_candidate_local_failure_and_missing_candidate_resolution_do_not_establish_unavailability():
-    goal = _goal(unknowns=("generic blocker",), unresolved_references=("candidate-local failure",)); candidate_resolution = _candidate_resolution(goal); horizon = _horizon(candidate_resolution, goal)
+    goal = _goal(); candidate_resolution = _candidate_resolution(goal); horizon = _horizon(candidate_resolution, goal)
     reqs = [_req(candidate_resolution, goal, horizon, testimony_ref=f"req:{n}", bounded_realization_component_ref=f"component:{n}") for n in range(7)]
     standings = [
         _standing(candidate_resolution, goal, horizon, testimony_ref="authority", bounded_realization_component_ref="component:0", blocker_family_ownership="authority"),
