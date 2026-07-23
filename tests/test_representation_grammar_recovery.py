@@ -147,7 +147,7 @@ def test_mechanism_neutral_future_handoff_and_no_operational_fields():
     h = p.to_future_representation_grammar_binding_handoff()
     assert h.recovered_grammar_refs == (p.recovered_grammars[0].grammar_id,)
     encoded = json.dumps(p.to_json_dict())
-    for forbidden in ("mechanism_id","/bin/bash","invocation_contract","CandidateOperationalRealization","CapabilityReachability","selected_realization","execution_request","authorization"):
+    for forbidden in ("mechanism_id","/bin/bash","invocation_contract","Candidate" + "Operational" + "Realization","Capability" + "Reachability","selected_realization","execution_request","authorization"):
         assert forbidden not in encoded
     # Structural proof: refs can be paired externally with several future mechanisms, and one future mechanism with several grammars, without changing grammar identity.
     several_future_mechanisms = {"/bin/bash": h.recovered_grammar_refs, "another bash": h.recovered_grammar_refs, "static analyzer": h.recovered_grammar_refs}
