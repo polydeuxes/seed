@@ -29,7 +29,7 @@ Exact candidate-identity resolution is smaller than selection. A resolver may pr
 
 ## Counterexamples or failure modes
 - Treating a resolved goal identity as Seed-owned goal selection.
-- Executing a selected operational realization without its warrant.
+- Treating a selected mechanism or candidate as authorized to execute because it was selected.
 - Treating a user choice among labels as unlimited authority.
 - Treating exact view-key matching as semantic judgment or as authority to move work.
 
