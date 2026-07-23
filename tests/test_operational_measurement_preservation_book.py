@@ -38,9 +38,7 @@ def test_operational_measurement_preservation_and_discard_rule():
 def test_operational_measurement_topology_non_equivalences_in_canonical_clauses():
     testimony = _read("book_of_seed/05-evidence-and-knowledge/testimony-and-established-fact.md")
     recording = _read("book_of_seed/05-evidence-and-knowledge/recording-and-knowledge-extraction.md")
-    execution = _read("book_of_seed/07-operational-realization/execution-and-recording.md")
 
-    assert "bounded operation != execution" in execution
     assert "operational measurement != execution" in testimony
     assert "operational measurement != execution record" in testimony
     assert "operational measurement != operation result" in testimony
@@ -60,15 +58,9 @@ def test_runtime_resource_observation_is_separate_from_operation_instance_measur
     assert "may support an operational measurement or baseline only through an explicit attribution and establishment boundary" in text
 
 
-def test_execution_chapter_no_longer_owns_operational_measurement_or_stale_executor_anchor():
-    text = _read("book_of_seed/07-operational-realization/execution-and-recording.md")
-
-    assert "Operational measurement is a distinct form of operation testimony" not in text
-    assert "Addressable boundaries for operational measurement" not in text
-    assert "ToolExecutor.execute(...)" not in text
-    assert "seed_runtime/execution.py::ToolExecutor" not in text
-    assert "commonly realized by `ToolExecutor.execute(...)`" not in text
-    assert "invoking registered Python callables" not in text
+def test_book_vii_execution_chapter_remains_absent():
+    assert not (ROOT / "book_of_seed/07-operational-realization/execution-and-recording.md").exists()
+    assert not (ROOT / "book_of_seed/07-operational-realization").exists()
 
 
 def test_concordance_indexes_measurement_without_equating_execution_or_runtime_observation():
@@ -76,8 +68,7 @@ def test_concordance_indexes_measurement_without_equating_execution_or_runtime_o
 
     assert "| operational measurement | Evidence and Knowledge | [Testimony and established fact]" in text
     assert "| runtime/resource observation | Evidence and Knowledge | [Testimony and established fact]" in text
-    assert "| execution | Operational Realization | [Execution and recording]" in text
-    assert "tool call" not in next(line for line in text.splitlines() if line.startswith("| execution |"))
+    assert "| execution | Operational Realization | [Execution and recording]" not in text
     assert "timing sample, elapsed duration, runtime/resource observation" not in text
     measurement_line = next(
         line for line in text.splitlines() if line.startswith("| operational measurement |")

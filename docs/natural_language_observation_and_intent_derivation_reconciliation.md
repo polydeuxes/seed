@@ -93,8 +93,6 @@ This reconciliation builds on existing architectural documentation, especially:
 - `docs/operator_intent_question_and_claim_interface_reconciliation.md`
 - `docs/goal_policy_and_operator_authority_reconciliation.md`
 - `docs/assessment_recommendation_and_decision_reconciliation.md`
-- `docs/input_source_authority_reconciliation.md`
-- `docs/input_act_vocabulary.md`
 - `docs/input_inspection_reconciliation.md`
 - `docs/claim_support_characterization.md`
 - `docs/claim_support_design.md`

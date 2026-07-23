@@ -320,7 +320,6 @@ Start with:
 * `handoff_bootstrap_and_summary_reconciliation.md`
 * `continuation_context_and_working_state_reconciliation.md`
 * `bootstrap_invariants.md`
-* `handoff_alignment_guardrails_reconciliation.md`
 * `typed_projection_handoff_reconciliation.md`
 
 ## Architectural Findings

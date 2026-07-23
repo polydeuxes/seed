@@ -14,7 +14,6 @@ This is a capstone synthesis of already-established findings. Authority remains 
 
 Use this document as a navigation and synthesis layer only:
 
-- for detailed input-inspection authority, use `docs/input_inspection_reconciliation.md`, `docs/input_act_vocabulary.md`, and `docs/input_envelope_vocabulary.md`;
 - for self-model and alignment authority, use `docs/self_model_and_alignment_architecture_reconciliation.md`;
 - for documentation-observation authority, use the existing documentation-observation design and characterization documents;
 - for repository-observation authority, use `docs/repository_observation_language_boundary.md` and `docs/repository_artifact_ontology_reconciliation.md`;
@@ -66,7 +65,7 @@ Input Inspection is the user-intake and decision-routing surface. It records use
 
 Its responsibility in this synthesis is narrow: it explains how user input becomes inspected and routed before any future self-model evidence work might classify user utterances as questions, commands, observations, documentation claims, corrections, or other input acts.
 
-Input Inspection does not itself prove repository claims, bypass validation, execute tools directly, or turn user language into self-model truth. Its authority remains in `docs/input_inspection_reconciliation.md`, with vocabulary boundaries in `docs/input_act_vocabulary.md` and `docs/input_envelope_vocabulary.md`.
+Input Inspection does not itself prove repository claims, bypass validation, execute tools directly, or turn user language into self-model truth. Its authority remains in `docs/input_inspection_reconciliation.md` and remains bounded by existing implementation evidence.
 
 ### Documentation Observation
 
@@ -342,8 +341,6 @@ This document does not:
 This synthesis references the following authority documents without replacing them:
 
 - `docs/input_inspection_reconciliation.md`
-- `docs/input_act_vocabulary.md`
-- `docs/input_envelope_vocabulary.md`
 - `docs/self_model_and_alignment_architecture_reconciliation.md`
 - `docs/documentation_observation_design.md`
 - `docs/documentation_observation_v0_implementation_characterization.md`

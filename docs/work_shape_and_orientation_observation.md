@@ -110,7 +110,6 @@ cross-reference, broad search, and implementation-facing read-model review:
 - `docs/finding_applicability_index.md`
 - `docs/future_frontiers.md`
 - `docs/future_state_consequence_pressure_selection_observation.md`
-- `docs/handoff_alignment_guardrails_reconciliation.md`
 - `docs/handoff_and_continuation_lineage_frontier.md`
 - `docs/handoff_bootstrap_and_summary_reconciliation.md`
 - `docs/handoff_consumption_activation_reconciliation.md`

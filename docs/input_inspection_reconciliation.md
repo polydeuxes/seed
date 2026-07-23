@@ -217,4 +217,4 @@ The next implementation should remain narrow:
 
 Until then, the correct documentation-level conclusion is:
 
-> Seed has an input-inspection and decision-routing path, but it does not yet have first-class conversational/input-act categories. Natural conversational input is possible but not structurally guaranteed, and the main gap is vocabulary/classifier specification plus observation/claim/correction intake, not runtime routing.
+> Seed has an input-inspection and decision-routing path, but it does not yet have first-class conversational/input-act categories. Natural conversational input is possible but not structurally guaranteed, and the main gap is vocabulary/classifier specification; it is not runtime routing.

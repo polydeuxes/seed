@@ -176,7 +176,7 @@ No single current subsystem owns universal discovery of worthwhile inquiry. Exis
 | Candidate | Existing responsibility | Fit for discovery pressure | Limitation |
 | --- | --- | --- | --- |
 | Inquiry | Owns questions; inquiry-state work preserves bounded question/current-answer structure. | Best conceptual owner for deciding what is a legitimate question. | Current implementation is artifacts/surfaces, not an autonomous discoverer. |
-| Observation | Owns bounded observation intake and provenance. | Best source of new evidence and changed conditions. | Does not decide significance by itself. |
+| Observation | Owns bounded observation provenance. | Best source of new evidence and changed conditions. | Does not decide significance by itself. |
 | Repository diagnostics | Own operational surfaces such as pressure, shape, consumer, reachability, and inventory audits. | Best current implementation for surfacing inconsistencies and gaps. | Diagnostic pressure is inspection-oriented, not execution-oriented. |
 | Capability reasoning | Owns missing capability and recommendation pressure downstream of projected state. | Best for capability-gap inquiry. | Does not acquire providers or execute capabilities by itself. |
 | Runtime | Routes validated decisions and records runtime events. | Owns interaction and response routing. | Not an autonomous inquiry discoverer in current core. |

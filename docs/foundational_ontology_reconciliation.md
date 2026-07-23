@@ -97,7 +97,6 @@ introduced or refined the candidate primitives:
 - `docs/evidence_trust_and_source_authority_reconciliation.md`
 - `docs/causality_and_explanation_reconciliation.md`
 - `docs/explainability_reconciliation.md`
-- `docs/handoff_alignment_guardrails_reconciliation.md`
 - `docs/handoff_document_boundary_reconciliation.md`
 - `docs/typed_projection_handoff_reconciliation.md`
 - `docs/boundary_preservation_as_architectural_principle.md`

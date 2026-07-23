@@ -74,7 +74,6 @@ Starting and adjacent documents inspected included:
 - `docs/lineage_distinction_observation.md`
 - `docs/goal_policy_and_operator_authority_reconciliation.md`
 - `docs/operator_navigation_reconciliation.md`
-- `docs/operator_investigation_workflow_reconciliation.md`
 - `docs/persistence_frontier.md`
 - `docs/backlog_and_status_reconciliation.md`
 

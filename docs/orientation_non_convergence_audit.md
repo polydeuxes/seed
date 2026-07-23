@@ -120,7 +120,6 @@ Documents and repository areas inspected included:
 - `docs/source_navigation_surface_reconciliation.md`
 - `docs/source_navigation_without_grep_audit.md`
 - `docs/documentation_authority_reconciliation.md`
-- `docs/input_source_authority_reconciliation.md`
 - `docs/operator_interface_and_projection_authority_reconciliation.md`
 - `docs/view_authority_and_surface_responsibility_reconciliation.md`
 - `docs/goal_policy_and_operator_authority_reconciliation.md`

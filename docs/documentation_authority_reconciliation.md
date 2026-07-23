@@ -68,7 +68,6 @@ Additional major authority-adjacent documents inspected or sampled:
 - `docs/backlog_and_status_reconciliation.md`
 - `docs/durable_lifecycle_reconciliation.md`
 - `docs/adoption_decision_authority_reconciliation.md`
-- `docs/input_source_authority_reconciliation.md`
 - `docs/repository_reconciliation_characterization.md`
 - `docs/repository_reconciliation_frontier.md`
 - `docs/repository_reconciliation_v1_frontier.md`

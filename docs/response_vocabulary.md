@@ -415,7 +415,7 @@ state; it does not ingest or create knowledge.
 ## Observation Response
 
 An **Observation Response** communicates observations, observation-derived facts,
-or observation intake/diff/export results.
+or observation, diff, or export results.
 
 Examples include observed fact summaries, verbose observation-derived fact
 output, observation inventory diff output, exported observation JSON, and

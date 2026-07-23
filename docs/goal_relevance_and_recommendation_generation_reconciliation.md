@@ -102,7 +102,6 @@ This reconciliation builds on existing architectural documentation, especially:
 - `docs/recommendation_selection_boundary.md`
 - `docs/explainability_audit.md`
 - `docs/why_not_explanation_characterization.md`
-- `docs/operator_investigation_workflow_reconciliation.md`
 - `docs/operation_support_boundary_reconciliation.md`
 - `docs/capability_authority_and_execution_boundary_reconciliation.md`
 - `docs/claim_support_frontier.md`
