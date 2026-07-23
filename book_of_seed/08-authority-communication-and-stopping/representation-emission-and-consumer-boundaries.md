@@ -74,7 +74,7 @@ An external response is not verified external effect. Transport, delivery indica
 ## Related chapters
 - [Authority scope](authority-scope.md)
 - [Evidence, provenance, and explanation](../05-evidence-and-knowledge/evidence-provenance-and-explanation.md)
-- [Execution and recording](../07-operational-realization/execution-and-recording.md)
+- [Testimony and established fact](../05-evidence-and-knowledge/testimony-and-established-fact.md)
 
 ## Request-shaped representation correction 001
 

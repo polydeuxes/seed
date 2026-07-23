@@ -40,7 +40,7 @@ Append-only records, established facts, projected material, current lawful condi
 ## Related chapters
 - [Recording and knowledge extraction](../05-evidence-and-knowledge/recording-and-knowledge-extraction.md)
 - [Projection and current state](projection-and-current-state.md)
-- [Execution and recording](../07-operational-realization/execution-and-recording.md)
+- [Testimony and established fact](../05-evidence-and-knowledge/testimony-and-established-fact.md)
 
 ## Temporal preservation, replay, and projection amendment 001
 

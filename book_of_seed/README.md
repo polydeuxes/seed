@@ -30,5 +30,4 @@ Change the Book when constitutional grammar, a durable distinction, or the statu
 4. [Inquiry and Examination](04-inquiry-and-examination/)
 5. [Evidence and Knowledge](05-evidence-and-knowledge/)
 6. [State and Projection](06-state-and-projection/)
-7. [Operational Realization](07-operational-realization/)
 8. [Authority, Communication, and Stopping](08-authority-communication-and-stopping/)

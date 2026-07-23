@@ -35,5 +35,5 @@ Consumer validation is not producer occurrence: a downstream boundary may lawful
 
 ## Related chapters
 - [Constraints, policy, and preconditions](constraints-policy-and-preconditions.md)
-- [Execution and recording](../07-operational-realization/execution-and-recording.md)
+- [Testimony and established fact](../05-evidence-and-knowledge/testimony-and-established-fact.md)
 - [Recording and knowledge extraction](../05-evidence-and-knowledge/recording-and-knowledge-extraction.md)
