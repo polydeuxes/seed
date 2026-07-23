@@ -50,9 +50,9 @@ Movement-linked interaction testimony is a possible relation among preserved sub
 
 ## Fidelity-determination disposition
 
-Fidelity determination is constitutional grammar plus bounded expectation plus implementation witness producing a qualitative finding: faithful, unfaithful, crossing, or Unknown within scope. It is not capability standing, mechanism fitness, operational realization, or execution.
+Fidelity determination is constitutional grammar plus bounded expectation plus implementation witness producing a qualitative finding: faithful within scope, unfaithful boundary crossing, crossing or mixed, or Unknown within scope. It is not capability standing, mechanism fitness, operational realization, or execution.
 
-Active Book I already owns the general external-grammar-versus-constitutional-grammar comparison boundary. In particular, cross-seam consumption preserves limits supplied by a Fidelity finding. That active home is sufficient for the general Fidelity orientation needed here. No new Fidelity Book, engine, registry, score, diagnostic, or ontology was created.
+PR 1929 overclaimed prior active ownership when it treated Book I's cross-seam consumption of limits supplied by a Fidelity finding as proof that Book I already owned Fidelity production. Consumption of a Fidelity finding does not establish responsibility for producing that finding. This correction places the general Fidelity-production boundary in Book I's external-versus-constitutional grammar chapter. Cross-seam preservation of limits supplied by a Fidelity finding remains a separate consumer responsibility. No new Fidelity Book, engine, registry, score, diagnostic, or ontology was created.
 
 ## Chapter-by-chapter findings
 
@@ -76,7 +76,7 @@ The entire active `book_of_seed/07-operational-realization/` directory was delet
 
 ## Active clauses relocated
 
-No active Book VII clause supplied a genuinely missing constitutional distinction requiring relocation. Fidelity determination was not relocated because the active Book I external/constitutional grammar boundary already gives it an evidenced general home.
+No active Book VII clause supplied a genuinely missing constitutional distinction requiring Book VII retention. Fidelity production required an explicit active production clause because the prior Book I clause evidenced only cross-seam consumption. The general Fidelity-production boundary was placed in Book I's external-versus-constitutional grammar chapter. Cross-seam preservation of limits supplied by a Fidelity finding remains a separate consumer responsibility.
 
 ## Active clauses deleted as duplicate or foreign framing
 
@@ -130,7 +130,7 @@ This correction stops at active Book district excision, direct navigation repair
 12. **Did authority require Book VII?** No. Authority remains in authority-scope grammar.
 13. **Did recording require Book VII?** No. Recording already has a Book V home.
 14. **Did Fidelity determination belong to Book VII?** No.
-15. **Where was Fidelity retained, relocated, or left Unknown?** It was retained in the active Book I external/constitutional grammar comparison boundary; no relocation was needed. Future implementation-specific Fidelity remains Unknown.
+15. **Where was Fidelity retained, relocated, or left Unknown?** General Fidelity production now belongs to the active Book I external/constitutional grammar comparison boundary by explicit correction clause; prior Book I consumption did not by itself prove production ownership. Future implementation-specific Fidelity remains Unknown.
 16. **Which Book VII clauses supplied genuinely missing distinctions?** None.
 17. **Which clauses were already governed elsewhere?** Capability, mechanism-fit, Seed-act, external-occurrence, selection, authority, recording, refusal, external-effect, outcome, learning, and causation clauses were already governed elsewhere.
 18. **Which clauses merely specialized general grammar around operational subject matter?** Capability/mechanism terminology, operational realization shorthand, execution sequencing, interaction lifecycle, outcome, learning, and causal standing language specialized general grammar around operational subject matter.

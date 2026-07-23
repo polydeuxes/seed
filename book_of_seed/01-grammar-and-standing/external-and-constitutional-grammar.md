@@ -21,9 +21,14 @@ An external representation may become constitutionally addressable as source-att
 ### 01.External.C — Cross-seam consumption preserves refusal conditions
 A constitutional responsibility may consume addressable or translated external material only within the addressed or translated scope and only while preserving the limits that made the material lawful to use. The consumer must carry forward source role or Unknown, provenance or provenance Unknown, source grammar boundary, translated claim and scope when present, uncertainty, confidence limits, authority limits, negative authority, Unknowns, refusal conditions, and any tested-preservation boundary supplied by a Fidelity finding. Summarizing, indexing, citing, comparing, rendering, attaching, or projecting cross-seam material is lawful only when those limits travel with the consumed material. Dropping the limits is erasure; supplying unsupported source, owner, taxonomy, reliability, or authority is invention; treating external or translated material as cluster truth or operational state without separate warrant is mutation; and making the source, provider, attachment, translation artifact, or Fidelity finding the authority owner is relocation of authority.
 
+### 01.External.D — Fidelity production through bounded constitutional comparison
+A Fidelity finding is produced only by a bounded comparison that brings constitutional grammar, a bounded expectation, and an implementation witness under a declared examined seam or scope. The comparison must preserve the constitutional subject, bounded expectation, implementation witness, evidence and provenance, authority boundary, preserved invariants, observed erasure, invention, mutation, or relocation of authority, conflicts, Unknowns, and lawful stopping point. Within that scope it may produce qualitative standing that the witness is faithful within scope, an unfaithful boundary crossing, crossing or mixed, or Unknown. It must not become global certification, completion declaration, implementation owner map, score, registry, runtime engine, public diagnostic, automatic correction authority, or proof of external effect. A Fidelity-shaped artifact does not prove that this bounded comparison responsibility occurred; production standing depends on the comparison boundary and its preserved inputs. This production boundary is distinct from the cross-seam consumer responsibility to preserve limits supplied by an already-produced Fidelity finding.
+
 ## Important distinctions
 - source grammar translated for use != Seed-native grammar
 - external grammar != constitutional grammar
+- Fidelity production != Fidelity consumption
+- Fidelity-shaped artifact != lawfully produced Fidelity finding
 - lexical recurrence != constitutional authority
 - attributed representation != adopted law
 - attachment != adoption
