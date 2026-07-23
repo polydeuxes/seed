@@ -26,16 +26,15 @@ def bind(**kw):
     qq,ws,app,f,p,s,h=scenario(**kw)
     return bind_examination_probe_request(s,h,f,ws,app), (qq,ws,app,f,p,s,h)
 
-def test_matching_artifacts_produce_immutable_bound_request_and_handoff():
+def test_matching_artifacts_produce_immutable_bound_request_without_operational_realization_handoff():
     r,_=bind()
     assert r.artifact_type == "ExaminationProbeRequest" and r.request_state == "bound"
     assert r.read_only and not r.writes_event_ledger and not r.mutates_cluster
     with pytest.raises(Exception): r.request_state = "changed"
-    handoff=r.to_operational_realization_handoff().to_json_dict()
-    js=json.dumps(r.to_json_dict()) + json.dumps(handoff)
+    assert not hasattr(r, "to_operational" + "_realization_handoff")
+    js=json.dumps(r.to_json_dict())
     for forbidden in ("provider_choice", "selected_provider", "registered_operation", "operation_arguments", "authorization_decision", "pending_action", "execution_state", "tool_name"):
         assert forbidden not in js
-    assert handoff["probe_request_id"] == r.request_id
 
 
 def test_deterministic_identity_and_changed_inputs_change_identity():
@@ -104,7 +103,7 @@ def test_conflicting_method_applicability_cannot_bind():
 def test_read_only_no_mutation_no_external_surfaces():
     r,(qq,ws,app,f,p,s,h)=bind(); before=subprocess.run(["git","status","--short"],text=True,capture_output=True,check=True).stdout
     originals=[copy.deepcopy(x.to_json_dict()) for x in (ws,app,f,p,s)]
-    format_examination_probe_request(r); examination_probe_request_json(r); r.to_operational_realization_handoff().to_json_dict()
+    format_examination_probe_request(r); examination_probe_request_json(r)
     after=subprocess.run(["git","status","--short"],text=True,capture_output=True,check=True).stdout
     assert before == after
     assert [x.to_json_dict() for x in (ws,app,f,p,s)] == originals

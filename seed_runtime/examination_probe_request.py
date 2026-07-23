@@ -28,11 +28,6 @@ def _stable(prefix: str, payload: Any) -> str:
     return prefix + ":" + hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
 
 @dataclass(frozen=True)
-class OperationalRealizationHandoff:
-    probe_request_id: str; inquiry_identity: str; artifact_identity: str; artifact_hash: str; work_contract_reference: str; capability_identity: str; required_input_representation: str; requested_output_representation: str; method_constraint_reference: dict[str, Any]; read_only: bool=True; writes_event_ledger: bool=False; mutates_cluster: bool=False
-    def to_json_dict(self): return asdict(self)
-
-@dataclass(frozen=True)
 class ExaminationProbeRequest:
     artifact_type: str; request_id: str; request_state: str; inquiry_reference: dict[str, Any]; selection_reference: dict[str, Any]; frontier_reference: dict[str, Any]; policy_reference: dict[str, Any]; selected_work_reference: str; candidate_work_reference: str; work_contract_reference: str; corpus_member_reference: str; artifact_identity: str; artifact_hash: str; work_kind: str; capability_identity: str; required_input_representation: str; requested_output_representation: str; contract_convention: str; requested_outcome: str; selection_reason: str; method_reference: str; method_applicability_reference: dict[str, Any]; fidelity_constraints: tuple[str,...]; attribution_constraints: tuple[str,...]; claim_treatment_constraints: tuple[str,...]; supporting_references: tuple[str,...]; provenance: tuple[str,...]; unknowns: tuple[str,...]; conflicts: tuple[str,...]; boundary_notes: tuple[str,...]=BOUNDARY_NOTES; read_only: bool=True; writes_event_ledger: bool=False; mutates_cluster: bool=False; request_convention: str=CONVENTION
     def to_json_dict(self):
@@ -40,9 +35,6 @@ class ExaminationProbeRequest:
         for k in ("fidelity_constraints","attribution_constraints","claim_treatment_constraints","supporting_references","provenance","unknowns","conflicts","boundary_notes"):
             d[k]=list(getattr(self,k))
         return d
-    def to_operational_realization_handoff(self) -> OperationalRealizationHandoff | None:
-        if self.request_state != "bound": return None
-        return OperationalRealizationHandoff(self.request_id, str(self.inquiry_reference.get("bounded_question_id", "")), self.artifact_identity, self.artifact_hash, self.work_contract_reference, self.capability_identity, self.required_input_representation, self.requested_output_representation, self.method_applicability_reference)
 
 def _only_selected(selection: ExaminationWorkSelection) -> str:
     if selection.selection_state != "selected" or not selection.selected_work_reference or not selection.future_probe_request_handoff:

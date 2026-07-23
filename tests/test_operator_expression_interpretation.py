@@ -1,9 +1,8 @@
 import pytest
+from types import SimpleNamespace
 from seed_runtime.candidate_external_grammar import CandidateExternalGrammarInput, CandidateExternalGrammarInputCandidate, assemble_candidate_external_grammar_set
 from seed_runtime.representation_grammar_recovery import CandidateRecoveryMaterial, RepresentationGrammarComparison, LexicalSupportReference, recover_representation_grammars
 from seed_runtime.representation_grammar_applicability import ApplicabilityDemandMaterial, project_representation_grammar_applicability
-from seed_runtime.candidate_operational_realization import InvocationContract
-from seed_runtime.examination_probe_request import OperationalRealizationHandoff
 from seed_runtime.operator_expression_interpretation import attribute_operator_expression, interpret_operator_expression, format_operator_expression_interpretation, operator_expression_interpretation_json, OperatorExpressionInterpretationError
 
 MECH="internal:operator-expression-interpreter"
@@ -16,8 +15,10 @@ def fixture(cid="operator-grammar", app_state=None, structures=None, conflicts=(
     mat=(CandidateRecoveryMaterial(cid,"operator expression text","bounded operator expression grammar",source_material_refs=("mat",),supporting_comparison_refs=("cmp-"+cid,),lexical_support_refs=lex,supported_structures=structures,excluded_structures=("unrestricted coordination","prediction request","full English"),applicability_boundary=("operator-expression interpretation mechanism","single attributed operator expression"),known_limitations=("not full English",),provenance=("recovery",),unknowns=unknowns,conflicts=conflicts),)
     rec=recover_representation_grammars(cs,comparisons=cmp,lexical_support=lxs,recovery_material=mat)
     g=rec.recovered_grammars[0]
-    h=OperationalRealizationHandoff("probe-oe","inq","artifact","hash","work","interpret operator expression","operator expression text","operator expression interpretation projection",{})
-    c=InvocationContract("contract-oe",MECH,"operator expression text","operator expression interpretation projection","deterministic bounded interpretation",provenance=("contract",))
+    h=SimpleNamespace(probe_request_id="probe-oe", capability_identity="interpret operator expression", required_input_representation="operator expression text", requested_output_representation="operator expression interpretation projection")
+    h.to_json_dict=lambda: {"probe_request_id":"probe-oe","capability_identity":"interpret operator expression","required_input_representation":"operator expression text","requested_output_representation":"operator expression interpretation projection"}
+    c=SimpleNamespace(contract_id="contract-oe", mechanism_id=MECH, accepted_input_representation="operator expression text", produced_output_representation="operator expression interpretation projection", unknowns=(), provenance=("contract",))
+    c.to_json_dict=lambda: {"contract_id":"contract-oe","mechanism_id":MECH,"accepted_input_representation":"operator expression text","produced_output_representation":"operator expression interpretation projection","unknowns":[]}
     d=ApplicabilityDemandMaterial("single attributed operator expression","operator expression text","operator expression interpretation projection",required_structures=("show form",),lexical_support_refs=lex,required_lexical_refs=lex,applicability_boundary_refs=("operator-expression interpretation mechanism",),provenance=("probe-oe",),unknowns=unknowns,conflicts=conflicts)
     app=project_representation_grammar_applicability(rec,g,h,MECH,c,d,applicability_state=app_state,applicability_reason=(app_state or "")) if app_state else project_representation_grammar_applicability(rec,g,h,MECH,c,d)
     return rec,g,app,c

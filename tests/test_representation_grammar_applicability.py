@@ -1,9 +1,8 @@
 import pytest
+from types import SimpleNamespace
 from seed_runtime.candidate_external_grammar import CandidateExternalGrammarInput, CandidateExternalGrammarInputCandidate, assemble_candidate_external_grammar_set
 from seed_runtime.representation_grammar_recovery import CandidateRecoveryMaterial, RepresentationGrammarComparison, LexicalSupportReference, recover_representation_grammars
 from seed_runtime.representation_grammar_applicability import ApplicabilityDemandMaterial, RepresentationGrammarApplicabilityError, project_representation_grammar_applicability, format_representation_grammar_applicability
-from seed_runtime.candidate_operational_realization import InvocationContract, MechanismObservation, project_candidate_operational_realizations
-from seed_runtime.examination_probe_request import OperationalRealizationHandoff
 
 
 def recovery(cid="eng-simple", scope="english text"):
@@ -15,10 +14,14 @@ def recovery(cid="eng-simple", scope="english text"):
     return p,p.recovered_grammars[0]
 
 def handoff(probe="probe-1", demand="project subject predicate", inp="english text", out="subject/predicate projection"):
-    return OperationalRealizationHandoff(probe,"inq","artifact","hash","work",demand,inp,out,{"projection_id":"method"})
+    h = SimpleNamespace(probe_request_id=probe, capability_identity=demand, required_input_representation=inp, requested_output_representation=out)
+    h.to_json_dict = lambda: {"probe_request_id": probe, "capability_identity": demand, "required_input_representation": inp, "requested_output_representation": out}
+    return h
 
 def contract(cid="contract-1", mech="internal:deterministic-structural-producer", inp="english text", out="subject/predicate projection"):
-    return InvocationContract(cid,mech,inp,out,"exact text + recovered grammar ref","bounded projection",provenance=("contract-src",))
+    c = SimpleNamespace(contract_id=cid, mechanism_id=mech, accepted_input_representation=inp, produced_output_representation=out, unknowns=(), provenance=("contract-src",))
+    c.to_json_dict = lambda: {"contract_id": cid, "mechanism_id": mech, "accepted_input_representation": inp, "produced_output_representation": out, "unknowns": []}
+    return c
 
 def demand(**kw):
     d=dict(material_class_identity="simple declarative English sentence",source_representation="english text",required_target_representation="subject/predicate projection",required_structures=("explicit subject","simple predicate"),lexical_support_refs=("lex-dog",),required_lexical_refs=("lex-dog",),applicability_boundary_refs=("simple declarative English sentence",),provenance=("probe-1",))
@@ -33,11 +36,10 @@ def test_applicable_projection_shape_rendering_and_read_only_handoff():
     a=proj()
     assert a.artifact_type=="RepresentationGrammarApplicabilityProjection"
     assert a.applicability_state=="applicable"
-    assert a.future_candidate_realization_handoff is not None
     assert a.read_only and not a.writes_event_ledger and not a.mutates_cluster
     text=format_representation_grammar_applicability(a)
     assert "mechanism" in text and "does not own the grammar" in text
-    assert "CapabilityReachability" not in a.future_candidate_realization_handoff.to_json_dict()
+    assert "CapabilityReachability" not in a.to_json_dict()
 
 
 def test_identity_is_deterministic_order_independent_and_changes_for_relevant_inputs():
@@ -92,27 +94,19 @@ def test_bash_literal_excluded_unknown_and_no_execution_or_command_construction(
     assert project_representation_grammar_applicability(p,g,h,"/bin/bash",c,ApplicabilityDemandMaterial(**{**d.to_json_dict(),"required_structures":("brace expansion",)})).applicability_state=="unknown"
 
 
-def test_multiple_mechanisms_multiple_grammars_no_selection_and_candidate_integration_without_legacy_grammar():
+def test_multiple_mechanisms_multiple_grammars_no_selection():
     a=proj(); a2=proj(c=contract(cid="contract-2", mech="internal:producer-2"), m="internal:producer-2")
-    assert a.future_candidate_realization_handoff.mechanism_ref != a2.future_candidate_realization_handoff.mechanism_ref
+    assert a.mechanism_ref != a2.mechanism_ref
     assert a.applicability_projection_id != a2.applicability_projection_id
     p2,g2=recovery(cid="bash-literal", scope="english text")
     a3=project_representation_grammar_applicability(p2,g2,handoff(),contract().mechanism_id,contract(),demand())
     assert a3.recovered_grammar_ref != a.recovered_grammar_ref
-    cs=project_candidate_operational_realizations(handoff(), invocation_contracts=(contract(),), mechanism_observations=(MechanismObservation("obs", contract().mechanism_id, "identity", "internal"),), representation_grammar_applicability_handoffs=(a.future_candidate_realization_handoff,))
-    assert len(cs.candidates)==1
-    cand=cs.candidates[0]
-    assert cand.recovered_grammar_reference==a.recovered_grammar_ref
-    assert cand.invocation_contract_reference==contract().contract_id
-    assert cand.mechanism_reference==contract().mechanism_id
-    assert cand.grammar_standing=="recovered_only"
-    assert not hasattr(cs,"selected_candidate")
+    assert not hasattr(a,"selected_candidate")
 
-
-def test_non_applicable_unknown_conflict_emit_no_positive_handoff_and_do_not_mutate():
-    assert proj(d=demand(required_structures=("imperative",))).future_candidate_realization_handoff is None
-    assert proj(d=demand(required_structures=("coordination",))).future_candidate_realization_handoff is None
-    assert proj(d=demand(conflicts=("conflict",))).future_candidate_realization_handoff is None
+def test_non_applicable_unknown_conflict_do_not_mutate():
+    assert proj(d=demand(required_structures=("imperative",))).applicability_state == "not_applicable"
+    assert proj(d=demand(required_structures=("coordination",))).applicability_state == "unknown"
+    assert proj(d=demand(conflicts=("conflict",))).applicability_state == "conflict"
 
 
 def test_applicability_advancement_explanation_proving_cases_and_handoff_control():
@@ -122,9 +116,8 @@ def test_applicability_advancement_explanation_proving_cases_and_handoff_control
     assert applicable.artifact_type == "RepresentationGrammarApplicabilityAdvancementExplanation"
     assert applicable.source_artifact_type == "RepresentationGrammarApplicabilityProjection"
     assert applicable.source_state == "applicable"
-    assert applicable.handoff_permitted is True
-    assert "permits the existing future candidate-realization handoff" in applicable.next_handoff_boundary
-    assert "construct_candidate_realization" in applicable.prohibited_downstream_movement
+    assert applicable.handoff_permitted is False
+    assert "applicability boundary is satisfied" in applicable.next_handoff_boundary
     assert applicable.read_only and not applicable.writes_event_ledger and not applicable.mutates_cluster
     assert applicable.compatibility_boundary_changed is False
 

@@ -176,6 +176,22 @@ def test_preserves_all_four_native_projection_types_without_reinterpretation():
     )
 
 
+
+def test_operational_realization_demand_projection_remains_exported_while_staged_road_is_absent():
+    import seed_runtime
+
+    assert seed_runtime.OperationalRealizationNeedProjection is OperationalRealizationNeedProjection
+    assert hasattr(seed_runtime, "project_operational_realization_need")
+    deleted_symbols = (
+        "OperationalRealization" + "Handoff",
+        "Candidate" + "Operational" + "Realization",
+        "Capability" + "Reachability" + "Projection",
+        "Operational" + "Realization" + "Selection",
+        "Operational" + "Realization" + "Warrant",
+    )
+    assert all(name not in seed_runtime.__all__ for name in deleted_symbols)
+    assert all(not hasattr(seed_runtime, name) for name in deleted_symbols)
+
 def test_coexisting_needs_are_unordered_records_not_priority_or_blocker():
     goal = _goal()
     candidate_resolution = _candidate_resolution(goal)
