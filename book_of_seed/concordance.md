@@ -11,7 +11,7 @@ This is a lightweight navigation index. Aliases record repository or presentatio
 | lens | Grammar and Standing | [Lenses, views, and constitutional roads](01-grammar-and-standing/lenses-views-and-roads.md) | view, composition, read model | projection, constitutional road |
 | production authority | Grammar and Standing | [Constructors and production authority](01-grammar-and-standing/constructors-and-production-authority.md) | lawful constructor, ingress | standing, authority scope |
 | constitutional road | Grammar and Standing | [Lenses, views, and constitutional roads](01-grammar-and-standing/lenses-views-and-roads.md) | transition, path, active edge | lens, sequence, movement |
-| constitutional uptake | Grammar and Standing | [Lenses, views, and constitutional roads](01-grammar-and-standing/lenses-views-and-roads.md) | consumer uptake, transition grammar | constitutional road, handoff, explanation |
+| constitutional uptake | Grammar and Standing | [Lenses, views, and constitutional roads](01-grammar-and-standing/lenses-views-and-roads.md) | consumer uptake, transition grammar | constitutional road, representation, emission, explanation |
 | act | Acts and Constraints | [Acts and act artifacts](02-acts-and-constraints/acts-and-act-artifacts.md) | input act, operation | proposal, execution |
 | constraint | Acts and Constraints | [Constraints, policy, and preconditions](02-acts-and-constraints/constraints-policy-and-preconditions.md) | policy gate, precondition | authority, refusal |
 | selection artifact | Acts and Constraints | [Selection artifacts and acts of selection](02-acts-and-constraints/selection-artifacts-and-selection-acts.md) | selection record, binding | candidate set, selection act |
@@ -35,7 +35,7 @@ This is a lightweight navigation index. Aliases record repository or presentatio
 | knowledge extraction | Evidence and Knowledge | [Recording and knowledge extraction](05-evidence-and-knowledge/recording-and-knowledge-extraction.md) | fact extraction, promotion | recording, reconciliation |
 | state | State and Projection | [Events, facts, and state](06-state-and-projection/events-facts-and-state.md) | cluster state, belief state | event, fact, projection |
 | projection | State and Projection | [Projection and current state](06-state-and-projection/projection-and-current-state.md) | read model, view, projection cache, state build | replay, source record |
-| View emission | Grammar and Standing | [Lenses, views, and constitutional roads](01-grammar-and-standing/lenses-views-and-roads.md) | egress view, operator-facing view | warrant, reliance, handoff |
+| View emission | Grammar and Standing | [Lenses, views, and constitutional roads](01-grammar-and-standing/lenses-views-and-roads.md) | egress view, operator-facing view | warrant, reliance, emission |
 | ObservationView | State and Projection | [Projection and current state](06-state-and-projection/projection-and-current-state.md) | observation view, attributed testimony view | testimony occurrence, FactView |
 | FactView | State and Projection | [Projection and current state](06-state-and-projection/projection-and-current-state.md) | fact view | Fact standing, ObservationView, current-facing Fact View |
 | current-facing Fact View | State and Projection | [Projection and current state](06-state-and-projection/projection-and-current-state.md) | current fact view, present-facing Fact View | current standing, projection, Fact standing |
@@ -50,7 +50,7 @@ This is a lightweight navigation index. Aliases record repository or presentatio
 | baseline transition | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | established changed ordinary behavior, changed regime | transition establishment, operational baseline, temporal standing, evidence sufficiency, preservation |
 | rebuildability | State and Projection | [Projection and current state](06-state-and-projection/projection-and-current-state.md) | reprojectable cache, reconstructable current condition | projection, retained evidence, preservation |
 | authority scope | Authority, Communication, and Stopping | [Authority scope](08-authority-communication-and-stopping/authority-scope.md) | operator authority, approval scope | establishment, authorization |
-| handoff | Authority, Communication, and Stopping | [Communication and handoff](08-authority-communication-and-stopping/communication-and-handoff.md) | external handoff, presentation | authority, explanation |
+| representation and emission boundaries | Authority, Communication, and Stopping | [Representation, emission, and consumer boundaries](08-authority-communication-and-stopping/communication-and-handoff.md) | external-language handoff shorthand, presentation, communication | authority, responsibility transition, receipt, uptake, reliance, explanation |
 | refusal | Authority, Communication, and Stopping | [Refusal and non-performance](08-authority-communication-and-stopping/refusal-and-non-performance.md) | block, non-performance | policy, failure |
 | stopping | Authority, Communication, and Stopping | [Stopping and completion](08-authority-communication-and-stopping/stopping-and-completion.md) | exhaustion, sufficiency, completion | advancement, refusal |
 
