@@ -26,7 +26,7 @@ A need set characterizes what advancement may require within a bounded horizon. 
 ## Related chapters
 - [Selection and authorization](selection-and-authorization.md)
 - [Inquiry frontiers](../04-inquiry-and-examination/inquiry-frontiers.md)
-- [Capability standing and mechanism fitness](../07-operational-realization/capability-standing-and-mechanism-fitness.md)
+- [Testimony and established fact](../05-evidence-and-knowledge/testimony-and-established-fact.md)
 
 ## Gap, capability demand, and learned insufficiency amendment 001
 

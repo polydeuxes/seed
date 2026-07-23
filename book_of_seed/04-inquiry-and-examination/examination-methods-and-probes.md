@@ -38,4 +38,4 @@ Cross-examination may compare independently preserved testimony or findings only
 ## Related chapters
 - [Selection artifacts and acts of selection](../02-acts-and-constraints/selection-artifacts-and-selection-acts.md)
 - [Testimony and established fact](../05-evidence-and-knowledge/testimony-and-established-fact.md)
-- [Execution and recording](../07-operational-realization/execution-and-recording.md)
+- [Refusal and non-performance](../08-authority-communication-and-stopping/refusal-and-non-performance.md)
