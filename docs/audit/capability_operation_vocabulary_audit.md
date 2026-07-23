@@ -260,9 +260,9 @@ Avoid for now:
 ## Files Inspected During Audit
 
 - `README.md`
-- `01-architecture.md`
-- `03-runtime-loop.md`
-- `04-toolkit-system.md`
+- `docs/archive/original_book_of_seed/01-architecture.md`
+- `docs/archive/original_book_of_seed/03-runtime-loop.md`
+- `docs/archive/original_book_of_seed/04-toolkit-system.md`
 - `docs/capability_ownership_matrix.md`
 - `docs/tool_execution_ownership_audit.md`
 - `docs/audit/planning_execution_artifact_quarantine.md`

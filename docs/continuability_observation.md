@@ -107,10 +107,10 @@ activity context
 Documents and surfaces inspected included at least:
 
 - `README.md`
-- `01-architecture.md`
-- `02-domain-model.md`
-- `03-runtime-loop.md`
-- `13-knowledge-and-evidence.md`
+- `docs/archive/original_book_of_seed/01-architecture.md`
+- `docs/archive/original_book_of_seed/02-domain-model.md`
+- `docs/archive/original_book_of_seed/03-runtime-loop.md`
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`
 - `docs/index.md`
 - `docs/architectural_status_and_next_frontier.md`
 - `docs/movement_preservation_observation.md`

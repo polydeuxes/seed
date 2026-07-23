@@ -20,7 +20,7 @@ related:
   - claim_support_characterization.md
   - knowledge_lifecycle_reconciliation.md
   - knowledge_representation_reconciliation.md
-  - 13-knowledge-and-evidence.md
+  - docs/archive/original_book_of_seed/13-knowledge-and-evidence.md
 ---
 
 # Knowledge And Understanding Distinction Observation
@@ -44,7 +44,7 @@ where evidence is mixed.
 
 The review inspected repository documentation directly, including:
 
-- `13-knowledge-and-evidence.md`;
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`;
 - `docs/knowledge_lifecycle_reconciliation.md`;
 - `docs/knowledge_representation_reconciliation.md`;
 - `docs/claim_support_characterization.md`;
@@ -118,7 +118,7 @@ Strong recurring preserved concerns include:
 - selection of relevant projected knowledge for response without making response
   a truth-creating layer.
 
-This usage is especially strong in `13-knowledge-and-evidence.md`: Seed is
+This usage is especially strong in `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`: Seed is
 framed as an evidence-to-fact system, not a chatbot memory system; evidence is
 immutable raw observation; facts are projected interpretations of evidence; and
 provenance records where knowledge came from. The knowledge lifecycle

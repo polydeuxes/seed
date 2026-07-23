@@ -70,9 +70,9 @@ Documents and surfaces inspected included:
 
 - `README.md`
 - `docs/README.md`
-- `01-architecture.md`
-- `02-domain-model.md`
-- `13-knowledge-and-evidence.md`
+- `docs/archive/original_book_of_seed/01-architecture.md`
+- `docs/archive/original_book_of_seed/02-domain-model.md`
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`
 - `docs/situatedness_and_pressure_observation.md`
 - `docs/pressure_source_observation.md`
 - `docs/pressure_visibility_and_preservation_observation.md`

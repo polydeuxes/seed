@@ -12,7 +12,7 @@ This report groups usages by recovered meaning rather than by spelling alone. Li
 
 ### Family A — Projected world model / current projected knowledge
 
-- **Literal occurrence and owner:** `State`, `StateProjector`, `seed_runtime/state.py`, `state_views`, `ProjectionStore` state snapshots, `--current-*`, `--state-build`, Book phrases including “current projected world model derived from the EventLedger.” Representative owners: `01-architecture.md`, `seed_runtime/state.py`, `seed_runtime/state_views.py`, `seed_runtime/projection_store.py`, projection and view tests.
+- **Literal occurrence and owner:** `State`, `StateProjector`, `seed_runtime/state.py`, `state_views`, `ProjectionStore` state snapshots, `--current-*`, `--state-build`, Book phrases including “current projected world model derived from the EventLedger.” Representative owners: `docs/archive/original_book_of_seed/01-architecture.md`, `seed_runtime/state.py`, `seed_runtime/state_views.py`, `seed_runtime/projection_store.py`, projection and view tests.
 - **Subject whose state is asserted:** Seed's reconstructible world-model projection for a workspace: entities, observations, facts, fact supports, conflicts, aliases, relationships, goals, pending actions, approvals, registered operations, tool needs, and related indexes.
 - **Mechanical producer:** `EventLedger` replay through `StateProjector.apply()` and `finalize()`, optionally loaded/saved via `ProjectionStore` snapshots.
 - **Evidence consumed:** append-only event records, observations, facts, predicate/entity/relationship catalogs, inference catalog rules, and projection cache metadata when compatible.

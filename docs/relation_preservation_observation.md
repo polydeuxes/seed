@@ -104,11 +104,11 @@ relation of use
 Documents and surfaces inspected included at least:
 
 - `README.md`
-- `01-architecture.md`
-- `02-domain-model.md`
-- `03-runtime-loop.md`
-- `06-context-engine.md`
-- `13-knowledge-and-evidence.md`
+- `docs/archive/original_book_of_seed/01-architecture.md`
+- `docs/archive/original_book_of_seed/02-domain-model.md`
+- `docs/archive/original_book_of_seed/03-runtime-loop.md`
+- `docs/archive/original_book_of_seed/06-context-engine.md`
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`
 - `docs/README.md`
 - `docs/index.md`
 - `docs/architectural_knowledge_map.md`

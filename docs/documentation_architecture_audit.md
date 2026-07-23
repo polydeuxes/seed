@@ -28,8 +28,8 @@ Inventory scope: `README.md`, root historical markdown files discovered during t
 | Document | Category | Status | Authoritative | Archive candidate | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `README.md` | Canonical | Current | Yes | No | Product definition, core thesis, knowledge-first architecture, and top-level design principles. |
-| `01-architecture.md` | Historical Audit | Superseded root architecture draft | No | Yes | Root-level architecture narrative references additional numbered docs that are not present; useful as historical framing only. |
-| `09-pseudocode.md` | Historical Audit | Superseded root pseudocode sketch | No | Yes | Implementation sketch, explicitly not production code; should not compete with current docs or code. |
+| `docs/archive/original_book_of_seed/01-architecture.md` | Historical Audit | Superseded root architecture draft | No | Yes | Root-level architecture narrative references additional numbered docs that are not present; useful as historical framing only. |
+| `docs/archive/original_book_of_seed/09-pseudocode.md` | Historical Audit | Superseded root pseudocode sketch | No | Yes | Implementation sketch, explicitly not production code; should not compete with current docs or code. |
 | `docs/architecture.md` | Canonical | Current | Yes | No | Current boundary-oriented component architecture and ownership model. |
 | `docs/architecture_principles.md` | Canonical | Current but partially overlapping | Yes, secondary | No | Architecture direction and principles; overlaps with `README.md` and `docs/architecture.md`. Candidate for consolidation into canonical architecture set or index. |
 | `docs/architecture_visualization_phase1.md` | Methodology | Current design record | Partially | No | Explains why architecture diagrams are generated and how generation should work. |
@@ -312,8 +312,8 @@ A full file move is intentionally not recommended as the first step because it w
 
 These already declare themselves stale/quarantined or are root-level superseded sketches:
 
-- `01-architecture.md`
-- `09-pseudocode.md`
+- `docs/archive/original_book_of_seed/01-architecture.md`
+- `docs/archive/original_book_of_seed/09-pseudocode.md`
 - `docs/ask_question_refuse_inventory.md`
 - `docs/capability_ownership_matrix.md`
 - `docs/pending_action_lifecycle_inventory.md`

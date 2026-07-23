@@ -32,9 +32,9 @@ Primary files inspected:
 - `tests/test_state_summary_views.py`
 - `tests/test_inference_catalog.py`
 - `IMPLEMENTATION.md`
-- `03-runtime-loop.md`
-- `06-context-engine.md`
-- `13-knowledge-and-evidence.md`
+- `docs/archive/original_book_of_seed/03-runtime-loop.md`
+- `docs/archive/original_book_of_seed/06-context-engine.md`
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`
 - Relevant `docs/` audits concerning projection, storage, response, and lifecycle boundaries.
 
 ## Existing measurement inventory

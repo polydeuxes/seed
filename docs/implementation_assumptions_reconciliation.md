@@ -38,9 +38,9 @@ One exploratory `rg` command included a non-existent `seed` path and returned `r
 - `AGENTS.md`
 - `README.md`
 - `IMPLEMENTATION.md`
-- `02-domain-model.md`
-- `10-build-plan.md`
-- `13-knowledge-and-evidence.md`
+- `docs/archive/original_book_of_seed/02-domain-model.md`
+- `docs/archive/original_book_of_seed/10-build-plan.md`
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`
 - `seed_runtime/events.py`
 - `seed_runtime/state.py`
 - `seed_runtime/runtime.py`

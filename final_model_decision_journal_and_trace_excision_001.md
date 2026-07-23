@@ -59,8 +59,8 @@ Deleted test files:
 
 Removed current architectural / active ownership claims for the deleted family from:
 
-- `01-architecture.md`
-- `03-runtime-loop.md`
+- `docs/archive/original_book_of_seed/01-architecture.md`
+- `docs/archive/original_book_of_seed/03-runtime-loop.md`
 - `docs/architecture.md`
 - `docs/capability_ownership_matrix.md`
 - `docs/execution_inquiry_orientation_investigation.md`

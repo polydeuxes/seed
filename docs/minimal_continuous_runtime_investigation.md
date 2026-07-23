@@ -22,8 +22,8 @@ required by the evidence reviewed here.
 
 Core architecture and implementation-facing surfaces inspected:
 
-- `02-domain-model.md`
-- `03-runtime-loop.md`
+- `docs/archive/original_book_of_seed/02-domain-model.md`
+- `docs/archive/original_book_of_seed/03-runtime-loop.md`
 - `seed_runtime/runtime.py`
 - `seed_runtime/events.py`
 - `seed_runtime/state.py`

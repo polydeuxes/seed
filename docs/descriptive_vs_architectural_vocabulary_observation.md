@@ -59,12 +59,12 @@ tool need, projection, runtime, reconciliation, and authority boundary.
 Representative inspected files:
 
 - `README.md`
-- `01-architecture.md`
-- `02-domain-model.md`
-- `03-runtime-loop.md`
-- `04-toolkit-system.md`
-- `05-policy-and-safety.md`
-- `06-context-engine.md`
+- `docs/archive/original_book_of_seed/01-architecture.md`
+- `docs/archive/original_book_of_seed/02-domain-model.md`
+- `docs/archive/original_book_of_seed/03-runtime-loop.md`
+- `docs/archive/original_book_of_seed/04-toolkit-system.md`
+- `docs/archive/original_book_of_seed/05-policy-and-safety.md`
+- `docs/archive/original_book_of_seed/06-context-engine.md`
 - `docs/learning_as_lens_observation.md`
 - `docs/lens_as_observation_and_compression_pattern.md`
 - `docs/orientation_bundle_load_bearing_observation.md`

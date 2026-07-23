@@ -83,7 +83,7 @@ Evidence reviewed for this observation included:
 - `seed_runtime/graph_validation.py`
 - `seed_runtime/context_views.py`
 - `scripts/seed_local.py`
-- `13-knowledge-and-evidence.md`
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`
 - `docs/view_authority_and_surface_responsibility_reconciliation.md`
 - `docs/authority_owner_observation.md`
 - `docs/source_navigation_surface_reconciliation.md`

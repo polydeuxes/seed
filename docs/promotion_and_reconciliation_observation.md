@@ -65,9 +65,9 @@ Representative evidence reviewed:
 - `docs/README.md`
 - `docs/ontology.md`
 - `docs/foundational_ontology_reconciliation.md`
-- `02-domain-model.md`
-- `03-runtime-loop.md`
-- `13-knowledge-and-evidence.md`
+- `docs/archive/original_book_of_seed/02-domain-model.md`
+- `docs/archive/original_book_of_seed/03-runtime-loop.md`
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`
 - `docs/descriptive_vs_architectural_vocabulary_observation.md`
 - `docs/learning_as_lens_observation.md`
 - `docs/knowledge_and_understanding_distinction_observation.md`

@@ -81,7 +81,7 @@ archived, unresolved, not active, current concern, dormant, remainder
 Documents inspected included at least:
 
 - `README.md`
-- `01-architecture.md`
+- `docs/archive/original_book_of_seed/01-architecture.md`
 - `docs/index.md`
 - `docs/architectural_knowledge_map.md`
 - `docs/selection_convergence_observation.md`

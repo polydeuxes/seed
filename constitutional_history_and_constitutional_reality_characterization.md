@@ -20,9 +20,9 @@ Repository authority wins over the motivating orientation.
 
 Primary evidence reviewed:
 
-- `01-architecture.md`
-- `06-context-engine.md`
-- `13-knowledge-and-evidence.md`
+- `docs/archive/original_book_of_seed/01-architecture.md`
+- `docs/archive/original_book_of_seed/06-context-engine.md`
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`
 - `constitutional_state_reconciliation.md`
 - `constitutional_warrant_characterization.md`
 - `constitutional_warrant_global_characterization.md`

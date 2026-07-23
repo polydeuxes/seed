@@ -68,9 +68,9 @@ implementation-specific distinctions rather than a single repository principle.
 
 Materials reviewed or sampled for this observation include:
 
-- `13-knowledge-and-evidence.md`
-- `03-runtime-loop.md`
-- `04-toolkit-system.md`
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`
+- `docs/archive/original_book_of_seed/03-runtime-loop.md`
+- `docs/archive/original_book_of_seed/04-toolkit-system.md`
 - `docs/descriptive_vs_architectural_vocabulary_observation.md`
 - `docs/role_of_descriptive_vocabulary_observation.md`
 - `docs/defines_authority_reconciliation_observation.md`

@@ -88,6 +88,7 @@ Use this file to find the right document family before reading specific document
 - `knowledge_representation_map.md` — map of knowledge representation documents.
 - `architectural_status_and_next_frontier.md` — current architecture status and frontier.
 - `bootstrap_invariants.md` — compact continuation invariants.
+- Original numbered Seed corpus — historical formative testimony: [`archive/original_book_of_seed/README.md`](archive/original_book_of_seed/README.md).
 
 ## Documentation Authority And Navigation
 

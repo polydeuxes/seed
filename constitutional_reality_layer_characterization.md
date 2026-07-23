@@ -27,7 +27,7 @@ The app was used as a read-only repository authority check:
 
 ### Repository documents reviewed
 
-- `13-knowledge-and-evidence.md` for the recurring knowledge path from raw inputs and observations into evidence, facts, state projection, context views, and explanation.
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md` for the recurring knowledge path from raw inputs and observations into evidence, facts, state projection, context views, and explanation.
 - `docs/corroboration_and_fact_promotion_reconciliation.md` for the recurring separation among observation, evidence, fact, projection, promotion, support, corroboration, and truth.
 - `docs/cross_seed_provenance_and_federation_reconciliation.md` for cross-Seed boundaries, foreign testimony, imported claims, projection exports, mirrored state, provenance, authority, and federation non-collapse.
 - `time_neighborhood_characterization.md` and `time_higher_order_grouping_characterization.md` for recurring separation among external occurrence, observation time, source sample time, preservation time, diagnostic timing, operational visibility, temporal provenance, and authority.

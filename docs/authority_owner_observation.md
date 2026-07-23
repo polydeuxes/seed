@@ -91,8 +91,8 @@ Files and areas inspected for this observation include:
 - `seed_runtime/inquiry_orientation.py`
 - `seed_runtime/state_summary_views.py`
 - `scripts/seed_local.py`
-- `10-build-plan.md`
-- `13-knowledge-and-evidence.md`
+- `docs/archive/original_book_of_seed/10-build-plan.md`
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`
 - `docs/descriptive_language_vs_authority_observation.md`
 - `docs/defines_authority_reconciliation_observation.md`
 - `docs/measurement_ownership_boundary_audit.md`

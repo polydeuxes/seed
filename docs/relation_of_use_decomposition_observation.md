@@ -71,17 +71,17 @@ Search terms used included: `use`, `useful`, `usefulness`, `matters`, `why now`,
 Documents and surfaces inspected included:
 
 - `README.md`
-- `01-architecture.md`
-- `02-domain-model.md`
-- `03-runtime-loop.md`
-- `04-toolkit-system.md`
-- `05-policy-and-safety.md`
-- `06-context-engine.md`
-- `09-pseudocode.md`
-- `10-build-plan.md`
-- `11-naming.md`
-- `12-open-questions.md`
-- `13-knowledge-and-evidence.md`
+- `docs/archive/original_book_of_seed/01-architecture.md`
+- `docs/archive/original_book_of_seed/02-domain-model.md`
+- `docs/archive/original_book_of_seed/03-runtime-loop.md`
+- `docs/archive/original_book_of_seed/04-toolkit-system.md`
+- `docs/archive/original_book_of_seed/05-policy-and-safety.md`
+- `docs/archive/original_book_of_seed/06-context-engine.md`
+- `docs/archive/original_book_of_seed/09-pseudocode.md`
+- `docs/archive/original_book_of_seed/10-build-plan.md`
+- `docs/archive/original_book_of_seed/11-naming.md`
+- `docs/archive/original_book_of_seed/12-open-questions.md`
+- `docs/archive/original_book_of_seed/13-knowledge-and-evidence.md`
 - `docs/README.md`
 - `docs/index.md`
 - `docs/architectural_knowledge_map.md`
