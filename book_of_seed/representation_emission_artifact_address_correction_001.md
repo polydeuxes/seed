@@ -28,7 +28,7 @@ No redirect, alias, duplicate, symlink, old-name registry, compatibility map, or
 
 ## References updated
 
-Active Book navigation and direct path references were mechanically updated to the new chapter path. Historical testimony was preserved as historical testimony where appropriate; only direct path references necessary to keep references valid were mechanically corrected. The historical finding that prior surfaces involved `handoff` was not removed or reinterpreted as active authority.
+Active Book navigation and direct path references were mechanically updated to the new chapter path, but this statement was overbroad as completed in PR 1924. A later residue cleanup corrected one surviving active visible chapter label, one historical-attribution defect caused by mechanical path replacement, and two Book I phrases that recompressed formation, emission, and transport structure. Historical testimony was preserved as historical testimony where appropriate; only direct path references necessary to keep references valid were mechanically corrected. The historical finding that prior surfaces involved `handoff` was not removed or reinterpreted as active authority.
 
 ## Representation-formation boundary
 
@@ -88,7 +88,7 @@ This correction stops at the active chapter address, direct active Book link/pat
 3. Does the former path remain? No.
 4. Was any redirect, alias, duplicate, or compatibility stub introduced? No.
 5. Why was the former filename unfaithful after PR 1923? It retained the discarded `handoff` primitive as an active address after PR 1923 recovered the independently varying representation, emission, consumer, responsibility, authority, and external-realization coordinates.
-6. Were all active Book links updated? Yes, direct active Book links and path references found in the Book were updated to the new path.
+6. Were all active Book links updated? The old active file path was removed and the new active path was established, but PR 1924 left one active visible chapter label to be corrected by the subsequent residue cleanup.
 7. Were historical references mechanically preserved where appropriate? Yes, historical testimony was preserved while direct path references were mechanically updated where necessary.
 8. Does representation formation establish emission? No.
 9. What establishes bounded testimony that presentation occurred? A responsible emission occurrence presenting a bounded representation toward a candidate consumer boundary.

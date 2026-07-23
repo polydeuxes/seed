@@ -65,4 +65,4 @@ A surface may make a claim, artifact, boundary, output, or relation directly obs
 ## Related chapters
 - [Testimony and established fact](testimony-and-established-fact.md)
 - [Projection and current state](../06-state-and-projection/projection-and-current-state.md)
-- [Communication and handoff](../08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md)
+- [Representation, emission, and consumer boundaries](../08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md)
