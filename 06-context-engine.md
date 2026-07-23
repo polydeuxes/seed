@@ -1,5 +1,7 @@
 # 06 Context Engine
 
+
+This is historical/mixed context-engine design testimony, not an active ContextComposer, model decision, registry-selection, policy-routing, request_tool, or call_tool architecture.
 The context engine is the core product component.
 
 ## Purpose

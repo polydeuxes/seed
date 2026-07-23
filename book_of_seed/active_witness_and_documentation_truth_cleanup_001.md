@@ -87,7 +87,7 @@ Specific corrections included:
 - `docs/architecture.md` no longer claims RuntimeLoop is a deprecated active comparison point.
 - `docs/invariants.md` no longer contains a Runtime invariants section claiming Runtime is canonical or request_tool is current.
 - `docs/invariants.md` no longer retains compatibility clauses for ActionPlan, HandoffPlan, ExecutionProposal, or ExecutionAuthorization.
-- `01-architecture.md` was reduced to current bounded event/projection/observation/evidence/fact/view/diagnostic/capability-testimony responsibilities and explicitly stops short of a replacement route architecture.
+- `01-architecture.md` was reduced toward current bounded event/projection/observation/evidence/fact/view/diagnostic/capability-testimony responsibilities, but PR 1919 left an overstrong active `ToolRegistry` ownership claim that was corrected by the later active architecture/domain document truth correction operation.
 - `03-runtime-loop.md` was converted to a historical placeholder, not an active RuntimeLoop instruction document.
 - `docs/canonical_documentation_reconciliation.md` was corrected where it described `docs/architecture.md` as actively identifying Runtime as canonical.
 
@@ -99,7 +99,7 @@ Examples of preserved historical/audit families include runtime parity inventori
 
 ## Minimal Book references touched, if any
 
-Only this required Book report was added. No pre-existing Book file was rewritten. No Book-wide vocabulary lint was performed.
+Only this required Book report was added during PR 1919. The later active architecture/domain document truth correction operation amended this report because PR 1919's completion conclusion was overstrong. No Book-wide vocabulary lint was performed.
 
 ## Tests added or updated
 
@@ -160,7 +160,7 @@ The next operation is reserved for a full Book contamination lint over `book_of_
 
 ## Lawful stopping point
 
-This operation stops after removing deleted ID reservations, dead imports, stale active architecture/invariant claims, and directly active stale documentation anchors. It does not invent replacement architecture, does not create migrations or compatibility mechanisms, does not rename mixed models, and does not perform Book-wide lint.
+This PR 1919 operation stopped after removing deleted ID reservations, dead imports, stale active architecture/invariant claims, and selected directly active stale documentation anchors. Its conclusion that active documentation was complete was overstrong: additional active contamination remained in `01-architecture.md` and `02-domain-model.md` and was corrected later. It did not invent replacement architecture, did not create migrations or compatibility mechanisms, did not rename mixed models, and did not perform Book-wide lint.
 
 ## Final direct answers
 
@@ -181,6 +181,6 @@ This operation stops after removing deleted ID reservations, dead imports, stale
 15. Were any historical reports rewritten merely because their implementation was deleted? No; active-looking stale anchors were marked historical/stale or minimally corrected, but historical testimony was not mechanically purged.
 16. Were mixed `ToolNeed`, `ToolSpec`, `Approval`, `RiskClass`, recommendation, provider, backend, or Actor surfaces changed? No.
 17. Was a new architecture invented? No.
-18. What active-documentation residue remains? No known active document still asserts the deleted roads as current; historical/stale documents still contain preserved former vocabulary by design.
+18. What active-documentation residue remains? PR 1919 incorrectly concluded that no known active document still asserted deleted roads as current. Later inspection found additional active contamination in `01-architecture.md` and `02-domain-model.md`; the active architecture/domain document truth correction operation completed that bounded correction. Historical/stale documents still contain preserved former vocabulary by design.
 19. What exact scope is reserved for the next Book contamination lint? A repository-wide Book-focused contamination lint over `book_of_seed/` and Book-referenced canonical claims, including historical/current classification beyond this single added report.
 20. Where must this operation stop? It stops at active witness and active documentation truth cleanup, leaving historical testimony, mixed-boundary recovery, and Book-wide contamination lint for later operations.

@@ -40,9 +40,6 @@ Core projection responsibilities include:
   projection views, not a second state store.
 - `CapabilityCatalog` is read-only capability/provider metadata; catalog presence
   does not prove availability or verification.
-- `ToolRegistry` is registered operation inventory. Registered operation handling
-  remains separate from arbitrary provider text, shell commands, and host
-  mutation.
 
 ## Ownership boundary
 

@@ -1,5 +1,7 @@
 # 09 Pseudocode
 
+
+This is historical pseudocode testimony only. It is not an active implementation instruction for ToolRegistry, ContextComposer, PolicyGate, HandoffPlan, ToolkitCandidate, request_tool, or model_visible routing.
 This file sketches implementation structures. It is not intended to be copy-pasted as complete production code.
 
 ## Package layout

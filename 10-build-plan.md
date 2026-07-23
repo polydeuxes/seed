@@ -1,5 +1,7 @@
 # 10 Build Plan
 
+
+This is historical build-plan testimony for earlier sessions, not current operating instruction or active architecture. Deleted registry, policy, planning, handoff, pending-action, and builder-candidate roads named here are former design testimony unless separately re-evidenced by code.
 This is a suggested sequence for several Codex sessions in a new repo.
 
 

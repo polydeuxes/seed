@@ -1,5 +1,7 @@
 # 04 Toolkit System
 
+
+This is historical/mixed toolkit-system design testimony, not an active operation registry, executor, generated-toolkit lifecycle, or handoff architecture. Current implementation standing for toolkit/capability families remains unresolved unless separately evidenced by code.
 A toolkit is a portable package of generated or hand-written observation, catalog, capability, operation, provider, and handoff metadata. In the current core path it is not an internal execution plugin. Use the canonical capability/operation vocabulary in `02-domain-model.md`: capabilities explain why Seed needs an ability, operations define what can be called, implementations define how calls are fulfilled, and providers are the external backends.
 
 ## Definition

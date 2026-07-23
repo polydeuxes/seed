@@ -1,5 +1,7 @@
 # 05 Policy and Safety
 
+
+This is mixed policy/safety design testimony. It is not an active PolicyGate, ActionPlan, HandoffPlan, ExecutionProposal, ExecutionAuthorization, provider-handoff execution, or registry-routing architecture.
 Policy is the boundary between desire and an operation call or external-provider handoff.
 
 ## Core rule
