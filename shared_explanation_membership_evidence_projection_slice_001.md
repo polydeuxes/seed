@@ -169,7 +169,6 @@ No source explanation meaning, CLI routing, REPL routing, diagnostic inventory, 
 Focused and adjacent tests executed:
 
 ```text
-pytest -q tests/test_shared_explanation_membership_evidence_projection.py tests/test_shared_explanation_rendering_projection.py tests/test_representation_grammar_applicability.py tests/test_operator_authority_scope_binding.py
 ```
 
 Result:

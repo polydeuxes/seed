@@ -23,7 +23,7 @@ Primary implementation witnesses:
 - `seed_runtime/events.py`: `EventLedger`, `SQLiteEventLedger`, event correlation fields.
 - `seed_runtime/state.py`: replay, projection publication, measurement-history retention, fact-support construction, current-fact selection, conflict projection, evidence/observation projection.
 - `seed_runtime/models.py`: `Event`, legacy `ActionPlan`, legacy `HandoffPlan`, `PendingAction`, legacy `ExecutionAuthorization`.
-- `seed_runtime/candidate_operational_realization.py`, `seed_runtime/capability_reachability_projection.py`, `seed_runtime/operational_realization_selection.py`, `seed_runtime/representation_grammar_applicability.py`, `seed_runtime/operator_authority_scope_binding.py`: candidate movement, reachability, selection, warrant handoff, representation grammar, and authority/scope witnesses.
+- `seed_runtime/candidate_operational_realization.py`, `seed_runtime/capability_reachability_projection.py`, `seed_runtime/operational_realization_selection.py`, `seed_runtime/operator_authority_scope_binding.py`: candidate movement, reachability, selection, warrant handoff, and authority/scope witnesses.
 - `seed_runtime/execution_status.py`: transient status family.
 - Tests including `tests/test_fact_support_aggregation.py`, `tests/test_runtime_self_observation.py`, `tests/test_contradiction_characterization.py`, and `tests/test_temporal_characterization.py`.
 
@@ -235,7 +235,7 @@ Implemented or represented portions:
 3. **Reachability**: `CapabilityReachabilityProjection` consumes candidates and produces reachability plus future selection handoff; it does not select a realization.
 4. **Selection**: `OperationalRealizationSelection` selects zero or one supported realization under a selection policy and may produce `FutureOperationalRealizationWarrantHandoff`. Its boundary notes say selection does not warrant reliance, construct invocation, translate external representation, authorize, schedule, or execute.
 5. **Authority/scope**: `OperatorAuthorityScopeBindingProjection` can block or permit bounded downstream movement from operator expression and authority/scope material, but does not execute or grant authority beyond its scope.
-6. **Representation grammar**: `RepresentationGrammarApplicabilityProjection` can determine applicability between source and target representations and create future candidate-realization handoff; it remains read-only.
+6. **Representation grammar**: current review of representation grammar recovery is left to independent implementation evidence; no applicability-to-handoff owner is preserved here.
 7. **Handoff/authorization residue**: `ActionPlan`, `HandoffPlan`, and `ExecutionAuthorization` are explicitly legacy/experimental/non-core or side-path compatibility artifacts. `HandoffPlan` records a boundary but does not execute, approve, assert trust, register a tool, retry, schedule, or manage jobs. `ExecutionAuthorization` is non-core secret-free grant metadata and must not be used to add internal execution lifecycle.
 8. **Reported realization/result**: current repository evidence includes behavior observations/comparisons for candidate validation and generic evidence graph classification of tool results, but no canonical realization testimony artifact that binds an external mechanism's reported realization to before/after observations.
 

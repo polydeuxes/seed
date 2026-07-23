@@ -1,13 +1,11 @@
 import pytest
-from types import SimpleNamespace
 from seed_runtime.candidate_external_grammar import CandidateExternalGrammarInput, CandidateExternalGrammarInputCandidate, assemble_candidate_external_grammar_set
 from seed_runtime.representation_grammar_recovery import CandidateRecoveryMaterial, RepresentationGrammarComparison, LexicalSupportReference, recover_representation_grammars
-from seed_runtime.representation_grammar_applicability import ApplicabilityDemandMaterial, project_representation_grammar_applicability
 from seed_runtime.operator_expression_interpretation import attribute_operator_expression, interpret_operator_expression, format_operator_expression_interpretation, operator_expression_interpretation_json, OperatorExpressionInterpretationError
 
 MECH="internal:operator-expression-interpreter"
 
-def fixture(cid="operator-grammar", app_state=None, structures=None, conflicts=(), unknowns=(), lex=("lex-operator",)):
+def fixture(cid="operator-grammar", structures=None, conflicts=(), unknowns=(), lex=("lex-operator",)):
     structures=structures or ("show form","what is form","what owns form","why form","what supports form","what is unknown about form","what prevents form","presentation clause","active observation request","constraint clause","imperative/request")
     cs=assemble_candidate_external_grammar_set(CandidateExternalGrammarInput("operator expression text",(CandidateExternalGrammarInputCandidate(cid,"bounded operator expression grammar",provenance=("candidate",)),)))
     cmp=(RepresentationGrammarComparison("cmp-"+cid,cid,"mat","bounded forms","bounded forms",("structure",),"supports","fixture"),)
@@ -15,18 +13,12 @@ def fixture(cid="operator-grammar", app_state=None, structures=None, conflicts=(
     mat=(CandidateRecoveryMaterial(cid,"operator expression text","bounded operator expression grammar",source_material_refs=("mat",),supporting_comparison_refs=("cmp-"+cid,),lexical_support_refs=lex,supported_structures=structures,excluded_structures=("unrestricted coordination","prediction request","full English"),applicability_boundary=("operator-expression interpretation mechanism","single attributed operator expression"),known_limitations=("not full English",),provenance=("recovery",),unknowns=unknowns,conflicts=conflicts),)
     rec=recover_representation_grammars(cs,comparisons=cmp,lexical_support=lxs,recovery_material=mat)
     g=rec.recovered_grammars[0]
-    h=SimpleNamespace(probe_request_id="probe-oe", capability_identity="interpret operator expression", required_input_representation="operator expression text", requested_output_representation="operator expression interpretation projection")
-    h.to_json_dict=lambda: {"probe_request_id":"probe-oe","capability_identity":"interpret operator expression","required_input_representation":"operator expression text","requested_output_representation":"operator expression interpretation projection"}
-    c=SimpleNamespace(contract_id="contract-oe", mechanism_id=MECH, accepted_input_representation="operator expression text", produced_output_representation="operator expression interpretation projection", unknowns=(), provenance=("contract",))
-    c.to_json_dict=lambda: {"contract_id":"contract-oe","mechanism_id":MECH,"accepted_input_representation":"operator expression text","produced_output_representation":"operator expression interpretation projection","unknowns":[]}
-    d=ApplicabilityDemandMaterial("single attributed operator expression","operator expression text","operator expression interpretation projection",required_structures=("show form",),lexical_support_refs=lex,required_lexical_refs=lex,applicability_boundary_refs=("operator-expression interpretation mechanism",),provenance=("probe-oe",),unknowns=unknowns,conflicts=conflicts)
-    app=project_representation_grammar_applicability(rec,g,h,MECH,c,d,applicability_state=app_state,applicability_reason=(app_state or "")) if app_state else project_representation_grammar_applicability(rec,g,h,MECH,c,d)
-    return rec,g,app,c
+    return rec,g,"contract-oe"
 
 def interp(text, **kw):
-    rec,g,app,c=fixture(**kw.pop("fixture",{}))
+    rec,g,contract_id=fixture(**kw.pop("fixture",{}))
     expr=attribute_operator_expression(exact_text=text,workspace_ref="ws",session_ref="sess",operator_ref="actor",provenance=("input",))
-    return interpret_operator_expression(expr,rec,g,app,interpretation_mechanism_ref=MECH,invocation_contract_ref=c.contract_id,lexical_support_refs=kw.pop("lexical_support_refs",("lex-operator",)),**kw)
+    return interpret_operator_expression(expr,rec,g,interpretation_mechanism_ref=MECH,invocation_contract_ref=contract_id,lexical_support_refs=kw.pop("lexical_support_refs",("lex-operator",)),**kw)
 
 def test_projection_shape_deterministic_identity_and_read_only_handoff():
     a=interp("Show ownership on node115 as JSON."); b=interp("Show ownership on node115 as JSON.")
@@ -54,14 +46,12 @@ def test_identity_changes_for_required_semantic_inputs_and_order_independent():
     assert ordered.interpretation_projection_id==ordered2.interpretation_projection_id
 
 def test_mismatched_inputs_fail_and_non_applicable_states_do_not_interpret_or_handoff():
-    rec,g,app,c=fixture(); rec2,g2,app2,c2=fixture(cid="other")
+    rec,g,c=fixture(); rec2,g2,c2=fixture(cid="other")
     expr=attribute_operator_expression(exact_text="Show ownership on node115")
-    with pytest.raises(OperatorExpressionInterpretationError): interpret_operator_expression(expr,rec2,g,app,interpretation_mechanism_ref=MECH,invocation_contract_ref=c.contract_id)
-    with pytest.raises(OperatorExpressionInterpretationError): interpret_operator_expression(expr,rec,g,app2,interpretation_mechanism_ref=MECH,invocation_contract_ref=c.contract_id)
-    for st in ("not_applicable","unknown","conflict"):
-        p=interp("Show ownership on node115", fixture={"app_state":st})
-        assert p.interpretation_state in ("unsupported","unknown","conflict")
-        assert p.future_authority_scope_binding_handoff is None
+    with pytest.raises(OperatorExpressionInterpretationError): interpret_operator_expression(expr,rec2,g,interpretation_mechanism_ref=MECH,invocation_contract_ref=c)
+    p=interp("Show ownership on node115", conflicts=("interpretation conflict",))
+    assert p.interpretation_state == "conflict"
+    assert p.future_authority_scope_binding_handoff is None
 
 def test_proving_cases_and_boundaries():
     owns=interp("What owns storage on node115?", fixture={"structures":("what owns form","ambiguous ownership","show form")})

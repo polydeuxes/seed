@@ -69,7 +69,6 @@ Those clauses are necessary but incomplete for one independently recurring respo
 Implementation witnesses are not definitions, but they confirm recurrence beyond reports and SQLite:
 
 - `seed_runtime/representation_grammar_recovery.py` represents candidate grammar recovery from source material, attributed claims, comparisons, lexical support, applicability boundaries, contradictions, conflicts, Unknowns, and read-only/non-mutating standing. It treats supporting comparisons, contradicting comparisons, conflicts, and Unknowns as separate inputs and outcomes rather than as truth by repetition.
-- `tests/test_representation_grammar_applicability.py` exercises recovered grammar applicability while preserving mechanism, contract, handoff, material class, lexical support, boundary refs, conflicts, Unknowns, and non-mutation.
 - Knowledge-layer observation agreement records preserve candidate agreement and observation independence while explicitly not promoting agreement.
 
 These witnesses support a realization-independent comparison boundary. They do not support a Seed language design, operational realization design, source-independence algorithm, or universal topology.

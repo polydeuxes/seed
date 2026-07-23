@@ -17,7 +17,6 @@ Implementation evidence reviewed:
 - `seed_runtime/capability_reachability_projection.py` for demand-level reachability and separation among mechanical reachability, dependency availability, authority availability, grammar sufficiency, behavior, representation, and method.
 - `seed_runtime/operational_realization_selection.py` for zero-or-one selection and the boundary that selection does not authorize, schedule, execute, translate, or warrant.
 - `seed_runtime/operational_realization_warrant.py` for bounded warrant after selection and refusal to authorize, schedule, execute, mutate, or create pending action.
-- `seed_runtime/representation_grammar_recovery.py` and `seed_runtime/representation_grammar_applicability.py` for grammar recovery/applicability, unknown preservation, positive incompatibility, and non-execution boundaries.
 - `seed_runtime/tool_execution_policy.py` and `seed_runtime/policy.py` for selected registered-operation validation and later policy authorization.
 - `seed_runtime/explanations.py` for current projected-fact explanation vocabulary, which explains current beliefs and conflicts but does not compose constitutional blocker reasons across operational artifacts.
 
@@ -32,7 +31,6 @@ Report evidence reviewed:
 - `capability_reachability_projection_slice_001.md`.
 - `operational_realization_selection_slice_001.md`.
 - `operational_realization_warrant_slice_001.md`.
-- `representation_grammar_applicability_slice_001.md`.
 - `recovered_representation_grammar_slice_001.md`.
 - `implementation_grammar_visibility_audit.md`.
 - `operational_grammar_reconciliation_audit_001.md`.
@@ -124,7 +122,6 @@ Report evidence reviewed:
 
 - Movement attempting to advance: target and authority may be available, but Seed lacks a bounded representation or invocation grammar for the exact demand.
 - Constitutional stop stage: grammar recovery/applicability and candidate operational realization.
-- Blocking artifact: `RepresentationGrammarRecoveryProjection`, `RepresentationGrammarApplicabilityProjection`, and candidate `grammar_standing`.
 - State vocabulary: recovery/applicability `unknown`, `not_applicable`, `conflict`; candidate grammar standings `unknown`, `insufficient`, `declared_only`, `recovered_only`, `behaviorally_supported`, `behaviorally_contradicted`, `conflict`.
 - Preserved reason: `missing bounded support prevents applicability conclusion`, `bounded positive evidence establishes incompatibility`, or candidate standing reason `grammar insufficient`.
 - Authority-resolvable: no.
@@ -164,7 +161,6 @@ Report evidence reviewed:
 - `OperatorAuthorityScopeBindingProjection` owns first-stop evidence for ingress operator authority, bound scope, unresolved scope, operator-stated effect constraint conflicts, and future bounded-question handoff refusal.
 - `ObservationPermissionReport` owns domain-level observation permission visibility, but it is explicitly not an enforcement, approval-storage, or runtime-autonomy mechanism.
 - `PrivilegeDiscoveryAudit` owns privilege guidance and limiting reasons for capability needs, but remains visibility-only and does not escalate.
-- `RepresentationGrammarRecoveryProjection` owns recovered grammar outcomes; `RepresentationGrammarApplicabilityProjection` owns exact-demand applicability.
 - `CandidateOperationalRealizationSet` owns candidate-level mechanism/dependency/authority/grammar/behavior/representation/method standings.
 - `CapabilityReachabilityProjection` owns demand-level reachability composition across candidates without selection.
 - `OperationalRealizationSelectionProjection` owns zero-or-one realization selection but not warrant, authorization, or execution.

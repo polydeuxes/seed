@@ -5,9 +5,9 @@ from seed_runtime.operator_authority_scope_binding import *
 from tests.test_operator_expression_interpretation import fixture, MECH
 
 def interp(text, *, op="actor", ws="ws", sess="sess", fixture_kw=None):
-    rec,g,app,c=fixture(**(fixture_kw or {}))
+    rec,g,contract_id=fixture(**(fixture_kw or {}))
     e=attribute_operator_expression(exact_text=text,workspace_ref=ws,session_ref=sess,operator_ref=op,provenance=("input",))
-    p=interpret_operator_expression(e,rec,g,app,interpretation_mechanism_ref=MECH,invocation_contract_ref=c.contract_id,lexical_support_refs=("lex-operator",))
+    p=interpret_operator_expression(e,rec,g,interpretation_mechanism_ref=MECH,invocation_contract_ref=contract_id,lexical_support_refs=("lex-operator",))
     return e,p,p.future_authority_scope_binding_handoff
 
 def ctx(activity=("constitutional_read",), scopes=("node115",), *, op="actor", ws="ws", sess="sess", sources=("standing constitutional-read authority",), unknowns=(), restrictions=(), grantable=()):

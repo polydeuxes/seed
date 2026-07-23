@@ -1,8 +1,6 @@
 from dataclasses import replace
 
-from seed_runtime.representation_grammar_applicability import (
-    explain_representation_grammar_applicability_advancement,
-)
+from seed_runtime.operator_authority_scope_binding import explain_minimum_lawful_advancement
 from seed_runtime.shared_explanation_membership_evidence_projection import (
     BoundedInquiryReference,
     PreservedLineageEvidence,
@@ -11,18 +9,22 @@ from seed_runtime.shared_explanation_membership_evidence_projection import (
     shared_explanation_membership_evidence_json,
 )
 from seed_runtime.shared_explanation_rendering_projection import project_shared_explanation_rendering
-from tests.test_representation_grammar_applicability import demand, proj
+from tests.test_operator_authority_scope_binding import bind
 
 
-def _candidate(state="applicable"):
-    return project_shared_explanation_rendering(
-        explain_representation_grammar_applicability_advancement(
-            proj(applicability_state=state, d=demand(required_structures=("table",)))
-        )
+def _candidate(state="blocked"):
+    explanation = explain_minimum_lawful_advancement(
+        bind(
+            "Run an active scan of node115 and show me JSON.",
+            restrictions=("network_active_observation_not_granted",),
+        )[0]
     )
+    if state != "blocked":
+        explanation = replace(explanation, source_state=state, source_reason=state)
+    return project_shared_explanation_rendering(explanation)
 
 
-def test_matching_grammar_applicability_inquiry_lineage_belongs():
+def test_matching_shared_explanation_inquiry_lineage_belongs():
     result = project_shared_explanation_membership_evidence(
         BoundedInquiryReference("inquiry:one", "demand:one"),
         _candidate(),

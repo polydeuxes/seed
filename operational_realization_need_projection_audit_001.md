@@ -52,7 +52,6 @@ Existing artifacts that can supply inputs to such testimony are:
 - `CandidateOperationalRealizationSet`: candidate existence, no-known-realization observation, candidate-local mechanism availability, grammar standing, behavior standing, representation compatibility, methodological compatibility, dependency standing, authority standing, and candidate standing.
 - `CapabilityReachabilityProjection`: demand-level reachability state and family partitions such as supporting, blocked, unsupported, unknown, and conflicting candidates.
 - `OperationalRealizationSelection`: selected or no-selection state, but only as selection evidence, not as realization-family availability evidence.
-- `RepresentationGrammarApplicabilityProjection`: representation applicability evidence for future candidate realization, but not candidate selection or warrant.
 
 Standing testimony should therefore reference these artifacts as evidence, not replace them. A single unsupported candidate is evidence about that candidate. It is not evidence that the realization family is unavailable. A missing selection is evidence about selection state. It is not evidence that no realization is available.
 

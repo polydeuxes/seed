@@ -3,7 +3,6 @@
 1. Recovered responsibility: Seed now preserves one attributed operator expression and projects one bounded interpretation under one recovered and applicable operator-expression grammar.
 2. Current missing owner: before this slice, simple prose had to be manually translated into bounded-question fields or left on the runtime refusal road.
 3. Producer: `interpret_operator_expression(...)`.
-4. Input artifacts: `AttributedOperatorExpression`, `RepresentationGrammarRecoveryProjection`, `RecoveredRepresentationGrammar`, `RepresentationGrammarApplicabilityProjection`, mechanism reference, invocation contract reference, lexical/domain references, provenance, Unknowns, and conflicts.
 5. Attributed-expression artifact: `AttributedOperatorExpression` is the minimal immutable owner because existing input events did not own grammar-bound interpretation material.
 6. Output artifact: `OperatorExpressionInterpretationProjection`.
 7. Future authority/scope-binding handoff: `FutureOperatorAuthorityScopeBindingHandoff` is emitted only for `interpreted`.
