@@ -10,10 +10,8 @@ Primary implementation and report evidence reviewed:
 
 - `minimum_lawful_advancement_explanation_slice_001.md`
 - `operator_authority_scope_binding_slice_001.md`
-- `representation_grammar_applicability_slice_001.md`
 - `capability_reachability_projection_slice_001.md`
 - `seed_runtime/operator_authority_scope_binding.py`
-- `seed_runtime/representation_grammar_applicability.py`
 - `seed_runtime/capability_reachability_projection.py`
 - `seed_runtime/tool_validation.py`
 - `seed_runtime/tool_execution_policy.py`
@@ -22,7 +20,6 @@ Primary implementation and report evidence reviewed:
 - `docs/runtime_reassessment.md`
 - `tests/test_minimum_lawful_advancement_explanation.py`
 - `tests/test_operator_authority_scope_binding.py`
-- `tests/test_representation_grammar_applicability.py`
 - `tests/test_capability_reachability_projection.py`
 - `tests/test_tool_execution_policy.py`
 - `tests/test_policy.py`
@@ -115,7 +112,6 @@ One recovered representation grammar attempts to advance, through one mechanism 
 
 ### Decision owner
 
-`RepresentationGrammarApplicabilityProjection` owns the decision.
 
 ### Preserved state and reason
 
@@ -466,7 +462,6 @@ This classification rejects:
 ## Exact current compressions
 
 1. `OperatorAuthorityScopeBindingProjection -> MinimumLawfulAdvancementExplanation` is implemented and ingress-only.
-2. `RepresentationGrammarApplicabilityProjection -> FutureCandidateOperationalRealizationHandoff` is lawful only when `applicable`.
 3. `CapabilityReachabilityProjection -> FutureOperationalRealizationSelectionHandoff` is emitted for `reachable`/`blocked`, but selection is lawful only when reachable.
 4. `ToolValidationService` validates selected registered operation existence/status/input before policy.
 5. `ToolExecutionPolicyService` evaluates policy only after validation and does not execute, append events, or create pending actions.

@@ -26,7 +26,7 @@ Seed can lawfully revise its understanding of a bounded gap, candidate capabilit
 
 ## Repository witnesses examined
 
-Implementation witnesses were used only to establish present or absent boundaries: `seed_runtime/observation_sources.py`, `seed_runtime/observations.py`, `seed_runtime/evidence.py`, `seed_runtime/facts.py`, `seed_runtime/events.py`, `seed_runtime/state.py`, `seed_runtime/candidate_operational_realization.py`, `seed_runtime/capability_reachability_projection.py`, `seed_runtime/operational_realization_selection.py`, `seed_runtime/operator_authority_scope_binding.py`, `seed_runtime/representation_grammar_applicability.py`, `seed_runtime/models.py`, and `seed_runtime/execution_status.py`. Report witnesses included `book_of_seed/sensing_experience_and_learning_topology_recovery_001.md` and the operational measurement and preservation amendments from PRs 1895-1898.
+Implementation witnesses were used only to establish present or absent boundaries: `seed_runtime/observation_sources.py`, `seed_runtime/observations.py`, `seed_runtime/evidence.py`, `seed_runtime/facts.py`, `seed_runtime/events.py`, `seed_runtime/state.py`, `seed_runtime/candidate_operational_realization.py`, `seed_runtime/capability_reachability_projection.py`, `seed_runtime/operational_realization_selection.py`, `seed_runtime/operator_authority_scope_binding.py`, `seed_runtime/models.py`, and `seed_runtime/execution_status.py`. Report witnesses included `book_of_seed/sensing_experience_and_learning_topology_recovery_001.md` and the operational measurement and preservation amendments from PRs 1895-1898.
 
 ## PR 1899 findings accepted
 

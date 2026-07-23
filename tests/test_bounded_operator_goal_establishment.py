@@ -44,7 +44,6 @@ def _interpretation(**overrides):
         attributed_expression_ref="attributed-expression:1",
         grammar_recovery_ref="grammar-recovery:1",
         recovered_grammar_ref="grammar:1",
-        grammar_applicability_ref="grammar-applicability:1",
         interpretation_mechanism_ref="mechanism:1",
         invocation_contract_ref="contract:1",
         interpretation_state="interpreted",

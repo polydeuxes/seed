@@ -13,7 +13,6 @@ Primary implementation and report evidence reviewed:
 - `seed_runtime/shared_explanation_rendering_projection.py` and `tests/test_shared_explanation_rendering_projection.py` for the current shared rendering projection boundary.
 - `shared_explanation_presentation_contract_audit_001.md` and `shared_explanation_rendering_projection_slice_001.md` for prior explanation rendering analysis.
 - `seed_runtime/operator_authority_scope_binding.py` and `tests/test_operator_authority_scope_binding.py` for ingress authority/scope explanation ownership.
-- `seed_runtime/representation_grammar_applicability.py` and `tests/test_representation_grammar_applicability.py` for representation grammar applicability explanation ownership.
 - `seed_runtime/capability_reachability_projection.py` and `tests/test_capability_reachability_projection.py` for the reachability stage that can follow ingress and grammar applicability.
 - `capability_demand_realization_reachability_topology_audit_001.md`, `capability_derivation_operational_realization_topology_audit_001.md`, and `capability_reachability_projection_slice_001.md` for topology and reachability lineage evidence.
 - `seed_runtime/reasoning_path_audit.py` and `tests/test_reasoning_path_audit.py` for derivation-path visibility, supporting evidence, derived conclusions, consumers, and Unknown handling.
@@ -323,7 +322,6 @@ Current ingress explanation compressions:
 Current grammar-applicability explanation compressions:
 
 - established applicability evidence is a tuple of support strings;
-- handoff boundary is one `next_handoff_boundary` string;
 - reconsideration evidence is a tuple;
 - authority treatment is a stage-local explanatory string;
 - known loss and provenance are preserved as tuples.

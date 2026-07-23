@@ -5,10 +5,6 @@ from dataclasses import asdict, dataclass
 from typing import Any
 
 from seed_runtime.operator_authority_scope_binding import MinimumLawfulAdvancementExplanation
-from seed_runtime.representation_grammar_applicability import (
-    RepresentationGrammarApplicabilityAdvancementExplanation,
-)
-
 PROJECTION_CONVENTION = "shared_explanation_rendering_projection_v1"
 
 
@@ -59,8 +55,7 @@ def _tuple(xs: tuple[str, ...]) -> tuple[str, ...]:
 
 
 def project_shared_explanation_rendering(
-    explanation: MinimumLawfulAdvancementExplanation
-    | RepresentationGrammarApplicabilityAdvancementExplanation,
+    explanation: MinimumLawfulAdvancementExplanation,
 ) -> SharedExplanationRenderingProjection:
     if isinstance(explanation, MinimumLawfulAdvancementExplanation):
         stage_owned_material: dict[str, Any] = {
@@ -69,21 +64,6 @@ def project_shared_explanation_rendering(
             "movement_blocked": explanation.movement_blocked,
             "authority_resolvable": explanation.authority_resolvable,
             "reconsideration_transition": explanation.reconsideration_transition,
-        }
-    elif isinstance(explanation, RepresentationGrammarApplicabilityAdvancementExplanation):
-        stage_owned_material = {
-            "examined_grammar": explanation.examined_grammar,
-            "examined_demand": explanation.examined_demand,
-            "examined_mechanism": explanation.examined_mechanism,
-            "examined_contract": explanation.examined_contract,
-            "established_applicability_evidence": _tuple(explanation.established_applicability_evidence),
-            "next_handoff_boundary": explanation.next_handoff_boundary,
-            "handoff_permitted": explanation.handoff_permitted,
-            "authority_treatment": explanation.authority_treatment,
-            "reconsideration_evidence": _tuple(explanation.reconsideration_evidence),
-            "known_loss": _tuple(explanation.preserved_known_loss),
-            "provenance": _tuple(explanation.preserved_provenance),
-            "compatibility_boundary_changed": explanation.compatibility_boundary_changed,
         }
     else:
         raise TypeError("shared rendering projection requires one known stage-local explanation")

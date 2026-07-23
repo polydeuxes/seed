@@ -257,7 +257,6 @@ Focused and compatibility commands executed:
 ```bash
 pytest -q tests/test_bounded_constitutional_question_formulation.py
 pytest -q tests/test_bounded_constitutional_question_formulation.py tests/test_bounded_constitutional_question.py tests/test_constitutional_pipeline.py tests/test_operator_expression_interpretation.py tests/test_operator_authority_scope_binding.py
-pytest -q tests/test_constitutional_view_selection.py tests/test_constitutional_capability_projection.py tests/test_representation_grammar_recovery.py tests/test_representation_grammar_applicability.py tests/test_runtime_loop.py tests/test_cli_trace.py tests/test_seed_local_script.py tests/test_registry.py tests/test_policy.py tests/test_pending_actions.py tests/test_execution.py tests/test_execution_proposals.py tests/test_events.py tests/test_event_batching.py tests/test_diagnostic_inventory.py tests/test_diagnostic_shape_audit.py tests/test_public_exports.py
 pytest -q
 ```
 

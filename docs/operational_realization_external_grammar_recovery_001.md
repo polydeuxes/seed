@@ -11,13 +11,12 @@ Primary files inspected:
 - `seed_runtime/capability_reachability_projection.py`
 - `seed_runtime/operational_realization_selection.py`
 - `seed_runtime/operational_realization_warrant.py`
-- `seed_runtime/representation_grammar_applicability.py`
 - `seed_runtime/__init__.py`
 - `tests/test_candidate_operational_realization.py`
 - `tests/test_capability_reachability_projection.py`
 - `tests/test_operational_realization_selection.py`
 - `tests/test_operational_realization_warrant.py`
-- related tests found by repository search: `tests/test_examination_probe_request.py`, `tests/test_representation_grammar_applicability.py`, `tests/test_operator_expression_interpretation.py`, and operational-realization need tests.
+- related tests found by repository search: `tests/test_examination_probe_request.py`, `tests/test_operator_expression_interpretation.py`, and operational-realization need tests.
 
 ## Governing Distinction
 
