@@ -7,7 +7,7 @@ The origin, binding, extent, and non-transferability of authority across Seed's 
 What grants authority for a bounded goal or act, and how is that authority prevented from expanding in transit?
 
 ## Bounded resolution
-Operator expressions and explicit approvals may contribute authority only after interpretation and scope binding. Internal models, selections, records, and provider handoffs cannot create or enlarge that authority.
+Operator expressions and explicit approvals may contribute authority only after interpretation and scope binding. Internal models, selections, records, and provider emissions, transport structures, or ordinary-language handoff labels cannot create or enlarge that authority.
 
 ## Addressable boundaries for bounded reliance witnesses
 
@@ -40,4 +40,4 @@ Seed may analyze source packets, support paths, source roles, boundary mismatche
 ## Related chapters
 - [Construction and establishment](../03-goals-and-advancement/construction-and-establishment.md)
 - [Selection and authorization](../03-goals-and-advancement/selection-and-authorization.md)
-- [Communication and handoff](communication-and-handoff.md)
+- [Representation, emission, and consumer boundaries](communication-and-handoff.md)
