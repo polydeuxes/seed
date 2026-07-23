@@ -13,17 +13,9 @@ The motivation comes from `docs/input_source_authority_reconciliation.md`: Seed 
 
 > Where did this input come from, who or what submitted it, and what source context surrounds it?
 
-`InputAct` answers:
-
-> What kind of thing did the user say?
-
-
 > What should Seed do next?
 
-These are related, but they are not the same thing.
-
 ```text
-InputEnvelope != InputAct
 InputEnvelope != Authorization
 ```
 
@@ -36,9 +28,6 @@ The intended conceptual stack is:
 ```text
 InputEnvelope
         ↓
-InputInspection / InputAct
-        ↓
-        ↓
 Validation / guard / policy / capability boundaries
         ↓
 Runtime route
@@ -49,7 +38,6 @@ Each layer answers a different question:
 | Layer | Question |
 | --- | --- |
 | `InputEnvelope` | Where did the input come from and what source context surrounds it? |
-| `InputAct` | What kind of utterance was received? |
 | Validation / guard / policy | Is that route structurally valid and allowed? |
 | Runtime route | Which owner service handles the valid decision? |
 
@@ -118,7 +106,7 @@ mixed
 unknown
 ```
 
-It is not `InputAct` and does not say whether the payload is a command, query, observation, correction, or casual answer.
+It is not semantic classification, source trust, or execution permission.
 
 ### `payload_kind`
 
@@ -404,39 +392,6 @@ source_risk: unauthenticated_remote
 
 This should never be trusted as command authority.
 
-## Relationship To InputAct
-
-An envelope should be created or supplied before input-act classification.
-
-Example:
-
-```text
-InputEnvelope(channel=voice, authenticated_principal=none, source_trust=low)
-        ↓
-InputAct(command_request)
-        ↓
-```
-
-The same text through a different envelope may have a different safe downstream route:
-
-```text
-InputEnvelope(channel=cli, authenticated_principal=operator:john, source_trust=high)
-        ↓
-InputAct(command_request)
-        ↓
-```
-
-The input act is the same. The authority context is different.
-
-
-
-Examples:
-
-- Unknown voice plus `command_request` should bias away from side effects.
-- Authenticated operator browser plus `operator_query` may answer normally.
-- Home Assistant event plus `user_observation` may support observation intake if an owner exists.
-- OCR text plus `command_request` should not become `call_tool` merely because the text is imperative.
-
 ## Relationship To Policy And Approval
 
 An input envelope can provide metadata to policy, but it must not replace policy.
@@ -465,8 +420,6 @@ A future implementation may map an input envelope into observation metadata when
 
 ```text
 InputEnvelope
-        ↓
-InputAct(user_observation)
         ↓
 future observation intake owner
         ↓
@@ -508,8 +461,6 @@ If implemented, it should be metadata-only at first.
 It should not:
 
 - rewrite `Runtime`;
-- replace `InputInspection`;
-- replace `InputAct`;
 - execute tools;
 - authorize side effects;
 - bypass policy, approval, pending-action, or registered-tool boundaries;
@@ -528,7 +479,6 @@ This vocabulary rejects:
 - treating webcam/OCR input as command authority;
 - treating Home Assistant automation as a human operator;
 - treating browser input as trusted without a verified session/principal;
-- treating `InputAct` as authorization;
 - adding `AuthEngine`, `IdentityEngine`, `ChannelEngine`, or a new `RuntimeLoop`;
 - bypassing validation, guard, policy, approval, pending-action, or registered-tool boundaries;
 - using source metadata as implicit approval for side effects.

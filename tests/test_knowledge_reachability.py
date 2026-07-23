@@ -466,7 +466,6 @@ def test_reachability_candidate_kind_classifies_required_examples():
         "Evidence": "repository_concept",
         "InferenceRule": "repository_concept",
         "CapabilityCatalog": "code_symbol",
-        "InputAct": "code_symbol",
         "RelationshipDefinition": "code_symbol",
         "confidence": "schema_field",
         "dimensions": "schema_field",
