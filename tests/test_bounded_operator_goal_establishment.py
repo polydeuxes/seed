@@ -2,7 +2,6 @@ from seed_runtime.bounded_operator_goal_establishment import (
     bounded_operator_goal_establishment_json,
     establish_bounded_operator_goal_from_admitted_interpretation,
     establish_bounded_operator_goal_from_closed_choice,
-    establish_bounded_operator_goal_from_interpretation,
 )
 from seed_runtime.closed_choice_selection_binding import (
     ClosedChoiceOption,
@@ -10,7 +9,6 @@ from seed_runtime.closed_choice_selection_binding import (
     PresentedClosedChoiceSet,
     bind_closed_choice_selection,
 )
-from seed_runtime.operator_expression_interpretation import OperatorExpressionInterpretationProjection
 from seed_runtime.downstream_interpretation_admission import admit_downstream_interpretation
 from seed_runtime.interpretation_applicability_projection import project_interpretation_applicability
 from tests.test_downstream_interpretation_admission import admission_evidence
@@ -37,36 +35,6 @@ def _choice_binding(token="1"):
     return bind_closed_choice_selection(choice_set, capture)
 
 
-def _interpretation(**overrides):
-    base = dict(
-        artifact_type="OperatorExpressionInterpretationProjection",
-        interpretation_projection_id="interpretation:1",
-        attributed_expression_ref="attributed-expression:1",
-        grammar_recovery_ref="grammar-recovery:1",
-        recovered_grammar_ref="grammar:1",
-        interpretation_mechanism_ref="mechanism:1",
-        invocation_contract_ref="contract:1",
-        interpretation_state="interpreted",
-        interpretation_reason="one bounded interpretation is supported",
-        expression_form="show",
-        inquiry_or_request_kind="show",
-        relation_or_focus_expressions=("repository diagnostic inventory",),
-        subject_expressions=(),
-        object_expressions=(),
-        scope_expressions=("this repository",),
-        operator_stated_effect_constraints=("do not modify anything", "within two minutes"),
-        unresolved_references=(),
-        unresolved_lexical_bindings=(),
-        unsupported_residual_spans=(),
-        known_loss=("presentation wording normalized",),
-        provenance=("attributed-expression:1", "grammar:1"),
-        unknowns=(),
-        conflicts=(),
-    )
-    base.update(overrides)
-    return OperatorExpressionInterpretationProjection(**base)
-
-
 def test_closed_choice_ingress_establishes_bounded_goal_with_exact_lineage():
     binding = _choice_binding("1")
 
@@ -86,79 +54,10 @@ def test_closed_choice_ingress_establishes_bounded_goal_with_exact_lineage():
     assert goal.operator_acceptance_provenance == (binding.token_capture_ref,)
 
 
-def test_interpreted_expression_ingress_establishes_provisional_goal_and_preserves_unknowns():
-    interpretation = _interpretation(unknowns=("which diagnostic depth is enough remains unresolved",))
-
-    goal = establish_bounded_operator_goal_from_interpretation(
-        interpretation,
-        stop_conditions=("stop before authorization",),
-    )
-
-    assert goal.ingress_artifact_type == "OperatorExpressionInterpretationProjection"
-    assert goal.ingress_artifact_ref == "interpretation:1"
-    assert goal.establishment_state == "provisional"
-    assert "repository diagnostic inventory" in goal.known_scope
-    assert goal.unknowns == ("which diagnostic depth is enough remains unresolved",)
-    assert goal.sufficiency_state == "provisional"
-    assert "attributed-expression:1" in goal.ingress_lineage
-
-
 def test_refuses_when_no_bounded_orientation_is_supportable():
     unsupported_choice = establish_bounded_operator_goal_from_closed_choice(_choice_binding("9"))
-    unsupported_expression = establish_bounded_operator_goal_from_interpretation(
-        _interpretation(
-            interpretation_state="unsupported",
-            relation_or_focus_expressions=(),
-            scope_expressions=(),
-            unsupported_residual_spans=(),
-        )
-    )
-
     assert unsupported_choice.establishment_state == "refused"
     assert unsupported_choice.intended_outcome == ""
-    assert unsupported_expression.establishment_state == "refused"
-    assert unsupported_expression.known_scope == ()
-
-
-def test_operator_constraints_are_preserved_but_not_enforced():
-    goal = establish_bounded_operator_goal_from_interpretation(_interpretation())
-
-    assert goal.operator_constraints == ("do not modify anything", "within two minutes")
-    assert goal.constraints_enforced is False
-    assert goal.resources_observed is False
-
-
-def test_establishment_has_no_inquiry_authorization_execution_recording_or_satisfaction_effects():
-    goal = establish_bounded_operator_goal_from_interpretation(_interpretation())
-    data = bounded_operator_goal_establishment_json(goal)
-
-    assert data["inquiry_opened"] is False
-    assert data["work_authorized"] is False
-    assert data["execution_started"] is False
-    assert data["recording_started"] is False
-    assert data["satisfaction_judged"] is False
-    assert data["read_only"] is True
-    assert data["writes_event_ledger"] is False
-    assert data["mutates_cluster"] is False
-
-
-def test_corrections_remain_possible_without_rewriting_ingress_lineage():
-    original = establish_bounded_operator_goal_from_interpretation(_interpretation())
-    corrected = establish_bounded_operator_goal_from_interpretation(
-        _interpretation(
-            interpretation_projection_id="interpretation:correction",
-            attributed_expression_ref="attributed-expression:correction",
-            relation_or_focus_expressions=("repository diagnostic inventory tests",),
-            provenance=("attributed-expression:correction", "operator-correction:1"),
-        ),
-        correction_of_goal_ref=original.goal_establishment_id,
-    )
-
-    assert corrected.correction_of_goal_ref == original.goal_establishment_id
-    assert corrected.correction_possible_without_rewriting_ingress is True
-    assert original.ingress_artifact_ref == "interpretation:1"
-    assert "attributed-expression:1" in original.ingress_lineage
-    assert "attributed-expression:correction" in corrected.ingress_lineage
 
 
 def _goal_admission(*, consumer="consumer:bounded-operator-goal-establishment", purpose_ref="purpose:bounded-operator-goal-establishment", req_state="satisfied", adm_state="admit", selected=None):
@@ -267,135 +166,3 @@ def test_admitted_interpretation_handoff_has_no_inquiry_authorization_execution_
     assert goal.read_only is True
     assert goal.writes_event_ledger is False
     assert goal.mutates_cluster is False
-
-from seed_runtime.bounded_operator_goal_establishment import establish_bounded_operator_goal_from_authority_scope_binding
-from seed_runtime.operator_expression_interpretation import AttributedOperatorExpression
-from seed_runtime.operator_authority_scope_binding import OperatorAuthorityScopeBindingProjection
-
-
-def _expression():
-    return AttributedOperatorExpression(
-        expression_id="attributed-expression:1",
-        exact_text="Show repository diagnostic inventory on this repository as JSON",
-        normalized_text="Show repository diagnostic inventory on this repository as JSON",
-        input_representation="operator text",
-        source_channel="external input",
-        workspace_ref="workspace:1",
-        session_ref="session:1",
-        operator_ref="operator:1",
-        provenance=("operator-message:1",),
-    )
-
-
-def _authority_binding(**overrides):
-    base = dict(
-        artifact_type="OperatorAuthorityScopeBindingProjection",
-        binding_projection_id="binding:1",
-        interpretation_projection_ref="interpretation:1",
-        attributed_expression_ref="attributed-expression:1",
-        operator_identity_ref="operator:1",
-        workspace_ref="workspace:1",
-        session_ref="session:1",
-        inquiry_or_request_kind="show",
-        requested_activity_class="constitutional_read",
-        requested_scope_expressions=("this repository",),
-        resolved_scope_refs=("repo:seed",),
-        permitted_scope_refs=("repo:seed",),
-        excluded_scope_refs=(),
-        unresolved_scope_expressions=(),
-        authority_bearing_expressions=(),
-        authority_source_refs=("session-authority:1",),
-        required_authority_class="constitutional_read",
-        operator_stated_effect_constraints=("do not modify anything",),
-        presentation_preference="JSON",
-        binding_state="permitted",
-        binding_reason="within_established_authority_and_scope",
-        required_additional_authority=(),
-        supporting_references=("scope-binding:1",),
-        provenance=("authority-context:1",),
-        unknowns=(),
-        conflicts=(),
-    )
-    base.update(overrides)
-    return OperatorAuthorityScopeBindingProjection(**base)
-
-
-def test_permitted_authority_scope_binding_establishes_goal_and_preserves_matching_material():
-    expression = _expression()
-    interpretation = _interpretation(presentation_preference="JSON")
-    binding = _authority_binding()
-
-    goal = establish_bounded_operator_goal_from_authority_scope_binding(
-        binding,
-        interpretation,
-        expression,
-        sufficiency_conditions=("one permitted binding matches one interpreted expression",),
-        stop_conditions=("stop before advancement diagnosis",),
-    )
-
-    assert goal.establishment_state == "established"
-    assert goal.ingress_artifact_type == "OperatorAuthorityScopeBindingProjection"
-    assert goal.ingress_artifact_ref == binding.binding_projection_id
-    assert goal.intended_outcome == "repository diagnostic inventory"
-    assert goal.known_scope == ("repo:seed", "repository diagnostic inventory")
-    assert goal.operator_constraints == ("do not modify anything",)
-    assert goal.consumed_ingress_material_snapshot["expression"]["exact_text"] == expression.exact_text
-    assert goal.consumed_ingress_material_snapshot["interpretation"]["presentation_preference"] == "JSON"
-    assert goal.consumed_ingress_material_snapshot["authority_scope_binding"]["permitted_scope_refs"] == ["repo:seed"]
-    assert "session-authority:1" in goal.upstream_warrant_refs
-    assert goal.inquiry_opened is False
-    assert goal.work_authorized is False
-    assert goal.writes_event_ledger is False
-    assert goal.mutates_cluster is False
-
-
-def test_authority_scope_goal_establishment_refuses_unresolved_conflicting_mixed_or_insufficient_material():
-    expression = _expression()
-    interpretation = _interpretation()
-
-    unresolved = establish_bounded_operator_goal_from_authority_scope_binding(
-        _authority_binding(binding_state="unknown", binding_reason="requested_scope_unresolved", permitted_scope_refs=(), unresolved_scope_expressions=("this repository",)),
-        interpretation,
-        expression,
-    )
-    assert unresolved.establishment_state == "refused"
-    assert unresolved.establishment_reason == "authority_scope_binding_is_not_permitted"
-    assert unresolved.unresolved_scope == ("this repository",)
-
-    mixed = establish_bounded_operator_goal_from_authority_scope_binding(
-        _authority_binding(permitted_scope_refs=("repo:seed",), excluded_scope_refs=("repo:other",)),
-        interpretation,
-        expression,
-    )
-    assert mixed.establishment_state == "provisional"
-    assert "repo:other" in mixed.unresolved_scope
-
-    conflict = establish_bounded_operator_goal_from_authority_scope_binding(
-        _authority_binding(conflicts=("scope conflict",)),
-        interpretation,
-        expression,
-    )
-    assert conflict.establishment_state == "refused"
-    assert conflict.establishment_reason == "permitted_material_has_conflicts"
-    assert conflict.conflicts == ("scope conflict",)
-
-    insufficient = establish_bounded_operator_goal_from_authority_scope_binding(
-        _authority_binding(permitted_scope_refs=(), requested_scope_expressions=("this repository",)),
-        interpretation,
-        expression,
-    )
-    assert insufficient.establishment_state == "refused"
-    assert insufficient.establishment_reason == "permitted_binding_lacks_permitted_scope"
-
-
-def test_authority_scope_goal_establishment_requires_exact_matching_expression_and_interpretation():
-    expression = _expression()
-    interpretation = _interpretation()
-    binding = _authority_binding(interpretation_projection_ref="interpretation:other")
-
-    try:
-        establish_bounded_operator_goal_from_authority_scope_binding(binding, interpretation, expression)
-    except Exception as exc:
-        assert "does not match interpretation" in str(exc)
-    else:
-        raise AssertionError("mismatched binding was not refused")

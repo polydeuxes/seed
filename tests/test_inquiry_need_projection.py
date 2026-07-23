@@ -1,16 +1,17 @@
 from seed_runtime.bounded_advancement_horizon import EvidenceSnapshotReference, NeedFamilyExclusion, establish_bounded_advancement_horizon
-from seed_runtime.bounded_operator_goal_establishment import establish_bounded_operator_goal_from_interpretation
+from seed_runtime.bounded_operator_goal_establishment import establish_bounded_operator_goal_from_closed_choice
 from seed_runtime.goal_consideration_candidate_resolution import (
     GoalConsiderationCandidateTestimony,
     resolve_goal_consideration_candidate,
 )
 from seed_runtime.goal_orientation_inventory import association_from_bounded_goal, build_goal_orientation_inventory
 from seed_runtime.inquiry_need_projection import RepositoryWorldUncertaintyTestimony, inquiry_need_projection_json, project_inquiry_need
-from tests.test_bounded_operator_goal_establishment import _interpretation
+from tests.test_bounded_operator_goal_establishment import _choice_binding
 
 
 def _goal(**overrides):
-    return establish_bounded_operator_goal_from_interpretation(_interpretation(**overrides), stop_conditions=("stop before inquiry need",))
+    token = overrides.pop("token", "2" if overrides else "1")
+    return establish_bounded_operator_goal_from_closed_choice(_choice_binding(token), stop_conditions=("stop before inquiry need",))
 
 
 def _candidate_resolution(goal):

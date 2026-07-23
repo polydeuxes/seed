@@ -1,6 +1,5 @@
 from dataclasses import replace
 
-from seed_runtime.operator_authority_scope_binding import explain_minimum_lawful_advancement
 from seed_runtime.shared_explanation_membership_evidence_projection import (
     BoundedInquiryReference,
     PreservedLineageEvidence,
@@ -8,21 +7,25 @@ from seed_runtime.shared_explanation_membership_evidence_projection import (
     project_shared_explanation_membership_evidence,
     shared_explanation_membership_evidence_json,
 )
-from seed_runtime.shared_explanation_rendering_projection import project_shared_explanation_rendering
-from tests.test_operator_authority_scope_binding import bind
+from seed_runtime.shared_explanation_rendering_projection import SharedExplanationRenderingProjection
 
 
 def _candidate(state="blocked"):
-    explanation = explain_minimum_lawful_advancement(
-        bind(
-            "Run an active scan of node115 and show me JSON.",
-            restrictions=("network_active_observation_not_granted",),
-        )[0]
+    return SharedExplanationRenderingProjection(
+        artifact_type="SharedExplanationRenderingProjection",
+        source_explanation_identity="explanation:one",
+        source_artifact_owner="surviving-explanation-producer",
+        source_explanation_type="SurvivingExplanation",
+        producer="SharedExplanationRenderingProjection",
+        attempted_movement="display explanation",
+        source_state=state,
+        source_reason=state,
+        preserved_unknowns=(),
+        preserved_conflicts=(),
+        prohibited_downstream_movement=("mutate cluster",),
+        explanation_boundary="fixture explanation boundary",
+        stage_owned_material={"fixture": "surviving shared rendering candidate"},
     )
-    if state != "blocked":
-        explanation = replace(explanation, source_state=state, source_reason=state)
-    return project_shared_explanation_rendering(explanation)
-
 
 def test_matching_shared_explanation_inquiry_lineage_belongs():
     result = project_shared_explanation_membership_evidence(
