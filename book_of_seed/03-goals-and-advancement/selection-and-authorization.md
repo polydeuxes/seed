@@ -37,3 +37,9 @@ Exact candidate-identity resolution is smaller than selection. A resolver may pr
 - [Selection artifacts and acts of selection](../02-acts-and-constraints/selection-artifacts-and-selection-acts.md)
 - [Authority scope](../08-authority-communication-and-stopping/authority-scope.md)
 - [Constraints, policy, and preconditions](../02-acts-and-constraints/constraints-policy-and-preconditions.md)
+
+## Selection and authorization decompression correction 001
+
+Selection standing records a bounded choice among candidates and its basis. It may identify a selected mechanism, representation, route, or subject for a declared purpose, but it does not authorize the selected act, prove mechanism fitness, satisfy constraints, form a request representation, emit a request, invoke a mechanism, perform the requested act, or record a result.
+
+Authorization standing requires a separately warranted authority boundary preserving the authority subject, granting source, recipient or responsible boundary, act or movement authorized, scope, purpose, temporal standing, constraints, evidence, occurrence, negative authority, and remaining Unknowns. Approval testimony may be evidence for that boundary, but approval wording, selection, warrant, capability, feasibility, readiness, request formation, or recorded authorization reference is not an authority grant by identity.

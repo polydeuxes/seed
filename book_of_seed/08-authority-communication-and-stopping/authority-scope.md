@@ -41,3 +41,7 @@ Seed may analyze source packets, support paths, source roles, boundary mismatche
 - [Construction and establishment](../03-goals-and-advancement/construction-and-establishment.md)
 - [Selection and authorization](../03-goals-and-advancement/selection-and-authorization.md)
 - [Representation, emission, and consumer boundaries](representation-emission-and-consumer-boundaries.md)
+
+## Authorization boundary correction 001
+
+Authorization is a bounded standing established only by a responsible authority boundary. The boundary must preserve the authority subject, granting source, recipient or responsible boundary, authorized act or movement, scope, purpose, temporal standing, constraints, evidence, occurrence, negative authority, and Unknowns. Selection, approval testimony, mechanism capability, mechanism-fitness warrant, constraint result, precondition finding, feasibility, readiness, request representation, emission, invocation, performance report, or result record may contribute evidence only within its own standing and does not grant authority by identity.

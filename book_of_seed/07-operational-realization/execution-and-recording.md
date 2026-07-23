@@ -47,3 +47,9 @@ An execution record is testimony that an execution boundary reported an occurren
 - [Acts and act artifacts](../02-acts-and-constraints/acts-and-act-artifacts.md)
 - [Recording and knowledge extraction](../05-evidence-and-knowledge/recording-and-knowledge-extraction.md)
 - [Refusal and non-performance](../08-authority-communication-and-stopping/refusal-and-non-performance.md)
+
+## Invocation and performance occurrence correction 001
+
+A contemplated act, requested act, request-shaped representation, request emission, invocation occurrence, performance occurrence, refusal, non-occurrence, result testimony, and recording remain separate coordinates. Request formation does not establish emission. Emission does not establish invocation. Invocation does not establish completed performance. A requested act is not necessarily the performed act. Performance occurrence requires bounded occurrence evidence from the responsible performance boundary; result recording requires a separate preservation boundary.
+
+Deleted generic execution-planning machinery is not proof that performance or occurrence lacks constitutional standing. It only removes any claim that a special proposal artifact is the required predecessor to invocation, performance, refusal, non-occurrence, result testimony, or recording.
