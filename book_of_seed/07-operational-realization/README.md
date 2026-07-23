@@ -1,6 +1,6 @@
-# Book VII: Operational Realization
+# Book VII: Capability, Mechanism, Execution, and Recording
 
-This Book concerns the move from constitutional need to a warranted operational mechanism, its execution boundary, and its record.
+This Book concerns bounded capability standing, mechanism-fitness standing, execution or performance occurrence where separately warranted, and recording boundaries. It does not define a universal road from need to external effect.
 
-- [Operational realization and capability](operational-realization-and-capability.md)
+- [Capability standing and mechanism fitness](capability-standing-and-mechanism-fitness.md)
 - [Execution and recording](execution-and-recording.md)

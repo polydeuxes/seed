@@ -26,7 +26,7 @@ A need set characterizes what advancement may require within a bounded horizon. 
 ## Related chapters
 - [Selection and authorization](selection-and-authorization.md)
 - [Inquiry frontiers](../04-inquiry-and-examination/inquiry-frontiers.md)
-- [Operational realization and capability](../07-operational-realization/operational-realization-and-capability.md)
+- [Capability standing and mechanism fitness](../07-operational-realization/capability-standing-and-mechanism-fitness.md)
 
 ## Gap, capability demand, and learned insufficiency amendment 001
 
@@ -36,7 +36,7 @@ Need established does not open movement. A need is not a gap by identity, every 
 
 Gap family names are navigational distinctions, not a required universal schema. An outcome gap concerns current standing that does not satisfy a bounded required outcome. An evidence gap concerns testimony insufficient to establish relevant standing. A knowledge gap concerns an unresolved bounded constitutional question. A capability gap concerns no sufficiently supported capability known to realize a required transformation. A reachability gap concerns a supported capability not presently reachable. A dependency gap concerns unavailable or unknown supporting conditions. An authority gap concerns technically possible movement not lawfully authorized. A representation gap concerns realization grammar that cannot accept or produce required representations. A resource or budget gap concerns a route that cannot presently fit an applicable resource boundary. Learning may refine which kind of gap is actually present. Unknown capability is not absent capability, unreachable capability is not nonexistent capability, authority unavailable is not technical incapability, insufficient evidence is not failed outcome, and one unsupported candidate is not a capability gap.
 
-A capability demand is a bounded requirement for some transformation or outcome whose lawful realization would address a declared need or gap. A gap may expose that some transformation is needed, but it does not automatically establish the correct transformation, required mechanism, existence of a capability, reachability of that capability, or permission to use it. Capability demand is not capability, not selected mechanism, not authorization, and not movement opened.
+A capability demand is a bounded requirement for some transformation or outcome whose performance or external effect, if separately established, would address a declared need or gap. A gap may expose that some transformation is needed, but it does not automatically establish the correct transformation, required mechanism, existence of a capability, reachability of that capability, or permission to use it. Capability demand is not capability, not selected mechanism, not authorization, and not movement opened.
 
 Gap revision is the separate evidence-supported revision of insufficiency standing. New evidence may establish that the original gap remains, narrowed, widened, was mischaracterized, cannot yet be established, or that the requirement changed; it may also show that an apparent capability gap was actually dependency, authority, representation, resource, budget, or evidence insufficiency. New observation is not gap revision automatically, changed current State is not changed gap standing automatically, gap revision is not movement authorization, and gap resolved within scope is not all advancement complete.
 

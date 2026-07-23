@@ -27,7 +27,6 @@ Consumer validation is not producer occurrence: a downstream boundary may lawful
 ## Representative repository anchors
 - `seed_runtime/input_inspector.py::InputAct`
 - `seed_runtime/advancement_need_consideration_selection.py::select_advancement_need_for_consideration`
-- `seed_runtime/execution.py::ToolExecutor.execute`
 
 ## Counterexamples or failure modes
 - Treating a proposed, requested, or contemplated act artifact as evidence that a tool ran.
