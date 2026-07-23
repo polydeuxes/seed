@@ -14,7 +14,7 @@ Canonical amendment record. This record documents the reconciliation that amende
 - `06-state-and-projection/events-facts-and-state.md`
 - `06-state-and-projection/projection-and-current-state.md`
 - `08-authority-communication-and-stopping/authority-scope.md`
-- `08-authority-communication-and-stopping/communication-and-handoff.md`
+- `08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md`
 - `08-authority-communication-and-stopping/refusal-and-non-performance.md`
 - `concordance.md`
 - `unresolved.md`
@@ -107,7 +107,7 @@ The current implementation compresses normalized claim representation, fact-shap
 - `01-grammar-and-standing/lenses-views-and-roads.md`
 - `05-evidence-and-knowledge/testimony-and-established-fact.md`
 - `06-state-and-projection/projection-and-current-state.md`
-- `08-authority-communication-and-stopping/communication-and-handoff.md`
+- `08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md`
 - `concordance.md`
 - `unresolved.md`
 

@@ -22,7 +22,7 @@ Inspected the requested canonical chapters and nearby Book records:
 - `book_of_seed/06-state-and-projection/events-facts-and-state.md`
 - `book_of_seed/06-state-and-projection/projection-and-current-state.md`
 - `book_of_seed/08-authority-communication-and-stopping/authority-scope.md`
-- `book_of_seed/08-authority-communication-and-stopping/communication-and-handoff.md`
+- `book_of_seed/08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md`
 - `book_of_seed/08-authority-communication-and-stopping/refusal-and-non-performance.md`
 - `book_of_seed/concordance.md`
 - `book_of_seed/unresolved.md`

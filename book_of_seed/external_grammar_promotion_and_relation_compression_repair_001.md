@@ -102,7 +102,7 @@ After:
 - The external grammar clause in `01-grammar-and-standing/external-and-constitutional-grammar.md` already states that realization languages remain external grammar until bounded constitutional warrant states what survived and what remains limited or Unknown.
 - The uptake clause in `01-grammar-and-standing/lenses-views-and-roads.md` already distinguishes consumer-side relation family, assertion-preserving road subfamily, consumer constraints, consumer acts, and handoff structures. A further edit would risk creating the universal relation-family definition this pass is forbidden to establish.
 - The bounded reliance clause in `08-authority-communication-and-stopping/authority-scope.md` already treats reliance as bounded consumption under warrant and denies standing expansion.
-- The handoff clause in `08-authority-communication-and-stopping/communication-and-handoff.md` already attributes typed value transport and adapter handoff as handoff structure rather than automatic uptake or road standing.
+- The handoff clause in `08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md` already attributes typed value transport and adapter handoff as handoff structure rather than automatic uptake or road standing.
 
 ## Alternative readings and remaining Unknowns
 

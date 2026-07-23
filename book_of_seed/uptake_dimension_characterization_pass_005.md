@@ -121,7 +121,7 @@ These phrases may still appear in Book prose where they describe a relationship 
 - `book_of_seed/01-grammar-and-standing/constitutional-kinds-and-artifact-standing.md`: clarified that relationship modes, acts, constraints, handoff structures, and standing effects are not automatically durable kinds.
 - `book_of_seed/02-acts-and-constraints/acts-and-act-artifacts.md`: replaced re-establishment phrasing with new downstream establishment and separated consumer acts from constraints.
 - `book_of_seed/05-evidence-and-knowledge/evidence-provenance-and-explanation.md`: demoted explanation projection to an explanation-construction/projection act rather than a durable uptake kind.
-- `book_of_seed/08-authority-communication-and-stopping/communication-and-handoff.md`: clarified typed request handoff and adapter participation as representation/transport unless a consumer gives bounded constitutional use.
+- `book_of_seed/08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md`: clarified typed request handoff and adapter participation as representation/transport unless a consumer gives bounded constitutional use.
 - `book_of_seed/concordance.md`: removed premature top-level entries for assertion narrowing, coherence revalidation, re-establishment, explanation projection, and typed request handoff.
 
 ## Bounded resolution

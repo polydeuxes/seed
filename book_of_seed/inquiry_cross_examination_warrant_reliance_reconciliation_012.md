@@ -23,7 +23,7 @@ Local starting evidence reviewed:
 - `book_of_seed/sqlite_constitutional_witness_slice_002.md` and `book_of_seed/sqlite_seed_grammar_friction_characterization_010.md`, as SQLite testimony concerning locality, authority, evidence, and constitutional grammar compression.
 - Current Book IV: `book_of_seed/04-inquiry-and-examination/questions-and-inquiry.md`, `inquiry-frontiers.md`, and `examination-methods-and-probes.md`.
 - Current Book V: `book_of_seed/05-evidence-and-knowledge/testimony-and-established-fact.md`, `evidence-provenance-and-explanation.md`, and `recording-and-knowledge-extraction.md`.
-- Current Book VIII: `book_of_seed/08-authority-communication-and-stopping/authority-scope.md`, `communication-and-handoff.md`, `refusal-and-non-performance.md`, and `stopping-and-completion.md`.
+- Current Book VIII: `book_of_seed/08-authority-communication-and-stopping/authority-scope.md`, `representation-emission-and-consumer-boundaries.md`, `refusal-and-non-performance.md`, and `stopping-and-completion.md`.
 - Prior constitutional reports in `book_of_seed/characterization_pass_001.md`, `selection_topology_pass_002.md`, `selection_road_sufficiency_pass_003.md`, `consumer_uptake_topology_pass_004.md`, `uptake_dimension_characterization_pass_005.md`, `uptake_standing_characterization_pass_006.md`, `constitutional_occurrence_evidence_survey_007.md`, `realization_independence_audit_008.md`, and `eye_competency_composition_locality_characterization_009.md`.
 - Implementation witnesses, only as witnesses rather than definitions, including bounded inquiry, examination applicability, evidence, facts, events, explanations, authority scope binding, policy, selection, execution, and diagnostic-scope tests found by repository search.
 

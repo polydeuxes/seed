@@ -254,7 +254,7 @@ The durable concept supported by repository evidence is broader constitutional u
 - `book_of_seed/02-acts-and-constraints/acts-and-act-artifacts.md`: consumer validation distinguished from act occurrence.
 - `book_of_seed/02-acts-and-constraints/selection-artifacts-and-selection-acts.md`: selection-to-consumer uptake split into adoption, narrowing, and coherence revalidation.
 - `book_of_seed/05-evidence-and-knowledge/evidence-provenance-and-explanation.md`: explanation projection distinguished from upstream establishment.
-- `book_of_seed/08-authority-communication-and-stopping/communication-and-handoff.md`: typed value transport and adapter handoff distinguished from constitutional roads.
+- `book_of_seed/08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md`: typed value transport and adapter handoff distinguished from constitutional roads.
 - `book_of_seed/concordance.md`: durable uptake, assertion narrowing, coherence revalidation, re-establishment, explanation projection, and typed request handoff entries added.
 
 ## Bounded resolution

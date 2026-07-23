@@ -11,7 +11,7 @@ The smallest canonical Book neighborhood examined was:
 - `book_of_seed/01-grammar-and-standing/lenses-views-and-roads.md`
 - `book_of_seed/01-grammar-and-standing/constitutional-kinds-and-artifact-standing.md`
 - `book_of_seed/02-acts-and-constraints/acts-and-act-artifacts.md`
-- `book_of_seed/08-authority-communication-and-stopping/communication-and-handoff.md`
+- `book_of_seed/08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md`
 - `book_of_seed/06-state-and-projection/events-facts-and-state.md`
 - `book_of_seed/06-state-and-projection/projection-and-current-state.md`
 
@@ -22,7 +22,7 @@ The smallest canonical Book neighborhood examined was:
 - `01-grammar-and-standing/lenses-views-and-roads.md` already stated that constitutional uptake is consumer-side, local to evidence, warrant, identity, scope, authority, confidence, and Unknown limits; that roads are assertion-preserving uptake; and that producer-side warrant, artifact preservation, and consumer-side validation are related but not interchangeable.
 - `01-grammar-and-standing/constitutional-kinds-and-artifact-standing.md` already stated reachability without promotion: locally visible material does not become accepted, admitted, relied upon, projected as truth, recorded, or authorized by visibility alone.
 - `02-acts-and-constraints/acts-and-act-artifacts.md` already stated that consumer validation is not producer occurrence and that establishment of a new downstream subject is not re-establishment of an upstream subject.
-- `08-authority-communication-and-stopping/communication-and-handoff.md` already stated that handoff and typed transport are not automatically assertion uptake and that uptake begins only where a consumer gives transported material bounded constitutional use or standing.
+- `08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md` already stated that handoff and typed transport are not automatically assertion uptake and that uptake begins only where a consumer gives transported material bounded constitutional use or standing.
 - `06-state-and-projection/events-facts-and-state.md` and `06-state-and-projection/projection-and-current-state.md` already stated that projected material is not current standing by identity and that current standing requires a responsible bounded act.
 
 ## Relationship already present

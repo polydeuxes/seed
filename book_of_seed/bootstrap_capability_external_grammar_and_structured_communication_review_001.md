@@ -18,7 +18,7 @@ Primary Book evidence consulted:
 - `05-evidence-and-knowledge/evidence-provenance-and-explanation.md` and `testimony-and-established-fact.md`: testimony, evidence, support, admission, fact standing, warrant, and negative findings remain separate.
 - `06-state-and-projection/projection-and-current-state.md`: current-state and View representations are bounded projections with preserved standing and limits.
 - `07-operational-realization/operational-realization-and-capability.md`: capability is bounded support for possible realization, not mechanism, reachability, authority, selection, or execution.
-- `08-authority-communication-and-stopping/authority-scope.md`, `communication-and-handoff.md`, `refusal-and-non-performance.md`, and `stopping-and-completion.md`: communication can carry bounded requests and references; egress representation preserves standing without strengthening it; refusal and non-performance remain distinct.
+- `08-authority-communication-and-stopping/authority-scope.md`, `representation-emission-and-consumer-boundaries.md`, `refusal-and-non-performance.md`, and `stopping-and-completion.md`: communication can carry bounded requests and references; egress representation preserves standing without strengthening it; refusal and non-performance remain distinct.
 - Recent recovery reports, especially `post_tool_corridor_directional_topology_recovery_001.md`, `sensing_experience_and_learning_topology_recovery_001.md`, `constrained_movement_sensing_gap_capability_learning_correction_001.md`, `constitutional_projection_compression_recovery_001.md`, and `goal_to_question_connection_survey_001.md`.
 
 Implementation witnesses sampled:

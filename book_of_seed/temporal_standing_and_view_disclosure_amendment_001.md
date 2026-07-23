@@ -18,7 +18,7 @@ Canonical amendment record. This record documents the cross-examination that ame
 - `06-state-and-projection/events-facts-and-state.md`
 - `06-state-and-projection/projection-and-current-state.md`
 - `08-authority-communication-and-stopping/authority-scope.md`
-- `08-authority-communication-and-stopping/communication-and-handoff.md`
+- `08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md`
 - `concordance.md`
 - `unresolved.md`
 
@@ -68,7 +68,7 @@ Canonical amendment record. This record documents the cross-examination that ame
 - `01-grammar-and-standing/lenses-views-and-roads.md` now distinguishes View selection responsibility, assertion responsibility, and temporal disclosure responsibility.
 - `05-evidence-and-knowledge/testimony-and-established-fact.md` now defines temporal standing, `observed_at`, normalization preservation, Fact support time, Fact-establishment-time absence, expiry, staleness, and latest-support limits.
 - `06-state-and-projection/events-facts-and-state.md` now distinguishes event timestamp, ledger order, chronology, causation, projection-local selection, snapshot time, and current selection.
-- `08-authority-communication-and-stopping/communication-and-handoff.md` now preserves consumer-local temporal applicability and non-inheritance across egress/returned testimony.
+- `08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md` now preserves consumer-local temporal applicability and non-inheritance across egress/returned testimony.
 - `concordance.md` now indexes temporal standing and temporal disclosure.
 
 ## Clauses preserved
