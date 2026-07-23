@@ -1,5 +1,7 @@
 # 12 Open Questions
 
+
+This is historical open-question testimony, not current architecture, domain vocabulary, or operating instruction.
 These are decisions to make while building the new repo.
 
 ## Product questions

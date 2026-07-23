@@ -1,5 +1,7 @@
 # 08 Small Model Strategy
 
+
+This is historical/mixed model-strategy testimony, not an active RuntimeLoop, model-visible operation-routing, ActionPlan, HandoffPlan, or request_tool architecture.
 Designing around a small model is a feature, not a limitation.
 
 ## Why start small

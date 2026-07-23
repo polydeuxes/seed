@@ -120,3 +120,29 @@ def test_active_architecture_doc_does_not_claim_deleted_runtime_pipeline():
 
     for phrase in forbidden:
         assert phrase not in text
+
+
+def test_numbered_active_architecture_and_domain_docs_do_not_claim_deleted_owners():
+    active_docs = [Path("01-architecture.md"), Path("02-domain-model.md")]
+
+    forbidden = [
+        "ToolRegistry is registered operation inventory",
+        "ToolExecutor executes",
+        "RuntimeTool",
+        "RuntimeLoop",
+        "canonical Runtime",
+        "choose visible tools",
+        "through registry",
+        "ActionPlan",
+        "HandoffPlan",
+        "ToolkitCandidate",
+        "seed-builder-v1",
+        "canonical call_tool",
+        "model-visible tool selection",
+        "model_visible",
+    ]
+
+    for path in active_docs:
+        text = _read(path)
+        for phrase in forbidden:
+            assert phrase not in text, f"{path} still contains {phrase!r}"

@@ -1,5 +1,7 @@
 # 07 Builder Service
 
+
+This is historical/mixed builder-service design testimony, not an active seed-builder-v1, ToolkitCandidate, generated-toolkit lifecycle, registry import, or handoff execution architecture.
 The builder service turns ToolNeeds / capability gaps into generated toolkit candidates for observation, catalog, operation-contract, and handoff integration. Use the canonical capability/operation/implementation/provider/toolkit vocabulary in `02-domain-model.md`.
 
 ## Builder mission

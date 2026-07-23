@@ -1,5 +1,7 @@
 # 11 Naming
 
+
+This is historical/mixed naming testimony. It is not an active domain model and does not preserve HandoffPlan, Toolkit Candidate, policy route, or provider handoff architecture as current.
 Names shape the architecture. Use names that describe the new system, not the legacy one.
 
 ## Candidate product/system names
