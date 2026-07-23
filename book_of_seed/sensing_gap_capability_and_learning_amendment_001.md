@@ -20,7 +20,7 @@ Seed can lawfully revise its understanding of a bounded gap, candidate capabilit
 - `book_of_seed/06-state-and-projection/projection-and-current-state.md`
 - `book_of_seed/07-operational-realization/operational-realization-and-capability.md`
 - `book_of_seed/07-operational-realization/warrants-and-execution-proposals.md`
-- `book_of_seed/08-authority-communication-and-stopping/communication-and-handoff.md`
+- `book_of_seed/08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md`
 - `book_of_seed/08-authority-communication-and-stopping/authority-scope.md`
 - `book_of_seed/08-authority-communication-and-stopping/stopping-and-completion.md`
 

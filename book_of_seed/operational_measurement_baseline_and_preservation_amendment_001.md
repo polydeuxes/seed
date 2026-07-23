@@ -14,7 +14,7 @@ When Seed observes its own operation, Seed need not preserve every operational m
 - `05-evidence-and-knowledge/recording-and-knowledge-extraction.md`
 - `06-state-and-projection/projection-and-current-state.md`
 - `07-operational-realization/execution-and-recording.md`
-- `08-authority-communication-and-stopping/communication-and-handoff.md`
+- `08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md`
 - `08-authority-communication-and-stopping/stopping-and-completion.md`
 - `concordance.md`
 - `unresolved.md`

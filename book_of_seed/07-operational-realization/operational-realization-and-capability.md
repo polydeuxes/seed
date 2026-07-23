@@ -39,7 +39,7 @@ A fidelity determination examines a specific realization boundary by consuming t
 ## Related chapters
 - [Needs and opened movement](../03-goals-and-advancement/needs-and-opened-movement.md)
 - [Warrants and execution proposals](warrants-and-execution-proposals.md)
-- [Representation, emission, and consumer boundaries](../08-authority-communication-and-stopping/communication-and-handoff.md)
+- [Representation, emission, and consumer boundaries](../08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md)
 - [Evidence, provenance, and explanation](../05-evidence-and-knowledge/evidence-provenance-and-explanation.md)
 - [External and constitutional grammar](../01-grammar-and-standing/external-and-constitutional-grammar.md)
 

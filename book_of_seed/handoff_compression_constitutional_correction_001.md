@@ -25,7 +25,7 @@ The correction recovered these independently varying coordinates: producer ident
 ## Active chapters examined
 The bounded examination covered:
 
-- `book_of_seed/08-authority-communication-and-stopping/communication-and-handoff.md`
+- `book_of_seed/08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md`
 - `book_of_seed/01-grammar-and-standing/lenses-views-and-roads.md`
 - `book_of_seed/02-acts-and-constraints/constraints-policy-and-preconditions.md`
 - `book_of_seed/07-operational-realization/operational-realization-and-capability.md`

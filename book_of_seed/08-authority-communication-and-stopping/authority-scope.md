@@ -40,4 +40,4 @@ Seed may analyze source packets, support paths, source roles, boundary mismatche
 ## Related chapters
 - [Construction and establishment](../03-goals-and-advancement/construction-and-establishment.md)
 - [Selection and authorization](../03-goals-and-advancement/selection-and-authorization.md)
-- [Representation, emission, and consumer boundaries](communication-and-handoff.md)
+- [Representation, emission, and consumer boundaries](representation-emission-and-consumer-boundaries.md)

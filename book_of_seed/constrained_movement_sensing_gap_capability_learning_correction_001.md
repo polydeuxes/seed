@@ -19,7 +19,7 @@ PR 1900's distinctions are preserved, but their constitutional grammar is rotate
 - `book_of_seed/07-operational-realization/warrants-and-execution-proposals.md`
 - `book_of_seed/08-authority-communication-and-stopping/stopping-and-completion.md`
 - `book_of_seed/08-authority-communication-and-stopping/authority-scope.md`
-- `book_of_seed/08-authority-communication-and-stopping/communication-and-handoff.md`
+- `book_of_seed/08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md`
 - `book_of_seed/01-grammar-and-standing/lenses-views-and-roads.md`
 
 ## PR 1900 findings preserved

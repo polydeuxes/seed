@@ -46,7 +46,7 @@ Primary clauses and chapters inspected:
   - `06.Projection.B — Purpose-relative lossless projection and package standing` added by this pass
 - `07-operational-realization/operational-realization-and-capability.md`
   - realization compatibility and fidelity boundary
-- `08-authority-communication-and-stopping/communication-and-handoff.md`
+- `08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md`
   - `08.Handoff.A`, `08.Handoff.B`, and especially `08.Handoff.C — Egress representation preserves result standing without strengthening it`
 - `08-authority-communication-and-stopping/refusal-and-non-performance.md`
 - `08-authority-communication-and-stopping/stopping-and-completion.md`
