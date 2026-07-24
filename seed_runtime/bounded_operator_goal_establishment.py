@@ -10,11 +10,6 @@ from seed_runtime.closed_choice_selection_binding import ClosedChoiceSelectionBi
 from seed_runtime.downstream_interpretation_admission import DownstreamInterpretationAdmission
 
 CONVENTION = "bounded_operator_goal_establishment_v1"
-BOUNDARY_NOTES = (
-    "Bounded operator goal establishment is not constitutional meta-target establishment.",
-    "Bounded operator goal establishment is not operator operating constraint enforcement.",
-    "Goal established is not inquiry opened, resources observed, constraints satisfied, work authorized, or goal satisfied.",
-)
 BOUNDED_GOAL_ESTABLISHMENT_CONSUMER_REF = "consumer:bounded-operator-goal-establishment"
 BOUNDED_GOAL_ESTABLISHMENT_PURPOSE_REF = "purpose:bounded-operator-goal-establishment"
 
@@ -53,8 +48,6 @@ class BoundedOperatorGoalEstablishment:
     upstream_applicability_refs: tuple[str, ...] = ()
     upstream_admission_refs: tuple[str, ...] = ()
     consumed_admitted_meaning_snapshot: dict[str, object] | None = None
-    boundary_notes: tuple[str, ...] = BOUNDARY_NOTES
-    establishment_convention: str = CONVENTION
 
     def to_json_dict(self) -> dict[str, object]:
         data = asdict(self)
