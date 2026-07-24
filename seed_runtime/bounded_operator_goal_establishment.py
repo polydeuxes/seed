@@ -53,11 +53,6 @@ class BoundedOperatorGoalEstablishment:
     upstream_applicability_refs: tuple[str, ...] = ()
     upstream_admission_refs: tuple[str, ...] = ()
     consumed_admitted_meaning_snapshot: dict[str, object] | None = None
-    reinterpreted_source: bool = False
-    regenerated_warrants: bool = False
-    reselected_candidate: bool = False
-    recomputed_applicability: bool = False
-    recomputed_admission: bool = False
     read_only: bool = True
     writes_event_ledger: bool = False
     mutates_cluster: bool = False
