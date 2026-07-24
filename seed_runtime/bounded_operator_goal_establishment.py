@@ -37,7 +37,6 @@ class BoundedOperatorGoalEstablishment:
     establishment_state: str
     establishment_reason: str
     intended_outcome: str
-    outcome_resolution: str
     known_scope: tuple[str, ...]
     unresolved_scope: tuple[str, ...]
     unknowns: tuple[str, ...]
@@ -74,12 +73,10 @@ def establish_bounded_operator_goal_from_closed_choice(
         state = "refused"
         reason = "closed_choice_selection_does_not_support_bounded_orientation"
         intended = ""
-        resolution = "none"
     else:
         state = "established"
         reason = "closed_choice_selection_supplies_bounded_operator_goal_standing"
         intended = binding.bound_option_label or binding.bound_option_ref
-        resolution = "presented closed-choice option"
 
     lineage = _refs((binding.binding_id, binding.choice_set_ref, binding.exact_choice_set_fingerprint, binding.token_capture_ref))
     payload = {
@@ -102,7 +99,6 @@ def establish_bounded_operator_goal_from_closed_choice(
         state,
         reason,
         intended,
-        resolution,
         (binding.bound_option_ref,) if binding.bound_option_ref else (),
         _refs((*unresolved_scope, *unsupported)),
         unknowns,
@@ -206,8 +202,7 @@ def establish_bounded_operator_goal_from_admitted_interpretation(
     return BoundedOperatorGoalEstablishment(
         "BoundedOperatorGoalEstablishment", _stable("bounded-operator-goal-establishment", payload),
         admission.artifact_type, admission.admission_id, lineage, state, reason, intended,
-        "admitted consumer-local interpretation" if state != "refused" else "none", scope, unresolved,
-        unknowns, conflicts,
+        scope, unresolved, unknowns, conflicts,
         _refs(candidate_known_loss), upstream_source_refs,
         upstream_selection_refs, upstream_applicability_refs, upstream_admission_refs, admission.applicability_projection.selected_meaning_snapshot,
     )
