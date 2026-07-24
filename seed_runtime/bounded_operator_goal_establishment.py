@@ -14,7 +14,6 @@ BOUNDARY_NOTES = (
     "Bounded operator goal establishment is not constitutional meta-target establishment.",
     "Bounded operator goal establishment is not operator operating constraint enforcement.",
     "Goal established is not inquiry opened, resources observed, constraints satisfied, work authorized, or goal satisfied.",
-    "Corrections may establish a later bounded goal without rewriting the exact ingress lineage preserved here.",
 )
 LAWFUL_INGRESS_TYPES = ("ClosedChoiceSelectionBinding", "DownstreamInterpretationAdmission")
 BOUNDED_GOAL_ESTABLISHMENT_CONSUMER_REF = "consumer:bounded-operator-goal-establishment"
@@ -51,8 +50,6 @@ class BoundedOperatorGoalEstablishment:
     ambiguities: tuple[str, ...]
     conflicts: tuple[str, ...]
     known_loss: tuple[str, ...]
-    correction_of_goal_ref: str = ""
-    correction_possible_without_rewriting_ingress: bool = True
     upstream_source_material_refs: tuple[str, ...] = ()
     upstream_warrant_refs: tuple[str, ...] = ()
     upstream_selection_refs: tuple[str, ...] = ()
@@ -91,7 +88,6 @@ def establish_bounded_operator_goal_from_closed_choice(
     *,
     unresolved_scope: tuple[str, ...] = (),
     known_loss: tuple[str, ...] = (),
-    correction_of_goal_ref: str = "",
 ) -> BoundedOperatorGoalEstablishment:
     """Establish a bounded operator goal from an exact closed-choice selection binding."""
     if binding.artifact_type != "ClosedChoiceSelectionBinding":
@@ -121,7 +117,6 @@ def establish_bounded_operator_goal_from_closed_choice(
         "unknowns": unknowns,
         "conflicts": conflicts,
         "known_loss": sorted(known_loss),
-        "correction_of": correction_of_goal_ref,
         "convention": CONVENTION,
     }
     return BoundedOperatorGoalEstablishment(
@@ -140,14 +135,11 @@ def establish_bounded_operator_goal_from_closed_choice(
         (),
         conflicts,
         _refs(known_loss),
-        correction_of_goal_ref,
     )
 
 
 def establish_bounded_operator_goal_from_admitted_interpretation(
     admission: DownstreamInterpretationAdmission,
-    *,
-    correction_of_goal_ref: str = "",
 ) -> BoundedOperatorGoalEstablishment:
     """Establish one bounded operator goal by consuming an exact consumer-local admission.
 
@@ -239,14 +231,14 @@ def establish_bounded_operator_goal_from_admitted_interpretation(
     payload = {
         "ingress": admission.admission_id, "state": state, "selected": selected_ref,
         "unknowns": unknowns, "conflicts": conflicts, "unresolved": unresolved,
-        "correction_of": correction_of_goal_ref, "convention": CONVENTION,
+        "convention": CONVENTION,
     }
     return BoundedOperatorGoalEstablishment(
         "BoundedOperatorGoalEstablishment", _stable("bounded-operator-goal-establishment", payload),
         admission.artifact_type, admission.admission_id, lineage, state, reason, intended,
         "admitted consumer-local interpretation" if state != "refused" else "none", scope, unresolved,
         unknowns, _refs(proposed_corrections), conflicts,
-        _refs(candidate_known_loss), correction_of_goal_ref, True, upstream_source_refs, upstream_warrant_refs,
+        _refs(candidate_known_loss), upstream_source_refs, upstream_warrant_refs,
         upstream_selection_refs, upstream_applicability_refs, upstream_admission_refs, admission.applicability_projection.selected_meaning_snapshot,
     )
 
