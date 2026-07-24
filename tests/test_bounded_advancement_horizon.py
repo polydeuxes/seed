@@ -16,7 +16,6 @@ def _goal(**overrides):
     token = overrides.pop("token", "2" if overrides else "1")
     goal = establish_bounded_operator_goal_from_closed_choice(
         _choice_binding(token),
-        stop_conditions=("stop before need classification",),
     )
     return replace(goal, **overrides) if overrides else goal
 

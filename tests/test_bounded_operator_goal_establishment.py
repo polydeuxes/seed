@@ -37,10 +37,7 @@ def _choice_binding(token="1"):
 def test_closed_choice_ingress_establishes_bounded_goal_with_exact_lineage():
     binding = _choice_binding("1")
 
-    goal = establish_bounded_operator_goal_from_closed_choice(
-        binding,
-        stop_conditions=("before opening inquiry frontier",),
-    )
+    goal = establish_bounded_operator_goal_from_closed_choice(binding)
 
     assert goal.artifact_type == "BoundedOperatorGoalEstablishment"
     assert goal.ingress_artifact_type == "ClosedChoiceSelectionBinding"
@@ -76,10 +73,7 @@ def _goal_admission(*, consumer="consumer:bounded-operator-goal-establishment", 
 def test_admitted_interpretation_for_exact_goal_consumer_establishes_goal_and_preserves_full_lineage():
     selection, projection, admission = _goal_admission()
 
-    goal = establish_bounded_operator_goal_from_admitted_interpretation(
-        admission,
-        stop_conditions=("stop before inquiry opening",),
-    )
+    goal = establish_bounded_operator_goal_from_admitted_interpretation(admission)
 
     assert goal.establishment_state == "established"
     assert goal.ingress_artifact_type == "DownstreamInterpretationAdmission"
