@@ -61,7 +61,6 @@ BOUNDARY_NOTES: tuple[str, ...] = (
 class BoundedInquiryFrontier:
     frontier_id: str
     frontier_state: FrontierState
-    candidate_resolution_id: str
     advancement_need_selection_id: str
     selected_need_reference_id: str | None
     native_projection_id: str | None
@@ -178,7 +177,6 @@ def assemble_bounded_inquiry_frontier(
                 testimony.native_projection_id != ref.native_projection_id,
                 testimony.native_lineage != ref.native_lineage,
                 testimony.need_set_id != ref.need_set_id,
-                testimony.candidate_resolution_id != ref.candidate_resolution_id,
                 testimony.advancement_need_selection_id != selected_need.selection_id,
                 testimony.selected_need_goal_id != ref.goal_establishment_id,
                 testimony.horizon_id != ref.horizon_id,
@@ -228,7 +226,6 @@ def assemble_bounded_inquiry_frontier(
     return BoundedInquiryFrontier(
         _stable("bounded-inquiry-frontier", payload),
         state,
-        ref.candidate_resolution_id if ref is not None else "",
         selected_need.selection_id,
         testimony.selected_need_reference_id,
         testimony.native_projection_id,

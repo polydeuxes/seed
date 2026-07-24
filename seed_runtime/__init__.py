@@ -160,25 +160,7 @@ from seed_runtime.bounded_advancement_horizon import (
     establish_bounded_advancement_horizon,
 )
 
-from seed_runtime.goal_consideration_candidate_resolution import (
-    GoalConsiderationCandidateResolution,
-    GoalConsiderationCandidateTestimony,
-    goal_consideration_candidate_resolution_json,
-    goal_consideration_candidate_set_id,
-    resolve_goal_consideration_candidate,
-    visible_bounded_goal_candidates,
-)
 
-from seed_runtime.goal_orientation_inventory import (
-    SUPPORTED_GOAL_DIMENSIONS,
-    GoalOrientationAssociation,
-    GoalOrientationArtifactView,
-    GoalOrientationDimensionEntry,
-    GoalOrientationInventory,
-    association_from_bounded_goal,
-    build_goal_orientation_inventory,
-    goal_orientation_inventory_json,
-)
 
 from seed_runtime.closed_choice_selection_binding import (
     ClosedChoiceOption,
@@ -246,20 +228,6 @@ __all__ = [
     "NeedFamilyExclusion",
     "bounded_advancement_horizon_json",
     "establish_bounded_advancement_horizon",
-    "GoalConsiderationCandidateResolution",
-    "GoalConsiderationCandidateTestimony",
-    "goal_consideration_candidate_resolution_json",
-    "goal_consideration_candidate_set_id",
-    "resolve_goal_consideration_candidate",
-    "visible_bounded_goal_candidates",
-    "SUPPORTED_GOAL_DIMENSIONS",
-    "GoalOrientationAssociation",
-    "GoalOrientationArtifactView",
-    "GoalOrientationDimensionEntry",
-    "GoalOrientationInventory",
-    "association_from_bounded_goal",
-    "build_goal_orientation_inventory",
-    "goal_orientation_inventory_json",
     "BoundedOperatorGoalEstablishment",
     "BoundedOperatorGoalEstablishmentError",
     "bounded_operator_goal_establishment_json",

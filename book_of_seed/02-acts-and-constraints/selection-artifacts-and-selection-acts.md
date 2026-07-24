@@ -35,7 +35,6 @@ For the local advancement-need road recovered by `advancement_need_consideration
 - read-only selection != no constitutional occurrence
 
 ## Representative repository anchors
-- `seed_runtime/goal_consideration_candidate_resolution.py::GoalConsiderationCandidateResolution`
 - `seed_runtime/constitutional_view_selection.py::SelectedConstitutionalViews`
 - `seed_runtime/constitutional_view_selection.py::select_constitutional_views`
 - `seed_runtime/advancement_need_consideration_selection.py::AdvancementNeedConsiderationSelection`

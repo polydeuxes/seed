@@ -1,7 +1,7 @@
 """Read-only bounded advancement horizon construction.
 
 A horizon preserves a caller-supplied present movement boundary for one bounded
-goal whose identity has been resolved against a visible inventory snapshot. It
+goal identity. It
 does not select the goal, classify needs, judge sufficiency, choose a next step,
 authorize work, execute, record, or mutate state.
 """
@@ -16,14 +16,8 @@ from typing import Iterable, Literal
 from seed_runtime.bounded_operator_goal_establishment import (
     BoundedOperatorGoalEstablishment,
 )
-from seed_runtime.goal_consideration_candidate_resolution import (
-    GoalConsiderationCandidateResolution,
-)
-
 HorizonState = Literal["bounded", "refused"]
 RefusalReason = Literal[
-    "candidate_not_resolved",
-    "goal_artifact_identity_mismatch",
     "goal_artifact_not_established",
     "missing_present_movement_boundary",
     "excluded_need_family_missing_reason",
@@ -40,7 +34,7 @@ NEED_CLASSIFICATION_FIELDS: tuple[str, ...] = (
 
 BOUNDARY_NOTES: tuple[str, ...] = (
     "BoundedAdvancementHorizon is not the goal itself.",
-    "Resolved candidate identity is not Seed-owned goal selection, constitutional focus, priority, or advancement.",
+    "Bounded goal identity is not Seed-owned goal selection, constitutional focus, priority, or advancement.",
     "BoundedAdvancementHorizon preserves a supplied movement boundary; it does not produce that boundary's constitutional standing.",
     "Included need family means potentially relevant to preserve, not that a need exists.",
     "Excluded need families must carry explicit reasons.",
@@ -68,9 +62,6 @@ class BoundedAdvancementHorizon:
     horizon_id: str
     horizon_state: HorizonState
     refusal_reason: RefusalReason | None
-    candidate_resolution_id: str
-    resolved_goal_establishment_id: str | None
-    resolved_goal_source_ref: str | None
     goal_establishment_id: str
     goal_artifact_type: str
     goal_ingress_artifact_ref: str
@@ -87,7 +78,6 @@ class BoundedAdvancementHorizon:
     conflicts: tuple[str, ...]
     stale_evidence_refs: tuple[str, ...]
     unavailable_evidence_refs: tuple[str, ...]
-    candidate_identity_only: bool = True
     selects_goal: bool = False
     establishes_focus: bool = False
     classified_need_families: tuple[str, ...] = ()
@@ -124,7 +114,6 @@ def _dedupe(values: Iterable[str]) -> tuple[str, ...]:
 
 def _refuse(
     reason: RefusalReason,
-    candidate_resolution: GoalConsiderationCandidateResolution,
     goal: BoundedOperatorGoalEstablishment,
     *,
     present_movement_boundary: str = "",
@@ -134,7 +123,6 @@ def _refuse(
     payload = {
         "state": "refused",
         "reason": reason,
-        "candidate_resolution": candidate_resolution.resolution_id,
         "goal": goal.goal_establishment_id,
         "boundary": present_movement_boundary,
     }
@@ -143,9 +131,6 @@ def _refuse(
         horizon_id=_stable("bounded-advancement-horizon", payload),
         horizon_state="refused",
         refusal_reason=reason,
-        candidate_resolution_id=candidate_resolution.resolution_id,
-        resolved_goal_establishment_id=candidate_resolution.resolved_goal_establishment_id,
-        resolved_goal_source_ref=candidate_resolution.resolved_goal_source_ref,
         goal_establishment_id=goal.goal_establishment_id,
         goal_artifact_type=goal.artifact_type,
         goal_ingress_artifact_ref=goal.ingress_artifact_ref,
@@ -158,15 +143,13 @@ def _refuse(
         current_state_bounds=(),
         potentially_relevant_need_families=(),
         explicitly_excluded_need_families=(),
-        unknowns=_dedupe((*candidate_resolution.unknowns, *goal.unknowns, *unknowns)),
-        conflicts=_dedupe((*candidate_resolution.conflicts, *goal.conflicts, *conflicts)),
+        unknowns=_dedupe((*goal.unknowns, *unknowns)),
+        conflicts=_dedupe((*goal.conflicts, *conflicts)),
         stale_evidence_refs=(),
         unavailable_evidence_refs=(),
     )
 
-
 def establish_bounded_advancement_horizon(
-    candidate_resolution: GoalConsiderationCandidateResolution,
     goal: BoundedOperatorGoalEstablishment,
     *,
     present_movement_boundary: str,
@@ -182,43 +165,24 @@ def establish_bounded_advancement_horizon(
     stale_evidence_refs: Iterable[str] = (),
     unavailable_evidence_refs: Iterable[str] = (),
 ) -> BoundedAdvancementHorizon:
-    """Preserve a supplied advancement boundary for one resolved goal identity."""
-    if (
-        candidate_resolution.resolution_state != "resolved"
-        or not candidate_resolution.resolved_goal_establishment_id
-    ):
-        return _refuse(
-            "candidate_not_resolved",
-            candidate_resolution,
-            goal,
-            present_movement_boundary=present_movement_boundary,
-        )
-    if candidate_resolution.resolved_goal_establishment_id != goal.goal_establishment_id:
-        return _refuse(
-            "goal_artifact_identity_mismatch",
-            candidate_resolution,
-            goal,
-            present_movement_boundary=present_movement_boundary,
-        )
+    """Preserve a supplied advancement boundary for one exact bounded goal identity."""
     if (
         goal.artifact_type != "BoundedOperatorGoalEstablishment"
         or goal.establishment_state == "refused"
     ):
         return _refuse(
             "goal_artifact_not_established",
-            candidate_resolution,
             goal,
             present_movement_boundary=present_movement_boundary,
         )
     if not present_movement_boundary:
-        return _refuse("missing_present_movement_boundary", candidate_resolution, goal)
+        return _refuse("missing_present_movement_boundary", goal)
 
     excluded = tuple(explicitly_excluded_need_families)
     missing_reasons = tuple(item.need_family for item in excluded if not item.reason)
     if missing_reasons:
         return _refuse(
             "excluded_need_family_missing_reason",
-            candidate_resolution,
             goal,
             present_movement_boundary=present_movement_boundary,
             conflicts=(
@@ -229,9 +193,8 @@ def establish_bounded_advancement_horizon(
 
     snapshots = tuple(evidence_snapshot_refs)
     payload = {
-        "candidate_resolution": candidate_resolution.resolution_id,
         "goal": goal.goal_establishment_id,
-        "source": candidate_resolution.resolved_goal_source_ref,
+        "source": goal.ingress_artifact_ref,
         "boundary": present_movement_boundary,
         "included_scope": list(_dedupe(included_scope)),
         "excluded_scope": list(_dedupe(excluded_scope)),
@@ -246,9 +209,6 @@ def establish_bounded_advancement_horizon(
         horizon_id=_stable("bounded-advancement-horizon", payload),
         horizon_state="bounded",
         refusal_reason=None,
-        candidate_resolution_id=candidate_resolution.resolution_id,
-        resolved_goal_establishment_id=candidate_resolution.resolved_goal_establishment_id,
-        resolved_goal_source_ref=candidate_resolution.resolved_goal_source_ref,
         goal_establishment_id=goal.goal_establishment_id,
         goal_artifact_type=goal.artifact_type,
         goal_ingress_artifact_ref=goal.ingress_artifact_ref,
@@ -261,8 +221,8 @@ def establish_bounded_advancement_horizon(
         current_state_bounds=_dedupe(current_state_bounds),
         potentially_relevant_need_families=_dedupe(potentially_relevant_need_families),
         explicitly_excluded_need_families=excluded,
-        unknowns=_dedupe((*candidate_resolution.unknowns, *goal.unknowns, *unknowns)),
-        conflicts=_dedupe((*candidate_resolution.conflicts, *goal.conflicts, *conflicts)),
+        unknowns=_dedupe((*goal.unknowns, *unknowns)),
+        conflicts=_dedupe((*goal.conflicts, *conflicts)),
         stale_evidence_refs=_dedupe(stale_evidence_refs),
         unavailable_evidence_refs=_dedupe(unavailable_evidence_refs),
     )
