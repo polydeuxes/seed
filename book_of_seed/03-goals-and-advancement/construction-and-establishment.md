@@ -7,7 +7,7 @@ The transition from a constructed goal-shaped representation to an established b
 Which ingress evidence and invariants establish a goal's constitutional standing?
 
 ## Bounded resolution
-Construction produces a representation; establishment binds admitted operator meaning, scope, provenance, and boundedness into a goal with standing. The Book does not recognize caller-supplied sufficiency tuple presence or absence as a separate provisional/established bounded-goal standing split.
+Construction produces a representation; establishment binds admitted operator meaning, scope, provenance, and boundedness into a goal with standing.
 
 ## Important distinctions
 - establishment assertion != artifact field named established

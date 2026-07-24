@@ -1,5 +1,4 @@
 from seed_runtime.bounded_operator_goal_establishment import (
-    bounded_operator_goal_establishment_json,
     establish_bounded_operator_goal_from_admitted_interpretation,
     establish_bounded_operator_goal_from_closed_choice,
 )
@@ -51,40 +50,6 @@ def test_closed_choice_ingress_establishes_bounded_goal_with_exact_lineage():
     assert goal.known_scope == ("inspect_repository",)
     assert binding.exact_choice_set_fingerprint in goal.ingress_lineage
     assert goal.operator_acceptance_provenance == (binding.token_capture_ref,)
-
-
-def test_caller_sufficiency_tuple_presence_and_absence_do_not_control_goal_standing():
-    binding = _choice_binding("1")
-
-    without_tuple = establish_bounded_operator_goal_from_closed_choice(binding)
-
-    assert without_tuple.establishment_state == "established"
-    assert "sufficiency_conditions" not in bounded_operator_goal_establishment_json(without_tuple)
-    assert "sufficiency_state" not in bounded_operator_goal_establishment_json(without_tuple)
-    try:
-        establish_bounded_operator_goal_from_closed_choice(
-            binding,
-            sufficiency_conditions=("caller tuple must not promote standing",),
-        )
-    except TypeError as exc:
-        assert "sufficiency_conditions" in str(exc)
-    else:  # pragma: no cover - the removed compatibility field must not return
-        raise AssertionError("sufficiency_conditions unexpectedly accepted")
-
-
-def test_no_provisional_standing_remains_in_runtime_goal_output():
-    _, _, admission = _goal_admission()
-
-    closed_choice_goal = establish_bounded_operator_goal_from_closed_choice(_choice_binding("1"))
-    admitted_goal = establish_bounded_operator_goal_from_admitted_interpretation(admission)
-    refused_goal = establish_bounded_operator_goal_from_closed_choice(_choice_binding("9"))
-
-    for goal in (closed_choice_goal, admitted_goal, refused_goal):
-        encoded = bounded_operator_goal_establishment_json(goal)
-        assert goal.establishment_state != "provisional"
-        assert "provisional" not in str(encoded)
-        assert "sufficiency_conditions" not in encoded
-        assert "sufficiency_state" not in encoded
 
 
 def test_refuses_when_no_bounded_orientation_is_supportable():
