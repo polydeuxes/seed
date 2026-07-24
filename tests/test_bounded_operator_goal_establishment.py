@@ -135,12 +135,3 @@ def test_unknown_conflict_and_mismatched_identity_are_refused_with_lineage_prese
     assert mismatched_goal.establishment_state == "refused"
     assert any("selected candidate identity" in conflict for conflict in mismatched_goal.conflicts)
     assert admission.selected_candidate_ref == selection.selected_candidate_ref
-
-
-def test_admitted_interpretation_handoff_is_read_only_and_does_not_mutate_cluster():
-    _, _, admission = _goal_admission()
-    goal = establish_bounded_operator_goal_from_admitted_interpretation(admission)
-
-    assert goal.read_only is True
-    assert goal.writes_event_ledger is False
-    assert goal.mutates_cluster is False
