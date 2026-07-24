@@ -3,7 +3,7 @@ from seed_runtime.bounded_operator_goal_establishment import establish_bounded_o
 from seed_runtime.clarification_need_projection import OperatorMeaningUncertaintyTestimony, project_clarification_need
 from tests.test_bounded_operator_goal_establishment import _choice_binding
 
-def _goal(): return establish_bounded_operator_goal_from_closed_choice(_choice_binding("1"), stop_conditions=("stop",))
+def _goal(): return establish_bounded_operator_goal_from_closed_choice(_choice_binding("1"))
 def _horizon(goal, **kw):
     base=dict(present_movement_boundary="boundary", evidence_snapshot_refs=(EvidenceSnapshotReference("evidence:1","snapshot:1"),), potentially_relevant_need_families=("clarification",)); base.update(kw); return establish_bounded_advancement_horizon(goal, **base)
 def _t(goal,horizon,**kw):

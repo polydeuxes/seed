@@ -4,7 +4,7 @@ from seed_runtime.inquiry_need_projection import RepositoryWorldUncertaintyTesti
 from seed_runtime.goal_advancement_need_set import assemble_goal_advancement_need_set
 from tests.test_bounded_operator_goal_establishment import _choice_binding
 
-def _goal(): return establish_bounded_operator_goal_from_closed_choice(_choice_binding("1"), stop_conditions=("stop",))
+def _goal(): return establish_bounded_operator_goal_from_closed_choice(_choice_binding("1"))
 def _horizon(g, **kw):
     base=dict(present_movement_boundary="boundary", evidence_snapshot_refs=(EvidenceSnapshotReference("evidence:1","snapshot:1"),), potentially_relevant_need_families=("inquiry",)); base.update(kw); return establish_bounded_advancement_horizon(g, **base)
 def _inquiry(g,h): return project_inquiry_need(g,h,[RepositoryWorldUncertaintyTestimony("t:1","src:1",g.goal_establishment_id,h.horizon_id,"evidence:1","component:1","subject:1","bounded_advancement_horizon","established")])

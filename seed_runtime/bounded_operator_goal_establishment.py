@@ -47,7 +47,6 @@ class BoundedOperatorGoalEstablishment:
     outcome_resolution: str
     known_scope: tuple[str, ...]
     unresolved_scope: tuple[str, ...]
-    stop_conditions: tuple[str, ...]
     unknowns: tuple[str, ...]
     ambiguities: tuple[str, ...]
     conflicts: tuple[str, ...]
@@ -90,7 +89,6 @@ class BoundedOperatorGoalEstablishment:
 def establish_bounded_operator_goal_from_closed_choice(
     binding: ClosedChoiceSelectionBinding,
     *,
-    stop_conditions: tuple[str, ...] = (),
     unresolved_scope: tuple[str, ...] = (),
     known_loss: tuple[str, ...] = (),
     correction_of_goal_ref: str = "",
@@ -120,7 +118,6 @@ def establish_bounded_operator_goal_from_closed_choice(
         "intended": intended,
         "known_scope": [binding.bound_option_ref] if binding.bound_option_ref else [],
         "unresolved_scope": sorted((*unresolved_scope, *unsupported)),
-        "stops": sorted(stop_conditions),
         "unknowns": unknowns,
         "conflicts": conflicts,
         "known_loss": sorted(known_loss),
@@ -139,7 +136,6 @@ def establish_bounded_operator_goal_from_closed_choice(
         resolution,
         (binding.bound_option_ref,) if binding.bound_option_ref else (),
         _refs((*unresolved_scope, *unsupported)),
-        _refs(stop_conditions),
         unknowns,
         (),
         conflicts,
@@ -151,7 +147,6 @@ def establish_bounded_operator_goal_from_closed_choice(
 def establish_bounded_operator_goal_from_admitted_interpretation(
     admission: DownstreamInterpretationAdmission,
     *,
-    stop_conditions: tuple[str, ...] = (),
     correction_of_goal_ref: str = "",
 ) -> BoundedOperatorGoalEstablishment:
     """Establish one bounded operator goal by consuming an exact consumer-local admission.
@@ -243,7 +238,6 @@ def establish_bounded_operator_goal_from_admitted_interpretation(
 
     payload = {
         "ingress": admission.admission_id, "state": state, "selected": selected_ref,
-        "stops": sorted(stop_conditions),
         "unknowns": unknowns, "conflicts": conflicts, "unresolved": unresolved,
         "correction_of": correction_of_goal_ref, "convention": CONVENTION,
     }
@@ -251,7 +245,7 @@ def establish_bounded_operator_goal_from_admitted_interpretation(
         "BoundedOperatorGoalEstablishment", _stable("bounded-operator-goal-establishment", payload),
         admission.artifact_type, admission.admission_id, lineage, state, reason, intended,
         "admitted consumer-local interpretation" if state != "refused" else "none", scope, unresolved,
-        _refs(stop_conditions), unknowns, _refs(proposed_corrections), conflicts,
+        unknowns, _refs(proposed_corrections), conflicts,
         _refs(candidate_known_loss), correction_of_goal_ref, True, upstream_source_refs, upstream_warrant_refs,
         upstream_selection_refs, upstream_applicability_refs, upstream_admission_refs, admission.applicability_projection.selected_meaning_snapshot,
     )
