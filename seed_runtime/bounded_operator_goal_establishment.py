@@ -53,9 +53,6 @@ class BoundedOperatorGoalEstablishment:
     upstream_applicability_refs: tuple[str, ...] = ()
     upstream_admission_refs: tuple[str, ...] = ()
     consumed_admitted_meaning_snapshot: dict[str, object] | None = None
-    read_only: bool = True
-    writes_event_ledger: bool = False
-    mutates_cluster: bool = False
     boundary_notes: tuple[str, ...] = BOUNDARY_NOTES
     establishment_convention: str = CONVENTION
 
