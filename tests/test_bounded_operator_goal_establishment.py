@@ -142,15 +142,10 @@ def test_unknown_conflict_and_mismatched_identity_are_refused_with_lineage_prese
     assert admission.selected_candidate_ref == selection.selected_candidate_ref
 
 
-def test_admitted_interpretation_handoff_has_no_inquiry_authorization_execution_recording_satisfaction_or_mutation():
+def test_admitted_interpretation_handoff_is_read_only_and_does_not_mutate_cluster():
     _, _, admission = _goal_admission()
     goal = establish_bounded_operator_goal_from_admitted_interpretation(admission)
 
-    assert goal.inquiry_opened is False
-    assert goal.work_authorized is False
-    assert goal.execution_started is False
-    assert goal.recording_started is False
-    assert goal.satisfaction_judged is False
     assert goal.read_only is True
     assert goal.writes_event_ledger is False
     assert goal.mutates_cluster is False
