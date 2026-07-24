@@ -47,7 +47,6 @@ class BoundedOperatorGoalEstablishment:
     known_scope: tuple[str, ...]
     unresolved_scope: tuple[str, ...]
     unknowns: tuple[str, ...]
-    ambiguities: tuple[str, ...]
     conflicts: tuple[str, ...]
     known_loss: tuple[str, ...]
     upstream_source_material_refs: tuple[str, ...] = ()
@@ -131,7 +130,6 @@ def establish_bounded_operator_goal_from_closed_choice(
         (binding.bound_option_ref,) if binding.bound_option_ref else (),
         _refs((*unresolved_scope, *unsupported)),
         unknowns,
-        (),
         conflicts,
         _refs(known_loss),
     )
@@ -152,7 +150,6 @@ def establish_bounded_operator_goal_from_admitted_interpretation(
     projection = admission.applicability_projection
     selection = projection.selected_candidate
     selected_ref = admission.selected_candidate_ref or ""
-    proposed_corrections: tuple[str, ...] = ()
     residual_refs: tuple[str, ...] = ()
     candidate_unknowns: tuple[str, ...] = ()
     candidate_conflicts: tuple[str, ...] = ()
@@ -165,7 +162,6 @@ def establish_bounded_operator_goal_from_admitted_interpretation(
         candidate_unknowns = _refs(getattr(selection, "unknowns", ()))
         candidate_conflicts = _refs(getattr(selection, "conflicts", ()))
         candidate_known_loss = _refs(getattr(selection, "known_loss", ()))
-        proposed_corrections = _refs(getattr(c, "correction_ref", str(c)) for c in getattr(selection, "proposed_corrections", ()))
         residual_refs = _refs(getattr(s, "span_ref", str(s)) for s in getattr(selection, "residual_source_material", ()))
 
     # Selective introspection of carried upstream objects is lineage preservation,
@@ -235,7 +231,7 @@ def establish_bounded_operator_goal_from_admitted_interpretation(
         "BoundedOperatorGoalEstablishment", _stable("bounded-operator-goal-establishment", payload),
         admission.artifact_type, admission.admission_id, lineage, state, reason, intended,
         "admitted consumer-local interpretation" if state != "refused" else "none", scope, unresolved,
-        unknowns, _refs(proposed_corrections), conflicts,
+        unknowns, conflicts,
         _refs(candidate_known_loss), upstream_source_refs,
         upstream_selection_refs, upstream_applicability_refs, upstream_admission_refs, admission.applicability_projection.selected_meaning_snapshot,
     )
