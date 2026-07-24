@@ -15,7 +15,6 @@ BOUNDARY_NOTES = (
     "Bounded operator goal establishment is not operator operating constraint enforcement.",
     "Goal established is not inquiry opened, resources observed, constraints satisfied, work authorized, or goal satisfied.",
 )
-LAWFUL_INGRESS_TYPES = ("ClosedChoiceSelectionBinding", "DownstreamInterpretationAdmission")
 BOUNDED_GOAL_ESTABLISHMENT_CONSUMER_REF = "consumer:bounded-operator-goal-establishment"
 BOUNDED_GOAL_ESTABLISHMENT_PURPOSE_REF = "purpose:bounded-operator-goal-establishment"
 
