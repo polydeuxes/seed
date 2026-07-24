@@ -51,7 +51,6 @@ class BoundedOperatorGoalEstablishment:
     conflicts: tuple[str, ...]
     known_loss: tuple[str, ...]
     upstream_source_material_refs: tuple[str, ...] = ()
-    upstream_warrant_refs: tuple[str, ...] = ()
     upstream_selection_refs: tuple[str, ...] = ()
     upstream_applicability_refs: tuple[str, ...] = ()
     upstream_admission_refs: tuple[str, ...] = ()
@@ -222,11 +221,10 @@ def establish_bounded_operator_goal_from_admitted_interpretation(
         if isinstance(span, dict)
     )
     upstream_source_refs = _refs((admission.selection_result_id, projection.selection_result_id, *snapshot_source_refs, *residual_source_refs, *projection.provenance))
-    upstream_warrant_refs = _refs((getattr(selection, "candidate_ref", ""), selected_ref))
     upstream_selection_refs = _refs((admission.selection_result_id, selected_ref))
     upstream_applicability_refs = _refs((projection.projection_id, *projection.provenance))
     upstream_admission_refs = _refs((admission.admission_id, *(e.evidence_ref for e in admission.admission_evidence), *admission.provenance))
-    lineage = _refs((*upstream_source_refs, *upstream_warrant_refs, *upstream_selection_refs, *upstream_applicability_refs, *upstream_admission_refs))
+    lineage = _refs((*upstream_source_refs, *upstream_selection_refs, *upstream_applicability_refs, *upstream_admission_refs))
 
     payload = {
         "ingress": admission.admission_id, "state": state, "selected": selected_ref,
@@ -238,7 +236,7 @@ def establish_bounded_operator_goal_from_admitted_interpretation(
         admission.artifact_type, admission.admission_id, lineage, state, reason, intended,
         "admitted consumer-local interpretation" if state != "refused" else "none", scope, unresolved,
         unknowns, _refs(proposed_corrections), conflicts,
-        _refs(candidate_known_loss), upstream_source_refs, upstream_warrant_refs,
+        _refs(candidate_known_loss), upstream_source_refs,
         upstream_selection_refs, upstream_applicability_refs, upstream_admission_refs, admission.applicability_projection.selected_meaning_snapshot,
     )
 

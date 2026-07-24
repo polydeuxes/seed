@@ -83,7 +83,6 @@ def test_admitted_interpretation_for_exact_goal_consumer_establishes_goal_and_pr
     assert admission.admission_id in goal.upstream_admission_refs
     assert projection.projection_id in goal.upstream_applicability_refs
     assert selection.selection_result_id in goal.upstream_selection_refs
-    assert selection.selected_candidate_ref in goal.upstream_warrant_refs
     assert "contract:local" in goal.upstream_source_material_refs
     assert goal.reinterpreted_source is False
     assert goal.regenerated_warrants is False
