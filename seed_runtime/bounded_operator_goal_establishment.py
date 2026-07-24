@@ -13,7 +13,6 @@ CONVENTION = "bounded_operator_goal_establishment_v1"
 BOUNDARY_NOTES = (
     "Bounded operator goal establishment is not constitutional meta-target establishment.",
     "Bounded operator goal establishment is not operator operating constraint enforcement.",
-    "A provisional bounded goal may be enough orientation for reversible continuation without perfect goal resolution.",
     "Goal established is not inquiry opened, resources observed, constraints satisfied, work authorized, or goal satisfied.",
     "Corrections may establish a later bounded goal without rewriting the exact ingress lineage preserved here.",
 )
@@ -48,8 +47,6 @@ class BoundedOperatorGoalEstablishment:
     outcome_resolution: str
     known_scope: tuple[str, ...]
     unresolved_scope: tuple[str, ...]
-    sufficiency_conditions: tuple[str, ...]
-    sufficiency_state: str
     stop_conditions: tuple[str, ...]
     operator_acceptance_provenance: tuple[str, ...]
     operator_constraints: tuple[str, ...]
@@ -95,7 +92,6 @@ class BoundedOperatorGoalEstablishment:
 def establish_bounded_operator_goal_from_closed_choice(
     binding: ClosedChoiceSelectionBinding,
     *,
-    sufficiency_conditions: tuple[str, ...] = (),
     stop_conditions: tuple[str, ...] = (),
     unresolved_scope: tuple[str, ...] = (),
     known_loss: tuple[str, ...] = (),
@@ -114,8 +110,8 @@ def establish_bounded_operator_goal_from_closed_choice(
         intended = ""
         resolution = "none"
     else:
-        state = "established" if sufficiency_conditions else "provisional"
-        reason = "closed_choice_selection_supplies_bounded_operator_orientation"
+        state = "established"
+        reason = "closed_choice_selection_supplies_bounded_operator_goal_standing"
         intended = binding.bound_option_label or binding.bound_option_ref
         resolution = "presented closed-choice option"
 
@@ -126,7 +122,6 @@ def establish_bounded_operator_goal_from_closed_choice(
         "intended": intended,
         "known_scope": [binding.bound_option_ref] if binding.bound_option_ref else [],
         "unresolved_scope": sorted((*unresolved_scope, *unsupported)),
-        "sufficiency": sorted(sufficiency_conditions),
         "stops": sorted(stop_conditions),
         "unknowns": unknowns,
         "conflicts": conflicts,
@@ -146,8 +141,6 @@ def establish_bounded_operator_goal_from_closed_choice(
         resolution,
         (binding.bound_option_ref,) if binding.bound_option_ref else (),
         _refs((*unresolved_scope, *unsupported)),
-        _refs(sufficiency_conditions),
-        "provisional" if state == "provisional" else ("established" if state == "established" else "unsupported"),
         _refs(stop_conditions),
         _refs((binding.token_capture_ref,)),
         (),
@@ -162,7 +155,6 @@ def establish_bounded_operator_goal_from_closed_choice(
 def establish_bounded_operator_goal_from_admitted_interpretation(
     admission: DownstreamInterpretationAdmission,
     *,
-    sufficiency_conditions: tuple[str, ...] = (),
     stop_conditions: tuple[str, ...] = (),
     correction_of_goal_ref: str = "",
 ) -> BoundedOperatorGoalEstablishment:
@@ -230,8 +222,8 @@ def establish_bounded_operator_goal_from_admitted_interpretation(
     elif not selected_ref or selection is None:
         state, reason = "refused", "admitted_interpretation_lacks_selected_meaning_identity"
     else:
-        state = "established" if sufficiency_conditions else "provisional"
-        reason = "consumer_local_admitted_interpretation_supplies_bounded_operator_goal_orientation"
+        state = "established"
+        reason = "consumer_local_admitted_interpretation_supplies_bounded_operator_goal_standing"
 
     intended = "" if state == "refused" else (getattr(selection, "proposed_meaning", "") or getattr(selection, "label", "") or selected_ref)
     scope = () if state == "refused" else _refs((selected_ref, getattr(selection, "label", "")))
@@ -255,7 +247,7 @@ def establish_bounded_operator_goal_from_admitted_interpretation(
 
     payload = {
         "ingress": admission.admission_id, "state": state, "selected": selected_ref,
-        "sufficiency": sorted(sufficiency_conditions), "stops": sorted(stop_conditions),
+        "stops": sorted(stop_conditions),
         "unknowns": unknowns, "conflicts": conflicts, "unresolved": unresolved,
         "correction_of": correction_of_goal_ref, "convention": CONVENTION,
     }
@@ -263,7 +255,6 @@ def establish_bounded_operator_goal_from_admitted_interpretation(
         "BoundedOperatorGoalEstablishment", _stable("bounded-operator-goal-establishment", payload),
         admission.artifact_type, admission.admission_id, lineage, state, reason, intended,
         "admitted consumer-local interpretation" if state != "refused" else "none", scope, unresolved,
-        _refs(sufficiency_conditions), "established" if state == "established" else ("provisional" if state == "provisional" else "unsupported"),
         _refs(stop_conditions), upstream_admission_refs, (), unknowns, _refs(proposed_corrections), conflicts,
         _refs(candidate_known_loss), correction_of_goal_ref, True, upstream_source_refs, upstream_warrant_refs,
         upstream_selection_refs, upstream_applicability_refs, upstream_admission_refs, admission.applicability_projection.selected_meaning_snapshot,
