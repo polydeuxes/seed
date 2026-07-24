@@ -54,7 +54,6 @@ class BoundedOperatorGoalEstablishment:
     upstream_applicability_refs: tuple[str, ...] = ()
     upstream_admission_refs: tuple[str, ...] = ()
     consumed_admitted_meaning_snapshot: dict[str, object] | None = None
-    consumed_ingress_material_snapshot: dict[str, object] | None = None
     inquiry_opened: bool = False
     resources_observed: bool = False
     constraints_enforced: bool = False
