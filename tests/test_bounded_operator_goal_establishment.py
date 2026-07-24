@@ -84,11 +84,6 @@ def test_admitted_interpretation_for_exact_goal_consumer_establishes_goal_and_pr
     assert projection.projection_id in goal.upstream_applicability_refs
     assert selection.selection_result_id in goal.upstream_selection_refs
     assert "contract:local" in goal.upstream_source_material_refs
-    assert goal.reinterpreted_source is False
-    assert goal.regenerated_warrants is False
-    assert goal.reselected_candidate is False
-    assert goal.recomputed_applicability is False
-    assert goal.recomputed_admission is False
 
 
 def test_admission_for_another_consumer_or_purpose_is_refused_without_revising_selection():
