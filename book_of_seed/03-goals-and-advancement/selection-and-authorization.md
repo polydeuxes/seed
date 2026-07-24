@@ -21,7 +21,6 @@ Exact candidate-identity resolution is smaller than selection. A resolver may pr
 - selected-for-consideration standing != authorization standing
 
 ## Representative repository anchors
-- `seed_runtime/goal_consideration_candidate_resolution.py`
 - `seed_runtime/advancement_need_consideration_selection.py`
 - `seed_runtime/constitutional_view_selection.py`
 - `seed_runtime/operational_realization_selection.py`

@@ -47,7 +47,6 @@ class AdvancementNeedConsiderationEvidence:
     source_ref: str
     reference_id: str | None = None
     need_set_id: str | None = None
-    candidate_resolution_id: str | None = None
     goal_establishment_id: str | None = None
     horizon_id: str | None = None
     family: NeedFamily | None = None
@@ -113,7 +112,6 @@ def _selection_id(
                 item.evidence_state,
                 item.reference_id or "",
                 item.need_set_id or "",
-                item.candidate_resolution_id or "",
                 item.goal_establishment_id or "",
                 item.horizon_id or "",
                 item.family or "",
@@ -216,7 +214,6 @@ def select_advancement_need_for_consideration(
         item.evidence_ref
         for item in exact
         if item.need_set_id != reference_set.need_set_id
-        or item.candidate_resolution_id != reference_set.candidate_resolution_id
         or item.goal_establishment_id != reference_set.goal_establishment_id
         or item.horizon_id != reference_set.horizon_id
         or item.family is None

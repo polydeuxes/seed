@@ -9,7 +9,6 @@ from typing import Iterable, Literal
 
 from seed_runtime.bounded_advancement_horizon import BoundedAdvancementHorizon
 from seed_runtime.bounded_operator_goal_establishment import BoundedOperatorGoalEstablishment
-from seed_runtime.goal_consideration_candidate_resolution import GoalConsiderationCandidateResolution
 
 RequirementStanding = Literal["required", "not_required", "unknown", "conflicting"]
 AvailabilityStanding = Literal["available", "unavailable", "unknown", "conflicting"]
@@ -19,7 +18,6 @@ ScopeApplicability = Literal["applicable", "outside_current_scope", "unknown", "
 HorizonMateriality = Literal["material", "not_material", "unknown", "conflicting"]
 NeedStanding = Literal["established", "unsupported", "unknown", "conflicting", "unclassified_here"]
 UnclassifiedReason = Literal[
-    "candidate_resolution_identity_mismatch",
     "goal_identity_mismatch",
     "horizon_identity_mismatch",
     "evidence_identity_mismatch",
@@ -46,7 +44,6 @@ BOUNDARY_NOTES: tuple[str, ...] = (
 class OperationalRealizationRequirementTestimony:
     testimony_ref: str
     source_ref: str
-    candidate_resolution_id: str
     goal_establishment_id: str
     horizon_id: str
     evidence_ref: str
@@ -66,7 +63,6 @@ class OperationalRealizationRequirementTestimony:
 class OperationalRealizationStandingTestimony:
     testimony_ref: str
     source_ref: str
-    candidate_resolution_id: str
     goal_establishment_id: str
     horizon_id: str
     evidence_ref: str
@@ -113,7 +109,6 @@ class OperationalRealizationNeedProjectionItem:
 @dataclass(frozen=True)
 class OperationalRealizationNeedProjection:
     projection_id: str
-    candidate_resolution_id: str
     goal_establishment_id: str
     horizon_id: str
     evidence_refs: tuple[str, ...]
@@ -149,9 +144,7 @@ def _horizon_evidence_refs(horizon: BoundedAdvancementHorizon) -> tuple[str, ...
     return tuple(item.evidence_ref for item in horizon.evidence_snapshot_refs)
 
 
-def _base_reason(t, candidate_resolution, goal, horizon, evidence_refs, expected_family: str) -> UnclassifiedReason | None:
-    if t.candidate_resolution_id != candidate_resolution.resolution_id:
-        return "candidate_resolution_identity_mismatch"
+def _base_reason(t, goal, horizon, evidence_refs, expected_family: str) -> UnclassifiedReason | None:
     if t.goal_establishment_id != goal.goal_establishment_id:
         return "goal_identity_mismatch"
     if t.horizon_id != horizon.horizon_id:
@@ -218,7 +211,6 @@ def _conclude(req: RequirementStanding, avail: AvailabilityStanding, coverage: C
 
 
 def project_operational_realization_need(
-    candidate_resolution: GoalConsiderationCandidateResolution,
     goal: BoundedOperatorGoalEstablishment,
     horizon: BoundedAdvancementHorizon,
     requirements: Iterable[OperationalRealizationRequirementTestimony] = (),
@@ -230,12 +222,12 @@ def project_operational_realization_need(
     buckets: dict[str, list[OperationalRealizationNeedProjectionItem]] = {k: [] for k in ("established", "unsupported", "unknown", "conflicting", "unclassified_here", "unclassified")}
     used: set[str] = set()
     for req in reqs:
-        reason = _base_reason(req, candidate_resolution, goal, horizon, evidence_refs, "operational_realization_requirement")
+        reason = _base_reason(req, goal, horizon, evidence_refs, "operational_realization_requirement")
         matches = [s for s in standing_items if s.bounded_realization_component_ref == req.bounded_realization_component_ref and s.required_transformation_ref == req.required_transformation_ref and s.applicable_scope_ref == req.applicable_scope_ref]
         standing = matches[0] if matches else None
         if standing is not None:
             used.add(standing.testimony_ref)
-            reason = reason or _base_reason(standing, candidate_resolution, goal, horizon, evidence_refs, "operational_realization_standing") or _join_reason(req, standing)
+            reason = reason or _base_reason(standing, goal, horizon, evidence_refs, "operational_realization_standing") or _join_reason(req, standing)
         else:
             reason = reason or "not_standing_component"
         need = None if reason else _conclude(req.requirement_standing, standing.availability_standing, standing.coverage_standing, standing.blocker_family_ownership)  # type: ignore[union-attr]
@@ -260,10 +252,10 @@ def project_operational_realization_need(
     for standing in standing_items:
         if standing.testimony_ref in used:
             continue
-        reason = _base_reason(standing, candidate_resolution, goal, horizon, evidence_refs, "operational_realization_standing") or "not_requirement_component"
+        reason = _base_reason(standing, goal, horizon, evidence_refs, "operational_realization_standing") or "not_requirement_component"
         buckets["unclassified"].append(OperationalRealizationNeedProjectionItem("", standing.testimony_ref, standing.bounded_realization_component_ref, standing.required_transformation_ref, standing.applicable_scope_ref, standing.owning_stage, None, None, None, None, None, None, None, (standing.evidence_ref,), reason))
-    payload = {"candidate_resolution": candidate_resolution.resolution_id, "goal": goal.goal_establishment_id, "horizon": horizon.horizon_id, "requirements": [r.testimony_ref for r in reqs], "standings": [s.testimony_ref for s in standing_items]}
-    return OperationalRealizationNeedProjection(_stable("operational-realization-need-projection", payload), candidate_resolution.resolution_id, goal.goal_establishment_id, horizon.horizon_id, evidence_refs, *(tuple(buckets[k]) for k in ("established", "unsupported", "unknown", "conflicting", "unclassified_here", "unclassified")))
+    payload = {"goal": goal.goal_establishment_id, "horizon": horizon.horizon_id, "requirements": [r.testimony_ref for r in reqs], "standings": [s.testimony_ref for s in standing_items]}
+    return OperationalRealizationNeedProjection(_stable("operational-realization-need-projection", payload), goal.goal_establishment_id, horizon.horizon_id, evidence_refs, *(tuple(buckets[k]) for k in ("established", "unsupported", "unknown", "conflicting", "unclassified_here", "unclassified")))
 
 
 def operational_realization_need_projection_json(projection: OperationalRealizationNeedProjection) -> dict[str, object]:

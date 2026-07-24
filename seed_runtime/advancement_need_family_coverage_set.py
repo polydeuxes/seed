@@ -38,7 +38,6 @@ BOUNDARY_NOTES: tuple[str, ...] = (
 class FamilyBoundedCandidateSpace:
     family: NeedFamily
     candidate_space_id: str
-    candidate_resolution_id: str
     goal_establishment_id: str
     horizon_id: str
     native_projection_id: str
@@ -56,7 +55,6 @@ class ExplicitComponentExclusion:
 class FamilyCoverageTestimony:
     family: NeedFamily
     testimony_id: str
-    candidate_resolution_id: str
     goal_establishment_id: str
     horizon_id: str
     native_projection_id: str
@@ -84,7 +82,6 @@ class AdvancementNeedFamilyCoverageRecord:
     family: NeedFamily
     scope_disposition: ScopeDisposition
     coverage_standing: CoverageStanding
-    candidate_resolution_id: str
     goal_establishment_id: str
     horizon_id: str
     native_projection_id: str = ""
@@ -103,7 +100,6 @@ class AdvancementNeedFamilyCoverageRecord:
 class AdvancementNeedFamilyCoverageSet:
     coverage_set_id: str
     artifact_type: str
-    candidate_resolution_id: str
     goal_establishment_id: str
     horizon_id: str
     family_records: frozenset[AdvancementNeedFamilyCoverageRecord]
@@ -162,7 +158,6 @@ def _identity_conflicts(
 ) -> tuple[FamilyCoverageIdentityConflict, ...]:
     conflicts: list[FamilyCoverageIdentityConflict] = []
     expected = {
-        "candidate_resolution_identity_mismatch": horizon.candidate_resolution_id,
         "goal_identity_mismatch": horizon.goal_establishment_id,
         "horizon_identity_mismatch": horizon.horizon_id,
     }
@@ -170,7 +165,6 @@ def _identity_conflicts(
         if actuals is None:
             continue
         values = (
-            actuals.candidate_resolution_id,
             actuals.goal_establishment_id,
             actuals.horizon_id,
         )
@@ -255,8 +249,7 @@ def assemble_advancement_need_family_coverage_set(
                     family,
                     "excluded",
                     "not_evaluated",
-                    horizon.candidate_resolution_id,
-                    horizon.goal_establishment_id,
+                                horizon.goal_establishment_id,
                     horizon.horizon_id,
                     horizon_exclusion_reason=exclusion_reason,
                 )
@@ -272,8 +265,7 @@ def assemble_advancement_need_family_coverage_set(
                 family,
                 scope,
                 standing,
-                horizon.candidate_resolution_id,
-                horizon.goal_establishment_id,
+                        horizon.goal_establishment_id,
                 horizon.horizon_id,
                 native_projection_id=(
                     space.native_projection_id
@@ -327,7 +319,6 @@ def assemble_advancement_need_family_coverage_set(
             {"horizon": horizon.horizon_id, "records": sorted(payload)},
         ),
         "AdvancementNeedFamilyCoverageSet",
-        horizon.candidate_resolution_id,
         horizon.goal_establishment_id,
         horizon.horizon_id,
         frozenset(records),

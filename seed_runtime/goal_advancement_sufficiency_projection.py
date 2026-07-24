@@ -57,7 +57,6 @@ class GoalAdvancementSufficiencyProjection:
     artifact_type: str
     need_set_id: str
     coverage_set_id: str
-    candidate_resolution_id: str
     goal_establishment_id: str
     horizon_id: str
     conclusion: SufficiencyConclusion
@@ -120,8 +119,7 @@ def project_goal_advancement_sufficiency(
     """Project bounded sufficiency without ranking, selecting, recording, or mutating."""
     reasons: set[GoalAdvancementSufficiencyReason] = set()
 
-    if (need_set.candidate_resolution_id, need_set.goal_establishment_id, need_set.horizon_id) != (
-        coverage_set.candidate_resolution_id,
+    if (need_set.goal_establishment_id, need_set.horizon_id) != (
         coverage_set.goal_establishment_id,
         coverage_set.horizon_id,
     ):
@@ -191,7 +189,6 @@ def project_goal_advancement_sufficiency(
         "GoalAdvancementSufficiencyProjection",
         need_set.need_set_id,
         coverage_set.coverage_set_id,
-        need_set.candidate_resolution_id,
         need_set.goal_establishment_id,
         need_set.horizon_id,
         conclusion,
