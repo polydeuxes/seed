@@ -49,7 +49,6 @@ def test_closed_choice_ingress_establishes_bounded_goal_with_exact_lineage():
     assert goal.intended_outcome == "Inspect repository"
     assert goal.known_scope == ("inspect_repository",)
     assert binding.exact_choice_set_fingerprint in goal.ingress_lineage
-    assert goal.operator_acceptance_provenance == (binding.token_capture_ref,)
 
 
 def test_refuses_when_no_bounded_orientation_is_supportable():
@@ -92,7 +91,6 @@ def test_admitted_interpretation_for_exact_goal_consumer_establishes_goal_and_pr
     assert selection.selection_result_id in goal.upstream_selection_refs
     assert selection.selected_candidate_ref in goal.upstream_warrant_refs
     assert "contract:local" in goal.upstream_source_material_refs
-    assert "adm:bounded-goal" in goal.operator_acceptance_provenance
     assert goal.reinterpreted_source is False
     assert goal.regenerated_warrants is False
     assert goal.reselected_candidate is False

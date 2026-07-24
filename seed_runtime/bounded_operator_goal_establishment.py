@@ -48,8 +48,6 @@ class BoundedOperatorGoalEstablishment:
     known_scope: tuple[str, ...]
     unresolved_scope: tuple[str, ...]
     stop_conditions: tuple[str, ...]
-    operator_acceptance_provenance: tuple[str, ...]
-    operator_constraints: tuple[str, ...]
     unknowns: tuple[str, ...]
     ambiguities: tuple[str, ...]
     conflicts: tuple[str, ...]
@@ -142,8 +140,6 @@ def establish_bounded_operator_goal_from_closed_choice(
         (binding.bound_option_ref,) if binding.bound_option_ref else (),
         _refs((*unresolved_scope, *unsupported)),
         _refs(stop_conditions),
-        _refs((binding.token_capture_ref,)),
-        (),
         unknowns,
         (),
         conflicts,
@@ -255,7 +251,7 @@ def establish_bounded_operator_goal_from_admitted_interpretation(
         "BoundedOperatorGoalEstablishment", _stable("bounded-operator-goal-establishment", payload),
         admission.artifact_type, admission.admission_id, lineage, state, reason, intended,
         "admitted consumer-local interpretation" if state != "refused" else "none", scope, unresolved,
-        _refs(stop_conditions), upstream_admission_refs, (), unknowns, _refs(proposed_corrections), conflicts,
+        _refs(stop_conditions), unknowns, _refs(proposed_corrections), conflicts,
         _refs(candidate_known_loss), correction_of_goal_ref, True, upstream_source_refs, upstream_warrant_refs,
         upstream_selection_refs, upstream_applicability_refs, upstream_admission_refs, admission.applicability_projection.selected_meaning_snapshot,
     )
