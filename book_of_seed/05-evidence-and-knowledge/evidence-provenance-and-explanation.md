@@ -35,6 +35,9 @@ Attribution, association, attachment, ownership candidate, source-reported blame
 ### 05.Evidence.F — Observability classification is not provenance
 A surface may make a claim, artifact, boundary, output, or relation directly observable; implementation evidence may make a relation reconstructable; constitutional evidence may make a pattern constitutionally inferable; and missing support may remain Unknown. These standings support only their bounded claim forms. They do not establish provenance, full lineage, runtime trace, execution log, producer occurrence, semantic explanation, or upstream constitutional movement without applicable preserved lineage, authority, evidence, confidence limits, Unknowns, and lawful stop.
 
+### 05.Evidence.G — Resolution and visibility are not semantic support
+Reference resolution, linkage, graph adjacency, membership, visibility, and representation labels may establish only the bounded representational relation their responsible method warrants. They do not by themselves establish semantic support, applicability, admission, assertion adoption, truth, or reliance. Any stronger use requires claim-appropriate evidence, provenance, scope, authority, conflicts, limits, and a responsible consumer boundary.
+
 ## Important distinctions
 - provenance represented != provenance verified
 - event reference != occurrence seal
@@ -52,6 +55,7 @@ A surface may make a claim, artifact, boundary, output, or relation directly obs
 - correlation or sequence != causation
 - attribution != responsibility
 - observability classification != provenance
+- reference or linkage resolution != semantic support
 
 ## Representative repository anchors
 - `seed_runtime/evidence.py::Evidence`

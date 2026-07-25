@@ -24,6 +24,12 @@ A constitutional responsibility may consume addressable or translated external m
 ### 01.External.D — Fidelity production through bounded constitutional comparison
 A Fidelity finding is produced only by a bounded comparison that brings constitutional grammar, a bounded expectation, and an implementation witness under a declared examined seam or scope. The comparison must preserve the constitutional subject, bounded expectation, implementation witness, evidence and provenance, authority boundary, preserved invariants, observed erasure, invention, mutation, or relocation of authority, conflicts, Unknowns, and lawful stopping point. Within that scope it may produce qualitative standing that the witness is faithful within scope, an unfaithful boundary crossing, crossing or mixed, or Unknown. It must not become global certification, completion declaration, implementation owner map, score, registry, runtime engine, public diagnostic, automatic correction authority, or proof of external effect. A Fidelity-shaped artifact does not prove that this bounded comparison responsibility occurred; production standing depends on the comparison boundary and its preserved inputs. This production boundary is distinct from the cross-seam consumer responsibility to preserve limits supplied by an already-produced Fidelity finding.
 
+### 01.External.E — Measurement and recurrence do not establish meaning
+A declared measurement may establish exact equality, counting, recurrence, prefix occurrence, the result of a declared blank predicate, or adjacency within its measurement boundary. It does not thereby establish structural, grammatical, or semantic meaning. A recurrence assertion must disclose the representation or projection examined, the rule by which equivalence or sameness was determined, and the bounded scope within which occurrences were counted. A consumer's purpose separately governs lawful reliance, acceptable aggregation, and acceptable representational loss; purpose is not therefore a required coordinate of every exact count.
+
+### 01.External.F — Candidate production remains attributed
+A candidate must preserve its actual producer, source role, formation occurrence, scope, authority limits, and provenance. A Seed-produced candidate, operator-supplied candidate testimony, and external-source candidate or rule testimony may therefore have different production standing without closing the possible source roles into an exhaustive taxonomy. Consuming, comparing, transporting, or re-presenting candidate material does not relocate its production or establish a missing formation occurrence.
+
 ## Important distinctions
 - source grammar translated for use != Seed-native grammar
 - external grammar != constitutional grammar
@@ -33,6 +39,8 @@ A Fidelity finding is produced only by a bounded comparison that brings constitu
 - attributed representation != adopted law
 - attachment != adoption
 - provider confidence != repository authority
+- measurement != structural, grammatical, or semantic meaning
+- candidate carriage or consumption != candidate production
 
 ## Representative repository anchors
 - `seed_runtime/candidate_external_grammar.py::CandidateExternalGrammarSet`

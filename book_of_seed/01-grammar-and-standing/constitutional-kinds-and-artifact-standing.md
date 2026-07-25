@@ -18,6 +18,15 @@ A produced, preserved, rendered, indexed, or otherwise reachable artifact may be
 ### 01.Standing.B — Constitutional kind labels are not ontology closure
 A kind label, artifact form, characterization category, dataclass name, concordance entry, inventory row, or recurring report type may preserve a bounded standing distinction for the subject and consumer it names. It does not close Seed's constitutional ontology, make all similarly named materials equivalent, establish a mandatory artifact grammar, or supply kind-specific production authority without preserved evidence, provenance, scope, confidence limits, Unknowns, and the applicable establishment boundary.
 
+### 01.Standing.C — Constructed behavior does not confer standing
+Compiled behavior, artifact construction, stable serialization, and compatibility evidence may witness what an observer, projection, adapter, or other constructed mechanism does within a bounded implementation seam. They do not establish the constitutional standing suggested by an artifact's name, output vocabulary, or observed behavior. Such standing still requires its own subject, responsible producer, evidence, scope, authority, occurrence, limits, and kind-specific establishment boundary.
+
+### 01.Standing.D — Multiplicity does not establish a collective
+Co-presence or multiplicity does not by itself establish membership, collection standing, relation, topology, ordering, selection, priority, focus, shared purpose, or higher-order identity. Each stronger assertion requires its own bounded subject and warrant; preserving several participant identities does not silently create or mutate a collective subject.
+
+### 01.Standing.E — Relations have bounded standing
+A relation is its own bounded claim subject. Relation standing must preserve its participants and their roles, the relation assertion, evidence, scope, producer, consumer and purpose, authority, occurrence, conflicts, and limits. Insufficient evidence for that relation does not establish a strengthened negative relation such as unrelatedness, independence, non-conflict, or absence of dependency. The honest epistemic answer may remain Unknown, but that answer does not establish that a constitutional Unknown standing was responsibly produced. Later evidence may revise relation standing without mutating participant identity.
+
 ## Important distinctions
 - occurrence evidence may be local to a producing or observing boundary and absent from the resulting artifact
 - represented provenance != verified producer occurrence
@@ -30,6 +39,9 @@ A kind label, artifact form, characterization category, dataclass name, concorda
 - concordance entry != constitutional legitimacy
 - new downstream subject != upstream subject re-established
 - consumer-local standing != inherited producer standing
+- constructed behavior != constitutional standing
+- multiplicity != collective standing
+- insufficient relation evidence != negative relation
 
 ## Representative repository anchors
 - `seed_runtime/inquiry_artifacts.py::InquiryArtifactVisibility`
