@@ -14,8 +14,6 @@ Refusal, policy blocks, failed preconditions, and requests for clarification rem
 - policy block != missing capability
 - request for clarification != abandonment
 
-## Representative repository anchors
-
 ## Counterexamples or failure modes
 - Silently dropping a prohibited request instead of preserving the reason.
 - Calling lack of approval a tool failure.

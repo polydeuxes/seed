@@ -22,8 +22,6 @@ An access state, visible route, available artifact, capability candidate, catalo
 - precondition report != execution result
 - passing constraint != complete authority
 
-## Representative repository anchors
-
 ## Counterexamples or failure modes
 - Recording that approval is required as though approval was granted.
 - Treating a passing schema validation as sufficient execution authority.
