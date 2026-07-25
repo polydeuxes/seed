@@ -75,7 +75,6 @@ Recording may preserve already produced measurement testimony and already produc
 ## Representative repository anchors
 - `seed_runtime/events.py::EventLedger`
 - `seed_runtime/observations.py::ObservationIngestor`
-- `seed_runtime/fact_extraction.py`
 
 ## Counterexamples or failure modes
 - Assuming all ledger payloads become facts during replay.

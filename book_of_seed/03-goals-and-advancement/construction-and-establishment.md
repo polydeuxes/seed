@@ -18,7 +18,6 @@ Construction produces a representation; establishment binds admitted operator me
 
 ## Representative repository anchors
 - `seed_runtime/bounded_operator_goal_establishment.py::BoundedOperatorGoalEstablishment`
-- `seed_runtime/operator_expression_interpretation.py`
 - `tests/test_bounded_operator_goal_establishment.py`
 
 ## Counterexamples or failure modes

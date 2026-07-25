@@ -29,9 +29,6 @@ Seed may analyze source packets, support paths, source roles, boundary mismatche
 - analytical competence != adjudicative authority
 
 ## Representative repository anchors
-- `seed_runtime/operator_authority_scope_binding.py`
-- `seed_runtime/policy.py::PolicyGate`
-- `tests/test_internal_llm_authority_excision.py`
 
 ## Counterexamples or failure modes
 - Allowing inferred intent to widen target or impact.
