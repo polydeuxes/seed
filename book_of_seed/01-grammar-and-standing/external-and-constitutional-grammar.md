@@ -36,8 +36,6 @@ A Fidelity finding is produced only by a bounded comparison that brings constitu
 
 ## Representative repository anchors
 - `seed_runtime/candidate_external_grammar.py::CandidateExternalGrammarSet`
-- `seed_runtime/representation_grammar_recovery.py::RecoveredRepresentationGrammar`
-- `tests/test_representation_grammar_recovery.py`
 
 ## Counterexamples or failure modes
 - Treating a provider's field names as Seed-native kinds.

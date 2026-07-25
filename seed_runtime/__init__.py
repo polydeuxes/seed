@@ -292,33 +292,8 @@ __all__ = [
     "build_projection_integrity_summary",
     "InputInspector",
     "ToolNeed",
-    "AttributedGrammarClaim",
-    "CandidateRecoveryMaterial",
-    "FutureRepresentationGrammarBindingHandoff",
-    "LexicalSupportReference",
-    "RecoveredRepresentationGrammar",
-    "RepresentationGrammarComparison",
-    "RepresentationGrammarRecoveryProjection",
-    "RepresentationGrammarSourceMaterialRef",
-    "format_representation_grammar_recovery",
-    "recover_representation_grammars",
-    "representation_grammar_recovery_json",
     "format_bounded_constitutional_question",
 ]
-
-from .representation_grammar_recovery import (
-    AttributedGrammarClaim,
-    CandidateRecoveryMaterial,
-    FutureRepresentationGrammarBindingHandoff,
-    LexicalSupportReference,
-    RecoveredRepresentationGrammar,
-    RepresentationGrammarComparison,
-    RepresentationGrammarRecoveryProjection,
-    RepresentationGrammarSourceMaterialRef,
-    format_representation_grammar_recovery,
-    recover_representation_grammars,
-    representation_grammar_recovery_json,
-)
 
 from .bounded_constitutional_question import (
     format_bounded_constitutional_question,
