@@ -18,12 +18,12 @@ A bounded question may establish the identity, provenance, scope, evidence deman
 An operator ask, prompt phrase, uncertainty statement, reformulation, or presentation label may create attributed testimony or inquiry pressure only. Seed may initiate internal inquiry after a bounded translation preserves identity, source, scope, evidence demand, authority limit, uncertainty, and lawful stop. That translation does not make the operator's wording repository knowledge, assign universal inquiry ownership, retire neighboring questions, establish an answer, or authorize investigation beyond the translated boundary.
 
 ### 04.Question.C — Question relations are local and non-collapsing
-A relation involving inquiry pressure, an inquiry need, a bounded question, examination work, a finding, an answer, completion, communication, or later re-entry exists only where the exact source standing, target standing, crossing evidence or warrant, authority boundary, and surviving limits are preserved for that local relation. Naming several such standings in one report, graph, implementation surface, or sequence does not establish a canonical node inventory, universal pipeline, constitutional ordering, or missing edge. No relation carries stronger answer, sufficiency, authority, completion, retirement, receipt, reliance, correction, reopening, execution, or mutation standing unless that stronger standing is separately established.
+A relation involving inquiry pressure, an inquiry need, a bounded question, examination work, a finding, an answer, completion, communication, or later re-entry exists only where the exact source standing, target standing, crossing evidence or warrant, authority boundary, and surviving limits are preserved for that local relation. Naming several such standings in one report, graph, implementation surface, or sequence does not establish a canonical node inventory, universal pipeline, constitutional ordering, or missing edge. No relation carries stronger answer, evidentiary warrant, authority, completion, retirement, receipt, reliance, correction, reopening, execution, or mutation standing unless that stronger standing is separately established.
 
 External grammar cannot inject an internal question. Operator material may remain testimony, pressure, goals, constraints, corrections, or responses; Seed owns the constitutional act that forms any internal question from that material. An implementation taxonomy such as `QuestionFamily`, an exposed inventory, exact family label, dispatch map, or presentation surface is realization testimony only. It may support compatibility routing or bounded implementation eligibility, but it does not become Seed's constitutional question taxonomy or establish applicability to a goal by existence.
 
 ### 04.Question.D — Questions constrain evidence demand without becoming lenses
-A bounded question may require dimensions, observation boundaries, and lawful stop conditions, and may constrain which lens family or examination method is applicable. It does not by itself force one canonical lens, supply the evidence it demands, or make a lens output into an answer. Some questions may be answered or lawfully stopped from already-preserved evidence without constructing a new lens; others may require selecting, composing, or requesting a bounded examination method. Question applicability, lens applicability, and evidence sufficiency remain separate standings that must be preserved at the local boundary.
+A bounded question may require dimensions, observation boundaries, and lawful stop conditions, and may constrain which lens family or examination method is applicable. It does not by itself force one canonical lens, supply the evidence it demands, or make a lens output into an answer. Some questions may be answered or lawfully stopped from already-preserved evidence without constructing a new lens; others may require selecting, composing, or requesting a bounded examination method. Question applicability, lens applicability, and the evidence warrant required by the question remain separate standings that must be preserved at the local boundary.
 
 ### 04.Question.E — Normal internal questioning is Seed-owned
 The normal constitutional relationship is:
@@ -57,7 +57,7 @@ Preserved Unknowns include the complete executable default dialogue loop, the fu
 - answer request != authority to investigate without bounds
 - question != lens
 - question applicability != lens applicability
-- lens applicability != evidence sufficiency
+- lens applicability != evidence warrant for the question
 - Seed-owned act != currently complete realization
 
 ## Representative repository anchors

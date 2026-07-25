@@ -23,8 +23,6 @@ Exact candidate-identity resolution is smaller than selection. A resolver may pr
 ## Representative repository anchors
 - `seed_runtime/advancement_need_consideration_selection.py`
 - `seed_runtime/constitutional_view_selection.py`
-- `seed_runtime/operational_realization_selection.py`
-- `seed_runtime/operator_authority_scope_binding.py`
 
 ## Counterexamples or failure modes
 - Treating a resolved goal identity as Seed-owned goal selection.

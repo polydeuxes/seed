@@ -19,13 +19,13 @@ A produced, preserved, rendered, indexed, or otherwise reachable artifact may be
 A kind label, artifact form, characterization category, dataclass name, concordance entry, inventory row, or recurring report type may preserve a bounded standing distinction for the subject and consumer it names. It does not close Seed's constitutional ontology, make all similarly named materials equivalent, establish a mandatory artifact grammar, or supply kind-specific production authority without preserved evidence, provenance, scope, confidence limits, Unknowns, and the applicable establishment boundary.
 
 ### 01.Standing.C — Constructed behavior does not confer standing
-Compiled behavior, artifact construction, stable serialization, and compatibility evidence may witness what an observer, projection, adapter, or other constructed mechanism does within a bounded implementation seam. They do not establish the constitutional standing suggested by an artifact's name, output vocabulary, or observed behavior. Such standing still requires its own subject, responsible producer, evidence, scope, authority, occurrence, limits, and kind-specific establishment boundary.
+Compiled behavior, artifact construction, stable serialization, and compatibility evidence may witness what an observer, projection, adapter, or other constructed mechanism does within a bounded implementation seam. They do not establish the constitutional standing suggested by an artifact's name, output vocabulary, or observed behavior. Such standing still requires its own subject, responsible producer, evidence, scope, authority, occurrence, limits, and kind-specific production or establishment boundary.
 
 ### 01.Standing.D — Multiplicity does not establish a collective
 Co-presence or multiplicity does not by itself establish membership, collection standing, relation, topology, ordering, selection, priority, focus, shared purpose, or higher-order identity. Each stronger assertion requires its own bounded subject and warrant; preserving several participant identities does not silently create or mutate a collective subject.
 
 ### 01.Standing.E — Relations have bounded standing
-A relation is its own bounded claim subject. Relation standing must preserve its participants and their roles, the relation assertion, evidence, scope, producer, consumer and purpose, authority, occurrence, conflicts, and limits. Insufficient evidence for that relation does not establish a strengthened negative relation such as unrelatedness, independence, non-conflict, or absence of dependency. The honest epistemic answer may remain Unknown, but that answer does not establish that a constitutional Unknown standing was responsibly produced. Later evidence may revise relation standing without mutating participant identity.
+A relation is its own bounded claim subject. A relation claim or standing must preserve each applicable constitutional dimension, or its explicit Unknown or unresolved standing, including participants and roles, the relation assertion, evidence standing, scope, producer, consumer and purpose, authority, occurrence, conflicts, and limits. Evidence that does not warrant a bounded relation claim does not thereby warrant its negation or an opposing strengthened relation claim such as unrelatedness, independence, non-conflict, not dependent, or absence of dependency. Bounded findings may instead preserve absence, limitation, conflict, non-applicability, unresolved authority, unresolved provenance, or failure to warrant the examined claim. The honest epistemic answer may remain Unknown, but that answer does not establish that a constitutional Unknown standing was responsibly produced; absence of a relation producer does not automatically produce Typed Unknown standing. Candidate relation, relation testimony, and evidence-supported or established relation standing remain distinct. Later evidence may revise relation standing without mutating participant identity.
 
 ## Important distinctions
 - occurrence evidence may be local to a producing or observing boundary and absent from the resulting artifact
@@ -41,12 +41,11 @@ A relation is its own bounded claim subject. Relation standing must preserve its
 - consumer-local standing != inherited producer standing
 - constructed behavior != constitutional standing
 - multiplicity != collective standing
-- insufficient relation evidence != negative relation
+- evidence that does not warrant a relation claim != its negation or an opposing strengthened relation
 
 ## Representative repository anchors
 - `seed_runtime/inquiry_artifacts.py::InquiryArtifactVisibility`
 - `seed_runtime/bounded_operator_goal_establishment.py::BoundedOperatorGoalEstablishment`
-- `seed_runtime/execution_proposals.py::ExecutionProposal`
 
 ## Counterexamples or failure modes
 - Calling any serialized dictionary a constitutional artifact.

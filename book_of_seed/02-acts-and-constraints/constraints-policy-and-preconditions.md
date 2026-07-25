@@ -23,7 +23,6 @@ An access state, visible route, available artifact, capability candidate, catalo
 - passing constraint != complete authority
 
 ## Representative repository anchors
-- `seed_runtime/policy.py::PolicyGate`
 
 ## Counterexamples or failure modes
 - Recording that approval is required as though approval was granted.
