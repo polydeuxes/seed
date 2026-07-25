@@ -16,6 +16,9 @@ Material applicable to a consumer, material admitted to a consumer, and material
 
 A lens output is a bounded representation of what the supplied sources expose under the lens method. It is not automatically the answer to the question that motivated the lens, not proof that the evidence is sufficient for that question, and not recovery of dimensions that the supplied evidence did not preserve. Where required dimensions are absent from the examined material, a lens may make that bounded absence distinguishable; it may not manufacture the missing provenance, authority, occurrence, or standing.
 
+### 01.Uptake.A — New availability does not revise a consumer
+Evidence becoming available does not by itself change any consumer assertion, standing, confidence, reliance, or current result. A revision requires a responsible consumer-local occurrence that lawfully uses the material under the relevant purpose, scope, authority, applicability, admission constraints, conflicts, Unknowns, and temporal limits. Availability, applicability, admission, consumption, uptake, reliance, and standing change remain distinct, but the Book requires neither a universal order among them nor a separately produced admission occurrence when only responsible consumption is evidenced. An upstream producer owns its attributed production and availability testimony, not universal delivery or any consumer's applicability, admission, uptake, reliance, or downstream revision. One consumer's uptake, assertion, or reliance does not establish another's or transfer automatically to another purpose or boundary.
+
 ## Important distinctions
 - lens != constitutional road
 - lens != evidence
@@ -37,6 +40,8 @@ A lens output is a bounded representation of what the supplied sources expose un
 - constitutional uptake != universal stage
 - artifact fields read != assertion adopted
 - consumer-local warrant may coexist with weaker upstream standing
+- newly available evidence != consumer-local uptake or revision
+- one consumer's uptake or reliance != another consumer's uptake or reliance
 
 ## Representative repository anchors
 - `seed_runtime/constitutional_view_selection.py`
