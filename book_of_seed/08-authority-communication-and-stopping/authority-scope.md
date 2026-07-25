@@ -28,8 +28,6 @@ Seed may analyze source packets, support paths, source roles, boundary mismatche
 - internal recommendation != authority grant
 - analytical competence != adjudicative authority
 
-## Representative repository anchors
-
 ## Counterexamples or failure modes
 - Allowing inferred intent to widen target or impact.
 - Treating a recorded approval identifier as transferable authority.
