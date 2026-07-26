@@ -31,11 +31,11 @@ def test_sensing_remembering_trajectory_learning_invariants_are_canonical():
         assert invariant in text
 
 
-def test_need_gap_and_capability_demand_invariants_are_canonical():
+def test_demand_gap_and_capability_demand_invariants_are_canonical():
     text = _read("book_of_seed/03-goals-and-advancement/needs-and-opened-movement.md")
 
     required = [
-        "“Need” is the current implementation noun for the bounded Demand subject represented locally",
+        "The current goal-advancement implementation represents bounded Demand standing directly through explicitly local Demand-family artifacts",
         "Demand established does not open movement",
         "Demand standing must remain recoverable",
         "Establishment establishes bounded required-result standing",

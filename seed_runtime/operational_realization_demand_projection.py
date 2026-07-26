@@ -1,4 +1,4 @@
-"""Read-only operational-realization need projection from explicit family testimony."""
+"""Read-only operational-realization demand projection from explicit family testimony."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ CoverageStanding = Literal["complete_for_horizon", "partial", "unknown", "confli
 BlockerFamilyOwnership = Literal["operational_realization", "authority", "clarification", "inquiry", "generic", "unknown", "conflicting"]
 ScopeApplicability = Literal["applicable", "outside_current_scope", "unknown", "conflicting"]
 HorizonMateriality = Literal["material", "not_material", "unknown", "conflicting"]
-NeedStanding = Literal["established", "unsupported", "unknown", "conflicting", "unclassified_here"]
+OperationalRealizationDemandStanding = Literal["established", "unsupported", "unknown", "conflicting", "unclassified_here"]
 UnclassifiedReason = Literal[
     "goal_identity_mismatch",
     "horizon_identity_mismatch",
@@ -32,11 +32,11 @@ UnclassifiedReason = Literal[
 ]
 
 BOUNDARY_NOTES: tuple[str, ...] = (
-    "OperationalRealizationNeedProjection consumes only explicit operational-realization requirement and standing testimony.",
+    "OperationalRealizationDemandProjection consumes only explicit operational-realization requirement and standing testimony.",
     "Requirement standing, realization-family availability standing, realization-family coverage standing, blocker-family ownership, scope applicability, and horizon materiality remain separate dimensions.",
-    "Unavailability establishes need only when coverage is complete for the bounded horizon and the deficiency is owned by the operational-realization family.",
-    "No selected realization, no supporting candidate observed, one candidate blocked, reachability blocked, missing selection, failed implementation, authority failure, and downstream silence do not by themselves establish realization-family unavailability or need.",
-    "Operational realization need established is not realization selection, warrant, representation translation, invocation preparation, authority request, authorization, execution, recording, event-ledger writing, or cluster mutation.",
+    "Unavailability establishes demand only when coverage is complete for the bounded horizon and the deficiency is owned by the operational-realization family.",
+    "No selected realization, no supporting candidate observed, one candidate blocked, reachability blocked, missing selection, failed implementation, authority failure, and downstream silence do not by themselves establish realization-family unavailability or demand.",
+    "Operational realization demand established is not realization selection, warrant, representation translation, invocation preparation, authority request, authorization, execution, recording, event-ledger writing, or cluster mutation.",
 )
 
 
@@ -88,7 +88,7 @@ class OperationalRealizationStandingTestimony:
 
 
 @dataclass(frozen=True)
-class OperationalRealizationNeedProjectionItem:
+class OperationalRealizationDemandProjectionItem:
     requirement_testimony_ref: str
     standing_testimony_ref: str
     bounded_realization_component_ref: str
@@ -101,23 +101,23 @@ class OperationalRealizationNeedProjectionItem:
     blocker_family_ownership: BlockerFamilyOwnership | None
     scope_applicability: ScopeApplicability | None
     horizon_materiality: HorizonMateriality | None
-    need_standing: NeedStanding | None
+    operational_realization_demand_standing: OperationalRealizationDemandStanding | None
     evidence_refs: tuple[str, ...]
     unclassified_reason: UnclassifiedReason | None = None
 
 
 @dataclass(frozen=True)
-class OperationalRealizationNeedProjection:
+class OperationalRealizationDemandProjection:
     projection_id: str
     goal_establishment_id: str
     horizon_id: str
     evidence_refs: tuple[str, ...]
-    established: tuple[OperationalRealizationNeedProjectionItem, ...]
-    unsupported: tuple[OperationalRealizationNeedProjectionItem, ...]
-    unknown: tuple[OperationalRealizationNeedProjectionItem, ...]
-    conflicting: tuple[OperationalRealizationNeedProjectionItem, ...]
-    unclassified_here: tuple[OperationalRealizationNeedProjectionItem, ...]
-    unclassified: tuple[OperationalRealizationNeedProjectionItem, ...]
+    established: tuple[OperationalRealizationDemandProjectionItem, ...]
+    unsupported: tuple[OperationalRealizationDemandProjectionItem, ...]
+    unknown: tuple[OperationalRealizationDemandProjectionItem, ...]
+    conflicting: tuple[OperationalRealizationDemandProjectionItem, ...]
+    unclassified_here: tuple[OperationalRealizationDemandProjectionItem, ...]
+    unclassified: tuple[OperationalRealizationDemandProjectionItem, ...]
     selects_realization: bool = False
     warrants_realization: bool = False
     translates_representation: bool = False
@@ -180,7 +180,7 @@ def _join_reason(req: OperationalRealizationRequirementTestimony, standing: Oper
     return None
 
 
-def _conclude(req: RequirementStanding, avail: AvailabilityStanding, coverage: CoverageStanding, owner: BlockerFamilyOwnership) -> NeedStanding:
+def _conclude(req: RequirementStanding, avail: AvailabilityStanding, coverage: CoverageStanding, owner: BlockerFamilyOwnership) -> OperationalRealizationDemandStanding:
     if req == "not_required":
         return "unsupported"
     if req == "unknown":
@@ -210,16 +210,16 @@ def _conclude(req: RequirementStanding, avail: AvailabilityStanding, coverage: C
     return "unknown"
 
 
-def project_operational_realization_need(
+def project_operational_realization_demand(
     goal: BoundedOperatorGoalEstablishment,
     horizon: BoundedAdvancementHorizon,
     requirements: Iterable[OperationalRealizationRequirementTestimony] = (),
     standings: Iterable[OperationalRealizationStandingTestimony] = (),
-) -> OperationalRealizationNeedProjection:
+) -> OperationalRealizationDemandProjection:
     reqs = tuple(requirements)
     standing_items = tuple(standings)
     evidence_refs = _horizon_evidence_refs(horizon)
-    buckets: dict[str, list[OperationalRealizationNeedProjectionItem]] = {k: [] for k in ("established", "unsupported", "unknown", "conflicting", "unclassified_here", "unclassified")}
+    buckets: dict[str, list[OperationalRealizationDemandProjectionItem]] = {k: [] for k in ("established", "unsupported", "unknown", "conflicting", "unclassified_here", "unclassified")}
     used: set[str] = set()
     for req in reqs:
         reason = _base_reason(req, goal, horizon, evidence_refs, "operational_realization_requirement")
@@ -230,8 +230,8 @@ def project_operational_realization_need(
             reason = reason or _base_reason(standing, goal, horizon, evidence_refs, "operational_realization_standing") or _join_reason(req, standing)
         else:
             reason = reason or "not_standing_component"
-        need = None if reason else _conclude(req.requirement_standing, standing.availability_standing, standing.coverage_standing, standing.blocker_family_ownership)  # type: ignore[union-attr]
-        item = OperationalRealizationNeedProjectionItem(
+        demand = None if reason else _conclude(req.requirement_standing, standing.availability_standing, standing.coverage_standing, standing.blocker_family_ownership)  # type: ignore[union-attr]
+        item = OperationalRealizationDemandProjectionItem(
             req.testimony_ref,
             standing.testimony_ref if standing else "",
             req.bounded_realization_component_ref,
@@ -244,19 +244,19 @@ def project_operational_realization_need(
             None if reason or standing is None else standing.blocker_family_ownership,
             None if reason else req.scope_applicability,
             None if reason else req.horizon_materiality,
-            need,
+            demand,
             (req.evidence_ref,) + ((standing.evidence_ref,) if standing else ()),
             reason,
         )
-        buckets[need or "unclassified"].append(item)
+        buckets[demand or "unclassified"].append(item)
     for standing in standing_items:
         if standing.testimony_ref in used:
             continue
         reason = _base_reason(standing, goal, horizon, evidence_refs, "operational_realization_standing") or "not_requirement_component"
-        buckets["unclassified"].append(OperationalRealizationNeedProjectionItem("", standing.testimony_ref, standing.bounded_realization_component_ref, standing.required_transformation_ref, standing.applicable_scope_ref, standing.owning_stage, None, None, None, None, None, None, None, (standing.evidence_ref,), reason))
+        buckets["unclassified"].append(OperationalRealizationDemandProjectionItem("", standing.testimony_ref, standing.bounded_realization_component_ref, standing.required_transformation_ref, standing.applicable_scope_ref, standing.owning_stage, None, None, None, None, None, None, None, (standing.evidence_ref,), reason))
     payload = {"goal": goal.goal_establishment_id, "horizon": horizon.horizon_id, "requirements": [r.testimony_ref for r in reqs], "standings": [s.testimony_ref for s in standing_items]}
-    return OperationalRealizationNeedProjection(_stable("operational-realization-need-projection", payload), goal.goal_establishment_id, horizon.horizon_id, evidence_refs, *(tuple(buckets[k]) for k in ("established", "unsupported", "unknown", "conflicting", "unclassified_here", "unclassified")))
+    return OperationalRealizationDemandProjection(_stable("operational-realization-demand-projection", payload), goal.goal_establishment_id, horizon.horizon_id, evidence_refs, *(tuple(buckets[k]) for k in ("established", "unsupported", "unknown", "conflicting", "unclassified_here", "unclassified")))
 
 
-def operational_realization_need_projection_json(projection: OperationalRealizationNeedProjection) -> dict[str, object]:
+def operational_realization_demand_projection_json(projection: OperationalRealizationDemandProjection) -> dict[str, object]:
     return projection.to_json_dict()

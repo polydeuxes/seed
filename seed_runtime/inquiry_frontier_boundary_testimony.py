@@ -1,7 +1,7 @@
 """Read-only inquiry frontier-boundary testimony preservation.
 
 This module preserves implementation-defined frontier-boundary clauses for one
-exact selected inquiry need. Its clause-family vocabulary is realization
+exact selected inquiry demand. Its clause-family vocabulary is realization
 compatibility testimony, not canonical Book grammar. It does not assemble a
 frontier, formulate a question, open inquiry, authorize access, execute, record,
 write the event ledger, or mutate cluster state.
@@ -14,7 +14,7 @@ from hashlib import sha256
 import json
 from typing import Iterable, Literal
 
-from seed_runtime.advancement_need_consideration_selection import AdvancementNeedConsiderationSelection
+from seed_runtime.goal_advancement_demand_consideration_selection import GoalAdvancementDemandConsiderationSelection
 
 ClauseFamily = Literal[
     "included_excluded_inquiry_scope",
@@ -30,7 +30,7 @@ FamilyDisposition = Literal["inquiry", "adjacent_family", "mixed", "unclassified
 OwnershipBasis = Literal["stage_producer_lineage", "adapter_lineage", "unowned"]
 
 BOUNDARY_NOTES: tuple[str, ...] = (
-    "InquiryFrontierBoundaryTestimony preserves unordered implementation-defined clauses for one exact selected inquiry need.",
+    "InquiryFrontierBoundaryTestimony preserves unordered implementation-defined clauses for one exact selected inquiry demand.",
     "Clause-family labels and opaque references remain realization testimony and do not establish constitutional subjects or Book law.",
     "Goal-horizon scope is not inquiry scope; visible evidence and caller-supplied territory references do not establish eligibility or selected-source standing.",
     "Uncertainty subject is not sufficient-resolution condition; stale or unavailable evidence is not a stopping condition.",
@@ -65,12 +65,12 @@ class InquiryFrontierBoundaryClause:
     clause_ref: str
     clause_family: ClauseFamily
     clause_text: str
-    selected_need_reference_id: str
+    selected_inquiry_demand_reference_id: str
     native_projection_id: str
     native_lineage: tuple[str, ...]
-    need_set_id: str
-    advancement_need_selection_id: str
-    selected_need_goal_id: str
+    goal_advancement_demand_set_id: str
+    goal_advancement_demand_selection_id: str
+    selected_inquiry_demand_goal_id: str
     horizon_id: str
     source_testimony_ref: str
     bounded_uncertainty_component_ref: str
@@ -95,12 +95,12 @@ class InquiryFrontierBoundaryClause:
 @dataclass(frozen=True)
 class InquiryFrontierBoundaryTestimony:
     testimony_id: str
-    selected_need_reference_id: str | None
+    selected_inquiry_demand_reference_id: str | None
     native_projection_id: str | None
     native_lineage: tuple[str, ...]
-    need_set_id: str
-    advancement_need_selection_id: str
-    selected_need_goal_id: str
+    goal_advancement_demand_set_id: str
+    goal_advancement_demand_selection_id: str
+    selected_inquiry_demand_goal_id: str
     horizon_id: str
     source_testimony_ref: str | None
     bounded_uncertainty_component_ref: str | None
@@ -140,18 +140,18 @@ def _ownership(item: FrontierBoundaryClauseInput) -> OwnershipBasis:
 
 
 def preserve_inquiry_frontier_boundary_testimony(
-    selected_need: AdvancementNeedConsiderationSelection,
+    selected_demand: GoalAdvancementDemandConsiderationSelection,
     clauses: Iterable[FrontierBoundaryClauseInput] = (),
 ) -> InquiryFrontierBoundaryTestimony:
-    """Preserve unordered compatibility clauses for the exact selected inquiry need."""
+    """Preserve unordered compatibility clauses for the exact selected inquiry demand."""
     clause_inputs = tuple(clauses)
-    ref = selected_need.selected_reference if selected_need.selection_state == "selected" else None
+    ref = selected_demand.selected_reference if selected_demand.selection_state == "selected" else None
     if ref is None or ref.family != "inquiry":
-        payload = {"selection": selected_need.selection_id, "clauses": [c.clause_ref for c in clause_inputs], "state": "no-selected-inquiry"}
+        payload = {"selection": selected_demand.selection_id, "clauses": [c.clause_ref for c in clause_inputs], "state": "no-selected-inquiry"}
         return InquiryFrontierBoundaryTestimony(
             _stable("inquiry-frontier-boundary-testimony", payload),
-            None, None, (), selected_need.reference_set_id, selected_need.need_set_id,
-            "", selected_need.selection_id, selected_need.selected_goal_id, selected_need.horizon_id, None, None, None, (), (),
+            None, None, (), selected_demand.reference_set_id, selected_demand.goal_advancement_demand_set_id,
+            "", selected_demand.selection_id, selected_demand.selected_goal_id, selected_demand.horizon_id, None, None, None, (), (),
             tuple(c.clause_ref for c in clause_inputs if _ownership(c) == "unowned"),
         )
 
@@ -163,7 +163,7 @@ def preserve_inquiry_frontier_boundary_testimony(
             InquiryFrontierBoundaryClause(
                 item.clause_ref, item.clause_family, item.clause_text,
                 ref.reference_id, ref.native_projection_id, ref.native_lineage,
-                ref.need_set_id, selected_need.selection_id, ref.goal_establishment_id, ref.horizon_id,
+                ref.goal_advancement_demand_set_id, selected_demand.selection_id, ref.goal_establishment_id, ref.horizon_id,
                 source_testimony_ref, component_ref, subject_ref,
                 item.producer_ref, tuple(item.producer_lineage), item.adapter_ref, tuple(item.adapter_lineage), _ownership(item),
                 tuple(item.source_lineage), tuple(item.evidence_classes), tuple(item.provenance_roles),
@@ -171,11 +171,11 @@ def preserve_inquiry_frontier_boundary_testimony(
                 item.clause_standing, item.scope_disposition, item.evidence_currency, item.evidence_availability, item.family_disposition,
             )
         )
-    payload = {"selected_need": ref.reference_id, "native": ref.native_lineage, "clauses": [c.clause_ref for c in clause_inputs]}
+    payload = {"selected_demand": ref.reference_id, "native": ref.native_lineage, "clauses": [c.clause_ref for c in clause_inputs]}
     return InquiryFrontierBoundaryTestimony(
         _stable("inquiry-frontier-boundary-testimony", payload),
         ref.reference_id, ref.native_projection_id, ref.native_lineage,
-        ref.need_set_id, selected_need.selection_id, ref.goal_establishment_id, ref.horizon_id,
+        ref.goal_advancement_demand_set_id, selected_demand.selection_id, ref.goal_establishment_id, ref.horizon_id,
         source_testimony_ref, component_ref, subject_ref, visible_refs, tuple(preserved),
         tuple(c.clause_ref for c in preserved if c.ownership_basis == "unowned"),
     )

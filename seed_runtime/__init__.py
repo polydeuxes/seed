@@ -72,12 +72,14 @@ from seed_runtime.bounded_operator_goal_establishment import (
     establish_bounded_operator_goal_from_closed_choice,
 )
 
-from seed_runtime.goal_advancement_need_set import (
-    GoalAdvancementNeedSet,
-    NeedFamilyAssemblyRecord,
-    NeedFamilyIdentityConflict,
-    assemble_goal_advancement_need_set,
-    goal_advancement_need_set_json,
+from seed_runtime.goal_advancement_demand_set import (
+    GoalAdvancementDemandSet,
+    GoalAdvancementDemandFamily,
+    GoalAdvancementDemandFamilyDisposition,
+    GoalAdvancementDemandFamilyAssemblyRecord,
+    GoalAdvancementDemandFamilyIdentityConflict,
+    assemble_goal_advancement_demand_set,
+    goal_advancement_demand_set_json,
 )
 
 from seed_runtime.bounded_inquiry_frontier import (
@@ -86,19 +88,19 @@ from seed_runtime.bounded_inquiry_frontier import (
     bounded_inquiry_frontier_json,
 )
 
-from seed_runtime.advancement_need_consideration_selection import (
-    AdvancementNeedConsiderationSelection,
-    AdvancementNeedConsiderationEvidence,
-    advancement_need_consideration_selection_json,
-    select_advancement_need_for_consideration,
+from seed_runtime.goal_advancement_demand_consideration_selection import (
+    GoalAdvancementDemandConsiderationSelection,
+    GoalAdvancementDemandConsiderationEvidence,
+    goal_advancement_demand_consideration_selection_json,
+    select_goal_advancement_demand_for_consideration,
 )
 
-from seed_runtime.advancement_need_reference_set import (
-    AdvancementNeedReference,
-    AdvancementNeedReferenceConflict,
-    AdvancementNeedReferenceSet,
-    advancement_need_reference_set_json,
-    project_advancement_need_reference_set,
+from seed_runtime.goal_advancement_demand_reference_set import (
+    GoalAdvancementDemandReference,
+    GoalAdvancementDemandReferenceConflict,
+    GoalAdvancementDemandReferenceSet,
+    goal_advancement_demand_reference_set_json,
+    project_goal_advancement_demand_reference_set,
 )
 
 from seed_runtime.goal_advancement_sufficiency_projection import (
@@ -108,54 +110,54 @@ from seed_runtime.goal_advancement_sufficiency_projection import (
     project_goal_advancement_sufficiency,
 )
 
-from seed_runtime.advancement_need_family_coverage_set import (
-    AdvancementNeedFamilyCoverageRecord,
-    AdvancementNeedFamilyCoverageSet,
+from seed_runtime.goal_advancement_demand_family_coverage_set import (
+    GoalAdvancementDemandFamilyCoverageRecord,
+    GoalAdvancementDemandFamilyCoverageSet,
     ExplicitComponentExclusion,
     FamilyBoundedCandidateSpace,
     FamilyCoverageTestimony,
-    assemble_advancement_need_family_coverage_set,
-    advancement_need_family_coverage_set_json,
+    assemble_goal_advancement_demand_family_coverage_set,
+    goal_advancement_demand_family_coverage_set_json,
 )
 
-from seed_runtime.operational_realization_need_projection import (
-    OperationalRealizationNeedProjection,
-    OperationalRealizationNeedProjectionItem,
+from seed_runtime.operational_realization_demand_projection import (
+    OperationalRealizationDemandProjection,
+    OperationalRealizationDemandProjectionItem,
     OperationalRealizationRequirementTestimony,
     OperationalRealizationStandingTestimony,
-    operational_realization_need_projection_json,
-    project_operational_realization_need,
+    operational_realization_demand_projection_json,
+    project_operational_realization_demand,
 )
 
-from seed_runtime.authority_need_projection import (
-    AuthorityNeedProjection,
-    AuthorityNeedProjectionItem,
+from seed_runtime.authority_demand_projection import (
+    AuthorityDemandProjection,
+    AuthorityDemandProjectionItem,
     AuthorityRequirementTestimony,
     AuthorityStandingTestimony,
-    authority_need_projection_json,
-    project_authority_need,
+    authority_demand_projection_json,
+    project_authority_demand,
 )
 
-from seed_runtime.inquiry_need_projection import (
-    InquiryNeedProjection,
-    InquiryNeedProjectionItem,
+from seed_runtime.inquiry_demand_projection import (
+    InquiryDemandProjection,
+    InquiryDemandProjectionItem,
     RepositoryWorldUncertaintyTestimony,
-    inquiry_need_projection_json,
-    project_inquiry_need,
+    inquiry_demand_projection_json,
+    project_inquiry_demand,
 )
 
-from seed_runtime.clarification_need_projection import (
-    ClarificationNeedProjection,
-    ClarificationNeedProjectionItem,
+from seed_runtime.clarification_demand_projection import (
+    ClarificationDemandProjection,
+    ClarificationDemandProjectionItem,
     OperatorMeaningUncertaintyTestimony,
-    clarification_need_projection_json,
-    project_clarification_need,
+    clarification_demand_projection_json,
+    project_clarification_demand,
 )
 
 from seed_runtime.bounded_advancement_horizon import (
     BoundedAdvancementHorizon,
     EvidenceSnapshotReference,
-    NeedFamilyExclusion,
+    GoalAdvancementDemandFamilyExclusion,
     bounded_advancement_horizon_json,
     establish_bounded_advancement_horizon,
 )
@@ -176,56 +178,58 @@ __all__ = [
     "BoundedInquiryFrontier",
     "assemble_bounded_inquiry_frontier",
     "bounded_inquiry_frontier_json",
-    "AdvancementNeedConsiderationSelection",
-    "AdvancementNeedConsiderationEvidence",
-    "advancement_need_consideration_selection_json",
-    "select_advancement_need_for_consideration",
-    "AdvancementNeedReference",
-    "AdvancementNeedReferenceConflict",
-    "AdvancementNeedReferenceSet",
-    "advancement_need_reference_set_json",
-    "project_advancement_need_reference_set",
+    "GoalAdvancementDemandConsiderationSelection",
+    "GoalAdvancementDemandConsiderationEvidence",
+    "goal_advancement_demand_consideration_selection_json",
+    "select_goal_advancement_demand_for_consideration",
+    "GoalAdvancementDemandReference",
+    "GoalAdvancementDemandReferenceConflict",
+    "GoalAdvancementDemandReferenceSet",
+    "goal_advancement_demand_reference_set_json",
+    "project_goal_advancement_demand_reference_set",
     "GoalAdvancementSufficiencyProjection",
     "GoalAdvancementSufficiencyReason",
     "goal_advancement_sufficiency_projection_json",
     "project_goal_advancement_sufficiency",
-    "AdvancementNeedFamilyCoverageRecord",
-    "AdvancementNeedFamilyCoverageSet",
+    "GoalAdvancementDemandFamilyCoverageRecord",
+    "GoalAdvancementDemandFamilyCoverageSet",
     "ExplicitComponentExclusion",
     "FamilyBoundedCandidateSpace",
     "FamilyCoverageTestimony",
-    "assemble_advancement_need_family_coverage_set",
-    "advancement_need_family_coverage_set_json",
-    "GoalAdvancementNeedSet",
-    "NeedFamilyAssemblyRecord",
-    "NeedFamilyIdentityConflict",
-    "assemble_goal_advancement_need_set",
-    "goal_advancement_need_set_json",
-    "OperationalRealizationNeedProjection",
-    "OperationalRealizationNeedProjectionItem",
+    "assemble_goal_advancement_demand_family_coverage_set",
+    "goal_advancement_demand_family_coverage_set_json",
+    "GoalAdvancementDemandSet",
+    "GoalAdvancementDemandFamily",
+    "GoalAdvancementDemandFamilyDisposition",
+    "GoalAdvancementDemandFamilyAssemblyRecord",
+    "GoalAdvancementDemandFamilyIdentityConflict",
+    "assemble_goal_advancement_demand_set",
+    "goal_advancement_demand_set_json",
+    "OperationalRealizationDemandProjection",
+    "OperationalRealizationDemandProjectionItem",
     "OperationalRealizationRequirementTestimony",
     "OperationalRealizationStandingTestimony",
-    "operational_realization_need_projection_json",
-    "project_operational_realization_need",
-    "AuthorityNeedProjection",
-    "AuthorityNeedProjectionItem",
+    "operational_realization_demand_projection_json",
+    "project_operational_realization_demand",
+    "AuthorityDemandProjection",
+    "AuthorityDemandProjectionItem",
     "AuthorityRequirementTestimony",
     "AuthorityStandingTestimony",
-    "authority_need_projection_json",
-    "project_authority_need",
-    "InquiryNeedProjection",
-    "InquiryNeedProjectionItem",
+    "authority_demand_projection_json",
+    "project_authority_demand",
+    "InquiryDemandProjection",
+    "InquiryDemandProjectionItem",
     "RepositoryWorldUncertaintyTestimony",
-    "inquiry_need_projection_json",
-    "project_inquiry_need",
-    "ClarificationNeedProjection",
-    "ClarificationNeedProjectionItem",
+    "inquiry_demand_projection_json",
+    "project_inquiry_demand",
+    "ClarificationDemandProjection",
+    "ClarificationDemandProjectionItem",
     "OperatorMeaningUncertaintyTestimony",
-    "clarification_need_projection_json",
-    "project_clarification_need",
+    "clarification_demand_projection_json",
+    "project_clarification_demand",
     "BoundedAdvancementHorizon",
     "EvidenceSnapshotReference",
-    "NeedFamilyExclusion",
+    "GoalAdvancementDemandFamilyExclusion",
     "bounded_advancement_horizon_json",
     "establish_bounded_advancement_horizon",
     "BoundedOperatorGoalEstablishment",

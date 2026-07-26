@@ -1,4 +1,4 @@
-"""Read-only assembly of stage-owned need projections for one advancement horizon."""
+"""Read-only assembly of stage-owned demand projections for one advancement horizon."""
 
 from __future__ import annotations
 
@@ -7,34 +7,34 @@ from hashlib import sha256
 import json
 from typing import Literal
 
-from seed_runtime.authority_need_projection import AuthorityNeedProjection
+from seed_runtime.authority_demand_projection import AuthorityDemandProjection
 from seed_runtime.bounded_advancement_horizon import BoundedAdvancementHorizon
-from seed_runtime.clarification_need_projection import ClarificationNeedProjection
-from seed_runtime.inquiry_need_projection import InquiryNeedProjection
-from seed_runtime.operational_realization_need_projection import (
-    OperationalRealizationNeedProjection,
+from seed_runtime.clarification_demand_projection import ClarificationDemandProjection
+from seed_runtime.inquiry_demand_projection import InquiryDemandProjection
+from seed_runtime.operational_realization_demand_projection import (
+    OperationalRealizationDemandProjection,
 )
 
-NeedFamily = Literal[
+GoalAdvancementDemandFamily = Literal[
     "clarification",
     "inquiry",
     "authority",
     "operational_realization",
 ]
-NeedFamilyDisposition = Literal["supplied", "absent", "excluded"]
+GoalAdvancementDemandFamilyDisposition = Literal["supplied", "absent", "excluded"]
 IdentityConflictKind = Literal[
     "goal_identity_mismatch",
     "horizon_identity_mismatch",
 ]
 
 BOUNDARY_NOTES: tuple[str, ...] = (
-    "GoalAdvancementNeedSet preserves supplied stage-owned need projections without reinterpretation.",
-    "Coexisting needs are an unordered set, not a priority order, overall blocker, route, or next action.",
-    "Supplied, absent, and explicitly excluded need families remain distinct.",
-    "The need set is not a sufficiency judgment and does not open inquiry, request authority, select realization, authorize, execute, record, write the event ledger, or mutate cluster state.",
+    "GoalAdvancementDemandSet preserves supplied stage-owned demand projections without reinterpretation.",
+    "Coexisting demands are an unordered set, not a priority order, overall blocker, route, or next action.",
+    "Supplied, absent, and explicitly excluded demand families remain distinct.",
+    "The demand set is not a sufficiency judgment and does not open inquiry, request authority, select realization, authorize, execute, record, write the event ledger, or mutate cluster state.",
 )
 
-FAMILIES: tuple[NeedFamily, ...] = (
+FAMILIES: tuple[GoalAdvancementDemandFamily, ...] = (
     "clarification",
     "inquiry",
     "authority",
@@ -43,8 +43,8 @@ FAMILIES: tuple[NeedFamily, ...] = (
 
 
 @dataclass(frozen=True)
-class NeedFamilyIdentityConflict:
-    family: NeedFamily
+class GoalAdvancementDemandFamilyIdentityConflict:
+    family: GoalAdvancementDemandFamily
     conflict_kind: IdentityConflictKind
     expected: str
     actual: str
@@ -52,34 +52,34 @@ class NeedFamilyIdentityConflict:
 
 
 @dataclass(frozen=True)
-class NeedFamilyAssemblyRecord:
-    family: NeedFamily
-    disposition: NeedFamilyDisposition
+class GoalAdvancementDemandFamilyAssemblyRecord:
+    family: GoalAdvancementDemandFamily
+    disposition: GoalAdvancementDemandFamilyDisposition
     projection: (
-        ClarificationNeedProjection
-        | InquiryNeedProjection
-        | AuthorityNeedProjection
-        | OperationalRealizationNeedProjection
+        ClarificationDemandProjection
+        | InquiryDemandProjection
+        | AuthorityDemandProjection
+        | OperationalRealizationDemandProjection
         | None
     ) = None
     exclusion_reason: str = ""
-    identity_conflicts: tuple[NeedFamilyIdentityConflict, ...] = ()
+    identity_conflicts: tuple[GoalAdvancementDemandFamilyIdentityConflict, ...] = ()
 
 
 @dataclass(frozen=True)
-class GoalAdvancementNeedSet:
-    need_set_id: str
+class GoalAdvancementDemandSet:
+    goal_advancement_demand_set_id: str
     artifact_type: str
     goal_establishment_id: str
     horizon_id: str
-    family_records: frozenset[NeedFamilyAssemblyRecord]
+    family_records: frozenset[GoalAdvancementDemandFamilyAssemblyRecord]
     horizon_unknowns: tuple[str, ...]
     horizon_conflicts: tuple[str, ...]
     horizon_exclusions: tuple[str, ...]
     refuses_mismatched_projection: bool
-    classifies_need: bool = False
-    orders_needs: bool = False
-    prioritizes_needs: bool = False
+    classifies_demand: bool = False
+    orders_demands: bool = False
+    prioritizes_demands: bool = False
     declares_overall_blocker: bool = False
     selects_route: bool = False
     selects_next_action: bool = False
@@ -99,7 +99,7 @@ class GoalAdvancementNeedSet:
     def to_json_dict(self) -> dict[str, object]:
         records = sorted(self.family_records, key=lambda record: record.family)
         return {
-            "need_set_id": self.need_set_id,
+            "goal_advancement_demand_set_id": self.goal_advancement_demand_set_id,
             "artifact_type": self.artifact_type,
             "goal_establishment_id": self.goal_establishment_id,
             "horizon_id": self.horizon_id,
@@ -108,9 +108,9 @@ class GoalAdvancementNeedSet:
             "horizon_conflicts": self.horizon_conflicts,
             "horizon_exclusions": self.horizon_exclusions,
             "refuses_mismatched_projection": self.refuses_mismatched_projection,
-            "classifies_need": self.classifies_need,
-            "orders_needs": self.orders_needs,
-            "prioritizes_needs": self.prioritizes_needs,
+            "classifies_demand": self.classifies_demand,
+            "orders_demands": self.orders_demands,
+            "prioritizes_demands": self.prioritizes_demands,
             "declares_overall_blocker": self.declares_overall_blocker,
             "selects_route": self.selects_route,
             "selects_next_action": self.selects_next_action,
@@ -136,25 +136,25 @@ def _stable(prefix: str, payload: object) -> str:
     return prefix + ":" + sha256(encoded).hexdigest()
 
 
-def _excluded_family_reason(horizon: BoundedAdvancementHorizon, family: NeedFamily) -> str:
-    aliases = {family, f"{family}_need"}
-    for exclusion in horizon.explicitly_excluded_need_families:
-        if exclusion.need_family in aliases:
+def _excluded_family_reason(horizon: BoundedAdvancementHorizon, family: GoalAdvancementDemandFamily) -> str:
+    aliases = {family, f"{family}_demand"}
+    for exclusion in horizon.explicitly_excluded_goal_advancement_demand_families:
+        if exclusion.goal_advancement_demand_family in aliases:
             return exclusion.reason
     return ""
 
 
 def _identity_conflicts(
-    family: NeedFamily,
+    family: GoalAdvancementDemandFamily,
     projection: (
-        ClarificationNeedProjection
-        | InquiryNeedProjection
-        | AuthorityNeedProjection
-        | OperationalRealizationNeedProjection
+        ClarificationDemandProjection
+        | InquiryDemandProjection
+        | AuthorityDemandProjection
+        | OperationalRealizationDemandProjection
     ),
     horizon: BoundedAdvancementHorizon,
-) -> tuple[NeedFamilyIdentityConflict, ...]:
-    conflicts: list[NeedFamilyIdentityConflict] = []
+) -> tuple[GoalAdvancementDemandFamilyIdentityConflict, ...]:
+    conflicts: list[GoalAdvancementDemandFamilyIdentityConflict] = []
     expected = (
         (
             "goal_identity_mismatch",
@@ -166,7 +166,7 @@ def _identity_conflicts(
     for kind, wanted, actual in expected:
         if wanted != actual:
             conflicts.append(
-                NeedFamilyIdentityConflict(
+                GoalAdvancementDemandFamilyIdentityConflict(
                     family,
                     kind,  # type: ignore[arg-type]
                     wanted,
@@ -177,15 +177,15 @@ def _identity_conflicts(
     return tuple(conflicts)
 
 
-def assemble_goal_advancement_need_set(
+def assemble_goal_advancement_demand_set(
     horizon: BoundedAdvancementHorizon,
     *,
-    clarification: ClarificationNeedProjection | None = None,
-    inquiry: InquiryNeedProjection | None = None,
-    authority: AuthorityNeedProjection | None = None,
-    operational_realization: OperationalRealizationNeedProjection | None = None,
+    clarification: ClarificationDemandProjection | None = None,
+    inquiry: InquiryDemandProjection | None = None,
+    authority: AuthorityDemandProjection | None = None,
+    operational_realization: OperationalRealizationDemandProjection | None = None,
     refuse_mismatched_projection: bool = False,
-) -> GoalAdvancementNeedSet:
+) -> GoalAdvancementDemandSet:
     """Preserve supplied family projections for the exact bounded horizon."""
     supplied = {
         "clarification": clarification,
@@ -193,14 +193,14 @@ def assemble_goal_advancement_need_set(
         "authority": authority,
         "operational_realization": operational_realization,
     }
-    records: set[NeedFamilyAssemblyRecord] = set()
-    all_conflicts: list[NeedFamilyIdentityConflict] = []
+    records: set[GoalAdvancementDemandFamilyAssemblyRecord] = set()
+    all_conflicts: list[GoalAdvancementDemandFamilyIdentityConflict] = []
     for family in FAMILIES:
         projection = supplied[family]
         exclusion_reason = _excluded_family_reason(horizon, family)
         if projection is None:
             records.add(
-                NeedFamilyAssemblyRecord(
+                GoalAdvancementDemandFamilyAssemblyRecord(
                     family,
                     "excluded" if exclusion_reason else "absent",
                     None,
@@ -213,7 +213,7 @@ def assemble_goal_advancement_need_set(
         all_conflicts.extend(conflicts)
         if conflicts and refuse_mismatched_projection:
             records.add(
-                NeedFamilyAssemblyRecord(
+                GoalAdvancementDemandFamilyAssemblyRecord(
                     family,
                     "absent",
                     None,
@@ -223,7 +223,7 @@ def assemble_goal_advancement_need_set(
             )
             continue
         records.add(
-            NeedFamilyAssemblyRecord(
+            GoalAdvancementDemandFamilyAssemblyRecord(
                 family,
                 "supplied",
                 projection,
@@ -246,21 +246,21 @@ def assemble_goal_advancement_need_set(
         ),
         "refuse_mismatched_projection": refuse_mismatched_projection,
     }
-    return GoalAdvancementNeedSet(
-        _stable("goal-advancement-need-set", payload),
-        "GoalAdvancementNeedSet",
+    return GoalAdvancementDemandSet(
+        _stable("goal-advancement-demand-set", payload),
+        "GoalAdvancementDemandSet",
         horizon.goal_establishment_id,
         horizon.horizon_id,
         frozenset(records),
         horizon.unknowns,
         horizon.conflicts,
         tuple(
-            f"{item.need_family}: {item.reason}"
-            for item in horizon.explicitly_excluded_need_families
+            f"{item.goal_advancement_demand_family}: {item.reason}"
+            for item in horizon.explicitly_excluded_goal_advancement_demand_families
         ),
         refuse_mismatched_projection,
     )
 
 
-def goal_advancement_need_set_json(need_set: GoalAdvancementNeedSet) -> dict[str, object]:
-    return need_set.to_json_dict()
+def goal_advancement_demand_set_json(demand_set: GoalAdvancementDemandSet) -> dict[str, object]:
+    return demand_set.to_json_dict()

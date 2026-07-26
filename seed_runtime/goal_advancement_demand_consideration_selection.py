@@ -1,4 +1,4 @@
-"""Read-only selection of one exact advancement need reference for consideration."""
+"""Read-only selection of one exact advancement demand reference for consideration."""
 
 from __future__ import annotations
 
@@ -6,13 +6,13 @@ from dataclasses import asdict, dataclass
 from hashlib import sha256
 from typing import Iterable, Literal
 
-from seed_runtime.advancement_need_reference_set import (
-    AdvancementNeedReference,
-    AdvancementNeedReferenceSet,
+from seed_runtime.goal_advancement_demand_reference_set import (
+    GoalAdvancementDemandReference,
+    GoalAdvancementDemandReferenceSet,
 )
-from seed_runtime.goal_advancement_need_set import NeedFamily
+from seed_runtime.goal_advancement_demand_set import GoalAdvancementDemandFamily
 
-AdvancementNeedConsiderationEvidenceState = Literal[
+GoalAdvancementDemandConsiderationEvidenceState = Literal[
     "exact_reference",
     "missing_identity",
     "ambiguous",
@@ -32,45 +32,45 @@ SelectionState = Literal[
 ]
 
 BOUNDARY_NOTES: tuple[str, ...] = (
-    "AdvancementNeedConsiderationSelection consumes explicit consideration evidence naming exact visible advancement-need references only.",
-    "The testified need must match the same need set, selected goal, bounded horizon, need family, native projection, and native record lineage.",
-    "Need selected for consideration is not highest-priority need, primary blocker, resolution selected, next action selected, realization selected, inquiry opened, authority requested, authorization, execution, recording, event-ledger write, or mutation.",
-    "Uniqueness, sufficiency reasons, standing labels, presentation order, family, wording similarity, severity, and selectable count do not select a need.",
+    "GoalAdvancementDemandConsiderationSelection consumes explicit consideration evidence naming exact visible goal-advancement-demand references only.",
+    "The testified demand must match the same demand set, selected goal, bounded horizon, demand family, native projection, and native record lineage.",
+    "Demand selected for consideration is not highest-priority demand, primary blocker, resolution selected, next action selected, realization selected, inquiry opened, authority requested, authorization, execution, recording, event-ledger write, or mutation.",
+    "Uniqueness, sufficiency reasons, standing labels, presentation order, family, wording similarity, severity, and selectable count do not select a demand.",
 )
 
 
 @dataclass(frozen=True)
-class AdvancementNeedConsiderationEvidence:
-    """Attributed testimony for one advancement-need consideration selection."""
+class GoalAdvancementDemandConsiderationEvidence:
+    """Attributed testimony for one goal-advancement-demand consideration selection."""
 
     evidence_ref: str
     source_ref: str
     reference_id: str | None = None
-    need_set_id: str | None = None
+    goal_advancement_demand_set_id: str | None = None
     goal_establishment_id: str | None = None
     horizon_id: str | None = None
-    family: NeedFamily | None = None
+    family: GoalAdvancementDemandFamily | None = None
     native_projection_id: str | None = None
     native_lineage: tuple[str, ...] = ()
-    evidence_state: AdvancementNeedConsiderationEvidenceState = "exact_reference"
+    evidence_state: GoalAdvancementDemandConsiderationEvidenceState = "exact_reference"
     candidate_reference_ids: tuple[str, ...] = ()
     unknowns: tuple[str, ...] = ()
     conflicts: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
-class AdvancementNeedConsiderationSelection:
+class GoalAdvancementDemandConsiderationSelection:
     selection_id: str
     reference_set_id: str
-    need_set_id: str
+    goal_advancement_demand_set_id: str
     selected_goal_id: str
     horizon_id: str
     consideration_evidence_refs: tuple[str, ...]
     consideration_provenance_refs: tuple[str, ...]
     selection_state: SelectionState
-    selected_reference: AdvancementNeedReference | None = None
-    visible_references: tuple[AdvancementNeedReference, ...] = ()
-    non_selected_references: tuple[AdvancementNeedReference, ...] = ()
+    selected_reference: GoalAdvancementDemandReference | None = None
+    visible_references: tuple[GoalAdvancementDemandReference, ...] = ()
+    non_selected_references: tuple[GoalAdvancementDemandReference, ...] = ()
     ambiguous_reference_ids: tuple[str, ...] = ()
     missing_identity_evidence_refs: tuple[str, ...] = ()
     reference_mismatch_evidence_refs: tuple[str, ...] = ()
@@ -80,8 +80,8 @@ class AdvancementNeedConsiderationSelection:
     unknowns: tuple[str, ...] = ()
     conflicts: tuple[str, ...] = ()
     read_only: bool = True
-    selects_need: bool = False
-    prioritizes_needs: bool = False
+    selects_demand: bool = False
+    prioritizes_demands: bool = False
     declares_primary_blocker: bool = False
     selects_resolution: bool = False
     selects_next_action: bool = False
@@ -100,8 +100,8 @@ class AdvancementNeedConsiderationSelection:
 
 
 def _selection_id(
-    reference_set: AdvancementNeedReferenceSet,
-    evidence: tuple[AdvancementNeedConsiderationEvidence, ...],
+    reference_set: GoalAdvancementDemandReferenceSet,
+    evidence: tuple[GoalAdvancementDemandConsiderationEvidence, ...],
 ) -> str:
     lines = [reference_set.reference_set_id]
     lines.extend(
@@ -111,7 +111,7 @@ def _selection_id(
                 item.source_ref,
                 item.evidence_state,
                 item.reference_id or "",
-                item.need_set_id or "",
+                item.goal_advancement_demand_set_id or "",
                 item.goal_establishment_id or "",
                 item.horizon_id or "",
                 item.family or "",
@@ -121,16 +121,16 @@ def _selection_id(
         )
         for item in evidence
     )
-    return "advancement_need_consideration_selection:" + sha256(
+    return "goal_advancement_demand_consideration_selection:" + sha256(
         "\n".join(lines).encode()
     ).hexdigest()
 
 
-def select_advancement_need_for_consideration(
-    reference_set: AdvancementNeedReferenceSet,
-    consideration_evidence: Iterable[AdvancementNeedConsiderationEvidence] = (),
-) -> AdvancementNeedConsiderationSelection:
-    """Select one need only from exact, fully bound consideration evidence."""
+def select_goal_advancement_demand_for_consideration(
+    reference_set: GoalAdvancementDemandReferenceSet,
+    consideration_evidence: Iterable[GoalAdvancementDemandConsiderationEvidence] = (),
+) -> GoalAdvancementDemandConsiderationSelection:
+    """Select one demand only from exact, fully bound consideration evidence."""
     evidence = tuple(consideration_evidence)
     evidence_refs = tuple(item.evidence_ref for item in evidence)
     provenance_refs = tuple(item.source_ref for item in evidence)
@@ -139,13 +139,13 @@ def select_advancement_need_for_consideration(
 
     def result(
         state: SelectionState, **kwargs: object
-    ) -> AdvancementNeedConsiderationSelection:
+    ) -> GoalAdvancementDemandConsiderationSelection:
         selected = kwargs.get("selected_reference")
         non_selected = tuple(ref for ref in visible if ref != selected)
-        return AdvancementNeedConsiderationSelection(
+        return GoalAdvancementDemandConsiderationSelection(
             selection_id,
             reference_set.reference_set_id,
-            reference_set.need_set_id,
+            reference_set.goal_advancement_demand_set_id,
             reference_set.goal_establishment_id,
             reference_set.horizon_id,
             evidence_refs,
@@ -213,7 +213,7 @@ def select_advancement_need_for_consideration(
     mismatched = tuple(
         item.evidence_ref
         for item in exact
-        if item.need_set_id != reference_set.need_set_id
+        if item.goal_advancement_demand_set_id != reference_set.goal_advancement_demand_set_id
         or item.goal_establishment_id != reference_set.goal_establishment_id
         or item.horizon_id != reference_set.horizon_id
         or item.family is None
@@ -264,7 +264,7 @@ def select_advancement_need_for_consideration(
     return result("selected", selected_reference=ref)
 
 
-def advancement_need_consideration_selection_json(
-    selection: AdvancementNeedConsiderationSelection,
+def goal_advancement_demand_consideration_selection_json(
+    selection: GoalAdvancementDemandConsiderationSelection,
 ) -> dict[str, object]:
     return selection.to_json_dict()
