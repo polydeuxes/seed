@@ -72,4 +72,10 @@ def test_rules_cli_does_not_build_runtime_or_tool_executor(monkeypatch, capsys):
 
     assert exit_code == 0
     payload = json.loads(capsys.readouterr().out)
-    assert any(entry["category"] == "capability_resolution" for entry in payload)
+    entry = next(
+        entry
+        for entry in payload
+        if entry["id"] == "capability_resolution.disk_inspection"
+    )
+    assert entry["source"] == "capability_catalog/*.yml"
+    assert entry["metadata"]["operations"] == ["disk.inspect"]

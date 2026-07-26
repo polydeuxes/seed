@@ -12,7 +12,7 @@ from seed_runtime.capability_catalog import CapabilityRecommendation
 from seed_runtime.facts import is_fact_expired
 from seed_runtime.models import Entity, Fact
 from seed_runtime.state import State
-from seed_runtime.tool_needs import slugify
+from seed_runtime.capabilities import slugify
 
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
 _RISK_LEVELS = {"L1": 1, "L2": 2, "L3": 3, "L4": 4}
