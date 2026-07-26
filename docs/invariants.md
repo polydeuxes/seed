@@ -31,10 +31,8 @@ readable documentation today and executable architecture checks over time.
 
 ## Capability invariants
 
-- `ToolNeed` is a capability gap, not an executable tool.
 - Capability resolution is read-only.
 - Capability resolution never implies verification.
-- ToolNeed creation never implies verification.
 - Known capability catalog metadata never implies verification.
 - Provider recommendation never implies verification.
 - CapabilityRecommendation operation metadata never implies verification.

@@ -79,7 +79,6 @@ def test_inquiry_note_is_not_projected_into_runtime_state(tmp_path):
     assert after.observed_facts == before.observed_facts
     assert after.inferred_facts == before.inferred_facts
     assert after.goals == before.goals == {}
-    assert after.tool_needs == before.tool_needs == {}
     assert not hasattr(after, "execution_authorizations")
     assert not hasattr(after, "execution_proposals")
     assert not hasattr(before, "execution_authorizations")
@@ -135,11 +134,7 @@ def test_orientation_explicitly_renders_absent_related_material(tmp_path):
 
 def test_orientation_helper_does_not_mutate_state_or_create_actions(tmp_path):
     _ledger, state = _state_with_example_host_fact()
-    before = (
-        dict(state.facts),
-        dict(state.goals),
-        dict(state.tool_needs),
-    )
+    before = (dict(state.facts), dict(state.goals))
     note = record_inquiry_note(
         tmp_path / "probe.jsonl",
         "example_host wrong",
@@ -148,13 +143,8 @@ def test_orientation_helper_does_not_mutate_state_or_create_actions(tmp_path):
 
     view = build_inquiry_orientation(state, note)
 
-    assert (
-        dict(state.facts),
-        dict(state.goals),
-        dict(state.tool_needs),
-    ) == before
+    assert (dict(state.facts), dict(state.goals)) == before
     assert view.related_material
-    assert state.tool_needs == {}
     assert not hasattr(state, "execution_proposals")
     assert not hasattr(state, "pending_" + "actions")
     assert not hasattr(state, "action_" + "plans")

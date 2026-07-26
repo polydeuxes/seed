@@ -56,7 +56,7 @@ from seed_runtime.observation_normalizers import (
 )
 from seed_runtime.observations import Observation, ObservationIngestor
 from seed_runtime.input_inspector import InputArtifact, InputInspector
-from seed_runtime.models import Event, ToolNeed
+from seed_runtime.models import Event
 from seed_runtime.state import EntityRelationship, EntityTypeAssertion
 from seed_runtime.verification_evidence import (
     VerificationEvidence,
@@ -291,7 +291,6 @@ __all__ = [
     "ProjectionIntegritySummary",
     "build_projection_integrity_summary",
     "InputInspector",
-    "ToolNeed",
     "format_bounded_constitutional_question",
 ]
 

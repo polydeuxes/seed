@@ -462,7 +462,7 @@ def test_visibility_and_workflow_structures_are_distinguished_from_schema_detail
                 "concrete_diagnostic",
             ),
             OperationalGraphNode(
-                "emitter:tool_needs", "emitter", "tool_needs", "concrete_emitter"
+                "emitter:state_patches", "emitter", "state_patches", "concrete_emitter"
             ),
             OperationalGraphNode(
                 "observation_predicate:user_uid",
@@ -481,7 +481,7 @@ def test_visibility_and_workflow_structures_are_distinguished_from_schema_detail
     audit = build_architecture_conformance_audit(architecture_evidence=(), graph=graph)
     significance = {item.subject: item.significance for item in audit.findings}
     assert significance["visibility coverage audit"] == "visibility_structure"
-    assert significance["tool needs"] == "workflow_structure"
+    assert significance["state patches"] == "workflow_structure"
     assert significance["user uid"] == "schema_detail"
 
 

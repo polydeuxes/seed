@@ -41,7 +41,6 @@ from seed_runtime.models import (
     FactSupport,
     Goal,
     Observation,
-    ToolNeed,
     ToolSpec,
 )
 
@@ -473,7 +472,6 @@ class State:
     evidence: dict[str, Evidence] = field(default_factory=dict)
     observations: dict[str, Observation] = field(default_factory=dict)
     goals: dict[str, Goal] = field(default_factory=dict)
-    tool_needs: dict[str, ToolNeed] = field(default_factory=dict)
     approvals: dict[str, Approval] = field(default_factory=dict)
     tools: dict[str, ToolSpec] = field(default_factory=dict)
 
