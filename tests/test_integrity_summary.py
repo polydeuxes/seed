@@ -16,7 +16,7 @@ from seed_runtime.integrity_summary import (
     ProjectionIntegritySummary,
     build_projection_integrity_summary,
 )
-from seed_runtime.models import ToolNeed
+from seed_runtime.models import ToolSpec
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import GraphValidationIssue, State, StateProjector
 from seed_runtime.events import EventLedger
@@ -73,14 +73,16 @@ def _evidence(evidence_id: str, fact: Fact) -> Evidence:
     )
 
 
-def _need(capability: str) -> ToolNeed:
-    return ToolNeed(
-        id=f"need_{capability}",
-        workspace_id="ws",
-        name=f"Need {capability}",
-        summary=f"Need {capability}",
-        capability=capability,
-        reason="test inventory universe",
+def _tool(capability: str) -> ToolSpec:
+    return ToolSpec(
+        name=f"tool_{capability}",
+        summary=f"Tool contract for {capability}",
+        toolkit_id="tests",
+        input_schema={},
+        output_schema={},
+        policy_action="test",
+        implementation="tests:noop",
+        capabilities=[capability],
     )
 
 
@@ -162,11 +164,6 @@ def test_summary_aggregates_conflicts_contradictions_graph_and_stale_signals():
 
 def test_summary_aggregates_capability_inventory_states():
     ledger = EventLedger()
-    ledger.append("tool_need.created", "ws", {"tool_need": to_plain(_need("unverified_cap"))})
-    ledger.append("tool_need.created", "ws", {"tool_need": to_plain(_need("verified_cap"))})
-    ledger.append("tool_need.created", "ws", {"tool_need": to_plain(_need("provider_cap"))})
-    ledger.append("tool_need.created", "ws", {"tool_need": to_plain(_need("unknown_cap"))})
-    ledger.append("tool_need.created", "ws", {"tool_need": to_plain(_need("stale_cap"))})
     expired_at = datetime.now(timezone.utc) - timedelta(seconds=1)
     for capability, value, expires_at in [
         ("verified_cap", "verified", None),
@@ -190,6 +187,7 @@ def test_summary_aggregates_capability_inventory_states():
             },
         )
     state = _project(ledger)
+    state.tools["tool_unverified_cap"] = _tool("unverified_cap")
 
     summary = build_projection_integrity_summary(
         state, capability_inventory=build_capability_inventory(state, now=BASE_TIME)
