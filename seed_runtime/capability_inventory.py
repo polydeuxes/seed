@@ -57,14 +57,12 @@ class _CapabilityInventorySources:
 
     admitted_capabilities: _AdmittedCapabilityState
     executable_operation_contracts: _ExecutableOperationContractState
-    requested_capabilities: set[str] = field(default_factory=set)
 
     def capability_universe(self) -> set[str]:
         """Return the unchanged inventory union after ownership handoff."""
 
         capabilities: set[str] = set()
         capabilities.update(self.executable_operation_contracts.capabilities)
-        capabilities.update(self.requested_capabilities)
         capabilities.update(self.admitted_capabilities.capabilities)
         return capabilities
 
@@ -119,7 +117,10 @@ def build_capability_inventory(
     """Return deterministic capability verification inventory from State only.
 
     The inventory universe is the union of capabilities already present in the
-    projection (registered tools, ToolNeeds, and verification fact subjects).
+    projection (registered tool operation contracts and verification fact
+    subjects). ToolSpec capability declarations are executable operation-contract
+    metadata, not evidence of competency presence; verification-fact subjects are
+    the evidence/admission input.
     Verification state is derived from ``capability_verified`` facts and their
     projected FactSupport records. Missing verification facts produce
     ``unverified`` entries; expired verification facts produce ``stale`` entries
@@ -153,7 +154,6 @@ def _capability_inventory_sources(state: State) -> _CapabilityInventorySources:
     return _CapabilityInventorySources(
         admitted_capabilities=_admitted_capability_state(state),
         executable_operation_contracts=_executable_operation_contract_state(state),
-        requested_capabilities=_requested_capabilities(state),
     )
 
 
@@ -213,12 +213,6 @@ def _observed_verification_capability_subjects(state: State) -> set[str]:
         for fact in state.facts.values()
         if fact.predicate == CAPABILITY_VERIFIED_PREDICATE
     }
-
-
-def _requested_capabilities(state: State) -> set[str]:
-    """Capabilities requested by unresolved needs, separate from evidence and contracts."""
-
-    return {need.capability for need in state.tool_needs.values()}
 
 
 def _entry_for_capability(
