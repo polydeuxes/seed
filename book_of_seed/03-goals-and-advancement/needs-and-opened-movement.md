@@ -6,9 +6,9 @@ The establishment of bounded Demands, their current goal-advancement representat
 
 ## Bounded resolution
 
-A **Demand** states what result, relation, clarification, inquiry, authority, transformation, competency, or other bounded condition is required under an exact responsibility and scope. Where applicable, it preserves enough evidence to recover the required result, responsibility, scope, source or testimony, standing, materiality, applicability, and material Unknowns or conflicts. This definition requires neither one universal Demand class or schema nor a dedicated artifact for every Demand.
+A **Demand** states what result, relation, clarification, inquiry, authority, transformation, competency, or other bounded condition is required under an exact responsibility and scope. Demand standing must remain recoverable, where applicable, from evidence preserving the required result, responsibility, scope, source or testimony, standing, materiality, applicability, and material Unknowns or conflicts. This definition requires neither one universal Demand class or schema nor a dedicated artifact for every Demand.
 
-Demand established does not open movement. Establishment records a bounded required result; it does not select, authorize, execute, or complete movement. Demand satisfied within scope does not mean all advancement is complete.
+Demand established does not open movement. Establishment establishes bounded required-result standing; it does not select, authorize, execute, or complete movement. Demand satisfied within scope does not mean all advancement is complete.
 
 ## Current implementation vocabulary and locality
 
@@ -32,7 +32,7 @@ Demand is not Gap, Capability, capability candidate, mechanism candidate, select
 
 “Capability demand” is not evidenced as an independent constitutional kind between Demand and Capability. It is Demand content concerning a required transformation, effect, relation, competency, or outcome, where separately established. Such content may constrain later inquiry or candidate formation, but it does not produce a candidate, establish a Capability, select a mechanism, supply authority, or execute movement.
 
-Unknown capability is not absent capability. Unreachable capability is not nonexistent capability. Authority unavailable is not technical incapability. One unsupported candidate is not a capability Gap. The caller-supplied candidate-, reachability-, selection-, warrant-, or handoff-shaped testimony that may remain on operational-realization inputs does not establish those standings or restore a staged operational-realization road.
+Unknown capability is not absent capability. Unreachable capability is not nonexistent capability. Authority unavailable is not technical incapability. One unsupported candidate is not a capability Gap. The caller-supplied candidate-, reachability-, selection-, or warrant-shaped testimony that may remain on operational-realization inputs does not establish those standings or restore a staged operational-realization road.
 
 ## Demand and Gap
 
@@ -40,7 +40,7 @@ A **Gap** is an evidence-supported scoped incompatibility relative to a declared
 
 A Demand may supply a Gap reference condition. Gap evidence may support Demand establishment. Demand and Gap may also arise from shared evidence through separate establishment acts. Neither imposes a universal ordering: Demand does not automatically establish Gap, and Gap does not automatically establish Demand. Demand can exist without an established Gap, and Gap can exist without an established Demand.
 
-Gap established != Demand established. Gap established != transformation selected. Gap established != movement authorized. New observation is not automatic Gap revision, and changed current State is not automatically changed Gap standing. Gap revision is a separate evidence-supported revision of scoped incompatibility; it is not authorization. A Gap satisfied or resolved within scope does not mean all advancement is complete.
+Gap established != Demand established. Gap established != transformation selected. Gap established != movement authorized. New observation is not automatic Gap revision, and changed current State is not automatically changed Gap standing. Gap revision is a separate evidence-supported revision of scoped incompatibility; it is not authorization. A Gap resolved within scope does not mean all advancement is complete.
 
 Named Gap distinctions remain useful when bounded by evidence, responsibility, reference condition, and scope. An evidence Gap concerns testimony inadequate to warrant relevant standing; a knowledge Gap concerns an unresolved bounded constitutional question; an outcome Gap concerns current standing incompatible with a required outcome; and capability, reachability, dependency, authority, representation, resource, or budget Gaps concern their respective boundaries. A current difference is not automatically a material Gap, and an unresolved question is not a failed Capability.
 
