@@ -35,25 +35,19 @@ def test_need_gap_and_capability_demand_invariants_are_canonical():
     text = _read("book_of_seed/03-goals-and-advancement/needs-and-opened-movement.md")
 
     required = [
-        "A need is not a gap by identity",
-        "Need established does not open movement",
-        "insufficiency is not permission to act",
-        "a gap is not authorization",
-        "a gap does not automatically establish a capability demand",
-        "current difference is not material gap automatically",
-        "an unresolved question is not a failed capability",
-        "There is no free-floating gap standing without that reference condition and scope",
+        "“Need” is the current implementation noun for the bounded Demand subject represented locally",
+        "Demand established does not open movement",
+        "there is no Need -> Demand transition",
+        "it is not an exhaustive constitutional Demand taxonomy",
+        "Demand is not Gap, Capability, capability candidate, mechanism candidate, selection, authorization, execution, or movement",
+        "“Capability demand” is not evidenced as an independent constitutional kind between Demand and Capability",
+        "Demand established != candidate producer exists",
+        "Gap evidence may support Demand establishment",
+        "Gap does not automatically establish Demand",
         "Unknown capability is not absent capability",
-        "one unsupported candidate is not a capability gap",
-        "Capability demand is not capability",
-        "not selected mechanism",
-        "not authorization",
-        "New observation is not gap revision automatically",
-        "changed current State is not changed gap standing automatically",
-        "gap revision is not movement authorization",
-        "Does every gap open movement? No.",
-        "Does a gap automatically establish a capability demand? No.",
-        "Can passive observation revise capability or gap standing? Yes, after bounded examination and establishment.",
+        "One unsupported candidate is not a capability Gap",
+        "New observation is not automatic Gap revision",
+        "Gap revision is a separate evidence-supported revision of scoped incompatibility; it is not authorization",
     ]
 
     for invariant in required:
@@ -151,17 +145,18 @@ def test_constrained_need_gap_and_demand_invariants_are_canonical():
     text = _read("book_of_seed/03-goals-and-advancement/needs-and-opened-movement.md")
 
     required = [
-        "Need and gap are disciplines governing possible advancement, not permission to advance",
-        "Gap established does not perform movement",
-        "Gap family names are not a subclass hierarchy",
-        "Evidence gap constrains establishment movement",
-        "Knowledge gap constrains answer or explanation movement",
-        "Capability demand is a constraint on candidate formation and realization inquiry",
-        "capability demand established is not capability exists",
-        "Gap revision may be understood as constrained movement in insufficiency standing",
-        "Gap revision is not movement authorization",
-        "Is gap primarily one universal object family? Not by default",
-        "Does an established gap itself perform movement? No.",
+        "A **Demand** states what result, relation, clarification, inquiry, authority, transformation, competency, or other bounded condition is required under an exact responsibility and scope",
+        "A family label is not an exact Demand",
+        "A projection container is not an established Demand",
+        "An absent projection does not mean Demand absent",
+        "Unknown is not unsupported",
+        "A **Gap** is an evidence-supported scoped incompatibility relative to a declared reference condition and responsibility",
+        "Demand can exist without an established Gap, and Gap can exist without an established Demand",
+        "common-grammar establishment:",
+        "bounded relational Demand",
+        "exact family:\n    Unknown",
+        "Recurrence is measurement, not meaning, selection, authority, or execution",
+        "Common grammar is not a competency Demand by identity",
     ]
 
     for invariant in required:
