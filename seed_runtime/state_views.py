@@ -192,30 +192,15 @@ def build_requirement_view(state: State) -> list[RequirementView]:
 def build_capability_view(state: State) -> list[CapabilityView]:
     """Return deterministic read-only Capability views from projected State."""
 
-    views: list[CapabilityView] = []
-    for need in sorted(
-        state.tool_needs.values(), key=lambda item: (item.capability, item.name, item.id)
-    ):
-        views.append(
-            CapabilityView(
-                capability_id=need.id,
-                capability_name=need.capability,
-                status=need.status,
-                supporting_event_ids=_dedupe_sorted(
-                    [need.requested_by_event_id] if need.requested_by_event_id else []
-                ),
-            )
+    return [
+        CapabilityView(
+            capability_id=tool.name,
+            capability_name=tool.name,
+            status="registered",
+            supporting_event_ids=[],
         )
-    for tool in sorted(state.tools.values(), key=lambda item: (item.name, item.toolkit_id)):
-        views.append(
-            CapabilityView(
-                capability_id=tool.name,
-                capability_name=tool.name,
-                status="registered",
-                supporting_event_ids=[],
-            )
-        )
-    return views
+        for tool in sorted(state.tools.values(), key=lambda item: (item.name, item.toolkit_id))
+    ]
 
 
 def build_issue_view(state: State) -> list[IssueView]:
@@ -246,7 +231,7 @@ def build_state_summary(state: State) -> StateSummary:
         facts_count=_fact_view_count(visible_state),
         observations_count=len(visible_state.observations),
         requirements_count=len(visible_state.goals),
-        capabilities_count=len(visible_state.tool_needs) + len(visible_state.tools),
+        capabilities_count=len(visible_state.tools),
         issues_count=len(visible_state.graph_issues),
         last_event_id=visible_state.last_event_id,
         projection_version=visible_state.projection_version,

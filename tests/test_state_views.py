@@ -6,7 +6,7 @@ from pathlib import Path
 
 from seed_runtime.events import SQLiteEventLedger
 from seed_runtime.facts import FactSupport
-from seed_runtime.models import Entity, Fact, Goal, ToolNeed, ToolSpec, utc_now
+from seed_runtime.models import Entity, Fact, Goal, ToolSpec, utc_now
 from seed_runtime.observations import Observation
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import GraphValidationIssue, State, StateProjector
@@ -64,16 +64,6 @@ def _state() -> State:
         summary="backup_restore required",
         status="active",
         created_from_event_id="evt_goal",
-    )
-    state.tool_needs["need_backup"] = ToolNeed(
-        id="need_backup",
-        workspace_id="ws",
-        name="backup_restore",
-        summary="Need backup restore",
-        capability="backup_restore",
-        reason="missing capability",
-        requested_by_event_id="evt_need",
-        status="proposed",
     )
     state.tools["docker"] = ToolSpec(
         name="docker",
@@ -299,12 +289,6 @@ def test_requirement_view_builds_correctly_from_projected_state():
 def test_capability_view_builds_correctly_from_projected_state():
     assert build_capability_view(_state()) == [
         CapabilityView(
-            capability_id="need_backup",
-            capability_name="backup_restore",
-            status="proposed",
-            supporting_event_ids=["evt_need"],
-        ),
-        CapabilityView(
             capability_id="docker",
             capability_name="docker",
             status="registered",
@@ -329,7 +313,7 @@ def test_state_summary_reports_correct_counts():
         facts_count=1,
         observations_count=1,
         requirements_count=1,
-        capabilities_count=2,
+        capabilities_count=1,
         issues_count=1,
         last_event_id="evt_last",
         projection_version="v1",
@@ -392,7 +376,7 @@ def test_state_summary_counts_directly_without_materializing_views(monkeypatch):
         facts_count=1,
         observations_count=1,
         requirements_count=1,
-        capabilities_count=2,
+        capabilities_count=1,
         issues_count=1,
         last_event_id="evt_last",
         projection_version="v1",
@@ -464,18 +448,9 @@ def _seed_db(db_path):
             value=True,
         )
         goal = Goal(id="goal_cli", workspace_id="local", summary="keep docker available")
-        need = ToolNeed(
-            id="need_cli",
-            workspace_id="local",
-            name="docker_check",
-            summary="Need docker checks",
-            capability="docker_inspection",
-            reason="current state",
-        )
         ledger.append("observation.observed", "local", {"observation": to_plain(observation)})
         ledger.append("fact.observed", "local", {"fact": to_plain(fact)})
         ledger.append("goal.created", "local", {"goal": to_plain(goal)})
-        ledger.append("tool_need.created", "local", {"tool_need": to_plain(need)})
     finally:
         ledger.close()
 
