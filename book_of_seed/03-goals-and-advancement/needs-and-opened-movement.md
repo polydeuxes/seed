@@ -1,55 +1,77 @@
-# Needs and Opened Movement
+# Demands and Opened Movement
 
 ## Constitutional subject
-The establishment and assembly of advancement needs and their relationship to possible movement.
 
-## Core question
-When does an established need open a lawful next movement, if ever?
+The establishment of bounded Demands, their current goal-advancement representation as needs, their relationship to scoped Gaps and Capabilities, and their effect on possible movement.
 
 ## Bounded resolution
-A need set characterizes what advancement may require within a bounded horizon. Need standing alone does not open or authorize movement.
 
-## Important distinctions
-- need established != movement opened
-- insufficiency != permission to act
-- candidate need != selected consideration
+A **Demand** states what result, relation, clarification, inquiry, authority, transformation, competency, or other bounded condition is required under an exact responsibility and scope. Where applicable, it preserves enough evidence to recover the required result, responsibility, scope, source or testimony, standing, materiality, applicability, and material Unknowns or conflicts. This definition requires neither one universal Demand class or schema nor a dedicated artifact for every Demand.
+
+Demand established does not open movement. Establishment records a bounded required result; it does not select, authorize, execute, or complete movement. Demand satisfied within scope does not mean all advancement is complete.
+
+## Current implementation vocabulary and locality
+
+“Need” is the current implementation noun for the bounded Demand subject represented locally. Current anchors retain that noun: `GoalAdvancementNeedSet`, `NeedFamily`, `ClarificationNeedProjection`, `InquiryNeedProjection`, `AuthorityNeedProjection`, `OperationalRealizationNeedProjection`, and `NeedStanding`. Need is not currently evidenced as a separate constitutional kind, and there is no Need -> Demand transition: no current producer, responsible act, warrant, distinct output, or consumer establishes such a crossing.
+
+The current implementation-backed `NeedFamily` inventory is `clarification`, `inquiry`, `authority`, and `operational_realization`. It is `GoalAdvancementNeedSet`-local, established-goal-local, and bounded-advancement-horizon-local. The current `NeedFamily` tuple is exhaustive for its assembler; it is not an exhaustive constitutional Demand taxonomy, and a Demand may arise outside that implementation locality.
+
+A family label is not an exact Demand. A projection container is not an established Demand. `NeedStanding="established"` means established bounded Demand standing only within the exact local responsibility and scope. An absent projection does not mean Demand absent, and an excluded family does not mean Demand satisfied. Unknown is not unsupported, and unsupported is not permanently impossible.
+
+## Demand, movement, and Capability
+
+Demand is not Gap, Capability, capability candidate, mechanism candidate, selection, authorization, execution, or movement. In particular:
+
+- Demand established != movement opened.
+- Demand established != candidate producer exists.
+- required transformation != mechanism candidate.
+- Capability candidate != Capability established.
+- Capability established != authorized use.
+- catalog recommendation != candidate selection.
+- `ToolSpec` association != mechanism selection.
+
+“Capability demand” is not evidenced as an independent constitutional kind between Demand and Capability. It is Demand content concerning a required transformation, effect, relation, competency, or outcome, where separately established. Such content may constrain later inquiry or candidate formation, but it does not produce a candidate, establish a Capability, select a mechanism, supply authority, or execute movement.
+
+Unknown capability is not absent capability. Unreachable capability is not nonexistent capability. Authority unavailable is not technical incapability. One unsupported candidate is not a capability Gap. The caller-supplied candidate-, reachability-, selection-, warrant-, or handoff-shaped testimony that may remain on operational-realization inputs does not establish those standings or restore a staged operational-realization road.
+
+## Demand and Gap
+
+A **Gap** is an evidence-supported scoped incompatibility relative to a declared reference condition and responsibility. There is no free-floating Gap standing without that reference condition, responsibility, and scope. Gap family names are navigational, boundary-local distinctions rather than a required subclass hierarchy or universal Gap object.
+
+A Demand may supply a Gap reference condition. Gap evidence may support Demand establishment. Demand and Gap may also arise from shared evidence through separate establishment acts. Neither imposes a universal ordering: Demand does not automatically establish Gap, and Gap does not automatically establish Demand. Demand can exist without an established Gap, and Gap can exist without an established Demand.
+
+Gap established != Demand established. Gap established != transformation selected. Gap established != movement authorized. New observation is not automatic Gap revision, and changed current State is not automatically changed Gap standing. Gap revision is a separate evidence-supported revision of scoped incompatibility; it is not authorization. A Gap satisfied or resolved within scope does not mean all advancement is complete.
+
+Named Gap distinctions remain useful when bounded by evidence, responsibility, reference condition, and scope. An evidence Gap concerns testimony inadequate to warrant relevant standing; a knowledge Gap concerns an unresolved bounded constitutional question; an outcome Gap concerns current standing incompatible with a required outcome; and capability, reachability, dependency, authority, representation, resource, or budget Gaps concern their respective boundaries. A current difference is not automatically a material Gap, and an unresolved question is not a failed Capability.
+
+## Bounded common-grammar counterexample
+
+A possible Demand may arise before an interpreted operator goal exists. For example, repeated bounded failure to establish sufficient common grammar for an operator interaction may expose pressure to establish a common-grammar relation. The exact operator material remains uninterpreted. Recurrence is measurement, not meaning, selection, authority, or execution; it does not select English or a learning mechanism.
+
+The possible result has this bounded standing:
+
+```text
+common-grammar establishment:
+    bounded relational Demand
+
+exact family:
+    Unknown
+
+Seed grammar competency:
+    possible satisfaction candidate
+    not the Demand by identity
+```
+
+This counterexample demonstrates only that the four current goal/horizon-local families are not a universal taxonomy. It creates no pre-goal producer, fifth family, acquisition mechanism, authority, or execution road. Common grammar is not a competency Demand by identity; a separately established competency might be one candidate way to satisfy the relational Demand.
 
 ## Representative repository anchors
+
 - `seed_runtime/goal_advancement_need_set.py::GoalAdvancementNeedSet`
 - `seed_runtime/bounded_advancement_horizon.py::BoundedAdvancementHorizon`
 - `seed_runtime/goal_advancement_sufficiency_projection.py`
 
-## Counterexamples or failure modes
-- Executing the first apparent remedy when an insufficiency is projected.
-- Treating an excluded need family as satisfied.
-
 ## Related chapters
+
 - [Selection and authorization](selection-and-authorization.md)
 - [Inquiry frontiers](../04-inquiry-and-examination/inquiry-frontiers.md)
 - [Testimony and established fact](../05-evidence-and-knowledge/testimony-and-established-fact.md)
-
-## Gap, capability demand, and learned insufficiency amendment 001
-
-A bounded purpose or required outcome may be compared with current condition standing to establish a need, insufficiency, or gap, but these are not identical. A need states what advancement may require within a bounded horizon. A gap is an evidence-supported insufficiency relative to a declared reference condition and scope, such as a required condition, declared purpose, constitutional question, capability demand, budget, authority requirement, representation requirement, or other bounded criterion. There is no free-floating gap standing without that reference condition and scope.
-
-Need established does not open movement. A need is not a gap by identity, every established need need not constitute a gap, insufficiency is not permission to act, a gap is not authorization, a gap does not automatically establish a capability demand, current difference is not material gap automatically, and an unresolved question is not a failed capability.
-
-Gap family names are navigational distinctions, not a required universal schema. An outcome gap concerns current standing that does not satisfy a bounded required outcome. An evidence gap concerns testimony that does not warrant the relevant standing. A knowledge gap concerns an unresolved bounded constitutional question. A capability gap concerns no capability warranted as able to realize a required transformation. A reachability gap concerns a supported capability not presently reachable. A dependency gap concerns unavailable or unknown supporting conditions. An authority gap concerns technically possible movement not lawfully authorized. A representation gap concerns realization grammar that cannot accept or produce required representations. A resource or budget gap concerns a route that cannot presently fit an applicable resource boundary. Learning may refine which kind of gap is actually present. Unknown capability is not absent capability, unreachable capability is not nonexistent capability, authority unavailable is not technical incapability, evidence that does not warrant relevant standing is not failed outcome, and one unsupported candidate is not a capability gap.
-
-A capability demand is a bounded requirement for some transformation or outcome whose performance or external effect, if separately established, would address a declared need or gap. A gap may expose that some transformation is needed, but it does not automatically establish the correct transformation, required mechanism, existence of a capability, reachability of that capability, or permission to use it. Capability demand is not capability, not selected mechanism, not authorization, and not movement opened.
-
-Gap revision is the separate evidence-supported revision of insufficiency standing. New evidence may establish that the original gap remains, narrowed, widened, was mischaracterized, cannot yet be established, or that the requirement changed; it may also show that an apparent capability gap was actually dependency, authority, representation, resource, budget, or evidence insufficiency. New observation is not gap revision automatically, changed current State is not changed gap standing automatically, gap revision is not movement authorization, and gap resolved within scope is not all advancement complete.
-
-Direct answers preserved by this clause: Does every established need constitute a gap? No; a need may expose bounded advancement requirements without establishing a scoped insufficiency against a declared reference condition. Does every gap open movement? No. Does a gap automatically establish a capability demand? No. Can passive observation revise capability or gap standing? Yes, after bounded examination and establishment. Can an interaction revise both capability standing and gap standing? Yes, within the supported purpose, conditions, and uncertainty. Does changed capability or gap standing automatically open movement? No.
-
-## Constrained movement need and gap correction 001
-
-Need and gap are disciplines governing possible advancement, not permission to advance. An established need may characterize what advancement may require within a bounded horizon; it does not admit movement by itself. A scoped gap is boundary-local insufficiency or a constraint result relative to a declared reference condition and scope; it may constrain the claimed dimension of insufficiency, the scope of possible advancement, the capability demand that may be considered, stopping conditions, and evaluation of later outcome. Gap established does not perform movement, open movement, authorize movement, select a candidate, prove a capability demand, or complete advancement when resolved within scope.
-
-Gap family names are not a subclass hierarchy and do not require one universal Gap object family. Evidence gap constrains establishment movement at the evidence boundary; Knowledge gap constrains answer or explanation movement at the inquiry boundary; outcome gap constrains advancement relative to purpose at the evaluation boundary; capability gap constrains possible-realization movement at the capability boundary; reachability gap constrains present route movement at the route boundary; dependency gap constrains prerequisite-satisfied movement at the dependency boundary; authority gap constrains lawful-use movement at the authority boundary; representation gap constrains translation or handoff movement at the representation boundary; and resource or budget gap constrains feasible movement within budget at the resource boundary. These names remain lawful only when consumed testimony or standing, responsible boundary, reference condition, scope, lawful result, and remaining possible movement are preserved.
-
-Capability demand is a constraint on candidate formation and realization inquiry: established insufficiency may support a bounded transformation requirement, but capability demand established is not capability exists, not mechanism selected, and not movement authorized. It narrows candidate formation, realization inquiry, representation inquiry, and dependency inquiry without performing selection or handoff.
-
-Gap revision may be understood as constrained movement in insufficiency standing. It consumes prior scoped insufficiency, new evidence, and comparison against the declared reference condition to establish that the gap remains, narrows, widens, changes family, becomes unsupported, becomes Unknown, or resolves within scope. Gap revision is not movement authorization, and gap resolved within scope is not advancement complete.
-
-Direct answers preserved by this clause: Is gap primarily one universal object family? Not by default; the Book treats named gaps as distinct boundary-local insufficiency or constraint results unless evidence warrants a shared implementation family. Does an established gap itself perform movement? No. Can gap revision be understood as movement in insufficiency standing? Yes, when bounded by prior scoped insufficiency, new evidence, declared reference condition, examination method, warrant, scope, and Unknowns.
