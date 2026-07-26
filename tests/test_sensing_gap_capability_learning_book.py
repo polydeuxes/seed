@@ -37,6 +37,8 @@ def test_need_gap_and_capability_demand_invariants_are_canonical():
     required = [
         "“Need” is the current implementation noun for the bounded Demand subject represented locally",
         "Demand established does not open movement",
+        "Demand standing must remain recoverable",
+        "Establishment establishes bounded required-result standing",
         "there is no Need -> Demand transition",
         "it is not an exhaustive constitutional Demand taxonomy",
         "Demand is not Gap, Capability, capability candidate, mechanism candidate, selection, authorization, execution, or movement",
@@ -46,8 +48,10 @@ def test_need_gap_and_capability_demand_invariants_are_canonical():
         "Gap does not automatically establish Demand",
         "Unknown capability is not absent capability",
         "One unsupported candidate is not a capability Gap",
+        "candidate-, reachability-, selection-, or warrant-shaped testimony",
         "New observation is not automatic Gap revision",
         "Gap revision is a separate evidence-supported revision of scoped incompatibility; it is not authorization",
+        "A Gap resolved within scope does not mean all advancement is complete",
     ]
 
     for invariant in required:
