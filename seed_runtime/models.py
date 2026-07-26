@@ -25,16 +25,6 @@ else:
 
 Actor = Literal["user", "model", "system", "tool", "builder", "approver"]
 GoalStatus = Literal["active", "blocked", "complete", "abandoned"]
-ToolNeedStatus = Literal[
-    "proposed",
-    "accepted",
-    "generating",
-    "generated",
-    "validating",
-    "validated",
-    "registered",
-    "rejected",
-]
 RiskClass = Literal["L1", "L2", "L3", "L4"]
 HandoffBackendType = Literal["ansible", "mcp", "temporal", "manual"]
 
@@ -89,20 +79,6 @@ class Entity(SeedModel):
     aliases: list[str] = Field(default_factory=list)
     attributes: dict[str, Any] = Field(default_factory=dict)
     confidence: float = 1.0
-
-
-class ToolNeed(SeedModel):
-    id: str
-    workspace_id: str = "default"
-    name: str
-    summary: str
-    capability: str
-    reason: str
-    requested_by_event_id: str | None = None
-    risk_hint: str | None = None
-    status: ToolNeedStatus = "proposed"
-    desired_inputs: list[str] = Field(default_factory=list)
-    desired_outputs: list[str] = Field(default_factory=list)
 
 
 class ToolSpec(SeedModel):

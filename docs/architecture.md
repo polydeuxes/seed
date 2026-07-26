@@ -29,7 +29,7 @@ Events -> projected State -> Evidence Graph -> Contradiction Detection -> Confid
 
 - **EventLedger** is the authoritative historical event record. It is append-only and records what happened within Seed, without becoming a truth oracle about the world.
 - **ProjectionStore** caches projection snapshots derived from EventLedger data. It is an optimization, not source-of-truth persistence.
-- **State** is the current projected world model: facts, observations, relationships, entity types, requirements/goals, capabilities, ToolNeeds / capability gaps, and graph issues.
+- **State** is the current projected world model: facts, observations, relationships, entity types, requirements/goals, capabilities, and graph issues.
 - **State Views** are read-only representations of projected State. They answer what Seed currently knows without reading raw events directly.
 - **Evidence Graph** is a read-only explanation layer derived from projected State. It links Evidence records to Facts so Seed can explain why a fact exists, which projected evidence supports it, and which facts remain unsupported.
 - **Contradiction Detection** is a read-only projection view derived from projected facts and the Evidence Graph. It reports conservative conflicts such as exclusive predicates with multiple values, includes evidence and supporting event IDs for each side, and never decides which fact is correct.

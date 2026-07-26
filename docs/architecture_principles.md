@@ -25,8 +25,7 @@ Input / observations
   -> evidence / facts
   -> relationships / entity types
   -> explanations / current state
-  -> ToolNeed
-  -> capability_resolution
+  -> capability resolution
       -> registered operation candidates
       -> provider/handoff recommendations
 ```
@@ -63,7 +62,7 @@ Ownership in the core loop should remain explicit:
 - Event history belongs to `EventLedger`.
 - Projected current state belongs to `StateProjector` and `ProjectionStore`.
 - Explanations are read-only views over projected state and evidence.
-- Capability-gap creation and capability resolution belong to `ToolNeedService`.
+- Capability resolution remains reasoning-oriented and read-only.
 - Registered operation inventory belongs to `ToolRegistry`.
 - Capability metadata and provider/handoff recommendations belong to `CapabilityCatalog`.
 - Execution belongs only to `ToolExecutor`.
@@ -85,7 +84,6 @@ Concrete Seed examples:
 - `Runtime` is canonical for runtime routing, but it does not own tool execution. `ToolExecutor` owns execution.
 - CLI and API may expose projected state, but they do not own projection. `ProjectionStore` owns cached projected state, and `EventLedger` owns append-only history.
 - `StateProjector` reads events to derive state, but it does not own event creation.
-- `ToolNeedService` owns capability-gap creation and capability resolution, even when a runtime path or CLI command calls it.
 - `ToolRegistry` owns registered operation inventory; runtime callers should not construct a competing operation inventory.
 - `CapabilityCatalog` owns capability metadata and provider/handoff recommendations; provider recommendation metadata should not become an execution path.
 
@@ -118,11 +116,11 @@ Examples:
 Observation -> Evidence
 Evidence -> Fact
 Fact + Rule -> Inferred Fact
-ToolNeed + Registry -> Operation Candidates
-ToolNeed + CapabilityCatalog -> Recommendations
+Capability + Registry -> Operation Candidates
+Capability + CapabilityCatalog -> Recommendations
 ```
 
-Logic-first design means that each transition should be explainable, deterministic where possible, and owned by a named subsystem. Facts should be traceable to evidence. Inferred facts should be traceable to facts and rules. Capability recommendations should be traceable to ToolNeeds, registered operations, and catalog metadata.
+Logic-first design means that each transition should be explainable, deterministic where possible, and owned by a named subsystem. Facts should be traceable to evidence. Inferred facts should be traceable to facts and rules. Capability recommendations should be traceable to registered operations and catalog metadata.
 
 ## Function-Block Principle
 
@@ -145,15 +143,13 @@ Function blocks should expose ownership problems early. If a diagram needs two o
 
 Execution starts at `ToolExecutor`.
 
-Everything before `ToolExecutor` should remain reasoning-oriented and read-only with respect to host execution. Pre-execution components may create events, project state, validate decisions, identify ToolNeeds, match registered operation candidates, or recommend providers. They should not run registered operations, mutate hosts, invoke provider-side execution, implement retries, or manage external workflow lifecycles.
+Everything before `ToolExecutor` should remain reasoning-oriented and read-only with respect to host execution. Pre-execution components may create events, project state, validate decisions, match registered operation candidates, or recommend providers. They should not run registered operations, mutate hosts, invoke provider-side execution, implement retries, or manage external workflow lifecycles.
 
 `ToolExecutor` is the only execution owner. Runtime and decision-validation paths may decide whether a `call_tool` decision is valid and may delegate to `ToolExecutor`, but they do not become execution owners.
 
 ## Capability Hierarchy
 
 ```text
-ToolNeed
-    ↓
 Capability
     ↓
 Registered Operations
@@ -163,8 +159,7 @@ Provider Recommendations
 
 The hierarchy separates reasoning concepts from executable inventory:
 
-- `ToolNeed` describes a capability gap or requested capability.
-- A capability describes what kind of ability would satisfy the need.
+- A capability describes a kind of ability.
 - Registered operations are executable entries owned by `ToolRegistry`.
 - Provider recommendations are metadata owned by `CapabilityCatalog`.
 

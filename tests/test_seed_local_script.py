@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 
-from seed_runtime.models import ToolNeed
 from seed_runtime.recommendation_ranker import RankedRecommendation
 from seed_runtime.state import State
 
@@ -3963,7 +3962,7 @@ def test_cli_repository_current_facts_filter_matches_broad_relationship_facts(
     source_dir = repo_path / "tests"
     source_dir.mkdir(parents=True)
     (source_dir / "test_toolkit_validator.py").write_text(
-        "from seed_runtime.toolkit import CandidateStore, ToolNeed\n"
+        "from seed_runtime.toolkit import CandidateStore, ToolkitCandidate\n"
         "from seed_runtime.validator import ToolkitValidator\n"
         "\n"
         "def test_validator_accepts_generated_stub_candidate():\n"
@@ -3995,7 +3994,7 @@ def test_cli_repository_current_facts_filter_matches_broad_relationship_facts(
     ]
     expected_imports = [
         "CandidateStore (path=tests/test_toolkit_validator.py)",
-        "ToolNeed (path=tests/test_toolkit_validator.py)",
+        "ToolkitCandidate (path=tests/test_toolkit_validator.py)",
         "ToolkitValidator (path=tests/test_toolkit_validator.py)",
     ]
 
