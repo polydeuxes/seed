@@ -21,7 +21,7 @@ A constructor consumes values or representations and produces another representa
 ## Representative repository anchors
 - `seed_runtime/bounded_operator_goal_establishment.py::establish_bounded_operator_goal_from_admitted_interpretation`
 - `seed_runtime/bounded_operator_goal_establishment.py::BoundedOperatorGoalEstablishment`
-- `seed_runtime/advancement_need_consideration_selection.py::select_advancement_need_for_consideration`
+- `seed_runtime/goal_advancement_demand_consideration_selection.py::select_goal_advancement_demand_for_consideration`
 - `seed_runtime/__init__.py`
 
 ## Counterexamples or failure modes

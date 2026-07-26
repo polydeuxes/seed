@@ -11,7 +11,7 @@ PR 1900's distinctions are preserved, but their constitutional grammar is rotate
 ## Canonical clauses examined
 
 - `book_of_seed/sensing_gap_capability_and_learning_amendment_001.md`
-- `book_of_seed/03-goals-and-advancement/needs-and-opened-movement.md`
+- `book_of_seed/03-goals-and-advancement/demands-and-opened-movement.md`
 - `book_of_seed/03-goals-and-advancement/orientation-and-movement.md`
 - `book_of_seed/02-acts-and-constraints/constraints-policy-and-preconditions.md`
 - `book_of_seed/05-evidence-and-knowledge/testimony-and-established-fact.md`
@@ -157,7 +157,7 @@ Evidence gap, capability Unknown, authority gap, resource insufficiency, unresol
 - `book_of_seed/03-goals-and-advancement/orientation-and-movement.md`
 - `book_of_seed/02-acts-and-constraints/constraints-policy-and-preconditions.md`
 - `book_of_seed/05-evidence-and-knowledge/testimony-and-established-fact.md`
-- `book_of_seed/03-goals-and-advancement/needs-and-opened-movement.md`
+- `book_of_seed/03-goals-and-advancement/demands-and-opened-movement.md`
 - `book_of_seed/07-operational-realization/operational-realization-and-capability.md`
 - `book_of_seed/08-authority-communication-and-stopping/stopping-and-completion.md`
 

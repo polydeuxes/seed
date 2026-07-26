@@ -20,7 +20,7 @@ This is a lightweight navigation index. Aliases record repository or presentatio
 | selection standing | Acts and Constraints | [Selection artifacts and acts of selection](02-acts-and-constraints/selection-artifacts-and-selection-acts.md) | focus standing, bounded selection standing | consideration selection, representation standing, authorization standing |
 | establishment | Goals and Advancement | [Construction and establishment](03-goals-and-advancement/construction-and-establishment.md) | bounded goal establishment | construction, standing |
 | orientation | Goals and Advancement | [Orientation and movement](03-goals-and-advancement/orientation-and-movement.md) | current work position, source navigation | movement, lens |
-| advancement need | Goals and Advancement | [Needs and opened movement](03-goals-and-advancement/needs-and-opened-movement.md) | need family, insufficiency | bounded horizon, movement |
+| advancement need | Goals and Advancement | [Needs and opened movement](03-goals-and-advancement/demands-and-opened-movement.md) | need family, insufficiency | bounded horizon, movement |
 | authorization | Goals and Advancement | [Selection and authorization](03-goals-and-advancement/selection-and-authorization.md) | approval, permission | selection, authority scope |
 | constitutional question | Inquiry and Examination | [Questions and inquiry](04-inquiry-and-examination/questions-and-inquiry.md) | bounded question, question surface | uncertainty, inquiry |
 | inquiry frontier | Inquiry and Examination | [Inquiry frontiers](04-inquiry-and-examination/inquiry-frontiers.md) | bounded frontier, inquiry artifacts | boundary testimony, examination |

@@ -10,7 +10,7 @@ Seed can lawfully revise its understanding of a bounded gap, candidate capabilit
 
 ## Canonical clauses examined
 
-- `book_of_seed/03-goals-and-advancement/needs-and-opened-movement.md`
+- `book_of_seed/03-goals-and-advancement/demands-and-opened-movement.md`
 - `book_of_seed/03-goals-and-advancement/orientation-and-movement.md`
 - `book_of_seed/03-goals-and-advancement/selection-and-authorization.md`
 - `book_of_seed/04-inquiry-and-examination/questions-and-inquiry.md`
@@ -119,7 +119,7 @@ ObservationIngestor to evidence-linked Fact-shaped artifact does not independent
 ## Canonical clauses amended
 
 - `book_of_seed/05-evidence-and-knowledge/testimony-and-established-fact.md`
-- `book_of_seed/03-goals-and-advancement/needs-and-opened-movement.md`
+- `book_of_seed/03-goals-and-advancement/demands-and-opened-movement.md`
 - `book_of_seed/07-operational-realization/operational-realization-and-capability.md`
 - `book_of_seed/concordance.md`
 

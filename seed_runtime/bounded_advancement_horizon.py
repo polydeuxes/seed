@@ -23,7 +23,7 @@ RefusalReason = Literal[
     "excluded_goal_advancement_demand_family_missing_reason",
 ]
 
-NEED_CLASSIFICATION_FIELDS: tuple[str, ...] = (
+DEMAND_CLASSIFICATION_FIELDS: tuple[str, ...] = (
     "clarification_demand",
     "inquiry_demand",
     "authority_demand",
