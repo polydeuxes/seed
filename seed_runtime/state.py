@@ -1174,17 +1174,6 @@ class StateProjector:
             data = payload.get("goal", payload)
             goal = Goal(**data)
             state.goals[goal.id] = goal
-        elif event.kind == "tool_need.created":
-            data = payload.get("tool_need", payload)
-            need = ToolNeed(**data)
-            state.tool_needs[need.id] = need
-        elif event.kind == "tool_need.status_changed":
-            need_id = payload["tool_need_id"]
-            if need_id in state.tool_needs:
-                current = state.tool_needs[need_id]
-                state.tool_needs[need_id] = ToolNeed(
-                    **{**current.__dict__, "status": payload["status"]}
-                )
         elif event.kind == "approval.granted":
             data = payload.get("approval", payload).copy()
             data["expires_at"] = _parse_dt(data.get("expires_at"))
@@ -1217,11 +1206,6 @@ def _recover_affected_scope(event: Event) -> _AffectedScope | None:
     if event.kind == "goal.created":
         data = payload.get("goal", payload)
         return _AffectedScope("goals", data.get("id"))
-    if event.kind in {"tool_need.created", "tool_need.status_changed"}:
-        data = payload.get("tool_need", payload)
-        return _AffectedScope(
-            "tool_needs", data.get("id") or payload.get("tool_need_id")
-        )
     if event.kind == "approval.granted":
         data = payload.get("approval", payload)
         return _AffectedScope("approvals", data.get("id"), data.get("scope"))
