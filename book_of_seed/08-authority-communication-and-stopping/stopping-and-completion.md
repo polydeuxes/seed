@@ -11,7 +11,7 @@ Current evidence supports several distinct non-movement conditions, including su
 
 ## Important distinctions
 - stopping != completion
-- no selected movement != no remaining need
+- no selected movement != no remaining Demand
 - bounded exhaustion != global impossibility
 
 ## Representative repository anchors
