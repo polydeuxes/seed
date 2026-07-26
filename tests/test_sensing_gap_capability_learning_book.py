@@ -58,6 +58,40 @@ def test_demand_gap_and_capability_demand_invariants_are_canonical():
         assert invariant in text
 
 
+def test_canonical_navigation_uses_demand_and_bounds_former_need_vocabulary():
+    concordance = _read("book_of_seed/concordance.md")
+
+    required = [
+        "| goal-advancement Demand |",
+        "[Demands and opened movement](03-goals-and-advancement/demands-and-opened-movement.md)",
+        "former advancement-need vocabulary",
+        "former `NeedFamily` implementation vocabulary",
+        "Demand != Gap",
+        "Gap != Demand by identity",
+        "Demand != Capability",
+        "Demand established != movement opened",
+        "“Capability demand”**: noncanonical shorthand for Demand content",
+        "It is not an independent constitutional kind, Capability, mechanism, selected mechanism, authorization, or execution",
+    ]
+    stale = [
+        "| advancement need |",
+        "[Needs and opened movement]",
+        "claim standing, evidence, need",
+        "addressing a declared need or gap",
+    ]
+
+    for invariant in required:
+        assert invariant in concordance
+
+    for residue in stale:
+        assert residue not in concordance
+
+    assert "orientation, Demand, selection" in _read("book_of_seed/03-goals-and-advancement/README.md")
+    assert "no selected movement != no remaining Demand" in _read(
+        "book_of_seed/08-authority-communication-and-stopping/stopping-and-completion.md"
+    )
+
+
 def test_book_vii_capability_chapter_remains_absent():
     assert not (ROOT / "book_of_seed/07-operational-realization/operational-realization-and-capability.md").exists()
     assert not (ROOT / "book_of_seed/07-operational-realization").exists()
