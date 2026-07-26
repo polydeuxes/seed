@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from seed_runtime.base import SeedModel
-from seed_runtime.models import HandoffBackendType, ToolNeed
+from seed_runtime.models import HandoffBackendType
 from seed_runtime.capabilities import slugify
 
 
@@ -81,13 +81,6 @@ class CapabilityCatalog:
     def get(self, capability: str) -> CapabilityCatalogEntry | None:
         """Return the catalog entry for a capability, if present."""
         return self._entries.get(slugify(capability))
-
-    def recommend_for(self, tool_need: ToolNeed) -> list[CapabilityRecommendation]:
-        """Return provider recommendations matching a tool need's capability."""
-        entry = self.get(tool_need.capability)
-        if entry is None:
-            return []
-        return list(entry.recommendations)
 
     def list_entries(self) -> list[CapabilityCatalogEntry]:
         """Return catalog entries in capability order."""

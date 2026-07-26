@@ -78,4 +78,7 @@ def test_rules_cli_does_not_build_runtime_or_tool_executor(monkeypatch, capsys):
         if entry["id"] == "capability_resolution.disk_inspection"
     )
     assert entry["source"] == "capability_catalog/*.yml"
+    assert entry["if_conditions"] == [
+        "CapabilityCatalog contains capability 'disk_inspection'"
+    ]
     assert entry["metadata"]["operations"] == ["disk.inspect"]

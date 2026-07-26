@@ -280,7 +280,7 @@ class RuleInventoryBuilder:
                     source=_source("capability_catalog/*.yml"),
                     summary=f"Recommend providers for capability {entry.capability}.",
                     if_conditions=[
-                        f"ToolNeed.capability is {entry.capability!r}",
+                        f"CapabilityCatalog contains capability {entry.capability!r}",
                     ],
                     then_effects=[
                         "provider and handoff recommendations may be reported as metadata",
