@@ -271,17 +271,7 @@ class RuleInventoryBuilder:
         ]
 
     def _capability_resolution_entries(self) -> list[RuleInventoryEntry]:
-        entries = [
-            RuleInventoryEntry(
-                id="capability_resolution.registered_operation_candidates",
-                category="capability_resolution",
-                source="seed_runtime/tool_needs.py:ToolNeedService.resolve_capability",
-                summary="Matching registered operations are reported as candidates only.",
-                if_conditions=["ToolNeed.capability matches a registered ToolSpec capability"],
-                then_effects=["registered operation candidate metadata is reported", "no tool is executed"],
-                metadata={"executable": False},
-            )
-        ]
+        entries: list[RuleInventoryEntry] = []
         for entry in self.capability_catalog.list_entries():
             entries.append(
                 RuleInventoryEntry(
