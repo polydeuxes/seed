@@ -11,7 +11,7 @@ from seed_runtime.capability_candidates import CapabilityCandidateInspection
 from seed_runtime.capability_catalog import CapabilityCatalog, CapabilityRecommendation
 from seed_runtime.capability_inventory import CapabilityInventoryEntry, build_capability_inventory
 from seed_runtime.capability_verification import CapabilityVerificationInspection
-from seed_runtime.models import ToolNeed, ToolSpec
+from seed_runtime.models import ToolSpec
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import State
 from seed_runtime.verification_evidence import VerificationEvidenceInspection
@@ -19,7 +19,6 @@ from seed_runtime.verification_evidence import VerificationEvidenceInspection
 _BOUNDARY_NOTES = (
     "single_capability_projection_not_global_capability_identity",
     "same_normalized_string_correlation_only",
-    "requested_state_proves_demand_only",
     "catalog_known_proves_metadata_presence_only",
     "provider_recommendations_are_advisory_unselected",
     "registered_operations_are_contract_associations_only",
@@ -47,7 +46,6 @@ class RegisteredOperationAssociation:
 @dataclass(frozen=True)
 class SingleCapabilityStateProjection:
     capability_name: str
-    requested: list[ToolNeed] = field(default_factory=list)
     catalog_known: bool | str = "unknown"
     provider_recommendations: list[CapabilityRecommendation] = field(default_factory=list)
     registered_operations: list[RegisteredOperationAssociation] = field(default_factory=list)
@@ -78,11 +76,6 @@ def build_single_capability_state_projection(
 
     normalized = normalize_capability(capability_name)
     unknowns: list[str] = []
-
-    requested = [
-        need for need in state.tool_needs.values()
-        if normalize_capability(need.capability) == normalized
-    ]
 
     catalog_entry = None if catalog is None else catalog.get(normalized)
     if catalog is None:
@@ -148,7 +141,6 @@ def build_single_capability_state_projection(
 
     return SingleCapabilityStateProjection(
         capability_name=normalized,
-        requested=sorted(requested, key=lambda need: need.id),
         catalog_known=("unknown" if catalog is None else catalog_entry is not None),
         provider_recommendations=([] if catalog_entry is None else list(catalog_entry.recommendations)),
         registered_operations=operations,
@@ -191,7 +183,6 @@ def format_single_capability_state_projection(projection: SingleCapabilityStateP
         f"read_only: {str(projection.read_only).lower()}",
         f"writes_event_ledger: {str(projection.writes_event_ledger).lower()}",
         f"mutates_cluster: {str(projection.mutates_cluster).lower()}",
-        f"requested: {len(projection.requested)} demand artifact(s)",
         f"catalog_known: {projection.catalog_known}",
         f"provider_recommendations: {len(projection.provider_recommendations)} advisory unselected record(s)",
         f"registered_operations: {len(projection.registered_operations)} contract association(s)",
