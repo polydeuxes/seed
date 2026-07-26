@@ -102,9 +102,9 @@ def test_privilege_discovery_empty_state_is_sane_and_read_only(
         ledger.close()
 
     state = State(workspace_id="ws")
-    before = (dict(state.facts), dict(state.evidence), list(state.open_tool_needs))
+    before = (dict(state.facts), dict(state.evidence))
     audit = build_privilege_discovery(state)
-    after = (dict(state.facts), dict(state.evidence), list(state.open_tool_needs))
+    after = (dict(state.facts), dict(state.evidence))
     assert before == after
     assert audit.mutates_cluster is False
     assert audit.writes_event_ledger is False

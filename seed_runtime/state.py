@@ -530,11 +530,6 @@ class State:
             if severity is None or issue.severity == severity
         ]
 
-    @property
-    def open_tool_needs(self) -> list[ToolNeed]:
-        closed = {"registered", "rejected"}
-        return [need for need in self.tool_needs.values() if need.status not in closed]
-
     def get_relationships(
         self,
         subject: str | None = None,

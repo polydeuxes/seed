@@ -111,9 +111,9 @@ def test_capability_relationship_is_read_only_and_no_ledger_writes(
         ledger.close()
 
     state = State(workspace_id="ws")
-    before = (dict(state.facts), dict(state.evidence), list(state.open_tool_needs))
+    before = (dict(state.facts), dict(state.evidence))
     audit = build_capability_relationship(state)
-    after = (dict(state.facts), dict(state.evidence), list(state.open_tool_needs))
+    after = (dict(state.facts), dict(state.evidence))
     assert before == after
     assert audit.read_only is True
     assert audit.writes_event_ledger is False
