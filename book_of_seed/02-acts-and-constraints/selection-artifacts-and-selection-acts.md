@@ -13,9 +13,9 @@ Candidate-identity resolution is not itself a selection act. A resolver may comp
 
 Selection-to-consumer uptake is not singular. A consumer may adopt selected-subject standing for a new bounded purpose, narrow representation selection to selected registered names, or revalidate coherence between a selected subject and other testimony. Consumer acceptance of one of those smaller assertions does not accept every producer assertion, and selected names suitable for composition do not prove exact-key selection occurrence.
 
-Repository evidence supports a shared higher-order selection grammar with distinct subfamilies. Representation selection may choose registered read-model views by exact deterministic keys for one composition purpose. Advancement-need consideration selection may choose one already-established need for bounded present consideration after full identity and lineage checks. Meaning selection, closed-choice binding, policy/work selection, and operational-realization selection have their own candidate sets and downstream limits. Shared selection vocabulary does not collapse these into one constitutional act kind.
+Repository evidence supports a shared higher-order selection grammar with distinct subfamilies. Representation selection may choose registered read-model views by exact deterministic keys for one composition purpose. Goal-advancement-demand consideration selection may choose one already-established demand for bounded present consideration after full identity and lineage checks. Meaning selection, closed-choice binding, policy/work selection, and operational-realization selection have their own candidate sets and downstream limits. Shared selection vocabulary does not collapse these into one constitutional act kind.
 
-For the local advancement-need road recovered by `advancement_need_consideration_selection_correspondence_001.md`, advancement-need consideration selection consumes a bounded visible/selectable advancement-need reference set plus exact consideration evidence and performs bounded consideration selection. It establishes selected-for-consideration standing. It does not establish priority, primary blocker standing, next required act, route, next inquiry, self-orientation, authorization, or execution.
+For the local goal-advancement-demand road recovered by `advancement_need_consideration_selection_correspondence_001.md`, goal-advancement-demand consideration selection consumes a bounded visible/selectable goal-advancement-demand reference set plus exact consideration evidence and performs bounded consideration selection. It establishes selected-for-consideration standing. It does not establish priority, primary blocker standing, next required act, route, next inquiry, self-orientation, authorization, or execution.
 
 ## Important distinctions
 - selection artifact != act of selection
@@ -37,8 +37,8 @@ For the local advancement-need road recovered by `advancement_need_consideration
 ## Representative repository anchors
 - `seed_runtime/constitutional_view_selection.py::SelectedConstitutionalViews`
 - `seed_runtime/constitutional_view_selection.py::select_constitutional_views`
-- `seed_runtime/advancement_need_consideration_selection.py::AdvancementNeedConsiderationSelection`
-- `seed_runtime/advancement_need_consideration_selection.py::select_advancement_need_for_consideration`
+- `seed_runtime/goal_advancement_demand_consideration_selection.py::GoalAdvancementDemandConsiderationSelection`
+- `seed_runtime/goal_advancement_demand_consideration_selection.py::select_goal_advancement_demand_for_consideration`
 - `seed_runtime/examination_work_selection.py`
 - `seed_runtime/closed_choice_selection_binding.py`
 
@@ -46,7 +46,7 @@ For the local advancement-need road recovered by `advancement_need_consideration
 - Taking the first displayed candidate as selected.
 - Treating exact candidate-identity resolution as proof of a Seed-owned selection act.
 - Reusing a selection artifact against a different candidate set.
-- Treating a uniquely eligible need as automatically selected when no exact consideration evidence was supplied.
+- Treating a uniquely eligible demand as automatically selected when no exact consideration evidence was supplied.
 - Reusing a representation-selection artifact as if it warranted consideration, authorization, or movement for another consumer.
 - Treating omitted non-selected alternatives as invalidating a selector whose intended consumer does not require them.
 - Treating preserved non-selected alternatives as completing the producer warrant when identity, basis, or consumer validation is still missing.

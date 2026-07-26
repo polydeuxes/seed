@@ -33,7 +33,7 @@ Primary districts examined:
 - `02-acts-and-constraints/constraints-policy-and-preconditions.md`
 - `03-goals-and-advancement/selection-and-authorization.md`
 - `03-goals-and-advancement/orientation-and-movement.md`
-- `03-goals-and-advancement/needs-and-opened-movement.md`
+- `03-goals-and-advancement/demands-and-opened-movement.md`
 - `05-evidence-and-knowledge/evidence-provenance-and-explanation.md`
 - `07-operational-realization/warrants-and-execution-proposals.md`
 - `08-authority-communication-and-stopping/authority-scope.md`

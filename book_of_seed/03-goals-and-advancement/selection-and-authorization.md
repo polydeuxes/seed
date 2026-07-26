@@ -15,7 +15,7 @@ Exact candidate-identity resolution is smaller than selection. A resolver may pr
 - candidate identity resolved != candidate selected
 - selection != authorization
 - consideration != permission
-- selected advancement need != priority, route, inquiry opening, or realization
+- selected advancement demand != priority, route, inquiry opening, or realization
 - representation selection != consideration selection automatically
 - closed choice binding != execution approval
 - selected-for-consideration standing != authorization standing

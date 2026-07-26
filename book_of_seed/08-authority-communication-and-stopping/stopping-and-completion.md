@@ -25,7 +25,7 @@ Current evidence supports several distinct non-movement conditions, including su
 
 ## Related chapters
 - [Orientation and movement](../03-goals-and-advancement/orientation-and-movement.md)
-- [Needs and opened movement](../03-goals-and-advancement/needs-and-opened-movement.md)
+- [Demands and opened movement](../03-goals-and-advancement/demands-and-opened-movement.md)
 - [Refusal and non-performance](refusal-and-non-performance.md)
 
 ## Constrained movement stopping correction 001

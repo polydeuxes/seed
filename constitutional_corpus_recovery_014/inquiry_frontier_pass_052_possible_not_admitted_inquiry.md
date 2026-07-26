@@ -11,7 +11,7 @@ Evidence from pass 051 was re-read against:
 - `constitutional_corpus_recovery_014/authority_reliance_admission.md`
 - `constitutional_corpus_recovery_014/book_projection_pass_020_admission_participation_boundary.md`
 - `book_of_seed/08-authority-communication-and-stopping/authority-scope.md`
-- `book_of_seed/03-goals-and-advancement/needs-and-opened-movement.md`
+- `book_of_seed/03-goals-and-advancement/demands-and-opened-movement.md`
 - `book_of_seed/03-goals-and-advancement/selection-and-authorization.md`
 - `bounded_inquiry_frontier_audit_001.md`
 - `bounded_inquiry_frontier_question_handoff_audit_001.md`

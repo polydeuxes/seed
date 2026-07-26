@@ -30,7 +30,7 @@ Constitutional movement is a warranted transition in lawful position, standing, 
 
 ## Related chapters
 - [Lenses, views, and constitutional roads](../01-grammar-and-standing/lenses-views-and-roads.md)
-- [Needs and opened movement](needs-and-opened-movement.md)
+- [Demands and opened movement](demands-and-opened-movement.md)
 - [Stopping and completion](../08-authority-communication-and-stopping/stopping-and-completion.md)
 
 ## Constrained movement grammar correction 001

@@ -4,5 +4,5 @@ This Book concerns lawful goal standing and the bounded distinctions between ori
 
 - [Construction and establishment](construction-and-establishment.md)
 - [Orientation and movement](orientation-and-movement.md)
-- [Needs and opened movement](needs-and-opened-movement.md)
+- [Demands and opened movement](demands-and-opened-movement.md)
 - [Selection and authorization](selection-and-authorization.md)

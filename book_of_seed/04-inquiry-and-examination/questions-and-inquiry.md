@@ -12,13 +12,13 @@ Question-shaped external material is testimony, not an internal constitutional q
 ## Addressable boundaries for question standing
 
 ### 04.Question.A — Question standing is not answer standing
-A bounded question may establish the identity, provenance, scope, evidence demand, and lawful stop conditions for an inquiry posture, but it does not establish the answer, select the outcome, authorize unbounded investigation, or convert the operator's wording into repository knowledge. Reformulation, frontier membership, or advancement need may carry the question forward only within preserved evidence, authority, uncertainty, and negative-authority limits.
+A bounded question may establish the identity, provenance, scope, evidence demand, and lawful stop conditions for an inquiry posture, but it does not establish the answer, select the outcome, authorize unbounded investigation, or convert the operator's wording into repository knowledge. Reformulation, frontier membership, or advancement demand may carry the question forward only within preserved evidence, authority, uncertainty, and negative-authority limits.
 
 ### 04.Question.B — Inquiry origination requires bounded translation
 An operator ask, prompt phrase, uncertainty statement, reformulation, or presentation label may create attributed testimony or inquiry pressure only. Seed may initiate internal inquiry after a bounded translation preserves identity, source, scope, evidence demand, authority limit, uncertainty, and lawful stop. That translation does not make the operator's wording repository knowledge, assign universal inquiry ownership, retire neighboring questions, establish an answer, or authorize investigation beyond the translated boundary.
 
 ### 04.Question.C — Question relations are local and non-collapsing
-A relation involving inquiry pressure, an inquiry need, a bounded question, examination work, a finding, an answer, completion, communication, or later re-entry exists only where the exact source standing, target standing, crossing evidence or warrant, authority boundary, and surviving limits are preserved for that local relation. Naming several such standings in one report, graph, implementation surface, or sequence does not establish a canonical node inventory, universal pipeline, constitutional ordering, or missing edge. No relation carries stronger answer, evidentiary warrant, authority, completion, retirement, receipt, reliance, correction, reopening, execution, or mutation standing unless that stronger standing is separately established.
+A relation involving inquiry pressure, an inquiry demand, a bounded question, examination work, a finding, an answer, completion, communication, or later re-entry exists only where the exact source standing, target standing, crossing evidence or warrant, authority boundary, and surviving limits are preserved for that local relation. Naming several such standings in one report, graph, implementation surface, or sequence does not establish a canonical node inventory, universal pipeline, constitutional ordering, or missing edge. No relation carries stronger answer, evidentiary warrant, authority, completion, retirement, receipt, reliance, correction, reopening, execution, or mutation standing unless that stronger standing is separately established.
 
 External grammar cannot inject an internal question. Operator material may remain testimony, pressure, goals, constraints, corrections, or responses; Seed owns the constitutional act that forms any internal question from that material. An implementation taxonomy such as `QuestionFamily`, an exposed inventory, exact family label, dispatch map, or presentation surface is realization testimony only. It may support compatibility routing or bounded implementation eligibility, but it does not become Seed's constitutional question taxonomy or establish applicability to a goal by existence.
 
@@ -63,7 +63,7 @@ Preserved Unknowns include the complete executable default dialogue loop, the fu
 ## Representative repository anchors
 - `seed_runtime/bounded_constitutional_question.py`
 - `seed_runtime/question_surface_inventory.py`
-- `seed_runtime/inquiry_need_projection.py`
+- `seed_runtime/inquiry_demand_projection.py`
 
 ## Counterexamples or failure modes
 - Promoting every open string in state to a constitutional question.

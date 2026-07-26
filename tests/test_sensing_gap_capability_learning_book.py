@@ -32,7 +32,7 @@ def test_sensing_remembering_trajectory_learning_invariants_are_canonical():
 
 
 def test_demand_gap_and_capability_demand_invariants_are_canonical():
-    text = _read("book_of_seed/03-goals-and-advancement/needs-and-opened-movement.md")
+    text = _read("book_of_seed/03-goals-and-advancement/demands-and-opened-movement.md")
 
     required = [
         "The current goal-advancement implementation represents bounded Demand standing directly through explicitly local Demand-family artifacts",
@@ -145,8 +145,8 @@ def test_constrained_evidence_learning_and_causation_invariants_are_canonical():
         assert invariant in text
 
 
-def test_constrained_need_gap_and_demand_invariants_are_canonical():
-    text = _read("book_of_seed/03-goals-and-advancement/needs-and-opened-movement.md")
+def test_constrained_demand_gap_invariants_are_canonical():
+    text = _read("book_of_seed/03-goals-and-advancement/demands-and-opened-movement.md")
 
     required = [
         "A **Demand** states what result, relation, clarification, inquiry, authority, transformation, competency, or other bounded condition is required under an exact responsibility and scope",
