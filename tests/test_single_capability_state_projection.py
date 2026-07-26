@@ -3,12 +3,11 @@ import json
 
 from seed_runtime.capability_candidates import build_capability_candidates
 from seed_runtime.capability_catalog import CapabilityCatalog, CapabilityCatalogEntry, CapabilityRecommendation
-from seed_runtime.capability_inventory import build_capability_inventory
+from seed_runtime.capability_inventory import CapabilityInventoryEntry, build_capability_inventory
 from seed_runtime.capability_verification import build_capability_verification_inspection
 from seed_runtime.evidence import Evidence
 from seed_runtime.events import EventLedger
 from seed_runtime.facts import Fact
-from seed_runtime.models import ToolNeed
 from seed_runtime.serialization import to_plain
 from seed_runtime.single_capability_state_projection import (
     build_single_capability_state_projection,
@@ -27,10 +26,6 @@ def _project(ledger):
     return StateProjector(ledger).project("ws")
 
 
-def _need(capability):
-    return ToolNeed(id=f"need_{capability}", workspace_id="ws", name="need", summary="need", capability=capability, reason="test")
-
-
 def _package_fact(package="python3"):
     return Fact(id=f"fact_{package}", subject_id="localhost", predicate="package_installed", value=package, evidence_ids=[f"evd_{package}"], observed_at=BASE_TIME, source_type="discovery")
 
@@ -41,7 +36,6 @@ def _verification_fact(capability="python_runtime", value="verified", expires_at
 
 def _ledger(value="verified", expires_at=None):
     ledger = EventLedger()
-    ledger.append("tool_need.created", "ws", {"tool_need": to_plain(_need("Python Runtime"))})
     ledger.append("fact.observed", "ws", {"fact": to_plain(_package_fact())})
     ledger.append("fact.observed", "ws", {"fact": to_plain(_verification_fact(value=value, expires_at=expires_at))})
     return ledger
@@ -66,7 +60,6 @@ def test_projection_normalizes_and_exposes_boundaries_without_selection():
     assert projection.capability_name == "python_runtime"
     assert projection.catalog_known is True
     assert projection.verification_status == "verified"
-    assert len(projection.requested) == 1
     assert projection.provider_recommendations[0].provider == "manual"
     assert projection.registered_operations == []
     assert projection.candidate_evidence[0].candidate == "python_runtime"
@@ -84,12 +77,18 @@ def test_projection_normalizes_and_exposes_boundaries_without_selection():
 
 def test_absent_candidate_and_verification_evidence_are_not_absence_or_failure():
     ledger = EventLedger()
-    ledger.append("tool_need.created", "ws", {"tool_need": to_plain(_need("Python Runtime"))})
     state = _project(ledger)
     candidates = build_capability_candidates(state, filter_text="python_runtime")
     evidence = build_verification_evidence(state, filter_text="python_runtime", path_env="", candidate_inspection=candidates)
 
-    projection = build_single_capability_state_projection(state, "Python Runtime", catalog=_catalog(), candidate_inspection=candidates, verification_evidence_inspection=evidence, inventory=build_capability_inventory(state, now=BASE_TIME))
+    projection = build_single_capability_state_projection(
+        state,
+        "Python Runtime",
+        catalog=_catalog(),
+        candidate_inspection=candidates,
+        verification_evidence_inspection=evidence,
+        inventory=[CapabilityInventoryEntry(capability="python_runtime", state="unverified")],
+    )
     rendered = format_single_capability_state_projection(projection)
 
     assert projection.candidate_evidence == []
@@ -115,7 +114,7 @@ def test_json_shape_is_stable_and_typed():
     payload = single_capability_state_projection_json(projection)
 
     assert list(payload) == [
-        "capability_name", "requested", "catalog_known", "provider_recommendations",
+        "capability_name", "catalog_known", "provider_recommendations",
         "registered_operations", "candidate_evidence", "verification_evidence",
         "verification_status", "verification_support", "freshness", "unknowns",
         "boundary_notes", "read_only", "writes_event_ledger", "mutates_cluster",
