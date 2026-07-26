@@ -55,6 +55,7 @@ def test_projection_shape_stage_list_visibility():
 
 def test_projection_shape_consumes_and_produces_visibility():
     stages = _stages()
+    assert "tool_needs" not in stages["event_replay"].produces
     assert "facts" in stages["fact_support_projection"].consumes
     assert "fact_supports" in stages["fact_support_projection"].produces
     assert "relationship_catalog" in stages["catalog_relationship_projection"].consumes

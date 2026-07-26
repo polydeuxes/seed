@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
 from seed_runtime.serialization import to_plain
-from seed_runtime.models import Approval, Entity, Fact, Goal, ToolNeed, utc_now
+from seed_runtime.models import Approval, Entity, Fact, Goal, utc_now
 from seed_runtime.state import ProjectionBuildDiagnostics, StateProjector
 import seed_runtime.state as state_module
 
@@ -138,7 +138,7 @@ def test_affected_projection_recovery_does_not_create_dependency_tracking():
         None
     ) == state_module._AffectedProjectionSet(())
     assert state_module._recover_affected_projections(
-        state_module._AffectedScope(collection="tool_needs", identity="need_scope")
+        state_module._AffectedScope(collection="goals", identity="goal_scope")
     ) == state_module._AffectedProjectionSet(())
 
 
@@ -314,14 +314,6 @@ def test_projector_rebuilds_state_deterministically():
         observed_at=utc_now(),
     )
     goal = Goal(id="goal_1", workspace_id=workspace_id, summary="Make SSH work")
-    need = ToolNeed(
-        id="need_1",
-        workspace_id=workspace_id,
-        name="install_ssh_server",
-        summary="Install SSH",
-        capability="ssh_access",
-        reason="missing tool",
-    )
     approval = Approval(
         id=new_id("appr"), action="ssh.install", scope="ent_1", approved_by="user"
     )
@@ -329,7 +321,6 @@ def test_projector_rebuilds_state_deterministically():
     ledger.append("entity.upserted", workspace_id, {"entity": to_plain(entity)})
     ledger.append("fact.observed", workspace_id, {"fact": to_plain(fact)})
     ledger.append("goal.created", workspace_id, {"goal": to_plain(goal)})
-    ledger.append("tool_need.created", workspace_id, {"tool_need": to_plain(need)})
     ledger.append("approval.granted", workspace_id, {"approval": to_plain(approval)})
 
     first = StateProjector(ledger).project(workspace_id)
@@ -339,7 +330,6 @@ def test_projector_rebuilds_state_deterministically():
     assert first.entities["ent_1"].name == "example_host"
     assert first.facts["fact_1"].value is False
     assert first.goals["goal_1"].status == "active"
-    assert first.tool_needs["need_1"].name == "install_ssh_server"
     assert first.has_approval("ssh.install", "ent_1") is not None
 
 

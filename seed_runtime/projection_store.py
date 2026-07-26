@@ -25,7 +25,6 @@ from seed_runtime.models import (
     Approval,
     Entity,
     Goal,
-    ToolNeed,
     ToolSpec,
 )
 from seed_runtime.observations import Observation
@@ -930,7 +929,6 @@ def state_to_payload(state: State) -> dict[str, Any]:
             "evidence": state.evidence,
             "observations": state.observations,
             "goals": state.goals,
-            "tool_needs": state.tool_needs,
             "approvals": state.approvals,
             "tools": state.tools,
         }
@@ -965,7 +963,6 @@ def state_from_payload(payload: dict[str, Any]) -> State:
     state.evidence = _model_dict(payload, "evidence", Evidence)
     state.observations = _model_dict(payload, "observations", Observation)
     state.goals = _model_dict(payload, "goals", Goal)
-    state.tool_needs = _model_dict(payload, "tool_needs", ToolNeed)
     state.approvals = _model_dict(payload, "approvals", Approval)
     state.tools = _model_dict(payload, "tools", ToolSpec)
     return state
