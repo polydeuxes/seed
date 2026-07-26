@@ -1,4 +1,4 @@
-"""Read-only clarification-need projection from explicit operator-meaning testimony."""
+"""Read-only clarification-demand projection from explicit operator-meaning testimony."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from seed_runtime.bounded_operator_goal_establishment import (
     BoundedOperatorGoalEstablishment,
 )
 
-ClarificationNeedStanding = Literal[
+ClarificationDemandStanding = Literal[
     "established", "unsupported", "unknown", "conflicting", "excluded_family"
 ]
 UnclassifiedReason = Literal[
@@ -27,9 +27,9 @@ UnclassifiedReason = Literal[
 ]
 
 BOUNDARY_NOTES: tuple[str, ...] = (
-    "ClarificationNeedProjection consumes only explicit component-bounded operator-meaning uncertainty testimony.",
+    "ClarificationDemandProjection consumes only explicit component-bounded operator-meaning uncertainty testimony.",
     "Generic unresolved material, family hints, mixed prose, and unresolved goal fields are not clarification evidence.",
-    "Clarification need established is not clarification requested, question wording selected, inquiry opened, action selected, authorization, execution, recording, or mutation.",
+    "Clarification demand established is not clarification requested, question wording selected, inquiry opened, action selected, authorization, execution, recording, or mutation.",
     "The projection does not inspect wording to discover operator meaning or reinterpret the goal.",
 )
 
@@ -43,7 +43,7 @@ class OperatorMeaningUncertaintyTestimony:
     evidence_ref: str
     bounded_uncertainty_component_ref: str
     owning_stage: str
-    standing: ClarificationNeedStanding
+    standing: ClarificationDemandStanding
     uncertainty_family: str = "operator_meaning"
     stage_owns_operator_meaning: bool = True
     component_bounded: bool = True
@@ -53,28 +53,28 @@ class OperatorMeaningUncertaintyTestimony:
 
 
 @dataclass(frozen=True)
-class ClarificationNeedProjectionItem:
+class ClarificationDemandProjectionItem:
     testimony_ref: str
     source_ref: str
     bounded_uncertainty_component_ref: str
     owning_stage: str
-    standing: ClarificationNeedStanding | None
+    standing: ClarificationDemandStanding | None
     unclassified_reason: UnclassifiedReason | None = None
     evidence_ref: str = ""
 
 
 @dataclass(frozen=True)
-class ClarificationNeedProjection:
+class ClarificationDemandProjection:
     projection_id: str
     goal_establishment_id: str
     horizon_id: str
     evidence_refs: tuple[str, ...]
-    established: tuple[ClarificationNeedProjectionItem, ...]
-    unsupported: tuple[ClarificationNeedProjectionItem, ...]
-    unknown: tuple[ClarificationNeedProjectionItem, ...]
-    conflicting: tuple[ClarificationNeedProjectionItem, ...]
-    excluded_family: tuple[ClarificationNeedProjectionItem, ...]
-    unclassified: tuple[ClarificationNeedProjectionItem, ...]
+    established: tuple[ClarificationDemandProjectionItem, ...]
+    unsupported: tuple[ClarificationDemandProjectionItem, ...]
+    unknown: tuple[ClarificationDemandProjectionItem, ...]
+    conflicting: tuple[ClarificationDemandProjectionItem, ...]
+    excluded_family: tuple[ClarificationDemandProjectionItem, ...]
+    unclassified: tuple[ClarificationDemandProjectionItem, ...]
     requests_clarification: bool = False
     selects_question_wording: bool = False
     opens_inquiry: bool = False
@@ -104,8 +104,8 @@ def _horizon_evidence_refs(horizon: BoundedAdvancementHorizon) -> tuple[str, ...
 
 def _excluded_clarification_family(horizon: BoundedAdvancementHorizon) -> bool:
     return any(
-        item.need_family in {"clarification", "clarification_need"}
-        for item in horizon.explicitly_excluded_need_families
+        item.goal_advancement_demand_family in {"clarification", "clarification_demand"}
+        for item in horizon.explicitly_excluded_goal_advancement_demand_families
     )
 
 
@@ -137,15 +137,15 @@ def _unclassified_reason(
     return None
 
 
-def project_clarification_need(
+def project_clarification_demand(
     goal: BoundedOperatorGoalEstablishment,
     horizon: BoundedAdvancementHorizon,
     testimony: Iterable[OperatorMeaningUncertaintyTestimony] = (),
-) -> ClarificationNeedProjection:
-    """Project clarification need standings without requesting clarification."""
+) -> ClarificationDemandProjection:
+    """Project clarification demand standings without requesting clarification."""
     testimony_items = tuple(testimony)
     evidence_refs = _horizon_evidence_refs(horizon)
-    buckets: dict[str, list[ClarificationNeedProjectionItem]] = {
+    buckets: dict[str, list[ClarificationDemandProjectionItem]] = {
         "established": [],
         "unsupported": [],
         "unknown": [],
@@ -156,7 +156,7 @@ def project_clarification_need(
     excluded = _excluded_clarification_family(horizon)
     for item in testimony_items:
         reason = _unclassified_reason(item, goal, horizon, evidence_refs)
-        projection_item = ClarificationNeedProjectionItem(
+        projection_item = ClarificationDemandProjectionItem(
             testimony_ref=item.testimony_ref,
             source_ref=item.source_ref,
             bounded_uncertainty_component_ref=item.bounded_uncertainty_component_ref,
@@ -176,8 +176,8 @@ def project_clarification_need(
         "horizon": horizon.horizon_id,
         "testimony": [item.testimony_ref for item in testimony_items],
     }
-    return ClarificationNeedProjection(
-        _stable("clarification-need-projection", payload),
+    return ClarificationDemandProjection(
+        _stable("clarification-demand-projection", payload),
         goal.goal_establishment_id,
         horizon.horizon_id,
         evidence_refs,
@@ -190,7 +190,7 @@ def project_clarification_need(
     )
 
 
-def clarification_need_projection_json(
-    projection: ClarificationNeedProjection,
+def clarification_demand_projection_json(
+    projection: ClarificationDemandProjection,
 ) -> dict[str, object]:
     return projection.to_json_dict()

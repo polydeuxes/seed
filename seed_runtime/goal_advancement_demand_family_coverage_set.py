@@ -1,8 +1,8 @@
-"""Read-only family-owned advancement need coverage assembly.
+"""Read-only family-owned advancement demand coverage assembly.
 
-This assembler preserves native need-projection identity alongside family-owned
+This assembler preserves native demand-projection identity alongside family-owned
 bounded candidate-space coverage testimony.  It does not own candidate spaces,
-classify needs, plan, route, authorize, execute, record, write the event ledger,
+classify demands, plan, route, authorize, execute, record, write the event ledger,
 or mutate cluster state.
 """
 
@@ -14,7 +14,7 @@ import json
 from typing import Iterable, Literal
 
 from seed_runtime.bounded_advancement_horizon import BoundedAdvancementHorizon
-from seed_runtime.goal_advancement_need_set import FAMILIES, NeedFamily
+from seed_runtime.goal_advancement_demand_set import FAMILIES, GoalAdvancementDemandFamily
 
 ScopeDisposition = Literal["included", "excluded", "conflicting"]
 CoverageStanding = Literal[
@@ -26,7 +26,7 @@ CoverageStanding = Literal[
 ]
 
 BOUNDARY_NOTES: tuple[str, ...] = (
-    "AdvancementNeedFamilyCoverageSet preserves family-owned coverage testimony without owning candidate spaces.",
+    "GoalAdvancementDemandFamilyCoverageSet preserves family-owned coverage testimony without owning candidate spaces.",
     "Scope disposition and coverage standing are separate dimensions.",
     "Excluded families keep explicit horizon reasons and are not evaluated for coverage completeness.",
     "Complete coverage requires matching bounded candidate space testimony, complete included-component accounting, explicit exclusions, and no material coverage conflict.",
@@ -36,7 +36,7 @@ BOUNDARY_NOTES: tuple[str, ...] = (
 
 @dataclass(frozen=True)
 class FamilyBoundedCandidateSpace:
-    family: NeedFamily
+    family: GoalAdvancementDemandFamily
     candidate_space_id: str
     goal_establishment_id: str
     horizon_id: str
@@ -53,7 +53,7 @@ class ExplicitComponentExclusion:
 
 @dataclass(frozen=True)
 class FamilyCoverageTestimony:
-    family: NeedFamily
+    family: GoalAdvancementDemandFamily
     testimony_id: str
     goal_establishment_id: str
     horizon_id: str
@@ -71,15 +71,15 @@ class FamilyCoverageTestimony:
 
 @dataclass(frozen=True)
 class FamilyCoverageIdentityConflict:
-    family: NeedFamily
+    family: GoalAdvancementDemandFamily
     conflict_kind: str
     expected: str
     actual: str
 
 
 @dataclass(frozen=True)
-class AdvancementNeedFamilyCoverageRecord:
-    family: NeedFamily
+class GoalAdvancementDemandFamilyCoverageRecord:
+    family: GoalAdvancementDemandFamily
     scope_disposition: ScopeDisposition
     coverage_standing: CoverageStanding
     goal_establishment_id: str
@@ -97,12 +97,12 @@ class AdvancementNeedFamilyCoverageRecord:
 
 
 @dataclass(frozen=True)
-class AdvancementNeedFamilyCoverageSet:
+class GoalAdvancementDemandFamilyCoverageSet:
     coverage_set_id: str
     artifact_type: str
     goal_establishment_id: str
     horizon_id: str
-    family_records: frozenset[AdvancementNeedFamilyCoverageRecord]
+    family_records: frozenset[GoalAdvancementDemandFamilyCoverageRecord]
     judges_sufficiency: bool = False
     sufficient_for_now: None = None
     prioritizes_families: bool = False
@@ -141,11 +141,11 @@ def _dedupe(values: Iterable[str]) -> tuple[str, ...]:
 
 
 def _horizon_exclusion_reason(
-    horizon: BoundedAdvancementHorizon, family: NeedFamily
+    horizon: BoundedAdvancementHorizon, family: GoalAdvancementDemandFamily
 ) -> str:
-    aliases = {family, f"{family}_need"}
-    for exclusion in horizon.explicitly_excluded_need_families:
-        if exclusion.need_family in aliases:
+    aliases = {family, f"{family}_demand"}
+    for exclusion in horizon.explicitly_excluded_goal_advancement_demand_families:
+        if exclusion.goal_advancement_demand_family in aliases:
             return exclusion.reason
     return ""
 
@@ -154,7 +154,7 @@ def _identity_conflicts(
     horizon: BoundedAdvancementHorizon,
     space: FamilyBoundedCandidateSpace | None,
     testimony: FamilyCoverageTestimony | None,
-    family: NeedFamily,
+    family: GoalAdvancementDemandFamily,
 ) -> tuple[FamilyCoverageIdentityConflict, ...]:
     conflicts: list[FamilyCoverageIdentityConflict] = []
     expected = {
@@ -229,23 +229,23 @@ def _coverage_standing(
     return "partial"
 
 
-def assemble_advancement_need_family_coverage_set(
+def assemble_goal_advancement_demand_family_coverage_set(
     horizon: BoundedAdvancementHorizon,
     *,
     candidate_spaces: Iterable[FamilyBoundedCandidateSpace] = (),
     testimonies: Iterable[FamilyCoverageTestimony] = (),
-) -> AdvancementNeedFamilyCoverageSet:
+) -> GoalAdvancementDemandFamilyCoverageSet:
     """Assemble family coverage records for one exact bounded horizon."""
     spaces = {space.family: space for space in candidate_spaces}
     by_family = {testimony.family: testimony for testimony in testimonies}
-    records: set[AdvancementNeedFamilyCoverageRecord] = set()
+    records: set[GoalAdvancementDemandFamilyCoverageRecord] = set()
     for family in FAMILIES:
         exclusion_reason = _horizon_exclusion_reason(horizon, family)
         space = spaces.get(family)
         testimony = by_family.get(family)
         if exclusion_reason:
             records.add(
-                AdvancementNeedFamilyCoverageRecord(
+                GoalAdvancementDemandFamilyCoverageRecord(
                     family,
                     "excluded",
                     "not_evaluated",
@@ -261,7 +261,7 @@ def assemble_advancement_need_family_coverage_set(
             "conflicting" if standing == "conflicting" else "included"
         )
         records.add(
-            AdvancementNeedFamilyCoverageRecord(
+            GoalAdvancementDemandFamilyCoverageRecord(
                 family,
                 scope,
                 standing,
@@ -313,19 +313,19 @@ def assemble_advancement_need_family_coverage_set(
         )
         for r in records
     ]
-    return AdvancementNeedFamilyCoverageSet(
+    return GoalAdvancementDemandFamilyCoverageSet(
         _stable(
-            "advancement-need-family-coverage-set",
+            "goal-advancement-demand-family-coverage-set",
             {"horizon": horizon.horizon_id, "records": sorted(payload)},
         ),
-        "AdvancementNeedFamilyCoverageSet",
+        "GoalAdvancementDemandFamilyCoverageSet",
         horizon.goal_establishment_id,
         horizon.horizon_id,
         frozenset(records),
     )
 
 
-def advancement_need_family_coverage_set_json(
-    coverage_set: AdvancementNeedFamilyCoverageSet,
+def goal_advancement_demand_family_coverage_set_json(
+    coverage_set: GoalAdvancementDemandFamilyCoverageSet,
 ) -> dict[str, object]:
     return coverage_set.to_json_dict()

@@ -1,4 +1,4 @@
-"""Read-only inquiry-need projection from explicit repository/world uncertainty testimony."""
+"""Read-only inquiry-demand projection from explicit repository/world uncertainty testimony."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from typing import Iterable, Literal
 from seed_runtime.bounded_advancement_horizon import BoundedAdvancementHorizon
 from seed_runtime.bounded_operator_goal_establishment import BoundedOperatorGoalEstablishment
 
-InquiryNeedStanding = Literal[
+InquiryDemandStanding = Literal[
     "established", "unsupported", "unknown", "conflicting", "excluded_family"
 ]
 EvidenceFreshness = Literal["current", "stale", "unknown"]
@@ -28,10 +28,10 @@ UnclassifiedReason = Literal[
 ]
 
 BOUNDARY_NOTES: tuple[str, ...] = (
-    "InquiryNeedProjection consumes only explicit component-bounded repository/world uncertainty testimony.",
-    "Generic Unknowns, observations, unsupported facts, stale evidence, absent artifacts, and mixed unresolved material are not inquiry-need evidence.",
+    "InquiryDemandProjection consumes only explicit component-bounded repository/world uncertainty testimony.",
+    "Generic Unknowns, observations, unsupported facts, stale evidence, absent artifacts, and mixed unresolved material are not inquiry-demand evidence.",
     "Inquiry standing is preserved separately from evidence freshness and evidence availability.",
-    "Inquiry need established is not inquiry opened, question selected, observation authorized, action selected, sufficiency judged, execution, recording, event-ledger writing, or cluster mutation.",
+    "Inquiry demand established is not inquiry opened, question selected, observation authorized, action selected, sufficiency judged, execution, recording, event-ledger writing, or cluster mutation.",
 )
 
 
@@ -45,7 +45,7 @@ class RepositoryWorldUncertaintyTestimony:
     bounded_uncertainty_component_ref: str
     repository_world_subject_ref: str
     owning_stage: str
-    standing: InquiryNeedStanding
+    standing: InquiryDemandStanding
     uncertainty_family: str = "repository_world"
     stage_owns_repository_world_uncertainty: bool = True
     component_bounded: bool = True
@@ -57,13 +57,13 @@ class RepositoryWorldUncertaintyTestimony:
 
 
 @dataclass(frozen=True)
-class InquiryNeedProjectionItem:
+class InquiryDemandProjectionItem:
     testimony_ref: str
     source_ref: str
     bounded_uncertainty_component_ref: str
     repository_world_subject_ref: str
     owning_stage: str
-    standing: InquiryNeedStanding | None
+    standing: InquiryDemandStanding | None
     evidence_ref: str
     evidence_freshness: EvidenceFreshness
     evidence_availability: EvidenceAvailability
@@ -71,17 +71,17 @@ class InquiryNeedProjectionItem:
 
 
 @dataclass(frozen=True)
-class InquiryNeedProjection:
+class InquiryDemandProjection:
     projection_id: str
     goal_establishment_id: str
     horizon_id: str
     evidence_refs: tuple[str, ...]
-    established: tuple[InquiryNeedProjectionItem, ...]
-    unsupported: tuple[InquiryNeedProjectionItem, ...]
-    unknown: tuple[InquiryNeedProjectionItem, ...]
-    conflicting: tuple[InquiryNeedProjectionItem, ...]
-    excluded_family: tuple[InquiryNeedProjectionItem, ...]
-    unclassified: tuple[InquiryNeedProjectionItem, ...]
+    established: tuple[InquiryDemandProjectionItem, ...]
+    unsupported: tuple[InquiryDemandProjectionItem, ...]
+    unknown: tuple[InquiryDemandProjectionItem, ...]
+    conflicting: tuple[InquiryDemandProjectionItem, ...]
+    excluded_family: tuple[InquiryDemandProjectionItem, ...]
+    unclassified: tuple[InquiryDemandProjectionItem, ...]
     opens_inquiry: bool = False
     selects_question: bool = False
     authorizes_observation: bool = False
@@ -108,7 +108,7 @@ def _horizon_evidence_refs(horizon: BoundedAdvancementHorizon) -> tuple[str, ...
 
 
 def _excluded_inquiry_family(horizon: BoundedAdvancementHorizon) -> bool:
-    return any(item.need_family in {"inquiry", "inquiry_need"} for item in horizon.explicitly_excluded_need_families)
+    return any(item.goal_advancement_demand_family in {"inquiry", "inquiry_demand"} for item in horizon.explicitly_excluded_goal_advancement_demand_families)
 
 
 def _unclassified_reason(
@@ -138,15 +138,15 @@ def _unclassified_reason(
     return None
 
 
-def project_inquiry_need(
+def project_inquiry_demand(
     goal: BoundedOperatorGoalEstablishment,
     horizon: BoundedAdvancementHorizon,
     testimony: Iterable[RepositoryWorldUncertaintyTestimony] = (),
-) -> InquiryNeedProjection:
-    """Project inquiry-need standings without opening inquiry or authorizing observation."""
+) -> InquiryDemandProjection:
+    """Project inquiry-demand standings without opening inquiry or authorizing observation."""
     testimony_items = tuple(testimony)
     evidence_refs = _horizon_evidence_refs(horizon)
-    buckets: dict[str, list[InquiryNeedProjectionItem]] = {
+    buckets: dict[str, list[InquiryDemandProjectionItem]] = {
         "established": [],
         "unsupported": [],
         "unknown": [],
@@ -157,7 +157,7 @@ def project_inquiry_need(
     excluded = _excluded_inquiry_family(horizon)
     for item in testimony_items:
         reason = _unclassified_reason(item, goal, horizon, evidence_refs)
-        projection_item = InquiryNeedProjectionItem(
+        projection_item = InquiryDemandProjectionItem(
             testimony_ref=item.testimony_ref,
             source_ref=item.source_ref,
             bounded_uncertainty_component_ref=item.bounded_uncertainty_component_ref,
@@ -178,8 +178,8 @@ def project_inquiry_need(
         "horizon": horizon.horizon_id,
         "testimony": [item.testimony_ref for item in testimony_items],
     }
-    return InquiryNeedProjection(
-        _stable("inquiry-need-projection", payload),
+    return InquiryDemandProjection(
+        _stable("inquiry-demand-projection", payload),
         goal.goal_establishment_id,
         horizon.horizon_id,
         evidence_refs,
@@ -192,5 +192,5 @@ def project_inquiry_need(
     )
 
 
-def inquiry_need_projection_json(projection: InquiryNeedProjection) -> dict[str, object]:
+def inquiry_demand_projection_json(projection: InquiryDemandProjection) -> dict[str, object]:
     return projection.to_json_dict()

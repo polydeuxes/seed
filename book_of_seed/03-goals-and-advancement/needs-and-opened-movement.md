@@ -2,7 +2,7 @@
 
 ## Constitutional subject
 
-The establishment of bounded Demands, their current goal-advancement representation as needs, their relationship to scoped Gaps and Capabilities, and their effect on possible movement.
+The establishment of bounded Demands, their current goal-advancement representation, their relationship to scoped Gaps and Capabilities, and their effect on possible movement.
 
 ## Bounded resolution
 
@@ -10,13 +10,13 @@ A **Demand** states what result, relation, clarification, inquiry, authority, tr
 
 Demand established does not open movement. Establishment establishes bounded required-result standing; it does not select, authorize, execute, or complete movement. Demand satisfied within scope does not mean all advancement is complete.
 
-## Current implementation vocabulary and locality
+## Current implementation locality
 
-“Need” is the current implementation noun for the bounded Demand subject represented locally. Current anchors retain that noun: `GoalAdvancementNeedSet`, `NeedFamily`, `ClarificationNeedProjection`, `InquiryNeedProjection`, `AuthorityNeedProjection`, `OperationalRealizationNeedProjection`, and `NeedStanding`. Need is not currently evidenced as a separate constitutional kind, and there is no Need -> Demand transition: no current producer, responsible act, warrant, distinct output, or consumer establishes such a crossing.
+The current goal-advancement implementation represents bounded Demand standing directly through explicitly local Demand-family artifacts. `GoalAdvancementDemandSet`, `GoalAdvancementDemandFamily`, `ClarificationDemandProjection`, `InquiryDemandProjection`, `AuthorityDemandProjection`, `OperationalRealizationDemandProjection`, and their family-local Demand-standing types name that representation. Demand is the canonical constitutional vocabulary; the former `Need*` vocabulary represented this same local Demand standing and was not a separate constitutional kind, and there is no Need -> Demand transition: no producer, responsible act, warrant, distinct output, or consumer establishes such a crossing.
 
-The current implementation-backed `NeedFamily` inventory is `clarification`, `inquiry`, `authority`, and `operational_realization`. It is `GoalAdvancementNeedSet`-local, established-goal-local, and bounded-advancement-horizon-local. The current `NeedFamily` tuple is exhaustive for its assembler; it is not an exhaustive constitutional Demand taxonomy, and a Demand may arise outside that implementation locality.
+The current implementation-backed `GoalAdvancementDemandFamily` inventory is `clarification`, `inquiry`, `authority`, and `operational_realization`. It is `GoalAdvancementDemandSet`-local, established-goal-local, and bounded-advancement-horizon-local. The current tuple is exhaustive for its assembler; it is not an exhaustive constitutional Demand taxonomy, and a Demand may arise outside that implementation locality.
 
-A family label is not an exact Demand. A projection container is not an established Demand. `NeedStanding="established"` means established bounded Demand standing only within the exact local responsibility and scope. An absent projection does not mean Demand absent, and an excluded family does not mean Demand satisfied. Unknown is not unsupported, and unsupported is not permanently impossible.
+A family label is not an exact Demand. A projection container is not an established Demand. A family-local Demand standing of `"established"` means established bounded Demand standing only within the exact local responsibility and scope. An absent projection does not mean Demand absent, and an excluded family does not mean Demand satisfied. Unknown is not unsupported, and unsupported is not permanently impossible.
 
 ## Demand, movement, and Capability
 
@@ -66,7 +66,7 @@ This counterexample demonstrates only that the four current goal/horizon-local f
 
 ## Representative repository anchors
 
-- `seed_runtime/goal_advancement_need_set.py::GoalAdvancementNeedSet`
+- `seed_runtime/goal_advancement_demand_set.py::GoalAdvancementDemandSet`
 - `seed_runtime/bounded_advancement_horizon.py::BoundedAdvancementHorizon`
 - `seed_runtime/goal_advancement_sufficiency_projection.py`
 

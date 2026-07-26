@@ -1,6 +1,6 @@
 """Read-only implementation-local inquiry-frontier compatibility assessment.
 
-The assembler consumes one exact selected inquiry need plus preserved
+The assembler consumes one exact selected inquiry demand plus preserved
 implementation-defined boundary testimony. It reports the current realization's
 local coherence result. Clause families, required-family coverage, territory
 references, and derived warrant labels in this module are compatibility
@@ -16,7 +16,7 @@ from hashlib import sha256
 import json
 from typing import Literal
 
-from seed_runtime.advancement_need_consideration_selection import AdvancementNeedConsiderationSelection
+from seed_runtime.goal_advancement_demand_consideration_selection import GoalAdvancementDemandConsiderationSelection
 from seed_runtime.inquiry_frontier_boundary_testimony import (
     ClauseFamily,
     InquiryFrontierBoundaryClause,
@@ -37,7 +37,7 @@ FrontierState = Literal[
     "established",
     "missing_required_clause_family",
     "material_binding_conflict",
-    "not_selected_inquiry_need",
+    "not_selected_inquiry_demand",
 ]
 
 # Implementation-local completeness inventory retained for public compatibility.
@@ -50,7 +50,7 @@ REQUIRED_CLAUSE_FAMILIES: tuple[ClauseFamily, ...] = (
 )
 
 BOUNDARY_NOTES: tuple[str, ...] = (
-    "BoundedInquiryFrontier reports compatibility coherence over already-preserved implementation-defined clauses for one exact selected inquiry need.",
+    "BoundedInquiryFrontier reports compatibility coherence over already-preserved implementation-defined clauses for one exact selected inquiry demand.",
     "Its established state is implementation-local compatibility standing, not proof of a canonical frontier, fixed family inventory, evidence territory, or constitutional inquiry opening.",
     "Opaque territory references and derived territory-warrant buckets are legacy diagnostic testimony and do not establish eligibility, admission, source selection, or constitutional warrant standing.",
     "Frontier compatibility established is not inquiry executed and not result known.",
@@ -61,11 +61,11 @@ BOUNDARY_NOTES: tuple[str, ...] = (
 class BoundedInquiryFrontier:
     frontier_id: str
     frontier_state: FrontierState
-    advancement_need_selection_id: str
-    selected_need_reference_id: str | None
+    goal_advancement_demand_selection_id: str
+    selected_inquiry_demand_reference_id: str | None
     native_projection_id: str | None
     native_lineage: tuple[str, ...]
-    need_set_id: str
+    goal_advancement_demand_set_id: str
     selected_goal_id: str
     horizon_id: str
     testimony_id: str
@@ -162,23 +162,23 @@ def _is_operatively_coherent(clause: InquiryFrontierBoundaryClause) -> bool:
 
 
 def assemble_bounded_inquiry_frontier(
-    selected_need: AdvancementNeedConsiderationSelection,
+    selected_demand: GoalAdvancementDemandConsiderationSelection,
     testimony: InquiryFrontierBoundaryTestimony,
 ) -> BoundedInquiryFrontier:
     """Report implementation-local compatibility coherence read-only."""
     clauses = testimony.clauses
     preserved_refs = tuple(c.clause_ref for c in clauses)
-    identity_conflict = selected_need.selection_state != "selected" or selected_need.selected_reference is None
-    ref = selected_need.selected_reference
+    identity_conflict = selected_demand.selection_state != "selected" or selected_demand.selected_reference is None
+    ref = selected_demand.selected_reference
     if ref is not None:
         identity_conflict = identity_conflict or any(
             (
-                testimony.selected_need_reference_id != ref.reference_id,
+                testimony.selected_inquiry_demand_reference_id != ref.reference_id,
                 testimony.native_projection_id != ref.native_projection_id,
                 testimony.native_lineage != ref.native_lineage,
-                testimony.need_set_id != ref.need_set_id,
-                testimony.advancement_need_selection_id != selected_need.selection_id,
-                testimony.selected_need_goal_id != ref.goal_establishment_id,
+                testimony.goal_advancement_demand_set_id != ref.goal_advancement_demand_set_id,
+                testimony.goal_advancement_demand_selection_id != selected_demand.selection_id,
+                testimony.selected_inquiry_demand_goal_id != ref.goal_establishment_id,
                 testimony.horizon_id != ref.horizon_id,
             )
         )
@@ -200,8 +200,8 @@ def assemble_bounded_inquiry_frontier(
         )
     )
 
-    if selected_need.selection_state != "selected" or ref is None or ref.family != "inquiry":
-        state: FrontierState = "not_selected_inquiry_need"
+    if selected_demand.selection_state != "selected" or ref is None or ref.family != "inquiry":
+        state: FrontierState = "not_selected_inquiry_demand"
     elif material_conflicts:
         state = "material_binding_conflict"
     elif missing:
@@ -216,7 +216,7 @@ def assemble_bounded_inquiry_frontier(
         if c.clause_family == "eligible_ineligible_evidence_territory"
     }
     payload = {
-        "selection": selected_need.selection_id,
+        "selection": selected_demand.selection_id,
         "testimony": testimony.testimony_id,
         "state": state,
         "operative": tuple(c.clause_ref for c in operative),
@@ -226,12 +226,12 @@ def assemble_bounded_inquiry_frontier(
     return BoundedInquiryFrontier(
         _stable("bounded-inquiry-frontier", payload),
         state,
-        selected_need.selection_id,
-        testimony.selected_need_reference_id,
+        selected_demand.selection_id,
+        testimony.selected_inquiry_demand_reference_id,
         testimony.native_projection_id,
         testimony.native_lineage,
-        testimony.need_set_id,
-        testimony.selected_need_goal_id,
+        testimony.goal_advancement_demand_set_id,
+        testimony.selected_inquiry_demand_goal_id,
         testimony.horizon_id,
         testimony.testimony_id,
         testimony.source_testimony_ref,
