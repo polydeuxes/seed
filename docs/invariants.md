@@ -31,8 +31,6 @@ readable documentation today and executable architecture checks over time.
 
 ## Capability invariants
 
-- Capability resolution is read-only.
-- Capability resolution never implies verification.
 - Known capability catalog metadata never implies verification.
 - Provider recommendation never implies verification.
 - CapabilityRecommendation operation metadata never implies verification.
@@ -74,7 +72,6 @@ readable documentation today and executable architecture checks over time.
 - Observing a package must not imply ownership.
 - Observing a process must not imply management.
 - Observing a container must not imply orchestration.
-- Capability resolution must not imply verification.
 - Write access must not be required for observation.
 - Prefer least-privileged observation sources.
 - Observation must not claim more than the selected source directly supports.
@@ -83,11 +80,10 @@ readable documentation today and executable architecture checks over time.
 ## Capability verification invariants
 
 - Capability verification is not implemented in the current runtime.
-- Requested capability, known capability, candidate capability, and
-  provider-recommended capability are not synonyms for verified capability.
-- Unverified is the default state for requested, known, candidate, and
-  provider-recommended capabilities unless a future scoped verification model
-  proves otherwise.
+- Known capability, candidate capability, and provider-recommended capability
+  are not synonyms for verified capability.
+- Unverified is the default state for known, candidate, and provider-recommended
+  capabilities unless a future scoped verification model proves otherwise.
 - Stale verification must not be treated as current positive verification.
 - Failed verification requires accepted negative evidence; it is not merely the
   absence of positive evidence.
