@@ -73,10 +73,10 @@ No consumer calls the consumed object Demand. No later artifact strengthens Need
 | DemandFamily | report prose for kinds of bounded Demand | PR 1935/report reasoning | report readers only | qualified/local when referring to current four | none itself | possible family classifier | absent | `NeedFamily` descriptively | Demand occurrence | report-local, partially evidenced |
 | NeedProjection | read-only family-specific classification container | four projector functions | assembly/reference paths | exact goal/horizon/evidence | contains established/unsupported/unknown/conflicting/etc. items | projection, not Demand by identity | four dataclasses | Demand projection as clearer prose | automatically established Demand | strong |
 | NeedStanding | family-local posture for exact item | projector conclusion or supplied testimony under checks | references/sufficiency | exact item and local producer | established, unsupported, unknown, conflicting plus local exclusions | standing of locally represented Demand | several local Literals, one named `NeedStanding` | Demand standing locally | global truth/permission | strong local |
-| capability demand | bounded required transformation/outcome constraining candidate formation | operational-realization handoff/road is reported elsewhere; no universal artifact | candidate/reachability/selection/warrant road where present | exact transformation and road | relation/identity; establishment must be warranted | Demand content/relation, not independent kind | fields across operational-realization artifacts, not one class | transformation Demand | Need-to-Demand intermediate, capability, mechanism | partial implementation + canonical wording |
+| capability demand | Demand content concerning a required transformation, effect, relation, or competency, where separately established | no universal producer; current operational-realization projection accepts caller testimony | may constrain later candidate formation or inquiry; no universal consumer road | exact result and responsibility | establishment must be separately warranted | Demand content, not independent kind | no distinct artifact; opaque testimony refs survive in one projection input | transformation or relational Demand | Need-to-Demand intermediate, capability, mechanism | canonical wording + bounded current testimony shape |
 | Gap | scoped insufficiency relative to declared reference condition | no universal producer; boundary-local comparisons | boundary-local inquiry/candidate/evaluation consumers | reference condition + scope | established/unsupported/Unknown etc. locally | insufficiency relation/result | no universal Gap object | may share evidence with Demand | Demand, authorization | canonical distinction; distributed implementation |
-| Capability | warranted ability to realize a required transformation under conditions | candidate/reachability evidence only partially establishes it | selection/realization inquiry | demand + conditions + scope | candidate/reachable etc.; complete standing absent | ability/competency | distributed candidates/reachability | none | Demand, Gap, mechanism | canonical strong, implementation partial |
-| mechanism candidate | possible means offered for a Demand | candidate formation | comparison/selection | exact Demand and candidate set | candidate/noncandidate/unknown locally | candidate representation | road-specific artifacts | capability candidate in some roads | Demand, capability, selection | strong distinction |
+| Capability | warranted ability to realize a required transformation under conditions | no generic current producer evidenced by this recovery | road-local consumers, where independently evidenced | demand + conditions + scope | complete standing absent here | ability/competency | no universal artifact or road | none | Demand, Gap, mechanism | canonical strong; current generic topology absent |
+| mechanism candidate | possible means offered for a Demand | no generic current producer evidenced by this recovery | road-local comparison/selection, where independently evidenced | exact Demand and candidate set | must be established by its own road | no universal representation | deleted operational-realization topology is historical recovery testimony, not current production | capability candidate in some independently evidenced roads | Demand, capability, selection | strong distinction; no current universal road |
 
 ## Need -> Demand crossing matrix
 
@@ -86,7 +86,7 @@ No consumer calls the consumed object Demand. No later artifact strengthens Need
 | Need projection | rename/reinterpret container | word choice only | Demand occurrence | none | forbidden: projection can contain no established item |
 | Need family label | bind label | label membership only | exact Demand | none | forbidden: label lacks subject/evidence/scope/standing |
 | selected need reference | consideration selection | exact identity evidence | stronger Demand | frontier/sufficiency paths | selection preserves native meaning; no strengthening |
-| established gap | infer transformation | scoped insufficiency alone | capability Demand | candidate road | Book says gap may support/expose, not automatically establish |
+| established gap | infer transformation | scoped insufficiency alone | capability Demand | no universal consumer | Book says gap may support/expose, not automatically establish |
 | PR 1935 prose | constitutional description | implementation topology | Demand-family reading | report readers | supports synonymy, not a runtime crossing |
 
 **Direct finding: there is no current Need -> Demand crossing.** No row has all five required coordinates: input standing, responsible act, warrant, distinct output standing, and consumer.
@@ -99,7 +99,7 @@ No consumer calls the consumed object Demand. No later artifact strengthens Need
 | inquiry | yes | yes | constitutional uncertainty may be; projector cannot | component-bounded repository/world uncertainty and subject | `project_inquiry_need` | need set/reference/selection/frontier | grammar-state examination could be inquiry, but establishment result is not merely inquiry | admissible grammar evidence and pre-goal scope Unknown |
 | authority | yes | yes | authority question may arise pre-goal; projector cannot | paired authority requirement and standing, applicable/material | `project_authority_need` | need set/reference/sufficiency | only authority-to-acquire, not grammar requirement itself | authority owner/source absent for witness |
 | operational_realization | yes | yes | candidate requirement may conceptually arise; projector cannot | paired transformation requirement and availability/coverage with realization-owned blocker | `project_operational_realization_need` | need set/reference/sufficiency | could represent later realization deficit, not initial incompatibility automatically | transformation meaning and goal/horizon not established |
-| common_grammar_establishment | no; inquiry row only | current machinery cannot accept pre-goal | **yes as possible pressure** | exact material, current grammar standing, bounded clarification occurrences/results, recurrence identity, material blocked consequence, responsibility and scope; establishment warrant still absent | none | none | broader competency Demand or Unknown; do not force/add fifth family | exact establishment test, owner, operator/interaction identity, stopping conditions, authority and candidate road |
+| common_grammar_establishment | no | current machinery cannot accept pre-goal | **yes as possible pressure** | exact material, current grammar standing, bounded clarification occurrences/results, recurrence identity, material blocked consequence, responsibility and scope; establishment warrant still absent | none | none | bounded relational Demand; exact constitutional family **Unknown**; none of the four faithfully owns the whole pre-goal Demand | exact establishment test, owner, operator/interaction identity, stopping conditions, authority, and possible satisfaction roads |
 
 The four are exhaustive only for the implementation tuple and assembly shape. They are not explicitly exhaustive constitutional Demand families.
 
@@ -153,11 +153,11 @@ To move from possible to established Demand, the repository supports requiring a
 | possible Demand | common grammar may be required | faithful-interaction owner; bounded operator/interaction | possible; permits examination only, not action | absent / absent | report-local recovery |
 | established Demand | sufficient common grammar required | same owner/scope under warrant | established; constrains candidate formation, not movement | absent generally; local Need projectors only / local roads | absent for witness |
 | Demand family | variant classifier under an organizing purpose | classifier owner; locality-dependent | label standing only; never exact occurrence | `NeedFamily` locally / assembly | implementation-local; universal Unknown |
-| required transformation | establish sufficient common grammar (not English) if warranted | Demand owner; exact result/scope | possible/established content; not mechanism | operational testimony patterns only / candidate road | canonical grammar, witness absent |
-| Capability | ability to establish required result under conditions | capability establishment owner; demand/scope/conditions | Unknown/candidate/established locally; may support candidacy, no authorization | distributed candidate/reachability / selection | partial, absent for witness |
-| Capability candidate | proposed ability/realization for exact Demand | candidate former; Demand scope | candidate etc.; permits comparison, not selection | road-specific / reachability/selection | implemented elsewhere, no witness binding |
-| mechanism candidate | concrete possible means | candidate owner; exact candidate set | candidate; permits bounded comparison only | road-specific / selector | partially implemented, absent here |
-| selection | responsible choice/non-selection from bounded candidates | selector; exact purpose/set | selected/non-selected/unknown/conflict; no authorization | selection modules / later handoff | implemented generally, absent here |
+| demanded relational result | establish sufficient common grammar (not English) if warranted | Demand owner; exact operator/interaction responsibility and scope | possible/established content; does not select a satisfaction road | absent / absent | recovery conclusion; witness establishment absent |
+| Capability | ability to establish a required result under conditions | capability establishment owner; demand/scope/conditions | Unknown unless independently established; no authorization follows | no generic producer / road-local consumers only where independently evidenced | absent for witness |
+| Capability candidate | proposed ability or realization for exact Demand | candidate former; Demand scope | permits comparison only after separate candidate establishment | deleted staged road is historical testimony / none for witness | no generic current road |
+| mechanism candidate | concrete possible means | candidate owner; exact candidate set | candidate standing must be independently produced | no generic producer / road-local selector only where independently evidenced | absent here |
+| selection | responsible choice/non-selection from bounded candidates | selector; exact purpose/set | no selection follows from Demand or opaque refs | no generic current operational-realization selector / none for witness | deleted staged selector is historical testimony |
 | authority | permission/requirement standing for acquisition/use | authority owner; actor/action/scope | available/unavailable/etc.; permits only what grant says | authority projection concerns need, not grant / later road | implemented locally, witness Unknown |
 | execution | occurrence using an authorized selected mechanism | execution owner; exact act | occurred/refused/etc.; produces result testimony, not competency automatically | operational executors elsewhere / observation | absent for witness |
 | learning establishment | warranted establishment that a learning change occurred | learning/evaluation owner; exact experience/change | established only from evidence; not automatically competency | no witness road / none | canonical report vocabulary, absent |
@@ -165,7 +165,9 @@ To move from possible to established Demand, the repository supports requiring a
 
 ## Clarification Demand versus common-grammar establishment Demand
 
-The best current disposition is **different bounded Demands at different responsibility and scope, with the second a broader competency Demand; exact family classification remains Unknown**. Clarification Demand resolves this bounded operator-meaning uncertainty. Common-grammar establishment would establish a relation or competency whose absence repeatedly generates a class of uncertainties. The latter may support later clarification, inquiry, or realization work but is not the same occurrence merely enlarged.
+The best current disposition is **different bounded Demands at different responsibility and scope, with common-grammar establishment a demanded relational result; exact family classification remains Unknown**. Clarification Demand resolves this bounded operator-meaning uncertainty. Common-grammar establishment demands sufficient shared grammar between Seed and this operator for this bounded interaction responsibility. It is not Seed grammar competency by identity and is not the same occurrence merely enlarged.
+
+Possible satisfaction roads include Seed acquiring a grammar competency, the operator adopting mutually known grammar, bounded translation, tested and established attributed external grammar, another successful clarification representation, or a federated or externally provided grammar relation. Establishing the Demand selects none of them. In particular, `"learn English"` does not select English, a possible grammar-learning road is not authorized acquisition, and later scoped reliance on acquired grammar would require separate competency-establishment evidence.
 
 Current fit is mixed: inquiry can examine grammar standing; authority can represent missing permission; operational realization can represent a later required transformation with unavailable coverage; clarification can represent occurrence-local meaning uncertainty. None, alone, owns the pre-goal relation-level requirement. Family classification is not required to recognize **possible** pressure, and current evidence neither warrants forcing it into one of four nor inventing a fifth.
 
@@ -186,7 +188,11 @@ It is not yet an implemented or automatically established topology. Demand and G
 
 ## Capability-demand audit
 
-The phrase `capability demand` is not evidenced as an independent constitutional kind between Need and Capability. Canonical Book wording defines it as a bounded transformation/outcome requirement and as a constraint on candidate formation. Reports identify an exact demand relation carried along operational-realization candidate/reachability/selection/warrant artifacts rather than one universal object.
+The phrase `capability demand` is not evidenced as an independent constitutional kind between Need and Capability. It is Demand content concerning a required transformation, effect, relation, or competency, where separately established. It may constrain later candidate formation or inquiry, but the current repository does not thereby evidence one universal `Demand -> candidate -> reachability -> selection -> warrant` road.
+
+PR 1936 deleted `seed_runtime/candidate_operational_realization.py`, `seed_runtime/capability_reachability_projection.py`, `seed_runtime/operational_realization_selection.py`, `seed_runtime/operational_realization_warrant.py`, `OperationalRealizationHandoff`, and `ExaminationProbeRequest.to_operational_realization_handoff(...)`. Descriptions of that staged topology in older reports are **historical recovery testimony**, not current implementation.
+
+`OperationalRealizationNeedProjection` currently accepts caller-supplied requirement and standing testimony. Its standing testimony still has opaque `candidate_existence_ref`, `reachability_ref`, `selection_ref`, `warrant_ref`, `representation_applicability_ref`, `dependency_ref`, and `behavior_support_ref` fields. The caller supplies them; this projection neither produces nor validates the named standing, and no current producer recreating the deleted staged road was found. Surviving reference fields are not surviving producers, accepted testimony is not constitutional standing, and a reference-shaped payload is not an active candidate road.
 
 The active chapter currently over-separates when it presents this as a general chain in which a Need is followed by a distinct capability Demand without an evidenced producer. The more faithful reading is:
 
@@ -196,7 +202,7 @@ Gap: scoped current incompatibility relative to that Demand or another condition
 Capability candidates: possible means of satisfying the Demand
 ```
 
-Thus “capability demand” is Demand content concerning a required transformation and/or a road-local constraint on candidate formation, not a second constitutional layer. A Gap may support its establishment, but does not select the transformation.
+Thus “capability demand” is Demand content concerning a required transformation, effect, relation, or competency, not a second constitutional layer. A Gap may support its establishment, but does not select the transformation. Demand established does not prove a candidate producer exists; required transformation is not a mechanism candidate; opaque candidate ref is not candidate standing; catalog metadata is not candidate production; and `ToolSpec` association is not mechanism selection.
 
 ## Active Book and report vocabulary classification
 
@@ -241,7 +247,7 @@ This matrix is local guidance, not a universal enum and not a requested implemen
 | `ClarificationNeedProjection` -> `ClarificationDemandProjection` | faithful for exact local items | class/module/function names, IDs/prefix expectations, exports/tests/docs; serialized shapes potentially consumers | projection responsibility remains local | medium | defer pending canonical reconciliation and compatibility map |
 | `InquiryNeedProjection` -> `InquiryDemandProjection` | faithful locally | same plus frontier/reference lineage consumers | no distinct Need responsibility | medium | defer |
 | `AuthorityNeedProjection` -> `AuthorityDemandProjection` | faithful locally | same plus paired testimony road | no distinct Need responsibility | medium | defer |
-| `OperationalRealizationNeedProjection` -> `OperationalRealizationDemandProjection` | faithful locally | widest road: candidates/reachability/selection/warrant references plus tests/docs/stable IDs | local requirement/availability join remains | medium/high | defer |
+| `OperationalRealizationNeedProjection` -> `OperationalRealizationDemandProjection` | faithful locally | class/module/function names, testimony shapes including opaque legacy-named refs, tests/docs/stable IDs | local requirement/availability join remains; refs do not prove the deleted staged topology | medium/high | defer |
 | `GoalAdvancementNeedSet` -> `GoalAdvancementDemandSet` | clearer about member subject | central imports, artifacts, serialization keys (`need_set_id`), stable hashes/IDs, references, selection, sufficiency, exports/tests/Book | old name usefully signals goal-advancement locality | **high** if read as general Demand set | do not rename now |
 | `NeedStanding` -> `DemandStanding` | faithful for local item posture | local type aliases, tests/docs; uneven standing aliases across four modules | no distinct responsibility, but local vocabularies differ | high if treated universal | do not create universal enum/rename now |
 
@@ -249,40 +255,26 @@ A clearer noun is insufficient warrant. Any future rename needs an explicit stat
 
 ## Direct answers
 
-1. **Need -> Demand producer?** No.
-2. **Distinct Demand artifact?** No general or distinct artifact was found.
-3. **Consumer requiring both separately?** No.
-4. **Did PR 1935 treat `NeedFamily` as implementation naming for Demand families?** Yes, explicitly in report prose.
-5. **Are four families exhaustive constitutional Demand families?** No; only the implementation tuple is exhaustive for its assembler.
-6. **Bounded to one established goal and advancement horizon?** Yes.
-7. **Can Demand arise before bounded goal establishment?** Constitutionally possible; implementation support is absent. No Book rule found forbids it.
-8. **Can first-contact common-grammar pressure arise before goal establishment?** Yes; the witness's inability to interpret precedes lawful goal meaning.
-9. **Impossible to fit into current set?** At that pre-goal time, yes: required identities are unavailable. Not proof of permanent impossibility after separate lawful establishment.
-10. **Is Need implementation vocabulary for Demand standing?** Best-supported local conclusion: yes.
-11. **Evidence?** PR 1935's explicit description, family content as required results, identical local standings, and absence of any crossing/artifact/dual consumer support it. Active Book's separate nouns and capability-demand phrasing contradict only lexically; they provide no producer topology.
-12. **Is `NeedStanding="established"` functionally established Demand?** Yes, bounded to the exact local projection premises; not universal truth or authority.
-13. **Is a NeedFamily label a Demand?** No.
-14. **Is a NeedProjection automatically an established Demand?** No.
-15. **Does a later stage strengthen Need into Demand?** No; later stages preserve/reference/select/assess it.
-16. **Is capability demand an independent kind?** Not evidenced.
-17. **Disposition?** Demand content concerning a required transformation and a road-local candidate constraint.
-18. **Demand/Gap relation?** Different assertions: requirement versus scoped insufficiency relative to a condition; either may support the other through separate establishment.
-19. **Demand without established Gap?** Yes, where a required result is declared/established without current-condition Gap comparison.
-20. **Gap without established Demand?** Yes, against another declared reference condition while transformation remains Unknown.
-21. **Does repetition automatically establish Demand?** No.
-22. **First failed enum crossing?** Exact non-selection/unsupported binding for that occurrence, if coherently preserved; not refusal or grammar Demand.
-23. **Repeated crossing adds?** Evidence of same-scope mechanism recurrence and possible material incompatibility; no meaning/authority.
-24. **Infer `learn English`?** No.
-25. **Form common-grammar Demand without interpreting phrase?** A possible Demand, yes, from topology; established Demand only with separate responsibility, scope, materiality, grammar-standing, failure, and warrant evidence.
-26. **Owner?** The responsibility to sustain faithful bounded operator interaction, not the operator phrase and not a family label.
-27. **Scope?** This operator (if identity is lawfully preserved), this interaction/responsibility, current applicable grammar standing, bounded clarification mechanism/attempts, and declared stopping/materiality boundary.
-28. **Family?** Best described as a broader competency Demand; exact constitutional family is Unknown.
-29. **Lawful current home?** No pre-goal home. Pieces may later be represented in several local families, but none faithfully owns the whole pre-goal Demand.
-30. **Would `DemandFamily` be more faithful?** Semantically clearer for local represented subjects.
-31. **Would rename now falsely universalize?** Yes, materially; defer.
-32. **Which Book claims over-separate?** Any reading that makes “Need,” “capability demand,” and Capability a mandatory three-layer chain, especially the chapter's sequence “need/gap may expose capability demand,” without a Need-to-Demand producer.
-33. **Which distinctions remain valid?** Demand/Need standing does not open movement; Demand != Gap, Capability, candidate, selection, authority, execution, or movement; Gap needs scope/reference and is not authorization; capability demand != capability/mechanism.
-34. **Smallest next honest operation?** A later, separate canonical Book reconciliation should clarify Need as current implementation vocabulary for bounded Demand standing and qualify the four families as goal/horizon-local, while preserving all valid boundaries. Before any rename or implementation, specify and test the missing pre-goal possible-to-established Demand responsibility/warrant in another bounded recovery. This report stops before either operation.
+1. **Is common-grammar establishment a competency Demand by identity?** No. It is a bounded relational Demand; Seed grammar-competency acquisition is only one possible satisfaction candidate.
+2. **What exact result is demanded?** Sufficient common grammar between Seed and this operator for this bounded interaction responsibility.
+3. **Is that result relational?** Yes. The result concerns the sufficient shared-grammar relation, not one party's competency by identity.
+4. **Can Seed competency acquisition satisfy it?** Possibly, if separately selected, authorized, performed, evaluated, and established within scope.
+5. **Is competency acquisition the only possible satisfaction road?** No. Operator adoption, bounded translation, established attributed external grammar, another clarification representation, and federated or externally provided grammar are also possible roads; none is selected here.
+6. **Does `"learn English"` select English?** No. It remains uninterpreted first-contact material.
+7. **Does recurrence select a learning strategy?** No. Recurrence is measurement, not meaning, selection, authority, or execution.
+8. **What is the exact Demand family?** **Unknown.** Do not add a fifth family.
+9. **Does the current four-family implementation contain it?** Not as the whole pre-goal relational Demand. The current goal/horizon-local families do not faithfully own it.
+10. **Can later clarification, inquiry, authority, and realization Demands coexist around it?** Yes. Later local projections may independently represent those coordinates without classifying or exhausting the relational Demand.
+11. **Which staged operational-realization modules were deleted in PR 1936?** `candidate_operational_realization.py`, `capability_reachability_projection.py`, `operational_realization_selection.py`, and `operational_realization_warrant.py`; PR 1936 also deleted `OperationalRealizationHandoff` and `ExaminationProbeRequest.to_operational_realization_handoff(...)`.
+12. **Does any current producer recreate that staged road?** No current producer was found.
+13. **What candidate/reachability/selection/warrant-shaped fields survive?** `candidate_existence_ref`, `reachability_ref`, `selection_ref`, `warrant_ref`, `representation_applicability_ref`, `dependency_ref`, and `behavior_support_ref` survive on `OperationalRealizationStandingTestimony`.
+14. **Who supplies those surviving fields?** The caller supplies them as standing testimony accepted by `OperationalRealizationNeedProjection`.
+15. **Do those fields independently establish their named standing?** No. They are opaque refs, not producers, validation, or constitutional standing.
+16. **Does the current repository evidence a universal Demand-to-candidate road?** No. Demand may constrain later candidate formation or inquiry, but Demand establishment does not prove a candidate producer exists.
+17. **Does capability demand remain a distinct constitutional kind?** No. It remains Demand content concerning a required transformation, effect, relation, or competency, where separately established.
+18. **What central PR 1997 findings remain unchanged?** No Need-to-Demand producer, distinct runtime Demand artifact, or consumer requiring both exists; Need/Demand are synonymous at the exact local represented subject; `NeedFamily` remains goal/horizon-local and non-exhaustive; possible pre-goal Demand remains possible; first-contact material remains uninterpreted; recurrence remains measurement rather than meaning; and possible Demand is not established Demand. Demand also remains distinct from Gap, Capability, candidate, selection, authority, execution, and movement.
+19. **What exact report statements were corrected?** Statements classifying common-grammar establishment as a broader competency Demand were corrected to a relational result with exact family Unknown. Statements presenting the deleted candidate/reachability/selection/warrant/handoff topology as a current operational-realization road were corrected to historical recovery testimony, and surviving fields were classified as opaque caller-supplied refs. Capability-demand and rename-blast-radius descriptions were corrected accordingly.
+20. **What active implementation or Book material changed?** None.
 
 ## Strongest Unknowns
 
@@ -292,7 +284,7 @@ A clearer noun is insufficient warrant. Any future rename needs an explicit stat
 - The applicable grammar comparison and evidence that establishes “insufficient common grammar” without interpreting content.
 - The retry owner, retry authority, recurrence equivalence, and stopping conditions.
 - Whether common-grammar establishment belongs to a named family at all.
-- Whether it is one competency Demand or a composition of interaction, inquiry, authority, realization, learning, and competency responsibilities.
+- Which, if any, constitutional family owns the relational Demand; none of the current four faithfully owns the whole pre-goal result, while later local coordinates may coexist.
 - Which evidence establishes competency after learning and how operator-specific scope changes over time.
 
 ## Protected districts and stopping boundary
