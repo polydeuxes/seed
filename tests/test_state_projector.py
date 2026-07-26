@@ -339,7 +339,7 @@ def test_projector_rebuilds_state_deterministically():
     assert first.entities["ent_1"].name == "example_host"
     assert first.facts["fact_1"].value is False
     assert first.goals["goal_1"].status == "active"
-    assert first.open_tool_needs[0].name == "install_ssh_server"
+    assert first.tool_needs["need_1"].name == "install_ssh_server"
     assert first.has_approval("ssh.install", "ent_1") is not None
 
 
