@@ -12,7 +12,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, BinaryIO, Literal, TextIO
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -5777,6 +5777,87 @@ def inquiry_note_store_path_from_args(args: argparse.Namespace) -> Path:
     return REPO_ROOT / ".seed" / "inquiry_notes.jsonl"
 
 
+class _PrefixedBinaryInput:
+    """Return one already-observed byte frame before continuing at its boundary."""
+
+    def __init__(self, prefix: bytes, source: BinaryIO) -> None:
+        self._prefix = prefix
+        self._source = source
+
+    def readline(self) -> bytes:
+        if self._prefix is not None:
+            prefix = self._prefix
+            self._prefix = None
+            return prefix
+        return self._source.readline()
+
+
+class _PrefixedConsoleInput:
+    """Expose a prefetched frame without changing its capture provenance."""
+
+    def __init__(
+        self,
+        prefix: bytes | str,
+        source: TextIO,
+        binary_source: BinaryIO | None,
+    ) -> None:
+        self.encoding = getattr(source, "encoding", None)
+        self._prefix = prefix
+        self._source = source
+        if binary_source is not None:
+            self.buffer = _PrefixedBinaryInput(prefix, binary_source)
+
+    def readline(self) -> str:
+        if self._prefix is not None:
+            prefix = self._prefix
+            self._prefix = None
+            return prefix
+        return self._source.readline()
+
+
+def _is_console_exit(material: bytes | str, encoding: str | None) -> bool:
+    command = (
+        material.removesuffix(b"\n").removesuffix(b"\r")
+        if isinstance(material, bytes)
+        else material.removesuffix("\n").removesuffix("\r")
+    )
+    if isinstance(command, bytes):
+        try:
+            return command == "exit".encode(encoding or "utf-8", errors="strict")
+        except LookupError:
+            return False
+    return command == "exit"
+
+
+def run_persistent_operator_console(
+    *,
+    ledger: EventLedger,
+    workspace_id: str,
+    session_id: str,
+    input_stream: TextIO,
+    output_stream: TextIO,
+) -> None:
+    """Own process-local repetition around bounded operator interactions."""
+    output_stream.write("Seed console: `exit` exits.\n")
+    output_stream.flush()
+    binary_source = getattr(input_stream, "buffer", None)
+    while True:
+        material = (
+            binary_source.readline() if binary_source is not None else input_stream.readline()
+        )
+        if material in (b"", "") or _is_console_exit(
+            material, getattr(input_stream, "encoding", None)
+        ):
+            return
+        run_operator_ingress_common_grammar_probe_attempt(
+            ledger=ledger,
+            workspace_id=workspace_id,
+            session_id=session_id,
+            input_stream=_PrefixedConsoleInput(material, input_stream, binary_source),
+            output_stream=output_stream,
+        )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     if argv is None:
@@ -5793,6 +5874,21 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     apply_bounded_ask_dispatch(args, parser)
     validate_lifecycle_args(args, parser)
+    if not argv:
+        ledger: EventLedger = EventLedger()
+        try:
+            run_persistent_operator_console(
+                ledger=ledger,
+                workspace_id=args.workspace,
+                session_id=args.session,
+                input_stream=sys.stdin,
+                output_stream=sys.stdout,
+            )
+            return 0
+        finally:
+            close = getattr(ledger, "close", None)
+            if close is not None:
+                close()
     if args.operator_ingress_bootstrap:
         if args.message:
             parser.error("--operator-ingress-bootstrap reads ingress and response from stdin")

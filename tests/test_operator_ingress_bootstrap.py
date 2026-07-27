@@ -23,6 +23,7 @@ from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     validate_capture_for_probe,
 )
 from seed_runtime.state import StateProjector
+from scripts import seed_local
 
 
 def run_attempt(text, ledger=None, session="s"):
@@ -375,6 +376,66 @@ def run_raw(material: bytes, *, ledger=None):
         output_stream=output,
     )
     return ledger, view, output.getvalue()
+
+
+def run_console(material: bytes):
+    ledger = EventLedger()
+    output = StringIO()
+    seed_local.run_persistent_operator_console(
+        ledger=ledger,
+        workspace_id="console-w",
+        session_id="console-s",
+        input_stream=_RawStdin(material),
+        output_stream=output,
+    )
+    return ledger, output.getvalue()
+
+
+def test_bare_seed_enters_persistent_console_and_announces_exit():
+    completed = subprocess.run(
+        [sys.executable, "scripts/seed_local.py"],
+        input=b"exit\n",
+        capture_output=True,
+        check=True,
+    )
+    assert completed.stdout == b"Seed console: `exit` exits.\n"
+    assert completed.returncode == 0
+
+
+def test_console_runs_multiple_bounded_interactions_after_local_stop_and_unsupported():
+    ledger, output = run_console(b"first ingress\n2\nsecond ingress\nnot-a-token\nexit\n")
+    attempts = StateProjector(ledger).project("console-w").operator_ingress_bootstraps
+    assert len(attempts) == 2
+    assert {view.get("selected_treatment") for view in attempts.values()} == {
+        "local-stop",
+        None,
+    }
+    assert any(
+        view.get("current_standing", {})
+        .get("binding_finding", {})
+        .get("dimensions", {})
+        .get("standing")
+        == "unsupported"
+        for view in attempts.values()
+    )
+    assert output.count("Select one treatment by its exact token:") == 2
+    assert "Local-stop treatment selected; bounded stop was not established." in output
+    assert "Unsupported response" in output
+
+
+def test_outer_exit_is_not_operator_ingress_and_prefetched_bytes_keep_provenance():
+    ledger, _ = run_console(b"\xff\nexit\n")
+    events = ledger.list_events("console-w")
+    captures = [
+        event
+        for event in events
+        if event.kind == "operator.bootstrap.raw_material_captured"
+    ]
+    assert len(captures) == 1
+    assert captures[0].payload["exact_bytes_hex"] == "ff0a"
+    assert captures[0].payload["capture_boundary"] == "stdin.buffer.readline"
+    assert captures[0].payload["byte_material_origin"] == "direct_boundary_observation"
+    assert b"exit\n".hex() not in str([event.payload for event in events])
 
 
 def test_stdin_buffer_capture_preserves_exact_boundary_bytes_and_decoder_testimony(
