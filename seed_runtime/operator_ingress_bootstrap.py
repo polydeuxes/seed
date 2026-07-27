@@ -226,7 +226,12 @@ def _capture_representation(
         _dimensions(
             identity=f"representation-examination:{captured.id}",
             content="strict decoder examination",
-            standing="decodable" if examination.succeeded else "not-decodable",
+            # Preserve the particular decoder occurrence here as well as in the
+            # examination payload.  A shared ``not-decodable`` standing would
+            # collapse an unavailable mechanism and bytes rejected by an
+            # available mechanism back into the Boolean boundary this record is
+            # intended to repair.
+            standing=examination.outcome,
             source=captured.id,
             responsibility="bounded-representation-evidence-production",
             authority="decoder outcome evidence only",
