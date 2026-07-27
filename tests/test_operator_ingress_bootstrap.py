@@ -22,6 +22,10 @@ from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     run_operator_ingress_common_grammar_probe_attempt,
     validate_capture_for_probe,
 )
+from seed_runtime.operator_ingress_representation import (
+    CapturedOperatorMaterial,
+    capture_stdin_material,
+)
 from seed_runtime.state import StateProjector
 from scripts import seed_local
 
@@ -29,11 +33,14 @@ from scripts import seed_local
 def run_attempt(text, ledger=None, session="s"):
     ledger = ledger or EventLedger()
     output = StringIO()
+    input_stream = StringIO(text)
+    captured_ingress = capture_stdin_material(input_stream)
     view = run_operator_ingress_common_grammar_probe_attempt(
         ledger=ledger,
         workspace_id="w",
         session_id=session,
-        input_stream=StringIO(text),
+        captured_ingress=captured_ingress,
+        response_input_stream=input_stream,
         output_stream=output,
     )
     return ledger, view, output.getvalue()
@@ -321,44 +328,6 @@ def test_consumed_capture_replay_is_refused_after_durable_reconstruction(tmp_pat
         )
 
 
-def test_real_cli_reads_ingress_presents_stdout_and_persists(tmp_path):
-    db = tmp_path / "cli.db"
-    completed = subprocess.run(
-        [
-            sys.executable,
-            "scripts/seed_local.py",
-            "--operator-ingress-bootstrap",
-            "--db",
-            str(db),
-            "--workspace",
-            "cli-w",
-            "--session",
-            "cli-s",
-        ],
-        input="free form operator words\n2\n",
-        text=True,
-        capture_output=True,
-        check=True,
-    )
-    assert completed.stdout.splitlines() == [
-        "Select one treatment by its exact token:",
-        "1. Select bounded common-grammar acquisition treatment.",
-        "2. Select local stopping treatment.",
-        "Local-stop treatment selected; bounded stop was not established.",
-    ]
-    ledger = SQLiteEventLedger(str(db))
-    assert (
-        ledger.list_events("cli-w")[0].payload["exact_bytes_hex"]
-        == b"free form operator words\n".hex()
-    )
-    assert ledger.list_events("cli-w")[-1].kind == "operator.bootstrap.treatment_selected"
-    assert completed.returncode == 0
-    assert not any(
-        event.kind == "operator.bootstrap.stopping_occurred"
-        for event in ledger.list_events("cli-w")
-    )
-
-
 class _RawStdin:
     def __init__(self, material: bytes, encoding="utf-8"):
         self.buffer = BytesIO(material)
@@ -368,11 +337,14 @@ class _RawStdin:
 def run_raw(material: bytes, *, ledger=None):
     ledger = ledger or EventLedger()
     output = StringIO()
+    input_stream = _RawStdin(material)
+    captured_ingress = capture_stdin_material(input_stream)
     view = run_operator_ingress_common_grammar_probe_attempt(
         ledger=ledger,
         workspace_id="raw-w",
         session_id="raw-s",
-        input_stream=_RawStdin(material),
+        captured_ingress=captured_ingress,
+        response_input_stream=input_stream,
         output_stream=output,
     )
     return ledger, view, output.getvalue()
@@ -402,6 +374,70 @@ def test_bare_seed_enters_persistent_console_and_announces_exit():
     assert completed.returncode == 0
 
 
+def test_console_passes_its_capture_unchanged_to_the_bounded_attempt(monkeypatch):
+    supplied = _RawStdin(b"ordinary ingress\r\n2\nexit\n")
+    received = []
+
+    def bounded_attempt(**kwargs):
+        received.append(kwargs)
+        # Response ownership remains inside the bounded attempt.
+        assert kwargs["response_input_stream"].buffer.readline() == b"2\n"
+
+    monkeypatch.setattr(
+        seed_local,
+        "run_operator_ingress_common_grammar_probe_attempt",
+        bounded_attempt,
+    )
+    seed_local.run_persistent_operator_console(
+        ledger=EventLedger(),
+        workspace_id="w",
+        session_id="s",
+        input_stream=supplied,
+        output_stream=StringIO(),
+    )
+
+    assert len(received) == 1
+    capture = received[0]["captured_ingress"]
+    assert capture.exact_bytes == b"ordinary ingress\r\n"
+    assert capture.delimiter_hex == "0d0a"
+    assert capture.capture_boundary == "stdin.buffer.readline"
+    assert capture.byte_material_origin == "direct_boundary_observation"
+    assert received[0]["response_input_stream"] is supplied
+
+
+def test_existing_capture_provenance_is_recorded_without_reinference():
+    capture = CapturedOperatorMaterial(
+        exact_bytes=b"captured elsewhere\n",
+        eof=False,
+        delimiter_hex="0a",
+        capture_boundary="explicit-test-boundary",
+        byte_material_origin="explicit-test-origin",
+        encoding_testimony="utf-8",
+        known_loss=("explicit-test-loss",),
+    )
+    ledger = EventLedger()
+    run_operator_ingress_common_grammar_probe_attempt(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        captured_ingress=capture,
+        response_input_stream=BytesIO(b"2\n"),
+        output_stream=StringIO(),
+    )
+    recorded = ledger.list_events("w")[0].payload
+    assert recorded["capture_boundary"] == capture.capture_boundary
+    assert recorded["byte_material_origin"] == capture.byte_material_origin
+    assert recorded["exact_bytes_hex"] == capture.exact_bytes.hex()
+    assert recorded["known_loss"] == list(capture.known_loss)
+
+
+def test_parser_has_no_alternate_operator_ingress_controller():
+    parser = seed_local.build_parser()
+    assert not any(
+        action.dest == "operator_ingress_bootstrap" for action in parser._actions
+    )
+
+
 def test_console_runs_multiple_bounded_interactions_after_local_stop_and_unsupported():
     ledger, output = run_console(b"first ingress\n2\nsecond ingress\nnot-a-token\nexit\n")
     attempts = StateProjector(ledger).project("console-w").operator_ingress_bootstraps
@@ -423,7 +459,7 @@ def test_console_runs_multiple_bounded_interactions_after_local_stop_and_unsuppo
     assert "Unsupported response" in output
 
 
-def test_outer_exit_is_not_operator_ingress_and_prefetched_bytes_keep_provenance():
+def test_outer_exit_is_not_operator_ingress_and_capture_keeps_provenance():
     ledger, _ = run_console(b"\xff\nexit\n")
     events = ledger.list_events("console-w")
     captures = [
@@ -546,33 +582,6 @@ def test_invalid_initial_bytes_are_preserved_without_replacement_and_stop_before
     )
 
 
-def test_real_cli_invalid_raw_bytes_are_durable_and_stop_before_presentation(tmp_path):
-    db = tmp_path / "invalid-cli.db"
-    completed = subprocess.run(
-        [
-            sys.executable,
-            "scripts/seed_local.py",
-            "--operator-ingress-bootstrap",
-            "--db",
-            str(db),
-            "--workspace",
-            "bytes-w",
-            "--session",
-            "bytes-s",
-        ],
-        input=b"\xff\n1\n",
-        capture_output=True,
-        check=True,
-    )
-    assert (
-        completed.stdout
-        == b"Representation insufficient: captured material did not decode under the selected decoder mechanism.\n"
-    )
-    events = SQLiteEventLedger(str(db)).list_events("bytes-w")
-    assert events[0].payload["exact_bytes_hex"] == "ff0a"
-    assert not any(e.kind == "operator.bootstrap.presentation_occurred" for e in events)
-
-
 def test_invalid_enum_bytes_stop_before_token_capture_or_binding():
     ledger, _, output = run_raw(b"hello\n\xff\n")
     assert "Select one treatment" in output
@@ -672,11 +681,13 @@ def test_decoder_outcomes_and_selection_sources_remain_distinct():
 def run_operator_with_stream(stream):
     ledger = EventLedger()
     output = StringIO()
+    captured_ingress = capture_stdin_material(stream)
     view = run_operator_ingress_common_grammar_probe_attempt(
         ledger=ledger,
         workspace_id="raw-w",
         session_id="raw-s",
-        input_stream=stream,
+        captured_ingress=captured_ingress,
+        response_input_stream=stream,
         output_stream=output,
     )
     return ledger, view, output.getvalue()
