@@ -253,7 +253,7 @@ def _capture_representation(
     return capture, examination, captured, examination_event
 
 
-def run_operator_ingress_bootstrap(
+def run_operator_ingress_common_grammar_probe_attempt(
     *,
     ledger: EventLedger,
     workspace_id: str,
@@ -261,7 +261,7 @@ def run_operator_ingress_bootstrap(
     input_stream: TextIO | BinaryIO,
     output_stream: TextIO,
 ) -> dict[str, object]:
-    """Run exactly one ingress/probe/response attempt and stop."""
+    """Run exactly one ingress/common-grammar-probe/response attempt and stop."""
     attempt = new_id("operator_bootstrap_attempt")
     (
         captured_ingress,
