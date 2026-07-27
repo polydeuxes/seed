@@ -81,13 +81,6 @@ class DiagnosticShapeAuditSummary:
 
 
 IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
-    "operator_ingress_bootstrap": DiagnosticImplementationSpec(
-        name="operator_ingress_bootstrap",
-        module_path="seed_runtime/operator_ingress_bootstrap.py",
-        build_function="run_operator_ingress_bootstrap",
-        cli_flags=("--operator-ingress-bootstrap",),
-        event_ledger_write_markers=("ledger.append",),
-    ),
     "classification_coverage": DiagnosticImplementationSpec(
         name="classification_coverage",
         module_path="seed_runtime/classification_coverage.py",
