@@ -347,7 +347,9 @@ from seed_runtime.selection_path_audit import (
     selection_path_audit_json,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.operator_ingress_common_grammar_prerequisite import run_operator_ingress_bootstrap
+from seed_runtime.operator_ingress_common_grammar_prerequisite import (
+    run_operator_ingress_common_grammar_probe_attempt,
+)
 from seed_runtime.facts import (
     Fact,
     FactConflict,
@@ -5796,7 +5798,7 @@ def main(argv: list[str] | None = None) -> int:
             parser.error("--operator-ingress-bootstrap reads ingress and response from stdin")
         ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
         try:
-            run_operator_ingress_bootstrap(
+            run_operator_ingress_common_grammar_probe_attempt(
                 ledger=ledger,
                 workspace_id=args.workspace,
                 session_id=args.session,

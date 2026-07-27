@@ -19,7 +19,7 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     CHOICE_SET_REF,
     bootstrap_choice_set,
-    run_operator_ingress_bootstrap,
+    run_operator_ingress_common_grammar_probe_attempt,
     validate_capture_for_probe,
 )
 from seed_runtime.state import StateProjector
@@ -28,7 +28,7 @@ from seed_runtime.state import StateProjector
 def run_attempt(text, ledger=None, session="s"):
     ledger = ledger or EventLedger()
     output = StringIO()
-    view = run_operator_ingress_bootstrap(
+    view = run_operator_ingress_common_grammar_probe_attempt(
         ledger=ledger,
         workspace_id="w",
         session_id=session,
@@ -358,7 +358,7 @@ class _RawStdin:
 def run_raw(material: bytes, *, ledger=None):
     ledger = ledger or EventLedger()
     output = StringIO()
-    view = run_operator_ingress_bootstrap(
+    view = run_operator_ingress_common_grammar_probe_attempt(
         ledger=ledger,
         workspace_id="raw-w",
         session_id="raw-s",
@@ -602,7 +602,7 @@ def test_decoder_outcomes_and_selection_sources_remain_distinct():
 def run_operator_with_stream(stream):
     ledger = EventLedger()
     output = StringIO()
-    view = run_operator_ingress_bootstrap(
+    view = run_operator_ingress_common_grammar_probe_attempt(
         ledger=ledger,
         workspace_id="raw-w",
         session_id="raw-s",
