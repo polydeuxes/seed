@@ -14,6 +14,7 @@ from seed_runtime.closed_choice_selection_binding import (
 from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
 from seed_runtime.operator_ingress_representation import (
+    CapturedOperatorMaterial,
     capture_stdin_material,
     examine_text_representation,
 )
@@ -183,9 +184,23 @@ def project_bootstrap_events(state, event) -> None:
 
 
 def _capture_representation(
-    *, ledger, workspace, session, attempt, input_stream, material_role, lineage=()
+    *,
+    ledger,
+    workspace,
+    session,
+    attempt,
+    material_role,
+    captured_material=None,
+    input_stream=None,
+    lineage=(),
 ):
-    capture = capture_stdin_material(input_stream)
+    if (captured_material is None) == (input_stream is None):
+        raise ValueError("supply exactly one of captured_material or input_stream")
+    capture = (
+        captured_material
+        if captured_material is not None
+        else capture_stdin_material(input_stream)
+    )
     capture_ref = new_id("operator_material")
     captured = _record(
         ledger,
@@ -258,7 +273,8 @@ def run_operator_ingress_common_grammar_probe_attempt(
     ledger: EventLedger,
     workspace_id: str,
     session_id: str,
-    input_stream: TextIO | BinaryIO,
+    captured_ingress: CapturedOperatorMaterial,
+    response_input_stream: TextIO | BinaryIO,
     output_stream: TextIO,
 ) -> dict[str, object]:
     """Run exactly one ingress/common-grammar-probe/response attempt and return."""
@@ -273,7 +289,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
         workspace=workspace_id,
         session=session_id,
         attempt=attempt,
-        input_stream=input_stream,
+        captured_material=captured_ingress,
         material_role="initial_ingress",
     )
     raw_ingress = (
@@ -445,7 +461,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
         workspace=workspace_id,
         session=session_id,
         attempt=attempt,
-        input_stream=input_stream,
+        input_stream=response_input_stream,
         material_role="enum_response",
         lineage=(presented.id,),
     )
