@@ -347,7 +347,7 @@ from seed_runtime.selection_path_audit import (
     selection_path_audit_json,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.operator_ingress_bootstrap import run_operator_ingress_bootstrap
+from seed_runtime.operator_ingress_common_grammar_prerequisite import run_operator_ingress_bootstrap
 from seed_runtime.facts import (
     Fact,
     FactConflict,
