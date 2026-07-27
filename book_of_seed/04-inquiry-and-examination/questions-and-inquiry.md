@@ -63,7 +63,6 @@ Preserved Unknowns include the complete executable default dialogue loop, the fu
 ## Representative repository anchors
 - `seed_runtime/bounded_constitutional_question.py`
 - `seed_runtime/question_surface_inventory.py`
-- `seed_runtime/inquiry_demand_projection.py`
 
 ## Counterexamples or failure modes
 - Promoting every open string in state to a constitutional question.

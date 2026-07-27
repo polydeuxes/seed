@@ -2,7 +2,6 @@ from dataclasses import replace
 
 from seed_runtime.bounded_advancement_horizon import (
     EvidenceSnapshotReference,
-    GoalAdvancementDemandFamilyExclusion,
     bounded_advancement_horizon_json,
     establish_bounded_advancement_horizon,
 )
@@ -50,22 +49,6 @@ def test_horizon_preserves_supplied_boundary_scope_and_current_bounds():
     assert horizon.current_state_bounds == ("repository snapshot at horizon construction",)
 
 
-def test_horizon_preserves_possible_and_excluded_goal_advancement_demand_families_without_classification():
-    goal = _goal()
-    horizon = establish_bounded_advancement_horizon(
-        goal,
-        present_movement_boundary="preserve possible demand families only",
-        potentially_relevant_goal_advancement_demand_families=("clarification", "inquiry", "authority", "operational-realization"),
-        explicitly_excluded_goal_advancement_demand_families=(
-            GoalAdvancementDemandFamilyExclusion("scheduling", "outside this supplied movement boundary"),
-            GoalAdvancementDemandFamilyExclusion("execution", "would mutate the advancement stage"),
-        ),
-    )
-    assert horizon.potentially_relevant_goal_advancement_demand_families == ("clarification", "inquiry", "authority", "operational-realization")
-    assert horizon.classified_goal_advancement_demand_families == ()
-    assert horizon.sufficient_for_now is None
-
-
 def test_horizon_preserves_goal_unknowns_conflicts_and_supplied_evidence_quality():
     goal = _goal(unknowns=("goal source omits current-state bound",), conflicts=("two source spans disagree on scope",))
     horizon = establish_bounded_advancement_horizon(
@@ -103,8 +86,6 @@ def test_horizon_does_not_select_goal_or_establish_focus_and_remains_read_only()
     data = bounded_advancement_horizon_json(horizon)
     assert data["selects_goal"] is False
     assert data["establishes_focus"] is False
-    assert data["classified_goal_advancement_demand_families"] == ()
-    assert data["judges_sufficiency"] is False
     assert data["opens_inquiry"] is False
     assert data["writes_event_ledger"] is False
     assert data["mutates_cluster"] is False

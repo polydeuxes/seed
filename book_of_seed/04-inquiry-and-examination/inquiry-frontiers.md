@@ -25,8 +25,6 @@ For one exact bounded inquiry frontier, preserved testimony may contribute posit
 - preserved testimony != warranted frontier support
 
 ## Representative repository anchors
-- `seed_runtime/bounded_inquiry_frontier.py::BoundedInquiryFrontier`
-- `seed_runtime/inquiry_frontier_boundary_testimony.py`
 - `seed_runtime/inquiry_artifacts.py`
 
 ## Counterexamples or failure modes

@@ -2,7 +2,7 @@
 
 A horizon preserves a caller-supplied present movement boundary for one bounded
 goal identity. It
-does not select the goal, classify demands, judge sufficiency, choose a next step,
+does not select the goal, choose a next step,
 authorize work, execute, record, or mutate state.
 """
 
@@ -20,32 +20,14 @@ HorizonState = Literal["bounded", "refused"]
 RefusalReason = Literal[
     "goal_artifact_not_established",
     "missing_present_movement_boundary",
-    "excluded_goal_advancement_demand_family_missing_reason",
 ]
-
-DEMAND_CLASSIFICATION_FIELDS: tuple[str, ...] = (
-    "clarification_demand",
-    "inquiry_demand",
-    "authority_demand",
-    "operational_realization_demand",
-    "sufficient_for_now",
-    "selected_next_action",
-)
 
 BOUNDARY_NOTES: tuple[str, ...] = (
     "BoundedAdvancementHorizon is not the goal itself.",
     "Bounded goal identity is not Seed-owned goal selection, constitutional focus, priority, or advancement.",
     "BoundedAdvancementHorizon preserves a supplied movement boundary; it does not produce that boundary's constitutional standing.",
-    "Included demand family means potentially relevant to preserve, not that a demand exists.",
-    "Excluded demand families must carry explicit reasons.",
     "The horizon is read-only and does not open inquiry, authorize, execute, record, or mutate state.",
 )
-
-
-@dataclass(frozen=True)
-class GoalAdvancementDemandFamilyExclusion:
-    goal_advancement_demand_family: str
-    reason: str
 
 
 @dataclass(frozen=True)
@@ -72,22 +54,15 @@ class BoundedAdvancementHorizon:
     evidence_snapshot_refs: tuple[EvidenceSnapshotReference, ...]
     time_bounds: tuple[str, ...]
     current_state_bounds: tuple[str, ...]
-    potentially_relevant_goal_advancement_demand_families: tuple[str, ...]
-    explicitly_excluded_goal_advancement_demand_families: tuple[GoalAdvancementDemandFamilyExclusion, ...]
     unknowns: tuple[str, ...]
     conflicts: tuple[str, ...]
     stale_evidence_refs: tuple[str, ...]
     unavailable_evidence_refs: tuple[str, ...]
     selects_goal: bool = False
     establishes_focus: bool = False
-    classified_goal_advancement_demand_families: tuple[str, ...] = ()
-    judges_sufficiency: bool = False
-    sufficient_for_now: None = None
     selects_next_action: bool = False
     selected_next_action: None = None
     opens_inquiry: bool = False
-    requests_authority: bool = False
-    selects_realization: bool = False
     schedules: bool = False
     authorizes_work: bool = False
     starts_execution: bool = False
@@ -141,8 +116,6 @@ def _refuse(
         evidence_snapshot_refs=(),
         time_bounds=(),
         current_state_bounds=(),
-        potentially_relevant_goal_advancement_demand_families=(),
-        explicitly_excluded_goal_advancement_demand_families=(),
         unknowns=_dedupe((*goal.unknowns, *unknowns)),
         conflicts=_dedupe((*goal.conflicts, *conflicts)),
         stale_evidence_refs=(),
@@ -158,8 +131,6 @@ def establish_bounded_advancement_horizon(
     evidence_snapshot_refs: Iterable[EvidenceSnapshotReference] = (),
     time_bounds: Iterable[str] = (),
     current_state_bounds: Iterable[str] = (),
-    potentially_relevant_goal_advancement_demand_families: Iterable[str] = (),
-    explicitly_excluded_goal_advancement_demand_families: Iterable[GoalAdvancementDemandFamilyExclusion] = (),
     unknowns: Iterable[str] = (),
     conflicts: Iterable[str] = (),
     stale_evidence_refs: Iterable[str] = (),
@@ -178,19 +149,6 @@ def establish_bounded_advancement_horizon(
     if not present_movement_boundary:
         return _refuse("missing_present_movement_boundary", goal)
 
-    excluded = tuple(explicitly_excluded_goal_advancement_demand_families)
-    missing_reasons = tuple(item.goal_advancement_demand_family for item in excluded if not item.reason)
-    if missing_reasons:
-        return _refuse(
-            "excluded_goal_advancement_demand_family_missing_reason",
-            goal,
-            present_movement_boundary=present_movement_boundary,
-            conflicts=(
-                f"excluded demand family lacks reason: {family}"
-                for family in missing_reasons
-            ),
-        )
-
     snapshots = tuple(evidence_snapshot_refs)
     payload = {
         "goal": goal.goal_establishment_id,
@@ -201,8 +159,6 @@ def establish_bounded_advancement_horizon(
         "snapshots": [asdict(item) for item in snapshots],
         "time_bounds": list(_dedupe(time_bounds)),
         "current_state_bounds": list(_dedupe(current_state_bounds)),
-        "goal_advancement_demand_families": list(_dedupe(potentially_relevant_goal_advancement_demand_families)),
-        "excluded_goal_advancement_demand_families": [asdict(item) for item in excluded],
     }
     return BoundedAdvancementHorizon(
         artifact_type="BoundedAdvancementHorizon",
@@ -219,8 +175,6 @@ def establish_bounded_advancement_horizon(
         evidence_snapshot_refs=snapshots,
         time_bounds=_dedupe(time_bounds),
         current_state_bounds=_dedupe(current_state_bounds),
-        potentially_relevant_goal_advancement_demand_families=_dedupe(potentially_relevant_goal_advancement_demand_families),
-        explicitly_excluded_goal_advancement_demand_families=excluded,
         unknowns=_dedupe((*goal.unknowns, *unknowns)),
         conflicts=_dedupe((*goal.conflicts, *conflicts)),
         stale_evidence_refs=_dedupe(stale_evidence_refs),
