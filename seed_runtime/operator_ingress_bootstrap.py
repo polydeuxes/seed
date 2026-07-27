@@ -13,10 +13,9 @@ from seed_runtime.closed_choice_selection_binding import (
 )
 from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
-from seed_runtime.operator_ingress_pesc import (
+from seed_runtime.operator_ingress_representation import (
     capture_stdin_material,
     examine_text_representation,
-    pesc_dimensions,
 )
 from seed_runtime.state import StateProjector
 
@@ -108,7 +107,7 @@ def project_bootstrap_events(state, event) -> None:
             "known_loss": [],
             "unknowns": [],
             "conflicts": [],
-            "pesc_standing": {},
+            "representation_examinations": {},
         },
     )
     view["event_ids"].append(event.id)
@@ -120,12 +119,13 @@ def project_bootstrap_events(state, event) -> None:
         "dimensions": event.payload["dimensions"],
         "lineage": list(event.payload.get("lineage", ())),
     }
-    if event.kind == "operator.bootstrap.pesc_evidence_produced":
-        view["pesc_standing"][event.payload["material_role"]] = {
-            "evidence_event_id": event.id,
+    if event.kind == "operator.bootstrap.representation_examined":
+        view["representation_examinations"][event.payload["material_role"]] = {
+            "examination_event_id": event.id,
             "capture_event_id": event.payload["capture_event_id"],
-            "dimensions": event.payload["pesc_dimensions"],
-            "admission": event.payload["admission"],
+            "encoding_testimony": event.payload["encoding_testimony"],
+            "decoder_succeeded": event.payload["decoder_succeeded"],
+            "decoder_failure": event.payload["decoder_failure"],
         }
         view["last_event_kind"] = event.kind
         return
@@ -207,30 +207,30 @@ def _capture_representation(
         delimiter_hex=capture.delimiter_hex,
         encoding_testimony=capture.encoding_testimony,
         capture_boundary=capture.capture_boundary,
+        original_transport_bytes=capture.original_transport_bytes,
         known_loss=list(capture.known_loss),
         lineage=list(lineage),
     )
     examination = examine_text_representation(capture)
-    evidence = _record(
+    examination_event = _record(
         ledger,
-        "operator.bootstrap.pesc_evidence_produced",
+        "operator.bootstrap.representation_examined",
         workspace,
         session,
         attempt,
         _dimensions(
-            identity=f"pesc:{captured.id}",
-            content="canonical PESC representation examination",
-            standing="supported" if examination.succeeded else "insufficient",
+            identity=f"representation-examination:{captured.id}",
+            content="strict decoder examination",
+            standing="decodable" if examination.succeeded else "not-decodable",
             source=captured.id,
             responsibility="bounded-representation-evidence-production",
-            authority="representation evidence and purpose-local admission only",
+            authority="decoder outcome evidence only",
             scope=f"captured-occurrence:{capture_ref}",
-            occurrence="PESC evidence occurrence durably recorded",
+            occurrence="decoder examination durably recorded",
         ),
         material_role=material_role,
         capture_event_id=captured.id,
-        pesc_dimensions=pesc_dimensions(capture, examination),
-        admission="admitted" if examination.succeeded else "not_admitted",
+        encoding_testimony=capture.encoding_testimony,
         decoder_mechanism=examination.mechanism,
         decoder_succeeded=examination.succeeded,
         decoder_failure=examination.failure,
@@ -238,7 +238,7 @@ def _capture_representation(
         unknowns=["true source-relative encoding Unknown"],
         lineage=[captured.id],
     )
-    return capture, examination, captured, evidence
+    return capture, examination, captured, examination_event
 
 
 def run_operator_ingress_bootstrap(
@@ -251,7 +251,7 @@ def run_operator_ingress_bootstrap(
 ) -> dict[str, object]:
     """Run exactly one ingress/probe/response attempt and stop."""
     attempt = new_id("operator_bootstrap_attempt")
-    captured_ingress, ingress_examination, ingress_capture, ingress_pesc = (
+    captured_ingress, ingress_examination, ingress_capture, ingress_examination_event = (
         _capture_representation(
             ledger=ledger,
             workspace=workspace_id,
@@ -280,10 +280,10 @@ def run_operator_ingress_bootstrap(
             session_id,
             attempt,
             _dimensions(
-                identity=f"stop:{ingress_pesc.id}",
+                identity=f"stop:{ingress_examination_event.id}",
                 content="representation insufficiency",
                 standing="closed",
-                source=ingress_pesc.id,
+                source=ingress_examination_event.id,
                 responsibility="competent-local-stopping",
                 authority="closes only this interaction",
                 scope=f"attempt:{attempt}",
@@ -291,11 +291,11 @@ def run_operator_ingress_bootstrap(
             ),
             closed=True,
             response_kind="representation_insufficient",
-            lineage=[ingress_pesc.id],
+            lineage=[ingress_examination_event.id],
         )
         state = StateProjector(ledger).project(workspace_id)
         output_stream.write(
-            "Representation insufficient: captured material was not admitted as text.\n"
+            "Representation insufficient: captured material was not decodable under the testified encoding.\n"
         )
         output_stream.flush()
         return state.operator_ingress_bootstraps[attempt]
@@ -313,19 +313,19 @@ def run_operator_ingress_bootstrap(
             identity=attempt,
             content=ingress_content,
             standing="occurred",
-            source=ingress_pesc.id,
+            source=ingress_examination_event.id,
             responsibility="operator-ingress",
             authority="occurrence-only; meaning Unknown",
             scope=f"workspace:{workspace_id};session:{session_id}",
-            occurrence="admitted represented text preserves raw/PESC lineage",
+            occurrence="strictly decoded text preserves capture/examination lineage",
         ),
         raw_input=raw_ingress,
         ingress_kind=ingress_kind,
-        admitted_text=ingress_examination.represented_text,
+        decoded_text=ingress_examination.represented_text,
         raw_material_event_id=ingress_capture.id,
-        pesc_evidence_event_id=ingress_pesc.id,
+        representation_examination_event_id=ingress_examination_event.id,
         known_loss=list(captured_ingress.known_loss),
-        lineage=[ingress_capture.id, ingress_pesc.id],
+        lineage=[ingress_capture.id, ingress_examination_event.id],
     )
     StateProjector(ledger).project(workspace_id)
     if ingress_kind == "eof":
@@ -401,7 +401,7 @@ def run_operator_ingress_bootstrap(
         choice_set_fingerprint=choice_set.exact_choice_set_fingerprint,
         lineage=[ingress.id],
     )
-    captured_response, response_examination, response_capture, response_pesc = (
+    captured_response, response_examination, response_capture, response_examination_event = (
         _capture_representation(
             ledger=ledger,
             workspace=workspace_id,
@@ -478,10 +478,10 @@ def run_operator_ingress_bootstrap(
             session_id,
             attempt,
             _dimensions(
-                identity=f"stop:{response_pesc.id}",
+                identity=f"stop:{response_examination_event.id}",
                 content="response representation insufficiency",
                 standing="closed",
-                source=response_pesc.id,
+                source=response_examination_event.id,
                 responsibility="competent-local-stopping",
                 authority="closes only this interaction",
                 scope=f"attempt:{attempt}",
@@ -489,11 +489,11 @@ def run_operator_ingress_bootstrap(
             ),
             closed=True,
             response_kind="representation_insufficient",
-            lineage=[response_pesc.id],
+            lineage=[response_examination_event.id],
         )
         state = StateProjector(ledger).project(workspace_id)
         output_stream.write(
-            "Representation insufficient: captured response was not admitted as text.\n"
+            "Representation insufficient: captured response was not decodable under the testified encoding.\n"
         )
         output_stream.flush()
         return state.operator_ingress_bootstraps[attempt]
@@ -509,11 +509,11 @@ def run_operator_ingress_bootstrap(
             identity=capture_ref,
             content=None if response_kind == "eof" else token,
             standing="captured",
-            source=response_pesc.id,
+            source=response_examination_event.id,
             responsibility="response-capture",
             authority="occurrence-only; meaning and intent Unknown until binding",
             scope=f"choice-set:{CHOICE_SET_REF}",
-            occurrence="admitted represented text preserves raw/PESC lineage",
+            occurrence="strictly decoded text preserves capture/examination lineage",
         ),
         raw_input=raw_response,
         response_kind=response_kind,
@@ -521,9 +521,9 @@ def run_operator_ingress_bootstrap(
         presentation_ref=presentation_ref,
         capture_ref=capture_ref,
         choice_set_fingerprint=choice_set.exact_choice_set_fingerprint,
-        lineage=[presented.id, response_capture.id, response_pesc.id],
+        lineage=[presented.id, response_capture.id, response_examination_event.id],
         raw_material_event_id=response_capture.id,
-        pesc_evidence_event_id=response_pesc.id,
+        representation_examination_event_id=response_examination_event.id,
     )
     capture = OperatorSelectionTokenCapture(
         capture_ref, CHOICE_SET_REF, token, provenance=(response.id,)
