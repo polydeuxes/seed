@@ -17,11 +17,13 @@ preserved operator ingress
 -> interpretation unavailable for the BOGE consumer
 -> bounded affirmative/negative communication probe
 -> exact affirmative selection
-   -> bounded common-grammar acquisition treatment may proceed
+   -> bounded acquisition treatment enters separate applicability, selection,
+      authority, admission, and stopping boundaries
 -> exact negative selection
-   -> lawful local stop
+   -> local-stop treatment is selected
+   -> a separate competent stopping consumer may establish the bounded stop
 -> unsupported response
-   -> Unknown response standing
+   -> exact-set nonmembership known; response meaning, intent, and requested treatment Unknown
    -> optionally one or more bounded, separately evidenced retries
 -> repeated obstruction evidence
    -> possible bounded Demand for the missing common-grammar prerequisite
@@ -35,11 +37,11 @@ These are guarded alternatives, not a claim that every interaction traverses eve
 
 ## Communication-probe boundary
 
-The affirmative/negative enum is a minimal communication probe, not an interpretation menu. Its members select only whether bounded common-grammar acquisition treatment may proceed or the interaction should stop. Tokens, literal encodings, and presentation labels are local representation details, not constitutional truth vocabulary.
+The affirmative/negative enum is a minimal communication probe, not an interpretation menu. Its members select only the bounded acquisition treatment or the local-stop treatment. Tokens, literal encodings, and presentation labels are local representation details, not constitutional truth vocabulary.
 
-An exact affirmative selection establishes only the probe's bounded selection standing; any authority required for acquisition remains separate. It does not prove English, shared grammar, interpretation of the preserved ingress, a goal, or successful grammar acquisition. An exact negative selection establishes only a lawful local stop; it does not interpret the original ingress or establish a general refusal.
+An exact affirmative selection establishes only selection of the bounded acquisition treatment; it neither authorizes nor begins acquisition. It does not prove English, shared grammar, interpretation of the preserved ingress, a goal, or successful grammar acquisition. An exact negative selection establishes only selection of the local-stop treatment; it does not itself establish stopping, and a separate competent stopping consumer must establish the stop. It does not interpret the original ingress or establish a general refusal.
 
-A response unsupported by the probe is neither affirmative nor negative, neither refusal nor authorization. Its standing is Unknown. One or more retries may occur only as bounded, separately evidenced interactions. Repetition supplies scoped obstruction evidence; it neither interprets the response nor automatically establishes a Demand.
+A response unsupported by the probe is neither affirmative nor negative, neither refusal nor authorization. Exact-set nonmembership is known from the binding evidence, while the response's meaning, intent, and requested treatment remain Unknown. One or more retries may occur only as bounded, separately evidenced interactions. Repetition supplies scoped obstruction evidence; it neither interprets the response nor automatically establishes a Demand.
 
 ## Demand, authority, and movement boundary
 
@@ -56,9 +58,9 @@ BOGE remains operator-origin throughout. Necessary internal work is expressed th
 ## Important distinctions
 
 - communication probe != interpretation menu
-- affirmative selection != shared grammar or successful acquisition
-- negative selection != general refusal
-- unsupported response != authorization or refusal
+- affirmative selection != acquisition authorized or begun
+- negative selection != bounded stop established
+- unsupported membership result != response meaning known
 - recurrence evidence != Demand established
 - prerequisite Demand != goal
 - Demand established != acquisition authorized
