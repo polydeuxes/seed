@@ -97,17 +97,6 @@
       "cardinality": "single"
     },
     {
-      "predicate": "capability_verified",
-      "kind": "durable_fact",
-      "value_type": "enum",
-      "allowed_values": [
-        "verified",
-        "provider_reported",
-        "unverified"
-      ],
-      "cardinality": "single"
-    },
-    {
       "predicate": "cpu_count",
       "kind": "durable_fact",
       "value_type": "integer",

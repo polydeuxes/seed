@@ -9,12 +9,6 @@ from seed_runtime.capability_candidates import (
     build_capability_candidates,
 )
 
-from seed_runtime.capability_inventory import (
-    CapabilityEvidenceSummary,
-    CapabilityInventoryEntry,
-    CapabilitySupportSummary,
-    build_capability_inventory,
-)
 from seed_runtime.capability_promotion_readiness import (
     CapabilityPromotionReadiness,
     CapabilityPromotionReadinessInspection,
@@ -250,10 +244,6 @@ __all__ = [
     "CapabilityCandidateEvidence",
     "CapabilityCandidateInspection",
     "build_capability_candidates",
-    "CapabilityEvidenceSummary",
-    "CapabilityInventoryEntry",
-    "CapabilitySupportSummary",
-    "build_capability_inventory",
     "CapabilityPromotionReadiness",
     "CapabilityPromotionReadinessInspection",
     "build_capability_promotion_readiness_inspection",

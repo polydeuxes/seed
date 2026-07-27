@@ -1,10 +1,8 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 import json
 
 from seed_runtime.capability_candidates import build_capability_candidates
 from seed_runtime.capability_catalog import CapabilityCatalog, CapabilityCatalogEntry, CapabilityRecommendation
-from seed_runtime.capability_inventory import CapabilityInventoryEntry, build_capability_inventory
-from seed_runtime.capability_verification import build_capability_verification_inspection
 from seed_runtime.evidence import Evidence
 from seed_runtime.events import EventLedger
 from seed_runtime.facts import Fact
@@ -30,14 +28,9 @@ def _package_fact(package="python3"):
     return Fact(id=f"fact_{package}", subject_id="localhost", predicate="package_installed", value=package, evidence_ids=[f"evd_{package}"], observed_at=BASE_TIME, source_type="discovery")
 
 
-def _verification_fact(capability="python_runtime", value="verified", expires_at=None):
-    return Fact(id=f"fact_{capability}_{value}", subject_id=capability, predicate="capability_verified", value=value, evidence_ids=[f"evd_{capability}_{value}"], observed_at=BASE_TIME, expires_at=expires_at, source_type="provider")
-
-
-def _ledger(value="verified", expires_at=None):
+def _ledger():
     ledger = EventLedger()
     ledger.append("fact.observed", "ws", {"fact": to_plain(_package_fact())})
-    ledger.append("fact.observed", "ws", {"fact": to_plain(_verification_fact(value=value, expires_at=expires_at))})
     return ledger
 
 
@@ -50,8 +43,7 @@ def _projection(ledger=None, *, path_env=""):
     state = _project(ledger)
     candidates = build_capability_candidates(state, filter_text="python_runtime")
     evidence = build_verification_evidence(state, filter_text="python_runtime", path_env=path_env, candidate_inspection=candidates)
-    verification = build_capability_verification_inspection(state, filter_text="python_runtime", now=BASE_TIME)
-    return build_single_capability_state_projection(state, "Python Runtime", catalog=_catalog(), candidate_inspection=candidates, verification_evidence_inspection=evidence, verification_inspection=verification, inventory=build_capability_inventory(state, now=BASE_TIME)), state, ledger
+    return build_single_capability_state_projection(state, "Python Runtime", catalog=_catalog(), candidate_inspection=candidates, verification_evidence_inspection=evidence), state, ledger
 
 
 def test_projection_normalizes_and_exposes_boundaries_without_selection():
@@ -59,7 +51,6 @@ def test_projection_normalizes_and_exposes_boundaries_without_selection():
 
     assert projection.capability_name == "python_runtime"
     assert projection.catalog_known is True
-    assert projection.verification_status == "verified"
     assert projection.provider_recommendations[0].provider == "manual"
     assert projection.registered_operations == []
     assert projection.candidate_evidence[0].candidate == "python_runtime"
@@ -87,26 +78,13 @@ def test_absent_candidate_and_verification_evidence_are_not_absence_or_failure()
         catalog=_catalog(),
         candidate_inspection=candidates,
         verification_evidence_inspection=evidence,
-        inventory=[CapabilityInventoryEntry(capability="python_runtime", state="unverified")],
     )
     rendered = format_single_capability_state_projection(projection)
 
     assert projection.candidate_evidence == []
     assert projection.verification_evidence == []
-    assert projection.verification_status == "unverified"
     assert "empty is not capability absence" in rendered
     assert "empty is not verification failure" in rendered
-
-
-def test_verification_states_remain_distinct():
-    stale_projection, _, _ = _projection(_ledger(expires_at=BASE_TIME - timedelta(days=1)))
-    unverified_projection, _, _ = _projection(_ledger(value="unverified"))
-    unknown_projection, _, _ = _projection(_ledger(value="mystery"))
-
-    assert stale_projection.verification_status == "stale"
-    assert unverified_projection.verification_status == "unverified"
-    assert unknown_projection.verification_status == "unknown"
-    assert stale_projection.freshness["reason"] == "verification fact exists but is expired"
 
 
 def test_json_shape_is_stable_and_typed():
@@ -116,7 +94,7 @@ def test_json_shape_is_stable_and_typed():
     assert list(payload) == [
         "capability_name", "catalog_known", "provider_recommendations",
         "registered_operations", "candidate_evidence", "verification_evidence",
-        "verification_status", "verification_support", "freshness", "unknowns",
+        "unknowns",
         "boundary_notes", "read_only", "writes_event_ledger", "mutates_cluster",
     ]
     assert payload["provider_recommendations"][0]["provider"] == "manual"

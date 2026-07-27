@@ -3,14 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from typing import Any
 
 from seed_runtime.capabilities import normalize_capability
 from seed_runtime.capability_candidates import CapabilityCandidateInspection
 from seed_runtime.capability_catalog import CapabilityCatalog, CapabilityRecommendation
-from seed_runtime.capability_inventory import CapabilityInventoryEntry, build_capability_inventory
-from seed_runtime.capability_verification import CapabilityVerificationInspection
 from seed_runtime.models import ToolSpec
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import State
@@ -24,8 +21,6 @@ _BOUNDARY_NOTES = (
     "registered_operations_are_contract_associations_only",
     "candidate_evidence_is_not_capability_availability",
     "verification_evidence_is_not_verification_failure_or_success",
-    "verification_status_comes_from_existing_inventory_owner",
-    "freshness_comes_from_existing_inventory_support",
     "no_provider_selection",
     "no_operation_selection",
     "no_capability_verification",
@@ -51,9 +46,6 @@ class SingleCapabilityStateProjection:
     registered_operations: list[RegisteredOperationAssociation] = field(default_factory=list)
     candidate_evidence: list[Any] = field(default_factory=list)
     verification_evidence: list[Any] = field(default_factory=list)
-    verification_status: str = "unknown"
-    verification_support: Any = None
-    freshness: Any = None
     unknowns: list[str] = field(default_factory=list)
     boundary_notes: list[str] = field(default_factory=lambda: list(_BOUNDARY_NOTES))
     read_only: bool = True
@@ -68,9 +60,6 @@ def build_single_capability_state_projection(
     catalog: CapabilityCatalog | None = None,
     candidate_inspection: CapabilityCandidateInspection | None = None,
     verification_evidence_inspection: VerificationEvidenceInspection | None = None,
-    verification_inspection: CapabilityVerificationInspection | None = None,
-    inventory: list[CapabilityInventoryEntry] | None = None,
-    now: datetime | None = None,
 ) -> SingleCapabilityStateProjection:
     """Compose existing owner-produced artifacts for one capability string only."""
 
@@ -102,43 +91,6 @@ def build_single_capability_state_projection(
             if normalize_capability(evidence.candidate) == normalized
         ]
 
-    inventory_entry = None
-    entries = inventory
-    if entries is None:
-        entries = build_capability_inventory(state, now=now or datetime.now(timezone.utc))
-    matching_inventory = [
-        entry for entry in entries if normalize_capability(entry.capability) == normalized
-    ]
-    if matching_inventory:
-        inventory_entry = sorted(
-            matching_inventory,
-            key=lambda entry: (
-                (entry.support is not None),
-                _verification_state_rank(entry.state),
-                entry.latest_observed_at or entry.observed_at or datetime.min.replace(tzinfo=timezone.utc),
-                entry.capability,
-            ),
-            reverse=True,
-        )[0]
-
-    verification_status = "unknown"
-    verification_support = None
-    freshness = None
-    if inventory_entry is None:
-        unknowns.append("capability_inventory_entry_missing")
-    else:
-        verification_status = inventory_entry.state
-        verification_support = inventory_entry.support
-        freshness = {
-            "observed_at": inventory_entry.observed_at,
-            "latest_observed_at": inventory_entry.latest_observed_at,
-            "age_seconds": inventory_entry.age_seconds,
-            "reason": inventory_entry.reason,
-        }
-
-    if verification_inspection is None:
-        unknowns.append("verification_inspection_owner_artifact_missing")
-
     return SingleCapabilityStateProjection(
         capability_name=normalized,
         catalog_known=("unknown" if catalog is None else catalog_entry is not None),
@@ -146,21 +98,8 @@ def build_single_capability_state_projection(
         registered_operations=operations,
         candidate_evidence=candidate_evidence,
         verification_evidence=verification_evidence,
-        verification_status=verification_status,
-        verification_support=verification_support,
-        freshness=freshness,
         unknowns=unknowns,
     )
-
-
-def _verification_state_rank(state: str) -> int:
-    return {
-        "verified": 4,
-        "provider_reported": 3,
-        "stale": 2,
-        "unverified": 1,
-        "unknown": 0,
-    }.get(state, 0)
 
 
 def _operation_assoc(tool: ToolSpec, normalized: str) -> RegisteredOperationAssociation | None:
@@ -188,7 +127,6 @@ def format_single_capability_state_projection(projection: SingleCapabilityStateP
         f"registered_operations: {len(projection.registered_operations)} contract association(s)",
         f"candidate_evidence: {len(projection.candidate_evidence)} owner-produced candidate record(s); empty is not capability absence",
         f"verification_evidence: {len(projection.verification_evidence)} owner-produced evidence record(s); empty is not verification failure",
-        f"verification_status: {projection.verification_status}",
         f"unknowns: {', '.join(projection.unknowns) if projection.unknowns else 'none'}",
         "boundary_notes:",
     ]

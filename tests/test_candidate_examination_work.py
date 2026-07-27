@@ -100,4 +100,4 @@ def test_frontier_adapter_preserves_frontier_ownership_and_existing_behavior():
     assert item.candidate_work_id == ws.candidate_work[0].candidate_work_id
     assert hasattr(item,"classification") and item.classification.unknown and not hasattr(ws.candidate_work[0],"classification")
     # Existing public compatibility imports remain unchanged.
-    import seed_runtime.external_material_testimony_binding, seed_runtime.external_material_structural_projection, seed_runtime.external_material_surface_feature_projection, seed_runtime.candidate_external_grammar, seed_runtime.capability_inventory, seed_runtime.events
+    import seed_runtime.external_material_testimony_binding, seed_runtime.external_material_structural_projection, seed_runtime.external_material_surface_feature_projection, seed_runtime.candidate_external_grammar, seed_runtime.events

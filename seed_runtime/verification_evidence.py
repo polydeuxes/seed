@@ -78,7 +78,7 @@ def build_verification_evidence(
     The candidate universe remains the evidence-derived capability candidates.
     Acquisition only checks whether repository-justified binary names are present
     as executable files in PATH directories. It never runs those binaries and
-    never promotes evidence into ``capability_verified`` facts.
+    never promotes evidence into competency standing.
     """
 
     if candidate_inspection is None:

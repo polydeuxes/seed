@@ -80,10 +80,6 @@ from seed_runtime.external_site_rule_testimony import (
 from seed_runtime.capability_candidates import build_capability_candidates
 from seed_runtime.capability_catalog import CapabilityCatalog
 from seed_runtime.capabilities import normalize_capability
-from seed_runtime.capability_inventory import (
-    CapabilityInventoryEntry,
-    build_capability_inventory,
-)
 from seed_runtime.capability_needs import (
     build_capability_needs,
     capability_needs_json,
@@ -113,9 +109,6 @@ from seed_runtime.capability_relationship import (
 )
 from seed_runtime.capability_promotion_readiness import (
     build_capability_promotion_readiness_inspection,
-)
-from seed_runtime.capability_verification import (
-    build_capability_verification_inspection,
 )
 from seed_runtime.single_capability_state_projection import (
     build_single_capability_state_projection,
@@ -1789,14 +1782,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="print read-only projected Capability views and exit",
     )
     parser.add_argument(
-        "--capability-status",
-        action="store_true",
-        help=(
-            "print read-only capability verification inventory as deterministic JSON "
-            "and exit; derives only from projected facts/evidence"
-        ),
-    )
-    parser.add_argument(
         "--capability-candidates",
         nargs="?",
         const="__all__",
@@ -1834,20 +1819,9 @@ def build_parser() -> argparse.ArgumentParser:
         const="__all__",
         metavar="FILTER",
         help=(
-            "print read-only capability verification promotion-readiness as deterministic JSON; "
+            "print read-only capability promotion-readiness as deterministic JSON; "
             "optional FILTER such as ssh, python, docker, git, or curl; does not promote, "
-            "create capability_verified facts, select, evaluate policy, authorize, or execute"
-        ),
-    )
-    parser.add_argument(
-        "--capability-verification",
-        nargs="?",
-        const="__all__",
-        metavar="FILTER",
-        help=(
-            "print read-only candidate capability verification status as deterministic JSON; "
-            "optional FILTER such as ssh, python, docker, git, or curl; does not select, "
-            "evaluate policy, plan, authorize, or execute tools"
+            "create facts, select, evaluate policy, authorize, or execute"
         ),
     )
     parser.add_argument(
@@ -2125,10 +2099,8 @@ def validate_lifecycle_args(
         bool(args.current_observations),
         bool(args.current_requirements),
         bool(args.current_capabilities),
-        bool(args.capability_status),
         bool(args.capability_candidates),
         bool(args.verification_evidence),
-        bool(args.capability_verification),
         bool(args.single_capability_state),
         bool(args.capability_promotion_readiness),
         bool(args.current_issues),
@@ -2195,8 +2167,8 @@ def validate_lifecycle_args(
             "--fact-support, --best-fact, "
             "--current-selection, --current-facts-cache-debug, "
             "--current-observations, --current-requirements, "
-            "--current-capabilities, --capability-status, --capability-candidates, "
-            "--verification-evidence, --capability-verification, "
+            "--current-capabilities, --capability-candidates, "
+            "--verification-evidence, "
             "--capability-promotion-readiness, --current-issues, "
             "--candidate-requests, --candidate-routes, --inquiry-artifacts, "
             "--state-build, --state-build-cache-debug, --integrity-summary, "
@@ -4725,12 +4697,6 @@ def format_capability_views(views: list[CapabilityView]) -> str:
     return "\n".join(lines)
 
 
-def format_capability_inventory(entries: list[CapabilityInventoryEntry]) -> str:
-    """Format capability verification inventory as deterministic JSON."""
-
-    return json.dumps(to_plain(entries), sort_keys=True, indent=2)
-
-
 def format_projection_integrity_summary(summary: ProjectionIntegritySummary) -> str:
     """Format the read-only Projection Integrity Summary."""
 
@@ -4754,16 +4720,6 @@ def format_projection_integrity_summary(summary: ProjectionIntegritySummary) -> 
         "",
         f"Refresh recommendations: {summary.refresh_recommendation_count}",
         "See: --stale-fact-refreshes",
-        "",
-        "Capabilities",
-        "",
-        f"Verified: {summary.verified_capability_count}",
-        f"Unverified: {summary.unverified_capability_count}",
-        f"Stale: {summary.stale_capability_count}",
-        f"Unknown: {summary.unknown_capability_count}",
-        f"Provider reported: {summary.provider_reported_capability_count}",
-        "",
-        "See: --capability-status",
         "",
         "Caveats",
         "",
@@ -6993,14 +6949,6 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
 
-    if args.capability_status:
-        print(
-            format_capability_inventory(
-                build_capability_inventory(projected_state_from_args(args))
-            )
-        )
-        return 0
-
     if args.capability_candidates:
         filter_text = (
             None
@@ -7064,16 +7012,12 @@ def main(argv: list[str] | None = None) -> int:
             filter_text=normalized_capability,
             candidate_inspection=candidate_inspection,
         )
-        verification_inspection = build_capability_verification_inspection(
-            state, filter_text=normalized_capability, fact_index=fact_index
-        )
         projection = build_single_capability_state_projection(
             state,
             args.single_capability_state,
             catalog=CapabilityCatalog.load("capability_catalog"),
             candidate_inspection=candidate_inspection,
             verification_evidence_inspection=verification_evidence_inspection,
-            verification_inspection=verification_inspection,
         )
         if args.json_output:
             print(
@@ -7102,32 +7046,6 @@ def main(argv: list[str] | None = None) -> int:
             json.dumps(
                 to_plain(
                     build_capability_promotion_readiness_inspection(
-                        state,
-                        filter_text=filter_text,
-                        fact_index=fact_index,
-                    )
-                ),
-                indent=2,
-                sort_keys=True,
-            )
-        )
-        return 0
-
-    if args.capability_verification:
-        filter_text = (
-            None
-            if args.capability_verification == "__all__"
-            else args.capability_verification
-        )
-        status_consumer = CliExecutionStatusConsumer()
-        state = projected_state_from_args(args, status_consumer=status_consumer)
-        fact_index = _load_or_build_fact_index_from_args(
-            args, state, status_consumer=status_consumer
-        )
-        print(
-            json.dumps(
-                to_plain(
-                    build_capability_verification_inspection(
                         state,
                         filter_text=filter_text,
                         fact_index=fact_index,
