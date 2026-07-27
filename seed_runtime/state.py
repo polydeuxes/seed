@@ -1136,7 +1136,7 @@ class StateProjector:
         _select_replay_targets(replay_justification)
         payload = event.payload
         if event.kind.startswith("operator.bootstrap."):
-            from seed_runtime.operator_ingress_bootstrap import project_bootstrap_events
+            from seed_runtime.operator_ingress_common_grammar_prerequisite import project_bootstrap_events
 
             project_bootstrap_events(state, event)
         if event.kind == "entity.upserted":
