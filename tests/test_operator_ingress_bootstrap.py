@@ -1,4 +1,4 @@
-from io import StringIO
+from io import BytesIO, StringIO
 import subprocess
 import sys
 
@@ -65,7 +65,10 @@ def test_exact_treatments_select_without_acquisition_and_stop_is_separate(
 )
 def test_near_matches_and_empty_are_unsupported_with_semantic_unknowns(token):
     ledger, view, output = run_attempt(f"hello\n{token}\n")
-    assert view["current_standing"]["binding_finding"]["dimensions"]["standing"] == "unsupported"
+    assert (
+        view["current_standing"]["binding_finding"]["dimensions"]["standing"]
+        == "unsupported"
+    )
     assert view["unknowns"] == [
         "operator intent Unknown",
         "requested treatment Unknown",
@@ -96,11 +99,16 @@ def test_eof_is_distinct_from_empty_response():
 def test_initial_eof_records_eof_and_separate_stop_without_probe():
     ledger, view, output = run_attempt("")
     assert [event.kind for event in ledger.list_events("w")] == [
+        "operator.bootstrap.raw_material_captured",
+        "operator.bootstrap.pesc_evidence_produced",
         "operator.bootstrap.initial_eof_occurred",
         "operator.bootstrap.stopping_occurred",
     ]
     assert view["closed"] is True
-    assert view["current_standing"]["interaction_closure"]["dimensions"]["standing"] == "closed"
+    assert (
+        view["current_standing"]["interaction_closure"]["dimensions"]["standing"]
+        == "closed"
+    )
     assert "selected_treatment" not in view
     assert output == "Bootstrap stopped locally.\n"
 
@@ -110,12 +118,16 @@ def test_exact_ingress_preservation_all_dimensions_and_durable_replay(tmp_path):
     ledger, view, _ = run_attempt(
         "  Mixed CASE ingress  \n2\n", SQLiteEventLedger(str(path))
     )
-    ingress = ledger.list_events("w")[0]
+    ingress = next(
+        e
+        for e in ledger.list_events("w")
+        if e.kind == "operator.bootstrap.ingress_occurred"
+    )
     assert ingress.payload["raw_input"] == "  Mixed CASE ingress  \n"
     assert ingress.payload["known_loss"] == [
-        "terminal framing outside captured line is not preserved"
+        "original transport bytes and prior decoder behavior are unavailable"
     ]
-    assert len(view["dimensional_standing"]) == 7
+    assert len(view["dimensional_standing"]) == 11
     assert all(
         set(item["dimensions"])
         == {
@@ -133,11 +145,20 @@ def test_exact_ingress_preservation_all_dimensions_and_durable_replay(tmp_path):
     assert all(
         item["lineage"] for item in list(view["dimensional_standing"].values())[1:]
     )
-    assert view["current_standing"]["presentation"]["dimensions"]["standing"] == "consumed"
+    assert (
+        view["current_standing"]["presentation"]["dimensions"]["standing"] == "consumed"
+    )
     assert view["current_standing"]["response"]["dimensions"]["standing"] == "consumed"
-    assert view["current_standing"]["binding_finding"]["dimensions"]["standing"] == "bound"
-    assert view["dimensional_standing"][view["event_ids"][2]]["dimensions"]["standing"] == "presented"
-    assert view["dimensional_standing"][view["event_ids"][3]]["dimensions"]["standing"] == "captured"
+    assert (
+        view["current_standing"]["binding_finding"]["dimensions"]["standing"] == "bound"
+    )
+    assert (
+        view["current_standing"]["presentation"]["dimensions"]["standing"] == "consumed"
+    )
+    assert (
+        view["current_standing"]["raw_response_material"]["dimensions"]["standing"]
+        == "captured"
+    )
     attempt_ref = ingress.payload["attempt_ref"]
     ledger.close()
     reopened = SQLiteEventLedger(str(path))
@@ -319,9 +340,201 @@ def test_real_cli_reads_ingress_presents_stdout_and_persists(tmp_path):
     ]
     ledger = SQLiteEventLedger(str(db))
     assert (
-        ledger.list_events("cli-w")[0].payload["raw_input"]
-        == "free form operator words\n"
+        ledger.list_events("cli-w")[0].payload["exact_bytes_hex"]
+        == b"free form operator words\n".hex()
     )
     assert (
         ledger.list_events("cli-w")[-1].kind == "operator.bootstrap.stopping_occurred"
+    )
+
+
+class _RawStdin:
+    def __init__(self, material: bytes, encoding="utf-8"):
+        self.buffer = BytesIO(material)
+        self.encoding = encoding
+
+
+def run_raw(material: bytes, *, ledger=None):
+    ledger = ledger or EventLedger()
+    output = StringIO()
+    view = run_operator_ingress_bootstrap(
+        ledger=ledger,
+        workspace_id="raw-w",
+        session_id="raw-s",
+        input_stream=_RawStdin(material),
+        output_stream=output,
+    )
+    return ledger, view, output.getvalue()
+
+
+def test_canonical_pesc_dimensions_preserve_bytes_framing_and_eight_dimensions(
+    tmp_path,
+):
+    path = tmp_path / "raw.db"
+    ledger, view, _ = run_raw("é\r\n2\n".encode(), ledger=SQLiteEventLedger(str(path)))
+    raw = ledger.list_events("raw-w")[0]
+    assert raw.payload["exact_bytes_hex"] == "é\r\n".encode().hex()
+    assert raw.payload["delimiter_hex"] == "0d0a"
+    assert raw.payload["capture_boundary"] == "stdin.buffer.readline"
+    assert set(view["pesc_standing"]["initial_ingress"]["dimensions"]) == {
+        "P_projection_representation",
+        "E_equivalence",
+        "S_scope",
+        "C_consumer_contract",
+    }
+    for dimension in view["pesc_standing"]["initial_ingress"]["dimensions"].values():
+        assert set(dimension) == {
+            "observed_evidence",
+            "producer_responsibility",
+            "source_provenance",
+            "scope_locality",
+            "known_loss",
+            "unknowns_conflicts",
+            "supports",
+            "does_not_follow",
+        }
+    pesc_events = [
+        e
+        for e in ledger.list_events("raw-w")
+        if e.kind == "operator.bootstrap.pesc_evidence_produced"
+    ]
+    assert len(pesc_events) == 2
+    assert all(
+        set(e.payload["dimensions"])
+        == {
+            "identity",
+            "content",
+            "standing",
+            "source_provenance",
+            "responsibility",
+            "authority_warrant",
+            "scope_locality",
+            "occurrence_preservation",
+        }
+        for e in pesc_events
+    )
+    ledger.close()
+    replay = StateProjector(SQLiteEventLedger(str(path))).project("raw-w")
+    assert (
+        replay.operator_ingress_bootstraps[
+            next(iter(replay.operator_ingress_bootstraps))
+        ]
+        == view
+    )
+
+
+@pytest.mark.parametrize("material", [b"ASCII\n2\n", "λ\n2\n".encode("utf-8")])
+def test_decoder_success_is_bounded_evidence_and_admits_lineage(material):
+    ledger, view, _ = run_raw(material)
+    projection = view["pesc_standing"]["initial_ingress"]
+    assert projection["admission"] == "admitted"
+    p = projection["dimensions"]["P_projection_representation"]
+    assert p["observed_evidence"]["decoder_succeeded"] is True
+    assert "unique or correct encoding" in p["does_not_follow"]
+    ingress = next(
+        e
+        for e in ledger.list_events("raw-w")
+        if e.kind == "operator.bootstrap.ingress_occurred"
+    )
+    assert ingress.payload["lineage"] == [
+        ingress.payload["raw_material_event_id"],
+        ingress.payload["pesc_evidence_event_id"],
+    ]
+    assert view["pesc_standing"]["enum_response"]["admission"] == "admitted"
+    response = next(
+        e
+        for e in ledger.list_events("raw-w")
+        if e.kind == "operator.bootstrap.response_captured"
+    )
+    assert response.payload["lineage"][-2:] == [
+        response.payload["raw_material_event_id"],
+        response.payload["pesc_evidence_event_id"],
+    ]
+
+
+def test_invalid_initial_bytes_are_preserved_without_replacement_and_stop_before_enum():
+    ledger, view, output = run_raw(b"\xff\n1\n")
+    assert (
+        output
+        == "Representation insufficient: captured material was not admitted as text.\n"
+    )
+    events = ledger.list_events("raw-w")
+    assert events[0].payload["exact_bytes_hex"] == "ff0a"
+    assert events[1].payload["decoder_succeeded"] is False
+    assert "\ufffd" not in str([event.payload for event in events])
+    assert not any(
+        e.kind
+        in {
+            "operator.bootstrap.probe_produced",
+            "operator.bootstrap.presentation_occurred",
+            "operator.bootstrap.response_captured",
+        }
+        for e in events
+    )
+    assert view["pesc_standing"]["initial_ingress"]["admission"] == "not_admitted"
+
+
+def test_real_cli_invalid_raw_bytes_are_durable_and_stop_before_presentation(tmp_path):
+    db = tmp_path / "invalid-cli.db"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "scripts/seed_local.py",
+            "--operator-ingress-bootstrap",
+            "--db",
+            str(db),
+            "--workspace",
+            "bytes-w",
+            "--session",
+            "bytes-s",
+        ],
+        input=b"\xff\n1\n",
+        capture_output=True,
+        check=True,
+    )
+    assert (
+        completed.stdout
+        == b"Representation insufficient: captured material was not admitted as text.\n"
+    )
+    events = SQLiteEventLedger(str(db)).list_events("bytes-w")
+    assert events[0].payload["exact_bytes_hex"] == "ff0a"
+    assert not any(e.kind == "operator.bootstrap.presentation_occurred" for e in events)
+
+
+def test_invalid_enum_bytes_stop_before_token_capture_or_binding():
+    ledger, _, output = run_raw(b"hello\n\xff\n")
+    assert "Select one treatment" in output
+    assert output.endswith(
+        "Representation insufficient: captured response was not admitted as text.\n"
+    )
+    events = ledger.list_events("raw-w")
+    assert not any(
+        e.kind
+        in {
+            "operator.bootstrap.response_captured",
+            "operator.bootstrap.binding_completed",
+            "operator.bootstrap.unsupported_finding",
+        }
+        for e in events
+    )
+    assert not any(
+        any(term in e.kind for term in ("demand", "acquisition", "boge", "cluster"))
+        for e in events
+    )
+
+
+def test_empty_material_and_eof_have_distinct_raw_evidence():
+    empty_ledger, _, _ = run_raw(b"\n2\n")
+    eof_ledger, _, _ = run_raw(b"")
+    empty = empty_ledger.list_events("raw-w")[0].payload
+    eof = eof_ledger.list_events("raw-w")[0].payload
+    assert (empty["exact_bytes_hex"], empty["eof"], empty["delimiter_hex"]) == (
+        "0a",
+        False,
+        "0a",
+    )
+    assert (eof["exact_bytes_hex"], eof["eof"], eof["delimiter_hex"]) == (
+        "",
+        True,
+        None,
     )
