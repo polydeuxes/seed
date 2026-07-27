@@ -39,18 +39,16 @@ def run_attempt(text, ledger=None, session="s"):
 
 
 @pytest.mark.parametrize(
-    "token,treatment,closed",
-    [("1", "common-grammar-acquisition", None), ("2", "local-stop", True)],
+    "token,treatment",
+    [("1", "common-grammar-acquisition"), ("2", "local-stop")],
 )
-def test_exact_treatments_select_without_acquisition_and_stop_is_separate(
-    token, treatment, closed
-):
+def test_exact_treatments_select_without_acquisition_or_bounded_stop(token, treatment):
     ledger, view, output = run_attempt(f"do something exactly\n{token}\n")
     assert view["selected_treatment"] == treatment
-    assert view.get("closed") is closed
+    assert view.get("closed") is None
     kinds = [event.kind for event in ledger.list_events("w")]
     assert "operator.bootstrap.treatment_selected" in kinds
-    assert ("operator.bootstrap.stopping_occurred" in kinds) is (token == "2")
+    assert "operator.bootstrap.stopping_occurred" not in kinds
     assert not any(
         any(
             word in event.kind
@@ -78,6 +76,10 @@ def test_near_matches_and_empty_are_unsupported_with_semantic_unknowns(token):
     assert "Unsupported response" in output
     assert not any(
         event.kind == "operator.bootstrap.treatment_selected"
+        for event in ledger.list_events()
+    )
+    assert not any(
+        event.kind == "operator.bootstrap.stopping_occurred"
         for event in ledger.list_events()
     )
 
@@ -112,6 +114,37 @@ def test_initial_eof_records_eof_and_separate_stop_without_probe():
     )
     assert "selected_treatment" not in view
     assert output == "Bootstrap stopped locally.\n"
+    stop = ledger.list_events("w")[-1]
+    assert stop.payload["dimensions"]["authority_warrant"] == (
+        "closes only this interaction"
+    )
+
+
+def test_competency_local_eof_stop_returns_without_terminating_seed(tmp_path):
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "scripts/seed_local.py",
+            "--operator-ingress-bootstrap",
+            "--db",
+            str(tmp_path / "eof.db"),
+            "--workspace",
+            "eof-w",
+        ],
+        input="",
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    assert completed.returncode == 0
+    assert completed.stdout == "Bootstrap stopped locally.\n"
+    ledger = SQLiteEventLedger(str(tmp_path / "eof.db"))
+    stop = ledger.list_events("eof-w")[-1]
+    assert stop.kind == "operator.bootstrap.stopping_occurred"
+    assert stop.payload["dimensions"]["responsibility"] == (
+        "competent-local-stopping"
+    )
+    assert stop.payload["dimensions"]["scope_locality"].startswith("attempt:")
 
 
 def test_exact_ingress_preservation_all_dimensions_and_durable_replay(tmp_path):
@@ -128,7 +161,7 @@ def test_exact_ingress_preservation_all_dimensions_and_durable_replay(tmp_path):
     assert ingress.payload["known_loss"] == [
         "original transport bytes and prior decoder behavior are unavailable"
     ]
-    assert len(view["dimensional_standing"]) == 11
+    assert len(view["dimensional_standing"]) == 10
     assert all(
         set(item["dimensions"])
         == {
@@ -177,7 +210,7 @@ def test_exact_ingress_preservation_all_dimensions_and_durable_replay(tmp_path):
     [
         ("hello\n1\n", "consumed", "consumed", "bound", "selected", None),
         ("hello\nwat\n", "consumed", "consumed", "unsupported", None, None),
-        ("hello\n2\n", "consumed", "consumed", "bound", "selected", "closed"),
+        ("hello\n2\n", "consumed", "consumed", "bound", "selected", None),
         ("", None, None, None, None, "closed"),
         ("hello\n", "consumed", "occurred", None, None, "closed"),
     ],
@@ -337,15 +370,18 @@ def test_real_cli_reads_ingress_presents_stdout_and_persists(tmp_path):
         "Select one treatment by its exact token:",
         "1. Select bounded common-grammar acquisition treatment.",
         "2. Select local stopping treatment.",
-        "Bootstrap stopped locally.",
+        "Local-stop treatment selected; bounded stop was not established.",
     ]
     ledger = SQLiteEventLedger(str(db))
     assert (
         ledger.list_events("cli-w")[0].payload["exact_bytes_hex"]
         == b"free form operator words\n".hex()
     )
-    assert (
-        ledger.list_events("cli-w")[-1].kind == "operator.bootstrap.stopping_occurred"
+    assert ledger.list_events("cli-w")[-1].kind == "operator.bootstrap.treatment_selected"
+    assert completed.returncode == 0
+    assert not any(
+        event.kind == "operator.bootstrap.stopping_occurred"
+        for event in ledger.list_events("cli-w")
     )
 
 
