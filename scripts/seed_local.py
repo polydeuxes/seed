@@ -347,6 +347,7 @@ from seed_runtime.selection_path_audit import (
     selection_path_audit_json,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
+from seed_runtime.operator_ingress_bootstrap import run_operator_ingress_bootstrap
 from seed_runtime.facts import (
     Fact,
     FactConflict,
@@ -825,6 +826,11 @@ def build_parser() -> argparse.ArgumentParser:
             "SQLite event ledger path for sharing local state across runs; "
             "use this with state/query commands"
         ),
+    )
+    parser.add_argument(
+        "--operator-ingress-bootstrap",
+        action="store_true",
+        help="run one bounded free-form operator common-grammar bootstrap attempt",
     )
     parser.add_argument(
         "--events",
@@ -5785,6 +5791,23 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     apply_bounded_ask_dispatch(args, parser)
     validate_lifecycle_args(args, parser)
+    if args.operator_ingress_bootstrap:
+        if args.message:
+            parser.error("--operator-ingress-bootstrap reads ingress and response from stdin")
+        ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
+        try:
+            run_operator_ingress_bootstrap(
+                ledger=ledger,
+                workspace_id=args.workspace,
+                session_id=args.session,
+                input_stream=sys.stdin,
+                output_stream=sys.stdout,
+            )
+            return 0
+        finally:
+            close = getattr(ledger, "close", None)
+            if close is not None:
+                close()
     if args.show_predicate_catalog:
         print(format_predicate_catalog(PredicateCatalog.load(args.predicate_catalog)))
         return 0
