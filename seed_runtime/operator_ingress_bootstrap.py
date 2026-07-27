@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TextIO
+from typing import BinaryIO, TextIO
 
 from seed_runtime.closed_choice_selection_binding import (
     ClosedChoiceOption,
@@ -13,6 +13,11 @@ from seed_runtime.closed_choice_selection_binding import (
 )
 from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
+from seed_runtime.operator_ingress_pesc import (
+    capture_stdin_material,
+    examine_text_representation,
+    pesc_dimensions,
+)
 from seed_runtime.state import StateProjector
 
 CHOICE_SET_REF = "operator-common-grammar-bootstrap:v1:two-treatment"
@@ -89,6 +94,8 @@ def project_bootstrap_events(state, event) -> None:
             "current_standing": {
                 subject: None
                 for subject in (
+                    "raw_initial_material",
+                    "raw_response_material",
                     "preserved_ingress",
                     "produced_probe",
                     "presentation",
@@ -101,6 +108,7 @@ def project_bootstrap_events(state, event) -> None:
             "known_loss": [],
             "unknowns": [],
             "conflicts": [],
+            "pesc_standing": {},
         },
     )
     view["event_ids"].append(event.id)
@@ -112,6 +120,15 @@ def project_bootstrap_events(state, event) -> None:
         "dimensions": event.payload["dimensions"],
         "lineage": list(event.payload.get("lineage", ())),
     }
+    if event.kind == "operator.bootstrap.pesc_evidence_produced":
+        view["pesc_standing"][event.payload["material_role"]] = {
+            "evidence_event_id": event.id,
+            "capture_event_id": event.payload["capture_event_id"],
+            "dimensions": event.payload["pesc_dimensions"],
+            "admission": event.payload["admission"],
+        }
+        view["last_event_kind"] = event.kind
+        return
     subject_by_kind = {
         "operator.bootstrap.ingress_occurred": "preserved_ingress",
         "operator.bootstrap.initial_eof_occurred": "preserved_ingress",
@@ -124,7 +141,16 @@ def project_bootstrap_events(state, event) -> None:
         "operator.bootstrap.treatment_selected": "treatment_selection",
         "operator.bootstrap.stopping_occurred": "interaction_closure",
     }
-    subject = subject_by_kind[event.kind]
+    subject = (
+        "raw_initial_material"
+        if event.kind == "operator.bootstrap.raw_material_captured"
+        and event.payload["material_role"] == "initial_ingress"
+        else (
+            "raw_response_material"
+            if event.kind == "operator.bootstrap.raw_material_captured"
+            else subject_by_kind[event.kind]
+        )
+    )
     dimensions = dict(event.payload["dimensions"])
     if subject == "preserved_ingress":
         dimensions["standing"] = "preserved"
@@ -153,20 +179,92 @@ def project_bootstrap_events(state, event) -> None:
             view[key] = event.payload[key]
 
 
+def _capture_representation(
+    *, ledger, workspace, session, attempt, input_stream, material_role, lineage=()
+):
+    capture = capture_stdin_material(input_stream)
+    capture_ref = new_id("operator_material")
+    captured = _record(
+        ledger,
+        "operator.bootstrap.raw_material_captured",
+        workspace,
+        session,
+        attempt,
+        _dimensions(
+            identity=capture_ref,
+            content=capture.exact_bytes.hex(),
+            standing="captured",
+            source=capture.capture_boundary,
+            responsibility="competent-raw-material-capture",
+            authority="occurrence evidence only",
+            scope=f"workspace:{workspace};session:{session};role:{material_role}",
+            occurrence="exact boundary bytes durably preserved as hexadecimal",
+        ),
+        material_role=material_role,
+        exact_bytes_hex=capture.exact_bytes.hex(),
+        byte_count=len(capture.exact_bytes),
+        eof=capture.eof,
+        delimiter_hex=capture.delimiter_hex,
+        encoding_testimony=capture.encoding_testimony,
+        capture_boundary=capture.capture_boundary,
+        known_loss=list(capture.known_loss),
+        lineage=list(lineage),
+    )
+    examination = examine_text_representation(capture)
+    evidence = _record(
+        ledger,
+        "operator.bootstrap.pesc_evidence_produced",
+        workspace,
+        session,
+        attempt,
+        _dimensions(
+            identity=f"pesc:{captured.id}",
+            content="canonical PESC representation examination",
+            standing="supported" if examination.succeeded else "insufficient",
+            source=captured.id,
+            responsibility="bounded-representation-evidence-production",
+            authority="representation evidence and purpose-local admission only",
+            scope=f"captured-occurrence:{capture_ref}",
+            occurrence="PESC evidence occurrence durably recorded",
+        ),
+        material_role=material_role,
+        capture_event_id=captured.id,
+        pesc_dimensions=pesc_dimensions(capture, examination),
+        admission="admitted" if examination.succeeded else "not_admitted",
+        decoder_mechanism=examination.mechanism,
+        decoder_succeeded=examination.succeeded,
+        decoder_failure=examination.failure,
+        known_loss=list(capture.known_loss),
+        unknowns=["true source-relative encoding Unknown"],
+        lineage=[captured.id],
+    )
+    return capture, examination, captured, evidence
+
+
 def run_operator_ingress_bootstrap(
     *,
     ledger: EventLedger,
     workspace_id: str,
     session_id: str,
-    input_stream: TextIO,
+    input_stream: TextIO | BinaryIO,
     output_stream: TextIO,
 ) -> dict[str, object]:
     """Run exactly one ingress/probe/response attempt and stop."""
     attempt = new_id("operator_bootstrap_attempt")
-    raw_ingress = input_stream.readline()
+    captured_ingress, ingress_examination, ingress_capture, ingress_pesc = (
+        _capture_representation(
+            ledger=ledger,
+            workspace=workspace_id,
+            session=session_id,
+            attempt=attempt,
+            input_stream=input_stream,
+            material_role="initial_ingress",
+        )
+    )
+    raw_ingress = ingress_examination.represented_text or ""
     ingress_kind = (
         "eof"
-        if raw_ingress == ""
+        if captured_ingress.eof
         else "empty" if raw_ingress in {"\n", "\r\n"} else "text"
     )
     ingress_content = (
@@ -174,6 +272,33 @@ def run_operator_ingress_bootstrap(
         if ingress_kind == "eof"
         else raw_ingress.removesuffix("\n").removesuffix("\r")
     )
+    if not ingress_examination.succeeded and not captured_ingress.eof:
+        _record(
+            ledger,
+            "operator.bootstrap.stopping_occurred",
+            workspace_id,
+            session_id,
+            attempt,
+            _dimensions(
+                identity=f"stop:{ingress_pesc.id}",
+                content="representation insufficiency",
+                standing="closed",
+                source=ingress_pesc.id,
+                responsibility="competent-local-stopping",
+                authority="closes only this interaction",
+                scope=f"attempt:{attempt}",
+                occurrence="separate stopping act recorded",
+            ),
+            closed=True,
+            response_kind="representation_insufficient",
+            lineage=[ingress_pesc.id],
+        )
+        state = StateProjector(ledger).project(workspace_id)
+        output_stream.write(
+            "Representation insufficient: captured material was not admitted as text.\n"
+        )
+        output_stream.flush()
+        return state.operator_ingress_bootstraps[attempt]
     ingress = _record(
         ledger,
         (
@@ -188,15 +313,19 @@ def run_operator_ingress_bootstrap(
             identity=attempt,
             content=ingress_content,
             standing="occurred",
-            source="real-shell-stdin",
+            source=ingress_pesc.id,
             responsibility="operator-ingress",
             authority="occurrence-only; meaning Unknown",
             scope=f"workspace:{workspace_id};session:{session_id}",
-            occurrence="exact raw input preserved",
+            occurrence="admitted represented text preserves raw/PESC lineage",
         ),
         raw_input=raw_ingress,
         ingress_kind=ingress_kind,
-        known_loss=["terminal framing outside captured line is not preserved"],
+        admitted_text=ingress_examination.represented_text,
+        raw_material_event_id=ingress_capture.id,
+        pesc_evidence_event_id=ingress_pesc.id,
+        known_loss=list(captured_ingress.known_loss),
+        lineage=[ingress_capture.id, ingress_pesc.id],
     )
     StateProjector(ledger).project(workspace_id)
     if ingress_kind == "eof":
@@ -272,10 +401,21 @@ def run_operator_ingress_bootstrap(
         choice_set_fingerprint=choice_set.exact_choice_set_fingerprint,
         lineage=[ingress.id],
     )
-    raw_response = input_stream.readline()
+    captured_response, response_examination, response_capture, response_pesc = (
+        _capture_representation(
+            ledger=ledger,
+            workspace=workspace_id,
+            session=session_id,
+            attempt=attempt,
+            input_stream=input_stream,
+            material_role="enum_response",
+            lineage=(presented.id,),
+        )
+    )
+    raw_response = response_examination.represented_text or ""
     response_kind = (
         "eof"
-        if raw_response == ""
+        if captured_response.eof
         else "empty" if raw_response in {"\n", "\r\n"} else "token"
     )
     token = (
@@ -330,6 +470,34 @@ def run_operator_ingress_bootstrap(
         output_stream.flush()
         return state.operator_ingress_bootstraps[attempt]
 
+    if not response_examination.succeeded:
+        _record(
+            ledger,
+            "operator.bootstrap.stopping_occurred",
+            workspace_id,
+            session_id,
+            attempt,
+            _dimensions(
+                identity=f"stop:{response_pesc.id}",
+                content="response representation insufficiency",
+                standing="closed",
+                source=response_pesc.id,
+                responsibility="competent-local-stopping",
+                authority="closes only this interaction",
+                scope=f"attempt:{attempt}",
+                occurrence="separate stopping act recorded",
+            ),
+            closed=True,
+            response_kind="representation_insufficient",
+            lineage=[response_pesc.id],
+        )
+        state = StateProjector(ledger).project(workspace_id)
+        output_stream.write(
+            "Representation insufficient: captured response was not admitted as text.\n"
+        )
+        output_stream.flush()
+        return state.operator_ingress_bootstraps[attempt]
+
     capture_ref = f"capture:{presented.id}"
     response = _record(
         ledger,
@@ -341,11 +509,11 @@ def run_operator_ingress_bootstrap(
             identity=capture_ref,
             content=None if response_kind == "eof" else token,
             standing="captured",
-            source="real-shell-stdin",
+            source=response_pesc.id,
             responsibility="response-capture",
             authority="occurrence-only; meaning and intent Unknown until binding",
             scope=f"choice-set:{CHOICE_SET_REF}",
-            occurrence="exact raw response preserved",
+            occurrence="admitted represented text preserves raw/PESC lineage",
         ),
         raw_input=raw_response,
         response_kind=response_kind,
@@ -353,7 +521,9 @@ def run_operator_ingress_bootstrap(
         presentation_ref=presentation_ref,
         capture_ref=capture_ref,
         choice_set_fingerprint=choice_set.exact_choice_set_fingerprint,
-        lineage=[presented.id],
+        lineage=[presented.id, response_capture.id, response_pesc.id],
+        raw_material_event_id=response_capture.id,
+        pesc_evidence_event_id=response_pesc.id,
     )
     capture = OperatorSelectionTokenCapture(
         capture_ref, CHOICE_SET_REF, token, provenance=(response.id,)
