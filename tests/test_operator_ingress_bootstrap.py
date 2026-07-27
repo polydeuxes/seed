@@ -368,14 +368,16 @@ def run_raw(material: bytes, *, ledger=None):
     return ledger, view, output.getvalue()
 
 
-def test_binary_capture_preserves_exact_original_bytes_and_decoder_testimony(tmp_path):
+def test_stdin_buffer_capture_preserves_exact_boundary_bytes_and_decoder_testimony(
+    tmp_path,
+):
     path = tmp_path / "raw.db"
     ledger, view, _ = run_raw("é\r\n2\n".encode(), ledger=SQLiteEventLedger(str(path)))
     raw, examination = ledger.list_events("raw-w")[:2]
     assert raw.payload["exact_bytes_hex"] == "é\r\n".encode().hex()
     assert raw.payload["delimiter_hex"] == "0d0a"
     assert raw.payload["capture_boundary"] == "stdin.buffer.readline"
-    assert raw.payload["original_transport_bytes"] is True
+    assert raw.payload["byte_material_origin"] == "direct_boundary_observation"
     assert raw.payload["encoding_testimony"] == "utf-8"
     assert examination.kind == "operator.bootstrap.representation_examined"
     assert examination.payload["decoder_mechanism"] == "utf-8"
@@ -395,16 +397,26 @@ def test_binary_capture_preserves_exact_original_bytes_and_decoder_testimony(tmp
     )
 
 
-def test_text_fallback_identifies_reencoded_material_as_not_original_bytes():
+def test_stringio_capture_identifies_text_reencoding_and_preserves_known_loss():
     ledger, _, _ = run_attempt("hello\n2\n")
     raw = ledger.list_events("w")[0]
     assert raw.payload["exact_bytes_hex"] == b"hello\n".hex()
-    assert raw.payload["original_transport_bytes"] is False
+    assert (
+        raw.payload["byte_material_origin"]
+        == "text_reencoding_after_prior_decoding"
+    )
     assert raw.payload["encoding_testimony"] is None
     assert raw.payload["capture_boundary"] == "text-stream adapter after prior decoding"
     assert raw.payload["known_loss"] == [
         "original transport bytes and prior decoder behavior are unavailable"
     ]
+    examination = ledger.list_events("w")[1]
+    assert examination.payload["decoder_mechanism"] == "utf-8"
+    assert (
+        examination.payload["decoder_mechanism_selection"]
+        == "implementation_utf8_fallback"
+    )
+    assert examination.payload["decoder_outcome"] == "decoded"
 
 
 def test_decoder_success_does_not_claim_admission_interpretation_or_competency():
@@ -423,6 +435,19 @@ def test_production_operator_ingress_contains_no_pesc_identifier_or_payload():
     production = Path("seed_runtime/operator_ingress_bootstrap.py").read_text()
     production += Path("seed_runtime/operator_ingress_representation.py").read_text()
     assert forbidden not in production.lower()
+
+
+def test_production_and_event_payloads_do_not_claim_source_relative_original_bytes():
+    forbidden = "original_transport" + "_bytes"
+    production = Path("seed_runtime/operator_ingress_bootstrap.py").read_text()
+    production += Path("seed_runtime/operator_ingress_representation.py").read_text()
+    assert forbidden not in production
+
+    ledgers = (run_raw(b"hello\n2\n")[0], run_attempt("hello\n2\n")[0])
+    for ledger in ledgers:
+        assert forbidden not in str(
+            [event.payload for event in ledger.list_events()]
+        )
 
 
 def test_invalid_initial_bytes_are_preserved_without_replacement_and_stop_before_enum():
@@ -591,7 +616,7 @@ def test_utf8_fallback_is_implementation_selected_and_direct_bytesio_is_exact():
     ledger, _, _ = run_operator_with_stream(BytesIO(b"\xc3\xa9\n2\n"))
     raw, examination = ledger.list_events("raw-w")[:2]
     assert raw.payload["exact_bytes_hex"] == b"\xc3\xa9\n".hex()
-    assert raw.payload["original_transport_bytes"] is True
+    assert raw.payload["byte_material_origin"] == "direct_boundary_observation"
     assert (
         raw.payload["capture_boundary"]
         == "binary-stream.readline (bytes observed directly)"
