@@ -7,15 +7,13 @@ The boundary between a selection record and the bounded act that chooses from a 
 What evidence proves that a lawful selection occurred for a particular candidate set?
 
 ## Bounded resolution
-A selection act consumes a bounded candidate set plus selection evidence, exact comparison, or policy, validates the identity and applicability required by that owner, and chooses zero or more candidates or preserves a lawful non-selection. Its artifact asserts that bounded result and preserves enough basis, identity, uncertainty, or refusal information for the intended consumer to distinguish lawful selection from unsupported omission. Preservation of all non-selected alternatives is selector-specific: consideration selection may need a visible/non-selected reference snapshot, while representation selection may be sufficient with selected registered names plus unsupported-key uncertainty. Direct construction proves only artifact constructibility. Selection does not itself authorize, execute, open inquiry, or establish every downstream subject unless the responsible boundary explicitly does so.
+A selection act consumes a bounded candidate set plus selection evidence, exact comparison, or policy, validates the identity and applicability required by that owner, and chooses zero or more candidates or preserves a lawful non-selection. Its artifact asserts that bounded result and preserves enough basis, identity, uncertainty, or refusal information for the intended consumer to distinguish lawful selection from unsupported omission. Preservation of all non-selected alternatives is selector-specific: representation selection may be sufficient with selected registered names plus unsupported-key uncertainty. Direct construction proves only artifact constructibility. Selection does not itself authorize, execute, open inquiry, or establish every downstream subject unless the responsible boundary explicitly does so.
 
 Candidate-identity resolution is not itself a selection act. A resolver may compare attributed testimony with a visible candidate set and establish that exactly one candidate identity matches. That occurrence does not establish who selected the candidate, why it should receive present consideration, whether it is applicable now, or whether movement should proceed through it.
 
 Selection-to-consumer uptake is not singular. A consumer may adopt selected-subject standing for a new bounded purpose, narrow representation selection to selected registered names, or revalidate coherence between a selected subject and other testimony. Consumer acceptance of one of those smaller assertions does not accept every producer assertion, and selected names suitable for composition do not prove exact-key selection occurrence.
 
-Repository evidence supports a shared higher-order selection grammar with distinct subfamilies. Representation selection may choose registered read-model views by exact deterministic keys for one composition purpose. Goal-advancement-demand consideration selection may choose one already-established demand for bounded present consideration after full identity and lineage checks. Meaning selection, closed-choice binding, policy/work selection, and operational-realization selection have their own candidate sets and downstream limits. Shared selection vocabulary does not collapse these into one constitutional act kind.
-
-For the local goal-advancement-demand road recovered by `advancement_need_consideration_selection_correspondence_001.md`, goal-advancement-demand consideration selection consumes a bounded visible/selectable goal-advancement-demand reference set plus exact consideration evidence and performs bounded consideration selection. It establishes selected-for-consideration standing. It does not establish priority, primary blocker standing, next required act, route, next inquiry, self-orientation, authorization, or execution.
+Repository evidence supports a shared higher-order selection grammar with distinct subfamilies. Representation selection may choose registered read-model views by exact deterministic keys for one composition purpose. Meaning selection, closed-choice binding, policy/work selection, and operational-realization selection have their own candidate sets and downstream limits. Shared selection vocabulary does not collapse these into one constitutional act kind.
 
 ## Important distinctions
 - selection artifact != act of selection
@@ -23,7 +21,6 @@ For the local goal-advancement-demand road recovered by `advancement_need_consid
 - ranked candidate != selected candidate
 - selection record != authorization
 - selection != execution or authorization
-- representation selection != consideration selection automatically
 - selected candidate identity != candidate-set identity
 - selected result != preserved selection basis
 - artifact preservation != consumer-side validation
@@ -44,8 +41,7 @@ For the local goal-advancement-demand road recovered by `advancement_need_consid
 - Taking the first displayed candidate as selected.
 - Treating exact candidate-identity resolution as proof of a Seed-owned selection act.
 - Reusing a selection artifact against a different candidate set.
-- Treating a uniquely eligible demand as automatically selected when no exact consideration evidence was supplied.
-- Reusing a representation-selection artifact as if it warranted consideration, authorization, or movement for another consumer.
+- Reusing a representation-selection artifact as if it warranted authorization or movement for another consumer.
 - Treating omitted non-selected alternatives as invalidating a selector whose intended consumer does not require them.
 - Treating preserved non-selected alternatives as completing the producer warrant when identity, basis, or consumer validation is still missing.
 

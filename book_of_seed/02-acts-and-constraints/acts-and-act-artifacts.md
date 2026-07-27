@@ -24,8 +24,6 @@ Consumer validation is not producer occurrence: a downstream boundary may lawful
 - establishment of a new downstream subject != re-establishment of the upstream subject
 - producer occurrence != assertion truth automatically
 
-## Representative repository anchors
-
 ## Counterexamples or failure modes
 - Treating a proposed, requested, or contemplated act artifact as evidence that a tool ran.
 - Treating classified operator language as the requested act itself.
