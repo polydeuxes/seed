@@ -551,21 +551,6 @@ class _DiagnosticSurfaceConsumptionIdentification:
 
 DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
     DiagnosticInventoryEntry(
-        name="operator_ingress_bootstrap",
-        cli_flags=("--operator-ingress-bootstrap",),
-        uses_projected_state=True,
-        uses_repo_files=False,
-        supports_json=False,
-        supports_record=False,
-        record_scope="none",
-        emits_diagnostic_facts=False,
-        emits_cluster_facts=False,
-        writes_event_ledger=True,
-        mutates_cluster=False,
-        reads_diagnostic_facts=False,
-        description="Runs one versioned two-treatment operator-ingress bootstrap probe, records occurrence evidence, projects current standing, and stops without cluster mutation.",
-    ),
-    DiagnosticInventoryEntry(
         name="classification_coverage",
         cli_flags=("--classification-coverage",),
         uses_projected_state=True,
