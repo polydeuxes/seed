@@ -35,12 +35,12 @@ def test_demand_gap_and_capability_demand_invariants_are_canonical():
     text = _read("book_of_seed/03-goals-and-advancement/demands-and-opened-movement.md")
 
     required = [
-        "The current goal-advancement implementation represents bounded Demand standing directly through explicitly local Demand-family artifacts",
+        "The canonical goal-advancement Demand families are clarification, inquiry, authority, and operational realization",
         "Demand established does not open movement",
         "Demand standing must remain recoverable",
         "Establishment establishes bounded required-result standing",
         "there is no Need -> Demand transition",
-        "it is not an exhaustive constitutional Demand taxonomy",
+        "They are not an exhaustive constitutional Demand taxonomy",
         "Demand is not Gap, Capability, capability candidate, mechanism candidate, selection, authorization, execution, or movement",
         "“Capability demand” is not evidenced as an independent constitutional kind between Demand and Capability",
         "Demand established != candidate producer exists",
@@ -48,7 +48,7 @@ def test_demand_gap_and_capability_demand_invariants_are_canonical():
         "Gap does not automatically establish Demand",
         "Unknown capability is not absent capability",
         "One unsupported candidate is not a capability Gap",
-        "candidate-, reachability-, selection-, or warrant-shaped testimony",
+        "Candidate-, reachability-, selection-, or warrant-shaped testimony",
         "New observation is not automatic Gap revision",
         "Gap revision is a separate evidence-supported revision of scoped incompatibility; it is not authorization",
         "A Gap resolved within scope does not mean all advancement is complete",
