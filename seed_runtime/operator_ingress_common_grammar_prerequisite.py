@@ -261,7 +261,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
     input_stream: TextIO | BinaryIO,
     output_stream: TextIO,
 ) -> dict[str, object]:
-    """Run exactly one ingress/common-grammar-probe/response attempt and stop."""
+    """Run exactly one ingress/common-grammar-probe/response attempt and return."""
     attempt = new_id("operator_bootstrap_attempt")
     (
         captured_ingress,
@@ -636,27 +636,9 @@ def run_operator_ingress_common_grammar_probe_attempt(
             lineage=[binding_event.id],
         )
         if treatment == "local-stop":
-            _record(
-                ledger,
-                "operator.bootstrap.stopping_occurred",
-                workspace_id,
-                session_id,
-                attempt,
-                _dimensions(
-                    identity=f"stop:{selection.id}",
-                    content="local stop",
-                    standing="closed",
-                    source=selection.id,
-                    responsibility="competent-local-stopping",
-                    authority="closes only this interaction",
-                    scope=f"attempt:{attempt}",
-                    occurrence="separate stopping act recorded",
-                ),
-                selected_treatment=treatment,
-                closed=True,
-                lineage=[selection.id],
+            result = (
+                "Local-stop treatment selected; bounded stop was not established."
             )
-            result = "Bootstrap stopped locally."
         else:
             result = "Common-grammar acquisition treatment selected; acquisition was not authorized or begun."
     else:
