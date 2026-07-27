@@ -107,9 +107,6 @@ from seed_runtime.capability_relationship import (
     capability_relationship_json,
     format_capability_relationship,
 )
-from seed_runtime.capability_promotion_readiness import (
-    build_capability_promotion_readiness_inspection,
-)
 from seed_runtime.single_capability_state_projection import (
     build_single_capability_state_projection,
     format_single_capability_state_projection,
@@ -1814,17 +1811,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
-        "--capability-promotion-readiness",
-        nargs="?",
-        const="__all__",
-        metavar="FILTER",
-        help=(
-            "print read-only capability promotion-readiness as deterministic JSON; "
-            "optional FILTER such as ssh, python, docker, git, or curl; does not promote, "
-            "create facts, select, evaluate policy, authorize, or execute"
-        ),
-    )
-    parser.add_argument(
         "--current-issues",
         action="store_true",
         help="print read-only projected Issue views and exit",
@@ -2102,7 +2088,6 @@ def validate_lifecycle_args(
         bool(args.capability_candidates),
         bool(args.verification_evidence),
         bool(args.single_capability_state),
-        bool(args.capability_promotion_readiness),
         bool(args.current_issues),
         bool(args.candidate_requests),
         bool(args.candidate_routes),
@@ -2168,8 +2153,7 @@ def validate_lifecycle_args(
             "--current-selection, --current-facts-cache-debug, "
             "--current-observations, --current-requirements, "
             "--current-capabilities, --capability-candidates, "
-            "--verification-evidence, "
-            "--capability-promotion-readiness, --current-issues, "
+            "--verification-evidence, --current-issues, "
             "--candidate-requests, --candidate-routes, --inquiry-artifacts, "
             "--state-build, --state-build-cache-debug, --integrity-summary, "
             "--inferred-facts, --fact-conflicts, --stale-facts, "
@@ -7029,32 +7013,6 @@ def main(argv: list[str] | None = None) -> int:
             )
         else:
             print(format_single_capability_state_projection(projection))
-        return 0
-
-    if args.capability_promotion_readiness:
-        filter_text = (
-            None
-            if args.capability_promotion_readiness == "__all__"
-            else args.capability_promotion_readiness
-        )
-        status_consumer = CliExecutionStatusConsumer()
-        state = projected_state_from_args(args, status_consumer=status_consumer)
-        fact_index = _load_or_build_fact_index_from_args(
-            args, state, status_consumer=status_consumer
-        )
-        print(
-            json.dumps(
-                to_plain(
-                    build_capability_promotion_readiness_inspection(
-                        state,
-                        filter_text=filter_text,
-                        fact_index=fact_index,
-                    )
-                ),
-                indent=2,
-                sort_keys=True,
-            )
-        )
         return 0
 
     if args.current_issues:
