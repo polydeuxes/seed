@@ -210,7 +210,7 @@ def _capture_representation(
         delimiter_hex=capture.delimiter_hex,
         encoding_testimony=capture.encoding_testimony,
         capture_boundary=capture.capture_boundary,
-        original_transport_bytes=capture.original_transport_bytes,
+        byte_material_origin=capture.byte_material_origin,
         known_loss=list(capture.known_loss),
         lineage=list(lineage),
     )

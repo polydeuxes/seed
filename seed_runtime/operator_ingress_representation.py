@@ -14,7 +14,7 @@ class CapturedOperatorMaterial:
     eof: bool
     delimiter_hex: str | None
     capture_boundary: str
-    original_transport_bytes: bool
+    byte_material_origin: str
     encoding_testimony: str | None
     known_loss: tuple[str, ...]
 
@@ -41,7 +41,7 @@ def capture_stdin_material(input_stream: TextIO | BinaryIO) -> CapturedOperatorM
         material = binary.readline()
         testimony = getattr(input_stream, "encoding", None)
         boundary = "stdin.buffer.readline"
-        original_transport_bytes = True
+        byte_material_origin = "direct_boundary_observation"
         loss = (
             "transport bytes before the stdin byte-stream boundary are not observable",
         )
@@ -51,7 +51,7 @@ def capture_stdin_material(input_stream: TextIO | BinaryIO) -> CapturedOperatorM
         if isinstance(value, bytes):
             material = value
             boundary = "binary-stream.readline (bytes observed directly)"
-            original_transport_bytes = True
+            byte_material_origin = "direct_boundary_observation"
             loss = (
                 "transport bytes before the supplied binary-stream boundary are not observable",
             )
@@ -62,7 +62,7 @@ def capture_stdin_material(input_stream: TextIO | BinaryIO) -> CapturedOperatorM
             adapter_encoding = testimony or "utf-8"
             material = value.encode(adapter_encoding, errors="strict")
             boundary = "text-stream adapter after prior decoding"
-            original_transport_bytes = False
+            byte_material_origin = "text_reencoding_after_prior_decoding"
             loss = (
                 "original transport bytes and prior decoder behavior are unavailable",
             )
@@ -76,7 +76,7 @@ def capture_stdin_material(input_stream: TextIO | BinaryIO) -> CapturedOperatorM
         eof=material == b"",
         delimiter_hex=delimiter,
         capture_boundary=boundary,
-        original_transport_bytes=original_transport_bytes,
+        byte_material_origin=byte_material_origin,
         encoding_testimony=testimony,
         known_loss=loss,
     )
