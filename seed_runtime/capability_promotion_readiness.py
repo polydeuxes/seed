@@ -1,9 +1,9 @@
 """Read-only capability verification promotion-readiness inspection.
 
-This module joins evidence-derived capability candidates with acquired
-verification evidence to explain whether a future capability verification
-promotion would be supportable. It does not create ``capability_verified``
-facts, select capabilities, evaluate policy, invoke tools, plan, or execute.
+This module joins evidence-derived capability candidates with locally acquired
+evidence to show whether candidate and readiness support coexist. It does not
+promote either input into competency standing, create facts, select capabilities,
+evaluate policy, invoke tools, plan, or execute.
 """
 
 from __future__ import annotations
@@ -24,15 +24,15 @@ from seed_runtime.verification_evidence import (
 
 _PROMOTION_READINESS_BOUNDARY_NOTES = (
     "promotion_readiness_not_promotion",
-    "promotion_readiness_not_capability_verified",
-    "capability_candidate_not_verified_capability",
-    "verification_evidence_not_capability_verified",
-    "capability_verified_not_capability_selection",
-    "capability_verified_not_execution_authority",
-    "capability_verified_not_execution_decision",
-    "capability_verified_not_tool_invocation",
+    "promotion_readiness_not_competency_standing",
+    "capability_candidate_not_competency_standing",
+    "verification_evidence_not_competency_standing",
+    "readiness_not_capability_selection",
+    "readiness_not_execution_authority",
+    "readiness_not_execution_decision",
+    "readiness_not_tool_invocation",
     "observed_binary_not_permission",
-    "no_capability_verified_fact_creation",
+    "no_fact_creation",
     "no_inventory_modification",
     "no_capability_selection",
     "no_policy_evaluation",
@@ -89,7 +89,7 @@ def build_capability_promotion_readiness_inspection(
     Verification support comes from read-only local PATH metadata inspection. A
     candidate is ``supported`` only when both candidate support and verification
     support are present. This function never writes facts or events and never
-    promotes readiness into ``capability_verified``.
+    promotes readiness into competency standing.
     """
 
     candidate_inspection = build_capability_candidates(
@@ -148,9 +148,9 @@ def _promotion_readiness_from_verification_payload(
             promotion_readiness="supported",
             rationale=(
                 "candidate support is present and verification evidence is present, so "
-                "a future capability verification promotion would be supportable by "
-                "the inspected evidence; this inspection does not promote, create "
-                "capability_verified facts, select, authorize, evaluate policy, or execute"
+                "candidate readiness has both inspected support inputs; "
+                "this inspection does not promote, create facts, select, authorize, "
+                "evaluate policy, or execute"
             ),
         )
     return CapabilityPromotionReadiness(
@@ -160,7 +160,6 @@ def _promotion_readiness_from_verification_payload(
         promotion_readiness="unsupported",
         rationale=(
             "candidate support is present but required verification support is missing, "
-            "so capability verification promotion is not supportable from the inspected "
-            "evidence; no capability_verified fact is created"
+            "so readiness stops without competency standing; no fact is created"
         ),
     )

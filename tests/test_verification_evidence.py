@@ -7,7 +7,6 @@ from seed_runtime.facts import Fact
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
 from seed_runtime.verification_evidence import build_verification_evidence
-from seed_runtime.capability_verification import build_capability_verification_inspection
 
 from test_seed_local_script import load_seed_local_module
 
@@ -46,22 +45,6 @@ def test_verification_evidence_observes_path_binary(tmp_path):
     assert inspection.evidence[0].observation_source == "local_path_inspection"
     assert inspection.evidence[0].value == str(ssh)
     assert "binary_not_invoked" in inspection.evidence[0].support_notes
-
-
-def test_verification_evidence_remains_inspectable_and_supports_verification_inspection(tmp_path, monkeypatch):
-    python = tmp_path / "python3"
-    python.write_text("stub", encoding="utf-8")
-    python.chmod(0o755)
-    monkeypatch.setenv("PATH", str(tmp_path))
-    ledger = EventLedger()
-    ledger.append("fact.observed", "ws", {"fact": to_plain(_package_fact("python3"))})
-
-    verification = build_capability_verification_inspection(_project(ledger), filter_text="python").verifications[0]
-
-    assert verification.candidate == "python_runtime"
-    assert verification.verification_status == "unverified"
-    assert verification.acquired_verification_evidence[0].value == str(python)
-    assert "verification_evidence_not_capability_verification" in verification.acquired_verification_evidence[0].boundary_notes
 
 
 def test_verification_evidence_cli_is_read_only_and_survives_absent_execution(monkeypatch, tmp_path, capsys):

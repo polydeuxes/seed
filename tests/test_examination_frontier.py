@@ -96,4 +96,4 @@ def test_mixed_corpus_demonstration_and_compatibility_boundaries():
     assert by["compare"].classification.unsupported
     assert all(i.classification.newly_eligible == "unresolved_no_previous_frontier_input" for i in f.work_items)
     # Existing compatibility boundaries remain import-compatible and unmodified by this test.
-    import seed_runtime.bounded_constitutional_question, seed_runtime.external_site_rule_testimony, seed_runtime.external_material_testimony_binding, seed_runtime.external_material_structural_projection, seed_runtime.external_material_surface_feature_projection, seed_runtime.candidate_external_grammar, seed_runtime.events, seed_runtime.capability_inventory
+    import seed_runtime.bounded_constitutional_question, seed_runtime.external_site_rule_testimony, seed_runtime.external_material_testimony_binding, seed_runtime.external_material_structural_projection, seed_runtime.external_material_surface_feature_projection, seed_runtime.candidate_external_grammar, seed_runtime.events

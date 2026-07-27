@@ -7,7 +7,6 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from seed_runtime.capability_inventory import build_capability_inventory
 from seed_runtime.contradictions import build_contradictions
 from seed_runtime.evidence import Evidence
 from seed_runtime.facts import Fact
@@ -105,11 +104,6 @@ def test_empty_projection_integrity_summary_has_zero_counts_and_caveats():
         graph_issue_count=0,
         stale_fact_count=0,
         refresh_recommendation_count=0,
-        verified_capability_count=0,
-        unverified_capability_count=0,
-        stale_capability_count=0,
-        unknown_capability_count=0,
-        provider_reported_capability_count=0,
         caveats=list(DEFAULT_INTEGRITY_SUMMARY_CAVEATS),
         projection_version="v1",
         last_event_id=None,
@@ -162,44 +156,6 @@ def test_summary_aggregates_conflicts_contradictions_graph_and_stale_signals():
     assert summary.last_event_id == "evt-last"
 
 
-def test_summary_aggregates_capability_inventory_states():
-    ledger = EventLedger()
-    expired_at = datetime.now(timezone.utc) - timedelta(seconds=1)
-    for capability, value, expires_at in [
-        ("verified_cap", "verified", None),
-        ("provider_cap", "provider_reported", None),
-        ("unknown_cap", "ambiguous", None),
-        ("stale_cap", "verified", expired_at),
-    ]:
-        ledger.append(
-            "fact.observed",
-            "ws",
-            {
-                "fact": to_plain(
-                    _fact(
-                        f"fact_{capability}",
-                        capability,
-                        "capability_verified",
-                        value,
-                        expires_at=expires_at,
-                    )
-                )
-            },
-        )
-    state = _project(ledger)
-    state.tools["tool_unverified_cap"] = _tool("unverified_cap")
-
-    summary = build_projection_integrity_summary(
-        state, capability_inventory=build_capability_inventory(state, now=BASE_TIME)
-    )
-
-    assert summary.verified_capability_count == 1
-    assert summary.unverified_capability_count == 1
-    assert summary.stale_capability_count == 1
-    assert summary.unknown_capability_count == 1
-    assert summary.provider_reported_capability_count == 1
-
-
 def test_summary_is_deterministic_and_read_only():
     state = State(workspace_id="ws")
     state.facts = {
@@ -249,7 +205,6 @@ def test_integrity_summary_cli_output_is_read_only_and_concise(tmp_path, capsys,
     assert "Integrity Summary" in output
     assert "Unsupported facts: 0" in output
     assert "Fact conflicts: 0" in output
-    assert "Capabilities" in output
     assert "Refresh recommendations: 0" in output
     assert _event_count(db_path) == before_count
 
@@ -269,11 +224,6 @@ def test_integrity_summary_navigation_hints_reference_existing_inventory_command
         graph_issue_count=4,
         stale_fact_count=8,
         refresh_recommendation_count=5,
-        verified_capability_count=14,
-        unverified_capability_count=6,
-        stale_capability_count=2,
-        unknown_capability_count=1,
-        provider_reported_capability_count=7,
         caveats=[],
         projection_version="v1",
         last_event_id="evt-last",
@@ -287,7 +237,6 @@ def test_integrity_summary_navigation_hints_reference_existing_inventory_command
         "--graph-issues",
         "--stale-facts",
         "--stale-fact-refreshes",
-        "--capability-status",
     ]
 
     for command in navigation_commands:
@@ -317,7 +266,6 @@ def test_integrity_summary_navigation_hints_are_shown_for_empty_state():
     assert "Graph issues: 0\nSee: --graph-issues" in output
     assert "Stale facts: 0\nSee: --stale-facts" in output
     assert "Refresh recommendations: 0\nSee: --stale-fact-refreshes" in output
-    assert "See: --capability-status" in output
 
 
 def test_integrity_summary_navigation_does_not_change_summary_semantics():

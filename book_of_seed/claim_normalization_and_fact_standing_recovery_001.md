@@ -30,7 +30,7 @@ Unknown remains where the Book does not specify exact conflict-handling mechanic
 | fact promotion | Movement from evidence-backed input into a normalized fact claim. | To distinguish observation preservation, evidence existence, fact representation, current selection, and verification. | `docs/corroboration_and_fact_promotion_reconciliation.md`. | In code, `ObservationIngestor` optionally suppresses promotion and otherwise emits `fact.observed` / `fact.inferred`. | Ambiguous term. Historically implementation terminology; constitutionally it must be read as a production/establishment boundary only when support, scope, and conflict-aware constraints are preserved. |
 | fact standing | Bounded standing of a normalized claim that Seed may treat as an established fact under scope and support limits. | Exposed by Book recovery to separate testimony from established fact. | Book chapter `testimony-and-established-fact.md`. | State/projection Book chapters use "established facts" as replay material. | Warranted by the Book as distinct from testimony, current standing, verification, and truth. Exact thresholds remain partly Unknown. |
 | current fact | A projection-selected current support/value, not the same thing as a historical fact. | To prevent preserved history from being read as live state. | `docs/claim_strength_and_assertion_semantics_reconciliation.md`; Book `projection-and-current-state.md`. | `FactView` builder renders current projected claims from `FactSupport`, and State exposes `get_current_facts`. | Projection-local characterization. Current standing requires a later consumer/projection boundary; it is not inherent in `Fact`. |
-| verified fact | A scoped verification claim or verification-produced fact-shaped record. | To avoid treating confidence, corroboration, or selection as verification. | `docs/claim_strength_and_assertion_semantics_reconciliation.md`; verification-related runtime tests use `capability_verified`. | Capability verification producers append `fact.observed` with verification predicates. | Not universal truth. Verification standing requires method, scope, and time; current code can represent verification claims as Facts, but the stronger verification boundary is consumer-specific. |
+| verified fact | A scoped verification claim or verification-produced fact-shaped record. | To avoid treating confidence, corroboration, or selection as verification. | `docs/claim_strength_and_assertion_semantics_reconciliation.md`. | No active capability-verification producer is implemented. | Not universal truth. Verification standing requires method, scope, and time; generic attributed claims may remain Facts without establishing capability standing. |
 
 ### Historical reconciliation audit
 
@@ -61,7 +61,7 @@ The earlier chain weakened `Fact` because Seed needed a claim-centric ontology: 
 | `FactView` | `State.fact_supports` or raw facts fallback. | Current projected claims/support groups. | Needs normalized shape and support aggregation. | It implies projection-selected fact material, not necessarily original establishment proof. | Do not read as universal truth, verified live state, or exhaustive history. |
 | `State` current getters / projector | Event replay facts and support records. | Historical facts as projection input; current selection rules for outputs. | Needs normalized facts. | Relies on fact records as replay material but selection is separate. | Do not collapse Fact into current standing. |
 | ExplanationBuilder | FactSupport and Facts. | Current beliefs and competing beliefs from projected supports. | Needs normalized shape plus support details. | Relies on projected fact/support material. | Explanation does not verify the underlying world. |
-| Capability/verification consumers | Fact predicates such as package installed and capability verified. | Predicate-specific facts and expiry. | Needs normalized predicate/value. | Needs sufficient scope-specific facts. | `capability_verified` fact is not universal verification outside method/scope/time. |
+| Capability/verification consumers | Generic attributed Facts such as package observations. | Predicate-specific facts and expiry where independently defined. | Needs normalized predicate/value. | Needs sufficient scope-specific facts. | No active capability predicate admits competency standing. |
 | Projection store/summary views | Projected State. | Snapshot/read-model validity and freshness. | Needs serialized projected shape. | No new fact standing. | Cache existence does not create truth or mutation authority. |
 
 ## 4. Boundary comparison
@@ -142,7 +142,7 @@ These are not recovered as separate constitutional kinds in this pass. They are 
 | corroborated fact | support aggregation | multiple compatible supports | support-group scope | conflicts visible | State support, confidence | proof/truth | support characterization |
 | historical fact | recorded/replayed fact event | prior fact event | observed_at/event history | may be stale/contradicted | State replay/history | current truth | standing effect |
 | current selected fact | State projector/read view | projected supports/freshness | projection time/current rules | selection/conflict rules | FactView, explanations | verification | projection-local |
-| verified fact | verification producer/predicate | method-specific verification evidence | verification scope/time | consumer-specific | capability verification consumers | universal truth | method-scoped standing/effect |
+| verified fact | verification producer/predicate | method-specific verification evidence | verification scope/time | consumer-specific | independently implemented verification consumers | universal truth | method-scoped standing/effect |
 
 ## Direct construction audit
 
@@ -169,7 +169,7 @@ These are not recovered as separate constitutional kinds in this pass. They are 
 | Evidence-supported claims | Payload supports considering a proposition. | Evidence source. | Evidence payload links. | Provenance. | Only through promotion/establishment. | Evidence-facing view. |
 | Explanation claims | Why Seed selected/believes. | ExplanationBuilder. | BeliefExplanation/FactExplanation. | Projected support. | No. | Explanation of view, not new truth. |
 | Projection-local assertions | Current selected state/support. | Projector/read view. | support/current view rows. | Facts/supports/projection rules. | No new Fact by identity. | Projection-local current standing. |
-| Verification claims | Method says capability/condition verified. | Verification producer. | predicate such as `capability_verified`. | Verification method evidence. | Often represented as Fact. | Scoped verification standing only. |
+| Verification claims | An attributed source says a condition was verified. | Attributed observation producer. | Generic predicate defined for that source, if independently warranted. | Source-attributed evidence. | May be represented as a generic Fact. | Assertion standing only; no capability or competency standing. |
 
 ## Required conclusion
 

@@ -150,7 +150,6 @@ def test_package_observations_do_not_introduce_entities_relationships_or_inferen
         "service_running",
         "service_status",
         "capability_available",
-        "capability_verified",
         "process_running",
         "listening_endpoint",
         "listening_protocol",

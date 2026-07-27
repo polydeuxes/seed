@@ -94,7 +94,7 @@ def test_promotion_readiness_is_available_from_runtime_public_api(tmp_path):
 
     assert inspection.readiness[0].candidate == "ssh_client"
     assert inspection.readiness[0].promotion_readiness == "supported"
-    assert "no_capability_verified_fact_creation" in inspection.notes
+    assert "no_fact_creation" in inspection.notes
 
 
 def test_promotion_readiness_reports_missing_verification_support(tmp_path):
@@ -114,7 +114,7 @@ def test_promotion_readiness_reports_missing_verification_support(tmp_path):
     assert "verification support is missing" in readiness.rationale
 
 
-def test_promotion_readiness_does_not_create_capability_verified_facts_or_write_events(
+def test_promotion_readiness_does_not_create_facts_or_write_events(
     tmp_path,
 ):
     ssh = tmp_path / "ssh"
@@ -135,10 +135,7 @@ def test_promotion_readiness_does_not_create_capability_verified_facts_or_write_
     assert inspection.readiness[0].promotion_readiness == "supported"
     assert [event.id for event in ledger.list_events("ws")] == before_events
     assert state.facts == before_facts
-    assert not any(
-        fact.predicate == "capability_verified" for fact in state.facts.values()
-    )
-    assert "no_capability_verified_fact_creation" in inspection.notes
+    assert "no_fact_creation" in inspection.notes
 
 
 def test_promotion_readiness_invokes_no_policy_or_execution(monkeypatch, tmp_path):
@@ -259,9 +256,6 @@ def test_promotion_readiness_consumes_candidates_from_fact_index_without_writes(
     assert [event.id for event in ledger.list_events("ws")] == before_events
     assert state.observations == before_observations
     assert state.facts == before_facts
-    assert not any(
-        fact.predicate == "capability_verified" for fact in state.facts.values()
-    )
     assert "promotion_readiness_not_promotion" in inspection.notes
     assert "no_tool_execution" in inspection.notes
 
