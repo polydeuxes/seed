@@ -101,10 +101,10 @@ def test_initial_eof_records_eof_and_separate_stop_without_probe():
     ledger, view, output = run_attempt("")
     assert [event.kind for event in ledger.list_events("w")] == [
         "operator.bootstrap.raw_material_captured",
-        "operator.bootstrap.representation_examined",
         "operator.bootstrap.initial_eof_occurred",
         "operator.bootstrap.stopping_occurred",
     ]
+    assert view["representation_examinations"] == {}
     assert view["closed"] is True
     assert (
         view["current_standing"]["interaction_closure"]["dimensions"]["standing"]
@@ -387,7 +387,12 @@ def test_binary_capture_preserves_exact_original_bytes_and_decoder_testimony(tmp
     assert "competency" not in str(projected).lower()
     ledger.close()
     replay = StateProjector(SQLiteEventLedger(str(path))).project("raw-w")
-    assert replay.operator_ingress_bootstraps[next(iter(replay.operator_ingress_bootstraps))] == view
+    assert (
+        replay.operator_ingress_bootstraps[
+            next(iter(replay.operator_ingress_bootstraps))
+        ]
+        == view
+    )
 
 
 def test_text_fallback_identifies_reencoded_material_as_not_original_bytes():
@@ -395,6 +400,7 @@ def test_text_fallback_identifies_reencoded_material_as_not_original_bytes():
     raw = ledger.list_events("w")[0]
     assert raw.payload["exact_bytes_hex"] == b"hello\n".hex()
     assert raw.payload["original_transport_bytes"] is False
+    assert raw.payload["encoding_testimony"] is None
     assert raw.payload["capture_boundary"] == "text-stream adapter after prior decoding"
     assert raw.payload["known_loss"] == [
         "original transport bytes and prior decoder behavior are unavailable"
@@ -408,8 +414,7 @@ def test_decoder_success_does_not_claim_admission_interpretation_or_competency()
     forbidden = ("admission", "admitted", "interpretation", "competency")
     assert not any(word in str(examination.payload).lower() for word in forbidden)
     assert not any(
-        word in str(view["representation_examinations"]).lower()
-        for word in forbidden
+        word in str(view["representation_examinations"]).lower() for word in forbidden
     )
 
 
@@ -423,8 +428,8 @@ def test_production_operator_ingress_contains_no_pesc_identifier_or_payload():
 def test_invalid_initial_bytes_are_preserved_without_replacement_and_stop_before_enum():
     ledger, view, output = run_raw(b"\xff\n1\n")
     assert output == (
-        "Representation insufficient: captured material was not decodable under "
-        "the testified encoding.\n"
+        "Representation insufficient: captured material did not decode under "
+        "the selected decoder mechanism.\n"
     )
     events = ledger.list_events("raw-w")
     assert events[0].payload["exact_bytes_hex"] == "ff0a"
@@ -440,7 +445,11 @@ def test_invalid_initial_bytes_are_preserved_without_replacement_and_stop_before
         }
         for e in events
     )
-    assert view["representation_examinations"]["initial_ingress"]["decoder_succeeded"] is False
+    assert (
+        view["representation_examinations"]["initial_ingress"]["decoder_succeeded"]
+        is False
+    )
+
 
 def test_real_cli_invalid_raw_bytes_are_durable_and_stop_before_presentation(tmp_path):
     db = tmp_path / "invalid-cli.db"
@@ -462,7 +471,7 @@ def test_real_cli_invalid_raw_bytes_are_durable_and_stop_before_presentation(tmp
     )
     assert (
         completed.stdout
-        == b"Representation insufficient: captured material was not decodable under the testified encoding.\n"
+        == b"Representation insufficient: captured material did not decode under the selected decoder mechanism.\n"
     )
     events = SQLiteEventLedger(str(db)).list_events("bytes-w")
     assert events[0].payload["exact_bytes_hex"] == "ff0a"
@@ -473,7 +482,7 @@ def test_invalid_enum_bytes_stop_before_token_capture_or_binding():
     ledger, _, output = run_raw(b"hello\n\xff\n")
     assert "Select one treatment" in output
     assert output.endswith(
-        "Representation insufficient: captured response was not decodable under the testified encoding.\n"
+        "Representation insufficient: captured response did not decode under the selected decoder mechanism.\n"
     )
     events = ledger.list_events("raw-w")
     assert not any(
@@ -505,4 +514,110 @@ def test_empty_material_and_eof_have_distinct_raw_evidence():
         "",
         True,
         None,
+    )
+
+
+def test_initial_and_response_eof_do_not_claim_representation_examination():
+    initial_ledger, initial_view, _ = run_raw(b"")
+    response_ledger, response_view, _ = run_raw(b"hello\n")
+    assert not any(
+        event.kind == "operator.bootstrap.representation_examined"
+        for event in initial_ledger.list_events("raw-w")
+    )
+    response_examinations = [
+        event
+        for event in response_ledger.list_events("raw-w")
+        if event.kind == "operator.bootstrap.representation_examined"
+    ]
+    assert [event.payload["material_role"] for event in response_examinations] == [
+        "initial_ingress"
+    ]
+    assert initial_view["representation_examinations"] == {}
+    assert "enum_response" not in response_view["representation_examinations"]
+    eof_event = next(
+        event
+        for event in response_ledger.list_events("raw-w")
+        if event.kind == "operator.bootstrap.response_eof_occurred"
+    )
+    raw_response = next(
+        event
+        for event in response_ledger.list_events("raw-w")
+        if event.kind == "operator.bootstrap.raw_material_captured"
+        and event.payload["material_role"] == "enum_response"
+    )
+    assert raw_response.id in eof_event.payload["lineage"]
+
+
+def test_decoder_outcomes_and_selection_sources_remain_distinct():
+    unavailable_ledger, _, _ = run_operator_with_stream(
+        _RawStdin(b"hello\n", "x-no-such-codec")
+    )
+    rejected_ledger, _, _ = run_raw(b"\xff\n")
+    success_ledger, _, _ = run_raw(b"hello\n2\n")
+    unavailable = unavailable_ledger.list_events("raw-w")[1].payload
+    rejected = rejected_ledger.list_events("raw-w")[1].payload
+    success = success_ledger.list_events("raw-w")[1].payload
+    assert unavailable["decoder_outcome"] == "decoder_unavailable"
+    assert unavailable["decoder_mechanism_selection"] == "stream_encoding_testimony"
+    assert unavailable["decoder_failure"].startswith("LookupError:")
+    assert rejected["decoder_outcome"] == "bytes_rejected"
+    assert rejected["decoder_failure"].startswith("UnicodeDecodeError:")
+    assert success["decoder_outcome"] == "decoded"
+    assert success["decoder_failure"] is None
+
+
+def run_operator_with_stream(stream):
+    ledger = EventLedger()
+    output = StringIO()
+    view = run_operator_ingress_bootstrap(
+        ledger=ledger,
+        workspace_id="raw-w",
+        session_id="raw-s",
+        input_stream=stream,
+        output_stream=output,
+    )
+    return ledger, view, output.getvalue()
+
+
+def test_utf8_fallback_is_implementation_selected_and_direct_bytesio_is_exact():
+    ledger, _, _ = run_operator_with_stream(BytesIO(b"\xc3\xa9\n2\n"))
+    raw, examination = ledger.list_events("raw-w")[:2]
+    assert raw.payload["exact_bytes_hex"] == b"\xc3\xa9\n".hex()
+    assert raw.payload["original_transport_bytes"] is True
+    assert (
+        raw.payload["capture_boundary"]
+        == "binary-stream.readline (bytes observed directly)"
+    )
+    assert raw.payload["encoding_testimony"] is None
+    assert examination.payload["decoder_mechanism"] == "utf-8"
+    assert (
+        examination.payload["decoder_mechanism_selection"]
+        == "implementation_utf8_fallback"
+    )
+
+
+def test_representation_evidence_produces_no_broader_standing():
+    ledger, view, _ = run_raw(b"hello\n2\n")
+    evidence = str(
+        [
+            event.payload
+            for event in ledger.list_events("raw-w")
+            if event.kind
+            in {
+                "operator.bootstrap.raw_material_captured",
+                "operator.bootstrap.representation_examined",
+            }
+        ]
+        + [view["representation_examinations"]]
+    ).lower()
+    assert not any(
+        word in evidence
+        for word in (
+            "admission",
+            "interpretation",
+            "grammar",
+            "competency",
+            "demand",
+            "boge",
+        )
     )

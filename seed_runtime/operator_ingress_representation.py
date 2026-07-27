@@ -24,9 +24,14 @@ class RepresentationExamination:
     """One bounded decoder invocation and its evidence, not an encoding verdict."""
 
     mechanism: str
-    succeeded: bool
+    mechanism_selection: str
+    outcome: str
     represented_text: str | None
     failure: str | None
+
+    @property
+    def succeeded(self) -> bool:
+        return self.outcome == "decoded"
 
 
 def capture_stdin_material(input_stream: TextIO | BinaryIO) -> CapturedOperatorMaterial:
@@ -42,14 +47,25 @@ def capture_stdin_material(input_stream: TextIO | BinaryIO) -> CapturedOperatorM
         )
     else:
         value = input_stream.readline()
-        testimony = getattr(input_stream, "encoding", None) or "utf-8"
-        # Compatibility for programmatic text streams.  This adapter is honest
-        # about the earlier framing/decoding rather than calling recreated bytes
-        # original transport material.
-        material = value.encode(testimony, errors="strict")
-        boundary = "text-stream adapter after prior decoding"
-        original_transport_bytes = False
-        loss = ("original transport bytes and prior decoder behavior are unavailable",)
+        testimony = getattr(input_stream, "encoding", None)
+        if isinstance(value, bytes):
+            material = value
+            boundary = "binary-stream.readline (bytes observed directly)"
+            original_transport_bytes = True
+            loss = (
+                "transport bytes before the supplied binary-stream boundary are not observable",
+            )
+        else:
+            # Compatibility for programmatic text streams.  This adapter is honest
+            # about the earlier framing/decoding rather than calling recreated bytes
+            # original transport material.
+            adapter_encoding = testimony or "utf-8"
+            material = value.encode(adapter_encoding, errors="strict")
+            boundary = "text-stream adapter after prior decoding"
+            original_transport_bytes = False
+            loss = (
+                "original transport bytes and prior decoder behavior are unavailable",
+            )
     delimiter = (
         "0d0a"
         if material.endswith(b"\r\n")
@@ -68,20 +84,32 @@ def capture_stdin_material(input_stream: TextIO | BinaryIO) -> CapturedOperatorM
 
 def examine_text_representation(
     capture: CapturedOperatorMaterial,
-) -> RepresentationExamination:
-    """Invoke only the stdin transport's testified decoder, strictly."""
-    mechanism = capture.encoding_testimony or "utf-8"
+) -> RepresentationExamination | None:
+    """Strictly invoke the selected decoder when material exists."""
     if capture.eof:
-        return RepresentationExamination(
-            mechanism, False, None, "EOF has no material to decode"
-        )
+        return None
+    mechanism = capture.encoding_testimony or "utf-8"
+    selection = (
+        "stream_encoding_testimony"
+        if capture.encoding_testimony is not None
+        else "implementation_utf8_fallback"
+    )
     try:
         represented = capture.exact_bytes.decode(mechanism, errors="strict")
-    except (UnicodeDecodeError, LookupError) as exc:
+    except LookupError as exc:
         return RepresentationExamination(
             mechanism,
-            False,
+            selection,
+            "decoder_unavailable",
             None,
             f"{type(exc).__name__}: {exc}",
         )
-    return RepresentationExamination(mechanism, True, represented, None)
+    except UnicodeDecodeError as exc:
+        return RepresentationExamination(
+            mechanism,
+            selection,
+            "bytes_rejected",
+            None,
+            f"{type(exc).__name__}: {exc}",
+        )
+    return RepresentationExamination(mechanism, selection, "decoded", represented, None)
