@@ -37,8 +37,6 @@ For the local goal-advancement-demand road recovered by `advancement_need_consid
 ## Representative repository anchors
 - `seed_runtime/constitutional_view_selection.py::SelectedConstitutionalViews`
 - `seed_runtime/constitutional_view_selection.py::select_constitutional_views`
-- `seed_runtime/goal_advancement_demand_consideration_selection.py::GoalAdvancementDemandConsiderationSelection`
-- `seed_runtime/goal_advancement_demand_consideration_selection.py::select_goal_advancement_demand_for_consideration`
 - `seed_runtime/examination_work_selection.py`
 - `seed_runtime/closed_choice_selection_binding.py`
 

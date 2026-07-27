@@ -25,7 +25,6 @@ Consumer validation is not producer occurrence: a downstream boundary may lawful
 - producer occurrence != assertion truth automatically
 
 ## Representative repository anchors
-- `seed_runtime/goal_advancement_demand_consideration_selection.py::select_goal_advancement_demand_for_consideration`
 
 ## Counterexamples or failure modes
 - Treating a proposed, requested, or contemplated act artifact as evidence that a tool ran.

@@ -15,7 +15,6 @@ Current evidence supports several distinct non-movement conditions, including su
 - bounded exhaustion != global impossibility
 
 ## Representative repository anchors
-- `seed_runtime/goal_advancement_sufficiency_projection.py`
 - `seed_runtime/bounded_advancement_horizon.py`
 - `seed_runtime/models.py::GoalStatus`
 
