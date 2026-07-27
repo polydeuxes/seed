@@ -6,7 +6,7 @@ The bounded prerequisite movement available when preserved operator ingress cann
 
 ## Bounded resolution
 
-Bounded operator goal establishment (**BOGE**) is Seed's only goal-establishment apparatus and remains operator-origin. Seed does not establish a self-goal or an instrumental goal in order to communicate. Establishing only enough common grammar to examine preserved operator ingress is prerequisite movement before the first operator-origin BOGE can become establishable; it is not another goal.
+Bounded operator goal establishment (**BOGE**) is Seed's only goal-establishment apparatus and remains operator-origin. Seed does not establish a self-goal or an instrumental goal in order to communicate. Establishing only enough common grammar to examine preserved operator ingress is prerequisite movement before an operator-origin BOGE from that ingress can become establishable; it is not another goal or a claim about a universal first event.
 
 ## Canonical sequence
 
