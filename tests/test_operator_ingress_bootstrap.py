@@ -565,6 +565,14 @@ def test_decoder_outcomes_and_selection_sources_remain_distinct():
     assert success["decoder_outcome"] == "decoded"
     assert success["decoder_failure"] is None
 
+    for ledger, expected in (
+        (unavailable_ledger, "decoder_unavailable"),
+        (rejected_ledger, "bytes_rejected"),
+        (success_ledger, "decoded"),
+    ):
+        examination = ledger.list_events("raw-w")[1]
+        assert examination.payload["dimensions"]["standing"] == expected
+
 
 def run_operator_with_stream(stream):
     ledger = EventLedger()
