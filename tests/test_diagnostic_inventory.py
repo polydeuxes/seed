@@ -194,6 +194,7 @@ def test_cli_diagnostic_inventory_lists_known_diagnostics(capsys):
 
     assert "Diagnostic" in output
     for name in [
+        "operator_ingress_bootstrap",
         "classification_coverage",
         "graph_issue_summary",
         "knowledge_reachability",
@@ -221,6 +222,7 @@ def test_cli_diagnostic_inventory_json_emits_valid_json(capsys):
 
     assert isinstance(payload, list)
     assert {entry["name"] for entry in payload} >= {
+        "operator_ingress_bootstrap",
         "classification_coverage",
         "graph_issue_summary",
         "knowledge_reachability",
