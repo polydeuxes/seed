@@ -124,6 +124,9 @@ def project_bootstrap_events(state, event) -> None:
             "examination_event_id": event.id,
             "capture_event_id": event.payload["capture_event_id"],
             "encoding_testimony": event.payload["encoding_testimony"],
+            "decoder_mechanism": event.payload["decoder_mechanism"],
+            "decoder_mechanism_selection": event.payload["decoder_mechanism_selection"],
+            "decoder_outcome": event.payload["decoder_outcome"],
             "decoder_succeeded": event.payload["decoder_succeeded"],
             "decoder_failure": event.payload["decoder_failure"],
         }
@@ -212,6 +215,8 @@ def _capture_representation(
         lineage=list(lineage),
     )
     examination = examine_text_representation(capture)
+    if examination is None:
+        return capture, None, captured, None
     examination_event = _record(
         ledger,
         "operator.bootstrap.representation_examined",
@@ -232,6 +237,8 @@ def _capture_representation(
         capture_event_id=captured.id,
         encoding_testimony=capture.encoding_testimony,
         decoder_mechanism=examination.mechanism,
+        decoder_mechanism_selection=examination.mechanism_selection,
+        decoder_outcome=examination.outcome,
         decoder_succeeded=examination.succeeded,
         decoder_failure=examination.failure,
         known_loss=list(capture.known_loss),
@@ -251,17 +258,22 @@ def run_operator_ingress_bootstrap(
 ) -> dict[str, object]:
     """Run exactly one ingress/probe/response attempt and stop."""
     attempt = new_id("operator_bootstrap_attempt")
-    captured_ingress, ingress_examination, ingress_capture, ingress_examination_event = (
-        _capture_representation(
-            ledger=ledger,
-            workspace=workspace_id,
-            session=session_id,
-            attempt=attempt,
-            input_stream=input_stream,
-            material_role="initial_ingress",
-        )
+    (
+        captured_ingress,
+        ingress_examination,
+        ingress_capture,
+        ingress_examination_event,
+    ) = _capture_representation(
+        ledger=ledger,
+        workspace=workspace_id,
+        session=session_id,
+        attempt=attempt,
+        input_stream=input_stream,
+        material_role="initial_ingress",
     )
-    raw_ingress = ingress_examination.represented_text or ""
+    raw_ingress = (
+        ingress_examination.represented_text or "" if ingress_examination else ""
+    )
     ingress_kind = (
         "eof"
         if captured_ingress.eof
@@ -272,7 +284,7 @@ def run_operator_ingress_bootstrap(
         if ingress_kind == "eof"
         else raw_ingress.removesuffix("\n").removesuffix("\r")
     )
-    if not ingress_examination.succeeded and not captured_ingress.eof:
+    if ingress_examination is not None and not ingress_examination.succeeded:
         _record(
             ledger,
             "operator.bootstrap.stopping_occurred",
@@ -295,7 +307,7 @@ def run_operator_ingress_bootstrap(
         )
         state = StateProjector(ledger).project(workspace_id)
         output_stream.write(
-            "Representation insufficient: captured material was not decodable under the testified encoding.\n"
+            "Representation insufficient: captured material did not decode under the selected decoder mechanism.\n"
         )
         output_stream.flush()
         return state.operator_ingress_bootstraps[attempt]
@@ -313,19 +325,36 @@ def run_operator_ingress_bootstrap(
             identity=attempt,
             content=ingress_content,
             standing="occurred",
-            source=ingress_examination_event.id,
+            source=(
+                ingress_capture.id
+                if ingress_examination_event is None
+                else ingress_examination_event.id
+            ),
             responsibility="operator-ingress",
             authority="occurrence-only; meaning Unknown",
             scope=f"workspace:{workspace_id};session:{session_id}",
-            occurrence="strictly decoded text preserves capture/examination lineage",
+            occurrence=(
+                "EOF occurrence preserves raw-capture lineage"
+                if ingress_kind == "eof"
+                else "strictly decoded text preserves capture/examination lineage"
+            ),
         ),
         raw_input=raw_ingress,
         ingress_kind=ingress_kind,
-        decoded_text=ingress_examination.represented_text,
+        decoded_text=(
+            ingress_examination.represented_text if ingress_examination else None
+        ),
         raw_material_event_id=ingress_capture.id,
-        representation_examination_event_id=ingress_examination_event.id,
+        **(
+            {"representation_examination_event_id": ingress_examination_event.id}
+            if ingress_examination_event is not None
+            else {}
+        ),
         known_loss=list(captured_ingress.known_loss),
-        lineage=[ingress_capture.id, ingress_examination_event.id],
+        lineage=[
+            ingress_capture.id,
+            *([ingress_examination_event.id] if ingress_examination_event else []),
+        ],
     )
     StateProjector(ledger).project(workspace_id)
     if ingress_kind == "eof":
@@ -401,18 +430,23 @@ def run_operator_ingress_bootstrap(
         choice_set_fingerprint=choice_set.exact_choice_set_fingerprint,
         lineage=[ingress.id],
     )
-    captured_response, response_examination, response_capture, response_examination_event = (
-        _capture_representation(
-            ledger=ledger,
-            workspace=workspace_id,
-            session=session_id,
-            attempt=attempt,
-            input_stream=input_stream,
-            material_role="enum_response",
-            lineage=(presented.id,),
-        )
+    (
+        captured_response,
+        response_examination,
+        response_capture,
+        response_examination_event,
+    ) = _capture_representation(
+        ledger=ledger,
+        workspace=workspace_id,
+        session=session_id,
+        attempt=attempt,
+        input_stream=input_stream,
+        material_role="enum_response",
+        lineage=(presented.id,),
     )
-    raw_response = response_examination.represented_text or ""
+    raw_response = (
+        response_examination.represented_text or "" if response_examination else ""
+    )
     response_kind = (
         "eof"
         if captured_response.eof
@@ -443,7 +477,8 @@ def run_operator_ingress_bootstrap(
             raw_input=raw_response,
             response_kind="eof",
             presentation_ref=presentation_ref,
-            lineage=[presented.id],
+            raw_material_event_id=response_capture.id,
+            lineage=[presented.id, response_capture.id],
         )
         _record(
             ledger,
@@ -470,7 +505,7 @@ def run_operator_ingress_bootstrap(
         output_stream.flush()
         return state.operator_ingress_bootstraps[attempt]
 
-    if not response_examination.succeeded:
+    if response_examination is not None and not response_examination.succeeded:
         _record(
             ledger,
             "operator.bootstrap.stopping_occurred",
@@ -493,7 +528,7 @@ def run_operator_ingress_bootstrap(
         )
         state = StateProjector(ledger).project(workspace_id)
         output_stream.write(
-            "Representation insufficient: captured response was not decodable under the testified encoding.\n"
+            "Representation insufficient: captured response did not decode under the selected decoder mechanism.\n"
         )
         output_stream.flush()
         return state.operator_ingress_bootstraps[attempt]
