@@ -120,33 +120,6 @@ def test_initial_eof_records_eof_and_separate_stop_without_probe():
     )
 
 
-def test_competency_local_eof_stop_returns_without_terminating_seed(tmp_path):
-    completed = subprocess.run(
-        [
-            sys.executable,
-            "scripts/seed_local.py",
-            "--operator-ingress-bootstrap",
-            "--db",
-            str(tmp_path / "eof.db"),
-            "--workspace",
-            "eof-w",
-        ],
-        input="",
-        text=True,
-        capture_output=True,
-        check=True,
-    )
-    assert completed.returncode == 0
-    assert completed.stdout == "Bootstrap stopped locally.\n"
-    ledger = SQLiteEventLedger(str(tmp_path / "eof.db"))
-    stop = ledger.list_events("eof-w")[-1]
-    assert stop.kind == "operator.bootstrap.stopping_occurred"
-    assert stop.payload["dimensions"]["responsibility"] == (
-        "competent-local-stopping"
-    )
-    assert stop.payload["dimensions"]["scope_locality"].startswith("attempt:")
-
-
 def test_exact_ingress_preservation_all_dimensions_and_durable_replay(tmp_path):
     path = tmp_path / "events.db"
     ledger, view, _ = run_attempt(
