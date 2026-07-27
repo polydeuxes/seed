@@ -1,4 +1,8 @@
+import pytest
+
 from seed_runtime.bounded_operator_goal_establishment import (
+    BoundedOperatorGoalEstablishmentError,
+    admit_closed_choice_to_bounded_goal,
     establish_bounded_operator_goal_from_admitted_interpretation,
     establish_bounded_operator_goal_from_closed_choice,
 )
@@ -36,8 +40,9 @@ def _choice_binding(token="1"):
 
 def test_closed_choice_ingress_establishes_bounded_goal_with_exact_lineage():
     binding = _choice_binding("1")
+    admission = admit_closed_choice_to_bounded_goal(binding, eligibility_evidence_refs=("eligibility:bounded-goal-menu:1",))
 
-    goal = establish_bounded_operator_goal_from_closed_choice(binding)
+    goal = establish_bounded_operator_goal_from_closed_choice(binding, admission=admission)
 
     assert goal.artifact_type == "BoundedOperatorGoalEstablishment"
     assert goal.ingress_artifact_type == "ClosedChoiceSelectionBinding"
@@ -49,9 +54,16 @@ def test_closed_choice_ingress_establishes_bounded_goal_with_exact_lineage():
 
 
 def test_refuses_when_no_bounded_orientation_is_supportable():
-    unsupported_choice = establish_bounded_operator_goal_from_closed_choice(_choice_binding("9"))
+    binding = _choice_binding("9")
+    admission = admit_closed_choice_to_bounded_goal(binding, eligibility_evidence_refs=("eligibility:bounded-goal-menu:1",))
+    unsupported_choice = establish_bounded_operator_goal_from_closed_choice(binding, admission=admission)
     assert unsupported_choice.establishment_state == "refused"
     assert unsupported_choice.intended_outcome == ""
+
+
+def test_closed_choice_requires_exact_positive_goal_admission():
+    with pytest.raises(BoundedOperatorGoalEstablishmentError):
+        establish_bounded_operator_goal_from_closed_choice(_choice_binding("1"))
 
 
 def _goal_admission(*, consumer="consumer:bounded-operator-goal-establishment", purpose_ref="purpose:bounded-operator-goal-establishment", req_state="satisfied", adm_state="admit", selected=None):

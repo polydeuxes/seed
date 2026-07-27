@@ -6,6 +6,7 @@ from seed_runtime.bounded_advancement_horizon import (
     establish_bounded_advancement_horizon,
 )
 from seed_runtime.bounded_operator_goal_establishment import (
+    admit_closed_choice_to_bounded_goal,
     establish_bounded_operator_goal_from_closed_choice,
 )
 from tests.test_bounded_operator_goal_establishment import _choice_binding
@@ -13,8 +14,10 @@ from tests.test_bounded_operator_goal_establishment import _choice_binding
 
 def _goal(**overrides):
     token = overrides.pop("token", "2" if overrides else "1")
+    binding = _choice_binding(token)
     goal = establish_bounded_operator_goal_from_closed_choice(
-        _choice_binding(token),
+        binding,
+        admission=admit_closed_choice_to_bounded_goal(binding, eligibility_evidence_refs=("eligibility:bounded-goal-menu:1",)),
     )
     return replace(goal, **overrides) if overrides else goal
 

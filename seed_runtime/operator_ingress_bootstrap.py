@@ -12,6 +12,7 @@ from seed_runtime.closed_choice_selection_binding import (
     bind_closed_choice_selection,
 )
 from seed_runtime.events import EventLedger
+from seed_runtime.ids import new_id
 from seed_runtime.state import StateProjector
 
 CHOICE_SET_REF = "operator-common-grammar-bootstrap:v1:two-treatment"
@@ -81,10 +82,25 @@ def project_bootstrap_events(state, event) -> None:
         return
     attempt = event.payload["attempt_ref"]
     view = state.operator_ingress_bootstraps.setdefault(
-        attempt, {"event_ids": [], "known_loss": [], "unknowns": [], "conflicts": []}
+        attempt,
+        {
+            "event_ids": [],
+            "dimensional_standing": {},
+            "known_loss": [],
+            "unknowns": [],
+            "conflicts": [],
+        },
     )
     view["event_ids"].append(event.id)
-    view["dimensions"] = event.payload["dimensions"]
+    # Occurrences are evidence in their own right.  Keep each complete
+    # eight-dimensional description rather than replacing it with the tail event.
+    view["dimensional_standing"][event.id] = {
+        "event_kind": event.kind,
+        "subject_ref": event.payload["dimensions"]["identity"],
+        "dimensions": event.payload["dimensions"],
+        "lineage": list(event.payload.get("lineage", ())),
+    }
+    view["current_dimensions"] = event.payload["dimensions"]
     view["standing"] = event.payload["dimensions"]["standing"]
     view["last_event_kind"] = event.kind
     for key in ("known_loss", "unknowns", "conflicts"):
@@ -111,7 +127,7 @@ def run_operator_ingress_bootstrap(
     output_stream: TextIO,
 ) -> dict[str, object]:
     """Run exactly one ingress/probe/response attempt and stop."""
-    attempt = f"operator-bootstrap:{session_id}"
+    attempt = new_id("operator_bootstrap_attempt")
     raw_ingress = input_stream.readline()
     ingress_kind = (
         "eof"
@@ -125,7 +141,11 @@ def run_operator_ingress_bootstrap(
     )
     ingress = _record(
         ledger,
-        "operator.bootstrap.ingress_occurred",
+        (
+            "operator.bootstrap.initial_eof_occurred"
+            if ingress_kind == "eof"
+            else "operator.bootstrap.ingress_occurred"
+        ),
         workspace_id,
         session_id,
         attempt,
@@ -144,6 +164,32 @@ def run_operator_ingress_bootstrap(
         known_loss=["terminal framing outside captured line is not preserved"],
     )
     StateProjector(ledger).project(workspace_id)
+    if ingress_kind == "eof":
+        _record(
+            ledger,
+            "operator.bootstrap.stopping_occurred",
+            workspace_id,
+            session_id,
+            attempt,
+            _dimensions(
+                identity=f"stop:{ingress.id}",
+                content="initial EOF",
+                standing="closed",
+                source=ingress.id,
+                responsibility="competent-local-stopping",
+                authority="closes only this interaction",
+                scope=f"attempt:{attempt}",
+                occurrence="separate stopping act recorded",
+            ),
+            closed=True,
+            response_kind="initial_eof",
+            lineage=[ingress.id],
+        )
+        state = StateProjector(ledger).project(workspace_id)
+        output_stream.write("Bootstrap stopped locally.\n")
+        output_stream.flush()
+        return state.operator_ingress_bootstraps[attempt]
+
     presentation_ref = f"presentation:{ingress.id}"
     choice_set = bootstrap_choice_set(presentation_ref)
     _record(
@@ -164,6 +210,8 @@ def run_operator_ingress_bootstrap(
         ),
         choice_set_ref=CHOICE_SET_REF,
         presentation_ref=presentation_ref,
+        choice_set_fingerprint=choice_set.exact_choice_set_fingerprint,
+        lineage=[ingress.id],
     )
     rendered = render_probe(choice_set)
     output_stream.write(rendered + "\n")
@@ -186,6 +234,8 @@ def run_operator_ingress_bootstrap(
         ),
         choice_set_ref=CHOICE_SET_REF,
         presentation_ref=presentation_ref,
+        choice_set_fingerprint=choice_set.exact_choice_set_fingerprint,
+        lineage=[ingress.id],
     )
     raw_response = input_stream.readline()
     response_kind = (
@@ -220,13 +270,18 @@ def run_operator_ingress_bootstrap(
         choice_set_ref=CHOICE_SET_REF,
         presentation_ref=presentation_ref,
         capture_ref=capture_ref,
+        choice_set_fingerprint=choice_set.exact_choice_set_fingerprint,
+        lineage=[presented.id],
     )
     capture = OperatorSelectionTokenCapture(
         capture_ref, CHOICE_SET_REF, token, provenance=(response.id,)
     )
-    binding = bind_closed_choice_selection(
-        choice_set,
-        capture,
+    binding = validate_capture_for_probe(
+        ledger=ledger,
+        workspace_id=workspace_id,
+        attempt_ref=attempt,
+        choice_set=choice_set,
+        capture=capture,
         unsupported_selection_evidence=(
             ("EOF is not a selection token",) if response_kind == "eof" else ()
         ),
@@ -266,6 +321,8 @@ def run_operator_ingress_bootstrap(
         choice_set_ref=CHOICE_SET_REF,
         response_kind=response_kind,
         unknowns=list(unknowns),
+        choice_set_fingerprint=choice_set.exact_choice_set_fingerprint,
+        lineage=[response.id, presented.id],
     )
     if binding.binding_state == "bound":
         treatment = binding.bound_option_ref
@@ -287,6 +344,7 @@ def run_operator_ingress_bootstrap(
             ),
             selected_treatment=treatment,
             binding_id=binding.binding_id,
+            lineage=[binding_event.id],
         )
         if treatment == "local-stop":
             _record(
@@ -307,6 +365,7 @@ def run_operator_ingress_bootstrap(
                 ),
                 selected_treatment=treatment,
                 closed=True,
+                lineage=[selection.id],
             )
             result = "Bootstrap stopped locally."
         else:
@@ -320,18 +379,75 @@ def run_operator_ingress_bootstrap(
 
 
 def validate_capture_for_probe(
-    choice_set, capture, expected_presentation_ref: str, seen_capture_refs=()
+    *,
+    ledger: EventLedger,
+    workspace_id: str,
+    attempt_ref: str,
+    choice_set: PresentedClosedChoiceSet,
+    capture: OperatorSelectionTokenCapture,
+    unsupported_selection_evidence: tuple[str, ...] = (),
 ):
-    """Goal-local admission seam for identity and replay checks."""
+    """Validate production identity/currentness and consume one recorded capture."""
+    events = [
+        event
+        for event in ledger.list_events(workspace_id)
+        if event.payload.get("attempt_ref") == attempt_ref
+    ]
+    presentations = [
+        event
+        for event in events
+        if event.kind == "operator.bootstrap.presentation_occurred"
+    ]
+    captures = [
+        event
+        for event in events
+        if event.kind == "operator.bootstrap.response_captured"
+    ]
+    if not presentations or not captures:
+        raise ClosedChoiceSelectionBindingError(
+            "communication probe lacks recorded presentation or capture evidence"
+        )
+    presentation = presentations[-1]
+    recorded_capture = captures[-1]
+    fingerprint = choice_set.exact_choice_set_fingerprint
     if (
         choice_set.choice_set_ref != CHOICE_SET_REF
-        or choice_set.presentation_ref != expected_presentation_ref
+        or choice_set.presentation_ref != presentation.payload.get("presentation_ref")
+        or capture.choice_set_ref != presentation.payload.get("choice_set_ref")
+        or fingerprint != presentation.payload.get("choice_set_fingerprint")
     ):
         raise ClosedChoiceSelectionBindingError(
-            "communication probe presentation/set identity mismatch"
+            "communication probe presentation/set identity or fingerprint mismatch"
         )
-    if capture.capture_ref in seen_capture_refs:
+    if (
+        capture.capture_ref != recorded_capture.payload.get("capture_ref")
+        or capture.choice_set_ref != recorded_capture.payload.get("choice_set_ref")
+        or capture.captured_token
+        != (
+            ""
+            if recorded_capture.payload.get("response_kind") == "eof"
+            else recorded_capture.payload.get("raw_input", "")
+            .removesuffix("\n")
+            .removesuffix("\r")
+        )
+    ):
         raise ClosedChoiceSelectionBindingError(
-            "communication probe response capture was already replayed"
+            "communication probe capture is not the current recorded occurrence"
         )
-    return bind_closed_choice_selection(choice_set, capture)
+    if any(
+        event.kind
+        in {
+            "operator.bootstrap.binding_completed",
+            "operator.bootstrap.unsupported_finding",
+        }
+        and event.payload.get("capture_ref") == capture.capture_ref
+        for event in events
+    ):
+        raise ClosedChoiceSelectionBindingError(
+            "communication probe response capture was already consumed"
+        )
+    return bind_closed_choice_selection(
+        choice_set,
+        capture,
+        unsupported_selection_evidence=unsupported_selection_evidence,
+    )

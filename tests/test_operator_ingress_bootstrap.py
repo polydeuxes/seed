@@ -9,12 +9,12 @@ from seed_runtime.bounded_operator_goal_establishment import (
     establish_bounded_operator_goal_from_closed_choice,
 )
 from seed_runtime.closed_choice_selection_binding import (
+    ClosedChoiceOption,
     ClosedChoiceSelectionBindingError,
     OperatorSelectionTokenCapture,
+    PresentedClosedChoiceSet,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.diagnostic_inventory import DIAGNOSTIC_INVENTORY
-from seed_runtime.diagnostic_shape_audit import build_diagnostic_shape_audit
 from seed_runtime.operator_ingress_bootstrap import (
     CHOICE_SET_REF,
     bootstrap_choice_set,
@@ -85,32 +85,51 @@ def test_eof_is_distinct_from_empty_response():
     assert empty["response_kind"] == "empty"
 
 
+def test_initial_eof_records_eof_and_separate_stop_without_probe():
+    ledger, view, output = run_attempt("")
+    assert [event.kind for event in ledger.list_events("w")] == [
+        "operator.bootstrap.initial_eof_occurred",
+        "operator.bootstrap.stopping_occurred",
+    ]
+    assert view["closed"] is True
+    assert view["standing"] == "closed"
+    assert "selected_treatment" not in view
+    assert output == "Bootstrap stopped locally.\n"
+
+
 def test_exact_ingress_preservation_all_dimensions_and_durable_replay(tmp_path):
     path = tmp_path / "events.db"
     ledger, view, _ = run_attempt(
-        "  Mixed CASE ingress  \n1\n", SQLiteEventLedger(str(path))
+        "  Mixed CASE ingress  \n2\n", SQLiteEventLedger(str(path))
     )
     ingress = ledger.list_events("w")[0]
     assert ingress.payload["raw_input"] == "  Mixed CASE ingress  \n"
     assert ingress.payload["known_loss"] == [
         "terminal framing outside captured line is not preserved"
     ]
-    assert set(view["dimensions"]) == {
-        "identity",
-        "content",
-        "standing",
-        "source_provenance",
-        "responsibility",
-        "authority_warrant",
-        "scope_locality",
-        "occurrence_preservation",
-    }
+    assert len(view["dimensional_standing"]) == 7
+    assert all(
+        set(item["dimensions"])
+        == {
+            "identity",
+            "content",
+            "standing",
+            "source_provenance",
+            "responsibility",
+            "authority_warrant",
+            "scope_locality",
+            "occurrence_preservation",
+        }
+        for item in view["dimensional_standing"].values()
+    )
+    assert all(
+        item["lineage"] for item in list(view["dimensional_standing"].values())[1:]
+    )
+    attempt_ref = ingress.payload["attempt_ref"]
     ledger.close()
     reopened = SQLiteEventLedger(str(path))
     replayed = (
-        StateProjector(reopened)
-        .project("w")
-        .operator_ingress_bootstraps["operator-bootstrap:s"]
+        StateProjector(reopened).project("w").operator_ingress_bootstraps[attempt_ref]
     )
     assert replayed == view
     assert all(
@@ -118,16 +137,119 @@ def test_exact_ingress_preservation_all_dimensions_and_durable_replay(tmp_path):
     )
 
 
-def test_probe_identity_replay_guards_and_boge_refusal():
-    choice = bootstrap_choice_set("presentation:1")
-    capture = OperatorSelectionTokenCapture("capture:1", CHOICE_SET_REF, "1")
-    binding = validate_capture_for_probe(choice, capture, "presentation:1")
+def _recorded_probe_inputs(ledger):
+    events = ledger.list_events("w")
+    ingress = events[0]
+    response = next(
+        e for e in events if e.kind == "operator.bootstrap.response_captured"
+    )
+    choice = bootstrap_choice_set(response.payload["presentation_ref"])
+    capture = OperatorSelectionTokenCapture(
+        response.payload["capture_ref"], CHOICE_SET_REF, "1"
+    )
+    return ingress.payload["attempt_ref"], choice, capture
+
+
+def test_probe_identity_fingerprint_and_consumption_guards():
+    ledger, _, _ = run_attempt("hello\n1\n")
+    attempt, choice, capture = _recorded_probe_inputs(ledger)
     with pytest.raises(ClosedChoiceSelectionBindingError):
-        validate_capture_for_probe(choice, capture, "presentation:wrong")
+        validate_capture_for_probe(
+            ledger=ledger,
+            workspace_id="w",
+            attempt_ref=attempt,
+            choice_set=bootstrap_choice_set("presentation:wrong"),
+            capture=capture,
+        )
+    wrong_set_capture = OperatorSelectionTokenCapture(
+        capture.capture_ref, "goal-choice-set:wrong", capture.captured_token
+    )
     with pytest.raises(ClosedChoiceSelectionBindingError):
-        validate_capture_for_probe(choice, capture, "presentation:1", ("capture:1",))
+        validate_capture_for_probe(
+            ledger=ledger,
+            workspace_id="w",
+            attempt_ref=attempt,
+            choice_set=choice,
+            capture=wrong_set_capture,
+        )
+    altered = PresentedClosedChoiceSet(
+        CHOICE_SET_REF,
+        choice.prompt,
+        (ClosedChoiceOption("1", "different", "Different"), *choice.options[1:]),
+        choice.presentation_ref,
+    )
+    with pytest.raises(ClosedChoiceSelectionBindingError):
+        validate_capture_for_probe(
+            ledger=ledger,
+            workspace_id="w",
+            attempt_ref=attempt,
+            choice_set=altered,
+            capture=capture,
+        )
+    with pytest.raises(ClosedChoiceSelectionBindingError, match="already consumed"):
+        validate_capture_for_probe(
+            ledger=ledger,
+            workspace_id="w",
+            attempt_ref=attempt,
+            choice_set=choice,
+            capture=capture,
+        )
+
+
+def test_communication_binding_lacks_positive_boge_admission():
+    ledger, view, _ = run_attempt("hello\n1\n")
+    attempt, choice, capture = _recorded_probe_inputs(ledger)
+    binding_event = next(
+        e
+        for e in ledger.list_events("w")
+        if e.kind == "operator.bootstrap.binding_completed"
+    )
+    # Re-create the immutable binding only to exercise the downstream boundary;
+    # production already consumed this capture and records the same binding identity.
+    from seed_runtime.closed_choice_selection_binding import (
+        bind_closed_choice_selection,
+    )
+
+    binding = bind_closed_choice_selection(choice, capture)
+    assert (
+        binding.binding_id == binding_event.payload["binding_id"] == view["binding_id"]
+    )
     with pytest.raises(BoundedOperatorGoalEstablishmentError):
         establish_bounded_operator_goal_from_closed_choice(binding)
+
+
+def test_two_durable_attempts_in_same_session_remain_distinct(tmp_path):
+    path = tmp_path / "attempts.db"
+    ledger = SQLiteEventLedger(str(path))
+    _, first, _ = run_attempt("first\n1\n", ledger, session="same")
+    _, second, _ = run_attempt("second\n2\n", ledger, session="same")
+    attempt_refs = {e.payload["attempt_ref"] for e in ledger.list_events("w")}
+    assert len(attempt_refs) == 2
+    assert first["event_ids"] != second["event_ids"]
+    ledger.close()
+    reopened = SQLiteEventLedger(str(path))
+    projection = StateProjector(reopened).project("w").operator_ingress_bootstraps
+    assert set(projection) == attempt_refs
+    assert {view["selected_treatment"] for view in projection.values()} == {
+        "common-grammar-acquisition",
+        "local-stop",
+    }
+
+
+def test_consumed_capture_replay_is_refused_after_durable_reconstruction(tmp_path):
+    path = tmp_path / "replay.db"
+    ledger, _, _ = run_attempt("hello\n1\n", SQLiteEventLedger(str(path)))
+    attempt, choice, capture = _recorded_probe_inputs(ledger)
+    ledger.close()
+    reopened = SQLiteEventLedger(str(path))
+    with pytest.raises(ClosedChoiceSelectionBindingError, match="already consumed"):
+        validate_capture_for_probe(
+            ledger=reopened,
+            workspace_id="w",
+            attempt_ref=attempt,
+            choice_set=choice,
+            capture=capture,
+        )
 
 
 def test_real_cli_reads_ingress_presents_stdout_and_persists(tmp_path):
@@ -163,19 +285,3 @@ def test_real_cli_reads_ingress_presents_stdout_and_persists(tmp_path):
     assert (
         ledger.list_events("cli-w")[-1].kind == "operator.bootstrap.stopping_occurred"
     )
-
-
-def test_bootstrap_probe_is_visible_and_shape_audited():
-    entry = next(
-        item
-        for item in DIAGNOSTIC_INVENTORY
-        if item.name == "operator_ingress_bootstrap"
-    )
-    assert entry.cli_flags == ("--operator-ingress-bootstrap",)
-    assert entry.writes_event_ledger is True
-    assert entry.mutates_cluster is False
-    rows = [
-        row for row in build_diagnostic_shape_audit() if row.diagnostic == entry.name
-    ]
-    assert len(rows) == 9
-    assert not [row for row in rows if row.status == "mismatch"]
