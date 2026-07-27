@@ -66,6 +66,11 @@ def establish_bounded_operator_goal_from_closed_choice(
     if binding.artifact_type != "ClosedChoiceSelectionBinding":
         raise BoundedOperatorGoalEstablishmentError("closed-choice ingress must be a ClosedChoiceSelectionBinding artifact")
 
+    if binding.choice_set_ref.startswith("operator-common-grammar-bootstrap:"):
+        raise BoundedOperatorGoalEstablishmentError(
+            "communication-probe bindings are not bounded-goal ingress"
+        )
+
     unknowns = _refs(binding.unknown_selection_evidence)
     conflicts = _refs(binding.conflicting_selection_evidence)
     unsupported = _refs(binding.unsupported_selection_evidence)

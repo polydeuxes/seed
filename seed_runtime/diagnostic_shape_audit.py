@@ -43,6 +43,7 @@ class DiagnosticImplementationSpec:
     json_cli_flags: tuple[str, ...] = ()
     repo_file_markers: tuple[str, ...] = ()
     diagnostic_fact_read_markers: tuple[str, ...] = ()
+    event_ledger_write_markers: tuple[str, ...] = ()
     mutation_markers: tuple[str, ...] = (
         "subprocess.run",
         ".write_text(",
@@ -80,6 +81,14 @@ class DiagnosticShapeAuditSummary:
 
 
 IMPLEMENTATION_SPECS: dict[str, DiagnosticImplementationSpec] = {
+    "operator_ingress_bootstrap": DiagnosticImplementationSpec(
+        name="operator_ingress_bootstrap",
+        module_path="seed_runtime/operator_ingress_bootstrap.py",
+        build_function="run_operator_ingress_bootstrap",
+        format_function="render_probe",
+        cli_flags=("--operator-ingress-bootstrap",),
+        event_ledger_write_markers=("ledger.append",),
+    ),
     "classification_coverage": DiagnosticImplementationSpec(
         name="classification_coverage",
         module_path="seed_runtime/classification_coverage.py",
@@ -1044,8 +1053,12 @@ def _observe(
         "record_scope": record_scope or "none",
         "emits_diagnostic_facts": "DevObservationSeed" in record_source
         and ("diagnostic_" in record_source or "record_facts" in record_source),
-        "writes_event_ledger": "ingest_observations" in record_source
-        and "EventLedger" in record_source,
+        "writes_event_ledger": (
+            "ingest_observations" in record_source and "EventLedger" in record_source
+        ) or bool(
+            spec.event_ledger_write_markers
+            and all(marker in module_source for marker in spec.event_ledger_write_markers)
+        ),
         "reads_diagnostic_facts": (
             all(marker in module_source for marker in spec.diagnostic_fact_read_markers)
             if spec.diagnostic_fact_read_markers
