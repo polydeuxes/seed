@@ -2,7 +2,6 @@ import pytest
 
 from seed_runtime.bounded_operator_goal_establishment import (
     BoundedOperatorGoalEstablishmentError,
-    admit_closed_choice_to_bounded_goal,
     establish_bounded_operator_goal_from_admitted_interpretation,
     establish_bounded_operator_goal_from_closed_choice,
 )
@@ -38,27 +37,24 @@ def _choice_binding(token="1"):
     return bind_closed_choice_selection(choice_set, capture)
 
 
-def test_closed_choice_ingress_establishes_bounded_goal_with_exact_lineage():
+def test_raw_closed_choice_cannot_establish_bounded_goal():
     binding = _choice_binding("1")
-    admission = admit_closed_choice_to_bounded_goal(binding, eligibility_evidence_refs=("eligibility:bounded-goal-menu:1",))
-
-    goal = establish_bounded_operator_goal_from_closed_choice(binding, admission=admission)
-
-    assert goal.artifact_type == "BoundedOperatorGoalEstablishment"
-    assert goal.ingress_artifact_type == "ClosedChoiceSelectionBinding"
-    assert goal.ingress_artifact_ref == binding.binding_id
-    assert goal.establishment_state == "established"
-    assert goal.intended_outcome == "Inspect repository"
-    assert goal.known_scope == ("inspect_repository",)
-    assert binding.exact_choice_set_fingerprint in goal.ingress_lineage
+    with pytest.raises(BoundedOperatorGoalEstablishmentError, match="unavailable"):
+        establish_bounded_operator_goal_from_closed_choice(binding)
 
 
-def test_refuses_when_no_bounded_orientation_is_supportable():
-    binding = _choice_binding("9")
-    admission = admit_closed_choice_to_bounded_goal(binding, eligibility_evidence_refs=("eligibility:bounded-goal-menu:1",))
-    unsupported_choice = establish_bounded_operator_goal_from_closed_choice(binding, admission=admission)
-    assert unsupported_choice.establishment_state == "refused"
-    assert unsupported_choice.intended_outcome == ""
+def test_arbitrary_refs_have_no_admission_api_and_labels_are_not_goal_meaning():
+    import seed_runtime.bounded_operator_goal_establishment as boge
+
+    assert not hasattr(boge, "admit_closed_choice_to_bounded_goal")
+    assert not hasattr(boge, "ClosedChoiceBoundedGoalAdmission")
+    binding = _choice_binding("1")
+    assert binding.bound_option_label == "Inspect repository"
+    assert binding.bound_option_ref == "inspect_repository"
+    with pytest.raises(TypeError):
+        establish_bounded_operator_goal_from_closed_choice(
+            binding, eligibility_evidence_refs=("arbitrary string",)
+        )
 
 
 def test_closed_choice_requires_exact_positive_goal_admission():

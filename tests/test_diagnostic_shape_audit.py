@@ -284,6 +284,18 @@ def test_current_shape_audit_has_no_mismatches_for_registered_surfaces():
     assert "Mismatches: 0" in format_diagnostic_shape_audit(rows)
 
 
+def test_operator_ingress_bootstrap_is_shape_audited_as_cluster_read_only():
+    rows = [
+        row
+        for row in build_diagnostic_shape_audit()
+        if row.diagnostic == "operator_ingress_bootstrap"
+    ]
+    assert rows
+    assert all(row.status == "consistent" for row in rows)
+    assert next(row for row in rows if row.field == "writes_event_ledger").observed is True
+    assert next(row for row in rows if row.field == "mutates_cluster").declared is False
+
+
 def test_snapshot_and_consumer_projected_state_detection_matches_behavior():
     rows = build_diagnostic_shape_audit()
 

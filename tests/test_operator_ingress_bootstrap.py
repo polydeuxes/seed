@@ -65,7 +65,7 @@ def test_exact_treatments_select_without_acquisition_and_stop_is_separate(
 )
 def test_near_matches_and_empty_are_unsupported_with_semantic_unknowns(token):
     ledger, view, output = run_attempt(f"hello\n{token}\n")
-    assert view["standing"] == "unsupported"
+    assert view["current_standing"]["binding_finding"]["dimensions"]["standing"] == "unsupported"
     assert view["unknowns"] == [
         "operator intent Unknown",
         "requested treatment Unknown",
@@ -79,10 +79,18 @@ def test_near_matches_and_empty_are_unsupported_with_semantic_unknowns(token):
 
 
 def test_eof_is_distinct_from_empty_response():
-    _, eof, _ = run_attempt("hello\n")
+    eof_ledger, eof, _ = run_attempt("hello\n")
     _, empty, _ = run_attempt("hello\n\n", session="empty")
     assert eof["response_kind"] == "eof"
     assert empty["response_kind"] == "empty"
+    eof_kinds = [event.kind for event in eof_ledger.list_events("w")]
+    assert "operator.bootstrap.response_eof_occurred" in eof_kinds
+    assert "operator.bootstrap.stopping_occurred" in eof_kinds
+    assert "operator.bootstrap.response_captured" not in eof_kinds
+    assert "operator.bootstrap.binding_completed" not in eof_kinds
+    assert "operator.bootstrap.unsupported_finding" not in eof_kinds
+    assert "capture_ref" not in eof
+    assert "binding_id" not in eof
 
 
 def test_initial_eof_records_eof_and_separate_stop_without_probe():
@@ -92,7 +100,7 @@ def test_initial_eof_records_eof_and_separate_stop_without_probe():
         "operator.bootstrap.stopping_occurred",
     ]
     assert view["closed"] is True
-    assert view["standing"] == "closed"
+    assert view["current_standing"]["interaction_closure"]["dimensions"]["standing"] == "closed"
     assert "selected_treatment" not in view
     assert output == "Bootstrap stopped locally.\n"
 
@@ -125,6 +133,11 @@ def test_exact_ingress_preservation_all_dimensions_and_durable_replay(tmp_path):
     assert all(
         item["lineage"] for item in list(view["dimensional_standing"].values())[1:]
     )
+    assert view["current_standing"]["presentation"]["dimensions"]["standing"] == "consumed"
+    assert view["current_standing"]["response"]["dimensions"]["standing"] == "consumed"
+    assert view["current_standing"]["binding_finding"]["dimensions"]["standing"] == "bound"
+    assert view["dimensional_standing"][view["event_ids"][2]]["dimensions"]["standing"] == "presented"
+    assert view["dimensional_standing"][view["event_ids"][3]]["dimensions"]["standing"] == "captured"
     attempt_ref = ingress.payload["attempt_ref"]
     ledger.close()
     reopened = SQLiteEventLedger(str(path))
@@ -135,6 +148,33 @@ def test_exact_ingress_preservation_all_dimensions_and_durable_replay(tmp_path):
     assert all(
         event.payload["mutates_cluster"] is False for event in reopened.list_events("w")
     )
+
+
+@pytest.mark.parametrize(
+    "text,present,response,binding,treatment,closure",
+    [
+        ("hello\n1\n", "consumed", "consumed", "bound", "selected", None),
+        ("hello\nwat\n", "consumed", "consumed", "unsupported", None, None),
+        ("hello\n2\n", "consumed", "consumed", "bound", "selected", "closed"),
+        ("", None, None, None, None, "closed"),
+        ("hello\n", "consumed", "occurred", None, None, "closed"),
+    ],
+)
+def test_subject_local_current_standing_is_asymmetric(
+    text, present, response, binding, treatment, closure
+):
+    _, view, _ = run_attempt(text)
+
+    def standing(subject):
+        current = view["current_standing"][subject]
+        return current and current["dimensions"]["standing"]
+
+    assert standing("preserved_ingress") == "preserved"
+    assert standing("presentation") == present
+    assert standing("response") == response
+    assert standing("binding_finding") == binding
+    assert standing("treatment_selection") == treatment
+    assert standing("interaction_closure") == closure
 
 
 def _recorded_probe_inputs(ledger):

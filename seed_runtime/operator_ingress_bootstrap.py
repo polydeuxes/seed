@@ -86,6 +86,18 @@ def project_bootstrap_events(state, event) -> None:
         {
             "event_ids": [],
             "dimensional_standing": {},
+            "current_standing": {
+                subject: None
+                for subject in (
+                    "preserved_ingress",
+                    "produced_probe",
+                    "presentation",
+                    "response",
+                    "binding_finding",
+                    "treatment_selection",
+                    "interaction_closure",
+                )
+            },
             "known_loss": [],
             "unknowns": [],
             "conflicts": [],
@@ -100,8 +112,31 @@ def project_bootstrap_events(state, event) -> None:
         "dimensions": event.payload["dimensions"],
         "lineage": list(event.payload.get("lineage", ())),
     }
-    view["current_dimensions"] = event.payload["dimensions"]
-    view["standing"] = event.payload["dimensions"]["standing"]
+    subject_by_kind = {
+        "operator.bootstrap.ingress_occurred": "preserved_ingress",
+        "operator.bootstrap.initial_eof_occurred": "preserved_ingress",
+        "operator.bootstrap.probe_produced": "produced_probe",
+        "operator.bootstrap.presentation_occurred": "presentation",
+        "operator.bootstrap.response_captured": "response",
+        "operator.bootstrap.response_eof_occurred": "response",
+        "operator.bootstrap.binding_completed": "binding_finding",
+        "operator.bootstrap.unsupported_finding": "binding_finding",
+        "operator.bootstrap.treatment_selected": "treatment_selection",
+        "operator.bootstrap.stopping_occurred": "interaction_closure",
+    }
+    subject = subject_by_kind[event.kind]
+    dimensions = dict(event.payload["dimensions"])
+    if subject == "preserved_ingress":
+        dimensions["standing"] = "preserved"
+    view["current_standing"][subject] = {
+        "subject_ref": dimensions["identity"],
+        "dimensions": dimensions,
+        "evidence_event_id": event.id,
+    }
+    if subject == "response" and view["current_standing"]["presentation"]:
+        view["current_standing"]["presentation"]["dimensions"]["standing"] = "consumed"
+    if subject == "binding_finding" and view["current_standing"]["response"]:
+        view["current_standing"]["response"]["dimensions"]["standing"] = "consumed"
     view["last_event_kind"] = event.kind
     for key in ("known_loss", "unknowns", "conflicts"):
         view[key] = sorted(set((*view[key], *event.payload.get(key, ()))))
@@ -248,6 +283,53 @@ def run_operator_ingress_bootstrap(
         if response_kind == "eof"
         else raw_response.removesuffix("\n").removesuffix("\r")
     )
+    if response_kind == "eof":
+        eof = _record(
+            ledger,
+            "operator.bootstrap.response_eof_occurred",
+            workspace_id,
+            session_id,
+            attempt,
+            _dimensions(
+                identity=f"response-eof:{presented.id}",
+                content=None,
+                standing="occurred",
+                source="real-shell-stdin",
+                responsibility="response-occurrence",
+                authority="EOF occurrence only; not a token or binding input",
+                scope=f"attempt:{attempt}",
+                occurrence="response EOF evidence preserved",
+            ),
+            raw_input=raw_response,
+            response_kind="eof",
+            presentation_ref=presentation_ref,
+            lineage=[presented.id],
+        )
+        _record(
+            ledger,
+            "operator.bootstrap.stopping_occurred",
+            workspace_id,
+            session_id,
+            attempt,
+            _dimensions(
+                identity=f"stop:{eof.id}",
+                content="response EOF",
+                standing="closed",
+                source=eof.id,
+                responsibility="competent-local-stopping",
+                authority="closes only this interaction",
+                scope=f"attempt:{attempt}",
+                occurrence="separate stopping act recorded",
+            ),
+            closed=True,
+            response_kind="eof",
+            lineage=[eof.id],
+        )
+        state = StateProjector(ledger).project(workspace_id)
+        output_stream.write("Bootstrap stopped locally.\n")
+        output_stream.flush()
+        return state.operator_ingress_bootstraps[attempt]
+
     capture_ref = f"capture:{presented.id}"
     response = _record(
         ledger,
@@ -282,9 +364,6 @@ def run_operator_ingress_bootstrap(
         attempt_ref=attempt,
         choice_set=choice_set,
         capture=capture,
-        unsupported_selection_evidence=(
-            ("EOF is not a selection token",) if response_kind == "eof" else ()
-        ),
     )
     unknowns = (
         ()

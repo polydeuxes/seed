@@ -18,18 +18,6 @@ class BoundedOperatorGoalEstablishmentError(ValueError):
     pass
 
 
-@dataclass(frozen=True)
-class ClosedChoiceBoundedGoalAdmission:
-    """Goal-owner-produced admission for one exact closed-choice binding."""
-    artifact_type: str
-    admission_id: str
-    binding_id: str
-    choice_set_fingerprint: str
-    consumer_ref: str
-    purpose_ref: str
-    eligibility_evidence_refs: tuple[str, ...]
-
-
 def _refs(values: Iterable[str] = ()) -> tuple[str, ...]:
     return tuple(sorted({str(value) for value in values if value}))
 
@@ -37,36 +25,6 @@ def _refs(values: Iterable[str] = ()) -> tuple[str, ...]:
 def _stable(prefix: str, payload: object) -> str:
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
     return prefix + ":" + hashlib.sha256(encoded).hexdigest()
-
-
-def admit_closed_choice_to_bounded_goal(
-    binding: ClosedChoiceSelectionBinding,
-    *,
-    eligibility_evidence_refs: tuple[str, ...],
-) -> ClosedChoiceBoundedGoalAdmission:
-    """Competently admit an exact binding when positive goal eligibility exists."""
-    evidence = _refs(eligibility_evidence_refs)
-    if not evidence:
-        raise BoundedOperatorGoalEstablishmentError(
-            "closed-choice bounded-goal admission requires positive eligibility evidence"
-        )
-    payload = {
-        "binding_id": binding.binding_id,
-        "choice_set_fingerprint": binding.exact_choice_set_fingerprint,
-        "consumer_ref": BOUNDED_GOAL_ESTABLISHMENT_CONSUMER_REF,
-        "purpose_ref": BOUNDED_GOAL_ESTABLISHMENT_PURPOSE_REF,
-        "eligibility_evidence_refs": evidence,
-        "convention": CONVENTION,
-    }
-    return ClosedChoiceBoundedGoalAdmission(
-        "ClosedChoiceBoundedGoalAdmission",
-        _stable("closed-choice-bounded-goal-admission", payload),
-        binding.binding_id,
-        binding.exact_choice_set_fingerprint,
-        BOUNDED_GOAL_ESTABLISHMENT_CONSUMER_REF,
-        BOUNDED_GOAL_ESTABLISHMENT_PURPOSE_REF,
-        evidence,
-    )
 
 
 @dataclass(frozen=True)
@@ -100,66 +58,19 @@ class BoundedOperatorGoalEstablishment:
 
 def establish_bounded_operator_goal_from_closed_choice(
     binding: ClosedChoiceSelectionBinding,
-    *,
-    admission: ClosedChoiceBoundedGoalAdmission | None = None,
-    unresolved_scope: tuple[str, ...] = (),
-    known_loss: tuple[str, ...] = (),
 ) -> BoundedOperatorGoalEstablishment:
-    """Establish a bounded operator goal from an exact closed-choice selection binding."""
+    """Refuse the unavailable closed-choice bounded-goal road.
+
+    A selection binding carries comparison evidence, not independently admitted
+    bounded-goal semantics.  No competent goal-option producer exists in this
+    slice, so neither its option reference nor its presentation label is goal
+    meaning.
+    """
     if binding.artifact_type != "ClosedChoiceSelectionBinding":
         raise BoundedOperatorGoalEstablishmentError("closed-choice ingress must be a ClosedChoiceSelectionBinding artifact")
-
-    if (
-        admission is None
-        or admission.artifact_type != "ClosedChoiceBoundedGoalAdmission"
-        or admission.binding_id != binding.binding_id
-        or admission.choice_set_fingerprint != binding.exact_choice_set_fingerprint
-        or admission.consumer_ref != BOUNDED_GOAL_ESTABLISHMENT_CONSUMER_REF
-        or admission.purpose_ref != BOUNDED_GOAL_ESTABLISHMENT_PURPOSE_REF
-        or not admission.eligibility_evidence_refs
-    ):
-        raise BoundedOperatorGoalEstablishmentError(
-            "closed-choice binding lacks exact positive bounded-goal admission"
-        )
-
-    unknowns = _refs(binding.unknown_selection_evidence)
-    conflicts = _refs(binding.conflicting_selection_evidence)
-    unsupported = _refs(binding.unsupported_selection_evidence)
-    if binding.binding_state != "bound" or not binding.bound_option_ref:
-        state = "refused"
-        reason = "closed_choice_selection_does_not_support_bounded_orientation"
-        intended = ""
-    else:
-        state = "established"
-        reason = "closed_choice_selection_supplies_bounded_operator_goal_standing"
-        intended = binding.bound_option_label or binding.bound_option_ref
-
-    lineage = _refs((binding.binding_id, binding.choice_set_ref, binding.exact_choice_set_fingerprint, binding.token_capture_ref, admission.admission_id, *admission.eligibility_evidence_refs))
-    payload = {
-        "ingress": binding.binding_id,
-        "state": state,
-        "intended": intended,
-        "known_scope": [binding.bound_option_ref] if binding.bound_option_ref else [],
-        "unresolved_scope": sorted((*unresolved_scope, *unsupported)),
-        "unknowns": unknowns,
-        "conflicts": conflicts,
-        "known_loss": sorted(known_loss),
-        "convention": CONVENTION,
-    }
-    return BoundedOperatorGoalEstablishment(
-        "BoundedOperatorGoalEstablishment",
-        _stable("bounded-operator-goal-establishment", payload),
-        binding.artifact_type,
-        binding.binding_id,
-        lineage,
-        state,
-        reason,
-        intended,
-        (binding.bound_option_ref,) if binding.bound_option_ref else (),
-        _refs((*unresolved_scope, *unsupported)),
-        unknowns,
-        conflicts,
-        _refs(known_loss),
+    raise BoundedOperatorGoalEstablishmentError(
+        "closed-choice bounded-goal establishment is unavailable: no competent "
+        "goal-specific semantic admission producer exists"
     )
 
 
