@@ -190,11 +190,11 @@ def test_constrained_demand_gap_invariants_are_canonical():
         "Unknown is not unsupported",
         "A **Gap** is an evidence-supported scoped incompatibility relative to a declared reference condition and responsibility",
         "Demand can exist without an established Gap, and Gap can exist without an established Demand",
-        "common-grammar establishment:",
+        "common-grammar standing required by the exact consumer",
         "bounded relational Demand",
         "exact family:\n    Unknown",
-        "Recurrence is measurement, not meaning, selection, authority, or execution",
-        "Common grammar is not a competency Demand by identity",
+        "Recurrence supplies measurement evidence only",
+        "it is not a global language state or a competency by identity",
     ]
 
     for invariant in required:
