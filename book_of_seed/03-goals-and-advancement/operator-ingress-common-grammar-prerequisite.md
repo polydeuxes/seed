@@ -6,38 +6,43 @@ The bounded prerequisite movement available when preserved operator ingress cann
 
 ## Bounded resolution
 
-Bounded operator goal establishment (**BOGE**) is Seed's only goal-establishment apparatus and remains operator-origin. Seed does not establish a self-goal or an instrumental goal in order to communicate. Establishing only enough common grammar to examine preserved operator ingress is prerequisite movement before an operator-origin BOGE from that ingress can become establishable; it is not another goal or a claim about a universal first event.
+Bounded operator goal establishment (**BOGE**) names the operator-origin constitutional boundary examined here. The name does not require one universal realization. Seed does not establish a self-goal or an instrumental goal in order to communicate. Movement concerning the common-grammar standing required by the exact BOGE consumer to examine the exact preserved operator ingress for that consumer's declared act is prerequisite movement before an operator-origin BOGE from that ingress can become establishable; it is not another goal or a claim about a universal first event.
 
-## Canonical sequence
+## Guarded prerequisite topology
 
-The bounded sequence is:
+This display shows alternative local branches, possible later relations, and separately responsible occurrences. It requires no universal traversal and no compulsory order beyond an exact local dependency:
 
 ```text
 preserved operator ingress
--> interpretation unavailable for the BOGE consumer
--> bounded affirmative/negative communication probe
+-> the BOGE consumer cannot presently examine that material under an applicable common grammar
+-> a responsible consumer presents a bounded affirmative/negative treatment-choice representation
 -> exact affirmative selection
-   -> bounded acquisition treatment enters separate applicability, selection,
-      authority, admission, and stopping boundaries
+   -> selects only the bounded acquisition treatment
+   -> separately responsible examination of treatment applicability, selection,
+      authority, admission, or stopping may occur where locally required
 -> exact negative selection
-   -> local-stop treatment is selected
-   -> a separate competent stopping consumer may establish the bounded stop
+   -> selects only the local-stop treatment
+   -> a separate responsible stopping occurrence at a competent boundary may establish the bounded stop
 -> unsupported response
    -> exact-set nonmembership known; response meaning, intent, and requested treatment Unknown
-   -> optionally one or more bounded, separately evidenced retries
+   -> zero or more bounded, separately evidenced retries may occur
 -> repeated obstruction evidence
-   -> possible bounded Demand for the missing common-grammar prerequisite
--> authorized prerequisite movement
--> sufficient common grammar established for the preserved ingress
--> original ingress re-enters interpretation, warrant, applicability, and admission
--> operator-origin BOGE may then be established
+   -> may become evidence applicable to a separately responsible examination
+      of whether a bounded Demand exists
+   -> recurrence alone establishes no Demand
+-> separately selected and authorized prerequisite movement
+   -> a responsible acquisition occurrence may make attributed external-grammar
+      resources or interpretation candidates available
+-> the responsible consumer may examine the same preserved ingress again
+-> any later interpretation, warrant, applicability, admission, or operator-origin BOGE
+   requires its own responsible consumer-local occurrence
 ```
 
-These are guarded alternatives, not a claim that every interaction traverses every branch. Retry has no constitutionally fixed count and remains optional, bounded, and separately evidenced.
+The topology does not require every relation to produce a dedicated artifact. Retry has no constitutionally fixed count and remains optional, bounded, and separately evidenced.
 
 ## Communication-probe boundary
 
-The affirmative/negative enum is a minimal communication probe, not an interpretation menu. Its members select only the bounded acquisition treatment or the local-stop treatment. Tokens, literal encodings, and presentation labels are local representation details, not constitutional truth vocabulary.
+The affirmative/negative enum is a minimal communication-probe representation, not an interpretation menu. The representation exposes only the bounded acquisition treatment and the local-stop treatment; a responsible selection occurrence may select one of those treatments through an exact member. The representation does not interpret the original ingress, prove shared grammar, select English, establish a goal, authorize acquisition, or perform stopping. Tokens, literal encodings, and presentation labels are local representation details, not constitutional truth vocabulary.
 
 An exact affirmative selection establishes only selection of the bounded acquisition treatment; it neither authorizes nor begins acquisition. It does not prove English, shared grammar, interpretation of the preserved ingress, a goal, or successful grammar acquisition. An exact negative selection establishes only selection of the local-stop treatment; it does not itself establish stopping, and a separate competent stopping consumer must establish the stop. It does not interpret the original ingress or establish a general refusal.
 
@@ -45,13 +50,15 @@ A response unsupported by the probe is neither affirmative nor negative, neither
 
 ## Demand, authority, and movement boundary
 
-Repeated obstruction evidence may support possible establishment of a bounded Demand for the missing common-grammar prerequisite. The exact Demand family remains **Unknown**: current canonical grammar does not warrant assignment to the operational-realization family or any other named family. The Demand concerns a prerequisite to possible BOGE establishment, not a second goal, and Demand establishment does not itself select or authorize acquisition.
+Repeated obstruction evidence may become applicable to a separately responsible examination of whether a bounded Demand exists for the exact consumer's common-grammar constraint on examination of the exact preserved ingress. The exact Demand family remains **Unknown**: current canonical grammar does not warrant assignment to the operational-realization family or any other named family. Recurrence alone establishes no Demand. Any established Demand would concern a prerequisite to possible BOGE establishment, not a second goal, and Demand establishment would not itself select or authorize acquisition.
 
 Any acquisition treatment requires separately warranted selection and authority. Authorized prerequisite movement remains limited to the common grammar required to examine the preserved ingress for possible BOGE establishment. It does not authorize a global bootstrap, general language learning, a competency implementation, a shell controller, or adoption of English or any other privileged constitutional grammar.
 
-## Re-entry and truth boundary
+## Re-examination and truth boundary
 
-Acquired external grammar supplies attributed interpretation resources or candidates, never constitutional truth. Sufficient common grammar does not retroactively interpret or admit the original ingress. The preserved ingress must re-enter interpretation and still pass interpretation warrant, applicability, admission, and BOGE establishment. Failure at any boundary retains its own lawful Unknown, refusal, or stopping standing.
+A responsible acquisition occurrence may make attributed external-grammar resources or interpretation candidates available. Availability of those resources does not interpret, warrant, apply, admit, or establish the preserved ingress by identity, and neither external grammar nor an interpretation candidate is constitutional truth.
+
+A responsible consumer may later examine the same preserved ingress again under the newly available material and its preserved limits. The same ingress occurrence and provenance remain recoverable; acquisition does not replace that ingress with a new operator occurrence. Any interpretation, warrant, applicability, admission, or BOGE establishment requires its own responsible consumer-local occurrence. Failure at any later boundary retains its own lawful Unknown, refusal, or stopping standing. One acquisition occurrence does not establish permanent common-grammar standing for every consumer, material, act, or purpose.
 
 BOGE remains operator-origin throughout. Necessary internal work is expressed through prerequisite, Demand, movement, selection, authority, and stopping grammar; Seed establishes no independent Seed-origin goal to perform it.
 
@@ -65,7 +72,7 @@ BOGE remains operator-origin throughout. Necessary internal work is expressed th
 - prerequisite Demand != goal
 - Demand established != acquisition authorized
 - external grammar resource != constitutional truth
-- sufficient common grammar != admitted interpretation
+- external-grammar resource availability != admitted interpretation
 - prerequisite movement != Seed-origin goal establishment
 
 ## Related chapters

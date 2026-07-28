@@ -46,23 +46,29 @@ Named Gap distinctions remain useful when bounded by evidence, responsibility, r
 
 ## Bounded common-grammar counterexample
 
-A possible Demand may arise before an interpreted operator goal exists. For example, repeated bounded failure to establish sufficient common grammar for an operator interaction may expose pressure to establish a common-grammar relation. The exact operator material remains uninterpreted. Recurrence is measurement, not meaning, selection, authority, or execution; it does not select English or a learning mechanism.
+A possible Demand may arise before an interpreted operator goal exists. For example, a responsible consumer may repeatedly fail or stop while attempting to examine the same preserved operator ingress because the common-grammar standing required by that exact consumer for that exact examination act is not established. The exact operator material remains uninterpreted. Recurrence supplies measurement evidence only: it is not meaning, Demand, selection, authority, or execution, and it does not select English or a learning mechanism.
+
+That evidence may become applicable to a separately responsible examination of whether a bounded Demand exists. Demand establishment requires its own responsible occurrence and must preserve the required result, responsibility, scope, source evidence, materiality, applicability, material Unknowns, and conflicts. Recurrence alone does not establish a Demand.
 
 The possible result has this bounded standing:
 
 ```text
-common-grammar establishment:
+required result:
+    common-grammar standing required by the exact consumer
+    to examine the exact preserved ingress for its declared act and purpose
+
+possible Demand standing:
     bounded relational Demand
 
 exact family:
     Unknown
 
-Seed grammar competency:
+separately established competency:
     possible satisfaction candidate
     not the Demand by identity
 ```
 
-This counterexample demonstrates only that the four canonical families are not a universal taxonomy. It creates no pre-goal producer, fifth family, acquisition mechanism, authority, or execution road. Common grammar is not a competency Demand by identity; a separately established competency might be one candidate way to satisfy the relational Demand.
+The possible relation is consumer-relative, material-relative, and act- and purpose-relative; it is not a global language state or a competency by identity. This counterexample demonstrates only that the four canonical families are not a universal taxonomy. It creates no pre-goal producer, fifth family, acquisition mechanism, authority, or execution road. A separately established competency might be one candidate way to satisfy the possible bounded relation, but a competency candidate is not a Capability established.
 
 ## Representative repository anchors
 
