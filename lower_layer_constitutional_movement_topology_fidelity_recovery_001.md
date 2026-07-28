@@ -30,7 +30,7 @@ receipt != interpretation
 
 ### 1. Constitutional coordinates
 
-The Book does **not** warrant a single compulsory pipeline. Its smallest recoverable relation is recursive and consumer-relative:
+The Book does **not** warrant a single compulsory ordered process. Its smallest recoverable relation is recursive and consumer-relative:
 
 ```text
 responsible producer makes attributed material available
@@ -174,7 +174,7 @@ already-established BoundedConstitutionalQuestion + explicit capability contract
 registrations/builders + optional exact selection keys
  -> question projection + capability projections
  -> view selection -> composition request -> composition artifact
- -> pipeline formatter/JSON -> diagnostic CLI stdout
+ -> constitutional pipeline formatter/JSON -> diagnostic CLI stdout
 
 DISCONNECTED ISLAND F — candidate external grammar
 caller JSON -> schema/duplicate-id validation -> immutable candidate set
@@ -240,11 +240,11 @@ No current call in the examined runtime makes this set input to representation e
 | Renewed availability | return values, ledger replay, State, JSON/human representations | stage returns and preserved records | known next stage only on connected roads | return, preservation, projection, and display separable | no general registry/addressing or responsible next-consumer relation | mixed |
 | Presentation formation | operator choice set/probe; shared-explanation requested presentation; View formatters | responsible representation-forming occurrences invoke fixed probe and presentation functions | responsible binding occurrence uses recorded presentation identity; responsible formatting callers use artifacts | probe artifact and formation occurrence remain separate | most diagnostic presentations have no identified later responsible consumer | mixed |
 | Composition | shared-explanation composition and constitutional View composition | sequencing or selection-to-request adapter | composition builders | source identity, unadmitted/Unknown/conflict material, read-only boundaries | neither road is a general Answer/dialogue composer | faithful within examined scope |
-| Rendering | per-artifact human formatters | responsible formatting occurrence invokes formatter functions | responsible CLI branch when selected | text formation remains separate from source artifact; formatter artifact is not an emitter | `SharedExplanationRenderingProjection` itself is representation projection, not final formatting | mixed |
+| Rendering | per-artifact human formatters | responsible formatting occurrence invokes formatter functions | responsible CLI branch when selected | text formation remains separate from source artifact; formatting occurrence != emission occurrence | `SharedExplanationRenderingProjection` itself is representation projection, not final formatting | mixed |
 | Emission | ingress `output_stream.write/flush`; CLI `print` for selected surfaces | rendered strings | stdout boundary only | ingress separately records presentation; CLI emission occurrence is code-witnessed | delivery, receipt, interpretation, and later use absent; no general emitter consumes shared composition | mixed |
 | Treatment selection | exact-token binding followed by treatment Event | recorded response + current presentation/set validation | treatment-recording branch | binding, selection, authority limit, and stop remain distinct | enum is developer-authored; selection grants no acquisition movement | faithful within examined scope |
 | Selection-to-later-consumer crossing | affirmative acquisition ends in status text; bounded attempt returns; later console handling captures fresh ingress | selected treatment Event concerning preserved ingress X | no later responsible acquisition consumer or competent stopping occurrence is evidenced | negative authority is explicit; missing consumer identity and exact lawful behavior remain Unknown | constrained movement is abandoned without continuation or stopping witness, and ingress X does not re-enter | unfaithful boundary crossing |
-| Returned-material re-entry | ingress returns attempt projection to persistent console; pipeline returns composition | return statements | console loop/display caller, not original semantic consumer | return and local projection are visible | no interpretation re-entry for preserved ingress; no evidence that the correct prior consumer receives or uses a result | Unknown |
+| Returned-material re-entry | ingress returns attempt projection to persistent console; constitutional pipeline returns composition | return statements | console loop/display caller, not original semantic consumer | return and local projection are visible | no interpretation re-entry for preserved ingress; no evidence that the correct prior consumer receives or uses a result | Unknown |
 
 ### 13. Faithful crossings, mixed objects, and islands
 
