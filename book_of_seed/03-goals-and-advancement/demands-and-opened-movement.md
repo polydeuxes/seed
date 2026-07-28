@@ -50,15 +50,18 @@ A possible Demand may arise before an interpreted operator goal exists. For exam
 
 That evidence may become applicable to a separately responsible examination of whether a bounded Demand exists. Demand establishment requires its own responsible occurrence and must preserve the required result, responsibility, scope, source evidence, materiality, applicability, material Unknowns, and conflicts. Recurrence alone does not establish a Demand.
 
-The possible result has this bounded standing:
+The possible subject under examination may be characterized as:
 
 ```text
 required result:
     common-grammar standing required by the exact consumer
     to examine the exact preserved ingress for its declared act and purpose
 
-possible Demand standing:
+possible Demand characterization if separately established:
     bounded relational Demand
+
+established Demand standing:
+    not established by recurrence or this counterexample
 
 exact family:
     Unknown

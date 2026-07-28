@@ -16,26 +16,58 @@ This display shows alternative local branches, possible later relations, and sep
 preserved operator ingress
 -> the BOGE consumer cannot presently examine that material under an applicable common grammar
 -> a responsible consumer presents a bounded affirmative/negative treatment-choice representation
--> exact affirmative selection
+
+alternative response branches:
+
+1. exact affirmative selection
    -> selects only the bounded acquisition treatment
-   -> separately responsible examination of treatment applicability, selection,
-      authority, admission, or stopping may occur where locally required
--> exact negative selection
+   -> any later examination of acquisition applicability, authority,
+      stopping constraints, or available movement requires its own
+      responsible occurrence
+
+2. exact negative selection
    -> selects only the local-stop treatment
-   -> a separate responsible stopping occurrence at a competent boundary may establish the bounded stop
--> unsupported response
-   -> exact-set nonmembership known; response meaning, intent, and requested treatment Unknown
+   -> a separate responsible stopping occurrence at a competent boundary
+      may establish the bounded stop
+
+3. unsupported response
+   -> exact-set nonmembership known
+   -> meaning, intent, and requested treatment remain Unknown
    -> zero or more bounded, separately evidenced retries may occur
--> repeated obstruction evidence
-   -> may become evidence applicable to a separately responsible examination
-      of whether a bounded Demand exists
-   -> recurrence alone establishes no Demand
--> separately selected and authorized prerequisite movement
-   -> a responsible acquisition occurrence may make attributed external-grammar
-      resources or interpretation candidates available
--> the responsible consumer may examine the same preserved ingress again
--> any later interpretation, warrant, applicability, admission, or operator-origin BOGE
-   requires its own responsible consumer-local occurrence
+   -> repeated obstruction may produce recurrence evidence
+```
+
+Possible later acquisition relation:
+
+```text
+affirmative acquisition-treatment selection
++ separately warranted acquisition movement
+-> a responsible acquisition occurrence may make attributed external-grammar
+   resources or interpretation candidates available
+```
+
+Possible later re-examination relation:
+
+```text
+newly available material
+-> may support a later responsible examination of the same preserved ingress
+```
+
+Possible later Demand-examination relation:
+
+```text
+recurrence evidence
+-> may become applicable to a separate responsible examination of whether
+   a bounded Demand exists
+-> recurrence alone establishes no Demand
+```
+
+Responsibility for every later relation remains local:
+
+```text
+any later interpretation, warrant, applicability, admission of the preserved
+ingress for the exact consumer, or operator-origin BOGE establishment
+-> requires its own responsible consumer-local occurrence
 ```
 
 The topology does not require every relation to produce a dedicated artifact. Retry has no constitutionally fixed count and remains optional, bounded, and separately evidenced.
@@ -44,7 +76,7 @@ The topology does not require every relation to produce a dedicated artifact. Re
 
 The affirmative/negative enum is a minimal communication-probe representation, not an interpretation menu. The representation exposes only the bounded acquisition treatment and the local-stop treatment; a responsible selection occurrence may select one of those treatments through an exact member. The representation does not interpret the original ingress, prove shared grammar, select English, establish a goal, authorize acquisition, or perform stopping. Tokens, literal encodings, and presentation labels are local representation details, not constitutional truth vocabulary.
 
-An exact affirmative selection establishes only selection of the bounded acquisition treatment; it neither authorizes nor begins acquisition. It does not prove English, shared grammar, interpretation of the preserved ingress, a goal, or successful grammar acquisition. An exact negative selection establishes only selection of the local-stop treatment; it does not itself establish stopping, and a separate competent stopping consumer must establish the stop. It does not interpret the original ingress or establish a general refusal.
+An exact affirmative selection establishes only selection of the bounded acquisition treatment; it neither establishes acquisition applicability, selects an acquisition movement, supplies authority, nor performs acquisition. It does not prove English, shared grammar, interpretation of the preserved ingress, a goal, or successful grammar acquisition. An exact negative selection establishes only selection of the local-stop treatment; it does not itself establish stopping, and a separate responsible stopping occurrence at a competent boundary must establish the bounded stop. It does not interpret the original ingress or establish a general refusal.
 
 A response unsupported by the probe is neither affirmative nor negative, neither refusal nor authorization. Exact-set nonmembership is known from the binding evidence, while the response's meaning, intent, and requested treatment remain Unknown. One or more retries may occur only as bounded, separately evidenced interactions. Repetition supplies scoped obstruction evidence; it neither interprets the response nor automatically establishes a Demand.
 
@@ -52,7 +84,7 @@ A response unsupported by the probe is neither affirmative nor negative, neither
 
 Repeated obstruction evidence may become applicable to a separately responsible examination of whether a bounded Demand exists for the exact consumer's common-grammar constraint on examination of the exact preserved ingress. The exact Demand family remains **Unknown**: current canonical grammar does not warrant assignment to the operational-realization family or any other named family. Recurrence alone establishes no Demand. Any established Demand would concern a prerequisite to possible BOGE establishment, not a second goal, and Demand establishment would not itself select or authorize acquisition.
 
-Any acquisition treatment requires separately warranted selection and authority. Authorized prerequisite movement remains limited to the common grammar required to examine the preserved ingress for possible BOGE establishment. It does not authorize a global bootstrap, general language learning, a competency implementation, a shell controller, or adoption of English or any other privileged constitutional grammar.
+Selection of the acquisition treatment does not establish acquisition applicability, select an acquisition movement, or supply authority. Any later acquisition movement and its authority require separate warrant and responsible occurrences. Authorized prerequisite movement remains limited to the common grammar required to examine the preserved ingress for possible BOGE establishment. It does not authorize a global bootstrap, general language learning, a competency implementation, a shell controller, or adoption of English or any other privileged constitutional grammar.
 
 ## Re-examination and truth boundary
 
