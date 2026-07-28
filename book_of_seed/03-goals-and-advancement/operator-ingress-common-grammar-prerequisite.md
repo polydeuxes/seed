@@ -17,18 +17,18 @@ preserved operator ingress whose richer grammar is not presently shared
 -> developer-supplied potential-goal meaning, attributed and bounded:
    establish richer shared grammar with the operator
 + local alternative: establish no such goal and stop locally
--> a responsible occurrence presents those members as a bounded
+-> a responsible occurrence presents those alternatives as a bounded
    closed-choice representation
 
 alternative response branches:
 
-1. exact potential-goal-member selection
-   -> exact member-selection testimony
-   -> a consumer-local occurrence may admit that selected member's preserved
-      goal meaning for BOGE
+1. exact selection of the presented potential-goal candidate
+   -> exact selection testimony identifying that presented alternative
+   -> a consumer-local occurrence may admit the preserved goal meaning
+      attributed to that potential-goal candidate for BOGE
    -> BOGE may establish bounded operator goal standing
 
-2. exact local-stop-member selection
+2. exact selection of the presented local-stop alternative
    -> selects only the local-stop treatment
    -> a separate responsible stopping occurrence at a competent boundary
       may establish the bounded stop
@@ -36,7 +36,7 @@ alternative response branches:
       quiescence
 
 3. unsupported response
-   -> exact-set nonmembership known
+   -> nonparticipation in the exact presented set known
    -> meaning, intent, and requested treatment remain Unknown
    -> zero or more bounded, separately evidenced retries may occur
    -> repeated obstruction may produce recurrence evidence
@@ -71,26 +71,28 @@ This is a distinction display, not a compulsory universal sequence. The Book ass
 
 ## Closed-choice representation and first-contact use
 
-A closed-choice representation is a communication representation for exposing an exact bounded member set. It may remain useful whenever exact bounded selection is preferable to free-form testimony; availability of prose competency does not retire it. Closed-choice grammar and free-form prose grammar are distinct, and closed-choice representation is not bootstrap-only representation. Membership of each candidate or treatment in this exact bounded choice set must be established for the local selection purpose. That membership establishes neither the member's truth or warrant nor its selection, applicability, admission, authority, goal standing, movement, or performance. A responsible presentation occurrence represents the bounded set; it neither invents the members nor strengthens their standing. Tokens, literal encodings, numeric positions, and rendered labels are local representation details rather than constitutional truth vocabulary; a rendered label is not the member's full meaning.
+A closed-choice representation is a communication representation for exposing an exact bounded set of alternatives. It may remain useful whenever exact bounded selection is preferable to free-form testimony; availability of prose competency does not retire it. Closed-choice grammar and free-form prose grammar are distinct, and closed-choice representation is not bootstrap-only representation. Participation of each candidate or treatment in this exact bounded set must be established for the local selection purpose, scope, evidence, producer, occurrence, and surviving **Unknowns**. That participation establishes neither the alternative's truth or warrant nor its selection, applicability, admission, authority, goal standing, movement, or performance. A responsible presentation occurrence represents the bounded set; it neither invents the alternatives nor strengthens their standing. Tokens, literal encodings, numeric positions, and rendered labels are local representation details rather than constitutional truth vocabulary; a rendered label is not an alternative's full meaning.
 
-A bounded presented set may contain members with different local roles, including a potential-goal member, presentation-navigation member, local-stop member, or clarification member. This is not a closed taxonomy. A closed-choice member is not universally a potential goal. For example, `more options` or `show details` selects a presentation relation, not a goal. A local-stop member selects only local stopping treatment and requires a separate competent stopping occurrence.
+Multiplicity does not establish a bounded set, and establishment of a bounded set does not establish that any subject participates in it. Participation of a subject in an exact candidate, eligible, or presented set is a separately warranted relation for a declared purpose.
 
-The operator-ingress case is one ordinary use of bounded potential-goal presentation when richer free-form translation is not presently available. For this exact use, the locally established members may express the attributed potential-goal meaning “establish richer shared grammar with the operator” and the local alternative “establish no such goal and stop locally.” The negative member is not itself a goal. That two-member set is not a universal choice set, and closed-choice sets need not concern grammar acquisition or contain affirmative and negative members.
+A bounded presentation may expose alternatives participating under different local roles, including a potential-goal candidate, presentation-navigation alternative, local-stop alternative, or clarification alternative. The role under which an alternative participates in this presentation remains explicit where relevant; these examples do not form a closed taxonomy. A presented alternative is not universally a potential goal. For example, `more options` or `show details` selects a presentation relation, not a goal. A local-stop alternative selects only local stopping treatment and requires a separate competent stopping occurrence.
+
+The operator-ingress case is one ordinary use of bounded potential-goal presentation when richer free-form translation is not presently available. For this exact use, the alternatives whose local participation is established may express the attributed potential-goal meaning “establish richer shared grammar with the operator” and the local alternative “establish no such goal and stop locally.” The local-stop alternative is not itself a goal. That two-alternative set is not a universal choice set, and closed-choice sets need not concern grammar acquisition or contain affirmative and negative alternatives.
 
 In a first-contact occurrence, a presented closed-choice set together with exact token binding may provide the first shared grammar presently available between Seed and the operator. This possibility establishes no universal first event: not every Seed begins with an enum, and the first shared grammar need not be binary or numeric. Exact token binding is not free-form interpretation. It neither selects English as constitutional common grammar nor establishes permanent common grammar. Common-grammar standing remains relative to the consumer, material, act, purpose, participants, and scope.
 
-For the current case, the closed choice exposes only the bounded potential-goal meaning and the local-stop treatment; a responsible selection occurrence may select one through an exact member. The representation does not interpret the original ingress, prove shared grammar beyond the bounded selection, select English, establish a goal, authorize acquisition, or perform stopping.
+For the current case, the closed choice exposes only the bounded potential-goal meaning and the local-stop treatment; a responsible selection occurrence may select one exact presented alternative. The representation does not interpret the original ingress, prove shared grammar beyond the bounded selection, select English, establish a goal, authorize acquisition, or perform stopping.
 
-An exact potential-goal-member selection establishes which presented member the operator selected. It does not establish that every member is a potential goal, that its rendered label is its full meaning, that its meaning is admitted to BOGE, or that a bounded goal exists. A consumer-local admission occurrence must preserve the selected member's upstream identity, meaning, provenance, scope, standing, known loss, Unknowns, and conflicts. It must not derive goal meaning from the token, numeric position, rendered label alone, array membership, or type compatibility. Only a selected member whose goal-specific meaning has the required consumer-local admission may reach BOGE. This requirement does not prescribe an admission artifact or require every ingress road to use an admitted-interpretation implementation shape.
+Exact selection testimony identifies which presented alternative the operator selected. It does not establish that every presented alternative is a potential goal, that its rendered label is its full meaning, that the preserved meaning attributed to the selected potential-goal candidate is admitted to BOGE, or that a bounded goal exists. A consumer-local admission occurrence must preserve that candidate's upstream identity, meaning, provenance, scope, standing, known loss, **Unknowns**, and conflicts. It must not derive goal meaning from the token, numeric position, rendered label alone, array membership, or type compatibility. Only a selected potential-goal candidate whose goal-specific meaning has the required consumer-local admission may reach BOGE. This requirement does not prescribe an admission artifact or require every ingress road to use an admitted-interpretation implementation shape.
 
 The lawful local relation is:
 
 ```text
 bounded potential-goal standing
--> local eligible-set membership
+-> participation in an exact locally eligible presentation set
 -> bounded representation
--> exact operator member-selection testimony
--> consumer-local admission of the selected member's preserved goal meaning
+-> exact operator selection testimony identifying one presented alternative
+-> consumer-local admission of the preserved meaning attributed to the selected potential-goal candidate
 -> possible BOGE establishment
 ```
 
@@ -98,7 +100,7 @@ Selected potential-goal meaning is not an established bounded goal. BOGE consume
 
 An exact local-stop selection establishes only selection of the local-stop treatment; it does not itself establish stopping, and a separate responsible stopping occurrence at a competent boundary must establish the bounded stop. No grammar-acquisition goal is established, and Seed may return to quiescence. It does not interpret the original ingress or establish a general refusal.
 
-A response unsupported by the probe is neither affirmative nor negative, neither refusal nor authorization. Exact-set nonmembership is known from the binding evidence, while the response's meaning, intent, and requested treatment remain Unknown. One or more retries may occur only as bounded, separately evidenced interactions. Repetition supplies scoped obstruction evidence; it neither interprets the response nor automatically establishes a Demand.
+A response unsupported by the probe is neither affirmative nor negative, neither refusal nor authorization. Nonparticipation in the exact presented set is known from the binding evidence, while the response's meaning, intent, and requested treatment remain Unknown. One or more retries may occur only as bounded, separately evidenced interactions. Repetition supplies scoped obstruction evidence; it neither interprets the response nor automatically establishes a Demand.
 
 ## Authority and movement boundary
 
@@ -110,7 +112,7 @@ A later responsible acquisition occurrence may make attributed external-grammar 
 
 Newly available material may support later upstream translation or interpretation concerning the same preserved ingress under the material's preserved limits. The same ingress occurrence and provenance remain recoverable; acquisition does not replace that ingress with a new operator occurrence. Translation, candidate interpretation, warrant, selection, applicability, admission, and BOGE establishment remain distinct and require their own responsible occurrences and evidence. Failure at any boundary retains its own lawful Unknown, refusal, or stopping standing. One acquisition occurrence or one closed-choice selection does not establish permanent common-grammar standing for every consumer, material, act, purpose, participant, or scope.
 
-BOGE consumes consumer-local admitted goal-specific meaning, with preserved lineage and consumer-local evidence, rather than unresolved raw prose, and establishes bounded-goal standing. The admitted-interpretation road and closed-choice road are distinct possible roads sharing that narrower constitutional requirement; neither is identical to the other or universally compulsory. A visible numbered enum is one possible representation, not the constitutional primitive. Bounded potential-goal standing may lead through local eligible-set membership, bounded representation, exact operator member-selection testimony, and consumer-local admission of the selected member's preserved goal meaning toward possible BOGE establishment. Potential-goal standing does not establish a bounded goal; eligible-set membership does not present; presentation does not select; selection does not admit goal meaning; admission does not establish the goal; establishment does not consider it for movement; consideration does not select movement; and movement selection neither authorizes nor performs movement.
+BOGE consumes consumer-local admitted goal-specific meaning, with preserved lineage and consumer-local evidence, rather than unresolved raw prose, and establishes bounded-goal standing. The admitted-interpretation road and closed-choice road are distinct possible roads sharing that narrower constitutional requirement; neither is identical to the other or universally compulsory. A visible numbered enum is one possible representation, not the constitutional primitive. Bounded potential-goal standing may lead through participation in an exact locally eligible presentation set, bounded representation, exact operator selection testimony identifying one presented alternative, and consumer-local admission of the preserved meaning attributed to the selected potential-goal candidate toward possible BOGE establishment. Potential-goal standing does not establish participation in that set or a bounded goal; multiplicity does not establish the set; set establishment does not establish candidate participation; participation does not present; presentation does not select; selection does not admit goal meaning; admission does not establish the goal; establishment does not consider it for movement; consideration does not select movement; and movement selection neither authorizes nor performs movement.
 
 BOGE remains operator-origin throughout. Necessary internal work is expressed through prerequisite, Demand, movement, selection, authority, and stopping grammar; Seed establishes no independent Seed-origin goal to perform it.
 
@@ -120,23 +122,30 @@ BOGE remains operator-origin throughout. Necessary internal work is expressed th
 - closed-choice grammar != free-form prose grammar
 - closed-choice representation != bootstrap-only representation
 - bounded representation != closed-choice representation
-- represented subject != selectable member set
-- member-set eligibility != presentation
+- candidate exists != candidate participates in this set
+- multiplicity != bounded set established
+- bounded set established != candidate participation established
+- participates in potential-goal candidate set != eligible for this presentation
+- eligible for presentation != actually represented
+- represented alternative != selected alternative
+- selected alternative != goal-specific meaning admitted to BOGE
+- represented subject != bounded set of selectable alternatives
+- participation in an eligible set != presentation
 - presentation != selection
 - selection != establishment
 - establishment != movement, authority, or performance
-- exact-set membership != truth, warrant, applicability, admission, or authority
+- exact-set participation != truth, warrant, applicability, admission, authority, or goal standing
 - exact token binding != free-form interpretation
 - prose competency available != enum obsolete
-- local member set != universal ontology
-- closed-choice member != potential goal universally
-- rendered label != full member meaning
+- local bounded set != universal ontology
+- presented alternative != potential goal universally
+- rendered label != full alternative meaning
 - presentation navigation != goal establishment
 - local-stop selection != goal establishment
 - goal-semantic admission != BOGE establishment
 - affirmative selection != acquisition authorized or begun
 - negative selection != bounded stop established
-- unsupported membership result != response meaning known
+- nonparticipation in the exact presented set != response meaning known
 - external grammar resource != constitutional truth
 - external-grammar resource availability != admitted interpretation
 
