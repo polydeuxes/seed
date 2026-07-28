@@ -13,7 +13,13 @@ The word "handoff" is not a Seed-native constitutional act, artifact, road, or p
 
 Communication is likewise not proof of mutual understanding or establishment. Constitutional communication may describe the formation and emission of a representation, possible transport, possible receipt, or possible interpretation only to the extent those occurrences are separately evidenced. A message, report, rendered View, API result, CLI output, owner field, routing target, or adjacent process does not by itself prove actual consumer receipt, interpretation, uptake, lawful reliance, responsibility transition, authority transition, or external effect.
 
-A closed-choice representation may expose an exact bounded member set for local selection. The candidate or treatment members must already be established for the exact subject, standing, purpose, and available alternatives; presenting them does not invent constitutional alternatives. Tokens and labels are local representation details. Closed-choice representation is not limited to common-grammar bootstrap use and does not become obsolete when free-form prose is available. Its member set need not be binary, numeric, affirmative/negative, or concerned with grammar acquisition.
+A closed-choice representation may expose an exact bounded member set for local selection. Membership of each candidate or treatment in this exact bounded choice set must be established for the local selection purpose. Membership does not establish the member's truth, warrant, selection, applicability, admission, authority, goal standing, movement, or performance. The responsible presentation occurrence represents the bounded set; it neither invents the members nor strengthens their standing. Tokens and labels are local representation details. Closed-choice representation is not limited to common-grammar bootstrap use and does not become obsolete when free-form prose is available. Its member set need not be binary, numeric, affirmative/negative, or concerned with grammar acquisition.
+
+A bounded represented subject may preserve exact source material, an Observation, evidence, an **Unknown**, a conflict, a candidate, a measurement, a bounded goal, or a possible treatment together with current evidence, standing, and an exact local purpose. Only a responsibility requiring selection needs a bounded eligible-member relation. Where it does, a separate responsible occurrence establishes local membership, a separate responsible occurrence may form a bounded closed-choice representation, exact member-selection testimony may follow, and a later consumer-local occurrence may use that testimony for its own declared act. This recurring form neither makes every bounded subject a closed-choice set nor makes representation itself responsible for selection.
+
+Member meaning supplied by a developer remains attributed initial testimony or constitutional input, not eternal law or unrestricted truth. Meaning and standing later recovered from attributed material, evidence, comparison, and responsible Seed-side acts remain evidence-relative and bounded across identity, content, standing, provenance, responsibility, authority, scope, and occurrence. No rule requires every coordinate to be populated: unsupported coordinates remain **Unknown** or inapplicable. Neither source of meaning automatically replaces the other.
+
+Realization testimony does not collapse these relations: an artifact is not an act, array membership is not constitutional membership, a field value is not standing, and type compatibility is not lawful consumption.
 
 ## Addressable boundaries for representation and responsibility
 
@@ -42,6 +48,12 @@ An external response is not verified external effect. Transport, delivery indica
 
 ## Important distinctions
 - representation != source material
+- bounded representation != closed-choice representation
+- represented subject != selectable member set
+- member-set eligibility != presentation
+- presentation != selection
+- selection != establishment
+- establishment != movement, authority, or performance
 - representation formation != emission
 - emission != delivery
 - delivery != receipt
