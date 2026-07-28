@@ -14,6 +14,11 @@ The following inequalities govern every finding:
 lexical match != contamination
 awkward wording != false constitutional claim
 implementation similarity != causal origin
+PR changed file != PR changed quoted wording
+file added with wording = repository introduction evidence
+repository introduction != conceptual origin
+precursor wording != current exact wording
+later expansion != original pressure source
 local example != universal law
 historical residue != active standing automatically
 quoted evidence != adopted constitutional vocabulary
@@ -76,7 +81,7 @@ The last line is not compulsory: compression can make adjacency look ordered eve
 - **Distinction endangered:** recording occurrence / Event artifact; Fact-establishment act / Fact-shaped material; projection occurrence / projected representation.
 - **Nearby narrowing:** the same sentence says recording does not make every asserted occurrence true, Fact-shaped material may lack Fact standing, projected material is not standing by identity, and consumer limits must be preserved.
 - **Cross-chapter narrowing or contradiction:** `02-acts-and-constraints/acts-and-act-artifacts.md:10` says an artifact reports or preserves an assertion and construction does not prove the act; `06-state-and-projection/projection-and-current-state.md:10` makes projection and standing distinct.
-- **Historical introduction:** Unknown. The line is present in the earliest locally visible repository state, commit `012be5d` / PR #1949, which added the cited file. That boundary does not establish when the wording was introduced or whether it had a pre-Book origin. Commit `6f1426a` / PR #1948 did not modify the cited file and is not introduction evidence.
+- **Historical introduction:** Fragment-level evidence is recovered. PR #1742 added the cited file at commit `8406e6a` with the pressure-bearing precursor “facts carry supported claims”; this is repository-introduction evidence for the Fact “carry” pressure. The current Event noun using “assert” and projection noun using “replays” are later wording evolutions, but their exact changing commits are Unknown. Pre-Book conceptual or textual origin is Unknown.
 - **Implementation correlation:** **direct lexical repetition** in `seed_runtime/models.py` (`Event`, `Fact`) and **structural similarity** in `seed_runtime/state.py` projection APIs. This does not establish direction or causation.
 - **Claim standing:** candidate contamination pressure.
 - **Wording standing:** active grammar.
@@ -94,7 +99,7 @@ The last line is not compulsory: compression can make adjacency look ordered eve
 - **Distinction endangered:** applicability / candidate establishment; selection act / transfer / request formation; output artifact / later establishment.
 - **Nearby narrowing:** output remains testimony or evidence; lines 12 and 26 separate applicability, selection, request, execution, and Fact establishment.
 - **Cross-chapter narrowing or contradiction:** `01-grammar-and-standing/lenses-views-and-roads.md:14,20` requires consumer-local applicability and denies automatic crossings; `08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md:12` denies the compressed transfer term Seed-native standing.
-- **Historical introduction:** Unknown. The sentence is present in the earliest locally visible repository state, commit `012be5d` / PR #1949, which added the cited file. That boundary is not proof of introduction. Commit `6f1426a` / PR #1948 did not modify the cited file and is not introduction evidence. Later active amendments added stronger consumer and communication distinctions without amending this line.
+- **Historical introduction:** Repository introduction of the exact quoted sentence is recovered at commit `8406e6a` / PR #1742: that PR added the cited file containing the sentence. Pre-Book conceptual or textual origin is Unknown. Later active amendments added stronger consumer and communication distinctions without amending this line.
 - **Implementation correlation:** **structural similarity** in probe-request and examination surfaces under `seed_runtime/`; no current implementation correlation proves that this sentence governs them.
 - **Claim standing:** candidate contamination pressure.
 - **Wording standing:** stale residue.
@@ -135,10 +140,10 @@ BCP-02 is the active candidate in this family: “become candidates” can sound
 - **Distinction endangered:** independent optional relations / one general ordered connection.
 - **Nearby narrowing:** the full paragraph carefully denies identity between every adjacent standing.
 - **Cross-chapter narrowing or contradiction:** `01-grammar-and-standing/lenses-views-and-roads.md:20,55` denies universal order and treats the exact `constitutional pipeline` implementation call order as local; `book_of_seed/README.md:16` denies order from Book numbering.
-- **Historical introduction:** Unknown. The wording is present in the earliest locally visible repository state, commit `012be5d` / PR #1949, which added the cited file. No earlier occurrence was recovered from the examined history; that does not prove introduction or exclude a pre-Book origin. Commit `6f1426a` / PR #1948 did not modify the cited file and is not introduction evidence.
+- **Historical introduction:** Fragment-level evidence is recovered. PR #1742 added the cited file at commit `8406e6a` with the pressure-bearing sentence “Their boundaries must remain visible even when one pipeline connects them.” This establishes repository introduction of the generic `pipeline` term and relation, not of the current exact sentence beginning “These boundaries”. The current exact-sentence amendment is a later wording evolution whose changing commit is Unknown. Pre-Book conceptual or textual origin is Unknown.
 - **Implementation correlation:** **direct lexical repetition** exists only for the exact named `constitutional pipeline` implementation and its tests; **structural similarity** exists in ledger replay and projection. Neither proves a single general constitutional connection.
 - **Claim standing:** candidate contamination pressure.
-- **Wording standing:** historical or local example.
+- **Wording standing:** active grammar.
 - **Reasoning:** singular generic wording can reassemble carefully separated coordinates into a normal road, despite the paragraph's own non-equivalences.
 
 ### D — Scalar or threshold grammar
@@ -155,7 +160,7 @@ BCP-02 is the active candidate in this family: “become candidates” can sound
 - **Distinction endangered:** claim- and consumer-relative warrant / scalar sufficiency; projected condition / responsible stopping or completion establishment.
 - **Nearby narrowing:** the ordering and completion warrant are explicitly `[UNRESOLVED]`; lines 13-15 and 30-34 distinguish stop, completion, remaining Demand, failure, and global impossibility.
 - **Cross-chapter narrowing or contradiction:** `01-grammar-and-standing/lenses-views-and-roads.md:12` says road sufficiency is local; `04-inquiry-and-examination/inquiry-frontiers.md:18` requires warrant sufficient for an exact claim, boundary, and reliance purpose.
-- **Historical introduction:** Unknown. The wording is present in the earliest locally visible repository state, commit `012be5d` / PR #1949, which added the cited file. The examined history does not establish introduction or pre-Book origin. Commit `6f1426a` / PR #1948 did not modify the cited file and is not introduction evidence.
+- **Historical introduction:** Repository introduction of the exact quoted wording is recovered at commit `8406e6a` / PR #1742: that PR added the cited file containing the question, the sufficiency-projections clause, and the unresolved completion-warrant sentence. Pre-Book conceptual or textual origin is Unknown.
 - **Implementation correlation:** **structural similarity** with sufficiency-named projections and bounded horizon surfaces; no causal relation is established.
 - **Claim standing:** candidate contamination pressure.
 - **Wording standing:** stale residue.
@@ -173,7 +178,7 @@ BCP-02 is the active candidate in this family: “become candidates” can sound
 - **Distinction endangered:** none after local qualification; a detached excerpt could lose the condition.
 - **Nearby narrowing:** purpose, warrant, identity, authority, confidence, Unknowns, producer warrant, artifact preservation, and consumer validation are explicit.
 - **Cross-chapter narrowing or contradiction:** consistent with the exact-claim formulation in `04-inquiry-and-examination/inquiry-frontiers.md:18`.
-- **Historical introduction:** Unknown. The wording is present in the earliest locally visible repository state, commit `012be5d` / PR #1949, which added the cited file. The examined history does not establish introduction or pre-Book origin. Commit `6f1426a` / PR #1948 did not modify the cited file and is not introduction evidence.
+- **Historical introduction:** Fragment-level evidence is recovered. “Road sufficiency is local” is present by commit `f9b2516` / PR #1746, the earliest verified occurrence in a commit that changed the cited file. The exact introduction commit for the later clause “the preserved evidence, warrant, identity, scope, authority, confidence, and Unknown limits are sufficient for that consumer boundary” is Unknown: the examined uptake amendments do not supply a recovered patch establishing its addition. PR #1983 changed the cited file while preserving that clause and added separate uptake narrowing; PR #1984 changed another sentence only. Pre-Book conceptual or textual origin is Unknown.
 - **Implementation correlation:** no current implementation correlation found beyond ordinary sufficiency vocabulary.
 - **Claim standing:** faithful within context.
 - **Wording standing:** stale residue.
@@ -266,20 +271,23 @@ BCP-05 carries the only retained candidate pressure in this family. The controll
 
 ## 5. Historical provenance map
 
-The map distinguishes a commit that changes wording from a merge-adjacent or earliest-visible boundary. A PR is associated only where its resulting commit changed the cited file. The repository begins locally at the large root commit `012be5d`; material present there supplies an earliest locally visible occurrence, not proof of introduction.
+The map keeps changed-file evidence separate from quoted-wording evidence. A file added with wording supplies repository-introduction evidence for that wording, not its pre-Book conceptual origin. A later change that preserves wording is preservation only, and a pressure-bearing precursor does not establish introduction of a later exact sentence. The local investigation incorrectly encountered commit `012be5d` as a shallow or merge-adjacent history boundary. PR #1949 did not modify the cited Book files and supplies no provenance evidence for their wording.
 
-| Finding ids | Cited Book file | Earliest verified commit changing the cited wording, if recovered | Associated PR changing that file or wording, if recovered | Later narrowing amendments | Historical origin standing |
-|---|---|---|---|---|---|
-| BCP-01, BCP-04 | `book_of_seed/06-state-and-projection/events-facts-and-state.md` | Not recovered; wording is present at the local history boundary `012be5d` | PR #1949 added the file in `012be5d`; this is not introduction evidence | `3f9b054` / PR #1984 changed the file but did not change the cited line | earliest visible occurrence only; historical introduction Unknown; pre-Book origin Unknown |
-| BCP-02, BCP-10 | `book_of_seed/04-inquiry-and-examination/examination-methods-and-probes.md` | Not recovered; wording is present at the local history boundary `012be5d` | PR #1949 added the file in `012be5d`; this is not introduction evidence | later communication grammar narrows the relation in a different cited file | earliest visible occurrence only; historical introduction Unknown; pre-Book origin Unknown |
-| BCP-03 | `book_of_seed/03-goals-and-advancement/operator-ingress-common-grammar-prerequisite.md` | `2c2c59e` added the file with the quoted display | PR #2026 | `fe4b06c` / PR #2027 narrowed the bounded-resolution sentence; `af7758b` / PR #2028 changed other display branches | introduction recovered; later amendment recovered; pre-Book origin Unknown |
-| BCP-05 | `book_of_seed/08-authority-communication-and-stopping/stopping-and-completion.md` | Not recovered; wording is present at the local history boundary `012be5d` | PR #1949 added the file in `012be5d`; this is not introduction evidence | later stopping corrections changed the file but preserved the cited wording | earliest visible occurrence only; historical introduction Unknown; pre-Book origin Unknown |
-| BCP-06 | `book_of_seed/01-grammar-and-standing/lenses-views-and-roads.md` | Not recovered; wording is present at the local history boundary `012be5d` | PR #1949 added the file in `012be5d`; this is not introduction evidence | `e34d26b` / PR #1983 and `3f9b054` / PR #1984 changed the file while preserving the cited scalar wording | earliest visible occurrence only; historical introduction Unknown; pre-Book origin Unknown |
-| BCP-07 | `book_of_seed/03-goals-and-advancement/demands-and-opened-movement.md` | `b5dc93c` added the quoted counterexample under the earlier `needs-and-opened-movement.md` path | PR #1999 | later Demand amendments and rename preserved the quoted sentence; ingress-specific chapters narrow its scope | introduction recovered; later amendment recovered; pre-Book origin Unknown |
-| BCP-08 | `book_of_seed/03-goals-and-advancement/operator-ingress-common-grammar-prerequisite.md` | `2c2c59e` added the file with the quoted exclusivity | PR #2026 | `fe4b06c` / PR #2027 changed the rest of the sentence, not the quoted exclusivity | introduction recovered; later amendment recovered; pre-Book origin Unknown |
-| BCP-09 | `book_of_seed/03-goals-and-advancement/demands-and-opened-movement.md` | `b5dc93c` added the four-family counterexample; `21820e4` changed it to the current quoted wording | PR #1999 added the counterexample; PR #2019 changed the cited file and current wording | later Demand rename/amendments preserved the non-universal qualification | introduction recovered for the counterexample; later amendment recovered; pre-Book origin Unknown |
+| Finding id | Quoted fragment or pressure-bearing precursor | Cited Book file | Repository introduction or earliest verified changing commit | Associated PR | Later wording changes or narrowing | Current exact wording introduction | Pre-Book origin |
+|---|---|---|---|---|---|---|---|
+| BCP-01 | “facts carry supported claims” precursor | `book_of_seed/06-state-and-projection/events-facts-and-state.md` | `8406e6a`; repository introduction recovered because the file was added with the fragment | PR #1742 | Current Event “assert” and projection “replays” forms are later expansions | Fact “carry” pressure-bearing precursor recovered; later exact Event and projection wording introduction Unknown | Unknown |
+| BCP-01 | Event noun using “assert”; projection noun using “replays” | `book_of_seed/06-state-and-projection/events-facts-and-state.md` | later changing commits not recovered | — | The PR #1742 skeleton instead used “records of occurrences or assertions” and “state is a replayed ... projection” | current exact wording introduction Unknown | Unknown |
+| BCP-02 / BCP-10 | exact quoted examination sentence | `book_of_seed/04-inquiry-and-examination/examination-methods-and-probes.md` | `8406e6a`; repository introduction recovered because the file was added with the exact sentence | PR #1742 | later consumer and communication grammar narrows the relation in other files | recovered at `8406e6a` | Unknown |
+| BCP-03 | quoted common-grammar display | `book_of_seed/03-goals-and-advancement/operator-ingress-common-grammar-prerequisite.md` | `2c2c59e`; file and exact display introduction recovered | PR #2026 | `fe4b06c` / PR #2027 narrowed the bounded-resolution sentence, not the display; `af7758b` / PR #2028 changed other display branches while preserving the quoted steps | recovered at `2c2c59e` | Unknown |
+| BCP-04 | “Their boundaries must remain visible even when one pipeline connects them.” | `book_of_seed/06-state-and-projection/events-facts-and-state.md` | `8406e6a`; pressure-bearing precursor and generic `pipeline` relation introduced with the file | PR #1742 | later grammatical expansion changed “Their” to current “These” | current exact wording introduction Unknown | Unknown |
+| BCP-05 | quoted stopping/completion sufficiency wording | `book_of_seed/08-authority-communication-and-stopping/stopping-and-completion.md` | `8406e6a`; repository introduction recovered because the file was added with the exact wording | PR #1742 | later stopping corrections changed the file but preserved the quoted wording; later preservation only | recovered at `8406e6a` | Unknown |
+| BCP-06 | “Road sufficiency is local” | `book_of_seed/01-grammar-and-standing/lenses-views-and-roads.md` | `f9b2516`; earliest verified occurrence in a commit that changed the cited file | PR #1746 | later uptake amendments preserved the phrase | not claimed beyond earliest verified changed-file occurrence | Unknown |
+| BCP-06 | “the preserved evidence, warrant, identity, scope, authority, confidence, and Unknown limits are sufficient for that consumer boundary” | `book_of_seed/01-grammar-and-standing/lenses-views-and-roads.md` | exact adding patch not recovered | — | `e34d26b` / PR #1983 preserved the clause while adding separate uptake narrowing; `3f9b054` / PR #1984 changed another sentence only | current exact wording introduction Unknown | Unknown |
+| BCP-07 | quoted bounded common-grammar-relation counterexample | `book_of_seed/03-goals-and-advancement/demands-and-opened-movement.md` | `b5dc93c`; exact wording introduction recovered under the earlier filename | PR #1999 | Demand rename and later amendments preserved it; rename/preservation only | recovered at `b5dc93c` | Unknown |
+| BCP-08 | “BOGE is Seed's only goal-establishment apparatus” | `book_of_seed/03-goals-and-advancement/operator-ingress-common-grammar-prerequisite.md` | `2c2c59e`; file and exact wording introduction recovered | PR #2026 | `fe4b06c` / PR #2027 changed the rest of the sentence and narrowed scope; quoted exclusivity preserved | recovered at `2c2c59e` | Unknown |
+| BCP-09 | non-universal four-family counterexample and current “four canonical families” qualifier | `book_of_seed/03-goals-and-advancement/demands-and-opened-movement.md` | `b5dc93c` introduced the counterexample; `21820e4` introduced the current exact qualifier | PR #1999; PR #2019 | later Demand rename/amendments preserved the non-universal qualification; rename/preservation only | recovered at `21820e4` | Unknown |
 
-Commit `6f1426a` / PR #1948 changed three other Book files, but none of the four cited files grouped at the earliest-visible boundary above. It is therefore neither an associated changed-file PR nor evidence of introduction for BCP-01, BCP-02, BCP-04, BCP-05, BCP-06, or BCP-10. No authorship, conceptual origin, or causal responsibility follows from the verified commit associations.
+These associations establish repository introduction, changed-file occurrence, narrowing, or preservation only as stated. They establish neither authorship nor causal influence.
 
 ## 6. Current implementation correlations
 
@@ -299,7 +307,7 @@ No correlation establishes a causal relation between Book wording and implementa
 This is a short non-numeric set, not a ranking or prescription:
 
 - **The examination sentence (BCP-02/BCP-10):** claim standing is **candidate contamination pressure**; wording standing is **stale residue**. It compresses several responsible coordinates, retains non-native transfer shorthand, and resembles current probe-request composition.
-- **The singular generic connection (BCP-04):** claim standing is **candidate contamination pressure**; wording standing is **historical or local example**. It sits inside otherwise careful State grammar but can restore an unwarranted general ordering. The generic quoted `pipeline` is not the named implementation subject by identity.
+- **The singular generic connection (BCP-04):** claim standing is **candidate contamination pressure**; wording standing is **active grammar**. It sits inside otherwise careful State grammar but can restore an unwarranted general ordering. The generic quoted `pipeline` is not the named implementation subject by identity.
 - **The abstract stopping/completion sufficiency grammar (BCP-05):** claim standing is **candidate contamination pressure**; wording standing is **stale residue**. The claim is unresolved, leaves producer and consumer unnamed, and is compatible with current projection nouns.
 - **The exclusive BOGE apparatus claim (BCP-08):** claim standing is **candidate contamination pressure**; wording standing is **active grammar**. It is categorical and directly repeats a current operator-ingress witness even though its intended constitutional-versus-realization scope remains Unknown.
 - **The common-grammar relation (BCP-07):** claim standing is **candidate contamination pressure**; wording standing is **stale residue**. It can hide consumer, material, act, and purpose coordinates and appear global when removed from its bounded interaction example.
@@ -327,11 +335,11 @@ The retired `sufficient`, `insufficient`, and `sufficiency` forms remain outside
 
 ### Verified historical provenance
 
-The file-adding or wording-changing evidence is bounded to the map above: PR #1949 is only the earliest locally visible repository boundary for its cited files; PR #1999 changed the Demand counterexample; PR #2026 added the operator-ingress chapter and its relevant wording; PR #2027 later narrowed one sentence; PR #2028 later changed other display branches; and PR #2019 supplied BCP-09's current exact qualifier.
+PR #1742 introduced the Book skeleton and supplies repository-introduction evidence for the exact examination sentence, the stopping/completion sufficiency wording, and the generic State `pipeline` precursor. Later commits supplied expanded or revised forms whose exact introduction is reported separately where recovered. PR #1999 introduced the Demand counterexamples, PR #2019 supplied BCP-09's current exact qualifier, and PR #2026 introduced the operator-ingress chapter and relevant wording; PR #2027 narrowed surrounding wording, while PR #2028 changed other branches and preserved the quoted steps. PR #1949 did not modify the cited Book files and supplies no provenance evidence for these findings.
 
 ### Historical provenance remaining Unknown
 
-Introduction remains Unknown for BCP-01, BCP-02/BCP-10, BCP-04, BCP-05, and BCP-06. Pre-Book origin remains Unknown for every finding. No earlier occurrence recovered from examined history proves that an occurrence did not exist.
+Pre-Book conceptual or textual origin remains Unknown for every finding. Current exact wording introduction remains Unknown for the later BCP-01 Event “assert” and projection “replays” fragments, the BCP-04 “These boundaries” amendment, and the BCP-06 consumer-boundary clause. Those Unknowns do not erase the recovered PR #1742 repository introductions or pressure-bearing precursors, nor the earliest verified changed-file occurrence for the separate BCP-06 road-sufficiency fragment.
 
 ### Amendment posture
 
