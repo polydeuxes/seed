@@ -17,7 +17,7 @@ A closed-choice representation may expose an exact bounded member set for local 
 
 A bounded represented subject may preserve exact source material, an Observation, evidence, an **Unknown**, a conflict, a candidate, a measurement, a bounded goal, or a possible treatment together with current evidence, standing, and an exact local purpose. Only a responsibility requiring selection needs a bounded eligible-member relation. Where it does, a separate responsible occurrence establishes local membership, a separate responsible occurrence may form a bounded closed-choice representation, exact member-selection testimony may follow, and a later consumer-local occurrence may use that testimony for its own declared act. This recurring form neither makes every bounded subject a closed-choice set nor makes representation itself responsible for selection.
 
-Member meaning supplied by a developer remains attributed initial testimony or constitutional input, not eternal law or unrestricted truth. Meaning and standing later recovered from attributed material, evidence, comparison, and responsible Seed-side acts remain evidence-relative and bounded across identity, content, standing, provenance, responsibility, authority, scope, and occurrence. No rule requires every coordinate to be populated: unsupported coordinates remain **Unknown** or inapplicable. Neither source of meaning automatically replaces the other.
+Developer-supplied member meaning remains attributed bounded initial meaning. Its source, scope, authority, limits, Unknowns, and occurrence remain visible. Developer provenance establishes neither truth, eternal law, universal applicability, goal standing, selection, admission, nor authority. Meaning and standing later recovered from attributed material, evidence, comparison, and responsible Seed-side acts remain evidence-relative and bounded across identity, content, standing, provenance, responsibility, authority, scope, and occurrence. No rule requires every coordinate to be populated: unsupported coordinates remain **Unknown** or inapplicable. Neither source of meaning automatically replaces the other.
 
 Realization testimony does not collapse these relations: an artifact is not an act, array membership is not constitutional membership, a field value is not standing, and type compatibility is not lawful consumption.
 
@@ -53,6 +53,8 @@ An external response is not verified external effect. Transport, delivery indica
 - member-set eligibility != presentation
 - presentation != selection
 - selection != establishment
+- selection != goal-semantic admission
+- developer-supplied meaning != constitutional truth
 - establishment != movement, authority, or performance
 - representation formation != emission
 - emission != delivery
