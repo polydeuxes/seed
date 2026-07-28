@@ -9,7 +9,9 @@ Which ingress evidence and invariants establish a goal's constitutional standing
 ## Bounded resolution
 Construction produces a representation; establishment binds admitted operator meaning, scope, provenance, and boundedness into a goal with standing.
 
-BOGE consumes consumer-local admitted goal-specific meaning and establishes bounded-goal standing. Selected potential-goal meaning is not an established bounded goal. On a closed-choice road, bounded potential-goal standing, participation in an exact locally eligible presentation set, bounded representation, exact operator selection testimony identifying one presented alternative, consumer-local admission of the preserved meaning attributed to the selected potential-goal candidate, and possible BOGE establishment remain distinct. On an admitted-interpretation road, interpretation candidate, candidate-local warrant, selection, purpose-local applicability, consumer-local admission, and BOGE establishment remain distinct. These are different possible roads sharing a narrower consumer-local admission requirement, not identical or universally compulsory roads.
+BOGE consumes consumer-local admitted goal-specific meaning and establishes bounded-goal standing. A selected presented alternative and the potential-goal candidate recovered through its lineage are not an established bounded goal. On a closed-choice road, bounded potential-goal standing, eligibility for one presentation purpose, formation of a presented alternative that represents the source candidate, participation of that alternative in the exact presented set, token binding, operator selection testimony identifying that alternative, recovery of the source candidate and meaning through preserved lineage, consumer-local admission, and possible BOGE establishment remain distinct. The candidate is not itself the presented alternative; candidate meaning is not rendered content; and selecting the presented alternative does not select the source candidate by identity or adopt every upstream assertion. On an admitted-interpretation road, interpretation candidate, candidate-local warrant, selection, purpose-local applicability, consumer-local admission, and BOGE establishment remain distinct. These are different possible roads sharing a narrower consumer-local admission requirement, not identical or universally compulsory roads.
+
+Separation of these constitutional responsibilities does not require repeated operator selections. One operator response occurrence may provide testimony used by separately responsible Seed-side binding, lineage recovery, meaning recovery, consumer-local admission, and BOGE occurrences. Every crossing requires its own evidence, but no crossing asks the operator to recreate the same selection merely because Seed decomposes its internal acts. One selection does not automatically establish any later standing.
 
 ## Important distinctions
 - establishment assertion != artifact field named established
@@ -18,6 +20,12 @@ BOGE consumes consumer-local admitted goal-specific meaning and establishes boun
 - interpreted expression != established goal
 - valid fields != admitted meaning
 - potential-goal standing != bounded goal established
+- source candidate != presented alternative
+- candidate meaning != rendered content
+- presented alternative != token binding
+- token binding != operator selection occurrence
+- source candidate recovered through lineage != goal meaning admitted to BOGE
+- separate constitutional acts != repeated operator selections
 - selection != goal-semantic admission
 - goal-semantic admission != BOGE establishment
 - BOGE establishment != movement consideration
