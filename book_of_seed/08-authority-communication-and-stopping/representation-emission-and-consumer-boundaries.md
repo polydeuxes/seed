@@ -13,6 +13,8 @@ The word "handoff" is not a Seed-native constitutional act, artifact, road, or p
 
 Communication is likewise not proof of mutual understanding or establishment. Constitutional communication may describe the formation and emission of a representation, possible transport, possible receipt, or possible interpretation only to the extent those occurrences are separately evidenced. A message, report, rendered View, API result, CLI output, owner field, routing target, or adjacent process does not by itself prove actual consumer receipt, interpretation, uptake, lawful reliance, responsibility transition, authority transition, or external effect.
 
+A closed-choice representation may expose an exact bounded member set for local selection. The candidate or treatment members must already be established for the exact subject, standing, purpose, and available alternatives; presenting them does not invent constitutional alternatives. Tokens and labels are local representation details. Closed-choice representation is not limited to common-grammar bootstrap use and does not become obsolete when free-form prose is available. Its member set need not be binary, numeric, affirmative/negative, or concerned with grammar acquisition.
+
 ## Addressable boundaries for representation and responsibility
 
 ### 08.Communication.A — Bounded responsibility transition
