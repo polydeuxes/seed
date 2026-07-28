@@ -210,11 +210,14 @@ def test_constrained_stopping_invariants_are_canonical():
     text = _read("book_of_seed/08-authority-communication-and-stopping/stopping-and-completion.md")
 
     required = [
-        "Stopping may be constrained by evidence gap, capability Unknown, authority gap, resource insufficiency, unresolved causation, preservation failure",
-        "may require stop, defer, narrow, return to inquiry, expose insufficiency, or refuse reliance",
+        "Stopping may be constrained by evidence gap, capability Unknown, authority gap, resource limits, unresolved causation, preservation failure",
+        "may require stop, defer, narrow, return to inquiry, expose unmet requirements, or refuse reliance",
         "Stopping is not failure",
         "Unknown is not permission to invent movement",
     ]
 
     for invariant in required:
         assert invariant in text
+
+    assert "resource insufficiency" not in text
+    assert "expose insufficiency" not in text

@@ -4,10 +4,10 @@
 The grounds for stopping inquiry or movement and the stronger claim that a bounded goal is complete.
 
 ## Core question
-Which exact evidenced conditions can warrant a bounded responsible consumer stopping its present act, a competent stopping boundary establishing a bounded stop, or the stronger completion claim for an exact bounded goal?
+Which exact evidenced conditions can warrant a bounded responsible consumer stopping its present act, a responsible stopping occurrence at a competent boundary that establishes a bounded stop, or the stronger completion claim for an exact bounded goal?
 
 ## Bounded resolution
-Current evidence exposes several distinct possible non-movement conditions, including existing bounded horizons, policy blocks, explicit goal standing, exhaustion findings, impossibility findings, refusal, operator boundaries, evidence gaps, capability Unknowns, authority gaps, resource limits, unresolved causation, preservation failure, or satisfied scope. This set is illustrative rather than exhaustive; no projection, status field, or condition establishes stopping or completion by identity. `[UNRESOLVED]` Their exact ordering and the conditions that warrant a bounded stopping occurrence or the stronger completion claim for an exact bounded goal remain unclear.
+Current evidence exposes several distinct possible non-movement conditions, including existing bounded horizons, policy blocks, explicit goal standing, exhaustion findings, impossibility findings, refusal, operator boundaries, evidence gaps, capability Unknowns, authority gaps, resource limits, unresolved causation, preservation failure, or satisfied scope. This set is illustrative rather than exhaustive; no projection, status field, or condition establishes stopping or completion by identity. `[UNRESOLVED]` The relations among these conditions, including whether any ordering is required, and the evidence that warrants a bounded stopping occurrence or the stronger completion claim for an exact bounded goal remain unclear.
 
 ## Important distinctions
 - stopping != completion
