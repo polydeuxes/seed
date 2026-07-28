@@ -7,7 +7,7 @@ The applicability, selection, and binding of examination work used to acquire bo
 What warrants a probe request, and what standing can its result acquire?
 
 ## Bounded resolution
-An applicable examination method may be available for bounded consideration; applicability alone does not select it. A responsible bounded selection occurrence may select examination work. A separately responsible request-forming occurrence may produce a probe request for its bounded consumer; the exact producer and consumer remain Unknown where the evidence does not identify them. Any invocation or examination occurrence remains separate. Produced output remains attributed testimony or evidence; later Fact or other establishment standing requires its own responsible establishment occurrence.
+An applicable examination method may be available for bounded consideration; applicability alone does not select it. A responsible bounded selection occurrence may select examination work. A separately responsible request-forming occurrence may produce a probe request for its bounded consumer; the exact producer and consumer remain Unknown where the evidence does not identify them. Any invocation or examination occurrence remains separate. Produced output remains attributed testimony or evidence. Any later Fact or other standing requires its own kind-appropriate responsible production or establishment occurrence.
 
 
 ## Addressable boundaries for bounded examination witnesses
