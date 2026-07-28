@@ -4,15 +4,17 @@
 The grounds for stopping inquiry or movement and the stronger claim that a bounded goal is complete.
 
 ## Core question
-Which sufficiency, exhaustion, impossibility, refusal, or operator conditions warrant stopping, and which warrant completion?
+Which exact evidenced conditions can warrant a bounded responsible consumer stopping its present act, a competent stopping boundary establishing a bounded stop, or the stronger completion claim for an exact bounded goal?
 
 ## Bounded resolution
-Current evidence supports several distinct non-movement conditions, including sufficiency projections, bounded horizons, policy blocks, and explicit goal status. `[UNRESOLVED]` Their complete constitutional ordering and the sufficient warrant for completion remain unclear.
+Current evidence exposes several distinct possible non-movement conditions, including existing bounded horizons, policy blocks, explicit goal standing, exhaustion findings, impossibility findings, refusal, operator boundaries, evidence gaps, capability Unknowns, authority gaps, resource limits, unresolved causation, preservation failure, or satisfied scope. This set is illustrative rather than exhaustive; no projection, status field, or condition establishes stopping or completion by identity. `[UNRESOLVED]` Their exact ordering and the conditions that warrant a bounded stopping occurrence or the stronger completion claim for an exact bounded goal remain unclear.
 
 ## Important distinctions
 - stopping != completion
+- stopping != failure
 - no selected movement != no remaining Demand
 - bounded exhaustion != global impossibility
+- local stop != process termination
 
 ## Representative repository anchors
 - `seed_runtime/bounded_advancement_horizon.py`
@@ -29,6 +31,6 @@ Current evidence supports several distinct non-movement conditions, including su
 
 ## Constrained movement stopping correction 001
 
-Stopping may be constrained by evidence gap, capability Unknown, authority gap, resource insufficiency, unresolved causation, preservation failure, satisfied scope, operator boundary, or refusal. Such standings may require stop, defer, narrow, return to inquiry, expose insufficiency, or refuse reliance without making stopping a failure or completion by identity. Unknown is not permission to invent movement, and a constraint result that requires stopping does not perform the movement it governs.
+Stopping may be constrained by evidence gap, capability Unknown, authority gap, resource limits, unresolved causation, preservation failure, satisfied scope, operator boundary, or refusal. Such standings may require stop, defer, narrow, return to inquiry, expose unmet requirements, or refuse reliance without making stopping a failure or completion by identity. Unknown is not permission to invent movement, and a constraint result that requires stopping does not perform the movement it governs.
 
 Stopping is not failure.
