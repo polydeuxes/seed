@@ -289,7 +289,7 @@ Passing tests therefore preserve the implemented boundaries, including intention
 | Acquisition relation | Unknown as constitutional applicability; absent within current scope | no consumer, authority, or movement; omission not automatically defective |
 | Re-examination relation | disconnected witness | same ingress preserved, no responsible re-examiner or lineage |
 | BOGE relation | disconnected witness | production does not invoke BOGE; closed-choice path refuses; admitted path is independent |
-| State projection | faithful local support but not constitutional act | accurate Event visibility and losses; no consumer uptake/current constitutional assertion |
+| State projection | mixed witness containing an unfaithful projected-standing crossing | Event visibility, lineage, loss preservation, and exact binder-local response consumption are faithful local support; presentation is nevertheless projected as `consumed` without evidence of external receipt, interpretation, use, or reliance |
 | `representation insufficiency` wording | stale lexical pressure with bounded behavioral consequence | later Event/output shorthand compresses distinct decoder failures, while exact decoder outcomes remain distinguishable upstream |
 | Bare-road durable replay | absent; live process-local reconstruction only | bare `seed` uses `EventLedger`; cross-process replay requires a supplied persistent ledger such as `SQLiteEventLedger` |
 | `bootstrap` lexical family | stale lexical pressure only | corrected Book rejects universal bootstrap, but behavior does not enact one |
