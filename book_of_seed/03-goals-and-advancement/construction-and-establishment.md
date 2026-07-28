@@ -9,12 +9,18 @@ Which ingress evidence and invariants establish a goal's constitutional standing
 ## Bounded resolution
 Construction produces a representation; establishment binds admitted operator meaning, scope, provenance, and boundedness into a goal with standing.
 
+BOGE consumes consumer-local admitted goal-specific meaning and establishes bounded-goal standing. Selected potential-goal meaning is not an established bounded goal. On a closed-choice road, bounded potential-goal standing, local eligible-set membership, bounded representation, exact operator member-selection testimony, consumer-local admission of the selected member's preserved goal meaning, and possible BOGE establishment remain distinct. On an admitted-interpretation road, interpretation candidate, candidate-local warrant, selection, purpose-local applicability, consumer-local admission, and BOGE establishment remain distinct. These are different possible roads sharing a narrower consumer-local admission requirement, not identical or universally compulsory roads.
+
 ## Important distinctions
 - establishment assertion != artifact field named established
 - establishment lineage != proof that each upstream producer ran
 - construction != establishment
 - interpreted expression != established goal
 - valid fields != admitted meaning
+- potential-goal standing != bounded goal established
+- selection != goal-semantic admission
+- goal-semantic admission != BOGE establishment
+- BOGE establishment != movement consideration
 
 ## Representative repository anchors
 - `seed_runtime/bounded_operator_goal_establishment.py::BoundedOperatorGoalEstablishment`
