@@ -93,11 +93,13 @@ def establish_bounded_operator_goal_from_admitted_interpretation(
     candidate_unknowns: tuple[str, ...] = ()
     candidate_conflicts: tuple[str, ...] = ()
     candidate_known_loss: tuple[str, ...] = ()
+    proposed_meaning = ""
 
     # The admission carries the selected candidate and a snapshot produced upstream.
     # Use those values only; do not call warrant, selection, applicability, or
     # admission producers from this goal-establishment owner.
     if selection is not None:
+        proposed_meaning = getattr(selection, "proposed_meaning", "")
         candidate_unknowns = _refs(getattr(selection, "unknowns", ()))
         candidate_conflicts = _refs(getattr(selection, "conflicts", ()))
         candidate_known_loss = _refs(getattr(selection, "known_loss", ()))
@@ -138,11 +140,13 @@ def establish_bounded_operator_goal_from_admitted_interpretation(
         state, reason = "refused", "admitted_interpretation_has_conflicting_upstream_lineage"
     elif not selected_ref or selection is None:
         state, reason = "refused", "admitted_interpretation_lacks_selected_meaning_identity"
+    elif not isinstance(proposed_meaning, str) or not proposed_meaning.strip():
+        state, reason = "refused", "admitted_interpretation_lacks_exact_candidate_proposition"
     else:
         state = "established"
         reason = "consumer_local_admitted_interpretation_supplies_bounded_operator_goal_standing"
 
-    intended = "" if state == "refused" else (getattr(selection, "proposed_meaning", "") or getattr(selection, "label", "") or selected_ref)
+    intended = "" if state == "refused" else proposed_meaning
     scope = () if state == "refused" else _refs((selected_ref, getattr(selection, "label", "")))
     snapshot = admission.applicability_projection.selected_meaning_snapshot or {}
     snapshot_source_refs = tuple(

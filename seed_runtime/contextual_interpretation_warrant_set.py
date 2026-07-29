@@ -114,6 +114,7 @@ class ClarificationEvidence:
 class CandidateWarrant:
     candidate_ref: str
     label: str
+    proposed_meaning: str
     source_spans: tuple[SourceSpan, ...]
     proposed_corrections: tuple[CorrectionCandidate, ...]
     examined_retrospective_material: tuple[RetrospectiveEvidence, ...]
@@ -211,6 +212,26 @@ def produce_contextual_interpretation_warrant_set(
         else:
             standing, reason = "unresolved", "candidate has no supplied supporting or contradicting evidence"
         residual = tuple(span for span in operator_material.source_spans if span.span_ref not in set(candidate.source_span_refs))
-        warrants.append(CandidateWarrant(candidate.candidate_ref, candidate.label, candidate_spans, candidate_corrections, examined, by_disposition["supporting"], by_disposition["contradicting"], by_disposition["irrelevant"], by_disposition["unresolved"], clarifications, standing, reason, unknowns, conflicts, residual, _refs(known_loss_by_candidate.get(candidate.candidate_ref, ()))) )
+        warrants.append(
+            CandidateWarrant(
+                candidate.candidate_ref,
+                candidate.label,
+                candidate.proposed_meaning,
+                candidate_spans,
+                candidate_corrections,
+                examined,
+                by_disposition["supporting"],
+                by_disposition["contradicting"],
+                by_disposition["irrelevant"],
+                by_disposition["unresolved"],
+                clarifications,
+                standing,
+                reason,
+                unknowns,
+                conflicts,
+                residual,
+                _refs(known_loss_by_candidate.get(candidate.candidate_ref, ())),
+            )
+        )
     payload = {"operator_material": asdict(operator_material), "candidates": [asdict(w) for w in warrants], "binding": closed_choice_selection_binding_ref, "convention": CONVENTION}
     return ContextualInterpretationWarrantSet("ContextualInterpretationWarrantSet", _stable("contextual-interpretation-warrant-set", payload), operator_material, tuple(warrants), closed_choice_selection_binding_ref)

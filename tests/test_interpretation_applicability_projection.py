@@ -59,6 +59,7 @@ def test_applicable_projection_preserves_selected_meaning_and_remains_read_only(
     assert projection.applicability == "applicable"
     assert projection.selected_candidate_ref == selection.selected_candidate_ref
     assert projection.selected_meaning_snapshot == asdict(selection.selected_candidate)
+    assert projection.selected_meaning_snapshot["proposed_meaning"] == "operator asks to establish a goal"
     assert projection.downstream_admission is None
     assert projection.admitted is False
     assert projection.goal_established is False

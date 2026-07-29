@@ -45,10 +45,12 @@ def test_candidate_local_evidence_and_corrections_are_preserved_without_selectio
 
     repair, inspect = warrant_set.candidate_warrants
     assert repair.candidate_ref == "cand:repair"
+    assert repair.proposed_meaning == "operator asks to fix the cache"
     assert repair.proposed_corrections[0].original_text == "teh"
     assert repair.proposed_corrections[0].corrected_text == "the"
     assert [e.evidence_ref for e in repair.supporting_evidence] == ["ev:repair-support"]
     assert [e.evidence_ref for e in inspect.supporting_evidence] == ["ev:inspect-support"]
+    assert inspect.proposed_meaning == "operator asks for read-only inspection"
     assert warrant_set.closed_choice_selection_binding_ref == "closed-choice-selection-binding:abc"
     assert warrant_set.selected_candidate_ref is None
     assert warrant_set.interpretation_selected is False
