@@ -103,6 +103,9 @@ def test_role_testimony_and_authority_are_distinct_from_meaning_warrant():
 def test_exact_role_testimony_under_bounded_authority_establishes_only_standing():
     occurrence = examine_standing()
     assert occurrence.payload["standing_result"] == "established"
+    assert occurrence.payload["examination_reason"] == (
+        "exact_admissible_role_testimony_under_applicable_bounded_authority"
+    )
     assert (
         occurrence.payload["source_role_testimony_ref"]
         == APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY.testimony_id
@@ -214,6 +217,79 @@ def test_missing_forged_wrong_unknown_and_conflicting_standing_inputs():
             )
         ).payload["standing_result"]
         == "refused"
+    )
+
+
+@pytest.mark.parametrize(
+    ("changes", "epistemic", "reason"),
+    [
+        (
+            {"source_ref": "source:wrong"},
+            {"unknowns": ("material unknown",)},
+            "source_identity_mismatch",
+        ),
+        (
+            {"source_ref": "source:wrong"},
+            {"conflicts": ("material conflict",)},
+            "source_identity_mismatch",
+        ),
+        (
+            {"attributed_role": "local-stop"},
+            {"unknowns": ("material unknown",)},
+            "attributed_role_mismatch",
+        ),
+        (
+            {"testimony_id": "testimony:forged"},
+            {"conflicts": ("material conflict",)},
+            "forged_source_role_testimony",
+        ),
+    ],
+)
+def test_testimony_inadmissibility_precedes_carried_epistemic_content(
+    changes, epistemic, reason
+):
+    testimony = replace(
+        APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY, **changes, **epistemic
+    )
+    occurrence = examine_standing(testimony=testimony)
+    assert occurrence.payload["standing_result"] == "refused"
+    assert occurrence.payload["examination_reason"] == reason
+    assert occurrence.payload["refusal_reason"] == reason
+
+
+@pytest.mark.parametrize(
+    ("changes", "epistemic"),
+    [
+        ({"scope": "scope:wrong"}, {"unknowns": ("material unknown",)}),
+        (
+            {"convention_id": "convention:forged"},
+            {"conflicts": ("material conflict",)},
+        ),
+    ],
+)
+def test_authority_inapplicability_precedes_carried_epistemic_content(
+    changes, epistemic
+):
+    convention = replace(
+        APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION, **changes, **epistemic
+    )
+    occurrence = examine_standing(convention=convention)
+    assert occurrence.payload["standing_result"] == "refused"
+    assert occurrence.payload["examination_reason"] == (
+        "forged_or_inapplicable_constitutive_authority"
+    )
+
+
+def test_wrong_authority_type_is_refused_before_conflict_shaped_content():
+    class ConflictShapedAuthority:
+        conflicts = ("material conflict",)
+        unknowns = ()
+
+    occurrence = examine_standing(convention=ConflictShapedAuthority())
+    assert occurrence.payload["standing_result"] == "refused"
+    assert (
+        occurrence.payload["examination_reason"]
+        == "inapplicable_constitutive_authority_form"
     )
 
 
