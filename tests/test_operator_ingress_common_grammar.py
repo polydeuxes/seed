@@ -132,7 +132,7 @@ def test_exact_recorded_standing_is_consumed_for_only_presentation_eligibility()
     )
     assert occurrence.payload["upstream_standing_result"] == "established"
     assert occurrence.payload["source_ref"] == POTENTIAL_GOAL_SOURCE_REF
-    for key in (
+    forbidden = (
         "establishes_alternative_formation",
         "establishes_exact_set_participation",
         "establishes_presentation",
@@ -145,8 +145,74 @@ def test_exact_recorded_standing_is_consumed_for_only_presentation_eligibility()
         "establishes_movement",
         "establishes_authority",
         "establishes_performance",
-    ):
-        assert occurrence.payload[key] is False
+    )
+    for key in forbidden:
+        assert key not in occurrence.payload
+
+
+def test_same_event_id_resolves_to_exact_recorded_standing():
+    ledger = EventLedger()
+    standing = _examine_potential_goal_standing(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref="attempt:test",
+        testimony=APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY,
+        convention=APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION,
+    )
+    supplied = standing.model_copy(deep=True)
+    assert supplied is not ledger.get(standing.id)
+
+    occurrence = _examine_presentation_eligibility(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref="attempt:test",
+        standing_occurrence=supplied,
+        presentation_ref="presentation:test",
+        purpose_declaration=application_presentation_purpose("presentation:test"),
+        convention=APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION,
+    )
+
+    assert occurrence.payload["eligibility_result"] == "eligible"
+
+
+def test_sqlite_reconstructed_standing_is_consumed_and_survives_replay(tmp_path):
+    path = tmp_path / "eligibility.db"
+    ledger = SQLiteEventLedger(str(path))
+    standing = _examine_potential_goal_standing(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref="attempt:test",
+        testimony=APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY,
+        convention=APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION,
+    )
+    reconstructed = ledger.get(standing.id)
+    assert reconstructed is not standing
+
+    occurrence = _examine_presentation_eligibility(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref="attempt:test",
+        standing_occurrence=reconstructed,
+        presentation_ref="presentation:test",
+        purpose_declaration=application_presentation_purpose("presentation:test"),
+        convention=APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION,
+    )
+    assert occurrence.payload["eligibility_result"] == "eligible"
+    ledger.close()
+
+    reopened = SQLiteEventLedger(str(path))
+    recorded = reopened.get(occurrence.id)
+    assert recorded.payload["eligibility_result"] == "eligible"
+    replayed = StateProjector(reopened).project("w")
+    eligibility = replayed.operator_ingress_common_grammar_attempts["attempt:test"][
+        "current_standing"
+    ]["presentation_eligibility"]
+    assert eligibility["dimensions"]["standing"] == "eligible"
+    reopened.close()
 
 
 @pytest.mark.parametrize(
@@ -212,7 +278,7 @@ def test_missing_standing_is_unknown_not_ineligible():
 @pytest.mark.parametrize(
     ("field", "expected"), [("unknowns", "unknown"), ("conflicts", "conflict")]
 )
-def test_exact_carried_upstream_states_are_preserved(field, expected):
+def test_exact_carried_upstream_unknowns_and_conflicts_are_preserved(field, expected):
     ledger = EventLedger()
     testimony = replace(
         APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY, **{field: ("carried",)}
@@ -1069,6 +1135,12 @@ def test_exact_ingress_preservation_all_dimensions_and_durable_replay(tmp_path):
         StateProjector(reopened)
         .project("w")
         .operator_ingress_common_grammar_attempts[attempt_ref]
+    )
+    assert (
+        replayed["current_standing"]["presentation_eligibility"]["dimensions"][
+            "standing"
+        ]
+        == "eligible"
     )
     assert replayed == view
     assert all(
