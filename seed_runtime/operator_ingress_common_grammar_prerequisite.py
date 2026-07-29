@@ -48,6 +48,9 @@ ALTERNATIVE_SOURCES = {
     "common-grammar-acquisition": "source:operator-common-grammar-potential-goal:v1",
     "local-stop": "source:operator-common-grammar-local-stop:v1",
 }
+RENDERING_KNOWN_LOSS = (
+    "rendered label is a compressed presentation and does not carry the complete source proposition",
+)
 
 
 def _representation_fingerprint(representations: object) -> str:
@@ -55,6 +58,33 @@ def _representation_fingerprint(representations: object) -> str:
         representations, sort_keys=True, separators=(",", ":"), ensure_ascii=False
     ).encode()
     return "operator-ingress-representations:" + hashlib.sha256(encoded).hexdigest()
+
+
+def _recordable_binding_testimony(binding) -> dict[str, object]:
+    """Serialize the complete binding without using ledger-reserved secret keys."""
+    testimony = binding.to_json_dict()
+    testimony["presented_options"] = [
+        {
+            "presented_token": option.token,
+            "presented_alternative_ref": option.presented_alternative_ref,
+            "presented_label": option.presented_label,
+            "presented_detail": option.presented_detail,
+        }
+        for option in binding.presented_options
+    ]
+    return testimony
+
+
+def _recordable_presented_options(choice_set) -> list[dict[str, str]]:
+    return [
+        {
+            "presented_token": option.token,
+            "presented_alternative_ref": option.presented_alternative_ref,
+            "presented_label": option.presented_label,
+            "presented_detail": option.presented_detail,
+        }
+        for option in choice_set.options
+    ]
 
 
 @dataclass(frozen=True)
@@ -91,6 +121,7 @@ class RecoveredRepresentedSource:
     representation_scope: str
     representation_known_loss: tuple[str, ...]
     representation_occurrence_id: str
+    binding_occurrence_id: str
 
 
 def common_grammar_representation_lineages(
@@ -115,7 +146,7 @@ def common_grammar_representation_lineages(
                 1
             ],
             "presented_alternative_represents_application_owned_source",
-            "member_of_exact_presented_choice_set",
+            "participates_in_exact_presented_choice_set_for_declared_purpose",
             "application-owned common-grammar prerequisite source",
             producer_occurrence_ref,
             (
@@ -126,16 +157,52 @@ def common_grammar_representation_lineages(
                 "seed_runtime.operator_ingress_common_grammar:alternative-source-lineage:v1",
             ),
             f"presentation:{choice_set.presentation_ref};choice-set:{choice_set.choice_set_ref}",
+            RENDERING_KNOWN_LOSS,
         )
         for option in choice_set.options
     )
 
 
 def _recover_represented_source(
-    binding, choice_set, occurrence, *, attempt_ref, presentation_occurrence
+    binding,
+    choice_set,
+    occurrence,
+    *,
+    ledger,
+    workspace_id,
+    attempt_ref,
+    presentation_occurrence,
+    selection_occurrence,
 ):
     """Recover from one earlier durable representation occurrence, never constants."""
     selected = binding.selected_presented_alternative_ref
+    attempt_events = [
+        event
+        for event in ledger.list_events(workspace_id)
+        if event.payload.get("attempt_ref") == attempt_ref
+    ]
+    binding_occurrences = [
+        event
+        for event in attempt_events
+        if event.kind == "operator.ingress.common_grammar.binding_completed"
+    ]
+    recorded_binding = binding_occurrences[0] if len(binding_occurrences) == 1 else None
+    response_occurrences = [
+        event
+        for event in attempt_events
+        if event.kind == "operator.ingress.common_grammar.response_captured"
+    ]
+    recorded_response = (
+        response_occurrences[0] if len(response_occurrences) == 1 else None
+    )
+    presentation_occurrences = [
+        event
+        for event in attempt_events
+        if event.kind == "operator.ingress.common_grammar.presentation_occurred"
+    ]
+    recorded_presentation = (
+        presentation_occurrences[0] if len(presentation_occurrences) == 1 else None
+    )
     checks = (
         (occurrence is None, "no_recorded_representation_occurrence"),
         (
@@ -162,6 +229,12 @@ def _recover_represented_source(
         ),
         (presentation_occurrence is None, "no_recorded_presentation_occurrence"),
         (
+            recorded_presentation is None
+            or presentation_occurrence is None
+            or recorded_presentation.id != presentation_occurrence.id,
+            "recorded_presentation_occurrence_mismatch",
+        ),
+        (
             presentation_occurrence is not None
             and presentation_occurrence.payload.get("attempt_ref") != attempt_ref,
             "wrong_presentation_attempt",
@@ -177,6 +250,64 @@ def _recover_represented_source(
             and presentation_occurrence.payload.get("choice_set_fingerprint")
             != choice_set.exact_choice_set_fingerprint,
             "presentation_fingerprint_mismatch",
+        ),
+        (not binding_occurrences, "no_recorded_binding_occurrence"),
+        (len(binding_occurrences) > 1, "multiple_recorded_binding_occurrences"),
+        (
+            recorded_binding is not None
+            and recorded_binding.payload.get("binding_id") != binding.binding_id,
+            "binding_id_mismatch",
+        ),
+        (
+            recorded_binding is not None
+            and recorded_binding.payload.get("choice_set_ref")
+            != binding.choice_set_ref,
+            "binding_choice_set_mismatch",
+        ),
+        (
+            recorded_binding is not None
+            and recorded_binding.payload.get("choice_set_fingerprint")
+            != binding.exact_choice_set_fingerprint,
+            "binding_set_fingerprint_mismatch",
+        ),
+        (
+            recorded_binding is not None
+            and recorded_binding.payload.get("presented_options")
+            != _recordable_presented_options(choice_set),
+            "binding_presented_options_mismatch",
+        ),
+        (
+            recorded_binding is not None
+            and recorded_binding.payload.get("selected_presented_alternative_ref")
+            != selected,
+            "binding_selected_alternative_mismatch",
+        ),
+        (
+            recorded_binding is not None
+            and recorded_binding.payload.get("binding_testimony")
+            != _recordable_binding_testimony(binding),
+            "recorded_binding_payload_mismatch",
+        ),
+        (
+            recorded_response is None
+            or presentation_occurrence is None
+            or recorded_binding is None
+            or recorded_response.id not in recorded_binding.payload.get("lineage", ())
+            or presentation_occurrence.id
+            not in recorded_binding.payload.get("lineage", ())
+            or presentation_occurrence.id
+            not in recorded_response.payload.get("lineage", ()),
+            "binding_lineage_mismatch",
+        ),
+        (
+            selection_occurrence is None
+            or recorded_binding is None
+            or selection_occurrence.payload.get("binding_id") != binding.binding_id
+            or selection_occurrence.payload.get("selected_presented_alternative_ref")
+            != selected
+            or recorded_binding.id
+            not in selection_occurrence.payload.get("lineage", ()),
+            "selected_alternative_occurrence_mismatch",
         ),
         (
             binding.binding_state != "bound" or not selected,
@@ -228,7 +359,10 @@ def _recover_represented_source(
         != "presented_alternative_represents_application_owned_source"
     ):
         return None, "representation_relation_missing_or_conflicting"
-    if item["exact_set_participation"] != "member_of_exact_presented_choice_set":
+    if (
+        item["exact_set_participation"]
+        != "participates_in_exact_presented_choice_set_for_declared_purpose"
+    ):
         return None, "exact_set_participation_missing_or_conflicting"
     if item["unknowns"]:
         return None, "representation_evidence_unknown"
@@ -254,6 +388,7 @@ def _recover_represented_source(
             item["scope"],
             tuple(item["known_loss"]),
             occurrence.id,
+            recorded_binding.id,
         ),
         None,
     )
@@ -692,6 +827,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
         representation_evidence_fingerprint=_representation_fingerprint(
             representation_payload
         ),
+        known_loss=list(RENDERING_KNOWN_LOSS),
         lineage=[produced.id],
     )
     rendered = render_probe(choice_set)
@@ -891,8 +1027,11 @@ def run_operator_ingress_common_grammar_probe_attempt(
             occurrence="binding finding recorded",
         ),
         binding_id=binding.binding_id,
+        binding_testimony=_recordable_binding_testimony(binding),
         capture_ref=capture_ref,
         choice_set_ref=CHOICE_SET_REF,
+        presented_options=_recordable_presented_options(choice_set),
+        selected_presented_alternative_ref=(binding.selected_presented_alternative_ref),
         response_kind=response_kind,
         unknowns=list(unknowns),
         choice_set_fingerprint=choice_set.exact_choice_set_fingerprint,
@@ -935,8 +1074,11 @@ def run_operator_ingress_common_grammar_probe_attempt(
             binding,
             choice_set,
             recorded_representation,
+            ledger=ledger,
+            workspace_id=workspace_id,
             attempt_ref=attempt,
             presentation_occurrence=presented,
+            selection_occurrence=selection,
         )
         if recovered is None:
             _record(
@@ -985,6 +1127,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
                 presentation_ref=presentation_ref,
                 known_loss=list(recovered.representation_known_loss),
                 representation_occurrence_id=recovered.representation_occurrence_id,
+                binding_occurrence_id=recovered.binding_occurrence_id,
                 lineage=[
                     recovered.representation_occurrence_id,
                     presented.id,
