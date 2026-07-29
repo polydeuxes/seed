@@ -26,16 +26,19 @@ alternative response branches:
    -> exact selection testimony identifying that presented alternative
    -> represented source-candidate identity is recovered through preserved lineage
    -> a separately warranted meaning relation establishes that the candidate expresses the bounded goal proposition
-   -> BOGE-local applicability is examined
-   -> a consumer-local occurrence admits the bounded goal proposition to BOGE
-   -> the BOGE establishment occurrence may consume the admitted proposition
+   -> BOGE-local applicability examines whether that warranted relation may support
+      BOGE's bounded use of the proposition
+   -> a consumer-local occurrence admits the warranted relation to BOGE while
+      preserving its identity, lineage, and limits
+   -> the BOGE establishment occurrence may rely on the admitted relation and consume
+      the proposition as expressed by the source candidate
       and establish bounded operator goal standing
 
 2. exact selection of the presented local-stop alternative
    -> the represented local-stop source is recovered through representation lineage
    -> a separately warranted meaning relation establishes that the source expresses its bounded proposition
-   -> a separate responsible stopping occurrence at a competent boundary
-      may establish the bounded stop
+   -> a competent stopping occurrence may rely on that bounded relation
+      when establishing the bounded stop
    -> no grammar-acquisition goal is established, and Seed may return to
       quiescence
 
@@ -89,9 +92,9 @@ In a first-contact occurrence, a presented closed-choice set together with exact
 
 For the current case, the closed choice exposes a presented alternative representing the bounded potential-goal candidate and a presented alternative representing the local-stop treatment; a responsible selection occurrence may identify one exact presented alternative. The representation does not interpret the original ingress, prove shared grammar beyond the bounded selection, select English, establish a goal, authorize acquisition, or perform stopping.
 
-Exact selection testimony identifies which presented alternative the operator selected. A responsible binding occurrence may both compare the captured token against the exact presented set and identify the corresponding alternative; the Book does not universally require separate occurrences for those two acts. Binding does not select the source candidate by identity automatically, establish that every presented alternative is a potential goal, make its rendered label its full meaning, warrant a meaning relation, adopt every upstream assertion, admit goal meaning to BOGE, or establish a bounded goal. Preserved representation lineage may support recovery of the represented source-candidate identity, relation path, and attribution source, but does not by itself warrant that the source expresses the proposition. A separate responsible occurrence must warrant the meaning relation that the candidate expresses bounded goal proposition M; M must then be examined for BOGE-local applicability and admitted by a consumer-local occurrence; it must not be reconstructed or warranted from the label, token, numeric position, array inclusion, type compatibility, or reference resolution. Candidate recovery is not applicability or admission. Only the applicable bounded proposition receiving the required consumer-local admission may reach BOGE. This requirement prescribes neither a representation or admission artifact nor an implementation shape.
+Exact selection testimony identifies which presented alternative the operator selected. A responsible binding occurrence may both compare the captured token against the exact presented set and identify the corresponding alternative; the Book does not universally require separate occurrences for those two acts. Binding does not select the source candidate by identity automatically, establish that every presented alternative is a potential goal, make its rendered label its full meaning, warrant a meaning relation, adopt every upstream assertion, admit a meaning relation to BOGE, or establish a bounded goal. Preserved representation lineage may support recovery of the represented source-candidate identity, relation path, and attribution source, but does not by itself warrant that the source expresses the proposition. A separate responsible occurrence must warrant the meaning relation that candidate G expresses bounded goal proposition M. BOGE-local applicability then examines whether that warranted relation may support BOGE's bounded use of M; it does not make M applicable by proposition identity. A consumer-local occurrence must admit the warranted relation, not detach and admit bare M. Where applicable, that admission preserves selected presented alternative A, source candidate G, bounded proposition M, the warranted relation that G expresses M, operator-selection lineage, representation lineage, source and attribution, scope and purpose, authority limits, known loss, conflicts, **Unknowns**, and consumer identity. Candidate recovery is not applicability or admission, and applicability is not admission. The admission may reach BOGE without materializing a dedicated meaning-relation or admission artifact. BOGE may then rely on the admitted relation, consume M as the proposition expressed by G, and establish bounded operator goal standing; it does not establish the relation again. The meaning relation's identity and lineage must not be erased by equal proposition text: the same proposition expressed by another candidate, source, scope, or warrant is not automatically the same admitted relation.
 
-One external operator-response occurrence may supply testimony to responsible Seed-side occurrences: exact token binding and identification of the selected presented alternative, source-identity recovery through representation lineage, warrant of the meaning relation under preserved attribution, BOGE-local applicability, consumer-local admission, and a possible BOGE establishment occurrence that consumes the admitted proposition. Separate constitutional acts do not require repeated operator selections. Each crossing retains its appropriate responsibility and evidence, and none asks the operator to recreate the same selection merely because the internal responsibilities are decomposed. The one selection does not automatically establish any downstream standing.
+One external operator-response occurrence may supply testimony to responsible Seed-side occurrences: exact token binding and identification of the selected presented alternative, source-identity recovery through representation lineage, warrant of the meaning relation under preserved attribution, BOGE-local applicability, consumer-local admission of that relation, and a possible BOGE establishment occurrence that relies on the admitted relation while consuming its proposition. Separate constitutional acts do not require repeated operator selections. Each crossing retains its appropriate responsibility and evidence, and none asks the operator to recreate the same selection merely because the internal responsibilities are decomposed. The one selection does not automatically establish any downstream standing.
 
 The lawful local relation is:
 
@@ -105,15 +108,17 @@ bounded potential-goal standing
 -> represented source-candidate identity recovered through preserved representation lineage
 -> separately warranted meaning relation establishes that the source candidate
    expresses bounded goal proposition M
--> BOGE-local applicability
--> BOGE-local admission
--> BOGE establishment occurrence consumes or relies on admitted M
+-> BOGE-local applicability examines whether the warranted relation may support
+   BOGE's bounded use of M
+-> BOGE-local admission preserves the warranted relation and its limits
+-> BOGE establishment occurrence relies on the admitted relation and consumes M
+   as the proposition expressed by the source candidate
 -> possible bounded operator goal establishment
 ```
 
-Selected potential-goal meaning is not an established bounded goal. BOGE consumes consumer-local admitted goal-specific meaning and establishes bounded operator goal standing. Only after that establishment do any grammar acquisition, capability examination, movement consideration, movement selection, authority, performance, and evidence production belong to ordinary bounded-goal advancement responsibilities.
+Selected potential-goal meaning is not an established bounded goal. BOGE relies on the consumer-local admitted warranted relation and consumes the bounded goal proposition as expressed by the exact source candidate when establishing bounded operator goal standing. Only after that establishment do any grammar acquisition, capability examination, movement consideration, movement selection, authority, performance, and evidence production belong to ordinary bounded-goal advancement responsibilities.
 
-An exact local-stop selection identifies the presented local-stop alternative only. The same operator response may support exact binding, alternative identification, and recovery of its preserved local-stop meaning without a second confirmation. Selection does not itself establish stopping: a separate responsible stopping occurrence at a competent boundary must establish the bounded stop. No grammar-acquisition goal is established, and Seed may return to quiescence. It does not interpret the original ingress or establish a general refusal.
+An exact local-stop selection identifies presented local-stop alternative A_stop only. Representation lineage identifies represented source S_stop, and a separately warranted meaning relation establishes that S_stop expresses bounded local-stop proposition M_stop. The same operator response may support exact binding, alternative identification, lineage recovery, and warrant without a second confirmation. A competent stopping occurrence may rely on that bounded relation when establishing the local stop. The relation being admitted or otherwise usable does not mean stopping occurred; stopping occurrence does not establish a grammar-acquisition goal. No grammar-acquisition goal is established, and Seed may return to quiescence. It does not interpret the original ingress or establish a general refusal.
 
 A captured response token unsupported by the probe is neither affirmative nor negative, neither refusal nor authorization. Comparison against the exact token bindings of this one presented closed-choice representation identifies no presented alternative. The response's meaning, operator intent, and requested treatment remain **Unknown**; no potential-goal candidate or local-stop alternative is selected. A token-binding nonmatch does not establish candidate nonparticipation. One or more retries may occur only as bounded, separately evidenced interactions. Repetition supplies scoped obstruction evidence; it neither interprets the response nor automatically establishes a Demand.
 
@@ -127,7 +132,7 @@ A later responsible acquisition occurrence may make attributed external-grammar 
 
 Newly available material may support later upstream translation or interpretation concerning the same preserved ingress under the material's preserved limits. The same ingress occurrence and provenance remain recoverable; acquisition does not replace that ingress with a new operator occurrence. Translation, candidate interpretation, warrant, selection, applicability, admission, and BOGE establishment remain distinct and require their own responsible occurrences and evidence. Failure at any boundary retains its own lawful Unknown, refusal, or stopping standing. One acquisition occurrence or one closed-choice selection does not establish permanent common-grammar standing for every consumer, material, act, purpose, participant, or scope.
 
-BOGE consumes consumer-local admitted goal-specific meaning, with preserved lineage and consumer-local evidence, rather than unresolved raw prose, and establishes bounded-goal standing. The admitted-interpretation road and closed-choice road are distinct possible roads sharing that narrower constitutional requirement; neither is identical to the other or universally compulsory. A visible numbered enum is one possible representation, not the constitutional primitive. Bounded potential-goal standing may lead through source eligibility, formation and exact-set participation of a presented alternative representing that candidate, exact operator selection testimony identifying the presented alternative, represented-source identity recovery through lineage, separate warrant of the meaning relation that the candidate expresses the bounded proposition, BOGE-local applicability, BOGE-local admission, BOGE consumption or reliance on the admitted proposition, and possible establishment. Potential-goal standing does not establish eligibility or a bounded goal; eligibility does not form the presented alternative; representation does not establish exact-set participation; participation does not select; selection does not recover a source by identity or warrant its meaning relation; warrant does not establish applicability; applicability does not establish admission; admission does not establish the goal; establishment does not consider it for movement; consideration does not select movement; and movement selection neither authorizes nor performs movement.
+BOGE relies on a consumer-local admitted warranted relation, with preserved lineage and consumer-local evidence, and consumes its bounded proposition as expressed by the selected candidate rather than consuming unresolved raw prose or proposition content detached from its standing. The admitted-interpretation road and closed-choice road are distinct possible roads sharing that narrower constitutional requirement; neither is identical to the other or universally compulsory. A visible numbered enum is one possible representation, not the constitutional primitive. Bounded potential-goal standing may lead through source eligibility, formation and exact-set participation of a presented alternative representing that candidate, exact operator selection testimony identifying the presented alternative, represented-source identity recovery through lineage, separate warrant of the meaning relation that the candidate expresses the bounded proposition, BOGE-local applicability of that relation, BOGE-local admission of that relation, BOGE reliance on the admitted relation while consuming its proposition, and possible establishment. Potential-goal standing does not establish eligibility or a bounded goal; eligibility does not form the presented alternative; representation does not establish exact-set participation; participation does not select; selection does not recover a source by identity or warrant its meaning relation; warrant does not establish applicability; applicability does not establish admission; admission does not establish the goal; establishment does not consider it for movement; consideration does not select movement; and movement selection neither authorizes nor performs movement.
 
 BOGE remains operator-origin throughout. Necessary internal work is expressed through prerequisite, Demand, movement, selection, authority, and stopping grammar; Seed establishes no independent Seed-origin goal to perform it.
 
@@ -148,13 +153,19 @@ BOGE remains operator-origin throughout. Necessary internal work is expressed th
 - token binding != operator selection occurrence
 - operator response occurrence != binding occurrence
 - binding result != meaning relation warranted
+- proposition M != warranted relation that G expresses M
+- selected candidate identity != proposition identity
+- same proposition expressed by another candidate != same admitted meaning relation automatically
 - meaning relation warranted != purpose-local applicability
+- meaning relation warranted != proposition applicable to BOGE by identity
 - purpose-local applicability != consumer-local admission
 - consumer-local admission != consumer use or reliance
+- admission of the warranted meaning relation != bounded goal established
+- BOGE consumes M != BOGE consumes M without its candidate and relation standing
 - selected presented alternative != source candidate selected by identity automatically
-- source candidate recovered through lineage != goal meaning admitted to BOGE
+- source candidate recovered through lineage != warranted meaning relation admitted to BOGE
 - represented alternative != selected alternative
-- selected alternative != goal-specific meaning admitted to BOGE
+- selected alternative != warranted meaning relation admitted to BOGE
 - represented subject != bounded set of selectable alternatives
 - participation in an eligible set != presentation
 - presentation != selection
@@ -170,6 +181,8 @@ BOGE remains operator-origin throughout. Necessary internal work is expressed th
 - presented alternative selected != every upstream assertion adopted
 - presentation navigation != goal establishment
 - local-stop selection != goal establishment
+- local-stop relation admitted or usable != stopping occurred
+- stopping occurred != grammar-acquisition goal established
 - goal-semantic admission != BOGE establishment
 - affirmative selection != acquisition authorized or begun
 - negative selection != bounded stop established
