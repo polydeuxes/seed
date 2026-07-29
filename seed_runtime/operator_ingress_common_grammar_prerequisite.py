@@ -465,10 +465,12 @@ def _examine_presentation_eligibility(
     """Examine only the exact source-to-presentation-purpose eligibility relation."""
     result, reason = "eligible", "exact_standing_and_purpose_under_bounded_authority"
     expected_purpose = application_presentation_purpose(presentation_ref)
-    recorded = (
-        isinstance(standing_occurrence, Event)
-        and ledger.get(standing_occurrence.id) is standing_occurrence
+    resolved_standing_occurrence = (
+        ledger.get(standing_occurrence.id)
+        if isinstance(standing_occurrence, Event)
+        else None
     )
+    recorded = resolved_standing_occurrence is not None
     matching = [
         event
         for event in ledger.list(workspace_id)
@@ -477,25 +479,29 @@ def _examine_presentation_eligibility(
         and event.payload.get("attempt_ref") == attempt_ref
     ]
 
-    # Identity and structural admission precede all carried conflicts and Unknowns.
+    # Input identity and admissibility validation precede carried conflicts and Unknowns.
     if standing_occurrence is None:
         result, reason = "unknown", "required_standing_occurrence_unavailable"
     elif not isinstance(standing_occurrence, Event):
         result, reason = "refused", "standing_occurrence_not_an_event"
     elif not recorded:
         result, reason = "refused", "foreign_forged_or_unrecorded_standing_occurrence"
-    elif len(matching) != 1 or matching[0] is not standing_occurrence:
+    elif (
+        len(matching) != 1
+        or matching[0].id != resolved_standing_occurrence.id
+        or standing_occurrence.id != resolved_standing_occurrence.id
+    ):
         result, reason = "refused", "standing_occurrence_not_exactly_once_for_attempt"
     elif (
-        standing_occurrence.kind
+        resolved_standing_occurrence.kind
         != "operator.ingress.common_grammar.potential_goal_standing_examined"
-        or standing_occurrence.workspace_id != workspace_id
-        or standing_occurrence.session_id != session_id
-        or standing_occurrence.payload.get("attempt_ref") != attempt_ref
+        or resolved_standing_occurrence.workspace_id != workspace_id
+        or resolved_standing_occurrence.session_id != session_id
+        or resolved_standing_occurrence.payload.get("attempt_ref") != attempt_ref
     ):
         result, reason = "refused", "foreign_or_malformed_standing_occurrence"
     else:
-        upstream = standing_occurrence.payload
+        upstream = resolved_standing_occurrence.payload
         required_upstream = {
             "standing_subject": POTENTIAL_GOAL_SOURCE_REF,
             "standing_relation": "has bounded potential-goal standing",
@@ -575,7 +581,7 @@ def _examine_presentation_eligibility(
                 "forged_or_inapplicable_presentation_eligibility_authority",
             )
     if result == "eligible":
-        upstream = standing_occurrence.payload
+        upstream = resolved_standing_occurrence.payload
         if upstream["standing_result"] == "conflict" or upstream["conflicts"]:
             result, reason = "conflict", "exact_upstream_standing_conflict"
         elif upstream["standing_result"] == "unknown" or upstream["unknowns"]:
@@ -601,7 +607,7 @@ def _examine_presentation_eligibility(
         else None
     )
     upstream_payload = (
-        standing_occurrence.payload if isinstance(standing_occurrence, Event) else {}
+        resolved_standing_occurrence.payload if resolved_standing_occurrence else {}
     )
     conflicts = list(upstream_payload.get("conflicts", ()))
     unknowns = list(upstream_payload.get("unknowns", ()))
@@ -687,18 +693,6 @@ def _examine_presentation_eligibility(
         conflicts=conflicts,
         unknowns=unknowns,
         refusal_reason=reason if result == "refused" else None,
-        establishes_alternative_formation=False,
-        establishes_exact_set_participation=False,
-        establishes_presentation=False,
-        establishes_selection=False,
-        establishes_meaning=False,
-        establishes_applicability=False,
-        establishes_admission=False,
-        establishes_bounded_goal=False,
-        establishes_stopping=False,
-        establishes_movement=False,
-        establishes_authority=False,
-        establishes_performance=False,
         lineage=list(lineage),
     )
 
