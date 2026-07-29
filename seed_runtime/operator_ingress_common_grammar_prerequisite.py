@@ -96,7 +96,7 @@ class ApplicationSourceRoleTestimony:
 
 @dataclass(frozen=True)
 class ApplicationPotentialGoalStandingConvention:
-    """Bounded authority for examining eligible role testimony; asserts no role."""
+    """Bounded authority for examining admissible role testimony; asserts no role."""
 
     convention_id: str = "convention:operator-common-grammar:potential-goal-standing:v1"
     attribution: str = "Seed application developer declaration"
@@ -251,7 +251,7 @@ def _examine_potential_goal_standing(
     if testimony is None:
         result, reason = "unknown", "required_source_role_testimony_missing"
     elif not isinstance(testimony, ApplicationSourceRoleTestimony):
-        result, reason = "refused", "ineligible_testimony_form"
+        result, reason = "refused", "inadmissible_testimony_form"
     elif any(
         not getattr(testimony, name, None)
         for name in (
