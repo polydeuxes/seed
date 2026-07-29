@@ -31,15 +31,15 @@ def _stable(prefix: str, payload: object) -> str:
 @dataclass(frozen=True)
 class ClosedChoiceOption:
     token: str
-    option_ref: str
+    presented_alternative_ref: str
     presented_label: str
     presented_detail: str = ""
 
     def __post_init__(self) -> None:
         if not self.token:
             raise ClosedChoiceSelectionBindingError("closed choice option token is required")
-        if not self.option_ref:
-            raise ClosedChoiceSelectionBindingError("closed choice option_ref is required")
+        if not self.presented_alternative_ref:
+            raise ClosedChoiceSelectionBindingError("presented alternative identity is required")
 
 
 @dataclass(frozen=True)
@@ -95,7 +95,7 @@ class ClosedChoiceSelectionBinding:
     captured_token: str
     binding_state: str
     binding_reason: str
-    bound_option_ref: str | None
+    selected_presented_alternative_ref: str | None
     bound_option_label: str | None
     unsupported_selection_evidence: tuple[str, ...]
     unknown_selection_evidence: tuple[str, ...]
@@ -109,6 +109,11 @@ class ClosedChoiceSelectionBinding:
     mutates_cluster: bool = False
     boundary_notes: tuple[str, ...] = BOUNDARY_NOTES
     binding_convention: str = CONVENTION
+
+    @property
+    def bound_option_ref(self) -> str | None:
+        """Compatibility coordinate; this is a presented alternative, never a source."""
+        return self.selected_presented_alternative_ref
 
     def to_json_dict(self) -> dict[str, object]:
         data = asdict(self)
@@ -158,7 +163,9 @@ def bind_closed_choice_selection(
         "captured_token": token_capture.captured_token,
         "state": state,
         "reason": reason,
-        "bound_option_ref": bound.option_ref if bound else None,
+        "selected_presented_alternative_ref": (
+            bound.presented_alternative_ref if bound else None
+        ),
         "unsupported": unsupported,
         "unknowns": all_unknowns,
         "conflicts": all_conflicts,
@@ -175,7 +182,7 @@ def bind_closed_choice_selection(
         token_capture.captured_token,
         state,
         reason,
-        bound.option_ref if bound else None,
+        bound.presented_alternative_ref if bound else None,
         bound.presented_label if bound else None,
         unsupported,
         all_unknowns,
