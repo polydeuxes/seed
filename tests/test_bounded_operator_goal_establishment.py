@@ -4,6 +4,7 @@ from seed_runtime.bounded_operator_goal_establishment import (
     BoundedOperatorGoalEstablishmentError,
     establish_bounded_operator_goal_from_admitted_interpretation,
     establish_bounded_operator_goal_from_closed_choice,
+    examine_meaning_relation_applicability,
 )
 from seed_runtime.closed_choice_selection_binding import (
     ClosedChoiceOption,
@@ -52,10 +53,10 @@ def test_raw_closed_choice_cannot_establish_bounded_goal():
 
 
 def test_arbitrary_refs_have_no_admission_api_and_labels_are_not_goal_meaning():
-    import seed_runtime.bounded_operator_goal_establishment as boge
+    import seed_runtime.bounded_operator_goal_establishment as goal_establishment
 
-    assert not hasattr(boge, "admit_closed_choice_to_bounded_goal")
-    assert not hasattr(boge, "ClosedChoiceBoundedGoalAdmission")
+    assert not hasattr(goal_establishment, "admit_closed_choice_to_bounded_goal")
+    assert not hasattr(goal_establishment, "ClosedChoiceBoundedGoalAdmission")
     binding = _choice_binding("1")
     assert binding.bound_option_label == "Inspect repository"
     assert binding.selected_presented_alternative_ref == "inspect_repository"
@@ -63,6 +64,43 @@ def test_arbitrary_refs_have_no_admission_api_and_labels_are_not_goal_meaning():
         establish_bounded_operator_goal_from_closed_choice(
             binding, eligibility_evidence_refs=("arbitrary string",)
         )
+
+
+def test_relation_fields_and_source_role_do_not_supply_consumer_evidence():
+    occurrence = {
+        "id": "event:one",
+        "kind": "operator.ingress.common_grammar.meaning_relation_warranted",
+        "payload": {
+            "relation_ref": "relation:one",
+            "source_role": "potential-goal candidate",
+            "proposition": "same text",
+            "scope": "scope:one",
+            "provenance": ["source:one"],
+            "known_loss": [],
+            "conflicts": [],
+        },
+    }
+    examination = examine_meaning_relation_applicability(occurrence)
+    assert examination.applicability == "unknown"
+    assert examination.evidence["condition_evidence"] == []
+    assert examination.evidence["meaning_relation_warrant_occurrence"] is occurrence
+
+    other = {
+        **occurrence,
+        "id": "event:two",
+        "payload": {**occurrence["payload"], "relation_ref": "relation:two"},
+    }
+    other_examination = examine_meaning_relation_applicability(other)
+    assert other_examination.evidence["meaning_relation_warrant_occurrence"] is other
+    assert other_examination.evidence != examination.evidence
+
+
+def test_relation_conflict_remains_conflict_at_consumer_boundary():
+    examination = examine_meaning_relation_applicability(
+        {"id": "event:conflict", "payload": {"conflicts": ["source conflict"]}}
+    )
+    assert examination.applicability == "conflict"
+    assert examination.conflicts == ("source conflict",)
 
 
 def test_closed_choice_requires_exact_positive_goal_admission():

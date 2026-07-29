@@ -14,6 +14,63 @@ BOUNDED_GOAL_ESTABLISHMENT_CONSUMER_REF = "consumer:bounded-operator-goal-establ
 BOUNDED_GOAL_ESTABLISHMENT_PURPOSE_REF = "purpose:bounded-operator-goal-establishment"
 
 
+@dataclass(frozen=True)
+class MeaningRelationApplicabilityExamination:
+    """Consumer-owned standing for one exact warranted meaning relation."""
+
+    consumer_ref: str
+    purpose_ref: str
+    condition_examined: str
+    applicability: str
+    reason: str
+    evidence: dict[str, object]
+    conflicts: tuple[str, ...] = ()
+    unknowns: tuple[str, ...] = ()
+
+
+def examine_meaning_relation_applicability(
+    meaning_relation_occurrence: dict[str, object],
+) -> MeaningRelationApplicabilityExamination:
+    """Examine the current consumer boundary without inventing an admission.
+
+    This consumer currently establishes a goal only from an exact admitted
+    interpretation.  A warranted meaning relation is therefore relevant input,
+    but is not itself positive evidence of applicability to this consumer.
+    """
+    payload = meaning_relation_occurrence.get("payload", {})
+    conflicts = _refs(payload.get("conflicts", ())) if isinstance(payload, dict) else ()
+    condition = (
+        "an exact DownstreamInterpretationAdmission admitted for the bounded "
+        "operator goal establishment consumer and purpose"
+    )
+    evidence = {
+        "meaning_relation_warrant_occurrence": meaning_relation_occurrence,
+        "consumer_ref": BOUNDED_GOAL_ESTABLISHMENT_CONSUMER_REF,
+        "purpose_ref": BOUNDED_GOAL_ESTABLISHMENT_PURPOSE_REF,
+        "condition_examined": condition,
+        "condition_evidence": [],
+    }
+    if conflicts:
+        return MeaningRelationApplicabilityExamination(
+            BOUNDED_GOAL_ESTABLISHMENT_CONSUMER_REF,
+            BOUNDED_GOAL_ESTABLISHMENT_PURPOSE_REF,
+            condition,
+            "conflict",
+            "the warranted relation carries unresolved conflict",
+            evidence,
+            conflicts,
+        )
+    return MeaningRelationApplicabilityExamination(
+        BOUNDED_GOAL_ESTABLISHMENT_CONSUMER_REF,
+        BOUNDED_GOAL_ESTABLISHMENT_PURPOSE_REF,
+        condition,
+        "unknown",
+        "no consumer-local admitted interpretation evidence was supplied",
+        evidence,
+        unknowns=("consumer-local admission evidence is absent",),
+    )
+
+
 class BoundedOperatorGoalEstablishmentError(ValueError):
     pass
 

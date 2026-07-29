@@ -8,8 +8,6 @@ import sys
 import pytest
 
 from seed_runtime.bounded_operator_goal_establishment import (
-    BOUNDED_GOAL_ESTABLISHMENT_CONSUMER_REF,
-    BOUNDED_GOAL_ESTABLISHMENT_PURPOSE_REF,
     BoundedOperatorGoalEstablishmentError,
     establish_bounded_operator_goal_from_closed_choice,
 )
@@ -29,10 +27,7 @@ from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     APPLICATION_SOURCE_MEANING_CONVENTION,
     SOURCE_MEANING_CONVENTIONS,
     SOURCE_MEANING_TESTIMONIES,
-    BOGE_MEANING_RELATION_APPLICABILITY_CONTRACT,
-    BOGEPurposeLocalRequirementTestimony,
-    _boge_requirement_testimonies,
-    _examine_boge_meaning_relation_applicability,
+    _examine_meaning_relation_for_bounded_operator_goal_establishment,
     _warrant_source_meaning_relation,
     common_grammar_choice_set,
     _recover_represented_source,
@@ -150,19 +145,63 @@ def test_testimony_and_convention_are_distinct_inputs_to_exact_warrant(token):
     assert warrant.payload["relation_assertion"] == "expresses"
     assert warrant.payload["source_ref"] == testimony.source_ref
     assert warrant.payload["proposition"] == testimony.proposition
-    assert (
-        "first bounded implementation witness"
-        in warrant.payload["implementation_status"]
-    )
-    assert (
-        "developer authority as constitutional authority"
-        in warrant.payload["not_established"]
-    )
+    assert "implementation_status" not in warrant.payload
+    assert "not_established" not in warrant.payload
     assert warrant.payload["lineage"][-1] == recovery.id
     assert RENDERING_KNOWN_LOSS[0] in warrant.payload["known_loss"]
     assert view["meaning_testimony_ref"] == testimony.testimony_id
     assert view["constitutive_convention_ref"] == convention.convention_id
     assert view.get("bounded_goal") is None and view.get("closed") is None
+
+
+def test_potential_goal_relation_reaches_consumer_boundary_as_unknown():
+    ledger, view, _ = run_attempt("unknown request\n1\n")
+    events = ledger.list_events("w")
+    warrant = next(e for e in events if e.kind.endswith("meaning_relation_warranted"))
+    finding = next(e for e in events if e.kind.endswith("applicability_examined"))
+    assert warrant.payload["source_role"] == "potential-goal candidate"
+    assert finding.payload["applicability"] == "unknown"
+    assert finding.payload["condition_evidence"] == []
+    assert finding.payload["meaning_relation_warrant_occurrence"] == warrant.model_dump(
+        mode="json"
+    )
+    assert (
+        view["current_standing"][
+            "bounded_operator_goal_establishment_applicability"
+        ]["evidence_event_id"]
+        == finding.id
+    )
+    assert not any(
+        "admission" in event.kind or event.kind.endswith(".goal_established")
+        for event in events
+    )
+
+
+def test_local_stop_relation_has_no_bounded_goal_applicability_or_stopping():
+    ledger, view, _ = run_attempt("unknown request\n2\n")
+    events = ledger.list_events("w")
+    warrant = next(e for e in events if e.kind.endswith("meaning_relation_warranted"))
+    assert warrant.payload["source_role"] == "local-stop"
+    assert view["current_standing"]["meaning_relation"]["evidence_event_id"] == warrant.id
+    assert view["current_standing"]["bounded_operator_goal_establishment_applicability"] is None
+    assert not any("applicability" in event.kind or "stopping" in event.kind for event in events)
+
+
+def test_unrecorded_relation_is_refused_without_inapplicability():
+    ledger, _, _ = run_attempt("unknown request\n1\n")
+    warrant = next(
+        e for e in ledger.list_events("w") if e.kind.endswith("meaning_relation_warranted")
+    )
+    forged = warrant.model_copy(update={"id": "event:forged"})
+    refusal = _examine_meaning_relation_for_bounded_operator_goal_establishment(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref=warrant.payload["attempt_ref"],
+        meaning_relation=forged,
+    )
+    assert refusal.payload["applicability"] == "unknown"
+    assert refusal.payload["refusal_reason"] == "supplied_meaning_relation_is_not_exact_recorded_warrant"
 
 
 def _rewarrant(ledger, recovery, *, testimony=None, convention=None):
@@ -174,121 +213,6 @@ def _rewarrant(ledger, recovery, *, testimony=None, convention=None):
         source_recovery=recovery,
         testimony=testimony,
         convention=convention,
-    )
-
-
-@pytest.mark.parametrize("token,expected", [("1", "applicable"), ("2", "inapplicable")])
-def test_boge_applicability_is_separate_and_relation_complete(token, expected):
-    ledger, view, _ = run_attempt(f"unknown request\n{token}\n")
-    events = ledger.list_events("w")
-    warrant = next(e for e in events if e.kind.endswith("meaning_relation_warranted"))
-    finding = next(
-        e
-        for e in events
-        if e.kind.endswith("boge_meaning_relation_applicability_examined")
-    )
-    assert events.index(warrant) < events.index(finding)
-    assert finding.payload["meaning_relation_warrant_occurrence_id"] == warrant.id
-    assert finding.payload["relation_ref"] == warrant.payload["relation_ref"]
-    assert finding.payload["source_ref"] == warrant.payload["source_ref"]
-    assert finding.payload["proposition"] == warrant.payload["proposition"]
-    assert finding.payload["applicability"] == expected
-    assert finding.payload["consumer_ref"] == BOUNDED_GOAL_ESTABLISHMENT_CONSUMER_REF
-    assert finding.payload["purpose_ref"] == BOUNDED_GOAL_ESTABLISHMENT_PURPOSE_REF
-    assert RENDERING_KNOWN_LOSS[0] in finding.payload["known_loss"]
-    assert (
-        view["current_standing"]["meaning_relation"]["evidence_event_id"] == warrant.id
-    )
-    assert (
-        view["current_standing"]["boge_meaning_relation_applicability"][
-            "evidence_event_id"
-        ]
-        == finding.id
-    )
-    assert not any(
-        "admission" in event.kind or "goal_establish" in event.kind for event in events
-    )
-
-
-def test_contract_and_requirement_testimony_do_not_contain_a_finding():
-    contract = BOGE_MEANING_RELATION_APPLICABILITY_CONTRACT
-    serialized = repr(contract)
-    for source, (_, proposition) in SOURCE_PROPOSITIONS.items():
-        assert source not in serialized and proposition not in serialized
-    assert not hasattr(contract, "applicability")
-    testimony = _boge_requirement_testimonies(
-        "meaning-relation:exact", "potential-goal candidate"
-    )
-    assert testimony and all(not hasattr(item, "applicability") for item in testimony)
-    assert contract is not testimony
-
-
-def _reexamine(ledger, warrant, testimonies):
-    return _examine_boge_meaning_relation_applicability(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        attempt_ref=warrant.payload["attempt_ref"],
-        meaning_relation=warrant,
-        contract=BOGE_MEANING_RELATION_APPLICABILITY_CONTRACT,
-        requirement_testimonies=testimonies,
-    )
-
-
-def test_missing_unsatisfied_and_conflicting_requirement_states_remain_distinct():
-    ledger, _, _ = run_attempt("unknown request\n1\n")
-    warrant = next(
-        e
-        for e in ledger.list_events("w")
-        if e.kind.endswith("meaning_relation_warranted")
-    )
-    testimony = list(
-        _boge_requirement_testimonies(
-            warrant.payload["relation_ref"], warrant.payload["source_role"]
-        )
-    )
-    assert (
-        _reexamine(ledger, warrant, testimony[:-1]).payload["applicability"]
-        == "Unknown"
-    )
-    unsatisfied = [
-        (
-            replace(item, testified_state="unsatisfied")
-            if item.requirement_id == "boge-source-role"
-            else item
-        )
-        for item in testimony
-    ]
-    assert (
-        _reexamine(ledger, warrant, unsatisfied).payload["applicability"]
-        == "inapplicable"
-    )
-    conflicting = [
-        *testimony,
-        replace(testimony[0], testimony_id="conflict", testified_state="unsatisfied"),
-    ]
-    assert (
-        _reexamine(ledger, warrant, conflicting).payload["applicability"] == "conflict"
-    )
-
-
-def test_foreign_requirement_testimony_is_not_consumed():
-    ledger, _, _ = run_attempt("unknown request\n1\n")
-    warrant = next(
-        e
-        for e in ledger.list_events("w")
-        if e.kind.endswith("meaning_relation_warranted")
-    )
-    testimony = list(
-        _boge_requirement_testimonies(
-            warrant.payload["relation_ref"], warrant.payload["source_role"]
-        )
-    )
-    testimony[0] = replace(testimony[0], consumer_ref="consumer:foreign")
-    finding = _reexamine(ledger, warrant, testimony)
-    assert finding.payload["applicability"] == "Unknown"
-    assert (
-        testimony[0].testimony_id not in finding.payload["requirement_testimony_refs"]
     )
 
 
@@ -559,7 +483,7 @@ def test_exact_ingress_preservation_all_dimensions_and_durable_replay(tmp_path):
     assert ingress.payload["known_loss"] == [
         "original transport bytes and prior decoder behavior are unavailable"
     ]
-    assert len(view["dimensional_standing"]) == 14
+    assert len(view["dimensional_standing"]) == 13
     assert all(
         set(item["dimensions"])
         == {
@@ -1031,7 +955,7 @@ def test_invalid_enum_bytes_stop_before_token_capture_or_binding():
         for e in events
     )
     assert not any(
-        any(term in e.kind for term in ("demand", "acquisition", "boge", "cluster"))
+        any(term in e.kind for term in ("demand", "acquisition", "bounded-goal-applicability", "cluster"))
         for e in events
     )
 
@@ -1163,7 +1087,7 @@ def test_representation_evidence_produces_no_broader_standing():
             "interpretation",
             "competency",
             "demand",
-            "boge",
+            "bounded-goal-applicability",
         )
     )
 
