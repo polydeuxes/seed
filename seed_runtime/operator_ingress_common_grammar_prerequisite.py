@@ -52,6 +52,45 @@ RENDERING_KNOWN_LOSS = (
     "rendered label is a compressed presentation and does not carry the complete source proposition",
 )
 
+MEANING_CONVENTION_PURPOSE = "operator-ingress common-grammar source meaning"
+MEANING_CONVENTION_SCOPE = "operator-ingress-common-grammar:v1"
+
+
+@dataclass(frozen=True)
+class ApplicationSourceMeaningConvention:
+    convention_id: str
+    source_ref: str
+    source_role: str
+    proposition: str
+    relation_assertion: str = "expresses"
+    attribution: str = "Seed application developer declaration"
+    purpose: str = MEANING_CONVENTION_PURPOSE
+    scope: str = MEANING_CONVENTION_SCOPE
+    producer_occurrence_ref: str = (
+        "seed_runtime.operator_ingress_common_grammar:source-declaration:v1"
+    )
+    authority_limits: tuple[str, ...] = (
+        "only this exact source expresses this exact proposition in this exact use",
+        "no goal, stopping, acquisition, applicability, admission, authority, or movement",
+    )
+    provenance: tuple[str, ...] = (
+        "application-owned operator-ingress common-grammar declaration",
+    )
+    known_loss: tuple[str, ...] = RENDERING_KNOWN_LOSS
+    unknowns: tuple[str, ...] = ()
+    conflicts: tuple[str, ...] = ()
+
+
+SOURCE_MEANING_CONVENTIONS = {
+    source_ref: ApplicationSourceMeaningConvention(
+        f"convention:operator-common-grammar:{source_ref.rsplit(':', 2)[-2]}:v1",
+        source_ref,
+        role,
+        proposition,
+    )
+    for source_ref, (role, proposition) in SOURCE_PROPOSITIONS.items()
+}
+
 
 def _representation_fingerprint(representations: object) -> str:
     encoded = json.dumps(
@@ -122,6 +161,178 @@ class RecoveredRepresentedSource:
     representation_known_loss: tuple[str, ...]
     representation_occurrence_id: str
     binding_occurrence_id: str
+
+
+def _warrant_source_meaning_relation(
+    *, ledger, workspace_id, session_id, attempt_ref, source_recovery, convention
+):
+    """Warrant one local source relation from recorded recovery plus declaration."""
+    recoveries = [
+        event
+        for event in ledger.list_events(workspace_id)
+        if event.payload.get("attempt_ref") == attempt_ref
+        and event.kind
+        in {
+            "operator.ingress.common_grammar.source_recovered",
+            "operator.ingress.common_grammar.source_recovery_refused",
+        }
+    ]
+    recorded = recoveries[0] if len(recoveries) == 1 else None
+    representation = (
+        ledger.get(source_recovery.payload.get("representation_occurrence_id", ""))
+        if source_recovery is not None
+        else None
+    )
+    checks = (
+        (not recoveries, "no_exact_recorded_source_recovery_occurrence"),
+        (len(recoveries) > 1, "multiple_source_recovery_occurrences"),
+        (
+            recorded is None
+            or source_recovery is None
+            or recorded.model_dump() != source_recovery.model_dump(),
+            "supplied_source_recovery_is_not_recorded_occurrence",
+        ),
+        (
+            recorded is not None and recorded.kind.endswith("source_recovery_refused"),
+            "source_recovery_reports_refusal",
+        ),
+        (convention is None, "missing_constitutive_convention"),
+        (
+            convention is not None
+            and (
+                convention.source_ref not in SOURCE_MEANING_CONVENTIONS
+                or convention.convention_id
+                != SOURCE_MEANING_CONVENTIONS[convention.source_ref].convention_id
+            ),
+            "constitutive_convention_identity_mismatch",
+        ),
+        (
+            convention is not None
+            and convention.attribution != "Seed application developer declaration",
+            "constitutive_convention_attribution_absent_or_mismatched",
+        ),
+        (
+            convention is not None
+            and convention.source_ref in SOURCE_MEANING_CONVENTIONS
+            and convention.authority_limits
+            != SOURCE_MEANING_CONVENTIONS[convention.source_ref].authority_limits,
+            "constitutive_convention_authority_absent_or_mismatched",
+        ),
+        (
+            convention is not None and convention.purpose != MEANING_CONVENTION_PURPOSE,
+            "constitutive_convention_purpose_mismatch",
+        ),
+        (
+            convention is not None and convention.scope != MEANING_CONVENTION_SCOPE,
+            "constitutive_convention_scope_mismatch",
+        ),
+        (
+            convention is not None and bool(convention.unknowns),
+            "constitutive_convention_unknown",
+        ),
+        (
+            convention is not None and bool(convention.conflicts),
+            "constitutive_convention_conflicting",
+        ),
+        (
+            recorded is not None
+            and convention is not None
+            and recorded.payload.get("recovered_source_ref") != convention.source_ref,
+            "source_identity_mismatch",
+        ),
+        (
+            recorded is not None
+            and convention is not None
+            and recorded.payload.get("recovered_source_role") != convention.source_role,
+            "source_role_mismatch",
+        ),
+        (
+            recorded is not None
+            and convention is not None
+            and recorded.payload.get("recovered_source_proposition")
+            != convention.proposition,
+            "proposition_mismatch",
+        ),
+        (representation is None, "upstream_representation_occurrence_missing"),
+        (
+            representation is not None and bool(representation.payload.get("unknowns")),
+            "upstream_representation_unknown",
+        ),
+        (
+            representation is not None
+            and bool(representation.payload.get("conflicts")),
+            "upstream_representation_conflicting",
+        ),
+    )
+    reason = next((reason for failed, reason in checks if failed), None)
+    if reason:
+        return _record(
+            ledger,
+            "operator.ingress.common_grammar.meaning_relation_refused",
+            workspace_id,
+            session_id,
+            attempt_ref,
+            _dimensions(
+                identity=f"meaning-relation-refusal:{source_recovery.id if source_recovery else attempt_ref}",
+                content=reason,
+                standing="refused",
+                source=source_recovery.id if source_recovery else "Unknown",
+                responsibility="application-source-meaning-relation-warrant",
+                authority="refusal only; does not establish negation",
+                scope=f"attempt:{attempt_ref}",
+                occurrence="exact bounded refusal durably recorded",
+            ),
+            refusal_reason=reason,
+            unknowns=["whether the source expresses the proposition remains Unknown"],
+            lineage=[source_recovery.id] if source_recovery else [],
+        )
+    relation_ref = f"meaning-relation:{convention.source_ref}:expresses"
+    return _record(
+        ledger,
+        "operator.ingress.common_grammar.meaning_relation_warranted",
+        workspace_id,
+        session_id,
+        attempt_ref,
+        _dimensions(
+            identity=relation_ref,
+            content=convention.proposition,
+            standing="warranted",
+            source=convention.convention_id,
+            responsibility="application-source-meaning-relation-warrant",
+            authority="exact local constitutive convention only",
+            scope=f"attempt:{attempt_ref};{convention.scope}",
+            occurrence="separate responsible meaning-relation warrant recorded",
+        ),
+        relation_ref=relation_ref,
+        relation_assertion=convention.relation_assertion,
+        source_ref=convention.source_ref,
+        source_role=convention.source_role,
+        proposition=convention.proposition,
+        convention=asdict(convention),
+        constitutive_convention_ref=convention.convention_id,
+        source_recovery_occurrence_id=source_recovery.id,
+        representation_occurrence_id=source_recovery.payload[
+            "representation_occurrence_id"
+        ],
+        binding_occurrence_id=source_recovery.payload["binding_occurrence_id"],
+        selected_presented_alternative_ref=source_recovery.payload[
+            "selected_presented_alternative_ref"
+        ],
+        known_loss=list(
+            dict.fromkeys(
+                (*source_recovery.payload.get("known_loss", ()), *convention.known_loss)
+            )
+        ),
+        conflicts=list(convention.conflicts),
+        unknowns=list(convention.unknowns),
+        warrant_basis="exact bounded developer-supplied constitutive convention",
+        lineage=[
+            source_recovery.payload["representation_occurrence_id"],
+            source_recovery.payload["binding_occurrence_id"],
+            *source_recovery.payload["lineage"][-1:],
+            source_recovery.id,
+        ],
+    )
 
 
 def common_grammar_representation_lineages(
@@ -466,6 +677,7 @@ def project_operator_ingress_common_grammar_events(state, event) -> None:
                     "binding_finding",
                     "alternative_selection",
                     "source_recovery",
+                    "meaning_relation",
                     "interaction_closure",
                 )
             },
@@ -510,6 +722,8 @@ def project_operator_ingress_common_grammar_events(state, event) -> None:
         "operator.ingress.common_grammar.alternative_selected": "alternative_selection",
         "operator.ingress.common_grammar.source_recovered": "source_recovery",
         "operator.ingress.common_grammar.source_recovery_refused": "source_recovery",
+        "operator.ingress.common_grammar.meaning_relation_warranted": "meaning_relation",
+        "operator.ingress.common_grammar.meaning_relation_refused": "meaning_relation",
         "operator.ingress.common_grammar.stopping_occurred": "interaction_closure",
     }
     subject = (
@@ -546,6 +760,9 @@ def project_operator_ingress_common_grammar_events(state, event) -> None:
         "recovered_source_ref",
         "recovered_source_role",
         "recovered_source_proposition",
+        "relation_ref",
+        "relation_assertion",
+        "constitutive_convention_ref",
         "closed",
         "response_kind",
     ):
@@ -668,7 +885,9 @@ def run_operator_ingress_common_grammar_probe_attempt(
     ingress_kind = (
         "eof"
         if captured_ingress.eof
-        else "empty" if raw_ingress in {"\n", "\r\n"} else "text"
+        else "empty"
+        if raw_ingress in {"\n", "\r\n"}
+        else "text"
     )
     ingress_content = (
         None
@@ -874,7 +1093,9 @@ def run_operator_ingress_common_grammar_probe_attempt(
     response_kind = (
         "eof"
         if captured_response.eof
-        else "empty" if raw_response in {"\n", "\r\n"} else "token"
+        else "empty"
+        if raw_response in {"\n", "\r\n"}
+        else "token"
     )
     token = (
         ""
@@ -1081,7 +1302,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
             selection_occurrence=selection,
         )
         if recovered is None:
-            _record(
+            recovery_event = _record(
                 ledger,
                 "operator.ingress.common_grammar.source_recovery_refused",
                 workspace_id,
@@ -1101,9 +1322,17 @@ def run_operator_ingress_common_grammar_probe_attempt(
                 selected_presented_alternative_ref=alternative,
                 lineage=[presented.id, binding_event.id, selection.id],
             )
+            _warrant_source_meaning_relation(
+                ledger=ledger,
+                workspace_id=workspace_id,
+                session_id=session_id,
+                attempt_ref=attempt,
+                source_recovery=recovery_event,
+                convention=None,
+            )
             result = f"Source recovery refused: {refusal_reason}."
         else:
-            _record(
+            recovery_event = _record(
                 ledger,
                 "operator.ingress.common_grammar.source_recovered",
                 workspace_id,
@@ -1134,6 +1363,14 @@ def run_operator_ingress_common_grammar_probe_attempt(
                     binding_event.id,
                     selection.id,
                 ],
+            )
+            _warrant_source_meaning_relation(
+                ledger=ledger,
+                workspace_id=workspace_id,
+                session_id=session_id,
+                attempt_ref=attempt,
+                source_recovery=recovery_event,
+                convention=SOURCE_MEANING_CONVENTIONS[recovered.represented_source_ref],
             )
             if recovered.represented_source_role == "local-stop":
                 result = (

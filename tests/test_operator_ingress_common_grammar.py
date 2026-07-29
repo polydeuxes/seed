@@ -1,5 +1,6 @@
 from io import BytesIO, StringIO
 from copy import deepcopy
+from dataclasses import replace
 from pathlib import Path
 import subprocess
 import sys
@@ -23,6 +24,8 @@ from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     ALTERNATIVE_SOURCES,
     RENDERING_KNOWN_LOSS,
     SOURCE_PROPOSITIONS,
+    SOURCE_MEANING_CONVENTIONS,
+    _warrant_source_meaning_relation,
     common_grammar_choice_set,
     _recover_represented_source,
     run_operator_ingress_common_grammar_probe_attempt,
@@ -119,6 +122,164 @@ def test_recovery_consumes_recorded_occurrence_and_preserves_full_lineage():
         .operator_ingress_common_grammar_attempts[represented.payload["attempt_ref"]]
     )
     assert RENDERING_KNOWN_LOSS[0] in projected["known_loss"]
+
+
+@pytest.mark.parametrize("token", ["1", "2"])
+def test_separate_convention_warrants_exact_source_meaning_relation(token):
+    ledger, view, _ = run_attempt(f"unknown request\n{token}\n")
+    events = ledger.list_events("w")
+    recovery = next(e for e in events if e.kind.endswith("source_recovered"))
+    warrant = next(e for e in events if e.kind.endswith("meaning_relation_warranted"))
+    convention = SOURCE_MEANING_CONVENTIONS[recovery.payload["recovered_source_ref"]]
+    assert events.index(recovery) < events.index(warrant)
+    assert recovery.payload["dimensions"]["authority_warrant"].startswith(
+        "source identity recovery only"
+    )
+    assert warrant.payload["source_recovery_occurrence_id"] == recovery.id
+    assert warrant.payload["source_ref"] == convention.source_ref
+    assert warrant.payload["source_role"] == convention.source_role
+    assert warrant.payload["proposition"] == convention.proposition
+    assert warrant.payload["relation_assertion"] == "expresses"
+    assert warrant.payload["warrant_basis"] == (
+        "exact bounded developer-supplied constitutive convention"
+    )
+    assert warrant.payload["proposition"] not in {
+        option.presented_label for option in common_grammar_choice_set("x").options
+    }
+    assert RENDERING_KNOWN_LOSS[0] in warrant.payload["known_loss"]
+    assert warrant.payload["lineage"][-1] == recovery.id
+    assert (
+        view["current_standing"]["source_recovery"]["evidence_event_id"] == recovery.id
+    )
+    assert (
+        view["current_standing"]["meaning_relation"]["evidence_event_id"] == warrant.id
+    )
+    assert view.get("bounded_goal") is None
+    assert view.get("closed") is None
+
+
+@pytest.mark.parametrize(
+    "change,reason",
+    [
+        ({"proposition": "changed proposition"}, "proposition_mismatch"),
+        ({"source_role": "changed role"}, "source_role_mismatch"),
+        ({"convention_id": "wrong"}, "constitutive_convention_identity_mismatch"),
+        (
+            {"attribution": ""},
+            "constitutive_convention_attribution_absent_or_mismatched",
+        ),
+        ({"purpose": "wrong"}, "constitutive_convention_purpose_mismatch"),
+        ({"scope": "wrong"}, "constitutive_convention_scope_mismatch"),
+        (
+            {"authority_limits": ()},
+            "constitutive_convention_authority_absent_or_mismatched",
+        ),
+    ],
+)
+def test_meaning_relation_refuses_mismatched_convention_coordinates(change, reason):
+    ledger, _, _ = run_attempt("unknown request\n1\n")
+    recovery = next(
+        e for e in ledger.list_events("w") if e.kind.endswith("source_recovered")
+    )
+    convention = replace(
+        SOURCE_MEANING_CONVENTIONS[recovery.payload["recovered_source_ref"]], **change
+    )
+    refusal = _warrant_source_meaning_relation(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref=recovery.payload["attempt_ref"],
+        source_recovery=recovery,
+        convention=convention,
+    )
+    assert refusal.kind.endswith("meaning_relation_refused")
+    assert refusal.payload["refusal_reason"] == reason
+    assert "remains Unknown" in refusal.payload["unknowns"][0]
+
+
+def test_other_source_cannot_reuse_same_proposition_and_forged_recovery_refuses():
+    ledger, _, _ = run_attempt("unknown request\n1\n")
+    recovery = next(
+        e for e in ledger.list_events("w") if e.kind.endswith("source_recovered")
+    )
+    other = SOURCE_MEANING_CONVENTIONS["source:operator-common-grammar-local-stop:v1"]
+    same_proposition_other_source = replace(
+        other, proposition=recovery.payload["recovered_source_proposition"]
+    )
+    refusal = _warrant_source_meaning_relation(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref=recovery.payload["attempt_ref"],
+        source_recovery=recovery,
+        convention=same_proposition_other_source,
+    )
+    assert refusal.payload["refusal_reason"] == "source_identity_mismatch"
+    forged = recovery.model_copy(deep=True)
+    forged.payload["recovered_source_proposition"] = "forged"
+    refusal = _warrant_source_meaning_relation(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref=recovery.payload["attempt_ref"],
+        source_recovery=forged,
+        convention=SOURCE_MEANING_CONVENTIONS[recovery.payload["recovered_source_ref"]],
+    )
+    assert refusal.payload["refusal_reason"] == (
+        "supplied_source_recovery_is_not_recorded_occurrence"
+    )
+
+
+def test_meaning_relation_refuses_missing_duplicate_and_unknown_upstream_recovery():
+    empty = EventLedger()
+    refusal = _warrant_source_meaning_relation(
+        ledger=empty,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref="missing",
+        source_recovery=None,
+        convention=None,
+    )
+    assert refusal.payload["refusal_reason"] == (
+        "no_exact_recorded_source_recovery_occurrence"
+    )
+
+    ledger, _, _ = run_attempt("unknown request\n1\n")
+    recovery = next(
+        e for e in ledger.list_events("w") if e.kind.endswith("source_recovered")
+    )
+    convention = SOURCE_MEANING_CONVENTIONS[recovery.payload["recovered_source_ref"]]
+    ledger.append(
+        recovery.kind,
+        "w",
+        deepcopy(recovery.payload),
+        session_id="s",
+    )
+    refusal = _warrant_source_meaning_relation(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref=recovery.payload["attempt_ref"],
+        source_recovery=recovery,
+        convention=convention,
+    )
+    assert refusal.payload["refusal_reason"] == "multiple_source_recovery_occurrences"
+
+    ledger, _, _ = run_attempt("unknown request\n1\n", session="upstream")
+    recovery = next(
+        e for e in ledger.list_events("w") if e.kind.endswith("source_recovered")
+    )
+    representation = ledger.get(recovery.payload["representation_occurrence_id"])
+    representation.payload["unknowns"] = ["relevant representation Unknown"]
+    refusal = _warrant_source_meaning_relation(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="upstream",
+        attempt_ref=recovery.payload["attempt_ref"],
+        source_recovery=recovery,
+        convention=SOURCE_MEANING_CONVENTIONS[recovery.payload["recovered_source_ref"]],
+    )
+    assert refusal.payload["refusal_reason"] == "upstream_representation_unknown"
 
 
 @pytest.mark.parametrize(
@@ -222,7 +383,7 @@ def test_exact_ingress_preservation_all_dimensions_and_durable_replay(tmp_path):
     assert ingress.payload["known_loss"] == [
         "original transport bytes and prior decoder behavior are unavailable"
     ]
-    assert len(view["dimensional_standing"]) == 12
+    assert len(view["dimensional_standing"]) == 13
     assert all(
         set(item["dimensions"])
         == {
