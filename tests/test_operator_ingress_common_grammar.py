@@ -1,4 +1,5 @@
 from io import BytesIO, StringIO
+from copy import deepcopy
 from pathlib import Path
 import subprocess
 import sys
@@ -20,6 +21,7 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     CHOICE_SET_REF,
     ALTERNATIVE_SOURCES,
+    RENDERING_KNOWN_LOSS,
     SOURCE_PROPOSITIONS,
     common_grammar_choice_set,
     _recover_represented_source,
@@ -73,7 +75,13 @@ def test_representation_evidence_precedes_response_and_preserves_distinctions():
         row["representation_relation"]
         == "presented_alternative_represents_application_owned_source"
     )
-    assert row["exact_set_participation"] == "member_of_exact_presented_choice_set"
+    assert row["exact_set_participation"] == (
+        "participates_in_exact_presented_choice_set_for_declared_purpose"
+    )
+    assert row["rendered_label"] != row["proposition_assertion"]
+    assert row["known_loss"] == (
+        "rendered label is a compressed presentation and does not carry the complete source proposition",
+    )
     assert (
         row["producer_occurrence_ref"] == represented.payload["dimensions"]["identity"]
     )
@@ -93,6 +101,7 @@ def test_recovery_consumes_recorded_occurrence_and_preserves_full_lineage():
     selection = next(e for e in events if e.kind.endswith("alternative_selected"))
     recovery = next(e for e in events if e.kind.endswith("source_recovered"))
     assert recovery.payload["representation_occurrence_id"] == represented.id
+    assert recovery.payload["binding_occurrence_id"] == binding.id
     assert recovery.payload["lineage"] == [
         represented.id,
         presentation.id,
@@ -100,6 +109,16 @@ def test_recovery_consumes_recorded_occurrence_and_preserves_full_lineage():
         selection.id,
     ]
     assert response.id in binding.payload["lineage"]
+    assert (
+        tuple(recovery.payload["known_loss"])
+        == represented.payload["representations"][0]["known_loss"]
+    )
+    projected = (
+        StateProjector(ledger)
+        .project("w")
+        .operator_ingress_common_grammar_attempts[represented.payload["attempt_ref"]]
+    )
+    assert RENDERING_KNOWN_LOSS[0] in projected["known_loss"]
 
 
 @pytest.mark.parametrize(
@@ -869,17 +888,136 @@ def test_recovery_refuses_missing_or_mismatched_recorded_evidence(mutation, reas
     events = ledger.list_events("w")
     occurrence = next(e for e in events if e.kind.endswith("alternatives_represented"))
     presentation = next(e for e in events if e.kind.endswith("presentation_occurred"))
+    response = next(e for e in events if e.kind.endswith("response_captured"))
     attempt = occurrence.payload["attempt_ref"]
     choice = common_grammar_choice_set(occurrence.payload["presentation_ref"])
     binding = bind_closed_choice_selection(
-        choice, OperatorSelectionTokenCapture("capture:test", CHOICE_SET_REF, "1")
+        choice,
+        OperatorSelectionTokenCapture(
+            response.payload["capture_ref"],
+            CHOICE_SET_REF,
+            "1",
+            provenance=(response.id,),
+        ),
     )
     recovered, refusal = _recover_represented_source(
         binding,
         choice,
         mutation(occurrence),
+        ledger=ledger,
+        workspace_id="w",
         attempt_ref=attempt,
         presentation_occurrence=presentation,
+        selection_occurrence=next(
+            e for e in events if e.kind.endswith("alternative_selected")
+        ),
     )
+    assert recovered is None
+    assert refusal == reason
+
+
+def _recover_after_binding_event_mutation(mutate):
+    ledger, _, _ = run_attempt("unknown request\n1\n")
+    events = ledger.list_events("w")
+    represented = next(e for e in events if e.kind.endswith("alternatives_represented"))
+    presentation = next(e for e in events if e.kind.endswith("presentation_occurred"))
+    response = next(e for e in events if e.kind.endswith("response_captured"))
+    binding_event = next(e for e in events if e.kind.endswith("binding_completed"))
+    selection = next(e for e in events if e.kind.endswith("alternative_selected"))
+    choice = common_grammar_choice_set(represented.payload["presentation_ref"])
+    binding = bind_closed_choice_selection(
+        choice,
+        OperatorSelectionTokenCapture(
+            response.payload["capture_ref"],
+            CHOICE_SET_REF,
+            "1",
+            provenance=(response.id,),
+        ),
+    )
+    mutate(ledger, binding_event, selection)
+    return _recover_represented_source(
+        binding,
+        choice,
+        represented,
+        ledger=ledger,
+        workspace_id="w",
+        attempt_ref=represented.payload["attempt_ref"],
+        presentation_occurrence=presentation,
+        selection_occurrence=selection,
+    )
+
+
+def _remove_binding_occurrence(ledger, binding_event, _selection):
+    ledger._events.remove(binding_event)
+    ledger._by_workspace["w"].remove(binding_event)
+    del ledger._by_id[binding_event.id]
+
+
+def _duplicate_binding_occurrence(ledger, binding_event, _selection):
+    ledger.append(
+        binding_event.kind,
+        "w",
+        deepcopy(binding_event.payload),
+        session_id=binding_event.session_id,
+    )
+
+
+@pytest.mark.parametrize(
+    "mutation,reason",
+    [
+        (_remove_binding_occurrence, "no_recorded_binding_occurrence"),
+        (_duplicate_binding_occurrence, "multiple_recorded_binding_occurrences"),
+        (
+            lambda _ledger, event, _selection: event.payload.__setitem__(
+                "binding_id", "binding:wrong"
+            ),
+            "binding_id_mismatch",
+        ),
+        (
+            lambda _ledger, event, _selection: event.payload.__setitem__(
+                "choice_set_ref", "choice-set:wrong"
+            ),
+            "binding_choice_set_mismatch",
+        ),
+        (
+            lambda _ledger, event, _selection: event.payload.__setitem__(
+                "choice_set_fingerprint", "fingerprint:wrong"
+            ),
+            "binding_set_fingerprint_mismatch",
+        ),
+        (
+            lambda _ledger, event, _selection: event.payload.__setitem__(
+                "presented_options", list(reversed(event.payload["presented_options"]))
+            ),
+            "binding_presented_options_mismatch",
+        ),
+        (
+            lambda _ledger, event, _selection: event.payload.__setitem__(
+                "selected_presented_alternative_ref", "local-stop"
+            ),
+            "binding_selected_alternative_mismatch",
+        ),
+        (
+            lambda _ledger, event, _selection: event.payload[
+                "binding_testimony"
+            ].__setitem__("binding_reason", "forged"),
+            "recorded_binding_payload_mismatch",
+        ),
+        (
+            lambda _ledger, event, _selection: event.payload.__setitem__(
+                "lineage", event.payload["lineage"][1:]
+            ),
+            "binding_lineage_mismatch",
+        ),
+        (
+            lambda _ledger, _event, selection: selection.payload.__setitem__(
+                "selected_presented_alternative_ref", "local-stop"
+            ),
+            "selected_alternative_occurrence_mismatch",
+        ),
+    ],
+)
+def test_recovery_requires_the_exact_recorded_binding_occurrence(mutation, reason):
+    recovered, refusal = _recover_after_binding_event_mutation(mutation)
     assert recovered is None
     assert refusal == reason

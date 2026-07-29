@@ -1,4 +1,4 @@
-# Operator common-grammar common-grammar return-topology Fidelity recovery 001
+# Operator common-grammar initialization-era return-topology Fidelity recovery 001
 
 ## Scope, authority, and method
 
@@ -128,18 +128,18 @@ This corrects an assignment without silently amending the conflicting Book
 sentence: the sentence remains active constitutional testimony requiring later
 constitutional correction, while the conflict itself remains visible here.
 
-### 1.3 Closed-choice common-grammar role
+### 1.3 Closed-choice initialization-era role
 
 The active prerequisite chapter names the affirmative/negative enum a minimal
 communication-probe representation and a bounded treatment-choice
-representation, not an interpretation menu. The broader common-grammar interaction review also
+representation, not an interpretation menu. The broader initialization-era review also
 permits structured enum communication before prose when a responsible
 occurrence preserves the request's subject, boundary, standing, evidence,
 Unknowns, conflicts, authority distinction, scope, applicability, references,
 and lawful next movement. A closed enum remains local and must not become a
 universal ontology.
 
-For this exact common-grammar interaction, **bounded treatment-choice representation through a
+For this exact initialization-era, **bounded treatment-choice representation through a
 minimal closed-choice communication grammar** is the most precise combined
 characterization. “Minimal common grammar” describes the dependency-escaping
 effect, but the Book does not establish that label as an independently acquired
@@ -293,7 +293,7 @@ operator testimony occurrence
   --BW/IW (disconnected)--> consumer-local admission
   --BW/IW (disconnected)--> BOGE consumption/establishment
 
-common-grammar departure:
+initialization-era departure:
 responsible interpretation examination of X
   --Missing--> evidenced local common-grammar unavailability
   --Missing--> attributed inability of that exact act to continue
@@ -331,7 +331,7 @@ Unknown rather than being manufactured from nearby names.
 | applicability | selected interpretation, one consumer/purpose contract and requirement evidence | compare purpose-local fit | complete local requirement evidence | applicable/inapplicable/Unknown/conflict | admission producer | `project_interpretation_applicability`, disconnected |
 | admission | selection, applicability and exact local admission evidence | admit or refuse for one consumer/purpose | applicable interpretation and local evidence | admitted/unadmitted/Unknown/conflict | exact downstream consumer | `admit_downstream_interpretation`, disconnected |
 | BOGE | consumer-local admission and selected-meaning snapshot | establish or refuse one bounded operator goal | exact BOGE consumer/purpose, admitted applicable meaning, bounded upstream standing | established/refused bounded goal | later goal consumers | `establish_bounded_operator_goal_from_admitted_interpretation`, disconnected |
-| treatment-choice formation | evidenced inability of exact interpretation act to continue | form bounded acquisition/local-stop choices | attributed local dependency finding and representation standing | presented closed-choice set | presentation occurrence | `common_grammar_choice_set`, live but consumes only presentation identity/constants |
+| treatment-choice formation | evidenced inability of exact interpretation act to continue | form bounded acquisition/local-stop choices | attributed local dependency finding and representation standing | presented closed-choice set | presentation occurrence | the then-current choice-set producer, live but consumes only presentation identity/constants |
 | presentation | closed-choice representation | emit bounded representation | formed choice set and output boundary | presentation occurrence/output | operator | `render_probe` and attempt output, live |
 | response capture | next boundary material | retain exact response bytes and decode testimony | boundary read/decoder | response occurrence | binder | live attempt capture path |
 | response binding | response plus exact presented set | compare exact token membership | same presentation identity and supported token encoding | bound option or unsupported standing | treatment selector | `bind_closed_choice_selection`, live |
@@ -341,7 +341,7 @@ Unknown rather than being manufactured from nearby names.
 | competency availability | established current scoped competency | make standing addressable to a later bounded consumer | establishment, currentness, applicability still separate | available bounded standing | candidate/material examiner | no connected common-grammar owner |
 | re-examination | same preserved X plus newly available applicable competency/material | perform a new examination occurrence | consumer selection and applicable current standing | new examination result, not reused interpretation | candidate/warrant road | Book permits; production owner absent |
 
-## 4. Common-grammar entrance-and-return matrix
+## 4. initialization-era entrance-and-return matrix
 
 | Required relation | Book standing | Current implementation evidence | Fidelity classification |
 | ----------------- | ------------- | ------------------------------- | ----------------------- |
@@ -434,7 +434,7 @@ and disconnected interpretation owners.
 | Examined subject | Classification | Basis |
 | --- | --- | --- |
 | 1. ordinary interpretation-to-BOGE grammar | faithful within examined scope | current implementation owners preserve candidate warrant, selection, applicability, admission, and BOGE distinctions when explicitly composed; they are not a console road |
-| 2. common-grammar entrance | unfaithful boundary crossing | decoded ingress identity crosses directly to choice formation without interpretation attempt or evidenced dependency result |
+| 2. initialization-era entrance | unfaithful boundary crossing | decoded ingress identity crosses directly to choice formation without interpretation attempt or evidenced dependency result |
 | 3. closed-choice grammar | mixed | presentation, binding, and selection preserve local enum limits; formation lacks its warranted antecedent |
 | 4. affirmative acquisition relation | mixed | Book permits a separately warranted optional relation; current road stops at selection |
 | 5. competency evidence | mixed | general constitutional/evidence forms and isolated implementation testimony exist; common-English establishment does not |
@@ -452,7 +452,7 @@ and disconnected interpretation owners.
    consumes admitted selected meaning and refuses responsibility for raw-source
    reinterpretation or meaning selection.
 
-2. **Exact common-grammar interaction dependency**
+2. **Exact initialization-era dependency**
 
    Applicable common grammar is required by the responsible examination that
    would form interpretation candidates from preserved prose. The exact named
