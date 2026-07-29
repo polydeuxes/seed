@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 import hashlib
 import json
 from typing import BinaryIO, TextIO
@@ -246,16 +246,12 @@ def _examine_potential_goal_standing(
 ):
     """Perform only the bounded potential-goal-standing constitutive act."""
     result = "established"
-    reason = "exact_eligible_role_testimony_under_applicable_bounded_authority"
+    reason = "exact_admissible_role_testimony_under_applicable_bounded_authority"
 
     if testimony is None:
         result, reason = "unknown", "required_source_role_testimony_missing"
     elif not isinstance(testimony, ApplicationSourceRoleTestimony):
         result, reason = "refused", "ineligible_testimony_form"
-    elif testimony.conflicts:
-        result, reason = "conflict", "source_role_testimony_conflicting"
-    elif testimony.unknowns:
-        result, reason = "unknown", "source_role_testimony_materially_unknown"
     elif any(
         not getattr(testimony, name, None)
         for name in (
@@ -270,22 +266,27 @@ def _examine_potential_goal_standing(
         )
     ):
         result, reason = "refused", "required_source_role_testimony_coordinate_missing"
+    elif (
+        testimony.testimony_id
+        != APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY.testimony_id
+    ):
+        result, reason = "refused", "forged_source_role_testimony"
     elif testimony.source_ref != POTENTIAL_GOAL_SOURCE_REF:
         result, reason = "refused", "source_identity_mismatch"
     elif testimony.attributed_role != POTENTIAL_GOAL_ROLE:
         result, reason = "refused", "attributed_role_mismatch"
-    elif testimony != APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY:
+    elif (
+        replace(testimony, conflicts=(), unknowns=())
+        != APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY
+    ):
         result, reason = "refused", "forged_source_role_testimony"
     elif convention is None:
         result, reason = "unknown", "required_constitutive_authority_missing"
     elif not isinstance(convention, ApplicationPotentialGoalStandingConvention):
         result, reason = "refused", "inapplicable_constitutive_authority_form"
-    elif convention.conflicts:
-        result, reason = "conflict", "constitutive_authority_conflicting"
-    elif convention.unknowns:
-        result, reason = "unknown", "constitutive_authority_materially_unknown"
     elif (
-        convention != APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION
+        convention.convention_id
+        != APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION.convention_id
         or convention.permitted_testimony_kind != "ApplicationSourceRoleTestimony"
         or convention.permitted_standing_relation
         != "has bounded potential-goal standing"
@@ -294,6 +295,19 @@ def _examine_potential_goal_standing(
         or not convention.required_provenance
     ):
         result, reason = "refused", "forged_or_inapplicable_constitutive_authority"
+    elif (
+        replace(convention, conflicts=(), unknowns=())
+        != APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION
+    ):
+        result, reason = "refused", "forged_or_inapplicable_constitutive_authority"
+    elif testimony.conflicts:
+        result, reason = "conflict", "source_role_testimony_conflicting"
+    elif testimony.unknowns:
+        result, reason = "unknown", "source_role_testimony_materially_unknown"
+    elif convention.conflicts:
+        result, reason = "conflict", "constitutive_authority_conflicting"
+    elif convention.unknowns:
+        result, reason = "unknown", "constitutive_authority_materially_unknown"
 
     exact_testimony = (
         asdict(testimony)
