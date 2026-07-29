@@ -91,13 +91,13 @@ def test_role_testimony_and_authority_are_distinct_from_meaning_warrant():
     assert "standing" not in role.authority_limits[0].split("does not establish ")[0]
     assert not hasattr(authority, "source_ref")
     assert not hasattr(authority, "attributed_role")
-    assert examine_standing(testimony=meaning).payload["standing_result"] == "refused"
-    assert (
-        examine_standing(testimony="potential-goal candidate").payload[
-            "standing_result"
-        ]
-        == "refused"
-    )
+    for testimony in (meaning, "potential-goal candidate"):
+        occurrence = examine_standing(testimony=testimony)
+        assert occurrence.payload["standing_result"] == "refused"
+        assert (
+            occurrence.payload["examination_reason"]
+            == "inadmissible_testimony_form"
+        )
 
 
 def test_exact_role_testimony_under_bounded_authority_establishes_only_standing():
