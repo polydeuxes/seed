@@ -221,7 +221,7 @@ def test_missing_forged_wrong_unknown_and_conflicting_standing_inputs():
 
 
 @pytest.mark.parametrize(
-    ("changes", "epistemic", "reason"),
+    ("changes", "carried_content", "reason"),
     [
         (
             {"source_ref": "source:wrong"},
@@ -245,11 +245,11 @@ def test_missing_forged_wrong_unknown_and_conflicting_standing_inputs():
         ),
     ],
 )
-def test_testimony_inadmissibility_precedes_carried_epistemic_content(
-    changes, epistemic, reason
+def test_testimony_inadmissibility_precedes_carried_unknowns_or_conflicts(
+    changes, carried_content, reason
 ):
     testimony = replace(
-        APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY, **changes, **epistemic
+        APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY, **changes, **carried_content
     )
     occurrence = examine_standing(testimony=testimony)
     assert occurrence.payload["standing_result"] == "refused"
@@ -258,7 +258,7 @@ def test_testimony_inadmissibility_precedes_carried_epistemic_content(
 
 
 @pytest.mark.parametrize(
-    ("changes", "epistemic"),
+    ("changes", "carried_content"),
     [
         ({"scope": "scope:wrong"}, {"unknowns": ("material unknown",)}),
         (
@@ -267,11 +267,11 @@ def test_testimony_inadmissibility_precedes_carried_epistemic_content(
         ),
     ],
 )
-def test_authority_inapplicability_precedes_carried_epistemic_content(
-    changes, epistemic
+def test_authority_inapplicability_precedes_carried_unknowns_or_conflicts(
+    changes, carried_content
 ):
     convention = replace(
-        APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION, **changes, **epistemic
+        APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION, **changes, **carried_content
     )
     occurrence = examine_standing(convention=convention)
     assert occurrence.payload["standing_result"] == "refused"
