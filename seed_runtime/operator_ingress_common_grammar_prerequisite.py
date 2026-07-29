@@ -19,6 +19,7 @@ from seed_runtime.bounded_operator_goal_establishment import (
 )
 from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
+from seed_runtime.models import Event
 from seed_runtime.operator_ingress_representation import (
     CapturedOperatorMaterial,
     capture_stdin_material,
@@ -65,6 +66,15 @@ POTENTIAL_GOAL_STANDING_PURPOSE = (
 )
 POTENTIAL_GOAL_STANDING_SCOPE = (
     "operator-ingress-common-grammar:v1:potential-goal-standing"
+)
+PRESENTATION_ELIGIBILITY_RELATION = "is eligible for exact presentation purpose"
+PRESENTATION_ELIGIBILITY_PURPOSE = (
+    "consider one already-standing bounded potential-goal source for later formation "
+    "of a presented alternative in this exact bounded operator-ingress common-grammar "
+    "closed-choice presentation"
+)
+PRESENTATION_ELIGIBILITY_SCOPE = (
+    "operator-ingress-common-grammar:v1:potential-goal-presentation-eligibility"
 )
 
 
@@ -131,6 +141,69 @@ APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY = ApplicationSourceRoleTestimony(
 APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION = (
     ApplicationPotentialGoalStandingConvention()
 )
+
+
+@dataclass(frozen=True)
+class ApplicationPresentationPurposeDeclaration:
+    """Application proposal for one examination, not an eligibility finding."""
+
+    purpose_id: str
+    presentation_ref: str
+    representation_kind: str = "bounded operator-ingress common-grammar closed choice"
+    required_upstream_standing_relation: str = "has bounded potential-goal standing"
+    application_attribution: str = "Seed application developer declaration"
+    producer_declaration_ref: str = (
+        "seed_runtime.operator_ingress_common_grammar:presentation-purpose:v1"
+    )
+    purpose: str = PRESENTATION_ELIGIBILITY_PURPOSE
+    scope: str = PRESENTATION_ELIGIBILITY_SCOPE
+    provenance: tuple[str, ...] = (
+        "application-owned exact operator-ingress presentation-purpose declaration",
+    )
+    authority_limits: tuple[str, ...] = (
+        "proposes examination only and does not establish presentation eligibility",
+        "does not form an alternative or establish exact-set participation or selection",
+        "does not establish meaning, applicability, admission, a bounded goal, movement, authority, or performance",
+    )
+    known_loss: tuple[str, ...] = ()
+    conflicts: tuple[str, ...] = ()
+    unknowns: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class ApplicationPresentationEligibilityConvention:
+    """Local bounded authority for the source-to-purpose eligibility examination."""
+
+    convention_id: str = (
+        "convention:operator-common-grammar:presentation-eligibility:v1"
+    )
+    attribution: str = "Seed application developer declaration"
+    permitted_upstream_standing_relation: str = "has bounded potential-goal standing"
+    permitted_presentation_purpose_form: str = (
+        "ApplicationPresentationPurposeDeclaration"
+    )
+    permitted_eligibility_relation: str = PRESENTATION_ELIGIBILITY_RELATION
+    purpose: str = PRESENTATION_ELIGIBILITY_PURPOSE
+    scope: str = PRESENTATION_ELIGIBILITY_SCOPE
+    required_provenance: bool = True
+    authority_limits: tuple[str, ...] = (
+        "local constitutive authority only; not constitutional authority by identity",
+        "not a universal presentation rule and grants no alternative formation or exact-set participation",
+    )
+    conflicts: tuple[str, ...] = ()
+    unknowns: tuple[str, ...] = ()
+
+
+APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION = (
+    ApplicationPresentationEligibilityConvention()
+)
+
+
+def application_presentation_purpose(presentation_ref: str):
+    return ApplicationPresentationPurposeDeclaration(
+        purpose_id=f"purpose:operator-common-grammar:potential-goal:{presentation_ref}",
+        presentation_ref=presentation_ref,
+    )
 
 
 @dataclass(frozen=True)
@@ -267,8 +340,7 @@ def _examine_potential_goal_standing(
     ):
         result, reason = "refused", "required_source_role_testimony_coordinate_missing"
     elif (
-        testimony.testimony_id
-        != APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY.testimony_id
+        testimony.testimony_id != APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY.testimony_id
     ):
         result, reason = "refused", "forged_source_role_testimony"
     elif testimony.source_ref != POTENTIAL_GOAL_SOURCE_REF:
@@ -374,6 +446,259 @@ def _examine_potential_goal_standing(
         refusal_reason=reason if result == "refused" else None,
         establishes_presentation_eligibility=False,
         establishes_exact_set_participation=False,
+        lineage=list(lineage),
+    )
+
+
+def _examine_presentation_eligibility(
+    *,
+    ledger,
+    workspace_id,
+    session_id,
+    attempt_ref,
+    standing_occurrence,
+    presentation_ref,
+    purpose_declaration,
+    convention,
+    lineage=(),
+):
+    """Examine only the exact source-to-presentation-purpose eligibility relation."""
+    result, reason = "eligible", "exact_standing_and_purpose_under_bounded_authority"
+    expected_purpose = application_presentation_purpose(presentation_ref)
+    recorded = (
+        isinstance(standing_occurrence, Event)
+        and ledger.get(standing_occurrence.id) is standing_occurrence
+    )
+    matching = [
+        event
+        for event in ledger.list(workspace_id)
+        if event.kind
+        == "operator.ingress.common_grammar.potential_goal_standing_examined"
+        and event.payload.get("attempt_ref") == attempt_ref
+    ]
+
+    # Identity and structural admission precede all carried conflicts and Unknowns.
+    if standing_occurrence is None:
+        result, reason = "unknown", "required_standing_occurrence_unavailable"
+    elif not isinstance(standing_occurrence, Event):
+        result, reason = "refused", "standing_occurrence_not_an_event"
+    elif not recorded:
+        result, reason = "refused", "foreign_forged_or_unrecorded_standing_occurrence"
+    elif len(matching) != 1 or matching[0] is not standing_occurrence:
+        result, reason = "refused", "standing_occurrence_not_exactly_once_for_attempt"
+    elif (
+        standing_occurrence.kind
+        != "operator.ingress.common_grammar.potential_goal_standing_examined"
+        or standing_occurrence.workspace_id != workspace_id
+        or standing_occurrence.session_id != session_id
+        or standing_occurrence.payload.get("attempt_ref") != attempt_ref
+    ):
+        result, reason = "refused", "foreign_or_malformed_standing_occurrence"
+    else:
+        upstream = standing_occurrence.payload
+        required_upstream = {
+            "standing_subject": POTENTIAL_GOAL_SOURCE_REF,
+            "standing_relation": "has bounded potential-goal standing",
+            "purpose": POTENTIAL_GOAL_STANDING_PURPOSE,
+            "scope": POTENTIAL_GOAL_STANDING_SCOPE,
+            "source_role_testimony_ref": APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY.testimony_id,
+            "constitutive_authority_ref": APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION.convention_id,
+        }
+        missing = [
+            key
+            for key in (*required_upstream, "standing_result", "conflicts", "unknowns")
+            if key not in upstream
+        ]
+        if missing:
+            result, reason = "refused", "malformed_standing_occurrence"
+        elif any(
+            upstream.get(key) != value for key, value in required_upstream.items()
+        ):
+            result, reason = (
+                "refused",
+                "standing_occurrence_identity_or_coordinates_mismatch",
+            )
+        elif upstream["standing_result"] not in {
+            "established",
+            "unknown",
+            "conflict",
+            "refused",
+        }:
+            result, reason = "refused", "malformed_standing_result"
+
+    if result == "eligible":
+        if purpose_declaration is None:
+            result, reason = "unknown", "required_presentation_purpose_missing"
+        elif not isinstance(
+            purpose_declaration, ApplicationPresentationPurposeDeclaration
+        ):
+            result, reason = "refused", "inadmissible_presentation_purpose_form"
+        elif any(
+            not getattr(purpose_declaration, name, None)
+            for name in (
+                "purpose_id",
+                "presentation_ref",
+                "representation_kind",
+                "required_upstream_standing_relation",
+                "application_attribution",
+                "producer_declaration_ref",
+                "purpose",
+                "scope",
+                "provenance",
+            )
+        ):
+            result, reason = (
+                "refused",
+                "required_presentation_purpose_coordinate_missing",
+            )
+        elif (
+            replace(purpose_declaration, conflicts=(), unknowns=()) != expected_purpose
+        ):
+            result, reason = "refused", "forged_or_inapplicable_presentation_purpose"
+    if result == "eligible":
+        if convention is None:
+            result, reason = (
+                "unknown",
+                "required_presentation_eligibility_authority_missing",
+            )
+        elif not isinstance(convention, ApplicationPresentationEligibilityConvention):
+            result, reason = (
+                "refused",
+                "inapplicable_presentation_eligibility_authority_form",
+            )
+        elif (
+            replace(convention, conflicts=(), unknowns=())
+            != APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION
+        ):
+            result, reason = (
+                "refused",
+                "forged_or_inapplicable_presentation_eligibility_authority",
+            )
+    if result == "eligible":
+        upstream = standing_occurrence.payload
+        if upstream["standing_result"] == "conflict" or upstream["conflicts"]:
+            result, reason = "conflict", "exact_upstream_standing_conflict"
+        elif upstream["standing_result"] == "unknown" or upstream["unknowns"]:
+            result, reason = "unknown", "exact_upstream_standing_unknown"
+        elif upstream["standing_result"] == "refused":
+            result, reason = "refused", "exact_upstream_standing_refused"
+        elif purpose_declaration.conflicts or convention.conflicts:
+            result, reason = "conflict", "presentation_eligibility_inputs_conflicting"
+        elif purpose_declaration.unknowns or convention.unknowns:
+            result, reason = (
+                "unknown",
+                "presentation_eligibility_inputs_materially_unknown",
+            )
+
+    purpose_ref = (
+        purpose_declaration.purpose_id
+        if isinstance(purpose_declaration, ApplicationPresentationPurposeDeclaration)
+        else None
+    )
+    supplied_presentation_ref = (
+        purpose_declaration.presentation_ref
+        if isinstance(purpose_declaration, ApplicationPresentationPurposeDeclaration)
+        else None
+    )
+    upstream_payload = (
+        standing_occurrence.payload if isinstance(standing_occurrence, Event) else {}
+    )
+    conflicts = list(upstream_payload.get("conflicts", ()))
+    unknowns = list(upstream_payload.get("unknowns", ()))
+    if isinstance(purpose_declaration, ApplicationPresentationPurposeDeclaration):
+        conflicts += list(purpose_declaration.conflicts)
+        unknowns += list(purpose_declaration.unknowns)
+    if isinstance(convention, ApplicationPresentationEligibilityConvention):
+        conflicts += list(convention.conflicts)
+        unknowns += list(convention.unknowns)
+    if result == "unknown":
+        unknowns.append(reason)
+    return _record(
+        ledger,
+        "operator.ingress.common_grammar.presentation_eligibility_examined",
+        workspace_id,
+        session_id,
+        attempt_ref,
+        _dimensions(
+            identity=f"presentation-eligibility:{POTENTIAL_GOAL_SOURCE_REF}:{presentation_ref}",
+            content=reason,
+            standing=result,
+            source=(
+                standing_occurrence.id
+                if recorded
+                else "responsible bounded examination"
+            ),
+            responsibility="bounded presentation-eligibility examination",
+            authority="bounded local constitutive convention; no alternative formation",
+            scope=f"attempt:{attempt_ref};{PRESENTATION_ELIGIBILITY_SCOPE}",
+            occurrence="distinct presentation-eligibility act durably recorded",
+        ),
+        source_ref=POTENTIAL_GOAL_SOURCE_REF,
+        upstream_standing_occurrence_id=(
+            standing_occurrence.id if isinstance(standing_occurrence, Event) else None
+        ),
+        upstream_standing_relation=upstream_payload.get("standing_relation"),
+        upstream_standing_result=upstream_payload.get("standing_result"),
+        presentation_purpose_id=purpose_ref,
+        presentation_ref=supplied_presentation_ref,
+        presentation_purpose=(
+            asdict(purpose_declaration)
+            if isinstance(
+                purpose_declaration, ApplicationPresentationPurposeDeclaration
+            )
+            else None
+        ),
+        eligibility_relation=PRESENTATION_ELIGIBILITY_RELATION,
+        eligibility_result=result,
+        examination_reason=reason,
+        purpose=PRESENTATION_ELIGIBILITY_PURPOSE,
+        scope=PRESENTATION_ELIGIBILITY_SCOPE,
+        provenance=(
+            list(purpose_declaration.provenance)
+            if isinstance(
+                purpose_declaration, ApplicationPresentationPurposeDeclaration
+            )
+            else []
+        ),
+        constitutive_authority_ref=(
+            convention.convention_id
+            if isinstance(convention, ApplicationPresentationEligibilityConvention)
+            else None
+        ),
+        authority_limits=(
+            list(purpose_declaration.authority_limits)
+            if isinstance(
+                purpose_declaration, ApplicationPresentationPurposeDeclaration
+            )
+            else []
+        )
+        + (
+            list(convention.authority_limits)
+            if isinstance(convention, ApplicationPresentationEligibilityConvention)
+            else []
+        ),
+        known_loss=(
+            list(purpose_declaration.known_loss)
+            if isinstance(
+                purpose_declaration, ApplicationPresentationPurposeDeclaration
+            )
+            else []
+        ),
+        conflicts=conflicts,
+        unknowns=unknowns,
+        refusal_reason=reason if result == "refused" else None,
+        establishes_alternative_formation=False,
+        establishes_exact_set_participation=False,
+        establishes_presentation=False,
+        establishes_selection=False,
+        establishes_meaning=False,
+        establishes_applicability=False,
+        establishes_admission=False,
+        establishes_bounded_goal=False,
+        establishes_stopping=False,
+        establishes_movement=False,
+        establishes_authority=False,
+        establishes_performance=False,
         lineage=list(lineage),
     )
 
@@ -1101,6 +1426,7 @@ def project_operator_ingress_common_grammar_events(state, event) -> None:
                     "source_recovery",
                     "source_role_testimony",
                     "potential_goal_standing",
+                    "presentation_eligibility",
                     "meaning_relation",
                     "bounded_operator_goal_establishment_applicability",
                     "interaction_closure",
@@ -1148,6 +1474,7 @@ def project_operator_ingress_common_grammar_events(state, event) -> None:
         "operator.ingress.common_grammar.source_recovered": "source_recovery",
         "operator.ingress.common_grammar.source_recovery_refused": "source_recovery",
         "operator.ingress.common_grammar.potential_goal_standing_examined": "potential_goal_standing",
+        "operator.ingress.common_grammar.presentation_eligibility_examined": "presentation_eligibility",
         "operator.ingress.common_grammar.meaning_relation_warranted": "meaning_relation",
         "operator.ingress.common_grammar.meaning_relation_refused": "meaning_relation",
         "operator.ingress.common_grammar.bounded_operator_goal_establishment_applicability_examined": "bounded_operator_goal_establishment_applicability",
@@ -1192,6 +1519,10 @@ def project_operator_ingress_common_grammar_events(state, event) -> None:
         "standing_subject",
         "standing_relation",
         "standing_result",
+        "upstream_standing_occurrence_id",
+        "presentation_purpose_id",
+        "eligibility_relation",
+        "eligibility_result",
         "relation_ref",
         "relation_assertion",
         "meaning_testimony_ref",
@@ -1439,7 +1770,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
         output_stream.flush()
         return state.operator_ingress_common_grammar_attempts[attempt]
 
-    _examine_potential_goal_standing(
+    standing_occurrence = _examine_potential_goal_standing(
         ledger=ledger,
         workspace_id=workspace_id,
         session_id=session_id,
@@ -1450,6 +1781,17 @@ def run_operator_ingress_common_grammar_probe_attempt(
     )
 
     presentation_ref = f"presentation:{ingress.id}"
+    _examine_presentation_eligibility(
+        ledger=ledger,
+        workspace_id=workspace_id,
+        session_id=session_id,
+        attempt_ref=attempt,
+        standing_occurrence=standing_occurrence,
+        presentation_ref=presentation_ref,
+        purpose_declaration=application_presentation_purpose(presentation_ref),
+        convention=APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION,
+        lineage=[standing_occurrence.id],
+    )
     choice_set = common_grammar_choice_set(presentation_ref)
     produced = _record(
         ledger,

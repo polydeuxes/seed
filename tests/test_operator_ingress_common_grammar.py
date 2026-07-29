@@ -27,6 +27,8 @@ from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     APPLICATION_SOURCE_MEANING_CONVENTION,
     APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY,
     APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION,
+    APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION,
+    ApplicationPresentationPurposeDeclaration,
     ApplicationSourceMeaningTestimony,
     ApplicationSourceRoleTestimony,
     POTENTIAL_GOAL_SOURCE_REF,
@@ -35,6 +37,8 @@ from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     _examine_meaning_relation_for_bounded_operator_goal_establishment,
     _warrant_source_meaning_relation,
     _examine_potential_goal_standing,
+    _examine_presentation_eligibility,
+    application_presentation_purpose,
     common_grammar_choice_set,
     _recover_represented_source,
     run_operator_ingress_common_grammar_probe_attempt,
@@ -81,6 +85,279 @@ def examine_standing(
     return event
 
 
+def examine_eligibility(
+    *,
+    standing_marker="canonical",
+    purpose_marker="canonical",
+    authority_marker="canonical",
+):
+    ledger = EventLedger()
+    standing = _examine_potential_goal_standing(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref="attempt:test",
+        testimony=APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY,
+        convention=APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION,
+    )
+    purpose = application_presentation_purpose("presentation:test")
+    occurrence = _examine_presentation_eligibility(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref="attempt:test",
+        standing_occurrence=(
+            standing if standing_marker == "canonical" else standing_marker
+        ),
+        presentation_ref="presentation:test",
+        purpose_declaration=(
+            purpose if purpose_marker == "canonical" else purpose_marker
+        ),
+        convention=(
+            APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION
+            if authority_marker == "canonical"
+            else authority_marker
+        ),
+    )
+    return ledger, standing, occurrence
+
+
+def test_exact_recorded_standing_is_consumed_for_only_presentation_eligibility():
+    _, standing, occurrence = examine_eligibility()
+    assert occurrence.payload["eligibility_result"] == "eligible"
+    assert occurrence.payload["upstream_standing_occurrence_id"] == standing.id
+    assert (
+        occurrence.payload["upstream_standing_relation"]
+        == "has bounded potential-goal standing"
+    )
+    assert occurrence.payload["upstream_standing_result"] == "established"
+    assert occurrence.payload["source_ref"] == POTENTIAL_GOAL_SOURCE_REF
+    for key in (
+        "establishes_alternative_formation",
+        "establishes_exact_set_participation",
+        "establishes_presentation",
+        "establishes_selection",
+        "establishes_meaning",
+        "establishes_applicability",
+        "establishes_admission",
+        "establishes_bounded_goal",
+        "establishes_stopping",
+        "establishes_movement",
+        "establishes_authority",
+        "establishes_performance",
+    ):
+        assert occurrence.payload[key] is False
+
+
+@pytest.mark.parametrize(
+    "substitute",
+    [
+        APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY,
+        SOURCE_MEANING_TESTIMONIES[POTENTIAL_GOAL_SOURCE_REF],
+        "potential-goal candidate",
+    ],
+)
+def test_testimony_or_role_string_cannot_establish_presentation_eligibility(substitute):
+    assert (
+        examine_eligibility(standing_marker=substitute)[2].payload["eligibility_result"]
+        == "refused"
+    )
+
+
+def test_copied_foreign_and_unrecorded_standing_evidence_is_refused():
+    _, standing, _ = examine_eligibility()
+    assert (
+        examine_eligibility(standing_marker=deepcopy(standing.payload))[2].payload[
+            "eligibility_result"
+        ]
+        == "refused"
+    )
+    assert (
+        examine_eligibility(standing_marker=standing)[2].payload["eligibility_result"]
+        == "refused"
+    )
+
+
+def test_duplicate_standing_occurrences_are_refused():
+    ledger = EventLedger()
+    kwargs = dict(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref="attempt:test",
+        testimony=APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY,
+        convention=APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION,
+    )
+    standing = _examine_potential_goal_standing(**kwargs)
+    _examine_potential_goal_standing(**kwargs)
+    occurrence = _examine_presentation_eligibility(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref="attempt:test",
+        standing_occurrence=standing,
+        presentation_ref="presentation:test",
+        purpose_declaration=application_presentation_purpose("presentation:test"),
+        convention=APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION,
+    )
+    assert occurrence.payload["eligibility_result"] == "refused"
+
+
+def test_missing_standing_is_unknown_not_ineligible():
+    result = examine_eligibility(standing_marker=None)[2].payload
+    assert result["eligibility_result"] == "unknown"
+    assert result["eligibility_result"] != "ineligible"
+
+
+@pytest.mark.parametrize(
+    ("field", "expected"), [("unknowns", "unknown"), ("conflicts", "conflict")]
+)
+def test_exact_carried_upstream_states_are_preserved(field, expected):
+    ledger = EventLedger()
+    testimony = replace(
+        APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY, **{field: ("carried",)}
+    )
+    standing = _examine_potential_goal_standing(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref="attempt:test",
+        testimony=testimony,
+        convention=APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION,
+    )
+    occurrence = _examine_presentation_eligibility(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref="attempt:test",
+        standing_occurrence=standing,
+        presentation_ref="presentation:test",
+        purpose_declaration=application_presentation_purpose("presentation:test"),
+        convention=APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION,
+    )
+    assert occurrence.payload["eligibility_result"] == expected
+
+
+def test_exact_upstream_refusal_does_not_become_ineligible():
+    ledger = EventLedger()
+    standing = _examine_potential_goal_standing(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref="attempt:test",
+        testimony=replace(
+            APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY, attributed_role="wrong"
+        ),
+        convention=APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION,
+    )
+    occurrence = _examine_presentation_eligibility(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref="attempt:test",
+        standing_occurrence=standing,
+        presentation_ref="presentation:test",
+        purpose_declaration=application_presentation_purpose("presentation:test"),
+        convention=APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION,
+    )
+    assert occurrence.payload["eligibility_result"] == "refused"
+
+
+@pytest.mark.parametrize(
+    "purpose",
+    [
+        replace(
+            application_presentation_purpose("presentation:test"),
+            presentation_ref="wrong",
+        ),
+        replace(application_presentation_purpose("presentation:test"), purpose="wrong"),
+        replace(application_presentation_purpose("presentation:test"), provenance=()),
+        ApplicationPresentationPurposeDeclaration("forged", "presentation:test"),
+    ],
+)
+def test_wrong_missing_or_forged_purpose_is_refused(purpose):
+    assert (
+        examine_eligibility(purpose_marker=purpose)[2].payload["eligibility_result"]
+        == "refused"
+    )
+
+
+def test_missing_authority_is_unknown_and_forged_authority_is_refused():
+    assert (
+        examine_eligibility(authority_marker=None)[2].payload["eligibility_result"]
+        == "unknown"
+    )
+    forged = replace(APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION, scope="wrong")
+    assert (
+        examine_eligibility(authority_marker=forged)[2].payload["eligibility_result"]
+        == "refused"
+    )
+
+
+def test_structural_purpose_failure_precedes_carried_unknowns():
+    purpose = replace(
+        application_presentation_purpose("presentation:test"),
+        scope="wrong",
+        unknowns=("carried",),
+    )
+    occurrence = examine_eligibility(purpose_marker=purpose)[2]
+    assert occurrence.payload["eligibility_result"] == "refused"
+
+
+@pytest.mark.parametrize(
+    ("coordinate", "value"),
+    [
+        ("standing_subject", "source:wrong"),
+        ("standing_relation", "expresses"),
+    ],
+)
+def test_wrong_upstream_source_or_relation_is_refused(coordinate, value):
+    original = examine_standing()
+    forged = original.model_copy(deep=True)
+    forged.payload[coordinate] = value
+    ledger = EventLedger()
+    ledger.extend([forged])
+    recorded = ledger.get(forged.id)
+    occurrence = _examine_presentation_eligibility(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref="attempt:test",
+        standing_occurrence=recorded,
+        presentation_ref="presentation:test",
+        purpose_declaration=application_presentation_purpose("presentation:test"),
+        convention=APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION,
+    )
+    assert occurrence.payload["eligibility_result"] == "refused"
+
+
+def test_live_eligibility_is_once_after_standing_before_probe_and_not_for_local_stop():
+    ledger, view, output = run_attempt("ingress\n2\n")
+    events = ledger.list("w")
+    kinds = [event.kind for event in events]
+    eligibility = [
+        event
+        for event in events
+        if event.kind.endswith("presentation_eligibility_examined")
+    ]
+    assert len(eligibility) == 1
+    assert (
+        kinds.index("operator.ingress.common_grammar.potential_goal_standing_examined")
+        < kinds.index(
+            "operator.ingress.common_grammar.presentation_eligibility_examined"
+        )
+        < kinds.index("operator.ingress.common_grammar.probe_produced")
+        < kinds.index("operator.ingress.common_grammar.alternatives_represented")
+    )
+    assert eligibility[0].payload["source_ref"] == POTENTIAL_GOAL_SOURCE_REF
+    assert "local-stop" not in eligibility[0].payload["source_ref"]
+    assert (
+        view["current_standing"]["presentation_eligibility"]["evidence_event_id"]
+        == eligibility[0].id
+    )
+    assert output.count("Select one alternative") == 1
+
+
 def test_role_testimony_and_authority_are_distinct_from_meaning_warrant():
     role = APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY
     meaning = SOURCE_MEANING_TESTIMONIES[POTENTIAL_GOAL_SOURCE_REF]
@@ -94,10 +371,7 @@ def test_role_testimony_and_authority_are_distinct_from_meaning_warrant():
     for testimony in (meaning, "potential-goal candidate"):
         occurrence = examine_standing(testimony=testimony)
         assert occurrence.payload["standing_result"] == "refused"
-        assert (
-            occurrence.payload["examination_reason"]
-            == "inadmissible_testimony_form"
-        )
+        assert occurrence.payload["examination_reason"] == "inadmissible_testimony_form"
 
 
 def test_exact_role_testimony_under_bounded_authority_establishes_only_standing():
@@ -756,7 +1030,7 @@ def test_exact_ingress_preservation_all_dimensions_and_durable_replay(tmp_path):
     assert ingress.payload["known_loss"] == [
         "original transport bytes and prior decoder behavior are unavailable"
     ]
-    assert len(view["dimensional_standing"]) == 14
+    assert len(view["dimensional_standing"]) == 15
     assert all(
         set(item["dimensions"])
         == {
