@@ -14,6 +14,10 @@ from seed_runtime.closed_choice_selection_binding import (
     PresentedClosedChoiceSet,
     bind_closed_choice_selection,
 )
+from seed_runtime.bounded_operator_goal_establishment import (
+    BOUNDED_GOAL_ESTABLISHMENT_CONSUMER_REF,
+    BOUNDED_GOAL_ESTABLISHMENT_PURPOSE_REF,
+)
 from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
 from seed_runtime.operator_ingress_representation import (
@@ -128,6 +132,112 @@ SOURCE_MEANING_CONVENTIONS = {
     source_ref: APPLICATION_SOURCE_MEANING_CONVENTION
     for source_ref in SOURCE_PROPOSITIONS
 }
+
+
+@dataclass(frozen=True)
+class BOGEMeaningRelationApplicabilityContract:
+    """The bounded intake declaration; it is not an applicability finding."""
+
+    contract_id: str = "contract:boge:meaning-relation-applicability:v1"
+    consumer_ref: str = BOUNDED_GOAL_ESTABLISHMENT_CONSUMER_REF
+    purpose_ref: str = BOUNDED_GOAL_ESTABLISHMENT_PURPOSE_REF
+    accepted_input_standing: str = "warranted meaning relation"
+    accepted_relation_form: str = "source expresses proposition"
+    required_source_role: str = "potential-goal candidate"
+    required_coordinates: tuple[str, ...] = (
+        "relation_ref",
+        "source_ref",
+        "source_role",
+        "proposition",
+        "meaning_testimony_ref",
+        "constitutive_convention_ref",
+        "source_recovery_occurrence_id",
+        "scope",
+        "provenance",
+        "selected_presented_alternative_ref",
+        "representation_occurrence_id",
+        "binding_occurrence_id",
+    )
+    required_requirement_ids: tuple[str, ...] = (
+        "boge-input-standing",
+        "boge-source-role",
+        "boge-relation-lineage",
+        "boge-warrant-references",
+        "boge-scope-and-provenance",
+        "boge-known-loss-handling",
+    )
+    known_refusals: tuple[str, ...] = (
+        "malformed, foreign, unrecorded, or non-warranted relation occurrence",
+        "foreign consumer or purpose testimony",
+    )
+    provenance: tuple[str, ...] = (
+        "seed_runtime.operator_ingress_common_grammar:boge-intake-contract:v1",
+    )
+    authority_limits: tuple[str, ...] = (
+        "current bounded BOGE intake only; not a universal consumer contract",
+        "does not establish applicability by construction",
+    )
+    conflicts: tuple[str, ...] = ()
+    unknowns: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class BOGEPurposeLocalRequirementTestimony:
+    """Developer-attributed evidence for one requirement, separate from contract and finding."""
+
+    testimony_id: str
+    relation_ref: str
+    consumer_ref: str
+    purpose_ref: str
+    requirement_id: str
+    testified_state: str
+    rationale: str
+    attributed_supplier: str = "Seed application developer declaration"
+    producer_declaration_ref: str = (
+        "seed_runtime.operator_ingress_common_grammar:boge-requirement-testimony:v1"
+    )
+    scope: str = MEANING_CONVENTION_SCOPE
+    provenance: tuple[str, ...] = ("bounded BOGE application testimony",)
+    authority_limits: tuple[str, ...] = (
+        "developer attribution is not constitutional or exclusive consumer authority",
+        "testimony does not establish applicability by construction",
+    )
+    conflicts: tuple[str, ...] = ()
+    unknowns: tuple[str, ...] = ()
+
+
+BOGE_MEANING_RELATION_APPLICABILITY_CONTRACT = (
+    BOGEMeaningRelationApplicabilityContract()
+)
+
+
+def _boge_requirement_testimonies(relation_ref: str, source_role: str):
+    state_by_requirement = {
+        requirement: "satisfied"
+        for requirement in BOGE_MEANING_RELATION_APPLICABILITY_CONTRACT.required_requirement_ids
+    }
+    if source_role != "potential-goal candidate":
+        state_by_requirement["boge-source-role"] = "unsatisfied"
+    return tuple(
+        BOGEPurposeLocalRequirementTestimony(
+            testimony_id=f"testimony:boge:{relation_ref}:{requirement}:v1",
+            relation_ref=relation_ref,
+            consumer_ref=BOUNDED_GOAL_ESTABLISHMENT_CONSUMER_REF,
+            purpose_ref=BOUNDED_GOAL_ESTABLISHMENT_PURPOSE_REF,
+            requirement_id=requirement,
+            testified_state=state,
+            rationale=(
+                "the exact relation has potential-goal source standing for bounded BOGE use"
+                if requirement == "boge-source-role" and state == "satisfied"
+                else (
+                    "the exact local-stop relation does not satisfy the current bounded-operator-goal-establishment consumer contract"
+                    if requirement == "boge-source-role"
+                    else f"the recorded exact relation supplies {requirement}"
+                )
+            ),
+        )
+        for requirement, state in state_by_requirement.items()
+    )
 
 
 def _representation_fingerprint(representations: object) -> str:
@@ -479,6 +589,278 @@ def _warrant_source_meaning_relation(
     )
 
 
+def _examine_boge_meaning_relation_applicability(
+    *,
+    ledger,
+    workspace_id,
+    session_id,
+    attempt_ref,
+    meaning_relation,
+    contract,
+    requirement_testimonies,
+):
+    """Examine one recorded relation for this exact consumer and purpose."""
+    occurrences = [
+        event
+        for event in ledger.list_events(workspace_id)
+        if event.payload.get("attempt_ref") == attempt_ref
+        and event.kind
+        in {
+            "operator.ingress.common_grammar.meaning_relation_warranted",
+            "operator.ingress.common_grammar.meaning_relation_refused",
+        }
+    ]
+    recorded = occurrences[0] if len(occurrences) == 1 else None
+    contract_valid = (
+        (
+            contract == BOGE_MEANING_RELATION_APPLICABILITY_CONTRACT
+            and contract.consumer_ref == BOUNDED_GOAL_ESTABLISHMENT_CONSUMER_REF
+            and contract.purpose_ref == BOUNDED_GOAL_ESTABLISHMENT_PURPOSE_REF
+            and contract.accepted_input_standing == "warranted meaning relation"
+            and contract.accepted_relation_form == "source expresses proposition"
+            and bool(contract.required_coordinates)
+            and bool(contract.authority_limits)
+            and bool(contract.provenance)
+            and not contract.conflicts
+            and not contract.unknowns
+        )
+        if contract is not None
+        else False
+    )
+    # Structural failures are refusals rather than findings about applicability.
+    malformed = next(
+        (
+            reason
+            for failed, reason in (
+                (not occurrences, "no_exact_meaning_relation_warrant_occurrence"),
+                (len(occurrences) > 1, "multiple_meaning_relation_warrant_occurrences"),
+                (
+                    recorded is None
+                    or meaning_relation is None
+                    or recorded.model_dump() != meaning_relation.model_dump(),
+                    "supplied_meaning_relation_is_not_recorded_occurrence",
+                ),
+                (
+                    recorded is not None
+                    and recorded.kind.endswith("meaning_relation_refused"),
+                    "meaning_relation_is_not_warranted",
+                ),
+                (
+                    recorded is not None
+                    and recorded.payload.get("dimensions", {}).get("standing")
+                    != "warranted",
+                    "meaning_relation_is_not_warranted",
+                ),
+                (
+                    recorded is not None
+                    and recorded.payload.get("relation_assertion") != "expresses",
+                    "meaning_relation_is_not_expresses",
+                ),
+                (
+                    recorded is not None
+                    and any(
+                        not recorded.payload.get(key)
+                        for key in (
+                            "relation_ref",
+                            "source_ref",
+                            "source_role",
+                            "proposition",
+                            "meaning_testimony_ref",
+                            "constitutive_convention_ref",
+                            "source_recovery_occurrence_id",
+                            "scope",
+                            "provenance",
+                            "selected_presented_alternative_ref",
+                            "representation_occurrence_id",
+                            "binding_occurrence_id",
+                        )
+                    ),
+                    "meaning_relation_required_coordinate_absent",
+                ),
+                (
+                    recorded is not None
+                    and (
+                        recorded.payload.get("conflicts")
+                        or recorded.payload.get("unknowns")
+                    ),
+                    "meaning_relation_unresolved",
+                ),
+                (not contract_valid, "invalid_boge_meaning_relation_contract"),
+            )
+            if failed
+        ),
+        None,
+    )
+    if malformed:
+        return _record(
+            ledger,
+            "operator.ingress.common_grammar.boge_meaning_relation_applicability_refused",
+            workspace_id,
+            session_id,
+            attempt_ref,
+            _dimensions(
+                identity=f"boge-applicability-refusal:{meaning_relation.id if meaning_relation else attempt_ref}",
+                content=malformed,
+                standing="refused",
+                source=meaning_relation.id if meaning_relation else "Unknown",
+                responsibility="BOGE-local meaning-relation applicability examination",
+                authority="refusal only; failure does not establish inapplicability",
+                scope=f"attempt:{attempt_ref}",
+                occurrence="bounded refusal durably recorded",
+            ),
+            refusal_reason=malformed,
+            consumer_ref=BOUNDED_GOAL_ESTABLISHMENT_CONSUMER_REF,
+            purpose_ref=BOUNDED_GOAL_ESTABLISHMENT_PURPOSE_REF,
+            contract_ref=contract.contract_id if contract else None,
+            unknowns=["applicability remains Unknown"],
+            conflicts=[],
+            known_loss=[],
+            lineage=[meaning_relation.id] if meaning_relation else [],
+        )
+
+    testimony = tuple(requirement_testimonies or ())
+    known = set(contract.required_requirement_ids)
+    foreign = [
+        item
+        for item in testimony
+        if (
+            item.relation_ref != recorded.payload["relation_ref"]
+            or item.consumer_ref != contract.consumer_ref
+            or item.purpose_ref != contract.purpose_ref
+        )
+    ]
+    invalid = [
+        item
+        for item in testimony
+        if (
+            item.requirement_id not in known
+            or item.testified_state
+            not in {"satisfied", "unsatisfied", "Unknown", "conflict", "refused"}
+            or not item.attributed_supplier
+            or not item.producer_declaration_ref
+            or not item.scope
+            or not item.provenance
+        )
+    ]
+    grouped = {requirement: [] for requirement in known}
+    for item in testimony:
+        if item not in foreign and item not in invalid:
+            grouped[item.requirement_id].append(item)
+    missing = sorted(requirement for requirement, items in grouped.items() if not items)
+    conflicting = sorted(
+        requirement
+        for requirement, items in grouped.items()
+        if (
+            len({item.testified_state for item in items}) > 1
+            or any(
+                item.testified_state == "conflict" or item.conflicts for item in items
+            )
+        )
+    )
+    unknown = sorted(
+        requirement
+        for requirement, items in grouped.items()
+        if any(
+            item.testified_state in {"Unknown", "refused"} or item.unknowns
+            for item in items
+        )
+    )
+    unsatisfied = sorted(
+        requirement
+        for requirement, items in grouped.items()
+        if items and all(item.testified_state == "unsatisfied" for item in items)
+    )
+    if foreign or invalid:
+        outcome, reason = (
+            "Unknown",
+            "foreign_or_malformed_requirement_testimony_not_consumed",
+        )
+    elif conflicting:
+        outcome, reason = "conflict", "conflicting_boge_requirement_testimony"
+    elif missing or unknown:
+        outcome, reason = (
+            "Unknown",
+            "required_boge_requirement_testimony_missing_or_unknown",
+        )
+    elif unsatisfied:
+        outcome, reason = (
+            "inapplicable",
+            "this exact relation does not satisfy the current bounded-operator-goal-establishment consumer contract",
+        )
+    else:
+        outcome, reason = (
+            "applicable",
+            "all exact current BOGE-local requirements are satisfied by separate purpose-local testimony",
+        )
+    testimony_refs = [
+        item.testimony_id
+        for item in testimony
+        if item not in foreign and item not in invalid
+    ]
+    return _record(
+        ledger,
+        "operator.ingress.common_grammar.boge_meaning_relation_applicability_examined",
+        workspace_id,
+        session_id,
+        attempt_ref,
+        _dimensions(
+            identity=f"boge-meaning-relation-applicability:{recorded.payload['relation_ref']}:{attempt_ref}",
+            content=reason,
+            standing=outcome,
+            source=recorded.id,
+            responsibility="BOGE-local meaning-relation applicability examination",
+            authority="this exact consumer and purpose only; no admission or reliance",
+            scope=f"attempt:{attempt_ref};consumer:{contract.consumer_ref};purpose:{contract.purpose_ref}",
+            occurrence="separate responsible applicability occurrence recorded",
+        ),
+        relation_ref=recorded.payload["relation_ref"],
+        meaning_relation_warrant_occurrence_id=recorded.id,
+        source_ref=recorded.payload["source_ref"],
+        source_role=recorded.payload["source_role"],
+        proposition=recorded.payload["proposition"],
+        relation_assertion="expresses",
+        meaning_testimony_ref=recorded.payload["meaning_testimony_ref"],
+        constitutive_convention_ref=recorded.payload["constitutive_convention_ref"],
+        source_recovery_occurrence_id=recorded.payload["source_recovery_occurrence_id"],
+        selected_presented_alternative_ref=recorded.payload[
+            "selected_presented_alternative_ref"
+        ],
+        representation_occurrence_id=recorded.payload["representation_occurrence_id"],
+        binding_occurrence_id=recorded.payload["binding_occurrence_id"],
+        consumer_ref=contract.consumer_ref,
+        purpose_ref=contract.purpose_ref,
+        contract_ref=contract.contract_id,
+        requirement_testimony_refs=testimony_refs,
+        applicability=outcome,
+        applicability_reason=reason,
+        known_refusals=list(contract.known_refusals),
+        scope=recorded.payload["scope"],
+        provenance=[*recorded.payload["provenance"], *contract.provenance],
+        known_loss=list(recorded.payload.get("known_loss", ())),
+        conflicts=conflicting,
+        unknowns=sorted(set((*missing, *unknown))),
+        implementation_status="first bounded implementation witness of the general consumer-local meaning-relation applicability responsibility",
+        requirement_evidence_basis="developer-attributed application testimony for the current bounded BOGE consumer contract",
+        not_established=[
+            "developer authority as constitutional authority",
+            "exclusive developer ownership of applicability testimony",
+            "universal BOGE consumer requirements",
+            "universal applicability topology",
+            "required artifact shape for future implementations",
+            "inapplicability of Seed-derived requirement evidence",
+            "inapplicability of externally attributed requirement evidence",
+            "admission",
+            "consumer reliance",
+            "bounded goal establishment",
+            "stopping",
+            "movement",
+            "authority",
+            "performance",
+        ],
+        lineage=[*recorded.payload.get("lineage", ()), recorded.id, *testimony_refs],
+    )
+
+
 def common_grammar_representation_lineages(
     choice_set: PresentedClosedChoiceSet,
     producer_occurrence_ref: str,
@@ -822,6 +1204,7 @@ def project_operator_ingress_common_grammar_events(state, event) -> None:
                     "alternative_selection",
                     "source_recovery",
                     "meaning_relation",
+                    "boge_meaning_relation_applicability",
                     "interaction_closure",
                 )
             },
@@ -868,6 +1251,8 @@ def project_operator_ingress_common_grammar_events(state, event) -> None:
         "operator.ingress.common_grammar.source_recovery_refused": "source_recovery",
         "operator.ingress.common_grammar.meaning_relation_warranted": "meaning_relation",
         "operator.ingress.common_grammar.meaning_relation_refused": "meaning_relation",
+        "operator.ingress.common_grammar.boge_meaning_relation_applicability_examined": "boge_meaning_relation_applicability",
+        "operator.ingress.common_grammar.boge_meaning_relation_applicability_refused": "boge_meaning_relation_applicability",
         "operator.ingress.common_grammar.stopping_occurred": "interaction_closure",
     }
     subject = (
@@ -908,6 +1293,14 @@ def project_operator_ingress_common_grammar_events(state, event) -> None:
         "relation_assertion",
         "meaning_testimony_ref",
         "constitutive_convention_ref",
+        "meaning_relation_warrant_occurrence_id",
+        "consumer_ref",
+        "purpose_ref",
+        "contract_ref",
+        "requirement_testimony_refs",
+        "applicability",
+        "applicability_reason",
+        "known_refusals",
         "implementation_status",
         "closed",
         "response_kind",
@@ -1031,9 +1424,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
     ingress_kind = (
         "eof"
         if captured_ingress.eof
-        else "empty"
-        if raw_ingress in {"\n", "\r\n"}
-        else "text"
+        else "empty" if raw_ingress in {"\n", "\r\n"} else "text"
     )
     ingress_content = (
         None
@@ -1239,9 +1630,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
     response_kind = (
         "eof"
         if captured_response.eof
-        else "empty"
-        if raw_response in {"\n", "\r\n"}
-        else "token"
+        else "empty" if raw_response in {"\n", "\r\n"} else "token"
     )
     token = (
         ""
@@ -1511,7 +1900,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
                     selection.id,
                 ],
             )
-            _warrant_source_meaning_relation(
+            meaning_relation = _warrant_source_meaning_relation(
                 ledger=ledger,
                 workspace_id=workspace_id,
                 session_id=session_id,
@@ -1519,6 +1908,18 @@ def run_operator_ingress_common_grammar_probe_attempt(
                 source_recovery=recovery_event,
                 testimony=SOURCE_MEANING_TESTIMONIES[recovered.represented_source_ref],
                 convention=SOURCE_MEANING_CONVENTIONS[recovered.represented_source_ref],
+            )
+            _examine_boge_meaning_relation_applicability(
+                ledger=ledger,
+                workspace_id=workspace_id,
+                session_id=session_id,
+                attempt_ref=attempt,
+                meaning_relation=meaning_relation,
+                contract=BOGE_MEANING_RELATION_APPLICABILITY_CONTRACT,
+                requirement_testimonies=_boge_requirement_testimonies(
+                    meaning_relation.payload["relation_ref"],
+                    meaning_relation.payload["source_role"],
+                ),
             )
             if recovered.represented_source_role == "local-stop":
                 result = (
