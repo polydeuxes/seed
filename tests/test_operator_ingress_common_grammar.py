@@ -24,7 +24,9 @@ from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     ALTERNATIVE_SOURCES,
     RENDERING_KNOWN_LOSS,
     SOURCE_PROPOSITIONS,
+    APPLICATION_SOURCE_MEANING_CONVENTION,
     SOURCE_MEANING_CONVENTIONS,
+    SOURCE_MEANING_TESTIMONIES,
     _warrant_source_meaning_relation,
     common_grammar_choice_set,
     _recover_represented_source,
@@ -125,112 +127,183 @@ def test_recovery_consumes_recorded_occurrence_and_preserves_full_lineage():
 
 
 @pytest.mark.parametrize("token", ["1", "2"])
-def test_separate_convention_warrants_exact_source_meaning_relation(token):
+def test_testimony_and_convention_are_distinct_inputs_to_exact_warrant(token):
     ledger, view, _ = run_attempt(f"unknown request\n{token}\n")
     events = ledger.list_events("w")
     recovery = next(e for e in events if e.kind.endswith("source_recovered"))
     warrant = next(e for e in events if e.kind.endswith("meaning_relation_warranted"))
+    testimony = SOURCE_MEANING_TESTIMONIES[recovery.payload["recovered_source_ref"]]
     convention = SOURCE_MEANING_CONVENTIONS[recovery.payload["recovered_source_ref"]]
-    assert events.index(recovery) < events.index(warrant)
-    assert recovery.payload["dimensions"]["authority_warrant"].startswith(
-        "source identity recovery only"
+    assert convention is APPLICATION_SOURCE_MEANING_CONVENTION
+    assert not hasattr(convention, "source_ref") and not hasattr(
+        convention, "proposition"
     )
+    assert warrant.payload["meaning_testimony_ref"] == testimony.testimony_id
+    assert warrant.payload["constitutive_convention_ref"] == convention.convention_id
     assert warrant.payload["source_recovery_occurrence_id"] == recovery.id
-    assert warrant.payload["source_ref"] == convention.source_ref
-    assert warrant.payload["source_role"] == convention.source_role
-    assert warrant.payload["proposition"] == convention.proposition
     assert warrant.payload["relation_assertion"] == "expresses"
-    assert warrant.payload["warrant_basis"] == (
-        "exact bounded developer-supplied constitutive convention"
+    assert warrant.payload["source_ref"] == testimony.source_ref
+    assert warrant.payload["proposition"] == testimony.proposition
+    assert (
+        "first bounded implementation witness"
+        in warrant.payload["implementation_status"]
     )
-    assert warrant.payload["proposition"] not in {
-        option.presented_label for option in common_grammar_choice_set("x").options
-    }
-    assert RENDERING_KNOWN_LOSS[0] in warrant.payload["known_loss"]
+    assert (
+        "developer authority as constitutional authority"
+        in warrant.payload["not_established"]
+    )
     assert warrant.payload["lineage"][-1] == recovery.id
-    assert (
-        view["current_standing"]["source_recovery"]["evidence_event_id"] == recovery.id
+    assert RENDERING_KNOWN_LOSS[0] in warrant.payload["known_loss"]
+    assert view["meaning_testimony_ref"] == testimony.testimony_id
+    assert view["constitutive_convention_ref"] == convention.convention_id
+    assert view.get("bounded_goal") is None and view.get("closed") is None
+
+
+def _rewarrant(ledger, recovery, *, testimony=None, convention=None):
+    return _warrant_source_meaning_relation(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref=recovery.payload["attempt_ref"],
+        source_recovery=recovery,
+        testimony=testimony,
+        convention=convention,
     )
-    assert (
-        view["current_standing"]["meaning_relation"]["evidence_event_id"] == warrant.id
-    )
-    assert view.get("bounded_goal") is None
-    assert view.get("closed") is None
 
 
 @pytest.mark.parametrize(
     "change,reason",
     [
-        ({"proposition": "changed proposition"}, "proposition_mismatch"),
-        ({"source_role": "changed role"}, "source_role_mismatch"),
+        ({"testimony_id": "wrong"}, "meaning_testimony_identity_mismatch"),
+        ({"source_ref": "source:wrong"}, "meaning_testimony_identity_mismatch"),
+        ({"source_role": "wrong"}, "source_role_mismatch"),
+        ({"proposition": "changed"}, "proposition_mismatch"),
+        (
+            {"relation_assertion": "identifies"},
+            "meaning_testimony_relation_not_expresses",
+        ),
+        (
+            {"attributed_supplier": ""},
+            "meaning_testimony_attribution_absent_or_mismatched",
+        ),
+        (
+            {"producer_declaration_ref": ""},
+            "meaning_testimony_declaration_reference_absent",
+        ),
+        ({"provenance": ()}, "meaning_testimony_provenance_absent"),
+        (
+            {"declared_application_purpose": "wrong"},
+            "meaning_testimony_purpose_mismatch",
+        ),
+        ({"scope": "wrong"}, "meaning_testimony_scope_mismatch"),
+        ({"unknowns": ("unknown",)}, "meaning_testimony_unknown"),
+        ({"conflicts": ("conflict",)}, "meaning_testimony_conflicting"),
+    ],
+)
+def test_changed_or_incomplete_testimony_refuses(change, reason):
+    ledger, _, _ = run_attempt("unknown request\n1\n")
+    recovery = next(
+        e for e in ledger.list_events("w") if e.kind.endswith("source_recovered")
+    )
+    testimony = replace(
+        SOURCE_MEANING_TESTIMONIES[recovery.payload["recovered_source_ref"]], **change
+    )
+    assert (
+        _rewarrant(
+            ledger,
+            recovery,
+            testimony=testimony,
+            convention=APPLICATION_SOURCE_MEANING_CONVENTION,
+        ).payload["refusal_reason"]
+        == reason
+    )
+
+
+@pytest.mark.parametrize(
+    "change,reason",
+    [
         ({"convention_id": "wrong"}, "constitutive_convention_identity_mismatch"),
         (
             {"attribution": ""},
             "constitutive_convention_attribution_absent_or_mismatched",
         ),
-        ({"purpose": "wrong"}, "constitutive_convention_purpose_mismatch"),
-        ({"scope": "wrong"}, "constitutive_convention_scope_mismatch"),
+        ({"applicable_authority": ()}, "constitutive_convention_authority_absent"),
         (
-            {"authority_limits": ()},
-            "constitutive_convention_authority_absent_or_mismatched",
+            {"permitted_testimony_kind": "Other"},
+            "constitutive_convention_testimony_form_not_permitted",
         ),
+        (
+            {"permitted_relation_form": "represents"},
+            "constitutive_convention_does_not_permit_expresses",
+        ),
+        ({"purpose": ""}, "constitutive_convention_purpose_mismatch"),
+        ({"scope": ""}, "constitutive_convention_scope_mismatch"),
+        ({"unknowns": ("unknown",)}, "constitutive_convention_unknown"),
+        ({"conflicts": ("conflict",)}, "constitutive_convention_conflicting"),
     ],
 )
-def test_meaning_relation_refuses_mismatched_convention_coordinates(change, reason):
+def test_changed_or_incomplete_convention_refuses(change, reason):
     ledger, _, _ = run_attempt("unknown request\n1\n")
     recovery = next(
         e for e in ledger.list_events("w") if e.kind.endswith("source_recovered")
     )
-    convention = replace(
-        SOURCE_MEANING_CONVENTIONS[recovery.payload["recovered_source_ref"]], **change
+    convention = replace(APPLICATION_SOURCE_MEANING_CONVENTION, **change)
+    testimony = SOURCE_MEANING_TESTIMONIES[recovery.payload["recovered_source_ref"]]
+    assert (
+        _rewarrant(
+            ledger, recovery, testimony=testimony, convention=convention
+        ).payload["refusal_reason"]
+        == reason
     )
-    refusal = _warrant_source_meaning_relation(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        attempt_ref=recovery.payload["attempt_ref"],
-        source_recovery=recovery,
-        convention=convention,
+
+
+def test_missing_inputs_other_source_and_forged_recovery_refuse_without_negation():
+    ledger, _, _ = run_attempt("unknown request\n1\n")
+    recovery = next(
+        e for e in ledger.list_events("w") if e.kind.endswith("source_recovered")
     )
-    assert refusal.kind.endswith("meaning_relation_refused")
-    assert refusal.payload["refusal_reason"] == reason
+    exact = SOURCE_MEANING_TESTIMONIES[recovery.payload["recovered_source_ref"]]
+    assert (
+        _rewarrant(
+            ledger,
+            recovery,
+            testimony=None,
+            convention=APPLICATION_SOURCE_MEANING_CONVENTION,
+        ).payload["refusal_reason"]
+        == "missing_meaning_testimony"
+    )
+    assert (
+        _rewarrant(ledger, recovery, testimony=exact, convention=None).payload[
+            "refusal_reason"
+        ]
+        == "missing_constitutive_convention"
+    )
+    other = SOURCE_MEANING_TESTIMONIES["source:operator-common-grammar-local-stop:v1"]
+    assert (
+        _rewarrant(
+            ledger,
+            recovery,
+            testimony=other,
+            convention=APPLICATION_SOURCE_MEANING_CONVENTION,
+        ).payload["refusal_reason"]
+        == "source_identity_mismatch"
+    )
+    forged = recovery.model_copy(deep=True)
+    forged.payload["recovered_source_proposition"] = "forged"
+    refusal = _rewarrant(
+        ledger,
+        forged,
+        testimony=exact,
+        convention=APPLICATION_SOURCE_MEANING_CONVENTION,
+    )
+    assert (
+        refusal.payload["refusal_reason"]
+        == "supplied_source_recovery_is_not_recorded_occurrence"
+    )
     assert "remains Unknown" in refusal.payload["unknowns"][0]
 
 
-def test_other_source_cannot_reuse_same_proposition_and_forged_recovery_refuses():
-    ledger, _, _ = run_attempt("unknown request\n1\n")
-    recovery = next(
-        e for e in ledger.list_events("w") if e.kind.endswith("source_recovered")
-    )
-    other = SOURCE_MEANING_CONVENTIONS["source:operator-common-grammar-local-stop:v1"]
-    same_proposition_other_source = replace(
-        other, proposition=recovery.payload["recovered_source_proposition"]
-    )
-    refusal = _warrant_source_meaning_relation(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        attempt_ref=recovery.payload["attempt_ref"],
-        source_recovery=recovery,
-        convention=same_proposition_other_source,
-    )
-    assert refusal.payload["refusal_reason"] == "source_identity_mismatch"
-    forged = recovery.model_copy(deep=True)
-    forged.payload["recovered_source_proposition"] = "forged"
-    refusal = _warrant_source_meaning_relation(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        attempt_ref=recovery.payload["attempt_ref"],
-        source_recovery=forged,
-        convention=SOURCE_MEANING_CONVENTIONS[recovery.payload["recovered_source_ref"]],
-    )
-    assert refusal.payload["refusal_reason"] == (
-        "supplied_source_recovery_is_not_recorded_occurrence"
-    )
-
-
-def test_meaning_relation_refuses_missing_duplicate_and_unknown_upstream_recovery():
+def test_missing_duplicate_and_unknown_upstream_recovery_refuse():
     empty = EventLedger()
     refusal = _warrant_source_meaning_relation(
         ledger=empty,
@@ -238,37 +311,18 @@ def test_meaning_relation_refuses_missing_duplicate_and_unknown_upstream_recover
         session_id="s",
         attempt_ref="missing",
         source_recovery=None,
+        testimony=None,
         convention=None,
     )
-    assert refusal.payload["refusal_reason"] == (
-        "no_exact_recorded_source_recovery_occurrence"
+    assert (
+        refusal.payload["refusal_reason"]
+        == "no_exact_recorded_source_recovery_occurrence"
     )
-
-    ledger, _, _ = run_attempt("unknown request\n1\n")
-    recovery = next(
-        e for e in ledger.list_events("w") if e.kind.endswith("source_recovered")
-    )
-    convention = SOURCE_MEANING_CONVENTIONS[recovery.payload["recovered_source_ref"]]
-    ledger.append(
-        recovery.kind,
-        "w",
-        deepcopy(recovery.payload),
-        session_id="s",
-    )
-    refusal = _warrant_source_meaning_relation(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        attempt_ref=recovery.payload["attempt_ref"],
-        source_recovery=recovery,
-        convention=convention,
-    )
-    assert refusal.payload["refusal_reason"] == "multiple_source_recovery_occurrences"
-
     ledger, _, _ = run_attempt("unknown request\n1\n", session="upstream")
     recovery = next(
         e for e in ledger.list_events("w") if e.kind.endswith("source_recovered")
     )
+    testimony = SOURCE_MEANING_TESTIMONIES[recovery.payload["recovered_source_ref"]]
     representation = ledger.get(recovery.payload["representation_occurrence_id"])
     representation.payload["unknowns"] = ["relevant representation Unknown"]
     refusal = _warrant_source_meaning_relation(
@@ -277,7 +331,8 @@ def test_meaning_relation_refuses_missing_duplicate_and_unknown_upstream_recover
         session_id="upstream",
         attempt_ref=recovery.payload["attempt_ref"],
         source_recovery=recovery,
-        convention=SOURCE_MEANING_CONVENTIONS[recovery.payload["recovered_source_ref"]],
+        testimony=testimony,
+        convention=APPLICATION_SOURCE_MEANING_CONVENTION,
     )
     assert refusal.payload["refusal_reason"] == "upstream_representation_unknown"
 

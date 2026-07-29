@@ -57,38 +57,76 @@ MEANING_CONVENTION_SCOPE = "operator-ingress-common-grammar:v1"
 
 
 @dataclass(frozen=True)
-class ApplicationSourceMeaningConvention:
-    convention_id: str
+class ApplicationSourceMeaningTestimony:
+    testimony_id: str
     source_ref: str
     source_role: str
     proposition: str
     relation_assertion: str = "expresses"
-    attribution: str = "Seed application developer declaration"
-    purpose: str = MEANING_CONVENTION_PURPOSE
-    scope: str = MEANING_CONVENTION_SCOPE
-    producer_occurrence_ref: str = (
+    attributed_supplier: str = "Seed application developer declaration"
+    producer_declaration_ref: str = (
         "seed_runtime.operator_ingress_common_grammar:source-declaration:v1"
     )
-    authority_limits: tuple[str, ...] = (
-        "only this exact source expresses this exact proposition in this exact use",
-        "no goal, stopping, acquisition, applicability, admission, authority, or movement",
-    )
+    declared_application_purpose: str = MEANING_CONVENTION_PURPOSE
+    scope: str = MEANING_CONVENTION_SCOPE
     provenance: tuple[str, ...] = (
         "application-owned operator-ingress common-grammar declaration",
     )
     known_loss: tuple[str, ...] = RENDERING_KNOWN_LOSS
-    unknowns: tuple[str, ...] = ()
     conflicts: tuple[str, ...] = ()
+    unknowns: tuple[str, ...] = ()
+    authority_limits: tuple[str, ...] = (
+        "testimony asserts only the exact expresses relation and does not warrant itself",
+        "no truth, applicability, admission, goal, stopping, acquisition, authority, or movement",
+    )
 
 
-SOURCE_MEANING_CONVENTIONS = {
-    source_ref: ApplicationSourceMeaningConvention(
-        f"convention:operator-common-grammar:{source_ref.rsplit(':', 2)[-2]}:v1",
+@dataclass(frozen=True)
+class ApplicationSourceMeaningConvention:
+    convention_id: str = "convention:operator-common-grammar:source-meaning:v2"
+    attribution: str = "Seed application developer declaration"
+    permitted_testimony_kind: str = "ApplicationSourceMeaningTestimony"
+    permitted_relation_form: str = "expresses"
+    purpose: str = MEANING_CONVENTION_PURPOSE
+    scope: str = MEANING_CONVENTION_SCOPE
+    applicable_authority: tuple[str, ...] = (
+        "bounded application convention for examining eligible testimony as warrant basis",
+    )
+    required_provenance: bool = True
+    required_coordinates: tuple[str, ...] = (
+        "testimony_id",
+        "source_ref",
+        "source_role",
+        "proposition",
+        "relation_assertion",
+        "attributed_supplier",
+        "producer_declaration_ref",
+        "declared_application_purpose",
+        "scope",
+        "provenance",
+    )
+    known_limitations: tuple[str, ...] = (
+        "does not declare any source-to-proposition relation",
+        "is neither constitutional authority nor a universal meaning-warrant topology",
+    )
+    conflicts: tuple[str, ...] = ()
+    unknowns: tuple[str, ...] = ()
+
+
+SOURCE_MEANING_TESTIMONIES = {
+    source_ref: ApplicationSourceMeaningTestimony(
+        f"testimony:operator-common-grammar:{source_ref.rsplit(':', 2)[-2]}:v1",
         source_ref,
         role,
         proposition,
     )
     for source_ref, (role, proposition) in SOURCE_PROPOSITIONS.items()
+}
+APPLICATION_SOURCE_MEANING_CONVENTION = ApplicationSourceMeaningConvention()
+# Applicability maps exact local identity only; the convention contains no G or M assertion.
+SOURCE_MEANING_CONVENTIONS = {
+    source_ref: APPLICATION_SOURCE_MEANING_CONVENTION
+    for source_ref in SOURCE_PROPOSITIONS
 }
 
 
@@ -164,9 +202,16 @@ class RecoveredRepresentedSource:
 
 
 def _warrant_source_meaning_relation(
-    *, ledger, workspace_id, session_id, attempt_ref, source_recovery, convention
+    *,
+    ledger,
+    workspace_id,
+    session_id,
+    attempt_ref,
+    source_recovery,
+    testimony,
+    convention,
 ):
-    """Warrant one local source relation from recorded recovery plus declaration."""
+    """Warrant one local relation from distinct recovery, testimony, and convention."""
     recoveries = [
         event
         for event in ledger.list_events(workspace_id)
@@ -183,6 +228,20 @@ def _warrant_source_meaning_relation(
         if source_recovery is not None
         else None
     )
+    expected_testimony = (
+        SOURCE_MEANING_TESTIMONIES.get(testimony.source_ref)
+        if testimony is not None
+        else None
+    )
+    required_missing = (
+        [
+            name
+            for name in convention.required_coordinates
+            if testimony is None or not getattr(testimony, name, None)
+        ]
+        if convention is not None
+        else []
+    )
     checks = (
         (not recoveries, "no_exact_recorded_source_recovery_occurrence"),
         (len(recoveries) > 1, "multiple_source_recovery_occurrences"),
@@ -196,14 +255,55 @@ def _warrant_source_meaning_relation(
             recorded is not None and recorded.kind.endswith("source_recovery_refused"),
             "source_recovery_reports_refusal",
         ),
+        (testimony is None, "missing_meaning_testimony"),
+        (
+            testimony is not None
+            and (
+                expected_testimony is None
+                or testimony.testimony_id != expected_testimony.testimony_id
+            ),
+            "meaning_testimony_identity_mismatch",
+        ),
+        (
+            testimony is not None and testimony.relation_assertion != "expresses",
+            "meaning_testimony_relation_not_expresses",
+        ),
+        (
+            testimony is not None
+            and testimony.attributed_supplier
+            != "Seed application developer declaration",
+            "meaning_testimony_attribution_absent_or_mismatched",
+        ),
+        (
+            testimony is not None and not testimony.producer_declaration_ref,
+            "meaning_testimony_declaration_reference_absent",
+        ),
+        (
+            testimony is not None and not testimony.provenance,
+            "meaning_testimony_provenance_absent",
+        ),
+        (
+            testimony is not None
+            and testimony.declared_application_purpose != MEANING_CONVENTION_PURPOSE,
+            "meaning_testimony_purpose_mismatch",
+        ),
+        (
+            testimony is not None and testimony.scope != MEANING_CONVENTION_SCOPE,
+            "meaning_testimony_scope_mismatch",
+        ),
+        (
+            testimony is not None and bool(testimony.unknowns),
+            "meaning_testimony_unknown",
+        ),
+        (
+            testimony is not None and bool(testimony.conflicts),
+            "meaning_testimony_conflicting",
+        ),
         (convention is None, "missing_constitutive_convention"),
         (
             convention is not None
-            and (
-                convention.source_ref not in SOURCE_MEANING_CONVENTIONS
-                or convention.convention_id
-                != SOURCE_MEANING_CONVENTIONS[convention.source_ref].convention_id
-            ),
+            and convention.convention_id
+            != APPLICATION_SOURCE_MEANING_CONVENTION.convention_id,
             "constitutive_convention_identity_mismatch",
         ),
         (
@@ -212,11 +312,19 @@ def _warrant_source_meaning_relation(
             "constitutive_convention_attribution_absent_or_mismatched",
         ),
         (
+            convention is not None and not convention.applicable_authority,
+            "constitutive_convention_authority_absent",
+        ),
+        (
             convention is not None
-            and convention.source_ref in SOURCE_MEANING_CONVENTIONS
-            and convention.authority_limits
-            != SOURCE_MEANING_CONVENTIONS[convention.source_ref].authority_limits,
-            "constitutive_convention_authority_absent_or_mismatched",
+            and convention.permitted_testimony_kind
+            != "ApplicationSourceMeaningTestimony",
+            "constitutive_convention_testimony_form_not_permitted",
+        ),
+        (
+            convention is not None
+            and convention.permitted_relation_form != "expresses",
+            "constitutive_convention_does_not_permit_expresses",
         ),
         (
             convention is not None and convention.purpose != MEANING_CONVENTION_PURPOSE,
@@ -225,6 +333,14 @@ def _warrant_source_meaning_relation(
         (
             convention is not None and convention.scope != MEANING_CONVENTION_SCOPE,
             "constitutive_convention_scope_mismatch",
+        ),
+        (bool(required_missing), "constitutive_convention_required_coordinate_absent"),
+        (
+            convention is not None
+            and convention.required_provenance
+            and testimony is not None
+            and not testimony.provenance,
+            "constitutive_convention_required_provenance_absent",
         ),
         (
             convention is not None and bool(convention.unknowns),
@@ -235,23 +351,34 @@ def _warrant_source_meaning_relation(
             "constitutive_convention_conflicting",
         ),
         (
+            convention is not None
+            and convention != APPLICATION_SOURCE_MEANING_CONVENTION,
+            "forged_constitutive_convention",
+        ),
+        (
             recorded is not None
-            and convention is not None
-            and recorded.payload.get("recovered_source_ref") != convention.source_ref,
+            and testimony is not None
+            and recorded.payload.get("recovered_source_ref") != testimony.source_ref,
             "source_identity_mismatch",
         ),
         (
             recorded is not None
-            and convention is not None
-            and recorded.payload.get("recovered_source_role") != convention.source_role,
+            and testimony is not None
+            and recorded.payload.get("recovered_source_role") != testimony.source_role,
             "source_role_mismatch",
         ),
         (
             recorded is not None
-            and convention is not None
+            and testimony is not None
             and recorded.payload.get("recovered_source_proposition")
-            != convention.proposition,
+            != testimony.proposition,
             "proposition_mismatch",
+        ),
+        (
+            testimony is not None
+            and expected_testimony is not None
+            and testimony != expected_testimony,
+            "forged_meaning_testimony",
         ),
         (representation is None, "upstream_representation_occurrence_missing"),
         (
@@ -278,7 +405,7 @@ def _warrant_source_meaning_relation(
                 standing="refused",
                 source=source_recovery.id if source_recovery else "Unknown",
                 responsibility="application-source-meaning-relation-warrant",
-                authority="refusal only; does not establish negation",
+                authority="refusal only; does not establish negation or a competing relation",
                 scope=f"attempt:{attempt_ref}",
                 occurrence="exact bounded refusal durably recorded",
             ),
@@ -286,7 +413,7 @@ def _warrant_source_meaning_relation(
             unknowns=["whether the source expresses the proposition remains Unknown"],
             lineage=[source_recovery.id] if source_recovery else [],
         )
-    relation_ref = f"meaning-relation:{convention.source_ref}:expresses"
+    relation_ref = f"meaning-relation:{testimony.source_ref}:expresses"
     return _record(
         ledger,
         "operator.ingress.common_grammar.meaning_relation_warranted",
@@ -295,20 +422,22 @@ def _warrant_source_meaning_relation(
         attempt_ref,
         _dimensions(
             identity=relation_ref,
-            content=convention.proposition,
+            content=testimony.proposition,
             standing="warranted",
-            source=convention.convention_id,
+            source=f"{testimony.testimony_id};{convention.convention_id}",
             responsibility="application-source-meaning-relation-warrant",
-            authority="exact local constitutive convention only",
-            scope=f"attempt:{attempt_ref};{convention.scope}",
+            authority="developer-attributed application testimony under a bounded local constitutive convention",
+            scope=f"attempt:{attempt_ref};{testimony.scope}",
             occurrence="separate responsible meaning-relation warrant recorded",
         ),
         relation_ref=relation_ref,
-        relation_assertion=convention.relation_assertion,
-        source_ref=convention.source_ref,
-        source_role=convention.source_role,
-        proposition=convention.proposition,
-        convention=asdict(convention),
+        relation_assertion=testimony.relation_assertion,
+        source_ref=testimony.source_ref,
+        source_role=testimony.source_role,
+        proposition=testimony.proposition,
+        meaning_testimony=asdict(testimony),
+        meaning_testimony_ref=testimony.testimony_id,
+        constitutive_convention=asdict(convention),
         constitutive_convention_ref=convention.convention_id,
         source_recovery_occurrence_id=source_recovery.id,
         representation_occurrence_id=source_recovery.payload[
@@ -318,14 +447,29 @@ def _warrant_source_meaning_relation(
         selected_presented_alternative_ref=source_recovery.payload[
             "selected_presented_alternative_ref"
         ],
+        purpose=testimony.declared_application_purpose,
+        scope=testimony.scope,
+        provenance=list(testimony.provenance),
         known_loss=list(
             dict.fromkeys(
-                (*source_recovery.payload.get("known_loss", ()), *convention.known_loss)
+                (*source_recovery.payload.get("known_loss", ()), *testimony.known_loss)
             )
         ),
-        conflicts=list(convention.conflicts),
-        unknowns=list(convention.unknowns),
-        warrant_basis="exact bounded developer-supplied constitutive convention",
+        conflicts=[],
+        unknowns=[],
+        warrant_basis_kind="developer-attributed application testimony under a bounded local constitutive convention",
+        implementation_status="first bounded implementation witness of the general meaning-relation warrant responsibility",
+        not_established=[
+            "developer ownership of all meaning testimony",
+            "developer authority as constitutional authority",
+            "exclusive use of constitutive convention",
+            "universal meaning-warrant topology",
+            "required artifact shape for future witnesses",
+            "inapplicability of Seed-derived testimony",
+            "inapplicability of externally attributed testimony",
+            "truth or applicability of the proposition",
+            "admission, bounded goal, stopping, acquisition, authority, or movement",
+        ],
         lineage=[
             source_recovery.payload["representation_occurrence_id"],
             source_recovery.payload["binding_occurrence_id"],
@@ -762,7 +906,9 @@ def project_operator_ingress_common_grammar_events(state, event) -> None:
         "recovered_source_proposition",
         "relation_ref",
         "relation_assertion",
+        "meaning_testimony_ref",
         "constitutive_convention_ref",
+        "implementation_status",
         "closed",
         "response_kind",
     ):
@@ -1328,6 +1474,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
                 session_id=session_id,
                 attempt_ref=attempt,
                 source_recovery=recovery_event,
+                testimony=None,
                 convention=None,
             )
             result = f"Source recovery refused: {refusal_reason}."
@@ -1370,6 +1517,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
                 session_id=session_id,
                 attempt_ref=attempt,
                 source_recovery=recovery_event,
+                testimony=SOURCE_MEANING_TESTIMONIES[recovered.represented_source_ref],
                 convention=SOURCE_MEANING_CONVENTIONS[recovered.represented_source_ref],
             )
             if recovered.represented_source_role == "local-stop":
