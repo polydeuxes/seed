@@ -30,12 +30,8 @@ A declared measurement may produce bounded findings of exact equality, count, re
 ### 01.External.F — Candidate production remains attributed
 A candidate must preserve each applicable producer, source-role, formation-occurrence, scope, authority, and provenance dimension where known. Where a dimension is unresolved, its Unknown or unresolved standing must remain explicit. A Seed-produced candidate, operator-supplied candidate testimony, and external-source candidate or rule testimony may therefore have different production standing without closing the possible source roles into an exhaustive taxonomy. Consuming, comparing, transporting, or re-presenting candidate material does not relocate its production or establish a missing formation occurrence. An Unknown producer is not an invented producer; an Unknown formation occurrence does not mean that no candidate exists; and Unknown provenance must not be silently supplied.
 
-### 01.External.G — Meaning is a bounded representational relation
-Meaning names a relation in which subject X identifies, represents, or expresses subject or proposition Y for a declared purpose and scope, with source and attribution, producer and occurrence, provenance, authority limits, known loss, conflicts, and **Unknowns** preserved. It is not an object, artifact kind, truth standing, warrant, provenance, represented-subject identity, consumer authority, admission, or reliance. Different relations remain distinguishable: a token may identify a presented alternative within one exact presentation; that alternative may represent a source candidate for one presentation purpose; and that candidate may express a bounded proposition under attributed meaning support. No field adjacency, array inclusion, label, reference resolution, artifact shape, or repetition warrants those relations by identity.
-
-Material may carry or propose a meaning assertion without the relation being warranted. A responsible occurrence may warrant only the bounded relation supported by claim-appropriate authority, evidence or constitutive convention, scope, provenance, conflicts, loss, and preserved **Unknowns**. For example, an occurrence with bounded representation authority may constitute that token T identifies alternative A within exact presentation C; attributed material and comparison evidence may instead support that A represents candidate G for purpose P. These are possible bounded responsibilities, not new constitutional kinds or a closed taxonomy, and neither establishes universal truth or unrestricted reliance.
-
-Warranted meaning is not automatically applicable to a consumer and purpose. Applicability is not admission; admission is not the consumer's reliance occurrence; and reliance is not completion of the consumer's act. A consumer may rely only on the bounded relation warranted and admitted for that consumer's exact act and purpose, without silently adopting a stronger upstream assertion. Where the responsible owner or evidence requirement is not established, it remains **Unknown**.
+### 01.External.G — External material may propose meaning
+External material may carry or propose a meaning assertion without thereby warranting a Seed-native meaning relation. Translation preserves the external source, attribution, scope, provenance, authority limits, known loss, conflicts, and **Unknowns** applicable to that assertion; it does not turn carriage, field adjacency, array inclusion, labels, reference resolution, artifact shape, or repetition into relation warrant. Any Seed-native warrant remains a separate bounded relation-standing responsibility under [Constitutional kinds and artifact standing](constitutional-kinds-and-artifact-standing.md).
 
 ## Important distinctions
 - source grammar translated for use != Seed-native grammar
@@ -49,11 +45,7 @@ Warranted meaning is not automatically applicable to a consumer and purpose. App
 - measurement != structural, grammatical, or semantic meaning
 - candidate carriage or consumption != candidate production
 - material carries or proposes meaning != meaning relation warranted
-- meaning relation warranted != purpose-local applicability
-- purpose-local applicability != consumer-local admission
-- consumer-local admission != consumer reliance occurrence
-- consumer reliance != consumer act completed
-- meaning relation != truth, its warrant, provenance, represented-subject identity, or consumer authority
+- external material carries or proposes meaning != Seed-native meaning relation warranted
 
 ## Representative repository anchors
 - `seed_runtime/candidate_external_grammar.py::CandidateExternalGrammarSet`
