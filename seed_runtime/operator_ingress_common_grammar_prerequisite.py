@@ -58,6 +58,80 @@ RENDERING_KNOWN_LOSS = (
 MEANING_CONVENTION_PURPOSE = "operator-ingress common-grammar source meaning"
 MEANING_CONVENTION_SCOPE = "operator-ingress-common-grammar:v1"
 
+POTENTIAL_GOAL_SOURCE_REF = "source:operator-common-grammar-potential-goal:v1"
+POTENTIAL_GOAL_ROLE = "potential-goal candidate"
+POTENTIAL_GOAL_STANDING_PURPOSE = (
+    "establish bounded potential-goal standing for operator-ingress common grammar"
+)
+POTENTIAL_GOAL_STANDING_SCOPE = (
+    "operator-ingress-common-grammar:v1:potential-goal-standing"
+)
+
+
+@dataclass(frozen=True)
+class ApplicationSourceRoleTestimony:
+    """Application testimony about one role, not testimony about meaning or standing."""
+
+    testimony_id: str
+    source_ref: str
+    attributed_role: str
+    attributed_supplier: str = "Seed application developer declaration"
+    producer_declaration_ref: str = (
+        "seed_runtime.operator_ingress_common_grammar:potential-goal-role-declaration:v1"
+    )
+    purpose: str = POTENTIAL_GOAL_STANDING_PURPOSE
+    scope: str = POTENTIAL_GOAL_STANDING_SCOPE
+    provenance: tuple[str, ...] = (
+        "application-owned operator-ingress common-grammar role declaration",
+    )
+    authority_limits: tuple[str, ...] = (
+        "does not establish its own standing or presentation eligibility",
+        "does not establish meaning, proposition truth, applicability, admission, or a bounded goal",
+        "does not establish movement, authority, or performance",
+    )
+    known_loss: tuple[str, ...] = ()
+    conflicts: tuple[str, ...] = ()
+    unknowns: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class ApplicationPotentialGoalStandingConvention:
+    """Bounded authority for examining eligible role testimony; asserts no role."""
+
+    convention_id: str = "convention:operator-common-grammar:potential-goal-standing:v1"
+    attribution: str = "Seed application developer declaration"
+    permitted_testimony_kind: str = "ApplicationSourceRoleTestimony"
+    permitted_standing_relation: str = "has bounded potential-goal standing"
+    purpose: str = POTENTIAL_GOAL_STANDING_PURPOSE
+    scope: str = POTENTIAL_GOAL_STANDING_SCOPE
+    required_provenance: bool = True
+    required_coordinates: tuple[str, ...] = (
+        "testimony_id",
+        "source_ref",
+        "attributed_role",
+        "attributed_supplier",
+        "producer_declaration_ref",
+        "purpose",
+        "scope",
+        "provenance",
+    )
+    authority_limits: tuple[str, ...] = (
+        "local constitutive authority only; not constitutional authority by identity",
+        "not a universal potential-goal-standing topology and grants no presentation eligibility",
+    )
+    conflicts: tuple[str, ...] = ()
+    unknowns: tuple[str, ...] = ()
+
+
+APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY = ApplicationSourceRoleTestimony(
+    testimony_id="testimony:operator-common-grammar:potential-goal-role:v1",
+    source_ref=POTENTIAL_GOAL_SOURCE_REF,
+    attributed_role=POTENTIAL_GOAL_ROLE,
+)
+APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION = (
+    ApplicationPotentialGoalStandingConvention()
+)
+
 
 @dataclass(frozen=True)
 class ApplicationSourceMeaningTestimony:
@@ -165,6 +239,129 @@ def _recordable_presented_options(choice_set) -> list[dict[str, str]]:
         }
         for option in choice_set.options
     ]
+
+
+def _examine_potential_goal_standing(
+    *, ledger, workspace_id, session_id, attempt_ref, testimony, convention, lineage=()
+):
+    """Perform only the bounded potential-goal-standing constitutive act."""
+    result = "established"
+    reason = "exact_eligible_role_testimony_under_applicable_bounded_authority"
+
+    if testimony is None:
+        result, reason = "unknown", "required_source_role_testimony_missing"
+    elif not isinstance(testimony, ApplicationSourceRoleTestimony):
+        result, reason = "refused", "ineligible_testimony_form"
+    elif testimony.conflicts:
+        result, reason = "conflict", "source_role_testimony_conflicting"
+    elif testimony.unknowns:
+        result, reason = "unknown", "source_role_testimony_materially_unknown"
+    elif any(
+        not getattr(testimony, name, None)
+        for name in (
+            "testimony_id",
+            "source_ref",
+            "attributed_role",
+            "attributed_supplier",
+            "producer_declaration_ref",
+            "purpose",
+            "scope",
+            "provenance",
+        )
+    ):
+        result, reason = "refused", "required_source_role_testimony_coordinate_missing"
+    elif testimony.source_ref != POTENTIAL_GOAL_SOURCE_REF:
+        result, reason = "refused", "source_identity_mismatch"
+    elif testimony.attributed_role != POTENTIAL_GOAL_ROLE:
+        result, reason = "refused", "attributed_role_mismatch"
+    elif testimony != APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY:
+        result, reason = "refused", "forged_source_role_testimony"
+    elif convention is None:
+        result, reason = "unknown", "required_constitutive_authority_missing"
+    elif not isinstance(convention, ApplicationPotentialGoalStandingConvention):
+        result, reason = "refused", "inapplicable_constitutive_authority_form"
+    elif convention.conflicts:
+        result, reason = "conflict", "constitutive_authority_conflicting"
+    elif convention.unknowns:
+        result, reason = "unknown", "constitutive_authority_materially_unknown"
+    elif (
+        convention != APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION
+        or convention.permitted_testimony_kind != "ApplicationSourceRoleTestimony"
+        or convention.permitted_standing_relation
+        != "has bounded potential-goal standing"
+        or convention.purpose != POTENTIAL_GOAL_STANDING_PURPOSE
+        or convention.scope != POTENTIAL_GOAL_STANDING_SCOPE
+        or not convention.required_provenance
+    ):
+        result, reason = "refused", "forged_or_inapplicable_constitutive_authority"
+
+    exact_testimony = (
+        asdict(testimony)
+        if isinstance(testimony, ApplicationSourceRoleTestimony)
+        else None
+    )
+    exact_convention = (
+        asdict(convention)
+        if isinstance(convention, ApplicationPotentialGoalStandingConvention)
+        else None
+    )
+    established = result == "established"
+    source_ref = testimony.source_ref if exact_testimony else POTENTIAL_GOAL_SOURCE_REF
+    role = testimony.attributed_role if exact_testimony else None
+    return _record(
+        ledger,
+        "operator.ingress.common_grammar.potential_goal_standing_examined",
+        workspace_id,
+        session_id,
+        attempt_ref,
+        _dimensions(
+            identity=f"bounded-potential-goal-standing:{source_ref}",
+            content=reason,
+            standing=result,
+            source=(
+                f"{testimony.testimony_id};{convention.convention_id}"
+                if established
+                else "responsible bounded examination"
+            ),
+            responsibility="bounded-potential-goal-standing examination",
+            authority="bounded local constitutive convention; no presentation eligibility",
+            scope=f"attempt:{attempt_ref};{POTENTIAL_GOAL_STANDING_SCOPE}",
+            occurrence="distinct potential-goal-standing act durably recorded",
+        ),
+        standing_subject=source_ref,
+        standing_relation="has bounded potential-goal standing",
+        standing_result=result,
+        examination_reason=reason,
+        attributed_role=role,
+        source_role_testimony=exact_testimony,
+        source_role_testimony_ref=(testimony.testimony_id if exact_testimony else None),
+        constitutive_authority=exact_convention,
+        constitutive_authority_ref=(
+            convention.convention_id if exact_convention else None
+        ),
+        purpose=POTENTIAL_GOAL_STANDING_PURPOSE,
+        scope=POTENTIAL_GOAL_STANDING_SCOPE,
+        provenance=list(testimony.provenance) if exact_testimony else [],
+        authority_limits=(
+            list(testimony.authority_limits) + list(convention.authority_limits)
+            if exact_testimony and exact_convention
+            else []
+        ),
+        known_loss=list(testimony.known_loss) if exact_testimony else [],
+        conflicts=(
+            list(testimony.conflicts if exact_testimony else ())
+            + list(convention.conflicts if exact_convention else ())
+        ),
+        unknowns=(
+            list(testimony.unknowns if exact_testimony else ())
+            + list(convention.unknowns if exact_convention else ())
+            + ([] if result != "unknown" else [reason])
+        ),
+        refusal_reason=reason if result == "refused" else None,
+        establishes_presentation_eligibility=False,
+        establishes_exact_set_participation=False,
+        lineage=list(lineage),
+    )
 
 
 @dataclass(frozen=True)
@@ -478,8 +675,7 @@ def _examine_meaning_relation_for_bounded_operator_goal_establishment(
         event
         for event in ledger.list_events(workspace_id)
         if event.payload.get("attempt_ref") == attempt_ref
-        and event.kind
-        == "operator.ingress.common_grammar.meaning_relation_warranted"
+        and event.kind == "operator.ingress.common_grammar.meaning_relation_warranted"
     ]
     exact = recorded[0] if len(recorded) == 1 else None
     if (
@@ -889,6 +1085,8 @@ def project_operator_ingress_common_grammar_events(state, event) -> None:
                     "binding_finding",
                     "alternative_selection",
                     "source_recovery",
+                    "source_role_testimony",
+                    "potential_goal_standing",
                     "meaning_relation",
                     "bounded_operator_goal_establishment_applicability",
                     "interaction_closure",
@@ -935,6 +1133,7 @@ def project_operator_ingress_common_grammar_events(state, event) -> None:
         "operator.ingress.common_grammar.alternative_selected": "alternative_selection",
         "operator.ingress.common_grammar.source_recovered": "source_recovery",
         "operator.ingress.common_grammar.source_recovery_refused": "source_recovery",
+        "operator.ingress.common_grammar.potential_goal_standing_examined": "potential_goal_standing",
         "operator.ingress.common_grammar.meaning_relation_warranted": "meaning_relation",
         "operator.ingress.common_grammar.meaning_relation_refused": "meaning_relation",
         "operator.ingress.common_grammar.bounded_operator_goal_establishment_applicability_examined": "bounded_operator_goal_establishment_applicability",
@@ -975,6 +1174,10 @@ def project_operator_ingress_common_grammar_events(state, event) -> None:
         "recovered_source_ref",
         "recovered_source_role",
         "recovered_source_proposition",
+        "source_role_testimony_ref",
+        "standing_subject",
+        "standing_relation",
+        "standing_result",
         "relation_ref",
         "relation_assertion",
         "meaning_testimony_ref",
@@ -991,6 +1194,12 @@ def project_operator_ingress_common_grammar_events(state, event) -> None:
     ):
         if key in event.payload:
             view[key] = event.payload[key]
+    if event.kind == "operator.ingress.common_grammar.potential_goal_standing_examined":
+        view["current_standing"]["source_role_testimony"] = {
+            "subject_ref": event.payload.get("source_role_testimony_ref"),
+            "testimony": event.payload.get("source_role_testimony"),
+            "evidence_event_id": event.id,
+        }
 
 
 def _capture_representation(
@@ -1108,9 +1317,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
     ingress_kind = (
         "eof"
         if captured_ingress.eof
-        else "empty"
-        if raw_ingress in {"\n", "\r\n"}
-        else "text"
+        else "empty" if raw_ingress in {"\n", "\r\n"} else "text"
     )
     ingress_content = (
         None
@@ -1218,6 +1425,16 @@ def run_operator_ingress_common_grammar_probe_attempt(
         output_stream.flush()
         return state.operator_ingress_common_grammar_attempts[attempt]
 
+    _examine_potential_goal_standing(
+        ledger=ledger,
+        workspace_id=workspace_id,
+        session_id=session_id,
+        attempt_ref=attempt,
+        testimony=APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY,
+        convention=APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION,
+        lineage=[ingress.id],
+    )
+
     presentation_ref = f"presentation:{ingress.id}"
     choice_set = common_grammar_choice_set(presentation_ref)
     produced = _record(
@@ -1316,9 +1533,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
     response_kind = (
         "eof"
         if captured_response.eof
-        else "empty"
-        if raw_response in {"\n", "\r\n"}
-        else "token"
+        else "empty" if raw_response in {"\n", "\r\n"} else "token"
     )
     token = (
         ""

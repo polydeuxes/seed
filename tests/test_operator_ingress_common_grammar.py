@@ -25,10 +25,16 @@ from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     RENDERING_KNOWN_LOSS,
     SOURCE_PROPOSITIONS,
     APPLICATION_SOURCE_MEANING_CONVENTION,
+    APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY,
+    APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION,
+    ApplicationSourceMeaningTestimony,
+    ApplicationSourceRoleTestimony,
+    POTENTIAL_GOAL_SOURCE_REF,
     SOURCE_MEANING_CONVENTIONS,
     SOURCE_MEANING_TESTIMONIES,
     _examine_meaning_relation_for_bounded_operator_goal_establishment,
     _warrant_source_meaning_relation,
+    _examine_potential_goal_standing,
     common_grammar_choice_set,
     _recover_represented_source,
     run_operator_ingress_common_grammar_probe_attempt,
@@ -56,6 +62,185 @@ def run_attempt(text, ledger=None, session="s"):
         output_stream=output,
     )
     return ledger, view, output.getvalue()
+
+
+def examine_standing(
+    *,
+    testimony=APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY,
+    convention=APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION,
+):
+    ledger = EventLedger()
+    event = _examine_potential_goal_standing(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref="attempt:test",
+        testimony=testimony,
+        convention=convention,
+    )
+    return event
+
+
+def test_role_testimony_and_authority_are_distinct_from_meaning_warrant():
+    role = APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY
+    meaning = SOURCE_MEANING_TESTIMONIES[POTENTIAL_GOAL_SOURCE_REF]
+    authority = APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION
+    assert isinstance(role, ApplicationSourceRoleTestimony)
+    assert isinstance(meaning, ApplicationSourceMeaningTestimony)
+    assert role.testimony_id != meaning.testimony_id
+    assert "standing" not in role.authority_limits[0].split("does not establish ")[0]
+    assert not hasattr(authority, "source_ref")
+    assert not hasattr(authority, "attributed_role")
+    assert examine_standing(testimony=meaning).payload["standing_result"] == "refused"
+    assert (
+        examine_standing(testimony="potential-goal candidate").payload[
+            "standing_result"
+        ]
+        == "refused"
+    )
+
+
+def test_exact_role_testimony_under_bounded_authority_establishes_only_standing():
+    occurrence = examine_standing()
+    assert occurrence.payload["standing_result"] == "established"
+    assert (
+        occurrence.payload["source_role_testimony_ref"]
+        == APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY.testimony_id
+    )
+    assert (
+        occurrence.payload["constitutive_authority_ref"]
+        == APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION.convention_id
+    )
+    assert occurrence.payload["establishes_presentation_eligibility"] is False
+    assert occurrence.payload["establishes_exact_set_participation"] is False
+    forbidden = (
+        "applicability",
+        "admission",
+        "bounded_goal",
+        "stopping",
+        "acquisition",
+        "movement",
+        "authority_standing",
+    )
+    assert not any(name in occurrence.payload for name in forbidden)
+
+
+@pytest.mark.parametrize(
+    "coordinate",
+    [
+        "testimony_id",
+        "source_ref",
+        "attributed_role",
+        "attributed_supplier",
+        "producer_declaration_ref",
+        "purpose",
+        "scope",
+        "provenance",
+    ],
+)
+def test_missing_role_testimony_coordinate_is_refused(coordinate):
+    value = () if coordinate == "provenance" else ""
+    occurrence = examine_standing(
+        testimony=replace(
+            APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY, **{coordinate: value}
+        )
+    )
+    assert occurrence.payload["standing_result"] == "refused"
+
+
+def test_missing_forged_wrong_unknown_and_conflicting_standing_inputs():
+    assert examine_standing(testimony=None).payload["standing_result"] == "unknown"
+    assert (
+        examine_standing(
+            testimony=replace(
+                APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY, testimony_id="forged"
+            )
+        ).payload["examination_reason"]
+        == "forged_source_role_testimony"
+    )
+    assert (
+        examine_standing(
+            testimony=replace(
+                APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY, source_ref="source:wrong"
+            )
+        ).payload["examination_reason"]
+        == "source_identity_mismatch"
+    )
+    assert (
+        examine_standing(
+            testimony=replace(
+                APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY, attributed_role="local-stop"
+            )
+        ).payload["examination_reason"]
+        == "attributed_role_mismatch"
+    )
+    assert (
+        examine_standing(
+            testimony=replace(
+                APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY,
+                unknowns=("material unknown",),
+            )
+        ).payload["standing_result"]
+        == "unknown"
+    )
+    assert (
+        examine_standing(
+            testimony=replace(
+                APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY, conflicts=("conflict",)
+            )
+        ).payload["standing_result"]
+        == "conflict"
+    )
+    assert (
+        examine_standing(
+            convention=replace(
+                APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION, unknowns=("unknown",)
+            )
+        ).payload["standing_result"]
+        == "unknown"
+    )
+    assert (
+        examine_standing(
+            convention=replace(
+                APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION, conflicts=("conflict",)
+            )
+        ).payload["standing_result"]
+        == "conflict"
+    )
+    assert (
+        examine_standing(
+            convention=replace(
+                APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION, scope="elsewhere"
+            )
+        ).payload["standing_result"]
+        == "refused"
+    )
+
+
+@pytest.mark.parametrize("token", ["1", "2"])
+def test_live_standing_precedes_formation_without_crossing_eligibility(token):
+    ledger, view, output = run_attempt(f"unknown request\n{token}\n")
+    events = ledger.list_events("w")
+    standing = [
+        e for e in events if e.kind.endswith("potential_goal_standing_examined")
+    ]
+    represented = next(e for e in events if e.kind.endswith("alternatives_represented"))
+    assert len(standing) == 1
+    assert events.index(standing[0]) < events.index(represented)
+    assert standing[0].payload["standing_subject"] == POTENTIAL_GOAL_SOURCE_REF
+    assert standing[0].payload["standing_result"] == "established"
+    assert standing[0].payload["attributed_role"] != "local-stop"
+    assert (
+        view["current_standing"]["source_role_testimony"]["testimony"][
+            "attributed_role"
+        ]
+        == "potential-goal candidate"
+    )
+    assert (
+        view["current_standing"]["potential_goal_standing"]["dimensions"]["standing"]
+        == "established"
+    )
+    assert output.count("Select one alternative") == 1
 
 
 def test_representation_evidence_precedes_response_and_preserves_distinctions():
@@ -166,9 +351,9 @@ def test_potential_goal_relation_reaches_consumer_boundary_as_unknown():
         mode="json"
     )
     assert (
-        view["current_standing"][
-            "bounded_operator_goal_establishment_applicability"
-        ]["evidence_event_id"]
+        view["current_standing"]["bounded_operator_goal_establishment_applicability"][
+            "evidence_event_id"
+        ]
         == finding.id
     )
     assert not any(
@@ -182,15 +367,24 @@ def test_local_stop_relation_has_no_bounded_goal_applicability_or_stopping():
     events = ledger.list_events("w")
     warrant = next(e for e in events if e.kind.endswith("meaning_relation_warranted"))
     assert warrant.payload["source_role"] == "local-stop"
-    assert view["current_standing"]["meaning_relation"]["evidence_event_id"] == warrant.id
-    assert view["current_standing"]["bounded_operator_goal_establishment_applicability"] is None
-    assert not any("applicability" in event.kind or "stopping" in event.kind for event in events)
+    assert (
+        view["current_standing"]["meaning_relation"]["evidence_event_id"] == warrant.id
+    )
+    assert (
+        view["current_standing"]["bounded_operator_goal_establishment_applicability"]
+        is None
+    )
+    assert not any(
+        "applicability" in event.kind or "stopping" in event.kind for event in events
+    )
 
 
 def test_unrecorded_relation_is_refused_without_inapplicability():
     ledger, _, _ = run_attempt("unknown request\n1\n")
     warrant = next(
-        e for e in ledger.list_events("w") if e.kind.endswith("meaning_relation_warranted")
+        e
+        for e in ledger.list_events("w")
+        if e.kind.endswith("meaning_relation_warranted")
     )
     forged = warrant.model_copy(update={"id": "event:forged"})
     refusal = _examine_meaning_relation_for_bounded_operator_goal_establishment(
@@ -201,7 +395,10 @@ def test_unrecorded_relation_is_refused_without_inapplicability():
         meaning_relation=forged,
     )
     assert refusal.payload["applicability"] == "unknown"
-    assert refusal.payload["refusal_reason"] == "supplied_meaning_relation_is_not_exact_recorded_warrant"
+    assert (
+        refusal.payload["refusal_reason"]
+        == "supplied_meaning_relation_is_not_exact_recorded_warrant"
+    )
 
 
 def _rewarrant(ledger, recovery, *, testimony=None, convention=None):
@@ -483,7 +680,7 @@ def test_exact_ingress_preservation_all_dimensions_and_durable_replay(tmp_path):
     assert ingress.payload["known_loss"] == [
         "original transport bytes and prior decoder behavior are unavailable"
     ]
-    assert len(view["dimensional_standing"]) == 13
+    assert len(view["dimensional_standing"]) == 14
     assert all(
         set(item["dimensions"])
         == {
@@ -955,7 +1152,15 @@ def test_invalid_enum_bytes_stop_before_token_capture_or_binding():
         for e in events
     )
     assert not any(
-        any(term in e.kind for term in ("demand", "acquisition", "bounded-goal-applicability", "cluster"))
+        any(
+            term in e.kind
+            for term in (
+                "demand",
+                "acquisition",
+                "bounded-goal-applicability",
+                "cluster",
+            )
+        )
         for e in events
     )
 
