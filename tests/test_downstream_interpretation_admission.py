@@ -44,6 +44,9 @@ def test_admission_requires_applicable_status_and_explicit_consumer_local_eviden
     assert admitted.consumer_ref == projection.bounded_downstream_purpose.consumer_ref
     assert admitted.purpose_ref == projection.bounded_downstream_purpose.purpose_ref
     assert admitted.selected_candidate_ref == selection.selected_candidate_ref
+    assert admitted.selected_candidate is selection.selected_candidate
+    assert admitted.selected_candidate.proposed_meaning == "operator asks to establish a goal"
+    assert admitted.applicability_projection.selected_meaning_snapshot["proposed_meaning"] == admitted.selected_candidate.proposed_meaning
     assert admitted.applicability_projection == projection
 
 

@@ -63,6 +63,8 @@ def test_exact_operator_clarification_selects_one_warranted_candidate_and_preser
     assert result.interpretation_selected is True
     assert result.selected_candidate_ref == "cand:repair"
     assert result.selected_candidate.label == "repair cache typo"
+    assert result.selected_candidate.proposed_meaning == "operator asks to fix the cache"
+    assert result.selected_candidate is warrant_set.candidate_warrants[0]
     assert result.operator_material.exact_text == "fix teh cache; maybe inspect yesterday's note"
     assert warrant_set.operator_material.exact_text == "fix teh cache; maybe inspect yesterday's note"
     assert result.selection_evidence[0].exact_text == "I mean the repair-cache interpretation."

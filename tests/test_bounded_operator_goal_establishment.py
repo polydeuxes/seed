@@ -13,6 +13,14 @@ from seed_runtime.closed_choice_selection_binding import (
 )
 from seed_runtime.downstream_interpretation_admission import admit_downstream_interpretation
 from seed_runtime.interpretation_applicability_projection import project_interpretation_applicability
+from seed_runtime.contextual_interpretation_selection import CandidateSelectionEvidence, select_contextual_interpretation
+from seed_runtime.contextual_interpretation_warrant_set import (
+    ExactOperatorMaterial,
+    InterpretationCandidate,
+    RetrospectiveEvidence,
+    SourceSpan,
+    produce_contextual_interpretation_warrant_set,
+)
 from tests.test_downstream_interpretation_admission import admission_evidence
 from tests.test_interpretation_applicability_projection import evidence, purpose, selected_result
 
@@ -86,12 +94,65 @@ def test_admitted_interpretation_for_exact_goal_consumer_establishes_goal_and_pr
     assert goal.establishment_state == "established"
     assert goal.ingress_artifact_type == "DownstreamInterpretationAdmission"
     assert goal.ingress_artifact_ref == admission.admission_id
-    assert goal.intended_outcome == selection.selected_candidate.label
+    assert goal.intended_outcome == selection.selected_candidate.proposed_meaning
     assert goal.consumed_admitted_meaning_snapshot == projection.selected_meaning_snapshot
     assert admission.admission_id in goal.upstream_admission_refs
     assert projection.projection_id in goal.upstream_applicability_refs
     assert selection.selection_result_id in goal.upstream_selection_refs
     assert "contract:local" in goal.upstream_source_material_refs
+
+
+def _differently_labeled_goal_selection(proposed_meaning):
+    material = ExactOperatorMaterial(
+        "operator-material:goal-1",
+        "Examine the repository under the bounded operator goal",
+        (SourceSpan("span:goal-1", "operator:turn", 0, 54, "Examine the repository under the bounded operator goal"),),
+        ("operator-material:goal-1",),
+    )
+    warrants = produce_contextual_interpretation_warrant_set(
+        operator_material=material,
+        candidates=(InterpretationCandidate("candidate:goal-1", "Short display label", ("span:goal-1",), proposed_meaning),),
+        retrospective_evidence=(
+            RetrospectiveEvidence("ev:goal-1", "candidate:goal-1", "supporting", "retro:goal-1", "supports this exact candidate proposition"),
+        ),
+    )
+    return select_contextual_interpretation(
+        warrants,
+        selection_evidence=(
+            CandidateSelectionEvidence("sel:goal-1", "candidate:goal-1", "exact_operator_clarification", "Select this candidate."),
+        ),
+    )
+
+
+def test_goal_uses_exact_candidate_proposition_and_never_display_label_or_candidate_identity():
+    proposition = "Examine the repository under the bounded operator goal"
+    selection, projection, admission = _goal_admission(selected=_differently_labeled_goal_selection(proposition))
+
+    goal = establish_bounded_operator_goal_from_admitted_interpretation(admission)
+
+    assert selection.selected_candidate.warrant_standing == "warranted"
+    assert projection.applicability == "applicable"
+    assert admission.admitted is True
+    assert goal.establishment_state == "established"
+    assert goal.intended_outcome == proposition
+    assert goal.intended_outcome != selection.selected_candidate.label
+    assert goal.intended_outcome != selection.selected_candidate_ref
+    assert goal.consumed_admitted_meaning_snapshot["proposed_meaning"] == proposition
+
+
+@pytest.mark.parametrize("proposed_meaning", ["", "   "])
+def test_missing_exact_candidate_proposition_refuses_without_semantic_fallback(proposed_meaning):
+    selection, _, admission = _goal_admission(selected=_differently_labeled_goal_selection(proposed_meaning))
+
+    goal = establish_bounded_operator_goal_from_admitted_interpretation(admission)
+
+    assert admission.admitted is True
+    assert selection.selected_candidate.label == "Short display label"
+    assert selection.selected_candidate_ref == "candidate:goal-1"
+    assert goal.establishment_state == "refused"
+    assert goal.establishment_reason == "admitted_interpretation_lacks_exact_candidate_proposition"
+    assert goal.intended_outcome == ""
+    assert goal.consumed_admitted_meaning_snapshot["proposed_meaning"] == proposed_meaning
 
 
 def test_admission_for_another_consumer_or_purpose_is_refused_without_revising_selection():
