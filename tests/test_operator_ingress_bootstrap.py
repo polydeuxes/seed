@@ -1,4 +1,5 @@
 from io import BytesIO, StringIO
+from dataclasses import replace
 from pathlib import Path
 import subprocess
 import sys
@@ -14,11 +15,16 @@ from seed_runtime.closed_choice_selection_binding import (
     ClosedChoiceSelectionBindingError,
     OperatorSelectionTokenCapture,
     PresentedClosedChoiceSet,
+    bind_closed_choice_selection,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     CHOICE_SET_REF,
+    ALTERNATIVE_SOURCES,
+    SOURCE_PROPOSITIONS,
     bootstrap_choice_set,
+    bootstrap_representation_lineages,
+    recover_bootstrap_source,
     run_operator_ingress_common_grammar_probe_attempt,
     validate_capture_for_probe,
 )
@@ -46,17 +52,85 @@ def run_attempt(text, ledger=None, session="s"):
     return ledger, view, output.getvalue()
 
 
+def test_alternative_source_lineage_is_distinct_and_recovery_is_separate():
+    choice = bootstrap_choice_set("presentation:one")
+    lineages = bootstrap_representation_lineages(choice)
+    option = choice.options[0]
+    lineage = lineages[0]
+    capture = OperatorSelectionTokenCapture("capture:one", CHOICE_SET_REF, option.token)
+    binding = bind_closed_choice_selection(choice, capture)
+
+    assert option.token != option.presented_alternative_ref
+    assert option.token != lineage.represented_source_ref
+    assert option.presented_alternative_ref != lineage.represented_source_ref
+    assert option.presented_label != lineage.proposition_assertion
+    assert binding.selected_presented_alternative_ref == option.presented_alternative_ref
+    assert not hasattr(binding, "represented_source_ref")
+
+    recovered = recover_bootstrap_source(binding, choice, lineages)
+    source_ref = ALTERNATIVE_SOURCES[option.presented_alternative_ref]
+    assert recovered.represented_source_ref == source_ref
+    assert (recovered.represented_source_role, recovered.proposition_assertion) == (
+        SOURCE_PROPOSITIONS[source_ref]
+    )
+
+
 @pytest.mark.parametrize(
-    "token,treatment",
+    "field,value",
+    [
+        ("presented_alternative_ref", "forged-alternative"),
+        ("represented_source_ref", "source:forged"),
+        ("exact_choice_set_fingerprint", "closed-choice-set:forged"),
+        ("presentation_ref", "presentation:forged"),
+        ("provenance", ()),
+        ("unknowns", ("lineage Unknown",)),
+        ("conflicts", ("lineage conflicts",)),
+    ],
+)
+def test_source_recovery_refuses_forged_or_insufficient_lineage(field, value):
+    choice = bootstrap_choice_set("presentation:one")
+    binding = bind_closed_choice_selection(
+        choice, OperatorSelectionTokenCapture("capture:one", CHOICE_SET_REF, "1")
+    )
+    lineages = bootstrap_representation_lineages(choice)
+    forged = (replace(lineages[0], **{field: value}), lineages[1])
+    assert recover_bootstrap_source(binding, choice, forged) is None
+
+
+def test_non_successful_binding_recovers_no_source():
+    choice = bootstrap_choice_set("presentation:one")
+    lineages = bootstrap_representation_lineages(choice)
+    unsupported = bind_closed_choice_selection(
+        choice, OperatorSelectionTokenCapture("capture:bad", CHOICE_SET_REF, "9")
+    )
+    unknown = bind_closed_choice_selection(
+        choice,
+        OperatorSelectionTokenCapture(
+            "capture:unknown", CHOICE_SET_REF, "1", unknowns=("Unknown",)
+        ),
+    )
+    assert recover_bootstrap_source(unsupported, choice, lineages) is None
+    assert recover_bootstrap_source(unknown, choice, lineages) is None
+
+
+@pytest.mark.parametrize(
+    "token,alternative",
     [("1", "common-grammar-acquisition"), ("2", "local-stop")],
 )
-def test_exact_treatments_select_without_acquisition_or_bounded_stop(token, treatment):
+def test_exact_alternatives_recover_sources_without_goal_or_stop(token, alternative):
     ledger, view, output = run_attempt(f"do something exactly\n{token}\n")
-    assert view["selected_treatment"] == treatment
+    assert view["selected_presented_alternative_ref"] == alternative
     assert view.get("closed") is None
     kinds = [event.kind for event in ledger.list_events("w")]
-    assert "operator.bootstrap.treatment_selected" in kinds
+    assert "operator.bootstrap.alternative_selected" in kinds
+    assert "operator.bootstrap.source_recovered" in kinds
+    assert "operator.bootstrap.treatment_selected" not in kinds
     assert "operator.bootstrap.stopping_occurred" not in kinds
+    source_ref = ALTERNATIVE_SOURCES[alternative]
+    assert view["recovered_source_ref"] == source_ref
+    assert view["recovered_source_role"] == SOURCE_PROPOSITIONS[source_ref][0]
+    assert view["recovered_source_proposition"] == SOURCE_PROPOSITIONS[source_ref][1]
+    assert view.get("bounded_goal") is None
     assert not any(
         any(
             word in event.kind
@@ -83,7 +157,7 @@ def test_near_matches_and_empty_are_unsupported_with_semantic_unknowns(token):
     ]
     assert "Unsupported response" in output
     assert not any(
-        event.kind == "operator.bootstrap.treatment_selected"
+        event.kind == "operator.bootstrap.alternative_selected"
         for event in ledger.list_events()
     )
     assert not any(
@@ -142,7 +216,7 @@ def test_exact_ingress_preservation_all_dimensions_and_durable_replay(tmp_path):
     assert ingress.payload["known_loss"] == [
         "original transport bytes and prior decoder behavior are unavailable"
     ]
-    assert len(view["dimensional_standing"]) == 10
+    assert len(view["dimensional_standing"]) == 11
     assert all(
         set(item["dimensions"])
         == {
@@ -187,7 +261,7 @@ def test_exact_ingress_preservation_all_dimensions_and_durable_replay(tmp_path):
 
 
 @pytest.mark.parametrize(
-    "text,present,response,binding,treatment,closure",
+    "text,present,response,binding,alternative,closure",
     [
         ("hello\n1\n", "consumed", "consumed", "bound", "selected", None),
         ("hello\nwat\n", "consumed", "consumed", "unsupported", None, None),
@@ -197,7 +271,7 @@ def test_exact_ingress_preservation_all_dimensions_and_durable_replay(tmp_path):
     ],
 )
 def test_subject_local_current_standing_is_asymmetric(
-    text, present, response, binding, treatment, closure
+    text, present, response, binding, alternative, closure
 ):
     _, view, _ = run_attempt(text)
 
@@ -209,7 +283,7 @@ def test_subject_local_current_standing_is_asymmetric(
     assert standing("presentation") == present
     assert standing("response") == response
     assert standing("binding_finding") == binding
-    assert standing("treatment_selection") == treatment
+    assert standing("alternative_selection") == alternative
     assert standing("interaction_closure") == closure
 
 
@@ -306,7 +380,7 @@ def test_two_durable_attempts_in_same_session_remain_distinct(tmp_path):
     reopened = SQLiteEventLedger(str(path))
     projection = StateProjector(reopened).project("w").operator_ingress_bootstraps
     assert set(projection) == attempt_refs
-    assert {view["selected_treatment"] for view in projection.values()} == {
+    assert {view["selected_presented_alternative_ref"] for view in projection.values()} == {
         "common-grammar-acquisition",
         "local-stop",
     }
@@ -442,7 +516,7 @@ def test_console_runs_multiple_bounded_interactions_after_local_stop_and_unsuppo
     ledger, output = run_console(b"first ingress\n2\nsecond ingress\nnot-a-token\nexit\n")
     attempts = StateProjector(ledger).project("console-w").operator_ingress_bootstraps
     assert len(attempts) == 2
-    assert {view.get("selected_treatment") for view in attempts.values()} == {
+    assert {view.get("selected_presented_alternative_ref") for view in attempts.values()} == {
         "local-stop",
         None,
     }
@@ -455,7 +529,7 @@ def test_console_runs_multiple_bounded_interactions_after_local_stop_and_unsuppo
         for view in attempts.values()
     )
     assert output.count("Select one treatment by its exact token:") == 2
-    assert "Local-stop treatment selected; bounded stop was not established." in output
+    assert "Local-stop source recovered; bounded stop was not established." in output
     assert "Unsupported response" in output
 
 

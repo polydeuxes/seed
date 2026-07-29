@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import BinaryIO, TextIO
 
 from seed_runtime.closed_choice_selection_binding import (
@@ -30,6 +31,118 @@ OPTIONS = (
     ),
     ClosedChoiceOption("2", "local-stop", "Select local stopping treatment."),
 )
+
+SOURCE_PROPOSITIONS = {
+    "source:operator-common-grammar-potential-goal:v1": (
+        "potential-goal candidate",
+        "establish richer shared grammar with the operator",
+    ),
+    "source:operator-common-grammar-local-stop:v1": (
+        "local-stop",
+        "establish no such goal and stop locally",
+    ),
+}
+ALTERNATIVE_SOURCES = {
+    "common-grammar-acquisition": "source:operator-common-grammar-potential-goal:v1",
+    "local-stop": "source:operator-common-grammar-local-stop:v1",
+}
+
+
+@dataclass(frozen=True)
+class AlternativeSourceRepresentation:
+    presented_alternative_ref: str
+    represented_source_ref: str
+    represented_source_role: str
+    representation_purpose: str
+    choice_set_ref: str
+    exact_choice_set_fingerprint: str
+    presentation_ref: str
+    rendered_label: str
+    rendered_detail: str
+    proposition_assertion: str
+    provenance: tuple[str, ...]
+    scope: str
+    known_loss: tuple[str, ...] = ()
+    unknowns: tuple[str, ...] = ()
+    conflicts: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class RecoveredBootstrapSource:
+    presented_alternative_ref: str
+    represented_source_ref: str
+    represented_source_role: str
+    proposition_assertion: str
+    representation_provenance: tuple[str, ...]
+    representation_scope: str
+    representation_known_loss: tuple[str, ...]
+
+
+def bootstrap_representation_lineages(
+    choice_set: PresentedClosedChoiceSet,
+) -> tuple[AlternativeSourceRepresentation, ...]:
+    """Preserve the application-owned row-to-source assertions for this probe."""
+    return tuple(
+        AlternativeSourceRepresentation(
+            option.presented_alternative_ref,
+            ALTERNATIVE_SOURCES[option.presented_alternative_ref],
+            SOURCE_PROPOSITIONS[ALTERNATIVE_SOURCES[option.presented_alternative_ref]][0],
+            "represent an application-owned bounded bootstrap source",
+            choice_set.choice_set_ref,
+            choice_set.exact_choice_set_fingerprint,
+            choice_set.presentation_ref,
+            option.presented_label,
+            option.presented_detail,
+            SOURCE_PROPOSITIONS[ALTERNATIVE_SOURCES[option.presented_alternative_ref]][1],
+            ("seed_runtime.operator_ingress_bootstrap:alternative-source-lineage:v1",),
+            f"presentation:{choice_set.presentation_ref};choice-set:{choice_set.choice_set_ref}",
+        )
+        for option in choice_set.options
+    )
+
+
+def recover_bootstrap_source(binding, choice_set, lineage):
+    """Recover only the source represented by the exactly bound alternative."""
+    selected = binding.selected_presented_alternative_ref
+    if (
+        binding.binding_state != "bound"
+        or not selected
+        or binding.unknown_selection_evidence
+        or binding.conflicting_selection_evidence
+        or binding.choice_set_ref != choice_set.choice_set_ref
+        or binding.exact_choice_set_fingerprint != choice_set.exact_choice_set_fingerprint
+        or binding.presented_options != choice_set.options
+    ):
+        return None
+    matches = [item for item in lineage if item.presented_alternative_ref == selected]
+    if len(matches) != 1:
+        return None
+    item = matches[0]
+    expected_source = ALTERNATIVE_SOURCES.get(selected)
+    expected = SOURCE_PROPOSITIONS.get(expected_source)
+    if (
+        item.choice_set_ref != choice_set.choice_set_ref
+        or item.exact_choice_set_fingerprint != choice_set.exact_choice_set_fingerprint
+        or item.presentation_ref != choice_set.presentation_ref
+        or item.rendered_label
+        != next(o.presented_label for o in choice_set.options if o.presented_alternative_ref == selected)
+        or item.represented_source_ref != expected_source
+        or expected is None
+        or (item.represented_source_role, item.proposition_assertion) != expected
+        or not item.provenance
+        or item.unknowns
+        or item.conflicts
+    ):
+        return None
+    return RecoveredBootstrapSource(
+        selected,
+        item.represented_source_ref,
+        item.represented_source_role,
+        item.proposition_assertion,
+        item.provenance,
+        item.scope,
+        item.known_loss,
+    )
 
 
 def bootstrap_choice_set(presentation_ref: str) -> PresentedClosedChoiceSet:
@@ -101,7 +214,8 @@ def project_bootstrap_events(state, event) -> None:
                     "presentation",
                     "response",
                     "binding_finding",
-                    "treatment_selection",
+                    "alternative_selection",
+                    "source_recovery",
                     "interaction_closure",
                 )
             },
@@ -142,7 +256,8 @@ def project_bootstrap_events(state, event) -> None:
         "operator.bootstrap.response_eof_occurred": "response",
         "operator.bootstrap.binding_completed": "binding_finding",
         "operator.bootstrap.unsupported_finding": "binding_finding",
-        "operator.bootstrap.treatment_selected": "treatment_selection",
+        "operator.bootstrap.alternative_selected": "alternative_selection",
+        "operator.bootstrap.source_recovered": "source_recovery",
         "operator.bootstrap.stopping_occurred": "interaction_closure",
     }
     subject = (
@@ -175,7 +290,10 @@ def project_bootstrap_events(state, event) -> None:
         "presentation_ref",
         "capture_ref",
         "binding_id",
-        "selected_treatment",
+        "selected_presented_alternative_ref",
+        "recovered_source_ref",
+        "recovered_source_role",
+        "recovered_source_proposition",
         "closed",
         "response_kind",
     ):
@@ -630,33 +748,62 @@ def run_operator_ingress_common_grammar_probe_attempt(
         lineage=[response.id, presented.id],
     )
     if binding.binding_state == "bound":
-        treatment = binding.bound_option_ref
+        alternative = binding.selected_presented_alternative_ref
         selection = _record(
             ledger,
-            "operator.bootstrap.treatment_selected",
+            "operator.bootstrap.alternative_selected",
             workspace_id,
             session_id,
             attempt,
             _dimensions(
-                identity=treatment,
+                identity=alternative,
                 content=token,
                 standing="selected",
                 source=binding_event.id,
-                responsibility="treatment-selection",
+                responsibility="presented-alternative-selection",
                 authority="selection only; acquisition not authorized or begun",
                 scope=f"attempt:{attempt}",
                 occurrence="selection event recorded",
             ),
-            selected_treatment=treatment,
+            selected_presented_alternative_ref=alternative,
             binding_id=binding.binding_id,
             lineage=[binding_event.id],
         )
-        if treatment == "local-stop":
-            result = (
-                "Local-stop treatment selected; bounded stop was not established."
-            )
+        recovered = recover_bootstrap_source(
+            binding, choice_set, bootstrap_representation_lineages(choice_set)
+        )
+        if recovered is None:
+            result = "Source recovery refused: representation lineage was insufficient."
         else:
-            result = "Common-grammar acquisition treatment selected; acquisition was not authorized or begun."
+            _record(
+                ledger,
+                "operator.bootstrap.source_recovered",
+                workspace_id,
+                session_id,
+                attempt,
+                _dimensions(
+                    identity=recovered.represented_source_ref,
+                    content=recovered.proposition_assertion,
+                    standing="recovered",
+                    source=";".join(recovered.representation_provenance),
+                    responsibility="alternative-source-lineage-recovery",
+                    authority="source identity recovery only; no meaning warrant, goal, acquisition, or stop",
+                    scope=recovered.representation_scope,
+                    occurrence="separate responsible source-recovery occurrence recorded",
+                ),
+                selected_presented_alternative_ref=alternative,
+                recovered_source_ref=recovered.represented_source_ref,
+                recovered_source_role=recovered.represented_source_role,
+                recovered_source_proposition=recovered.proposition_assertion,
+                choice_set_fingerprint=choice_set.exact_choice_set_fingerprint,
+                presentation_ref=presentation_ref,
+                known_loss=list(recovered.representation_known_loss),
+                lineage=[binding_event.id, selection.id],
+            )
+            if recovered.represented_source_role == "local-stop":
+                result = "Local-stop source recovered; bounded stop was not established."
+            else:
+                result = "Potential-goal source recovered; bounded goal was not established and acquisition was not authorized or begun."
     else:
         result = "Unsupported response: exact token 1 or 2 required."
     state = StateProjector(ledger).project(workspace_id)
