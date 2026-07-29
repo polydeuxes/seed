@@ -24,7 +24,7 @@ and not phases of a protocol. This report applies them exactly. It does not
 recover, rename, reduce, or replace them.
 
 **Governing answer:** PR 2029 preserves several correct local distinctions, but
-does **not** faithfully project operator bootstrap through the eight dimensions.
+does **not** faithfully project operator bounded common-grammar interaction through the eight dimensions.
 Its proposed implementation makes a library-owned attempt aggregate the center
 of the road, encodes absence of warrant as repeated negative booleans, elects
 not to record the very occurrences needed for recurrence and currentness, has
@@ -65,7 +65,7 @@ The Book fixes the following cross-examination rules.
   selection neither authorizes nor begins acquisition. Negative selection does
   not establish stopping.
 * Common-grammar work is prerequisite movement before possible BOGE. BOGE
-  remains operator-origin; Seed may not manufacture a Seed-origin bootstrap
+  remains operator-origin; Seed may not manufacture a Seed-origin bounded common-grammar interaction
   goal.
 * Retry is optional, bounded, separately evidenced, and policy-dependent. The
   Book specifies no count.
@@ -83,7 +83,7 @@ what remains Unknown; `¬` what does not follow.
 it is not a claim that storage produced the occurrence. “Current” means a
 projector's bounded, conflict-aware standing, never mutation of cluster truth.
 
-## 4. Eight-dimensional matrices for every bootstrap occurrence
+## 4. Eight-dimensional matrices for every bounded common-grammar interaction occurrence
 
 ### 4.1 Operator-ingress occurrence
 
@@ -95,7 +95,7 @@ projector's bounded, conflict-aware standing, never mutation of cluster truth.
 | source / provenance | **E:** `source_kind=operator`, channel, capture time/order, session/correlation, known loss. **P:** adapter. **Prov:** direct capture boundary. **L:** all available lineage. **Cur:** source attribution with unresolved identity. **U:** operator identity and upstream transport details not observed. **¬:** `operator` does not grant operator authority. |
 | responsibility | **E:** shell adapter accepted the free-form occurrence. **P:** real runnable shell path, not a test or arbitrary library caller. **Prov:** invocation and emitted event lineage. **L:** producer/adapter/version. **Cur:** ingress producer remains attributable. **U:** downstream interpretation owner. **¬:** binder or projector cannot retroactively become ingress producer. |
 | authority / warrant | **E:** warrant only to preserve attributed ingress for bounded examination. **P:** ingress boundary plus recording policy. **Prov:** declared channel contract. **L:** scope and limits. **Cur:** available, not authorized movement. **U:** intent, requested action, interpretation, BOGE eligibility. **¬:** capture is not admission, Demand, authority, or execution. |
-| scope / locality | **E:** one workspace/session/interaction/channel occurrence. **P:** ingress adapter. **Prov:** scoped ids. **L:** exact locality. **Cur:** only that interaction. **U:** relation to other interactions absent evidence. **¬:** no global bootstrap or shared grammar. |
+| scope / locality | **E:** one workspace/session/interaction/channel occurrence. **P:** ingress adapter. **Prov:** scoped ids. **L:** exact locality. **Cur:** only that interaction. **U:** relation to other interactions absent evidence. **¬:** no global bounded common-grammar interaction or shared grammar. |
 | occurrence / preservation | **E:** actual read completed or EOF occurred. **P:** shell read boundary; recorder separately appends. **Prov:** occurrence id linked to event id and append order. **L:** occurrence assertion. **Cur:** durable unconsumed/superseded status derived by projection. **U:** delivery before capture and future use. **¬:** an in-memory constructor or capture string alone is not a production witness. |
 
 ### 4.2 Probe-production occurrence
@@ -186,7 +186,7 @@ projector's bounded, conflict-aware standing, never mutation of cluster truth.
 | source / provenance | **E:** complete attempt chain, policy version/input, event order, presentation/response/binding refs. **P:** recorder/projector preserve. **Prov:** ledger sequence plus explicit causal refs; timestamp alone is insufficient. **L:** chain and conflicts. **Cur:** replayable provenance. **U:** causation where not asserted. **¬:** temporal order alone does not prove retry relation. |
 | responsibility | **E:** policy selects whether another retry is admitted; producer creates it; projector computes active attempt; recurrence examiner compares. **P:** separate owners. **Prov:** respective artifacts/events. **L:** responsibility per assertion. **Cur:** no attempt object owns policy and projection together. **U:** Demand establisher remains missing. **¬:** application convenience does not transfer constitutional responsibility. |
 | authority / warrant | **E:** bounded policy authorizes at most the selected next occurrence, if any; recurrence may warrant Demand examination. **P:** policy/recurrence consumers. **Prov:** policy authority and eligible history. **L:** decisions and limits. **Cur:** next retry allowed or stopped. **U:** whether Demand exists and its family. **¬:** no fixed one-retry authority, automatic Demand, acquisition authority, or Seed goal. |
-| scope / locality | **E:** one interaction, declared retry policy, time/as-of boundary, obstruction predicate. **P:** policy/projector. **Prov:** scope fields. **L:** exact locality. **Cur:** scoped currentness and recurrence only. **U:** equivalence across interactions. **¬:** recurrence is not a universal bootstrap condition. |
+| scope / locality | **E:** one interaction, declared retry policy, time/as-of boundary, obstruction predicate. **P:** policy/projector. **Prov:** scope fields. **L:** exact locality. **Cur:** scoped currentness and recurrence only. **U:** equivalence across interactions. **¬:** recurrence is not a universal bounded common-grammar interaction condition. |
 | occurrence / preservation | **E:** separately recorded attempts, responses, findings, retry decisions, supersession relations; projection is rebuildable. **P:** producers/recorder/projector. **Prov:** event ids and projection rule/as-of. **L:** durable evidence; projection snapshot need not be canonical. **Cur:** derived current attempt and recurrence standing. **U:** discarded occurrences cannot be recovered. **¬:** immutable in-memory aggregate cannot prove durable recurrence, replay, or supersession. |
 
 ## 5. Adjudication of PR 2029's proposed artifacts and assertions
@@ -200,8 +200,8 @@ projector's bounded, conflict-aware standing, never mutation of cluster truth.
 | `OperatorCommonGrammarProbeSelectionResult` | **mixed object** | A narrow positive treatment-selection event is faithful. Embedding the whole road and negative-authority booleans duplicates upstream evidence and absent downstream warrant. |
 | `OperatorIngressBoundedStop` | **faithful event artifact only if competently produced** | A separate stop consumer is correct, but the artifact must record its own occurrence; it is not current closed standing until projection applies it. |
 | negative-authority booleans | **duplicated compiled structures** | `false` copies do not establish why authority, Demand, BOGE, execution, or mutation is absent. Projection must expose positive standing, explicit Unknown/conflict/refusal, scope, and missing warrants. |
-| `writes_event_ledger=false` | **incorrect application boundary** | Correct for the pure binder itself, incorrect for a production bootstrap road whose occurrences must support currentness, supersession, recurrence, and later Demand examination. Event recording still does not mutate cluster truth. |
-| `mutates_projected_state=false` | **category error if read as projection prohibition** | Producers should not directly mutate projected State. The `StateProjector` must nevertheless derive a current bootstrap view by replaying recorded evidence. Projection is not producer mutation. |
+| `writes_event_ledger=false` | **incorrect application boundary** | Correct for the pure binder itself, incorrect for a production bounded common-grammar interaction road whose occurrences must support currentness, supersession, recurrence, and later Demand examination. Event recording still does not mutate cluster truth. |
+| `mutates_projected_state=false` | **category error if read as projection prohibition** | Producers should not directly mutate projected State. The `StateProjector` must nevertheless derive a current bounded common-grammar interaction view by replaying recorded evidence. Projection is not producer mutation. |
 | library-only implementation/no shell caller | **fake-only scaffolding** | Tests can witness value behavior, never real ingress, emission, response, or stop occurrences. A runnable production caller is mandatory. |
 | fixed one-retry policy | **unwarranted application policy** | No existing canonical authority fixes one retry. Policy may select zero, one, or more within a bounded rule; the selection and each occurrence must be separately evidenced. |
 
@@ -234,7 +234,7 @@ boundary disclosures, not a template for a new monolithic protocol result.
 10. Keep BOGE operator-origin and require preserved ingress to re-enter
     interpretation, warrant, applicability, admission, and BOGE after adequate
     grammar exists.
-11. Preserve `mutates_cluster=false` throughout this read-only bootstrap.
+11. Preserve `mutates_cluster=false` throughout this read-only bounded common-grammar interaction.
 
 ## 7. Exact PR 2029 conclusions that must be rejected
 
@@ -274,7 +274,7 @@ boundary disclosures, not a template for a new monolithic protocol result.
 real free-form shell ingress
 -> competent ingress occurrence/event production
 -> EventLedger / SQLiteEventLedger recording
--> bootstrap projector derives preserved-ingress current standing
+-> bounded common-grammar interaction projector derives preserved-ingress current standing
 -> bounded probe production
 -> representation formation
 -> real shell emission and presentation occurrence/event
@@ -318,7 +318,7 @@ session controller or interpreter.
 * `seed_runtime.state.StateProjector.project` and `project_from_state` already
   replay workspace-scoped ledger order and expose an as-of event boundary.
 * `StateProjector.apply` remains the event-kind dispatch boundary. It must gain
-  narrow bootstrap handlers rather than receive direct producer mutations.
+  narrow bounded common-grammar interaction handlers rather than receive direct producer mutations.
 * Existing projection publication, replay, and projection-store machinery may
   rebuild/cache the view; a cache snapshot must not become occurrence evidence.
 * `PresentedClosedChoiceSet`, `OperatorSelectionTokenCapture`, and
@@ -330,7 +330,7 @@ session controller or interpreter.
 
 ## 10. Only genuinely missing implementation pieces
 
-1. A real free-form bootstrap mode/caller in `scripts/seed_local.py` with
+1. A real free-form bounded common-grammar interaction mode/caller in `scripts/seed_local.py` with
    explicit workspace/session/channel framing and exact capture-loss behavior.
 2. Narrow produced event payloads for ingress capture/EOF, probe production,
    presentation emission, response capture/EOF, binding finding, treatment
@@ -339,7 +339,7 @@ session controller or interpreter.
    truly coincide.
 3. A small recorder/orchestrator that appends already-produced event artifacts;
    it must not infer their truth while recording.
-4. A bootstrap projection/read model preserving the eight dimensions,
+4. A bounded common-grammar interaction projection/read model preserving the eight dimensions,
    Unknowns/conflicts, history refs, current attempt/presentation/response,
    consumption, stopping, and supersession.
 5. A fixed two-treatment probe producer and real renderer/emitter split.
@@ -366,15 +366,15 @@ material belongs in this corrected slice.
 
 | File | Smallest faithful anticipated change | LOC range |
 | --- | --- | ---: |
-| `scripts/seed_local.py` | explicit real free-form bootstrap caller and narrow stdin/stdout adapter | 55–90 |
+| `scripts/seed_local.py` | explicit real free-form bounded common-grammar interaction caller and narrow stdin/stdout adapter | 55–90 |
 | `seed_runtime/operator_ingress_common_grammar.py` | event payload producers, fixed probe representation, response validation, narrow treatment selections, policy seam | 190–260 |
 | `seed_runtime/operator_ingress_stopping.py` | separate local-stop/EOF consumer and event production | 35–60 |
-| `seed_runtime/operator_ingress_projection.py` | eight-dimensional bootstrap view and replay reducers/currentness rules | 140–210 |
-| `seed_runtime/state.py` | dispatch bootstrap event kinds into the dedicated reducer/view | 20–40 |
+| `seed_runtime/operator_ingress_projection.py` | eight-dimensional bounded common-grammar interaction view and replay reducers/currentness rules | 140–210 |
+| `seed_runtime/state.py` | dispatch bounded common-grammar interaction event kinds into the dedicated reducer/view | 20–40 |
 | `seed_runtime/bounded_operator_goal_establishment.py` | refuse probe treatment selection; require goal-eligible evidence | 15–30 |
 | `seed_runtime/__init__.py` | bounded exports | 10–20 |
 | `tests/test_operator_ingress_common_grammar.py` | exact local producer/consumer asymmetry and Unknown boundaries | 130–190 |
-| `tests/test_operator_ingress_bootstrap_cli.py` | real caller, output, EOF, recording, retry policy | 130–200 |
+| `tests/test_operator_ingress_bounded common-grammar interaction_cli.py` | real caller, output, EOF, recording, retry policy | 130–200 |
 | `tests/test_operator_ingress_projection.py` | replay, currentness, consumption, supersession, recurrence, no Demand/cluster mutation | 150–220 |
 | `tests/test_bounded_operator_goal_establishment.py` | communication-probe refusal and lawful goal fixture | 20–40 |
 | **Total** | **eleven anticipated files** | **895–1,360** |

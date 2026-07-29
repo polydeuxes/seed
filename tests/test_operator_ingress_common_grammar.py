@@ -1,5 +1,4 @@
 from io import BytesIO, StringIO
-from dataclasses import replace
 from pathlib import Path
 import subprocess
 import sys
@@ -22,9 +21,8 @@ from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     CHOICE_SET_REF,
     ALTERNATIVE_SOURCES,
     SOURCE_PROPOSITIONS,
-    bootstrap_choice_set,
-    bootstrap_representation_lineages,
-    recover_bootstrap_source,
+    common_grammar_choice_set,
+    _recover_represented_source,
     run_operator_ingress_common_grammar_probe_attempt,
     validate_capture_for_probe,
 )
@@ -52,65 +50,56 @@ def run_attempt(text, ledger=None, session="s"):
     return ledger, view, output.getvalue()
 
 
-def test_alternative_source_lineage_is_distinct_and_recovery_is_separate():
-    choice = bootstrap_choice_set("presentation:one")
-    lineages = bootstrap_representation_lineages(choice)
-    option = choice.options[0]
-    lineage = lineages[0]
-    capture = OperatorSelectionTokenCapture("capture:one", CHOICE_SET_REF, option.token)
-    binding = bind_closed_choice_selection(choice, capture)
-
-    assert option.token != option.presented_alternative_ref
-    assert option.token != lineage.represented_source_ref
-    assert option.presented_alternative_ref != lineage.represented_source_ref
-    assert option.presented_label != lineage.proposition_assertion
-    assert binding.selected_presented_alternative_ref == option.presented_alternative_ref
-    assert not hasattr(binding, "represented_source_ref")
-
-    recovered = recover_bootstrap_source(binding, choice, lineages)
-    source_ref = ALTERNATIVE_SOURCES[option.presented_alternative_ref]
-    assert recovered.represented_source_ref == source_ref
-    assert (recovered.represented_source_role, recovered.proposition_assertion) == (
-        SOURCE_PROPOSITIONS[source_ref]
+def test_representation_evidence_precedes_response_and_preserves_distinctions():
+    ledger, view, _ = run_attempt("unknown request\n1\n")
+    events = ledger.list_events("w")
+    represented = next(e for e in events if e.kind.endswith("alternatives_represented"))
+    response = next(e for e in events if e.kind.endswith("response_captured"))
+    assert events.index(represented) < events.index(response)
+    row = represented.payload["representations"][0]
+    assert (
+        len(
+            {
+                "1",
+                row["presented_alternative_ref"],
+                row["represented_source_ref"],
+                row["rendered_label"],
+                row["proposition_assertion"],
+            }
+        )
+        == 5
+    )
+    assert (
+        row["representation_relation"]
+        == "presented_alternative_represents_application_owned_source"
+    )
+    assert row["exact_set_participation"] == "member_of_exact_presented_choice_set"
+    assert (
+        row["producer_occurrence_ref"] == represented.payload["dimensions"]["identity"]
+    )
+    assert (
+        view["current_standing"]["alternative_representations"]["evidence_event_id"]
+        == represented.id
     )
 
 
-@pytest.mark.parametrize(
-    "field,value",
-    [
-        ("presented_alternative_ref", "forged-alternative"),
-        ("represented_source_ref", "source:forged"),
-        ("exact_choice_set_fingerprint", "closed-choice-set:forged"),
-        ("presentation_ref", "presentation:forged"),
-        ("provenance", ()),
-        ("unknowns", ("lineage Unknown",)),
-        ("conflicts", ("lineage conflicts",)),
-    ],
-)
-def test_source_recovery_refuses_forged_or_insufficient_lineage(field, value):
-    choice = bootstrap_choice_set("presentation:one")
-    binding = bind_closed_choice_selection(
-        choice, OperatorSelectionTokenCapture("capture:one", CHOICE_SET_REF, "1")
-    )
-    lineages = bootstrap_representation_lineages(choice)
-    forged = (replace(lineages[0], **{field: value}), lineages[1])
-    assert recover_bootstrap_source(binding, choice, forged) is None
-
-
-def test_non_successful_binding_recovers_no_source():
-    choice = bootstrap_choice_set("presentation:one")
-    lineages = bootstrap_representation_lineages(choice)
-    unsupported = bind_closed_choice_selection(
-        choice, OperatorSelectionTokenCapture("capture:bad", CHOICE_SET_REF, "9")
-    )
-    unknown = bind_closed_choice_selection(
-        choice,
-        OperatorSelectionTokenCapture(
-            "capture:unknown", CHOICE_SET_REF, "1", unknowns=("Unknown",)
-        ),
-    )
-    assert recover_bootstrap_source(unsupported, choice, lineages) is None
-    assert recover_bootstrap_source(unknown, choice, lineages) is None
+def test_recovery_consumes_recorded_occurrence_and_preserves_full_lineage():
+    ledger, _, _ = run_attempt("unknown request\n1\n")
+    events = ledger.list_events("w")
+    represented = next(e for e in events if e.kind.endswith("alternatives_represented"))
+    presentation = next(e for e in events if e.kind.endswith("presentation_occurred"))
+    response = next(e for e in events if e.kind.endswith("response_captured"))
+    binding = next(e for e in events if e.kind.endswith("binding_completed"))
+    selection = next(e for e in events if e.kind.endswith("alternative_selected"))
+    recovery = next(e for e in events if e.kind.endswith("source_recovered"))
+    assert recovery.payload["representation_occurrence_id"] == represented.id
+    assert recovery.payload["lineage"] == [
+        represented.id,
+        presentation.id,
+        binding.id,
+        selection.id,
+    ]
+    assert response.id in binding.payload["lineage"]
 
 
 @pytest.mark.parametrize(
@@ -122,10 +111,9 @@ def test_exact_alternatives_recover_sources_without_goal_or_stop(token, alternat
     assert view["selected_presented_alternative_ref"] == alternative
     assert view.get("closed") is None
     kinds = [event.kind for event in ledger.list_events("w")]
-    assert "operator.bootstrap.alternative_selected" in kinds
-    assert "operator.bootstrap.source_recovered" in kinds
-    assert "operator.bootstrap.treatment_selected" not in kinds
-    assert "operator.bootstrap.stopping_occurred" not in kinds
+    assert "operator.ingress.common_grammar.alternative_selected" in kinds
+    assert "operator.ingress.common_grammar.source_recovered" in kinds
+    assert "operator.ingress.common_grammar.stopping_occurred" not in kinds
     source_ref = ALTERNATIVE_SOURCES[alternative]
     assert view["recovered_source_ref"] == source_ref
     assert view["recovered_source_role"] == SOURCE_PROPOSITIONS[source_ref][0]
@@ -138,7 +126,7 @@ def test_exact_alternatives_recover_sources_without_goal_or_stop(token, alternat
         )
         for event in ledger.list_events("w")
     )
-    assert "1. Select bounded common-grammar acquisition treatment." in output
+    assert "1. Select bounded common-grammar acquisition alternative." in output
 
 
 @pytest.mark.parametrize(
@@ -152,16 +140,16 @@ def test_near_matches_and_empty_are_unsupported_with_semantic_unknowns(token):
     )
     assert view["unknowns"] == [
         "operator intent Unknown",
-        "requested treatment Unknown",
+        "requested alternative Unknown",
         "response meaning Unknown",
     ]
     assert "Unsupported response" in output
     assert not any(
-        event.kind == "operator.bootstrap.alternative_selected"
+        event.kind == "operator.ingress.common_grammar.alternative_selected"
         for event in ledger.list_events()
     )
     assert not any(
-        event.kind == "operator.bootstrap.stopping_occurred"
+        event.kind == "operator.ingress.common_grammar.stopping_occurred"
         for event in ledger.list_events()
     )
 
@@ -172,11 +160,11 @@ def test_eof_is_distinct_from_empty_response():
     assert eof["response_kind"] == "eof"
     assert empty["response_kind"] == "empty"
     eof_kinds = [event.kind for event in eof_ledger.list_events("w")]
-    assert "operator.bootstrap.response_eof_occurred" in eof_kinds
-    assert "operator.bootstrap.stopping_occurred" in eof_kinds
-    assert "operator.bootstrap.response_captured" not in eof_kinds
-    assert "operator.bootstrap.binding_completed" not in eof_kinds
-    assert "operator.bootstrap.unsupported_finding" not in eof_kinds
+    assert "operator.ingress.common_grammar.response_eof_occurred" in eof_kinds
+    assert "operator.ingress.common_grammar.stopping_occurred" in eof_kinds
+    assert "operator.ingress.common_grammar.response_captured" not in eof_kinds
+    assert "operator.ingress.common_grammar.binding_completed" not in eof_kinds
+    assert "operator.ingress.common_grammar.unsupported_finding" not in eof_kinds
     assert "capture_ref" not in eof
     assert "binding_id" not in eof
 
@@ -184,9 +172,9 @@ def test_eof_is_distinct_from_empty_response():
 def test_initial_eof_records_eof_and_separate_stop_without_probe():
     ledger, view, output = run_attempt("")
     assert [event.kind for event in ledger.list_events("w")] == [
-        "operator.bootstrap.raw_material_captured",
-        "operator.bootstrap.initial_eof_occurred",
-        "operator.bootstrap.stopping_occurred",
+        "operator.ingress.common_grammar.raw_material_captured",
+        "operator.ingress.common_grammar.initial_eof_occurred",
+        "operator.ingress.common_grammar.stopping_occurred",
     ]
     assert view["representation_examinations"] == {}
     assert view["closed"] is True
@@ -194,8 +182,7 @@ def test_initial_eof_records_eof_and_separate_stop_without_probe():
         view["current_standing"]["interaction_closure"]["dimensions"]["standing"]
         == "closed"
     )
-    assert "selected_treatment" not in view
-    assert output == "Bootstrap stopped locally.\n"
+    assert output == "Operator-ingress common-grammar interaction stopped locally.\n"
     stop = ledger.list_events("w")[-1]
     assert stop.payload["dimensions"]["authority_warrant"] == (
         "closes only this interaction"
@@ -210,13 +197,13 @@ def test_exact_ingress_preservation_all_dimensions_and_durable_replay(tmp_path):
     ingress = next(
         e
         for e in ledger.list_events("w")
-        if e.kind == "operator.bootstrap.ingress_occurred"
+        if e.kind == "operator.ingress.common_grammar.ingress_occurred"
     )
     assert ingress.payload["raw_input"] == "  Mixed CASE ingress  \n"
     assert ingress.payload["known_loss"] == [
         "original transport bytes and prior decoder behavior are unavailable"
     ]
-    assert len(view["dimensional_standing"]) == 11
+    assert len(view["dimensional_standing"]) == 12
     assert all(
         set(item["dimensions"])
         == {
@@ -252,7 +239,9 @@ def test_exact_ingress_preservation_all_dimensions_and_durable_replay(tmp_path):
     ledger.close()
     reopened = SQLiteEventLedger(str(path))
     replayed = (
-        StateProjector(reopened).project("w").operator_ingress_bootstraps[attempt_ref]
+        StateProjector(reopened)
+        .project("w")
+        .operator_ingress_common_grammar_attempts[attempt_ref]
     )
     assert replayed == view
     assert all(
@@ -291,9 +280,11 @@ def _recorded_probe_inputs(ledger):
     events = ledger.list_events("w")
     ingress = events[0]
     response = next(
-        e for e in events if e.kind == "operator.bootstrap.response_captured"
+        e
+        for e in events
+        if e.kind == "operator.ingress.common_grammar.response_captured"
     )
-    choice = bootstrap_choice_set(response.payload["presentation_ref"])
+    choice = common_grammar_choice_set(response.payload["presentation_ref"])
     capture = OperatorSelectionTokenCapture(
         response.payload["capture_ref"], CHOICE_SET_REF, "1"
     )
@@ -308,7 +299,7 @@ def test_probe_identity_fingerprint_and_consumption_guards():
             ledger=ledger,
             workspace_id="w",
             attempt_ref=attempt,
-            choice_set=bootstrap_choice_set("presentation:wrong"),
+            choice_set=common_grammar_choice_set("presentation:wrong"),
             capture=capture,
         )
     wrong_set_capture = OperatorSelectionTokenCapture(
@@ -352,7 +343,7 @@ def test_communication_binding_lacks_positive_boge_admission():
     binding_event = next(
         e
         for e in ledger.list_events("w")
-        if e.kind == "operator.bootstrap.binding_completed"
+        if e.kind == "operator.ingress.common_grammar.binding_completed"
     )
     # Re-create the immutable binding only to exercise the downstream boundary;
     # production already consumed this capture and records the same binding identity.
@@ -378,9 +369,13 @@ def test_two_durable_attempts_in_same_session_remain_distinct(tmp_path):
     assert first["event_ids"] != second["event_ids"]
     ledger.close()
     reopened = SQLiteEventLedger(str(path))
-    projection = StateProjector(reopened).project("w").operator_ingress_bootstraps
+    projection = (
+        StateProjector(reopened).project("w").operator_ingress_common_grammar_attempts
+    )
     assert set(projection) == attempt_refs
-    assert {view["selected_presented_alternative_ref"] for view in projection.values()} == {
+    assert {
+        view["selected_presented_alternative_ref"] for view in projection.values()
+    } == {
         "common-grammar-acquisition",
         "local-stop",
     }
@@ -508,15 +503,23 @@ def test_existing_capture_provenance_is_recorded_without_reinference():
 def test_parser_has_no_alternate_operator_ingress_controller():
     parser = seed_local.build_parser()
     assert not any(
-        action.dest == "operator_ingress_bootstrap" for action in parser._actions
+        action.dest == "operator_ingress_common_grammar" for action in parser._actions
     )
 
 
 def test_console_runs_multiple_bounded_interactions_after_local_stop_and_unsupported():
-    ledger, output = run_console(b"first ingress\n2\nsecond ingress\nnot-a-token\nexit\n")
-    attempts = StateProjector(ledger).project("console-w").operator_ingress_bootstraps
+    ledger, output = run_console(
+        b"first ingress\n2\nsecond ingress\nnot-a-token\nexit\n"
+    )
+    attempts = (
+        StateProjector(ledger)
+        .project("console-w")
+        .operator_ingress_common_grammar_attempts
+    )
     assert len(attempts) == 2
-    assert {view.get("selected_presented_alternative_ref") for view in attempts.values()} == {
+    assert {
+        view.get("selected_presented_alternative_ref") for view in attempts.values()
+    } == {
         "local-stop",
         None,
     }
@@ -528,7 +531,7 @@ def test_console_runs_multiple_bounded_interactions_after_local_stop_and_unsuppo
         == "unsupported"
         for view in attempts.values()
     )
-    assert output.count("Select one treatment by its exact token:") == 2
+    assert output.count("Select one alternative by its exact token:") == 2
     assert "Local-stop source recovered; bounded stop was not established." in output
     assert "Unsupported response" in output
 
@@ -539,7 +542,7 @@ def test_outer_exit_is_not_operator_ingress_and_capture_keeps_provenance():
     captures = [
         event
         for event in events
-        if event.kind == "operator.bootstrap.raw_material_captured"
+        if event.kind == "operator.ingress.common_grammar.raw_material_captured"
     ]
     assert len(captures) == 1
     assert captures[0].payload["exact_bytes_hex"] == "ff0a"
@@ -559,7 +562,7 @@ def test_stdin_buffer_capture_preserves_exact_boundary_bytes_and_decoder_testimo
     assert raw.payload["capture_boundary"] == "stdin.buffer.readline"
     assert raw.payload["byte_material_origin"] == "direct_boundary_observation"
     assert raw.payload["encoding_testimony"] == "utf-8"
-    assert examination.kind == "operator.bootstrap.representation_examined"
+    assert examination.kind == "operator.ingress.common_grammar.representation_examined"
     assert examination.payload["decoder_mechanism"] == "utf-8"
     assert examination.payload["decoder_succeeded"] is True
     assert examination.payload["decoder_failure"] is None
@@ -570,8 +573,8 @@ def test_stdin_buffer_capture_preserves_exact_boundary_bytes_and_decoder_testimo
     ledger.close()
     replay = StateProjector(SQLiteEventLedger(str(path))).project("raw-w")
     assert (
-        replay.operator_ingress_bootstraps[
-            next(iter(replay.operator_ingress_bootstraps))
+        replay.operator_ingress_common_grammar_attempts[
+            next(iter(replay.operator_ingress_common_grammar_attempts))
         ]
         == view
     )
@@ -581,10 +584,7 @@ def test_stringio_capture_identifies_text_reencoding_and_preserves_known_loss():
     ledger, _, _ = run_attempt("hello\n2\n")
     raw = ledger.list_events("w")[0]
     assert raw.payload["exact_bytes_hex"] == b"hello\n".hex()
-    assert (
-        raw.payload["byte_material_origin"]
-        == "text_reencoding_after_prior_decoding"
-    )
+    assert raw.payload["byte_material_origin"] == "text_reencoding_after_prior_decoding"
     assert raw.payload["encoding_testimony"] is None
     assert raw.payload["capture_boundary"] == "text-stream adapter after prior decoding"
     assert raw.payload["known_loss"] == [
@@ -612,22 +612,24 @@ def test_decoder_success_does_not_claim_admission_interpretation_or_competency()
 
 def test_production_operator_ingress_contains_no_pesc_identifier_or_payload():
     forbidden = "pe" + "sc"
-    production = Path("seed_runtime/operator_ingress_common_grammar_prerequisite.py").read_text()
+    production = Path(
+        "seed_runtime/operator_ingress_common_grammar_prerequisite.py"
+    ).read_text()
     production += Path("seed_runtime/operator_ingress_representation.py").read_text()
     assert forbidden not in production.lower()
 
 
 def test_production_and_event_payloads_do_not_claim_source_relative_original_bytes():
     forbidden = "original_transport" + "_bytes"
-    production = Path("seed_runtime/operator_ingress_common_grammar_prerequisite.py").read_text()
+    production = Path(
+        "seed_runtime/operator_ingress_common_grammar_prerequisite.py"
+    ).read_text()
     production += Path("seed_runtime/operator_ingress_representation.py").read_text()
     assert forbidden not in production
 
     ledgers = (run_raw(b"hello\n2\n")[0], run_attempt("hello\n2\n")[0])
     for ledger in ledgers:
-        assert forbidden not in str(
-            [event.payload for event in ledger.list_events()]
-        )
+        assert forbidden not in str([event.payload for event in ledger.list_events()])
 
 
 def test_invalid_initial_bytes_are_preserved_without_replacement_and_stop_before_enum():
@@ -643,10 +645,10 @@ def test_invalid_initial_bytes_are_preserved_without_replacement_and_stop_before
     assert not any(
         e.kind
         in {
-            "operator.bootstrap.probe_produced",
-            "operator.bootstrap.presentation_occurred",
-            "operator.bootstrap.response_captured",
-            "operator.bootstrap.binding_completed",
+            "operator.ingress.common_grammar.probe_produced",
+            "operator.ingress.common_grammar.presentation_occurred",
+            "operator.ingress.common_grammar.response_captured",
+            "operator.ingress.common_grammar.binding_completed",
         }
         for e in events
     )
@@ -658,7 +660,7 @@ def test_invalid_initial_bytes_are_preserved_without_replacement_and_stop_before
 
 def test_invalid_enum_bytes_stop_before_token_capture_or_binding():
     ledger, _, output = run_raw(b"hello\n\xff\n")
-    assert "Select one treatment" in output
+    assert "Select one alternative" in output
     assert output.endswith(
         "Representation insufficient: captured response did not decode under the selected decoder mechanism.\n"
     )
@@ -666,9 +668,9 @@ def test_invalid_enum_bytes_stop_before_token_capture_or_binding():
     assert not any(
         e.kind
         in {
-            "operator.bootstrap.response_captured",
-            "operator.bootstrap.binding_completed",
-            "operator.bootstrap.unsupported_finding",
+            "operator.ingress.common_grammar.response_captured",
+            "operator.ingress.common_grammar.binding_completed",
+            "operator.ingress.common_grammar.unsupported_finding",
         }
         for e in events
     )
@@ -699,13 +701,13 @@ def test_initial_and_response_eof_do_not_claim_representation_examination():
     initial_ledger, initial_view, _ = run_raw(b"")
     response_ledger, response_view, _ = run_raw(b"hello\n")
     assert not any(
-        event.kind == "operator.bootstrap.representation_examined"
+        event.kind == "operator.ingress.common_grammar.representation_examined"
         for event in initial_ledger.list_events("raw-w")
     )
     response_examinations = [
         event
         for event in response_ledger.list_events("raw-w")
-        if event.kind == "operator.bootstrap.representation_examined"
+        if event.kind == "operator.ingress.common_grammar.representation_examined"
     ]
     assert [event.payload["material_role"] for event in response_examinations] == [
         "initial_ingress"
@@ -715,12 +717,12 @@ def test_initial_and_response_eof_do_not_claim_representation_examination():
     eof_event = next(
         event
         for event in response_ledger.list_events("raw-w")
-        if event.kind == "operator.bootstrap.response_eof_occurred"
+        if event.kind == "operator.ingress.common_grammar.response_eof_occurred"
     )
     raw_response = next(
         event
         for event in response_ledger.list_events("raw-w")
-        if event.kind == "operator.bootstrap.raw_material_captured"
+        if event.kind == "operator.ingress.common_grammar.raw_material_captured"
         and event.payload["material_role"] == "enum_response"
     )
     assert raw_response.id in eof_event.payload["lineage"]
@@ -792,8 +794,8 @@ def test_representation_evidence_produces_no_broader_standing():
             for event in ledger.list_events("raw-w")
             if event.kind
             in {
-                "operator.bootstrap.raw_material_captured",
-                "operator.bootstrap.representation_examined",
+                "operator.ingress.common_grammar.raw_material_captured",
+                "operator.ingress.common_grammar.representation_examined",
             }
         ]
         + [view["representation_examinations"]]
@@ -803,9 +805,81 @@ def test_representation_evidence_produces_no_broader_standing():
         for word in (
             "admission",
             "interpretation",
-            "grammar",
             "competency",
             "demand",
             "boge",
         )
     )
+
+
+@pytest.mark.parametrize(
+    "mutation,reason",
+    [
+        (lambda event: None, "no_recorded_representation_occurrence"),
+        (
+            lambda event: event.model_copy(
+                update={"payload": {**event.payload, "attempt_ref": "wrong-attempt"}}
+            ),
+            "wrong_attempt",
+        ),
+        (
+            lambda event: event.model_copy(
+                update={
+                    "payload": {
+                        **event.payload,
+                        "presentation_ref": "wrong-presentation",
+                    }
+                }
+            ),
+            "wrong_presentation",
+        ),
+        (
+            lambda event: event.model_copy(
+                update={"payload": {**event.payload, "choice_set_ref": "wrong-set"}}
+            ),
+            "wrong_choice_set",
+        ),
+        (
+            lambda event: event.model_copy(
+                update={"payload": {**event.payload, "choice_set_fingerprint": "wrong"}}
+            ),
+            "wrong_set_fingerprint",
+        ),
+        (
+            lambda event: event.model_copy(
+                update={
+                    "payload": {
+                        **event.payload,
+                        "representations": [
+                            {
+                                **event.payload["representations"][0],
+                                "represented_source_ref": "source:forged",
+                            },
+                            *event.payload["representations"][1:],
+                        ],
+                    }
+                }
+            ),
+            "forged_relation_payload",
+        ),
+    ],
+)
+def test_recovery_refuses_missing_or_mismatched_recorded_evidence(mutation, reason):
+    ledger, _, _ = run_attempt("unknown request\n1\n")
+    events = ledger.list_events("w")
+    occurrence = next(e for e in events if e.kind.endswith("alternatives_represented"))
+    presentation = next(e for e in events if e.kind.endswith("presentation_occurred"))
+    attempt = occurrence.payload["attempt_ref"]
+    choice = common_grammar_choice_set(occurrence.payload["presentation_ref"])
+    binding = bind_closed_choice_selection(
+        choice, OperatorSelectionTokenCapture("capture:test", CHOICE_SET_REF, "1")
+    )
+    recovered, refusal = _recover_represented_source(
+        binding,
+        choice,
+        mutation(occurrence),
+        attempt_ref=attempt,
+        presentation_occurrence=presentation,
+    )
+    assert recovered is None
+    assert refusal == reason

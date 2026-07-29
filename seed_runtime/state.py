@@ -474,7 +474,7 @@ class State:
     goals: dict[str, Goal] = field(default_factory=dict)
     approvals: dict[str, Approval] = field(default_factory=dict)
     tools: dict[str, ToolSpec] = field(default_factory=dict)
-    operator_ingress_bootstraps: dict[str, dict[str, Any]] = field(default_factory=dict)
+    operator_ingress_common_grammar_attempts: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     def get_entity_type_assertions(
         self, entity_id: str | None = None
@@ -1135,10 +1135,10 @@ class StateProjector:
         replay_justification = _justify_replay_selection(replay_assessment)
         _select_replay_targets(replay_justification)
         payload = event.payload
-        if event.kind.startswith("operator.bootstrap."):
-            from seed_runtime.operator_ingress_common_grammar_prerequisite import project_bootstrap_events
+        if event.kind.startswith("operator.ingress.common_grammar."):
+            from seed_runtime.operator_ingress_common_grammar_prerequisite import project_operator_ingress_common_grammar_events
 
-            project_bootstrap_events(state, event)
+            project_operator_ingress_common_grammar_events(state, event)
         if event.kind == "entity.upserted":
             data = payload.get("entity", payload)
             entity = Entity(**data)

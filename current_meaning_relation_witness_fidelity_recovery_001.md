@@ -2,9 +2,9 @@
 
 ## Scope and method
 
-This is one report-only recovery against merged `main` after PR 2068. The inquiry follows only operator-ingress roads that may reach `BoundedOperatorGoalEstablishment` (BOGE): the live closed-choice bootstrap road and the separately constructible admitted-interpretation road. Repository implementation is authority for current behavior; the active Book supplies the already-settled constitutional distinctions. Tests are implementation evidence, not constitutional authority. Historical reports were search aids only.
+This is one report-only recovery against merged `main` after PR 2068. The inquiry follows only operator-ingress roads that may reach `BoundedOperatorGoalEstablishment` (BOGE): the live closed-choice common-grammar interaction road and the separately constructible admitted-interpretation road. Repository implementation is authority for current behavior; the active Book supplies the already-settled constitutional distinctions. Tests are implementation evidence, not constitutional authority. Historical reports were search aids only.
 
-Search of non-test Python callers found a live producer for the bootstrap closed choice, but no non-test invocation of the contextual warrant, selection, applicability, admission, or either relevant BOGE function. Consequently, “current road” below distinguishes a production-invoked road from a programmatically constructible/test-active island.
+Search of non-test Python callers found a live producer for the common-grammar closed choice, but no non-test invocation of the contextual warrant, selection, applicability, admission, or either relevant BOGE function. Consequently, “current road” below distinguishes a production-invoked road from a programmatically constructible/test-active island.
 
 ## A. Constitutional expectation
 
@@ -20,7 +20,7 @@ Legend: `-->` consumes material, `..>` preserves/projects, `-#>` carries identit
 
 ```text
 run_operator_ingress_common_grammar_probe_attempt
-  --> bootstrap_choice_set(presentation_ref)
+  --> common_grammar_choice_set(presentation_ref)
       --> PresentedClosedChoiceSet(
             hard-coded token / option_ref / presented_label,
             no presented_detail, presentation identity, provenance)
@@ -42,22 +42,22 @@ ClosedChoiceSelectionBinding
        (every correctly typed binding raises: no competent goal-specific
         semantic admission producer)
 
-Events ..> StateProjector ..> operator_ingress_bootstraps visibility
+Events ..> StateProjector ..> operator_ingress_common_grammar_attempts visibility
 ```
 
 The live application owns exactly two alternatives. Token `1` has `option_ref="common-grammar-acquisition"` and a label selecting that treatment; token `2` has `option_ref="local-stop"` and a label selecting that treatment. The responsible presentation occurrence records stdout emission and the exact set fingerprint. The response occurrence preserves raw/decoded response lineage; the validator proves that the capture belongs to that recorded presentation and has not already been consumed. The binder compares the token against the exact immutable set and identifies the matching option. Unknown/conflicting selection evidence prevents a bound option; a nonmember is unsupported.
 
-The binder's responsible act is exact-set-local comparison and option identification. Its output copies the matched `option_ref` and `presented_label`; it does not output a presented-alternative identity distinct from those fields, a source-candidate ref, a representation relation, a meaning assertion, a meaning-relation warrant, applicability, or admission. Its boundary notes explicitly stop before goal application. The bootstrap then silently uses `bound_option_ref` as `selected_treatment`; this is a treatment-selection assertion supported by the binding Event, not source recovery or semantic standing.
+The binder's responsible act is exact-set-local comparison and option identification. Its output copies the matched `option_ref` and `presented_label`; it does not output a presented-alternative identity distinct from those fields, a source-candidate ref, a representation relation, a meaning assertion, a meaning-relation warrant, applicability, or admission. Its boundary notes explicitly stop before goal application. The common-grammar interaction then silently uses `bound_option_ref` as `selected_treatment`; this is a treatment-selection assertion supported by the binding Event, not source recovery or semantic standing.
 
 ### B.2 Crossing inventory
 
 | Crossing | Responsible occurrence | Exact input and act | Output standing | Evidence/provenance and loss | Current consumer | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| constants -> choice set | `bootstrap_choice_set` called by the attempt | Local constants plus `presentation_ref`; constructs an immutable representation | exact set content/fingerprint | module provenance string; no source candidate, producer authority, semantic evidence, loss, conflicts, or Unknowns | renderer, presentation recorder, validator, binder | implemented representation |
+| constants -> choice set | `common_grammar_choice_set` called by the attempt | Local constants plus `presentation_ref`; constructs an immutable representation | exact set content/fingerprint | module provenance string; no source candidate, producer authority, semantic evidence, loss, conflicts, or Unknowns | renderer, presentation recorder, validator, binder | implemented representation |
 | choice set -> presentation | attempt's stdout write and `presentation_occurred` record | rendered prompt and token/label rows; emits them | recorded presentation occurrence | presentation ref, fingerprint, ingress lineage; content is compressed to label and detail is empty | response capture and validator | implemented |
 | response -> token capture | `_capture_representation` and `response_captured`, then `OperatorSelectionTokenCapture` construction | exact boundary bytes are decoded; framed text becomes token | occurrence testimony scoped to exact set | raw capture, examination and response Event lineage; true source-relative encoding remains Unknown | validator/binder | implemented |
 | token + exact set -> selected option | `validate_capture_for_probe` then `bind_closed_choice_selection` | validates occurrence/currentness, compares exact token | bound local option ref/label or unsupported/Unknown/conflict | presentation fingerprint, response/binding Events, capture ref; does not preserve a separate alternative ref or source relation | treatment selection; tests reconstruct for BOGE refusal | implemented exact selection testimony |
-| bound option -> represented source candidate | none | `bound_option_ref` is copied into `selected_treatment` without a represented-source relation | no source-candidate standing | equal string/position is insufficient; producer, act, evidence, scope, semantic loss, and Unknowns are absent | bootstrap result branch | absent; first unsupported semantic crossing |
+| bound option -> represented source candidate | none | `bound_option_ref` is copied into `selected_treatment` without a represented-source relation | no source-candidate standing | equal string/position is insufficient; producer, act, evidence, scope, semantic loss, and Unknowns are absent | common-grammar interaction result branch | absent; first unsupported semantic crossing |
 | source candidate -> meaning assertion | none on this road | no `G` or `M` is produced | none | not witnessed | none | absent |
 | assertion -> meaning-relation warrant | none | no relation assertion is examined | none | not witnessed | none | absent |
 | warrant -> BOGE applicability/admission | none | no exact relation is available to examine or admit | none | not witnessed | none | absent |
@@ -122,14 +122,14 @@ Current tests prove candidate-local evidence partitioning and standing, explicit
 
 `produce_contextual_interpretation_warrant_set` accepts an optional caller-supplied string and includes it in the stable-id payload; the resulting warrant set preserves it. No validation requires an artifact, resolves the reference, checks candidate identity, relates a bound alternative to a candidate, or uses it in warrant-standing calculation. `select_contextual_interpretation` does not copy or consult it, so it is lost before selection result and cannot reach applicability, admission, or BOGE.
 
-The only producer found is direct caller supply; the only concrete supply is a test literal (`closed-choice-selection-binding:abc`). The production bootstrap never calls the warrant producer, and no runtime road supplies its real binding id. No consumer relies on the field. It therefore preserves an opaque reference, establishes no relation, cannot lawfully connect one operator selection to candidate selection, and does not participate in the current first-contact road.
+The only producer found is direct caller supply; the only concrete supply is a test literal (`closed-choice-selection-binding:abc`). The bounded operator-ingress common-grammar interaction never calls the warrant producer, and no runtime road supplies its real binding id. No consumer relies on the field. It therefore preserves an opaque reference, establishes no relation, cannot lawfully connect one operator selection to candidate selection, and does not participate in the current first-contact road.
 
 ## D. Meaning-standing table
 
 | Subject | Meaning assertion carried | Warrant producer | Warrant evidence | Applicability consumer | Admission | Reliance/consumption | Standing |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| live `ClosedChoiceOption` row | label/detail carry presentation text only | not witnessed | not witnessed | not witnessed | not witnessed | binder compares token; bootstrap uses ref as treatment | represented alternative content; source and meaning Unknown |
-| bound closed-choice option | copied ref and label | not witnessed | selection occurrence warrants exact-set membership only | not witnessed | refused/unavailable at closed-choice BOGE boundary | bootstrap relies on binding for treatment identity, not BOGE meaning | exact selection testimony; no source/meaning standing |
+| live `ClosedChoiceOption` row | label/detail carry presentation text only | not witnessed | not witnessed | not witnessed | not witnessed | binder compares token; common-grammar interaction uses ref as treatment | represented alternative content; source and meaning Unknown |
+| bound closed-choice option | copied ref and label | not witnessed | selection occurrence warrants exact-set membership only | not witnessed | refused/unavailable at closed-choice BOGE boundary | common-grammar interaction relies on binding for treatment identity, not BOGE meaning | exact selection testimony; no source/meaning standing |
 | potential closed-choice `G -> M` | not carried | not witnessed | not witnessed | not witnessed | not witnessed | BOGE lawfully refuses | absent |
 | caller-built `InterpretationCandidate` | yes, `proposed_meaning` | not witnessed as relation warrant | caller-supplied spans only; no meaning-specific adjudication | not yet | not yet | warrant producer consumes candidate but drops proposition | meaning assertion carriage only |
 | `CandidateWarrant` | label and candidate-local evidence; exact proposed proposition absent | `produce_contextual_interpretation_warrant_set` computes standing | candidate-bound retrospective/clarification evidence, spans, loss/Unknown/conflict | projection consumes selected artifact | admission consumes projection/artifact | BOGE later consumes artifact | artifact warrant represented; exact meaning relation not witnessed |
@@ -152,14 +152,14 @@ The only producer found is direct caller supply; the only concrete supply is a t
 | consumer and purpose | caller-created `BoundedDownstreamPurpose` | projection -> admission; BOGE checks exact constants | no loss on admitted path | applicability/admission locality and BOGE refusal guard |
 | admission evidence | caller-created evidence keyed to selection/projection/candidate/purpose/consumer | admission object and provenance; BOGE retains evidence refs | state does not identify an exact meaning relation | admission outcome and upstream admission refs |
 | BOGE `intended_outcome` | BOGE producer | prefers missing `proposed_meaning`, then label, then candidate ref | reconstructs goal content from label/ref rather than consuming preserved `M` | established bounded-goal output |
-| closed-choice `option_ref` | caller/application option row | binding -> bootstrap treatment selection | no source/alternative role distinction | treatment branch; closed-choice BOGE refuses |
+| closed-choice `option_ref` | caller/application option row | binding -> common-grammar treatment selection | no source/alternative role distinction | treatment branch; closed-choice BOGE refuses |
 | closed-choice selection evidence | response and exact-set binding occurrences | Events, binding id, projected view | never reaches warrant/applicability/admission road | treatment selection and audit visibility only |
 
 ## F. First unsupported crossing
 
 ### Closed-choice road
 
-The first semantic crossing that exceeds upstream standing is the bootstrap's conversion of `binding.bound_option_ref` into `selected_treatment`. Exact binding supports “the operator selected this presented row in this exact set.” No responsible occurrence establishes that the row represents a distinct source candidate, or that the local option reference is that source. The implementation may lawfully use the ref under its application-local treatment convention, but it does not preserve that convention as a bounded representation/meaning warrant. Downstream BOGE does **not** compound the problem: its closed-choice entry point intentionally refuses before meaning applicability/admission and goal establishment.
+The first semantic crossing that exceeds upstream standing is the common-grammar interaction's conversion of `binding.bound_option_ref` into `selected_treatment`. Exact binding supports “the operator selected this presented row in this exact set.” No responsible occurrence establishes that the row represents a distinct source candidate, or that the local option reference is that source. The implementation may lawfully use the ref under its application-local treatment convention, but it does not preserve that convention as a bounded representation/meaning warrant. Downstream BOGE does **not** compound the problem: its closed-choice entry point intentionally refuses before meaning applicability/admission and goal establishment.
 
 ### Admitted-interpretation road
 
@@ -169,13 +169,13 @@ The first unsupported crossing is warrant production: the producer claims candid
 
 ### One external response
 
-The connected bootstrap faithfully captures one external response, validates it against the one recorded presentation, consumes it once in binding, and preserves response -> binding -> treatment-selection Event lineage. It does not ask again. Later Event projection uses standing derived from that occurrence rather than rereading the raw response. The capture is neither lost nor duplicated before treatment selection, and replay is refused.
+The connected common-grammar interaction faithfully captures one external response, validates it against the one recorded presentation, consumes it once in binding, and preserves response -> binding -> treatment-selection Event lineage. It does not ask again. Later Event projection uses standing derived from that occurrence rather than rereading the raw response. The capture is neither lost nor duplicated before treatment selection, and replay is refused.
 
 That is only selection-derived standing. It never reaches the contextual selection field: `closed_choice_selection_binding_ref` is not supplied by production, is not validated, and is dropped; contextual tests instead create a separate `CandidateSelectionEvidence`, described as exact operator clarification. Thus no current exact road demonstrates one response flowing through presented-alternative selection, source recovery, independent meaning warrant, applicability, admission, and BOGE. This is a disconnected/lost internal lineage, not evidence that a second operator selection is constitutionally required.
 
 ### Local-stop branch
 
-Token `2` binds exactly to the presented row whose local `option_ref` is `local-stop`; the bootstrap records `treatment_selected`. It then explicitly reports: “Local-stop treatment selected; bounded stop was not established.” It creates no represented local-stop source, no independent `S_stop -> expresses M_stop` warrant, and no competent `stopping_occurred` Event for token `2`. The only competent stopping occurrences are separate EOF or representation-insufficiency branches. Therefore the token-2 road is **lawfully unavailable before the required semantic and stopping crossings**: exact negative-option selection is not treated as stopping by identity.
+Token `2` binds exactly to the presented row whose local `option_ref` is `local-stop`; the common-grammar interaction records `treatment_selected`. It then explicitly reports: “Local-stop treatment selected; bounded stop was not established.” It creates no represented local-stop source, no independent `S_stop -> expresses M_stop` warrant, and no competent `stopping_occurred` Event for token `2`. The only competent stopping occurrences are separate EOF or representation-insufficiency branches. Therefore the token-2 road is **lawfully unavailable before the required semantic and stopping crossings**: exact negative-option selection is not treated as stopping by identity.
 
 ## H. Fidelity verdict
 
