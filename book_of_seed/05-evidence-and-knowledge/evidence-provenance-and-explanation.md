@@ -38,6 +38,9 @@ A surface may make a claim, artifact, boundary, output, or relation directly obs
 ### 05.Evidence.G — Resolution and visibility are not semantic support
 Reference resolution, linkage, graph adjacency, membership, visibility, and representation labels may establish only the bounded representational relation their responsible method warrants. They do not by themselves establish semantic support, applicability, admission, assertion adoption, truth, or reliance. Any stronger use requires claim-appropriate evidence, provenance, scope, authority, conflicts, limits, and a responsible consumer boundary.
 
+### 05.Evidence.H — Meaning assertion carriage is not warrant production
+An artifact may preserve a meaning assertion, its attributed source, support or warrant references, scope, and limits. The artifact carries that assertion; it does not perform the warranting act. A separately responsible occurrence warrants a bounded meaning relation only within claim-appropriate authority, evidence or constitutive convention, scope, provenance, conflicts, known loss, and preserved **Unknowns**. Artifact shape, adjacent fields, array inclusion, labels, resolved references, and repeated occurrence do not substitute for that production boundary.
+
 ## Important distinctions
 - provenance represented != provenance verified
 - event reference != occurrence seal
@@ -56,6 +59,7 @@ Reference resolution, linkage, graph adjacency, membership, visibility, and repr
 - attribution != responsibility
 - observability classification != provenance
 - reference or linkage resolution != semantic support
+- artifact carries meaning assertion != responsible occurrence warrants assertion
 
 ## Representative repository anchors
 - `seed_runtime/evidence.py::Evidence`
