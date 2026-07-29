@@ -58,7 +58,7 @@ def test_arbitrary_refs_have_no_admission_api_and_labels_are_not_goal_meaning():
     assert not hasattr(boge, "ClosedChoiceBoundedGoalAdmission")
     binding = _choice_binding("1")
     assert binding.bound_option_label == "Inspect repository"
-    assert binding.bound_option_ref == "inspect_repository"
+    assert binding.selected_presented_alternative_ref == "inspect_repository"
     with pytest.raises(TypeError):
         establish_bounded_operator_goal_from_closed_choice(
             binding, eligibility_evidence_refs=("arbitrary string",)

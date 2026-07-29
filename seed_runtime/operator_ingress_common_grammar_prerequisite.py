@@ -1,8 +1,10 @@
-"""One-attempt production bootstrap for unknown operator common grammar."""
+"""One-attempt bounded operator-ingress common-grammar interaction for unknown operator common grammar."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+import hashlib
+import json
 from typing import BinaryIO, TextIO
 
 from seed_runtime.closed_choice_selection_binding import (
@@ -21,15 +23,15 @@ from seed_runtime.operator_ingress_representation import (
 )
 from seed_runtime.state import StateProjector
 
-CHOICE_SET_REF = "operator-common-grammar-bootstrap:v1:two-treatment"
-PROMPT = "Select one treatment by its exact token:"
+CHOICE_SET_REF = "operator-ingress-common-grammar:v1:two-alternative"
+PROMPT = "Select one alternative by its exact token:"
 OPTIONS = (
     ClosedChoiceOption(
         "1",
         "common-grammar-acquisition",
-        "Select bounded common-grammar acquisition treatment.",
+        "Select bounded common-grammar acquisition alternative.",
     ),
-    ClosedChoiceOption("2", "local-stop", "Select local stopping treatment."),
+    ClosedChoiceOption("2", "local-stop", "Select local stopping alternative."),
 )
 
 SOURCE_PROPOSITIONS = {
@@ -48,6 +50,13 @@ ALTERNATIVE_SOURCES = {
 }
 
 
+def _representation_fingerprint(representations: object) -> str:
+    encoded = json.dumps(
+        representations, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    ).encode()
+    return "operator-ingress-representations:" + hashlib.sha256(encoded).hexdigest()
+
+
 @dataclass(frozen=True)
 class AlternativeSourceRepresentation:
     presented_alternative_ref: str
@@ -60,6 +69,11 @@ class AlternativeSourceRepresentation:
     rendered_label: str
     rendered_detail: str
     proposition_assertion: str
+    representation_relation: str
+    exact_set_participation: str
+    source_attribution: str
+    producer_occurrence_ref: str
+    authority_limits: tuple[str, ...]
     provenance: tuple[str, ...]
     scope: str
     known_loss: tuple[str, ...] = ()
@@ -68,7 +82,7 @@ class AlternativeSourceRepresentation:
 
 
 @dataclass(frozen=True)
-class RecoveredBootstrapSource:
+class RecoveredRepresentedSource:
     presented_alternative_ref: str
     represented_source_ref: str
     represented_source_role: str
@@ -76,83 +90,183 @@ class RecoveredBootstrapSource:
     representation_provenance: tuple[str, ...]
     representation_scope: str
     representation_known_loss: tuple[str, ...]
+    representation_occurrence_id: str
 
 
-def bootstrap_representation_lineages(
+def common_grammar_representation_lineages(
     choice_set: PresentedClosedChoiceSet,
+    producer_occurrence_ref: str,
 ) -> tuple[AlternativeSourceRepresentation, ...]:
     """Preserve the application-owned row-to-source assertions for this probe."""
     return tuple(
         AlternativeSourceRepresentation(
             option.presented_alternative_ref,
             ALTERNATIVE_SOURCES[option.presented_alternative_ref],
-            SOURCE_PROPOSITIONS[ALTERNATIVE_SOURCES[option.presented_alternative_ref]][0],
-            "represent an application-owned bounded bootstrap source",
+            SOURCE_PROPOSITIONS[ALTERNATIVE_SOURCES[option.presented_alternative_ref]][
+                0
+            ],
+            "represent an application-owned bounded common-grammar source",
             choice_set.choice_set_ref,
             choice_set.exact_choice_set_fingerprint,
             choice_set.presentation_ref,
             option.presented_label,
             option.presented_detail,
-            SOURCE_PROPOSITIONS[ALTERNATIVE_SOURCES[option.presented_alternative_ref]][1],
-            ("seed_runtime.operator_ingress_bootstrap:alternative-source-lineage:v1",),
+            SOURCE_PROPOSITIONS[ALTERNATIVE_SOURCES[option.presented_alternative_ref]][
+                1
+            ],
+            "presented_alternative_represents_application_owned_source",
+            "member_of_exact_presented_choice_set",
+            "application-owned common-grammar prerequisite source",
+            producer_occurrence_ref,
+            (
+                "no meaning warrant",
+                "no goal, stopping, acquisition, or action authority",
+            ),
+            (
+                "seed_runtime.operator_ingress_common_grammar:alternative-source-lineage:v1",
+            ),
             f"presentation:{choice_set.presentation_ref};choice-set:{choice_set.choice_set_ref}",
         )
         for option in choice_set.options
     )
 
 
-def recover_bootstrap_source(binding, choice_set, lineage):
-    """Recover only the source represented by the exactly bound alternative."""
+def _recover_represented_source(
+    binding, choice_set, occurrence, *, attempt_ref, presentation_occurrence
+):
+    """Recover from one earlier durable representation occurrence, never constants."""
     selected = binding.selected_presented_alternative_ref
-    if (
-        binding.binding_state != "bound"
-        or not selected
-        or binding.unknown_selection_evidence
-        or binding.conflicting_selection_evidence
-        or binding.choice_set_ref != choice_set.choice_set_ref
-        or binding.exact_choice_set_fingerprint != choice_set.exact_choice_set_fingerprint
-        or binding.presented_options != choice_set.options
-    ):
-        return None
-    matches = [item for item in lineage if item.presented_alternative_ref == selected]
+    checks = (
+        (occurrence is None, "no_recorded_representation_occurrence"),
+        (
+            occurrence is not None
+            and occurrence.payload.get("attempt_ref") != attempt_ref,
+            "wrong_attempt",
+        ),
+        (
+            occurrence is not None
+            and occurrence.payload.get("presentation_ref")
+            != choice_set.presentation_ref,
+            "wrong_presentation",
+        ),
+        (
+            occurrence is not None
+            and occurrence.payload.get("choice_set_ref") != choice_set.choice_set_ref,
+            "wrong_choice_set",
+        ),
+        (
+            occurrence is not None
+            and occurrence.payload.get("choice_set_fingerprint")
+            != choice_set.exact_choice_set_fingerprint,
+            "wrong_set_fingerprint",
+        ),
+        (presentation_occurrence is None, "no_recorded_presentation_occurrence"),
+        (
+            presentation_occurrence is not None
+            and presentation_occurrence.payload.get("attempt_ref") != attempt_ref,
+            "wrong_presentation_attempt",
+        ),
+        (
+            presentation_occurrence is not None
+            and presentation_occurrence.payload.get("presentation_ref")
+            != choice_set.presentation_ref,
+            "wrong_presentation_occurrence",
+        ),
+        (
+            presentation_occurrence is not None
+            and presentation_occurrence.payload.get("choice_set_fingerprint")
+            != choice_set.exact_choice_set_fingerprint,
+            "presentation_fingerprint_mismatch",
+        ),
+        (
+            binding.binding_state != "bound" or not selected,
+            "no_selected_presented_alternative",
+        ),
+        (bool(binding.unknown_selection_evidence), "selection_evidence_unknown"),
+        (
+            bool(binding.conflicting_selection_evidence),
+            "selection_evidence_conflicting",
+        ),
+    )
+    for failed, reason in checks:
+        if failed:
+            return None, reason
+    lineage = occurrence.payload.get("representations", ())
+    if occurrence.payload.get(
+        "representation_evidence_fingerprint"
+    ) != _representation_fingerprint(lineage):
+        return None, "forged_relation_payload"
+    matches = [
+        item for item in lineage if item.get("presented_alternative_ref") == selected
+    ]
     if len(matches) != 1:
-        return None
+        return None, "selected_alternative_not_preserved"
     item = matches[0]
-    expected_source = ALTERNATIVE_SOURCES.get(selected)
-    expected = SOURCE_PROPOSITIONS.get(expected_source)
+    required = {
+        "represented_source_ref",
+        "represented_source_role",
+        "proposition_assertion",
+        "representation_relation",
+        "exact_set_participation",
+        "rendered_label",
+        "rendered_detail",
+        "source_attribution",
+        "producer_occurrence_ref",
+        "provenance",
+        "scope",
+        "authority_limits",
+        "known_loss",
+        "unknowns",
+        "conflicts",
+    }
+    if not required.issubset(item):
+        return None, "representation_evidence_missing"
+    if item["producer_occurrence_ref"] != occurrence.payload["dimensions"]["identity"]:
+        return None, "forged_relation_payload"
     if (
-        item.choice_set_ref != choice_set.choice_set_ref
-        or item.exact_choice_set_fingerprint != choice_set.exact_choice_set_fingerprint
-        or item.presentation_ref != choice_set.presentation_ref
-        or item.rendered_label
-        != next(o.presented_label for o in choice_set.options if o.presented_alternative_ref == selected)
-        or item.represented_source_ref != expected_source
-        or expected is None
-        or (item.represented_source_role, item.proposition_assertion) != expected
-        or not item.provenance
-        or item.unknowns
-        or item.conflicts
+        item["representation_relation"]
+        != "presented_alternative_represents_application_owned_source"
     ):
-        return None
-    return RecoveredBootstrapSource(
-        selected,
-        item.represented_source_ref,
-        item.represented_source_role,
-        item.proposition_assertion,
-        item.provenance,
-        item.scope,
-        item.known_loss,
+        return None, "representation_relation_missing_or_conflicting"
+    if item["exact_set_participation"] != "member_of_exact_presented_choice_set":
+        return None, "exact_set_participation_missing_or_conflicting"
+    if item["unknowns"]:
+        return None, "representation_evidence_unknown"
+    if item["conflicts"]:
+        return None, "representation_evidence_conflicting"
+    option = next(
+        (o for o in choice_set.options if o.presented_alternative_ref == selected), None
+    )
+    if option is None:
+        return None, "wrong_alternative_identity"
+    if (
+        item["rendered_label"] != option.presented_label
+        or item["rendered_detail"] != option.presented_detail
+    ):
+        return None, "rendered_content_mismatch"
+    return (
+        RecoveredRepresentedSource(
+            selected,
+            item["represented_source_ref"],
+            item["represented_source_role"],
+            item["proposition_assertion"],
+            tuple(item["provenance"]),
+            item["scope"],
+            tuple(item["known_loss"]),
+            occurrence.id,
+        ),
+        None,
     )
 
 
-def bootstrap_choice_set(presentation_ref: str) -> PresentedClosedChoiceSet:
+def common_grammar_choice_set(presentation_ref: str) -> PresentedClosedChoiceSet:
     """Return the application-owned probe; callers can supply identity, not semantics."""
     return PresentedClosedChoiceSet(
         choice_set_ref=CHOICE_SET_REF,
         prompt=PROMPT,
         options=OPTIONS,
         presentation_ref=presentation_ref,
-        provenance=("seed_runtime.operator_ingress_bootstrap:v1",),
+        provenance=("seed_runtime.operator_ingress_common_grammar:v1",),
     )
 
 
@@ -194,12 +308,12 @@ def _record(ledger, kind, workspace, session, attempt, dimensions, **extra):
     )
 
 
-def project_bootstrap_events(state, event) -> None:
-    """Dispatch one bootstrap event into the dedicated current view."""
-    if not event.kind.startswith("operator.bootstrap."):
+def project_operator_ingress_common_grammar_events(state, event) -> None:
+    """Dispatch one operator-ingress common-grammar event into the dedicated current view."""
+    if not event.kind.startswith("operator.ingress.common_grammar."):
         return
     attempt = event.payload["attempt_ref"]
-    view = state.operator_ingress_bootstraps.setdefault(
+    view = state.operator_ingress_common_grammar_attempts.setdefault(
         attempt,
         {
             "event_ids": [],
@@ -211,6 +325,7 @@ def project_bootstrap_events(state, event) -> None:
                     "raw_response_material",
                     "preserved_ingress",
                     "produced_probe",
+                    "alternative_representations",
                     "presentation",
                     "response",
                     "binding_finding",
@@ -234,7 +349,7 @@ def project_bootstrap_events(state, event) -> None:
         "dimensions": event.payload["dimensions"],
         "lineage": list(event.payload.get("lineage", ())),
     }
-    if event.kind == "operator.bootstrap.representation_examined":
+    if event.kind == "operator.ingress.common_grammar.representation_examined":
         view["representation_examinations"][event.payload["material_role"]] = {
             "examination_event_id": event.id,
             "capture_event_id": event.payload["capture_event_id"],
@@ -248,25 +363,27 @@ def project_bootstrap_events(state, event) -> None:
         view["last_event_kind"] = event.kind
         return
     subject_by_kind = {
-        "operator.bootstrap.ingress_occurred": "preserved_ingress",
-        "operator.bootstrap.initial_eof_occurred": "preserved_ingress",
-        "operator.bootstrap.probe_produced": "produced_probe",
-        "operator.bootstrap.presentation_occurred": "presentation",
-        "operator.bootstrap.response_captured": "response",
-        "operator.bootstrap.response_eof_occurred": "response",
-        "operator.bootstrap.binding_completed": "binding_finding",
-        "operator.bootstrap.unsupported_finding": "binding_finding",
-        "operator.bootstrap.alternative_selected": "alternative_selection",
-        "operator.bootstrap.source_recovered": "source_recovery",
-        "operator.bootstrap.stopping_occurred": "interaction_closure",
+        "operator.ingress.common_grammar.ingress_occurred": "preserved_ingress",
+        "operator.ingress.common_grammar.initial_eof_occurred": "preserved_ingress",
+        "operator.ingress.common_grammar.probe_produced": "produced_probe",
+        "operator.ingress.common_grammar.alternatives_represented": "alternative_representations",
+        "operator.ingress.common_grammar.presentation_occurred": "presentation",
+        "operator.ingress.common_grammar.response_captured": "response",
+        "operator.ingress.common_grammar.response_eof_occurred": "response",
+        "operator.ingress.common_grammar.binding_completed": "binding_finding",
+        "operator.ingress.common_grammar.unsupported_finding": "binding_finding",
+        "operator.ingress.common_grammar.alternative_selected": "alternative_selection",
+        "operator.ingress.common_grammar.source_recovered": "source_recovery",
+        "operator.ingress.common_grammar.source_recovery_refused": "source_recovery",
+        "operator.ingress.common_grammar.stopping_occurred": "interaction_closure",
     }
     subject = (
         "raw_initial_material"
-        if event.kind == "operator.bootstrap.raw_material_captured"
+        if event.kind == "operator.ingress.common_grammar.raw_material_captured"
         and event.payload["material_role"] == "initial_ingress"
         else (
             "raw_response_material"
-            if event.kind == "operator.bootstrap.raw_material_captured"
+            if event.kind == "operator.ingress.common_grammar.raw_material_captured"
             else subject_by_kind[event.kind]
         )
     )
@@ -322,7 +439,7 @@ def _capture_representation(
     capture_ref = new_id("operator_material")
     captured = _record(
         ledger,
-        "operator.bootstrap.raw_material_captured",
+        "operator.ingress.common_grammar.raw_material_captured",
         workspace,
         session,
         attempt,
@@ -352,7 +469,7 @@ def _capture_representation(
         return capture, None, captured, None
     examination_event = _record(
         ledger,
-        "operator.bootstrap.representation_examined",
+        "operator.ingress.common_grammar.representation_examined",
         workspace,
         session,
         attempt,
@@ -396,7 +513,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
     output_stream: TextIO,
 ) -> dict[str, object]:
     """Run exactly one ingress/common-grammar-probe/response attempt and return."""
-    attempt = new_id("operator_bootstrap_attempt")
+    attempt = new_id("operator_ingress_common_grammar_attempt")
     (
         captured_ingress,
         ingress_examination,
@@ -426,7 +543,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
     if ingress_examination is not None and not ingress_examination.succeeded:
         _record(
             ledger,
-            "operator.bootstrap.stopping_occurred",
+            "operator.ingress.common_grammar.stopping_occurred",
             workspace_id,
             session_id,
             attempt,
@@ -449,13 +566,13 @@ def run_operator_ingress_common_grammar_probe_attempt(
             "Representation insufficient: captured material did not decode under the selected decoder mechanism.\n"
         )
         output_stream.flush()
-        return state.operator_ingress_bootstraps[attempt]
+        return state.operator_ingress_common_grammar_attempts[attempt]
     ingress = _record(
         ledger,
         (
-            "operator.bootstrap.initial_eof_occurred"
+            "operator.ingress.common_grammar.initial_eof_occurred"
             if ingress_kind == "eof"
-            else "operator.bootstrap.ingress_occurred"
+            else "operator.ingress.common_grammar.ingress_occurred"
         ),
         workspace_id,
         session_id,
@@ -499,7 +616,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
     if ingress_kind == "eof":
         _record(
             ledger,
-            "operator.bootstrap.stopping_occurred",
+            "operator.ingress.common_grammar.stopping_occurred",
             workspace_id,
             session_id,
             attempt,
@@ -518,15 +635,17 @@ def run_operator_ingress_common_grammar_probe_attempt(
             lineage=[ingress.id],
         )
         state = StateProjector(ledger).project(workspace_id)
-        output_stream.write("Bootstrap stopped locally.\n")
+        output_stream.write(
+            "Operator-ingress common-grammar interaction stopped locally.\n"
+        )
         output_stream.flush()
-        return state.operator_ingress_bootstraps[attempt]
+        return state.operator_ingress_common_grammar_attempts[attempt]
 
     presentation_ref = f"presentation:{ingress.id}"
-    choice_set = bootstrap_choice_set(presentation_ref)
-    _record(
+    choice_set = common_grammar_choice_set(presentation_ref)
+    produced = _record(
         ledger,
-        "operator.bootstrap.probe_produced",
+        "operator.ingress.common_grammar.probe_produced",
         workspace_id,
         session_id,
         attempt,
@@ -545,12 +664,42 @@ def run_operator_ingress_common_grammar_probe_attempt(
         choice_set_fingerprint=choice_set.exact_choice_set_fingerprint,
         lineage=[ingress.id],
     )
+    representation_ref = new_id("operator_ingress_representation")
+    representations = common_grammar_representation_lineages(
+        choice_set, representation_ref
+    )
+    representation_payload = [asdict(item) for item in representations]
+    representation_event = _record(
+        ledger,
+        "operator.ingress.common_grammar.alternatives_represented",
+        workspace_id,
+        session_id,
+        attempt,
+        _dimensions(
+            identity=representation_ref,
+            content="application-owned alternatives represent carried sources",
+            standing="preserved-before-selection",
+            source="application-owned common-grammar prerequisite sources",
+            responsibility="responsible-alternative-representation",
+            authority="representation testimony only; no meaning warrant",
+            scope=f"attempt:{attempt};presentation:{presentation_ref}",
+            occurrence="exact representation relations and set participation durably preserved",
+        ),
+        choice_set_ref=choice_set.choice_set_ref,
+        presentation_ref=presentation_ref,
+        choice_set_fingerprint=choice_set.exact_choice_set_fingerprint,
+        representations=representation_payload,
+        representation_evidence_fingerprint=_representation_fingerprint(
+            representation_payload
+        ),
+        lineage=[produced.id],
+    )
     rendered = render_probe(choice_set)
     output_stream.write(rendered + "\n")
     output_stream.flush()
     presented = _record(
         ledger,
-        "operator.bootstrap.presentation_occurred",
+        "operator.ingress.common_grammar.presentation_occurred",
         workspace_id,
         session_id,
         attempt,
@@ -567,7 +716,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
         choice_set_ref=CHOICE_SET_REF,
         presentation_ref=presentation_ref,
         choice_set_fingerprint=choice_set.exact_choice_set_fingerprint,
-        lineage=[ingress.id],
+        lineage=[produced.id, representation_event.id],
     )
     (
         captured_response,
@@ -599,7 +748,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
     if response_kind == "eof":
         eof = _record(
             ledger,
-            "operator.bootstrap.response_eof_occurred",
+            "operator.ingress.common_grammar.response_eof_occurred",
             workspace_id,
             session_id,
             attempt,
@@ -621,7 +770,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
         )
         _record(
             ledger,
-            "operator.bootstrap.stopping_occurred",
+            "operator.ingress.common_grammar.stopping_occurred",
             workspace_id,
             session_id,
             attempt,
@@ -640,14 +789,16 @@ def run_operator_ingress_common_grammar_probe_attempt(
             lineage=[eof.id],
         )
         state = StateProjector(ledger).project(workspace_id)
-        output_stream.write("Bootstrap stopped locally.\n")
+        output_stream.write(
+            "Operator-ingress common-grammar interaction stopped locally.\n"
+        )
         output_stream.flush()
-        return state.operator_ingress_bootstraps[attempt]
+        return state.operator_ingress_common_grammar_attempts[attempt]
 
     if response_examination is not None and not response_examination.succeeded:
         _record(
             ledger,
-            "operator.bootstrap.stopping_occurred",
+            "operator.ingress.common_grammar.stopping_occurred",
             workspace_id,
             session_id,
             attempt,
@@ -670,12 +821,12 @@ def run_operator_ingress_common_grammar_probe_attempt(
             "Representation insufficient: captured response did not decode under the selected decoder mechanism.\n"
         )
         output_stream.flush()
-        return state.operator_ingress_bootstraps[attempt]
+        return state.operator_ingress_common_grammar_attempts[attempt]
 
     capture_ref = f"capture:{presented.id}"
     response = _record(
         ledger,
-        "operator.bootstrap.response_captured",
+        "operator.ingress.common_grammar.response_captured",
         workspace_id,
         session_id,
         attempt,
@@ -715,7 +866,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
         else (
             "response meaning Unknown",
             "operator intent Unknown",
-            "requested treatment Unknown",
+            "requested alternative Unknown",
         )
     )
     finding_kind = (
@@ -725,7 +876,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
     )
     binding_event = _record(
         ledger,
-        f"operator.bootstrap.{finding_kind}",
+        f"operator.ingress.common_grammar.{finding_kind}",
         workspace_id,
         session_id,
         attempt,
@@ -751,7 +902,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
         alternative = binding.selected_presented_alternative_ref
         selection = _record(
             ledger,
-            "operator.bootstrap.alternative_selected",
+            "operator.ingress.common_grammar.alternative_selected",
             workspace_id,
             session_id,
             attempt,
@@ -769,15 +920,50 @@ def run_operator_ingress_common_grammar_probe_attempt(
             binding_id=binding.binding_id,
             lineage=[binding_event.id],
         )
-        recovered = recover_bootstrap_source(
-            binding, choice_set, bootstrap_representation_lineages(choice_set)
+        representation_occurrences = [
+            event
+            for event in ledger.list_events(workspace_id)
+            if event.kind == "operator.ingress.common_grammar.alternatives_represented"
+            and event.payload.get("attempt_ref") == attempt
+        ]
+        recorded_representation = (
+            representation_occurrences[0]
+            if len(representation_occurrences) == 1
+            else None
+        )
+        recovered, refusal_reason = _recover_represented_source(
+            binding,
+            choice_set,
+            recorded_representation,
+            attempt_ref=attempt,
+            presentation_occurrence=presented,
         )
         if recovered is None:
-            result = "Source recovery refused: representation lineage was insufficient."
+            _record(
+                ledger,
+                "operator.ingress.common_grammar.source_recovery_refused",
+                workspace_id,
+                session_id,
+                attempt,
+                _dimensions(
+                    identity=f"source-recovery-refusal:{selection.id}",
+                    content=refusal_reason,
+                    standing="refused",
+                    source=selection.id,
+                    responsibility="represented-source-recovery",
+                    authority="refusal only; establishes no source or proposition standing",
+                    scope=f"attempt:{attempt}",
+                    occurrence="bounded source-recovery refusal durably recorded",
+                ),
+                refusal_reason=refusal_reason,
+                selected_presented_alternative_ref=alternative,
+                lineage=[presented.id, binding_event.id, selection.id],
+            )
+            result = f"Source recovery refused: {refusal_reason}."
         else:
             _record(
                 ledger,
-                "operator.bootstrap.source_recovered",
+                "operator.ingress.common_grammar.source_recovered",
                 workspace_id,
                 session_id,
                 attempt,
@@ -798,10 +984,18 @@ def run_operator_ingress_common_grammar_probe_attempt(
                 choice_set_fingerprint=choice_set.exact_choice_set_fingerprint,
                 presentation_ref=presentation_ref,
                 known_loss=list(recovered.representation_known_loss),
-                lineage=[binding_event.id, selection.id],
+                representation_occurrence_id=recovered.representation_occurrence_id,
+                lineage=[
+                    recovered.representation_occurrence_id,
+                    presented.id,
+                    binding_event.id,
+                    selection.id,
+                ],
             )
             if recovered.represented_source_role == "local-stop":
-                result = "Local-stop source recovered; bounded stop was not established."
+                result = (
+                    "Local-stop source recovered; bounded stop was not established."
+                )
             else:
                 result = "Potential-goal source recovered; bounded goal was not established and acquisition was not authorized or begun."
     else:
@@ -809,7 +1003,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
     state = StateProjector(ledger).project(workspace_id)
     output_stream.write(result + "\n")
     output_stream.flush()
-    return state.operator_ingress_bootstraps[attempt]
+    return state.operator_ingress_common_grammar_attempts[attempt]
 
 
 def validate_capture_for_probe(
@@ -830,12 +1024,12 @@ def validate_capture_for_probe(
     presentations = [
         event
         for event in events
-        if event.kind == "operator.bootstrap.presentation_occurred"
+        if event.kind == "operator.ingress.common_grammar.presentation_occurred"
     ]
     captures = [
         event
         for event in events
-        if event.kind == "operator.bootstrap.response_captured"
+        if event.kind == "operator.ingress.common_grammar.response_captured"
     ]
     if not presentations or not captures:
         raise ClosedChoiceSelectionBindingError(
@@ -871,8 +1065,8 @@ def validate_capture_for_probe(
     if any(
         event.kind
         in {
-            "operator.bootstrap.binding_completed",
-            "operator.bootstrap.unsupported_finding",
+            "operator.ingress.common_grammar.binding_completed",
+            "operator.ingress.common_grammar.unsupported_finding",
         }
         and event.payload.get("capture_ref") == capture.capture_ref
         for event in events

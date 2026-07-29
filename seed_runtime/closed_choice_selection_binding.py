@@ -110,11 +110,6 @@ class ClosedChoiceSelectionBinding:
     boundary_notes: tuple[str, ...] = BOUNDARY_NOTES
     binding_convention: str = CONVENTION
 
-    @property
-    def bound_option_ref(self) -> str | None:
-        """Compatibility coordinate; this is a presented alternative, never a source."""
-        return self.selected_presented_alternative_ref
-
     def to_json_dict(self) -> dict[str, object]:
         data = asdict(self)
         for key, value in data.items():

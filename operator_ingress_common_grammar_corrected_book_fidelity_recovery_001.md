@@ -6,7 +6,7 @@ This is one report-only recovery of the production witness reached by invoking b
 
 > What exact production road currently exists from bare `seed` operator ingress through common-grammar treatment selection and return to the persistent console, which responsible consumer owns each occurrence, and where is that road faithful, unfaithful, disconnected, or Unknown relative to the corrected Book?
 
-The implementation scope is `scripts/seed_local.py::run_persistent_operator_console`, `seed_runtime/operator_ingress_common_grammar_prerequisite.py`, `seed_runtime/operator_ingress_representation.py`, `seed_runtime/closed_choice_selection_binding.py`, `seed_runtime/events.py`, `seed_runtime/state.py`, `seed_runtime/bounded_operator_goal_establishment.py`, the direct external-grammar surface discovered in `seed_runtime/candidate_external_grammar.py`, and `tests/test_operator_ingress_bootstrap.py`. The comparison authority is the nine active chapters named in the request.
+The implementation scope is `scripts/seed_local.py::run_persistent_operator_console`, `seed_runtime/operator_ingress_common_grammar_prerequisite.py`, `seed_runtime/operator_ingress_representation.py`, `seed_runtime/closed_choice_selection_binding.py`, `seed_runtime/events.py`, `seed_runtime/state.py`, `seed_runtime/bounded_operator_goal_establishment.py`, the direct external-grammar surface discovered in `seed_runtime/candidate_external_grammar.py`, and `tests/test_operator_ingress_common_grammar.py`. The comparison authority is the nine active chapters named in the request.
 
 This report treats occurrence, artifact, preservation, projection, and consumer uptake separately. It assigns responsibility to functions or calling boundaries, not to a probe, Event, projection, ledger, choice set, treatment, boundary, or view by identity. “Production” below means the actual no-argument CLI path unless a programmatic-only branch is expressly identified. An Event's responsibility string is recorded testimony, not independent proof that the named constitutional competency exists.
 
@@ -33,18 +33,18 @@ Thus the locally expected continuous core is preservation → evidenced exact-co
 |---|---|---|---|---|---|
 | Console recurrence | `run_persistent_operator_console` | no-argument CLI, stdin/stdout, process-local ledger | banner and a `while True` capture cycle | workspace/session; recurrence only | outer EOF/`exit` inspector, or bounded attempt |
 | Initial capture occurrence | `capture_stdin_material`, called only by the console for ordinary production ingress | one `sys.stdin` frame | `CapturedOperatorMaterial` with exact boundary bytes, EOF, delimiter testimony, boundary, byte origin, encoding testimony, and known loss | one frame; occurrence evidence only | outer inspector, then the attempt with the same object |
-| Initial raw preservation | `_capture_representation` in the attempt | the already-captured object | `operator.bootstrap.raw_material_captured`; exact bytes as hex and supplied capture testimony | attempt/workspace/session/role; `mutates_cluster=false` | representation examiner; projector on replay |
+| Initial raw preservation | `_capture_representation` in the attempt | the already-captured object | `operator.ingress.common_grammar.raw_material_captured`; exact bytes as hex and supplied capture testimony | attempt/workspace/session/role; `mutates_cluster=false` | representation examiner; projector on replay |
 | Representation examination | `examine_text_representation`, recorded by `_capture_representation` | exact captured bytes plus encoding testimony or UTF-8 fallback | strict decoder result: `decoded`, `decoder_unavailable`, or `bytes_rejected` | capture occurrence; decoder evidence only | attempt branching; projector |
-| Ingress occurrence recording | attempt | decoded text or EOF plus raw/examination lineage | `operator.bootstrap.ingress_occurred` or programmatic `initial_eof_occurred`; meaning expressly Unknown | workspace/session; occurrence only | identity/lineage source for the probe on non-EOF; projector; no prerequisite material consumer evidenced |
-| Probe representation | `bootstrap_choice_set` and `render_probe`, orchestrated by attempt | presentation identity derived from ingress Event | exact two-option representation plus `operator.bootstrap.probe_produced` | one attempt; exact local token invitation only | stdout presenter; later validator |
-| Presentation occurrence | attempt's `output_stream.write/flush`, then `_record` | rendered representation | bytes/text sent toward real-shell stdout and `operator.bootstrap.presentation_occurred` | one attempt; no acquisition/stopping authority | human is candidate recipient; actual receipt/interpretation Unknown; response capture follows in control flow |
+| Ingress occurrence recording | attempt | decoded text or EOF plus raw/examination lineage | `operator.ingress.common_grammar.ingress_occurred` or programmatic `initial_eof_occurred`; meaning expressly Unknown | workspace/session; occurrence only | identity/lineage source for the probe on non-EOF; projector; no prerequisite material consumer evidenced |
+| Probe representation | `common_grammar_choice_set` and `render_probe`, orchestrated by attempt | presentation identity derived from ingress Event | exact two-option representation plus `operator.ingress.common_grammar.probe_produced` | one attempt; exact local token invitation only | stdout presenter; later validator |
+| Presentation occurrence | attempt's `output_stream.write/flush`, then `_record` | rendered representation | bytes/text sent toward real-shell stdout and `operator.ingress.common_grammar.presentation_occurred` | one attempt; no acquisition/stopping authority | human is candidate recipient; actual receipt/interpretation Unknown; response capture follows in control flow |
 | Response raw capture and examination | `_capture_representation` | the same input stream, now read once by the attempt | separate `CapturedOperatorMaterial`, raw Event, decoder evidence | enum-response role in same attempt | EOF/failure branch or response occurrence producer |
 | Response occurrence | attempt | decoded framed response | `response_eof_occurred`, or `response_captured` with exact token text and probe identity | exact choice set; meaning and intent Unknown before binding | validator/binder for non-EOF; projector |
 | Exact-set binding | `validate_capture_for_probe` then `bind_closed_choice_selection` | current recorded presentation, fingerprint, current unconsumed response capture | bound or unsupported `ClosedChoiceSelectionBinding`; corresponding Event | exact presented set; read-only, no goal/acquisition/authority | treatment selector only if bound; projector |
-| Treatment selection | attempt | bound option reference and binding Event | `operator.bootstrap.treatment_selected`, `selected_treatment` of `common-grammar-acquisition` or `local-stop` | one attempt; selection only | stdout result and projector; no constitutional downstream consumer |
-| Unsupported finding | attempt | non-bound exact-set binding | `operator.bootstrap.unsupported_finding` plus three semantic Unknowns | one attempt / exact set | stdout result and projector only |
-| Stopping occurrences | attempt, only on representation failure or EOF branches | examination failure or EOF occurrence | `operator.bootstrap.stopping_occurred`, `closed=true`, interaction closure | one attempt; claims competent local stop only | stdout and projector |
-| Projection | `StateProjector.apply` dispatching to `project_bootstrap_events` | all `operator.bootstrap.*` Events | `state.operator_ingress_bootstraps[attempt]` visibility | workspace replay; no cluster mutation | returned to caller then ignored by console; tests inspect it |
+| Treatment selection | attempt | bound option reference and binding Event | `operator.ingress.common_grammar.treatment_selected`, `selected_treatment` of `common-grammar-acquisition` or `local-stop` | one attempt; selection only | stdout result and projector; no constitutional downstream consumer |
+| Unsupported finding | attempt | non-bound exact-set binding | `operator.ingress.common_grammar.unsupported_finding` plus three semantic Unknowns | one attempt / exact set | stdout result and projector only |
+| Stopping occurrences | attempt, only on representation failure or EOF branches | examination failure or EOF occurrence | `operator.ingress.common_grammar.stopping_occurred`, `closed=true`, interaction closure | one attempt; claims competent local stop only | stdout and projector |
+| Projection | `StateProjector.apply` dispatching to `project_operator_ingress_common_grammar_events` | all `operator.ingress.common_grammar.*` Events | `state.operator_ingress_common_grammar_attempts[attempt]` visibility | workspace replay; no cluster mutation | returned to caller then ignored by console; tests inspect it |
 | Initial-ingress constitutional consumption before probe | none on bare-console road | decoded ingress Event | probe identity and lineage reference exist, but no examination, assertion adoption, material use, or constitutional uptake | not established | no exact prerequisite consumer evidenced |
 | Later constitutional consumption | none on bare-console road | projected/raw preserved ingress or selected treatment | no acquisition, Demand, re-examination, authority, stopping-after-negative, or BOGE result | not established | none evidenced |
 
@@ -134,7 +134,7 @@ A return completes Python control flow only. Affirmative, negative, and unsuppor
 
 ## Affirmative branch
 
-For exact token `1`, the binder produces a bound finding and the attempt records `operator.bootstrap.treatment_selected` with `selected_treatment="common-grammar-acquisition"`, binding lineage, `standing="selected"`, and authority “selection only; acquisition not authorized or begun.” State exposes that selection. Stdout says: “Common-grammar acquisition treatment selected; acquisition was not authorized or begun.” The attempt returns; the console ignores the returned view and captures a new frame as a new attempt.
+For exact token `1`, the binder produces a bound finding and the attempt records `operator.ingress.common_grammar.treatment_selected` with `selected_treatment="common-grammar-acquisition"`, binding lineage, `standing="selected"`, and authority “selection only; acquisition not authorized or begun.” State exposes that selection. Stdout says: “Common-grammar acquisition treatment selected; acquisition was not authorized or begun.” The attempt returns; the console ignores the returned view and captures a new frame as a new attempt.
 
 Classification by coordinate:
 
@@ -148,7 +148,7 @@ Accordingly, the bounded selection endpoint itself is faithful. The default cons
 
 ## Negative branch
 
-For exact token `2`, the same binding and selection road records `selected_treatment="local-stop"`. It does **not** record `operator.bootstrap.stopping_occurred`, set `closed`, or create `interaction_closure`. No competent stopping consumer acts. The attempt writes: “Local-stop treatment selected; bounded stop was not established.” It returns, the console continues, and a new initial frame is captured under a new attempt.
+For exact token `2`, the same binding and selection road records `selected_treatment="local-stop"`. It does **not** record `operator.ingress.common_grammar.stopping_occurred`, set `closed`, or create `interaction_closure`. No competent stopping consumer acts. The attempt writes: “Local-stop treatment selected; bounded stop was not established.” It returns, the console continues, and a new initial frame is captured under a new attempt.
 
 These are distinct standings:
 
@@ -163,7 +163,7 @@ The stdout is faithful to the evidence. Negative selection is therefore faithful
 
 ## Unsupported branch
 
-For any token outside the exact set—including empty and whitespace variants—the binder records `operator.bootstrap.unsupported_finding`. Exact-set nonmembership is known. The Event/projection retains “response meaning Unknown,” “operator intent Unknown,” and “requested treatment Unknown.” No refusal, treatment selection, stopping, retry requirement, or Demand is recorded.
+For any token outside the exact set—including empty and whitespace variants—the binder records `operator.ingress.common_grammar.unsupported_finding`. Exact-set nonmembership is known. The Event/projection retains “response meaning Unknown,” “operator intent Unknown,” and “requested treatment Unknown.” No refusal, treatment selection, stopping, retry requirement, or Demand is recorded.
 
 The attempt says “Unsupported response: exact token 1 or 2 required.” Here “required” describes membership needed by this exact binder, not a constitutional requirement to retry. It returns. The projection marks both presentation and response `consumed`, but those standings have different support: the binder used the exact response capture, while response occurrence does not prove external receipt, interpretation, use, reliance upon, or constitutional consumption of the presentation. The presentation and original ingress remain reconstructable from the live process-local Event history. They are durably reconstructable across process boundaries only when a persistent ledger is supplied. No active retry consumer re-presents or reopens either artifact. The console captures the next frame as a new attempt, not as a retry: new attempt identity, new initial-capture role, no prior presentation reference, and no lineage to the prior unsupported finding.
 
@@ -173,8 +173,8 @@ Zero retries is Book-permitted, so their absence is not unfaithful. The console 
 
 Four potential branches must be separated:
 
-1. **Initial EOF on bare production:** `run_persistent_operator_console` detects the `CapturedOperatorMaterial.eof` and returns. It produces no bootstrap Event and no `stopping_occurred`. This is outer console/process control, not the attempt's competent local stopping.
-2. **Direct/programmatic initial EOF:** if the attempt is called directly with an EOF capture, it records raw capture, `operator.bootstrap.initial_eof_occurred`, then a distinct `operator.bootstrap.stopping_occurred` sourced from that occurrence, with `closed=true`, `response_kind="initial_eof"`, attempt scope, and authority limited to closing this interaction.
+1. **Initial EOF on bare production:** `run_persistent_operator_console` detects the `CapturedOperatorMaterial.eof` and returns. It produces no operator-ingress common-grammar event and no `stopping_occurred`. This is outer console/process control, not the attempt's competent local stopping.
+2. **Direct/programmatic initial EOF:** if the attempt is called directly with an EOF capture, it records raw capture, `operator.ingress.common_grammar.initial_eof_occurred`, then a distinct `operator.ingress.common_grammar.stopping_occurred` sourced from that occurrence, with `closed=true`, `response_kind="initial_eof"`, attempt scope, and authority limited to closing this interaction.
 3. **Response EOF:** the attempt records response raw capture, `response_eof_occurred`, then a distinct stopping Event with `closed=true` and attempt-local authority. It does not create a normal response capture or binding.
 4. **Initial or response representation failure:** `_capture_representation` first records raw bytes and the exact decoder outcome. The attempt then records a separate stopping Event sourced from that examination, closes only the attempt, writes the exact implementation message `representation insufficiency` or `response representation insufficiency`, and returns. Those messages are stale retired-scalar residue that compresses the distinct `decoder_unavailable` and `bytes_rejected` outcomes; the upstream examination evidence preserves the distinction. Initial failure occurs before an ingress occurrence; response failure occurs after presentation but before response occurrence/binding.
 
@@ -184,7 +184,7 @@ The asymmetry with negative selection is intentional and accurately exposed: sel
 
 ## Projection and current visibility
 
-`StateProjector.apply` sends every `operator.bootstrap.*` Event to `project_bootstrap_events`. Per attempt, the projection preserves Event ids; an eight-dimensional snapshot per occurrence; lineage; raw-initial/raw-response material; representation-examination details; current subject slots; accumulated known loss, Unknowns, and conflicts; and selected scalar conveniences such as `selected_treatment`, `closed`, and `response_kind`.
+`StateProjector.apply` sends every `operator.ingress.common_grammar.*` Event to `project_operator_ingress_common_grammar_events`. Per attempt, the projection preserves Event ids; an eight-dimensional snapshot per occurrence; lineage; raw-initial/raw-response material; representation-examination details; current subject slots; accumulated known loss, Unknowns, and conflicts; and selected scalar conveniences such as `selected_treatment`, `closed`, and `response_kind`.
 
 | Projected subject | Source Events | What becomes visible | Known loss / Unknown / conflict treatment | Consumer standing |
 |---|---|---|---|---|
@@ -204,25 +204,25 @@ No bare-console caller consumes the returned projection. Tests and programmatic 
 
 ## Downstream consumer recovery
 
-Searches for every named Event kind, `CapturedOperatorMaterial`, both treatment literals, `selected_treatment`, and `operator_ingress_bootstraps` found no production downstream consumer beyond the projector and the within-attempt validator/selector. Imports, similarly named external-grammar code, and test-only reconstruction do not establish consumption.
+Searches for every named Event kind, `CapturedOperatorMaterial`, both treatment literals, `selected_treatment`, and `operator_ingress_common_grammar_attempts` found no production downstream consumer beyond the projector and the within-attempt validator/selector. Imports, similarly named external-grammar code, and test-only reconstruction do not establish consumption.
 
 | Candidate relation | Identity linkage | Lineage / scope / standing / authority | Invocation and material use | Classification |
 |---|---|---|---|---|
 | Common-grammar acquisition | no consumer references treatment literal outside producer/tests | none | none | absent within current scope; consumer absent |
 | Candidate external-grammar admission | separate CLI accepts caller JSON | no attempt, selection, ingress, presentation, or binding refs; no authority link | independently invoked only by its CLI flag | disconnected implementation island |
-| Demand examination/establishment | no bootstrap Event or projection consumer | no recurrence, exact ingress/consumer constraint, or Demand lineage | none | absent within current scope |
+| Demand examination/establishment | no operator-ingress common-grammar event or projection consumer | no recurrence, exact ingress/consumer constraint, or Demand lineage | none | absent within current scope |
 | Same-ingress re-examination | no consumer reopens raw Event/projection for examination | preserved visibility only; applicability/authority Unknown | none | projection-only visibility, then absent consumer |
-| Operator-origin BOGE from this ingress | closed-choice adapter accepts a reconstructed binding type but always refuses; admitted-interpretation BOGE consumes another road | no production bridge from bootstrap Event/binding object; exact ingress absent; console never invokes it | test reconstructs only to prove refusal | disconnected implementation island |
+| Operator-origin BOGE from this ingress | closed-choice adapter accepts a reconstructed binding type but always refuses; admitted-interpretation BOGE consumes another road | no production bridge from operator-ingress common-grammar event/binding object; exact ingress absent; console never invokes it | test reconstructs only to prove refusal | disconnected implementation island |
 | Competent stopping after negative selection | no consumer | selection expressly lacks stopping authority | none | absent within current scope |
 | EOF/failure local stopping | attempt itself records separate act | direct failure/EOF lineage, attempt scope, limited authority | invoked on those branches | directly connected locally; constitutional competency beyond declared boundary Unknown |
 
-The BOGE closed-choice function is especially important: accepting the Python binding type does not make it a consumer of the preserved ingress road. Production never passes the in-memory binding to it; the binding is not retained as an object in the Event; and the function categorically refuses because no goal-specific semantic admission exists. The admitted-interpretation BOGE path consumes `DownstreamInterpretationAdmission`, not bootstrap ingress or treatment selection.
+The BOGE closed-choice function is especially important: accepting the Python binding type does not make it a consumer of the preserved ingress road. Production never passes the in-memory binding to it; the binding is not retained as an object in the Event; and the function categorically refuses because no goal-specific semantic admission exists. The admitted-interpretation BOGE path consumes `DownstreamInterpretationAdmission`, not common-grammar interaction ingress or treatment selection.
 
 ## Implementation vocabulary standing
 
 | Term | Classification | Recovery |
 |---|---|---|
-| `bootstrap` / `operator-common-grammar-bootstrap` | stale lexical pressure only | Historical implementation namespace suggests universal start, while the corrected Book denies universal bootstrap; behavior remains local to bare console and does not create a global constitutional primitive. |
+| `common-grammar interaction` / `operator-ingress-common-grammar` | stale lexical pressure only | Historical implementation namespace suggests universal start, while the corrected Book denies universal common-grammar interaction; behavior remains local to bare console and does not create a global constitutional primitive. |
 | `one-attempt` / `probe_attempt` | faithful implementation-local identifier | Accurately bounds one initial object, one presentation, at most one response, and return; it is not constitutional stopping. |
 | `probe` | faithful implementation-local identifier with mild ambiguity | Behavior is the Book's communication-probe representation. It is not an examination execution or interpretation menu. |
 | `probe-production` | faithful implementation-local identifier | Separate from recorded presentation and response. |
@@ -233,13 +233,13 @@ The BOGE closed-choice function is especially important: accepting the Python bi
 | `local-stop` | compatibility identifier | Correct as a selected treatment; output explicitly says stop not established. |
 | `operator-ingress` responsibility string | misleading responsibility assignment | The attempt is the actual Event producer and records an occurrence attributed to operator ingress; the string can look like an agent/consumer. Behavior limits it to occurrence-only meaning Unknown, reducing but not eliminating pressure. |
 | `competent-local-stopping` | behaviorally consequential pressure / Unknown warrant | It affirmatively claims competency for EOF/decoder-failure stopping. Scope and separate occurrence are good, but constitutional competency is not independently examined. |
-| `seed_runtime.operator_ingress_bootstrap:v1` provenance | stale constitutional residue | The provenance string names an older/non-current module form and bootstrap vocabulary; it does not alter the actual fingerprinted two-option behavior. |
+| `seed_runtime.operator_ingress_common_grammar:v1` provenance | stale constitutional residue | The provenance string names an older/non-current module form and common-grammar interaction vocabulary; it does not alter the actual fingerprinted two-option behavior. |
 
 The retired scalar vocabulary encountered in implementation is quoted here only as evidence and is not promoted to corrected constitutional grammar.
 
 ## Test testimony
 
-`tests/test_operator_ingress_bootstrap.py` is compatibility testimony after production recovery, not constitutional warrant.
+`tests/test_operator_ingress_common_grammar.py` is compatibility testimony after production recovery, not constitutional warrant.
 
 - **Capture provenance and ownership proved:** real-buffer exact bytes, LF/CRLF delimiter testimony, encoding testimony, direct byte origin, text-adapter loss, same capture object passed unchanged, response ownership inside attempt, and no alternate parser controller.
 - **Single-capture continuity proved:** monkeypatch testimony proves the outer capture is passed without recapture; Event/projection reconstruction is proved in the live process, while cross-process replay requires a supplied persistent ledger. It does not prove a later constitutional consumer reopens the preserved ingress.
@@ -248,7 +248,7 @@ The retired scalar vocabulary encountered in implementation is quoted here only 
 - **Local-stop non-establishment proved:** token `2` lacks stop Event/closed standing and the persistent console starts another interaction.
 - **Unsupported Unknowns proved:** response meaning, operator intent, and requested treatment remain Unknown; no selection or stop occurs.
 - **EOF/failure stopping proved:** direct initial EOF, response EOF, and both representation failure kinds record separate local stops with expected lineage and decoder distinctions.
-- **Console recurrence proved:** multiple attempts occur after local-stop and unsupported responses; outer exact `exit` is excluded from bootstrap Events.
+- **Console recurrence proved:** multiple attempts occur after local-stop and unsupported responses; outer exact `exit` is excluded from operator-ingress common-grammar events.
 - **Same-ingress later continuity not proved:** tests prove preservation and replay, not downstream reopening or re-examination.
 - **Consumer availability not proved:** the BOGE test reconstructs an immutable binding and proves the adapter refuses it. That is evidence of disconnection, not production uptake.
 - **Common-grammar constraint left unexamined:** no test demonstrates an exact BOGE consumer attempted to examine the ingress and found common grammar unavailable before probe production.
@@ -292,7 +292,7 @@ Passing tests therefore preserve the implemented boundaries, including intention
 | State projection | mixed witness containing an unfaithful projected-standing crossing | Event visibility, lineage, loss preservation, and exact binder-local response consumption are faithful local support; presentation is nevertheless projected as `consumed` without evidence of external receipt, interpretation, use, or reliance |
 | `representation insufficiency` wording | stale lexical pressure with bounded behavioral consequence | later Event/output shorthand compresses distinct decoder failures, while exact decoder outcomes remain distinguishable upstream |
 | Bare-road durable replay | absent; live process-local reconstruction only | bare `seed` uses `EventLedger`; cross-process replay requires a supplied persistent ledger such as `SQLiteEventLedger` |
-| `bootstrap` lexical family | stale lexical pressure only | corrected Book rejects universal bootstrap, but behavior does not enact one |
+| `common-grammar interaction` lexical family | stale lexical pressure only | corrected Book rejects universal common-grammar interaction, but behavior does not enact one |
 
 ## Strongest continuous faithful road
 

@@ -80,7 +80,7 @@ does not independently establish constitutional scope.
 
 | Road | Producer | Preserved | Ignored/not established | Authority/currentness | Before → after |
 |---|---|---|---|---|---|
-| closed choice | `establish_bounded_operator_goal_from_closed_choice` | exact `bound_option_ref`; empty on refusal | locality, inside/outside boundary, resources, applicability, semantic scope | exact binding guards authorize local consumption; no separate currentness | bound/refused binding testimony → established/refused goal witness |
+| closed choice | `establish_bounded_operator_goal_from_closed_choice` | exact `selected_presented_alternative_ref`; empty on refusal | locality, inside/outside boundary, resources, applicability, semantic scope | exact binding guards authorize local consumption; no separate currentness | bound/refused binding testimony → established/refused goal witness |
 | admitted interpretation | `establish_bounded_operator_goal_from_admitted_interpretation` | selected candidate ref plus label, sorted/deduped; richer content remains in snapshot/lanes | no goal boundary; no re-selection, re-applicability, or re-admission | exact consumer/purpose, identity agreement, applicable/admitted result, and absence of upstream Unknown/conflict guard the road | admitted local interpretation → established goal, otherwise refusal |
 
 The closed-choice member is selected option identity. The admitted members are

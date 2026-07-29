@@ -32,16 +32,16 @@ treatment-choice representation formed != presentation occurred
 | Material or evidence | Responsible producer occurrence | Exact material preserved | Provenance and lineage | Declared standing and limits | Actual direct consumers and use |
 | --- | --- | --- | --- | --- | --- |
 | `CapturedOperatorMaterial` | `capture_stdin_material`, invoked by `run_persistent_operator_console` for initial ingress | Boundary-observed bytes, EOF, LF/CRLF delimiter testimony, capture boundary, byte origin, stream encoding testimony, and known loss | The object records boundary and origin; before recording it has no Event identity or constitutional consumer lineage | Smallest available stdin observation. Direct-buffer and binary-stream roads preserve observed bytes; text-stream compatibility recreates bytes after earlier decoding and declares loss. No meaning, grammar, purpose, or BOGE assertion | The console reads only `eof`, `exact_bytes`, and encoding testimony for its outer EOF/`exit` inspection. For ordinary material it passes the same object to `run_operator_ingress_common_grammar_probe_attempt`. The attempt reads bytes for recording and decoding; no BOGE act is performed |
-| raw-material Event | `_capture_representation`, by calling `_record` after receiving the same capture object | `exact_bytes_hex`, byte count, EOF, delimiter, encoding testimony, capture boundary, byte origin, and known loss | Fresh Event id plus attempt, workspace, session, role, and caller-supplied lineage | `captured`; authority is occurrence evidence only; scope is the exact role and session; no constitutional assertion is adopted | `examine_text_representation` receives the in-memory capture rather than this Event. The ingress-occurrence producer uses this Event id as source/lineage. `project_bootstrap_events` copies it into visibility. No production BOGE consumer reads the Event or its bytes |
+| raw-material Event | `_capture_representation`, by calling `_record` after receiving the same capture object | `exact_bytes_hex`, byte count, EOF, delimiter, encoding testimony, capture boundary, byte origin, and known loss | Fresh Event id plus attempt, workspace, session, role, and caller-supplied lineage | `captured`; authority is occurrence evidence only; scope is the exact role and session; no constitutional assertion is adopted | `examine_text_representation` receives the in-memory capture rather than this Event. The ingress-occurrence producer uses this Event id as source/lineage. `project_operator_ingress_common_grammar_events` copies it into visibility. No production BOGE consumer reads the Event or its bytes |
 | representation-examination result | `examine_text_representation`, invoked by `_capture_representation` | Selected decoder mechanism and selection basis, outcome, represented text on success, or bounded failure evidence | The caller records an examination Event sourced from the raw capture Event; represented text itself remains in memory for the next producer | One strict decoder invocation; explicitly not an encoding verdict. `decoded` establishes representation only, not interpretation, common grammar, or goal meaning | `_capture_representation` records the outcome. `run_operator_ingress_common_grammar_probe_attempt` reads `represented_text`, `succeeded`, and outcome to classify ingress and choose a decoder-failure branch. No BOGE examination consumes it |
-| ingress occurrence Event | `run_operator_ingress_common_grammar_probe_attempt`, by calling `_record` | `raw_input`, `decoded_text`, ingress kind, raw-material Event id, optional representation-examination Event id, known loss, and lineage | Source is the raw capture Event or examination Event; lineage includes both when decoding was invoked | Occurrence-only, meaning Unknown. Decoded text and occurrence attribution do not assert interpretation, grammar applicability, BOGE uptake, or a consumer constraint | `StateProjector` dispatches it to `project_bootstrap_events`. The same attempt uses the returned Event id to derive `presentation_ref` and probe lineage. It does not reread this Event's material before probe formation |
-| projected preserved-ingress material | `StateProjector.project` invokes `project_bootstrap_events`, which copies Event payload dimensions into `operator_ingress_bootstraps[attempt]` | Current preserved-ingress dimensions include decoded content; raw initial material retains hexadecimal bytes and loss testimony; dimensional records retain Event lineage | Projection entries cite evidence Event ids, subject refs, and lineage | Visibility and replay-derived current standing only. Projection does not establish examination, interpretation, constitutional uptake, or a responsible consumer | Diagnostic/state readers and tests can inspect it. Search found no production caller that reopens projected bytes or decoded text for the required act; later probe production already occurred in the originating call |
+| ingress occurrence Event | `run_operator_ingress_common_grammar_probe_attempt`, by calling `_record` | `raw_input`, `decoded_text`, ingress kind, raw-material Event id, optional representation-examination Event id, known loss, and lineage | Source is the raw capture Event or examination Event; lineage includes both when decoding was invoked | Occurrence-only, meaning Unknown. Decoded text and occurrence attribution do not assert interpretation, grammar applicability, BOGE uptake, or a consumer constraint | `StateProjector` dispatches it to `project_operator_ingress_common_grammar_events`. The same attempt uses the returned Event id to derive `presentation_ref` and probe lineage. It does not reread this Event's material before probe formation |
+| projected preserved-ingress material | `StateProjector.project` invokes `project_operator_ingress_common_grammar_events`, which copies Event payload dimensions into `operator_ingress_common_grammar_attempts[attempt]` | Current preserved-ingress dimensions include decoded content; raw initial material retains hexadecimal bytes and loss testimony; dimensional records retain Event lineage | Projection entries cite evidence Event ids, subject refs, and lineage | Visibility and replay-derived current standing only. Projection does not establish examination, interpretation, constitutional uptake, or a responsible consumer | Diagnostic/state readers and tests can inspect it. Search found no production caller that reopens projected bytes or decoded text for the required act; later probe production already occurred in the originating call |
 
 ### 1.2 Material use versus linkage
 
 The initial capture is materially used twice before the report's stopping point: the attempt serializes its bytes into the raw Event, and `examine_text_representation` decodes those bytes. The resulting decoded content is used to classify EOF/empty/text and populate the ingress occurrence. Those are capture, representation, and occurrence acts.
 
-The producer-to-producer crossing into probe formation uses the ingress Event **identity**, not its material. `presentation_ref` is `presentation:{ingress.id}`; the probe-produced Event lineage contains `ingress.id`; `bootstrap_choice_set` receives only that presentation identity. Neither raw bytes nor decoded content are arguments to `bootstrap_choice_set` or `render_probe`. No producer adopts a constitutional assertion that the BOGE consumer examined the material or that its required common grammar is unavailable.
+The producer-to-producer crossing into probe formation uses the ingress Event **identity**, not its material. `presentation_ref` is `presentation:{ingress.id}`; the probe-produced Event lineage contains `ingress.id`; `common_grammar_choice_set` receives only that presentation identity. Neither raw bytes nor decoded content are arguments to `common_grammar_choice_set` or `render_probe`. No producer adopts a constitutional assertion that the BOGE consumer examined the material or that its required common grammar is unavailable.
 
 Projected visibility is downstream of Event recording but is not an examiner. Although `StateProjector(ledger).project(workspace_id)` is called before the probe branch, its returned state is discarded at that point. The probe producer does not consume projected standing.
 
@@ -67,7 +67,7 @@ run_persistent_operator_console
             --> examine_text_representation(capture.exact_bytes)
             --> _record(representation_examined)
        --> _record(ingress_occurred; decoded occurrence, meaning Unknown)
-            ..> StateProjector --> project_bootstrap_events
+            ..> StateProjector --> project_operator_ingress_common_grammar_events
             ..> projected raw bytes / decoded preserved ingress / lineage
 
        ingress Event -X> responsible BOGE-consumer examination occurrence
@@ -77,7 +77,7 @@ run_persistent_operator_console
 
        ingress.id -#> presentation_ref and probe-produced Event lineage
        hard-coded CHOICE_SET_REF, PROMPT, OPTIONS
-         --> bootstrap_choice_set(presentation_ref)
+         --> common_grammar_choice_set(presentation_ref)
          --> render_probe(choice_set)
          --> _record(probe_produced)
          [STOP: treatment-choice representation has now been formed]
@@ -102,8 +102,8 @@ The search covered the prerequisite module, representation examination, bounded 
 | `_capture_representation` | Same capture object for initial ingress | Records exact bytes; invokes strict decoding; records decoder evidence | Raw-material and representation-examination Events plus in-memory examination result | Yes, within every ordinary attempt | direct partial witness |
 | `examine_text_representation` | `CapturedOperatorMaterial.exact_bytes` and encoding testimony | Invokes one selected strict decoder | `RepresentationExamination` with decoded text or decoder outcome | Yes, through `_capture_representation` | implementation-local support only |
 | `run_operator_ingress_common_grammar_probe_attempt` before probe formation | Capture, examination result, recorded Event identities | Classifies occurrence, records decoded content with meaning Unknown, handles EOF/decoder outcome, then proceeds on any decoded non-EOF occurrence | Ingress Event or bounded stopping record; otherwise control reaches probe formation | Yes | direct partial witness |
-| `bootstrap_choice_set` call owned by the attempt | Presentation identity; hard-coded constants | Constructs fixed two-treatment representation | `PresentedClosedChoiceSet` | Yes, for every decoded non-EOF ingress | incompatible responsibility |
-| `project_bootstrap_events` through `StateProjector` | Bootstrap Event payloads, identities, dimensions, and lineage | Copies current and per-occurrence visibility | `operator_ingress_bootstraps` view | Yes; pre-probe result discarded, later results returned | implementation-local support only |
+| `common_grammar_choice_set` call owned by the attempt | Presentation identity; hard-coded constants | Constructs fixed two-treatment representation | `PresentedClosedChoiceSet` | Yes, for every decoded non-EOF ingress | incompatible responsibility |
+| `project_operator_ingress_common_grammar_events` through `StateProjector` | Operator-ingress common-grammar event payloads, identities, dimensions, and lineage | Copies current and per-occurrence visibility | `operator_ingress_common_grammar_attempts` view | Yes; pre-probe result discarded, later results returned | implementation-local support only |
 | `produce_contextual_interpretation_warrant_set` | Caller-authored `ExactOperatorMaterial`, candidates, correction evidence, retrospective evidence | Produces candidate-scoped contextual warrants from supplied bounded inputs | `ContextualInterpretationWarrantSet` | No call from bare ingress; concrete calls are tests | disconnected witness |
 | `select_contextual_interpretation` | Warrant set and selection evidence | Selects or refuses candidate meaning under its own evidence contract | `ContextualInterpretationSelectionResult` | No call from bare ingress | disconnected witness |
 | `project_interpretation_applicability` | Selected interpretation, explicit bounded consumer/purpose, requirement evidence | Determines purpose-local applicability from supplied requirement evidence | `InterpretationApplicabilityProjection` | No call from bare ingress | disconnected witness |
@@ -113,7 +113,7 @@ The search covered the prerequisite module, representation examination, bounded 
 | representation-grammar applicability and examination-method applicability producers | Their own candidate/testimony contracts, not this capture or ingress Event | Evaluate their declared candidate-local applicability coordinates | Their own read-only applicability artifacts | No connected bare-ingress call | disconnected witness |
 | candidate external-grammar owners | Candidate/provider artifacts supplied by their own callers | Preserve or evaluate external-grammar evidence within a different bounded contract | Candidate/external-grammar artifacts | No connected bare-ingress call | disconnected witness |
 | `_record` calls for `stopping_occurred` | EOF or decoder-outcome Event identity and local constants | Record attempt-local stopping for those specific branches | Stopping Event and projected closed standing | Yes only for EOF/decoder branches, not decoded ordinary ingress | incompatible responsibility |
-| `EventLedger.append` and `project_bootstrap_events` | Producer-authored payload or already-recorded Event | Persist or project assertions authored elsewhere | Event or view entry | Yes | incompatible responsibility |
+| `EventLedger.append` and `project_operator_ingress_common_grammar_events` | Producer-authored payload or already-recorded Event | Persist or project assertions authored elsewhere | Event or view entry | Yes | incompatible responsibility |
 
 No candidate has the complete tuple of exact ingress input, BOGE act, common-grammar examination, attributed local finding, and production invocation. The partial support is distributed: capture and representation owners preserve material; contextual owners demonstrate implementation forms for exact text, candidate evidence, consumer/purpose coordinates, applicability, and admission; BOGE code demonstrates a consumer identity and purpose and a later admitted-meaning consumer. Those pieces are neither connected to this occurrence nor oriented to producing the prerequisite constraint finding.
 
@@ -127,7 +127,7 @@ The attempt function accepts a compatible capture type and materially reads it f
 
 ### Preserved-artifact road recovery
 
-The raw and ingress Events are recoverable through the ledger and projection. Search of bootstrap Event kinds, `operator_ingress_bootstraps`, raw material ids, ingress ids, and exact byte payload fields found only recording, projection, validation later in the interaction, tests, and report testimony. No production consumer reopens initial bytes or decoded content before probe formation.
+The raw and ingress Events are recoverable through the ledger and projection. Search of operator-ingress common-grammar event kinds, `operator_ingress_common_grammar_attempts`, raw material ids, ingress ids, and exact byte payload fields found only recording, projection, validation later in the interaction, tests, and report testimony. No production consumer reopens initial bytes or decoded content before probe formation.
 
 Tests reconstruct artifacts and prove preservation, replay visibility, exact binding, and a disconnected closed-choice refusal. They do not turn reconstruction into a production invocation. Likewise, a function accepting `ExactOperatorMaterial`, `DownstreamInterpretationAdmission`, or `ClosedChoiceSelectionBinding` does not connect it to this captured occurrence.
 
@@ -172,16 +172,16 @@ For every non-EOF capture whose selected strict decoder returns `decoded`, inclu
 
 ```text
 presentation_ref = f"presentation:{ingress.id}"
-choice_set = bootstrap_choice_set(presentation_ref)
+choice_set = common_grammar_choice_set(presentation_ref)
 ```
 
 The probe producer consumes:
 
 | Possible input | Actually consumed for probe formation? | Evidence |
 | --- | --- | --- |
-| decoded ingress material | No | No text argument reaches `bootstrap_choice_set`; options and prompt are constants |
+| decoded ingress material | No | No text argument reaches `common_grammar_choice_set`; options and prompt are constants |
 | ingress Event identity | Yes | Used to derive `presentation_ref` |
-| presentation identity | Yes | Sole argument to `bootstrap_choice_set` |
+| presentation identity | Yes | Sole argument to `common_grammar_choice_set` |
 | lineage only | Yes | Probe-produced record cites `ingress.id` |
 | projected standing | No | Pre-probe projection result is discarded |
 | hard-coded local constants | Yes | `CHOICE_SET_REF`, `PROMPT`, and `OPTIONS` determine content |
@@ -215,7 +215,7 @@ The candidate smallest absent responsibility is **partially distributed across e
 
 3. **Earliest unfaithful or missing crossing**
 
-   Immediately after the decoded ingress occurrence is recorded and before `bootstrap_choice_set` is called, the road lacks a responsible BOGE-consumer examination of the exact material and crosses from ingress identity directly to probe formation.
+   Immediately after the decoded ingress occurrence is recorded and before `common_grammar_choice_set` is called, the road lacks a responsible BOGE-consumer examination of the exact material and crosses from ingress identity directly to probe formation.
 
 4. **Smallest absent responsibility**
 
