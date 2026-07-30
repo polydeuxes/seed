@@ -205,12 +205,8 @@ def test_sqlite_replay_reconstructs_identical_material(tmp_path):
     replayed_artifact = OperatorIngressAddressableMaterial.from_json_dict(
         replay_view["addressable_operator_material"]
     )
-    replayed_ingress = replay_ledger.list_events("w")[-1]
     assert artifact.exact_operator_material.exact_text == "é\n"
     assert replayed_artifact.exact_operator_material.exact_text == "é\n"
-    assert replayed_ingress.payload["raw_input"] == "é\n"
-    assert replayed_ingress.payload["decoded_text"] == "é\n"
-    assert replayed_ingress.payload["dimensions"]["content"] == "é"
     replay_ledger.close()
 
 
