@@ -164,6 +164,7 @@ def test_decoded_non_eof_ingress_returns_after_preservation_and_projection(
     assert examination.payload["lineage"] == [capture.id]
     assert examination.payload["decoder_outcome"] == "decoded"
     assert ingress.payload["ingress_kind"] == ingress_kind
+    assert ingress.payload["raw_input"] == material.decode()
     assert ingress.payload["decoded_text"] == material.decode()
     assert ingress.payload["lineage"] == [capture.id, examination.id]
     assert ingress.payload["dimensions"]["content"] == content
