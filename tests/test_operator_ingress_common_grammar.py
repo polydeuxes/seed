@@ -1,5 +1,4 @@
 from io import BytesIO, StringIO
-from copy import deepcopy
 from dataclasses import replace
 from pathlib import Path
 import subprocess
@@ -22,9 +21,7 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY,
     APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION,
-    APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION,
     APPLICATION_SOURCE_MEANING_CONVENTION,
-    ApplicationPresentationPurposeDeclaration,
     ApplicationSourceMeaningTestimony,
     ApplicationSourceRoleTestimony,
     POTENTIAL_GOAL_SOURCE_REF,
@@ -39,8 +36,6 @@ from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     _representation_fingerprint,
     _warrant_source_meaning_relation,
     _examine_potential_goal_standing,
-    _examine_presentation_eligibility,
-    application_presentation_purpose,
     common_grammar_choice_set,
     common_grammar_representation_lineages,
     _recover_represented_source,
@@ -88,316 +83,38 @@ def examine_standing(
     return event
 
 
-def examine_eligibility(
-    *,
-    standing_marker="canonical",
-    purpose_marker="canonical",
-    authority_marker="canonical",
-):
+def test_historical_presentation_eligibility_event_still_projects():
+    """Historical projection compatibility witness, not current producer reachability or uptake."""
     ledger = EventLedger()
-    standing = _examine_potential_goal_standing(
-        ledger=ledger,
-        workspace_id="w",
+    historical = ledger.append(
+        "operator.ingress.common_grammar.presentation_eligibility_examined",
+        "w",
+        {
+            "attempt_ref": "attempt:historical",
+            "dimensions": {
+                "identity": "presentation-eligibility:historical",
+                "content": "historical eligibility payload",
+                "standing": "eligible",
+            },
+            "presentation_purpose_id": "purpose:historical",
+            "eligibility_relation": "is eligible for exact presentation purpose",
+            "eligibility_result": "eligible",
+            "mutates_cluster": False,
+        },
         session_id="s",
-        attempt_ref="attempt:test",
-        testimony=APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY,
-        convention=APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION,
-    )
-    purpose = application_presentation_purpose("presentation:test")
-    occurrence = _examine_presentation_eligibility(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        attempt_ref="attempt:test",
-        standing_occurrence=(
-            standing if standing_marker == "canonical" else standing_marker
-        ),
-        presentation_ref="presentation:test",
-        purpose_declaration=(
-            purpose if purpose_marker == "canonical" else purpose_marker
-        ),
-        convention=(
-            APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION
-            if authority_marker == "canonical"
-            else authority_marker
-        ),
-    )
-    return ledger, standing, occurrence
-
-
-def test_exact_recorded_standing_is_consumed_for_only_presentation_eligibility():
-    _, standing, occurrence = examine_eligibility()
-    assert occurrence.payload["eligibility_result"] == "eligible"
-    assert occurrence.payload["upstream_standing_occurrence_id"] == standing.id
-    assert (
-        occurrence.payload["upstream_standing_relation"]
-        == "has bounded potential-goal standing"
-    )
-    assert occurrence.payload["upstream_standing_result"] == "established"
-    assert occurrence.payload["source_ref"] == POTENTIAL_GOAL_SOURCE_REF
-    forbidden = (
-        "establishes_alternative_formation",
-        "establishes_exact_set_participation",
-        "establishes_presentation",
-        "establishes_selection",
-        "establishes_meaning",
-        "establishes_applicability",
-        "establishes_admission",
-        "establishes_bounded_goal",
-        "establishes_stopping",
-        "establishes_movement",
-        "establishes_authority",
-        "establishes_performance",
-    )
-    for key in forbidden:
-        assert key not in occurrence.payload
-
-
-def test_same_event_id_resolves_to_exact_recorded_standing():
-    ledger = EventLedger()
-    standing = _examine_potential_goal_standing(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        attempt_ref="attempt:test",
-        testimony=APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY,
-        convention=APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION,
-    )
-    supplied = standing.model_copy(deep=True)
-    assert supplied is not ledger.get(standing.id)
-
-    occurrence = _examine_presentation_eligibility(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        attempt_ref="attempt:test",
-        standing_occurrence=supplied,
-        presentation_ref="presentation:test",
-        purpose_declaration=application_presentation_purpose("presentation:test"),
-        convention=APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION,
     )
 
-    assert occurrence.payload["eligibility_result"] == "eligible"
-
-
-def test_sqlite_reconstructed_standing_is_consumed_and_survives_replay(tmp_path):
-    path = tmp_path / "eligibility.db"
-    ledger = SQLiteEventLedger(str(path))
-    standing = _examine_potential_goal_standing(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        attempt_ref="attempt:test",
-        testimony=APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY,
-        convention=APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION,
+    view = (
+        StateProjector(ledger)
+        .project("w")
+        .operator_ingress_common_grammar_attempts["attempt:historical"]
     )
-    reconstructed = ledger.get(standing.id)
-    assert reconstructed is not standing
-
-    occurrence = _examine_presentation_eligibility(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        attempt_ref="attempt:test",
-        standing_occurrence=reconstructed,
-        presentation_ref="presentation:test",
-        purpose_declaration=application_presentation_purpose("presentation:test"),
-        convention=APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION,
-    )
-    assert occurrence.payload["eligibility_result"] == "eligible"
-    ledger.close()
-
-    reopened = SQLiteEventLedger(str(path))
-    recorded = reopened.get(occurrence.id)
-    assert recorded.payload["eligibility_result"] == "eligible"
-    replayed = StateProjector(reopened).project("w")
-    eligibility = replayed.operator_ingress_common_grammar_attempts["attempt:test"][
-        "current_standing"
-    ]["presentation_eligibility"]
-    assert eligibility["dimensions"]["standing"] == "eligible"
-    reopened.close()
-
-
-@pytest.mark.parametrize(
-    "substitute",
-    [
-        APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY,
-        SOURCE_MEANING_TESTIMONIES[POTENTIAL_GOAL_SOURCE_REF],
-        "potential-goal candidate",
-    ],
-)
-def test_testimony_or_role_string_cannot_establish_presentation_eligibility(substitute):
-    assert (
-        examine_eligibility(standing_marker=substitute)[2].payload["eligibility_result"]
-        == "refused"
-    )
-
-
-def test_copied_foreign_and_unrecorded_standing_evidence_is_refused():
-    _, standing, _ = examine_eligibility()
-    assert (
-        examine_eligibility(standing_marker=deepcopy(standing.payload))[2].payload[
-            "eligibility_result"
-        ]
-        == "refused"
-    )
-    assert (
-        examine_eligibility(standing_marker=standing)[2].payload["eligibility_result"]
-        == "refused"
-    )
-
-
-def test_duplicate_standing_occurrences_are_refused():
-    ledger = EventLedger()
-    kwargs = dict(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        attempt_ref="attempt:test",
-        testimony=APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY,
-        convention=APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION,
-    )
-    standing = _examine_potential_goal_standing(**kwargs)
-    _examine_potential_goal_standing(**kwargs)
-    occurrence = _examine_presentation_eligibility(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        attempt_ref="attempt:test",
-        standing_occurrence=standing,
-        presentation_ref="presentation:test",
-        purpose_declaration=application_presentation_purpose("presentation:test"),
-        convention=APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION,
-    )
-    assert occurrence.payload["eligibility_result"] == "refused"
-
-
-def test_missing_standing_is_unknown_not_ineligible():
-    result = examine_eligibility(standing_marker=None)[2].payload
-    assert result["eligibility_result"] == "unknown"
-    assert result["eligibility_result"] != "ineligible"
-
-
-@pytest.mark.parametrize(
-    ("field", "expected"), [("unknowns", "unknown"), ("conflicts", "conflict")]
-)
-def test_exact_carried_upstream_unknowns_and_conflicts_are_preserved(field, expected):
-    ledger = EventLedger()
-    testimony = replace(
-        APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY, **{field: ("carried",)}
-    )
-    standing = _examine_potential_goal_standing(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        attempt_ref="attempt:test",
-        testimony=testimony,
-        convention=APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION,
-    )
-    occurrence = _examine_presentation_eligibility(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        attempt_ref="attempt:test",
-        standing_occurrence=standing,
-        presentation_ref="presentation:test",
-        purpose_declaration=application_presentation_purpose("presentation:test"),
-        convention=APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION,
-    )
-    assert occurrence.payload["eligibility_result"] == expected
-
-
-def test_exact_upstream_refusal_does_not_become_ineligible():
-    ledger = EventLedger()
-    standing = _examine_potential_goal_standing(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        attempt_ref="attempt:test",
-        testimony=replace(
-            APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY, attributed_role="wrong"
-        ),
-        convention=APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION,
-    )
-    occurrence = _examine_presentation_eligibility(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        attempt_ref="attempt:test",
-        standing_occurrence=standing,
-        presentation_ref="presentation:test",
-        purpose_declaration=application_presentation_purpose("presentation:test"),
-        convention=APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION,
-    )
-    assert occurrence.payload["eligibility_result"] == "refused"
-
-
-@pytest.mark.parametrize(
-    "purpose",
-    [
-        replace(
-            application_presentation_purpose("presentation:test"),
-            presentation_ref="wrong",
-        ),
-        replace(application_presentation_purpose("presentation:test"), purpose="wrong"),
-        replace(application_presentation_purpose("presentation:test"), provenance=()),
-        ApplicationPresentationPurposeDeclaration("forged", "presentation:test"),
-    ],
-)
-def test_wrong_missing_or_forged_purpose_is_refused(purpose):
-    assert (
-        examine_eligibility(purpose_marker=purpose)[2].payload["eligibility_result"]
-        == "refused"
-    )
-
-
-def test_missing_authority_is_unknown_and_forged_authority_is_refused():
-    assert (
-        examine_eligibility(authority_marker=None)[2].payload["eligibility_result"]
-        == "unknown"
-    )
-    forged = replace(APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION, scope="wrong")
-    assert (
-        examine_eligibility(authority_marker=forged)[2].payload["eligibility_result"]
-        == "refused"
-    )
-
-
-def test_structural_purpose_failure_precedes_carried_unknowns():
-    purpose = replace(
-        application_presentation_purpose("presentation:test"),
-        scope="wrong",
-        unknowns=("carried",),
-    )
-    occurrence = examine_eligibility(purpose_marker=purpose)[2]
-    assert occurrence.payload["eligibility_result"] == "refused"
-
-
-@pytest.mark.parametrize(
-    ("coordinate", "value"),
-    [
-        ("standing_subject", "source:wrong"),
-        ("standing_relation", "expresses"),
-    ],
-)
-def test_wrong_upstream_source_or_relation_is_refused(coordinate, value):
-    original = examine_standing()
-    forged = original.model_copy(deep=True)
-    forged.payload[coordinate] = value
-    ledger = EventLedger()
-    ledger.extend([forged])
-    recorded = ledger.get(forged.id)
-    occurrence = _examine_presentation_eligibility(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        attempt_ref="attempt:test",
-        standing_occurrence=recorded,
-        presentation_ref="presentation:test",
-        purpose_declaration=application_presentation_purpose("presentation:test"),
-        convention=APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION,
-    )
-    assert occurrence.payload["eligibility_result"] == "refused"
+    projected = view["current_standing"]["presentation_eligibility"]
+    assert projected["evidence_event_id"] == historical.id
+    assert projected["dimensions"] == historical.payload["dimensions"]
+    assert view["presentation_purpose_id"] == "purpose:historical"
+    assert view["eligibility_relation"] == "is eligible for exact presentation purpose"
+    assert view["eligibility_result"] == "eligible"
 
 
 def test_role_testimony_and_authority_are_distinct_from_meaning_warrant():
@@ -666,11 +383,6 @@ def test_decoded_non_eof_ingress_returns_after_preservation_and_projection(
         "seed_runtime.operator_ingress_common_grammar_prerequisite._examine_potential_goal_standing",
         downstream_must_not_run,
     )
-    monkeypatch.setattr(
-        "seed_runtime.operator_ingress_common_grammar_prerequisite._examine_presentation_eligibility",
-        downstream_must_not_run,
-    )
-
     view = run_operator_ingress_common_grammar_probe_attempt(
         ledger=ledger,
         workspace_id="w",
