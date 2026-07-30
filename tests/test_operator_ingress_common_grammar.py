@@ -32,6 +32,7 @@ from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     SOURCE_MEANING_CONVENTIONS,
     SOURCE_MEANING_TESTIMONIES,
     _dimensions,
+    _examine_meaning_relation_for_bounded_operator_goal_establishment,
     _record,
     _recordable_binding_testimony,
     _recordable_presented_options,
@@ -1082,7 +1083,10 @@ def test_representation_evidence_produces_no_broader_standing():
 # an active operator-ingress production road.
 
 
-def _record_downstream_fixture(*, ledger=None, token="1", attempt="attempt:helper"):
+def _record_preconsumption_probe_fixture(
+    *, ledger=None, token="1", attempt="attempt:helper"
+):
+    """Disconnected helper-contract testimony, not the active production road."""
     ledger = ledger or EventLedger()
     presentation_ref = "presentation:helper"
     choice = common_grammar_choice_set(presentation_ref)
@@ -1153,6 +1157,28 @@ def _record_downstream_fixture(*, ledger=None, token="1", attempt="attempt:helpe
         capture_ref, choice.choice_set_ref, token, provenance=(response.id,)
     )
     binding = bind_closed_choice_selection(choice, capture)
+    return ledger, choice, capture, binding, represented, presented, response
+
+
+def _record_consumed_probe_fixture(*, ledger=None, token="1", attempt="attempt:helper"):
+    """Disconnected consumed testimony, not the active production road."""
+    fixture = _record_preconsumption_probe_fixture(
+        ledger=ledger, token=token, attempt=attempt
+    )
+    ledger, choice, capture, binding, represented, presented, response = fixture
+
+    def dims(identity, standing, responsibility):
+        return _dimensions(
+            identity=identity,
+            content="bounded fixture",
+            standing=standing,
+            source="test fixture",
+            responsibility=responsibility,
+            authority="local contract only",
+            scope=f"attempt:{attempt}",
+            occurrence="direct bounded fixture occurrence",
+        )
+
     binding_event = _record(
         ledger,
         "operator.ingress.common_grammar.binding_completed",
@@ -1162,7 +1188,7 @@ def _record_downstream_fixture(*, ledger=None, token="1", attempt="attempt:helpe
         dims(binding.binding_id, "bound", "exact-set-binding"),
         binding_id=binding.binding_id,
         binding_testimony=_recordable_binding_testimony(binding),
-        capture_ref=capture_ref,
+        capture_ref=capture.capture_ref,
         choice_set_ref=choice.choice_set_ref,
         presented_options=_recordable_presented_options(choice),
         selected_presented_alternative_ref=binding.selected_presented_alternative_ref,
@@ -1187,20 +1213,15 @@ def _record_downstream_fixture(*, ledger=None, token="1", attempt="attempt:helpe
         lineage=[binding_event.id],
     )
     return (
-        ledger,
-        choice,
-        capture,
-        binding,
-        represented,
-        presented,
-        response,
+        *fixture,
         binding_event,
         selected,
     )
 
 
 def _record_source_recovery_fixture(*, token="1"):
-    fixture = _record_downstream_fixture(token=token)
+    """Disconnected recovery testimony, not the active production road."""
+    fixture = _record_consumed_probe_fixture(token=token)
     ledger, choice, _, binding, represented, presented, _, binding_event, selected = (
         fixture
     )
@@ -1471,7 +1492,7 @@ def test_direct_meaning_warrant_rejects_forgery_duplicates_and_upstream_uncertai
     ],
 )
 def test_direct_source_recovery_checks_exact_representation(mutation, reason):
-    fixture = _record_downstream_fixture()
+    fixture = _record_consumed_probe_fixture()
     mutation(fixture)
     occurrence = (
         None if reason == "no_recorded_representation_occurrence" else fixture[4]
@@ -1506,7 +1527,7 @@ def test_direct_source_recovery_checks_exact_representation(mutation, reason):
     ],
 )
 def test_direct_source_recovery_checks_exact_recorded_binding(field, value, reason):
-    fixture = _record_downstream_fixture()
+    fixture = _record_consumed_probe_fixture()
     fixture[7].payload[field] = value
     recovered, refusal = _recover_represented_source(
         fixture[3],
@@ -1521,22 +1542,198 @@ def test_direct_source_recovery_checks_exact_recorded_binding(field, value, reas
     assert recovered is None and refusal == reason
 
 
-def test_direct_capture_validation_identity_consumption_and_durable_replay(tmp_path):
-    fixture = _record_downstream_fixture()
+@pytest.mark.parametrize(
+    "binding_count,reason",
+    [
+        (0, "no_recorded_binding_occurrence"),
+        (2, "multiple_recorded_binding_occurrences"),
+    ],
+)
+def test_direct_source_recovery_requires_one_recorded_binding(binding_count, reason):
+    fixture = _record_consumed_probe_fixture()
+    source = fixture[0].list_events("w")
+    ledger = EventLedger()
+    ledger.extend(
+        event
+        for event in source
+        if event.kind != "operator.ingress.common_grammar.binding_completed"
+    )
+    if binding_count == 2:
+        ledger.extend(
+            [fixture[7], fixture[7].model_copy(update={"id": "evt:duplicate"})]
+        )
+
+    recovered, refusal = _recover_represented_source(
+        fixture[3],
+        fixture[1],
+        fixture[4],
+        ledger=ledger,
+        workspace_id="w",
+        attempt_ref="attempt:helper",
+        presentation_occurrence=fixture[5],
+        selection_occurrence=fixture[8],
+    )
+    assert recovered is None and refusal == reason
+
+
+def test_direct_source_recovery_checks_selected_occurrence_separately():
+    fixture = _record_consumed_probe_fixture()
+    mismatched_selection = fixture[8].model_copy(deep=True)
+    mismatched_selection.payload["binding_id"] = "binding:wrong"
+
+    recovered, refusal = _recover_represented_source(
+        fixture[3],
+        fixture[1],
+        fixture[4],
+        ledger=fixture[0],
+        workspace_id="w",
+        attempt_ref="attempt:helper",
+        presentation_occurrence=fixture[5],
+        selection_occurrence=mismatched_selection,
+    )
+    assert recovered is None
+    assert refusal == "selected_alternative_occurrence_mismatch"
+
+
+def test_direct_meaning_warrant_requires_exact_recorded_source_recovery():
+    fixture, recovery = _record_source_recovery_fixture()
+    ledger = EventLedger()
+    ledger.extend(
+        event for event in fixture[0].list_events("w") if event.id != recovery.id
+    )
+    testimony = SOURCE_MEANING_TESTIMONIES[recovery.payload["recovered_source_ref"]]
+
+    result = _rewarrant(
+        ledger,
+        recovery,
+        testimony=testimony,
+        convention=SOURCE_MEANING_CONVENTIONS[testimony.source_ref],
+    )
+
+    assert result.kind.endswith("meaning_relation_refused")
+    assert result.payload["refusal_reason"] == (
+        "no_exact_recorded_source_recovery_occurrence"
+    )
+    result_text = str(result.model_dump()).lower()
+    for unclaimed in (
+        "meaning relation warranted",
+        "proposition false",
+        "applicability",
+        "admission",
+        "goal establishment",
+    ):
+        assert unclaimed not in result_text
+
+
+def _record_meaning_warrant_fixture():
+    """Disconnected warrant testimony, not the active production road."""
+    fixture, recovery = _record_source_recovery_fixture()
+    testimony = SOURCE_MEANING_TESTIMONIES[recovery.payload["recovered_source_ref"]]
+    warrant = _rewarrant(
+        fixture[0],
+        recovery,
+        testimony=testimony,
+        convention=SOURCE_MEANING_CONVENTIONS[testimony.source_ref],
+    )
+    assert warrant.kind.endswith("meaning_relation_warranted")
+    return fixture[0], warrant
+
+
+def test_exact_recorded_meaning_warrant_allows_only_applicability_examination():
+    ledger, warrant = _record_meaning_warrant_fixture()
+    result = _examine_meaning_relation_for_bounded_operator_goal_establishment(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref="attempt:helper",
+        meaning_relation=warrant,
+    )
+    assert result.kind.endswith("applicability_examined")
+    assert result.payload["applicability"] == "unknown"
+    assert result.payload["unknowns"] == ["consumer-local admission evidence is absent"]
+    assert "inapplicable" not in str(result.model_dump()).lower()
+    assert not any(
+        marker in event.kind
+        for event in ledger.list_events("w")
+        for marker in ("admission", "goal_established")
+    )
+
+
+@pytest.mark.parametrize("supplied", ["unrecorded-copy", None])
+def test_meaning_warrant_consumer_refuses_nonexact_or_missing_warrant(supplied):
+    if supplied == "unrecorded-copy":
+        ledger, warrant = _record_meaning_warrant_fixture()
+        supplied_event = warrant.model_copy(update={"id": "evt:unrecorded-copy"})
+    else:
+        ledger, supplied_event = EventLedger(), None
+
+    result = _examine_meaning_relation_for_bounded_operator_goal_establishment(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        attempt_ref="attempt:helper",
+        meaning_relation=supplied_event,
+    )
+    assert result.kind.endswith("applicability_refused")
+    assert result.payload["refusal_reason"] == (
+        "supplied_meaning_relation_is_not_exact_recorded_warrant"
+    )
+    assert result.payload["applicability"] == "unknown"
+    assert not any(
+        marker in event.kind
+        for event in ledger.list_events("w")
+        for marker in ("admission", "goal_established")
+    )
+
+
+def test_direct_capture_validation_uses_preconsumption_fixture():
+    fixture = _record_preconsumption_probe_fixture()
     ledger, choice, capture = fixture[:3]
+    assert (
+        validate_capture_for_probe(
+            ledger=ledger,
+            workspace_id="w",
+            attempt_ref="attempt:helper",
+            choice_set=choice,
+            capture=capture,
+        ).binding_state
+        == "bound"
+    )
     altered = PresentedClosedChoiceSet(
         choice.choice_set_ref,
         choice.prompt,
         (ClosedChoiceOption("1", "different", "Different"), *choice.options[1:]),
         choice.presentation_ref,
     )
-    for candidate_choice, candidate_capture in (
-        (common_grammar_choice_set("presentation:wrong"), capture),
-        (choice, replace(capture, choice_set_ref="wrong")),
-        (altered, capture),
-        (choice, replace(capture, capture_ref="other")),
+    for candidate_choice, candidate_capture, message in (
+        (
+            common_grammar_choice_set("presentation:wrong"),
+            capture,
+            "presentation/set identity or fingerprint mismatch",
+        ),
+        (
+            replace(choice, choice_set_ref="choice-set:wrong"),
+            capture,
+            "presentation/set identity or fingerprint mismatch",
+        ),
+        (
+            choice,
+            replace(capture, choice_set_ref="wrong"),
+            "presentation/set identity or fingerprint mismatch",
+        ),
+        (altered, capture, "presentation/set identity or fingerprint mismatch"),
+        (
+            choice,
+            replace(capture, capture_ref="other"),
+            "capture is not the current recorded occurrence",
+        ),
+        (
+            choice,
+            replace(capture, captured_token="2"),
+            "capture is not the current recorded occurrence",
+        ),
     ):
-        with pytest.raises(ClosedChoiceSelectionBindingError):
+        with pytest.raises(ClosedChoiceSelectionBindingError, match=message):
             validate_capture_for_probe(
                 ledger=ledger,
                 workspace_id="w",
@@ -1544,6 +1741,11 @@ def test_direct_capture_validation_identity_consumption_and_durable_replay(tmp_p
                 choice_set=candidate_choice,
                 capture=candidate_capture,
             )
+
+
+def test_consumed_capture_refusal_and_durable_replay(tmp_path):
+    fixture = _record_consumed_probe_fixture()
+    ledger, choice, capture = fixture[:3]
     with pytest.raises(ClosedChoiceSelectionBindingError, match="already consumed"):
         validate_capture_for_probe(
             ledger=ledger,
@@ -1554,7 +1756,7 @@ def test_direct_capture_validation_identity_consumption_and_durable_replay(tmp_p
         )
     path = tmp_path / "helper-replay.db"
     durable = SQLiteEventLedger(str(path))
-    durable_fixture = _record_downstream_fixture(ledger=durable)
+    durable_fixture = _record_consumed_probe_fixture(ledger=durable)
     durable.close()
     reopened = SQLiteEventLedger(str(path))
     with pytest.raises(ClosedChoiceSelectionBindingError, match="already consumed"):
@@ -1569,7 +1771,16 @@ def test_direct_capture_validation_identity_consumption_and_durable_replay(tmp_p
 
 
 def test_direct_closed_choice_binding_is_not_positive_boge_admission():
-    with pytest.raises(BoundedOperatorGoalEstablishmentError):
-        establish_bounded_operator_goal_from_closed_choice(
-            _record_downstream_fixture()[3]
-        )
+    choice = PresentedClosedChoiceSet(
+        "choice:bare",
+        "Choose",
+        (ClosedChoiceOption("1", "alternative:bare", "Bare"),),
+        "presentation:bare",
+    )
+    capture = OperatorSelectionTokenCapture("capture:bare", "choice:bare", "1")
+    binding = bind_closed_choice_selection(choice, capture)
+    with pytest.raises(
+        BoundedOperatorGoalEstablishmentError,
+        match="closed-choice bounded-goal establishment is unavailable",
+    ):
+        establish_bounded_operator_goal_from_closed_choice(binding)
