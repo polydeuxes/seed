@@ -6,17 +6,17 @@ from dataclasses import asdict, dataclass, replace
 import hashlib
 import json
 
-from seed_runtime.contextual_interpretation_warrant_set import (
-    ExactOperatorMaterial,
-    InterpretationCandidate,
-    SourceSpan,
-)
+from seed_runtime.contextual_interpretation_warrant_set import InterpretationCandidate
 from seed_runtime.operator_ingress_addressable_material import (
     OperatorIngressAddressableMaterial,
+    OperatorIngressAddressableMaterialError,
+    validate_operator_ingress_addressable_material,
 )
 
 CONVENTION = "operator_ingress_interpretation_candidate_set_v1"
+ARTIFACT_TYPE = "operator_ingress_interpretation_candidate_set"
 FORMATION_UNKNOWN = "candidate formation occurrence Unknown"
+SOURCE_RELATION_UNKNOWN = "candidate source-material relation unavailable"
 NO_CANDIDATES_UNKNOWN = "no interpretation candidate testimony presently supplied"
 PROPOSITION_UNKNOWN = "candidate proposition unavailable"
 REQUIRED_AUTHORITY_LIMITS = (
@@ -46,20 +46,20 @@ class AttributedInterpretationCandidateTestimony:
     known_loss: tuple[str, ...]
     unknowns: tuple[str, ...]
     conflicts: tuple[str, ...]
-    authority_limits: tuple[str, ...]
+    supplied_authority_limits: tuple[str, ...]
 
 
 @dataclass(frozen=True)
 class OperatorIngressInterpretationCandidateSet:
     artifact_type: str
     candidate_set_id: str
-    addressable_material_projection_id: str
-    ingress_event_ref: str
-    exact_operator_material: ExactOperatorMaterial
+    addressable_material: OperatorIngressAddressableMaterial
     candidate_testimonies: tuple[AttributedInterpretationCandidateTestimony, ...]
     set_unknowns: tuple[str, ...]
     set_conflicts: tuple[str, ...]
     boundary_notes: tuple[str, ...]
+    # Uniform limits belong to this preservation responsibility, not its suppliers.
+    preservation_authority_limits: tuple[str, ...]
     convention: str = CONVENTION
     read_only: bool = True
     writes_event_ledger: bool = False
@@ -67,96 +67,57 @@ class OperatorIngressInterpretationCandidateSet:
     mutates_cluster: bool = False
 
     def to_json_dict(self) -> dict[str, object]:
-        """Return the artifact's single JSON-safe representation."""
         return asdict(self)
 
     @classmethod
     def from_json_dict(
         cls, value: dict[str, object]
     ) -> OperatorIngressInterpretationCandidateSet:
-        """Recover an artifact from its exact JSON-safe representation."""
-        material_value = _mapping(
-            value.get("exact_operator_material"), "exact material"
-        )
-        material = ExactOperatorMaterial(
-            material_ref=_string(material_value.get("material_ref"), "material_ref"),
-            exact_text=_string(
-                material_value.get("exact_text"), "exact_text", empty=True
-            ),
-            source_spans=tuple(
-                SourceSpan(**_mapping(span, "source span"))
-                for span in _sequence(
-                    material_value.get("source_spans"), "source spans"
-                )
-            ),
-            provenance=tuple(
-                _sequence(material_value.get("provenance", ()), "material provenance")
-            ),
-        )
-        testimonies = []
-        for raw in _sequence(
-            value.get("candidate_testimonies"), "candidate testimonies"
-        ):
-            testimony = _mapping(raw, "candidate testimony")
-            candidate_value = _mapping(testimony.get("candidate"), "candidate")
-            candidate = InterpretationCandidate(
-                candidate_ref=_string(
-                    candidate_value.get("candidate_ref"), "candidate_ref"
-                ),
-                label=_string(
-                    candidate_value.get("label"), "candidate label", empty=True
-                ),
-                source_span_refs=tuple(
-                    _sequence(
-                        candidate_value.get("source_span_refs"),
-                        "candidate source spans",
-                    )
-                ),
-                proposed_meaning=_string(
-                    candidate_value.get("proposed_meaning"),
-                    "proposed meaning",
-                    empty=True,
-                ),
+        mapping = _mapping(value, "candidate set")
+        if mapping.get("artifact_type") != ARTIFACT_TYPE:
+            _refuse("wrong artifact_type")
+        if mapping.get("convention") != CONVENTION:
+            _refuse("wrong convention")
+        try:
+            addressable = OperatorIngressAddressableMaterial.from_json_dict(
+                _mapping(mapping.get("addressable_material"), "addressable material")
             )
-            formation = testimony.get("formation_occurrence_ref")
-            if formation is not None and not isinstance(formation, str):
-                _refuse("formation_occurrence_ref must be a string or None")
-            testimonies.append(
-                AttributedInterpretationCandidateTestimony(
-                    candidate=candidate,
-                    attributed_supplier=_string(
-                        testimony.get("attributed_supplier"), "attributed supplier"
-                    ),
-                    supplier_provenance=tuple(testimony["supplier_provenance"]),
-                    formation_occurrence_ref=formation,
-                    declared_scope=tuple(testimony["declared_scope"]),
-                    known_loss=tuple(testimony["known_loss"]),
-                    unknowns=tuple(testimony["unknowns"]),
-                    conflicts=tuple(testimony["conflicts"]),
-                    authority_limits=tuple(testimony["authority_limits"]),
-                )
+        except OperatorIngressAddressableMaterialError as error:
+            _refuse(str(error))
+        testimonies = tuple(
+            _testimony_from_json(item)
+            for item in _sequence(
+                mapping.get("candidate_testimonies"), "candidate testimonies"
             )
-        return cls(
-            artifact_type=_string(value.get("artifact_type"), "artifact_type"),
-            candidate_set_id=_string(value.get("candidate_set_id"), "candidate_set_id"),
-            addressable_material_projection_id=_string(
-                value.get("addressable_material_projection_id"),
-                "material projection id",
-            ),
-            ingress_event_ref=_string(
-                value.get("ingress_event_ref"), "ingress event ref"
-            ),
-            exact_operator_material=material,
-            candidate_testimonies=tuple(testimonies),
-            set_unknowns=tuple(value["set_unknowns"]),
-            set_conflicts=tuple(value["set_conflicts"]),
-            boundary_notes=tuple(value["boundary_notes"]),
-            convention=_string(value.get("convention"), "convention"),
-            read_only=bool(value["read_only"]),
-            writes_event_ledger=bool(value["writes_event_ledger"]),
-            mutates_state=bool(value["mutates_state"]),
-            mutates_cluster=bool(value["mutates_cluster"]),
         )
+        result = cls(
+            artifact_type=ARTIFACT_TYPE,
+            candidate_set_id=_string(
+                mapping.get("candidate_set_id"), "candidate_set_id"
+            ),
+            addressable_material=addressable,
+            candidate_testimonies=testimonies,
+            set_unknowns=_string_tuple(mapping.get("set_unknowns"), "set_unknowns"),
+            set_conflicts=_string_tuple(mapping.get("set_conflicts"), "set_conflicts"),
+            boundary_notes=_string_tuple(
+                mapping.get("boundary_notes"), "boundary_notes"
+            ),
+            preservation_authority_limits=_string_tuple(
+                mapping.get("preservation_authority_limits"),
+                "preservation_authority_limits",
+            ),
+            convention=CONVENTION,
+            read_only=_boolean(mapping.get("read_only"), "read_only"),
+            writes_event_ledger=_boolean(
+                mapping.get("writes_event_ledger"), "writes_event_ledger"
+            ),
+            mutates_state=_boolean(mapping.get("mutates_state"), "mutates_state"),
+            mutates_cluster=_boolean(mapping.get("mutates_cluster"), "mutates_cluster"),
+        )
+        _validate_set(result)
+        if result.candidate_set_id != _candidate_set_id(result):
+            _refuse("candidate_set_id is forged or stale")
+        return result
 
 
 def _refuse(message: str) -> None:
@@ -177,45 +138,123 @@ def _sequence(value: object, name: str) -> list[object] | tuple[object, ...]:
 
 def _string(value: object, name: str, *, empty: bool = False) -> str:
     if not isinstance(value, str) or (not empty and not value):
-        _refuse(f"{name} must be a{' possibly empty' if empty else ' nonempty'} string")
+        _refuse(f"{name} must be a string")
     return value
 
 
-def _append_once(values: tuple[str, ...], required: tuple[str, ...]) -> tuple[str, ...]:
-    return values + tuple(value for value in required if value not in values)
+def _string_tuple(value: object, name: str) -> tuple[str, ...]:
+    sequence = _sequence(value, name)
+    if not all(isinstance(item, str) for item in sequence):
+        _refuse(f"{name} must contain only strings")
+    return tuple(sequence)
+
+
+def _boolean(value: object, name: str) -> bool:
+    if type(value) is not bool:
+        _refuse(f"{name} must be a boolean")
+    return value
+
+
+def _append_unknown(values: tuple[str, ...], value: str) -> tuple[str, ...]:
+    return values if value in values else values + (value,)
+
+
+def _testimony_from_json(raw: object) -> AttributedInterpretationCandidateTestimony:
+    value = _mapping(raw, "candidate testimony")
+    candidate_value = _mapping(value.get("candidate"), "candidate")
+    candidate = InterpretationCandidate(
+        candidate_ref=_string(candidate_value.get("candidate_ref"), "candidate_ref"),
+        label=_string(candidate_value.get("label"), "candidate label", empty=True),
+        source_span_refs=_string_tuple(
+            candidate_value.get("source_span_refs"), "source_span_refs"
+        ),
+        proposed_meaning=_string(
+            candidate_value.get("proposed_meaning"), "proposed_meaning", empty=True
+        ),
+    )
+    formation = value.get("formation_occurrence_ref")
+    if formation is not None:
+        _string(formation, "formation_occurrence_ref")
+    return AttributedInterpretationCandidateTestimony(
+        candidate=candidate,
+        attributed_supplier=_string(
+            value.get("attributed_supplier"), "attributed_supplier"
+        ),
+        supplier_provenance=_string_tuple(
+            value.get("supplier_provenance"), "supplier_provenance"
+        ),
+        formation_occurrence_ref=formation,
+        declared_scope=_string_tuple(value.get("declared_scope"), "declared_scope"),
+        known_loss=_string_tuple(value.get("known_loss"), "known_loss"),
+        unknowns=_string_tuple(value.get("unknowns"), "unknowns"),
+        conflicts=_string_tuple(value.get("conflicts"), "conflicts"),
+        supplied_authority_limits=_string_tuple(
+            value.get("supplied_authority_limits"), "supplied_authority_limits"
+        ),
+    )
+
+
+def _identity_payload(
+    value: OperatorIngressInterpretationCandidateSet,
+) -> dict[str, object]:
+    return {
+        "addressable_material": asdict(value.addressable_material),
+        "candidate_testimonies": [asdict(item) for item in value.candidate_testimonies],
+        "preservation_authority_limits": value.preservation_authority_limits,
+        "set_unknowns": value.set_unknowns,
+        "set_conflicts": value.set_conflicts,
+        "boundary_notes": value.boundary_notes,
+        "convention": value.convention,
+    }
+
+
+def _candidate_set_id(value: OperatorIngressInterpretationCandidateSet) -> str:
+    encoded = json.dumps(
+        _identity_payload(value),
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
+    return (
+        "operator-ingress-interpretation-candidate-set:"
+        + hashlib.sha256(encoded.encode()).hexdigest()
+    )
 
 
 def _validate_material(addressable: OperatorIngressAddressableMaterial) -> None:
-    if addressable.artifact_type != "operator_ingress_addressable_material":
-        _refuse("operator_ingress_addressable_material is required")
-    if not addressable.read_only or any(
-        (
-            addressable.writes_event_ledger,
-            addressable.mutates_state,
-            addressable.mutates_cluster,
+    try:
+        validate_operator_ingress_addressable_material(addressable)
+    except OperatorIngressAddressableMaterialError as error:
+        _refuse(str(error))
+
+
+def _validate_set(value: OperatorIngressInterpretationCandidateSet) -> None:
+    _validate_material(value.addressable_material)
+    if value.read_only is not True or any(
+        item is not False
+        for item in (
+            value.writes_event_ledger,
+            value.mutates_state,
+            value.mutates_cluster,
         )
     ):
-        _refuse("addressable material must be read-only and non-mutating")
-    material = addressable.exact_operator_material
-    if material.material_ref != addressable.ingress_event_ref:
-        _refuse("exact material must reference the ingress event")
-    if material.provenance != addressable.provenance:
-        _refuse("exact material must preserve addressable provenance")
-    seen: set[str] = set()
-    for span in material.source_spans:
-        if span.span_ref in seen:
-            _refuse("source span refs must be unique")
-        seen.add(span.span_ref)
-        if span.source_ref != material.material_ref:
-            _refuse("source span belongs to foreign material")
-        if (
-            span.start < 0
-            or span.end < span.start
-            or span.end > len(material.exact_text)
-        ):
-            _refuse("source span offsets exceed exact material")
-        if material.exact_text[span.start : span.end] != span.exact_text:
-            _refuse("source span text does not match exact material")
+        _refuse("candidate set must be read-only and non-mutating")
+    refs: set[str] = set()
+    spans = {
+        span.span_ref
+        for span in value.addressable_material.exact_operator_material.source_spans
+    }
+    for testimony in value.candidate_testimonies:
+        candidate = testimony.candidate
+        if not candidate.candidate_ref or candidate.candidate_ref in refs:
+            _refuse("candidate refs must be nonempty and unique")
+        refs.add(candidate.candidate_ref)
+        if not testimony.attributed_supplier:
+            _refuse("candidate testimony requires supplier attribution")
+        if testimony.formation_occurrence_ref == "":
+            _refuse("formation_occurrence_ref must be nonempty or None")
+        if any(ref not in spans for ref in candidate.source_span_refs):
+            _refuse("candidate references a foreign source span")
 
 
 def preserve_operator_ingress_interpretation_candidates(
@@ -224,65 +263,31 @@ def preserve_operator_ingress_interpretation_candidates(
     candidate_testimonies: tuple[AttributedInterpretationCandidateTestimony, ...],
     set_unknowns: tuple[str, ...] = (),
     set_conflicts: tuple[str, ...] = (),
+    preservation_authority_limits: tuple[str, ...] = REQUIRED_AUTHORITY_LIMITS,
 ) -> OperatorIngressInterpretationCandidateSet:
     """Preserve supplied testimony without generating or examining interpretation."""
     _validate_material(addressable_material)
-    material = addressable_material.exact_operator_material
-    spans = {span.span_ref: span for span in material.source_spans}
-    refs: set[str] = set()
     preserved = []
-    for testimony in candidate_testimonies:
-        candidate = testimony.candidate
-        if not candidate.candidate_ref:
-            _refuse("candidate_ref must be nonempty")
-        if candidate.candidate_ref in refs:
-            _refuse("candidate refs must be unique")
-        refs.add(candidate.candidate_ref)
-        if not testimony.attributed_supplier:
-            _refuse("candidate testimony requires supplier attribution")
-        for span_ref in candidate.source_span_refs:
-            if span_ref not in spans:
-                _refuse("candidate references a foreign source span")
-        unknowns = testimony.unknowns
-        if testimony.formation_occurrence_ref is None:
-            unknowns = _append_once(unknowns, (FORMATION_UNKNOWN,))
-        if candidate.proposed_meaning == "":
-            unknowns = _append_once(unknowns, (PROPOSITION_UNKNOWN,))
-        preserved.append(
-            replace(
-                testimony,
-                unknowns=unknowns,
-                authority_limits=_append_once(
-                    testimony.authority_limits, REQUIRED_AUTHORITY_LIMITS
-                ),
-            )
-        )
-    result_unknowns = set_unknowns
+    for supplied in candidate_testimonies:
+        unknowns = supplied.unknowns
+        if supplied.formation_occurrence_ref is None:
+            unknowns = _append_unknown(unknowns, FORMATION_UNKNOWN)
+        if not supplied.candidate.source_span_refs:
+            unknowns = _append_unknown(unknowns, SOURCE_RELATION_UNKNOWN)
+        if supplied.candidate.proposed_meaning == "":
+            unknowns = _append_unknown(unknowns, PROPOSITION_UNKNOWN)
+        preserved.append(replace(supplied, unknowns=unknowns))
     if not preserved:
-        result_unknowns = _append_once(result_unknowns, (NO_CANDIDATES_UNKNOWN,))
-    identity = {
-        "addressable_material_projection_id": addressable_material.material_projection_id,
-        "exact_operator_material": asdict(material),
-        "candidate_testimonies": [asdict(value) for value in preserved],
-        "set_unknowns": result_unknowns,
-        "set_conflicts": set_conflicts,
-        "convention": CONVENTION,
-    }
-    encoded = json.dumps(
-        identity, sort_keys=True, separators=(",", ":"), ensure_ascii=False
-    )
-    candidate_set_id = (
-        "operator-ingress-interpretation-candidate-set:"
-        + hashlib.sha256(encoded.encode()).hexdigest()
-    )
-    return OperatorIngressInterpretationCandidateSet(
-        artifact_type="operator_ingress_interpretation_candidate_set",
-        candidate_set_id=candidate_set_id,
-        addressable_material_projection_id=addressable_material.material_projection_id,
-        ingress_event_ref=addressable_material.ingress_event_ref,
-        exact_operator_material=material,
+        set_unknowns = _append_unknown(set_unknowns, NO_CANDIDATES_UNKNOWN)
+    result = OperatorIngressInterpretationCandidateSet(
+        artifact_type=ARTIFACT_TYPE,
+        candidate_set_id="pending",
+        addressable_material=addressable_material,
         candidate_testimonies=tuple(preserved),
-        set_unknowns=result_unknowns,
+        set_unknowns=set_unknowns,
         set_conflicts=set_conflicts,
         boundary_notes=BOUNDARY_NOTES,
+        preservation_authority_limits=preservation_authority_limits,
     )
+    _validate_set(result)
+    return replace(result, candidate_set_id=_candidate_set_id(result))
