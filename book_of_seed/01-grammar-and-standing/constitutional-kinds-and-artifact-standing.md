@@ -33,6 +33,26 @@ Material may carry or propose the assertion that X identifies, represents, or ex
 
 A warranted meaning relation may be examined for consumer-local applicability. Where the exact consumer boundary requires admission, an applicable meaning relation must receive consumer-local admission before consumer use. Applicable is not admitted, and admitted is not consumed or relied upon. A responsible consumer act may itself consume or rely on admitted material; the Book does not universally require a separate reliance occurrence. Exact reliance requirements remain local to the consumer responsibility and act, and remain **Unknown** where a particular road does not establish them.
 
+### 01.Standing.F — Dimensional characterization
+Seed commonly orients exact constitutional subjects and relations through approximately eight recurring macro-dimensional families:
+
+1. subject / identity
+2. assertion / content
+3. standing
+4. source / provenance
+5. responsibility
+6. authority / warrant
+7. scope / locality
+8. occurrence / preservation
+
+These families are broad constitutional questions, not mandatory fields or one universal artifact schema. Dimension != field, value, constitutional kind, subject-family registry, or implementation key. The paired labels are bounded compressions of neighboring concerns, not declarations that every pair is one indivisible scalar: standing is recurrent and cross-cutting; occurrence and preservation are related but independently variable; source and provenance are neighboring but not equivalent; and authority and warrant are neighboring but not equivalent. Approximately eight macro-dimensional families != exactly eight constitutional fields; this orientation is neither mathematically final nor closed.
+
+Macro-dimensional families unfold into local coordinates under the exact subject, question, consumer, responsibility, purpose, scope, and evidence boundary. Current repository recovery has identified roughly sixty recurring or boundedly supported local coordinates. That number is orientation only: roughly sixty local coordinates != a fixed coordinate registry, universal completeness requirement, or mandatory serialization schema. A local examination may require more or fewer coordinates. A coordinate may be applicable and known, applicable but **Unknown**, conflicting, unexamined, or inapplicable. Omission is not automatically a constitutional defect; the exact consumer or question determines which coordinates matter. Local coordinate expansion != universal schema expansion; macro family != local coordinate; coordinate != coordinate value; and representation completeness != constitutional standing.
+
+Acts, constraints, and relations are structurally distinct from dimensions and operate over or connect dimension-bearing subjects. An **act** is a responsible occurrence operating over dimension-bearing material. A **constraint** is a bounded permission, prohibition, requirement, or condition governing an act, relation, or standing. A **relation** is a bounded assertion connecting subjects, roles, materials, occurrences, or standings. Dimension-bearing material != the responsible act over that material, and act != constraint != relation. This three-part formulation is useful orientation rather than three additional dimensions, a mandatory intermediate layer, or a complete taxonomy; it is not an exhaustive constitutional enumeration.
+
+**Unknown** standing != an Unknown dimension, one Unknown kind per macro dimension, or a closed Unknown taxonomy. An exact coordinate, relation, question, or standing may remain **Unknown** when the required evidence, authority, provenance, occurrence, applicability, or other local relation is not warranted or available. **Unknown** remains bounded to the exact subject and question that produced it. Unknown coordinate != Unknown taxonomy, and inapplicable != **Unknown**.
+
 ## Important distinctions
 - occurrence evidence may be local to a producing or observing boundary and absent from the resulting artifact
 - represented provenance != verified producer occurrence
