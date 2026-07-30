@@ -7,24 +7,13 @@ import sys
 
 import pytest
 
-from seed_runtime.bounded_operator_goal_establishment import (
-    BoundedOperatorGoalEstablishmentError,
-    establish_bounded_operator_goal_from_closed_choice,
-)
 from seed_runtime.closed_choice_selection_binding import (
-    ClosedChoiceOption,
-    ClosedChoiceSelectionBindingError,
     OperatorSelectionTokenCapture,
-    PresentedClosedChoiceSet,
     bind_closed_choice_selection,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     CHOICE_SET_REF,
-    ALTERNATIVE_SOURCES,
-    RENDERING_KNOWN_LOSS,
-    SOURCE_PROPOSITIONS,
-    APPLICATION_SOURCE_MEANING_CONVENTION,
     APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY,
     APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION,
     APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION,
@@ -32,9 +21,7 @@ from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     ApplicationSourceMeaningTestimony,
     ApplicationSourceRoleTestimony,
     POTENTIAL_GOAL_SOURCE_REF,
-    SOURCE_MEANING_CONVENTIONS,
     SOURCE_MEANING_TESTIMONIES,
-    _examine_meaning_relation_for_bounded_operator_goal_establishment,
     _warrant_source_meaning_relation,
     _examine_potential_goal_standing,
     _examine_presentation_eligibility,
@@ -42,7 +29,6 @@ from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     common_grammar_choice_set,
     _recover_represented_source,
     run_operator_ingress_common_grammar_probe_attempt,
-    validate_capture_for_probe,
 )
 from seed_runtime.operator_ingress_representation import (
     CapturedOperatorMaterial,
@@ -397,33 +383,6 @@ def test_wrong_upstream_source_or_relation_is_refused(coordinate, value):
     assert occurrence.payload["eligibility_result"] == "refused"
 
 
-def test_live_eligibility_is_once_after_standing_before_probe_and_not_for_local_stop():
-    ledger, view, output = run_attempt("ingress\n2\n")
-    events = ledger.list("w")
-    kinds = [event.kind for event in events]
-    eligibility = [
-        event
-        for event in events
-        if event.kind.endswith("presentation_eligibility_examined")
-    ]
-    assert len(eligibility) == 1
-    assert (
-        kinds.index("operator.ingress.common_grammar.potential_goal_standing_examined")
-        < kinds.index(
-            "operator.ingress.common_grammar.presentation_eligibility_examined"
-        )
-        < kinds.index("operator.ingress.common_grammar.probe_produced")
-        < kinds.index("operator.ingress.common_grammar.alternatives_represented")
-    )
-    assert eligibility[0].payload["source_ref"] == POTENTIAL_GOAL_SOURCE_REF
-    assert "local-stop" not in eligibility[0].payload["source_ref"]
-    assert (
-        view["current_standing"]["presentation_eligibility"]["evidence_event_id"]
-        == eligibility[0].id
-    )
-    assert output.count("Select one alternative") == 1
-
-
 def test_role_testimony_and_authority_are_distinct_from_meaning_warrant():
     role = APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY
     meaning = SOURCE_MEANING_TESTIMONIES[POTENTIAL_GOAL_SOURCE_REF]
@@ -633,190 +592,6 @@ def test_wrong_authority_type_is_refused_before_conflict_shaped_content():
     )
 
 
-@pytest.mark.parametrize("token", ["1", "2"])
-def test_live_standing_precedes_formation_without_crossing_eligibility(token):
-    ledger, view, output = run_attempt(f"unknown request\n{token}\n")
-    events = ledger.list_events("w")
-    standing = [
-        e for e in events if e.kind.endswith("potential_goal_standing_examined")
-    ]
-    represented = next(e for e in events if e.kind.endswith("alternatives_represented"))
-    assert len(standing) == 1
-    assert events.index(standing[0]) < events.index(represented)
-    assert standing[0].payload["standing_subject"] == POTENTIAL_GOAL_SOURCE_REF
-    assert standing[0].payload["standing_result"] == "established"
-    assert standing[0].payload["attributed_role"] != "local-stop"
-    assert (
-        view["current_standing"]["source_role_testimony"]["testimony"][
-            "attributed_role"
-        ]
-        == "potential-goal candidate"
-    )
-    assert (
-        view["current_standing"]["potential_goal_standing"]["dimensions"]["standing"]
-        == "established"
-    )
-    assert output.count("Select one alternative") == 1
-
-
-def test_representation_evidence_precedes_response_and_preserves_distinctions():
-    ledger, view, _ = run_attempt("unknown request\n1\n")
-    events = ledger.list_events("w")
-    represented = next(e for e in events if e.kind.endswith("alternatives_represented"))
-    response = next(e for e in events if e.kind.endswith("response_captured"))
-    assert events.index(represented) < events.index(response)
-    row = represented.payload["representations"][0]
-    assert (
-        len(
-            {
-                "1",
-                row["presented_alternative_ref"],
-                row["represented_source_ref"],
-                row["rendered_label"],
-                row["proposition_assertion"],
-            }
-        )
-        == 5
-    )
-    assert (
-        row["representation_relation"]
-        == "presented_alternative_represents_application_owned_source"
-    )
-    assert row["exact_set_participation"] == (
-        "participates_in_exact_presented_choice_set_for_declared_purpose"
-    )
-    assert row["rendered_label"] != row["proposition_assertion"]
-    assert row["known_loss"] == (
-        "rendered label is a compressed presentation and does not carry the complete source proposition",
-    )
-    assert (
-        row["producer_occurrence_ref"] == represented.payload["dimensions"]["identity"]
-    )
-    assert (
-        view["current_standing"]["alternative_representations"]["evidence_event_id"]
-        == represented.id
-    )
-
-
-def test_recovery_consumes_recorded_occurrence_and_preserves_full_lineage():
-    ledger, _, _ = run_attempt("unknown request\n1\n")
-    events = ledger.list_events("w")
-    represented = next(e for e in events if e.kind.endswith("alternatives_represented"))
-    presentation = next(e for e in events if e.kind.endswith("presentation_occurred"))
-    response = next(e for e in events if e.kind.endswith("response_captured"))
-    binding = next(e for e in events if e.kind.endswith("binding_completed"))
-    selection = next(e for e in events if e.kind.endswith("alternative_selected"))
-    recovery = next(e for e in events if e.kind.endswith("source_recovered"))
-    assert recovery.payload["representation_occurrence_id"] == represented.id
-    assert recovery.payload["binding_occurrence_id"] == binding.id
-    assert recovery.payload["lineage"] == [
-        represented.id,
-        presentation.id,
-        binding.id,
-        selection.id,
-    ]
-    assert response.id in binding.payload["lineage"]
-    assert (
-        tuple(recovery.payload["known_loss"])
-        == represented.payload["representations"][0]["known_loss"]
-    )
-    projected = (
-        StateProjector(ledger)
-        .project("w")
-        .operator_ingress_common_grammar_attempts[represented.payload["attempt_ref"]]
-    )
-    assert RENDERING_KNOWN_LOSS[0] in projected["known_loss"]
-
-
-@pytest.mark.parametrize("token", ["1", "2"])
-def test_testimony_and_convention_are_distinct_inputs_to_exact_warrant(token):
-    ledger, view, _ = run_attempt(f"unknown request\n{token}\n")
-    events = ledger.list_events("w")
-    recovery = next(e for e in events if e.kind.endswith("source_recovered"))
-    warrant = next(e for e in events if e.kind.endswith("meaning_relation_warranted"))
-    testimony = SOURCE_MEANING_TESTIMONIES[recovery.payload["recovered_source_ref"]]
-    convention = SOURCE_MEANING_CONVENTIONS[recovery.payload["recovered_source_ref"]]
-    assert convention is APPLICATION_SOURCE_MEANING_CONVENTION
-    assert not hasattr(convention, "source_ref") and not hasattr(
-        convention, "proposition"
-    )
-    assert warrant.payload["meaning_testimony_ref"] == testimony.testimony_id
-    assert warrant.payload["constitutive_convention_ref"] == convention.convention_id
-    assert warrant.payload["source_recovery_occurrence_id"] == recovery.id
-    assert warrant.payload["relation_assertion"] == "expresses"
-    assert warrant.payload["source_ref"] == testimony.source_ref
-    assert warrant.payload["proposition"] == testimony.proposition
-    assert "implementation_status" not in warrant.payload
-    assert "not_established" not in warrant.payload
-    assert warrant.payload["lineage"][-1] == recovery.id
-    assert RENDERING_KNOWN_LOSS[0] in warrant.payload["known_loss"]
-    assert view["meaning_testimony_ref"] == testimony.testimony_id
-    assert view["constitutive_convention_ref"] == convention.convention_id
-    assert view.get("bounded_goal") is None and view.get("closed") is None
-
-
-def test_potential_goal_relation_reaches_consumer_boundary_as_unknown():
-    ledger, view, _ = run_attempt("unknown request\n1\n")
-    events = ledger.list_events("w")
-    warrant = next(e for e in events if e.kind.endswith("meaning_relation_warranted"))
-    finding = next(e for e in events if e.kind.endswith("applicability_examined"))
-    assert warrant.payload["source_role"] == "potential-goal candidate"
-    assert finding.payload["applicability"] == "unknown"
-    assert finding.payload["condition_evidence"] == []
-    assert finding.payload["meaning_relation_warrant_occurrence"] == warrant.model_dump(
-        mode="json"
-    )
-    assert (
-        view["current_standing"]["bounded_operator_goal_establishment_applicability"][
-            "evidence_event_id"
-        ]
-        == finding.id
-    )
-    assert not any(
-        "admission" in event.kind or event.kind.endswith(".goal_established")
-        for event in events
-    )
-
-
-def test_local_stop_relation_has_no_bounded_goal_applicability_or_stopping():
-    ledger, view, _ = run_attempt("unknown request\n2\n")
-    events = ledger.list_events("w")
-    warrant = next(e for e in events if e.kind.endswith("meaning_relation_warranted"))
-    assert warrant.payload["source_role"] == "local-stop"
-    assert (
-        view["current_standing"]["meaning_relation"]["evidence_event_id"] == warrant.id
-    )
-    assert (
-        view["current_standing"]["bounded_operator_goal_establishment_applicability"]
-        is None
-    )
-    assert not any(
-        "applicability" in event.kind or "stopping" in event.kind for event in events
-    )
-
-
-def test_unrecorded_relation_is_refused_without_inapplicability():
-    ledger, _, _ = run_attempt("unknown request\n1\n")
-    warrant = next(
-        e
-        for e in ledger.list_events("w")
-        if e.kind.endswith("meaning_relation_warranted")
-    )
-    forged = warrant.model_copy(update={"id": "event:forged"})
-    refusal = _examine_meaning_relation_for_bounded_operator_goal_establishment(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        attempt_ref=warrant.payload["attempt_ref"],
-        meaning_relation=forged,
-    )
-    assert refusal.payload["applicability"] == "unknown"
-    assert (
-        refusal.payload["refusal_reason"]
-        == "supplied_meaning_relation_is_not_exact_recorded_warrant"
-    )
-
-
 def _rewarrant(ledger, recovery, *, testimony=None, convention=None):
     return _warrant_source_meaning_relation(
         ledger=ledger,
@@ -827,239 +602,6 @@ def _rewarrant(ledger, recovery, *, testimony=None, convention=None):
         testimony=testimony,
         convention=convention,
     )
-
-
-@pytest.mark.parametrize(
-    "change,reason",
-    [
-        ({"testimony_id": "wrong"}, "meaning_testimony_identity_mismatch"),
-        ({"source_ref": "source:wrong"}, "meaning_testimony_identity_mismatch"),
-        ({"source_role": "wrong"}, "source_role_mismatch"),
-        ({"proposition": "changed"}, "proposition_mismatch"),
-        (
-            {"relation_assertion": "identifies"},
-            "meaning_testimony_relation_not_expresses",
-        ),
-        (
-            {"attributed_supplier": ""},
-            "meaning_testimony_attribution_absent_or_mismatched",
-        ),
-        (
-            {"producer_declaration_ref": ""},
-            "meaning_testimony_declaration_reference_absent",
-        ),
-        ({"provenance": ()}, "meaning_testimony_provenance_absent"),
-        (
-            {"declared_application_purpose": "wrong"},
-            "meaning_testimony_purpose_mismatch",
-        ),
-        ({"scope": "wrong"}, "meaning_testimony_scope_mismatch"),
-        ({"unknowns": ("unknown",)}, "meaning_testimony_unknown"),
-        ({"conflicts": ("conflict",)}, "meaning_testimony_conflicting"),
-    ],
-)
-def test_changed_or_incomplete_testimony_refuses(change, reason):
-    ledger, _, _ = run_attempt("unknown request\n1\n")
-    recovery = next(
-        e for e in ledger.list_events("w") if e.kind.endswith("source_recovered")
-    )
-    testimony = replace(
-        SOURCE_MEANING_TESTIMONIES[recovery.payload["recovered_source_ref"]], **change
-    )
-    assert (
-        _rewarrant(
-            ledger,
-            recovery,
-            testimony=testimony,
-            convention=APPLICATION_SOURCE_MEANING_CONVENTION,
-        ).payload["refusal_reason"]
-        == reason
-    )
-
-
-@pytest.mark.parametrize(
-    "change,reason",
-    [
-        ({"convention_id": "wrong"}, "constitutive_convention_identity_mismatch"),
-        (
-            {"attribution": ""},
-            "constitutive_convention_attribution_absent_or_mismatched",
-        ),
-        ({"applicable_authority": ()}, "constitutive_convention_authority_absent"),
-        (
-            {"permitted_testimony_kind": "Other"},
-            "constitutive_convention_testimony_form_not_permitted",
-        ),
-        (
-            {"permitted_relation_form": "represents"},
-            "constitutive_convention_does_not_permit_expresses",
-        ),
-        ({"purpose": ""}, "constitutive_convention_purpose_mismatch"),
-        ({"scope": ""}, "constitutive_convention_scope_mismatch"),
-        ({"unknowns": ("unknown",)}, "constitutive_convention_unknown"),
-        ({"conflicts": ("conflict",)}, "constitutive_convention_conflicting"),
-    ],
-)
-def test_changed_or_incomplete_convention_refuses(change, reason):
-    ledger, _, _ = run_attempt("unknown request\n1\n")
-    recovery = next(
-        e for e in ledger.list_events("w") if e.kind.endswith("source_recovered")
-    )
-    convention = replace(APPLICATION_SOURCE_MEANING_CONVENTION, **change)
-    testimony = SOURCE_MEANING_TESTIMONIES[recovery.payload["recovered_source_ref"]]
-    assert (
-        _rewarrant(
-            ledger, recovery, testimony=testimony, convention=convention
-        ).payload["refusal_reason"]
-        == reason
-    )
-
-
-def test_missing_inputs_other_source_and_forged_recovery_refuse_without_negation():
-    ledger, _, _ = run_attempt("unknown request\n1\n")
-    recovery = next(
-        e for e in ledger.list_events("w") if e.kind.endswith("source_recovered")
-    )
-    exact = SOURCE_MEANING_TESTIMONIES[recovery.payload["recovered_source_ref"]]
-    assert (
-        _rewarrant(
-            ledger,
-            recovery,
-            testimony=None,
-            convention=APPLICATION_SOURCE_MEANING_CONVENTION,
-        ).payload["refusal_reason"]
-        == "missing_meaning_testimony"
-    )
-    assert (
-        _rewarrant(ledger, recovery, testimony=exact, convention=None).payload[
-            "refusal_reason"
-        ]
-        == "missing_constitutive_convention"
-    )
-    other = SOURCE_MEANING_TESTIMONIES["source:operator-common-grammar-local-stop:v1"]
-    assert (
-        _rewarrant(
-            ledger,
-            recovery,
-            testimony=other,
-            convention=APPLICATION_SOURCE_MEANING_CONVENTION,
-        ).payload["refusal_reason"]
-        == "source_identity_mismatch"
-    )
-    forged = recovery.model_copy(deep=True)
-    forged.payload["recovered_source_proposition"] = "forged"
-    refusal = _rewarrant(
-        ledger,
-        forged,
-        testimony=exact,
-        convention=APPLICATION_SOURCE_MEANING_CONVENTION,
-    )
-    assert (
-        refusal.payload["refusal_reason"]
-        == "supplied_source_recovery_is_not_recorded_occurrence"
-    )
-    assert "remains Unknown" in refusal.payload["unknowns"][0]
-
-
-def test_missing_duplicate_and_unknown_upstream_recovery_refuse():
-    empty = EventLedger()
-    refusal = _warrant_source_meaning_relation(
-        ledger=empty,
-        workspace_id="w",
-        session_id="s",
-        attempt_ref="missing",
-        source_recovery=None,
-        testimony=None,
-        convention=None,
-    )
-    assert (
-        refusal.payload["refusal_reason"]
-        == "no_exact_recorded_source_recovery_occurrence"
-    )
-    ledger, _, _ = run_attempt("unknown request\n1\n", session="upstream")
-    recovery = next(
-        e for e in ledger.list_events("w") if e.kind.endswith("source_recovered")
-    )
-    testimony = SOURCE_MEANING_TESTIMONIES[recovery.payload["recovered_source_ref"]]
-    representation = ledger.get(recovery.payload["representation_occurrence_id"])
-    representation.payload["unknowns"] = ["relevant representation Unknown"]
-    refusal = _warrant_source_meaning_relation(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="upstream",
-        attempt_ref=recovery.payload["attempt_ref"],
-        source_recovery=recovery,
-        testimony=testimony,
-        convention=APPLICATION_SOURCE_MEANING_CONVENTION,
-    )
-    assert refusal.payload["refusal_reason"] == "upstream_representation_unknown"
-
-
-@pytest.mark.parametrize(
-    "token,alternative",
-    [("1", "common-grammar-acquisition"), ("2", "local-stop")],
-)
-def test_exact_alternatives_recover_sources_without_goal_or_stop(token, alternative):
-    ledger, view, output = run_attempt(f"do something exactly\n{token}\n")
-    assert view["selected_presented_alternative_ref"] == alternative
-    assert view.get("closed") is None
-    kinds = [event.kind for event in ledger.list_events("w")]
-    assert "operator.ingress.common_grammar.alternative_selected" in kinds
-    assert "operator.ingress.common_grammar.source_recovered" in kinds
-    assert "operator.ingress.common_grammar.stopping_occurred" not in kinds
-    source_ref = ALTERNATIVE_SOURCES[alternative]
-    assert view["recovered_source_ref"] == source_ref
-    assert view["recovered_source_role"] == SOURCE_PROPOSITIONS[source_ref][0]
-    assert view["recovered_source_proposition"] == SOURCE_PROPOSITIONS[source_ref][1]
-    assert view.get("bounded_goal") is None
-    assert not any(
-        any(
-            word in event.kind
-            for word in ("demand", "acquisition", "interpretation", "cluster")
-        )
-        for event in ledger.list_events("w")
-    )
-    assert "1. Select bounded common-grammar acquisition alternative." in output
-
-
-@pytest.mark.parametrize(
-    "token", ["", " ", "1 ", " 1", "ONE", "Acquisition", "01", "2 "]
-)
-def test_near_matches_and_empty_are_unsupported_with_semantic_unknowns(token):
-    ledger, view, output = run_attempt(f"hello\n{token}\n")
-    assert (
-        view["current_standing"]["binding_finding"]["dimensions"]["standing"]
-        == "unsupported"
-    )
-    assert view["unknowns"] == [
-        "operator intent Unknown",
-        "requested alternative Unknown",
-        "response meaning Unknown",
-    ]
-    assert "Unsupported response" in output
-    assert not any(
-        event.kind == "operator.ingress.common_grammar.alternative_selected"
-        for event in ledger.list_events()
-    )
-    assert not any(
-        event.kind == "operator.ingress.common_grammar.stopping_occurred"
-        for event in ledger.list_events()
-    )
-
-
-def test_eof_is_distinct_from_empty_response():
-    eof_ledger, eof, _ = run_attempt("hello\n")
-    _, empty, _ = run_attempt("hello\n\n", session="empty")
-    assert eof["response_kind"] == "eof"
-    assert empty["response_kind"] == "empty"
-    eof_kinds = [event.kind for event in eof_ledger.list_events("w")]
-    assert "operator.ingress.common_grammar.response_eof_occurred" in eof_kinds
-    assert "operator.ingress.common_grammar.stopping_occurred" in eof_kinds
-    assert "operator.ingress.common_grammar.response_captured" not in eof_kinds
-    assert "operator.ingress.common_grammar.binding_completed" not in eof_kinds
-    assert "operator.ingress.common_grammar.unsupported_finding" not in eof_kinds
-    assert "capture_ref" not in eof
-    assert "binding_id" not in eof
 
 
 def test_initial_eof_records_eof_and_separate_stop_without_probe():
@@ -1082,97 +624,108 @@ def test_initial_eof_records_eof_and_separate_stop_without_probe():
     )
 
 
-def test_exact_ingress_preservation_all_dimensions_and_durable_replay(tmp_path):
-    path = tmp_path / "events.db"
-    ledger, view, _ = run_attempt(
-        "  Mixed CASE ingress  \n2\n", SQLiteEventLedger(str(path))
-    )
-    ingress = next(
-        e
-        for e in ledger.list_events("w")
-        if e.kind == "operator.ingress.common_grammar.ingress_occurred"
-    )
-    assert ingress.payload["raw_input"] == "  Mixed CASE ingress  \n"
-    assert ingress.payload["known_loss"] == [
-        "original transport bytes and prior decoder behavior are unavailable"
-    ]
-    assert len(view["dimensional_standing"]) == 15
-    assert all(
-        set(item["dimensions"])
-        == {
-            "identity",
-            "content",
-            "standing",
-            "source_provenance",
-            "responsibility",
-            "authority_warrant",
-            "scope_locality",
-            "occurrence_preservation",
-        }
-        for item in view["dimensional_standing"].values()
-    )
-    assert all(
-        item["lineage"] for item in list(view["dimensional_standing"].values())[1:]
-    )
-    assert (
-        view["current_standing"]["presentation"]["dimensions"]["standing"] == "consumed"
-    )
-    assert view["current_standing"]["response"]["dimensions"]["standing"] == "consumed"
-    assert (
-        view["current_standing"]["binding_finding"]["dimensions"]["standing"] == "bound"
-    )
-    assert (
-        view["current_standing"]["presentation"]["dimensions"]["standing"] == "consumed"
-    )
-    assert (
-        view["current_standing"]["raw_response_material"]["dimensions"]["standing"]
-        == "captured"
-    )
-    attempt_ref = ingress.payload["attempt_ref"]
-    ledger.close()
-    reopened = SQLiteEventLedger(str(path))
-    replayed = (
-        StateProjector(reopened)
-        .project("w")
-        .operator_ingress_common_grammar_attempts[attempt_ref]
-    )
-    assert (
-        replayed["current_standing"]["presentation_eligibility"]["dimensions"][
-            "standing"
-        ]
-        == "eligible"
-    )
-    assert replayed == view
-    assert all(
-        event.payload["mutates_cluster"] is False for event in reopened.list_events("w")
-    )
-
-
 @pytest.mark.parametrize(
-    "text,present,response,binding,alternative,closure",
+    ("material", "ingress_kind", "content"),
     [
-        ("hello\n1\n", "consumed", "consumed", "bound", "selected", None),
-        ("hello\nwat\n", "consumed", "consumed", "unsupported", None, None),
-        ("hello\n2\n", "consumed", "consumed", "bound", "selected", None),
-        ("", None, None, None, None, "closed"),
-        ("hello\n", "consumed", "occurred", None, None, "closed"),
+        (b"Exact ingress \xc3\xa9\r\n", "text", "Exact ingress \xe9"),
+        (b"\n", "empty", ""),
     ],
 )
-def test_subject_local_current_standing_is_asymmetric(
-    text, present, response, binding, alternative, closure
+def test_decoded_non_eof_ingress_returns_after_preservation_and_projection(
+    material, ingress_kind, content, monkeypatch
 ):
-    _, view, _ = run_attempt(text)
+    ledger = EventLedger()
+    output = StringIO()
+    captured = capture_stdin_material(BytesIO(material))
 
-    def standing(subject):
-        current = view["current_standing"][subject]
-        return current and current["dimensions"]["standing"]
+    class ResponseInputMustNotBeRead:
+        def readline(self):
+            pytest.fail("decoded ingress must not trigger a response read")
 
-    assert standing("preserved_ingress") == "preserved"
-    assert standing("presentation") == present
-    assert standing("response") == response
-    assert standing("binding_finding") == binding
-    assert standing("alternative_selection") == alternative
-    assert standing("interaction_closure") == closure
+    def downstream_must_not_run(**_kwargs):
+        pytest.fail("decoded ingress must not trigger a downstream examination")
+
+    monkeypatch.setattr(
+        "seed_runtime.operator_ingress_common_grammar_prerequisite._examine_potential_goal_standing",
+        downstream_must_not_run,
+    )
+    monkeypatch.setattr(
+        "seed_runtime.operator_ingress_common_grammar_prerequisite._examine_presentation_eligibility",
+        downstream_must_not_run,
+    )
+
+    view = run_operator_ingress_common_grammar_probe_attempt(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        captured_ingress=captured,
+        response_input_stream=ResponseInputMustNotBeRead(),
+        output_stream=output,
+    )
+
+    events = ledger.list_events("w")
+    assert [event.kind for event in events] == [
+        "operator.ingress.common_grammar.raw_material_captured",
+        "operator.ingress.common_grammar.representation_examined",
+        "operator.ingress.common_grammar.ingress_occurred",
+    ]
+    capture, examination, ingress = events
+    assert capture.payload["exact_bytes_hex"] == material.hex()
+    assert examination.payload["lineage"] == [capture.id]
+    assert examination.payload["decoder_outcome"] == "decoded"
+    assert ingress.payload["ingress_kind"] == ingress_kind
+    assert ingress.payload["decoded_text"] == material.decode()
+    assert ingress.payload["lineage"] == [capture.id, examination.id]
+    assert ingress.payload["dimensions"]["content"] == content
+    assert ingress.payload["dimensions"]["authority_warrant"] == (
+        "occurrence-only; meaning Unknown"
+    )
+    assert view["event_ids"] == [event.id for event in events]
+    assert view["last_event_kind"] == ingress.kind
+    assert view["current_standing"]["preserved_ingress"] == {
+        "subject_ref": ingress.payload["attempt_ref"],
+        "dimensions": {
+            **ingress.payload["dimensions"],
+            "standing": "preserved",
+        },
+        "evidence_event_id": ingress.id,
+    }
+    assert (
+        view["representation_examinations"]["initial_ingress"]["examination_event_id"]
+        == examination.id
+    )
+    assert view["known_loss"] == list(captured.known_loss)
+    assert view["unknowns"] == []
+    assert view["current_standing"]["interaction_closure"] is None
+    assert output.getvalue() == ""
+
+
+def test_console_recurs_after_each_quiescent_non_eof_attempt():
+    ledger, output = run_console(b"first ingress\nsecond ingress\nexit\n")
+    events = ledger.list_events("console-w")
+    assert [event.kind for event in events] == [
+        kind
+        for _ in range(2)
+        for kind in (
+            "operator.ingress.common_grammar.raw_material_captured",
+            "operator.ingress.common_grammar.representation_examined",
+            "operator.ingress.common_grammar.ingress_occurred",
+        )
+    ]
+    assert [
+        event.payload["decoded_text"]
+        for event in events
+        if event.kind == "operator.ingress.common_grammar.ingress_occurred"
+    ] == ["first ingress\n", "second ingress\n"]
+    assert (
+        len(
+            StateProjector(ledger)
+            .project("console-w")
+            .operator_ingress_common_grammar_attempts
+        )
+        == 2
+    )
+    assert output == "Seed console: `exit` exits.\n"
 
 
 def _recorded_probe_inputs(ledger):
@@ -1188,112 +741,6 @@ def _recorded_probe_inputs(ledger):
         response.payload["capture_ref"], CHOICE_SET_REF, "1"
     )
     return ingress.payload["attempt_ref"], choice, capture
-
-
-def test_probe_identity_fingerprint_and_consumption_guards():
-    ledger, _, _ = run_attempt("hello\n1\n")
-    attempt, choice, capture = _recorded_probe_inputs(ledger)
-    with pytest.raises(ClosedChoiceSelectionBindingError):
-        validate_capture_for_probe(
-            ledger=ledger,
-            workspace_id="w",
-            attempt_ref=attempt,
-            choice_set=common_grammar_choice_set("presentation:wrong"),
-            capture=capture,
-        )
-    wrong_set_capture = OperatorSelectionTokenCapture(
-        capture.capture_ref, "goal-choice-set:wrong", capture.captured_token
-    )
-    with pytest.raises(ClosedChoiceSelectionBindingError):
-        validate_capture_for_probe(
-            ledger=ledger,
-            workspace_id="w",
-            attempt_ref=attempt,
-            choice_set=choice,
-            capture=wrong_set_capture,
-        )
-    altered = PresentedClosedChoiceSet(
-        CHOICE_SET_REF,
-        choice.prompt,
-        (ClosedChoiceOption("1", "different", "Different"), *choice.options[1:]),
-        choice.presentation_ref,
-    )
-    with pytest.raises(ClosedChoiceSelectionBindingError):
-        validate_capture_for_probe(
-            ledger=ledger,
-            workspace_id="w",
-            attempt_ref=attempt,
-            choice_set=altered,
-            capture=capture,
-        )
-    with pytest.raises(ClosedChoiceSelectionBindingError, match="already consumed"):
-        validate_capture_for_probe(
-            ledger=ledger,
-            workspace_id="w",
-            attempt_ref=attempt,
-            choice_set=choice,
-            capture=capture,
-        )
-
-
-def test_communication_binding_lacks_positive_boge_admission():
-    ledger, view, _ = run_attempt("hello\n1\n")
-    attempt, choice, capture = _recorded_probe_inputs(ledger)
-    binding_event = next(
-        e
-        for e in ledger.list_events("w")
-        if e.kind == "operator.ingress.common_grammar.binding_completed"
-    )
-    # Re-create the immutable binding only to exercise the downstream boundary;
-    # production already consumed this capture and records the same binding identity.
-    from seed_runtime.closed_choice_selection_binding import (
-        bind_closed_choice_selection,
-    )
-
-    binding = bind_closed_choice_selection(choice, capture)
-    assert (
-        binding.binding_id == binding_event.payload["binding_id"] == view["binding_id"]
-    )
-    with pytest.raises(BoundedOperatorGoalEstablishmentError):
-        establish_bounded_operator_goal_from_closed_choice(binding)
-
-
-def test_two_durable_attempts_in_same_session_remain_distinct(tmp_path):
-    path = tmp_path / "attempts.db"
-    ledger = SQLiteEventLedger(str(path))
-    _, first, _ = run_attempt("first\n1\n", ledger, session="same")
-    _, second, _ = run_attempt("second\n2\n", ledger, session="same")
-    attempt_refs = {e.payload["attempt_ref"] for e in ledger.list_events("w")}
-    assert len(attempt_refs) == 2
-    assert first["event_ids"] != second["event_ids"]
-    ledger.close()
-    reopened = SQLiteEventLedger(str(path))
-    projection = (
-        StateProjector(reopened).project("w").operator_ingress_common_grammar_attempts
-    )
-    assert set(projection) == attempt_refs
-    assert {
-        view["selected_presented_alternative_ref"] for view in projection.values()
-    } == {
-        "common-grammar-acquisition",
-        "local-stop",
-    }
-
-
-def test_consumed_capture_replay_is_refused_after_durable_reconstruction(tmp_path):
-    path = tmp_path / "replay.db"
-    ledger, _, _ = run_attempt("hello\n1\n", SQLiteEventLedger(str(path)))
-    attempt, choice, capture = _recorded_probe_inputs(ledger)
-    ledger.close()
-    reopened = SQLiteEventLedger(str(path))
-    with pytest.raises(ClosedChoiceSelectionBindingError, match="already consumed"):
-        validate_capture_for_probe(
-            ledger=reopened,
-            workspace_id="w",
-            attempt_ref=attempt,
-            choice_set=choice,
-            capture=capture,
-        )
 
 
 class _RawStdin:
@@ -1404,35 +851,6 @@ def test_parser_has_no_alternate_operator_ingress_controller():
     assert not any(
         action.dest == "operator_ingress_common_grammar" for action in parser._actions
     )
-
-
-def test_console_runs_multiple_bounded_interactions_after_local_stop_and_unsupported():
-    ledger, output = run_console(
-        b"first ingress\n2\nsecond ingress\nnot-a-token\nexit\n"
-    )
-    attempts = (
-        StateProjector(ledger)
-        .project("console-w")
-        .operator_ingress_common_grammar_attempts
-    )
-    assert len(attempts) == 2
-    assert {
-        view.get("selected_presented_alternative_ref") for view in attempts.values()
-    } == {
-        "local-stop",
-        None,
-    }
-    assert any(
-        view.get("current_standing", {})
-        .get("binding_finding", {})
-        .get("dimensions", {})
-        .get("standing")
-        == "unsupported"
-        for view in attempts.values()
-    )
-    assert output.count("Select one alternative by its exact token:") == 2
-    assert "Local-stop source recovered; bounded stop was not established." in output
-    assert "Unsupported response" in output
 
 
 def test_outer_exit_is_not_operator_ingress_and_capture_keeps_provenance():
@@ -1557,36 +975,6 @@ def test_invalid_initial_bytes_are_preserved_without_replacement_and_stop_before
     )
 
 
-def test_invalid_enum_bytes_stop_before_token_capture_or_binding():
-    ledger, _, output = run_raw(b"hello\n\xff\n")
-    assert "Select one alternative" in output
-    assert output.endswith(
-        "Representation insufficient: captured response did not decode under the selected decoder mechanism.\n"
-    )
-    events = ledger.list_events("raw-w")
-    assert not any(
-        e.kind
-        in {
-            "operator.ingress.common_grammar.response_captured",
-            "operator.ingress.common_grammar.binding_completed",
-            "operator.ingress.common_grammar.unsupported_finding",
-        }
-        for e in events
-    )
-    assert not any(
-        any(
-            term in e.kind
-            for term in (
-                "demand",
-                "acquisition",
-                "bounded-goal-applicability",
-                "cluster",
-            )
-        )
-        for e in events
-    )
-
-
 def test_empty_material_and_eof_have_distinct_raw_evidence():
     empty_ledger, _, _ = run_raw(b"\n2\n")
     eof_ledger, _, _ = run_raw(b"")
@@ -1602,37 +990,6 @@ def test_empty_material_and_eof_have_distinct_raw_evidence():
         True,
         None,
     )
-
-
-def test_initial_and_response_eof_do_not_claim_representation_examination():
-    initial_ledger, initial_view, _ = run_raw(b"")
-    response_ledger, response_view, _ = run_raw(b"hello\n")
-    assert not any(
-        event.kind == "operator.ingress.common_grammar.representation_examined"
-        for event in initial_ledger.list_events("raw-w")
-    )
-    response_examinations = [
-        event
-        for event in response_ledger.list_events("raw-w")
-        if event.kind == "operator.ingress.common_grammar.representation_examined"
-    ]
-    assert [event.payload["material_role"] for event in response_examinations] == [
-        "initial_ingress"
-    ]
-    assert initial_view["representation_examinations"] == {}
-    assert "enum_response" not in response_view["representation_examinations"]
-    eof_event = next(
-        event
-        for event in response_ledger.list_events("raw-w")
-        if event.kind == "operator.ingress.common_grammar.response_eof_occurred"
-    )
-    raw_response = next(
-        event
-        for event in response_ledger.list_events("raw-w")
-        if event.kind == "operator.ingress.common_grammar.raw_material_captured"
-        and event.payload["material_role"] == "enum_response"
-    )
-    assert raw_response.id in eof_event.payload["lineage"]
 
 
 def test_decoder_outcomes_and_selection_sources_remain_distinct():
@@ -1719,91 +1076,6 @@ def test_representation_evidence_produces_no_broader_standing():
     )
 
 
-@pytest.mark.parametrize(
-    "mutation,reason",
-    [
-        (lambda event: None, "no_recorded_representation_occurrence"),
-        (
-            lambda event: event.model_copy(
-                update={"payload": {**event.payload, "attempt_ref": "wrong-attempt"}}
-            ),
-            "wrong_attempt",
-        ),
-        (
-            lambda event: event.model_copy(
-                update={
-                    "payload": {
-                        **event.payload,
-                        "presentation_ref": "wrong-presentation",
-                    }
-                }
-            ),
-            "wrong_presentation",
-        ),
-        (
-            lambda event: event.model_copy(
-                update={"payload": {**event.payload, "choice_set_ref": "wrong-set"}}
-            ),
-            "wrong_choice_set",
-        ),
-        (
-            lambda event: event.model_copy(
-                update={"payload": {**event.payload, "choice_set_fingerprint": "wrong"}}
-            ),
-            "wrong_set_fingerprint",
-        ),
-        (
-            lambda event: event.model_copy(
-                update={
-                    "payload": {
-                        **event.payload,
-                        "representations": [
-                            {
-                                **event.payload["representations"][0],
-                                "represented_source_ref": "source:forged",
-                            },
-                            *event.payload["representations"][1:],
-                        ],
-                    }
-                }
-            ),
-            "forged_relation_payload",
-        ),
-    ],
-)
-def test_recovery_refuses_missing_or_mismatched_recorded_evidence(mutation, reason):
-    ledger, _, _ = run_attempt("unknown request\n1\n")
-    events = ledger.list_events("w")
-    occurrence = next(e for e in events if e.kind.endswith("alternatives_represented"))
-    presentation = next(e for e in events if e.kind.endswith("presentation_occurred"))
-    response = next(e for e in events if e.kind.endswith("response_captured"))
-    attempt = occurrence.payload["attempt_ref"]
-    choice = common_grammar_choice_set(occurrence.payload["presentation_ref"])
-    binding = bind_closed_choice_selection(
-        choice,
-        OperatorSelectionTokenCapture(
-            response.payload["capture_ref"],
-            CHOICE_SET_REF,
-            "1",
-            provenance=(response.id,),
-        ),
-    )
-    recovered, refusal = _recover_represented_source(
-        binding,
-        choice,
-        mutation(occurrence),
-        ledger=ledger,
-        workspace_id="w",
-        attempt_ref=attempt,
-        presentation_occurrence=presentation,
-        selection_occurrence=next(
-            e for e in events if e.kind.endswith("alternative_selected")
-        ),
-    )
-    assert recovered is None
-    assert refusal == reason
-
-
 def _recover_after_binding_event_mutation(mutate):
     ledger, _, _ = run_attempt("unknown request\n1\n")
     events = ledger.list_events("w")
@@ -1848,64 +1120,3 @@ def _duplicate_binding_occurrence(ledger, binding_event, _selection):
         deepcopy(binding_event.payload),
         session_id=binding_event.session_id,
     )
-
-
-@pytest.mark.parametrize(
-    "mutation,reason",
-    [
-        (_remove_binding_occurrence, "no_recorded_binding_occurrence"),
-        (_duplicate_binding_occurrence, "multiple_recorded_binding_occurrences"),
-        (
-            lambda _ledger, event, _selection: event.payload.__setitem__(
-                "binding_id", "binding:wrong"
-            ),
-            "binding_id_mismatch",
-        ),
-        (
-            lambda _ledger, event, _selection: event.payload.__setitem__(
-                "choice_set_ref", "choice-set:wrong"
-            ),
-            "binding_choice_set_mismatch",
-        ),
-        (
-            lambda _ledger, event, _selection: event.payload.__setitem__(
-                "choice_set_fingerprint", "fingerprint:wrong"
-            ),
-            "binding_set_fingerprint_mismatch",
-        ),
-        (
-            lambda _ledger, event, _selection: event.payload.__setitem__(
-                "presented_options", list(reversed(event.payload["presented_options"]))
-            ),
-            "binding_presented_options_mismatch",
-        ),
-        (
-            lambda _ledger, event, _selection: event.payload.__setitem__(
-                "selected_presented_alternative_ref", "local-stop"
-            ),
-            "binding_selected_alternative_mismatch",
-        ),
-        (
-            lambda _ledger, event, _selection: event.payload[
-                "binding_testimony"
-            ].__setitem__("binding_reason", "forged"),
-            "recorded_binding_payload_mismatch",
-        ),
-        (
-            lambda _ledger, event, _selection: event.payload.__setitem__(
-                "lineage", event.payload["lineage"][1:]
-            ),
-            "binding_lineage_mismatch",
-        ),
-        (
-            lambda _ledger, _event, selection: selection.payload.__setitem__(
-                "selected_presented_alternative_ref", "local-stop"
-            ),
-            "selected_alternative_occurrence_mismatch",
-        ),
-    ],
-)
-def test_recovery_requires_the_exact_recorded_binding_occurrence(mutation, reason):
-    recovered, refusal = _recover_after_binding_event_mutation(mutation)
-    assert recovered is None
-    assert refusal == reason

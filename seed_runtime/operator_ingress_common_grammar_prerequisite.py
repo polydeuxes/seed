@@ -1735,7 +1735,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
             *([ingress_examination_event.id] if ingress_examination_event else []),
         ],
     )
-    StateProjector(ledger).project(workspace_id)
+    state = StateProjector(ledger).project(workspace_id)
     if ingress_kind == "eof":
         _record(
             ledger,
@@ -1763,6 +1763,8 @@ def run_operator_ingress_common_grammar_probe_attempt(
         )
         output_stream.flush()
         return state.operator_ingress_common_grammar_attempts[attempt]
+
+    return state.operator_ingress_common_grammar_attempts[attempt]
 
     standing_occurrence = _examine_potential_goal_standing(
         ledger=ledger,
