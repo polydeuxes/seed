@@ -11,8 +11,9 @@ This file is the documentation navigation authority. It is a map, not an encyclo
 1. [`../README.md`](../README.md) — repository orientation: what Seed is, what it owns, what it does not own, and where a new contributor should begin.
 2. [`seed.md`](seed.md) — concise architectural thesis / constitutional statement for Seed's claim-centric knowledge, projection, authority, operator, capability, and handoff invariants.
 3. [`ontology.md`](ontology.md) — concise architectural vocabulary and boundary reference.
-4. [`architectural_status_and_next_frontier.md`](architectural_status_and_next_frontier.md) — current architectural status, active frontier, and current priorities.
-5. [`architectural_knowledge_map.md`](architectural_knowledge_map.md) — concern map and routing to owning documents across foundational vocabulary, acquisition, integrity, selection, response, language, handoff, navigation, and architectural findings.
+4. [`../book_of_seed/README.md`](../book_of_seed/README.md) — durable constitutional grammar and Book-level navigation.
+5. [`architectural_status_and_next_frontier.md`](architectural_status_and_next_frontier.md) — current architectural status, active frontier, and current priorities.
+6. [`architectural_knowledge_map.md`](architectural_knowledge_map.md) — concern map and routing to owning documents across foundational vocabulary, acquisition, integrity, selection, response, language, handoff, navigation, and architectural findings.
 
 ---
 
