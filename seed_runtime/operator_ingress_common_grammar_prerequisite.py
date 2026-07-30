@@ -388,7 +388,11 @@ def run_operator_ingress_common_grammar_probe_attempt(
         ),
         raw_input=raw_ingress,
         ingress_kind=ingress_kind,
-        decoded_text=raw_ingress if ingress_examination is not None else None,
+        decoded_text=(
+            ingress_examination.represented_text
+            if ingress_examination is not None
+            else None
+        ),
         raw_material_event_id=ingress_capture.id,
         **(
             {"representation_examination_event_id": ingress_examination_event.id}
