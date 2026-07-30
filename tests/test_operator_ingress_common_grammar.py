@@ -19,12 +19,7 @@ from seed_runtime.bounded_operator_goal_establishment import (
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_ingress_common_grammar_prerequisite import (
-    APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY,
-    APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION,
     APPLICATION_SOURCE_MEANING_CONVENTION,
-    ApplicationSourceMeaningTestimony,
-    ApplicationSourceRoleTestimony,
-    POTENTIAL_GOAL_SOURCE_REF,
     RENDERING_KNOWN_LOSS,
     SOURCE_MEANING_CONVENTIONS,
     SOURCE_MEANING_TESTIMONIES,
@@ -35,7 +30,6 @@ from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     _recordable_presented_options,
     _representation_fingerprint,
     _warrant_source_meaning_relation,
-    _examine_potential_goal_standing,
     common_grammar_choice_set,
     common_grammar_representation_lineages,
     _recover_represented_source,
@@ -64,23 +58,6 @@ def run_attempt(text, ledger=None, session="s"):
         output_stream=output,
     )
     return ledger, view, output.getvalue()
-
-
-def examine_standing(
-    *,
-    testimony=APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY,
-    convention=APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION,
-):
-    ledger = EventLedger()
-    event = _examine_potential_goal_standing(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        attempt_ref="attempt:test",
-        testimony=testimony,
-        convention=convention,
-    )
-    return event
 
 
 def test_historical_presentation_eligibility_event_still_projects():
@@ -117,213 +94,43 @@ def test_historical_presentation_eligibility_event_still_projects():
     assert view["eligibility_result"] == "eligible"
 
 
-def test_role_testimony_and_authority_are_distinct_from_meaning_warrant():
-    role = APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY
-    meaning = SOURCE_MEANING_TESTIMONIES[POTENTIAL_GOAL_SOURCE_REF]
-    authority = APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION
-    assert isinstance(role, ApplicationSourceRoleTestimony)
-    assert isinstance(meaning, ApplicationSourceMeaningTestimony)
-    assert role.testimony_id != meaning.testimony_id
-    assert "standing" not in role.authority_limits[0].split("does not establish ")[0]
-    assert not hasattr(authority, "source_ref")
-    assert not hasattr(authority, "attributed_role")
-    for testimony in (meaning, "potential-goal candidate"):
-        occurrence = examine_standing(testimony=testimony)
-        assert occurrence.payload["standing_result"] == "refused"
-        assert occurrence.payload["examination_reason"] == "inadmissible_testimony_form"
-
-
-def test_exact_role_testimony_under_bounded_authority_establishes_only_standing():
-    occurrence = examine_standing()
-    assert occurrence.payload["standing_result"] == "established"
-    assert occurrence.payload["examination_reason"] == (
-        "exact_admissible_role_testimony_under_applicable_bounded_authority"
-    )
-    assert (
-        occurrence.payload["source_role_testimony_ref"]
-        == APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY.testimony_id
-    )
-    assert (
-        occurrence.payload["constitutive_authority_ref"]
-        == APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION.convention_id
-    )
-    assert occurrence.payload["establishes_presentation_eligibility"] is False
-    assert occurrence.payload["establishes_exact_set_participation"] is False
-    forbidden = (
-        "applicability",
-        "admission",
-        "bounded_goal",
-        "stopping",
-        "acquisition",
-        "movement",
-        "authority_standing",
-    )
-    assert not any(name in occurrence.payload for name in forbidden)
-
-
-@pytest.mark.parametrize(
-    "coordinate",
-    [
-        "testimony_id",
-        "source_ref",
-        "attributed_role",
-        "attributed_supplier",
-        "producer_declaration_ref",
-        "purpose",
-        "scope",
-        "provenance",
-    ],
-)
-def test_missing_role_testimony_coordinate_is_refused(coordinate):
-    value = () if coordinate == "provenance" else ""
-    occurrence = examine_standing(
-        testimony=replace(
-            APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY, **{coordinate: value}
-        )
-    )
-    assert occurrence.payload["standing_result"] == "refused"
-
-
-def test_missing_forged_wrong_unknown_and_conflicting_standing_inputs():
-    assert examine_standing(testimony=None).payload["standing_result"] == "unknown"
-    assert (
-        examine_standing(
-            testimony=replace(
-                APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY, testimony_id="forged"
-            )
-        ).payload["examination_reason"]
-        == "forged_source_role_testimony"
-    )
-    assert (
-        examine_standing(
-            testimony=replace(
-                APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY, source_ref="source:wrong"
-            )
-        ).payload["examination_reason"]
-        == "source_identity_mismatch"
-    )
-    assert (
-        examine_standing(
-            testimony=replace(
-                APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY, attributed_role="local-stop"
-            )
-        ).payload["examination_reason"]
-        == "attributed_role_mismatch"
-    )
-    assert (
-        examine_standing(
-            testimony=replace(
-                APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY,
-                unknowns=("material unknown",),
-            )
-        ).payload["standing_result"]
-        == "unknown"
-    )
-    assert (
-        examine_standing(
-            testimony=replace(
-                APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY, conflicts=("conflict",)
-            )
-        ).payload["standing_result"]
-        == "conflict"
-    )
-    assert (
-        examine_standing(
-            convention=replace(
-                APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION, unknowns=("unknown",)
-            )
-        ).payload["standing_result"]
-        == "unknown"
-    )
-    assert (
-        examine_standing(
-            convention=replace(
-                APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION, conflicts=("conflict",)
-            )
-        ).payload["standing_result"]
-        == "conflict"
-    )
-    assert (
-        examine_standing(
-            convention=replace(
-                APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION, scope="elsewhere"
-            )
-        ).payload["standing_result"]
-        == "refused"
+def test_historical_potential_goal_standing_event_still_projects():
+    """Historical projection compatibility witness, not producer reachability or authority."""
+    ledger = EventLedger()
+    historical = ledger.append(
+        "operator.ingress.common_grammar.potential_goal_standing_examined",
+        "w",
+        {
+            "attempt_ref": "attempt:historical-standing",
+            "dimensions": {
+                "identity": "bounded-potential-goal-standing:historical",
+                "content": "historical standing payload",
+                "standing": "established",
+            },
+            "standing_subject": "source:historical",
+            "standing_relation": "has bounded potential-goal standing",
+            "standing_result": "established",
+            "source_role_testimony_ref": "testimony:historical",
+            "source_role_testimony": {"attributed_role": "historical-role"},
+            "mutates_cluster": False,
+        },
+        session_id="s",
     )
 
-
-@pytest.mark.parametrize(
-    ("changes", "carried_content", "reason"),
-    [
-        (
-            {"source_ref": "source:wrong"},
-            {"unknowns": ("material unknown",)},
-            "source_identity_mismatch",
-        ),
-        (
-            {"source_ref": "source:wrong"},
-            {"conflicts": ("material conflict",)},
-            "source_identity_mismatch",
-        ),
-        (
-            {"attributed_role": "local-stop"},
-            {"unknowns": ("material unknown",)},
-            "attributed_role_mismatch",
-        ),
-        (
-            {"testimony_id": "testimony:forged"},
-            {"conflicts": ("material conflict",)},
-            "forged_source_role_testimony",
-        ),
-    ],
-)
-def test_testimony_inadmissibility_precedes_carried_unknowns_or_conflicts(
-    changes, carried_content, reason
-):
-    testimony = replace(
-        APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY, **changes, **carried_content
+    view = (
+        StateProjector(ledger)
+        .project("w")
+        .operator_ingress_common_grammar_attempts["attempt:historical-standing"]
     )
-    occurrence = examine_standing(testimony=testimony)
-    assert occurrence.payload["standing_result"] == "refused"
-    assert occurrence.payload["examination_reason"] == reason
-    assert occurrence.payload["refusal_reason"] == reason
-
-
-@pytest.mark.parametrize(
-    ("changes", "carried_content"),
-    [
-        ({"scope": "scope:wrong"}, {"unknowns": ("material unknown",)}),
-        (
-            {"convention_id": "convention:forged"},
-            {"conflicts": ("material conflict",)},
-        ),
-    ],
-)
-def test_authority_inapplicability_precedes_carried_unknowns_or_conflicts(
-    changes, carried_content
-):
-    convention = replace(
-        APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION, **changes, **carried_content
-    )
-    occurrence = examine_standing(convention=convention)
-    assert occurrence.payload["standing_result"] == "refused"
-    assert occurrence.payload["examination_reason"] == (
-        "forged_or_inapplicable_constitutive_authority"
-    )
-
-
-def test_wrong_authority_type_is_refused_before_conflict_shaped_content():
-    class ConflictShapedAuthority:
-        conflicts = ("material conflict",)
-        unknowns = ()
-
-    occurrence = examine_standing(convention=ConflictShapedAuthority())
-    assert occurrence.payload["standing_result"] == "refused"
-    assert (
-        occurrence.payload["examination_reason"]
-        == "inapplicable_constitutive_authority_form"
-    )
+    projected = view["current_standing"]["potential_goal_standing"]
+    assert projected["evidence_event_id"] == historical.id
+    assert projected["dimensions"] == historical.payload["dimensions"]
+    assert view["standing_result"] == "established"
+    assert view["current_standing"]["source_role_testimony"] == {
+        "subject_ref": "testimony:historical",
+        "testimony": {"attributed_role": "historical-role"},
+        "evidence_event_id": historical.id,
+    }
 
 
 def _rewarrant(ledger, recovery, *, testimony=None, convention=None):
@@ -366,7 +173,7 @@ def test_initial_eof_records_eof_and_separate_stop_without_probe():
     ],
 )
 def test_decoded_non_eof_ingress_returns_after_preservation_and_projection(
-    material, ingress_kind, content, monkeypatch
+    material, ingress_kind, content
 ):
     ledger = EventLedger()
     output = StringIO()
@@ -376,13 +183,6 @@ def test_decoded_non_eof_ingress_returns_after_preservation_and_projection(
         def readline(self):
             pytest.fail("decoded ingress must not trigger a response read")
 
-    def downstream_must_not_run(**_kwargs):
-        pytest.fail("decoded ingress must not trigger a downstream examination")
-
-    monkeypatch.setattr(
-        "seed_runtime.operator_ingress_common_grammar_prerequisite._examine_potential_goal_standing",
-        downstream_must_not_run,
-    )
     view = run_operator_ingress_common_grammar_probe_attempt(
         ledger=ledger,
         workspace_id="w",
