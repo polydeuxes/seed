@@ -43,7 +43,9 @@ def _record(ledger, kind, workspace, session, attempt, dimensions, **extra):
     )
 
 
-def project_operator_ingress_common_grammar_events(state, event) -> None:
+def project_operator_ingress_common_grammar_events(
+    state, event, *, ledger=None
+) -> None:
     """Dispatch one operator-ingress common-grammar event into the dedicated current view."""
     if not event.kind.startswith("operator.ingress.common_grammar."):
         return
@@ -141,6 +143,24 @@ def project_operator_ingress_common_grammar_events(state, event) -> None:
         "dimensions": dimensions,
         "evidence_event_id": event.id,
     }
+    if event.kind == "operator.ingress.common_grammar.ingress_occurred" and all(
+        key in event.payload
+        for key in (
+            "decoded_text",
+            "raw_material_event_id",
+            "representation_examination_event_id",
+        )
+    ):
+        from seed_runtime.operator_ingress_addressable_material import (
+            form_operator_ingress_addressable_material,
+        )
+
+        if ledger is not None:
+            view["addressable_operator_material"] = (
+                form_operator_ingress_addressable_material(
+                    ingress_occurrence=event, ledger=ledger
+                ).to_json_dict()
+            )
     if subject == "response" and view["current_standing"]["presentation"]:
         view["current_standing"]["presentation"]["dimensions"]["standing"] = "consumed"
     if subject == "binding_finding" and view["current_standing"]["response"]:
@@ -368,9 +388,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
         ),
         raw_input=raw_ingress,
         ingress_kind=ingress_kind,
-        decoded_text=(
-            ingress_examination.represented_text if ingress_examination else None
-        ),
+        decoded_text=ingress_content,
         raw_material_event_id=ingress_capture.id,
         **(
             {"representation_examination_event_id": ingress_examination_event.id}
