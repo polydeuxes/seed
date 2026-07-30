@@ -173,7 +173,7 @@ Structure evidence: X contains, declares, imports, subclasses, or associates wit
 Behavior evidence: X calls, routes, mutates, emits, records, stores, validates, returns, or executes Y in a runtime-relevant path.
 ```
 
-### Did Structure Reconciliation v1 accidentally prove behavior?
+### Structure Reconciliation v1 behavior boundary
 
 No.
 

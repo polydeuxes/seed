@@ -44,7 +44,7 @@ The inspected CLI has no `ask` parser, no `--question-family` argument, and no `
 | Boundary parity | **Behavior difference by absence.** Direct result declares read-only/no-record/no-ledger/no-mutation boundary; ask returns parser error before a boundary-bearing result exists. |
 | Overall parity | **Not preserved in current implementation.** The direct inquiry exists, but bounded ask is not executable in this checkout. |
 
-### Direct direct-surface observations
+### Authority-constrained service ownership direct-surface observations
 
 The direct JSON output reports:
 
@@ -73,7 +73,7 @@ The direct human output renders the same answer shape under `Service Ownership A
 | Boundary parity | **Behavior difference by absence.** Direct result declares local endpoint scope and excludes ownership/health/reachability claims; ask returns parser error before a boundary-bearing result exists. |
 | Overall parity | **Not preserved in current implementation.** The direct inquiry exists, but bounded ask is not executable in this checkout. |
 
-### Direct direct-surface observations
+### Listener endpoint reachability direct-surface observations
 
 The direct JSON output reports:
 

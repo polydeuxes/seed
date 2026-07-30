@@ -32,4 +32,5 @@ Change the Book when constitutional grammar, a durable distinction, or the statu
 4. [Inquiry and Examination](04-inquiry-and-examination/)
 5. [Evidence and Knowledge](05-evidence-and-knowledge/)
 6. [State and Projection](06-state-and-projection/)
+7. **Intentionally absent** — see [Book VII Operational Topic Collection Excision 001](book_vii_operational_topic_collection_excision_001.md).
 8. [Authority, Communication, and Stopping](08-authority-communication-and-stopping/)
