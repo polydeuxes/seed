@@ -164,7 +164,7 @@ def test_decoded_non_eof_ingress_returns_after_preservation_and_projection(
     assert examination.payload["lineage"] == [capture.id]
     assert examination.payload["decoder_outcome"] == "decoded"
     assert ingress.payload["ingress_kind"] == ingress_kind
-    assert ingress.payload["decoded_text"] == content
+    assert ingress.payload["decoded_text"] == material.decode()
     assert ingress.payload["lineage"] == [capture.id, examination.id]
     assert ingress.payload["dimensions"]["content"] == content
     assert ingress.payload["dimensions"]["authority_warrant"] == (
@@ -207,7 +207,7 @@ def test_console_recurs_after_each_quiescent_non_eof_attempt():
         event.payload["decoded_text"]
         for event in events
         if event.kind == "operator.ingress.common_grammar.ingress_occurred"
-    ] == ["first ingress", "second ingress"]
+    ] == ["first ingress\n", "second ingress\n"]
     assert (
         len(
             StateProjector(ledger)

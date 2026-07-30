@@ -43,15 +43,27 @@ def _run(material: bytes, *, ledger=None):
 
 
 @pytest.mark.parametrize(
-    ("material", "text"), [(b" exact \r\n", " exact "), (b"\n", "")]
+    ("material", "text", "ingress_kind", "content"),
+    [
+        (b" exact \r\n", " exact \r\n", "text", " exact "),
+        (b"\n", "\n", "empty", ""),
+        (b"\r\n", "\r\n", "empty", ""),
+    ],
 )
-def test_decoded_ingress_forms_exact_bounded_addressable_material(material, text):
+def test_decoded_ingress_forms_exact_bounded_addressable_material(
+    material, text, ingress_kind, content
+):
     ledger, view, artifact, output = _run(material)
     raw, examination, ingress = ledger.list_events("w")
     assert artifact is not None
     assert artifact.ingress_event_ref == ingress.id
     assert artifact.raw_material_event_ref == raw.id
     assert artifact.representation_examination_event_ref == examination.id
+    assert ingress.payload["raw_input"] == text
+    assert ingress.payload["decoded_text"] == text
+    assert ingress.payload["dimensions"]["content"] == content
+    assert ingress.payload["ingress_kind"] == ingress_kind
+    assert ingress.payload["decoded_text"] != ingress.payload["dimensions"]["content"]
     assert artifact.exact_operator_material.material_ref == ingress.id
     assert artifact.exact_operator_material.exact_text == text
     assert artifact.exact_operator_material.provenance == (
@@ -190,6 +202,11 @@ def test_sqlite_replay_reconstructs_identical_material(tmp_path):
         )
         == artifact
     )
+    replayed_artifact = OperatorIngressAddressableMaterial.from_json_dict(
+        replay_view["addressable_operator_material"]
+    )
+    assert artifact.exact_operator_material.exact_text == "é\n"
+    assert replayed_artifact.exact_operator_material.exact_text == "é\n"
     replay_ledger.close()
 
 
