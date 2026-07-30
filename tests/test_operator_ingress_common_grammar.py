@@ -8,27 +8,43 @@ import sys
 import pytest
 
 from seed_runtime.closed_choice_selection_binding import (
+    ClosedChoiceOption,
+    ClosedChoiceSelectionBindingError,
     OperatorSelectionTokenCapture,
+    PresentedClosedChoiceSet,
     bind_closed_choice_selection,
+)
+from seed_runtime.bounded_operator_goal_establishment import (
+    BoundedOperatorGoalEstablishmentError,
+    establish_bounded_operator_goal_from_closed_choice,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_ingress_common_grammar_prerequisite import (
-    CHOICE_SET_REF,
     APPLICATION_POTENTIAL_GOAL_ROLE_TESTIMONY,
     APPLICATION_POTENTIAL_GOAL_STANDING_CONVENTION,
     APPLICATION_PRESENTATION_ELIGIBILITY_CONVENTION,
+    APPLICATION_SOURCE_MEANING_CONVENTION,
     ApplicationPresentationPurposeDeclaration,
     ApplicationSourceMeaningTestimony,
     ApplicationSourceRoleTestimony,
     POTENTIAL_GOAL_SOURCE_REF,
+    RENDERING_KNOWN_LOSS,
+    SOURCE_MEANING_CONVENTIONS,
     SOURCE_MEANING_TESTIMONIES,
+    _dimensions,
+    _record,
+    _recordable_binding_testimony,
+    _recordable_presented_options,
+    _representation_fingerprint,
     _warrant_source_meaning_relation,
     _examine_potential_goal_standing,
     _examine_presentation_eligibility,
     application_presentation_purpose,
     common_grammar_choice_set,
+    common_grammar_representation_lineages,
     _recover_represented_source,
     run_operator_ingress_common_grammar_probe_attempt,
+    validate_capture_for_probe,
 )
 from seed_runtime.operator_ingress_representation import (
     CapturedOperatorMaterial,
@@ -728,21 +744,6 @@ def test_console_recurs_after_each_quiescent_non_eof_attempt():
     assert output == "Seed console: `exit` exits.\n"
 
 
-def _recorded_probe_inputs(ledger):
-    events = ledger.list_events("w")
-    ingress = events[0]
-    response = next(
-        e
-        for e in events
-        if e.kind == "operator.ingress.common_grammar.response_captured"
-    )
-    choice = common_grammar_choice_set(response.payload["presentation_ref"])
-    capture = OperatorSelectionTokenCapture(
-        response.payload["capture_ref"], CHOICE_SET_REF, "1"
-    )
-    return ingress.payload["attempt_ref"], choice, capture
-
-
 class _RawStdin:
     def __init__(self, material: bytes, encoding="utf-8"):
         self.buffer = BytesIO(material)
@@ -1076,47 +1077,499 @@ def test_representation_evidence_produces_no_broader_standing():
     )
 
 
-def _recover_after_binding_event_mutation(mutate):
-    ledger, _, _ = run_attempt("unknown request\n1\n")
-    events = ledger.list_events("w")
-    represented = next(e for e in events if e.kind.endswith("alternatives_represented"))
-    presentation = next(e for e in events if e.kind.endswith("presentation_occurred"))
-    response = next(e for e in events if e.kind.endswith("response_captured"))
-    binding_event = next(e for e in events if e.kind.endswith("binding_completed"))
-    selection = next(e for e in events if e.kind.endswith("alternative_selected"))
-    choice = common_grammar_choice_set(represented.payload["presentation_ref"])
-    binding = bind_closed_choice_selection(
-        choice,
-        OperatorSelectionTokenCapture(
-            response.payload["capture_ref"],
-            CHOICE_SET_REF,
-            "1",
-            provenance=(response.id,),
+# Disconnected downstream helper-contract witnesses
+# This fixture exercises bounded helper contracts directly. It does not represent
+# an active operator-ingress production road.
+
+
+def _record_downstream_fixture(*, ledger=None, token="1", attempt="attempt:helper"):
+    ledger = ledger or EventLedger()
+    presentation_ref = "presentation:helper"
+    choice = common_grammar_choice_set(presentation_ref)
+    representation_ref = "representation:helper"
+    rows = common_grammar_representation_lineages(choice, representation_ref)
+    payload = [vars(row) for row in rows]
+
+    def dims(identity, standing, responsibility):
+        return _dimensions(
+            identity=identity,
+            content="bounded fixture",
+            standing=standing,
+            source="test fixture",
+            responsibility=responsibility,
+            authority="local contract only",
+            scope=f"attempt:{attempt}",
+            occurrence="direct bounded fixture occurrence",
+        )
+
+    represented = _record(
+        ledger,
+        "operator.ingress.common_grammar.alternatives_represented",
+        "w",
+        "s",
+        attempt,
+        dims(
+            representation_ref,
+            "preserved-before-selection",
+            "responsible-alternative-representation",
         ),
+        choice_set_ref=choice.choice_set_ref,
+        presentation_ref=presentation_ref,
+        choice_set_fingerprint=choice.exact_choice_set_fingerprint,
+        representations=payload,
+        representation_evidence_fingerprint=_representation_fingerprint(payload),
+        known_loss=list(RENDERING_KNOWN_LOSS),
+        lineage=[],
     )
-    mutate(ledger, binding_event, selection)
-    return _recover_represented_source(
+    presented = _record(
+        ledger,
+        "operator.ingress.common_grammar.presentation_occurred",
+        "w",
+        "s",
+        attempt,
+        dims(presentation_ref, "presented", "presentation"),
+        choice_set_ref=choice.choice_set_ref,
+        presentation_ref=presentation_ref,
+        choice_set_fingerprint=choice.exact_choice_set_fingerprint,
+        lineage=[represented.id],
+    )
+    capture_ref = "capture:helper"
+    response = _record(
+        ledger,
+        "operator.ingress.common_grammar.response_captured",
+        "w",
+        "s",
+        attempt,
+        dims(capture_ref, "captured", "response-capture"),
+        raw_input=token + "\n",
+        response_kind="token",
+        choice_set_ref=choice.choice_set_ref,
+        presentation_ref=presentation_ref,
+        capture_ref=capture_ref,
+        choice_set_fingerprint=choice.exact_choice_set_fingerprint,
+        lineage=[presented.id],
+    )
+    capture = OperatorSelectionTokenCapture(
+        capture_ref, choice.choice_set_ref, token, provenance=(response.id,)
+    )
+    binding = bind_closed_choice_selection(choice, capture)
+    binding_event = _record(
+        ledger,
+        "operator.ingress.common_grammar.binding_completed",
+        "w",
+        "s",
+        attempt,
+        dims(binding.binding_id, "bound", "exact-set-binding"),
+        binding_id=binding.binding_id,
+        binding_testimony=_recordable_binding_testimony(binding),
+        capture_ref=capture_ref,
+        choice_set_ref=choice.choice_set_ref,
+        presented_options=_recordable_presented_options(choice),
+        selected_presented_alternative_ref=binding.selected_presented_alternative_ref,
+        response_kind="token",
+        unknowns=[],
+        choice_set_fingerprint=choice.exact_choice_set_fingerprint,
+        lineage=[response.id, presented.id],
+    )
+    selected = _record(
+        ledger,
+        "operator.ingress.common_grammar.alternative_selected",
+        "w",
+        "s",
+        attempt,
+        dims(
+            binding.selected_presented_alternative_ref,
+            "selected",
+            "presented-alternative-selection",
+        ),
+        selected_presented_alternative_ref=binding.selected_presented_alternative_ref,
+        binding_id=binding.binding_id,
+        lineage=[binding_event.id],
+    )
+    return (
+        ledger,
+        choice,
+        capture,
+        binding,
+        represented,
+        presented,
+        response,
+        binding_event,
+        selected,
+    )
+
+
+def _record_source_recovery_fixture(*, token="1"):
+    fixture = _record_downstream_fixture(token=token)
+    ledger, choice, _, binding, represented, presented, _, binding_event, selected = (
+        fixture
+    )
+    recovered, refusal = _recover_represented_source(
         binding,
         choice,
         represented,
         ledger=ledger,
         workspace_id="w",
-        attempt_ref=represented.payload["attempt_ref"],
-        presentation_occurrence=presentation,
-        selection_occurrence=selection,
+        attempt_ref="attempt:helper",
+        presentation_occurrence=presented,
+        selection_occurrence=selected,
     )
-
-
-def _remove_binding_occurrence(ledger, binding_event, _selection):
-    ledger._events.remove(binding_event)
-    ledger._by_workspace["w"].remove(binding_event)
-    del ledger._by_id[binding_event.id]
-
-
-def _duplicate_binding_occurrence(ledger, binding_event, _selection):
-    ledger.append(
-        binding_event.kind,
+    assert refusal is None
+    recovery = _record(
+        ledger,
+        "operator.ingress.common_grammar.source_recovered",
         "w",
-        deepcopy(binding_event.payload),
-        session_id=binding_event.session_id,
+        "s",
+        "attempt:helper",
+        _dimensions(
+            identity=f"source-recovery:{selected.id}",
+            content=recovered.represented_source_ref,
+            standing="recovered",
+            source=represented.id,
+            responsibility="represented-source-recovery",
+            authority="recovery only",
+            scope="attempt:helper",
+            occurrence="direct bounded fixture occurrence",
+        ),
+        recovered_source_ref=recovered.represented_source_ref,
+        recovered_source_role=recovered.represented_source_role,
+        recovered_source_proposition=recovered.proposition_assertion,
+        selected_presented_alternative_ref=recovered.presented_alternative_ref,
+        representation_occurrence_id=represented.id,
+        binding_occurrence_id=binding_event.id,
+        known_loss=list(recovered.representation_known_loss),
+        lineage=[represented.id, presented.id, binding_event.id, selected.id],
     )
+    return fixture, recovery
+
+
+def test_direct_representation_and_source_recovery_preserve_exact_distinctions():
+    fixture, recovery = _record_source_recovery_fixture()
+    _, choice, _, _, represented, presented, response, binding_event, selected = fixture
+    row = represented.payload["representations"][0]
+    assert (
+        len(
+            {
+                "1",
+                row["presented_alternative_ref"],
+                row["represented_source_ref"],
+                row["rendered_label"],
+                row["proposition_assertion"],
+            }
+        )
+        == 5
+    )
+    assert row["rendered_label"] != row["proposition_assertion"]
+    assert row["exact_choice_set_fingerprint"] == choice.exact_choice_set_fingerprint
+    assert (
+        row["producer_occurrence_ref"] == represented.payload["dimensions"]["identity"]
+    )
+    assert recovery.payload["lineage"] == [
+        represented.id,
+        presented.id,
+        binding_event.id,
+        selected.id,
+    ]
+    assert response.id in binding_event.payload["lineage"]
+    assert tuple(recovery.payload["known_loss"]) == row["known_loss"]
+
+
+@pytest.mark.parametrize(
+    "change,reason",
+    [
+        ({"testimony_id": "wrong"}, "meaning_testimony_identity_mismatch"),
+        ({"source_ref": "source:wrong"}, "meaning_testimony_identity_mismatch"),
+        ({"source_role": "wrong"}, "source_role_mismatch"),
+        ({"proposition": "changed"}, "proposition_mismatch"),
+        (
+            {"relation_assertion": "identifies"},
+            "meaning_testimony_relation_not_expresses",
+        ),
+        (
+            {"attributed_supplier": ""},
+            "meaning_testimony_attribution_absent_or_mismatched",
+        ),
+        (
+            {"producer_declaration_ref": ""},
+            "meaning_testimony_declaration_reference_absent",
+        ),
+        ({"provenance": ()}, "meaning_testimony_provenance_absent"),
+        (
+            {"declared_application_purpose": "wrong"},
+            "meaning_testimony_purpose_mismatch",
+        ),
+        ({"scope": "wrong"}, "meaning_testimony_scope_mismatch"),
+        ({"unknowns": ("unknown",)}, "meaning_testimony_unknown"),
+        ({"conflicts": ("conflict",)}, "meaning_testimony_conflicting"),
+    ],
+)
+def test_direct_meaning_testimony_refusal_surface(change, reason):
+    fixture, recovery = _record_source_recovery_fixture()
+    testimony = replace(
+        SOURCE_MEANING_TESTIMONIES[recovery.payload["recovered_source_ref"]], **change
+    )
+    assert (
+        _rewarrant(
+            fixture[0],
+            recovery,
+            testimony=testimony,
+            convention=APPLICATION_SOURCE_MEANING_CONVENTION,
+        ).payload["refusal_reason"]
+        == reason
+    )
+
+
+@pytest.mark.parametrize(
+    "change,reason",
+    [
+        ({"convention_id": "wrong"}, "constitutive_convention_identity_mismatch"),
+        (
+            {"attribution": ""},
+            "constitutive_convention_attribution_absent_or_mismatched",
+        ),
+        ({"applicable_authority": ()}, "constitutive_convention_authority_absent"),
+        (
+            {"permitted_testimony_kind": "Other"},
+            "constitutive_convention_testimony_form_not_permitted",
+        ),
+        (
+            {"permitted_relation_form": "represents"},
+            "constitutive_convention_does_not_permit_expresses",
+        ),
+        ({"purpose": ""}, "constitutive_convention_purpose_mismatch"),
+        ({"scope": ""}, "constitutive_convention_scope_mismatch"),
+        ({"unknowns": ("unknown",)}, "constitutive_convention_unknown"),
+        ({"conflicts": ("conflict",)}, "constitutive_convention_conflicting"),
+    ],
+)
+def test_direct_constitutive_convention_refusal_surface(change, reason):
+    fixture, recovery = _record_source_recovery_fixture()
+    testimony = SOURCE_MEANING_TESTIMONIES[recovery.payload["recovered_source_ref"]]
+    assert (
+        _rewarrant(
+            fixture[0],
+            recovery,
+            testimony=testimony,
+            convention=replace(APPLICATION_SOURCE_MEANING_CONVENTION, **change),
+        ).payload["refusal_reason"]
+        == reason
+    )
+
+
+def test_direct_exact_meaning_warrant_and_missing_inputs_are_distinct():
+    fixture, recovery = _record_source_recovery_fixture()
+    testimony = SOURCE_MEANING_TESTIMONIES[recovery.payload["recovered_source_ref"]]
+    warranted = _rewarrant(
+        fixture[0],
+        recovery,
+        testimony=testimony,
+        convention=SOURCE_MEANING_CONVENTIONS[testimony.source_ref],
+    )
+    assert (
+        warranted.kind.endswith("meaning_relation_warranted")
+        and warranted.payload["source_recovery_occurrence_id"] == recovery.id
+    )
+    fixture, recovery = _record_source_recovery_fixture()
+    missing = _rewarrant(
+        fixture[0],
+        recovery,
+        testimony=None,
+        convention=APPLICATION_SOURCE_MEANING_CONVENTION,
+    )
+    assert (
+        missing.payload["refusal_reason"] == "missing_meaning_testimony"
+        and "remains Unknown" in missing.payload["unknowns"][0]
+    )
+    fixture, recovery = _record_source_recovery_fixture()
+    testimony = SOURCE_MEANING_TESTIMONIES[recovery.payload["recovered_source_ref"]]
+    assert (
+        _rewarrant(fixture[0], recovery, testimony=testimony, convention=None).payload[
+            "refusal_reason"
+        ]
+        == "missing_constitutive_convention"
+    )
+
+
+def test_direct_meaning_warrant_rejects_forgery_duplicates_and_upstream_uncertainty():
+    fixture, recovery = _record_source_recovery_fixture()
+    other = SOURCE_MEANING_TESTIMONIES["source:operator-common-grammar-local-stop:v1"]
+    assert (
+        _rewarrant(
+            fixture[0],
+            recovery,
+            testimony=other,
+            convention=APPLICATION_SOURCE_MEANING_CONVENTION,
+        ).payload["refusal_reason"]
+        == "source_identity_mismatch"
+    )
+    fixture, recovery = _record_source_recovery_fixture()
+    forged = recovery.model_copy(deep=True)
+    forged.payload["recovered_source_proposition"] = "forged"
+    exact = SOURCE_MEANING_TESTIMONIES[recovery.payload["recovered_source_ref"]]
+    assert (
+        _rewarrant(
+            fixture[0],
+            forged,
+            testimony=exact,
+            convention=APPLICATION_SOURCE_MEANING_CONVENTION,
+        ).payload["refusal_reason"]
+        == "supplied_source_recovery_is_not_recorded_occurrence"
+    )
+    fixture, recovery = _record_source_recovery_fixture()
+    fixture[0].extend([recovery.model_copy(update={"id": "event:duplicate"})])
+    exact = SOURCE_MEANING_TESTIMONIES[recovery.payload["recovered_source_ref"]]
+    assert (
+        _rewarrant(
+            fixture[0],
+            recovery,
+            testimony=exact,
+            convention=APPLICATION_SOURCE_MEANING_CONVENTION,
+        ).payload["refusal_reason"]
+        == "multiple_source_recovery_occurrences"
+    )
+    for field, reason in (
+        ("unknowns", "upstream_representation_unknown"),
+        ("conflicts", "upstream_representation_conflicting"),
+    ):
+        fixture, recovery = _record_source_recovery_fixture()
+        fixture[4].payload[field] = [field]
+        exact = SOURCE_MEANING_TESTIMONIES[recovery.payload["recovered_source_ref"]]
+        assert (
+            _rewarrant(
+                fixture[0],
+                recovery,
+                testimony=exact,
+                convention=APPLICATION_SOURCE_MEANING_CONVENTION,
+            ).payload["refusal_reason"]
+            == reason
+        )
+
+
+@pytest.mark.parametrize(
+    "mutation,reason",
+    [
+        (lambda f: None, "no_recorded_representation_occurrence"),
+        (lambda f: f[4].payload.__setitem__("attempt_ref", "wrong"), "wrong_attempt"),
+        (
+            lambda f: f[4].payload.__setitem__("presentation_ref", "wrong"),
+            "wrong_presentation",
+        ),
+        (
+            lambda f: f[4].payload.__setitem__("choice_set_ref", "wrong"),
+            "wrong_choice_set",
+        ),
+        (
+            lambda f: f[4].payload.__setitem__("choice_set_fingerprint", "wrong"),
+            "wrong_set_fingerprint",
+        ),
+        (
+            lambda f: f[4]
+            .payload["representations"][0]
+            .__setitem__("proposition_assertion", "forged"),
+            "forged_relation_payload",
+        ),
+    ],
+)
+def test_direct_source_recovery_checks_exact_representation(mutation, reason):
+    fixture = _record_downstream_fixture()
+    mutation(fixture)
+    occurrence = (
+        None if reason == "no_recorded_representation_occurrence" else fixture[4]
+    )
+    recovered, refusal = _recover_represented_source(
+        fixture[3],
+        fixture[1],
+        occurrence,
+        ledger=fixture[0],
+        workspace_id="w",
+        attempt_ref="attempt:helper",
+        presentation_occurrence=fixture[5],
+        selection_occurrence=fixture[8],
+    )
+    assert recovered is None and refusal == reason
+
+
+@pytest.mark.parametrize(
+    "field,value,reason",
+    [
+        ("binding_id", "wrong", "binding_id_mismatch"),
+        ("choice_set_ref", "wrong", "binding_choice_set_mismatch"),
+        ("choice_set_fingerprint", "wrong", "binding_set_fingerprint_mismatch"),
+        ("presented_options", [], "binding_presented_options_mismatch"),
+        (
+            "selected_presented_alternative_ref",
+            "wrong",
+            "binding_selected_alternative_mismatch",
+        ),
+        ("binding_testimony", {}, "recorded_binding_payload_mismatch"),
+        ("lineage", [], "binding_lineage_mismatch"),
+    ],
+)
+def test_direct_source_recovery_checks_exact_recorded_binding(field, value, reason):
+    fixture = _record_downstream_fixture()
+    fixture[7].payload[field] = value
+    recovered, refusal = _recover_represented_source(
+        fixture[3],
+        fixture[1],
+        fixture[4],
+        ledger=fixture[0],
+        workspace_id="w",
+        attempt_ref="attempt:helper",
+        presentation_occurrence=fixture[5],
+        selection_occurrence=fixture[8],
+    )
+    assert recovered is None and refusal == reason
+
+
+def test_direct_capture_validation_identity_consumption_and_durable_replay(tmp_path):
+    fixture = _record_downstream_fixture()
+    ledger, choice, capture = fixture[:3]
+    altered = PresentedClosedChoiceSet(
+        choice.choice_set_ref,
+        choice.prompt,
+        (ClosedChoiceOption("1", "different", "Different"), *choice.options[1:]),
+        choice.presentation_ref,
+    )
+    for candidate_choice, candidate_capture in (
+        (common_grammar_choice_set("presentation:wrong"), capture),
+        (choice, replace(capture, choice_set_ref="wrong")),
+        (altered, capture),
+        (choice, replace(capture, capture_ref="other")),
+    ):
+        with pytest.raises(ClosedChoiceSelectionBindingError):
+            validate_capture_for_probe(
+                ledger=ledger,
+                workspace_id="w",
+                attempt_ref="attempt:helper",
+                choice_set=candidate_choice,
+                capture=candidate_capture,
+            )
+    with pytest.raises(ClosedChoiceSelectionBindingError, match="already consumed"):
+        validate_capture_for_probe(
+            ledger=ledger,
+            workspace_id="w",
+            attempt_ref="attempt:helper",
+            choice_set=choice,
+            capture=capture,
+        )
+    path = tmp_path / "helper-replay.db"
+    durable = SQLiteEventLedger(str(path))
+    durable_fixture = _record_downstream_fixture(ledger=durable)
+    durable.close()
+    reopened = SQLiteEventLedger(str(path))
+    with pytest.raises(ClosedChoiceSelectionBindingError, match="already consumed"):
+        validate_capture_for_probe(
+            ledger=reopened,
+            workspace_id="w",
+            attempt_ref="attempt:helper",
+            choice_set=durable_fixture[1],
+            capture=durable_fixture[2],
+        )
+    reopened.close()
+
+
+def test_direct_closed_choice_binding_is_not_positive_boge_admission():
+    with pytest.raises(BoundedOperatorGoalEstablishmentError):
+        establish_bounded_operator_goal_from_closed_choice(
+            _record_downstream_fixture()[3]
+        )
