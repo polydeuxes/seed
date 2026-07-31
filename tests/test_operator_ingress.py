@@ -12,7 +12,10 @@ from seed_runtime.operator_ingress import (
 )
 from seed_runtime.operator_ingress_representation import (
     CapturedOperatorMaterial,
+    OperatorIngressRepresentationError,
+    RepresentationExamination,
     capture_stdin_material,
+    examine_text_representation,
 )
 from seed_runtime.state import StateProjector
 from scripts import seed_local
@@ -128,43 +131,120 @@ def test_projector_rejects_deleted_initial_eof_kind():
         StateProjector(ledger).project("w")
 
 
-@pytest.mark.parametrize(
-    "kind",
-    (
+def test_projector_accepts_current_kinds_from_producer_generated_roads():
+    decoded, decoded_view, _ = run_raw(b"decoded\n")
+    rejected, rejected_view, _ = run_raw(b"\xff\n")
+
+    decoded_events = decoded.list_events("raw-w")
+    rejected_events = rejected.list_events("raw-w")
+    assert [event.kind for event in decoded_events] == [
         "operator.ingress.raw_material_captured",
         "operator.ingress.representation_examined",
         "operator.ingress.ingress_occurred",
+    ]
+    assert [event.kind for event in rejected_events] == [
+        "operator.ingress.raw_material_captured",
+        "operator.ingress.representation_examined",
         "operator.ingress.stopping_occurred",
+    ]
+    assert decoded_view["event_ids"] == [event.id for event in decoded_events]
+    assert rejected_view["event_ids"] == [event.id for event in rejected_events]
+
+
+def _captured(**overrides):
+    values = {
+        "exact_bytes": b"material",
+        "eof": False,
+        "delimiter_hex": None,
+        "capture_boundary": "test boundary",
+        "byte_material_origin": "test origin",
+        "encoding_testimony": None,
+        "known_loss": (),
+    }
+    values.update(overrides)
+    return CapturedOperatorMaterial(**values)
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    (
+        {"exact_bytes": b"", "eof": True},
+        {},
+        {"exact_bytes": b"material\n", "delimiter_hex": "0a"},
+        {"exact_bytes": b"material\r\n", "delimiter_hex": "0d0a"},
     ),
 )
-def test_projector_accepts_each_current_operator_ingress_kind(kind):
-    ledger = EventLedger()
-    payload = {
-        "attempt_ref": "attempt:current",
-        "dimensions": {"identity": "occurrence:current", "standing": "occurred"},
-    }
-    if kind == "operator.ingress.representation_examined":
-        payload.update(
-            material_role="initial_ingress",
-            capture_event_id="capture:current",
-            encoding_testimony="utf-8",
-            decoder_mechanism="utf-8",
-            decoder_mechanism_selection="test",
-            decoder_outcome="decoded",
-            decoder_succeeded=True,
-            decoder_failure=None,
-        )
-    ledger.append(kind, "w", payload, session_id="s")
+def test_captured_operator_material_accepts_coherent_direct_construction(overrides):
+    assert isinstance(_captured(**overrides), CapturedOperatorMaterial)
 
-    state = StateProjector(ledger).project("w")
 
-    assert state.operator_ingress_attempts["attempt:current"]["last_event_kind"] == kind
+@pytest.mark.parametrize(
+    "overrides",
+    (
+        {"exact_bytes": b"", "eof": False},
+        {"eof": True},
+        {"delimiter_hex": "0a"},
+        {"exact_bytes": b"material\n", "delimiter_hex": None},
+        {"exact_bytes": b"material\r\n", "delimiter_hex": "0a"},
+        {"capture_boundary": ""},
+        {"byte_material_origin": ""},
+        {"encoding_testimony": ""},
+        {"exact_bytes": bytearray(b"material")},
+        {"eof": 0},
+        {"delimiter_hex": 10},
+        {"capture_boundary": 1},
+        {"byte_material_origin": object()},
+        {"encoding_testimony": 1},
+        {"known_loss": []},
+        {"known_loss": ("loss", 1)},
+    ),
+)
+def test_captured_operator_material_refuses_malformed_direct_construction(overrides):
+    with pytest.raises(OperatorIngressRepresentationError):
+        _captured(**overrides)
+
+
+@pytest.mark.parametrize(
+    "values",
+    (
+        ("utf-8", "testimony", "decoded", "text", None),
+        ("missing", "testimony", "decoder_unavailable", None, "not found"),
+        ("ascii", "testimony", "bytes_rejected", None, "invalid byte"),
+    ),
+)
+def test_representation_examination_accepts_coherent_direct_construction(values):
+    examination = RepresentationExamination(*values)
+    assert examination.succeeded is (values[2] == "decoded")
+
+
+@pytest.mark.parametrize(
+    "values",
+    (
+        ("utf-8", "testimony", "decoded", None, None),
+        ("utf-8", "testimony", "decoded", "text", "failure"),
+        ("utf-8", "testimony", "bytes_rejected", "text", "failure"),
+        ("utf-8", "testimony", "bytes_rejected", None, None),
+        ("utf-8", "testimony", "decoder_unavailable", None, ""),
+        ("utf-8", "testimony", "unknown", None, "failure"),
+        ("", "testimony", "decoded", "text", None),
+        ("utf-8", "", "decoded", "text", None),
+        (1, "testimony", "decoded", "text", None),
+        ("utf-8", 1, "decoded", "text", None),
+        ("utf-8", "testimony", 1, "text", None),
+        ("utf-8", "testimony", "decoded", b"text", None),
+        ("utf-8", "testimony", "decoded", "text", 1),
+    ),
+)
+def test_representation_examination_refuses_malformed_direct_construction(values):
+    with pytest.raises(OperatorIngressRepresentationError):
+        RepresentationExamination(*values)
 
 
 def test_runner_has_no_second_input_parameter():
-    assert "response_input_stream" not in inspect.signature(
-        run_operator_ingress_attempt
-    ).parameters
+    assert (
+        "response_input_stream"
+        not in inspect.signature(run_operator_ingress_attempt).parameters
+    )
 
 
 def test_deleted_payload_coordinates_are_not_copied_from_an_active_event():
@@ -182,9 +262,7 @@ def test_deleted_payload_coordinates_are_not_copied_from_an_active_event():
     )
 
     view = (
-        StateProjector(ledger)
-        .project("w")
-        .operator_ingress_attempts["attempt:current"]
+        StateProjector(ledger).project("w").operator_ingress_attempts["attempt:current"]
     )
     assert set(view) == {
         "event_ids",
@@ -316,12 +394,7 @@ def test_console_recurs_after_each_quiescent_non_eof_attempt():
         if event.kind == "operator.ingress.ingress_occurred"
     ] == ["first ingress\n", "second ingress\n"]
     assert (
-        len(
-            StateProjector(ledger)
-            .project("console-w")
-            .operator_ingress_attempts
-        )
-        == 2
+        len(StateProjector(ledger).project("console-w").operator_ingress_attempts) == 2
     )
     assert output == "Seed console: `exit` exits.\n"
 
@@ -378,6 +451,48 @@ def test_console_immediate_eof_returns_without_operator_ingress_events():
     assert output == "Seed console: `exit` exits.\n"
 
 
+def test_empty_stream_encoding_metadata_uses_utf8_fallback_at_producer_boundary():
+    captured = capture_stdin_material(_RawStdin(b"material\n", encoding=""))
+    examination = examine_text_representation(captured)
+
+    assert captured.encoding_testimony is None
+    assert examination.mechanism == "utf-8"
+    assert examination.mechanism_selection == "implementation_utf8_fallback"
+
+
+def test_console_admits_empty_stream_encoding_as_no_usable_testimony():
+    ledger = EventLedger()
+    output = StringIO()
+    seed_local.run_persistent_operator_console(
+        ledger=ledger,
+        workspace_id="console-w",
+        session_id="console-s",
+        input_stream=_RawStdin(b"material\n", encoding=""),
+        output_stream=output,
+    )
+
+    capture, examination, ingress = ledger.list_events("console-w")
+    assert capture.payload["exact_bytes_hex"] == b"material\n".hex()
+    assert capture.payload["encoding_testimony"] is None
+    assert examination.payload["encoding_testimony"] is None
+    assert examination.payload["decoder_mechanism"] == "utf-8"
+    assert (
+        examination.payload["decoder_mechanism_selection"]
+        == "implementation_utf8_fallback"
+    )
+    assert ingress.payload["decoded_text"] == "material\n"
+    assert output.getvalue() == "Seed console: `exit` exits.\n"
+
+
+@pytest.mark.parametrize("encoding", (1, b"utf-8", object()))
+def test_capture_refuses_foreign_stream_encoding_metadata(encoding):
+    with pytest.raises(
+        OperatorIngressRepresentationError,
+        match="malformed stream encoding metadata",
+    ):
+        capture_stdin_material(_RawStdin(b"material\n", encoding=encoding))
+
+
 def test_console_eof_after_ordinary_input_adds_no_second_attempt():
     ledger, output = run_console(b"ordinary ingress\n")
 
@@ -386,7 +501,9 @@ def test_console_eof_after_ordinary_input_adds_no_second_attempt():
         "operator.ingress.representation_examined",
         "operator.ingress.ingress_occurred",
     ]
-    assert len(StateProjector(ledger).project("console-w").operator_ingress_attempts) == 1
+    assert (
+        len(StateProjector(ledger).project("console-w").operator_ingress_attempts) == 1
+    )
     assert output == "Seed console: `exit` exits.\n"
 
 
@@ -481,9 +598,7 @@ def test_stdin_buffer_capture_preserves_exact_boundary_bytes_and_decoder_testimo
     ledger.close()
     replay = StateProjector(SQLiteEventLedger(str(path))).project("raw-w")
     assert (
-        replay.operator_ingress_attempts[
-            next(iter(replay.operator_ingress_attempts))
-        ]
+        replay.operator_ingress_attempts[next(iter(replay.operator_ingress_attempts))]
         == view
     )
 
@@ -520,18 +635,14 @@ def test_decoder_success_does_not_claim_admission_interpretation_or_competency()
 
 def test_production_operator_ingress_contains_no_pesc_identifier_or_payload():
     forbidden = "pe" + "sc"
-    production = Path(
-        "seed_runtime/operator_ingress.py"
-    ).read_text()
+    production = Path("seed_runtime/operator_ingress.py").read_text()
     production += Path("seed_runtime/operator_ingress_representation.py").read_text()
     assert forbidden not in production.lower()
 
 
 def test_production_and_event_payloads_do_not_claim_source_relative_original_bytes():
     forbidden = "original_transport" + "_bytes"
-    production = Path(
-        "seed_runtime/operator_ingress.py"
-    ).read_text()
+    production = Path("seed_runtime/operator_ingress.py").read_text()
     production += Path("seed_runtime/operator_ingress_representation.py").read_text()
     assert forbidden not in production
 
