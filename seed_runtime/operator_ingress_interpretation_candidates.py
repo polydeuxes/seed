@@ -44,13 +44,13 @@ def _refuse(message: str) -> None:
 
 
 def _string(value: object, name: str, *, empty: bool = False) -> str:
-    if not isinstance(value, str) or (not empty and not value):
+    if type(value) is not str or (not empty and not value):
         _refuse(f"{name} must be a string")
     return value
 
 
 def _intrinsic_string_tuple(value: object, name: str) -> None:
-    if type(value) is not tuple or not all(isinstance(item, str) for item in value):
+    if type(value) is not tuple or not all(type(item) is str for item in value):
         _refuse(f"{name} must be an exact tuple of strings")
 
 
@@ -68,7 +68,7 @@ def _json_sequence(value: object, name: str) -> list[object] | tuple[object, ...
 
 def _json_string_tuple(value: object, name: str) -> tuple[str, ...]:
     sequence = _json_sequence(value, name)
-    if not all(isinstance(item, str) for item in sequence):
+    if not all(type(item) is str for item in sequence):
         _refuse(f"{name} must contain only strings")
     return tuple(sequence)
 
@@ -209,14 +209,9 @@ class OperatorIngressInterpretationCandidateSet:
         self._validate_intrinsic_invariants()
 
     def _validate_intrinsic_invariants(self) -> None:
-        if self.artifact_type != ARTIFACT_TYPE:
-            _refuse("wrong artifact_type")
-        if self.convention != CONVENTION:
-            _refuse("wrong convention")
-        if self.boundary_notes != BOUNDARY_NOTES:
-            _refuse("v1 boundary_notes are repository-owned")
-        if self.preservation_authority_limits != REQUIRED_AUTHORITY_LIMITS:
-            _refuse("v1 preservation authority limits are repository-owned")
+        _string(self.artifact_type, "artifact_type")
+        _string(self.candidate_set_id, "candidate_set_id")
+        _string(self.convention, "convention")
         for name in (
             "candidate_testimonies",
             "supplied_set_unknowns",
@@ -231,6 +226,14 @@ class OperatorIngressInterpretationCandidateSet:
                     _refuse("candidate testimonies must be an exact tuple")
             else:
                 _intrinsic_string_tuple(value, name)
+        if self.artifact_type != ARTIFACT_TYPE:
+            _refuse("wrong artifact_type")
+        if self.convention != CONVENTION:
+            _refuse("wrong convention")
+        if self.boundary_notes != BOUNDARY_NOTES:
+            _refuse("v1 boundary_notes are repository-owned")
+        if self.preservation_authority_limits != REQUIRED_AUTHORITY_LIMITS:
+            _refuse("v1 preservation authority limits are repository-owned")
         try:
             validate_operator_ingress_addressable_material(self.addressable_material)
         except OperatorIngressAddressableMaterialError as error:
@@ -266,7 +269,6 @@ class OperatorIngressInterpretationCandidateSet:
             refs.add(candidate.candidate_ref)
             if any(ref not in spans for ref in candidate.source_span_refs):
                 _refuse("candidate references a foreign source span")
-        _string(self.candidate_set_id, "candidate_set_id")
         expected_id = candidate_set_id_from_fields(
             addressable_material=self.addressable_material,
             candidate_testimonies=self.candidate_testimonies,
