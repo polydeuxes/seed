@@ -17,27 +17,21 @@ from seed_runtime.contextual_interpretation_warrant_set import (
     ExactOperatorMaterial,
     SourceSpan,
 )
-from seed_runtime.operator_ingress_common_grammar_prerequisite import (
-    run_operator_ingress_common_grammar_probe_attempt,
+from seed_runtime.operator_ingress import (
+    run_operator_ingress_attempt,
 )
 from seed_runtime.operator_ingress_representation import capture_stdin_material
 from seed_runtime.state import StateProjector
 
 
-class _UnreadableResponse:
-    def readline(self):
-        pytest.fail("addressable-material formation must not read a second input")
-
-
 def _run(material: bytes, *, ledger=None):
     ledger = ledger or EventLedger()
     output = StringIO()
-    view = run_operator_ingress_common_grammar_probe_attempt(
+    view = run_operator_ingress_attempt(
         ledger=ledger,
         workspace_id="w",
         session_id="s",
         captured_ingress=capture_stdin_material(BytesIO(material)),
-        response_input_stream=_UnreadableResponse(),
         output_stream=output,
     )
     projected = view.get("addressable_operator_material")
@@ -102,9 +96,9 @@ def test_decoded_ingress_forms_exact_bounded_addressable_material(
     assert view["addressable_operator_material"] == artifact.to_json_dict()
     assert output == ""
     assert [event.kind for event in ledger.list_events("w")] == [
-        "operator.ingress.common_grammar.raw_material_captured",
-        "operator.ingress.common_grammar.representation_examined",
-        "operator.ingress.common_grammar.ingress_occurred",
+        "operator.ingress.raw_material_captured",
+        "operator.ingress.representation_examined",
+        "operator.ingress.ingress_occurred",
     ]
 
 
@@ -113,8 +107,8 @@ def test_empty_exact_material_has_one_canonical_zero_length_span():
     span = artifact.exact_operator_material.source_spans[0]
     assert (span.start, span.end, span.exact_text) == (0, 1, "\n")
 
-    # An empty decoded material is supported by the owner even though common
-    # grammar framing normally preserves its delimiter in decoded_text.
+    # An empty decoded material is supported by the owner; ingress capture
+    # normally preserves its delimiter in decoded_text.
     material = replace(artifact.exact_operator_material, exact_text="")
     span = SourceSpan(
         operator_material_full_span_id(
@@ -263,12 +257,11 @@ def test_active_formation_does_not_call_interpretation_producer(monkeypatch):
 def test_eof_and_representation_insufficiency_form_no_addressable_material(material):
     ledger = EventLedger()
     output = StringIO()
-    view = run_operator_ingress_common_grammar_probe_attempt(
+    view = run_operator_ingress_attempt(
         ledger=ledger,
         workspace_id="w",
         session_id="s",
         captured_ingress=capture_stdin_material(BytesIO(material)),
-        response_input_stream=_UnreadableResponse(),
         output_stream=output,
     )
     assert "addressable_operator_material" not in view
@@ -340,8 +333,8 @@ def test_sqlite_replay_reconstructs_identical_material(tmp_path):
     ledger.close()
     replay_ledger = SQLiteEventLedger(str(path))
     replay = StateProjector(replay_ledger).project("w")
-    replay_view = replay.operator_ingress_common_grammar_attempts[
-        next(iter(replay.operator_ingress_common_grammar_attempts))
+    replay_view = replay.operator_ingress_attempts[
+        next(iter(replay.operator_ingress_attempts))
     ]
     assert replay_view == view
     assert (
@@ -361,7 +354,7 @@ def test_sqlite_replay_reconstructs_identical_material(tmp_path):
 def test_historical_incomplete_ingress_replays_without_inventing_material():
     ledger = EventLedger()
     historical = ledger.append(
-        "operator.ingress.common_grammar.ingress_occurred",
+        "operator.ingress.ingress_occurred",
         "w",
         {
             "attempt_ref": "attempt:historical",
@@ -378,7 +371,7 @@ def test_historical_incomplete_ingress_replays_without_inventing_material():
     view = (
         StateProjector(ledger)
         .project("w")
-        .operator_ingress_common_grammar_attempts["attempt:historical"]
+        .operator_ingress_attempts["attempt:historical"]
     )
     assert (
         view["current_standing"]["preserved_ingress"]["evidence_event_id"]

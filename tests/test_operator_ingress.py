@@ -1,4 +1,5 @@
 from io import BytesIO, StringIO
+import inspect
 from pathlib import Path
 import subprocess
 import sys
@@ -6,8 +7,8 @@ import sys
 import pytest
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.operator_ingress_common_grammar_prerequisite import (
-    run_operator_ingress_common_grammar_probe_attempt,
+from seed_runtime.operator_ingress import (
+    run_operator_ingress_attempt,
 )
 from seed_runtime.operator_ingress_representation import (
     CapturedOperatorMaterial,
@@ -22,12 +23,11 @@ def run_attempt(text, ledger=None, session="s"):
     output = StringIO()
     input_stream = StringIO(text)
     captured_ingress = capture_stdin_material(input_stream)
-    view = run_operator_ingress_common_grammar_probe_attempt(
+    view = run_operator_ingress_attempt(
         ledger=ledger,
         workspace_id="w",
         session_id=session,
         captured_ingress=captured_ingress,
-        response_input_stream=input_stream,
         output_stream=output,
     )
     return ledger, view, output.getvalue()
@@ -87,7 +87,7 @@ DELETED_PAYLOAD_COORDINATES = (
 def test_deleted_event_kinds_are_rejected_without_creating_an_attempt(kind):
     ledger = EventLedger()
     ledger.append(
-        f"operator.ingress.common_grammar.{kind}",
+        f"operator.ingress.{kind}",
         "w",
         {"attempt_ref": "attempt:deleted", "dimensions": {"identity": "deleted"}},
         session_id="s",
@@ -97,10 +97,30 @@ def test_deleted_event_kinds_are_rejected_without_creating_an_attempt(kind):
         StateProjector(ledger).project("w")
 
 
+def test_previous_nested_namespace_is_rejected():
+    ledger = EventLedger()
+    previous_kind = "operator.ingress." + "common_" + "grammar.raw_material_captured"
+    ledger.append(
+        previous_kind,
+        "w",
+        {"attempt_ref": "attempt:previous", "dimensions": {"identity": "previous"}},
+        session_id="s",
+    )
+
+    with pytest.raises(ValueError, match="unsupported operator-ingress"):
+        StateProjector(ledger).project("w")
+
+
+def test_runner_has_no_second_input_parameter():
+    assert "response_input_stream" not in inspect.signature(
+        run_operator_ingress_attempt
+    ).parameters
+
+
 def test_deleted_payload_coordinates_are_not_copied_from_an_active_event():
     ledger = EventLedger()
     ledger.append(
-        "operator.ingress.common_grammar.raw_material_captured",
+        "operator.ingress.raw_material_captured",
         "w",
         {
             "attempt_ref": "attempt:current",
@@ -114,7 +134,7 @@ def test_deleted_payload_coordinates_are_not_copied_from_an_active_event():
     view = (
         StateProjector(ledger)
         .project("w")
-        .operator_ingress_common_grammar_attempts["attempt:current"]
+        .operator_ingress_attempts["attempt:current"]
     )
     assert set(view) == {
         "event_ids",
@@ -133,12 +153,12 @@ def test_deleted_payload_coordinates_are_not_copied_from_an_active_event():
     }
 
 
-def test_initial_eof_records_eof_and_separate_stop_without_probe():
+def test_initial_eof_records_eof_and_separate_local_stop():
     ledger, view, output = run_attempt("")
     assert [event.kind for event in ledger.list_events("w")] == [
-        "operator.ingress.common_grammar.raw_material_captured",
-        "operator.ingress.common_grammar.initial_eof_occurred",
-        "operator.ingress.common_grammar.stopping_occurred",
+        "operator.ingress.raw_material_captured",
+        "operator.ingress.initial_eof_occurred",
+        "operator.ingress.stopping_occurred",
     ]
     assert view["representation_examinations"] == {}
     assert view["closed"] is True
@@ -146,7 +166,7 @@ def test_initial_eof_records_eof_and_separate_stop_without_probe():
         view["current_standing"]["interaction_closure"]["dimensions"]["standing"]
         == "closed"
     )
-    assert output == "Operator-ingress common-grammar interaction stopped locally.\n"
+    assert output == "Operator-ingress interaction stopped locally.\n"
     stop = ledger.list_events("w")[-1]
     assert stop.payload["dimensions"]["authority_warrant"] == (
         "closes only this interaction"
@@ -167,26 +187,22 @@ def test_decoded_non_eof_ingress_returns_after_preservation_and_projection(
     output = StringIO()
     captured = capture_stdin_material(BytesIO(material))
 
-    class ResponseInputMustNotBeRead:
-        def readline(self):
-            pytest.fail("decoded ingress must not trigger a response read")
-
-    view = run_operator_ingress_common_grammar_probe_attempt(
+    view = run_operator_ingress_attempt(
         ledger=ledger,
         workspace_id="w",
         session_id="s",
         captured_ingress=captured,
-        response_input_stream=ResponseInputMustNotBeRead(),
         output_stream=output,
     )
 
     events = ledger.list_events("w")
     assert [event.kind for event in events] == [
-        "operator.ingress.common_grammar.raw_material_captured",
-        "operator.ingress.common_grammar.representation_examined",
-        "operator.ingress.common_grammar.ingress_occurred",
+        "operator.ingress.raw_material_captured",
+        "operator.ingress.representation_examined",
+        "operator.ingress.ingress_occurred",
     ]
     capture, examination, ingress = events
+    assert ingress.payload["attempt_ref"].startswith("operator_ingress_attempt_")
     assert capture.payload["exact_bytes_hex"] == material.hex()
     assert examination.payload["lineage"] == [capture.id]
     assert examination.payload["decoder_outcome"] == "decoded"
@@ -241,21 +257,21 @@ def test_console_recurs_after_each_quiescent_non_eof_attempt():
         kind
         for _ in range(2)
         for kind in (
-            "operator.ingress.common_grammar.raw_material_captured",
-            "operator.ingress.common_grammar.representation_examined",
-            "operator.ingress.common_grammar.ingress_occurred",
+            "operator.ingress.raw_material_captured",
+            "operator.ingress.representation_examined",
+            "operator.ingress.ingress_occurred",
         )
     ]
     assert [
         event.payload["decoded_text"]
         for event in events
-        if event.kind == "operator.ingress.common_grammar.ingress_occurred"
+        if event.kind == "operator.ingress.ingress_occurred"
     ] == ["first ingress\n", "second ingress\n"]
     assert (
         len(
             StateProjector(ledger)
             .project("console-w")
-            .operator_ingress_common_grammar_attempts
+            .operator_ingress_attempts
         )
         == 2
     )
@@ -273,12 +289,11 @@ def run_raw(material: bytes, *, ledger=None):
     output = StringIO()
     input_stream = _RawStdin(material)
     captured_ingress = capture_stdin_material(input_stream)
-    view = run_operator_ingress_common_grammar_probe_attempt(
+    view = run_operator_ingress_attempt(
         ledger=ledger,
         workspace_id="raw-w",
         session_id="raw-s",
         captured_ingress=captured_ingress,
-        response_input_stream=input_stream,
         output_stream=output,
     )
     return ledger, view, output.getvalue()
@@ -309,17 +324,15 @@ def test_bare_seed_enters_persistent_console_and_announces_exit():
 
 
 def test_console_passes_its_capture_unchanged_to_the_bounded_attempt(monkeypatch):
-    supplied = _RawStdin(b"ordinary ingress\r\n2\nexit\n")
+    supplied = _RawStdin(b"ordinary ingress\r\nexit\n")
     received = []
 
     def bounded_attempt(**kwargs):
         received.append(kwargs)
-        # Response ownership remains inside the bounded attempt.
-        assert kwargs["response_input_stream"].buffer.readline() == b"2\n"
 
     monkeypatch.setattr(
         seed_local,
-        "run_operator_ingress_common_grammar_probe_attempt",
+        "run_operator_ingress_attempt",
         bounded_attempt,
     )
     seed_local.run_persistent_operator_console(
@@ -336,7 +349,7 @@ def test_console_passes_its_capture_unchanged_to_the_bounded_attempt(monkeypatch
     assert capture.delimiter_hex == "0d0a"
     assert capture.capture_boundary == "stdin.buffer.readline"
     assert capture.byte_material_origin == "direct_boundary_observation"
-    assert received[0]["response_input_stream"] is supplied
+    assert "response_input_stream" not in received[0]
 
 
 def test_existing_capture_provenance_is_recorded_without_reinference():
@@ -350,12 +363,11 @@ def test_existing_capture_provenance_is_recorded_without_reinference():
         known_loss=("explicit-test-loss",),
     )
     ledger = EventLedger()
-    run_operator_ingress_common_grammar_probe_attempt(
+    run_operator_ingress_attempt(
         ledger=ledger,
         workspace_id="w",
         session_id="s",
         captured_ingress=capture,
-        response_input_stream=BytesIO(b"2\n"),
         output_stream=StringIO(),
     )
     recorded = ledger.list_events("w")[0].payload
@@ -365,20 +377,13 @@ def test_existing_capture_provenance_is_recorded_without_reinference():
     assert recorded["known_loss"] == list(capture.known_loss)
 
 
-def test_parser_has_no_alternate_operator_ingress_controller():
-    parser = seed_local.build_parser()
-    assert not any(
-        action.dest == "operator_ingress_common_grammar" for action in parser._actions
-    )
-
-
 def test_outer_exit_is_not_operator_ingress_and_capture_keeps_provenance():
     ledger, _ = run_console(b"\xff\nexit\n")
     events = ledger.list_events("console-w")
     captures = [
         event
         for event in events
-        if event.kind == "operator.ingress.common_grammar.raw_material_captured"
+        if event.kind == "operator.ingress.raw_material_captured"
     ]
     assert len(captures) == 1
     assert captures[0].payload["exact_bytes_hex"] == "ff0a"
@@ -398,7 +403,7 @@ def test_stdin_buffer_capture_preserves_exact_boundary_bytes_and_decoder_testimo
     assert raw.payload["capture_boundary"] == "stdin.buffer.readline"
     assert raw.payload["byte_material_origin"] == "direct_boundary_observation"
     assert raw.payload["encoding_testimony"] == "utf-8"
-    assert examination.kind == "operator.ingress.common_grammar.representation_examined"
+    assert examination.kind == "operator.ingress.representation_examined"
     assert examination.payload["decoder_mechanism"] == "utf-8"
     assert examination.payload["decoder_succeeded"] is True
     assert examination.payload["decoder_failure"] is None
@@ -409,8 +414,8 @@ def test_stdin_buffer_capture_preserves_exact_boundary_bytes_and_decoder_testimo
     ledger.close()
     replay = StateProjector(SQLiteEventLedger(str(path))).project("raw-w")
     assert (
-        replay.operator_ingress_common_grammar_attempts[
-            next(iter(replay.operator_ingress_common_grammar_attempts))
+        replay.operator_ingress_attempts[
+            next(iter(replay.operator_ingress_attempts))
         ]
         == view
     )
@@ -449,7 +454,7 @@ def test_decoder_success_does_not_claim_admission_interpretation_or_competency()
 def test_production_operator_ingress_contains_no_pesc_identifier_or_payload():
     forbidden = "pe" + "sc"
     production = Path(
-        "seed_runtime/operator_ingress_common_grammar_prerequisite.py"
+        "seed_runtime/operator_ingress.py"
     ).read_text()
     production += Path("seed_runtime/operator_ingress_representation.py").read_text()
     assert forbidden not in production.lower()
@@ -458,7 +463,7 @@ def test_production_operator_ingress_contains_no_pesc_identifier_or_payload():
 def test_production_and_event_payloads_do_not_claim_source_relative_original_bytes():
     forbidden = "original_transport" + "_bytes"
     production = Path(
-        "seed_runtime/operator_ingress_common_grammar_prerequisite.py"
+        "seed_runtime/operator_ingress.py"
     ).read_text()
     production += Path("seed_runtime/operator_ingress_representation.py").read_text()
     assert forbidden not in production
@@ -481,10 +486,10 @@ def test_invalid_initial_bytes_are_preserved_without_replacement_and_stop_before
     assert not any(
         e.kind
         in {
-            "operator.ingress.common_grammar.probe_produced",
-            "operator.ingress.common_grammar.presentation_occurred",
-            "operator.ingress.common_grammar.response_captured",
-            "operator.ingress.common_grammar.binding_completed",
+            "operator.ingress.probe_produced",
+            "operator.ingress.presentation_occurred",
+            "operator.ingress.response_captured",
+            "operator.ingress.binding_completed",
         }
         for e in events
     )
@@ -541,12 +546,11 @@ def run_operator_with_stream(stream):
     ledger = EventLedger()
     output = StringIO()
     captured_ingress = capture_stdin_material(stream)
-    view = run_operator_ingress_common_grammar_probe_attempt(
+    view = run_operator_ingress_attempt(
         ledger=ledger,
         workspace_id="raw-w",
         session_id="raw-s",
         captured_ingress=captured_ingress,
-        response_input_stream=stream,
         output_stream=output,
     )
     return ledger, view, output.getvalue()
@@ -577,8 +581,8 @@ def test_representation_evidence_produces_no_broader_standing():
             for event in ledger.list_events("raw-w")
             if event.kind
             in {
-                "operator.ingress.common_grammar.raw_material_captured",
-                "operator.ingress.common_grammar.representation_examined",
+                "operator.ingress.raw_material_captured",
+                "operator.ingress.representation_examined",
             }
         ]
         + [view["representation_examinations"]]
