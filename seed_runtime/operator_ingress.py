@@ -8,7 +8,6 @@ from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
 from seed_runtime.operator_ingress_representation import (
     CapturedOperatorMaterial,
-    capture_stdin_material,
     examine_text_representation,
 )
 from seed_runtime.state import StateProjector
@@ -43,9 +42,7 @@ def _record(ledger, kind, workspace, session, attempt, dimensions, **extra):
     )
 
 
-def project_operator_ingress_events(
-    state, event, *, ledger=None
-) -> None:
+def project_operator_ingress_events(state, event, *, ledger=None) -> None:
     """Dispatch one operator-ingress event into the dedicated current view."""
     if not event.kind.startswith("operator.ingress."):
         return
@@ -144,17 +141,10 @@ def _capture_representation(
     session,
     attempt,
     material_role,
-    captured_material=None,
-    input_stream=None,
+    captured_material: CapturedOperatorMaterial,
     lineage=(),
 ):
-    if (captured_material is None) == (input_stream is None):
-        raise ValueError("supply exactly one of captured_material or input_stream")
-    capture = (
-        captured_material
-        if captured_material is not None
-        else capture_stdin_material(input_stream)
-    )
+    capture = captured_material
     capture_ref = new_id("operator_material")
     captured = _record(
         ledger,
@@ -184,8 +174,6 @@ def _capture_representation(
         lineage=list(lineage),
     )
     examination = examine_text_representation(capture)
-    if examination is None:
-        return capture, None, captured, None
     examination_event = _record(
         ledger,
         "operator.ingress.representation_examined",
@@ -248,12 +236,10 @@ def run_operator_ingress_attempt(
         captured_material=captured_ingress,
         material_role="initial_ingress",
     )
-    raw_ingress = (
-        ingress_examination.represented_text or "" if ingress_examination else ""
-    )
+    raw_ingress = ingress_examination.represented_text or ""
     ingress_kind = "empty" if raw_ingress in {"\n", "\r\n"} else "text"
     ingress_content = raw_ingress.removesuffix("\n").removesuffix("\r")
-    if ingress_examination is not None and not ingress_examination.succeeded:
+    if not ingress_examination.succeeded:
         _record(
             ledger,
             "operator.ingress.stopping_occurred",
@@ -280,7 +266,7 @@ def run_operator_ingress_attempt(
         )
         output_stream.flush()
         return state.operator_ingress_attempts[attempt]
-    ingress = _record(
+    _record(
         ledger,
         "operator.ingress.ingress_occurred",
         workspace_id,
@@ -290,11 +276,7 @@ def run_operator_ingress_attempt(
             identity=attempt,
             content=ingress_content,
             standing="occurred",
-            source=(
-                ingress_capture.id
-                if ingress_examination_event is None
-                else ingress_examination_event.id
-            ),
+            source=ingress_examination_event.id,
             responsibility="operator-ingress",
             authority="occurrence-only; meaning Unknown",
             scope=f"workspace:{workspace_id};session:{session_id}",
@@ -302,21 +284,13 @@ def run_operator_ingress_attempt(
         ),
         raw_input=raw_ingress,
         ingress_kind=ingress_kind,
-        decoded_text=(
-            ingress_examination.represented_text
-            if ingress_examination is not None
-            else None
-        ),
+        decoded_text=ingress_examination.represented_text,
         raw_material_event_id=ingress_capture.id,
-        **(
-            {"representation_examination_event_id": ingress_examination_event.id}
-            if ingress_examination_event is not None
-            else {}
-        ),
+        representation_examination_event_id=ingress_examination_event.id,
         known_loss=list(captured_ingress.known_loss),
         lineage=[
             ingress_capture.id,
-            *([ingress_examination_event.id] if ingress_examination_event else []),
+            ingress_examination_event.id,
         ],
     )
     state = StateProjector(ledger).project(workspace_id)
