@@ -1,4 +1,4 @@
-"""One-attempt bounded operator-ingress representation handling and historical projection."""
+"""One-attempt bounded operator-ingress representation handling and projection."""
 
 from __future__ import annotations
 
@@ -49,6 +49,18 @@ def project_operator_ingress_common_grammar_events(
     """Dispatch one operator-ingress common-grammar event into the dedicated current view."""
     if not event.kind.startswith("operator.ingress.common_grammar."):
         return
+    subject_by_kind = {
+        "operator.ingress.common_grammar.raw_material_captured": "raw_initial_material",
+        "operator.ingress.common_grammar.ingress_occurred": "preserved_ingress",
+        "operator.ingress.common_grammar.initial_eof_occurred": "preserved_ingress",
+        "operator.ingress.common_grammar.stopping_occurred": "interaction_closure",
+    }
+    supported_kinds = {
+        *subject_by_kind,
+        "operator.ingress.common_grammar.representation_examined",
+    }
+    if event.kind not in supported_kinds:
+        raise ValueError(f"unsupported operator-ingress common-grammar event: {event.kind}")
     attempt = event.payload["attempt_ref"]
     view = state.operator_ingress_common_grammar_attempts.setdefault(
         attempt,
@@ -59,20 +71,7 @@ def project_operator_ingress_common_grammar_events(
                 subject: None
                 for subject in (
                     "raw_initial_material",
-                    "raw_response_material",
                     "preserved_ingress",
-                    "produced_probe",
-                    "alternative_representations",
-                    "presentation",
-                    "response",
-                    "binding_finding",
-                    "alternative_selection",
-                    "source_recovery",
-                    "source_role_testimony",
-                    "potential_goal_standing",
-                    "presentation_eligibility",
-                    "meaning_relation",
-                    "bounded_operator_goal_establishment_applicability",
                     "interaction_closure",
                 )
             },
@@ -104,37 +103,7 @@ def project_operator_ingress_common_grammar_events(
         }
         view["last_event_kind"] = event.kind
         return
-    subject_by_kind = {
-        "operator.ingress.common_grammar.ingress_occurred": "preserved_ingress",
-        "operator.ingress.common_grammar.initial_eof_occurred": "preserved_ingress",
-        "operator.ingress.common_grammar.probe_produced": "produced_probe",
-        "operator.ingress.common_grammar.alternatives_represented": "alternative_representations",
-        "operator.ingress.common_grammar.presentation_occurred": "presentation",
-        "operator.ingress.common_grammar.response_captured": "response",
-        "operator.ingress.common_grammar.response_eof_occurred": "response",
-        "operator.ingress.common_grammar.binding_completed": "binding_finding",
-        "operator.ingress.common_grammar.unsupported_finding": "binding_finding",
-        "operator.ingress.common_grammar.alternative_selected": "alternative_selection",
-        "operator.ingress.common_grammar.source_recovered": "source_recovery",
-        "operator.ingress.common_grammar.source_recovery_refused": "source_recovery",
-        "operator.ingress.common_grammar.potential_goal_standing_examined": "potential_goal_standing",
-        "operator.ingress.common_grammar.presentation_eligibility_examined": "presentation_eligibility",
-        "operator.ingress.common_grammar.meaning_relation_warranted": "meaning_relation",
-        "operator.ingress.common_grammar.meaning_relation_refused": "meaning_relation",
-        "operator.ingress.common_grammar.bounded_operator_goal_establishment_applicability_examined": "bounded_operator_goal_establishment_applicability",
-        "operator.ingress.common_grammar.bounded_operator_goal_establishment_applicability_refused": "bounded_operator_goal_establishment_applicability",
-        "operator.ingress.common_grammar.stopping_occurred": "interaction_closure",
-    }
-    subject = (
-        "raw_initial_material"
-        if event.kind == "operator.ingress.common_grammar.raw_material_captured"
-        and event.payload["material_role"] == "initial_ingress"
-        else (
-            "raw_response_material"
-            if event.kind == "operator.ingress.common_grammar.raw_material_captured"
-            else subject_by_kind[event.kind]
-        )
-    )
+    subject = subject_by_kind[event.kind]
     dimensions = dict(event.payload["dimensions"])
     if subject == "preserved_ingress":
         dimensions["standing"] = "preserved"
@@ -161,52 +130,12 @@ def project_operator_ingress_common_grammar_events(
                     ingress_occurrence=event, ledger=ledger
                 ).to_json_dict()
             )
-    if subject == "response" and view["current_standing"]["presentation"]:
-        view["current_standing"]["presentation"]["dimensions"]["standing"] = "consumed"
-    if subject == "binding_finding" and view["current_standing"]["response"]:
-        view["current_standing"]["response"]["dimensions"]["standing"] = "consumed"
     view["last_event_kind"] = event.kind
     for key in ("known_loss", "unknowns", "conflicts"):
         view[key] = sorted(set((*view[key], *event.payload.get(key, ()))))
-    for key in (
-        "choice_set_ref",
-        "presentation_ref",
-        "capture_ref",
-        "binding_id",
-        "selected_presented_alternative_ref",
-        "recovered_source_ref",
-        "recovered_source_role",
-        "recovered_source_proposition",
-        "source_role_testimony_ref",
-        "standing_subject",
-        "standing_relation",
-        "standing_result",
-        "upstream_standing_occurrence_id",
-        "presentation_purpose_id",
-        "eligibility_relation",
-        "eligibility_result",
-        "relation_ref",
-        "relation_assertion",
-        "meaning_testimony_ref",
-        "constitutive_convention_ref",
-        "meaning_relation_warrant_occurrence_id",
-        "consumer_ref",
-        "purpose_ref",
-        "condition_examined",
-        "condition_evidence",
-        "applicability",
-        "applicability_reason",
-        "closed",
-        "response_kind",
-    ):
+    for key in ("closed", "response_kind"):
         if key in event.payload:
             view[key] = event.payload[key]
-    if event.kind == "operator.ingress.common_grammar.potential_goal_standing_examined":
-        view["current_standing"]["source_role_testimony"] = {
-            "subject_ref": event.payload.get("source_role_testimony_ref"),
-            "testimony": event.payload.get("source_role_testimony"),
-            "evidence_event_id": event.id,
-        }
 
 
 def _capture_representation(
