@@ -51,6 +51,7 @@ def supplied(
     refs=None,
     meaning="meaning",
     unknowns=("supplier unknown",),
+    authority_limits=("testimony only",),
 ):
     if refs is None:
         refs = (material.exact_operator_material.source_spans[0].span_ref,)
@@ -63,7 +64,7 @@ def supplied(
         known_loss=("context unavailable",),
         supplied_unknowns=unknowns,
         conflicts=("supplied conflict",),
-        supplied_authority_limits=("testimony only",),
+        supplied_authority_limits=authority_limits,
     )
 
 
@@ -258,14 +259,21 @@ def test_producer_accepts_only_supplier_input_and_exact_tuples(material):
 
 def test_authority_owners_remain_separate_and_repository_declarations_fixed(material):
     _, addressable = material
-    shared = addressable.authority_limits[0]
-    result = preserve(addressable, supplied(addressable, unknowns=(shared,)))
+    shared_authority_text = addressable.authority_limits[0]
+    supplier_limits = (shared_authority_text, shared_authority_text)
+    result = preserve(
+        addressable,
+        supplied(addressable, authority_limits=supplier_limits),
+    )
     testimony = result.candidate_testimonies[0]
-    assert addressable.authority_limits
-    assert testimony.supplied_authority_limits == ("testimony only",)
+    assert shared_authority_text in addressable.authority_limits
+    assert testimony.supplied_authority_limits == supplier_limits
+    assert testimony.supplied_authority_limits.count(shared_authority_text) == 2
     assert result.preservation_authority_limits == REQUIRED_AUTHORITY_LIMITS
+    assert set(REQUIRED_AUTHORITY_LIMITS).isdisjoint(
+        testimony.supplied_authority_limits
+    )
     assert BOUNDARY_NOTES == result.boundary_notes
-    assert shared not in testimony.supplied_authority_limits
 
 
 def test_no_warrant_producer_is_called(material, monkeypatch):
