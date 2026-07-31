@@ -112,10 +112,12 @@ class RepresentationExamination:
 
 def capture_stdin_material(input_stream: TextIO | BinaryIO) -> CapturedOperatorMaterial:
     """Read one framed occurrence without passing production stdin through TextIO."""
+    # Every fallible stream-interface check available before the destructive read
+    # must precede it; subsequent capture fields derive from the observed material.
+    testimony = _encoding_testimony(input_stream)
     binary = getattr(input_stream, "buffer", None)
     if binary is not None:
         material = binary.readline()
-        testimony = _encoding_testimony(input_stream)
         boundary = "stdin.buffer.readline"
         byte_material_origin = "direct_boundary_observation"
         loss = (
@@ -123,7 +125,6 @@ def capture_stdin_material(input_stream: TextIO | BinaryIO) -> CapturedOperatorM
         )
     else:
         value = input_stream.readline()
-        testimony = _encoding_testimony(input_stream)
         if isinstance(value, bytes):
             material = value
             boundary = "binary-stream.readline (bytes observed directly)"

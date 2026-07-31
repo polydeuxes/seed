@@ -405,6 +405,39 @@ class _RawStdin:
         self.encoding = encoding
 
 
+class _ObservedBinaryReadline(BytesIO):
+    def __init__(self, material):
+        super().__init__(material)
+        self.readline_calls = 0
+
+    def readline(self, *args, **kwargs):
+        self.readline_calls += 1
+        return super().readline(*args, **kwargs)
+
+
+class _ObservedBufferedStdin:
+    def __init__(self, material, encoding):
+        self.buffer = _ObservedBinaryReadline(material)
+        self.encoding = encoding
+
+
+class _ObservedUnbufferedStream:
+    def __init__(self, material, encoding):
+        self._stream = BytesIO(material)
+        self.encoding = encoding
+        self.readline_calls = 0
+
+    def readline(self, *args, **kwargs):
+        self.readline_calls += 1
+        return self._stream.readline(*args, **kwargs)
+
+    def tell(self):
+        return self._stream.tell()
+
+    def read(self, *args, **kwargs):
+        return self._stream.read(*args, **kwargs)
+
+
 def run_raw(material: bytes, *, ledger=None):
     ledger = ledger or EventLedger()
     output = StringIO()
@@ -485,12 +518,26 @@ def test_console_admits_empty_stream_encoding_as_no_usable_testimony():
 
 
 @pytest.mark.parametrize("encoding", (1, b"utf-8", object()))
-def test_capture_refuses_foreign_stream_encoding_metadata(encoding):
+@pytest.mark.parametrize("buffered", (True, False), ids=("buffered", "unbuffered"))
+def test_capture_refuses_foreign_encoding_before_destructive_read(encoding, buffered):
+    material = b"material\nremaining\n"
+    stream = (
+        _ObservedBufferedStdin(material, encoding)
+        if buffered
+        else _ObservedUnbufferedStream(material, encoding)
+    )
+    read_boundary = stream.buffer if buffered else stream
+    initial_position = read_boundary.tell()
+
     with pytest.raises(
         OperatorIngressRepresentationError,
         match="malformed stream encoding metadata",
     ):
-        capture_stdin_material(_RawStdin(b"material\n", encoding=encoding))
+        capture_stdin_material(stream)
+
+    assert read_boundary.readline_calls == 0
+    assert read_boundary.tell() == initial_position
+    assert read_boundary.read() == material
 
 
 def test_console_eof_after_ordinary_input_adds_no_second_attempt():
