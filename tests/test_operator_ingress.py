@@ -111,6 +111,56 @@ def test_previous_nested_namespace_is_rejected():
         StateProjector(ledger).project("w")
 
 
+def test_projector_rejects_deleted_initial_eof_kind():
+    ledger = EventLedger()
+    deleted_kind = "operator.ingress." + "initial_eof_occurred"
+    ledger.append(
+        deleted_kind,
+        "w",
+        {"attempt_ref": "attempt:eof", "dimensions": {"identity": "eof"}},
+        session_id="s",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=f"unsupported operator-ingress event: {deleted_kind}",
+    ):
+        StateProjector(ledger).project("w")
+
+
+@pytest.mark.parametrize(
+    "kind",
+    (
+        "operator.ingress.raw_material_captured",
+        "operator.ingress.representation_examined",
+        "operator.ingress.ingress_occurred",
+        "operator.ingress.stopping_occurred",
+    ),
+)
+def test_projector_accepts_each_current_operator_ingress_kind(kind):
+    ledger = EventLedger()
+    payload = {
+        "attempt_ref": "attempt:current",
+        "dimensions": {"identity": "occurrence:current", "standing": "occurred"},
+    }
+    if kind == "operator.ingress.representation_examined":
+        payload.update(
+            material_role="initial_ingress",
+            capture_event_id="capture:current",
+            encoding_testimony="utf-8",
+            decoder_mechanism="utf-8",
+            decoder_mechanism_selection="test",
+            decoder_outcome="decoded",
+            decoder_succeeded=True,
+            decoder_failure=None,
+        )
+    ledger.append(kind, "w", payload, session_id="s")
+
+    state = StateProjector(ledger).project("w")
+
+    assert state.operator_ingress_attempts["attempt:current"]["last_event_kind"] == kind
+
+
 def test_runner_has_no_second_input_parameter():
     assert "response_input_stream" not in inspect.signature(
         run_operator_ingress_attempt
@@ -153,24 +203,22 @@ def test_deleted_payload_coordinates_are_not_copied_from_an_active_event():
     }
 
 
-def test_initial_eof_records_eof_and_separate_local_stop():
-    ledger, view, output = run_attempt("")
-    assert [event.kind for event in ledger.list_events("w")] == [
-        "operator.ingress.raw_material_captured",
-        "operator.ingress.initial_eof_occurred",
-        "operator.ingress.stopping_occurred",
-    ]
-    assert view["representation_examinations"] == {}
-    assert view["closed"] is True
-    assert (
-        view["current_standing"]["interaction_closure"]["dimensions"]["standing"]
-        == "closed"
-    )
-    assert output == "Operator-ingress interaction stopped locally.\n"
-    stop = ledger.list_events("w")[-1]
-    assert stop.payload["dimensions"]["authority_warrant"] == (
-        "closes only this interaction"
-    )
+def test_direct_runner_rejects_eof_before_recording_or_output():
+    ledger = EventLedger()
+    output = StringIO()
+    captured = capture_stdin_material(StringIO(""))
+
+    with pytest.raises(ValueError, match="^captured_ingress must be non-EOF$"):
+        run_operator_ingress_attempt(
+            ledger=ledger,
+            workspace_id="w",
+            session_id="s",
+            captured_ingress=captured,
+            output_stream=output,
+        )
+
+    assert ledger.list_events("w") == []
+    assert output.getvalue() == ""
 
 
 @pytest.mark.parametrize(
@@ -321,6 +369,25 @@ def test_bare_seed_enters_persistent_console_and_announces_exit():
     )
     assert completed.stdout == b"Seed console: `exit` exits.\n"
     assert completed.returncode == 0
+
+
+def test_console_immediate_eof_returns_without_operator_ingress_events():
+    ledger, output = run_console(b"")
+
+    assert ledger.list_events("console-w") == []
+    assert output == "Seed console: `exit` exits.\n"
+
+
+def test_console_eof_after_ordinary_input_adds_no_second_attempt():
+    ledger, output = run_console(b"ordinary ingress\n")
+
+    assert [event.kind for event in ledger.list_events("console-w")] == [
+        "operator.ingress.raw_material_captured",
+        "operator.ingress.representation_examined",
+        "operator.ingress.ingress_occurred",
+    ]
+    assert len(StateProjector(ledger).project("console-w").operator_ingress_attempts) == 1
+    assert output == "Seed console: `exit` exits.\n"
 
 
 def test_console_passes_its_capture_unchanged_to_the_bounded_attempt(monkeypatch):
@@ -499,20 +566,13 @@ def test_invalid_initial_bytes_are_preserved_without_replacement_and_stop_before
     )
 
 
-def test_empty_material_and_eof_have_distinct_raw_evidence():
+def test_empty_non_eof_material_preserves_raw_evidence():
     empty_ledger, _, _ = run_raw(b"\n2\n")
-    eof_ledger, _, _ = run_raw(b"")
     empty = empty_ledger.list_events("raw-w")[0].payload
-    eof = eof_ledger.list_events("raw-w")[0].payload
     assert (empty["exact_bytes_hex"], empty["eof"], empty["delimiter_hex"]) == (
         "0a",
         False,
         "0a",
-    )
-    assert (eof["exact_bytes_hex"], eof["eof"], eof["delimiter_hex"]) == (
-        "",
-        True,
-        None,
     )
 
 

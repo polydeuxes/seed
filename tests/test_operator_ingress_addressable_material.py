@@ -253,15 +253,14 @@ def test_active_formation_does_not_call_interpretation_producer(monkeypatch):
     assert artifact is not None
 
 
-@pytest.mark.parametrize("material", [b"", b"\xff\n"])
-def test_eof_and_representation_insufficiency_form_no_addressable_material(material):
+def test_representation_insufficiency_forms_no_addressable_material():
     ledger = EventLedger()
     output = StringIO()
     view = run_operator_ingress_attempt(
         ledger=ledger,
         workspace_id="w",
         session_id="s",
-        captured_ingress=capture_stdin_material(BytesIO(material)),
+        captured_ingress=capture_stdin_material(BytesIO(b"\xff\n")),
         output_stream=output,
     )
     assert "addressable_operator_material" not in view
