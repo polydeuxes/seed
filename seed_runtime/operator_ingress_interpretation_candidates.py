@@ -175,7 +175,7 @@ def _testimony_from_json(raw: object) -> AttributedInterpretationCandidateTestim
     formation = value.get("formation_occurrence_ref")
     if formation is not None:
         _string(formation, "formation_occurrence_ref")
-    return AttributedInterpretationCandidateTestimony(
+    testimony = AttributedInterpretationCandidateTestimony(
         candidate=candidate,
         attributed_supplier=_string(
             value.get("attributed_supplier"), "attributed_supplier"
@@ -192,6 +192,8 @@ def _testimony_from_json(raw: object) -> AttributedInterpretationCandidateTestim
             value.get("supplied_authority_limits"), "supplied_authority_limits"
         ),
     )
+    _validate_testimony(testimony)
+    return testimony
 
 
 def _identity_payload(
@@ -228,7 +230,58 @@ def _validate_material(addressable: OperatorIngressAddressableMaterial) -> None:
         _refuse(str(error))
 
 
+def _validate_testimony(value: object) -> None:
+    if not isinstance(value, AttributedInterpretationCandidateTestimony):
+        _refuse("candidate testimonies must contain testimony objects")
+    candidate = value.candidate
+    if not isinstance(candidate, InterpretationCandidate):
+        _refuse("candidate must be an InterpretationCandidate")
+    _string(candidate.candidate_ref, "candidate_ref")
+    _string(candidate.label, "candidate label", empty=True)
+    _string_tuple(candidate.source_span_refs, "source_span_refs")
+    _string(candidate.proposed_meaning, "proposed_meaning", empty=True)
+    _string(value.attributed_supplier, "attributed_supplier")
+    _string_tuple(value.supplier_provenance, "supplier_provenance")
+    if value.formation_occurrence_ref is not None:
+        _string(value.formation_occurrence_ref, "formation_occurrence_ref")
+    _string_tuple(value.declared_scope, "declared_scope")
+    _string_tuple(value.known_loss, "known_loss")
+    _string_tuple(value.unknowns, "unknowns")
+    _string_tuple(value.conflicts, "conflicts")
+    _string_tuple(value.supplied_authority_limits, "supplied_authority_limits")
+
+
+def _typed_testimony(
+    value: AttributedInterpretationCandidateTestimony,
+) -> AttributedInterpretationCandidateTestimony:
+    """Copy validated testimony into the exact frozen coordinate shapes."""
+    candidate = replace(
+        value.candidate, source_span_refs=tuple(value.candidate.source_span_refs)
+    )
+    return replace(
+        value,
+        candidate=candidate,
+        supplier_provenance=tuple(value.supplier_provenance),
+        declared_scope=tuple(value.declared_scope),
+        known_loss=tuple(value.known_loss),
+        unknowns=tuple(value.unknowns),
+        conflicts=tuple(value.conflicts),
+        supplied_authority_limits=tuple(value.supplied_authority_limits),
+    )
+
+
 def _validate_set(value: OperatorIngressInterpretationCandidateSet) -> None:
+    if value.artifact_type != ARTIFACT_TYPE:
+        _refuse("wrong artifact_type")
+    if value.convention != CONVENTION:
+        _refuse("wrong convention")
+    if value.boundary_notes != BOUNDARY_NOTES:
+        _refuse("v1 boundary_notes are repository-owned")
+    if value.preservation_authority_limits != REQUIRED_AUTHORITY_LIMITS:
+        _refuse("v1 preservation authority limits are repository-owned")
+    _string_tuple(value.set_unknowns, "set_unknowns")
+    _string_tuple(value.set_conflicts, "set_conflicts")
+    _sequence(value.candidate_testimonies, "candidate testimonies")
     _validate_material(value.addressable_material)
     if value.read_only is not True or any(
         item is not False
@@ -245,14 +298,11 @@ def _validate_set(value: OperatorIngressInterpretationCandidateSet) -> None:
         for span in value.addressable_material.exact_operator_material.source_spans
     }
     for testimony in value.candidate_testimonies:
+        _validate_testimony(testimony)
         candidate = testimony.candidate
         if not candidate.candidate_ref or candidate.candidate_ref in refs:
             _refuse("candidate refs must be nonempty and unique")
         refs.add(candidate.candidate_ref)
-        if not testimony.attributed_supplier:
-            _refuse("candidate testimony requires supplier attribution")
-        if testimony.formation_occurrence_ref == "":
-            _refuse("formation_occurrence_ref must be nonempty or None")
         if any(ref not in spans for ref in candidate.source_span_refs):
             _refuse("candidate references a foreign source span")
 
@@ -263,12 +313,16 @@ def preserve_operator_ingress_interpretation_candidates(
     candidate_testimonies: tuple[AttributedInterpretationCandidateTestimony, ...],
     set_unknowns: tuple[str, ...] = (),
     set_conflicts: tuple[str, ...] = (),
-    preservation_authority_limits: tuple[str, ...] = REQUIRED_AUTHORITY_LIMITS,
 ) -> OperatorIngressInterpretationCandidateSet:
     """Preserve supplied testimony without generating or examining interpretation."""
     _validate_material(addressable_material)
+    _sequence(candidate_testimonies, "candidate testimonies")
+    set_unknowns = _string_tuple(set_unknowns, "set_unknowns")
+    set_conflicts = _string_tuple(set_conflicts, "set_conflicts")
     preserved = []
     for supplied in candidate_testimonies:
+        _validate_testimony(supplied)
+        supplied = _typed_testimony(supplied)
         unknowns = supplied.unknowns
         if supplied.formation_occurrence_ref is None:
             unknowns = _append_unknown(unknowns, FORMATION_UNKNOWN)
@@ -287,7 +341,7 @@ def preserve_operator_ingress_interpretation_candidates(
         set_unknowns=set_unknowns,
         set_conflicts=set_conflicts,
         boundary_notes=BOUNDARY_NOTES,
-        preservation_authority_limits=preservation_authority_limits,
+        preservation_authority_limits=REQUIRED_AUTHORITY_LIMITS,
     )
     _validate_set(result)
     return replace(result, candidate_set_id=_candidate_set_id(result))
