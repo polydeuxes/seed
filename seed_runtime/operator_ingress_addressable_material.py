@@ -44,6 +44,11 @@ def addressable_material_projection_id(material: ExactOperatorMaterial) -> str:
     return _stable_id("operator-ingress-addressable-material", asdict(material))
 
 
+def operator_material_full_span_id(*, ingress_event_ref: str, exact_text: str) -> str:
+    """Return the addressable-material owner's canonical full-span identity."""
+    return _stable_id("operator-material-full-span", (ingress_event_ref, exact_text))
+
+
 @dataclass(frozen=True)
 class OperatorIngressAddressableMaterial:
     artifact_type: str
@@ -207,23 +212,23 @@ def validate_operator_ingress_addressable_material(
         or material.provenance != artifact.provenance
     ):
         _refuse("exact material standing does not match addressable standing")
+    if len(material.source_spans) != 1:
+        _refuse("exact material must have one canonical full source span")
+    span = material.source_spans[0]
+    if span.span_ref != operator_material_full_span_id(
+        ingress_event_ref=artifact.ingress_event_ref,
+        exact_text=material.exact_text,
+    ):
+        _refuse("full source span identity is forged")
+    if (
+        span.source_ref != artifact.ingress_event_ref
+        or span.start != 0
+        or span.end != len(material.exact_text)
+        or span.exact_text != material.exact_text
+    ):
+        _refuse("source span must cover the complete exact material")
     if artifact.material_projection_id != addressable_material_projection_id(material):
         _refuse("material projection identity is forged or stale")
-    seen: set[str] = set()
-    for span in material.source_spans:
-        if not span.span_ref or span.span_ref in seen:
-            _refuse("source span refs must be nonempty and unique")
-        seen.add(span.span_ref)
-        if span.source_ref != material.material_ref:
-            _refuse("source span belongs to foreign material")
-        if (
-            span.start < 0
-            or span.end < span.start
-            or span.end > len(material.exact_text)
-        ):
-            _refuse("source span offsets exceed exact material")
-        if material.exact_text[span.start : span.end] != span.exact_text:
-            _refuse("source span text does not match exact material")
 
 
 def form_operator_ingress_addressable_material(
@@ -280,8 +285,8 @@ def form_operator_ingress_addressable_material(
         _refuse("successful initial representation examination is missing or foreign")
 
     provenance = (raw.id, examination.id, ingress_occurrence.id)
-    span_ref = _stable_id(
-        "operator-material-full-span", (ingress_occurrence.id, exact_text)
+    span_ref = operator_material_full_span_id(
+        ingress_event_ref=ingress_occurrence.id, exact_text=exact_text
     )
     exact_material = ExactOperatorMaterial(
         material_ref=ingress_occurrence.id,

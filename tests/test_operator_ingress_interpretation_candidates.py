@@ -195,7 +195,7 @@ def test_invalid_complete_addressable_material_is_refused(ingress_material, chan
         _preserve(change(material))
 
 
-def test_identity_covers_each_authority_owner(ingress_material):
+def test_identity_covers_lawfully_variable_authority_owners(ingress_material):
     _, material = ingress_material
     testimony = _testimony(material)
     base = _preserve(material, testimony).candidate_set_id
@@ -216,15 +216,33 @@ def test_identity_covers_each_authority_owner(ingress_material):
         ).candidate_set_id
         != base
     )
-    assert (
-        _preserve(
-            material,
-            testimony,
-            preservation_authority_limits=REQUIRED_AUTHORITY_LIMITS
-            + ("new preservation limit",),
-        ).candidate_set_id
-        != base
-    )
+
+
+def test_producer_rejects_caller_owned_preservation_authority(ingress_material):
+    _, material = ingress_material
+    with pytest.raises(TypeError, match="preservation_authority_limits"):
+        _preserve(material, preservation_authority_limits=())
+
+
+@pytest.mark.parametrize(
+    ("field", "replacement"),
+    [
+        ("preservation_authority_limits", ()),
+        ("preservation_authority_limits", REQUIRED_AUTHORITY_LIMITS + ("extra",)),
+        ("preservation_authority_limits", REQUIRED_AUTHORITY_LIMITS[:-1]),
+        ("preservation_authority_limits", REQUIRED_AUTHORITY_LIMITS[::-1]),
+        ("preservation_authority_limits", ("similar wording",)),
+        ("boundary_notes", ("modified",)),
+    ],
+)
+def test_serialized_v1_repository_declarations_are_exact(
+    ingress_material, field, replacement
+):
+    _, material = ingress_material
+    encoded = _preserve(material, _testimony(material)).to_json_dict()
+    encoded[field] = replacement
+    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
+        OperatorIngressInterpretationCandidateSet.from_json_dict(encoded)
 
 
 def test_exact_round_trip_and_serialized_ownership_shape(ingress_material):
@@ -269,6 +287,75 @@ def test_malformed_string_sequences_are_refused(ingress_material, path, bad):
     for key in path[:-1]:
         cursor = cursor[key]
     cursor[path[-1]] = bad
+    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
+        OperatorIngressInterpretationCandidateSet.from_json_dict(encoded)
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "supplier_provenance",
+        "declared_scope",
+        "known_loss",
+        "unknowns",
+        "conflicts",
+        "supplied_authority_limits",
+    ],
+)
+@pytest.mark.parametrize("bad", ["plain string", ("valid", 1), object()])
+def test_direct_and_serialized_testimony_tuple_validation_parity(
+    ingress_material, field, bad
+):
+    _, material = ingress_material
+    testimony = replace(_testimony(material), **{field: bad})
+    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
+        _preserve(material, testimony)
+
+    encoded = _preserve(material, _testimony(material)).to_json_dict()
+    encoded["candidate_testimonies"][0][field] = bad
+    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
+        OperatorIngressInterpretationCandidateSet.from_json_dict(encoded)
+
+
+@pytest.mark.parametrize("bad", ["plain string", ("valid", 1), object()])
+def test_direct_and_serialized_candidate_span_validation_parity(ingress_material, bad):
+    _, material = ingress_material
+    base = _testimony(material)
+    testimony = replace(base, candidate=replace(base.candidate, source_span_refs=bad))
+    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
+        _preserve(material, testimony)
+
+    encoded = _preserve(material, base).to_json_dict()
+    encoded["candidate_testimonies"][0]["candidate"]["source_span_refs"] = bad
+    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
+        OperatorIngressInterpretationCandidateSet.from_json_dict(encoded)
+
+
+@pytest.mark.parametrize("field", ["set_unknowns", "set_conflicts"])
+@pytest.mark.parametrize("bad", ["plain string", ("valid", 1), object()])
+def test_direct_and_serialized_set_tuple_validation_parity(
+    ingress_material, field, bad
+):
+    _, material = ingress_material
+    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
+        _preserve(material, **{field: bad})
+
+    encoded = _preserve(material).to_json_dict()
+    encoded[field] = bad
+    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
+        OperatorIngressInterpretationCandidateSet.from_json_dict(encoded)
+
+
+@pytest.mark.parametrize("field", ["attributed_supplier", "formation_occurrence_ref"])
+@pytest.mark.parametrize("bad", [1, True, object(), ""])
+def test_direct_and_serialized_scalar_validation_parity(ingress_material, field, bad):
+    _, material = ingress_material
+    testimony = replace(_testimony(material), **{field: bad})
+    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
+        _preserve(material, testimony)
+
+    encoded = _preserve(material, _testimony(material)).to_json_dict()
+    encoded["candidate_testimonies"][0][field] = bad
     with pytest.raises(OperatorIngressInterpretationCandidateSetError):
         OperatorIngressInterpretationCandidateSet.from_json_dict(encoded)
 

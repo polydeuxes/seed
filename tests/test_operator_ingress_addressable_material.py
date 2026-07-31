@@ -1,3 +1,4 @@
+from dataclasses import replace
 from io import BytesIO, StringIO
 
 import pytest
@@ -8,8 +9,11 @@ from seed_runtime.operator_ingress_addressable_material import (
     UNKNOWNS,
     OperatorIngressAddressableMaterial,
     OperatorIngressAddressableMaterialError,
+    addressable_material_projection_id,
     form_operator_ingress_addressable_material,
+    operator_material_full_span_id,
 )
+from seed_runtime.contextual_interpretation_warrant_set import SourceSpan
 from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     run_operator_ingress_common_grammar_probe_attempt,
 )
@@ -72,6 +76,10 @@ def test_decoded_ingress_forms_exact_bounded_addressable_material(
         ingress.id,
     )
     span = artifact.exact_operator_material.source_spans[0]
+    assert len(artifact.exact_operator_material.source_spans) == 1
+    assert span.span_ref == operator_material_full_span_id(
+        ingress_event_ref=ingress.id, exact_text=text
+    )
     assert (span.source_ref, span.start, span.end, span.exact_text) == (
         ingress.id,
         0,
@@ -95,6 +103,65 @@ def test_decoded_ingress_forms_exact_bounded_addressable_material(
         "operator.ingress.common_grammar.representation_examined",
         "operator.ingress.common_grammar.ingress_occurred",
     ]
+
+
+def test_empty_exact_material_has_one_canonical_zero_length_span():
+    _, _, artifact, _ = _run(b"\n")
+    span = artifact.exact_operator_material.source_spans[0]
+    assert (span.start, span.end, span.exact_text) == (0, 1, "\n")
+
+    # An empty decoded material is supported by the owner even though common
+    # grammar framing normally preserves its delimiter in decoded_text.
+    material = replace(artifact.exact_operator_material, exact_text="")
+    span = SourceSpan(
+        operator_material_full_span_id(
+            ingress_event_ref=artifact.ingress_event_ref, exact_text=""
+        ),
+        artifact.ingress_event_ref,
+        0,
+        0,
+        "",
+    )
+    material = replace(material, source_spans=(span,))
+    rebuilt = replace(
+        artifact,
+        exact_operator_material=material,
+        material_projection_id=addressable_material_projection_id(material),
+    )
+    assert OperatorIngressAddressableMaterial.from_json_dict(rebuilt.to_json_dict())
+
+
+@pytest.mark.parametrize(
+    "shape", ["zero", "two", "partial", "overlap", "forged", "foreign", "short"]
+)
+def test_noncanonical_source_span_shapes_cannot_self_certify(shape):
+    _, _, artifact, _ = _run(b"abcdef\n")
+    material = artifact.exact_operator_material
+    full = material.source_spans[0]
+    partial = SourceSpan("span:partial", artifact.ingress_event_ref, 0, 3, "abc")
+    shapes = {
+        "zero": (),
+        "two": (
+            partial,
+            SourceSpan("span:rest", artifact.ingress_event_ref, 3, 7, "def\n"),
+        ),
+        "partial": (partial,),
+        "overlap": (
+            partial,
+            SourceSpan("span:overlap", artifact.ingress_event_ref, 2, 7, "cdef\n"),
+        ),
+        "forged": (replace(full, span_ref="span:forged"),),
+        "foreign": (replace(full, source_ref="event:foreign"),),
+        "short": (replace(full, end=6, exact_text="abcdef"),),
+    }
+    invented = replace(material, source_spans=shapes[shape])
+    self_certified = replace(
+        artifact,
+        exact_operator_material=invented,
+        material_projection_id=addressable_material_projection_id(invented),
+    )
+    with pytest.raises(OperatorIngressAddressableMaterialError):
+        OperatorIngressAddressableMaterial.from_json_dict(self_certified.to_json_dict())
 
 
 def test_active_formation_does_not_call_interpretation_producer(monkeypatch):
