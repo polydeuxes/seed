@@ -13,7 +13,10 @@ from seed_runtime.operator_ingress_addressable_material import (
     form_operator_ingress_addressable_material,
     operator_material_full_span_id,
 )
-from seed_runtime.contextual_interpretation_warrant_set import SourceSpan
+from seed_runtime.contextual_interpretation_warrant_set import (
+    ExactOperatorMaterial,
+    SourceSpan,
+)
 from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     run_operator_ingress_common_grammar_probe_attempt,
 )
@@ -129,6 +132,85 @@ def test_empty_exact_material_has_one_canonical_zero_length_span():
         material_projection_id=addressable_material_projection_id(material),
     )
     assert OperatorIngressAddressableMaterial.from_json_dict(rebuilt.to_json_dict())
+
+
+@pytest.mark.parametrize("exact_text", [[], 1])
+def test_direct_construction_refuses_non_string_nested_exact_text(exact_text):
+    _, _, artifact, _ = _run(b"material\n")
+    material = ExactOperatorMaterial(
+        material_ref=artifact.ingress_event_ref,
+        exact_text=exact_text,
+        source_spans=artifact.exact_operator_material.source_spans,
+        provenance=artifact.provenance,
+    )
+    with pytest.raises(OperatorIngressAddressableMaterialError):
+        replace(
+            artifact,
+            exact_operator_material=material,
+            material_projection_id=addressable_material_projection_id(material),
+        )
+
+
+def test_direct_construction_refuses_list_nested_material_provenance():
+    _, _, artifact, _ = _run(b"material\n")
+    material = ExactOperatorMaterial(
+        material_ref=artifact.ingress_event_ref,
+        exact_text=artifact.exact_operator_material.exact_text,
+        source_spans=artifact.exact_operator_material.source_spans,
+        provenance=list(artifact.provenance),
+    )
+    with pytest.raises(OperatorIngressAddressableMaterialError):
+        replace(
+            artifact,
+            exact_operator_material=material,
+            material_projection_id=addressable_material_projection_id(material),
+        )
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"material_ref": 1},
+        {"source_spans": []},
+        {"provenance": ("not", 1)},
+    ],
+)
+def test_direct_construction_refuses_other_malformed_nested_material_fields(changes):
+    _, _, artifact, _ = _run(b"material\n")
+    material = replace(artifact.exact_operator_material, **changes)
+    with pytest.raises(OperatorIngressAddressableMaterialError):
+        replace(
+            artifact,
+            exact_operator_material=material,
+            material_projection_id=addressable_material_projection_id(material),
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("span_ref", 1),
+        ("source_ref", 1),
+        ("start", False),
+        ("start", True),
+        ("start", 0.0),
+        ("end", False),
+        ("end", True),
+        ("end", 9.0),
+        ("exact_text", []),
+        ("exact_text", 1),
+    ],
+)
+def test_direct_construction_refuses_malformed_canonical_span_coordinate(field, value):
+    _, _, artifact, _ = _run(b"material\n")
+    span = replace(artifact.exact_operator_material.source_spans[0], **{field: value})
+    material = replace(artifact.exact_operator_material, source_spans=(span,))
+    with pytest.raises(OperatorIngressAddressableMaterialError):
+        replace(
+            artifact,
+            exact_operator_material=material,
+            material_projection_id=addressable_material_projection_id(material),
+        )
 
 
 @pytest.mark.parametrize(

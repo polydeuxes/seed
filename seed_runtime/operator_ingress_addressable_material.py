@@ -111,6 +111,9 @@ class OperatorIngressAddressableMaterial:
                 "addressable provenance must preserve exact raw, examination, ingress order"
             )
         material = self.exact_operator_material
+        _intrinsic_string(material.material_ref, "exact material material_ref")
+        _intrinsic_string(material.exact_text, "exact material exact_text", empty=True)
+        _intrinsic_string_tuple(material.provenance, "exact material provenance")
         if (
             material.material_ref != self.ingress_event_ref
             or material.provenance != self.provenance
@@ -121,6 +124,11 @@ class OperatorIngressAddressableMaterial:
         span = material.source_spans[0]
         if not isinstance(span, SourceSpan):
             _refuse("source span must be a SourceSpan")
+        _intrinsic_string(span.span_ref, "source span span_ref")
+        _intrinsic_string(span.source_ref, "source span source_ref")
+        _intrinsic_int(span.start, "source span start")
+        _intrinsic_int(span.end, "source span end")
+        _intrinsic_string(span.exact_text, "source span exact_text", empty=True)
         if span.span_ref != operator_material_full_span_id(
             ingress_event_ref=self.ingress_event_ref, exact_text=material.exact_text
         ):
@@ -255,8 +263,18 @@ def _string_tuple(value: object, name: str) -> tuple[str, ...]:
 
 
 def _intrinsic_string_tuple(value: object, name: str) -> None:
-    if type(value) is not tuple or not all(isinstance(item, str) for item in value):
+    if type(value) is not tuple or not all(type(item) is str for item in value):
         _refuse(f"{name} must be an exact tuple of strings")
+
+
+def _intrinsic_string(value: object, name: str, *, empty: bool = False) -> None:
+    if type(value) is not str or (not empty and not value):
+        _refuse(f"{name} must be an exact string")
+
+
+def _intrinsic_int(value: object, name: str) -> None:
+    if type(value) is not int:
+        _refuse(f"{name} must be an exact integer")
 
 
 def validate_operator_ingress_addressable_material(
