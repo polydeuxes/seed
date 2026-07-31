@@ -9,8 +9,8 @@ from seed_runtime.events import EventLedger
 from seed_runtime.operator_ingress_addressable_material import (
     OperatorIngressAddressableMaterial,
 )
-from seed_runtime.operator_ingress_common_grammar_prerequisite import (
-    run_operator_ingress_common_grammar_probe_attempt,
+from seed_runtime.operator_ingress import (
+    run_operator_ingress_attempt,
 )
 from seed_runtime.operator_ingress_interpretation_candidates import (
     BOUNDARY_NOTES,
@@ -36,12 +36,11 @@ class ForeignString(str):
 @pytest.fixture
 def material():
     ledger = EventLedger()
-    view = run_operator_ingress_common_grammar_probe_attempt(
+    view = run_operator_ingress_attempt(
         ledger=ledger,
         workspace_id="w",
         session_id="s",
         captured_ingress=capture_stdin_material(BytesIO(b" exact::text\r\n")),
-        response_input_stream=BytesIO(),
         output_stream=StringIO(),
     )
     return ledger, OperatorIngressAddressableMaterial.from_json_dict(

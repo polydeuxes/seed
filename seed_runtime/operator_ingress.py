@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import BinaryIO, TextIO
+from typing import TextIO
 
 from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
@@ -43,26 +43,26 @@ def _record(ledger, kind, workspace, session, attempt, dimensions, **extra):
     )
 
 
-def project_operator_ingress_common_grammar_events(
+def project_operator_ingress_events(
     state, event, *, ledger=None
 ) -> None:
-    """Dispatch one operator-ingress common-grammar event into the dedicated current view."""
-    if not event.kind.startswith("operator.ingress.common_grammar."):
+    """Dispatch one operator-ingress event into the dedicated current view."""
+    if not event.kind.startswith("operator.ingress."):
         return
     subject_by_kind = {
-        "operator.ingress.common_grammar.raw_material_captured": "raw_initial_material",
-        "operator.ingress.common_grammar.ingress_occurred": "preserved_ingress",
-        "operator.ingress.common_grammar.initial_eof_occurred": "preserved_ingress",
-        "operator.ingress.common_grammar.stopping_occurred": "interaction_closure",
+        "operator.ingress.raw_material_captured": "raw_initial_material",
+        "operator.ingress.ingress_occurred": "preserved_ingress",
+        "operator.ingress.initial_eof_occurred": "preserved_ingress",
+        "operator.ingress.stopping_occurred": "interaction_closure",
     }
     supported_kinds = {
         *subject_by_kind,
-        "operator.ingress.common_grammar.representation_examined",
+        "operator.ingress.representation_examined",
     }
     if event.kind not in supported_kinds:
-        raise ValueError(f"unsupported operator-ingress common-grammar event: {event.kind}")
+        raise ValueError(f"unsupported operator-ingress event: {event.kind}")
     attempt = event.payload["attempt_ref"]
-    view = state.operator_ingress_common_grammar_attempts.setdefault(
+    view = state.operator_ingress_attempts.setdefault(
         attempt,
         {
             "event_ids": [],
@@ -90,7 +90,7 @@ def project_operator_ingress_common_grammar_events(
         "dimensions": event.payload["dimensions"],
         "lineage": list(event.payload.get("lineage", ())),
     }
-    if event.kind == "operator.ingress.common_grammar.representation_examined":
+    if event.kind == "operator.ingress.representation_examined":
         view["representation_examinations"][event.payload["material_role"]] = {
             "examination_event_id": event.id,
             "capture_event_id": event.payload["capture_event_id"],
@@ -112,7 +112,7 @@ def project_operator_ingress_common_grammar_events(
         "dimensions": dimensions,
         "evidence_event_id": event.id,
     }
-    if event.kind == "operator.ingress.common_grammar.ingress_occurred" and all(
+    if event.kind == "operator.ingress.ingress_occurred" and all(
         key in event.payload
         for key in (
             "decoded_text",
@@ -159,7 +159,7 @@ def _capture_representation(
     capture_ref = new_id("operator_material")
     captured = _record(
         ledger,
-        "operator.ingress.common_grammar.raw_material_captured",
+        "operator.ingress.raw_material_captured",
         workspace,
         session,
         attempt,
@@ -189,7 +189,7 @@ def _capture_representation(
         return capture, None, captured, None
     examination_event = _record(
         ledger,
-        "operator.ingress.common_grammar.representation_examined",
+        "operator.ingress.representation_examined",
         workspace,
         session,
         attempt,
@@ -223,17 +223,16 @@ def _capture_representation(
     return capture, examination, captured, examination_event
 
 
-def run_operator_ingress_common_grammar_probe_attempt(
+def run_operator_ingress_attempt(
     *,
     ledger: EventLedger,
     workspace_id: str,
     session_id: str,
     captured_ingress: CapturedOperatorMaterial,
-    response_input_stream: TextIO | BinaryIO,
     output_stream: TextIO,
 ) -> dict[str, object]:
-    """Run exactly one ingress/common-grammar-probe/response attempt and return."""
-    attempt = new_id("operator_ingress_common_grammar_attempt")
+    """Capture, examine, project, and locally stop one bounded ingress attempt."""
+    attempt = new_id("operator_ingress_attempt")
     (
         captured_ingress,
         ingress_examination,
@@ -263,7 +262,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
     if ingress_examination is not None and not ingress_examination.succeeded:
         _record(
             ledger,
-            "operator.ingress.common_grammar.stopping_occurred",
+            "operator.ingress.stopping_occurred",
             workspace_id,
             session_id,
             attempt,
@@ -286,13 +285,13 @@ def run_operator_ingress_common_grammar_probe_attempt(
             "Representation insufficient: captured material did not decode under the selected decoder mechanism.\n"
         )
         output_stream.flush()
-        return state.operator_ingress_common_grammar_attempts[attempt]
+        return state.operator_ingress_attempts[attempt]
     ingress = _record(
         ledger,
         (
-            "operator.ingress.common_grammar.initial_eof_occurred"
+            "operator.ingress.initial_eof_occurred"
             if ingress_kind == "eof"
-            else "operator.ingress.common_grammar.ingress_occurred"
+            else "operator.ingress.ingress_occurred"
         ),
         workspace_id,
         session_id,
@@ -338,7 +337,7 @@ def run_operator_ingress_common_grammar_probe_attempt(
     if ingress_kind == "eof":
         _record(
             ledger,
-            "operator.ingress.common_grammar.stopping_occurred",
+            "operator.ingress.stopping_occurred",
             workspace_id,
             session_id,
             attempt,
@@ -357,10 +356,8 @@ def run_operator_ingress_common_grammar_probe_attempt(
             lineage=[ingress.id],
         )
         state = StateProjector(ledger).project(workspace_id)
-        output_stream.write(
-            "Operator-ingress common-grammar interaction stopped locally.\n"
-        )
+        output_stream.write("Operator-ingress interaction stopped locally.\n")
         output_stream.flush()
-        return state.operator_ingress_common_grammar_attempts[attempt]
+        return state.operator_ingress_attempts[attempt]
 
-    return state.operator_ingress_common_grammar_attempts[attempt]
+    return state.operator_ingress_attempts[attempt]

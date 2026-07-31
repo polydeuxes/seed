@@ -347,9 +347,7 @@ from seed_runtime.selection_path_audit import (
     selection_path_audit_json,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.operator_ingress_common_grammar_prerequisite import (
-    run_operator_ingress_common_grammar_probe_attempt,
-)
+from seed_runtime.operator_ingress import run_operator_ingress_attempt
 from seed_runtime.operator_ingress_representation import capture_stdin_material
 from seed_runtime.facts import (
     Fact,
@@ -5798,12 +5796,11 @@ def run_persistent_operator_console(
             captured_ingress.exact_bytes, captured_ingress.encoding_testimony
         ):
             return
-        run_operator_ingress_common_grammar_probe_attempt(
+        run_operator_ingress_attempt(
             ledger=ledger,
             workspace_id=workspace_id,
             session_id=session_id,
             captured_ingress=captured_ingress,
-            response_input_stream=input_stream,
             output_stream=output_stream,
         )
 
