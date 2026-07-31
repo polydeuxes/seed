@@ -1,5 +1,6 @@
 from dataclasses import fields, replace
 from io import BytesIO, StringIO
+import json
 
 import pytest
 
@@ -25,6 +26,10 @@ from seed_runtime.operator_ingress_interpretation_candidates import (
     preserve_operator_ingress_interpretation_candidates,
 )
 from seed_runtime.operator_ingress_representation import capture_stdin_material
+
+
+class ForeignString(str):
+    pass
 
 
 @pytest.fixture
@@ -173,6 +178,54 @@ def test_supplier_direct_tuple_shape_is_intrinsic(material, field, bad):
         replace(supplied(addressable), **{field: bad})
 
 
+@pytest.mark.parametrize(
+    ("owner", "field"),
+    [
+        ("candidate", "candidate_ref"),
+        ("candidate", "proposed_meaning"),
+        ("testimony", "attributed_supplier"),
+        ("testimony", "formation_occurrence_ref"),
+    ],
+)
+def test_supplier_direct_scalar_coordinates_require_exact_strings(
+    material, owner, field
+):
+    _, addressable = material
+    item = supplied(addressable)
+    if owner == "candidate":
+        candidate = replace(item.candidate, **{field: ForeignString("x")})
+        with pytest.raises(OperatorIngressInterpretationCandidateSetError):
+            replace(item, candidate=candidate)
+    else:
+        changes = {field: ForeignString(getattr(item, field))}
+        with pytest.raises(OperatorIngressInterpretationCandidateSetError):
+            replace(item, **changes)
+
+
+@pytest.mark.parametrize(
+    ("owner", "field"),
+    [
+        ("candidate", "source_span_refs"),
+        ("supplier", "supplier_provenance"),
+        ("supplier", "declared_scope"),
+        ("supplier", "supplied_authority_limits"),
+    ],
+)
+def test_supplier_direct_tuple_members_require_exact_strings(material, owner, field):
+    _, addressable = material
+    item = supplied(addressable)
+    if owner == "candidate":
+        candidate = replace(
+            item.candidate,
+            source_span_refs=(ForeignString(item.candidate.source_span_refs[0]),),
+        )
+        with pytest.raises(OperatorIngressInterpretationCandidateSetError):
+            replace(item, candidate=candidate)
+    else:
+        with pytest.raises(OperatorIngressInterpretationCandidateSetError):
+            replace(item, **{field: (ForeignString("x"),)})
+
+
 def test_zero_one_many_candidates_and_set_unknown_ownership(material):
     _, addressable = material
     zero = preserve(addressable, supplied_set_unknowns=(NO_CANDIDATES_UNKNOWN,))
@@ -219,6 +272,111 @@ def test_round_trip_and_forged_json_use_same_invariant_boundary(material):
     encoded["candidate_set_id"] = "pending"
     with pytest.raises(OperatorIngressInterpretationCandidateSetError, match="forged"):
         OperatorIngressInterpretationCandidateSet.from_json_dict(encoded)
+
+
+def test_addressable_material_and_candidate_set_round_trip_over_json_wire(material):
+    _, addressable = material
+    result = preserve(
+        addressable,
+        supplied(addressable, formation=None),
+        supplied_set_unknowns=("set unknown",),
+        set_conflicts=("set conflict",),
+    )
+
+    for artifact, artifact_type in (
+        (addressable, OperatorIngressAddressableMaterial),
+        (result, OperatorIngressInterpretationCandidateSet),
+    ):
+        mapping = artifact.to_json_dict()
+        if artifact is addressable:
+            assert type(mapping["provenance"]) is tuple
+        else:
+            assert type(mapping["candidate_testimonies"]) is tuple
+            assert (
+                type(
+                    mapping["candidate_testimonies"][0]["candidate"]["source_span_refs"]
+                )
+                is tuple
+            )
+        encoded = json.dumps(mapping)
+        decoded = json.loads(encoded)
+        if artifact is addressable:
+            assert type(decoded["provenance"]) is list
+        else:
+            assert type(decoded["candidate_testimonies"]) is list
+            assert (
+                type(
+                    decoded["candidate_testimonies"][0]["candidate"]["source_span_refs"]
+                )
+                is list
+            )
+        rebuilt = artifact_type.from_json_dict(decoded)
+        assert rebuilt == artifact
+        rebuilt_tuple = (
+            rebuilt.provenance
+            if artifact is addressable
+            else rebuilt.candidate_testimonies
+        )
+        assert type(rebuilt_tuple) is tuple
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "preservation_unknowns",
+        "supplied_set_unknowns",
+        "set_conflicts",
+        "boundary_notes",
+        "preservation_authority_limits",
+    ],
+)
+def test_preservation_and_set_tuple_members_require_exact_strings(material, field):
+    _, addressable = material
+    valid = preserve(addressable, supplied(addressable, formation=None))
+    if field == "preservation_unknowns":
+        testimony = valid.candidate_testimonies[0]
+        with pytest.raises(OperatorIngressInterpretationCandidateSetError):
+            replace(
+                testimony, preservation_unknowns=(ForeignString(FORMATION_UNKNOWN),)
+            )
+    else:
+        current = getattr(valid, field)
+        with pytest.raises(OperatorIngressInterpretationCandidateSetError):
+            replace(
+                valid,
+                **{field: (ForeignString(current[0] if current else "x"),)},
+            )
+
+
+@pytest.mark.parametrize("field", ["candidate_set_id", "artifact_type", "convention"])
+def test_candidate_set_scalar_identity_coordinates_require_exact_strings(
+    material, field
+):
+    _, addressable = material
+    valid = preserve(addressable, supplied(addressable))
+    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
+        replace(valid, **{field: ForeignString(getattr(valid, field))})
+
+
+def test_exact_builtin_strings_remain_accepted_at_all_ownership_layers(material):
+    _, addressable = material
+    item = supplied(addressable)
+    result = preserve(
+        addressable,
+        item,
+        supplied_set_unknowns=("set unknown",),
+        set_conflicts=("set conflict",),
+    )
+    assert type(result.candidate_set_id) is str
+    assert all(
+        type(value) is str
+        for value in (
+            item.candidate.candidate_ref,
+            item.attributed_supplier,
+            item.supplier_provenance[0],
+            result.boundary_notes[0],
+        )
+    )
 
 
 def test_identity_covers_each_unknown_owner_and_is_deterministic(material):
