@@ -236,9 +236,6 @@ def run_operator_ingress_attempt(
         captured_material=captured_ingress,
         material_role="initial_ingress",
     )
-    raw_ingress = ingress_examination.represented_text or ""
-    ingress_kind = "empty" if raw_ingress in {"\n", "\r\n"} else "text"
-    ingress_content = raw_ingress.removesuffix("\n").removesuffix("\r")
     if not ingress_examination.succeeded:
         _record(
             ledger,
@@ -266,6 +263,9 @@ def run_operator_ingress_attempt(
         )
         output_stream.flush()
         return state.operator_ingress_attempts[attempt]
+    raw_ingress = ingress_examination.represented_text
+    ingress_kind = "empty" if raw_ingress in {"\n", "\r\n"} else "text"
+    ingress_content = raw_ingress.removesuffix("\n").removesuffix("\r")
     _record(
         ledger,
         "operator.ingress.ingress_occurred",
