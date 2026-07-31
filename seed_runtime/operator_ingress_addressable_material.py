@@ -7,6 +7,7 @@ import hashlib
 import json
 
 from seed_runtime.contextual_interpretation_warrant_set import (
+    ContextualInterpretationWarrantSetError,
     ExactOperatorMaterial,
     SourceSpan,
 )
@@ -68,6 +69,72 @@ class OperatorIngressAddressableMaterial:
     mutates_state: bool = False
     mutates_cluster: bool = False
 
+    def __post_init__(self) -> None:
+        self._validate_intrinsic_invariants()
+
+    def _validate_intrinsic_invariants(self) -> None:
+        if self.artifact_type != "operator_ingress_addressable_material":
+            _refuse("wrong addressable material artifact_type")
+        for name in (
+            "material_projection_id",
+            "ingress_event_ref",
+            "raw_material_event_ref",
+            "representation_examination_event_ref",
+            "source_role",
+        ):
+            _exact_string(getattr(self, name), name)
+        for name in (
+            "provenance",
+            "scope",
+            "known_loss",
+            "unknowns",
+            "authority_limits",
+        ):
+            _intrinsic_string_tuple(getattr(self, name), name)
+        if not isinstance(self.exact_operator_material, ExactOperatorMaterial):
+            _refuse("exact_operator_material must be ExactOperatorMaterial")
+        if self.read_only is not True or any(
+            value is not False
+            for value in (
+                self.writes_event_ledger,
+                self.mutates_state,
+                self.mutates_cluster,
+            )
+        ):
+            _refuse("addressable material must be read-only and non-mutating")
+        if self.provenance != (
+            self.raw_material_event_ref,
+            self.representation_examination_event_ref,
+            self.ingress_event_ref,
+        ):
+            _refuse(
+                "addressable provenance must preserve exact raw, examination, ingress order"
+            )
+        material = self.exact_operator_material
+        if (
+            material.material_ref != self.ingress_event_ref
+            or material.provenance != self.provenance
+        ):
+            _refuse("exact material standing does not match addressable standing")
+        if type(material.source_spans) is not tuple or len(material.source_spans) != 1:
+            _refuse("exact material must have one canonical full source span")
+        span = material.source_spans[0]
+        if not isinstance(span, SourceSpan):
+            _refuse("source span must be a SourceSpan")
+        if span.span_ref != operator_material_full_span_id(
+            ingress_event_ref=self.ingress_event_ref, exact_text=material.exact_text
+        ):
+            _refuse("full source span identity is forged")
+        if (span.source_ref, span.start, span.end, span.exact_text) != (
+            self.ingress_event_ref,
+            0,
+            len(material.exact_text),
+            material.exact_text,
+        ):
+            _refuse("source span must cover the complete exact material")
+        if self.material_projection_id != addressable_material_projection_id(material):
+            _refuse("material projection identity is forged or stale")
+
     def to_json_dict(self) -> dict[str, object]:
         """Return the single JSON-safe projection representation."""
         return asdict(self)
@@ -93,30 +160,36 @@ class OperatorIngressAddressableMaterial:
         for span in spans:
             if not isinstance(span, dict):
                 _refuse("source span must be an object")
-            rebuilt_spans.append(
-                SourceSpan(
-                    span_ref=_exact_string(span.get("span_ref"), "span_ref"),
-                    source_ref=_exact_string(span.get("source_ref"), "source_ref"),
-                    start=_exact_int(span.get("start"), "span start"),
-                    end=_exact_int(span.get("end"), "span end"),
-                    exact_text=_exact_string(
-                        span.get("exact_text"), "span text", empty=True
-                    ),
+            try:
+                rebuilt_spans.append(
+                    SourceSpan(
+                        span_ref=_exact_string(span.get("span_ref"), "span_ref"),
+                        source_ref=_exact_string(span.get("source_ref"), "source_ref"),
+                        start=_exact_int(span.get("start"), "span start"),
+                        end=_exact_int(span.get("end"), "span end"),
+                        exact_text=_exact_string(
+                            span.get("exact_text"), "span text", empty=True
+                        ),
+                    )
                 )
+            except ContextualInterpretationWarrantSetError as error:
+                _refuse(str(error))
+        try:
+            material = ExactOperatorMaterial(
+                material_ref=_exact_string(
+                    material_value.get("material_ref"), "material_ref"
+                ),
+                exact_text=_exact_string(
+                    material_value.get("exact_text"), "exact_text", empty=True
+                ),
+                source_spans=tuple(rebuilt_spans),
+                provenance=_string_tuple(
+                    material_value.get("provenance"), "material provenance"
+                ),
             )
-        material = ExactOperatorMaterial(
-            material_ref=_exact_string(
-                material_value.get("material_ref"), "material_ref"
-            ),
-            exact_text=_exact_string(
-                material_value.get("exact_text"), "exact_text", empty=True
-            ),
-            source_spans=tuple(rebuilt_spans),
-            provenance=_string_tuple(
-                material_value.get("provenance"), "material provenance"
-            ),
-        )
-        artifact = cls(
+        except ContextualInterpretationWarrantSetError as error:
+            _refuse(str(error))
+        return cls(
             artifact_type=_exact_string(value.get("artifact_type"), "artifact_type"),
             material_projection_id=_exact_string(
                 value.get("material_projection_id"), "material_projection_id"
@@ -149,8 +222,6 @@ class OperatorIngressAddressableMaterial:
                 value.get("mutates_cluster"), "mutates_cluster"
             ),
         )
-        validate_operator_ingress_addressable_material(artifact)
-        return artifact
 
 
 def _refuse(message: str) -> None:
@@ -183,52 +254,18 @@ def _string_tuple(value: object, name: str) -> tuple[str, ...]:
     return tuple(value)
 
 
+def _intrinsic_string_tuple(value: object, name: str) -> None:
+    if type(value) is not tuple or not all(isinstance(item, str) for item in value):
+        _refuse(f"{name} must be an exact tuple of strings")
+
+
 def validate_operator_ingress_addressable_material(
     artifact: OperatorIngressAddressableMaterial,
 ) -> None:
     """Validate the complete frozen artifact without consulting the ledger."""
-    if artifact.artifact_type != "operator_ingress_addressable_material":
-        _refuse("wrong addressable material artifact_type")
-    if artifact.read_only is not True or any(
-        value is not False
-        for value in (
-            artifact.writes_event_ledger,
-            artifact.mutates_state,
-            artifact.mutates_cluster,
-        )
-    ):
-        _refuse("addressable material must be read-only and non-mutating")
-    if len(artifact.provenance) != 3 or artifact.provenance != (
-        artifact.raw_material_event_ref,
-        artifact.representation_examination_event_ref,
-        artifact.ingress_event_ref,
-    ):
-        _refuse(
-            "addressable provenance must preserve exact raw, examination, ingress order"
-        )
-    material = artifact.exact_operator_material
-    if (
-        material.material_ref != artifact.ingress_event_ref
-        or material.provenance != artifact.provenance
-    ):
-        _refuse("exact material standing does not match addressable standing")
-    if len(material.source_spans) != 1:
-        _refuse("exact material must have one canonical full source span")
-    span = material.source_spans[0]
-    if span.span_ref != operator_material_full_span_id(
-        ingress_event_ref=artifact.ingress_event_ref,
-        exact_text=material.exact_text,
-    ):
-        _refuse("full source span identity is forged")
-    if (
-        span.source_ref != artifact.ingress_event_ref
-        or span.start != 0
-        or span.end != len(material.exact_text)
-        or span.exact_text != material.exact_text
-    ):
-        _refuse("source span must cover the complete exact material")
-    if artifact.material_projection_id != addressable_material_projection_id(material):
-        _refuse("material projection identity is forged or stale")
+    if not isinstance(artifact, OperatorIngressAddressableMaterial):
+        _refuse("artifact must be OperatorIngressAddressableMaterial")
+    artifact._validate_intrinsic_invariants()
 
 
 def form_operator_ingress_addressable_material(
