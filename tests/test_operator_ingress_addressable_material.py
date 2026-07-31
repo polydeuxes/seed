@@ -155,13 +155,12 @@ def test_noncanonical_source_span_shapes_cannot_self_certify(shape):
         "short": (replace(full, end=6, exact_text="abcdef"),),
     }
     invented = replace(material, source_spans=shapes[shape])
-    self_certified = replace(
-        artifact,
-        exact_operator_material=invented,
-        material_projection_id=addressable_material_projection_id(invented),
-    )
     with pytest.raises(OperatorIngressAddressableMaterialError):
-        OperatorIngressAddressableMaterial.from_json_dict(self_certified.to_json_dict())
+        replace(
+            artifact,
+            exact_operator_material=invented,
+            material_projection_id=addressable_material_projection_id(invented),
+        )
 
 
 def test_active_formation_does_not_call_interpretation_producer(monkeypatch):

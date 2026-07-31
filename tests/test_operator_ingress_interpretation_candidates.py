@@ -1,4 +1,4 @@
-from dataclasses import replace
+from dataclasses import fields, replace
 from io import BytesIO, StringIO
 
 import pytest
@@ -12,283 +12,146 @@ from seed_runtime.operator_ingress_common_grammar_prerequisite import (
     run_operator_ingress_common_grammar_probe_attempt,
 )
 from seed_runtime.operator_ingress_interpretation_candidates import (
+    BOUNDARY_NOTES,
     FORMATION_UNKNOWN,
     NO_CANDIDATES_UNKNOWN,
+    PROPOSITION_UNKNOWN,
     REQUIRED_AUTHORITY_LIMITS,
     SOURCE_RELATION_UNKNOWN,
     AttributedInterpretationCandidateTestimony,
     OperatorIngressInterpretationCandidateSet,
     OperatorIngressInterpretationCandidateSetError,
+    SuppliedInterpretationCandidateTestimony,
     preserve_operator_ingress_interpretation_candidates,
 )
 from seed_runtime.operator_ingress_representation import capture_stdin_material
 
-EXACT_TEXT = " deploy::alpha | keep residual\r\n"
-
-
-class _UnreadableResponse:
-    def readline(self):
-        pytest.fail("candidate preservation must not read additional ingress")
-
 
 @pytest.fixture
-def ingress_material():
+def material():
     ledger = EventLedger()
     view = run_operator_ingress_common_grammar_probe_attempt(
         ledger=ledger,
         workspace_id="w",
         session_id="s",
-        captured_ingress=capture_stdin_material(BytesIO(EXACT_TEXT.encode())),
-        response_input_stream=_UnreadableResponse(),
+        captured_ingress=capture_stdin_material(BytesIO(b" exact::text\r\n")),
+        response_input_stream=BytesIO(),
         output_stream=StringIO(),
     )
-    artifact = OperatorIngressAddressableMaterial.from_json_dict(
+    return ledger, OperatorIngressAddressableMaterial.from_json_dict(
         view["addressable_operator_material"]
     )
-    return ledger, artifact
 
 
-def _testimony(
+def supplied(
     material,
+    *,
     ref="candidate:one",
-    span_refs=None,
-    supplier="operator-supplied testimony",
     formation="event:formation",
-    meaning="  proposed::meaning  ",
-    limits=("caller testimony only",),
+    refs=None,
+    meaning="meaning",
+    unknowns=("supplier unknown",),
 ):
-    if span_refs is None:
-        span_refs = (material.exact_operator_material.source_spans[0].span_ref,)
-    return AttributedInterpretationCandidateTestimony(
-        candidate=InterpretationCandidate(ref, "display label", span_refs, meaning),
-        attributed_supplier=supplier,
-        supplier_provenance=("submission:7", "provider:external"),
+    if refs is None:
+        refs = (material.exact_operator_material.source_spans[0].span_ref,)
+    return SuppliedInterpretationCandidateTestimony(
+        candidate=InterpretationCandidate(ref, "label", refs, meaning),
+        attributed_supplier="external supplier",
+        supplier_provenance=("submission:1",),
         formation_occurrence_ref=formation,
-        declared_scope=("this material only",),
-        known_loss=("speaker context unavailable",),
-        unknowns=("candidate-local unknown",),
-        conflicts=("candidate-local conflict",),
-        supplied_authority_limits=limits,
+        declared_scope=("this material",),
+        known_loss=("context unavailable",),
+        supplied_unknowns=unknowns,
+        conflicts=("supplied conflict",),
+        supplied_authority_limits=("testimony only",),
     )
 
 
-def _preserve(material, *testimonies, **kwargs):
+def preserve(material, *items, **kwargs):
     return preserve_operator_ingress_interpretation_candidates(
-        addressable_material=material, candidate_testimonies=testimonies, **kwargs
+        addressable_material=material, candidate_testimonies=items, **kwargs
     )
 
 
-def test_real_ingress_complete_material_and_three_limit_owners_survive(
-    ingress_material,
-):
-    ledger, material = ingress_material
-    shared_text = material.authority_limits[0]
-    testimony = _testimony(material, limits=(shared_text, shared_text))
-    before = testimony
-    event_count = len(ledger.list_events("w"))
-    result = _preserve(material, testimony)
-
-    assert result.addressable_material is material
-    assert result.addressable_material == material
-    assert material.provenance == (
-        material.raw_material_event_ref,
-        material.representation_examination_event_ref,
-        material.ingress_event_ref,
+def test_supplier_and_preserved_types_have_distinct_unknown_ownership(material):
+    ledger, addressable = material
+    item = supplied(
+        addressable, formation=None, unknowns=(FORMATION_UNKNOWN, FORMATION_UNKNOWN)
     )
+    before = item
+    count = len(ledger.list_events("w"))
+    result = preserve(
+        addressable,
+        item,
+        supplied_set_unknowns=(NO_CANDIDATES_UNKNOWN, NO_CANDIDATES_UNKNOWN),
+    )
+    attributed = result.candidate_testimonies[0]
+    assert item == before and attributed is not item
+    assert "preservation_unknowns" not in {field.name for field in fields(item)}
+    assert attributed.supplied_unknowns == (FORMATION_UNKNOWN, FORMATION_UNKNOWN)
+    assert attributed.preservation_unknowns == (FORMATION_UNKNOWN,)
+    assert result.supplied_set_unknowns == (
+        NO_CANDIDATES_UNKNOWN,
+        NO_CANDIDATES_UNKNOWN,
+    )
+    assert result.preservation_set_unknowns == ()
     assert (
-        material.source_role
-        == "operator-origin material at the preserved ingress boundary"
+        addressable.unknowns
+        and attributed.supplied_unknowns
+        and result.supplied_set_unknowns
     )
-    assert material.scope[0:2] == ("workspace:w", "session:s")
-    assert material.scope[2].startswith("attempt:")
-    assert material.known_loss == (
-        "transport bytes before the supplied binary-stream boundary are not observable",
-    )
-    assert material.unknowns
-    assert result.addressable_material.authority_limits == material.authority_limits
-    preserved = result.candidate_testimonies[0]
-    assert preserved.supplied_authority_limits == (shared_text, shared_text)
-    assert result.preservation_authority_limits == REQUIRED_AUTHORITY_LIMITS
-    assert shared_text in material.authority_limits
-    assert shared_text in preserved.supplied_authority_limits
-    assert testimony == before
-    assert testimony.unknowns == ("candidate-local unknown",)
-    assert preserved.candidate.proposed_meaning == "  proposed::meaning  "
-    assert len(ledger.list_events("w")) == event_count
-    assert result.read_only and not result.writes_event_ledger
-    assert not result.mutates_state and not result.mutates_cluster
+    assert len(ledger.list_events("w")) == count
 
 
-def test_absent_formation_zero_refs_and_blank_proposition_add_local_unknowns(
-    ingress_material,
+@pytest.mark.parametrize(
+    ("formation", "refs", "meaning", "expected"),
+    [
+        (None, ("full",), "meaning", (FORMATION_UNKNOWN,)),
+        ("event:f", (), "meaning", (SOURCE_RELATION_UNKNOWN,)),
+        ("event:f", ("full",), "", (PROPOSITION_UNKNOWN,)),
+        (
+            None,
+            (),
+            "",
+            (FORMATION_UNKNOWN, SOURCE_RELATION_UNKNOWN, PROPOSITION_UNKNOWN),
+        ),
+        ("event:f", ("full",), "meaning", ()),
+    ],
+)
+def test_preservation_unknowns_are_derived_in_fixed_order(
+    material, formation, refs, meaning, expected
 ):
-    _, material = ingress_material
-    result = _preserve(
-        material, _testimony(material, formation=None, span_refs=(), meaning="")
+    _, addressable = material
+    full = addressable.exact_operator_material.source_spans[0].span_ref
+    actual_refs = tuple(full if ref == "full" else ref for ref in refs)
+    result = preserve(
+        addressable,
+        supplied(addressable, formation=formation, refs=actual_refs, meaning=meaning),
     )
-    testimony = result.candidate_testimonies[0]
-    assert testimony.formation_occurrence_ref is None
-    assert FORMATION_UNKNOWN in testimony.unknowns
-    assert SOURCE_RELATION_UNKNOWN in testimony.unknowns
-    assert "candidate proposition unavailable" in testimony.unknowns
+    assert result.candidate_testimonies[0].preservation_unknowns == expected
 
 
-def test_empty_formation_is_distinct_from_none_and_refused(ingress_material):
-    _, material = ingress_material
+@pytest.mark.parametrize(
+    "bad",
+    [
+        (),
+        (FORMATION_UNKNOWN,),
+        (SOURCE_RELATION_UNKNOWN,),
+        (PROPOSITION_UNKNOWN,),
+        (PROPOSITION_UNKNOWN, FORMATION_UNKNOWN),
+        ("extra",),
+    ],
+)
+def test_attributed_testimony_refuses_wrong_preservation_findings(material, bad):
+    _, addressable = material
+    item = supplied(addressable, formation=None, refs=(), meaning="")
     with pytest.raises(
-        OperatorIngressInterpretationCandidateSetError, match="formation"
+        OperatorIngressInterpretationCandidateSetError, match="preservation_unknowns"
     ):
-        _preserve(material, _testimony(material, formation=""))
-
-
-def test_zero_one_and_many_candidates_have_no_selection_or_ranking(ingress_material):
-    _, material = ingress_material
-    zero = _preserve(material)
-    assert zero.candidate_testimonies == ()
-    assert zero.set_unknowns == (NO_CANDIDATES_UNKNOWN,)
-    one = _preserve(material, _testimony(material))
-    same_span = material.exact_operator_material.source_spans[0].span_ref
-    many = _preserve(
-        material,
-        _testimony(material, ref="candidate:a", span_refs=(same_span,), meaning="same"),
-        _testimony(material, ref="candidate:b", span_refs=(same_span,), meaning="same"),
-    )
-    assert len(material.exact_operator_material.source_spans) == 1
-    span = material.exact_operator_material.source_spans[0]
-    assert (span.start, span.end, span.exact_text) == (0, len(EXACT_TEXT), EXACT_TEXT)
-    assert len(many.candidate_testimonies) == 2
-    for artifact in (one, many):
-        encoded = artifact.to_json_dict()
-        assert (
-            "selected" not in encoded
-            and "rank" not in encoded
-            and "warrant" not in encoded
+        AttributedInterpretationCandidateTestimony(
+            **{field.name: getattr(item, field.name) for field in fields(item)},
+            preservation_unknowns=bad,
         )
-
-
-def test_candidate_ref_supplier_and_source_validation(ingress_material):
-    _, material = ingress_material
-    with pytest.raises(OperatorIngressInterpretationCandidateSetError, match="unique"):
-        _preserve(material, _testimony(material), _testimony(material))
-    with pytest.raises(OperatorIngressInterpretationCandidateSetError, match="foreign"):
-        _preserve(material, _testimony(material, span_refs=("span:foreign",)))
-    with pytest.raises(
-        OperatorIngressInterpretationCandidateSetError, match="supplier"
-    ):
-        _preserve(material, _testimony(material, supplier=""))
-
-
-@pytest.mark.parametrize(
-    "change",
-    [
-        lambda value: replace(value, artifact_type="other"),
-        lambda value: replace(value, read_only=False),
-        lambda value: replace(value, writes_event_ledger=True),
-        lambda value: replace(value, provenance=value.provenance[::-1]),
-        lambda value: replace(value, raw_material_event_ref="event:foreign"),
-        lambda value: replace(value, material_projection_id="projection:forged"),
-    ],
-)
-def test_invalid_complete_addressable_material_is_refused(ingress_material, change):
-    _, material = ingress_material
-    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
-        _preserve(change(material))
-
-
-def test_identity_covers_lawfully_variable_authority_owners(ingress_material):
-    _, material = ingress_material
-    testimony = _testimony(material)
-    base = _preserve(material, testimony).candidate_set_id
-    assert (
-        _preserve(
-            replace(
-                material,
-                authority_limits=material.authority_limits + ("new material limit",),
-            ),
-            testimony,
-        ).candidate_set_id
-        != base
-    )
-    assert (
-        _preserve(
-            material,
-            replace(testimony, supplied_authority_limits=("new supplier limit",)),
-        ).candidate_set_id
-        != base
-    )
-
-
-def test_producer_rejects_caller_owned_preservation_authority(ingress_material):
-    _, material = ingress_material
-    with pytest.raises(TypeError, match="preservation_authority_limits"):
-        _preserve(material, preservation_authority_limits=())
-
-
-@pytest.mark.parametrize(
-    ("field", "replacement"),
-    [
-        ("preservation_authority_limits", ()),
-        ("preservation_authority_limits", REQUIRED_AUTHORITY_LIMITS + ("extra",)),
-        ("preservation_authority_limits", REQUIRED_AUTHORITY_LIMITS[:-1]),
-        ("preservation_authority_limits", REQUIRED_AUTHORITY_LIMITS[::-1]),
-        ("preservation_authority_limits", ("similar wording",)),
-        ("boundary_notes", ("modified",)),
-    ],
-)
-def test_serialized_v1_repository_declarations_are_exact(
-    ingress_material, field, replacement
-):
-    _, material = ingress_material
-    encoded = _preserve(material, _testimony(material)).to_json_dict()
-    encoded[field] = replacement
-    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
-        OperatorIngressInterpretationCandidateSet.from_json_dict(encoded)
-
-
-def test_exact_round_trip_and_serialized_ownership_shape(ingress_material):
-    _, material = ingress_material
-    result = _preserve(material, _testimony(material, formation=None))
-    encoded = result.to_json_dict()
-    assert "addressable_material" in encoded
-    assert "authority_limits" in encoded["addressable_material"]
-    assert "supplied_authority_limits" in encoded["candidate_testimonies"][0]
-    assert "authority_limits" not in encoded["candidate_testimonies"][0]
-    assert encoded["candidate_testimonies"][0]["formation_occurrence_ref"] is None
-    assert OperatorIngressInterpretationCandidateSet.from_json_dict(encoded) == result
-
-
-@pytest.mark.parametrize(
-    "field", ["read_only", "writes_event_ledger", "mutates_state", "mutates_cluster"]
-)
-@pytest.mark.parametrize("bad", ["true", "false", 1, 0, None])
-def test_malformed_booleans_are_refused(ingress_material, field, bad):
-    _, material = ingress_material
-    encoded = _preserve(material, _testimony(material)).to_json_dict()
-    encoded[field] = bad
-    with pytest.raises(OperatorIngressInterpretationCandidateSetError, match="boolean"):
-        OperatorIngressInterpretationCandidateSet.from_json_dict(encoded)
-
-
-@pytest.mark.parametrize(
-    ("path", "bad"),
-    [
-        (("set_unknowns",), "not-a-sequence"),
-        (("preservation_authority_limits",), [1]),
-        (("addressable_material", "scope"), ["valid", 2]),
-        (("addressable_material", "authority_limits"), "not-a-sequence"),
-        (("candidate_testimonies", 0, "supplier_provenance"), [object()]),
-        (("candidate_testimonies", 0, "candidate", "source_span_refs"), "span:string"),
-    ],
-)
-def test_malformed_string_sequences_are_refused(ingress_material, path, bad):
-    _, material = ingress_material
-    encoded = _preserve(material, _testimony(material)).to_json_dict()
-    cursor = encoded
-    for key in path[:-1]:
-        cursor = cursor[key]
-    cursor[path[-1]] = bad
-    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
-        OperatorIngressInterpretationCandidateSet.from_json_dict(encoded)
 
 
 @pytest.mark.parametrize(
@@ -297,102 +160,121 @@ def test_malformed_string_sequences_are_refused(ingress_material, path, bad):
         "supplier_provenance",
         "declared_scope",
         "known_loss",
-        "unknowns",
+        "supplied_unknowns",
         "conflicts",
         "supplied_authority_limits",
     ],
 )
-@pytest.mark.parametrize("bad", ["plain string", ("valid", 1), object()])
-def test_direct_and_serialized_testimony_tuple_validation_parity(
-    ingress_material, field, bad
+@pytest.mark.parametrize("bad", ["string", ["list"], ("valid", 1)])
+def test_supplier_direct_tuple_shape_is_intrinsic(material, field, bad):
+    _, addressable = material
+    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
+        replace(supplied(addressable), **{field: bad})
+
+
+def test_zero_one_many_candidates_and_set_unknown_ownership(material):
+    _, addressable = material
+    zero = preserve(addressable, supplied_set_unknowns=(NO_CANDIDATES_UNKNOWN,))
+    assert zero.candidate_testimonies == ()
+    assert zero.supplied_set_unknowns == (NO_CANDIDATES_UNKNOWN,)
+    assert zero.preservation_set_unknowns == (NO_CANDIDATES_UNKNOWN,)
+    one = preserve(addressable, supplied(addressable))
+    many = preserve(
+        addressable, supplied(addressable, ref="a"), supplied(addressable, ref="b")
+    )
+    assert one.preservation_set_unknowns == () and len(many.candidate_testimonies) == 2
+
+
+def test_candidate_set_direct_construction_refuses_pending_forgery_and_stale_findings(
+    material,
 ):
-    _, material = ingress_material
-    testimony = replace(_testimony(material), **{field: bad})
-    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
-        _preserve(material, testimony)
-
-    encoded = _preserve(material, _testimony(material)).to_json_dict()
-    encoded["candidate_testimonies"][0][field] = bad
-    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
-        OperatorIngressInterpretationCandidateSet.from_json_dict(encoded)
-
-
-@pytest.mark.parametrize("bad", ["plain string", ("valid", 1), object()])
-def test_direct_and_serialized_candidate_span_validation_parity(ingress_material, bad):
-    _, material = ingress_material
-    base = _testimony(material)
-    testimony = replace(base, candidate=replace(base.candidate, source_span_refs=bad))
-    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
-        _preserve(material, testimony)
-
-    encoded = _preserve(material, base).to_json_dict()
-    encoded["candidate_testimonies"][0]["candidate"]["source_span_refs"] = bad
-    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
-        OperatorIngressInterpretationCandidateSet.from_json_dict(encoded)
-
-
-@pytest.mark.parametrize("field", ["set_unknowns", "set_conflicts"])
-@pytest.mark.parametrize("bad", ["plain string", ("valid", 1), object()])
-def test_direct_and_serialized_set_tuple_validation_parity(
-    ingress_material, field, bad
-):
-    _, material = ingress_material
-    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
-        _preserve(material, **{field: bad})
-
-    encoded = _preserve(material).to_json_dict()
-    encoded[field] = bad
-    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
-        OperatorIngressInterpretationCandidateSet.from_json_dict(encoded)
-
-
-@pytest.mark.parametrize("field", ["attributed_supplier", "formation_occurrence_ref"])
-@pytest.mark.parametrize("bad", [1, True, object(), ""])
-def test_direct_and_serialized_scalar_validation_parity(ingress_material, field, bad):
-    _, material = ingress_material
-    testimony = replace(_testimony(material), **{field: bad})
-    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
-        _preserve(material, testimony)
-
-    encoded = _preserve(material, _testimony(material)).to_json_dict()
-    encoded["candidate_testimonies"][0][field] = bad
-    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
-        OperatorIngressInterpretationCandidateSet.from_json_dict(encoded)
-
-
-@pytest.mark.parametrize(
-    ("field", "bad"),
-    [
-        ("artifact_type", "other"),
-        ("convention", "other"),
-        ("candidate_set_id", "forged"),
-    ],
-)
-def test_wrong_type_convention_and_identity_are_refused(ingress_material, field, bad):
-    _, material = ingress_material
-    encoded = _preserve(material, _testimony(material)).to_json_dict()
-    encoded[field] = bad
-    with pytest.raises(OperatorIngressInterpretationCandidateSetError):
-        OperatorIngressInterpretationCandidateSet.from_json_dict(encoded)
-
-
-def test_nested_forged_projection_identity_is_refused(ingress_material):
-    _, material = ingress_material
-    encoded = _preserve(material, _testimony(material)).to_json_dict()
-    encoded["addressable_material"]["material_projection_id"] = "forged"
-    with pytest.raises(
-        OperatorIngressInterpretationCandidateSetError, match="identity"
+    _, addressable = material
+    valid = preserve(addressable, supplied(addressable))
+    for change in (
+        {"candidate_set_id": "pending"},
+        {"candidate_set_id": "forged"},
+        {"preservation_set_unknowns": (NO_CANDIDATES_UNKNOWN,)},
+        {"boundary_notes": ()},
+        {"preservation_authority_limits": ()},
+        {"read_only": False},
     ):
+        with pytest.raises(OperatorIngressInterpretationCandidateSetError):
+            replace(valid, **change)
+
+
+def test_candidate_uniqueness_and_source_relation_are_enforced(material):
+    _, addressable = material
+    with pytest.raises(OperatorIngressInterpretationCandidateSetError, match="unique"):
+        preserve(addressable, supplied(addressable), supplied(addressable))
+    with pytest.raises(OperatorIngressInterpretationCandidateSetError, match="foreign"):
+        preserve(addressable, supplied(addressable, refs=("foreign",)))
+
+
+def test_round_trip_and_forged_json_use_same_invariant_boundary(material):
+    _, addressable = material
+    result = preserve(addressable, supplied(addressable, formation=None))
+    encoded = result.to_json_dict()
+    assert OperatorIngressInterpretationCandidateSet.from_json_dict(encoded) == result
+    encoded["candidate_set_id"] = "pending"
+    with pytest.raises(OperatorIngressInterpretationCandidateSetError, match="forged"):
         OperatorIngressInterpretationCandidateSet.from_json_dict(encoded)
 
 
-def test_preservation_does_not_call_warrant_producer(ingress_material, monkeypatch):
+def test_identity_covers_each_unknown_owner_and_is_deterministic(material):
+    _, addressable = material
+    item = supplied(addressable)
+    first = preserve(addressable, item)
+    assert preserve(addressable, item).candidate_set_id == first.candidate_set_id
+    assert (
+        preserve(
+            addressable, replace(item, supplied_unknowns=("changed",))
+        ).candidate_set_id
+        != first.candidate_set_id
+    )
+    assert (
+        preserve(addressable, item, supplied_set_unknowns=("changed",)).candidate_set_id
+        != first.candidate_set_id
+    )
+    missing = supplied(addressable, formation=None)
+    assert preserve(addressable, missing).candidate_set_id != first.candidate_set_id
+
+
+def test_producer_accepts_only_supplier_input_and_exact_tuples(material):
+    _, addressable = material
+    attributed = preserve(addressable, supplied(addressable)).candidate_testimonies[0]
+    with pytest.raises(
+        OperatorIngressInterpretationCandidateSetError, match="supplied"
+    ):
+        preserve(addressable, attributed)
+    with pytest.raises(
+        OperatorIngressInterpretationCandidateSetError, match="exact tuple"
+    ):
+        preserve_operator_ingress_interpretation_candidates(
+            addressable_material=addressable, candidate_testimonies=[]
+        )
+    with pytest.raises(TypeError):
+        preserve(addressable, set_unknowns=())
+
+
+def test_authority_owners_remain_separate_and_repository_declarations_fixed(material):
+    _, addressable = material
+    shared = addressable.authority_limits[0]
+    result = preserve(addressable, supplied(addressable, unknowns=(shared,)))
+    testimony = result.candidate_testimonies[0]
+    assert addressable.authority_limits
+    assert testimony.supplied_authority_limits == ("testimony only",)
+    assert result.preservation_authority_limits == REQUIRED_AUTHORITY_LIMITS
+    assert BOUNDARY_NOTES == result.boundary_notes
+    assert shared not in testimony.supplied_authority_limits
+
+
+def test_no_warrant_producer_is_called(material, monkeypatch):
     import seed_runtime.contextual_interpretation_warrant_set as warrants
 
     monkeypatch.setattr(
         warrants,
         "produce_contextual_interpretation_warrant_set",
-        lambda **kwargs: pytest.fail("warrant production must remain disconnected"),
+        lambda **kwargs: pytest.fail("must remain disconnected"),
     )
-    _, material = ingress_material
-    assert _preserve(material, _testimony(material)).candidate_testimonies
+    _, addressable = material
+    assert preserve(addressable, supplied(addressable)).candidate_testimonies
