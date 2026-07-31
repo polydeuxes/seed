@@ -33,23 +33,80 @@ def run_attempt(text, ledger=None, session="s"):
     return ledger, view, output.getvalue()
 
 
-def test_historical_presentation_eligibility_event_still_projects():
-    """Historical projection compatibility witness, not current producer reachability or uptake."""
+DELETED_EVENT_KINDS = (
+    "probe_produced",
+    "alternatives_represented",
+    "presentation_occurred",
+    "response_captured",
+    "response_eof_occurred",
+    "binding_completed",
+    "unsupported_finding",
+    "alternative_selected",
+    "source_recovered",
+    "source_recovery_refused",
+    "potential_goal_standing_examined",
+    "presentation_eligibility_examined",
+    "meaning_relation_warranted",
+    "meaning_relation_refused",
+    "bounded_operator_goal_establishment_applicability_examined",
+    "bounded_operator_goal_establishment_applicability_refused",
+)
+
+DELETED_PAYLOAD_COORDINATES = (
+    "choice_set_ref",
+    "presentation_ref",
+    "capture_ref",
+    "binding_id",
+    "selected_presented_alternative_ref",
+    "recovered_source_ref",
+    "recovered_source_role",
+    "recovered_source_proposition",
+    "source_role_testimony_ref",
+    "standing_subject",
+    "standing_relation",
+    "standing_result",
+    "upstream_standing_occurrence_id",
+    "presentation_purpose_id",
+    "eligibility_relation",
+    "eligibility_result",
+    "relation_ref",
+    "relation_assertion",
+    "meaning_testimony_ref",
+    "constitutive_convention_ref",
+    "meaning_relation_warrant_occurrence_id",
+    "consumer_ref",
+    "purpose_ref",
+    "condition_examined",
+    "condition_evidence",
+    "applicability",
+    "applicability_reason",
+)
+
+
+@pytest.mark.parametrize("kind", DELETED_EVENT_KINDS)
+def test_deleted_event_kinds_are_rejected_without_creating_an_attempt(kind):
     ledger = EventLedger()
-    historical = ledger.append(
-        "operator.ingress.common_grammar.presentation_eligibility_examined",
+    ledger.append(
+        f"operator.ingress.common_grammar.{kind}",
+        "w",
+        {"attempt_ref": "attempt:deleted", "dimensions": {"identity": "deleted"}},
+        session_id="s",
+    )
+
+    with pytest.raises(ValueError, match="unsupported operator-ingress"):
+        StateProjector(ledger).project("w")
+
+
+def test_deleted_payload_coordinates_are_not_copied_from_an_active_event():
+    ledger = EventLedger()
+    ledger.append(
+        "operator.ingress.common_grammar.raw_material_captured",
         "w",
         {
-            "attempt_ref": "attempt:historical",
-            "dimensions": {
-                "identity": "presentation-eligibility:historical",
-                "content": "historical eligibility payload",
-                "standing": "eligible",
-            },
-            "presentation_purpose_id": "purpose:historical",
-            "eligibility_relation": "is eligible for exact presentation purpose",
-            "eligibility_result": "eligible",
-            "mutates_cluster": False,
+            "attempt_ref": "attempt:current",
+            "material_role": "initial_ingress",
+            "dimensions": {"identity": "material:current", "standing": "captured"},
+            **{coordinate: "deleted" for coordinate in DELETED_PAYLOAD_COORDINATES},
         },
         session_id="s",
     )
@@ -57,52 +114,22 @@ def test_historical_presentation_eligibility_event_still_projects():
     view = (
         StateProjector(ledger)
         .project("w")
-        .operator_ingress_common_grammar_attempts["attempt:historical"]
+        .operator_ingress_common_grammar_attempts["attempt:current"]
     )
-    projected = view["current_standing"]["presentation_eligibility"]
-    assert projected["evidence_event_id"] == historical.id
-    assert projected["dimensions"] == historical.payload["dimensions"]
-    assert view["presentation_purpose_id"] == "purpose:historical"
-    assert view["eligibility_relation"] == "is eligible for exact presentation purpose"
-    assert view["eligibility_result"] == "eligible"
-
-
-def test_historical_potential_goal_standing_event_still_projects():
-    """Historical projection compatibility witness, not producer reachability or authority."""
-    ledger = EventLedger()
-    historical = ledger.append(
-        "operator.ingress.common_grammar.potential_goal_standing_examined",
-        "w",
-        {
-            "attempt_ref": "attempt:historical-standing",
-            "dimensions": {
-                "identity": "bounded-potential-goal-standing:historical",
-                "content": "historical standing payload",
-                "standing": "established",
-            },
-            "standing_subject": "source:historical",
-            "standing_relation": "has bounded potential-goal standing",
-            "standing_result": "established",
-            "source_role_testimony_ref": "testimony:historical",
-            "source_role_testimony": {"attributed_role": "historical-role"},
-            "mutates_cluster": False,
-        },
-        session_id="s",
-    )
-
-    view = (
-        StateProjector(ledger)
-        .project("w")
-        .operator_ingress_common_grammar_attempts["attempt:historical-standing"]
-    )
-    projected = view["current_standing"]["potential_goal_standing"]
-    assert projected["evidence_event_id"] == historical.id
-    assert projected["dimensions"] == historical.payload["dimensions"]
-    assert view["standing_result"] == "established"
-    assert view["current_standing"]["source_role_testimony"] == {
-        "subject_ref": "testimony:historical",
-        "testimony": {"attributed_role": "historical-role"},
-        "evidence_event_id": historical.id,
+    assert set(view) == {
+        "event_ids",
+        "dimensional_standing",
+        "current_standing",
+        "known_loss",
+        "unknowns",
+        "conflicts",
+        "representation_examinations",
+        "last_event_kind",
+    }
+    assert set(view["current_standing"]) == {
+        "raw_initial_material",
+        "preserved_ingress",
+        "interaction_closure",
     }
 
 
@@ -171,6 +198,22 @@ def test_decoded_non_eof_ingress_returns_after_preservation_and_projection(
         "occurrence-only; meaning Unknown"
     )
     assert view["event_ids"] == [event.id for event in events]
+    assert set(view) == {
+        "event_ids",
+        "dimensional_standing",
+        "current_standing",
+        "known_loss",
+        "unknowns",
+        "conflicts",
+        "representation_examinations",
+        "last_event_kind",
+        "addressable_operator_material",
+    }
+    assert set(view["current_standing"]) == {
+        "raw_initial_material",
+        "preserved_ingress",
+        "interaction_closure",
+    }
     assert view["last_event_kind"] == ingress.kind
     assert view["current_standing"]["preserved_ingress"] == {
         "subject_ref": ingress.payload["attempt_ref"],
