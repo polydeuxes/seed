@@ -14,15 +14,16 @@ from seed_runtime.operator_ingress_common_grammar_prerequisite import (
 )
 from seed_runtime.operator_ingress_interpretation_candidates import (
     BOUNDARY_NOTES,
-    FORMATION_UNKNOWN,
+    FORMATION_OCCURRENCE_REF_ABSENT,
     NO_CANDIDATES_UNKNOWN,
-    PROPOSITION_UNKNOWN,
+    PROPOSED_MEANING_ABSENT,
     REQUIRED_AUTHORITY_LIMITS,
-    SOURCE_RELATION_UNKNOWN,
+    SOURCE_SPAN_REFS_ABSENT,
     AttributedInterpretationCandidateTestimony,
     OperatorIngressInterpretationCandidateSet,
     OperatorIngressInterpretationCandidateSetError,
     SuppliedInterpretationCandidateTestimony,
+    candidate_set_id_from_fields,
     preserve_operator_ingress_interpretation_candidates,
 )
 from seed_runtime.operator_ingress_representation import capture_stdin_material
@@ -82,7 +83,9 @@ def preserve(material, *items, **kwargs):
 def test_supplier_and_preserved_types_have_distinct_unknown_ownership(material):
     ledger, addressable = material
     item = supplied(
-        addressable, formation=None, unknowns=(FORMATION_UNKNOWN, FORMATION_UNKNOWN)
+        addressable,
+        formation=None,
+        unknowns=(FORMATION_OCCURRENCE_REF_ABSENT, FORMATION_OCCURRENCE_REF_ABSENT),
     )
     before = item
     count = len(ledger.list_events("w"))
@@ -94,8 +97,11 @@ def test_supplier_and_preserved_types_have_distinct_unknown_ownership(material):
     attributed = result.candidate_testimonies[0]
     assert item == before and attributed is not item
     assert "preservation_unknowns" not in {field.name for field in fields(item)}
-    assert attributed.supplied_unknowns == (FORMATION_UNKNOWN, FORMATION_UNKNOWN)
-    assert attributed.preservation_unknowns == (FORMATION_UNKNOWN,)
+    assert attributed.supplied_unknowns == (
+        FORMATION_OCCURRENCE_REF_ABSENT,
+        FORMATION_OCCURRENCE_REF_ABSENT,
+    )
+    assert attributed.preservation_unknowns == (FORMATION_OCCURRENCE_REF_ABSENT,)
     assert result.supplied_set_unknowns == (
         NO_CANDIDATES_UNKNOWN,
         NO_CANDIDATES_UNKNOWN,
@@ -112,14 +118,18 @@ def test_supplier_and_preserved_types_have_distinct_unknown_ownership(material):
 @pytest.mark.parametrize(
     ("formation", "refs", "meaning", "expected"),
     [
-        (None, ("full",), "meaning", (FORMATION_UNKNOWN,)),
-        ("event:f", (), "meaning", (SOURCE_RELATION_UNKNOWN,)),
-        ("event:f", ("full",), "", (PROPOSITION_UNKNOWN,)),
+        (None, ("full",), "meaning", (FORMATION_OCCURRENCE_REF_ABSENT,)),
+        ("event:f", (), "meaning", (SOURCE_SPAN_REFS_ABSENT,)),
+        ("event:f", ("full",), "", (PROPOSED_MEANING_ABSENT,)),
         (
             None,
             (),
             "",
-            (FORMATION_UNKNOWN, SOURCE_RELATION_UNKNOWN, PROPOSITION_UNKNOWN),
+            (
+                FORMATION_OCCURRENCE_REF_ABSENT,
+                SOURCE_SPAN_REFS_ABSENT,
+                PROPOSED_MEANING_ABSENT,
+            ),
         ),
         ("event:f", ("full",), "meaning", ()),
     ],
@@ -141,10 +151,10 @@ def test_preservation_unknowns_are_derived_in_fixed_order(
     "bad",
     [
         (),
-        (FORMATION_UNKNOWN,),
-        (SOURCE_RELATION_UNKNOWN,),
-        (PROPOSITION_UNKNOWN,),
-        (PROPOSITION_UNKNOWN, FORMATION_UNKNOWN),
+        (FORMATION_OCCURRENCE_REF_ABSENT,),
+        (SOURCE_SPAN_REFS_ABSENT,),
+        (PROPOSED_MEANING_ABSENT,),
+        (PROPOSED_MEANING_ABSENT, FORMATION_OCCURRENCE_REF_ABSENT),
         ("extra",),
     ],
 )
@@ -239,6 +249,87 @@ def test_zero_one_many_candidates_and_set_unknown_ownership(material):
     assert one.preservation_set_unknowns == () and len(many.candidate_testimonies) == 2
 
 
+@pytest.mark.parametrize(
+    "attributed_supplier",
+    (
+        "Seed candidate producer",
+        "operator testimony",
+        "external grammar source",
+        "Unknown producer testimony",
+    ),
+)
+def test_candidate_producer_topology_remains_attributed_and_open(
+    material, attributed_supplier
+):
+    _, addressable = material
+    item = replace(supplied(addressable), attributed_supplier=attributed_supplier)
+    result = preserve(addressable, item)
+
+    assert result.candidate_testimonies[0].attributed_supplier == attributed_supplier
+    declarations = " ".join(result.boundary_notes).lower()
+    assert "production remains attributed" in declarations
+    assert "external or caller-supplied" not in declarations
+    assert "not seed-generated" not in declarations
+    assert "relocate candidate production" in declarations
+    assert "manufacture missing producer or formation standing" in declarations
+
+
+@pytest.mark.parametrize("count", (0, 1, 3))
+def test_set_authority_preserves_without_claiming_candidate_production(material, count):
+    _, addressable = material
+    items = tuple(
+        supplied(addressable, ref=f"candidate:{index}") for index in range(count)
+    )
+    result = preserve(addressable, *items)
+    authority = " ".join(result.preservation_authority_limits).lower()
+
+    assert "preserves supplied interpretation-candidate testimony only" in authority
+    assert "does not itself propose or generate an interpretation" in authority
+    assert "proposes one possible interpretation" not in authority
+    assert "repository generated candidate meaning" not in authority
+
+
+def test_derived_findings_are_exact_field_local_absences(material):
+    _, addressable = material
+    result = preserve(
+        addressable, supplied(addressable, formation=None, refs=(), meaning="")
+    )
+    findings = result.candidate_testimonies[0].preservation_unknowns
+
+    assert findings == (
+        FORMATION_OCCURRENCE_REF_ABSENT,
+        SOURCE_SPAN_REFS_ABSENT,
+        PROPOSED_MEANING_ABSENT,
+    )
+    joined = " ".join(findings)
+    assert "candidate formation occurrence Unknown" not in joined
+    assert "candidate source-material relation unavailable" not in joined
+    assert "candidate proposition unavailable" not in joined
+
+
+def test_preservation_copies_supplier_owned_testimony_without_normalization(material):
+    _, addressable = material
+    repeated = ("duplicate", "duplicate", "final")
+    item = replace(
+        supplied(addressable),
+        supplier_provenance=repeated,
+        known_loss=repeated,
+        supplied_unknowns=repeated,
+        conflicts=repeated,
+        supplied_authority_limits=repeated,
+    )
+    testimony = preserve(addressable, item).candidate_testimonies[0]
+
+    for field in (
+        "supplier_provenance",
+        "known_loss",
+        "supplied_unknowns",
+        "conflicts",
+        "supplied_authority_limits",
+    ):
+        assert getattr(testimony, field) == repeated
+
+
 def test_candidate_set_direct_construction_refuses_pending_forgery_and_stale_findings(
     material,
 ):
@@ -272,6 +363,50 @@ def test_round_trip_and_forged_json_use_same_invariant_boundary(material):
     encoded["candidate_set_id"] = "pending"
     with pytest.raises(OperatorIngressInterpretationCandidateSetError, match="forged"):
         OperatorIngressInterpretationCandidateSet.from_json_dict(encoded)
+
+
+def test_direct_and_json_construction_refuse_stale_repository_wording(material):
+    _, addressable = material
+    result = preserve(addressable, supplied(addressable, formation=None))
+    stale_boundary = (
+        "Candidate testimony is attributed external or caller-supplied grammar, not Seed-generated meaning.",
+        *result.boundary_notes[1:],
+    )
+    stale_authority = (
+        "proposes one possible interpretation only",
+        *result.preservation_authority_limits[1:],
+    )
+
+    for field, stale in (
+        ("boundary_notes", stale_boundary),
+        ("preservation_authority_limits", stale_authority),
+    ):
+        with pytest.raises(OperatorIngressInterpretationCandidateSetError):
+            replace(result, **{field: stale})
+        encoded = json.loads(json.dumps(result.to_json_dict()))
+        encoded[field] = list(stale)
+        with pytest.raises(OperatorIngressInterpretationCandidateSetError):
+            OperatorIngressInterpretationCandidateSet.from_json_dict(encoded)
+
+
+def test_identity_changes_with_repository_owned_declarations(material):
+    _, addressable = material
+    result = preserve(addressable, supplied(addressable))
+    fields_for_identity = {
+        "addressable_material": result.addressable_material,
+        "candidate_testimonies": result.candidate_testimonies,
+        "supplied_set_unknowns": result.supplied_set_unknowns,
+        "preservation_set_unknowns": result.preservation_set_unknowns,
+        "set_conflicts": result.set_conflicts,
+        "boundary_notes": result.boundary_notes,
+        "preservation_authority_limits": result.preservation_authority_limits,
+        "convention": result.convention,
+    }
+    assert (
+        candidate_set_id_from_fields(**fields_for_identity) == result.candidate_set_id
+    )
+    changed = {**fields_for_identity, "boundary_notes": ("changed",)}
+    assert candidate_set_id_from_fields(**changed) != result.candidate_set_id
 
 
 def test_addressable_material_and_candidate_set_round_trip_over_json_wire(material):
@@ -337,7 +472,8 @@ def test_preservation_and_set_tuple_members_require_exact_strings(material, fiel
         testimony = valid.candidate_testimonies[0]
         with pytest.raises(OperatorIngressInterpretationCandidateSetError):
             replace(
-                testimony, preservation_unknowns=(ForeignString(FORMATION_UNKNOWN),)
+                testimony,
+                preservation_unknowns=(ForeignString(FORMATION_OCCURRENCE_REF_ABSENT),),
             )
     else:
         current = getattr(valid, field)

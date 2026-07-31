@@ -18,18 +18,21 @@ from seed_runtime.operator_ingress_addressable_material import (
 
 CONVENTION = "operator_ingress_interpretation_candidate_set_v1"
 ARTIFACT_TYPE = "operator_ingress_interpretation_candidate_set"
-FORMATION_UNKNOWN = "candidate formation occurrence Unknown"
-SOURCE_RELATION_UNKNOWN = "candidate source-material relation unavailable"
+FORMATION_OCCURRENCE_REF_ABSENT = (
+    "no candidate formation-occurrence reference preserved"
+)
+SOURCE_SPAN_REFS_ABSENT = "no candidate source-span reference preserved"
 NO_CANDIDATES_UNKNOWN = "no interpretation candidate testimony presently supplied"
-PROPOSITION_UNKNOWN = "candidate proposition unavailable"
+PROPOSED_MEANING_ABSENT = "no candidate proposed-meaning text preserved"
 REQUIRED_AUTHORITY_LIMITS = (
-    "proposes one possible interpretation only",
-    "does not warrant its proposed meaning",
+    "preserves supplied interpretation-candidate testimony only",
+    "does not itself propose or generate an interpretation",
+    "does not warrant proposed meaning",
     "does not establish operator intent, goal, question, command, request, or treatment",
     "does not establish selection, applicability, admission, BOGE standing, Demand, movement, authorization, execution, or truth",
 )
 BOUNDARY_NOTES = (
-    "Candidate testimony is attributed external or caller-supplied grammar, not Seed-generated meaning.",
+    "Candidate production remains attributed; preservation does not generate proposed meaning, relocate candidate production, or manufacture missing producer or formation standing.",
     "Preservation does not evaluate, warrant, rank, select, apply, admit, or act on a candidate.",
     "A unique candidate is not a selected or warranted candidate; multiple candidates are not an ambiguity resolution.",
 )
@@ -106,11 +109,11 @@ def _derived_preservation_unknowns(
 ) -> tuple[str, ...]:
     findings = []
     if formation_occurrence_ref is None:
-        findings.append(FORMATION_UNKNOWN)
+        findings.append(FORMATION_OCCURRENCE_REF_ABSENT)
     if not candidate.source_span_refs:
-        findings.append(SOURCE_RELATION_UNKNOWN)
+        findings.append(SOURCE_SPAN_REFS_ABSENT)
     if candidate.proposed_meaning == "":
-        findings.append(PROPOSITION_UNKNOWN)
+        findings.append(PROPOSED_MEANING_ABSENT)
     return tuple(findings)
 
 
