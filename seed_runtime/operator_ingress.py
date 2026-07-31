@@ -52,7 +52,6 @@ def project_operator_ingress_events(
     subject_by_kind = {
         "operator.ingress.raw_material_captured": "raw_initial_material",
         "operator.ingress.ingress_occurred": "preserved_ingress",
-        "operator.ingress.initial_eof_occurred": "preserved_ingress",
         "operator.ingress.stopping_occurred": "interaction_closure",
     }
     supported_kinds = {
@@ -231,7 +230,10 @@ def run_operator_ingress_attempt(
     captured_ingress: CapturedOperatorMaterial,
     output_stream: TextIO,
 ) -> dict[str, object]:
-    """Capture, examine, project, and locally stop one bounded ingress attempt."""
+    """Capture, examine, and project one bounded non-EOF ingress attempt."""
+    if captured_ingress.eof:
+        raise ValueError("captured_ingress must be non-EOF")
+
     attempt = new_id("operator_ingress_attempt")
     (
         captured_ingress,
@@ -249,16 +251,8 @@ def run_operator_ingress_attempt(
     raw_ingress = (
         ingress_examination.represented_text or "" if ingress_examination else ""
     )
-    ingress_kind = (
-        "eof"
-        if captured_ingress.eof
-        else "empty" if raw_ingress in {"\n", "\r\n"} else "text"
-    )
-    ingress_content = (
-        None
-        if ingress_kind == "eof"
-        else raw_ingress.removesuffix("\n").removesuffix("\r")
-    )
+    ingress_kind = "empty" if raw_ingress in {"\n", "\r\n"} else "text"
+    ingress_content = raw_ingress.removesuffix("\n").removesuffix("\r")
     if ingress_examination is not None and not ingress_examination.succeeded:
         _record(
             ledger,
@@ -288,11 +282,7 @@ def run_operator_ingress_attempt(
         return state.operator_ingress_attempts[attempt]
     ingress = _record(
         ledger,
-        (
-            "operator.ingress.initial_eof_occurred"
-            if ingress_kind == "eof"
-            else "operator.ingress.ingress_occurred"
-        ),
+        "operator.ingress.ingress_occurred",
         workspace_id,
         session_id,
         attempt,
@@ -308,11 +298,7 @@ def run_operator_ingress_attempt(
             responsibility="operator-ingress",
             authority="occurrence-only; meaning Unknown",
             scope=f"workspace:{workspace_id};session:{session_id}",
-            occurrence=(
-                "EOF occurrence preserves raw-capture lineage"
-                if ingress_kind == "eof"
-                else "strictly decoded text preserves capture/examination lineage"
-            ),
+            occurrence="strictly decoded text preserves capture/examination lineage",
         ),
         raw_input=raw_ingress,
         ingress_kind=ingress_kind,
@@ -334,30 +320,4 @@ def run_operator_ingress_attempt(
         ],
     )
     state = StateProjector(ledger).project(workspace_id)
-    if ingress_kind == "eof":
-        _record(
-            ledger,
-            "operator.ingress.stopping_occurred",
-            workspace_id,
-            session_id,
-            attempt,
-            _dimensions(
-                identity=f"stop:{ingress.id}",
-                content="initial EOF",
-                standing="closed",
-                source=ingress.id,
-                responsibility="competent-local-stopping",
-                authority="closes only this interaction",
-                scope=f"attempt:{attempt}",
-                occurrence="separate stopping act recorded",
-            ),
-            closed=True,
-            response_kind="initial_eof",
-            lineage=[ingress.id],
-        )
-        state = StateProjector(ledger).project(workspace_id)
-        output_stream.write("Operator-ingress interaction stopped locally.\n")
-        output_stream.flush()
-        return state.operator_ingress_attempts[attempt]
-
     return state.operator_ingress_attempts[attempt]

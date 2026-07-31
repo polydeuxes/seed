@@ -69,7 +69,6 @@ def test_arbitrary_refs_have_no_admission_api_and_labels_are_not_goal_meaning():
 def test_relation_fields_and_source_role_do_not_supply_consumer_evidence():
     occurrence = {
         "id": "event:one",
-        "kind": "operator.ingress.meaning_relation_warranted",
         "payload": {
             "relation_ref": "relation:one",
             "source_role": "potential-goal candidate",
