@@ -6,17 +6,45 @@ from dataclasses import asdict, dataclass
 import hashlib
 import json
 
-from seed_runtime.contextual_interpretation_warrant_set import (
-    ContextualInterpretationWarrantSetError,
-    ExactOperatorMaterial,
-    SourceSpan,
-)
 from seed_runtime.events import EventLedger
 from seed_runtime.models import Event
 
 
 class OperatorIngressAddressableMaterialError(ValueError):
     """The supplied occurrence cannot lawfully form addressable material."""
+
+
+@dataclass(frozen=True)
+class SourceSpan:
+    span_ref: str
+    source_ref: str
+    start: int
+    end: int
+    exact_text: str
+
+    def __post_init__(self) -> None:
+        if not self.span_ref or not self.source_ref:
+            raise OperatorIngressAddressableMaterialError(
+                "source spans require span_ref and source_ref"
+            )
+        if self.start < 0 or self.end < self.start:
+            raise OperatorIngressAddressableMaterialError(
+                "source span offsets must be bounded and ordered"
+            )
+
+
+@dataclass(frozen=True)
+class ExactOperatorMaterial:
+    material_ref: str
+    exact_text: str
+    source_spans: tuple[SourceSpan, ...]
+    provenance: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not self.material_ref:
+            raise OperatorIngressAddressableMaterialError(
+                "operator material_ref is required"
+            )
 
 
 UNKNOWNS = (
@@ -168,35 +196,29 @@ class OperatorIngressAddressableMaterial:
         for span in spans:
             if not isinstance(span, dict):
                 _refuse("source span must be an object")
-            try:
-                rebuilt_spans.append(
-                    SourceSpan(
-                        span_ref=_exact_string(span.get("span_ref"), "span_ref"),
-                        source_ref=_exact_string(span.get("source_ref"), "source_ref"),
-                        start=_exact_int(span.get("start"), "span start"),
-                        end=_exact_int(span.get("end"), "span end"),
-                        exact_text=_exact_string(
-                            span.get("exact_text"), "span text", empty=True
-                        ),
-                    )
+            rebuilt_spans.append(
+                SourceSpan(
+                    span_ref=_exact_string(span.get("span_ref"), "span_ref"),
+                    source_ref=_exact_string(span.get("source_ref"), "source_ref"),
+                    start=_exact_int(span.get("start"), "span start"),
+                    end=_exact_int(span.get("end"), "span end"),
+                    exact_text=_exact_string(
+                        span.get("exact_text"), "span text", empty=True
+                    ),
                 )
-            except ContextualInterpretationWarrantSetError as error:
-                _refuse(str(error))
-        try:
-            material = ExactOperatorMaterial(
-                material_ref=_exact_string(
-                    material_value.get("material_ref"), "material_ref"
-                ),
-                exact_text=_exact_string(
-                    material_value.get("exact_text"), "exact_text", empty=True
-                ),
-                source_spans=tuple(rebuilt_spans),
-                provenance=_string_tuple(
-                    material_value.get("provenance"), "material provenance"
-                ),
             )
-        except ContextualInterpretationWarrantSetError as error:
-            _refuse(str(error))
+        material = ExactOperatorMaterial(
+            material_ref=_exact_string(
+                material_value.get("material_ref"), "material_ref"
+            ),
+            exact_text=_exact_string(
+                material_value.get("exact_text"), "exact_text", empty=True
+            ),
+            source_spans=tuple(rebuilt_spans),
+            provenance=_string_tuple(
+                material_value.get("provenance"), "material provenance"
+            ),
+        )
         return cls(
             artifact_type=_exact_string(value.get("artifact_type"), "artifact_type"),
             material_projection_id=_exact_string(

@@ -8,8 +8,8 @@ import json
 from seed_runtime.contextual_interpretation_warrant_set import (
     CandidateWarrant,
     ContextualInterpretationWarrantSet,
-    ExactOperatorMaterial,
 )
+from seed_runtime.operator_ingress_addressable_material import ExactOperatorMaterial
 
 CONVENTION = "contextual_interpretation_selection_result_v1"
 SELECTION_EVIDENCE_KINDS = {"exact_operator_clarification", "candidate_bound_selection_artifact"}

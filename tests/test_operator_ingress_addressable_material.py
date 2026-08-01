@@ -9,13 +9,11 @@ from seed_runtime.operator_ingress_addressable_material import (
     UNKNOWNS,
     OperatorIngressAddressableMaterial,
     OperatorIngressAddressableMaterialError,
+    ExactOperatorMaterial,
+    SourceSpan,
     addressable_material_projection_id,
     form_operator_ingress_addressable_material,
     operator_material_full_span_id,
-)
-from seed_runtime.contextual_interpretation_warrant_set import (
-    ExactOperatorMaterial,
-    SourceSpan,
 )
 from seed_runtime.operator_ingress import (
     run_operator_ingress_attempt,
@@ -41,6 +39,28 @@ def _run(material: bytes, *, ledger=None):
         else None
     )
     return ledger, view, artifact, output.getvalue()
+
+
+def test_exact_material_types_are_owned_by_addressable_material_boundary():
+    assert SourceSpan.__module__ == (
+        "seed_runtime.operator_ingress_addressable_material"
+    )
+    assert ExactOperatorMaterial.__module__ == (
+        "seed_runtime.operator_ingress_addressable_material"
+    )
+
+
+@pytest.mark.parametrize(
+    "construct",
+    [
+        lambda: SourceSpan("", "source:1", 0, 1, "x"),
+        lambda: SourceSpan("span:1", "source:1", 2, 1, "x"),
+        lambda: ExactOperatorMaterial("", "x", ()),
+    ],
+)
+def test_invalid_exact_material_direct_construction_uses_owner_error(construct):
+    with pytest.raises(OperatorIngressAddressableMaterialError):
+        construct()
 
 
 @pytest.mark.parametrize(
