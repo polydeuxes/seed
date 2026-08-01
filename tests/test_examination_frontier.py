@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from seed_runtime.bounded_constitutional_question import produce_bounded_constitutional_question
+from seed_runtime.bounded_constitutional_question import BoundedConstitutionalQuestion
 from seed_runtime.diagnostic_inventory import DIAGNOSTIC_INVENTORY
 from seed_runtime.diagnostic_shape_audit import build_diagnostic_shape_audit
 from seed_runtime.examination_frontier import *
@@ -11,7 +11,7 @@ from seed_runtime.examination_frontier import *
 LESSON_HASH="01af0782acb7d945a2c97e5916168790ccf204a99cbc96eca6c5b2a3e6d7b963"
 
 def q():
-    return produce_bounded_constitutional_question(operator_inquiry="examine bounded corpus", inquiry_provenance="testimony", bounded_question="For known artifacts and candidate work, what is eligible, examined, blocked, unsupported, deferred, failed, or Unknown?", constitutional_intent="frontier projection", scope_status="bounded", unknowns=("campaign history absent",))
+    return BoundedConstitutionalQuestion(bounded_question_id="test:examination-frontier-question", operator_inquiry="examine bounded corpus", inquiry_provenance="testimony", bounded_question="For known artifacts and candidate work, what is eligible, examined, blocked, unsupported, deferred, failed, or Unknown?", constitutional_intent="frontier projection", scope_status="bounded", uncertainty=(), unknowns=("campaign history absent",))
 
 def members(hash="h1"):
     return (CorpusMember("m1","book","selected_lesson_006.txt",hash), CorpusMember("repo","repository","AGENTS.md","rh"), CorpusMember("web","website_target","Project Gutenberg homepage target",""))
