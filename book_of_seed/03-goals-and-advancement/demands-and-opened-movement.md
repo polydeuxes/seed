@@ -73,10 +73,6 @@ separately established competency:
 
 The possible relation is consumer-relative, material-relative, and act- and purpose-relative; it is not a global language state or a competency by identity. This counterexample demonstrates only that the four canonical families are not a universal taxonomy. It creates no pre-goal producer, fifth family, acquisition mechanism, authority, or execution road. A separately established competency might be one candidate way to satisfy the possible bounded relation, but a competency candidate is not a Capability established.
 
-## Representative repository anchors
-
-- `seed_runtime/bounded_advancement_horizon.py::BoundedAdvancementHorizon`
-
 ## Related chapters
 
 - [Selection and authorization](selection-and-authorization.md)

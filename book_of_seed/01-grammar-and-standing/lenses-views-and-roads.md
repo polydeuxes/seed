@@ -47,7 +47,6 @@ Evidence becoming available does not by itself change any consumer assertion, st
 - `seed_runtime/constitutional_view_selection.py`
 - `seed_runtime/constitutional_view_composition.py`
 - `seed_runtime/constitutional_pipeline.py::invoke_constitutional_pipeline`
-- `seed_runtime/bounded_operator_goal_establishment.py::establish_bounded_operator_goal_from_admitted_interpretation`
 
 ## Counterexamples or failure modes
 - Reading a diagnostic display order as a lawful process order.

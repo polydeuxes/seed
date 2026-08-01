@@ -78,12 +78,10 @@ Acts, constraints, and relations are structurally distinct from dimensions. They
 
 ## Representative repository anchors
 - `seed_runtime/inquiry_artifacts.py::InquiryArtifactVisibility`
-- `seed_runtime/bounded_operator_goal_establishment.py::BoundedOperatorGoalEstablishment`
 
 ## Counterexamples or failure modes
 - Calling any serialized dictionary a constitutional artifact.
 - Inferring standing solely from a public export.
-- Directly constructing `BoundedOperatorGoalEstablishment` with `establishment_state="established"`; the fields represent an assertion but bypass ingress validation.
 
 ## Related chapters
 - [Constructors and production authority](constructors-and-production-authority.md)

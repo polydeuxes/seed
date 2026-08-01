@@ -39,10 +39,6 @@ Separation of these constitutional responsibilities does not require repeated op
 - goal-semantic admission != BOGE establishment
 - BOGE establishment != movement consideration
 
-## Representative repository anchors
-- `seed_runtime/bounded_operator_goal_establishment.py::BoundedOperatorGoalEstablishment`
-- `tests/test_bounded_operator_goal_establishment.py`
-
 ## Counterexamples or failure modes
 - Treating a legacy `Goal` model instance as proof of bounded establishment.
 - Establishing a goal directly from unadmitted text.
