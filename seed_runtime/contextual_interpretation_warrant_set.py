@@ -137,7 +137,6 @@ class ContextualInterpretationWarrantSet:
     warrant_set_id: str
     operator_material: ExactOperatorMaterial
     candidate_warrants: tuple[CandidateWarrant, ...]
-    closed_choice_selection_binding_ref: str | None = None
     selected_candidate_ref: None = None
     interpretation_selected: bool = False
     goal_bound: bool = False
@@ -165,7 +164,6 @@ def produce_contextual_interpretation_warrant_set(
     unknowns_by_candidate: dict[str, tuple[str, ...]] | None = None,
     conflicts_by_candidate: dict[str, tuple[str, ...]] | None = None,
     known_loss_by_candidate: dict[str, tuple[str, ...]] | None = None,
-    closed_choice_selection_binding_ref: str | None = None,
 ) -> ContextualInterpretationWarrantSet:
     """Produce candidate-local warrants from explicit candidates and supplied evidence only."""
     candidate_refs = [candidate.candidate_ref for candidate in candidates]
@@ -233,5 +231,5 @@ def produce_contextual_interpretation_warrant_set(
                 _refs(known_loss_by_candidate.get(candidate.candidate_ref, ())),
             )
         )
-    payload = {"operator_material": asdict(operator_material), "candidates": [asdict(w) for w in warrants], "binding": closed_choice_selection_binding_ref, "convention": CONVENTION}
-    return ContextualInterpretationWarrantSet("ContextualInterpretationWarrantSet", _stable("contextual-interpretation-warrant-set", payload), operator_material, tuple(warrants), closed_choice_selection_binding_ref)
+    payload = {"operator_material": asdict(operator_material), "candidates": [asdict(w) for w in warrants], "convention": CONVENTION}
+    return ContextualInterpretationWarrantSet("ContextualInterpretationWarrantSet", _stable("contextual-interpretation-warrant-set", payload), operator_material, tuple(warrants))
