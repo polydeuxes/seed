@@ -35,6 +35,9 @@ DELETED_DIAGNOSTICS = {
 PRESERVED_MODULES = (
     "seed_runtime.bounded_constitutional_question",
     "seed_runtime.examination_frontier",
+)
+DELETED_EXAMINATION_STAGING_MODULES = (
+    "seed_runtime.candidate_examination_work",
     "seed_runtime.examination_method_applicability",
     "seed_runtime.examination_policy_projection",
     "seed_runtime.examination_work_selection",
@@ -65,3 +68,8 @@ def test_deleted_static_diagnostics_are_absent_while_frontier_remains():
 def test_held_out_question_and_examination_modules_remain_importable():
     for module_name in PRESERVED_MODULES:
         assert importlib.import_module(module_name)
+
+
+def test_disconnected_examination_staging_modules_are_absent():
+    for module_name in DELETED_EXAMINATION_STAGING_MODULES:
+        assert importlib.util.find_spec(module_name) is None

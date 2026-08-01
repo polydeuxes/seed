@@ -1,13 +1,13 @@
 # Examination Methods and Probes
 
 ## Constitutional subject
-The applicability, selection, and binding of examination work used to acquire bounded findings.
+The boundaries that would be required for applicability, selection, and binding of examination work used to acquire bounded findings.
 
 ## Core question
 What warrants a probe request, and what standing can its result acquire?
 
 ## Bounded resolution
-An applicable examination method may be available for bounded consideration; applicability alone does not select it. A responsible bounded selection occurrence may select examination work. A separately responsible request-forming occurrence may produce a probe request for its bounded consumer; the exact producer and consumer remain Unknown where the evidence does not identify them. Any invocation or examination occurrence remains separate. Produced output remains attributed testimony or evidence. Any later Fact or other standing requires its own kind-appropriate responsible production or establishment occurrence.
+Applicability alone would not select examination work. The repository does not currently identify a responsible bounded selection occurrence or a request-forming occurrence with an operational consumer. Any future invocation or examination occurrence would remain separate. Produced output would remain attributed testimony or evidence. Any later Fact or other standing would require its own kind-appropriate responsible production or establishment occurrence.
 
 
 ## Addressable boundaries for bounded examination witnesses
@@ -27,9 +27,8 @@ Cross-examination may compare independently preserved testimony or findings only
 - finding != established fact
 
 ## Representative repository anchors
-- `seed_runtime/examination_method_applicability.py`
-- `seed_runtime/examination_work_selection.py`
-- `seed_runtime/examination_probe_request.py::ExaminationProbeRequest`
+- `examination_topology_and_standing_recovery_001.md` (historical topology testimony)
+- `disconnected_examination_staging_chain_deletion_001.md` (current implementation disposition)
 
 ## Counterexamples or failure modes
 - Running every applicable probe.
