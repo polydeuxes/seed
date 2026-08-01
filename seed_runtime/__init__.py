@@ -141,9 +141,4 @@ __all__ = [
     "ProjectionIntegritySummary",
     "build_projection_integrity_summary",
     "InputInspector",
-    "format_bounded_constitutional_question",
 ]
-
-from .bounded_constitutional_question import (
-    format_bounded_constitutional_question,
-)
