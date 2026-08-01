@@ -148,38 +148,6 @@ from seed_runtime.correlation_audit import (
     correlation_audit_json,
     format_correlation_audit,
 )
-from seed_runtime.constitutional_pipeline import (
-    ConstitutionalPipelineRequest,
-    constitutional_pipeline_result_json,
-    format_constitutional_pipeline_result,
-    invoke_constitutional_pipeline,
-)
-from seed_runtime.constitutional_pipeline_diagnostic import (
-    build_constitutional_pipeline_diagnostic,
-    constitutional_pipeline_diagnostic_json,
-    format_constitutional_pipeline_diagnostic,
-)
-from seed_runtime.constitutional_fidelity_view import (
-    build_constitutional_fidelity_view,
-    constitutional_fidelity_view_json,
-    format_constitutional_fidelity_view,
-)
-from seed_runtime.constitutional_governance_view import (
-    build_constitutional_governance_view,
-    constitutional_governance_view_json,
-    format_constitutional_governance_view,
-)
-from seed_runtime.constitutional_process_view import (
-    build_constitutional_process_view,
-    constitutional_process_view_json,
-    format_constitutional_process_view,
-)
-from seed_runtime.constitutional_view_composition import (
-    build_constitutional_view_composition,
-    constitutional_view_composition_json,
-    constitutional_view_composition_request,
-    format_constitutional_view_composition,
-)
 from seed_runtime.contradictions import (
     Contradiction,
     build_contradiction_summary,
@@ -1818,93 +1786,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="print read-only projected Issue views and exit",
     )
     parser.add_argument(
-        "--constitutional-process",
-        action="store_true",
-        help="print the read-only Constitutional Process View and exit",
-    )
-    parser.add_argument(
-        "--constitutional-governance",
-        action="store_true",
-        help="print the read-only Constitutional Governance View and exit",
-    )
-    parser.add_argument(
-        "--constitutional-fidelity",
-        action="store_true",
-        help="print the read-only Constitutional Fidelity View and exit",
-    )
-    parser.add_argument(
-        "--constitutional-pipeline",
-        action="store_true",
-        help=(
-            "refuse raw constitutional-pipeline question fields; typed API callers "
-            "must supply an already-established BoundedConstitutionalQuestion"
-        ),
-    )
-    parser.add_argument(
-        "--constitutional-pipeline-diagnostic",
-        action="store_true",
-        help=(
-            "refuse raw constitutional-pipeline diagnostic question fields; use the "
-            "typed API with an already-established BoundedConstitutionalQuestion"
-        ),
-    )
-    parser.add_argument(
-        "--operator-inquiry",
-        help="operator inquiry testimony for --constitutional-pipeline or --constitutional-pipeline-diagnostic",
-    )
-    parser.add_argument(
-        "--inquiry-provenance",
-        help="operator inquiry provenance for --constitutional-pipeline",
-    )
-    parser.add_argument(
-        "--bounded-question",
-        help="explicit bounded question for --constitutional-pipeline",
-    )
-    parser.add_argument(
-        "--constitutional-intent",
-        help="explicit constitutional intent for --constitutional-pipeline",
-    )
-    parser.add_argument(
-        "--scope-status",
-        help="explicit scope status for --constitutional-pipeline",
-    )
-    parser.add_argument(
-        "--pipeline-uncertainty",
-        action="append",
-        default=[],
-        help="explicit uncertainty entry for --constitutional-pipeline; may be repeated",
-    )
-    parser.add_argument(
-        "--pipeline-unknown",
-        action="append",
-        default=[],
-        help="explicit Unknown entry for --constitutional-pipeline; may be repeated",
-    )
-    parser.add_argument(
-        "--selection-key",
-        action="append",
-        default=[],
-        help="exact caller-supplied constitutional selection key; may be repeated",
-    )
-    parser.add_argument(
-        "--constitutional-view-composition",
-        nargs="+",
-        choices=(
-            "constitutional_process",
-            "constitutional_governance",
-            "constitutional_fidelity",
-        ),
-        help=(
-            "compose explicitly requested registered constitutional views into one "
-            "read-only bounded explanation and exit"
-        ),
-    )
-    parser.add_argument(
-        "--composition-purpose",
-        default="bounded_explanation",
-        help="purpose label for --constitutional-view-composition",
-    )
-    parser.add_argument(
         "--fact-conflicts",
         action="store_true",
         help="print projected active fact conflicts and their winning values",
@@ -2325,16 +2206,10 @@ def validate_lifecycle_args(
         or args.correlation_audit
         or args.inquiry_artifacts
         or args.audit_compare
-        or args.constitutional_pipeline
-        or args.constitutional_pipeline_diagnostic
-        or args.constitutional_process
-        or args.constitutional_governance
-        or args.constitutional_fidelity
-        or args.constitutional_view_composition
     ):
         parser.error(
             "--json can only be used with --ownership-discrepancies, "
-            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --question-surface-inventory, --question-family-definition, --question-family-explanation, --documentation-structure, --diagnostic-shape-audit, --candidate-external-grammar, --external-material-structure, --external-material-testimony-bindings, --external-site-rule-testimony, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --single-capability-state, --correlation-audit, --inquiry-artifacts, --constitutional-pipeline, --constitutional-pipeline-diagnostic, --constitutional-process, --constitutional-governance, --constitutional-fidelity, --constitutional-view-composition, or --audit-compare, or --external-material-structure, or --projection-shape, or --projection-stage-definition, or --projection-stage-explanation"
+            "--capability-needs, --container-ownership-authority, --service-ownership-authority, --listener-endpoint-authority, --diagnostic-inventory, --question-surface-inventory, --question-family-definition, --question-family-explanation, --documentation-structure, --diagnostic-shape-audit, --candidate-external-grammar, --external-material-structure, --external-material-testimony-bindings, --external-site-rule-testimony, --component-audit, --operational-story, --reasoning-path, --selection-path, --reference-selection, --architecture-conformance-audit, --operational-graph, --operational-surface-inventory, --visibility-coverage-audit, --operational-surface-classification-audit, --consumer-audit, --emitter-consumer-audit, --emitter-attribution-audit, --observation-inventory, --observation-utilization, --observation-domains, --observation-permission, --ops-brief, --investigation-path, --impact-audit, --history-brief, --snapshot-policy-audit, --observe-repository, --pressure-audit, --privilege-discovery, --capability-relationship, --single-capability-state, --correlation-audit, --inquiry-artifacts, or --audit-compare, or --external-material-structure, or --projection-shape, or --projection-stage-definition, or --projection-stage-explanation"
         )
     if args.question_family_definition and args.message:
         parser.error(
@@ -7071,67 +6946,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
 
-    if args.constitutional_pipeline:
-        parser.error("--constitutional-pipeline no longer accepts raw question fields; pass an already-established BoundedConstitutionalQuestion to the API")
 
-    if args.constitutional_pipeline_diagnostic:
-        parser.error("--constitutional-pipeline-diagnostic no longer accepts raw question fields; use the API with an already-established BoundedConstitutionalQuestion")
 
-    if args.constitutional_process:
-        view = build_constitutional_process_view()
-        if args.json_output:
-            print(
-                json.dumps(
-                    constitutional_process_view_json(view), indent=2, sort_keys=True
-                )
-            )
-        else:
-            print(format_constitutional_process_view(view))
-        return 0
-
-    if args.constitutional_governance:
-        view = build_constitutional_governance_view()
-        if args.json_output:
-            print(
-                json.dumps(
-                    constitutional_governance_view_json(view), indent=2, sort_keys=True
-                )
-            )
-        else:
-            print(format_constitutional_governance_view(view))
-        return 0
-
-    if args.constitutional_fidelity:
-        view = build_constitutional_fidelity_view()
-        if args.json_output:
-            print(
-                json.dumps(
-                    constitutional_fidelity_view_json(view), indent=2, sort_keys=True
-                )
-            )
-        else:
-            print(format_constitutional_fidelity_view(view))
-        return 0
-
-    if args.constitutional_view_composition:
-        artifact = build_constitutional_view_composition(
-            constitutional_view_composition_request(
-                requested_views=tuple(args.constitutional_view_composition),
-                composition_purpose=args.composition_purpose,
-                output_format="json" if args.json_output else "human",
-            )
-        )
-        if args.json_output:
-            print(
-                json.dumps(
-                    constitutional_view_composition_json(artifact),
-                    indent=2,
-                    sort_keys=True,
-                )
-            )
-        else:
-            print(format_constitutional_view_composition(artifact))
-        return 0
 
     if args.fact_conflicts:
         state = fact_query_state(args)
