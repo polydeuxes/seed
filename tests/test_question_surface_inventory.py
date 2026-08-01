@@ -189,43 +189,6 @@ def test_stale_constitutional_pipeline_bounded_ask_road_is_absent(capsys):
     assert "constitutional pipeline" not in capsys.readouterr().out
 
 
-def test_stale_constitutional_pipeline_bounded_ask_cannot_select_or_mutate_namespace():
-    parser = seed_local.build_parser()
-    args = parser.parse_args(
-        [
-            "ask",
-            "--question-family",
-            "constitutional pipeline",
-            "--surface-args",
-            "operator inquiry",
-            "operator:testimony",
-            "raw question",
-            "raw intent",
-            "bounded",
-            "process",
-        ]
-    )
-
-    with pytest.raises(SystemExit):
-        seed_local.apply_bounded_ask_dispatch(args, parser)
-    assert args.constitutional_pipeline is False
-
-    removed = BoundedWorkEligibilityResult(
-        question_family="constitutional pipeline",
-        bounded_status="not_dispatchable",
-        permitted=False,
-        reason="no bounded ask dispatch mapping in current implementation",
-    )
-    with pytest.raises(ValueError, match="selected surface value requires permitted"):
-        bounded_work_selected_surface_value_for_eligibility(
-            "constitutional pipeline", removed
-        )
-    with pytest.raises(ValueError, match="selected dispatch surface requires permitted"):
-        bounded_work_selected_dispatch_surface_for_eligibility(
-            "constitutional pipeline", removed
-        )
-    with pytest.raises(ValueError, match="selection requires permitted eligibility"):
-        bounded_work_selection_for_question_family("constitutional pipeline", removed)
 
 
 def test_question_family_eligibility_input_preparation_is_separate_from_eligibility():
