@@ -6,7 +6,6 @@ import hashlib
 import json
 from typing import Iterable
 
-from seed_runtime.closed_choice_selection_binding import ClosedChoiceSelectionBinding
 from seed_runtime.downstream_interpretation_admission import DownstreamInterpretationAdmission
 
 CONVENTION = "bounded_operator_goal_establishment_v1"
@@ -111,24 +110,6 @@ class BoundedOperatorGoalEstablishment:
             if isinstance(value, tuple):
                 data[key] = list(value)
         return data
-
-
-def establish_bounded_operator_goal_from_closed_choice(
-    binding: ClosedChoiceSelectionBinding,
-) -> BoundedOperatorGoalEstablishment:
-    """Refuse the unavailable closed-choice bounded-goal road.
-
-    A selection binding carries comparison evidence, not independently admitted
-    bounded-goal semantics.  No competent goal-option producer exists in this
-    slice, so neither its option reference nor its presentation label is goal
-    meaning.
-    """
-    if binding.artifact_type != "ClosedChoiceSelectionBinding":
-        raise BoundedOperatorGoalEstablishmentError("closed-choice ingress must be a ClosedChoiceSelectionBinding artifact")
-    raise BoundedOperatorGoalEstablishmentError(
-        "closed-choice bounded-goal establishment is unavailable: no competent "
-        "goal-specific semantic admission producer exists"
-    )
 
 
 def establish_bounded_operator_goal_from_admitted_interpretation(

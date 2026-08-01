@@ -13,7 +13,7 @@ Candidate-identity resolution is not itself a selection act. A resolver may comp
 
 Selection-to-consumer uptake is not singular. A consumer may adopt selected-subject standing for a new bounded purpose, narrow representation selection to selected registered names, or revalidate coherence between a selected subject and other testimony. Consumer acceptance of one of those smaller assertions does not accept every producer assertion, and selected names suitable for composition do not prove exact-key selection occurrence.
 
-Repository evidence supports a shared higher-order selection grammar with distinct subfamilies. Representation selection may choose registered read-model views by exact deterministic keys for one composition purpose. Meaning selection, closed-choice binding, policy/work selection, and operational-realization selection have their own candidate sets and downstream limits. Shared selection vocabulary does not collapse these into one constitutional act kind.
+Repository evidence supports a shared higher-order selection grammar with distinct subfamilies. Representation selection may choose registered read-model views by exact deterministic keys for one composition purpose. Meaning selection, policy/work selection, and operational-realization selection have their own candidate sets and downstream limits. Shared selection vocabulary does not collapse these into one constitutional act kind.
 
 ## Important distinctions
 - selection artifact != act of selection
@@ -35,7 +35,6 @@ Repository evidence supports a shared higher-order selection grammar with distin
 - `seed_runtime/constitutional_view_selection.py::SelectedConstitutionalViews`
 - `seed_runtime/constitutional_view_selection.py::select_constitutional_views`
 - `seed_runtime/examination_work_selection.py`
-- `seed_runtime/closed_choice_selection_binding.py`
 
 ## Counterexamples or failure modes
 - Taking the first displayed candidate as selected.

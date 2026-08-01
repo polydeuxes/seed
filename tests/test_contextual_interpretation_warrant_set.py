@@ -40,7 +40,6 @@ def test_candidate_local_evidence_and_corrections_are_preserved_without_selectio
             RetrospectiveEvidence("ev:repair-support", "cand:repair", "supporting", "retro:1", "cache was broken"),
             RetrospectiveEvidence("ev:inspect-support", "cand:inspect", "supporting", "retro:2", "note mentions inspection"),
         ),
-        closed_choice_selection_binding_ref="closed-choice-selection-binding:abc",
     )
 
     repair, inspect = warrant_set.candidate_warrants
@@ -51,7 +50,6 @@ def test_candidate_local_evidence_and_corrections_are_preserved_without_selectio
     assert [e.evidence_ref for e in repair.supporting_evidence] == ["ev:repair-support"]
     assert [e.evidence_ref for e in inspect.supporting_evidence] == ["ev:inspect-support"]
     assert inspect.proposed_meaning == "operator asks for read-only inspection"
-    assert warrant_set.closed_choice_selection_binding_ref == "closed-choice-selection-binding:abc"
     assert warrant_set.selected_candidate_ref is None
     assert warrant_set.interpretation_selected is False
     assert warrant_set.goal_bound is False

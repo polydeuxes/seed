@@ -1,16 +1,8 @@
 import pytest
 
 from seed_runtime.bounded_operator_goal_establishment import (
-    BoundedOperatorGoalEstablishmentError,
     establish_bounded_operator_goal_from_admitted_interpretation,
-    establish_bounded_operator_goal_from_closed_choice,
     examine_meaning_relation_applicability,
-)
-from seed_runtime.closed_choice_selection_binding import (
-    ClosedChoiceOption,
-    OperatorSelectionTokenCapture,
-    PresentedClosedChoiceSet,
-    bind_closed_choice_selection,
 )
 from seed_runtime.downstream_interpretation_admission import admit_downstream_interpretation
 from seed_runtime.interpretation_applicability_projection import project_interpretation_applicability
@@ -24,46 +16,6 @@ from seed_runtime.contextual_interpretation_warrant_set import (
 )
 from tests.test_downstream_interpretation_admission import admission_evidence
 from tests.test_interpretation_applicability_projection import evidence, purpose, selected_result
-
-
-def _choice_binding(token="1"):
-    choice_set = PresentedClosedChoiceSet(
-        choice_set_ref="goal-choice-set:1",
-        prompt="Choose the reversible goal orientation.",
-        options=(
-            ClosedChoiceOption("1", "inspect_repository", "Inspect repository"),
-            ClosedChoiceOption("2", "summarize_unknowns", "Summarize unknowns"),
-        ),
-        presentation_ref="goal-presentation:1",
-        provenance=("operator-facing-menu:1",),
-    )
-    capture = OperatorSelectionTokenCapture(
-        capture_ref=f"operator-capture:{token}",
-        choice_set_ref="goal-choice-set:1",
-        captured_token=token,
-        provenance=("operator-accepted-token",),
-    )
-    return bind_closed_choice_selection(choice_set, capture)
-
-
-def test_raw_closed_choice_cannot_establish_bounded_goal():
-    binding = _choice_binding("1")
-    with pytest.raises(BoundedOperatorGoalEstablishmentError, match="unavailable"):
-        establish_bounded_operator_goal_from_closed_choice(binding)
-
-
-def test_arbitrary_refs_have_no_admission_api_and_labels_are_not_goal_meaning():
-    import seed_runtime.bounded_operator_goal_establishment as goal_establishment
-
-    assert not hasattr(goal_establishment, "admit_closed_choice_to_bounded_goal")
-    assert not hasattr(goal_establishment, "ClosedChoiceBoundedGoalAdmission")
-    binding = _choice_binding("1")
-    assert binding.bound_option_label == "Inspect repository"
-    assert binding.selected_presented_alternative_ref == "inspect_repository"
-    with pytest.raises(TypeError):
-        establish_bounded_operator_goal_from_closed_choice(
-            binding, eligibility_evidence_refs=("arbitrary string",)
-        )
 
 
 def test_relation_fields_and_source_role_do_not_supply_consumer_evidence():
@@ -100,11 +52,6 @@ def test_relation_conflict_remains_conflict_at_consumer_boundary():
     )
     assert examination.applicability == "conflict"
     assert examination.conflicts == ("source conflict",)
-
-
-def test_closed_choice_requires_exact_positive_goal_admission():
-    with pytest.raises(BoundedOperatorGoalEstablishmentError):
-        establish_bounded_operator_goal_from_closed_choice(_choice_binding("1"))
 
 
 def _goal_admission(*, consumer="consumer:bounded-operator-goal-establishment", purpose_ref="purpose:bounded-operator-goal-establishment", req_state="satisfied", adm_state="admit", selected=None):

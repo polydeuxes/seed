@@ -58,7 +58,6 @@ from seed_runtime.bounded_operator_goal_establishment import (
     BoundedOperatorGoalEstablishmentError,
     bounded_operator_goal_establishment_json,
     establish_bounded_operator_goal_from_admitted_interpretation,
-    establish_bounded_operator_goal_from_closed_choice,
 )
 
 from seed_runtime.bounded_advancement_horizon import (
@@ -70,16 +69,6 @@ from seed_runtime.bounded_advancement_horizon import (
 
 
 
-from seed_runtime.closed_choice_selection_binding import (
-    ClosedChoiceOption,
-    ClosedChoiceSelectionBinding,
-    ClosedChoiceSelectionBindingError,
-    OperatorSelectionTokenCapture,
-    PresentedClosedChoiceSet,
-    bind_closed_choice_selection,
-    closed_choice_selection_binding_json,
-)
-
 __all__ = [
     "BoundedAdvancementHorizon",
     "EvidenceSnapshotReference",
@@ -89,14 +78,6 @@ __all__ = [
     "BoundedOperatorGoalEstablishmentError",
     "bounded_operator_goal_establishment_json",
     "establish_bounded_operator_goal_from_admitted_interpretation",
-    "establish_bounded_operator_goal_from_closed_choice",
-    "ClosedChoiceOption",
-    "ClosedChoiceSelectionBinding",
-    "ClosedChoiceSelectionBindingError",
-    "OperatorSelectionTokenCapture",
-    "PresentedClosedChoiceSet",
-    "bind_closed_choice_selection",
-    "closed_choice_selection_binding_json",
     "AnsibleInventoryObservationSource",
     "CapabilityCatalog",
     "CapabilityCandidate",
