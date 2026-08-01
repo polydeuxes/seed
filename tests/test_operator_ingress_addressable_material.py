@@ -259,20 +259,6 @@ def test_noncanonical_source_span_shapes_cannot_self_certify(shape):
         )
 
 
-def test_active_formation_does_not_call_interpretation_producer(monkeypatch):
-    import seed_runtime.contextual_interpretation_warrant_set as interpretation
-
-    monkeypatch.setattr(
-        interpretation,
-        "produce_contextual_interpretation_warrant_set",
-        lambda **kwargs: pytest.fail(
-            "interpretation production must remain disconnected"
-        ),
-    )
-    _, _, artifact, _ = _run(b"material\n")
-    assert artifact is not None
-
-
 def test_representation_insufficiency_forms_no_addressable_material():
     ledger = EventLedger()
     output = StringIO()

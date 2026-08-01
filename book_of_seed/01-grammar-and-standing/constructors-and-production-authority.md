@@ -19,8 +19,6 @@ A constructor consumes values or representations and produces another representa
 - module export != constitutional warrant
 
 ## Representative repository anchors
-- `seed_runtime/bounded_operator_goal_establishment.py::establish_bounded_operator_goal_from_admitted_interpretation`
-- `seed_runtime/bounded_operator_goal_establishment.py::BoundedOperatorGoalEstablishment`
 - `seed_runtime/__init__.py`
 
 ## Counterexamples or failure modes

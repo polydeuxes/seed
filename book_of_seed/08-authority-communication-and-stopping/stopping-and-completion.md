@@ -17,7 +17,6 @@ Current evidence exposes several distinct possible non-movement conditions, incl
 - local stop != process termination
 
 ## Representative repository anchors
-- `seed_runtime/bounded_advancement_horizon.py`
 - `seed_runtime/models.py::GoalStatus`
 
 ## Counterexamples or failure modes
