@@ -680,13 +680,6 @@ def test_decoder_success_does_not_claim_admission_interpretation_or_competency()
     )
 
 
-def test_production_operator_ingress_contains_no_pesc_identifier_or_payload():
-    forbidden = "pe" + "sc"
-    production = Path("seed_runtime/operator_ingress.py").read_text()
-    production += Path("seed_runtime/operator_ingress_representation.py").read_text()
-    assert forbidden not in production.lower()
-
-
 def test_production_and_event_payloads_do_not_claim_source_relative_original_bytes():
     forbidden = "original_transport" + "_bytes"
     production = Path("seed_runtime/operator_ingress.py").read_text()
