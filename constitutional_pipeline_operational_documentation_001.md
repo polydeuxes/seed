@@ -1,5 +1,10 @@
 # Constitutional Pipeline Operational Documentation 001
 
+> **Historical implementation testimony:** This numbered report records the former
+> bounded-ask and raw-field CLI topology. PR 1734 removed raw question origination,
+> and the later bounded-ask ingress cleanup removed the surviving stale dispatch.
+> See `constitutional_pipeline_operations.md` for the active operator contract.
+
 ## Orientation verification
 
 Verified the self-consumption demonstration conclusion:

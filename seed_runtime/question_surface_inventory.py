@@ -21,20 +21,11 @@ BOUNDED_ASK_DISPATCH_SURFACES: dict[str, str] = {
     "projection shape visibility": "projection_shape",
     "derivation explanation": "reasoning_path",
     "selection explanation": "selection_path",
-    "constitutional pipeline": "constitutional_pipeline",
 }
 
 BOUNDED_ASK_REQUIRED_SURFACE_ARGS: dict[str, tuple[str, ...]] = {
     "derivation explanation": ("domain", "subject"),
     "selection explanation": ("target",),
-    "constitutional pipeline": (
-        "operator_inquiry",
-        "inquiry_source",
-        "bounded_question",
-        "constitutional_intent",
-        "scope_status",
-        "selection_key",
-    ),
 }
 
 BOUNDED_ASK_DIAGNOSTIC_ONLY_FAMILIES: frozenset[str] = frozenset(
@@ -309,25 +300,12 @@ def bounded_work_selected_surface_value_for_eligibility(
                 question_family, eligibility
             )
         provided_surface_args = surface_args_result.surface_args
-        if question_family == "constitutional pipeline":
-            selection_key = provided_surface_args[5]
-            surface_value = {
-                "constitutional_pipeline": True,
-                "operator_inquiry": provided_surface_args[0],
-                "inquiry_provenance": provided_surface_args[1],
-                "bounded_question": provided_surface_args[2],
-                "constitutional_intent": provided_surface_args[3],
-                "scope_status": provided_surface_args[4],
-                "selection_key": (selection_key,) if selection_key else (),
-            }
-            reason = "prepared explicit constitutional pipeline bounded ask fields"
-        else:
-            surface_value = (
-                provided_surface_args[0]
-                if len(provided_surface_args) == 1
-                else provided_surface_args
-            )
-            reason = "prepared parameterized bounded ask surface value"
+        surface_value = (
+            provided_surface_args[0]
+            if len(provided_surface_args) == 1
+            else provided_surface_args
+        )
+        reason = "prepared parameterized bounded ask surface value"
     else:
         surface_value = BOUNDED_ASK_ARG_VALUES.get(question_family, True)
         reason = "prepared bounded ask surface value"
@@ -1002,18 +980,6 @@ def build_question_surface_inventory() -> tuple[QuestionSurfaceInventoryRow, ...
             answer_responsibility="renders a bounded read-only orientation view for an inquiry note",
             authority_boundary="read-only orientation over existing inquiry note and projected state; no routing; no execution",
             notes="Requires an explicit note id or latest note; this inventory does not classify intent.",
-        ),
-        QuestionSurfaceInventoryRow(
-            question_family="constitutional pipeline",
-            example_questions=(
-                "Run the constitutional pipeline for these explicit bounded inputs.",
-                "Which constitutional views match this explicit selection key?",
-            ),
-            surface="constitutional_pipeline",
-            surface_flag="--constitutional-pipeline",
-            answer_responsibility="invokes the complete read-only constitutional pipeline from explicit bounded inputs",
-            authority_boundary="read-only typed pipeline invocation; no event-ledger writes; no cluster mutation; operator testimony remains evidence, not fact",
-            notes="Requires explicit bounded constitutional fields and an exact selection key argument; an empty selection-key argument preserves absence and does not infer one.",
         ),
         QuestionSurfaceInventoryRow(
             question_family="projection shape visibility",

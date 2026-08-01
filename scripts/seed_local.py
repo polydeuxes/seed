@@ -1836,16 +1836,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--constitutional-pipeline",
         action="store_true",
         help=(
-            "invoke the complete read-only constitutional pipeline from explicit "
-            "operator-supplied bounded inputs and exit"
+            "refuse raw constitutional-pipeline question fields; typed API callers "
+            "must supply an already-established BoundedConstitutionalQuestion"
         ),
     )
     parser.add_argument(
         "--constitutional-pipeline-diagnostic",
         action="store_true",
         help=(
-            "run the read-only full constitutional pipeline diagnostic from explicit "
-            "operator-supplied bounded inputs and exit"
+            "refuse raw constitutional-pipeline diagnostic question fields; use the "
+            "typed API with an already-established BoundedConstitutionalQuestion"
         ),
     )
     parser.add_argument(
