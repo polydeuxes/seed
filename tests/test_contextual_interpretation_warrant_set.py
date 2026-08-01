@@ -4,11 +4,13 @@ from seed_runtime.contextual_interpretation_warrant_set import (
     ClarificationEvidence,
     ContextualInterpretationWarrantSetError,
     CorrectionCandidate,
-    ExactOperatorMaterial,
     InterpretationCandidate,
     RetrospectiveEvidence,
-    SourceSpan,
     produce_contextual_interpretation_warrant_set,
+)
+from seed_runtime.operator_ingress_addressable_material import (
+    ExactOperatorMaterial,
+    SourceSpan,
 )
 
 

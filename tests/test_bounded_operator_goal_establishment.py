@@ -8,12 +8,11 @@ from seed_runtime.downstream_interpretation_admission import admit_downstream_in
 from seed_runtime.interpretation_applicability_projection import project_interpretation_applicability
 from seed_runtime.contextual_interpretation_selection import CandidateSelectionEvidence, select_contextual_interpretation
 from seed_runtime.contextual_interpretation_warrant_set import (
-    ExactOperatorMaterial,
     InterpretationCandidate,
     RetrospectiveEvidence,
-    SourceSpan,
     produce_contextual_interpretation_warrant_set,
 )
+from seed_runtime.operator_ingress_addressable_material import ExactOperatorMaterial, SourceSpan
 from tests.test_downstream_interpretation_admission import admission_evidence
 from tests.test_interpretation_applicability_projection import evidence, purpose, selected_result
 

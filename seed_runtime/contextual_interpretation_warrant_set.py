@@ -6,6 +6,11 @@ import hashlib
 import json
 from typing import Iterable
 
+from seed_runtime.operator_ingress_addressable_material import (
+    ExactOperatorMaterial,
+    SourceSpan,
+)
+
 CONVENTION = "contextual_interpretation_warrant_set_v1"
 WARRANT_STANDINGS = {"warranted", "unwarranted", "ambiguous", "conflicted", "unresolved"}
 EVIDENCE_DISPOSITIONS = {"supporting", "contradicting", "irrelevant", "unresolved"}
@@ -32,33 +37,6 @@ def _refs(values: Iterable[str] = ()) -> tuple[str, ...]:
 def _stable(prefix: str, payload: object) -> str:
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
     return prefix + ":" + hashlib.sha256(encoded).hexdigest()
-
-
-@dataclass(frozen=True)
-class SourceSpan:
-    span_ref: str
-    source_ref: str
-    start: int
-    end: int
-    exact_text: str
-
-    def __post_init__(self) -> None:
-        if not self.span_ref or not self.source_ref:
-            raise ContextualInterpretationWarrantSetError("source spans require span_ref and source_ref")
-        if self.start < 0 or self.end < self.start:
-            raise ContextualInterpretationWarrantSetError("source span offsets must be bounded and ordered")
-
-
-@dataclass(frozen=True)
-class ExactOperatorMaterial:
-    material_ref: str
-    exact_text: str
-    source_spans: tuple[SourceSpan, ...]
-    provenance: tuple[str, ...] = ()
-
-    def __post_init__(self) -> None:
-        if not self.material_ref:
-            raise ContextualInterpretationWarrantSetError("operator material_ref is required")
 
 
 @dataclass(frozen=True)
