@@ -4,4 +4,3 @@ This Book concerns bounded questions, inquiry frontiers, and examination work us
 
 - [Questions and inquiry](questions-and-inquiry.md)
 - [Inquiry frontiers](inquiry-frontiers.md)
-- [Examination methods and probes](examination-methods-and-probes.md)

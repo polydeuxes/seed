@@ -47,5 +47,5 @@ Repository evidence supports a shared higher-order selection grammar with distin
 
 ## Related chapters
 - [Selection and authorization](../03-goals-and-advancement/selection-and-authorization.md)
-- [Examination methods and probes](../04-inquiry-and-examination/examination-methods-and-probes.md)
+- [Inquiry frontiers](../04-inquiry-and-examination/inquiry-frontiers.md)
 - [Evidence, provenance, and explanation](../05-evidence-and-knowledge/evidence-provenance-and-explanation.md)

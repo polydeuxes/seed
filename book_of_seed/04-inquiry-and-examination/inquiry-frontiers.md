@@ -17,6 +17,8 @@ A bounded inquiry frontier receives identity only by preserving the exact inquir
 ### 04.Frontier.B — Positive frontier support requires claim-relative warrant
 For one exact bounded inquiry frontier, preserved testimony may contribute positive support only when the consumer has warrant sufficient for the exact claim, inquiry demand, frontier boundary, and reliance purpose. Preservation, consideration, supplied positive dispositions, absence of explicit conflict, local predicate satisfaction, grouping, labeling, or apparent aggregate completeness do not by themselves supply that warrant or establish the whole frontier. Testimony with missing, insufficient, conflicting, stale, unavailable, Unknown, or otherwise claim-limited support, provenance, standing, scope, currentness, availability, conflict handling, or warrant remains preserved under that limitation rather than silently becoming positive frontier-establishing support. This requirement is claim-relative and realization-independent: different claims may require different local warrant, and a realization may preserve the distinction through any lawful mechanism without requiring recognized original producer ownership, canonical Evidence, a universal admission artifact, a universal warrant object, identical support coordinates, or a fixed warrant stage.
 
+Recorded or visible material is not relevant to a local responsibility merely because it is preserved, visible, or a member of the frontier. A bounded responsibility may treat that material as relevant for further examination only when explicit record material supports the exact local responsibility, subject binding, evidence or provenance requirements, and authority boundary required by that responsibility. The resulting standing is permission to examine further inside that boundary; it is not selection, execution, mutation, truth establishment, or required action.
+
 ## Important distinctions
 - frontier membership != work selection
 - inquiry visibility != inquiry execution
@@ -34,5 +36,5 @@ For one exact bounded inquiry frontier, preserved testimony may contribute posit
 
 ## Related chapters
 - [Questions and inquiry](questions-and-inquiry.md)
-- [Examination methods and probes](examination-methods-and-probes.md)
+- [Testimony and established fact](../05-evidence-and-knowledge/testimony-and-established-fact.md)
 - [Demands and opened movement](../03-goals-and-advancement/demands-and-opened-movement.md)
