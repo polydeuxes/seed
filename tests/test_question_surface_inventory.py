@@ -10,6 +10,8 @@ from seed_runtime.diagnostic_shape_audit import (
 )
 from seed_runtime.question_surface_inventory import (
     BOUNDED_ASK_DISPATCH_SURFACES,
+    BOUNDED_ASK_REQUIRED_SURFACE_ARGS,
+    BoundedWorkEligibilityResult,
     _bounded_work_eligibility_for_prepared_question_family,
     _lookup_exact_question_family,
     _prepare_question_family_eligibility_input,
@@ -30,6 +32,7 @@ from seed_runtime.question_surface_inventory import (
     bounded_work_selected_surface_value_for_eligibility,
     bounded_work_selection_for_question_family,
     bounded_work_surface_args_for_eligibility,
+    bounded_status_for_question_family,
     bounded_ask_inventory_findings,
     execute_bounded_work_dispatch,
     build_question_surface_inventory,
@@ -103,6 +106,7 @@ def test_bounded_ask_inventory_json_answers_required_operator_questions(capsys):
     payload = json.loads(capsys.readouterr().out)
 
     by_family = {row["question_family"]: row for row in payload}
+    assert "constitutional pipeline" not in by_family
     assert (
         by_family["authority-constrained service ownership"]["bounded_status"]
         == "eligible_now"
@@ -164,6 +168,64 @@ def test_exact_question_family_lookup_is_separate_from_eligibility_and_dispatch(
 def test_exact_question_family_lookup_rejects_unknown_text_before_eligibility():
     with pytest.raises(ValueError, match="unknown Question Family: made up"):
         _lookup_exact_question_family("made up")
+
+
+def test_stale_constitutional_pipeline_bounded_ask_road_is_absent(capsys):
+    rows = build_question_surface_inventory()
+    payload = question_surface_inventory_json(rows)
+
+    assert bounded_status_for_question_family("constitutional pipeline") == "not_dispatchable"
+    assert "constitutional pipeline" not in BOUNDED_ASK_DISPATCH_SURFACES
+    assert "constitutional pipeline" not in BOUNDED_ASK_REQUIRED_SURFACE_ARGS
+    assert all(row.question_family != "constitutional pipeline" for row in rows)
+    assert all(row["question_family"] != "constitutional pipeline" for row in payload)
+
+    with pytest.raises(ValueError, match="unknown Question Family: constitutional pipeline"):
+        bounded_work_eligibility_for_question_family("constitutional pipeline")
+    with pytest.raises(ValueError, match="unknown Question Family: constitutional pipeline"):
+        _lookup_exact_question_family("constitutional pipeline")
+
+    assert seed_local.main(["ask", "--question-families"]) == 0
+    assert "constitutional pipeline" not in capsys.readouterr().out
+
+
+def test_stale_constitutional_pipeline_bounded_ask_cannot_select_or_mutate_namespace():
+    parser = seed_local.build_parser()
+    args = parser.parse_args(
+        [
+            "ask",
+            "--question-family",
+            "constitutional pipeline",
+            "--surface-args",
+            "operator inquiry",
+            "operator:testimony",
+            "raw question",
+            "raw intent",
+            "bounded",
+            "process",
+        ]
+    )
+
+    with pytest.raises(SystemExit):
+        seed_local.apply_bounded_ask_dispatch(args, parser)
+    assert args.constitutional_pipeline is False
+
+    removed = BoundedWorkEligibilityResult(
+        question_family="constitutional pipeline",
+        bounded_status="not_dispatchable",
+        permitted=False,
+        reason="no bounded ask dispatch mapping in current implementation",
+    )
+    with pytest.raises(ValueError, match="selected surface value requires permitted"):
+        bounded_work_selected_surface_value_for_eligibility(
+            "constitutional pipeline", removed
+        )
+    with pytest.raises(ValueError, match="selected dispatch surface requires permitted"):
+        bounded_work_selected_dispatch_surface_for_eligibility(
+            "constitutional pipeline", removed
+        )
+    with pytest.raises(ValueError, match="selection requires permitted eligibility"):
+        bounded_work_selection_for_question_family("constitutional pipeline", removed)
 
 
 def test_question_family_eligibility_input_preparation_is_separate_from_eligibility():
