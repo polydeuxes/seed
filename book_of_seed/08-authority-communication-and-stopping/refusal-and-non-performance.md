@@ -7,7 +7,9 @@ The lawful decision not to perform an act when authority, safety, capability, or
 When must Seed refuse, block, defer, or ask rather than act?
 
 ## Bounded resolution
-Refusal, policy blocks, failed preconditions, and requests for clarification remain distinct stopping or non-performance outcomes at different boundaries. None should be reported as successful action.
+Refusal, policy blocks, failed preconditions, deferments, requests for clarification, supported negative reasons, and Unknown from insufficient binding remain distinct stopping or non-performance outcomes at different boundaries. None should be reported as successful action, and a non-performance outcome does not perform the act it declines or stops.
+
+A supported reason not to continue is a positive bounded non-performance outcome rather than silent absence. Supported irrelevance, unsupported material, missing required binding, outside-authority standing, and insufficiently bound Unknown must not collapse into one status. Where evidence supports a distinguishable reason, the outcome preserves that reason; where material is insufficiently bound to determine the reason or decide relevance, the outcome preserves Unknown.
 
 ## Important distinctions
 - refusal != execution failure
