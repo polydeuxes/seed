@@ -23,6 +23,7 @@ DELETED_FLAGS = (
     "--pipeline-uncertainty",
     "--pipeline-unknown",
     "--composition-purpose",
+    "--examination-frontier",
 )
 DELETED_DIAGNOSTICS = {
     "constitutional_pipeline",
@@ -32,7 +33,7 @@ DELETED_DIAGNOSTICS = {
     "constitutional_fidelity",
     "constitutional_view_composition",
 }
-PRESERVED_MODULES = (
+DELETED_FRONTIER_MODULES = (
     "seed_runtime.bounded_constitutional_question",
     "seed_runtime.examination_frontier",
 )
@@ -50,24 +51,23 @@ def test_deleted_static_flags_are_not_parser_options():
     option_strings = {option for action in parser._actions for option in action.option_strings}
 
     assert option_strings.isdisjoint(DELETED_FLAGS)
-    assert "--examination-frontier" in option_strings
     for flag in DELETED_FLAGS:
         with pytest.raises(SystemExit):
             parser.parse_args([flag])
 
 
-def test_deleted_static_diagnostics_are_absent_while_frontier_remains():
+def test_deleted_static_diagnostics_and_frontier_are_absent():
     inventory_names = {entry.name for entry in DIAGNOSTIC_INVENTORY}
 
     assert inventory_names.isdisjoint(DELETED_DIAGNOSTICS)
     assert DELETED_DIAGNOSTICS.isdisjoint(IMPLEMENTATION_SPECS)
-    assert "examination_frontier" in inventory_names
-    assert "examination_frontier" in IMPLEMENTATION_SPECS
+    assert "examination_frontier" not in inventory_names
+    assert "examination_frontier" not in IMPLEMENTATION_SPECS
 
 
-def test_held_out_question_and_examination_modules_remain_importable():
-    for module_name in PRESERVED_MODULES:
-        assert importlib.import_module(module_name)
+def test_frontier_district_modules_are_absent():
+    for module_name in DELETED_FRONTIER_MODULES:
+        assert importlib.util.find_spec(module_name) is None
 
 
 def test_disconnected_examination_staging_modules_are_absent():

@@ -61,7 +61,6 @@ Preserved Unknowns include the complete executable default dialogue loop, the fu
 - Seed-owned act != currently complete realization
 
 ## Representative repository anchors
-- `seed_runtime/bounded_constitutional_question.py`
 - `seed_runtime/question_surface_inventory.py`
 
 ## Counterexamples or failure modes
