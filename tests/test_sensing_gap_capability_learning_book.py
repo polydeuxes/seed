@@ -201,6 +201,29 @@ def test_constrained_demand_gap_invariants_are_canonical():
         assert invariant in text
 
 
+def test_operator_ingress_interpretation_examination_is_bounded_and_relational():
+    text = _read(
+        "book_of_seed/03-goals-and-advancement/operator-ingress-common-grammar-prerequisite.md"
+    )
+
+    required = [
+        "the exact Seed consumer whose declared communicative examination requires common-grammar standing",
+        "Common-grammar standing is a bounded warranted relation for one exact consumer, material, act, purpose, participant set, and scope",
+        "operator grammar remains attributed external grammar",
+        "a comparison finding is not an interpretation relation",
+        "Mechanical evidence supports only its mechanical finding and may not be promoted into meaning",
+        "Common-grammar insufficiency may be established only when evidence binds it to the exact consumer, material, act, purpose, required grammar standing, and scope",
+        "Result testimony is available to a later, separately responsible, bounded recurrence-measurement responsibility",
+        "recurrence is not meaning, common grammar, or Demand",
+        "may provide minimal shared-grammar standing for that exact selection act and scope",
+        "The exact Demand family remains **Unknown**",
+        "question-local examination consumer, and whether downstream claims share one occurrence all remain **Unknown**",
+    ]
+
+    for invariant in required:
+        assert invariant in text
+
+
 def test_constrained_book_vii_capability_chapter_remains_absent():
     assert not (ROOT / "book_of_seed/07-operational-realization/operational-realization-and-capability.md").exists()
     assert not (ROOT / "book_of_seed/07-operational-realization").exists()
