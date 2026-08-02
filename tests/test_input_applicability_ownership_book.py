@@ -10,39 +10,53 @@ def _clause() -> str:
     return text.split("### 01.Standing.E.1", 1)[1].split("### 01.Standing.F", 1)[0]
 
 
-def test_exact_act_owner_is_rebuttable_default_applicability_owner():
+def test_book_preserves_rebuttable_input_applicability_owner():
     clause = _clause()
 
     assert "responsibility assigned to perform an exact constitutional act" in clause
-    assert "responsible for ensuring that every proposed input is applicable" in clause
+    assert "responsible for ensuring that applicability is determined for every proposed input" in clause
+    assert "before that input participates in, is consumed by, or is relied upon" in clause
     assert "Unless the Book explicitly assigns otherwise" in clause
     assert "explicit Book assignment therefore overrides the ordinary owner" in clause
     assert "assigned responsible occurrence for that exact downstream act" in clause
 
 
-def test_applicability_does_not_collapse_admission_or_performance():
+def test_book_distinguishes_input_exclusion_from_whole_act_nonperformance():
     clause = _clause()
 
     assert "upstream applicability is not downstream admission" in clause
     assert "admission remains required only where its exact local road requires it" in clause
     assert "It does not by itself establish admission" in clause
-    assert "Inapplicable**, **conflicting**, or **Unknown** does not permit a supported downstream act result" in clause
-    assert "no supported or unsupported act result is fabricated" in clause
+    assert "may not participate in, be consumed by, or be relied upon in that act" in clause
+    assert "no act result may claim reliance on, support from, consumption of, or participation by the excluded input" in clause
+    assert "Exclusion of one input does not universally prohibit the whole act" in clause
+    assert "the act may proceed without that input when another independently sufficient lawful input set exists" in clause
 
 
-def test_composite_occurrence_preserves_independent_claims():
+def test_book_preserves_required_input_and_alternative_input_boundary():
     clause = _clause()
 
-    assert "One bounded responsible occurrence may determine input applicability" in clause
+    assert "constitutionally required for the act" in clause
+    assert "no lawful substitute or independently sufficient input set exists, the act is not performed" in clause
+    assert "optional, supplementary, or one candidate among several proposed inputs" in clause
+    assert "One rejected candidate is not all candidates rejected" in clause
+
+
+def test_book_preserves_composite_occurrence_as_independent_claims():
+    clause = _clause()
+
+    assert "One bounded responsible occurrence may determine applicability for proposed inputs" in clause
+    assert "perform or not perform the exact act using an independently sufficient lawful input set" in clause
     assert "These remain independently recoverable claims" in clause
     assert "applicability success is not act success" in clause
     assert "act success is not output standing" in clause
     assert "output standing is not downstream applicability" in clause
 
 
-def test_persistent_standing_does_not_create_production_demand():
+def test_book_does_not_turn_persistent_standing_into_production_demand():
     clause = _clause()
 
-    assert "lawfully persistent result standing create current production demand" in clause
-    assert "no current candidate-formation demand is established" in clause
-    assert "does not establish a producer, proposed input, responsible occurrence, Demand" in clause
+    assert "lawfully persistent result standing is not current production demand" in clause
+    assert "does not lose its standing merely because a later consumer does not consume it" in clause
+    assert "does not permit a producer to be implemented or invoked without a current responsibility" in clause
+    assert "does not by itself establish producer demand, candidate-formation demand" in clause
