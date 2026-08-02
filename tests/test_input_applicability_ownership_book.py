@@ -38,9 +38,10 @@ def test_book_preserves_required_input_and_alternative_input_boundary():
     clause = _clause()
 
     assert "An alternative proposed input does not participate by virtue of availability, similarity, equal proposition text or content" in clause
-    assert "Responsible occurrences must establish its own identity and standing" in clause
-    assert "the warrant of its substantive claim or relation, applicability to the exact act" in clause
-    assert "any consumer-local admission required by that road, authority and scope for participation" in clause
+    assert "the act-owning responsibility must determine or consume applicability standing for that exact input-to-act relation" in clause
+    assert "whatever standing, warrant, admission, authority, scope, provenance, or other relation that exact proposed use requires" in clause
+    assert "Required coordinates are local to the exact act and proposed use" in clause
+    assert "no coordinate is universally required merely because a subject is proposed as an input" in clause
     assert "No unassigned input-set sufficiency, substitution, readiness, or act-permission standing is created" in clause
     assert "One rejected candidate is not all candidates rejected" in clause
 
