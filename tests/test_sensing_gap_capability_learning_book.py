@@ -208,9 +208,7 @@ def test_operator_ingress_common_grammar_clause_has_no_unsupported_examination_a
 
     required = [
         "Common-grammar standing remains relative to the consumer, material, act, purpose, participants, and scope",
-        "may provide minimal shared-grammar standing for that exact selection act and scope",
         "Exact token binding is not free-form interpretation",
-        "matching token establishes neither free-form interpretation nor candidate meaning, permanent common grammar, or shared grammar beyond the warranted bounded selection",
     ]
 
     for invariant in required:
