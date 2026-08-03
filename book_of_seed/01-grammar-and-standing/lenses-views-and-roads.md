@@ -33,7 +33,6 @@ Evidence becoming available does not by itself change any consumer assertion, st
 - producer validation != consumer validation automatically
 - composition compatibility != general selection standing
 - selection purpose != reusable authority
-- relationship mode != consumer act
 - consumer act != consumer constraint
 - compressed transfer wording != constitutional relationship
 - typed values transported != constitutional uptake automatically
