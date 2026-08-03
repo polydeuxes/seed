@@ -30,6 +30,6 @@ Consumer validation is not producer occurrence: a downstream boundary may lawful
 - Treating direct construction of a selection result as evidence that exact focus evidence was validated.
 
 ## Related chapters
-- [Constraints, policy, and preconditions](constraints-policy-and-preconditions.md)
+- [Constraints and preconditions](constraints-and-preconditions.md)
 - [Testimony and established fact](../05-evidence-and-knowledge/testimony-and-established-fact.md)
 - [Recording and knowledge extraction](../05-evidence-and-knowledge/recording-and-knowledge-extraction.md)

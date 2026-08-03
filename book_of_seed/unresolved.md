@@ -3,7 +3,6 @@
 Only questions without a clean single-chapter home belong here.
 
 - `[UNRESOLVED]` Should authority, communication, and stopping remain one constitutional district, or do further kinds of evidence warrant separate Books?
-- `[UNRESOLVED]` Is examination constitutionally a kind of inquiry, a distinct district, or a bridge between inquiry and evidence acquisition?
 - `[UNRESOLVED]` Which current Fact producers, predicates, source types, and scopes establish constitutional Fact standing beyond weak source-relative observed claims, and which merely construct fact-shaped normalized claim artifacts or replay prior standing?
 - `[UNRESOLVED]` Which conflict-awareness mechanics are required before Fact production, during support aggregation, during projection, and at consumer uptake for each claim strength?
 - `[UNRESOLVED]` Which authority or corroboration thresholds, if any, are required for stronger Fact claims, live-state claims, and verification claims?

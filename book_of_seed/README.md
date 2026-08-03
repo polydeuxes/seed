@@ -29,7 +29,7 @@ Change the Book when constitutional grammar, a durable distinction, or the statu
 1. [Grammar and Standing](01-grammar-and-standing/)
 2. [Acts and Constraints](02-acts-and-constraints/)
 3. [Goals and Advancement](03-goals-and-advancement/)
-4. [Inquiry and Examination](04-inquiry-and-examination/)
+4. [Inquiry](04-inquiry/)
 5. [Evidence and Knowledge](05-evidence-and-knowledge/)
 6. [State and Projection](06-state-and-projection/)
 7. **Intentionally absent** — see [Book VII Operational Topic Collection Excision 001](book_vii_operational_topic_collection_excision_001.md).

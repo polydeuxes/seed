@@ -18,7 +18,7 @@ Constitutional movement is a warranted transition in lawful position, standing, 
 - orientation != movement
 - association != advancement
 - candidate identity resolution != selection or movement
-- current work position label != constitutional transition
+- current movement position label != constitutional transition
 
 ## Representative repository anchors
 - `seed_runtime/inquiry_orientation.py`

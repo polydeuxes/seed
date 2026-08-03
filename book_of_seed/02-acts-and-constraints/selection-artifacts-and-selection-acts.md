@@ -7,13 +7,13 @@ The boundary between a selection record and the bounded act that chooses from a 
 What evidence proves that a lawful selection occurred for a particular candidate set?
 
 ## Bounded resolution
-A selection act consumes a bounded candidate set plus selection evidence, exact comparison, or policy, validates the identity and applicability required by that owner, and chooses zero or more candidates or preserves a lawful non-selection. Its artifact asserts that bounded result and preserves enough basis, identity, uncertainty, or refusal information for the intended consumer to distinguish lawful selection from unsupported omission. Preservation of all non-selected alternatives is selector-specific: representation selection may be sufficient with selected registered names plus unsupported-key uncertainty. Direct construction proves only artifact constructibility. Selection does not itself authorize, execute, open inquiry, or establish every downstream subject unless the responsible boundary explicitly does so.
+A selection act consumes a bounded candidate set plus a selection basis supported by evidence or exact comparison, validates the identity and applicability required by that owner, and chooses zero or more candidates or preserves a lawful non-selection. Its artifact asserts that bounded result and preserves enough basis, identity, uncertainty, or refusal information for the intended consumer to distinguish lawful selection from unsupported omission. Preservation of all non-selected alternatives is selector-specific: representation selection may be sufficient with selected registered names plus unsupported-key uncertainty. Direct construction proves only artifact constructibility. Selection does not itself authorize, execute, open inquiry, or establish every downstream subject unless the responsible boundary explicitly does so.
 
 Candidate-identity resolution is not itself a selection act. A resolver may compare attributed testimony with a visible candidate set and establish that exactly one candidate identity matches. That occurrence does not establish who selected the candidate, why it should receive present consideration, whether it is applicable now, or whether movement should proceed through it.
 
 Selection-to-consumer uptake is not singular. A consumer may adopt selected-subject standing for a new bounded purpose, narrow representation selection to selected registered names, or revalidate coherence between a selected subject and other testimony. Consumer acceptance of one of those smaller assertions does not accept every producer assertion, and selected names suitable for composition do not prove exact-key selection occurrence.
 
-Repository evidence supports a shared higher-order selection grammar with distinct subfamilies. Representation selection may choose registered read-model views by exact deterministic keys for one composition purpose. Meaning selection, policy/work selection, and operational-realization selection have their own candidate sets and downstream limits. Shared selection vocabulary does not collapse these into one constitutional act kind.
+Repository evidence supports a shared higher-order selection grammar with distinct subfamilies. Representation selection may choose registered read-model views by exact deterministic keys for one composition purpose. Meaning selection and operational-realization selection have their own candidate sets and downstream limits. Shared selection vocabulary does not collapse these into one constitutional act kind.
 
 ## Important distinctions
 - selection artifact != act of selection
@@ -46,5 +46,5 @@ Repository evidence supports a shared higher-order selection grammar with distin
 
 ## Related chapters
 - [Selection and authorization](../03-goals-and-advancement/selection-and-authorization.md)
-- [Inquiry frontiers](../04-inquiry-and-examination/inquiry-frontiers.md)
+- [Inquiry frontiers](../04-inquiry/inquiry-frontiers.md)
 - [Evidence, provenance, and explanation](../05-evidence-and-knowledge/evidence-provenance-and-explanation.md)

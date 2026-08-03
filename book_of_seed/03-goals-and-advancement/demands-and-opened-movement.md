@@ -46,16 +46,16 @@ Named Gap distinctions remain useful when bounded by evidence, responsibility, r
 
 ## Bounded common-grammar counterexample
 
-A possible Demand may arise before an interpreted operator goal exists. For example, a responsible consumer may repeatedly fail or stop while attempting to examine the same preserved operator ingress because the common-grammar standing required by that exact consumer for that exact examination act is not established. The exact operator material remains uninterpreted. Recurrence supplies measurement evidence only: it is not meaning, Demand, selection, authority, or execution, and it does not select English or a learning mechanism.
+A possible Demand may arise before an interpreted operator goal exists. For example, a responsible consumer may repeatedly fail or stop while attempting consumer-local interpretation of the same preserved operator ingress because the common-grammar standing required by that exact consumer for that exact interpretation act is not established. The exact operator material remains uninterpreted. Recurrence supplies measurement evidence only: it is not meaning, Demand, selection, authority, or execution, and it does not select English or a learning mechanism.
 
-That evidence may become applicable to a separately responsible examination of whether a bounded Demand exists. Demand establishment requires its own responsible occurrence and must preserve the required result, responsibility, scope, source evidence, materiality, applicability, material Unknowns, and conflicts. Recurrence alone does not establish a Demand.
+That evidence may become applicable to a separately responsible establishment of whether a bounded Demand exists. Demand establishment requires its own responsible occurrence and must preserve the required result, responsibility, scope, source evidence, materiality, applicability, material Unknowns, and conflicts. Recurrence alone does not establish a Demand.
 
-The possible subject under examination may be characterized as:
+The possible subject proposed for Demand establishment may be characterized as:
 
 ```text
 required result:
     common-grammar standing required by the exact consumer
-    to examine the exact preserved ingress for its declared act and purpose
+    to interpret the exact preserved ingress for its declared act and purpose
 
 possible Demand characterization if separately established:
     bounded relational Demand
@@ -76,5 +76,5 @@ The possible relation is consumer-relative, material-relative, and act- and purp
 ## Related chapters
 
 - [Selection and authorization](selection-and-authorization.md)
-- [Inquiry frontiers](../04-inquiry-and-examination/inquiry-frontiers.md)
+- [Inquiry frontiers](../04-inquiry/inquiry-frontiers.md)
 - [Testimony and established fact](../05-evidence-and-knowledge/testimony-and-established-fact.md)

@@ -4,19 +4,19 @@
 The boundary between preserving events or diagnostic output and deriving knowledge from recorded material.
 
 ## Core question
-Which bounded responsibility may examine recorded material, and what standing, if any, may it establish?
+Which bounded responsibility may take up recorded material, and what standing, if any, may it establish?
 
 ## Bounded resolution
-A recording boundary may create a retrievable representation of attributed events, findings, testimony, or established standing within the preservation horizon supplied by the recorder. Examination or extraction from recorded material is a separate constitutional responsibility with its own evidence, reconciliation, and standing limits; successful extraction does not itself establish knowledge. Diagnostic recording should remain scoped to its diagnostic run unless a separate establishment boundary supplies additional standing. Diagnostic rendering, metrics output, CLI report text, and operator capture are not Seed preservation by identity; Seed preservation, when warranted, belongs to the retained testimony or compressed standing and not to the external surface that displayed it. Operational measurement production, operational understanding establishment, diagnostic rendering, and recording/preservation are separate responsibilities. Recording may preserve already produced measurement testimony or already established baseline, deviation, or transition standing; it does not produce the upstream measurement, comparison authority, baseline standing, deviation standing, or transition standing merely by storing a representation.
+A recording boundary may create a retrievable representation of attributed events, findings, testimony, or established standing within the preservation horizon supplied by the recorder. Extraction from recorded material is a separate constitutional responsibility with its own evidence, reconciliation, and standing limits; successful extraction does not itself establish knowledge. Diagnostic recording should remain scoped to its diagnostic run unless a separate establishment boundary supplies additional standing. Diagnostic rendering, metrics output, CLI report text, and operator capture are not Seed preservation by identity; Seed preservation, when warranted, belongs to the retained testimony or compressed standing and not to the external surface that displayed it. Operational measurement production, operational understanding establishment, diagnostic rendering, and recording/preservation are separate responsibilities. Recording may preserve already produced measurement testimony or already established baseline, deviation, or transition standing; it does not produce the upstream measurement, comparison authority, baseline standing, deviation standing, or transition standing merely by storing a representation.
 
 
 ## Addressable boundaries for recorded-change witnesses
 
 ### 05.Recording.A — Recorded assertion standing
-A recording boundary may create retrievable assertion-bearing material within its declared preservation horizon. The produced standing is that a record exists and preserves an attributed assertion. The permitted reliance is examination of that recorded assertion as recorded material. The forbidden inference is that the represented external occurrence, current lawful state, factual truth, renewed occurrence, or consumer receipt has been established merely because the record exists or remains retrievable.
+A recording boundary may create retrievable assertion-bearing material within its declared preservation horizon. The produced standing is that a record exists and preserves an attributed assertion. The bounded consumer may take up that recorded assertion as attributed material. The forbidden inference is that the represented external occurrence, current lawful state, factual truth, renewed occurrence, or consumer receipt has been established merely because the record exists or remains retrievable.
 
-### 05.Recording.B — Diagnostic or examination-scoped recording
-When recorded material is admitted only for diagnostic or examination purposes, consumers must preserve the scoped subject of that recording unless a separate establishment boundary supplies additional standing. The produced effect is bounded availability for examination, not mutation of cluster truth, universal state, reliance, or receipt.
+### 05.Recording.B — Diagnostic-run-scoped recording
+When recorded material is admitted only for diagnostic purposes, consumers must preserve the scoped subject of that recording unless a separate establishment boundary supplies additional standing. The produced effect is bounded availability to the diagnostic consumer, not mutation of cluster truth, universal state, reliance, or receipt.
 
 
 ### 05.Recording.C — Preservation and discard of operational measurements
