@@ -220,6 +220,7 @@ def test_operator_ingress_interpretation_examination_is_bounded_and_relational()
         "the result preserves separately the exact required relation; the exact missing or unusable standing boundary",
         "the resulting bounded non-performance, refusal, or stop; and the evidence and negative authority",
         "That preservation creates no new universal result kind or global grammar claim",
+        "No such result establishes by identity a Demand or Demand family, bounded-presentation applicability, presentation formation or emission, grammar-acquisition goal, movement, authority, acquisition, or permanent grammar absence",
         "Result testimony is available to a later, separately responsible, bounded recurrence-measurement responsibility",
         "recurrence is not meaning, common grammar, or Demand",
         "may provide minimal shared-grammar standing for that exact selection act and scope",
@@ -229,6 +230,8 @@ def test_operator_ingress_interpretation_examination_is_bounded_and_relational()
 
     for invariant in required:
         assert invariant in text
+
+    assert "prerequisite invocation" not in text
 
 
 def test_constrained_book_vii_capability_chapter_remains_absent():
