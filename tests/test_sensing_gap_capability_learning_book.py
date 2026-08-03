@@ -201,37 +201,31 @@ def test_constrained_demand_gap_invariants_are_canonical():
         assert invariant in text
 
 
-def test_operator_ingress_interpretation_examination_is_bounded_and_relational():
+def test_operator_ingress_common_grammar_clause_has_no_unsupported_examination_assignment():
     text = _read(
         "book_of_seed/03-goals-and-advancement/operator-ingress-common-grammar-prerequisite.md"
     )
 
     required = [
-        "the exact Seed consumer whose declared communicative examination requires common-grammar standing",
-        "Common-grammar standing is a bounded warranted relation for one exact consumer, material, act, purpose, participant set, and scope",
-        "operator grammar remains attributed external grammar",
-        "exact inputs whose applicability to this examination has been established",
-        "responsible occurrences have established or preserved whatever standing, warrant, admission, authority, scope, provenance, or other relation this exact proposed use requires",
-        "No coordinate is universally required merely because the subject is an input",
-        "Available, addressable, applicable, admitted, and consumed or relied upon remain distinct",
-        "a comparison finding is not an interpretation relation",
-        "Mechanical evidence supports only its mechanical finding and may not be promoted into meaning",
-        "A token nonmatch, decoder or parse failure, unrecognized material, unsupported candidate, or failed examination does not establish absent common grammar",
-        "the result preserves separately the exact required relation; the exact missing or unusable standing boundary",
-        "the resulting bounded non-performance, refusal, or stop; and the evidence and negative authority",
-        "That preservation creates no new universal result kind or global grammar claim",
-        "No such result establishes by identity a Demand or Demand family, bounded-presentation applicability, presentation formation or emission, grammar-acquisition goal, movement, authority, acquisition, or permanent grammar absence",
-        "Result testimony is available to a later, separately responsible, bounded recurrence-measurement responsibility",
-        "recurrence is not meaning, common grammar, or Demand",
+        "Common-grammar standing remains relative to the consumer, material, act, purpose, participants, and scope",
         "may provide minimal shared-grammar standing for that exact selection act and scope",
-        "The exact Demand family remains **Unknown**",
-        "question-local examination consumer, and whether downstream claims share one occurrence all remain **Unknown**",
+        "Exact token binding is not free-form interpretation",
+        "matching token establishes neither free-form interpretation nor candidate meaning, permanent common grammar, or shared grammar beyond the warranted bounded selection",
     ]
 
     for invariant in required:
         assert invariant in text
 
-    assert "prerequisite invocation" not in text
+    unsupported = [
+        "## Bounded common-grammar interpretation examination",
+        "communicative interpretation-examination responsibility",
+        "first interpretation-examination responsibility",
+        "Seed owns this constitutional act generally",
+        "whose declared communicative examination requires",
+    ]
+
+    for claim in unsupported:
+        assert claim not in text
 
 
 def test_constrained_book_vii_capability_chapter_remains_absent():
