@@ -220,8 +220,8 @@ Priority is workload/risk triage only, not a constitutional disposition. Family 
 - **Definition:** descriptive compounds or condition/result vocabulary resemble constitutional kinds, relations, results, or responsibilities enough to invite later identity promotion.
 - **Total / files:** **116 lines / 22 files**.
 - **Highest-density files:** `operator-ingress-common-grammar-prerequisite.md`, `constitutional-kinds-and-artifact-standing.md`, `representation-emission-and-consumer-boundaries.md`.
-- **Representative excerpts:** “readiness”; “conditional input applicability”; “automatic correction authority”; “trigger”; “shared purpose.”
-- **False positives excluded:** generic adjectives lacking constitutional load and the deleted `constitutive` wording.
+- **Representative excerpts:** “readiness”; “conditional input applicability”; “automatic correction authority”; “shared purpose”; “input-set sufficiency.”
+- **False positives excluded:** generic adjectives lacking constitutional load, the deleted `constitutive` wording, and vocabulary examples with no occurrence in the active inventory. Direct verification confirmed that the phantom terms did not contribute candidate lines or file-family assignments, so the **116 lines / 22 files** accounting is unchanged.
 - **Bounded follow-up:** inventory hooks and alternative routes together, limited to current active text and without promotion-by-name.
 
 ## 5. Chapter-family distribution
@@ -245,11 +245,11 @@ Only high-frequency formula families are mapped; no duplicate-propagation dispos
 
 | Formula family | Number of files | Locations | Exact or paraphrased | Apparent canonical owner found? | Follow-up needed |
 | --- | ---: | --- | --- | --- | --- |
-| “does not by itself establish” / “does not automatically establish” | 19 | Books I–VIII, densest in `constitutional-kinds-and-artifact-standing.md` and operator-ingress | Both | unclear | Compare local negated inferences after district audits. |
-| “must preserve” plus bounded coordinates/limits | 15 | Books I, III, V, VI, VIII | Paraphrased | unclear | Determine whether local coordinate lists are restatement or distinct law. |
-| Name/shape/adjacency/recurrence is not authority or standing | 12 | Books I, II, V, VI, VIII | Paraphrased | yes | Treat Book I as apparent orientation only; verify each local use. |
-| Production/performance is distinct from result standing | 11 | Books I–III, V, VI, VIII | Paraphrased | unclear | Review producer/result boundaries by district. |
-| Unknown/conflict must remain preserved rather than strengthened | 10 | Books I, III–VI, VIII | Paraphrased | unclear | Compare evidence and consumer boundaries after Book V audit. |
+| report-local formula family: “does not by itself establish” / “does not automatically establish” | 19 | Books I–VIII, densest in `constitutional-kinds-and-artifact-standing.md` and operator-ingress | Both | unclear | Compare local negated inferences after district audits. |
+| report-local formula family: “must preserve” plus bounded coordinates/limits | 15 | Books I, III, V, VI, VIII | Paraphrased | unclear | Determine whether local coordinate lists are restatement or distinct law. |
+| report-local formula family: name/shape/adjacency/recurrence is not authority or standing | 12 | Books I, II, V, VI, VIII | Paraphrased | yes | Treat Book I as apparent orientation only; verify each local use. |
+| report-local formula family: production/performance is distinct from result standing | 11 | Books I–III, V, VI, VIII | Paraphrased | unclear | Review producer/result boundaries by district. |
+| report-local formula family: Unknown/conflict must remain preserved rather than strengthened | 10 | Books I, III–VI, VIII | Paraphrased | unclear | Compare evidence and consumer boundaries after Book V audit. |
 
 An apparent owner marked “yes” is not a completed constitutional disposition.
 
@@ -263,6 +263,8 @@ An apparent owner marked “yes” is not a completed constitutional disposition
 | `05-evidence-and-knowledge/testimony-and-established-fact.md` — Observation-to-Fact boundary | “The current repository compresses ... in `ObservationIngestor`” | Names current class and compression | Attributed implementation testimony expressly limited from universal law | high |
 | `06-state-and-projection/projection-and-current-state.md` — Constitutional rule | “The current implementation named `FactView` exposes ...” | Names current implementation surface and prior PR | A bounded contrast between inventory testimony and constitutional View standing | high |
 
+Every row in this table was reverified against the exact current-main active Book inventory during the vocabulary-hook correction.
+
 ## 8. Alternative-route map
 
 This is the bounded set of recurring route shapes, not every line containing “or.”
@@ -272,26 +274,32 @@ This is the bounded set of recurring route shapes, not every line containing “
 | `01-grammar-and-standing/constitutional-kinds-and-artifact-standing.md` — Applicability | “may determine applicability ... or may validate and consume applicability standing” | Act-local determination vs separately assigned occurrence | yes | high |
 | Same — Alternative proposed inputs | “determine or consume applicability standing” | Direct producer vs consuming prior standing | yes | high |
 | `01-grammar-and-standing/external-and-constitutional-grammar.md` — Translation | “until a separate bounded warrant is established” | Attributed source grammar vs separately warranted Seed claim | yes | medium |
-| `02-acts-and-constraints/constraints-policy-and-preconditions.md` — Constraint outcome | evaluation, refusal, or non-performance routes | Constraint evaluation vs competent refusal/non-performance | yes | medium |
-| `03-goals-and-advancement/demands-and-opened-movement.md` — Demand | current evidence/authority or later establishing occurrence | Existing standing vs new production road | unclear | high |
-| `04-inquiry-and-examination/inquiry-frontiers.md` — Frontier | examination by current responsibility or another competent occurrence | Same occurrence vs separate competent examiner | unclear | medium |
-| `05-evidence-and-knowledge/recording-and-knowledge-extraction.md` — Extraction | direct establishment or consumption of established standing | Local establishment vs prior-standing route | yes | medium |
 | `08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md` — Consumer uptake | accept, narrow, refuse, or locally strengthen | Multiple consumer-local acts | yes | high |
+
+Four prior report-local paraphrase rows—constraint evaluation/refusal/non-performance, current Demand evidence versus a later establishing occurrence, current versus another inquiry examiner, and direct establishment versus consumption in recording—were deleted because direct reading did not support the stated route in the stated active file. Those narrative rows were not source candidate-line assignments, and this targeted verification found no associated false candidate line or file-family assignment requiring downstream recounting.
+
+Every row in this table was reverified against the exact current-main active Book inventory during the vocabulary-hook correction.
 
 No Git-history provenance analysis was used.
 
 ## 9. Vocabulary-hook map
 
-| Term or phrase | Active locations | Current grammatical use | Why later promotion is plausible | Established owner found? | Follow-up priority |
-| --- | --- | --- | --- | --- | --- |
-| `readiness` | Books I, III, IV, VIII | Condition or denied inferred standing | Result-like noun could be mistaken for a kind | unclear | high |
-| `conditional input applicability` | Book I | Qualified applicability condition | Compact phrase could be promoted as a producer/result identity | yes | medium |
-| `automatic correction authority` | Book I | Explicitly prohibited authority inference | Adjective-noun compound resembles an authority kind | no | low |
-| `trigger` / `triggered` | Books III, IV, VIII | Initiating condition or event description | Could be mistaken for a constitutional act or warrant by identity | unclear | high |
-| `shared purpose` / `shared state` family | Books I, III, VI | Relation/condition vocabulary, often negated as inference | Recurrence could encourage collective-subject promotion | unclear | medium |
-| `sufficient` / `sufficiency` result family | Books I–V, VIII | Threshold, evidence, or input-set condition | Can resemble an independently produced standing | unclear | high |
-| `selection testimony` | Books II, III | Evidence/testimony about a selection occurrence | Compound resembles an artifact kind | unclear | medium |
-| `activation condition` family | Books III, VIII | Condition on movement or authority | Could be read as a standalone warrant | unclear | medium |
+### Vocabulary-hook verification correction
+
+PR 2193's vocabulary-hook map included two phrases that direct current-main verification did not find anywhere in the active 34-file Book inventory:
+
+- `selection testimony`
+- `trigger` / `triggered`
+
+Those rows were prompt-, history-, or analyst-context residue, not active-current Book evidence. This correction reverified every vocabulary-hook row against the exact active inventory. Terms absent from current active text were deleted rather than preserved as active candidates. The same verification also found no active occurrence supporting the report-local `activation condition` family, so that row was deleted rather than replaced with a synonym. These were report defects, not constitutional defects or deleted Book law; the repository evidence does not identify which bounded alternative produced the residue.
+
+| Exact active phrase or report-local family | Exact active locations | Current grammatical use | Verification status | Why later promotion may be plausible | Established owner found? | Follow-up priority |
+| ------------------------------------------ | ---------------------- | ----------------------- | ------------------- | ------------------------------------ | ------------------------ | ------------------ |
+| Exact active phrase: `readiness` | `book_of_seed/01-grammar-and-standing/constitutional-kinds-and-artifact-standing.md` — Alternative proposed inputs; `book_of_seed/02-acts-and-constraints/constraints-policy-and-preconditions.md` — Readiness decomposition correction 001; `book_of_seed/03-goals-and-advancement/selection-and-authorization.md` — Authorization; `book_of_seed/06-state-and-projection/projection-and-current-state.md` — Constitutional rule; `book_of_seed/08-authority-communication-and-stopping/authority-scope.md` — sufficiency/admission and authorization boundaries | A denied inferred standing, decomposed condition, or explicitly bounded evidence contribution | confirmed by direct current-main search | The result-like noun could be mistaken for a kind or scalar permission. | unclear | high |
+| Exact active phrase: `conditional input applicability` | `book_of_seed/01-grammar-and-standing/constitutional-kinds-and-artifact-standing.md` — Alternative proposed inputs | Qualified applicability condition in a negative non-establishment rule | confirmed by direct current-main search | The compact phrase could be promoted as a producer or result identity. | yes | medium |
+| Exact active phrase: `automatic correction authority` | `book_of_seed/01-grammar-and-standing/external-and-constitutional-grammar.md` — Fidelity | An authority inference that a Fidelity finding explicitly must not become | confirmed by direct current-main search | The adjective-noun compound resembles an authority kind despite its negative use. | no | low |
+| Exact active phrase: `shared purpose` | `book_of_seed/01-grammar-and-standing/constitutional-kinds-and-artifact-standing.md` — Multiplicity, collections, and higher-order standing | One stronger collective assertion that co-presence does not establish | corrected after direct current-main search | The collective phrase could encourage promotion by recurrence, although `shared state` has no active occurrence. | unclear | medium |
+| report-local analytical family; exact active phrases include `input-set sufficiency`, `resource sufficiency`, `sufficiency and lawful stopping conditions`, `evidence sufficiency`, and `a sufficiency ... finding`; the active adjective is `sufficient` | `book_of_seed/01-grammar-and-standing/constitutional-kinds-and-artifact-standing.md` — Alternative proposed inputs; `book_of_seed/02-acts-and-constraints/constraints-policy-and-preconditions.md` — Non-examples and Readiness decomposition correction 001; `book_of_seed/02-acts-and-constraints/selection-artifacts-and-selection-acts.md` — Selection artifacts; `book_of_seed/04-inquiry-and-examination/inquiry-frontiers.md` — Frontier identity and testimony support; `book_of_seed/05-evidence-and-knowledge/evidence-provenance-and-explanation.md` — opening question; `book_of_seed/05-evidence-and-knowledge/recording-and-knowledge-extraction.md` — Preservation; `book_of_seed/05-evidence-and-knowledge/testimony-and-established-fact.md` — Fact standing, operational baselines, and Remembering; `book_of_seed/08-authority-communication-and-stopping/authority-scope.md` — sufficiency/admission boundary; `book_of_seed/concordance.md` — baseline transition, stopping, and Remembering entries | Several distinct threshold, evidence, input-set, resource, stopping, and support uses, grouped here only for later review | report-local analytical family grounded in listed exact phrases | Result-like noun uses could be mistaken for independently produced standing; the grouping itself is not an active constitutional subject. | unclear | high |
 
 The final active “constitutive warrant” wording was removed by commit `451b99f` before this inventory and is outside the current candidate set. Neither `constitutive warrant` nor `constitutive convention` remains in the 34-file active Book inventory, and neither is listed as an active hook. The required broad `git grep` over all of `book_of_seed/` returned two `constitutive warrant` matches, both in excluded historical reports (`atx_heading_evidence_born_competency_road_recovery_001.md:563` and `constrained_movement_sensing_gap_capability_learning_correction_001.md:66`); it returned no `constitutive convention` match.
 
@@ -343,4 +351,35 @@ none
 
 next bounded report:
 Active vocabulary-hook and alternative-route audit
+```
+
+### Vocabulary-hook correction disposition
+
+```text
+vocabulary-hook rows reverified:
+8
+
+confirmed rows:
+3
+
+corrected rows:
+2
+
+deleted phantom rows:
+3 — selection testimony; trigger / triggered; activation condition family
+
+repository-current rows reverified:
+5
+
+alternative-route rows reverified:
+8
+
+constitutional defect dispositions added:
+none
+
+Book amendments warranted by this correction:
+none
+
+runtime implementation warrant:
+none
 ```
