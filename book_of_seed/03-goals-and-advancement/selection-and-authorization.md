@@ -7,7 +7,7 @@ The boundary between choosing a candidate for consideration and granting authori
 Which selections establish only a bounded selected-for-consideration result, and which later warrant can authorize action?
 
 ## Bounded resolution
-Selection narrows a bounded candidate set through a responsible selection act and records its basis. It does not itself grant operator, policy, approval, or execution authority. Representation selection chooses views or other representations for one consumer purpose. Consideration selection chooses an already-established subject for bounded present consideration only where the responsible owner validates the evidence required for that selection. A selected-for-consideration result does not select a resolution, route, realization, inquiry opening, or authorization, and it is not reusable authorization standing.
+Selection narrows a bounded candidate set through a responsible selection act and records its basis. It does not itself grant operator, approval, or movement authority. Representation selection chooses views or other representations for one consumer purpose. Consideration selection chooses an already-established subject for bounded present consideration only where the responsible owner validates the evidence required for that selection. A selected-for-consideration result does not select a resolution, route, realization, inquiry opening, or authorization, and it is not reusable authorization standing.
 
 Exact candidate-identity resolution is smaller than selection. A resolver may prove that attributed testimony names exactly one visible candidate without establishing that Seed selected that candidate, that it should receive present consideration, or that advancement should proceed through it.
 
@@ -27,12 +27,12 @@ Exact candidate-identity resolution is smaller than selection. A resolver may pr
 - Treating a resolved goal identity as Seed-owned goal selection.
 - Treating a selected mechanism or candidate as authorized to execute because it was selected.
 - Treating a user choice among labels as unlimited authority.
-- Treating exact view-key matching as semantic judgment or as authority to move work.
+- Treating exact view-key matching as semantic judgment or as authority to move.
 
 ## Related chapters
 - [Selection artifacts and acts of selection](../02-acts-and-constraints/selection-artifacts-and-selection-acts.md)
 - [Authority scope](../08-authority-communication-and-stopping/authority-scope.md)
-- [Constraints, policy, and preconditions](../02-acts-and-constraints/constraints-policy-and-preconditions.md)
+- [Constraints and preconditions](../02-acts-and-constraints/constraints-and-preconditions.md)
 
 ## Selection and authorization decompression correction 001
 

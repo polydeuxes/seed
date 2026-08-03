@@ -14,18 +14,17 @@ This is a lightweight navigation index. Aliases record repository or presentatio
 | constitutional road | Grammar and Standing | [Lenses, views, and constitutional roads](01-grammar-and-standing/lenses-views-and-roads.md) | transition, path, active edge | lens, sequence, movement |
 | constitutional uptake | Grammar and Standing | [Lenses, views, and constitutional roads](01-grammar-and-standing/lenses-views-and-roads.md) | consumer uptake, transition grammar | constitutional road, representation, emission, explanation |
 | act | Acts and Constraints | [Acts and act artifacts](02-acts-and-constraints/acts-and-act-artifacts.md) | input act, operation | proposal, execution |
-| constraint | Acts and Constraints | [Constraints, policy, and preconditions](02-acts-and-constraints/constraints-policy-and-preconditions.md) | policy gate, precondition | authority, refusal |
+| constraint | Acts and Constraints | [Constraints and preconditions](02-acts-and-constraints/constraints-and-preconditions.md) | precondition | authority, refusal |
 | selection artifact | Acts and Constraints | [Selection artifacts and acts of selection](02-acts-and-constraints/selection-artifacts-and-selection-acts.md) | selection record, binding | candidate set, selection act |
 | representation selection | Acts and Constraints | [Selection artifacts and acts of selection](02-acts-and-constraints/selection-artifacts-and-selection-acts.md) | view selection, read-model selection | lens, composition, selection artifact |
 | consideration selection | Goals and Advancement | [Selection and authorization](03-goals-and-advancement/selection-and-authorization.md) | focus selection, former need-consideration-selection vocabulary | goal-advancement Demand, orientation, authorization |
 | selection standing | Acts and Constraints | [Selection artifacts and acts of selection](02-acts-and-constraints/selection-artifacts-and-selection-acts.md) | focus standing, bounded selection standing | consideration selection, representation standing, authorization standing |
 | establishment | Goals and Advancement | [Construction and establishment](03-goals-and-advancement/construction-and-establishment.md) | bounded goal establishment | construction, standing |
-| orientation | Goals and Advancement | [Orientation and movement](03-goals-and-advancement/orientation-and-movement.md) | current work position, source navigation | movement, lens |
+| orientation | Goals and Advancement | [Orientation and movement](03-goals-and-advancement/orientation-and-movement.md) | current movement position, source navigation | movement, lens |
 | goal-advancement Demand | Goals and Advancement | [Demands and opened movement](03-goals-and-advancement/demands-and-opened-movement.md) | former advancement-need vocabulary, former `NeedFamily` implementation vocabulary | bounded horizon, movement |
 | authorization | Goals and Advancement | [Selection and authorization](03-goals-and-advancement/selection-and-authorization.md) | approval, permission | selection, authority scope |
-| constitutional question | Inquiry and Examination | [Questions and inquiry](04-inquiry-and-examination/questions-and-inquiry.md) | bounded question, question surface | uncertainty, inquiry |
-| inquiry frontier | Inquiry and Examination | [Inquiry frontiers](04-inquiry-and-examination/inquiry-frontiers.md) | bounded frontier, inquiry artifacts | boundary testimony, examination |
-| examination | Inquiry and Examination | [Inquiry frontiers](04-inquiry-and-examination/inquiry-frontiers.md) | bounded examination, further examination | relevance, applicability, testimony |
+| constitutional question | Inquiry | [Questions and inquiry](04-inquiry/questions-and-inquiry.md) | bounded question, question surface | uncertainty, inquiry |
+| inquiry frontier | Inquiry | [Inquiry frontiers](04-inquiry/inquiry-frontiers.md) | bounded frontier, inquiry artifacts | boundary testimony, applicability |
 | testimony | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | observation, finding, claim expression, source claim | claim, fact, evidence |
 | Claim | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | claim, semantic claim, proposition | testimony, normalization, Fact |
 | normalization | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | normalized claim, canonical claim form | Claim, Fact, support |
@@ -52,8 +51,9 @@ This is a lightweight navigation index. Aliases record repository or presentatio
 | baseline transition | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | established changed ordinary behavior, changed regime | transition establishment, operational baseline, temporal standing, evidence sufficiency, preservation |
 | rebuildability | State and Projection | [Projection and current state](06-state-and-projection/projection-and-current-state.md) | reprojectable cache, reconstructable current condition | projection, retained evidence, preservation |
 | authority scope | Authority, Communication, and Stopping | [Authority scope](08-authority-communication-and-stopping/authority-scope.md) | operator authority, approval scope | establishment, authorization |
+| policy | Authority, Communication, and Stopping | [Authority scope](08-authority-communication-and-stopping/authority-scope.md) | bounded representation of delegated authority | authority, Uptake |
 | representation and emission boundaries | Authority, Communication, and Stopping | [Representation, emission, and consumer boundaries](08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md) | external-language handoff shorthand, presentation, communication | authority, responsibility transition, receipt, uptake, reliance, explanation |
-| refusal | Authority, Communication, and Stopping | [Refusal and non-performance](08-authority-communication-and-stopping/refusal-and-non-performance.md) | block, non-performance | policy, failure |
+| refusal | Authority, Communication, and Stopping | [Refusal and non-performance](08-authority-communication-and-stopping/refusal-and-non-performance.md) | block, non-performance | constraint, failure |
 | stopping | Authority, Communication, and Stopping | [Stopping and completion](08-authority-communication-and-stopping/stopping-and-completion.md) | exhaustion, sufficiency, completion | advancement, refusal |
 
 ## Sensing, gap, capability, and learning
