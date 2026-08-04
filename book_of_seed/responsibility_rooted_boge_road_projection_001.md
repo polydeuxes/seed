@@ -44,10 +44,10 @@ This is established directly by `construction-and-establishment.md:10-12` and `o
 | subject or material addressed | **positively instantiated and resolved** | The consumer-local admitted warranted relation that G expresses M, and M as expressed by exact G under that standing (`construction-and-establishment.md:12`; `operator-ingress-common-grammar-prerequisite.md:103,124-125`). |
 | exact responsible act | **positively instantiated and resolved** | Rely on the admitted relation, consume M as expressed by G, and establish bounded operator goal standing (`operator-ingress-common-grammar-prerequisite.md:119-126,129-131`). |
 | Authority | **positively instantiated but unresolved** | The exact Authority that permits the BOGE-establishing boundary to bear and perform the BOGE-establishment act is not supplied. General authority grammar requires an exact responsible boundary, act, purpose, scope, conditions, temporal standing, negative authority, and **Unknowns** (`08-authority-communication-and-stopping/authority-scope.md:9-12`). The later acquisition-movement Authority is explicitly separate and cannot fill this coordinate (`operator-ingress-common-grammar-prerequisite.md:137-139`). |
-| Evidence | **positively instantiated but unresolved** | The road requires appropriate evidence at each crossing and says the BOGE-local seam preserves consumer-local evidence and lineage (`construction-and-establishment.md:16`; `operator-ingress-common-grammar-prerequisite.md:103-105,147`), but it does not resolve the evidence supporting the BOGE act occurrence, its production occurrence, or its standing-establishment occurrence. The operator-response fact supports only that the operator produced R after emission, not BOGE occurrence (`operator-ingress-common-grammar-prerequisite.md:105`). |
+| Evidence | **positively instantiated and resolved** | The road conditionally requires appropriate evidence for an actual claim at each crossing and says the BOGE-local seam preserves consumer-local evidence and lineage (`construction-and-establishment.md:16`; `operator-ingress-common-grammar-prerequisite.md:103-105,147`). This generic road claims no actual BOGE instance and therefore does not require instance evidence. The operator-response fact supports only that the operator produced R after emission and cannot support an actual BOGE occurrence claim (`operator-ingress-common-grammar-prerequisite.md:105`). |
 | purpose / scope / locality | **positively instantiated and resolved** | BOGE-local bounded use of M as expressed by exact G, within the admitted relation's preserved identity, lineage, source and attribution, scope, purpose, authority limits, known loss, conflicts, **Unknowns**, and consumer identity (`operator-ingress-common-grammar-prerequisite.md:103`). The standing is a bounded operator goal, not universal common grammar (`operator-ingress-common-grammar-prerequisite.md:97,139`). |
 
-There is no positively instantiated conflicting required identifying branch. There is no responsibly **Unknown** required identifying branch. Authority and occurrence-specific Evidence remain unresolved; silence has not been promoted.
+There is no positively instantiated conflicting required identifying branch. There is no responsibly **Unknown** required identifying branch. Authority remains unresolved. The conditional evidence requirement is resolved without inventing evidence for an actual occurrence that this projection does not claim.
 
 ### 3.2 Conditional input branches
 
@@ -75,7 +75,9 @@ The common BOGE seam consumes two distinguishable inputs. Their identities must 
 | input identity | **positively instantiated and resolved** | M as the proposition expressed by exact source candidate G under I1's standing; not detached proposition content (`construction-and-establishment.md:12`; `operator-ingress-common-grammar-prerequisite.md:124-125,147`). |
 | input source | **positively instantiated and resolved** | Exact source candidate G and the admitted warranted relation that G expresses M (`operator-ingress-common-grammar-prerequisite.md:103`). |
 | provenance | **positively instantiated and resolved** | G, M, their warranted relation, source and attribution, and applicable lineage and limits remain preserved (`operator-ingress-common-grammar-prerequisite.md:103-105`). |
-| producer | **positively instantiated but unresolved** | The Book refers to developer-supplied or Seed-derived meaning testimony and to a potential-goal candidate, but assigns neither exact translation nor candidate-production ownership on the general road (`operator-ingress-common-grammar-prerequisite.md:70-85,105`). |
+| exact translation ownership | **positively instantiated and responsibly Unknown** | The active ingress chapter positively states that exact translation ownership remains **Unknown** (`operator-ingress-common-grammar-prerequisite.md:70-85`). |
+| interpretation implementation | **positively instantiated and responsibly Unknown** | The active ingress chapter positively states that interpretation implementation remains **Unknown** (`operator-ingress-common-grammar-prerequisite.md:70-85`). |
+| candidate-production ownership | **positively instantiated but unresolved** | The Book names a potential-goal candidate but does not assign candidate-production ownership on the general road (`operator-ingress-common-grammar-prerequisite.md:70-85,105`). Representation, emission, and capture ownership remain separate coordinates and are not promoted to **Unknown**. |
 | production occurrence | **positively instantiated but unresolved** | No exact occurrence producing G or M is assigned. Candidate existence does not establish its producer occurrence (`operator-ingress-common-grammar-prerequisite.md:85`). |
 | standing-establishment boundary | **positively instantiated but unresolved** | Bounded potential-goal standing is named on the closed-choice branch, but its exact establishing boundary is not named (`operator-ingress-common-grammar-prerequisite.md:107-112`). On the admitted-interpretation branch, interpretation-candidate and candidate-local-warrant responsibilities are named without exact ownership (`operator-ingress-common-grammar-prerequisite.md:70-85`). |
 | standing-establishment occurrence | **positively instantiated but unresolved** | No exact occurrence establishing G's bounded potential-goal standing or the admitted-interpretation candidate's standing is supplied. |
@@ -115,8 +117,9 @@ No Warrant produced by BOGE is established. Therefore all “BOGE-produced Warra
 
 | Branch | Classification | Recovery |
 |---|---|---|
-| BOGE-establishment act occurrence | **positively instantiated but unresolved** | The active Book names a “BOGE establishment occurrence” and describes what it may do, but repeatedly retains “possible” establishment; it supplies no exact occurred instance (`operator-ingress-common-grammar-prerequisite.md:39-41,124-126`). Responsibility identity is not occurrence (`README.md:39-41,113-120`). |
-| evidence for that occurrence | **positively instantiated but unresolved** | No exact BOGE-occurrence evidence is named. R after C is evidence only for the external response occurrence (`operator-ingress-common-grammar-prerequisite.md:105`). Artifact presence, lineage, and standing wording cannot substitute (`02-acts-and-constraints/acts-and-act-artifacts.md:7-10`). |
+| BOGE establishment occurrence coordinate | **positively instantiated and resolved** | The active Book names a “BOGE establishment occurrence” and conditionally describes the exact act it bears (`operator-ingress-common-grammar-prerequisite.md:39-41,124-126`). This is a conditional constitutional occurrence, not a claim that an actual occurrence happened. |
+| actual occurred BOGE instance | **not instantiated on this exact road** | This generic constitutional-road projection supplies no concrete historical or present instance. Responsibility identity and a constitutional occurrence coordinate do not prove that an actual occurrence happened (`README.md:39-41,113-120`). |
+| evidence for an actual occurred instance | **not instantiated on this exact road** | No actual occurrence is claimed, so this projection does not require instance evidence. If an actual occurrence is claimed, it requires exact occurrence evidence. R after C is evidence only for the external response occurrence and cannot be reused as BOGE occurrence evidence (`operator-ingress-common-grammar-prerequisite.md:105`; `02-acts-and-constraints/acts-and-act-artifacts.md:7-10`). |
 | distinct absence-of-occurrence finding | **not instantiated on this exact road** | The BOGE road does not name a separately responsible finding that a proposed BOGE act did not occur. “Possible” establishment and a different local-stop branch do not establish such a finding. The Responsibility root forbids converting absence into an occurrence (`README.md:122-139`). |
 
 ### 3.5 Result-production branches
@@ -124,8 +127,8 @@ No Warrant produced by BOGE is established. Therefore all “BOGE-produced Warra
 | Branch | Classification | Recovery |
 |---|---|---|
 | producer / production boundary | **positively instantiated and resolved** | The BOGE establishment boundary binds admitted meaning, scope, provenance, and boundedness into a goal with standing; this clause assigns production of the bounded operator goal to BOGE rather than merely repeating owner identity (`construction-and-establishment.md:9-12`). |
-| production occurrence | **positively instantiated but unresolved** | No exact BOGE production occurrence is distinguished from the BOGE act occurrence or standing-establishment occurrence. The root bars automatic identity (`README.md:157-166`). |
-| production-occurrence evidence | **positively instantiated but unresolved** | No evidence for a distinct production-occurrence claim is supplied. Result existence would not prove it (`README.md:168-170`). |
+| production occurrence relation | **positively instantiated but unresolved** | The active Book does not establish whether the BOGE establishment occurrence also bears result production, a distinct production occurrence exists, or one responsible occurrence bears multiple distinct acts. The exact relation among the BOGE act occurrence, result-production occurrence, and standing-establishment occurrence therefore remains unresolved; no sameness or separateness is presumed (`README.md:157-166`). |
+| production-occurrence evidence for an actual instance | **not instantiated on this exact road** | No actual result-production occurrence is claimed. If one is claimed, it requires exact evidence; result existence would not prove the occurrence (`README.md:168-170`). |
 | exact produced result | **positively instantiated and resolved** | The bounded operator goal into which establishment binds admitted meaning, scope, provenance, and boundedness (`construction-and-establishment.md:9-12`). It remains distinct from bounded operator goal standing under the root's result distinction (`README.md:172-179`). |
 
 The bounded operator goal is recovered as the result because the active clause separately says establishment binds the admitted coordinates into a goal with standing, not merely because standing is established. No act-to-production occurrence identity or input-producer-to-BOGE-producer identity is positively established.
@@ -135,11 +138,12 @@ The bounded operator goal is recovered as the result because the active clause s
 | Branch | Classification | Recovery |
 |---|---|---|
 | standing-establishment boundary | **positively instantiated and resolved** | BOGE is the boundary assigned to establish bounded operator goal standing (`construction-and-establishment.md:12`; `operator-ingress-common-grammar-prerequisite.md:9,124-131`). |
-| standing-establishment occurrence | **positively instantiated but unresolved** | A BOGE establishment occurrence is named, but no exact occurred instance is supplied (`operator-ingress-common-grammar-prerequisite.md:124-126`). |
-| standing-occurrence evidence | **positively instantiated but unresolved** | No evidence supporting an exact BOGE standing-establishment occurrence is supplied. Input lineage and the operator-response occurrence cannot be reused. |
+| BOGE standing-establishment occurrence coordinate | **positively instantiated and resolved** | The active Book assigns standing establishment to the conditional BOGE establishment occurrence (`operator-ingress-common-grammar-prerequisite.md:124-126`). |
+| actual occurred instance | **not instantiated on this exact road** | The conditional BOGE establishment road does not claim a concrete historical or present standing-establishment instance. |
+| standing-occurrence evidence | **not instantiated on this exact road** | No actual standing-establishment occurrence is claimed. Any such claim would require exact evidence; input lineage and operator-response evidence cannot be reused. |
 | exact established standing | **positively instantiated and resolved** | Bounded operator goal standing, bounded to M as expressed by exact G under the consumer-local admitted warranted relation (`construction-and-establishment.md:12`; `operator-ingress-common-grammar-prerequisite.md:129-131`). |
 
-The BOGE production occurrence and standing-establishment occurrence are **not** positively established as the same occurrence. The former remains unresolved; the latter is named but lacks an exact occurred instance. The active clause does positively assign the standing-establishment act to the BOGE establishment occurrence, but one establishment clause does not additionally identify a distinct production occurrence (`README.md:189-219`).
+The active clause positively assigns the standing-establishment act to the conditional BOGE establishment occurrence. It does not resolve the exact relation among that BOGE act occurrence, result-production occurrence, and standing-establishment occurrence. No sameness or separateness is presumed, and no actual occurred instance is claimed (`README.md:189-219`).
 
 ### 3.7 Conditional preservation and neighboring branches
 
@@ -152,7 +156,7 @@ The BOGE production occurrence and standing-establishment occurrence are **not**
 | Constraint | **not instantiated on this exact road** | No exact Constraint governing BOGE establishment is named. General statements that crossings require appropriate boundaries do not instantiate one. Constraint remains independently owned (`02-acts-and-constraints/constraints-and-preconditions.md:9-10`). |
 | lawful Stopping | **not instantiated on this exact road** | The local-stop alternative is a parallel response branch and requires its own competent stopping occurrence; it is not BOGE establishment or a Stop on an occurred BOGE road (`operator-ingress-common-grammar-prerequisite.md:43-50,133`). The Book also leaves the stronger completion grounds unresolved (`08-authority-communication-and-stopping/stopping-and-completion.md:3-12`). |
 
-No branch in §§3.2-3.7 is classified **positively instantiated but conflicting**. The only responsibly **Unknown** coordinates on material near this road are upstream and must stay there: operator intent, understanding, and operator selection occurrence on the closed-choice branch (`construction-and-establishment.md:16`; `operator-ingress-common-grammar-prerequisite.md:105`), and the exact family of the possible pre-goal Demand (`03-goals-and-advancement/demands-and-opened-movement.md:47-74`). They are not BOGE Authority, W2, occurrence, result, producer, or consumer answers.
+No branch in §§3.2-3.7 is classified **positively instantiated but conflicting**. Responsibly **Unknown** coordinates on material near this road must stay coordinate-local: exact translation ownership and interpretation implementation on the admitted-interpretation branch (`operator-ingress-common-grammar-prerequisite.md:70-85`); operator intent, understanding, and operator selection occurrence on the closed-choice branch (`construction-and-establishment.md:16`; `operator-ingress-common-grammar-prerequisite.md:105`); and the exact family of the possible pre-goal Demand (`03-goals-and-advancement/demands-and-opened-movement.md:47-74`). They are not BOGE Authority, W2, occurrence, result, producer, or consumer answers. Candidate-production, representation, emission, and capture ownership remain unresolved where stated; they are not **Unknown**.
 
 ## 4. Exact upstream responsibilities
 
@@ -199,7 +203,7 @@ preserved ingress
 → BOGE establishment
 ```
 
-Each relation requires its own responsible occurrence and evidence, but the Book assigns neither exact translation ownership nor candidate-production ownership (`operator-ingress-common-grammar-prerequisite.md:70-85`). The branch therefore establishes responsibility kinds and required separations while leaving the exact producers, occurrence identities, standing-establishment occurrences, and several consumer edges unresolved. It must not be merged with the closed-choice branch merely because both reach the same applicability/admission seam (`construction-and-establishment.md:12`).
+Each relation requires its own responsible occurrence and evidence. The Book positively establishes exact translation ownership and interpretation implementation as responsibly **Unknown**, while candidate-production ownership remains positively instantiated but unresolved (`operator-ingress-common-grammar-prerequisite.md:70-85`). The branch therefore establishes responsibility kinds and required separations while preserving those coordinate-local classifications and leaving the other unassigned producers, occurrence relations, standing-establishment occurrences, and several consumer edges unresolved. It must not be merged with the closed-choice branch merely because both reach the same applicability/admission seam (`construction-and-establishment.md:12`).
 
 ## 5. Connected graph
 
@@ -219,17 +223,18 @@ consumer-local admission responsibility
 admitted warranted meaning relation I1 + M-as-expressed-by-G I2
   --I1 is relied upon and I2 is consumed-->
 BOGE establishment responsibility
-  → BOGE-establishment act occurrence {exact occurred instance unresolved}
-  .. {production occurrence unresolved} ..>
+  → conditional BOGE establishment occurrence coordinate
+  → {exact relation to result production unresolved}
 bounded operator goal result
-  → BOGE standing-establishment occurrence {exact occurred instance unresolved}
+
+conditional BOGE establishment occurrence coordinate
   --establishes-->
 bounded operator goal standing
-  .. {exact downstream consumer and Uptake uninstantiated} ..>
+  .. {first exact downstream consumer not instantiated} ..>
 ordinary bounded-goal advancement responsibilities
 ```
 
-The W1 edge and the three common seam edges are established by `operator-ingress-common-grammar-prerequisite.md:101-105,119-131`. The bounded operator goal result and bounded operator goal standing remain separate under `construction-and-establishment.md:9-12`; the dotted production edge preserves the unresolved production occurrence rather than identifying it with either named establishment occurrence. The final dotted connection is only a named future district in `operator-ingress-common-grammar-prerequisite.md:60-68,129-131`; it is not an established consumption or Uptake edge.
+The W1 edge and the three common seam edges are established by `operator-ingress-common-grammar-prerequisite.md:101-105,119-131`. The bounded operator goal result and bounded operator goal standing remain separate under `construction-and-establishment.md:9-12`. The Book positively assigns standing establishment to the conditional BOGE establishment occurrence, while the graph preserves the unresolved exact relation among the BOGE act occurrence, result-production occurrence, and standing-establishment occurrence. It does not turn the generic road into a historical event trace or presume occurrence sameness or separateness. The final dotted connection is only a named future district in `operator-ingress-common-grammar-prerequisite.md:60-68,129-131`; it is not an established consumption or Uptake edge.
 
 ### 5.2 Closed-choice branch into the common road
 
@@ -271,7 +276,8 @@ The edges from representation through source recovery are established by `operat
 
 ```text
 preserved ingress
-  .. {translation ownership and occurrence unresolved} ..>
+  .. {exact translation ownership responsibly Unknown;
+      interpretation implementation responsibly Unknown} ..>
 translated or otherwise bounded source material
   .. {candidate-production ownership and occurrence unresolved} ..>
 interpretation candidate
@@ -284,7 +290,7 @@ interpretation candidate
   → common road in §5.1
 ```
 
-The active Book itself presents this distinction display and says that every relation needs its own responsible occurrence and evidence while leaving translation and candidate-production ownership unassigned (`operator-ingress-common-grammar-prerequisite.md:70-85`). Accordingly, the dotted edges cannot be promoted to a complete road.
+The active Book itself presents this distinction display and says that every relation needs its own responsible occurrence and evidence. It positively establishes exact translation ownership and interpretation implementation as responsibly **Unknown**, but leaves candidate-production ownership unresolved (`operator-ingress-common-grammar-prerequisite.md:70-85`). Accordingly, the dotted edges cannot be promoted to a complete road, and neighboring unassigned ownership coordinates cannot be promoted to **Unknown**.
 
 ## 6. Downstream consumer audit
 
@@ -312,45 +318,54 @@ These remain uninstantiated because naming downstream ordinary bounded-goal adva
 
 1. **Required coordinate unresolved — BOGE Authority.** No clause supplies the exact Authority for the BOGE-establishing act. Owner, locality, admission, an input's authority limits, absence of separate Authorization, and later movement Authority are not substitutes.
 2. **Required coordinate unresolved — W2.** W1 warrants only “G expresses M.” The Book does not identify the Warrant-producing boundary, occurrence, or bounded support for the BOGE establishment act and standing assertion.
-3. **Required coordinates unresolved — BOGE occurrences and evidence.** A BOGE establishment occurrence is named, but the exact act occurrence, its evidence, the production occurrence, its evidence, and the standing-establishment occurrence evidence are not recovered.
-4. **Result and standing must not collapse.** The active clause supports the bounded operator goal as result and bounded operator goal standing as standing, but does not identify the production occurrence with the standing-establishment occurrence.
+3. **Conditional occurrence coordinates recovered; actual instances not claimed.** The BOGE establishment occurrence coordinate and its standing-establishment assignment are positively instantiated and resolved as a conditional constitutional occurrence. A constitutional occurrence coordinate does not prove that an actual occurrence happened; an actual occurrence claim requires exact occurrence evidence, and operator-response evidence cannot be reused as BOGE occurrence evidence. The production-occurrence relation remains unresolved.
+4. **Result and standing must not collapse.** The active clause supports the bounded operator goal as result and bounded operator goal standing as standing, but does not resolve the exact relation among the BOGE act occurrence, result-production occurrence, and standing-establishment occurrence.
 5. **Input standing lacks exact establishment occurrences.** G's bounded potential-goal standing, interpretation-candidate standing on the alternate branch, W1 standing, applicability standing, and admission standing are named without exact occurrence identities or occurrence evidence.
 6. **Consumers exist only as named neighboring districts.** “Ordinary bounded-goal advancement responsibilities” and later movements are named, but no exact consumer-to-BOGE-standing road is established.
-7. **Consumer material lacks an established producer on parts of each branch.** The admitted-interpretation branch assigns neither translation nor candidate-production ownership. The closed-choice branch leaves bounded-potential-goal, eligibility, exact-set-participation, emission, and capture producers or occurrences partly unresolved.
+7. **Consumer material preserves coordinate-local ownership findings.** The admitted-interpretation branch positively establishes exact translation ownership and interpretation implementation as responsibly **Unknown**, while candidate-production ownership remains unresolved. The closed-choice branch leaves bounded-potential-goal, eligibility, exact-set-participation, emission, and capture producers or occurrences partly unresolved.
 8. **Neighboring Warrant rejected.** W1 is not W2; a local-stop meaning-relation Warrant is not W1; later movement Warrant is not W2.
 9. **Different-act Authority rejected.** Authority limits preserved with I1, Authority for later acquisition movement, and any operator-origin characterization do not answer BOGE Authority.
 10. **Occurrence reuse rejected.** The external response occurrence is not comparison, identification, source recovery, admission, BOGE act occurrence, BOGE production occurrence, or BOGE standing establishment. A possible shared Seed occurrence for comparison and identification does not merge their claims or results (`construction-and-establishment.md:14`).
 11. **Producer identities rejected.** Input producer is not BOGE producer; BOGE owner is not automatically its result producer; BOGE act occurrence is not automatically its production occurrence.
-12. **Unknown promotion rejected.** Operator intent, understanding, and operator selection occurrence are responsibly **Unknown** only on their exact closed-choice coordinates. They do not make BOGE Authority, W2, BOGE occurrence evidence, result, producer, or consumer **Unknown**. Those coordinates remain unresolved.
+12. **Unknown promotion rejected.** Exact translation ownership and interpretation implementation are responsibly **Unknown** on their exact admitted-interpretation coordinates. Operator intent, understanding, and operator selection occurrence are responsibly **Unknown** only on their exact closed-choice coordinates. Response meaning and requested treatment remain coordinate-local **Unknowns** on the nonmatch branch. They do not make candidate-production, representation, emission, capture, BOGE Authority, W2, BOGE occurrence evidence, result, producer, or consumer **Unknown**.
 13. **Silence does not instantiate a Stop, Constraint, separate Authorization, BOGE-produced Warrant, or absence-of-BOGE-occurrence finding.** Those branches remain uninstantiated on the exact BOGE road.
 
 ## 8. Required conclusion
 
 ```text
 Responsibility-root traversal result:
-C — structural branches are missing or misplaced
+B — coherent road with bounded unresolved coordinates
 ```
 
-BOGE itself is constitutionally established as a responsibility with an exact establishment act, a bounded operator goal result, and bounded standing. The road is not category D. But traversal cannot recover the complete requested graph: Authority and W2 are unresolved, the production occurrence is not connected to the standing-establishment occurrence, occurrence evidence is missing, several upstream producer and establishment occurrences are unresolved, and no exact downstream consumption or Uptake edge is established. Those are structural road defects rather than a coherent road with only bounded values missing, so category B would understate the missing connections.
+The Responsibility root successfully exposed every applicable branch needed to traverse the BOGE road. The traversal recovered a coherent constitutional road through bounded operator goal standing.
+
+The unresolved Authority, Warrant, occurrence relations, upstream ownership coordinates, and absent downstream consumer connection are defects or open coordinates within the BOGE road. They do not establish that Responsibility-root branches are missing or misplaced. An unresolved branch value is not a missing structural branch.
+
+Responsibility-root traversal succeeded.
+
+The first exact consumer of established bounded operator goal standing is not instantiated by the active Book.
 
 ### Exact recovery ledger
 
-- **exact upstream responsibilities recovered:** on the common seam, separate meaning-relation warrant, BOGE-local applicability, and consumer-local admission; on the closed-choice branch, representation formation, comparison, identification, and represented-source recovery, plus named but incompletely owned potential-goal-standing, eligibility, exact-set-participation, emission, and capture responsibilities; on the admitted-interpretation branch, named translation, candidate production, candidate-local warrant, selection, purpose-local applicability, and admission responsibilities, with exact ownership unresolved where stated above.
+- **exact upstream responsibilities recovered:** on the common seam, separate meaning-relation warrant, BOGE-local applicability, and consumer-local admission; on the closed-choice branch, representation formation, comparison, identification, and represented-source recovery, plus named but incompletely owned potential-goal-standing, eligibility, exact-set-participation, emission, and capture responsibilities; on the admitted-interpretation branch, named translation, candidate production, candidate-local warrant, selection, purpose-local applicability, and admission responsibilities, with exact translation ownership responsibly **Unknown** and candidate-production ownership unresolved.
 - **exact BOGE responsibility recovered:** rely on the admitted warranted relation that G expresses M, consume M as expressed by G under that standing, and establish bounded operator goal standing.
 - **exact result and standing recovered:** the exact produced result is the bounded operator goal; its exact established standing is bounded operator goal standing.
 - **exact downstream consumers recovered:** none. Ordinary bounded-goal advancement responsibilities are named but not connected as exact consumers.
-- **unresolved coordinates:** exact BOGE Authority; W2 producer, occurrence, and support; exact BOGE act occurrence and evidence; BOGE production occurrence and evidence; standing-establishment occurred instance and evidence; and the enumerated upstream owners, producer occurrences, and standing-establishment occurrences.
-- **responsibly Unknown coordinates:** operator intent, operator understanding, and operator selection occurrence on the closed-choice branch; response meaning and requested treatment on its nonmatch branch; exact family of the separately proposed pre-goal Demand. None supplies a BOGE coordinate.
-- **uninstantiated coordinates:** distinct absence-of-BOGE-occurrence finding, BOGE-produced Warrant, separate Authorization consumed by BOGE, exact BOGE Constraint, lawful Stopping on the BOGE establishment road, and every exact downstream consumer and Uptake coordinate.
-- **false identities rejected:** owner = producer; act occurrence = production occurrence; production occurrence = standing-establishment occurrence; input producer = BOGE producer; produced result = established standing; W1 = W2; local-stop Warrant = W1; later movement Warrant = W2; owner identity or locality = Authority; upstream input Authority = BOGE Authority; later movement Authority = BOGE Authority; response occurrence = BOGE occurrence; identified A = G; G = M; M detached from G and I1 = admitted input; applicability = admission = consumption = reliance; named later responsibility = consumer; absence = **Unknown**; absence = Stop.
-- **missing connections:** exact producer and occurrence edges for several upstream standings; a separately warranted BOGE act-and-standing assertion; identity between the BOGE production occurrence and standing-establishment occurrence; evidence edges for BOGE occurrence and standing establishment; and every exact established-BOGE-standing-to-consumer-to-Uptake edge.
+- **unresolved coordinates:** exact BOGE Authority; W2 producer, occurrence, and support; the exact relation among the BOGE act occurrence, result-production occurrence, and standing-establishment occurrence; candidate-production ownership; and the enumerated upstream owners, producer occurrences, and standing-establishment occurrences. The constitutional BOGE establishment and standing-establishment occurrence coordinates are resolved conditionally; absence of an actual occurred instance does not make them unresolved.
+- **responsibly Unknown coordinates:** exact translation ownership and interpretation implementation on the admitted-interpretation branch; operator intent, operator understanding, and operator selection occurrence on the closed-choice branch; response meaning and requested treatment on its nonmatch branch; exact family of the separately proposed pre-goal Demand. None supplies BOGE Authority, W2, a production-occurrence relation, or a consumer coordinate. Candidate-production, representation, emission, and capture ownership are not promoted to **Unknown**.
+- **uninstantiated coordinates:** an actual occurred BOGE instance and evidence for it where no actual occurrence is claimed; distinct absence-of-BOGE-occurrence finding; BOGE-produced Warrant; separate Authorization consumed by BOGE; exact BOGE Constraint; lawful Stopping on the BOGE establishment road; and every exact downstream consumer and Uptake coordinate.
+- **false identities rejected:** owner = producer; act occurrence = production occurrence; production occurrence = standing-establishment occurrence; input producer = BOGE producer; produced result = established standing; W1 = W2; local-stop Warrant = W1; later movement Warrant = W2; owner identity or locality = Authority; upstream input Authority = BOGE Authority; later movement Authority = BOGE Authority; response occurrence = BOGE occurrence; constitutional occurrence coordinate = actual occurred instance; identified A = G; G = M; M detached from G and I1 = admitted input; applicability = admission = consumption = reliance; named later responsibility = consumer; absence = **Unknown**; absence = Stop.
+- **missing connections:** exact producer and occurrence edges for several upstream standings; a separately warranted BOGE act-and-standing assertion; the exact relation among the BOGE act occurrence, result-production occurrence, and standing-establishment occurrence; and every exact established-BOGE-standing-to-consumer-to-Uptake edge. Evidence is required if an actual BOGE occurrence is claimed, but this generic projection makes no such claim.
 
-### Smallest next active-Book amendment
+### Next recovery
 
-One active amendment is warranted. The smallest amendment is a bounded addition to `03-goals-and-advancement/construction-and-establishment.md` that, without changing the existing upstream alternatives:
+No active-Book amendment is yet warranted from this report alone.
 
-1. names the exact Authority and Warrant for the BOGE establishment act;
-2. distinguishes the BOGE act occurrence, result-production occurrence, exact result, standing-establishment occurrence, and evidence for each, positively identifying any same occurrence only where intended; and
-3. names the first exact downstream responsibility that consumes bounded operator goal standing, including its consumer act, consumer-local applicability or admission, Warrant, Authority, and resulting Uptake relation.
+The Responsibility-root traversal establishes that the current Book does not resolve the exact BOGE Authority, the BOGE-act Warrant, the exact relation among its occurrence coordinates, or the first exact consumer of bounded operator goal standing.
 
-The amendment should leave upstream producer ownership unresolved where the active ingress chapter deliberately leaves it unresolved, rather than filling those coordinates with plausible labels. No broader restructuring is warranted by this recovery.
+Those values must be recovered from active law or lower-authority repository testimony before an amendment may name them.
+
+1. Recover the first exact responsibility that consumes established bounded operator goal standing.
+2. Recover whether repository testimony supports an exact Authority for the BOGE establishment act.
+3. Recover whether repository testimony supports the exact Warrant for the BOGE act and standing assertion.
+4. Amend the active Book only for exact law positively recovered.
