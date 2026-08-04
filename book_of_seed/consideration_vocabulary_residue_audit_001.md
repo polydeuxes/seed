@@ -1,6 +1,6 @@
 # Consideration Vocabulary Residue Audit 001
 
-## 1. Scope, authority, and method
+## 1. Scope and authority
 
 This corrected report audits every case-insensitive whole-word occurrence of
 `consideration` or `considerations` in the active numbered Book directories at
