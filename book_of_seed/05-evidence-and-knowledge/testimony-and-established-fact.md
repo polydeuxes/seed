@@ -30,7 +30,7 @@ Comparison alone does not establish truth, warrant, reliance, source independenc
 
 
 ### 05.Testimony.B — Operational measurement production
-An operational measurement is bounded testimony about the observed behavior of a particular operation instance under declared conditions and measurement method. The measurement-production responsibility produces that operation-instance testimony; recording is only one possible later preservation boundary. A measurement may identify operation, instance scope, phase, duration or resource behavior, clock or method, input scale, cache condition, environment or authority context, completion condition, and observation time as needed by its consumer, but no implementation must possess every dimension. Measuring a projection, cache lookup, query, rendering, observation collection, read-model construction, fact-index construction, diagnostic comparison, external realization, or other bounded operation does not make it execution by measurement alone. Diagnostic rendering may expose measurement testimony, but diagnostic rendering != measurement production and diagnostic rendering != measurement preservation. A measurement occurrence may exist transiently without ever becoming a recorded measurement; that does not make the measurement unreal and does not automatically make preservation mandatory. Measurement occurrence != recorded measurement, and recording measurement testimony != producing measurement testimony.
+An operational measurement is bounded testimony about the observed behavior of a particular operation instance under declared conditions and measurement method. The measurement-production responsibility produces that operation-instance testimony; recording is only one possible later preservation boundary. A measurement may identify operation, instance scope, phase, duration or resource behavior, clock or method, input scale, cache condition, environment or authority context, completion condition, and observation time as needed by its consumer, but no implementation must possess every dimension. Measuring a projection, cache lookup, query, rendering, observation collection, read-model construction, fact-index construction, diagnostic comparison, external realization, or other bounded operation does not make it an operation occurrence by measurement alone. Diagnostic rendering may expose measurement testimony, but diagnostic rendering != measurement production and diagnostic rendering != measurement preservation. A measurement occurrence may exist transiently without ever becoming a recorded measurement; that does not make the measurement unreal and does not automatically make preservation mandatory. Measurement occurrence != recorded measurement, and recording measurement testimony != producing measurement testimony.
 
 ### 05.Testimony.C — Runtime/resource observation production
 Operation-instance measurement and ambient runtime/resource observation are not identical. Operation-instance measurement attributes behavior to a scoped operation instance. Ordinary runtime/resource observation is testimony about a process or runtime condition at an observed time, such as process resident memory, thread count, process runtime duration, database size, or ledger size, without necessarily attributing the value to one bounded operation instance. Runtime/resource observation may be produced through ordinary observation grammar and may exist without a recording boundary. Runtime/resource observation is not an operational baseline by identity and may support an operational measurement or baseline only through an explicit attribution and establishment boundary; recording is not its producer merely because a recorded observation can survive process exit.
@@ -40,8 +40,8 @@ An operational baseline is retained, scoped, evidence-supported understanding of
 
 ## Important distinctions
 - operational measurement != recording
-- operational measurement != execution
-- operational measurement != execution record
+- operational measurement != operation occurrence
+- operational measurement != operation-occurrence record
 - operational measurement != operation result
 - operation-instance measurement != ambient runtime observation
 - runtime/resource observation != operational baseline
@@ -59,7 +59,7 @@ An operational baseline is retained, scoped, evidence-supported understanding of
 - one unusual sample != changed ordinary behavior
 - baseline transition establishment != transition recording
 - ExecutionStatus cadence != operation timing testimony
-- execution status != operational measurement
+- operation status != operational measurement
 - claim expression != claim interpretation
 - claim interpretation != normalization
 - normalization != support
@@ -128,6 +128,6 @@ Trajectory establishment may be understood, where warranted, as constrained move
 
 Learning establishment may be understood as constrained constitutional movement in retained understanding when prior standing, admitted prior evidence, bounded comparison and claim-relative warrant establish revised bounded standing. Learning establishment is not storage mutation, projection replacement, a new current value, model training by identity, a universal Learning object, or adaptive reliance. Learning may concern condition, trajectory, limitations in evidence support, gap, capability, reachability, dependency, authority, representation compatibility, resource feasibility, expectation, or strategy standing only within the subject, evidence, authority, scope, and limits preserved by the establishment boundary.
 
-Adaptive reliance is later movement constrained by the result of earlier movement in understanding. It may constrain inquiry continuation, selection, handoff, stopping, resource allocation, or explanation only when a consumer exposes the relied-upon standing, applicable warrant, purpose, scope, and remaining Unknowns. Revised standing exists does not mean later movement occurred, later selection changed does not prove learned standing was consumed, and adaptive reliance is not automatic execution.
+Adaptive reliance is later movement constrained by the result of earlier movement in understanding. It may constrain inquiry continuation, selection, stopping, resource allocation, or explanation only when a consumer exposes the relied-upon standing, applicable warrant, purpose, scope, and remaining Unknowns. Revised standing exists does not mean later movement occurred, later selection changed does not prove learned standing was consumed, and adaptive reliance does not establish that any later act occurred.
 
 Causal establishment may be understood as constrained movement from sequence or association toward bounded intervention standing. Association standing is not causal standing, interaction-linked learning is not causal proof, repeated association is not causal proof, and gap reduction or capability revision does not establish causation automatically. Causal standing requires its own intervention, before/after, alternative-cause, temporal, criteria, counterevidence, repeatability, scope, and uncertainty comparison before it may warrant later intervention, explanation, selection, or stopping beyond what association alone permits.
