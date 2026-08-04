@@ -29,7 +29,7 @@ def test_book_distinguishes_input_exclusion_from_whole_act_nonperformance():
     assert "It does not by itself establish admission" in clause
     assert "may not participate in, be consumed by, or be relied upon in that act" in clause
     assert "no act result may claim reliance on, support from, consumption of, or participation by the excluded input" in clause
-    assert "Exclusion of one proposed input does not by itself establish whether the exact act is performed or not performed" in clause
+    assert "Exclusion of one proposed input does not by itself establish whether the exact act occurs" in clause
     assert "That determination remains with the responsibility assigned to perform the exact act" in clause
     assert "under the conditions, relations, evidence, authority, scope, and other boundaries assigned to that responsibility" in clause
 
@@ -42,7 +42,7 @@ def test_book_preserves_required_input_and_alternative_input_boundary():
     assert "whatever standing, warrant, admission, authority, scope, provenance, or other relation that exact proposed use requires" in clause
     assert "Required coordinates are local to the exact act and proposed use" in clause
     assert "no coordinate is universally required merely because a subject is proposed as an input" in clause
-    assert "No unassigned input-set sufficiency, substitution, readiness, or act-permission standing is created" in clause
+    assert "No unassigned input-set scalar standing, substitution standing, or Authorization is created" in clause
     assert "One rejected candidate is not all candidates rejected" in clause
 
 
@@ -50,11 +50,11 @@ def test_book_preserves_composite_occurrence_as_independent_claims():
     clause = _clause()
 
     assert "One bounded responsible occurrence may determine applicability for proposed inputs" in clause
-    assert "perform or not perform the exact act within the act-owning responsibility's assigned boundaries" in clause
+    assert "perform the exact act or establish no act occurrence within the act-owning responsibility's assigned boundaries" in clause
     assert "These remain independently recoverable claims" in clause
-    assert "applicability success is not act performance" in clause
-    assert "one input excluded is neither act prohibited nor act permitted" in clause
-    assert "act performance is not output standing" in clause
+    assert "applicability success is not act occurrence" in clause
+    assert "one input excluded is neither act prohibited nor authorized" in clause
+    assert "act occurrence is not output standing" in clause
     assert "output standing is not downstream applicability" in clause
 
 

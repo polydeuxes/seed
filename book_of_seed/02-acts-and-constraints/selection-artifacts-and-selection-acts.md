@@ -7,7 +7,7 @@ The boundary between a selection record and the bounded act that chooses from a 
 What evidence proves that a lawful selection occurred for a particular candidate set?
 
 ## Bounded resolution
-A selection act consumes a bounded candidate set plus a selection basis supported by evidence or exact comparison, validates the identity and applicability required by that owner, and chooses zero or more candidates or preserves a lawful non-selection. Its artifact asserts that bounded result and preserves enough basis, identity, uncertainty, or refusal information for the intended consumer to distinguish lawful selection from unsupported omission. Preservation of all non-selected alternatives is selector-specific: representation selection may be sufficient with selected registered names plus unsupported-key uncertainty. Direct construction proves only artifact constructibility. Selection does not itself authorize, execute, open inquiry, or establish every downstream subject unless the responsible boundary explicitly does so.
+A selection act consumes a bounded candidate set plus a selection basis supported by evidence or exact comparison, validates the identity and applicability required by that owner, and chooses zero or more candidates or preserves a lawful non-selection. Its artifact asserts that bounded result and preserves the identity, uncertainty, evidence, limits, and basis required for the intended consumer to distinguish lawful non-selection from omission. Preservation of all non-selected alternatives is selector-specific: representation selection may require only selected registered names plus unsupported-key uncertainty. Direct construction proves only artifact constructibility. Selection does not itself establish Authorization, act occurrence, or open inquiry, or establish every downstream subject unless the responsible boundary explicitly does so.
 
 Candidate-identity resolution is not itself a selection act. A resolver may compare attributed testimony with a visible candidate set and establish that exactly one candidate identity matches. That occurrence does not establish who selected the candidate, why it should receive present consideration, whether it is applicable now, or whether movement should proceed through it.
 
@@ -20,7 +20,7 @@ Repository evidence supports a shared higher-order selection grammar with distin
 - candidate identity resolved != candidate selected
 - ranked candidate != selected candidate
 - selection record != authorization
-- selection != execution or authorization
+- selection != act occurrence or Authorization
 - selected candidate identity != candidate-set identity
 - selected result != preserved selection basis
 - artifact preservation != consumer-side validation
