@@ -15,7 +15,7 @@ The active Book controls this observation. Implementation names, test names, rep
 
 The Book VII excision record is used here as correction testimony and as a locator to active clauses. It is not treated as independent controlling constitutional law apart from the active clauses and navigation it corrected.
 
-The operator's phrase `grammar-bounded orientation` is attributed observation vocabulary for a general Seed orientation. It names Seed's recurring comparison posture toward a candidate equivalence produced by a bounded meaning-relation road between a presentation and a possible subject, meaning, relation, grammar, or role. It does not treat raw symbols as self-interpreting, does not presume that the encountered form has an existing Seed-native counterpart, and does not establish the candidate equivalence as true. It is not limited to Book maintenance, amendment drafting, repository curation, curator activity, or constitutional vocabulary review only. This report does not establish that phrase as a constitutional kind, a Responsibility, an act, a standing family, a runtime component, a named implementation family, or a universal mandatory sequence.
+The operator's phrase `grammar-bounded orientation` is attributed observation vocabulary for a general Seed orientation. It names Seed's recurring comparison posture after a presentation is related, within exact scope and consumer-purpose, to a proposed subject, meaning, relation, grammar, or role as a candidate equivalence available for examination. It does not treat raw symbols as self-interpreting, does not presume that the encountered form has an existing Seed-native counterpart, and does not establish the candidate equivalence as true. It is not limited to Book maintenance, amendment drafting, repository curation, curator activity, or constitutional vocabulary review only. This report does not establish that phrase as a constitutional kind, a Responsibility, an act, a standing family, a runtime component, a named implementation family, or a universal mandatory sequence.
 
 ## Observed practice
 
@@ -42,7 +42,7 @@ The attributed observation phrase for that first comparison is:
 grammar-bounded orientation
 ```
 
-It is Seed's general comparison posture toward encountered grammar once a bounded meaning-relation bridge is available, not an amendment to constitutional law. It may be applied to operator expressions, external grammar, testimony, representations, observations, claims, relations, runtime artifacts, repository structures, compiled competencies, district labels, Book vocabulary, and Seed's own prior renderings and implementation testimony. This illustrative list is not exhaustive and is not a taxonomy.
+It is Seed's general comparison posture toward encountered grammar where a candidate equivalence is available for examination, not an amendment to constitutional law. It may be applied to operator expressions, external grammar, testimony, representations, observations, claims, relations, runtime artifacts, repository structures, compiled competencies, district labels, Book vocabulary, and Seed's own prior renderings and implementation testimony. This illustrative list is not exhaustive and is not a taxonomy.
 
 ## First comparison
 
@@ -102,7 +102,7 @@ raw presentation
 != candidate equivalence
 ```
 
-Without a bounded meaning-relation road, no candidate equivalence is available for examination. Where a bounded meaning-relation road produces a candidate equivalence, grammar-bounded orientation may examine that candidate. The candidate equivalence is not thereby supported or true. Such a road may be acquired common grammar, attributed meaning relations, operator-mediated examples, or a recovered translator or parser competency. This list is illustrative only. This report does not decide which road exists in every case, does not prescribe its implementation, and does not establish a minimum quantity of relation, a readiness threshold, a completeness threshold, or a universal admission condition.
+Without a bounded candidate meaning relation, no candidate equivalence is available for examination. Where a candidate meaning relation relates a presentation to a proposed subject, meaning, relation, grammar, or role within an exact scope and consumer-purpose, grammar-bounded orientation may examine that candidate equivalence. The candidate equivalence is not thereby supported or true. Illustrative testimony may include acquired common grammar, attributed meaning relations, operator-mediated examples, or recovered translator or parser competency. This list is illustrative only. This report does not decide which exact responsibility forms a candidate meaning relation in every case, does not prescribe implementation, does not establish a universal producer, does not establish a mandatory preliminary stage, does not establish one shared mechanism family, and does not establish a minimum quantity of relation, a readiness threshold, a completeness threshold, or a universal admission condition.
 
 For every encountered word, phrase, artifact, representation, structure, relation, new term, or suspicious constitutional-looking compound, the first pass asks:
 
@@ -516,8 +516,32 @@ absence of relation grammar
 bounded relation
 → unnamed “enough” threshold
 
-meaning-relation road
-→ sufficient relation
+meaning-relation formation
+→ generic bridge
+
+meaning-relation formation
+→ constitutional road
+
+established Book word
+→ authorized for a different relation
+
+borrowed metaphor removed
+→ replacement metaphor inserted
+
+proposed relation not established
+→ negative-result noun
+
+completed negative comparison
+→ generic result family
+
+unresolved candidate
+→ rejected candidate
+
+relation not established
+→ relation established as false
+
+relation not established
+→ responsibly established Unknown
 
 Responsibility decomposition
 → necessary-and-sufficient calculus
@@ -535,9 +559,17 @@ negative wording
 → automatically contaminated
 ```
 
-Do not replace threshold vocabulary with a negative abstraction. Identify the exact positive relation being claimed, then state the bounded finding about that relation. Here, the hidden threshold claim is that some quantity or state of bounded relation permits candidate-equivalence formation; the exact relation is that a bounded meaning-relation road produces a candidate equivalence available for examination. The hidden completeness claim is that Responsibility decomposition detects all vocabulary contamination; the bounded repository finding is that Responsibility decomposition alone did not detect the replacement contamination demonstrated by PR 2238.
+Do not replace threshold vocabulary with a negative abstraction. Identify the exact positive relation being claimed, then state the bounded finding about that relation. Here, the hidden threshold claim is that some quantity or state of bounded relation permits candidate-equivalence formation; the exact relation is that a bounded candidate meaning relation makes a candidate equivalence available for examination. The candidate meaning relation is not established merely because the candidate equivalence is available for examination. Constitutional road is established elsewhere for a distinct relation and is not borrowed here. The hidden completeness claim is that Responsibility decomposition detects all vocabulary contamination; the bounded repository finding is that Responsibility decomposition alone did not detect the replacement contamination demonstrated by PR 2238.
 
-Completed bounded negative comparisons may produce rejection, conflict, non-support, or relation-not-established findings. An unnamed threshold negation must instead be decomposed into the exact proposed relation. Relation not established is not relation established as false, not responsibly established Unknown, not an incomplete subject, and not a scalar deficit.
+A completed bounded comparison may establish that:
+
+- the candidate equivalence conflicts with an established relation;
+
+- the candidate equivalence is rejected; or
+
+- the proposed relation is not established.
+
+An unnamed threshold negation must instead be decomposed into the exact proposed relation. The proposed relation is not established != the proposed relation is established as false != responsibly established Unknown. Where no responsible comparison occurred, the proposed relation remains unresolved. Relation not established is not an incomplete subject and not a scalar deficit.
 
 Repository-directed use is only proprioceptive use of the same grammar-bounded orientation. Natural stance language remains descriptive and does not reify a new constitutional kind, implementation object, capability family, or mandatory pipeline.
 
