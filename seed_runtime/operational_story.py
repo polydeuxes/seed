@@ -16,11 +16,6 @@ from seed_runtime.privilege_discovery import (
     build_privilege_discovery,
 )
 from seed_runtime.state import State
-from seed_runtime.typed_unknowns import (
-    TypedUnknownRecord,
-    preserve_typed_unknown,
-    typed_unknowns_to_public_dicts,
-)
 
 
 @dataclass(frozen=True)
@@ -71,9 +66,9 @@ class _OperationalStoryAnswerPayload:
 
 @dataclass(frozen=True)
 class _OperationalStoryLimitationsPayload:
-    """Implementation-local typed Unknown preservation for story limitations."""
+    """Implementation-local Unknown preservation for story limitations."""
 
-    unknowns: list[TypedUnknownRecord]
+    unknowns: list[dict[str, str]]
 
 
 @dataclass(frozen=True)
@@ -146,7 +141,7 @@ def build_operational_story(
         recent_changes=answer_payload.recent_changes,
         observed_outcomes=answer_payload.observed_outcomes,
         investigation_path=reasoning_payload.investigation_path,
-        unknowns=typed_unknowns_to_public_dicts(limitations_payload.unknowns),
+        unknowns=limitations_payload.unknowns,
         boundary=boundary_payload.boundary,
     )
 
@@ -171,30 +166,24 @@ def _compose_operational_story_payloads(
 ]:
     """Separate answer, reason, support, authority boundary, and limitations."""
 
-    unknowns: list[TypedUnknownRecord] = []
+    unknowns: list[dict[str, str]] = []
     if not has_pressures:
         unknowns.append(
-            preserve_typed_unknown(
-                unknown_type="Evidence Gap",
-                area="pressure",
-                reason="no operational pressure identified by current audit inputs",
-            )
+            {
+                "area": "pressure",
+                "reason": "no operational pressure identified by current audit inputs",
+            }
         )
     if not capability_needs:
         unknowns.append(
-            preserve_typed_unknown(
-                unknown_type="Evidence Gap",
-                area="capabilities",
-                reason="no capability needs identified by current audit inputs",
-            )
+            {
+                "area": "capabilities",
+                "reason": "no capability needs identified by current audit inputs",
+            }
         )
     if impact_overall == "unknown":
         unknowns.append(
-            preserve_typed_unknown(
-                unknown_type="Evidence Gap",
-                area="impact",
-                reason=_impact_unknown_reason(impact_metrics),
-            )
+            {"area": "impact", "reason": _impact_unknown_reason(impact_metrics)}
         )
 
     answer = _OperationalStoryAnswerPayload(

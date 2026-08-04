@@ -15,11 +15,6 @@ from seed_runtime.ownership_discrepancies import (
 from seed_runtime.pressure_audit import build_pressure_audit
 from seed_runtime.privilege_discovery import build_privilege_discovery
 from seed_runtime.state import State
-from seed_runtime.typed_unknowns import (
-    TypedUnknownRecord,
-    preserve_typed_unknown,
-    typed_unknowns_to_public_dicts,
-)
 
 
 @dataclass(frozen=True)
@@ -43,7 +38,7 @@ class _DerivationLineagePayload:
 
     consumers: list[dict[str, Any]]
     story_impact: list[dict[str, Any]]
-    unknowns: list[TypedUnknownRecord]
+    unknowns: list[dict[str, str]]
 
 
 @dataclass(frozen=True)
@@ -128,7 +123,7 @@ def build_reasoning_path_audit(
     story_impact.extend(story_entries)
     consumers.extend(story_consumers)
 
-    unknowns = _reasoning_path_typed_unknowns(
+    unknowns = _reasoning_path_unknowns(
         supporting_evidence_payload,
         intermediate,
         derived,
@@ -153,14 +148,14 @@ def build_reasoning_path_audit(
     )
 
 
-def _reasoning_path_typed_unknowns(
+def _reasoning_path_unknowns(
     supporting_evidence: _DerivationSupportingEvidencePayload,
     intermediate: list[dict[str, Any]],
     derived: list[dict[str, Any]],
     consumers: list[dict[str, Any]],
     story_impact: list[dict[str, Any]],
-) -> list[TypedUnknownRecord]:
-    """Preserve typed Unknowns when no derivation path evidence is available."""
+) -> list[dict[str, str]]:
+    """Preserve Unknown material when no derivation path evidence is available."""
 
     if (
         supporting_evidence.evidence
@@ -171,11 +166,10 @@ def _reasoning_path_typed_unknowns(
     ):
         return []
     return [
-        preserve_typed_unknown(
-            unknown_type="Evidence Gap",
-            area="derivation",
-            reason="no derivation evidence currently available",
-        )
+        {
+            "area": "derivation",
+            "reason": "no derivation evidence currently available",
+        }
     ]
 
 
@@ -367,7 +361,7 @@ def _reasoning_path_from_payloads(
         conclusions.derived_conclusions,
         lineage.consumers,
         lineage.story_impact,
-        typed_unknowns_to_public_dicts(lineage.unknowns),
+        lineage.unknowns,
     )
 
 

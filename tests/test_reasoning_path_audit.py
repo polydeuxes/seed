@@ -373,22 +373,19 @@ def test_reasoning_path_registered_in_visibility_contracts():
     assert all(row.status == "consistent" for row in rows)
 
 
-def test_reasoning_path_lineage_owns_typed_unknown_before_public_handoff():
+def test_reasoning_path_lineage_owns_unknown_dictionary_before_public_handoff():
     from seed_runtime.reasoning_path_audit import (
         _DerivationLineagePayload,
         _DerivationSupportingEvidencePayload,
         _DerivedConclusionPayload,
         _reasoning_path_from_payloads,
     )
-    from seed_runtime.typed_unknowns import preserve_typed_unknown
-
-    typed_unknown = preserve_typed_unknown(
-        unknown_type="Evidence Gap",
-        area="derivation",
-        reason="no derivation evidence currently available",
-    )
+    unknown = {
+        "area": "derivation",
+        "reason": "no derivation evidence currently available",
+    }
     lineage = _DerivationLineagePayload(
-        consumers=[], story_impact=[], unknowns=[typed_unknown]
+        consumers=[], story_impact=[], unknowns=[unknown]
     )
 
     audit = _reasoning_path_from_payloads(
@@ -399,8 +396,7 @@ def test_reasoning_path_lineage_owns_typed_unknown_before_public_handoff():
         lineage=lineage,
     )
 
-    assert lineage.unknowns == [typed_unknown]
-    assert lineage.unknowns[0].unknown_type == "Evidence Gap"
+    assert lineage.unknowns == [unknown]
     assert audit.unknowns == [
         {"area": "derivation", "reason": "no derivation evidence currently available"}
     ]
@@ -637,13 +633,13 @@ def test_reasoning_path_story_impact_owns_operational_story_lineage():
     ) == ([], [])
 
 
-def test_reasoning_path_typed_unknowns_owns_evidence_gap_preservation():
+def test_reasoning_path_unknowns_owns_exact_material_preservation():
     from seed_runtime.reasoning_path_audit import (
         _DerivationSupportingEvidencePayload,
-        _reasoning_path_typed_unknowns,
+        _reasoning_path_unknowns,
     )
 
-    unknowns = _reasoning_path_typed_unknowns(
+    unknowns = _reasoning_path_unknowns(
         _DerivationSupportingEvidencePayload(evidence=[]),
         intermediate=[],
         derived=[],
@@ -652,11 +648,11 @@ def test_reasoning_path_typed_unknowns_owns_evidence_gap_preservation():
     )
 
     assert len(unknowns) == 1
-    assert unknowns[0].unknown_type == "Evidence Gap"
-    assert unknowns[0].area == "derivation"
-    assert unknowns[0].reason == "no derivation evidence currently available"
+    assert unknowns == [
+        {"area": "derivation", "reason": "no derivation evidence currently available"}
+    ]
     assert (
-        _reasoning_path_typed_unknowns(
+        _reasoning_path_unknowns(
             _DerivationSupportingEvidencePayload(
                 evidence=[{"surface": "ownership_discrepancies"}]
             ),
