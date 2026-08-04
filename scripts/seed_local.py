@@ -177,9 +177,9 @@ from seed_runtime.question_surface_inventory import (
     _prepare_question_family_eligibility_input,
     apply_bounded_ask_dispatch_handoff,
     apply_bounded_ask_presentation_handoff,
+    bounded_ask_error_message_for_eligibility,
     bounded_work_dispatch_request_for_selection,
     bounded_work_presentation_handoff_for_eligibility,
-    bounded_work_refusal_for_eligibility,
     bounded_work_selection_for_question_family,
     bounded_work_surface_args_for_eligibility,
     execute_bounded_work_dispatch,
@@ -1896,8 +1896,7 @@ def apply_bounded_ask_dispatch(
         return
 
     if not eligibility.permitted:
-        refusal = bounded_work_refusal_for_eligibility(eligibility)
-        parser.error(refusal.message)
+        parser.error(bounded_ask_error_message_for_eligibility(eligibility))
 
     if args.presentation:
         presentation_handoff = bounded_work_presentation_handoff_for_eligibility(
