@@ -15,7 +15,7 @@ The active Book controls this observation. Implementation names, test names, rep
 
 The Book VII excision record is used here as correction testimony and as a locator to active clauses. It is not treated as independent controlling constitutional law apart from the active clauses and navigation it corrected.
 
-The operator's phrase `grammar-bounded orientation` is attributed observation vocabulary for a general Seed orientation. It names Seed's recurring comparison posture toward encountered grammar: which already-established grammar an encountered form is occupying, and what independently warranted distinction remains. It is not limited to Book maintenance, amendment drafting, repository curation, curator activity, or constitutional vocabulary review only. This report does not establish that phrase as a constitutional kind, a Responsibility, an act, a standing family, a runtime component, a named implementation family, or a universal mandatory sequence.
+The operator's phrase `grammar-bounded orientation` is attributed observation vocabulary for a general Seed orientation. It names Seed's recurring comparison posture after enough bounded relation is available to form a candidate equivalence between a presentation and a possible subject, meaning, relation, grammar, or role. It does not treat raw symbols as self-interpreting, does not presume that the encountered form has an existing Seed-native counterpart, and does not establish the candidate equivalence as true. It is not limited to Book maintenance, amendment drafting, repository curation, curator activity, or constitutional vocabulary review only. This report does not establish that phrase as a constitutional kind, a Responsibility, an act, a standing family, a runtime component, a named implementation family, or a universal mandatory sequence.
 
 ## Observed practice
 
@@ -26,8 +26,10 @@ Responsibility decomposition is necessary but not sufficient
 for detecting vocabulary contamination.
 
 Before testing whether a proposed word owns a complete responsibility,
-the reader must first ask which already-established word or coordinate
-the proposed word is trying to play as.
+the reader must first bound the candidate equivalence being proposed:
+what presentation has been encountered, what subject, meaning, relation,
+grammar, or role it is proposed to be equivalent to, within what scope,
+and for which consumer-purpose.
 ```
 
 The attributed observation phrase for that first comparison is:
@@ -36,43 +38,143 @@ The attributed observation phrase for that first comparison is:
 grammar-bounded orientation
 ```
 
-It is Seed's general comparison posture toward encountered grammar, not an amendment to constitutional law. It may be applied to operator expressions, external grammar, testimony, representations, observations, claims, relations, runtime artifacts, repository structures, compiled competencies, district labels, Book vocabulary, and Seed's own prior renderings and implementation testimony. This illustrative list is not exhaustive and is not a taxonomy.
+It is Seed's general comparison posture toward encountered grammar once a bounded meaning-relation bridge is available, not an amendment to constitutional law. It may be applied to operator expressions, external grammar, testimony, representations, observations, claims, relations, runtime artifacts, repository structures, compiled competencies, district labels, Book vocabulary, and Seed's own prior renderings and implementation testimony. This illustrative list is not exhaustive and is not a taxonomy.
 
 ## First comparison
 
+The earlier, too-narrow formulation asked:
+
+```text
+What grammatical role does the phrase occupy?
+Which established Seed coordinate already governs that role?
+What exact constitutional difference does the proposed word add?
+```
+
+Those questions remain useful only as the narrower questions being corrected. They presumed that the presentation was already understood, that the encountered form already occupied a known constitutional role, that an established Seed coordinate necessarily governed that role, and that any residue must be a constitutional difference. Grammar-bounded orientation begins earlier and more conditionally.
+
+The governing first pass is PESC, the operator's attributed term meaning:
+
+```text
+Presentation
+Equivalence
+Scope
+Consumer-purpose
+```
+
+PESC asks:
+
+```text
+Presentation
+→ what representation has been presented?
+
+Equivalence
+→ what subject, meaning, relation, grammar, or role
+  is the presentation proposed to be equivalent to?
+
+Scope
+→ within what exact bounds is that equivalence proposed?
+
+Consumer-purpose
+→ which consumer needs the proposed relation,
+  and for what exact purpose?
+```
+
+PESC bounds a candidate equivalence. It does not establish that equivalence as true, does not establish constitutional standing, applicability, admission, reliance, or Uptake by identity, and does not require a runtime pipeline or four materialized artifacts.
+
+The raw presentation boundary is essential:
+
+```text
+presentation
+!= interpreted meaning
+!= candidate equivalence
+!= supported relation
+!= shared rendering
+```
+
+Seed cannot inspect uninterpreted English symbols and directly recover their meaning. A candidate equivalence requires some bounded meaning-relation bridge, such as acquired common grammar, attributed meaning relations, operator-mediated examples, or a recovered translator or parser competency. This report does not decide which bridge exists in every case and does not prescribe its implementation. Grammar-bounded orientation begins after enough bounded relation is available to form a candidate equivalence.
+
 For every encountered word, phrase, artifact, representation, structure, relation, new term, or suspicious constitutional-looking compound, the first pass asks:
 
-1. What grammatical role does the phrase occupy?
-2. Which established Seed coordinate already governs that role?
-3. What exact constitutional difference does the proposed word add?
-4. Does the proposed phrase survive comparison against the full established grammar, not only the local sentence?
-5. What unsupported residue remains?
-6. Does the proposed replacement itself survive the same comparison?
+1. What presentation has been encountered?
+2. What subject, meaning, relation, grammar, or role is that presentation proposed to be equivalent to?
+3. Within what exact scope is that equivalence proposed?
+4. Which consumer needs the proposed relation, and for what exact purpose?
+5. What established relation grammar, if any, can examine that candidate equivalence?
+6. What supported relation, conflict, unresolved coordinate, or responsibly established Unknown remains?
+7. Does any proposed shared rendering preserve the recovered relation, scope, and consumer-purpose without becoming the relation by identity?
+8. Does any proposed replacement survive the same examination?
+
+No existing Seed-native counterpart is presumed. Valid bounded results include:
+
+```text
+supported equivalence recovered
+
+candidate equivalence partly supported
+
+candidate equivalence conflicting
+
+candidate equivalence rejected
+
+no applicable relation grammar presently recovered
+
+candidate remains unresolved
+
+responsible occurrence establishes Unknown
+for one exact instantiated coordinate
+
+additional common grammar is required
+```
+
+Absence of an applicable relation grammar is not automatically Unknown. An unsupported equivalence is not a negative claim about the presented subject. Unknown requires a responsible occurrence for an exact instantiated coordinate.
+
+Relations precede shared renderings:
+
+```text
+recovered relation
+!= English word
+!= rendered label
+!= Book heading
+!= implementation name
+```
+
+A shared rendering may be attached after a bounded relation is recovered:
+
+```text
+recovered relational shape
+↔ operator-shared rendering
+```
+
+The rendering communicates the relation. It is not the relation itself and does not strengthen its standing. `Responsibility` may therefore be described as a shared rendering for a recovered Responsibility-shaped relation, not as an English token Seed must search for before recognizing the relation. This report does not establish the exact mechanism by which renderings are acquired or retained.
+
+PESC bounds the candidate equivalence. The applicable relation grammar examines that candidate. Responsibility decomposition follows only where Responsibility-shaped residue survives. Other surviving material may instead be shaped as a meaning relation, Provenance relation, Evidence relation, Authority relation, Applicability relation, Admission relation, Production relation, Standing-establishment relation, Uptake relation, Occurrence relation, or Representation relation. That list is illustrative, not exhaustive, and not a taxonomy established by this report. This report does not create one competency per word, phrase, coordinate, Book heading, or implementation name, and does not establish that one relation-specific competency exists for every item in the illustrative list. Different relation-shaped candidates must be examined through the grammar appropriate to the relation they propose.
 
 The recursive rule is:
 
 ```text
-Mapping an unsupported phrase to an established coordinate
-does not authorize a new compound built from that coordinate.
+Mapping an unsupported phrase to an established relation
+does not authorize a new compound built from that relation.
 
-The proposed replacement must itself be compared
-against established grammar.
+The proposed replacement must itself pass the same
+PESC-bounded examination.
 ```
 
-For example, `operation occurrence` may initially map toward `act occurrence`. That mapping does not authorize `act-occurrence measurement`, `act-occurrence baseline`, `act-occurrence behavior`, or `act-occurrence record`. Each proposed compound must be tested again.
+For example, `operation occurrence` may initially map toward `act occurrence`. That mapping does not authorize `act-occurrence measurement`, `act-occurrence baseline`, `act-occurrence behavior`, or `act-occurrence record`. Each proposed compound must be tested again. This report does not restore or endorse `operation occurrence`, `operation-occurrence record`, `operation status`, `act-occurrence measurement`, `act-occurrence baseline`, `act-occurrence behavior`, `act-occurrence record`, or `act-occurrence testimony`; those phrases may remain here only as quoted examples of replacement contamination.
 
-The stronger questions are compositional:
-
-- Is the measurement testimony concerning an exact act occurrence?
-- Is the baseline standing supported by testimony about a bounded set of act occurrences?
-- Does the record preserve attributed testimony that an act occurred?
-- Is the phrase naming a new constitutional kind, or can the relation be expressed through already-established coordinates?
-
-Direct compositional description is preferred over creating a new hyphenated or adjective-modified family.
+Direct compositional description is preferred over creating a new hyphenated or adjective-modified family, but a compositional description is still only a candidate unless it survives the same bounded examination.
 
 ## Responsibility decomposition
 
-Only after that first comparison, the second pass asks whether a distinct constitutional residue survives through the Responsibility branches exposed in the active Book:
+Only after that PESC-bounded first comparison, the second pass asks whether relation-shaped residue survives and, if so, whether it is Responsibility-shaped. The sequence is:
+
+```text
+candidate equivalence
+→ relation-shaped residue recovered
+→ Responsibility-shaped residue?
+   yes: examine through Responsibility branches
+   no: do not force it into Responsibility
+```
+
+Where Responsibility-shaped residue survives, the second pass asks whether a distinct constitutional residue survives through the Responsibility branches exposed in the active Book:
 
 ```text
 owner / responsible boundary
@@ -116,21 +218,7 @@ It also asks:
 - Does deletion expose an already-established word underneath?
 - Does deletion leave no positive constitutional residue at all?
 
-Grammar-bounded orientation asks first:
-
-```text
-Is this proposed distinction merely occupying grammar
-already owned elsewhere?
-```
-
-Responsibility decomposition then asks:
-
-```text
-Does any independently warranted constitutional distinction
-remain after that mapping?
-```
-
-Neither pass replaces the other.
+Grammar-bounded orientation asks first whether a bounded candidate equivalence can be supported, conflicted, rejected, left unresolved, or examined by an applicable relation grammar. Responsibility decomposition then asks, only where Responsibility-shaped residue survives, whether any independently warranted constitutional distinction remains through the Responsibility branches. Neither pass replaces the other, and Responsibility is not a universal superkind or owner of neighboring relations.
 
 ## Failure evidence
 
@@ -138,12 +226,7 @@ A proposed phrase may remain grammatically readable, appear locally precise, sur
 
 A replacement can therefore be contamination even when the sentence still makes sense, the old distinction appears preserved, no obvious information was removed, the replacement sounds narrower, or the replacement uses an established word as one component.
 
-The missing first question is:
-
-```text
-Which already-established word or coordinate
-is this proposed word trying to play as?
-```
+The missing first discipline was PESC-bounded candidate equivalence: what presentation was encountered, what equivalence was proposed, within what scope, for which consumer-purpose, and through which applicable relation grammar, if any, it could be examined.
 
 ## Recurring contamination classes
 
@@ -359,9 +442,9 @@ This observation does not decide whether Recording is primarily compressed gramm
 
 Grammar-bounded orientation is Seed's general comparison posture toward encountered grammar before accepting new grammar. It is not a curator-only technique and not a Book-maintenance-only procedure. Repository curation, recovery, amendment drafting, replacement review, and vocabulary review are applications of the same orientation, not limits on it.
 
-When grammar-bounded orientation is applied to Seed's own repository, compiled behavior, vocabulary, structures, prior renderings, or implementation testimony, that is proprioceptive use of the same orientation. Proprioception is not a second orientation family, not a Book-only audit mode, not proof that an inspected repository claim is true, and not automatic constitutional adoption. When the orientation is directed outward toward operator or external material, it remains the same orientation. When it is directed inward toward Seed's own surfaces, it is proprioceptive use.
+When grammar-bounded orientation is applied to Seed's own repository, compiled behavior, vocabulary, structures, prior renderings, or implementation testimony as bounded subject, that is proprioceptive use of the same orientation. The same PESC questions apply: what presentation concerning Seed is available, what equivalence is proposed, within what scope, for which consumer-purpose, and which relation grammar can examine it. Proprioception is not a second orientation family, not a Book-only audit mode, not separate machinery, not proof that an inspected repository claim is true, and not automatic constitutional adoption. Repository testimony remains testimony; proprioceptive examination does not promote it into active constitutional law. When the orientation is directed outward toward operator or external material, it remains the same orientation. When it is directed inward toward Seed's own surfaces, it is proprioceptive use.
 
-The report may describe grammar-bounded orientation as Seed's natural stance or ordinary orientation posture, but that wording does not establish a `GrammarBoundedOrientation` artifact, orientation service, mandatory sequential stage, universal two-step pipeline, new constitutional dimension, new responsibility, new standing family, or new competency object. The ordering is epistemic discipline: grammar comparison before accepting new grammar, followed by Responsibility decomposition where responsibility-shaped residue survives. It is not a claim that every Seed occurrence must materialize two artifacts or invoke two implementation boundaries.
+The report may describe grammar-bounded orientation as Seed's natural stance or ordinary orientation posture, but that wording is descriptive and does not establish a `GrammarBoundedOrientation` artifact, orientation service, mandatory sequential stage, universal two-step pipeline, new constitutional dimension, new responsibility, new standing family, new capability family, or new competency object. The ordering is epistemic discipline: PESC-bounded candidate equivalence before accepting new grammar, followed by the applicable relation grammar and Responsibility decomposition only where Responsibility-shaped residue survives. It is not a claim that every Seed occurrence must materialize artifacts or invoke implementation boundaries.
 
 This report implements no later embodiment. Lexical scanning alone cannot perform grammar-bounded orientation. The observed practice requires direct reading, constitutional comparison, whole-grammar orientation, recursive replacement review, and Responsibility decomposition where responsibility-shaped residue survives.
 
@@ -384,26 +467,59 @@ natural stance
 
 established word used in replacement
 → replacement compound automatically authorized
+
+presentation
+→ self-interpreting meaning
+
+candidate equivalence
+→ established truth
+
+encountered form
+→ necessarily governed by an existing Seed coordinate
+
+shared rendering
+→ recovered relation by identity
+
+English word
+→ constitutional primitive
+
+grammar-bounded orientation
+→ Responsibility-only examination
+
+relation-shaped residue
+→ automatically Responsibility-shaped
+
+PESC
+→ mandatory runtime pipeline
+
+PESC
+→ four required materialized artifacts
+
+proprioception
+→ separate capability family
+
+absence of relation grammar
+→ responsibly established Unknown
 ```
 
-Repository-directed use is only proprioceptive use of the same grammar-bounded orientation. Natural stance language remains descriptive and does not reify a new constitutional kind, implementation object, or mandatory pipeline.
+Repository-directed use is only proprioceptive use of the same grammar-bounded orientation. Natural stance language remains descriptive and does not reify a new constitutional kind, implementation object, capability family, or mandatory pipeline.
 
 ## Direct answers
 
-1. The owner / act / result / consumer / deletion test missed whether the proposed phrase was merely occupying grammar already owned by an established coordinate.
-2. Grammar-bounded orientation adds the earlier question: which already-established word or coordinate is this proposed word trying to play as?
+1. The owner / act / result / consumer / deletion test missed the bounded candidate-equivalence question: what presentation was encountered, what relation was proposed, within what scope, and for which consumer-purpose?
+2. Grammar-bounded orientation adds the earlier PESC-bounded question: what presentation has been encountered, what subject, meaning, relation, grammar, or role is proposed as equivalent, within what scope, for which consumer-purpose, and through which applicable relation grammar, if any?
 3. A readable, lossless-looking replacement can still be contamination because local sentence meaning can remain intact while the replacement imports an unsupported constitutional-looking coordinate.
-4. The proposed replacement must itself be mapped recursively because mapping one residue to an established coordinate does not authorize a new compound built around that coordinate.
+4. The proposed replacement must itself be examined recursively because mapping one residue toward an established relation does not authorize a new compound built around that relation.
 5. Ordinary subject matter identifies what testimony concerns; constitutional grammar establishes Seed-native roles, standings, acts, results, or responsibilities. The first does not create the second.
 6. The recurring contamination classes observed were redundant specialization, renaming, coordinate compression, relation smuggling, subject matter promoted into grammar, replacement contamination, and recursive replacement contamination.
-7. Grammar-bounded orientation should come first; Responsibility decomposition should follow and test whether any independently warranted constitutional distinction remains.
+7. Grammar-bounded orientation should come first through PESC-bounded candidate equivalence; applicable relation grammar should examine the candidate; Responsibility decomposition should follow only where Responsibility-shaped residue survives.
 8. The consideration cleanup demonstrated that repeated terminology, a defining sentence, a named result, a named standing, concordance presence, and historical implementation lineage can still mask an unsupported specialization of Selection.
 9. PR 2238 demonstrated that local readability, lossless-looking replacement, and successful lexical scanning can miss unsupported replacement vocabulary.
 10. PR 2239 correctly recovered that grammar mapping should precede decomposition testing, `operational act` lacked independent support, PR 2238 repeated contamination, Recording-preservation grammar has active support, and several Recording-adjacent questions require further recovery.
 11. PR 2239 itself still exhibited recursive replacement contamination by proposing `act-occurrence measurement`, `act-occurrence baseline`, `act-occurrence behavior`, and `act-occurrence record` without fully comparing those compounds against active law.
 12. The currently supported Recording grammar is conditional preservation grammar: a bounded responsibility may create or preserve retrievable assertion-bearing material within a declared preservation horizon, and may support bounded claims that a record exists and preserves an attributed assertion without establishing that represented assertion as true.
 13. The exact Recording responsibility that remains unestablished is one universal or actual instantiated Recording responsibility with resolved owner, Authority, Warrant where required, occurrence Evidence, producer identity, standing-establishment identity, consumer, and Uptake.
-14. This observation preserves grammar-bounded orientation as general attributed observation vocabulary for Seed's comparison posture toward encountered grammar before accepting new grammar, including proprioceptive use when the encountered material is Seed's own repository, compiled behavior, vocabulary, structures, prior renderings, or implementation testimony.
+14. This observation preserves grammar-bounded orientation as general attributed observation vocabulary for Seed's comparison posture toward encountered grammar before accepting new grammar, including proprioceptive use when Seed's own repository, compiled behavior, vocabulary, structures, prior renderings, or implementation testimony is the bounded subject.
 15. It does not establish active constitutional law, a new constitutional kind, a Responsibility, an act, a standing family, a runtime component, a mandatory sequence, a Recording ontology, a completed Recording decomposition, or PR 2239's proposed compounds as active grammar.
 16. The later repository question remains where and how, if at all, this general orientation should be embodied without narrowing it to curator activity or Book maintenance and without reifying it as a constitutional kind, runtime capability, service, mandatory pipeline, new responsibility, standing family, or competency object.
 
@@ -413,8 +529,11 @@ Final disposition:
 grammar-bounded orientation:
 general attributed observation vocabulary for Seed's comparison posture toward encountered grammar
 
+PESC:
+Presentation, Equivalence, Scope, Consumer-purpose; bounds candidate equivalence without establishing it as true
+
 Responsibility decomposition:
-second pass where responsibility-shaped residue survives
+second pass where Responsibility-shaped residue survives
 
 recursive replacement review:
 required
