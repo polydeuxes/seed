@@ -2,7 +2,7 @@
 
 ## 1. Scope and authority
 
-This is one bounded, report-only recovery from the current merged repository (`HEAD` including PR 2240). It changes no active Book chapter, runtime file, test, concordance entry, navigation file, or other report.
+This is one bounded, report-only recovery from the current merged repository (`HEAD` including PR 2241). It changes no active Book chapter, runtime file, test, concordance entry, navigation file, or other report.
 
 Authority order preserved here:
 
@@ -32,11 +32,11 @@ Seed-owned bounded occurrence
 → may be governed by Act and act-occurrence grammar
 
 external operation or mechanism behavior
-→ may remain subject matter, attributed occurrence testimony,
-  a proposition, or a bounded finding
+→ subject that attributed testimony, a proposition, an Observation where
+  applicable, or a bounded finding may concern
 
 ambient runtime/resource condition
-→ may be Observation testimony without being an act occurrence
+→ subject that Observation testimony may concern without being an act occurrence
 ```
 
 Thus `operation` and `operational` are not established as an independent constitutional kind, but neither does every operation-related subject collapse directly into `Act` or `act occurrence`. Seed-owned bounded occurrences may be acts. External or ambient subjects may instead be what testimony, propositions, observations, or findings are about.
@@ -45,7 +45,7 @@ Mapping a phrase toward an established coordinate does not authorize a new compo
 
 ## 3. Prior correction testimony: Book VII and PR 2240
 
-The Book VII excision record is strong testimony for a rule of caution: external operational terms are ordinarily subjects of testimony, propositions under examination, externally attributed occurrences, bounded findings, or Unknown, and they are not automatically Seed-native constitutional kinds, stages, or districts. Its disposition for the former `execution` vocabulary supports the finding that no distinct execution family survived once Seed-owned act occurrence, request-shaped representation, emission, invocation occurrence, external mechanism performance, result testimony, and recording were separated.
+The Book VII excision record is strong testimony for a rule of caution: external operational terms ordinarily name subjects that testimony, propositions under examination, externally attributed occurrence testimony, bounded findings, or Unknown dispositions may concern, and they are not automatically Seed-native constitutional kinds, stages, or districts. Its disposition for the former `execution` vocabulary supports the finding that no distinct execution family survived once Seed-owned act occurrence, request-shaped representation, emission, invocation occurrence, external mechanism performance, result testimony, and recording were separated.
 
 This matters because PR 2238 replaced `execution`, `execution record`, and `execution status` with `operation occurrence`, `operation-occurrence record`, and `operation status`. That replacement substituted unsupported vocabulary for unsupported vocabulary. The defect is not that the old words must return; it is that the replacement words were not recursively compared to active grammar before being used.
 
@@ -56,10 +56,10 @@ PR 2240's `grammar_bounded_orientation_observation_001.md` supplies later attrib
 | Disputed phrase | Role it was trying to occupy | Governing grammar | Subject status | Residue | Disposition |
 |---|---|---|---|---|---|
 | `operational acts` | A modifier on Act | Act grammar may govern only Seed-owned bounded acts | Seed-owned only if the bounded occurrence is Seed-owned | No independent `operational act` family | Unsupported specialization of Act where Seed-owned; external or ambient subjects are not thereby Acts |
-| `operation instance` | Identified subject or occurrence for measurement | Measurement testimony concerning a bounded identified subject or occurrence | May be Seed-owned, external, or ambient depending on the exact subject | No universal equation to one act occurrence | Do not say `operation instance = one particular act occurrence` generically |
-| `operational measurement` / `operation-instance measurement` | Measurement testimony | Testimony and Evidence grammar for a bounded measurement | May concern a Seed-owned occurrence, external mechanism behavior, or ambient resource/runtime condition | No independent measurement kind; no new compound needed | Describe as measurement testimony concerning a bounded identified subject or occurrence |
+| `operation instance` | Identified subject or occurrence for measurement | Measurement testimony concerning a bounded identified subject or occurrence | May concern Seed-owned, external, or ambient subject matter depending on the exact subject | No universal equation to one act occurrence | Do not say `operation instance = one particular act occurrence` generically |
+| `operational measurement` / `operation-instance measurement` | Measurement testimony | Testimony and Evidence grammar for a bounded measurement | May concern a Seed-owned occurrence, external mechanism behavior as subject, or an ambient resource/runtime condition as subject | No independent measurement kind; no new compound needed | Describe as measurement testimony concerning a bounded identified subject or occurrence |
 | `operational baseline` | Standing about ordinary behavior under limits | Baseline standing with subject, Evidence, scope, comparison, and standing limits | Subject must be resolved locally | No independent baseline kind; no new compound needed | Describe as baseline standing concerning bounded ordinary behavior under its exact subject and limits |
-| `operational behavior` | Behavior being described or compared | Testimony, proposition, Observation, or finding grammar depending on subject | May be Seed-owned, external, or ambient | No independent behavior family | Do not replace with a new act-occurrence compound |
+| `operational behavior` | Behavior being described or compared | Testimony, proposition, Observation, or finding grammar depending on subject | May concern Seed-owned, external, or ambient subject matter | No independent behavior family | Do not replace with a new act-occurrence compound |
 | `operation failure` | Failure classification | Act-failure grammar only if the failed item is a Seed-owned act; otherwise testimony or finding about the external or ambient subject | Mixed | No universal failure mapping | Do not say every operation failure is an act failure |
 | `operation and conditions covered` | Scope and subject dimension | Scope, Evidence, comparison, and standing limits | Mixed | No independent kind | Identify the bounded subject and conditions rather than naming a new family |
 | `operational reality` | Broad subject matter preserved or understood | Testimony, Observation, proposition, finding, preservation, and standing grammar | Mixed | Umbrella phrase only | Decompose locally; no replacement noun required |
@@ -93,17 +93,17 @@ The only preserved disposition is that PR 2238 replaced unsupported vocabulary w
 
 ### 6.1 What is genuinely established
 
-Recording-preservation grammar is partly established. Active law supports a conditional proposition that a bounded responsibility may create or preserve retrievable assertion-bearing material within a declared preservation horizon.
+`Recording-preservation grammar` is report shorthand only, not a constitutional kind. Recursively mapped, the active clauses support preservation of retrievable assertion-bearing material within a declared preservation horizon.
 
 It may support bounded claims that:
 
 ```text
-a record exists;
-the record preserves an attributed assertion;
-the represented assertion or occurrence is not thereby established as true.
+a record may exist;
+a record may preserve an attributed assertion;
+record existence does not establish the represented assertion or occurrence as true.
 ```
 
-This is materially different from a bare recurring word. The preservation grammar has real active support, and `events-facts-and-state.md` supplies relevant active testimony that preserving attributed testimony as an Event does not establish the asserted occurrence as true.
+This is materially different from a bare recurring word. That bounded preservation finding has real active support, and `events-facts-and-state.md` supplies relevant active testimony that preserving attributed testimony as an Event does not establish the asserted occurrence as true.
 
 ### 6.2 What is not established: one exact Recording responsibility
 
@@ -131,8 +131,9 @@ Uptake
 Therefore:
 
 ```text
-Recording-preservation grammar:
-partly established
+`Recording-preservation grammar`:
+report shorthand for preservation of retrievable assertion-bearing material
+within a declared preservation horizon; not a constitutional kind
 
 one universal Recording responsibility:
 not established
@@ -141,7 +142,7 @@ one actual recording occurrence:
 not established merely by generic chapter prose
 ```
 
-The earlier claim that exactly one Recording responsibility is fully coordinate-complete is withdrawn. The report preserves the useful finding that no exact instantiated Recording responsibility is established generically.
+The earlier claim that exactly one Recording responsibility is fully coordinate-complete is withdrawn. The report preserves only the useful finding that no exact instantiated Recording responsibility, exact Recording owner, actual recording occurrence, or complete Recording road is established generically.
 
 ### 6.3 Recording compression versus incomplete ownership remains unresolved
 
@@ -156,24 +157,24 @@ B. The chapter already separates several responsibilities,
 
 The chapter distinguishes preservation decision, preservation, standing establishment, diagnostic-scoped admission, and extraction. That distinction is real evidence against treating every Recording-adjacent concern as one undifferentiated act. But the same prose does not fully establish the exact identities, ownership, separateness, or relations of all those responsibilities.
 
-Accordingly, this report does not conclude that Recording is silently compressed, and it also does not conclude that the chapter has already resolved all separate coordinates. The final Recording disposition remains unresolved between compression and incomplete ownership.
+Accordingly, this report does not conclude that Recording is silently compressed, and it also does not conclude that the chapter has already resolved all separate coordinates. The final Recording disposition remains unresolved between whether Recording wording compresses several responsibilities, whether several separately owned responsibilities are only incompletely recovered, and whether Recording names one exact act, result, responsibility, or only local explanatory wording in each occurrence.
 
 ## 7. Answer to the governing question
 
 **Which exact responsibilities preserve an act, testimony, result, or standing as retrievable material?**
 
-Recording-preservation grammar is partly established as a conditional preservation grammar. It can support bounded claims that a record exists, that attributed assertion-bearing material was preserved, and that the represented assertion or occurrence is not established as true merely by that preservation. It does not establish one universal Recording responsibility or one actual recording occurrence merely from generic chapter prose.
+`Recording-preservation grammar` is report shorthand for preservation of retrievable assertion-bearing material within a declared preservation horizon. It can support bounded claims that a record may exist, that a record may preserve an attributed assertion, and that record existence does not establish the represented assertion or occurrence as true. It does not establish `Recording-preservation grammar` as a constitutional kind, one universal Recording responsibility, one exact Recording owner, one actual recording occurrence, or one complete Recording road merely from generic chapter prose.
 
 **Which current operation-related terms disappear, remain ordinary subject matter, or remain unresolved when compared to Act, production, preservation, standing, and consumer Uptake?**
 
-`Operational act` is an unsupported specialization of Act where the subject is Seed-owned; external or ambient subjects are not thereby Acts. `Operation` and `operational` are not an independent constitutional kind and may remain ordinary subject matter, attributed occurrence testimony, a proposition, an Observation, or a bounded finding. Umbrella phrases such as `operational testimony and standing` and `operational understanding establishment` require local decomposition into the actual preserved or established material, if any; no replacement noun is required merely because the old phrase is removed.
+`Operational act` is an unsupported specialization of Act where the subject is Seed-owned; external or ambient subjects are not thereby Acts. `Operation` and `operational` are not an independent constitutional kind and may name ordinary subject matter within attributed testimony, propositions, Observations where applicable, or bounded findings; the subject does not become those representations by identity. Umbrella phrases such as `operational testimony and standing` and `operational understanding establishment` require local decomposition into the actual preserved or established material, if any; no replacement noun is required merely because the old phrase is removed.
 
 ## 8. Failure audit
 
 1. **Correction testimony promoted into authority:** corrected. The Book VII excision record is strong attributed testimony and a locator to active clauses, not independent controlling law.
-2. **Every operation-related subject collapsed into Act or act occurrence:** corrected. Only Seed-owned bounded occurrences may be governed by Act and act-occurrence grammar; external and ambient subjects may remain testimony subject matter, propositions, observations, or findings.
+2. **Every operation-related subject collapsed into Act or act occurrence:** corrected. Only Seed-owned bounded occurrences may be governed by Act and act-occurrence grammar; external and ambient subjects may remain subject matter that testimony, propositions, observations, or findings concern.
 3. **Recursive replacement contamination:** corrected. `act-occurrence measurement`, `act-occurrence baseline`, `act-occurrence behavior`, `act-occurrence record`, and `act-occurrence testimony` are not adopted as positive replacement compounds.
-4. **Recording contradiction:** corrected. Recording-preservation grammar is partly established, but one exact instantiated Recording responsibility is not established generically.
+4. **Recording contradiction:** corrected. `Recording-preservation grammar` is only bounded report shorthand, while one exact instantiated Recording responsibility is not established generically.
 5. **Recording compression prematurely rejected:** corrected. Compression versus incomplete ownership remains unresolved.
 6. **Amendment drafting from unresolved mappings:** corrected. This report does not prescribe active-file substitutions, amendment scope, or test repairs.
 7. **Unsupported test-breakage assertion:** corrected. This report makes no current broken-test assertion without exact repository evidence.
@@ -191,11 +192,12 @@ may remain ordinary subject matter; not an independent constitutional kind
 PR 2238 replacement vocabulary:
 unsupported
 
-PR 2239 replacement compounds:
+act-occurrence-* replacement compounds:
 unsupported recursive contamination
 
-Recording-preservation grammar:
-partly established
+`Recording-preservation grammar`:
+report shorthand for preservation of retrievable assertion-bearing material
+within a declared preservation horizon; not a constitutional kind
 
 exact instantiated Recording responsibility:
 not established generically
