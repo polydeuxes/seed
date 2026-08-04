@@ -53,7 +53,7 @@ Authority
 != Authority carried by an input
 ```
 
-The Authority coordinate may be positively established, responsibly Unknown, or unresolved. Absence of a separate Authorization standing does not answer the Authority coordinate.
+The Authority coordinate may be positively established, conflicting, responsibly Unknown, or unresolved. Absence of a separate Authorization standing does not answer the Authority coordinate.
 
 #### Evidence
 
@@ -104,24 +104,42 @@ Warrant
 
 #### Warrant consumer and reliance purpose
 
-Identifies the exact consumer and purpose for which the Warrant may be relied upon. Warrant production does not establish later reliance or Uptake.
+Where the exact Warrant has an established consumer, this branch identifies that consumer and the purpose for which the Warrant may be relied upon. Warrant production does not create a consumer, reliance purpose, later reliance, or Uptake by identity.
 
-### Realized-act branches
+### Act-occurrence and non-occurrence branches
 
-These branches apply where the exact act occurs, fails, or is responsibly found not to occur.
+These branches apply where the exact act occurs, including a failed act occurrence; or where a separate responsible occurrence establishes that the proposed act did not occur.
 
 #### Act occurrence
 
-Identifies the responsible occurrence at which the exact act happens, fails, or is found absent.
+Identifies the responsible occurrence at which the exact act happens. A failed act may still be an act occurrence. No act occurrence exists merely because a later responsibility finds that the proposed act did not occur.
 
 ```text
 act
 != act occurrence
 ```
 
-#### Act-occurrence evidence
+#### Absence-of-act-occurrence finding
 
-Identifies the evidence warranting the exact act-occurrence or absence-of-occurrence claim. A responsible absence-of-occurrence finding must not fabricate a produced result.
+Identifies the separately responsible occurrence and result that establish that the proposed exact act did not occur. The finding is not the absent act's occurrence. It may itself be a lawfully produced result under its own responsibility, evidence, Authority, scope, and Warrant.
+
+```text
+absence-of-act-occurrence finding
+!= act occurrence
+
+act occurrence
+!= absence-of-act-occurrence finding
+
+absence finding
+!= lawful Stop automatically
+
+absence finding
+!= failure automatically
+```
+
+#### Occurrence or non-occurrence evidence
+
+Identifies the evidence supporting the exact act-occurrence claim, failed-act-occurrence claim, or absence-of-act-occurrence finding. An absence-of-act-occurrence finding must not fabricate the absent act's result.
 
 ### Result-production branches
 
@@ -184,13 +202,28 @@ production occurrence
 
 Identifies the evidence warranting the standing-establishment occurrence. Artifact existence, construction, recording, projection, or visibility does not establish standing by identity.
 
-#### Result standing
+#### Established standing
 
-Identifies the exact standing established for the result. Produced result does not automatically possess established standing.
+Identifies the exact standing established for the exact result, relation, assertion, input-to-act relation, or other bounded subject.
 
-### Conditional preservation and downstream relations
+Where the subject is a produced result, this is result standing.
 
-These branches are exposed only where the exact road instantiates them. They remain governed by their independently owned constitutional grammar.
+Where the subject is not a produced result, the standing retains the exact identity of its own subject and must not be renamed result standing.
+
+```text
+produced result
+!= established standing automatically
+
+subject existence
+!= standing established
+
+standing-establishment occurrence
+!= production occurrence automatically
+```
+
+### Conditional preservation, standing, and neighboring branches
+
+These branches are exposed only where the exact road instantiates them. Some may precede the act, govern it, preserve its occurrence, terminate its road, or belong to a later consumer. They remain governed by their independently owned constitutional grammar.
 
 #### Preservation testimony
 
@@ -208,13 +241,35 @@ Identifies any exact consumer-local applicability or admission standing required
 
 Identifies the exact consumer, material consumed, consumer-local act, purpose, and resulting Uptake relation where a downstream consumer exists. A produced result does not establish a consumer or Uptake by identity.
 
-#### Constraint relation
+#### Constraint
 
-Identifies any independently owned Constraint governing the exact proposed act, material, or road. Responsibility does not own the Constraint merely because the Constraint governs its act.
+Constraint is an independently owned constitutional subject that may govern the exact proposed act, material, or road. It is not reclassified as a relation merely because it governs another responsibility. Responsibility does not own the Constraint merely because the Constraint governs its act.
 
-#### Lawful Stopping relation
+```text
+Constraint
+!= relation by identity
+```
 
-Identifies any independently owned Stopping responsibility and the exact evidenced reason it consumes. Absence of movement, unresolved material, a negative standing, or a preventing condition does not establish a Stop by identity.
+#### Lawful Stopping
+
+Stopping is an independently owned responsibility, act, occurrence, and result where the exact road establishes it. It is not reclassified as a relation merely because it connects a reason-producing responsibility to a stopped road. Absence of movement, unresolved material, a negative standing, or a preventing condition does not establish a Stop by identity.
+
+```text
+absence of movement
+!= Stop
+
+unresolved material
+!= Stop
+
+negative standing
+!= Stop
+
+preventing condition
+!= Stop
+
+Stopping
+!= relation by identity
+```
 
 The Responsibility hierarchy is a Book-root presentation and traversal structure. It does not create a new constitutional kind, reassign ownership among existing constitutional subjects, require one universal populated shape, or replace the exact grammar of the numbered Books.
 
