@@ -169,7 +169,7 @@ def bounded_work_eligibility_for_question_family(
 def bounded_ask_error_message_for_eligibility(
     eligibility: BoundedWorkEligibilityResult,
 ) -> str:
-    """Return the bounded ask error message for non-permitted work."""
+    """Return the bounded ask error message when eligibility does not admit bounded ask."""
 
     if eligibility.permitted:
         raise ValueError("bounded ask error message requires non-permitted eligibility")
