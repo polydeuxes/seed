@@ -1,95 +1,234 @@
 # Consideration Vocabulary Residue Audit 001
 
-## 1. Scope and authority
+## 1. Scope, authority, and method
 
-This report audits every case-insensitive whole-word occurrence of `consideration` or `considerations` in the active numbered Book directories at commit `c60b885` (current merged `main`, including PR 2232). The active Book is constitutional authority. `concordance.md` is a navigation aid, not an ontology. Runtime, `.pyc` cache remnants, and historical reports are implementation and attributed testimony only. Recurrence, list membership, and heading adjacency establish nothing by themselves.
+This corrected report audits every case-insensitive whole-word occurrence of
+`consideration` or `considerations` in the active numbered Book directories at
+commit `791f29e` (current merged `main`, including PR 2234). The active Book is
+constitutional authority. `concordance.md` is a navigation aid and cannot
+establish a family, standing, or alias. Runtime, tests, reports, former
+artifacts, and history are lower-authority testimony only. Absence is not
+Unknown.
 
-The exact search found nine occurrences across the active numbered Book, plus two occurrences in `concordance.md`. No occurrence of `considerations` (plural) was found. Runtime and tests were searched for `movement_consideration`, `MovementConsideration`, `candidate_consideration`, and `CandidateConsideration`; none exist in the current tree.
+The repeated search covered `book_of_seed/01-*` through `book_of_seed/08-*` and
+`book_of_seed/concordance.md`. It found **17 exact active-Book occurrences in 7
+files** and **3 exact concordance occurrences in 1 file**. No occurrence of the
+plural `considerations` was found. Counts below are occurrences, not merely
+matching lines: `selection-and-authorization.md:10` contains three, and
+`concordance.md:20` contains two.
 
-## 2. Exact occurrence inventory
+This is a one-file, report-only correction. It neither drafts nor makes an
+active-Book amendment.
 
-| Active location | Exact occurrence | Classification |
+## 2. Direct occurrence inventory
+
+| Corpus and exact location | Exact occurrence in local context | Local classification |
 |---|---|---|
-| `selection-and-authorization.md:4` | "choosing a candidate for consideration" | established — constitutional subject line for consideration selection |
-| `selection-and-authorization.md:7` | "bounded selected-for-consideration result" | established — core question, same family |
-| `selection-and-authorization.md:10` | "Consideration selection chooses an already-established subject for bounded present consideration only where the responsible owner validates the evidence required for that selection" | established — the defining sentence: exact act, owner, evidence requirement |
-| `selection-and-authorization.md:12` | "why it should receive present consideration" | established — ordinary explanatory wording tied to the defined concept |
-| `selection-and-authorization.md:17` | "consideration != permission" | established — Important Distinction |
-| `selection-and-authorization.md:19` | "representation selection != consideration selection automatically" | established — Important Distinction |
-| `selection-and-authorization.md:21` | "selected-for-consideration standing != authorization standing" | established — Important Distinction |
-| `inquiry-frontiers.md:10` | "Membership creates visibility for consideration, not selection, authorization, or resolution" | ordinary explanatory wording — negative-authority list, no compound |
-| `inquiry-frontiers.md:18` | "Preservation, consideration, supplied positive dispositions... do not by themselves supply that warrant" | ordinary explanatory wording — negative-authority list, no compound |
-| `selection-artifacts-and-selection-acts.md:12` | "why it should receive present consideration" | ordinary explanatory wording, echoes the established family without asserting a new one |
-| `construction-and-establishment.md:50` | "BOGE establishment != movement consideration" | **contaminated** — Important Distinction naming "movement consideration" without ever defining it |
-| `operator-ingress-common-grammar-prerequisite.md:65` | "-> any later movement consideration, movement selection, ..." | **contaminated** — road-diagram list item, undecomposed |
-| `operator-ingress-common-grammar-prerequisite.md:131` | "...any grammar acquisition, movement consideration, movement selection, authority, later act occurrence, and evidence production belong to ordinary bounded-goal advancement responsibilities" | **contaminated** — prose list item, undecomposed |
-| `operator-ingress-common-grammar-prerequisite.md:147` | "establishment does not consider it for movement; consideration does not select movement" | **contaminated** — verb-form step in a negative-authority chain, no independent definition |
-| `testimony-and-established-fact.md:131` | "candidate consideration, selection, handoff, stopping, resource allocation, or explanation" | **contaminated (weaker signal, single occurrence)** — list item, undecomposed, listed beside already-confirmed-contaminated `handoff` |
-| `concordance.md:20` | `consideration selection` row | established — concordance entry for the genuine family |
-| `concordance.md:21` | `selection standing`'s related-concepts column cites `consideration selection` | established — cross-reference to the genuine family |
+| active — `02-acts-and-constraints/selection-artifacts-and-selection-acts.md:12` | “present consideration” | unsupported wording carrying constitutional weight here: it helps describe what selection has not established, but does not define the purpose |
+| active — `03-goals-and-advancement/operator-ingress-common-grammar-prerequisite.md:65` | “movement consideration” | unsupported constitutional-looking vocabulary |
+| active — `03-goals-and-advancement/operator-ingress-common-grammar-prerequisite.md:131` | “movement consideration” | unsupported constitutional-looking vocabulary |
+| active — `03-goals-and-advancement/operator-ingress-common-grammar-prerequisite.md:147` | “consideration does not select movement” | unsupported wording carrying constitutional weight in a claimed sequence |
+| active — `03-goals-and-advancement/construction-and-establishment.md:50` | “movement consideration” | unsupported constitutional-looking vocabulary |
+| active — `03-goals-and-advancement/selection-and-authorization.md:4` | “candidate for consideration” | unsupported wording carrying constitutional weight in the chapter's subject line |
+| active — `03-goals-and-advancement/selection-and-authorization.md:7` | “selected-for-consideration” | not independently established as a distinct standing family |
+| active — `03-goals-and-advancement/selection-and-authorization.md:10` (first) | “Consideration selection” | unsupported constitutional-looking specialization of Selection |
+| active — `03-goals-and-advancement/selection-and-authorization.md:10` (second) | “present consideration” | undefined purpose phrase inside the alleged specialization |
+| active — `03-goals-and-advancement/selection-and-authorization.md:10` (third) | “selected-for-consideration” | result name repeating the undefined purpose; not independent proof of standing |
+| active — `03-goals-and-advancement/selection-and-authorization.md:12` | “present consideration” | unsupported wording carrying constitutional weight in a claimed selection consequence |
+| active — `03-goals-and-advancement/selection-and-authorization.md:17` | “consideration != permission” | unsupported distinction; a distinction from another unavailable term defines neither side |
+| active — `03-goals-and-advancement/selection-and-authorization.md:19` | “consideration selection” | unsupported constitutional-looking specialization |
+| active — `03-goals-and-advancement/selection-and-authorization.md:21` | “selected-for-consideration” | not independently established as a distinct standing family |
+| active — `04-inquiry/inquiry-frontiers.md:10` | “for consideration” | ordinary prose locally: no standing, responsibility, act kind, result kind, or road depends on it |
+| active — `04-inquiry/inquiry-frontiers.md:18` | “consideration” | ordinary prose locally: one item in a negative list, establishing no constitutional kind |
+| active — `05-evidence-and-knowledge/testimony-and-established-fact.md:131` | “candidate consideration” | unsupported constitutional-looking vocabulary; lower evidence because this is its single occurrence |
+| concordance — `concordance.md:20` (first) | “consideration selection” | navigation label only; no constitutional support |
+| concordance — `concordance.md:20` (second) | “need-consideration-selection” | alias text only; no constitutional support |
+| concordance — `concordance.md:21` | “consideration selection” | cross-reference only; no constitutional support |
 
-No active clause anywhere gives bare `movement consideration` or `candidate consideration` its own constitutional subject, core question, bounded resolution, addressable boundary, or Important Distinction defining what it consumes, what act it performs, or what result it produces.
+Thus the exact active files and counts are:
 
-## 3. Two unlike families, not one word
+- `selection-artifacts-and-selection-acts.md`: 1;
+- `operator-ingress-common-grammar-prerequisite.md`: 3;
+- `construction-and-establishment.md`: 1;
+- `selection-and-authorization.md`: 9;
+- `inquiry-frontiers.md`: 2;
+- `testimony-and-established-fact.md`: 1; and
+- no matching file under `01-*`, `06-*`, `07-*`, or `08-*`.
 
-The search confirms two genuinely different things share the word `consideration`, and they must not be treated as one finding:
+The concordance's 3 occurrences are all in `concordance.md`.
 
-**Family A — "consideration selection" (established, warranted).** `selection-and-authorization.md:10` gives it a full definition: it "chooses an already-established subject for bounded present consideration only where the responsible owner validates the evidence required for that selection." It has an owner (the responsible owner), an act (choosing an already-established subject), an evidence requirement, a named result (`selected-for-consideration standing`), and three Important Distinctions separating it from permission, from representation selection, and from authorization standing. `concordance.md:20` gives it its own row, with aliases `focus selection, former need-consideration-selection vocabulary` — confirming it has real historical implementation lineage. It is a genuine subfamily of the general Selection act (`selection-artifacts-and-selection-acts.md`), not raw compression.
+## 3. Governing correction: Selection is not consideration
 
-**Family B — "movement consideration" (unsupported, four occurrences, one file each side of a boundary and diagram).** Every occurrence names it as a step in a sequence — always adjacent to `movement selection`, always in a list or a negative-authority chain, never as the subject of its own defining sentence. `construction-and-establishment.md:50` only differentiates it from BOGE establishment; it never says what movement consideration *is*. `operator-ingress-common-grammar-prerequisite.md:65,131` list it alongside `movement selection, authority, later act occurrence, and evidence production` as things that "require their own responsible occurrences" — a requirement statement, not a definition. Line 147 uses it as a verb-form rhetorical step ("consideration does not select movement") reinforcing a negative-authority argument, not asserting a positive kind.
+The general Selection chapter establishes constitutional grammar: a
+responsible owner; a bounded candidate set; a selection basis and Evidence; a
+selection act; a selected or non-selected result; selection standing; and a
+declared purpose. That grammar permits selection of an already-established
+subject where the responsible boundary supplies the required coordinates.
 
-`candidate consideration` at `testimony-and-established-fact.md:131` is a single, weaker-signal occurrence of the same shape — listed among things adaptive reliance may constrain, undecomposed, and notably listed immediately beside `handoff`, a term already confirmed contaminated and removed from `representation-emission-and-consumer-boundaries.md` in an earlier correction this campaign. Its survival here suggests residue that the earlier handoff cleanup did not sweep, though that is a separate, adjacent finding and not adjudicated by this report.
+The active defining sentence states:
 
-## 4. Responsibility decomposition test — "movement consideration"
+> Consideration selection chooses an already-established subject for bounded
+> present consideration only where the responsible owner validates the
+> evidence required for that selection.
 
-Applying the same test sequence used in `examine_uptake_and_production_residue_audit_001.md` (consumer, existing-material, exact-act, result, responsibility):
+This establishes or repeats a responsible selection act, an
+already-established subject, owner-local evidence validation, and a bounded
+selected result. Those coordinates already belong to general Selection. The
+sentence does **not** independently establish what consideration is, what exact
+relation “present consideration” names, what result differs from ordinary
+selection standing, what consumer requires that distinct result, what Uptake
+is established from it, or what independent constitutional purpose
+differentiates the alleged subfamily.
 
-**Consumer test.** No clause makes "movement consideration" the subject of a consumer-shaped sentence (X consumes Y for purpose Z). It only ever appears as a list member or as the object of a negative-authority verb.
+Accordingly:
 
-**Existing-material test.** The territory it gestures at — "orienting toward a possible movement without yet selecting it" — is already owned. `orientation-and-movement.md`'s own definition: "Orientation associates and presents goal dimensions; movement requires a separately warranted transition." That is exactly what "considering" a movement, short of selecting it, would mean, and it already has a name, an owner, and a chapter. Where "movement consideration" instead means "choosing an already-established subject for present consideration" in the movement context specifically, that is already Family A's territory (`consideration selection`), just not cross-referenced to it.
+```text
+general Selection grammar is established
+!=
+a distinct consideration-selection subfamily is established
 
-**Exact-act test.** No clause names movement-consideration's own act, distinct from orientation's act or selection's act. It is never the grammatical subject of a "consumes / produces" sentence anywhere in the four occurrences.
+defining Selection
+!=
+defining consideration
 
-**Result test.** No result vocabulary exists for it (no "considered standing," no "movement-consideration finding"). The only adjacent result vocabulary — `selected-for-consideration standing` — belongs to Family A, not to this phrase.
+selected subject
+!=
+independently established selected-for-consideration standing
 
-**Responsibility test.** The single positive-looking formulation, `construction-and-establishment.md:50`'s "BOGE establishment != movement consideration," is a differentiation, not a definition — exactly the same shape as `constitutional-kinds-and-artifact-standing.md:69`'s "a responsible examination or other kind-specific production occurrence" from the prior Examination audit, which was found not to supply a distinct owner, act, subject, or result.
+a result name repeating an undefined purpose
+!=
+an established constitutional result family
+```
 
-**Residue after decomposition: none.** Everything "movement consideration" gestures at is already owned by `orientation-and-movement.md` (associating/presenting goal dimensions without claiming movement) or, where it means something stronger, by the already-established `consideration selection` (Family A). No distinct third responsibility survives.
+Repeating `consideration` and `selected-for-consideration` inside the definition
+and result name is circular. A defining sentence, a named result, and nearby
+distinctions cannot prove the missing independent purpose. The active Book may
+still establish ordinary selection standing for an already-established
+subject; the defect is the unsupported specialization, not Selection itself.
 
-## 5. Implementation and provenance witness
+## 4. Corrected decomposition test
 
-No live runtime module or test references `movement_consideration`, `MovementConsideration`, `candidate_consideration`, or `CandidateConsideration` anywhere in `seed_runtime/`, `tests/`, or `scripts/`. This is a meaningful negative witness: unlike Family A, which has real (now-superseded) implementation lineage — `seed_runtime/advancement_need_consideration_selection.py` is gone from the live tree but survives as a stale `__pycache__` remnant, and its provenance is documented in `focus_consideration_selection_constitutional_recovery_001.md` — "movement consideration" has never had implementation at all, in cache or otherwise. It is pure Book prose with no realization history, strengthening rather than weakening the case that it is unsupported constitutional-looking vocabulary rather than a compressed reference to something once built.
+The same questions apply to every constitutional-looking compound:
 
-## 6. Vocabulary classifications
+1. What exact responsibility owns it?
+2. What exact subject or material does it consume?
+3. What act is distinct from already-established grammar?
+4. What exact result does it produce?
+5. What standing differs from an existing standing family?
+6. Which exact consumer requires that result?
+7. What constitutional meaning remains after removing `consideration`?
 
-| Vocabulary | Classification | Exact basis |
+| Compound | Owner and material | Distinct act, result, standing, and consumer | Residue after removing `consideration` |
+|---|---|---|---|
+| `consideration selection` | no independent consideration responsibility; the sentence supplies an already-established subject to general Selection | no act distinct from Selection, no independently distinct result or standing, and no exact consumer of such a distinction | ordinary Selection remains; no independent consideration responsibility or standing remains |
+| `movement consideration` | no exact owner or subject-to-act relation | no distinct act, result, standing, consumer, or Uptake | no independent responsibility remains |
+| `candidate consideration` | no exact owner; the sole occurrence is an undecomposed list member | no distinct act, result, standing, consumer, or Uptake | no independent responsibility remains |
+
+No direct active-law clause supplies a contrary coordinate.
+
+## 5. Movement, candidate, bare wording, and Orientation
+
+`movement consideration` remains unsupported constitutional-looking
+vocabulary. Its occurrences provide no exact owner, subject-to-act relation,
+distinct act, result, standing, consumer, or Uptake. It has no surviving
+independent responsibility.
+
+The Orientation clause states only that Orientation associates and presents
+goal dimensions and that movement requires a separately warranted transition.
+That clause does not establish that Orientation owns every meaning formerly
+compressed under `movement consideration`. Removal may be lossless in some
+clauses without replacement. Where a positive relation is still required, it
+must be recovered independently rather than assigned to Orientation by
+resemblance. Neither Orientation nor ordinary Selection is thereby promoted
+into the unnamed present-subject responsibility.
+
+`candidate consideration` also remains unsupported constitutional-looking
+vocabulary. Its one undecomposed occurrence supplies no independent
+responsibility and must not be strengthened into a repository-wide family.
+Its amendment confidence is correspondingly lower.
+
+Bare `consideration` receives no blanket clearance or deletion. The inventory
+classifies each occurrence locally. Wording that merely says material may be
+considered is ordinary prose only when no standing, responsibility, act kind,
+result kind, or road depends on it. Wording that helps define a constitutional
+subject, result, standing, or selection specialization carries constitutional
+weight and cannot be cleared merely because the word also has an
+ordinary-English use.
+
+## 6. Historical lineage and contamination boundary
+
+Former repository surfaces named
+`GoalInquiryConsiderationSelection`, `NeedFocusEvidence`, and
+`AdvancementNeedConsiderationSelection`. Their existence establishes only that
+the repository once represented claims under those names. It does not
+establish that the claimed constitutional distinction was lawful.
+
+PR 1864 is adverse or limiting testimony: candidate-identity testimony did not
+establish Seed-owned goal selection or Focus standing. That deletion proves
+neither that every underlying competency was false nor that replacement
+`consideration` vocabulary was established. The bounded historical finding is:
+
+```text
+former artifact lineage:
+historical implementation testimony only
+
+constitutional support for a distinct consideration-selection family:
+not established by that lineage
+```
+
+Likewise, `concordance.md` remains a navigation aid. Its row, aliases, and
+cross-reference cannot establish the specialization.
+
+The cited active clauses contain neighboring disputed or unavailable wording,
+including exact occurrences of `"permission"`, `"visible"`, `"execution"`,
+`"sufficient"`, `"insufficient"`, and `"handoff"`. This report reaches only the
+bounded finding that those neighboring terms cannot serve as constitutional
+support for clearing consideration vocabulary. It does not audit or amend
+them. In particular, `consideration != permission` is not positive evidence:
+a distinction from an unsupported term does not define either side.
+
+## 7. Corrected findings and disposition
+
+| Vocabulary | Finding | Disposition |
 |---|---|---|
-| `consideration selection` | established constitutional subfamily of Selection | `selection-and-authorization.md:10`; `concordance.md:20` |
-| `selected-for-consideration standing` | established result vocabulary, Family A | `selection-and-authorization.md:7,21` |
-| bare `consideration` (frontier/candidate-identity contexts) | ordinary explanatory wording | `inquiry-frontiers.md:10,18`; `selection-artifacts-and-selection-acts.md:12` |
-| `movement consideration` | unsupported constitutional-looking vocabulary | `construction-and-establishment.md:50`; `operator-ingress-common-grammar-prerequisite.md:65,131,147` — fails all five decomposition tests; no implementation witness at any point in history |
-| `candidate consideration` | unsupported constitutional-looking vocabulary, single occurrence | `testimony-and-established-fact.md:131` — undecomposed list item, adjacent to already-contaminated `handoff` |
+| Selection | established constitutional grammar | **retain** |
+| `consideration selection` | not independently established as a distinct Selection subfamily; general Selection plus an undefined specialization | **unsupported constitutional-looking specialization; bounded active-Book correction warranted** |
+| `selected-for-consideration standing` | not independently established as a distinct standing family; the name repeats the same undefined purpose | **bounded active-Book correction warranted** |
+| `movement consideration` | unsupported constitutional-looking vocabulary; no independent constitutional responsibility | **bounded active-Book correction warranted** |
+| `candidate consideration` | unsupported constitutional-looking vocabulary; one occurrence only | **bounded active-Book correction warranted, with lower confidence** |
+| bare `consideration` | meaning and constitutional weight vary by occurrence | **classify occurrence by occurrence; no blanket retention or deletion** |
 
-## 7. Direct answers
+These findings preserve the movement-consideration and
+candidate-consideration residue findings while correcting the former report's
+unsupported clearance of consideration selection and bare consideration.
 
-1. **Is `consideration` itself contaminated?** No — the bare word is either part of an established, well-defined subfamily (`consideration selection`) or ordinary explanatory English. The word is not the problem.
-2. **Is `consideration selection` contaminated?** No. It passes the same test that `examination` and `movement consideration` fail: it has its own defining sentence, owner requirement, evidence requirement, named result, and three Important Distinctions.
-3. **Is `movement consideration` contaminated?** Yes. It names no exact act, owner, or result anywhere in the active Book; it appears only in lists and negative-authority chains; it has zero implementation history at any point recoverable from the repository.
-4. **Is `candidate consideration` contaminated?** Provisionally yes, on a single occurrence — same shape as `movement consideration`, weaker signal because it appears only once, listed beside `handoff` (already confirmed contaminated elsewhere).
-5. **Does `movement consideration` survive the deletion test?** No. Removing it from every occurrence and relying on already-established grammar (`orientation-and-movement.md`'s association/presentation function, and/or `consideration selection` where the stronger sense is meant) leaves a lossless account in all four locations.
-6. **High-confidence amendment candidates?** Independently: `construction-and-establishment.md:50`; `operator-ingress-common-grammar-prerequisite.md:65,131,147`; and, with lower confidence given the single occurrence, `testimony-and-established-fact.md:131`. This report does not draft amendments.
-7. **What remains Unknown?** Nothing new. This audit found no positively-raised-but-unresolved coordinate; it found either established vocabulary or vocabulary with no defining clause at all, which is a different finding from Unknown.
+## 8. Effect on PR 2232 and the unnamed-responsibility recovery
 
-## 8. Final disposition
+PR 2232 correctly recovered no exact downstream BOGE consumer. Its candidates
+now have this bounded interpretation:
 
-**Split disposition, not one verdict for the whole word.**
+- `movement consideration` is not merely an undecomposed consumer district; it
+  is unsupported vocabulary with no independent constitutional
+  responsibility;
+- `consideration selection` is not an established downstream consumer; it is
+  general Selection grammar plus an undefined specialization; and
+- ordinary bounded-goal advancement responsibilities remain an undecomposed
+  district.
 
-- `consideration selection` and its result vocabulary: **retain, no action** — genuinely established, distinguishable, and correctly distinguished from the compressed forms.
-- `movement consideration` (4 occurrences, 2 files): **D — unsupported constitutional-looking vocabulary requiring bounded amendment**, matching the disposition class used for `examination work` and `handoff`. It decomposes losslessly into `orientation-and-movement.md`'s existing grammar and, where a stronger sense is meant, into the existing `consideration selection` family.
-- `candidate consideration` (1 occurrence): **same classification, lower confidence** — worth including in the same bounded amendment given the identical shape, but flagged as single-occurrence testimony rather than a four-site pattern.
+This does not reopen the broader BOGE consumer report.
 
-This finding directly matters to the open BOGE-consumer investigation: `responsibility_rooted_boge_consumer_recovery_001.md` (PR 2232) tested "movement consideration" as one of ten candidate consumers and correctly classified it C (named district, not connected). This report goes one level further and finds that the named district itself has no independent constitutional standing to *be* connected to anything — it is not an undecomposed consumer waiting to be wired up; it is compressed vocabulary that should be retired into the grammar that already owns its territory before any further consumer-search treats it as a live candidate.
+This audit does not name or establish the missing responsibility by which Seed
+may presently bear a bounded relation to an already-established subject for
+one declared purpose. It does not select Focus, Attention, Consideration,
+Orientation, or Horizon as that responsibility's name. The absence of an
+established consideration family does not prove that the missing responsibility
+does not exist.
 
-## 9. At most one follow-up
+## 9. Scope boundary
 
-One bounded follow-up is warranted: independently audit the surviving `handoff` occurrence at `testimony-and-established-fact.md:131` against its immediate exact dependencies, since it sits in the same sentence as the `candidate consideration` finding above but is a separate, already-partially-adjudicated word with its own removal history elsewhere in the Book. Do not fold that audit into a `movement consideration` amendment merely because they currently share one sentence.
+This report preserves authority order, the reproduced occurrence inventory,
+the two residue findings, the distinction between absence and Unknown, and the
+one-file report-only scope. It proposes no replacement name, restores no former
+artifact, performs no neighboring-vocabulary sweep, changes no active clause,
+and drafts no amendment. Any bounded active-Book correction identified above
+is a later change requiring its own direct-law analysis.
