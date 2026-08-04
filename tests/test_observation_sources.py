@@ -2849,6 +2849,11 @@ def test_local_identity_projection_is_deterministic(monkeypatch, tmp_path):
         "_collect_network_observations",
         lambda self, observed_at, hostname, metadata: [],
     )
+    monkeypatch.setattr(
+        LocalHostObservationSource,
+        "_collect_storage_observations",
+        lambda self, observed_at, hostname, metadata: [],
+    )
     source = LocalHostObservationSource(
         proc_root=proc, etc_hostname=etc_hostname, machine_id=machine_id
     )
