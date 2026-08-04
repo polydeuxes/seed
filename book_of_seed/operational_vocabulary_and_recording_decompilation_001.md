@@ -2,7 +2,7 @@
 
 ## 1. Scope and authority
 
-This is one bounded, report-only recovery from the current merged repository (`HEAD` including PR 2241). It changes no active Book chapter, runtime file, test, concordance entry, navigation file, or other report.
+This is one bounded, report-only recovery from the current merged repository (`HEAD` including PR 2242). It changes no active Book chapter, runtime file, test, concordance entry, navigation file, or other report.
 
 Authority order preserved here:
 
@@ -45,7 +45,7 @@ Mapping a phrase toward an established coordinate does not authorize a new compo
 
 ## 3. Prior correction testimony: Book VII and PR 2240
 
-The Book VII excision record is strong testimony for a rule of caution: external operational terms ordinarily name subjects that testimony, propositions under examination, externally attributed occurrence testimony, bounded findings, or Unknown dispositions may concern, and they are not automatically Seed-native constitutional kinds, stages, or districts. Its disposition for the former `execution` vocabulary supports the finding that no distinct execution family survived once Seed-owned act occurrence, request-shaped representation, emission, invocation occurrence, external mechanism performance, result testimony, and recording were separated.
+The Book VII excision record is strong testimony for a rule of caution: external operational terms may name subjects that attributed testimony, propositions, Observations where applicable, or bounded findings concern. For an exact instantiated coordinate concerning such a subject, a responsible occurrence may establish Unknown. External operational terms are not automatically Seed-native constitutional kinds, stages, or districts. Its disposition for the former `execution` vocabulary supports the finding that no distinct execution family survived once Seed-owned act occurrence, request-shaped representation, emission, invocation occurrence, external mechanism performance, result testimony, and recording were separated.
 
 This matters because PR 2238 replaced `execution`, `execution record`, and `execution status` with `operation occurrence`, `operation-occurrence record`, and `operation status`. That replacement substituted unsupported vocabulary for unsupported vocabulary. The defect is not that the old words must return; it is that the replacement words were not recursively compared to active grammar before being used.
 
@@ -89,6 +89,13 @@ This report does not assert that any current test is broken. No test-inspection 
 
 The only preserved disposition is that PR 2238 replaced unsupported vocabulary with unsupported vocabulary, and a later active-law amendment would need direct, recursive comparison before choosing any replacement.
 
+
+## 5.1 Subject, representation, and Unknown boundary
+
+External or ambient subject matter is not identical to testimony about the subject, a proposition about the subject, Observation testimony about the subject, a finding about the subject, or Unknown. The word `operation` or `operational` may name ordinary subject matter within such representations, but the subject does not become the representation by identity.
+
+Absence of support is not the same as responsibly produced Unknown. A responsible occurrence may establish Unknown only for an exact instantiated coordinate concerning that subject, bounded to its exact subject, coordinate, question, consumer or purpose where applicable, scope, Evidence, Authority, and responsible occurrence. Unknown is not a generic result, not a subject classification, and not a disposition family.
+
 ## 6. Recording decomposition
 
 ### 6.1 What is genuinely established
@@ -103,7 +110,7 @@ a record may preserve an attributed assertion;
 record existence does not establish the represented assertion or occurrence as true.
 ```
 
-This is materially different from a bare recurring word. That bounded preservation finding has real active support, and `events-facts-and-state.md` supplies relevant active testimony that preserving attributed testimony as an Event does not establish the asserted occurrence as true.
+This is materially different from a bare recurring word. That bounded preservation finding has real active support, and `events-facts-and-state.md` contains an active constitutional clause concerning testimony: preserving attributed testimony as an Event does not establish the asserted occurrence as true.
 
 ### 6.2 What is not established: one exact Recording responsibility
 
@@ -178,6 +185,10 @@ Accordingly, this report does not conclude that Recording is silently compressed
 5. **Recording compression prematurely rejected:** corrected. Compression versus incomplete ownership remains unresolved.
 6. **Amendment drafting from unresolved mappings:** corrected. This report does not prescribe active-file substitutions, amendment scope, or test repairs.
 7. **Unsupported test-breakage assertion:** corrected. This report makes no current broken-test assertion without exact repository evidence.
+8. **Subject collapsed into representation or Unknown:** rejected. A subject is not testimony, a proposition, an Observation, a finding, or Unknown.
+9. **Lack of evidence collapsed into responsibly established Unknown:** rejected. Unknown requires a responsible occurrence for an exact instantiated coordinate with its bounded subject, question, consumer or purpose where applicable, scope, Evidence, and Authority.
+10. **Unknown promoted into a disposition family:** rejected. This report adopts no Unknown disposition vocabulary.
+11. **Established word used in replacement treated as automatic authorization:** rejected. A replacement compound built from an established word must still survive recursive comparison.
 
 ## 9. Required conclusion
 
