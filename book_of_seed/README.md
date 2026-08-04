@@ -127,9 +127,6 @@ Identifies the separately responsible occurrence and result that establish that 
 absence-of-act-occurrence finding
 != act occurrence
 
-act occurrence
-!= absence-of-act-occurrence finding
-
 absence finding
 != lawful Stop automatically
 
@@ -252,7 +249,7 @@ Constraint
 
 #### Lawful Stopping
 
-Stopping is an independently owned responsibility, act, occurrence, and result where the exact road establishes it. It is not reclassified as a relation merely because it connects a reason-producing responsibility to a stopped road. Absence of movement, unresolved material, a negative standing, or a preventing condition does not establish a Stop by identity.
+Where the exact road establishes lawful Stopping, preserve separately the responsible owner, stopping act, stopping occurrence, and bounded Stop result. Identity among those coordinates must not be inferred. It is not reclassified as a relation merely because it connects a reason-producing responsibility to a stopped road. Absence of movement, unresolved material, a negative standing, or a preventing condition does not establish a Stop by identity.
 
 ```text
 absence of movement
