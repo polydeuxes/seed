@@ -114,7 +114,7 @@ def test_constrained_movement_grammar_invariants_are_canonical():
 
 
 def test_constrained_constraint_invariants_are_canonical():
-    text = _read("book_of_seed/02-acts-and-constraints/constraints-policy-and-preconditions.md")
+    text = _read("book_of_seed/02-acts-and-constraints/constraints-and-preconditions.md")
 
     required = [
         "A constraint is not the governed movement",

@@ -62,7 +62,7 @@ Possible later advancement relation:
 ```text
 bounded grammar-acquisition goal standing
 -> ordinary bounded-goal advancement responsibilities
--> any later capability applicability determination, movement consideration, movement selection,
+-> any later movement consideration, movement selection,
    authority, performance, and evidence production require their own responsible
    occurrences
 ```
@@ -128,7 +128,7 @@ bounded potential-goal standing
 
 An identified presented alternative and a potential-goal candidate
 recovered through its representation lineage are not an established
-bounded goal. BOGE relies on the consumer-local admitted warranted relation and consumes the bounded goal proposition as expressed by the exact source candidate when establishing bounded operator goal standing. Only after that establishment do any grammar acquisition, capability applicability determination, movement consideration, movement selection, authority, performance, and evidence production belong to ordinary bounded-goal advancement responsibilities.
+bounded goal. BOGE relies on the consumer-local admitted warranted relation and consumes the bounded goal proposition as expressed by the exact source candidate when establishing bounded operator goal standing. Only after that establishment do any grammar acquisition, movement consideration, movement selection, authority, performance, and evidence production belong to ordinary bounded-goal advancement responsibilities.
 
 Exact identification of presented local-stop alternative A_stop establishes only that A_stop corresponds to captured response R within exact presentation C. The same responsible Seed occurrence may perform token comparison and alternative identification without collapsing those distinct acts, and identified A_stop plus preserved representation lineage may support separately responsible recovery of represented source S_stop without a second operator response. Neither response nor identification supports the independently warranted meaning relation that S_stop expresses bounded local-stop proposition M_stop. A competent stopping occurrence may rely on that independently warranted and applicable relation when establishing the local stop. The relation being admitted or otherwise usable does not mean stopping occurred; stopping occurrence does not establish a grammar-acquisition goal. No grammar-acquisition goal is established, and Seed may return to quiescence. It does not interpret the original ingress or establish a general refusal.
 
