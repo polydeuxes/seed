@@ -122,7 +122,9 @@ def test_constrained_constraint_invariants_are_canonical():
         "a constraint is not a sequential pipeline stage",
         "which movement remains admissible",
         "which standing may be relied upon",
-        "A constraint result can lawfully admit, prohibit, narrow, redirect, defer, or leave unchanged a later movement",
+        "At a constraint boundary, a constraint establishes or preserves the exact applicable prohibition",
+        "A responsible consumer may consume an applicable constraint result",
+        "The constraint result does not perform the governed movement, the consumer act, or a Stopping occurrence",
         "Does a constraint result perform the movement it governs? No.",
     ]
 
@@ -246,3 +248,16 @@ def test_constrained_stopping_invariants_are_canonical():
 
     assert "resource insufficiency" not in text
     assert "expose insufficiency" not in text
+    assert "Where the required binding remains unresolved, the Stop preserves the exact Unknown belonging to that established coordinate" in text
+    assert "does not make Stopping the owner of the reason-producing responsibility" in text
+
+
+def test_request_representation_keeps_act_occurrence_distinct_from_completion():
+    text = _read(
+        "book_of_seed/08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md"
+    )
+
+    assert "Emission remains distinct from delivery, receipt, invocation, act occurrence" in text
+    assert "does not establish an act occurrence or completion standing by identity" in text
+    assert "Any Completion claim remains separately warranted" in text
+    assert "completed act occurrence" not in text
