@@ -47,7 +47,6 @@ Represented-source recovery may then consume identified A and preserved represen
 - separate constitutional acts != repeated operator selections
 - selection != goal-semantic admission
 - goal-semantic admission != BOGE establishment
-- BOGE establishment != movement consideration
 
 ## Counterexamples or failure modes
 - Treating a legacy `Goal` model instance as proof of bounded establishment.
