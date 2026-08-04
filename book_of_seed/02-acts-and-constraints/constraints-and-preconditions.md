@@ -36,7 +36,7 @@ An access state, visible route, available artifact, capability candidate, catalo
 
 A constraint is not the governed movement, a constraint result is not occurrence of the governed movement, and a constraint is not a sequential pipeline stage. A constraint may govern whether movement may occur, which movement remains admissible, how far movement may proceed, under which scope movement remains lawful, which standing may be relied upon, or when movement must stop. Passing one constraint does not establish complete authority, complete movement warrant, selection, emission, receipt, responsibility transition, realization, or reliance beyond the result's scope.
 
-A constraint result can lawfully admit, prohibit, narrow, redirect, defer, or leave unchanged a later movement considered by a responsible consumer. It does not constitute the governed movement or mutate cluster truth.
+At a constraint boundary, a constraint establishes or preserves the exact applicable prohibition, requirement, condition, narrowing, redirection, deferral, or unchanged constraint standing. A responsible consumer may consume an applicable constraint result when determining whether a later movement remains prohibited, narrowed, redirected, deferred, or unchanged within that consumer's exact act. The constraint result does not perform the governed movement, the consumer act, or a Stopping occurrence, and it does not mutate cluster truth.
 
 Direct answer preserved by this clause: Does a constraint result perform the movement it governs? No.
 
