@@ -9,11 +9,6 @@ from typing import Any
 from seed_runtime.operational_story import build_operational_story
 from seed_runtime.pressure_audit import PressureItem, build_pressure_audit
 from seed_runtime.state import State
-from seed_runtime.typed_unknowns import (
-    TypedUnknownRecord,
-    preserve_typed_unknown,
-    typed_unknowns_to_public_dicts,
-)
 
 
 @dataclass(frozen=True)
@@ -48,7 +43,7 @@ class _SelectionFactorPayload:
 
 @dataclass(frozen=True)
 class _SelectionUnknownPayload:
-    unknowns: list[TypedUnknownRecord]
+    unknowns: list[dict[str, str]]
 
 
 @dataclass(frozen=True)
@@ -244,11 +239,10 @@ def _unsupported_target_non_selected_payload() -> _SelectionNonSelectedPayload:
 def _unsupported_target_unknown_payload() -> _SelectionUnknownPayload:
     return _SelectionUnknownPayload(
         unknowns=[
-            preserve_typed_unknown(
-                unknown_type="Implementation Unknown",
-                area="selection_logic",
-                reason="no implementation-backed selection evidence discovered for target",
-            )
+            {
+                "area": "selection_logic",
+                "reason": "no implementation-backed selection evidence discovered for target",
+            }
         ]
     )
 
@@ -283,7 +277,7 @@ def _selection_path_from_payload_bundle(
         non_selected=payloads.lineage.non_selected.non_selected,
         evidence=payloads.support.evidence,
         outcome=payloads.reason.outcome,
-        unknowns=typed_unknowns_to_public_dicts(payloads.lineage.unknowns.unknowns),
+        unknowns=payloads.lineage.unknowns.unknowns,
     )
 
 
@@ -428,14 +422,13 @@ def _target_matches_pressure_category(
 def _selection_unknowns_from_pressures(
     pressures: tuple[PressureItem, ...],
 ) -> _SelectionUnknownPayload:
-    unknowns: list[TypedUnknownRecord] = []
+    unknowns: list[dict[str, str]] = []
     if not pressures:
         unknowns.append(
-            preserve_typed_unknown(
-                unknown_type="Evidence Gap",
-                area="candidate_set",
-                reason="no pressure candidates available from current audit inputs",
-            )
+            {
+                "area": "candidate_set",
+                "reason": "no pressure candidates available from current audit inputs",
+            }
         )
     return _SelectionUnknownPayload(unknowns=unknowns)
 

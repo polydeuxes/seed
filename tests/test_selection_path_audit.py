@@ -296,8 +296,12 @@ def test_selection_unknown_payload_is_separate_from_candidate_lineage():
     empty = _selection_unknowns_from_pressures(())
 
     assert populated.unknowns == []
-    assert empty.unknowns[0].unknown_type == "Evidence Gap"
-    assert empty.unknowns[0].area == "candidate_set"
+    assert empty.unknowns == [
+        {
+            "area": "candidate_set",
+            "reason": "no pressure candidates available from current audit inputs",
+        }
+    ]
     assert "candidates" not in empty.__dataclass_fields__
     assert "selection_factors" not in empty.__dataclass_fields__
     assert "non_selected" not in empty.__dataclass_fields__
@@ -1073,8 +1077,12 @@ def test_unsupported_target_lineage_payload_is_owned_by_local_helper():
     ]
     assert payload.factors.selection_factors == ["unknown"]
     assert payload.non_selected.non_selected == []
-    assert len(payload.unknowns.unknowns) == 1
-    assert payload.unknowns.unknowns[0].area == "selection_logic"
+    assert payload.unknowns.unknowns == [
+        {
+            "area": "selection_logic",
+            "reason": "no implementation-backed selection evidence discovered for target",
+        }
+    ]
     assert "outcome" not in payload.__dataclass_fields__
     assert "evidence" not in payload.__dataclass_fields__
     assert "selected" not in payload.__dataclass_fields__
@@ -1148,12 +1156,12 @@ def test_unsupported_target_unknown_payload_is_owned_by_local_helper():
     payload = _unsupported_target_unknown_payload()
 
     assert len(payload.unknowns) == 1
-    assert payload.unknowns[0].unknown_type == "Implementation Unknown"
-    assert payload.unknowns[0].area == "selection_logic"
-    assert (
-        payload.unknowns[0].reason
-        == "no implementation-backed selection evidence discovered for target"
-    )
+    assert payload.unknowns == [
+        {
+            "area": "selection_logic",
+            "reason": "no implementation-backed selection evidence discovered for target",
+        }
+    ]
     assert "candidates" not in payload.__dataclass_fields__
     assert "selection_factors" not in payload.__dataclass_fields__
     assert "non_selected" not in payload.__dataclass_fields__
@@ -1224,7 +1232,7 @@ def test_selection_path_registered_in_visibility_contracts():
     assert {row.status for row in rows} <= {"consistent"}
 
 
-def test_selection_path_lineage_owns_typed_unknown_before_public_handoff():
+def test_selection_path_lineage_owns_unknown_dictionary_before_public_handoff():
     from seed_runtime.selection_path_audit import (
         _SelectionCandidateSetPayload,
         _SelectionFactorPayload,
@@ -1236,18 +1244,15 @@ def test_selection_path_lineage_owns_typed_unknown_before_public_handoff():
         _SelectionUnknownPayload,
         _selection_path_from_payloads,
     )
-    from seed_runtime.typed_unknowns import preserve_typed_unknown
-
-    typed_unknown = preserve_typed_unknown(
-        unknown_type="Implementation Unknown",
-        area="selection_logic",
-        reason="no implementation-backed selection evidence discovered for target",
-    )
+    unknown = {
+        "area": "selection_logic",
+        "reason": "no implementation-backed selection evidence discovered for target",
+    }
     lineage = _SelectionLineagePayload(
         _SelectionCandidateSetPayload(candidates=[]),
         _SelectionFactorPayload(selection_factors=["unknown"]),
         _SelectionNonSelectedPayload(non_selected=[]),
-        _SelectionUnknownPayload(unknowns=[typed_unknown]),
+        _SelectionUnknownPayload(unknowns=[unknown]),
     )
 
     audit = _selection_path_from_payloads(
@@ -1258,7 +1263,7 @@ def test_selection_path_lineage_owns_typed_unknown_before_public_handoff():
         lineage=lineage,
     )
 
-    assert lineage.unknowns.unknowns[0].unknown_type == "Implementation Unknown"
+    assert lineage.unknowns.unknowns == [unknown]
     assert audit.unknowns == [
         {
             "area": "selection_logic",
