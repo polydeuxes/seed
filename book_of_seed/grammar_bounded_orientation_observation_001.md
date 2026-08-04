@@ -15,15 +15,19 @@ The active Book controls this observation. Implementation names, test names, rep
 
 The Book VII excision record is used here as correction testimony and as a locator to active clauses. It is not treated as independent controlling constitutional law apart from the active clauses and navigation it corrected.
 
-The operator's phrase `grammar-bounded orientation` is attributed observation vocabulary for a general Seed orientation. It names Seed's recurring comparison posture after enough bounded relation is available to form a candidate equivalence between a presentation and a possible subject, meaning, relation, grammar, or role. It does not treat raw symbols as self-interpreting, does not presume that the encountered form has an existing Seed-native counterpart, and does not establish the candidate equivalence as true. It is not limited to Book maintenance, amendment drafting, repository curation, curator activity, or constitutional vocabulary review only. This report does not establish that phrase as a constitutional kind, a Responsibility, an act, a standing family, a runtime component, a named implementation family, or a universal mandatory sequence.
+The operator's phrase `grammar-bounded orientation` is attributed observation vocabulary for a general Seed orientation. It names Seed's recurring comparison posture toward a candidate equivalence produced by a bounded meaning-relation road between a presentation and a possible subject, meaning, relation, grammar, or role. It does not treat raw symbols as self-interpreting, does not presume that the encountered form has an existing Seed-native counterpart, and does not establish the candidate equivalence as true. It is not limited to Book maintenance, amendment drafting, repository curation, curator activity, or constitutional vocabulary review only. This report does not establish that phrase as a constitutional kind, a Responsibility, an act, a standing family, a runtime component, a named implementation family, or a universal mandatory sequence.
 
 ## Observed practice
 
 The repository observation is:
 
 ```text
-Responsibility decomposition is necessary but not sufficient
-for detecting vocabulary contamination.
+Responsibility decomposition alone does not detect
+every vocabulary contamination.
+
+In PR 2238, Responsibility decomposition did not expose
+the unsupported replacement vocabulary introduced elsewhere
+in the amended file.
 
 Before testing whether a proposed word owns a complete responsibility,
 the reader must first bound the candidate equivalence being proposed:
@@ -91,7 +95,14 @@ presentation
 != shared rendering
 ```
 
-Seed cannot inspect uninterpreted English symbols and directly recover their meaning. A candidate equivalence requires some bounded meaning-relation bridge, such as acquired common grammar, attributed meaning relations, operator-mediated examples, or a recovered translator or parser competency. This report does not decide which bridge exists in every case and does not prescribe its implementation. Grammar-bounded orientation begins after enough bounded relation is available to form a candidate equivalence.
+Seed cannot inspect uninterpreted English symbols and directly recover their meaning. The boundary is:
+
+```text
+raw presentation
+!= candidate equivalence
+```
+
+Without a bounded meaning-relation road, no candidate equivalence is available for examination. Where a bounded meaning-relation road produces a candidate equivalence, grammar-bounded orientation may examine that candidate. The candidate equivalence is not thereby supported or true. Such a road may be acquired common grammar, attributed meaning relations, operator-mediated examples, or a recovered translator or parser competency. This list is illustrative only. This report does not decide which road exists in every case, does not prescribe its implementation, and does not establish a minimum quantity of relation, a readiness threshold, a completeness threshold, or a universal admission condition.
 
 For every encountered word, phrase, artifact, representation, structure, relation, new term, or suspicious constitutional-looking compound, the first pass asks:
 
@@ -226,7 +237,7 @@ A proposed phrase may remain grammatically readable, appear locally precise, sur
 
 A replacement can therefore be contamination even when the sentence still makes sense, the old distinction appears preserved, no obvious information was removed, the replacement sounds narrower, or the replacement uses an established word as one component.
 
-The missing first discipline was PESC-bounded candidate equivalence: what presentation was encountered, what equivalence was proposed, within what scope, for which consumer-purpose, and through which applicable relation grammar, if any, it could be examined.
+The missing first discipline was PESC-bounded candidate equivalence: what presentation was encountered, what equivalence was proposed, within what scope, for which consumer-purpose, and through which applicable relation grammar, if any, it could be examined. Responsibility decomposition alone did not detect the replacement contamination demonstrated by PR 2238, while PESC-bounded grammar orientation exposed the missing comparison.
 
 ## Recurring contamination classes
 
@@ -500,7 +511,33 @@ proprioception
 
 absence of relation grammar
 → responsibly established Unknown
+
+
+bounded relation
+→ unnamed “enough” threshold
+
+meaning-relation road
+→ sufficient relation
+
+Responsibility decomposition
+→ necessary-and-sufficient calculus
+
+failure to detect one contamination
+→ generic incompleteness standing
+
+not sufficient
+→ scalar deficit
+
+threshold vocabulary removed
+→ replacement threshold vocabulary inserted
+
+negative wording
+→ automatically contaminated
 ```
+
+Do not replace threshold vocabulary with a negative abstraction. Identify the exact positive relation being claimed, then state the bounded finding about that relation. Here, the hidden threshold claim is that some quantity or state of bounded relation permits candidate-equivalence formation; the exact relation is that a bounded meaning-relation road produces a candidate equivalence available for examination. The hidden completeness claim is that Responsibility decomposition detects all vocabulary contamination; the bounded repository finding is that Responsibility decomposition alone did not detect the replacement contamination demonstrated by PR 2238.
+
+Completed bounded negative comparisons may produce rejection, conflict, non-support, or relation-not-established findings. An unnamed threshold negation must instead be decomposed into the exact proposed relation. Relation not established is not relation established as false, not responsibly established Unknown, not an incomplete subject, and not a scalar deficit.
 
 Repository-directed use is only proprioceptive use of the same grammar-bounded orientation. Natural stance language remains descriptive and does not reify a new constitutional kind, implementation object, capability family, or mandatory pipeline.
 
