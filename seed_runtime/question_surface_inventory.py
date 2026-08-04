@@ -166,46 +166,21 @@ def bounded_work_eligibility_for_question_family(
     return _bounded_work_eligibility_for_prepared_question_family(prepared_input)
 
 
-@dataclass(frozen=True)
-class BoundedWorkRefusalResult:
-    """Implementation-backed refusal for non-permitted bounded work."""
-
-    question_family: str
-    bounded_status: str
-    message: str
-    reason: str = ""
-
-
-def bounded_work_refusal_for_eligibility(
+def bounded_ask_error_message_for_eligibility(
     eligibility: BoundedWorkEligibilityResult,
-) -> BoundedWorkRefusalResult:
-    """Return the existing bounded ask refusal message for non-permitted work.
-
-    This recovers only the local refusal boundary after bounded eligibility has
-    rejected execution. It does not decide exact lookup, eligibility, argument
-    satisfaction, selection, dispatch preparation, dispatch execution,
-    presentation, rendering, schema, diagnostics, or semantic routing.
-    """
+) -> str:
+    """Return the bounded ask error message for non-permitted work."""
 
     if eligibility.permitted:
-        raise ValueError("bounded work refusal requires non-permitted eligibility")
+        raise ValueError("bounded ask error message requires non-permitted eligibility")
     if eligibility.bounded_status == "diagnostic_only":
-        message = (
+        return (
             f"Question Family '{eligibility.question_family}' is diagnostic_only and "
             "is not an inquiry-answer surface for bounded ask"
         )
-        reason = "diagnostic-only question family is refused by bounded ask"
-    else:
-        message = (
-            f"Question Family '{eligibility.question_family}' is not_dispatchable by "
-            "current implementation-backed eligibility"
-        )
-        reason = "question family has no bounded ask dispatch mapping"
-    return BoundedWorkRefusalResult(
-        question_family=eligibility.question_family,
-        bounded_status=eligibility.bounded_status,
-        message=message,
-        reason=reason,
+    return (
+        f"Question Family '{eligibility.question_family}' is not_dispatchable by "
+        "current implementation-backed eligibility"
     )
 
 
