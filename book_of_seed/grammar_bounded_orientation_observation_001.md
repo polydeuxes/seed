@@ -15,7 +15,7 @@ The active Book controls this observation. Implementation names, test names, rep
 
 The Book VII excision record is used here as correction testimony and as a locator to active clauses. It is not treated as independent controlling constitutional law apart from the active clauses and navigation it corrected.
 
-The operator's phrase `grammar-bounded orientation` is used only as attributed observation vocabulary. This report does not establish that phrase as a constitutional kind, a Responsibility, an act, a standing family, a runtime component, a named implementation family, or a universal mandatory sequence.
+The operator's phrase `grammar-bounded orientation` is attributed observation vocabulary for a general Seed orientation. It names Seed's recurring comparison posture toward encountered grammar: which already-established grammar an encountered form is occupying, and what independently warranted distinction remains. It is not limited to Book maintenance, amendment drafting, repository curation, curator activity, or constitutional vocabulary review only. This report does not establish that phrase as a constitutional kind, a Responsibility, an act, a standing family, a runtime component, a named implementation family, or a universal mandatory sequence.
 
 ## Observed practice
 
@@ -30,17 +30,17 @@ the reader must first ask which already-established word or coordinate
 the proposed word is trying to play as.
 ```
 
-The observed curation phrase for that first comparison is:
+The attributed observation phrase for that first comparison is:
 
 ```text
 grammar-bounded orientation
 ```
 
-It is an observed curation stance, not an amendment to constitutional law.
+It is Seed's general comparison posture toward encountered grammar, not an amendment to constitutional law. It may be applied to operator expressions, external grammar, testimony, representations, observations, claims, relations, runtime artifacts, repository structures, compiled competencies, district labels, Book vocabulary, and Seed's own prior renderings and implementation testimony. This illustrative list is not exhaustive and is not a taxonomy.
 
 ## First comparison
 
-For every new or suspicious constitutional-looking word or compound, the first pass asks:
+For every encountered word, phrase, artifact, representation, structure, relation, new term, or suspicious constitutional-looking compound, the first pass asks:
 
 1. What grammatical role does the phrase occupy?
 2. Which established Seed coordinate already governs that role?
@@ -355,13 +355,38 @@ does not establish consumer receipt or reliance
 
 This observation does not decide whether Recording is primarily compressed grammar or several correctly separated but incompletely owned responsibilities. Direct recovery remains necessary.
 
-## Repository need
+## General orientation and proprioceptive use
 
-Repository curation, recovery, amendment drafting, replacement review, and vocabulary review need grammar-bounded orientation before accepting constitutional-looking vocabulary.
+Grammar-bounded orientation is Seed's general comparison posture toward encountered grammar before accepting new grammar. It is not a curator-only technique and not a Book-maintenance-only procedure. Repository curation, recovery, amendment drafting, replacement review, and vocabulary review are applications of the same orientation, not limits on it.
 
-Possible later embodiments include curator boot orientation, Book-maintenance guidance, amendment review discipline, active vocabulary lint, replacement-vocabulary review, and structural comparison against Responsibility coordinates.
+When grammar-bounded orientation is applied to Seed's own repository, compiled behavior, vocabulary, structures, prior renderings, or implementation testimony, that is proprioceptive use of the same orientation. Proprioception is not a second orientation family, not a Book-only audit mode, not proof that an inspected repository claim is true, and not automatic constitutional adoption. When the orientation is directed outward toward operator or external material, it remains the same orientation. When it is directed inward toward Seed's own surfaces, it is proprioceptive use.
 
-This report implements none of them. Lexical scanning alone cannot perform grammar-bounded orientation. The observed practice requires direct reading, constitutional comparison, whole-grammar orientation, recursive replacement review, and Responsibility decomposition.
+The report may describe grammar-bounded orientation as Seed's natural stance or ordinary orientation posture, but that wording does not establish a `GrammarBoundedOrientation` artifact, orientation service, mandatory sequential stage, universal two-step pipeline, new constitutional dimension, new responsibility, new standing family, or new competency object. The ordering is epistemic discipline: grammar comparison before accepting new grammar, followed by Responsibility decomposition where responsibility-shaped residue survives. It is not a claim that every Seed occurrence must materialize two artifacts or invoke two implementation boundaries.
+
+This report implements no later embodiment. Lexical scanning alone cannot perform grammar-bounded orientation. The observed practice requires direct reading, constitutional comparison, whole-grammar orientation, recursive replacement review, and Responsibility decomposition where responsibility-shaped residue survives.
+
+## Orientation failure audit
+
+This report explicitly rejects these conversions:
+
+```text
+general orientation
+→ curator-only technique
+
+general orientation
+→ Book-maintenance-only procedure
+
+repository-directed orientation
+→ separate proprioception capability
+
+natural stance
+→ constitutional kind
+
+established word used in replacement
+→ replacement compound automatically authorized
+```
+
+Repository-directed use is only proprioceptive use of the same grammar-bounded orientation. Natural stance language remains descriptive and does not reify a new constitutional kind, implementation object, or mandatory pipeline.
 
 ## Direct answers
 
@@ -378,18 +403,18 @@ This report implements none of them. Lexical scanning alone cannot perform gramm
 11. PR 2239 itself still exhibited recursive replacement contamination by proposing `act-occurrence measurement`, `act-occurrence baseline`, `act-occurrence behavior`, and `act-occurrence record` without fully comparing those compounds against active law.
 12. The currently supported Recording grammar is conditional preservation grammar: a bounded responsibility may create or preserve retrievable assertion-bearing material within a declared preservation horizon, and may support bounded claims that a record exists and preserves an attributed assertion without establishing that represented assertion as true.
 13. The exact Recording responsibility that remains unestablished is one universal or actual instantiated Recording responsibility with resolved owner, Authority, Warrant where required, occurrence Evidence, producer identity, standing-establishment identity, consumer, and Uptake.
-14. This observation establishes only the observed repository curation need for grammar-bounded orientation before accepting constitutional-looking vocabulary.
+14. This observation preserves grammar-bounded orientation as general attributed observation vocabulary for Seed's comparison posture toward encountered grammar before accepting new grammar, including proprioceptive use when the encountered material is Seed's own repository, compiled behavior, vocabulary, structures, prior renderings, or implementation testimony.
 15. It does not establish active constitutional law, a new constitutional kind, a Responsibility, an act, a standing family, a runtime component, a mandatory sequence, a Recording ontology, a completed Recording decomposition, or PR 2239's proposed compounds as active grammar.
-16. The later repository question remains where and how, if at all, this observed stance should be embodied in curator boot orientation, Book-maintenance guidance, amendment review discipline, active vocabulary lint, replacement-vocabulary review, or structural comparison against Responsibility coordinates.
+16. The later repository question remains where and how, if at all, this general orientation should be embodied without narrowing it to curator activity or Book maintenance and without reifying it as a constitutional kind, runtime capability, service, mandatory pipeline, new responsibility, standing family, or competency object.
 
 Final disposition:
 
 ```text
 grammar-bounded orientation:
-observed curation stance
+general attributed observation vocabulary for Seed's comparison posture toward encountered grammar
 
 Responsibility decomposition:
-necessary second pass
+second pass where responsibility-shaped residue survives
 
 recursive replacement review:
 required
@@ -403,6 +428,6 @@ attributed testimony, not authority
 Recording disposition:
 not finally adjudicated here
 
-future repository embodiment:
-unresolved
+future embodiment:
+unresolved; proprioceptive use is the same orientation directed toward Seed's own surfaces
 ```
