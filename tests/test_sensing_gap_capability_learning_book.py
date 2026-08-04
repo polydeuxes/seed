@@ -71,7 +71,7 @@ def test_canonical_navigation_uses_demand_and_bounds_former_need_vocabulary():
         "Demand != Capability",
         "Demand established != movement opened",
         "“Capability demand”**: noncanonical shorthand for Demand content",
-        "It is not an independent constitutional kind, Capability, mechanism, selected mechanism, authorization, or execution",
+        "It is not an independent constitutional kind, Capability, mechanism, selected mechanism, Authorization, or act occurrence",
     ]
     stale = [
         "| advancement need |",
@@ -118,11 +118,11 @@ def test_constrained_constraint_invariants_are_canonical():
 
     required = [
         "A constraint is not the governed movement",
-        "a constraint result is not performance of the governed movement",
+        "a constraint result is not occurrence of the governed movement",
         "a constraint is not a sequential pipeline stage",
         "which movement remains admissible",
         "which standing may be relied upon",
-        "A constraint result can lawfully admit, block, narrow, redirect, defer, or leave unchanged a later movement",
+        "A constraint result can lawfully admit, prohibit, narrow, redirect, defer, or leave unchanged a later movement",
         "Does a constraint result perform the movement it governs? No.",
     ]
 
@@ -236,9 +236,9 @@ def test_constrained_stopping_invariants_are_canonical():
 
     required = [
         "Stopping may be constrained by evidence gap, capability Unknown, authority gap, resource limits, unresolved causation, preservation failure",
-        "may require stop, defer, narrow, return to inquiry, expose unmet requirements, or refuse reliance",
+        "may respond to such standings with a Stop, deferral, narrowing, return to inquiry, exposure of unmet requirements, or consumer-local non-reliance",
         "Stopping is not failure",
-        "Unknown is not permission to invent movement",
+        "Unknown does not warrant invented movement",
     ]
 
     for invariant in required:
