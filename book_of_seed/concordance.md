@@ -53,7 +53,7 @@ This is a lightweight navigation index. Aliases record repository or presentatio
 | authority scope | Authority, Communication, and Stopping | [Authority scope](08-authority-communication-and-stopping/authority-scope.md) | operator authority, approval scope | establishment, authorization |
 | policy | Authority, Communication, and Stopping | [Authority scope](08-authority-communication-and-stopping/authority-scope.md) | bounded representation of delegated authority | authority, Uptake |
 | representation and emission boundaries | Authority, Communication, and Stopping | [Representation, emission, and consumer boundaries](08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md) | external-language handoff shorthand, presentation, communication | authority, responsibility transition, receipt, uptake, reliance, explanation |
-| refusal | Authority, Communication, and Stopping | [Refusal and non-performance](08-authority-communication-and-stopping/refusal-and-non-performance.md) | block, non-performance | constraint, failure |
+| refusal | Authority, Communication, and Stopping | [Stopping and completion](08-authority-communication-and-stopping/stopping-and-completion.md) | attributed rendering of a bounded Stop, block, non-performance | constraint, Selection, Stopping |
 | stopping | Authority, Communication, and Stopping | [Stopping and completion](08-authority-communication-and-stopping/stopping-and-completion.md) | exhaustion, sufficiency, completion | advancement, refusal |
 
 ## Sensing, gap, capability, and learning
