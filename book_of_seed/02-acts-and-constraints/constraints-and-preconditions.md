@@ -30,7 +30,7 @@ An access state, visible route, available artifact, capability candidate, catalo
 ## Related chapters
 - [Acts and act artifacts](acts-and-act-artifacts.md)
 - [Selection and authorization](../03-goals-and-advancement/selection-and-authorization.md)
-- [Refusal and non-performance](../08-authority-communication-and-stopping/refusal-and-non-performance.md)
+- [Stopping and completion](../08-authority-communication-and-stopping/stopping-and-completion.md)
 
 ## Constrained movement constraint correction 001
 

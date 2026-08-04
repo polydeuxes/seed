@@ -7,7 +7,9 @@ The grounds for stopping inquiry or movement and the stronger claim that a bound
 Which exact evidenced conditions can warrant a bounded responsible consumer stopping its present act, a responsible stopping occurrence at a competent boundary that establishes a bounded stop, or the stronger completion claim for an exact bounded goal?
 
 ## Bounded resolution
-Current evidence exposes several distinct possible non-movement conditions, including existing bounded horizons, constraint prohibitions, explicit goal standing, exhaustion findings, impossibility findings, refusal, operator boundaries, evidence gaps, capability Unknowns, authority gaps, resource limits, unresolved causation, preservation failure, or satisfied scope. This set is illustrative rather than exhaustive; no projection, status field, or condition establishes stopping or completion by identity. `[UNRESOLVED]` The relations among these conditions, including whether any ordering is required, and the evidence that warrants a bounded stopping occurrence or the stronger completion claim for an exact bounded goal remain unclear.
+Current evidence exposes several distinct possible non-movement conditions, including existing bounded horizons, constraint prohibitions, explicit goal standing, exhaustion findings, impossibility findings, refusal-shaped wording, operator boundaries, evidence gaps, capability Unknowns, authority gaps, resource limits, unresolved causation, preservation failure, or satisfied scope. This set is illustrative rather than exhaustive; no projection, status field, or condition establishes stopping or completion by identity. `[UNRESOLVED]` The relations among these conditions, including whether any ordering is required, and the evidence that warrants a bounded stopping occurrence or the stronger completion claim for an exact bounded goal remain unclear.
+
+Where a bounded Stop is established, the stopping occurrence preserves a supported reason rather than silent absence. Supported irrelevance, unsupported material, missing required binding, outside-authority standing, and insufficiently bound Unknown must not collapse into one status. Where evidence supports a distinguishable reason, the Stop preserves that reason; where material is insufficiently bound to determine the reason, the Stop preserves Unknown. This discipline governs how an established Stop preserves its reason; it does not make Stopping the owner of every negative standing, constraint result, non-selection, or non-reliance that a Stop may later consume as its reason.
 
 ## Important distinctions
 - stopping != completion
@@ -15,6 +17,8 @@ Current evidence exposes several distinct possible non-movement conditions, incl
 - no selected movement != no remaining Demand
 - bounded exhaustion != global impossibility
 - local stop != process termination
+- refusal-shaped wording != Stopping by identity
+- a preventing condition != a Stopping occurrence
 
 ## Representative repository anchors
 - `seed_runtime/models.py::GoalStatus`
@@ -26,7 +30,7 @@ Current evidence exposes several distinct possible non-movement conditions, incl
 ## Related chapters
 - [Orientation and movement](../03-goals-and-advancement/orientation-and-movement.md)
 - [Demands and opened movement](../03-goals-and-advancement/demands-and-opened-movement.md)
-- [Refusal and non-performance](refusal-and-non-performance.md)
+- [Constraints and preconditions](../02-acts-and-constraints/constraints-and-preconditions.md)
 
 ## Constrained movement stopping correction 001
 
