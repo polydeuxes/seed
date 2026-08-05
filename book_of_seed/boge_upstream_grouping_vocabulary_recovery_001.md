@@ -137,8 +137,15 @@ The two expressions address different immediate objects. This recurring two-part
 The exact Capture owner, responsible boundary, Authority, Evidence, occurrence grammar, production, result, standing, consumer, and relation to Preservation remain unresolved until separately recovered.
 
 ```text
-capture of material
-!= automatically preservation of lineage
+capture-shaped wording applies to response material R
+
+preservation wording applies to
+R's response-occurrence lineage
+
+the exact relation between Capture
+and Preservation remains unresolved
+
+this report neither equates nor collapses them
 
 capture of material
 != comparison
@@ -155,7 +162,10 @@ capture of material
 
 Active clauses positively instantiate capture-shaped wording for response material R. They do not establish an exact Capture responsibility, an exact Capture owner, or one independently governed Capture act. Capture == Preserve is not established; Capture != Preserve is not established as a universal relation for every subject and scope. The two-part capture/preserve presentation is therefore not collapsed.
 
-Active law also contains `operator capture != Seed preservation`. That operator-capture presentation is not equated here with Seed capture-shaped response-material wording such as `Seed captures R`. Operator capture and Seed capture-shaped response-material wording are potentially different uses whose exact Equivalence, Scope, and Consumer-purpose require separate recovery. Operator capture == Seed capture is not established. This report does not conclude that `capture` has one Book-wide meaning or two constitutional meanings.
+Active law also contains `operator capture != Seed preservation`. That operator-capture presentation is not equated here with Seed capture-shaped response-material wording such as `Seed captures R`. Operator capture and Seed capture-shaped response-material wording are not equated here.
+
+Their exact Equivalence, Scope,
+and Consumer-purpose remain unresolved. Operator capture == Seed capture is not established. This report does not conclude that `capture` has one Book-wide meaning or two constitutional meanings.
 
 The direct active occurrences read for this correction include `Seed captures R and preserves its response-occurrence lineage`, `captured operator-response material and preserved response-occurrence lineage`, `capture preserves R and its response-occurrence lineage`, `captured response material and preserved occurrence lineage`, and `operator capture != Seed preservation`.
 
@@ -221,7 +231,9 @@ required
 | presented-alternative formation | independently owned responsibility; produces a presented alternative representing or referring to source material |
 | exact-set participation | relation or standing; separate from eligibility and formation |
 | emission | independently owned occurrence coordinate; formation is not emission |
-| operator-response occurrence | external occurrence; establishes only that the operator produced R after C was emitted unless more is separately warranted |
+| operator-response occurrence | external occurrence; establishes that the operator produced R after C was emitted
+
+Every further claim requires its own Warrant. |
 | capture-shaped response-material wording | active wording applied to R whose independent constitutional grammar, exact owner, responsible boundary, occurrence, and result remain unresolved; not comparison, identification, meaning establishment, or operator Selection occurrence |
 | comparison | independently owned responsible Seed act producing match or nonmatch finding |
 | presented-alternative identification | independently owned responsible Seed act producing A-corresponds-to-R-within-C, or no identified alternative |
@@ -330,7 +342,7 @@ bounded goal proposition M
 -> possible bounded operator goal standing
 ```
 
-The upstream responsibilities differ. They may converge on the common BOGE-relevant seam of meaning-relation Warrant support, BOGE-local Applicability standing, consumer-local Admission standing, and possible BOGE establishment. This convergence does not establish one shared family, owner, occurrence, or compulsory sequence. The seam contains support, standing-establishment responsibilities, standings, and the later BOGE establishment responsibility; it is not one composite responsibility. This seam does not establish one shared upstream family. Same BOGE consumer does not establish same producer. Same eventual establishment possibility does not establish the same exact responsibility. Different upstream material does not automatically establish distinct constitutional families. The closed-choice local-stop handling does not participate in this seam.
+The upstream responsibilities differ. They may converge on the common BOGE-relevant seam of meaning-relation Warrant support, BOGE-local Applicability standing, consumer-local Admission standing, and possible BOGE establishment. This convergence does not establish one shared family, owner, occurrence, or compulsory sequence. The seam contains support, standing-establishment responsibilities, standings, and the later BOGE establishment responsibility; it is not one composite responsibility. This seam does not establish one shared upstream family. Same BOGE consumer does not establish same producer. Same eventual establishment possibility does not establish the same exact responsibility. This report establishes no distinct constitutional families from the difference in upstream material. The closed-choice local-stop handling does not participate in this seam.
 
 ## Required classification table — `closed-choice road`
 
@@ -441,9 +453,8 @@ That future recovery must determine:
 - relation to Preservation;
 - relation to Recording;
 - relation to Compare and Identification;
-- whether operator capture and Seed capture are equivalent;
-- relation to Compare and Identification;
-- whether operator capture and Seed capture are equivalent, distinct, or merely unrelated external presentations.
+- whether operator capture and Seed capture
+  are equivalent, distinct, or have no established relation.
 
 This report does not perform that recovery. Separate Capture recovery is required.
 
