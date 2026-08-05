@@ -27,7 +27,7 @@ Evidence becoming available does not by itself change any consumer assertion, st
 - read-only representation selection or composition != assertion-preserving Uptake by itself
 - read-only selection != no constitutional occurrence
 - non-mutating act != lens automatically
-- repository adjacency != assertion-preserving Uptake
+- repository adjacency != constitutional sequence
 - constructibility != producer-to-consumer warrant
 - visibility != transition warrant
 - producer validation != consumer validation automatically
@@ -50,7 +50,7 @@ Evidence becoming available does not by itself change any consumer assertion, st
 ## Counterexamples or failure modes
 - Reading a diagnostic display order as a lawful process order.
 - module import != assertion-preserving Uptake
-- projection-selection-composition call order != assertion-preserving Uptake
+- Treating the pipeline's projection-selection-composition call order as a universal constitutional sequence; each component is explicitly read-only and locally bounded, but read-only status alone is not the reason no assertion-preserving Uptake relation is established.
 - Replacing discarded root or relevance-recognition vocabulary with Uptake as another universal noun.
 
 ## Related chapters
