@@ -39,7 +39,7 @@ Not every bounded road or emitted representation instantiates every coordinate; 
 
 ## Local constitutional context
 
-The chapter subject is preservation of meaning, evidence, provenance, Unknowns, Scope, and Authority boundaries when Seed forms and may emit a bounded representation toward a consumer. The same subject separates receipt, interpretation, Uptake, reliance, responsibility transition, authority transition, and external realization.
+The active chapter names preservation of meaning, Evidence, provenance, Unknowns, Authority boundaries, and `limits` among its subjects. This report does not establish the exact constitutional meaning of `limits`. The same subject separates receipt, interpretation, Uptake, reliance, responsibility transition, authority transition, and external realization.
 
 The core resolution establishes these distinctions:
 
@@ -66,7 +66,7 @@ Active evidence law separately states that missing or unavailable provenance doe
 | Presentation | In this occurrence, `bounded road` presents compressed transition wording: ordinary or external wording that may present several communication, representation, consumer, reliance, transition, realization, preservation, negative, and stopping coordinates without proving that each coordinate occurred or applies. The phrase is paired with `emitted representation`, which is an established subject, but the paired wording does not make `bounded road` an established subject. |
 | Equivalence | The phrase is not equivalent to closed-choice representation, admitted-interpretation wording, assertion-preserving Uptake relation, Responsibility branch shorthand, emitted representation, bounded representation, communication, transition, reliance, Authority transition, or external realization. It is not equivalent to one already-established constitutional subject or relation. |
 | Scope | The scope is the general communication-boundary warning in the Representation, Emission, and Consumer Boundaries chapter. It is not limited to BOGE, closed-choice representation, admitted-interpretation wording, or Responsibility-rooted branch vocabulary. It covers compressed transition wording wherever that wording addresses the listed coordinates. |
-| Consumer-purpose | The consumer purpose is preservation of exact consumer-local standing: a Consumer may not rely on compressed wording, emission, delivery indication, report form, routing target, owner field, or presented material as proof of receipt, interpretation, Uptake, lawful reliance, responsibility transition, Authority transition, external realization, or absence of occurrence without separate Evidence. |
+| Consumer-purpose | The Consumer-purpose is to prevent compressed wording, emission, delivery indication, report form, routing target, owner field, or presented material from establishing receipt, interpretation, Uptake, lawful reliance, Responsibility transition, Authority transition, external realization, or absence of occurrence without separate Evidence. |
 
 ## Coordinate-by-coordinate responsibility reading
 
@@ -82,7 +82,7 @@ Active evidence law separately states that missing or unavailable provenance doe
 | candidate recipient or Consumer | Candidate-Consumer identity may be established independently. Naming or targeting that candidate Consumer does not establish receipt, interpretation, Uptake, reliance, Responsibility transition, Authority transition, or external realization. |
 | receipt | Receipt needs separate evidence. Delivery indication or emitted representation does not establish receipt. |
 | interpretation | Interpretation needs separate evidence. Receipt does not establish interpretation. |
-| Uptake | Uptake is a Consumer-side relation with its own Consumer, purpose, subject, and Scope. Interpretation does not establish Uptake. |
+| Uptake | Uptake is a Consumer-side relation with its exact Consumer, material, Consumer-local Act, and purpose. Interpretation does not establish Uptake. |
 | reliance | Reliance needs separate lawful consumer-local standing. Uptake does not establish reliance. |
 | Responsibility transition | Responsibility transition needs a bounded transition with subject, holders, Scope, Authority, Evidence, acceptance or establishment occurrence, and remaining Unknowns. Reliance does not establish it. |
 | Authority transition | Authority transition needs a separately responsible boundary establishing authority subject, granting source, recipient, scope, purpose, temporal standing, constraints, evidence, and occurrence. Responsibility transition does not establish it. |
@@ -125,7 +125,7 @@ The relation protected by the clause is therefore a combination: absence of evid
 
 `bounded road` has no exact constitutional equivalent in this occurrence. It does not name one subject, one relation, one act, one responsibility, one owner, or one ordered set. It is ordinary compressed external wording for a set of possible communication-boundary coordinates named in the same paragraph.
 
-`instantiates every coordinate` correctly describes the rejected overclaim only if `instantiates` means that the exact subject, occurrence, result, or relation has been positively established for that coordinate under its own Evidence, Authority, Scope, and Unknown preservation. It is not correct if read to mean that every coordinate must exist, apply, or become Unknown for every compressed wording or emitted representation.
+`instantiates every coordinate` correctly describes the rejected overclaim only if `instantiates` means that the exact coordinate has been positively established under its own constitutional grammar. It is not correct if read to mean that every coordinate must exist, apply, or become Unknown for every compressed wording or emitted representation.
 
 ## Disposition
 
