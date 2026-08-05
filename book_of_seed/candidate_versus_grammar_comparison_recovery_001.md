@@ -60,6 +60,15 @@ result production
 
 standing established
 != later Uptake
+
+unresolved coordinate
+!= Unknown established
+
+independently established coordinate
+!= Unknown by identity
+
+compared subject
+!= consumption relation
 ```
 
 These can be described in sequence for readability, but no ordered universal sequence is established.
@@ -96,7 +105,7 @@ These can be described in sequence for readability, but no ordered universal seq
 | Lawful Stopping | Not established by the recovered material. Conflict, unresolved coordinates, missing Evidence, missing Authority, missing Warrant, or absence of applicable relation grammar do not establish a Stop by identity. |
 
 
-The active numbered Book chapters also establish responsible comparison acts outside `05.Testimony.E` without collapsing local coordinates. `book_of_seed/03-goals-and-advancement/construction-and-establishment.md` and `book_of_seed/08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md` directly support that a responsible comparison act may compare captured response material with exact presentation response coordinates; that act may establish exact match or nonmatch; Comparison != Identification; and one responsible occurrence may perform both acts without collapsing their Evidence, claims, or results. Those clauses do not establish one universal Compare grammar, one Compare family, identical Responsibilities, or one compulsory sequence.
+The active numbered Book chapters also establish responsible comparison acts outside `05.Testimony.E` without collapsing local coordinates. `book_of_seed/03-goals-and-advancement/construction-and-establishment.md` and `book_of_seed/08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md` directly support that a responsible comparison act may compare captured response material with exact presentation response coordinates; that act may establish exact match or nonmatch; Comparison != Identification; and one responsible occurrence may perform both acts without collapsing their Evidence, claims, or results. Those clauses do not establish identical Responsibilities, shared comparison relations or requirements, or one compulsory sequence.
 
 Active law restricts `05.Testimony.E` to its stated subject: multiple independently preserved testimonies or findings compared while preserving each input's source-local limits. The clause does not, by its own words, announce active general comparison grammar for all bounded subject material. It may testify to a more general pattern, but that generalization is not itself active law.
 
@@ -268,7 +277,11 @@ Which of those exact relations and requirements are shared remains unresolved.
 
 ## Remaining unresolved coordinates
 
-These coordinates remain unresolved unless a responsible occurrence positively establishes Unknown for an exact instantiated coordinate:
+These coordinates remain unresolved unless independently established for the exact occurrence.
+
+Unknown applies only where a responsible occurrence
+establishes Unknown for an exact positively instantiated
+coordinate that remains unresolved.
 
 - the owner;
 - Authority;
@@ -279,13 +292,15 @@ These coordinates remain unresolved unless a responsible occurrence positively e
 - Standing establishment;
 - consumer;
 - later Uptake;
-- the exact relation grammar consumed;
+- the exact applicable relation grammar compared with
+  the candidate equivalence, where established;
 - the exact comparison or relation basis;
 - whether exact comparison relations and requirements are shared.
 
 ## Amendment consequences
 
-Classification: exact comparison-coordinate recovery required first.
+The exact comparison relations and Responsibility
+coordinates must be recovered before an active amendment.
 
 Here, Compare is the recovered act rendering for both exact acts. Further recovery must determine whether the same subjects, Authority, Evidence, comparison relations, occurrence requirements, results, or preservation requirements govern both exact acts, without assuming any shared coordinate.
 
