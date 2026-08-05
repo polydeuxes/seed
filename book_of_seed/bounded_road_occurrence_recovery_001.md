@@ -75,11 +75,11 @@ Active evidence law separately states that missing or unavailable provenance doe
 | producer identity and responsibility | Must be evidenced for the exact producing responsibility. Compressed wording does not identify a producer, prove a producer occurrence, transfer responsibility, or establish that no producer occurred. |
 | material identity | Must preserve the exact material subject. Representation, source material, emitted material, received material, and consumed material are not the same by identity unless separately established. |
 | material content | Content must be preserved within the responsible representation or consumer boundary. Equal text, rendering, summary, or token recurrence does not establish equal standing or identical occurrence. |
-| source standing | Source standing travels only where preserved and within scope. Missing source standing is not negative source standing by identity. |
-| purpose and Scope | Purpose and Scope govern lawful formation, emission, presentation, consumer-local use, and reliance. A coordinate not governed by the local purpose is inapplicable rather than Unknown by identity. |
+| source standing | Source standing is available to a later Consumer only where the exact standing, subject, provenance, limits, and Scope are preserved and lawfully admitted or otherwise usable by that Consumer. Missing source standing is not negative source standing by identity. |
+| purpose and Scope | Purpose and Scope govern lawful formation, emission, presentation, consumer-local use, and reliance. Applicability requires a responsible finding; a coordinate is not applicable or inapplicable merely because compressed wording names it or because it is mentioned near a local purpose. |
 | representation formation | Formation may occur without emission. Formation does not establish delivery, receipt, interpretation, Uptake, reliance, responsibility transition, authority transition, or external realization. |
-| emission occurrence | Emission is separately evidenced presentation toward a candidate consumer boundary. Emission is not delivery, receipt, interpretation, Uptake, reliance, responsibility transition, authority transition, or external realization. |
-| candidate recipient or Consumer | A named, targeted, candidate, or addressed consumer does not establish actual consumer identity, receipt, interpretation, Uptake, reliance, transition, or external realization. |
+| emission occurrence | Emission is a separately evidenced occurrence in which Seed emits an exact representation toward a candidate Consumer. Emission is not delivery, receipt, interpretation, Uptake, reliance, responsibility transition, authority transition, or external realization. |
+| candidate recipient or Consumer | Candidate-Consumer identity may be established independently. Naming or targeting that candidate Consumer does not establish receipt, interpretation, Uptake, reliance, Responsibility transition, Authority transition, or external realization. |
 | receipt | Receipt needs separate evidence. Delivery indication or emitted representation does not establish receipt. |
 | interpretation | Interpretation needs separate evidence. Receipt does not establish interpretation. |
 | Uptake | Uptake is a consumer-side relation with its own consumer, purpose, subject, and preserved limits. Interpretation does not establish Uptake. |
@@ -93,7 +93,7 @@ Active evidence law separately states that missing or unavailable provenance doe
 | consumer-local non-reliance | Consumer-local non-reliance may be established where evidenced. Absence of reliance evidence is not the same as established non-reliance. |
 | lawful non-selection | Lawful non-selection must be established by the responsible selection boundary or preserved selection result. Absence of a selected coordinate is not by identity a lawful non-selection. |
 | eligibility findings | Eligibility findings are local standings or results. Absence of eligibility evidence is not an established ineligibility finding. |
-| bounded Stops | Bounded Stops require their own competent stopping responsibility. Failure, silence, non-selection, or missing transition evidence does not establish a Stop by identity. |
+| bounded Stops | A bounded Stop is established only through a competent Stopping occurrence with its own Evidence, Authority, Scope, result, and preserved limits. Failure, silence, non-selection, or missing transition evidence does not establish a Stop by identity. |
 | absence of evidenced Act occurrence | Absence of evidenced Act occurrence may be preserved as an evidence condition. It does not prove nonoccurrence unless a responsible negative finding establishes nonoccurrence within an exact evidence boundary. |
 
 ## Unknown versus nonoccurrence versus inapplicability audit
@@ -111,9 +111,10 @@ Audit findings:
 
 | Situation | Correct classification |
 |---|---|
-| Compressed wording names a coordinate and the coordinate is within the local purpose, but the exact value or occurrence remains unresolved. | Unknown or unresolved standing is preserved for that positively instantiated coordinate. |
-| A coordinate is not required by the exact subject, purpose, Scope, or consumer boundary. | Inapplicable or not required; not Unknown by identity. |
-| A coordinate has no evidence of occurrence. | Absence of evidenced act occurrence may be preserved. That is not proof of nonoccurrence. |
+| Compressed wording names a coordinate. | Naming does not positively instantiate that coordinate, establish its Applicability, require it, or make it Unknown by identity. |
+| A coordinate is positively instantiated, but its exact value or occurrence remains unresolved by responsible finding. | Unknown or unresolved standing is preserved for that coordinate. |
+| A responsible finding establishes that a coordinate is inapplicable to the exact subject, Act, purpose, Scope, occurrence, or Consumer. | The established inapplicability is preserved; it is not Unknown. |
+| No Evidence establishes an Act occurrence. | Absence of evidenced Act occurrence may be preserved; nonoccurrence is not established by identity. |
 | A responsible negative finding establishes that a coordinate did not occur within a bounded evidence boundary. | Established negative occurrence or nonoccurrence, preserving its evidence boundary and limits. |
 | A coordinate is unsupported, missing, or not selected under a lawful local rule. | Unsupported, missing, or lawful non-selection, as established by that rule; not Unknown by identity unless the coordinate itself is positively instantiated and unresolved. |
 | Missing provenance for material or source. | Provenance Unknown or unavailable provenance; not falsehood, invalidity, nonexistent source, or nonexistent producer occurrence. |
@@ -139,7 +140,7 @@ The occurrence is not an established constitutional subject and does not need an
 Amendment-ready replacement clause:
 
 ```text
-Not every compressed transition wording or emitted representation establishes each listed coordinate; a coordinate outside the exact subject, purpose, Scope, or consumer boundary is inapplicable or not required, an unevidenced act occurrence remains only an absence of evidenced act occurrence unless a responsible negative finding establishes nonoccurrence, and a positively instantiated coordinate whose value or occurrence remains unresolved must preserve Unknown or unresolved standing.
+Not every compressed transition wording or emitted representation establishes each listed coordinate. A coordinate does not become applicable, required, or Unknown merely because compressed wording names it. Where a responsible finding establishes inapplicability, that inapplicability is preserved. Absence of Evidence for an Act occurrence remains only absence of evidenced Act occurrence unless a responsible negative finding establishes nonoccurrence. A positively instantiated coordinate whose value or occurrence remains unresolved must preserve Unknown or unresolved standing.
 ```
 
 ## Exact amendment boundary
@@ -158,7 +159,6 @@ No prior finding is needed to replace this occurrence. The following matters rem
 
 - the exact Capture owner, responsible boundary, Authority, Evidence, occurrence, result, and relation to Preservation;
 - whether any concrete historical communication occurrence satisfied one or more listed coordinates;
-- whether a later active-law amendment should keep `instantiates` or use a narrower established verb;
 - exact tests for any later active amendment, because this report does not amend active law.
 
 ## Verification
