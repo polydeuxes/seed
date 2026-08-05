@@ -42,9 +42,11 @@ The active paragraph also limits the roster: not every compressed transition wor
 
 ### Communication.E comparison
 
-`08.Communication.E` already states the narrower external-evidence boundary: external response is not verified external effect; transport, delivery indication, receipt acknowledgement, returned testimony, provider output, or operator-visible response may be evidence within a bounded inquiry, but none proves the represented external effect without separate competent evidence. It also keeps requirement, request-formation, emission, delivery, external receipt, interpretation, uptake, reliance, responsibility-transition, authority-transition, realization, response-production, response-receipt, ingress, and new Observation times distinct and Unknown unless a responsible producer records them.
+`08.Communication.E` contains a supported external-effect evidence boundary and a defective temporal Unknown sentence. It says external response is not verified external effect; transport, delivery indication, receipt acknowledgement, returned testimony, provider output, or operator-visible response may be Evidence within a bounded inquiry, but none proves the represented external effect without separate competent Evidence. That boundary preserves that transport, delivery indication, receipt acknowledgement, returned testimony, provider output, and operator-visible response may be bounded Evidence without proving an external effect.
 
-This clause gives the correct bounded treatment for transport, delivery indication, receipt acknowledgement, returned testimony, provider output, operator-visible response, and external effect claims. It does not make Delivery, Receipt, or Acknowledgement Seed-side houses; it treats those words as possible evidentiary subjects or timing claims only within bounded support.
+The same active sentence then says requirement, request-formation, emission, delivery, external receipt, interpretation, uptake, reliance, responsibility-transition, authority-transition, realization, response-production, response-receipt, ingress, and new Observation times remain distinct and Unknown unless a responsible producer records them. That temporal wording makes absence of recording establish Unknown and is therefore defective under Unknown discipline.
+
+Communication.E external-effect boundary: supported. Communication.E temporal Unknown sentence: defective. Chapter-wide Unknown discipline: internally inconsistent. The clause does not make Delivery, Receipt, or Acknowledgement Seed-side houses; it treats those words as possible evidentiary subjects or timing claims only within bounded support.
 
 ## Handoff lineage
 
@@ -73,14 +75,14 @@ The removal of consumer-local examination is important precedent: membership in 
 
 | exact active item in longer list | positive active grammar or standing | disposition |
 |---|---|---|
-| producer identity and responsibility | Active representation/emission grammar requires responsible formation or producer when a bounded representation is emitted. | independently established Seed-side dimension where a producer/formation/emission occurrence is established |
-| material identity | A bounded representation must preserve source subject, material identity, content, and provenance. | independently established preservation dimension |
-| material content | Same representation-preservation grammar. | independently established preservation dimension |
-| source standing | The representation carries only assertion standing warranted by source material, formation method, purpose, scope, provenance, authority limits, and Unknowns. | independently established preservation dimension, not independent house by identity |
-| purpose and intended scope | Representation formation is for a declared purpose and bounded result emission preserves declared purpose and scope. | independently established preservation dimension |
+| producer identity and responsibility | Active representation/emission grammar requires responsible formation or producer when a bounded representation is emitted. | The active clauses establish producer and responsibility requirements for bounded representation formation and emission where applicable; that does not establish a producer-identity dimension, independent house, constitutional kind, or universal inventory member. |
+| material identity | A bounded representation must preserve source subject, material identity, content, and provenance. | The active representation clause names material identity among what a bounded representation must preserve where applicable; its broader constitutional standing remains unresolved, and inclusion does not establish a dimension, kind, house, mandatory coordinate, or universal schema. |
+| material content | A bounded representation must preserve source subject, material identity, content, and provenance. | The active representation clause names material content among what a bounded representation must preserve where applicable; its broader constitutional standing remains unresolved, and inclusion does not establish a dimension, kind, house, mandatory coordinate, or universal schema. |
+| source standing | The representation carries only assertion standing warranted by source material, formation method, purpose, scope, provenance, authority limits, and Unknowns. | The representation must preserve the source standing it actually carries; this does not create a source-standing dimension or independent house. |
+| purpose and intended scope | Representation formation is for a declared purpose and bounded result emission preserves declared purpose and scope. | The active clauses require declared purpose and scope for representation formation and preservation where applicable; that requirement does not establish them as dimensions, independent houses, constitutional kinds, or one universal inventory. |
 | representation formation | Positive Seed-side formation grammar exists. | independently established Seed-side grammar |
 | emission occurrence | Positive Seed-side emission grammar exists where evidenced. | independently established Seed-side grammar |
-| candidate recipient or consumer | Emission is toward a candidate consumer boundary; addressed/candidate consumer is not actual consumer. | candidate boundary dimension, not proof of actual receipt or uptake |
+| candidate recipient or consumer | Emission is toward a candidate consumer boundary; addressed/candidate consumer is not actual consumer. | candidate consumer boundary for emission, not proof of actual receipt or uptake and not a dimension by list membership |
 | receipt occurrence | Separately evidenced before claimed; no positive Receipt house recovered. | external/consumer occurrence or evidentiary subject, not Seed-side Responsibility by identity |
 | consumer-local interpretation | Separately evidenced before claimed; no universal Interpretation house recovered here. | consumer-local claim/evidentiary subject; requires separate recovery for positive grammar |
 | Uptake | Book 01 establishes Uptake as a consumer-side relation family. | independently established consumer-side relation family, not universal stage |
@@ -88,16 +90,16 @@ The removal of consumer-local examination is important precedent: membership in 
 | responsibility transition | Communication.A establishes positive bounded-transition grammar. | independently established Seed-side grammar where evidenced |
 | authority transition or non-transition | Communication.D establishes separate authority boundary and negative non-transfer rule. | independently bounded authority grammar; non-transition only where separately established |
 | external realization or non-realization | Communication.E treats external effect claims as separately evidenced; non-realization is not established by absence alone. | external-effect evidentiary boundary; no Seed-side house by identity |
-| preservation of provenance | Representation must preserve provenance. | independently established preservation requirement |
-| limits | Representation and transitions preserve limits. | independently established preservation requirement |
+| preservation of provenance | Representation must preserve provenance. | established preservation requirement where applicable, not a dimension by preservation-list membership |
+| limits | Representation and transitions preserve limits. | established preservation requirement where applicable, not a dimension by preservation-list membership |
 | Unknowns | Unknown preservation is required only for positively instantiated unresolved coordinates; naming alone does not instantiate Unknown. | bounded preservation rule, not automatic result of lexical occurrence |
-| constraint results | Representation may preserve represented constraint results. | preservation dimension, not independent house by identity |
-| negative authority | Representation must preserve negative authority. | preservation dimension |
-| consumer-local non-reliance | Representation may preserve consumer-local non-reliance. | preservation dimension; not positive reliance |
-| lawful non-selection | Representation may preserve lawful non-selection. | preservation dimension; not selection sequence |
-| eligibility findings | Representation may preserve eligibility findings. | preservation dimension |
-| established bounded Stops | Representation may preserve established bounded Stops. | preservation dimension under stopping law |
-| absence of an evidenced act occurrence | Active law says absence of Evidence remains only absence of evidenced Act occurrence unless a responsible negative finding establishes nonoccurrence. | useful negative-evidence boundary, not nonoccurrence or Unknown by identity |
+| constraint results | Representation may preserve represented constraint results. | A representation may preserve an established constraint result; the result does not become a dimension, independent house, constitutional kind, or universal inventory member. |
+| negative Authority | Representation must preserve negative authority. | The active representation clause requires preservation of negative Authority where applicable; that preservation requirement does not establish negative Authority as a dimension, independent house, constitutional kind, or universal inventory member. |
+| consumer-local non-reliance | Representation may preserve consumer-local non-reliance. | A representation may preserve established consumer-local non-reliance where applicable; this does not create a non-reliance dimension or positive reliance. |
+| lawful non-selection | Representation may preserve lawful non-selection. | A representation may preserve an established lawful non-selection finding; it does not become a dimension or selection sequence. |
+| eligibility findings | Representation may preserve eligibility findings. | A representation may preserve established eligibility findings where applicable; this does not make eligibility a dimension, independent house, constitutional kind, or universal inventory member. |
+| established bounded Stops | Representation may preserve established bounded Stops. | A representation may preserve an established bounded Stop; Stopping and its result remain distinct from dimensions. |
+| absence of an evidenced act occurrence | Active law says absence of Evidence remains only absence of evidenced Act occurrence unless a responsible negative finding establishes nonoccurrence. | useful negative-evidence boundary, not occurrence, nonoccurrence, Unknown, or a dimension by identity |
 
 ## Delivery, Receipt, and Acknowledgement boundary
 
@@ -114,18 +116,25 @@ Active law does not establish that external delivery or receipt is impossible. I
 
 Acknowledgement was audited only where it currently occurs: `receipt acknowledgement` in `08.Communication.E`. It is not promoted here into a standalone subject.
 
+## Governing dimensional distinction
+
+Active Book 01 states: Acts, constraints, and relations are structurally distinct from dimensions. Their presence in dimensional characterization does not make them additional dimensions, a mandatory intermediate layer, or one exhaustive taxonomy. This report therefore records that preservation is a grounded relation or requirement where active law says so; dimension is a grounded constitutional term; the phrase formed by combining preservation with dimension is not established by word combination. Membership in the inherited Handoff roster does not establish independent grammar, and membership in a preservation list != dimension.
+
 ## Unknown discipline
+
+The active communication paragraph contains three materially different Unknown statements. Statement 1, `Each coordinate requires its own evidence, authority, scope, limits, and Unknown preservation`, projects one Unknown-preservation requirement across unlike roster members and remains residue-prone. Statement 2, `Naming a coordinate does not establish its Applicability, that the exact responsible Act requires it, or Unknown standing`, correctly preserves that naming a coordinate does not establish Unknown standing. Statement 3, the sentence that the listed times `remain distinct and Unknown unless a responsible producer records them`, makes absence of recording establish Unknown and therefore violates Unknown discipline.
 
 The active communication paragraph correctly states that naming a coordinate does not establish Applicability, that an exact responsible Act requires it, or Unknown standing. It also states that absence of Evidence for an Act occurrence remains only absence of evidenced Act occurrence unless a responsible negative finding establishes nonoccurrence, and that only a positively instantiated coordinate remaining unresolved by responsible finding must preserve Unknown or unresolved standing.
 
 Therefore:
 
-- lexical presentation is not positive coordinate instantiation;
+- lexical presentation != positive coordinate instantiation;
 - uninstantiated coordinate is not Unknown;
-- positively instantiated coordinate remaining unresolved becomes Unknown only where responsibly established;
-- for external delivery, receipt, realization, or time claims, absence of Evidence is not positive occurrence, nonoccurrence, or Unknown by identity.
+- absence of recording != Unknown;
+- absence of Evidence != occurrence != nonoccurrence != Unknown by identity;
+- positively instantiated coordinate remaining unresolved may preserve Unknown only where responsibly established.
 
-Potential violation to amend later if the residue finding is sustained: the sentence `Each coordinate requires its own evidence, authority, scope, limits, and Unknown preservation` can be misread as assigning every named item the same coordinate status and an automatic Unknown-preservation duty. The next paragraph narrows that reading, but the peer-chain sentence remains residue-prone.
+Potential violations to amend later if the residue finding is sustained: the sentence `Each coordinate requires its own evidence, authority, scope, limits, and Unknown preservation` can be misread as assigning every named item the same coordinate status and an automatic Unknown-preservation duty. The later naming sentence narrows that reading, but the peer-chain and temporal Unknown sentences leave the active chapter internally inconsistent.
 
 ## Peer-chain answer
 
@@ -163,22 +172,24 @@ Their usefulness does not establish positive constitutional houses on both sides
 7. **Which members remain unrecovered compounds?** Responsibility transition and authority transition were not reopened beyond exact current standing; `authority transition or non-transition` and `external realization or non-realization` remain compound presentations where the negative side cannot be inferred from absence alone.
 8. **Do Delivery, Receipt, or Acknowledgement have independently established Seed-side Responsibilities?** No. Active law does not positively establish Delivery, Receipt, or Acknowledgement as Seed-side Responsibilities.
 9. **Which non-equivalences remain constitutionally useful?** The non-equivalences listed above remain useful as forbidden-inference boundaries, especially emission does not prove delivery; delivery does not prove receipt; receipt does not prove interpretation; uptake does not prove reliance; responsibility transition does not prove authority transition; and authority transition does not prove external realization.
-10. **Does `08.Communication.E` already carry the correct external-evidence boundary?** Yes. It provides the bounded treatment for transport, delivery indication, receipt acknowledgement, returned testimony, provider output, operator-visible response, and external effect claims.
-11. **Is the roster still needed as written?** Not as written, if the residue finding is sustained. Its useful forbidden inferences remain needed, but its peer/coordinate wording is overbroad and partly redundant with `08.Communication.E`.
-12. **Which exact active clauses would require later amendment if the residue finding is sustained?** Future amendment would need to examine, without drafting replacement text here, the constitutional subject line naming separate standings before receipt through external realization may be claimed; the bounded-resolution peer-chain sentence and `Each coordinate` sentence; the longer `distinct constitutional coordinates` list; the repeated peer chain in `08.Communication.C`; the Important Distinctions bullets from representation formation through authority transition/external realization; the counterexample treating emitted or delivered report as proof of later external/consumer outcomes; and request-shaped representation correction wording that names emission, delivery, receipt, invocation, act occurrence, result testimony, and recording as local relations rather than a universal sequence.
+10. **Does `08.Communication.E` already carry the correct external-evidence boundary?** 08.Communication.E correctly preserves that external evidence does not prove an external effect, but its temporal sentence incorrectly makes unrecorded times Unknown by identity.
+11. **Is the roster still needed as written?** Not as written, if the residue finding is sustained. Its useful forbidden inferences remain needed, but its peer wording, common-coordinate wording, and Unknown wording require later amendment.
+12. **Which exact active clauses would require later amendment if the residue finding is sustained?** Future amendment would need to examine, without drafting replacement text here, the constitutional subject line naming separate standings before receipt through external realization may be claimed; the peer-chain sentence; the `Each coordinate` sentence; the longer distinct-coordinate roster; the repeated chain in `08.Communication.C`; the temporal Unknown sentence in `08.Communication.E`; and related Important Distinctions and counterexamples only where they preserve the same false-peer or Unknown-by-absence defect. Request-shaped representation correction wording that names emission, delivery, receipt, invocation, act occurrence, result testimony, and recording as local relations rather than a universal sequence may also require review only within that same boundary.
 
 ## Verification results
 
-Commands run after creating this report:
+Commands run while correcting this report:
 
 ```bash
 git diff --check
 git diff --name-only
 git diff --stat
+git grep check for forbidden dimension-classification phrases
+rg -n "absence of recording != Unknown|membership in a preservation list != dimension|Acts, constraints, and relations are structurally distinct from dimensions|Communication.E external-effect boundary: supported|Communication.E temporal Unknown sentence: defective" book_of_seed/handoff_decomposition_residue_recovery_001.md
 pytest -q
 ```
 
-Results before staging: `git diff --check`, `git diff --name-only`, and `git diff --stat` produced no tracked diff output because the only change was the untracked new report file. `git status --short` showed exactly `?? book_of_seed/handoff_decomposition_residue_recovery_001.md`. `pytest -q` reported `3 failed, 1756 passed in 459.37s (0:07:39)`. The failures were the previously observed invariant failures in `tests/test_operational_measurement_preservation_book.py::test_operation_measurement_baseline_and_deviation_non_equivalences`, `tests/test_operational_measurement_preservation_book.py::test_operational_measurement_topology_non_equivalences_in_canonical_clauses`, and `tests/test_sensing_gap_capability_learning_book.py::test_constrained_evidence_learning_and_causation_invariants_are_canonical`.
+Current correction results before staging: `git diff --check` passed; `git diff --name-only` showed exactly `book_of_seed/handoff_decomposition_residue_recovery_001.md`; `git diff --stat` showed exactly one changed file; the required `git grep` produced no matches; the required string check found all required corrected statements. `pytest -q` reported `3 failed, 1756 passed in 356.22s (0:05:56)`. The failures were the previously observed invariant failures in `tests/test_operational_measurement_preservation_book.py::test_operation_measurement_baseline_and_deviation_non_equivalences`, `tests/test_operational_measurement_preservation_book.py::test_operational_measurement_topology_non_equivalences_in_canonical_clauses`, and `tests/test_sensing_gap_capability_learning_book.py::test_constrained_evidence_learning_and_causation_invariants_are_canonical`.
 
 ## Final disposition
 
@@ -186,7 +197,8 @@ The hypothesis is sustained in bounded form.
 
 - Handoff word excised != Handoff topology fully removed.
 - Historical decomposition != active constitutional inventory.
-- Useful non-equivalence != positive house on each side.
+- Peer presentation != same constitutional kind.
+- Useful non-equivalence != positive grammar on both sides.
 - Removing false peers != removing the forbidden inference they protected.
 
 The report stops before amendment, replacement wording, a replacement roster, chain, family, pipeline, stage model, transport model, communication model, or external-occurrence topology.
