@@ -231,9 +231,7 @@ required
 | presented-alternative formation | independently owned responsibility; produces a presented alternative representing or referring to source material |
 | exact-set participation | relation or standing; separate from eligibility and formation |
 | emission | independently owned occurrence coordinate; formation is not emission |
-| operator-response occurrence | external occurrence; establishes that the operator produced R after C was emitted
-
-Every further claim requires its own Warrant. |
+| operator-response occurrence | external occurrence; establishes that the operator produced R after C was emittedEvery further claim requires its own Warrant. |
 | capture-shaped response-material wording | active wording applied to R whose independent constitutional grammar, exact owner, responsible boundary, occurrence, and result remain unresolved; not comparison, identification, meaning establishment, or operator Selection occurrence |
 | comparison | independently owned responsible Seed act producing match or nonmatch finding |
 | presented-alternative identification | independently owned responsible Seed act producing A-corresponds-to-R-within-C, or no identified alternative |
