@@ -120,11 +120,74 @@ consumer-local Admission-standing establishment responsibility
 Warrant, Applicability standing, and Admission standing are not themselves owners, acts, boundaries, or responsibilities. Where exact owner identity or occurrence remains unresolved, that unresolved status is preserved. The exact Selection subject remains unresolved where active law does not establish it.
 
 
+## Capture vocabulary boundary
+
+The active BOGE-related clauses repeatedly pair:
+
+```text
+capture of response material R
+
+with
+
+preservation of R's response-occurrence lineage
+```
+
+The two expressions address different immediate objects. This recurring two-part presentation is evidence against silently replacing both with repeated Preserve wording. It does not by itself establish Capture as an independently owned constitutional responsibility.
+
+The exact Capture owner, responsible boundary, Authority, Evidence, occurrence grammar, production, result, standing, consumer, and relation to Preservation remain unresolved until separately recovered.
+
+```text
+capture of material
+!= automatically preservation of lineage
+
+capture of material
+!= comparison
+
+capture of material
+!= identification
+
+capture of material
+!= meaning establishment
+
+capture of material
+!= operator Selection occurrence
+```
+
+Active clauses positively instantiate capture-shaped wording for response material R. They do not establish an exact Capture responsibility, an exact Capture owner, or one independently governed Capture act. Capture == Preserve is not established; Capture != Preserve is not established as a universal relation for every subject and scope. The two-part capture/preserve presentation is therefore not collapsed.
+
+Active law also contains `operator capture != Seed preservation`. That operator-capture presentation is not equated here with Seed capture-shaped response-material wording such as `Seed captures R`. Operator capture and Seed capture-shaped response-material wording are potentially different uses whose exact Equivalence, Scope, and Consumer-purpose require separate recovery. Operator capture == Seed capture is not established. This report does not conclude that `capture` has one Book-wide meaning or two constitutional meanings.
+
+The direct active occurrences read for this correction include `Seed captures R and preserves its response-occurrence lineage`, `captured operator-response material and preserved response-occurrence lineage`, `capture preserves R and its response-occurrence lineage`, `captured response material and preserved occurrence lineage`, and `operator capture != Seed preservation`.
+
+```text
+capture-shaped wording:
+positively instantiated
+
+exact Capture responsibility:
+unresolved
+
+exact Capture owner:
+unresolved
+
+Capture == Preserve:
+not established
+
+two-part capture/preserve presentation:
+not collapsed
+
+operator capture == Seed capture:
+not established
+
+separate Capture recovery:
+required
+```
+
+
 ## PESC for `closed-choice road`
 
 | PESC coordinate | Finding |
 |---|---|
-| Presentation | The phrase appears as external presentation shorthand around a closed-choice representation used upstream of possible BOGE establishment. Active law separately names bounded potential-goal standing, presentation eligibility, formation of exact presentation C, presented alternative A, exact-set participation, emission occurrence, operator-response material R, capture and lineage, comparison act and finding, identification act and result, represented-source recovery, meaning-relation Warrant support, BOGE-local Applicability-standing establishment responsibility, consumer-local Admission-standing establishment responsibility, and possible BOGE establishment. |
+| Presentation | The phrase appears as external presentation shorthand around a closed-choice representation used upstream of possible BOGE establishment. Active law separately names bounded potential-goal standing, presentation eligibility, formation of exact presentation C, presented alternative A, exact-set participation, emission occurrence, operator-response material R, capture-shaped wording applied to R, preserved response-occurrence lineage, comparison act and finding, identification act and result, represented-source recovery, meaning-relation Warrant support, BOGE-local Applicability-standing establishment responsibility, consumer-local Admission-standing establishment responsibility, and possible BOGE establishment. |
 | Equivalence | The phrase is not equivalent to closed-choice representation, potential-goal standing, presentation eligibility, comparison, identification, meaning-relation Warrant support, Applicability standing, Admission standing, or BOGE establishment. It compresses several separately stated coordinates. |
 | Scope | The positively established scope is conditional: where a closed-choice representation is used upstream of possible BOGE establishment, exact local responsibilities and relations may prepare material for the common BOGE-relevant seam. Closed-choice representation is not limited to that use and may expose navigation, clarification, or local-stop alternatives. |
 | Consumer-purpose | The relevant consumer purpose for BOGE is admission and reliance on the warranted relation that exact source candidate G expresses bounded goal proposition M. Other consumers, including a competent Stopping occurrence for a local-stop alternative, remain separate. |
@@ -133,16 +196,16 @@ Warrant, Applicability standing, and Admission standing are not themselves owner
 
 | Coordinate | Recovery |
 |---|---|
-| owner | No one owner is established for the phrase. BOGE owns only the BOGE establishment responsibility. Representation-formation responsibility, the responsibility bearing the comparison act, the responsibility bearing the identification act, represented-source-recovery responsibility, meaning-relation Warrant-producing responsibility, Applicability-standing establishment responsibility, Admission-standing establishment responsibility, the response-capture responsibility whose exact owner remains unresolved where not established, the responsible emission boundary where active law establishes one, and the competent Stopping responsibility remain independently owned or unresolved according to their own evidence. |
-| subject or material | The compressed materials include potential-goal candidate G, presented alternative A, exact presentation C, token T, captured response material R and lineage, T-to-A relation, A-to-G representation lineage, the warranted relation that G expresses bounded goal proposition M, the admitted relation, and M as expressed by G. These are not one subject by identity. |
-| exact act | No single exact act is named by the phrase. Active law distinguishes acts to form the presented alternative or exact presentation, emit the representation, capture response material and preserve occurrence lineage, Compare R with C's exact response coordinates, identify the presented alternative corresponding to R within C, recover represented-source identity through preserved lineage, produce or establish the meaning-relation Warrant, determine and establish BOGE-local Applicability standing, admit the warranted relation, and perform BOGE establishment. |
+| owner | No one owner is established for the phrase. BOGE owns only the BOGE establishment responsibility. Representation-formation responsibility, the responsibility bearing the comparison act, the responsibility bearing the identification act, represented-source-recovery responsibility, meaning-relation Warrant-producing responsibility, Applicability-standing establishment responsibility, Admission-standing establishment responsibility, the responsible emission boundary where active law establishes one, and the competent Stopping responsibility remain independently owned or unresolved according to their own evidence. The active clauses positively instantiate capture-shaped wording for response material R. They do not establish the exact responsible owner or boundary for that coordinate. Ownership remains unresolved and is not reassigned to BOGE, Compare, Identification, emission, or Preservation. |
+| subject or material | The compressed materials include potential-goal candidate G, presented alternative A, exact presentation C, token T, captured response material R, preserved response-occurrence lineage, T-to-A relation, A-to-G representation lineage, the warranted relation that G expresses bounded goal proposition M, the admitted relation, and M as expressed by G. These are not one subject by identity. |
+| exact act | No single exact act is named by the phrase. Active law distinguishes acts to form the presented alternative or exact presentation, emit the representation, Compare R with C's exact response coordinates, identify the presented alternative corresponding to R within C, recover represented-source identity through preserved lineage, produce or establish the meaning-relation Warrant, determine and establish BOGE-local Applicability standing, admit the warranted relation, and perform BOGE establishment. The active clauses state that Seed captures R and elsewhere use capture-shaped wording for the response material. Whether this names an exact independently governed act, ordinary descriptive wording inside another responsible act, or a boundary distinct from Preservation remains unresolved. The exact-act inventory retains `capture response material R` only as act-shaped active wording whose independent constitutional grammar remains unresolved and does not replace it with `preserve response material R`. |
 | Authority | No common Authority for all compressed upstream responsibilities is established. Each responsibility requires its own Authority where applicable. BOGE Authority remains unresolved in the attributed Responsibility-rooted report and is not supplied by the phrase. |
 | Evidence | Evidence remains local to each responsibility. Operator-response occurrence evidence does not establish source meaning, Applicability standing, Admission standing, or BOGE occurrence evidence. |
 | purpose and scope | The bounded BOGE-relevant purpose is to make the exact warranted G-expresses-M relation available for BOGE-local Applicability standing, consumer-local Admission standing, and possible BOGE establishment. Closed-choice presentation may also serve local presentation, navigation, clarification, or Stopping purposes outside BOGE. |
 | input and Provenance | BOGE-relevant inputs preserve identified A where applicable, response lineage, representation lineage, source candidate G, bounded proposition M, the warranted relation that G expresses M, source and attribution, scope, purpose, authority limits, known loss, conflicts, Unknowns, and consumer identity. |
-| Warrant | The BOGE-relevant Warrant is the separate meaning-relation Warrant that G expresses M. It is not produced by response capture, comparison, or identification. A local-stop source requires its own separately warranted local-stop meaning relation. |
-| occurrence | Conditional occurrence coordinates are named for representation, emission, capture, comparison, identification, represented-source recovery, Warrant production or establishment, Applicability-standing establishment, Admission-standing establishment, and possible BOGE establishment. The phrase does not claim a concrete actual occurrence of each coordinate. |
-| production and result | Produced results include exact presentation C, presented alternative A, participation relation, captured R and lineage, comparison finding, identification result, recovered source identity, warranted meaning relation, Applicability standing, Admission standing, and possible bounded operator goal result. These results remain separate. |
+| Warrant | The BOGE-relevant Warrant is the separate meaning-relation Warrant that G expresses M. It is not produced by capture-shaped response-material wording, comparison, or identification. A local-stop source requires its own separately warranted local-stop meaning relation. |
+| occurrence | Conditional occurrence coordinates are named for representation, emission, capture-shaped response-material wording, comparison, identification, represented-source recovery, Warrant production or establishment, Applicability-standing establishment, Admission-standing establishment, and possible BOGE establishment. The phrase does not claim a concrete actual occurrence of each coordinate. |
+| production and result | Produced results include exact presentation C, presented alternative A, participation relation, captured R, preserved response-occurrence lineage, comparison finding, identification result, recovered source identity, warranted meaning relation, Applicability standing, Admission standing, and possible bounded operator goal result. These results remain separate. |
 | Standing establishment | Potential-goal standing, presentation eligibility, exact-set participation, meaning-relation Warrant standing, Applicability standing, Admission standing, and bounded-goal standing are separate standings. None follows from the phrase by identity. |
 | consumer and Uptake | The common BOGE consumer-local seam concerns Applicability and Admission of the warranted G-expresses-M relation before BOGE relies on that admitted relation. Closed-choice local-stop handling has a different consumer: a competent Stopping occurrence. |
 | Constraint | No single constraint family is established. Exact constraints, conflicts, known loss, Unknowns, and authority limits are preserved locally. No coordinate match is not a BOGE failure by identity. |
@@ -159,7 +222,7 @@ Warrant, Applicability standing, and Admission standing are not themselves owner
 | exact-set participation | relation or standing; separate from eligibility and formation |
 | emission | independently owned occurrence coordinate; formation is not emission |
 | operator-response occurrence | external occurrence; establishes only that the operator produced R after C was emitted unless more is separately warranted |
-| response capture | independently owned or unresolved responsibility preserving R and occurrence lineage; not comparison or identification |
+| capture-shaped response-material wording | active wording applied to R whose independent constitutional grammar, exact owner, responsible boundary, occurrence, and result remain unresolved; not comparison, identification, meaning establishment, or operator Selection occurrence |
 | comparison | independently owned responsible Seed act producing match or nonmatch finding |
 | presented-alternative identification | independently owned responsible Seed act producing A-corresponds-to-R-within-C, or no identified alternative |
 | represented-source recovery | independently owned responsibility producing recovered source identity through preserved lineage |
@@ -276,10 +339,10 @@ The upstream responsibilities differ. They may converge on the common BOGE-relev
 | surface phrase | `closed-choice road` |
 | positively established constitutional content | Where a closed-choice representation is used upstream of possible BOGE establishment, active law establishes distinct potential-goal, presentation, response, comparison, identification, source-recovery, meaning-relation Warrant support, Applicability standing, Admission standing, their producing or establishing responsibilities, and possible BOGE-establishment content, each bounded by its own evidence and responsibility. |
 | content not established | The phrase does not establish one responsibility, one owner, one BOGE-owned upstream family, one compulsory order, operator intent, operator understanding, operator selection occurrence, source meaning, Applicability standing, Admission standing, BOGE Authority, BOGE occurrence evidence, or bounded goal standing by identity. |
-| responsible boundaries or responsibilities compressed | Representation-formation responsibility; emission responsibility or responsible emission boundary, where active law establishes one; response-capture responsibility, where ownership is established, otherwise preserving ownership as unresolved; comparison responsibility; presented-alternative-identification responsibility; represented-source-recovery responsibility; meaning-relation Warrant-producing responsibility; BOGE-local Applicability-standing establishment responsibility; consumer-local Admission-standing establishment responsibility; BOGE establishment responsibility; and, on a separate local-stop outcome, local-stop source-recovery responsibility, local-stop meaning-relation Warrant-producing responsibility, and competent Stopping responsibility. |
-| constitutional subjects, relations, support, standings, acts, occurrences, and results compressed | Potential-goal standing; presentation eligibility; presented alternative; exact-set participation relation or standing; emission occurrence; operator-response occurrence; captured response material and lineage; comparison act and comparison finding; identification act and identification result; recovered represented-source identity; meaning-relation Warrant support; Applicability standing; Admission standing; Selection act or result only at the level active law establishes; bounded operator goal standing; and local-stop meaning-relation Warrant support. Exact categories remain visible and some owners or occurrences remain unresolved rather than reassigned. |
+| responsible boundaries or responsibilities compressed | Representation-formation responsibility; emission responsibility or responsible emission boundary, where active law establishes one; the capture-shaped response-material coordinate, with no exact responsible boundary recovered here and ownership unresolved; comparison responsibility; presented-alternative-identification responsibility; represented-source-recovery responsibility; meaning-relation Warrant-producing responsibility; BOGE-local Applicability-standing establishment responsibility; consumer-local Admission-standing establishment responsibility; BOGE establishment responsibility; and, on a separate local-stop outcome, local-stop source-recovery responsibility, local-stop meaning-relation Warrant-producing responsibility, and competent Stopping responsibility. |
+| constitutional subjects, relations, support, standings, acts, occurrences, and results compressed | Potential-goal standing; presentation eligibility; presented alternative; exact-set participation relation or standing; emission occurrence; operator-response occurrence; response material R; capture-shaped wording applied to R; preserved response-occurrence lineage; comparison act and comparison finding; identification act and identification result; recovered represented-source identity; meaning-relation Warrant support; Applicability standing; Admission standing; Selection act or result only at the level active law establishes; bounded operator goal standing; and local-stop meaning-relation Warrant support. Exact categories remain visible and some owners or occurrences remain unresolved rather than reassigned. |
 | exact BOGE establishment participation | Only after consumer-local Admission of the exact warranted G-expresses-M relation may BOGE rely on that admitted relation, consume M as expressed by G, and establish bounded operator goal standing. |
-| neighboring responsibilities | Representation-formation responsibility, emission responsibility or responsible emission boundary where established, response-capture responsibility where ownership is established, comparison responsibility, presented-alternative-identification responsibility, represented-source-recovery responsibility, Warrant-producing responsibility, Applicability-standing establishment responsibility, Admission-standing establishment responsibility, and competent Stopping responsibility remain neighboring responsibilities, responsible boundaries, or unresolved neighboring coordinates; Warrant, Applicability standing, and Admission standing remain support or standings, not responsibilities. |
+| neighboring responsibilities | Representation-formation responsibility, emission responsibility or responsible emission boundary where established, the unresolved capture-shaped response-material coordinate, comparison responsibility, presented-alternative-identification responsibility, represented-source-recovery responsibility, Warrant-producing responsibility, Applicability-standing establishment responsibility, Admission-standing establishment responsibility, and competent Stopping responsibility remain neighboring responsibilities, responsible boundaries, or unresolved neighboring coordinates; Warrant, Applicability standing, and Admission standing remain support or standings, not responsibilities. |
 | local alternatives that do not enter BOGE | Local-stop alternative; presentation-navigation alternatives; clarification alternatives; and no-coordinate-match outcomes. |
 | constitutional kind? | No. |
 | relation? | No single relation. It refers externally to several relations when decomposed. |
@@ -334,11 +397,13 @@ This report does not amend the following active clauses. It identifies exact lat
 | `book_of_seed/03-goals-and-advancement/construction-and-establishment.md:16` | `... becomes relevant to this road ...` | Replace with `... becomes relevant to this BOGE-local use ...` or `... becomes relevant to possible BOGE establishment ...`, preserving that identification does not establish candidate meaning. |
 | `book_of_seed/03-goals-and-advancement/operator-ingress-common-grammar-prerequisite.md:104` | `... becomes relevant to the road ...` | Replace with `... becomes relevant to possible BOGE establishment ...` or `... becomes relevant to the BOGE-local Applicability and Admission seam ...`, preserving each crossing's responsibility and evidence. |
 | `book_of_seed/03-goals-and-advancement/operator-ingress-common-grammar-prerequisite.md:146` | `The admitted-interpretation road and closed-choice road are distinct possible roads ...` | Replace with direct wording: `Where preserved ingress becomes translated or otherwise bounded source material, an interpretation candidate is produced, candidate-local Warrant standing is established, a responsible Selection occurrence establishes its exact Selection result, BOGE-local Applicability standing is established for the exact warranted meaning relation, and that relation receives consumer-local Admission to BOGE, and where a closed-choice representation is used upstream of possible BOGE establishment, the upstream responsibilities differ and may converge on the common BOGE-relevant seam of meaning-relation Warrant support, BOGE-local Applicability standing, consumer-local Admission standing, and possible BOGE establishment; neither display is identical to the other or universally compulsory.` |
-| `book_of_seed/08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md:18` | `In the local closed-choice road, ...` | Replace with direct conditional language: `Where a closed-choice representation is used for local selection upstream of possible BOGE establishment, ...` then preserve exact presentation C, token T, presented alternative A, emission, R, capture, comparison, identification, and no strengthened meaning. |
+| `book_of_seed/08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md:18` | `In the local closed-choice road, ...` | Replace with direct conditional language: `Where a closed-choice representation is used for local selection upstream of possible BOGE establishment, ...` then preserve exact presentation C, token T, presented alternative A, emission, R, capture-shaped response-material wording, comparison, identification, and no strengthened meaning. |
 
 Excluded general communication-boundary occurrence: `book_of_seed/08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md:12` uses `bounded road` generally, not as an occurrence of `closed-choice road`, `admitted-interpretation road`, `this road`, or `the road` clearly referring to one of those two descriptive presentations. This general bounded-road occurrence is outside Category C recovery, requires separate direct recovery before amendment, and has no replacement wording established here.
 
 No replacement proper noun is required for any Category C occurrence. Where no group noun is required, the later amendment should remove the group noun and state the constituent responsibilities directly.
+
+Category C road removal may alter only the recovered grouping vocabulary. Nearby capture and Preservation wording must retain its present semantic distinctions until separate recovery. Later amendment must preserve `capture response material R` and `preserve its response-occurrence lineage` where that two-part wording is nearby. It must not replace capture with Preserve, merge capture and lineage preservation, expand capture into a new responsibility, rename capture, or resolve Capture grammar incidentally.
 
 ## Amendment consequences
 
@@ -360,6 +425,27 @@ book_of_seed/08-authority-communication-and-stopping/representation-emission-and
 ```
 
 That later PR should decompose the direct clauses and should not replace `road` with another connective metaphor or with a new proper noun.
+
+## Deferred Capture recovery
+
+Capture vocabulary requires a separate PESC and Responsibility recovery.
+
+That future recovery must determine:
+
+- whether Seed capture names an exact act;
+- its owner and responsible boundary;
+- its subject and input;
+- Authority and Evidence;
+- occurrence and result;
+- relation to operator-response occurrence;
+- relation to Preservation;
+- relation to Recording;
+- relation to Compare and Identification;
+- whether operator capture and Seed capture are equivalent;
+- relation to Compare and Identification;
+- whether operator capture and Seed capture are equivalent, distinct, or merely unrelated external presentations.
+
+This report does not perform that recovery. Separate Capture recovery is required.
 
 ## Final confirmation
 
@@ -421,4 +507,46 @@ not invented
 
 general bounded-road occurrence:
 removed from Category C amendment readiness
+
+Disposition A:
+preserved
+
+BOGE district boundary:
+preserved
+
+Capture:
+not promoted into a responsibility
+
+Capture:
+not collapsed into Preserve
+
+capture of R:
+kept distinct from preservation of lineage
+
+exact Capture owner:
+unresolved
+
+exact Capture act grammar:
+unresolved
+
+operator capture and Seed capture:
+not equated
+
+Category C amendment map:
+preserved
+
+nearby capture wording:
+protected from incidental amendment
+
+active Book:
+unchanged
+
+tests:
+unchanged
+
+runtime:
+unchanged
+
+new constitutional vocabulary:
+not introduced
 ```
