@@ -19,10 +19,10 @@ Book VII is intentionally absent. Its former operational topic collection was ex
 
 ## Responsibility
 
-1. Responsibility is the Book's presentation and traversal root for reading a responsibility-shaped constitutional road.
+1. Responsibility is the Book's presentation and traversal root for reading each exact responsibility and the branches it instantiates.
 2. The headings beneath it expose coordinates and relations; they do not reassign constitutional ownership.
-3. Every instantiated responsibility must expose the branches required by its exact road.
-4. A conditional branch remains uninstantiated where the exact road does not establish that coordinate.
+3. Every instantiated responsibility must expose the branches required by that responsibility.
+4. A conditional branch remains uninstantiated where that responsibility does not establish the coordinate.
 5. An instantiated coordinate whose value has not been resolved remains unresolved unless a responsible occurrence positively establishes Unknown.
 6. Recurrence, headings, adjacency, implementation shape, or plausible completion do not establish a branch value or identity.
 
@@ -163,7 +163,7 @@ act occurrence
 != production occurrence
 ```
 
-The two may coincide only where the exact road establishes that identity.
+The two may coincide only where the exact responsibility establishes that identity.
 
 #### Production-occurrence evidence
 
@@ -220,7 +220,7 @@ standing-establishment occurrence
 
 ### Conditional preservation, standing, and neighboring branches
 
-These branches are exposed only where the exact road instantiates them. Some may precede the act, govern it, preserve its occurrence, terminate its road, or belong to a later consumer. They remain governed by their independently owned constitutional grammar.
+These branches are exposed only where the exact responsibility instantiates them. Some may precede the act, govern it, preserve its occurrence, or belong to a later consumer. They remain governed by their independently owned constitutional grammar.
 
 #### Preservation testimony
 
@@ -240,7 +240,7 @@ Identifies the exact consumer, material consumed, consumer-local act, purpose, a
 
 #### Constraint
 
-Constraint is an independently owned constitutional subject that may govern the exact proposed act, material, or road. It is not reclassified as a relation merely because it governs another responsibility. Responsibility does not own the Constraint merely because the Constraint governs its act.
+Constraint is an independently owned constitutional subject that may govern the exact proposed act, material, or responsibility. It is not reclassified as a relation merely because it governs another responsibility. Responsibility does not own the Constraint merely because the Constraint governs its act.
 
 ```text
 Constraint
@@ -249,7 +249,7 @@ Constraint
 
 #### Lawful Stopping
 
-Where the exact road establishes lawful Stopping, preserve separately the responsible owner, stopping act, stopping occurrence, and bounded Stop result. Identity among those coordinates must not be inferred. It is not reclassified as a relation merely because it connects a reason-producing responsibility to a stopped road. Absence of movement, unresolved material, a negative standing, or a preventing condition does not establish a Stop by identity.
+Where the exact responsibility establishes lawful Stopping, preserve separately the responsible owner, stopping act, stopping occurrence, and bounded Stop result. Identity among those coordinates must not be inferred. It is not reclassified as a relation merely because it connects a reason-producing responsibility to the exact act for which Stopping is established. Absence of movement, unresolved material, a negative standing, or a preventing condition does not establish a Stop by identity.
 
 ```text
 absence of movement

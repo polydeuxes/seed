@@ -25,7 +25,7 @@ def test_book_distinguishes_input_exclusion_from_whole_act_nonperformance():
     clause = _clause()
 
     assert "upstream applicability is not downstream admission" in clause
-    assert "admission remains required only where its exact local road requires it" in clause
+    assert "admission remains required only where the exact consumer-local act requires it" in clause
     assert "It does not by itself establish admission" in clause
     assert "may not participate in, be consumed by, or be relied upon in that act" in clause
     assert "no act result may claim reliance on, support from, consumption of, or participation by the excluded input" in clause

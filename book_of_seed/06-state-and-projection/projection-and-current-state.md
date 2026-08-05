@@ -49,6 +49,6 @@ A derived artifact need not be preserved when the understanding it carries can b
 - Collapsing projected material into current constitutional standing because replay completed.
 
 ## Related chapters
-- [Lenses, views, and constitutional roads](../01-grammar-and-standing/lenses-views-and-roads.md)
+- [Lenses, views, and assertion-preserving Uptake](../01-grammar-and-standing/lenses-views-and-assertion-preserving-uptake.md)
 - [Events, facts, and state](events-facts-and-state.md)
 - [Ownership, discrepancy, and residue](ownership-discrepancy-and-residue.md)
