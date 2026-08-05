@@ -11,11 +11,11 @@ Authority was read in the requested order:
 3. `grammar_bounded_orientation_observation_001.md` as attributed testimony;
 4. repository history for PR 2246 lineage only.
 
-The active Book controls. Recurrence, headings, nearby wording, implementation names, plausible abstraction, and shared English verbs do not establish equivalence. PR 2246 removed the earlier borrowed relation wording and left the current compressed phrase that a candidate equivalence is available for `examination`.
+The active Book controls. Recurrence, headings, nearby wording, implementation names, plausible abstraction, and shared English verbs do not establish equivalence. PR 2246 removed the earlier borrowed relation wording and left a compressed phrase for candidate-equivalence handling that this report corrects to Compare wording.
 
 ## Question under recovery
 
-The question under recovery is whether existing bounded-comparison grammar governs a candidate equivalence considered in relation to an applicable relation grammar.
+The question under recovery is whether existing bounded-comparison grammar governs a candidate equivalence compared with an applicable relation grammar.
 
 The hypothesis tested here is:
 
@@ -77,7 +77,7 @@ These can be described in sequence for readability, but no ordered universal seq
 | Input standing | Each input retains its own attribution, Provenance, support basis, subject, scope, Authority, confidence or uncertainty, Unknowns, Standing, and forbidden inferences. |
 | Preserved attribution | Required for each input. |
 | Provenance | Required for each input. |
-| Evidence or support basis | Support basis is preserved for each input; comparison alone does not create truth, warrant, source independence, permission, or reconciliation. |
+| Evidence or support basis | Support basis is preserved for each input; comparison alone does not create truth, Warrant, reliance, source independence, Authority, or reconciliation. |
 | Authority | Each input's Authority is preserved; the comparison boundary must not erase it. Separate Authority for the comparison is implied by responsibility topology but not globally named in the clause. |
 | Scope | The comparison is bounded; each input scope is preserved. |
 | Purpose | Not universally established by `05.Testimony.E`; the exact consumer-purpose remains local to the instantiated comparison. Comparison does not establish truth, reconciliation, reliance, source independence, or stronger standing by identity. |
@@ -113,15 +113,15 @@ The PESC observation describes a candidate equivalence between a presentation an
 | Consumer-purpose | The consumer needing the proposed relation and the purpose of that need. |
 | Applicable relation grammar | The relation grammar, if any, that can address the candidate relation proposed by PESC. Absence of an applicable relation grammar is not automatically Unknown. |
 | Owner of candidate-versus-grammar question | Unresolved. It is not automatically the candidate producer, operator, presentation source, later consumer, or PESC report. |
-| Exact responsible act | `examination` compresses an unresolved producer-local act concerning a candidate equivalence and an applicable relation grammar. Comparison is the present hypothesis under recovery, not the established constitutional name of that act. |
+| Exact responsible act | Compare the candidate equivalence with the applicable relation grammar. |
 | Authority | Unresolved for the general shape. Exact Authority must be recovered per instance. |
 | Evidence | Illustrative testimony may include acquired common grammar, attributed meaning relations, operator-mediated examples, or recovered translator or parser competency; the exact Evidence remains local. |
 | Warrant where required | Required for any meaning-relation, result, Standing, reliance, or adoption claim. Not supplied by translation, presentation, prose recurrence, or candidate carriage by identity. |
-| Act occurrence | Unresolved until an exact responsible occurrence performs the unresolved producer-local act. Candidate availability does not prove that occurrence. |
-| Producer / production boundary | Unresolved for the result of the producer-local act. Production of the candidate remains separate from production of that result. |
+| Act occurrence | Unresolved until an exact responsible occurrence performs Compare. Candidate availability does not prove that occurrence. |
+| Producer / production boundary | Unresolved for the result. Production of the candidate remains separate from production of that result. |
 | Production occurrence | Unresolved unless the exact result production occurrence is evidenced. |
 | Attributed candidate outcome inventory from the PESC observation report | Supported equivalence recovered; candidate equivalence partly supported; candidate equivalence conflicting; candidate equivalence rejected; no applicable relation grammar presently recovered; candidate remains unresolved; responsible occurrence establishes Unknown for one exact instantiated coordinate; additional common grammar is required. The PESC report identifies these as candidate bounded outcomes. This recovery does not establish the list as the active result grammar of one candidate-versus-grammar responsibility. |
-| Possible result standing | At most bounded relation standing for the exact candidate in relation to the applicable relation grammar, if the responsible occurrence and Warrant are established. It is not automatically constitutional Standing, applicability, admission, reliance, or Uptake. |
+| Possible result standing | At most bounded relation standing for the exact candidate compared with the applicable relation grammar, if the responsible occurrence and Warrant are established. It is not automatically constitutional Standing, applicability, admission, reliance, or Uptake. |
 | Standing-establishment boundary | Distinct unless exact law establishes identity. PESC says it does not establish truth, Standing, applicability, admission, reliance, or Uptake by identity. |
 | Consumer of result | Unresolved except by the PESC consumer-purpose coordinate; the result's later consumer may be the bounded consumer named for that purpose, but this is not automatic. |
 | Later Uptake | Consumer-side and distinct. Not established by candidate formation or result production. |
@@ -129,7 +129,7 @@ The PESC observation describes a candidate equivalence between a presentation an
 | Unknowns | Unknown only where a responsible occurrence establishes Unknown for an exact instantiated coordinate. Otherwise coordinates remain unresolved. |
 | Lawful Stopping | Not established by the recovered material. Conflict, unresolved coordinates, missing Evidence, missing Authority, missing Warrant, or absence of applicable relation grammar do not establish a Stop by identity. |
 
-PESC itself bounds a candidate equivalence by naming presentation, proposed equivalence, scope, and consumer-purpose. It may describe coordinates required to address the proposal. It does not, by its own attributed testimony, establish that it forms every candidate relation proposal, does not identify a universal producer, and does not establish the later unresolved producer-local act or its result.
+PESC itself bounds a candidate equivalence by naming presentation, proposed equivalence, scope, and consumer-purpose. It may describe coordinates required to address the proposal. It does not, by its own attributed testimony, establish that it forms every candidate relation proposal, does not identify a universal producer, and does not establish the later Compare occurrence or its result.
 
 The attributed candidate outcome inventory preserves that:
 
@@ -145,11 +145,11 @@ candidate rejected
 | Coordinate | Shape A | Shape B | Present standing |
 | --- | --- | --- | --- |
 | Subject kind | Multiple independently preserved testimonies or findings. | One candidate equivalence between a presentation and a proposed subject, meaning, relation, grammar, or role. | Exact instantiated subjects differ. |
-| Input relation | Inputs are related to one another within a bounded testimony-comparison clause. | The candidate is considered in relation to an applicable relation grammar, if any. | Exact instantiated input relations differ. |
-| Comparison basis | Not universally established by `05.Testimony.E`; must be recovered for the exact instantiated comparison. | Unresolved. If comparison applies, the exact comparison or relation basis must be recovered for the exact instantiated candidate. | Shared basis not established; distinct family basis not established. |
-| Purpose | Not universally established by `05.Testimony.E`; exact consumer-purpose remains local to the instantiated comparison. | Consumer-purpose is part of PESC, but the exact purpose of the unresolved producer-local act remains local to the instantiated candidate. | Shared purpose not established. |
+| Input relation | Inputs are related to one another within a bounded testimony-comparison clause. | The candidate equivalence is compared with an applicable relation grammar, if any. | Exact instantiated input relations differ. |
+| Comparison basis | Not universally established by `05.Testimony.E`; must be recovered for the exact instantiated comparison. | The applicable relation grammar, where established for the exact instance; the exact governing grammar relation remains unresolved. | Shared basis not established; different governing grammar not established. |
+| Purpose | Not universally established by `05.Testimony.E`; exact consumer-purpose remains local to the instantiated comparison. | Consumer-purpose is part of PESC, but the exact purpose of the Compare act remains local to the instantiated candidate. | Shared purpose not established. |
 | Owner | Local bounded comparison boundary. | Unresolved; not automatically candidate producer, source, operator, or consumer. | Not established as same. |
-| Exact act | Bounded testimony comparison. | `examination` compresses an unresolved producer-local act; Comparison remains a hypothesis for Shape B. | Exact instantiated responsibilities are non-identical; governing act grammar relation unresolved. |
+| Exact act | Bounded testimony comparison. | Compare the candidate equivalence with the applicable relation grammar. | Same act rendering does not establish same exact responsibility; governing Compare grammar relation remains unresolved. |
 | Authority | Comparison Authority and preserved input Authority; not globally named. | Unresolved per instance. | Not established as same. |
 | Evidence | Preserved support bases of inputs plus comparison Evidence. | Candidate Provenance, relation grammar Evidence, and Warranting material as applicable. | Coordinates differ. |
 | Warrant | Not produced by agreement alone. | Required for meaning-relation or result Standing; not produced by translation or candidate carriage alone. | Shared non-equivalence, not same exact responsibility. |
@@ -170,38 +170,41 @@ Shape A exact instantiated responsibility
 
 because their exact subjects, input relations, and preservation coordinates differ.
 
-The recovered evidence does not yet support either:
+The recovered evidence preserves:
 
 ```text
-one shared comparison act grammar
-```
+Compare:
+recovered act rendering for both exact acts
 
-or:
+one broader governing Compare grammar:
+unresolved
 
-```text
-distinct responsibility families
+exact responsibility identity:
+rejected
 ```
 
 The governing distinction is preserved:
 
 ```text
-non-identity of two exact instantiated responsibilities
-!= distinctness of their governing act grammar
+exact instantiated responsibility non-identity
+!= unresolved relation between the governing grammars of their Compare acts
 ```
 
 ## Production and standing boundaries
 
-Production is responsibility topology concerning producer, production occurrence, and result. Production is not automatically the exact act's name.
+Production is responsibility topology concerning producer, production occurrence, and result. Production is not automatically the exact act's name. Compare is the recovered act rendering for Shape B; production remains a separate Responsibility branch and does not name that act.
 
-The word `examination` appears because the exact producer-local act and several neighboring production coordinates have not yet been recovered. The missing material is not merely a Book word for production. The compressed items include:
+The unresolved material is the exact local topology, including where not established:
 
-- exact responsible act;
-- owner of that act;
-- producer of its result;
-- production occurrence;
+- owner;
+- Authority;
+- Evidence;
+- Warrant;
+- occurrence;
 - result;
-- Standing-establishment boundary where distinct;
-- relation between candidate producer and later consumer.
+- Standing establishment;
+- consumer;
+- later Uptake.
 
 Candidate production is separately established only when an exact boundary forms an attributed relation proposal or translated representation with preserved source, scope, Authority limits, Provenance or Provenance Unknown, uncertainty, conflicts, and loss. `01.External.A`, `01.External.F`, and `01.External.G` require that translation may form attributed material or relation proposal but does not establish comparison, interpretation, meaning-relation Warrant, or the result of either act. Candidate carriage or later consumption does not relocate candidate production.
 
@@ -209,7 +212,7 @@ Candidate production is separately established only when an exact boundary forms
 
 Active Uptake grammar is consumer-side. It names a consumer-side relation family, not every consumer-local act and not a universal stage. A consumer-local comparison may participate in Uptake when the consumer has prior Standing to use upstream material and the use occurrence preserves required identity, Evidence, Warrant, scope, Authority, confidence, and Unknown limits. But comparison occurrence is not Uptake by identity, and result production is not later Uptake by identity.
 
-For Shape B, whether the proposed candidate-versus-grammar responsibility consumes the candidate through Uptake remains unresolved. Candidate consumption by the unresolved producer-local act may be consumer-local in the ordinary sense that the boundary consumes upstream candidate material, but active law does not establish that every such consumption is constitutional Uptake. Consumption of a later result by another consumer is also a separate Uptake question, not answered by result existence.
+For Shape B, whether the proposed candidate-versus-grammar responsibility consumes the candidate through Uptake remains unresolved. Candidate consumption by the Compare act may be consumer-local in the ordinary sense that the boundary consumes upstream candidate material, but active law does not establish that every such consumption is constitutional Uptake. Consumption of a later result by another consumer is also a separate Uptake question, not answered by result existence.
 
 ## Lawful Stopping boundary
 
@@ -231,24 +234,29 @@ A Stop is not created by identity because a proposed act cannot presently contin
 
 ## Disposition
 
-Shape A and Shape B are distinct instantiated responsibility-shaped recoveries because their exact subjects, input relations, and preservation coordinates differ.
+Shape A and Shape B are non-identical exact instantiated responsibilities.
 
-The current Book does not establish whether they are:
+Shape A compares multiple independently preserved testimonies or findings.
 
-- differently instantiated responsibilities under one broader comparison act grammar; or
-- responsibilities governed by distinct act grammars.
+Shape B compares one candidate equivalence with the applicable relation grammar, where such grammar is established for the exact instance.
 
-Therefore neither shared comparison grammar nor distinct responsibility families is presently established.
+Both acts may be rendered as Compare.
 
-This is not flat identity-and-distinction Unknown. The exact instantiated responsibilities are positively non-identical. What remains unresolved is the relation between their governing act grammars or responsibility families.
+That shared act rendering does not establish that the responsibilities are identical or that one universal Compare grammar governs both.
+
+The relation between their governing Compare grammars remains unresolved.
+
+The exact instantiated responsibilities are non-identical.
+
+Whether one broader Compare grammar governs both exact acts, or whether their governing grammars differ, remains unresolved.
 
 ## Direct answers
 
-1. `examination` compresses an unresolved producer-local act concerning a candidate equivalence and applicable relation grammar; Comparison remains a hypothesis.
+1. Shape B's exact act rendering is: Compare the candidate equivalence with the applicable relation grammar.
 2. `05.Testimony.E` establishes the bounded testimony-comparison clause, not active general comparison grammar.
 3. Shape A and Shape B are not the same exact instantiated responsibility.
-4. Whether they share one governing act grammar remains unresolved.
-5. Whether they belong to distinct responsibility families remains unresolved.
+4. Same act rendering does not establish same exact responsibility.
+5. Same act rendering does not establish one universal governing grammar.
 6. Shape A's comparison basis and exact purpose are not universally established.
 7. Candidate production remains separate from the unresolved later act.
 8. The PESC outcomes are attributed candidate outcomes, not yet active result grammar for one recovered responsibility.
@@ -259,25 +267,25 @@ This is not flat identity-and-distinction Unknown. The exact instantiated respon
 
 These coordinates remain unresolved unless a responsible occurrence positively establishes Unknown for an exact instantiated coordinate:
 
-- the exact producer-local act currently rendered as `examination`;
-- the owner of that act;
-- the exact relation grammar consumed;
-- the act's Authority;
-- the exact comparison or relation basis, if comparison applies;
-- the act occurrence;
-- the result producer;
-- the production occurrence;
-- the active result grammar;
-- the Standing-establishment boundary;
-- the relation between candidate consumption and Uptake;
-- whether one broader act grammar governs both shapes;
-- whether distinct act grammars govern the two shapes.
+- the owner;
+- Authority;
+- Evidence;
+- Warrant;
+- occurrence;
+- result;
+- Standing establishment;
+- consumer;
+- later Uptake;
+- the exact governing relation grammar consumed;
+- the exact comparison or relation basis;
+- whether one broader Compare grammar governs both exact acts;
+- whether their governing grammars differ.
 
 ## Amendment consequences
 
 Classification: broader comparison-grammar recovery required first.
 
-Here, `comparison` remains the hypothesis being tested. The broader recovery must determine whether a supported general act grammar exists at all, not assume one and merely locate its owning clause.
+Here, Compare is the recovered act rendering for both exact acts. The broader recovery must determine whether one broader governing Compare grammar governs both exact acts, or whether their governing grammars differ, without assuming either answer.
 
 No active Book wording is drafted here. No owning active Book file is chosen yet.
 
@@ -296,20 +304,20 @@ Shape A purpose:
 no longer confused with produced relation standing
 
 exact act:
-restored to unresolved
+Shape B rendered as Compare the candidate equivalence with the applicable relation grammar
 
-Comparison:
-retained only as hypothesis for Shape B
+Compare:
+recovered act rendering for both exact acts
 
 Shape A exact responsibility
 != Shape B exact responsibility:
 preserved
 
-shared act grammar:
-not established
+one broader governing Compare grammar:
+unresolved
 
-distinct responsibility families:
-not established
+exact responsibility identity:
+rejected
 
 PESC outcome inventory:
 preserved as attributed testimony
@@ -318,7 +326,7 @@ lawful Stopping:
 not inferred from unresolved or preventing conditions
 
 Production:
-kept distinct from exact act
+kept distinct from act name
 
 Standing establishment:
 kept distinct from result production
