@@ -5,4 +5,4 @@ This Book concerns the vocabularies and warrants by which Seed can recognize con
 - [External and constitutional grammar](external-and-constitutional-grammar.md)
 - [Constitutional kinds and artifact standing](constitutional-kinds-and-artifact-standing.md)
 - [Constructors and production authority](constructors-and-production-authority.md)
-- [Lenses, views, and constitutional roads](lenses-views-and-roads.md)
+- [Lenses, views, and assertion-preserving Uptake](lenses-views-and-assertion-preserving-uptake.md)

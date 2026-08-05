@@ -9,7 +9,7 @@ def _read(relative: str) -> str:
 
 
 def test_view_kind_depends_on_emitted_standing_not_input_artifact_alone():
-    text = _read("book_of_seed/01-grammar-and-standing/lenses-views-and-roads.md")
+    text = _read("book_of_seed/01-grammar-and-standing/lenses-views-and-assertion-preserving-uptake.md")
 
     assert "Input artifact kind and representation shape may supply evidence" in text
     assert "they do not automatically determine the View kind" in text
