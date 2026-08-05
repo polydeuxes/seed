@@ -1,15 +1,17 @@
 # Representation, Emission, and Consumer Boundaries
 
 ## Constitutional subject
-The preservation of meaning, evidence, limits, provenance, Unknowns, and authority boundaries when Seed forms a bounded representation and may emit it toward a consumer, and the separate standings required before receipt, interpretation, uptake, reliance, responsibility transition, authority transition, or external realization may be claimed.
+The preservation of meaning, evidence, limits, provenance, Unknowns, Responsibility boundaries, and Authority boundaries when Seed forms a bounded representation from exact source material for a declared purpose, may emit it toward an exact candidate Consumer boundary, preserves warranted Standing, supports Consumer-local use only within that warrant, and attributes external Evidence without converting it into the Warrant for the assertions it carries.
 
 ## Core question
 What must representation, communication, emission, consumer-local use, and responsibility transition preserve, and what constitutional claims may compressed external wording not imply?
 
 ## Bounded resolution
-Seed may form a bounded representation from source material for a declared purpose and may emit that representation toward a candidate consumer. Representation formation is not emission. Emission is not delivery. Delivery is not receipt. Receipt is not interpretation. Interpretation is not uptake. Uptake is not reliance. Reliance is not responsibility transition. Responsibility transition is not authority transition. Authority transition is not external realization. Each coordinate requires its own evidence, authority, scope, limits, and Unknown preservation.
+Seed may form a bounded representation from exact source material for a declared purpose and may emit that representation toward an exact candidate Consumer boundary. Representation formation is not emission occurrence.
 
-Compressed transition wording must be decomposed into the distinct constitutional coordinates it compresses: producer identity and responsibility, material identity, material content, source standing, purpose and intended scope, representation formation, emission occurrence, candidate recipient or consumer, receipt occurrence, consumer-local interpretation, Uptake, reliance, responsibility transition, authority transition or non-transition, external realization or non-realization, and preservation of provenance, limits, Unknowns, constraint results, negative authority, consumer-local non-reliance, lawful non-selection, eligibility findings, established bounded Stops, and absence of an evidenced act occurrence. Not every compressed transition wording or emitted representation establishes each listed coordinate. Naming a coordinate does not establish its Applicability, that the exact responsible Act requires it, or Unknown standing. Where a responsible finding establishes inapplicability, that inapplicability is preserved. Absence of Evidence for an Act occurrence remains only absence of evidenced Act occurrence unless a responsible negative finding establishes nonoccurrence. A positively instantiated coordinate that remains unresolved by responsible finding must preserve Unknown or unresolved standing.
+The representation carries only the Standing warranted by its source, responsible formation, purpose, Scope, Evidence, provenance, Authority limits, conflicts, limits, and responsibly established Unknowns. An artifact or representation does not supply the Warrant for the assertions it carries; Standing depends on the applicable kind-specific production or establishment boundary and its validated inputs.
+
+Lexical presentation is not positive coordinate instantiation. Naming a coordinate does not establish Applicability, does not establish that an exact responsible Act requires it, and does not establish Unknown Standing. A positively instantiated unresolved coordinate is not Unknown established by identity. An Unknown must be responsibly established for its exact subject, question, purpose, Scope, Evidence boundary, and occurrence. Absence of Evidence for an Act occurrence remains only absence of evidenced Act occurrence unless a responsible finding establishes nonoccurrence.
 
 Communication is likewise not proof of mutual understanding or establishment. Constitutional communication may describe the formation and emission of a representation, possible transport, possible receipt, or possible interpretation only to the extent those occurrences are separately evidenced. A message, report, rendered View, API result, CLI output, owner field, routing target, or adjacent process does not by itself prove actual consumer receipt, interpretation, uptake, lawful reliance, responsibility transition, authority transition, or external effect.
 
@@ -88,14 +90,6 @@ An external response is not verified external effect. Transport, delivery indica
 - several developer-supplied relations != one opaque conclusion
 - establishment != movement, authority, or act occurrence
 - representation formation != emission
-- emission != delivery
-- delivery != receipt
-- receipt != interpretation
-- interpretation != uptake
-- uptake != reliance
-- reliance != responsibility transition
-- responsibility transition != authority transition
-- authority transition != external realization
 - addressed consumer != actual consumer
 - consumer accepts artifact type != lawful reliance
 - communication != mutual understanding
