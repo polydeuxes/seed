@@ -6,7 +6,7 @@ This report creates one attributed recovery record. It does not amend active Boo
 
 Authority was read in the requested order:
 
-1. active Book constitutional law: `README.md`, `01.External`, `01.Kinds`, `02.Acts`, `05.Testimony`, and `01.Uptake`;
+1. active Book constitutional law: `README.md`, `01.External`, `01.Kinds`, `02.Acts`, `book_of_seed/03-goals-and-advancement/construction-and-establishment.md`, `05.Testimony`, `book_of_seed/08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md`, and `01.Uptake`;
 2. current runtime and tests only as implementation testimony where needed;
 3. `grammar_bounded_orientation_observation_001.md` as attributed testimony;
 4. repository history for PR 2246 lineage only.
@@ -95,6 +95,9 @@ These can be described in sequence for readability, but no ordered universal seq
 | Unknowns | Unknowns must be preserved from inputs; Unknown may also be a bounded relation result when a responsible occurrence establishes it for an exact coordinate. |
 | Lawful Stopping | Not established by the recovered material. Conflict, unresolved coordinates, missing Evidence, missing Authority, missing Warrant, or absence of applicable relation grammar do not establish a Stop by identity. |
 
+
+The active numbered Book chapters also establish responsible comparison acts outside `05.Testimony.E` without collapsing local coordinates. `book_of_seed/03-goals-and-advancement/construction-and-establishment.md` and `book_of_seed/08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md` directly support that a responsible comparison act may compare captured response material with exact presentation response coordinates; that act may establish exact match or nonmatch; Comparison != Identification; and one responsible occurrence may perform both acts without collapsing their Evidence, claims, or results. Those clauses do not establish one universal Compare grammar, one Compare family, identical Responsibilities, or one compulsory sequence.
+
 Active law restricts `05.Testimony.E` to its stated subject: multiple independently preserved testimonies or findings compared while preserving each input's source-local limits. The clause does not, by its own words, announce active general comparison grammar for all bounded subject material. It may testify to a more general pattern, but that generalization is not itself active law.
 
 ## Shape B — candidate versus relation grammar
@@ -146,10 +149,10 @@ candidate rejected
 | --- | --- | --- | --- |
 | Subject kind | Multiple independently preserved testimonies or findings. | One candidate equivalence between a presentation and a proposed subject, meaning, relation, grammar, or role. | Exact instantiated subjects differ. |
 | Input relation | Inputs are related to one another within a bounded testimony-comparison clause. | The candidate equivalence is compared with an applicable relation grammar, if any. | Exact instantiated input relations differ. |
-| Comparison basis | Not universally established by `05.Testimony.E`; must be recovered for the exact instantiated comparison. | The applicable relation grammar, where established for the exact instance; the exact governing grammar relation remains unresolved. | Shared basis not established; different governing grammar not established. |
+| Comparison basis | Not universally established by `05.Testimony.E`; must be recovered for the exact instantiated comparison. | The candidate equivalence and the applicable relation grammar are the exact compared subjects. The exact relations or basis by which the Compare occurrence establishes its result remain local and are not universally established. | Shared exact comparison relations and requirements are not established. |
 | Purpose | Not universally established by `05.Testimony.E`; exact consumer-purpose remains local to the instantiated comparison. | Consumer-purpose is part of PESC, but the exact purpose of the Compare act remains local to the instantiated candidate. | Shared purpose not established. |
 | Owner | Local bounded comparison boundary. | Unresolved; not automatically candidate producer, source, operator, or consumer. | Not established as same. |
-| Exact act | Bounded testimony comparison. | Compare the candidate equivalence with the applicable relation grammar. | Same act rendering does not establish same exact responsibility; governing Compare grammar relation remains unresolved. |
+| Exact act | Bounded testimony comparison. | Compare the candidate equivalence with the applicable relation grammar. | Same act rendering does not establish same exact Responsibility; whether exact comparison relations and requirements are shared remains unresolved. |
 | Authority | Comparison Authority and preserved input Authority; not globally named. | Unresolved per instance. | Not established as same. |
 | Evidence | Preserved support bases of inputs plus comparison Evidence. | Candidate Provenance, relation grammar Evidence, and Warranting material as applicable. | Coordinates differ. |
 | Warrant | Not produced by agreement alone. | Required for meaning-relation or result Standing; not produced by translation or candidate carriage alone. | Shared non-equivalence, not same exact responsibility. |
@@ -164,8 +167,8 @@ candidate rejected
 The recovered evidence supports:
 
 ```text
-Shape A exact instantiated responsibility
-!= Shape B exact instantiated responsibility
+Shape A exact instantiated Responsibility
+!= Shape B exact instantiated Responsibility
 ```
 
 because their exact subjects, input relations, and preservation coordinates differ.
@@ -176,21 +179,27 @@ The recovered evidence preserves:
 Compare:
 recovered act rendering for both exact acts
 
-one broader governing Compare grammar:
-unresolved
+same Compare rendering
+!= same exact Responsibility
+
+subject compared
+!= comparison basis
+
+compared subjects
+!= universally established comparison basis
 
 exact responsibility identity:
 rejected
 ```
 
-The governing distinction is preserved:
-
-```text
-exact instantiated responsibility non-identity
-!= unresolved relation between the governing grammars of their Compare acts
-```
+The unresolved question is whether the same subjects, Authority, Evidence, comparison relations, occurrence requirements, results, or preservation requirements govern both exact acts.
 
 ## Production and standing boundaries
+
+```text
+candidate production
+!= later Compare occurrence
+```
 
 Production is responsibility topology concerning producer, production occurrence, and result. Production is not automatically the exact act's name. Compare is the recovered act rendering for Shape B; production remains a separate Responsibility branch and does not name that act.
 
@@ -234,34 +243,28 @@ A Stop is not created by identity because a proposed act cannot presently contin
 
 ## Disposition
 
-Shape A and Shape B are non-identical exact instantiated responsibilities.
+Shape A and Shape B are non-identical exact instantiated Responsibilities.
 
 Shape A compares multiple independently preserved testimonies or findings.
 
-Shape B compares one candidate equivalence with the applicable relation grammar, where such grammar is established for the exact instance.
+Shape B compares one candidate equivalence with an applicable relation grammar, where that relation grammar is established for the exact instance.
 
-Both acts may be rendered as Compare.
+Both exact acts may be rendered as Compare.
 
-That shared act rendering does not establish that the responsibilities are identical or that one universal Compare grammar governs both.
+That shared act rendering does not establish that the Responsibilities are identical or that the same subjects, Authority, Evidence, comparison relations, occurrence requirements, results, or preservation requirements govern both acts.
 
-The relation between their governing Compare grammars remains unresolved.
-
-The exact instantiated responsibilities are non-identical.
-
-Whether one broader Compare grammar governs both exact acts, or whether their governing grammars differ, remains unresolved.
+Which of those exact relations and requirements are shared remains unresolved.
 
 ## Direct answers
 
-1. Shape B's exact act rendering is: Compare the candidate equivalence with the applicable relation grammar.
-2. `05.Testimony.E` establishes the bounded testimony-comparison clause, not active general comparison grammar.
-3. Shape A and Shape B are not the same exact instantiated responsibility.
-4. Same act rendering does not establish same exact responsibility.
-5. Same act rendering does not establish one universal governing grammar.
-6. Shape A's comparison basis and exact purpose are not universally established.
-7. Candidate production remains separate from the unresolved later act.
-8. The PESC outcomes are attributed candidate outcomes, not yet active result grammar for one recovered responsibility.
-9. Result production and Standing establishment remain distinct unless exact identity is established.
-10. No new constitutional term or active amendment is yet warranted; broader act-grammar recovery remains the next step.
+1. Shape B's exact act rendering is Compare the candidate equivalence with the applicable relation grammar.
+2. Shape A and Shape B are non-identical exact instantiated Responsibilities.
+3. Same act rendering does not establish same exact Responsibility.
+4. The candidate equivalence and applicable relation grammar are compared subjects; the exact comparison basis remains local unless independently established.
+5. The shared Compare rendering does not establish that the same subjects, Authority, Evidence, comparison relations, occurrence requirements, results, or preservation requirements govern both acts.
+6. Candidate production remains separate from the later Compare occurrence.
+7. Result production and Standing establishment remain distinct unless exact identity is established.
+8. No new constitutional term, family, or active amendment is warranted by this report.
 
 ## Remaining unresolved coordinates
 
@@ -276,16 +279,15 @@ These coordinates remain unresolved unless a responsible occurrence positively e
 - Standing establishment;
 - consumer;
 - later Uptake;
-- the exact governing relation grammar consumed;
+- the exact relation grammar consumed;
 - the exact comparison or relation basis;
-- whether one broader Compare grammar governs both exact acts;
-- whether their governing grammars differ.
+- whether exact comparison relations and requirements are shared.
 
 ## Amendment consequences
 
-Classification: broader comparison-grammar recovery required first.
+Classification: exact comparison-coordinate recovery required first.
 
-Here, Compare is the recovered act rendering for both exact acts. The broader recovery must determine whether one broader governing Compare grammar governs both exact acts, or whether their governing grammars differ, without assuming either answer.
+Here, Compare is the recovered act rendering for both exact acts. Further recovery must determine whether the same subjects, Authority, Evidence, comparison relations, occurrence requirements, results, or preservation requirements govern both exact acts, without assuming any shared coordinate.
 
 No active Book wording is drafted here. No owning active Book file is chosen yet.
 
@@ -312,9 +314,6 @@ recovered act rendering for both exact acts
 Shape A exact responsibility
 != Shape B exact responsibility:
 preserved
-
-one broader governing Compare grammar:
-unresolved
 
 exact responsibility identity:
 rejected
