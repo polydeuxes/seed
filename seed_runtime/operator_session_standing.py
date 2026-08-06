@@ -134,6 +134,8 @@ def project_operator_session_standing(
     latest_source_recovery: dict[str, Any] | None = None
     latest_meaning_relation: dict[str, Any] | None = None
     goal_applicabilities: dict[str, dict[str, Any]] = {}
+    goal_responsibility_refs: set[str] = set()
+    goal_consumer_refs: set[str] = set()
     goal_admissions: dict[str, dict[str, Any]] = {}
     goal_consumptions: dict[str, dict[str, Any]] = {}
     goal_standings: dict[str, dict[str, Any]] = {}
@@ -800,6 +802,27 @@ def project_operator_session_standing(
             derived_standing, derived_basis = determine_goal_applicability(
                 relation, recovery, treatment, scope=scope
             )
+            if payload["responsibility_ref"] in goal_responsibility_refs:
+                raise ValueError(
+                    "duplicate responsibility reference: "
+                    f"{payload['responsibility_ref']}"
+                )
+            if payload["consumer_ref"] in goal_consumer_refs:
+                raise ValueError(
+                    f"duplicate consumer reference: {payload['consumer_ref']}"
+                )
+            expected_determination_authority = {
+                "standing": "bounded",
+                "supports": ["determine-exact-goal-applicability"],
+                "evidence_event_ids": [
+                    relation["event_id"],
+                    relation["presentation_formed_event_id"],
+                ],
+                "scope": {
+                    "consumer_purpose": CONSUMER_PURPOSE,
+                    "session_scope": scope,
+                },
+            }
             expected_authority = None
             if derived_standing == "applicable":
                 expected_authority = {
@@ -819,12 +842,22 @@ def project_operator_session_standing(
                 }
             expected = {
                 "consumer_purpose": CONSUMER_PURPOSE,
+                "act": {
+                    "act_ref": payload["act"]["act_ref"],
+                    "act_kind": "bounded-interaction-goal-applicability",
+                    "responsibility_ref": payload["responsibility_ref"],
+                },
+                "basis": {
+                    "responsibility_ref": payload["responsibility_ref"],
+                    "authority_support": "determine-exact-goal-applicability",
+                },
                 "consumer_responsibility": {
-                    "identity": payload["consumer_ref"],
+                    "identity": payload["responsibility_ref"],
+                    "consumer_identity": payload["consumer_ref"],
                     "purpose": CONSUMER_PURPOSE,
-                    "consumer": "interaction-goal-consumer",
                     "scope": scope,
-                    "authority": expected_authority,
+                    "determination_authority": expected_determination_authority,
+                    "treatment_authority": expected_authority,
                     "evidence_event_ids": [
                         relation["event_id"],
                         relation["presentation_formed_event_id"],
@@ -877,13 +910,17 @@ def project_operator_session_standing(
                         "goal applicability does not agree with the result "
                         f"derived from recorded testimony on {field}"
                     )
+            goal_responsibility_refs.add(payload["responsibility_ref"])
+            goal_consumer_refs.add(payload["consumer_ref"])
             goal_applicabilities[payload["applicability_ref"]] = {
                 "applicability_ref": payload["applicability_ref"],
                 "event_id": event.id,
                 "consumer_ref": payload["consumer_ref"],
+                "responsibility_ref": payload["responsibility_ref"],
                 "relation_ref": payload["relation_ref"],
                 "meaning_relation_event_id": payload["meaning_relation_event_id"],
-                "consumer_authority": expected_authority,
+                "treatment_authority": expected_authority,
+                "determination_authority": expected_determination_authority,
                 **expected,
             }
             continue
@@ -923,14 +960,15 @@ def project_operator_session_standing(
                     "applicability on alternative or standing"
                 )
             expected_admission = {
-                "consumer_responsibility_identity": applicability[
-                    "consumer_ref"
-                ],
+                "responsibility_ref": applicability["responsibility_ref"],
+                "act": {
+                    "act_ref": payload["act"]["act_ref"],
+                    "act_kind": "bounded-interaction-goal-admission",
+                    "responsibility_ref": applicability["responsibility_ref"],
+                },
                 "basis": {
                     "applicable_finding_event_id": applicability["event_id"],
-                    "consumer_responsibility_identity": applicability[
-                        "consumer_ref"
-                    ],
+                    "responsibility_ref": applicability["responsibility_ref"],
                     "authority_support": "admit-exact-meaning-relation",
                 },
                 "evidence_event_ids": [
@@ -964,6 +1002,14 @@ def project_operator_session_standing(
                 "proposition": payload["proposition"],
                 "consumer_scope": payload["consumer_scope"],
                 "standing": "admitted",
+                "responsibility_ref": applicability["responsibility_ref"],
+                "act": expected_admission["act"],
+                "basis": expected_admission["basis"],
+                "evidence_event_ids": expected_admission["evidence_event_ids"],
+                "lineage": expected_admission["lineage"],
+                "known_loss": expected_admission["known_loss"],
+                "unknowns": expected_admission["unknowns"],
+                "conflicts": expected_admission["conflicts"],
             }
             continue
         if event.kind == _GOAL_CONSUMPTION_KIND:
@@ -997,21 +1043,22 @@ def project_operator_session_standing(
                         f"admission on {field}"
                     )
             applicability = goal_applicabilities[admission["applicability_ref"]]
-            expected_authority = applicability["consumer_authority"]
-            if payload["consumer_authority"] != expected_authority:
+            expected_authority = applicability["treatment_authority"]
+            if payload["treatment_authority"] != expected_authority:
                 raise ValueError(
-                    "goal consumption does not carry the recorded consumer "
+                    "goal consumption does not carry the recorded treatment "
                     "authority"
                 )
             expected_consumption = {
-                "consumer_responsibility_identity": applicability[
-                    "consumer_ref"
-                ],
+                "responsibility_ref": applicability["responsibility_ref"],
+                "act": {
+                    "act_ref": payload["act"]["act_ref"],
+                    "act_kind": "bounded-interaction-goal-consumption",
+                    "responsibility_ref": applicability["responsibility_ref"],
+                },
                 "basis": {
                     "admission_event_id": admission["event_id"],
-                    "consumer_responsibility_identity": applicability[
-                        "consumer_ref"
-                    ],
+                    "responsibility_ref": applicability["responsibility_ref"],
                     "authority_support": "consume-exact-admitted-relation",
                 },
                 "evidence_event_ids": [
@@ -1050,7 +1097,15 @@ def project_operator_session_standing(
                 "source_identity": payload["source_identity"],
                 "proposition": payload["proposition"],
                 "consumer_scope": payload["consumer_scope"],
-                "consumer_authority": expected_authority,
+                "responsibility_ref": applicability["responsibility_ref"],
+                "treatment_authority": expected_authority,
+                "act": expected_consumption["act"],
+                "basis": expected_consumption["basis"],
+                "evidence_event_ids": expected_consumption["evidence_event_ids"],
+                "lineage": expected_consumption["lineage"],
+                "known_loss": expected_consumption["known_loss"],
+                "unknowns": expected_consumption["unknowns"],
+                "conflicts": expected_consumption["conflicts"],
             }
             continue
         if event.kind == _GOAL_STANDING_KIND:
@@ -1095,9 +1150,9 @@ def project_operator_session_standing(
                     "goal standing does not preserve the unresolved operator "
                     "authority boundary"
                 )
-            if payload["consumer_authority"] != consumption["consumer_authority"]:
+            if payload["treatment_authority"] != consumption["treatment_authority"]:
                 raise ValueError(
-                    "goal standing does not carry the recorded consumer "
+                    "goal standing does not carry the recorded treatment "
                     "authority"
                 )
             goal_applicability = goal_applicabilities[
@@ -1117,14 +1172,15 @@ def project_operator_session_standing(
                 ),
                 "locality": "current bounded interaction",
                 "consumer_scope": consumption["consumer_scope"],
-                "consumer_responsibility_identity": consumption[
-                    "consumer_ref"
-                ],
+                "responsibility_ref": consumption["responsibility_ref"],
+                "act": {
+                    "act_ref": payload["act"]["act_ref"],
+                    "act_kind": "bounded-interaction-goal-standing",
+                    "responsibility_ref": consumption["responsibility_ref"],
+                },
                 "basis": {
                     "consumption_event_id": consumption["event_id"],
-                    "consumer_responsibility_identity": consumption[
-                        "consumer_ref"
-                    ],
+                    "responsibility_ref": consumption["responsibility_ref"],
                     "authority_support": (
                         "establish-bounded-interaction-goal-standing"
                     ),
@@ -1169,11 +1225,30 @@ def project_operator_session_standing(
                 "source_identity": payload["source_identity"],
                 "proposition": payload["proposition"],
                 "standing": expected_goal["standing"],
-                "consumer_authority": consumption["consumer_authority"],
+                "responsibility_ref": consumption["responsibility_ref"],
+                # The complete validated boundary, retained so the next
+                # Consumer reads projected Standing rather than raw events.
+                "consumer_responsibility": goal_applicability[
+                    "consumer_responsibility"
+                ],
+                "treatment_authority": consumption["treatment_authority"],
                 "operator_authority": expected_operator_authority,
                 "consumer_scope": consumption["consumer_scope"],
                 "locality": expected_goal["locality"],
+                "act": expected_goal["act"],
+                "bases": {
+                    "applicability": goal_applicability["basis"],
+                    "admission": goal_admissions[consumption["admission_ref"]][
+                        "basis"
+                    ],
+                    "consumption": consumption["basis"],
+                    "goal_standing": expected_goal["basis"],
+                },
+                "evidence_event_ids": expected_goal["evidence_event_ids"],
+                "lineage": expected_goal["lineage"],
+                "known_loss": expected_goal["known_loss"],
                 "unknowns": expected_goal["unknowns"],
+                "conflicts": expected_goal["conflicts"],
             }
             goal_standings[payload["goal_standing_ref"]] = goal_standing
             latest_interaction_goal_standing = goal_standing
