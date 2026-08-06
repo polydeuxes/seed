@@ -111,6 +111,14 @@ def project_operator_session_standing(
                     "presentation emission without recorded formation: "
                     f"{presentation_ref}"
                 )
+            if (
+                event.payload["formed_event_id"]
+                != presentations[presentation_ref]["formed_event_id"]
+            ):
+                raise ValueError(
+                    "presentation emission does not name its recorded "
+                    "formation occurrence"
+                )
             presentations[presentation_ref]["emitted_event_id"] = event.id
             current_presentation_id = presentation_ref
             continue
@@ -121,6 +129,8 @@ def project_operator_session_standing(
                 "event_id": event.id,
                 "presentation_ref": payload["presentation_ref"],
                 "response_attempt_ref": payload["response_attempt_ref"],
+                "response_ingress_event_id": payload["response_ingress_event_id"],
+                "response_capture_event_id": payload["response_capture_event_id"],
                 "compared_representation": payload["compared_representation"],
                 "coordinate_set": payload["coordinate_set"],
                 "matched_coordinate": payload["matched_coordinate"],
@@ -162,6 +172,39 @@ def project_operator_session_standing(
                     raise ValueError(
                         "identification does not agree with its recorded "
                         f"comparison on {identification_key}"
+                    )
+            # An identified result must follow from the comparison finding
+            # and the recorded binding; a forged basis is refused here.
+            if identification["basis"] == "identified":
+                identified_alternative = identification["identified_alternative"]
+                matched = comparison["matched_coordinate"]
+                identification_presentation = presentations.get(
+                    identification["presentation_ref"]
+                )
+                if identification_presentation is None:
+                    raise ValueError(
+                        "identification names an unrecorded presentation: "
+                        f"{identification['presentation_ref']}"
+                    )
+                if (
+                    identified_alternative is None
+                    or matched is None
+                    or comparison["outcome"] != f"match:{matched}"
+                    or identified_alternative["response_coordinate"] != matched
+                    or identification_presentation["coordinate_bindings"].get(
+                        matched
+                    )
+                    != identified_alternative["alternative_id"]
+                ):
+                    raise ValueError(
+                        "identified result does not follow from its recorded "
+                        "comparison finding and binding"
+                    )
+            elif identification["basis"] == "no-coordinate-match":
+                if comparison["matched_coordinate"] is not None:
+                    raise ValueError(
+                        "no-coordinate-match identification contradicts a "
+                        "recorded match"
                     )
             # The most recent complete exchange finding, exactly as recorded.
             latest_exchange_finding = {
@@ -246,6 +289,58 @@ def project_operator_session_standing(
                     "source recovery does not agree with its recorded "
                     "identification"
                 )
+            # Re-prove Compare -> Identification -> A from the recorded
+            # comparison: a match to the identified alternative's own
+            # coordinate, bound to its identity by the recorded binding.
+            supporting_comparison = comparisons.get(
+                supporting_identification["comparison_ref"]
+            )
+            if supporting_comparison is None:
+                raise ValueError(
+                    "source recovery's identification has no recorded "
+                    "comparison"
+                )
+            matched = supporting_comparison["matched_coordinate"]
+            if (
+                matched is None
+                or supporting_comparison["outcome"] != f"match:{matched}"
+                or recorded_alternative["response_coordinate"] != matched
+                or presentation["coordinate_bindings"].get(matched)
+                != payload["alternative"]["alternative_id"]
+            ):
+                raise ValueError(
+                    "source recovery is not supported by a recorded match "
+                    "bound to the identified alternative"
+                )
+            if (
+                payload["response_ingress_event_id"]
+                != supporting_comparison["response_ingress_event_id"]
+                or payload["response_capture_event_id"]
+                != supporting_comparison["response_capture_event_id"]
+            ):
+                raise ValueError(
+                    "source recovery does not carry its comparison's "
+                    "recorded response evidence"
+                )
+            response_attempt = attempts.get(payload["response_attempt_ref"])
+            preserved_response = (
+                response_attempt["preserved_ingress"] if response_attempt else None
+            )
+            if preserved_response is None or (
+                preserved_response["evidence_event_id"]
+                != payload["response_ingress_event_id"]
+                or preserved_response["raw_material_event_id"]
+                != payload["response_capture_event_id"]
+            ):
+                raise ValueError(
+                    "source recovery's response evidence does not agree "
+                    "with the recorded ingress occurrence"
+                )
+            if payload["representation"] != recorded_alternative["representation"]:
+                raise ValueError(
+                    "source recovery does not agree with recorded formation "
+                    "testimony on the representation boundary"
+                )
             recovery = {
                 "recovery_ref": payload["recovery_ref"],
                 "event_id": event.id,
@@ -263,9 +358,9 @@ def project_operator_session_standing(
                 "response_capture_event_id": payload["response_capture_event_id"],
                 "alternative": payload["alternative"],
                 "source": payload["source"],
-                # The complete validated representation boundary, preserved
-                # so later Applicability need not infer purpose or Scope.
-                "representation": payload["representation"],
+                # The complete representation boundary, reconstructed from
+                # the recorded formation testimony it was validated against.
+                "representation": recorded_alternative["representation"],
             }
             source_recoveries[payload["recovery_ref"]] = recovery
             latest_source_recovery = recovery
@@ -420,6 +515,27 @@ def project_operator_session_standing(
                     **reconstructed,
                     "testimony": carried.get("testimony"),
                 }
+            # The relation's remaining Standing coordinates are producer
+            # invariants at this boundary; a forged loss, Unknown, or
+            # conflict inventory is refused rather than exposed.
+            reconstructed_relation_standing = {
+                "warrant_basis": (
+                    "attributed developer-supplied meaning testimony "
+                    "preserved by the recorded formation occurrence"
+                ),
+                "known_loss": [],
+                "unknowns": [
+                    "operator intent Unknown",
+                    "operator selection occurrence Unknown",
+                ],
+                "conflicts": [],
+            }
+            for field, value in reconstructed_relation_standing.items():
+                if payload[field] != value:
+                    raise ValueError(
+                        "meaning relation does not agree with recorded "
+                        f"testimony on {field}"
+                    )
             relation = {
                 "relation_ref": payload["relation_ref"],
                 "event_id": event.id,
@@ -437,11 +553,11 @@ def project_operator_session_standing(
                 "source_reference": payload["source_reference"],
                 "representation_purpose": payload["representation_purpose"],
                 "representation_scope": payload["representation_scope"],
-                "warrant_basis": payload["warrant_basis"],
+                "warrant_basis": reconstructed_relation_standing["warrant_basis"],
                 "authority_separation": authority_separation,
-                "known_loss": payload["known_loss"],
-                "unknowns": payload["unknowns"],
-                "conflicts": payload["conflicts"],
+                "known_loss": reconstructed_relation_standing["known_loss"],
+                "unknowns": reconstructed_relation_standing["unknowns"],
+                "conflicts": reconstructed_relation_standing["conflicts"],
             }
             meaning_relations[payload["relation_ref"]] = relation
             latest_meaning_relation = relation
@@ -459,6 +575,7 @@ def project_operator_session_standing(
                 "standing": "preserved",
                 "authority_warrant": event.payload["dimensions"]["authority_warrant"],
                 "evidence_event_id": event.id,
+                "raw_material_event_id": event.payload["raw_material_event_id"],
             }
             attempt["preserved_ingress"] = occurrence
             preserved_ingress_occurrences.append(occurrence)
