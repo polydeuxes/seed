@@ -34,6 +34,30 @@ _DEVELOPER_SUPPLIED_SOURCES = (
             "meaning": "establish richer shared grammar with the operator",
             "reference": _CANDIDATE_SOURCE_REFERENCE,
         },
+        # The exact developer-supplied treatment relation: this alternative
+        # may be consumed by the exact interaction-goal Consumer.  Neither
+        # the role string nor the rendered label carries this relation.
+        "consumer_treatment": {
+            "identity": (
+                "treatment:developer-supplied-interaction-goal-establishment"
+            ),
+            "consumer_purpose": (
+                "determine whether the validated potential-goal relation "
+                "bears on establishing the current bounded interaction goal"
+            ),
+            "treatment": (
+                "consume the warranted meaning relation to establish "
+                "bounded interaction-goal standing"
+            ),
+            "attribution": "developer-supplied",
+            "authority_boundary": (
+                "covers only bounded interaction-goal establishment for "
+                "this exact source and proposition within the forming "
+                "session; establishes no operator intent, selection, or "
+                "downstream authorization"
+            ),
+            "provenance": _CANDIDATE_SOURCE_REFERENCE,
+        },
     },
     {
         "role": "presentation-navigation",
@@ -105,6 +129,19 @@ def form_operator_presentation(
     for position, source in enumerate(_DEVELOPER_SUPPLIED_SOURCES, start=1):
         alternative_id = new_id("presented_alternative")
         coordinate = str(position)
+        source_treatment = source.get("consumer_treatment")
+        consumer_treatment = None
+        if source_treatment is not None:
+            consumer_treatment = {
+                **source_treatment,
+                "alternative_id": alternative_id,
+                "source_identity": source["represented_source"]["identity"],
+                "proposition": source["represented_source"]["meaning"],
+                "scope": scope,
+                "known_loss": [],
+                "unknowns": [],
+                "conflicts": [],
+            }
         alternatives.append(
             {
                 "alternative_id": alternative_id,
@@ -112,6 +149,10 @@ def form_operator_presentation(
                 "response_coordinate": coordinate,
                 "rendered_label": source["rendered_label"],
                 "represented_source": dict(source["represented_source"]),
+                # None means no treatment relation is preserved for this
+                # alternative and this exact Consumer; it is not global
+                # inapplicability to every Consumer.
+                "consumer_treatment": consumer_treatment,
                 # Each A-to-G representation relation preserves its own
                 # boundary; Presentation-level coordinates do not transfer
                 # to it automatically.
@@ -150,6 +191,10 @@ def form_operator_presentation(
         == prior_exchange_finding["identification"]["event_id"]
     ):
         recovered_meaning_relation = latest_relation
+    # The validated current interaction-goal Standing, exposed exactly.
+    current_interaction_goal = session_standing.get(
+        "latest_interaction_goal_standing"
+    )
     formed_event = ledger.append(
         PRESENTATION_FORMED_KIND,
         workspace_id,
@@ -185,6 +230,7 @@ def form_operator_presentation(
             "session_standing_evidence_ids": standing_evidence_ids,
             "prior_exchange_finding": prior_exchange_finding,
             "recovered_meaning_relation": recovered_meaning_relation,
+            "current_interaction_goal": current_interaction_goal,
             "known_loss": [
                 "rendered label compresses represented candidate meaning"
             ],
@@ -210,6 +256,7 @@ def form_operator_presentation(
         "session_standing_evidence_ids": standing_evidence_ids,
         "prior_exchange_finding": prior_exchange_finding,
         "recovered_meaning_relation": recovered_meaning_relation,
+        "current_interaction_goal": current_interaction_goal,
         "known_loss": ["rendered label compresses represented candidate meaning"],
         "unknowns": [],
         "conflicts": [],
@@ -261,6 +308,21 @@ def render_operator_presentation(presentation: dict[str, Any]) -> str:
             f"({relation['source_attribution']}). Operator intent and "
             "selection remain Unknown; Operator Authority for this "
             "proposition remains unresolved."
+        )
+    goal = presentation.get("current_interaction_goal")
+    if goal is not None:
+        lines.extend(
+            (
+                f"Current bounded interaction goal: \"{goal['proposition']}\"",
+                f"  Source: {goal['source_identity']}",
+                "  Applicability: established for this exact Consumer purpose",
+                "  Admission: established",
+                "  Consumption: occurred",
+                "  Operator intent remains Unknown. Operator Selection "
+                "remains Unknown.",
+                "  Operator Authority for the proposition remains "
+                "unresolved. Learning has not occurred.",
+            )
         )
     lines.append("Respond with exactly one token:")
     for alternative in presentation["alternatives"]:

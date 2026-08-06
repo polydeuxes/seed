@@ -318,6 +318,9 @@ from seed_runtime.operator_presentation import (
 from seed_runtime.operator_response_comparison import (
     run_operator_response_comparison_and_identification,
 )
+from seed_runtime.operator_interaction_goal import (
+    run_interaction_goal_establishment,
+)
 from seed_runtime.operator_source_recovery import (
     run_operator_source_recovery_and_meaning_relation,
 )
@@ -5718,6 +5721,11 @@ def run_persistent_operator_console(
                         identification_event_id=(
                             exchange_finding["identification"]["event_id"]
                         ),
+                    )
+                    run_interaction_goal_establishment(
+                        ledger,
+                        workspace_id=workspace_id,
+                        session_id=session_id,
                     )
             # The interaction output is a bounded Presentation formed from the
             # session's current Standing (including this attempt).  The View
