@@ -192,7 +192,7 @@ The console's output is constant. Prometheus's output is not — `Linux` becomes
 
 The prior recovery's conclusion stands: *"`sysname="Linux"` does not presently warrant constitutional `os=linux`."*
 
-## Finding 5 — Prometheus supplies the non-empty candidate cases the console cannot
+## Finding 5 — Prometheus supplies a more explicit candidate test specimen
 
 An earlier version of this report said `Hello` offers no structure to propose against, so every proposal set is necessarily empty. That reintroduces a claim already withdrawn in `orientation_attempt_observable_evidence_recovery_001.md`:
 
@@ -246,7 +246,7 @@ What this does remove is the argument that they must be one because the implemen
 
 - Whether any Translation owner survives its invocation. No repository evidence bears on this; both roads have single invocation sites.
 - Whether `competency` should be recovered as a constitutional kind, or remains a report-level description of compiled implementation behaviour.
-- The exact owner of each of the twelve Prometheus crossings. The prior recovery classified their standing; it did not assign owners.
+- The constitutional classification of each positively occurring crossing — whether it is an Act, constraint, transformation, production boundary, or implementation convention — and the exact owner of each positively established Act. Ownership is not a coordinate of every inventory item: an absent Fidelity examination has no owner to recover, and a convention is not automatically an Act requiring its own Responsibility. The prior recovery classified standing; it did not assign owners, and this report does not assume every crossing has one.
 - Whether the frozen assumptions are defects to correct or conventions to establish. This report does not decide that.
 
 ## Disposition
