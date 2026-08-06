@@ -145,7 +145,9 @@ richer shared grammar  != release from boundedness
 
 This bears on `:9` — "BOGE does not interpret unresolved raw prose" — which is therefore not a first-contact-only restriction. `:72-82`'s alternative route requires "translated **or otherwise bounded** source material": the requirement is that the material be bounded. Translation is one way to reach that. It does not release a later comparison from boundedness once prose competency exists.
 
-Consequently a design in which Seed compares accumulated raw operator messages with one another, to build relation standing before meaning is warranted, is not a permitted variant of either route.
+Consequently, comparison of accumulated raw operator messages with one another, to build relation standing before meaning is warranted, is not testified by either route and conflicts with this witness's requirement that compared material be bounded.
+
+That conflict does not prohibit construction supported by different or stronger Evidence.
 
 ## Finding 5 — four distinct Authority and Warrant relations
 
@@ -153,9 +155,11 @@ The exchange carries four relations that this report's ingredients imply but did
 
 ```text
 Source Authority
-  establishes that the operator produced this ingress or response
-  material, at the preserved occurrence and in the preserved
-  relation to C
+  establishes that the operator produced the attributed material at
+  the preserved occurrence, and preserves whatever exact occurrence
+  relation is evidenced:
+    the unbidden ingress precedes and occasions the first presentation
+    the response R is produced after C is emitted
 
 response-comparison Authority
   bounds R against C's exact response coordinates and permits only
@@ -346,6 +350,36 @@ A second round corrected four further defects, all in this report:
    this witness
 ```
 
+A third round corrected three defects introduced or left standing by the
+second:
+
+```text
+7. correction 6 reached the supported findings and the disposition but
+   not the body sentence it was meant to fix, which still read "not a
+   permitted variant of either route". The frames were corrected and the
+   claim they framed was not — the inverse of this author's usual
+   propagation failure, and undetected because a batch of edits was
+   verified only in aggregate rather than one by one
+
+8. Finding 5 opened by saying the four relations are what "this report's
+   ingredients imply but did not name", while the supported findings and
+   disposition called them "testified". The witness testifies to the
+   underlying boundaries — the operator produced R after C, comparison
+   is restricted to R against C's coordinates, identification does not
+   establish meaning, meaning requires separate Warrant and applicable
+   Authority, response establishes neither intent nor Selection nor
+   Authorization. The four-item inventory under these names is this
+   report's responsible decomposition of that testimony, not the
+   witness's own presentation. Same distinction applied to
+   exchange-instantiated comparison Authority: the bounded relation is
+   the witness's, the coordinate name is ours
+
+9. Finding 5 described Source Authority as preserving "the relation to
+   C" for both the ingress and the response. The unbidden ingress has no
+   preceding C — Finding 3 of this same report establishes that. The two
+   occurrence relations are now stated separately
+```
+
 ## Supported findings
 
 - The witness testifies to a comparison of captured operator-response material against an emitted presentation's exact response coordinates, naming Seed as actor kind, both inputs, and the result form, and separating the following identification act.
@@ -353,8 +387,8 @@ A second round corrected four further defects, all in this report:
 - The unbidden operator ingress occasions the first presentation, is not the response material R, and is not compared within this first-contact exchange. It remains preserved, uninterpreted, and available to later interpretation.
 - Closed-choice representation follows from bounded grammar orientation and is not retired by prose competency.
 - Bounded comparison is a testified input to Learning establishment, which produces revised retained understanding.
-- Source Authority, response-comparison Authority, meaning Warrant, and Operator Authority are four distinct relations. The witness withholds intent, understanding, assent, selection, and authorization from Source Authority by name.
-- The response comparison's exact Authority is instantiated by the completed bounded exchange rather than borrowed or held universally.
+- Four distinct Authority and Warrant relations — Source Authority, response-comparison Authority, meaning Warrant, Operator Authority — are derivable from the witness's preserved boundaries. The witness withholds intent, understanding, assent, selection, and authorization from the operator-produced-material fact by name; it does not present this four-item inventory under these names.
+- The bounded exchange carries the comparison's Authority bounds — R against C's exact coordinates, permitted result match or no-match — so that Authority is neither borrowed from bounded testimony comparison nor held universally. The coordinate name is this report's; the bounded relation is the witness's.
 
 ## Unsupported findings
 
@@ -376,8 +410,10 @@ A second round corrected four further defects, all in this report:
 
 ```text
 third comparison, actor kind named           testified
-four Authority/Warrant relations             testified
-exchange-instantiated comparison Authority   testified
+four Authority/Warrant relations             derived from the witness's
+                                             preserved boundaries
+exchange-instantiated comparison Authority   bounded relation testified;
+                                             coordinate name is ours
 first-contact candidate developer-supplied   testified
 closed choice from bounded orientation       testified
 
