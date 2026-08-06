@@ -201,6 +201,22 @@ def project_operator_session_standing(
                         "source recovery does not agree with recorded "
                         f"formation testimony on source {key}"
                     )
+            for key in ("role", "response_coordinate"):
+                if payload["alternative"][key] != recorded_alternative[key]:
+                    raise ValueError(
+                        "source recovery does not agree with recorded "
+                        f"formation testimony on alternative {key}"
+                    )
+            if (
+                payload["presentation_formed_event_id"]
+                != presentation["formed_event_id"]
+                or payload["presentation_emitted_event_id"]
+                != presentation["emitted_event_id"]
+            ):
+                raise ValueError(
+                    "source recovery does not carry the recorded "
+                    "presentation occurrence lineage"
+                )
             supporting_identification = next(
                 (
                     identification
@@ -213,11 +229,18 @@ def project_operator_session_standing(
             if supporting_identification is None or (
                 supporting_identification["presentation_ref"]
                 != payload["presentation_ref"]
+                or supporting_identification["basis"] != "identified"
+                or supporting_identification["outcome"]
+                != "alternative-identified"
                 or supporting_identification["identified_alternative"] is None
                 or supporting_identification["identified_alternative"][
                     "alternative_id"
                 ]
                 != payload["alternative"]["alternative_id"]
+                or supporting_identification["comparison_event_id"]
+                != payload["comparison_event_id"]
+                or supporting_identification["response_attempt_ref"]
+                != payload["response_attempt_ref"]
             ):
                 raise ValueError(
                     "source recovery does not agree with its recorded "
@@ -230,10 +253,19 @@ def project_operator_session_standing(
                 "presentation_formed_event_id": payload[
                     "presentation_formed_event_id"
                 ],
+                "presentation_emitted_event_id": payload[
+                    "presentation_emitted_event_id"
+                ],
+                "comparison_event_id": payload["comparison_event_id"],
                 "identification_event_id": payload["identification_event_id"],
                 "response_attempt_ref": payload["response_attempt_ref"],
+                "response_ingress_event_id": payload["response_ingress_event_id"],
+                "response_capture_event_id": payload["response_capture_event_id"],
                 "alternative": payload["alternative"],
                 "source": payload["source"],
+                # The complete validated representation boundary, preserved
+                # so later Applicability need not infer purpose or Scope.
+                "representation": payload["representation"],
             }
             source_recoveries[payload["recovery_ref"]] = recovery
             latest_source_recovery = recovery
@@ -327,19 +359,89 @@ def project_operator_session_standing(
                         "meaning relation does not agree with its recorded "
                         f"source recovery on {coordinate}"
                     )
+            # The structural Authority coordinates are reconstructed from
+            # recorded testimony, and the carried separation must equal the
+            # reconstruction -- a forged standing, support, Evidence, or
+            # Scope is refused rather than exposed to a later consumer.
+            reconstructed_separation = {
+                "source_authority": {
+                    "standing": "bounded",
+                    "supports": ["source-supplied-with-attributed-meaning"],
+                    "evidence_event_ids": [recovery["presentation_formed_event_id"]],
+                    "scope": {
+                        "source_identity": recovery["source"]["identity"],
+                        "proposition": recorded_source["meaning"],
+                    },
+                },
+                "response_comparison_authority": {
+                    "standing": "bounded",
+                    "supports": ["response-matched-coordinate-within-presentation"],
+                    "evidence_event_ids": [recovery["comparison_event_id"]],
+                    "scope": {
+                        "presentation_ref": recovery["presentation_ref"],
+                        "response_attempt_ref": recovery["response_attempt_ref"],
+                    },
+                },
+                "meaning_warrant": {
+                    "standing": "established",
+                    "supports": ["source-expresses-proposition"],
+                    "evidence_event_ids": [
+                        recovery["presentation_formed_event_id"],
+                        recovery["event_id"],
+                    ],
+                    "scope": {
+                        "source_identity": recovery["source"]["identity"],
+                        "proposition": recorded_source["meaning"],
+                    },
+                },
+                "operator_authority": {
+                    "standing": "unresolved",
+                    "supports": [],
+                    "evidence_event_ids": [],
+                    "scope": {"proposition": recorded_source["meaning"]},
+                },
+            }
+            carried_separation = payload["authority_separation"]
+            if set(carried_separation) != set(reconstructed_separation):
+                raise ValueError(
+                    "meaning relation does not carry the four Authority "
+                    "coordinates"
+                )
+            authority_separation = {}
+            for name, reconstructed in reconstructed_separation.items():
+                carried = carried_separation[name]
+                for field, value in reconstructed.items():
+                    if carried.get(field) != value:
+                        raise ValueError(
+                            "meaning relation does not agree with recorded "
+                            f"testimony on {name}.{field}"
+                        )
+                authority_separation[name] = {
+                    **reconstructed,
+                    "testimony": carried.get("testimony"),
+                }
             relation = {
                 "relation_ref": payload["relation_ref"],
                 "event_id": event.id,
                 "source_recovery_event_id": recovery_event_id,
                 "recovery_ref": payload["recovery_ref"],
                 "presentation_ref": payload["presentation_ref"],
+                "presentation_formed_event_id": payload[
+                    "presentation_formed_event_id"
+                ],
                 "identification_event_id": payload["identification_event_id"],
                 "alternative_id": payload["alternative_id"],
                 "source_identity": payload["source_identity"],
                 "proposition": payload["proposition"],
                 "source_attribution": payload["source_attribution"],
-                "authority_separation": payload["authority_separation"],
+                "source_reference": payload["source_reference"],
+                "representation_purpose": payload["representation_purpose"],
+                "representation_scope": payload["representation_scope"],
+                "warrant_basis": payload["warrant_basis"],
+                "authority_separation": authority_separation,
+                "known_loss": payload["known_loss"],
                 "unknowns": payload["unknowns"],
+                "conflicts": payload["conflicts"],
             }
             meaning_relations[payload["relation_ref"]] = relation
             latest_meaning_relation = relation

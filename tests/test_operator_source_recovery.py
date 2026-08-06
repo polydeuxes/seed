@@ -587,6 +587,117 @@ def test_projector_refuses_a_forged_proposition_or_attribution():
             _standing(ledger)
 
 
+def test_projector_refuses_recovery_with_false_occurrence_lineage():
+    # Correct C/A/G identities with forged occurrence lineage or attempt.
+    for forged_fields in (
+        {"presentation_emitted_event_id": "evt_forged"},
+        {"comparison_event_id": "evt_forged"},
+        {"response_attempt_ref": "operator_ingress_attempt_forged"},
+    ):
+        ledger = EventLedger()
+        _recovered_exchange(ledger)
+        good = next(
+            event
+            for event in ledger.list("w")
+            if event.kind == "operator.presentation.source_recovered"
+        )
+        ledger.append(
+            "operator.presentation.source_recovered",
+            "w",
+            {**good.payload, "recovery_ref": "forged", **forged_fields},
+            session_id="s",
+        )
+        with pytest.raises(ValueError):
+            _standing(ledger)
+
+
+def test_projector_refuses_forged_authority_coordinates():
+    forgeries = (
+        ("operator_authority", "standing", "established"),
+        ("operator_authority", "supports", ["goal-establishment"]),
+        ("meaning_warrant", "evidence_event_ids", ["evt_unrelated"]),
+        ("source_authority", "scope", {"source_identity": "source:other"}),
+    )
+    for name, field, forged_value in forgeries:
+        ledger = EventLedger()
+        _recovered_exchange(ledger)
+        good = next(
+            event
+            for event in ledger.list("w")
+            if event.kind == "operator.presentation.meaning_relation_established"
+        )
+        separation = {
+            key: dict(value)
+            for key, value in good.payload["authority_separation"].items()
+        }
+        separation[name][field] = forged_value
+        ledger.append(
+            "operator.presentation.meaning_relation_established",
+            "w",
+            {
+                **good.payload,
+                "relation_ref": "forged",
+                "authority_separation": separation,
+            },
+            session_id="s",
+        )
+        with pytest.raises(
+            ValueError, match=f"does not agree with recorded testimony on {name}"
+        ):
+            _standing(ledger)
+
+
+def test_projected_results_preserve_the_complete_validated_boundary():
+    ledger = EventLedger()
+    presentation, finding, result = _recovered_exchange(ledger)
+
+    standing = _standing(ledger)
+    recovery = standing["latest_source_recovery"]
+    assert recovery["presentation_emitted_event_id"] == (
+        presentation["emitted_event_id"]
+    )
+    assert recovery["comparison_event_id"] == finding["comparison"]["event_id"]
+    comparison_payload = ledger.get(finding["comparison"]["event_id"]).payload
+    assert recovery["response_ingress_event_id"] == (
+        comparison_payload["response_ingress_event_id"]
+    )
+    assert recovery["response_capture_event_id"] == (
+        comparison_payload["response_capture_event_id"]
+    )
+    assert set(recovery["representation"]) == {
+        "purpose",
+        "scope",
+        "provenance",
+        "evidence_event_ids",
+        "known_loss",
+        "unknowns",
+        "conflicts",
+    }
+
+    relation = standing["latest_meaning_relation"]
+    relation_payload = ledger.get(result["meaning_relation"]["event_id"]).payload
+    for key in (
+        "presentation_formed_event_id",
+        "source_reference",
+        "representation_purpose",
+        "representation_scope",
+        "warrant_basis",
+        "known_loss",
+        "conflicts",
+    ):
+        assert relation[key] == relation_payload[key], key
+    # Authority coordinates in Standing are the validated reconstruction.
+    assert relation["authority_separation"]["operator_authority"]["standing"] == (
+        "unresolved"
+    )
+    assert relation["authority_separation"]["meaning_warrant"][
+        "evidence_event_ids"
+    ] == [
+        presentation["formed_event_id"],
+        result["source_recovery"]["event_id"],
+    ]
+
+
 def test_console_runs_recovery_only_for_identified_exchanges():
     ledger = EventLedger()
     output = StringIO()
