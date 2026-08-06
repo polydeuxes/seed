@@ -171,10 +171,65 @@ def project_operator_session_standing(
             continue
         if event.kind == _SOURCE_RECOVERED_KIND:
             payload = event.payload
+            # A recovery is admitted into Standing only where the recorded
+            # formation testimony and the recorded identification agree with
+            # every coordinate it carries.
+            presentation = presentations.get(payload["presentation_ref"])
+            if presentation is None:
+                raise ValueError(
+                    "source recovery names an unrecorded presentation: "
+                    f"{payload['presentation_ref']}"
+                )
+            recorded_alternative = next(
+                (
+                    alternative
+                    for alternative in presentation["alternatives"]
+                    if alternative["alternative_id"]
+                    == payload["alternative"]["alternative_id"]
+                ),
+                None,
+            )
+            if recorded_alternative is None:
+                raise ValueError(
+                    "source recovery names an alternative outside its "
+                    "recorded presentation"
+                )
+            recorded_source = recorded_alternative["represented_source"]
+            for key in ("identity", "kind", "attribution", "reference"):
+                if payload["source"][key] != recorded_source[key]:
+                    raise ValueError(
+                        "source recovery does not agree with recorded "
+                        f"formation testimony on source {key}"
+                    )
+            supporting_identification = next(
+                (
+                    identification
+                    for identification in identifications.values()
+                    if identification["event_id"]
+                    == payload["identification_event_id"]
+                ),
+                None,
+            )
+            if supporting_identification is None or (
+                supporting_identification["presentation_ref"]
+                != payload["presentation_ref"]
+                or supporting_identification["identified_alternative"] is None
+                or supporting_identification["identified_alternative"][
+                    "alternative_id"
+                ]
+                != payload["alternative"]["alternative_id"]
+            ):
+                raise ValueError(
+                    "source recovery does not agree with its recorded "
+                    "identification"
+                )
             recovery = {
                 "recovery_ref": payload["recovery_ref"],
                 "event_id": event.id,
                 "presentation_ref": payload["presentation_ref"],
+                "presentation_formed_event_id": payload[
+                    "presentation_formed_event_id"
+                ],
                 "identification_event_id": payload["identification_event_id"],
                 "response_attempt_ref": payload["response_attempt_ref"],
                 "alternative": payload["alternative"],
@@ -194,12 +249,43 @@ def project_operator_session_standing(
                 )
             # The joined pair must agree on every shared coordinate; a
             # mismatched pair is structurally refused rather than composed.
+            presentation = presentations.get(payload["presentation_ref"])
+            if presentation is None:
+                raise ValueError(
+                    "meaning relation names an unrecorded presentation: "
+                    f"{payload['presentation_ref']}"
+                )
+            recorded_alternative = next(
+                (
+                    alternative
+                    for alternative in presentation["alternatives"]
+                    if alternative["alternative_id"] == payload["alternative_id"]
+                ),
+                None,
+            )
+            if recorded_alternative is None:
+                raise ValueError(
+                    "meaning relation names an alternative outside its "
+                    "recorded presentation"
+                )
+            recorded_source = recorded_alternative["represented_source"]
+            recorded_representation = recorded_alternative["representation"]
             agreements = (
                 (recovery_event_id, recovery["event_id"], "source_recovery_event_id"),
                 (
                     payload["presentation_ref"],
                     recovery["presentation_ref"],
                     "presentation_ref",
+                ),
+                (
+                    payload["presentation_formed_event_id"],
+                    recovery["presentation_formed_event_id"],
+                    "presentation_formed_event_id",
+                ),
+                (
+                    payload["identification_event_id"],
+                    recovery["identification_event_id"],
+                    "identification_event_id",
                 ),
                 (
                     payload["alternative_id"],
@@ -215,6 +301,24 @@ def project_operator_session_standing(
                     payload["source_reference"],
                     recovery["source"]["reference"],
                     "source_reference",
+                ),
+                # The proposition and its attribution must equal the recorded
+                # formation testimony exactly; a forged M is refused here.
+                (payload["proposition"], recorded_source["meaning"], "proposition"),
+                (
+                    payload["source_attribution"],
+                    recorded_source["attribution"],
+                    "source_attribution",
+                ),
+                (
+                    payload["representation_purpose"],
+                    recorded_representation["purpose"],
+                    "representation_purpose",
+                ),
+                (
+                    payload["representation_scope"],
+                    recorded_representation["scope"],
+                    "representation_scope",
                 ),
             )
             for supplied, recorded, coordinate in agreements:

@@ -108,6 +108,16 @@ def run_operator_source_recovery_and_meaning_relation(
         comparison_event.payload["response_attempt_ref"] == response_attempt_ref,
         "comparison and identification concern different attempts",
     )
+    _require(
+        comparison_event.payload["comparison_ref"]
+        == identification_event.payload["comparison_ref"],
+        "identification does not consume this exact comparison",
+    )
+    matched_coordinate = comparison_event.payload["matched_coordinate"]
+    _require(
+        matched_coordinate is not None,
+        "comparison recorded no coordinate match",
+    )
     formed_event = _validated_event(
         ledger,
         identification_event.payload["presentation_formed_event_id"],
@@ -119,6 +129,10 @@ def run_operator_source_recovery_and_meaning_relation(
     _require(
         formed_event.payload["presentation_ref"] == presentation_ref,
         "formation event does not record this exact presentation",
+    )
+    _require(
+        comparison_event.payload["presentation_formed_event_id"] == formed_event.id,
+        "comparison does not record this exact formation occurrence",
     )
     emitted_event = _validated_event(
         ledger,
@@ -135,7 +149,7 @@ def run_operator_source_recovery_and_meaning_relation(
     )
     response_ingress_event_id = comparison_event.payload["response_ingress_event_id"]
     response_capture_event_id = comparison_event.payload["response_capture_event_id"]
-    _validated_event(
+    ingress_event = _validated_event(
         ledger,
         response_ingress_event_id,
         "operator.ingress.ingress_occurred",
@@ -143,13 +157,39 @@ def run_operator_source_recovery_and_meaning_relation(
         session_id,
         "response ingress",
     )
-    _validated_event(
+    capture_event = _validated_event(
         ledger,
         response_capture_event_id,
         "operator.ingress.raw_material_captured",
         workspace_id,
         session_id,
         "response capture",
+    )
+    _require(
+        ingress_event.payload["attempt_ref"] == response_attempt_ref,
+        "ingress and comparison concern different attempts",
+    )
+    _require(
+        ingress_event.payload["raw_material_event_id"] == capture_event.id,
+        "ingress does not record this exact capture occurrence",
+    )
+    _require(
+        capture_event.payload["attempt_ref"] == response_attempt_ref,
+        "capture and ingress belong to different attempts",
+    )
+    _require(
+        ingress_event.payload.get("produced_after_presentation_ref")
+        == presentation_ref
+        and ingress_event.payload.get("produced_after_presentation_formed_event_id")
+        == formed_event.id
+        and ingress_event.payload.get("produced_after_presentation_emitted_event_id")
+        == emitted_event.id,
+        "ingress does not record production after this exact presentation chain",
+    )
+    _require(
+        comparison_event.payload["compared_representation"]
+        == ingress_event.payload["dimensions"]["content"],
+        "comparison did not consume the recorded ingress representation",
     )
 
     # The recorded formation payload is the sole source of the exact A -> G
@@ -169,6 +209,16 @@ def run_operator_source_recovery_and_meaning_relation(
             recorded_alternative[key] == identified[key],
             f"identified alternative disagrees with recorded {key}",
         )
+    _require(
+        recorded_alternative["response_coordinate"] == matched_coordinate,
+        "matched coordinate does not belong to the identified alternative",
+    )
+    _require(
+        formed_event.payload["coordinate_bindings"].get(matched_coordinate)
+        == recorded_alternative["alternative_id"],
+        "recorded binding does not bind the matched coordinate to this "
+        "alternative",
+    )
     represented_source = recorded_alternative["represented_source"]
     _require(
         bool(represented_source.get("identity")),
@@ -236,6 +286,9 @@ def run_operator_source_recovery_and_meaning_relation(
             "conflicts": [],
             "lineage": [
                 formed_event.id,
+                emitted_event.id,
+                capture_event.id,
+                ingress_event.id,
                 comparison_event.id,
                 identification_event.id,
             ],
@@ -269,25 +322,60 @@ def run_operator_source_recovery_and_meaning_relation(
                 "attributed developer-supplied meaning testimony preserved "
                 "by the recorded formation occurrence"
             ),
-            # Queryable four-way separation; each coordinate bounds itself.
+            # Structural four-way separation: standing, supported claims,
+            # Evidence, and Scope are coordinates, with testimony alongside
+            # rather than as the only representation.
             "authority_separation": {
-                "source_authority": (
-                    "authoritative only that this source was supplied with "
-                    "this attributed meaning"
-                ),
-                "response_comparison_authority": (
-                    "bounds only the recorded match or no-match within the "
-                    "exact presentation"
-                ),
-                "meaning_warrant": (
-                    "preserved attributed testimony plus the recovered exact "
-                    "source support the bounded relation that the source "
-                    "expresses the proposition"
-                ),
-                "operator_authority": (
-                    "unresolved for this proposition; not established by "
-                    "production, match, identification, or this relation"
-                ),
+                "source_authority": {
+                    "standing": "bounded",
+                    "supports": ["source-supplied-with-attributed-meaning"],
+                    "evidence_event_ids": [formed_event.id],
+                    "scope": {
+                        "source_identity": represented_source["identity"],
+                        "proposition": proposition,
+                    },
+                    "testimony": (
+                        "authoritative only that this source was supplied "
+                        "with this attributed meaning"
+                    ),
+                },
+                "response_comparison_authority": {
+                    "standing": "bounded",
+                    "supports": ["response-matched-coordinate-within-presentation"],
+                    "evidence_event_ids": [comparison_event.id],
+                    "scope": {
+                        "presentation_ref": presentation_ref,
+                        "response_attempt_ref": response_attempt_ref,
+                    },
+                    "testimony": (
+                        "bounds only the recorded match or no-match within "
+                        "the exact presentation"
+                    ),
+                },
+                "meaning_warrant": {
+                    "standing": "established",
+                    "supports": ["source-expresses-proposition"],
+                    "evidence_event_ids": [formed_event.id, recovery_event.id],
+                    "scope": {
+                        "source_identity": represented_source["identity"],
+                        "proposition": proposition,
+                    },
+                    "testimony": (
+                        "preserved attributed testimony plus the recovered "
+                        "exact source support the bounded relation that the "
+                        "source expresses the proposition"
+                    ),
+                },
+                "operator_authority": {
+                    "standing": "unresolved",
+                    "supports": [],
+                    "evidence_event_ids": [],
+                    "scope": {"proposition": proposition},
+                    "testimony": (
+                        "unresolved for this proposition; not established by "
+                        "production, match, identification, or this relation"
+                    ),
+                },
             },
             "purpose": (
                 "consume attributed developer-supplied meaning testimony for "

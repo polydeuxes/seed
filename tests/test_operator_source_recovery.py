@@ -121,25 +121,24 @@ def test_failed_identification_produces_no_source_recovery():
         },
         session_id="s",
     )
-    emitted = ledger.append(
-        "operator.presentation.emitted",
-        "w",
-        {
-            "attempt_ref": None,
-            "presentation_ref": presentation_id,
-            "formed_event_id": formed.id,
-            "known_loss": [],
-            "unknowns": [],
-            "conflicts": [],
-            "lineage": [formed.id],
-            "mutates_cluster": False,
-        },
-        session_id="s",
+    malformed_presentation = {
+        "presentation_id": presentation_id,
+        "workspace_id": "w",
+        "session_id": "s",
+        "formed_event_id": formed.id,
+        "emitted_event_id": None,
+        "alternatives": template_payload["alternatives"],
+        "prior_exchange_finding": None,
+        "recovered_meaning_relation": None,
+    }
+    emit_operator_presentation(
+        ledger, presentation=malformed_presentation, output_stream=StringIO()
     )
+    emitted_event_id = malformed_presentation["emitted_event_id"]
     malformed = {
         "presentation_id": presentation_id,
         "formed_event_id": formed.id,
-        "emitted_event_id": emitted.id,
+        "emitted_event_id": emitted_event_id,
     }
     projection = run_operator_ingress_attempt(
         ledger=ledger,
@@ -327,9 +326,9 @@ def test_operator_ingress_text_cannot_alter_the_proposition():
     assert result["meaning_relation"]["proposition"] != "1"
 
 
-def test_four_authorities_remain_distinct_and_queryable():
+def test_four_authorities_are_distinct_structural_coordinates():
     ledger = EventLedger()
-    _, _, result = _recovered_exchange(ledger)
+    presentation, finding, result = _recovered_exchange(ledger)
 
     relation_event = ledger.get(result["meaning_relation"]["event_id"])
     separation = relation_event.payload["authority_separation"]
@@ -339,7 +338,34 @@ def test_four_authorities_remain_distinct_and_queryable():
         "meaning_warrant",
         "operator_authority",
     }
-    assert len({value for value in separation.values()}) == 4
+    # Each coordinate is structural -- standing, supported claims, Evidence,
+    # and Scope -- with testimony alongside, not as the only representation.
+    for coordinate in separation.values():
+        assert set(coordinate) == {
+            "standing",
+            "supports",
+            "evidence_event_ids",
+            "scope",
+            "testimony",
+        }
+    assert separation["source_authority"]["standing"] == "bounded"
+    assert separation["source_authority"]["evidence_event_ids"] == [
+        presentation["formed_event_id"]
+    ]
+    assert separation["response_comparison_authority"]["supports"] == [
+        "response-matched-coordinate-within-presentation"
+    ]
+    assert separation["response_comparison_authority"]["evidence_event_ids"] == [
+        finding["comparison"]["event_id"]
+    ]
+    assert separation["meaning_warrant"]["standing"] == "established"
+    assert separation["meaning_warrant"]["evidence_event_ids"] == [
+        presentation["formed_event_id"],
+        result["source_recovery"]["event_id"],
+    ]
+    assert separation["meaning_warrant"]["supports"] == [
+        "source-expresses-proposition"
+    ]
 
 
 def test_operator_authority_for_proposition_remains_unresolved():
@@ -347,10 +373,13 @@ def test_operator_authority_for_proposition_remains_unresolved():
     _, _, result = _recovered_exchange(ledger)
 
     relation_event = ledger.get(result["meaning_relation"]["event_id"])
-    assert relation_event.payload["authority_separation"]["operator_authority"] == (
-        "unresolved for this proposition; not established by production, "
-        "match, identification, or this relation"
-    )
+    operator_authority = relation_event.payload["authority_separation"][
+        "operator_authority"
+    ]
+    assert operator_authority["standing"] == "unresolved"
+    assert operator_authority["supports"] == []
+    assert operator_authority["evidence_event_ids"] == []
+    assert operator_authority["scope"] == {"proposition": _GOAL_MEANING}
     flattened = str(relation_event.payload)
     assert "Operator intended" not in flattened
     assert "Operator selected" not in flattened
@@ -419,6 +448,143 @@ def test_later_presentation_exposes_bounded_relations_without_strengthening():
     assert "goal Standing" not in rendered
     assert "Operator selected" not in rendered
     assert "Operator intended" not in rendered
+
+
+def test_forged_identification_over_no_match_is_refused():
+    # Compare recorded no-coordinate-match; a forged identification claiming
+    # a valid alternative from C must not produce recovery.
+    ledger = EventLedger()
+    presentation, finding = _exchange(ledger, "not a coordinate\n")
+    good_payload = ledger.get(finding["identification"]["event_id"]).payload
+    formed_payload = ledger.get(presentation["formed_event_id"]).payload
+    valid_alternative = formed_payload["alternatives"][0]
+    forged = ledger.append(
+        "operator.exchange.identification_occurred",
+        "w",
+        {
+            **good_payload,
+            "identification_ref": "forged",
+            "basis": "identified",
+            "outcome": "alternative-identified",
+            "identified_alternative": {
+                "alternative_id": valid_alternative["alternative_id"],
+                "role": valid_alternative["role"],
+                "response_coordinate": valid_alternative["response_coordinate"],
+                "rendered_label": valid_alternative["rendered_label"],
+            },
+        },
+        session_id="s",
+    )
+    with pytest.raises(ValueError, match="recorded no coordinate match"):
+        _recover(ledger, forged.id)
+
+
+def test_binding_that_bypasses_the_matched_coordinate_is_refused():
+    # Recorded C binds coordinate 1 to the alternative whose own coordinate
+    # is 2: identification lawfully follows the recorded binding, but
+    # recovery refuses because the matched coordinate does not belong to
+    # the identified alternative.
+    ledger = EventLedger()
+    template = form_operator_presentation(
+        ledger, workspace_id="w", session_id="s", session_standing=_standing(ledger)
+    )
+    template_payload = ledger.get(template["formed_event_id"]).payload
+    presentation_id = template["presentation_id"] + "-crossbound"
+    crossbound_bindings = dict(template_payload["coordinate_bindings"])
+    crossbound_bindings["1"] = template_payload["coordinate_bindings"]["2"]
+    formed = ledger.append(
+        "operator.presentation.formed",
+        "w",
+        {
+            **template_payload,
+            "presentation_ref": presentation_id,
+            "coordinate_bindings": crossbound_bindings,
+            "dimensions": {
+                **template_payload["dimensions"],
+                "identity": presentation_id,
+            },
+        },
+        session_id="s",
+    )
+    crossbound = {
+        "presentation_id": presentation_id,
+        "workspace_id": "w",
+        "session_id": "s",
+        "formed_event_id": formed.id,
+        "emitted_event_id": None,
+        "alternatives": template_payload["alternatives"],
+        "prior_exchange_finding": None,
+        "recovered_meaning_relation": None,
+    }
+    emit_operator_presentation(
+        ledger, presentation=crossbound, output_stream=StringIO()
+    )
+    projection = run_operator_ingress_attempt(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        captured_ingress=capture_stdin_material(StringIO("1\n")),
+        output_stream=StringIO(),
+        produced_after_presentation=crossbound,
+    )
+    finding = run_operator_response_comparison_and_identification(
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        presentation=crossbound,
+        response_ingress_event_id=(
+            projection["current_standing"]["preserved_ingress"]["evidence_event_id"]
+        ),
+    )
+    assert finding["identification"]["basis"] == "identified"
+    assert finding["identification"]["identified_alternative"][
+        "response_coordinate"
+    ] == "2"
+    with pytest.raises(ValueError, match="does not belong to the identified"):
+        _recover(ledger, finding["identification"]["event_id"])
+
+
+def test_recovery_lineage_carries_the_complete_exchange_chain():
+    ledger = EventLedger()
+    presentation, finding, result = _recovered_exchange(ledger)
+
+    recovery_event = ledger.get(result["source_recovery"]["event_id"])
+    ingress_event_id = ledger.get(finding["comparison"]["event_id"]).payload[
+        "response_ingress_event_id"
+    ]
+    capture_event_id = ledger.get(finding["comparison"]["event_id"]).payload[
+        "response_capture_event_id"
+    ]
+    assert recovery_event.payload["lineage"] == [
+        presentation["formed_event_id"],
+        presentation["emitted_event_id"],
+        capture_event_id,
+        ingress_event_id,
+        finding["comparison"]["event_id"],
+        finding["identification"]["event_id"],
+    ]
+
+
+def test_projector_refuses_a_forged_proposition_or_attribution():
+    for forged_fields in (
+        {"proposition": "restart every service immediately"},
+        {"source_attribution": "operator-supplied"},
+    ):
+        ledger = EventLedger()
+        _recovered_exchange(ledger)
+        good = next(
+            event
+            for event in ledger.list("w")
+            if event.kind == "operator.presentation.meaning_relation_established"
+        )
+        ledger.append(
+            "operator.presentation.meaning_relation_established",
+            "w",
+            {**good.payload, "relation_ref": "forged", **forged_fields},
+            session_id="s",
+        )
+        with pytest.raises(ValueError, match="does not agree"):
+            _standing(ledger)
 
 
 def test_console_runs_recovery_only_for_identified_exchanges():
