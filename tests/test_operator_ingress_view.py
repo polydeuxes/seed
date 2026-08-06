@@ -59,39 +59,36 @@ def test_view_formation_is_read_only_and_does_not_perform_semantic_compare():
     assert "goal=" not in rendered.lower()
 
 
-def test_console_consumes_returned_projection_then_writes_formed_view(monkeypatch):
-    _, projection = _successful_projection()
-    calls = []
-
-    def attempt(**kwargs):
-        calls.append(("attempt", kwargs["output_stream"].getvalue()))
-        return projection
-
-    def form(supplied):
-        calls.append(("formation", supplied))
-        return "formed View\n"
-
-    class Output(StringIO):
-        def write(self, text):
-            calls.append(("write", text))
-            return super().write(text)
-
-    monkeypatch.setattr(seed_local, "run_operator_ingress_attempt", attempt)
-    monkeypatch.setattr(seed_local, "format_operator_ingress_view", form)
-    output = Output()
+def test_console_renders_bounded_presentation_and_keeps_view_behind_navigation():
+    # The console's interaction output is now a bounded Presentation; the
+    # View remains the renderer behind the `show current Standing`
+    # navigation alternative and stays valid for direct consumers.
+    ledger = EventLedger()
+    output = StringIO()
     seed_local.run_persistent_operator_console(
-        ledger=EventLedger(),
+        ledger=ledger,
         workspace_id="w",
         session_id="s",
         input_stream=StringIO("material\n"),
         output_stream=output,
     )
 
-    assert calls[0] == ("write", "Seed console: `exit` exits.\n")
-    assert calls[1][0] == "attempt"
-    assert calls[2] == ("formation", projection)
-    assert calls[3] == ("write", "formed View\n")
-    assert output.getvalue().endswith("formed View\n")
+    rendered = output.getvalue()
+    assert rendered.startswith("Seed console: `exit` exits.\n")
+    assert "Bounded Presentation" in rendered
+    assert "Operator ingress View" not in rendered
+    kinds = [event.kind for event in ledger.list_events("w")]
+    assert kinds[-2:] == [
+        "operator.presentation.formed",
+        "operator.presentation.emitted",
+    ]
+
+    attempt_id, projection = next(
+        iter(StateProjector(ledger).project("w").operator_ingress_attempts.items())
+    )
+    direct_view = format_operator_ingress_view(projection)
+    assert "Operator ingress View" in direct_view
+    assert "Bounded Presentation" not in direct_view
 
 
 def test_decoder_failure_output_and_lack_of_successful_view_are_unchanged():

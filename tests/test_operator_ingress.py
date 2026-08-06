@@ -386,6 +386,8 @@ def test_console_recurs_after_each_quiescent_non_eof_attempt():
             "operator.ingress.raw_material_captured",
             "operator.ingress.representation_examined",
             "operator.ingress.ingress_occurred",
+            "operator.presentation.formed",
+            "operator.presentation.emitted",
         )
     ]
     assert [
@@ -396,9 +398,7 @@ def test_console_recurs_after_each_quiescent_non_eof_attempt():
     assert (
         len(StateProjector(ledger).project("console-w").operator_ingress_attempts) == 2
     )
-    assert output.count("Operator ingress View\n") == 2
-    assert 'Represented material: "first ingress\\n"' in output
-    assert 'Represented material: "second ingress\\n"' in output
+    assert output.count("Bounded Presentation") == 2
 
 
 class _RawStdin:
@@ -506,7 +506,7 @@ def test_console_admits_empty_stream_encoding_as_no_usable_testimony():
         output_stream=output,
     )
 
-    capture, examination, ingress = ledger.list_events("console-w")
+    capture, examination, ingress = ledger.list_events("console-w")[:3]
     assert capture.payload["exact_bytes_hex"] == b"material\n".hex()
     assert capture.payload["encoding_testimony"] is None
     assert examination.payload["encoding_testimony"] is None
@@ -516,7 +516,7 @@ def test_console_admits_empty_stream_encoding_as_no_usable_testimony():
         == "implementation_utf8_fallback"
     )
     assert ingress.payload["decoded_text"] == "material\n"
-    assert 'Represented material: "material\\n"' in output.getvalue()
+    assert "Bounded Presentation" in output.getvalue()
 
 
 @pytest.mark.parametrize("encoding", (1, b"utf-8", object()))
@@ -549,12 +549,13 @@ def test_console_eof_after_ordinary_input_adds_no_second_attempt():
         "operator.ingress.raw_material_captured",
         "operator.ingress.representation_examined",
         "operator.ingress.ingress_occurred",
+        "operator.presentation.formed",
+        "operator.presentation.emitted",
     ]
     assert (
         len(StateProjector(ledger).project("console-w").operator_ingress_attempts) == 1
     )
-    assert output.count("Operator ingress View\n") == 1
-    assert 'Represented material: "ordinary ingress\\n"' in output
+    assert output.count("Bounded Presentation") == 1
 
 
 def test_console_passes_its_capture_unchanged_to_the_bounded_attempt(monkeypatch):
