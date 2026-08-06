@@ -139,6 +139,17 @@ def form_operator_presentation(
     # The latest recorded exchange finding, exposed exactly as recorded;
     # formation neither strengthens nor reinterprets it.
     prior_exchange_finding = session_standing.get("latest_exchange_finding")
+    # The recovered source relation is exposed only when it belongs to the
+    # exact latest finding's identification.
+    recovered_meaning_relation = None
+    latest_relation = session_standing.get("latest_meaning_relation")
+    if (
+        prior_exchange_finding is not None
+        and latest_relation is not None
+        and latest_relation["identification_event_id"]
+        == prior_exchange_finding["identification"]["event_id"]
+    ):
+        recovered_meaning_relation = latest_relation
     formed_event = ledger.append(
         PRESENTATION_FORMED_KIND,
         workspace_id,
@@ -173,6 +184,7 @@ def form_operator_presentation(
             "session_standing_as_of_event_id": session_standing["as_of_event_id"],
             "session_standing_evidence_ids": standing_evidence_ids,
             "prior_exchange_finding": prior_exchange_finding,
+            "recovered_meaning_relation": recovered_meaning_relation,
             "known_loss": [
                 "rendered label compresses represented candidate meaning"
             ],
@@ -197,6 +209,7 @@ def form_operator_presentation(
         "session_standing_as_of_event_id": session_standing["as_of_event_id"],
         "session_standing_evidence_ids": standing_evidence_ids,
         "prior_exchange_finding": prior_exchange_finding,
+        "recovered_meaning_relation": recovered_meaning_relation,
         "known_loss": ["rendered label compresses represented candidate meaning"],
         "unknowns": [],
         "conflicts": [],
@@ -240,6 +253,15 @@ def render_operator_presentation(presentation: dict[str, Any]) -> str:
                 f"{comparison['presentation_ref']}; response meaning and "
                 "requested treatment remain Unknown."
             )
+    relation = presentation.get("recovered_meaning_relation")
+    if relation is not None:
+        lines.append(
+            f"Recovered source {relation['source_identity']} expresses: "
+            f"\"{relation['proposition']}\" "
+            f"({relation['source_attribution']}). Operator intent and "
+            "selection remain Unknown; Operator Authority for this "
+            "proposition remains unresolved."
+        )
     lines.append("Respond with exactly one token:")
     for alternative in presentation["alternatives"]:
         lines.append(
