@@ -191,18 +191,18 @@ def test_console_supplies_prior_session_standing_to_later_interactions():
     assert standing["current_presentation"]["presentation_id"] == second_id
     # The second Presentation's recorded formation consumed Standing that
     # already contained the first interaction's events.
-    all_attempt_events = {
-        event_id
-        for attempt in standing["attempts"].values()
-        for event_id in attempt["event_ids"]
-    }
     second_evidence = set(
         standing["presentations"][second_id]["session_standing_evidence_ids"]
     )
     first_evidence = set(
         standing["presentations"][first_id]["session_standing_evidence_ids"]
     )
-    assert first_evidence < second_evidence <= all_attempt_events
+    assert first_evidence < second_evidence
+    # The second formation's consumed Evidence includes the first
+    # Presentation's formation and emission occurrences.
+    first_presentation = standing["presentations"][first_id]
+    assert first_presentation["formed_event_id"] in second_evidence
+    assert first_presentation["emitted_event_id"] in second_evidence
 
 
 def test_projection_does_not_mutate_ledger_or_synthesize_events():
