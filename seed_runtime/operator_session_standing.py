@@ -134,8 +134,7 @@ def project_operator_session_standing(
     latest_source_recovery: dict[str, Any] | None = None
     latest_meaning_relation: dict[str, Any] | None = None
     goal_applicabilities: dict[str, dict[str, Any]] = {}
-    goal_responsibility_refs: set[str] = set()
-    goal_consumer_refs: set[str] = set()
+    goal_identities: dict[str, str] = {}
     goal_admissions: dict[str, dict[str, Any]] = {}
     goal_consumptions: dict[str, dict[str, Any]] = {}
     goal_standings: dict[str, dict[str, Any]] = {}
@@ -146,6 +145,14 @@ def project_operator_session_standing(
     as_of_event_id: str | None = None
     consumed_event_ids: list[str] = []
     event_count = 0
+
+    def register_goal_identity(identity: str, coordinate: str) -> None:
+        existing = goal_identities.get(identity)
+        if existing is not None:
+            raise ValueError(
+                f"duplicate goal identity {identity}: {existing} and {coordinate}"
+            )
+        goal_identities[identity] = coordinate
 
     for event in ledger.list(workspace_id):
         if event.session_id != session_id:
@@ -738,7 +745,7 @@ def project_operator_session_standing(
                     "operator intent Unknown",
                     "operator selection occurrence Unknown",
                 ],
-                "conflicts": [],
+                    "conflicts": [],
             }
             for field, value in reconstructed_relation_standing.items():
                 if payload[field] != value:
@@ -802,15 +809,6 @@ def project_operator_session_standing(
             derived_standing, derived_basis = determine_goal_applicability(
                 relation, recovery, treatment, scope=scope
             )
-            if payload["responsibility_ref"] in goal_responsibility_refs:
-                raise ValueError(
-                    "duplicate responsibility reference: "
-                    f"{payload['responsibility_ref']}"
-                )
-            if payload["consumer_ref"] in goal_consumer_refs:
-                raise ValueError(
-                    f"duplicate consumer reference: {payload['consumer_ref']}"
-                )
             expected_determination_authority = {
                 "standing": "bounded",
                 "supports": ["determine-exact-goal-applicability"],
@@ -819,6 +817,10 @@ def project_operator_session_standing(
                     relation["presentation_formed_event_id"],
                 ],
                 "scope": {
+                    "meaning_relation_event_id": relation["event_id"],
+                    "alternative_id": relation["alternative_id"],
+                    "source_identity": relation["source_identity"],
+                    "proposition": relation["proposition"],
                     "consumer_purpose": CONSUMER_PURPOSE,
                     "session_scope": scope,
                 },
@@ -844,10 +846,11 @@ def project_operator_session_standing(
                 "consumer_purpose": CONSUMER_PURPOSE,
                 "act": {
                     "act_ref": payload["act"]["act_ref"],
-                    "act_kind": "bounded-interaction-goal-applicability",
+                    "act_kind": "determine-exact-goal-applicability",
                     "responsibility_ref": payload["responsibility_ref"],
                 },
                 "basis": {
+                    "finding": derived_basis,
                     "responsibility_ref": payload["responsibility_ref"],
                     "authority_support": "determine-exact-goal-applicability",
                 },
@@ -887,7 +890,6 @@ def project_operator_session_standing(
                 "proposition": relation["proposition"],
                 "consumer_scope": scope,
                 "standing": derived_standing,
-                "basis": derived_basis,
                 "consumed_authority_coordinates": {
                     name: relation["authority_separation"][name]["standing"]
                     for name in (
@@ -903,6 +905,14 @@ def project_operator_session_standing(
                     relation["source_recovery_event_id"],
                     relation["presentation_formed_event_id"],
                 ],
+                "dimensions": {
+                    **payload["dimensions"],
+                    "identity": payload["applicability_ref"],
+                    "standing": derived_standing,
+                    "source_provenance": relation["event_id"],
+                    "responsibility": payload["responsibility_ref"],
+                    "scope_locality": scope,
+                },
             }
             for field, value in expected.items():
                 if payload[field] != value:
@@ -910,8 +920,12 @@ def project_operator_session_standing(
                         "goal applicability does not agree with the result "
                         f"derived from recorded testimony on {field}"
                     )
-            goal_responsibility_refs.add(payload["responsibility_ref"])
-            goal_consumer_refs.add(payload["consumer_ref"])
+            register_goal_identity(payload["consumer_ref"], "Consumer")
+            register_goal_identity(payload["responsibility_ref"], "Responsibility")
+            register_goal_identity(payload["act"]["act_ref"], "Applicability Act")
+            register_goal_identity(
+                payload["applicability_ref"], "Applicability result"
+            )
             goal_applicabilities[payload["applicability_ref"]] = {
                 "applicability_ref": payload["applicability_ref"],
                 "event_id": event.id,
@@ -963,7 +977,7 @@ def project_operator_session_standing(
                 "responsibility_ref": applicability["responsibility_ref"],
                 "act": {
                     "act_ref": payload["act"]["act_ref"],
-                    "act_kind": "bounded-interaction-goal-admission",
+                    "act_kind": "admit-exact-meaning-relation",
                     "responsibility_ref": applicability["responsibility_ref"],
                 },
                 "basis": {
@@ -982,6 +996,14 @@ def project_operator_session_standing(
                     "operator selection occurrence Unknown",
                 ],
                 "conflicts": [],
+                "dimensions": {
+                    **payload["dimensions"],
+                    "identity": payload["admission_ref"],
+                    "standing": "admitted",
+                    "source_provenance": applicability["event_id"],
+                    "responsibility": applicability["responsibility_ref"],
+                    "scope_locality": scope,
+                },
             }
             for field, value in expected_admission.items():
                 if payload[field] != value:
@@ -989,6 +1011,8 @@ def project_operator_session_standing(
                         "goal admission does not carry its recorded basis "
                         f"and boundary on {field}"
                     )
+            register_goal_identity(payload["act"]["act_ref"], "Admission Act")
+            register_goal_identity(payload["admission_ref"], "Admission result")
             goal_admissions[payload["admission_ref"]] = {
                 "admission_ref": payload["admission_ref"],
                 "event_id": event.id,
@@ -1053,7 +1077,7 @@ def project_operator_session_standing(
                 "responsibility_ref": applicability["responsibility_ref"],
                 "act": {
                     "act_ref": payload["act"]["act_ref"],
-                    "act_kind": "bounded-interaction-goal-consumption",
+                    "act_kind": "consume-exact-admitted-relation",
                     "responsibility_ref": applicability["responsibility_ref"],
                 },
                 "basis": {
@@ -1077,6 +1101,14 @@ def project_operator_session_standing(
                     "operator selection occurrence Unknown",
                 ],
                 "conflicts": [],
+                "dimensions": {
+                    **payload["dimensions"],
+                    "identity": payload["consumption_ref"],
+                    "standing": "consumed",
+                    "source_provenance": admission["event_id"],
+                    "responsibility": applicability["responsibility_ref"],
+                    "scope_locality": scope,
+                },
             }
             for field, value in expected_consumption.items():
                 if payload[field] != value:
@@ -1084,6 +1116,10 @@ def project_operator_session_standing(
                         "goal consumption does not carry its recorded basis "
                         f"and boundary on {field}"
                     )
+            register_goal_identity(payload["act"]["act_ref"], "consumption Act")
+            register_goal_identity(
+                payload["consumption_ref"], "consumption occurrence/result"
+            )
             goal_consumptions[payload["consumption_ref"]] = {
                 "consumption_ref": payload["consumption_ref"],
                 "event_id": event.id,
@@ -1175,7 +1211,7 @@ def project_operator_session_standing(
                 "responsibility_ref": consumption["responsibility_ref"],
                 "act": {
                     "act_ref": payload["act"]["act_ref"],
-                    "act_kind": "bounded-interaction-goal-standing",
+                    "act_kind": "establish-bounded-interaction-goal-standing",
                     "responsibility_ref": consumption["responsibility_ref"],
                 },
                 "basis": {
@@ -1203,6 +1239,14 @@ def project_operator_session_standing(
                     "operator selection occurrence Unknown",
                 ],
                 "conflicts": [],
+                "dimensions": {
+                    **payload["dimensions"],
+                    "identity": payload["goal_standing_ref"],
+                    "standing": "interaction-goal-established",
+                    "source_provenance": consumption["event_id"],
+                    "responsibility": consumption["responsibility_ref"],
+                    "scope_locality": scope,
+                },
             }
             for field, value in expected_goal.items():
                 if payload[field] != value:
@@ -1250,6 +1294,10 @@ def project_operator_session_standing(
                 "unknowns": expected_goal["unknowns"],
                 "conflicts": expected_goal["conflicts"],
             }
+            register_goal_identity(
+                payload["act"]["act_ref"], "goal-establishment Act"
+            )
+            register_goal_identity(payload["goal_standing_ref"], "goal Standing")
             goal_standings[payload["goal_standing_ref"]] = goal_standing
             latest_interaction_goal_standing = goal_standing
             continue

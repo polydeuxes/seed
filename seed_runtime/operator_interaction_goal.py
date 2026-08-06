@@ -96,6 +96,10 @@ def run_interaction_goal_establishment(
             relation["presentation_formed_event_id"],
         ],
         "scope": {
+            "meaning_relation_event_id": relation["event_id"],
+            "alternative_id": relation["alternative_id"],
+            "source_identity": relation["source_identity"],
+            "proposition": relation["proposition"],
             "consumer_purpose": CONSUMER_PURPOSE,
             "session_scope": scope,
         },
@@ -136,10 +140,11 @@ def run_interaction_goal_establishment(
             "responsibility_ref": responsibility_ref,
             "act": {
                 "act_ref": new_id("goal_applicability_act"),
-                "act_kind": "bounded-interaction-goal-applicability",
+                "act_kind": "determine-exact-goal-applicability",
                 "responsibility_ref": responsibility_ref,
             },
             "basis": {
+                "finding": basis,
                 "responsibility_ref": responsibility_ref,
                 "authority_support": "determine-exact-goal-applicability",
             },
@@ -158,7 +163,6 @@ def run_interaction_goal_establishment(
             "proposition": relation["proposition"],
             "consumer_scope": scope,
             "standing": applicability_standing,
-            "basis": basis,
             "consumed_authority_coordinates": {
                 name: relation["authority_separation"][name]["standing"]
                 for name in (
@@ -233,7 +237,7 @@ def run_interaction_goal_establishment(
             "responsibility_ref": responsibility_ref,
             "act": {
                 "act_ref": new_id("goal_admission_act"),
-                "act_kind": "bounded-interaction-goal-admission",
+                "act_kind": "admit-exact-meaning-relation",
                 "responsibility_ref": responsibility_ref,
             },
             # The explicit constitutional basis for this exact movement.
@@ -287,7 +291,7 @@ def run_interaction_goal_establishment(
             "responsibility_ref": responsibility_ref,
             "act": {
                 "act_ref": new_id("goal_consumption_act"),
-                "act_kind": "bounded-interaction-goal-consumption",
+                "act_kind": "consume-exact-admitted-relation",
                 "responsibility_ref": responsibility_ref,
             },
             "basis": {
@@ -354,7 +358,7 @@ def run_interaction_goal_establishment(
             "responsibility_ref": responsibility_ref,
             "act": {
                 "act_ref": new_id("goal_standing_act"),
-                "act_kind": "bounded-interaction-goal-standing",
+                "act_kind": "establish-bounded-interaction-goal-standing",
                 "responsibility_ref": responsibility_ref,
             },
             "basis": {
