@@ -43,6 +43,7 @@ def project_operator_session_standing(
     unknowns: set[str] = set()
     conflicts: set[str] = set()
     as_of_event_id: str | None = None
+    consumed_event_ids: list[str] = []
     event_count = 0
 
     for event in ledger.list(workspace_id):
@@ -57,6 +58,7 @@ def project_operator_session_standing(
             raise ValueError(f"unsupported operator-ingress event: {event.kind}")
         event_count += 1
         as_of_event_id = event.id
+        consumed_event_ids.append(event.id)
         for key, collected in (
             ("known_loss", known_loss),
             ("unknowns", unknowns),
@@ -125,6 +127,10 @@ def project_operator_session_standing(
         "session_id": session_id,
         "as_of_event_id": as_of_event_id,
         "event_count": event_count,
+        # Exact append-order inventory of every session event this
+        # projection consumed, including Presentation formation and
+        # emission Evidence.
+        "consumed_event_ids": consumed_event_ids,
         "attempts": attempts,
         "preserved_ingress_occurrences": preserved_ingress_occurrences,
         "interaction_closures": interaction_closures,

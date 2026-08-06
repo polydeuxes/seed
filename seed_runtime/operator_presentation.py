@@ -20,7 +20,15 @@ _DEVELOPER_SUPPLIED_SOURCES = (
     {
         "role": "potential-goal",
         "rendered_label": "Establish richer shared grammar with the Operator",
+        "representation_purpose": (
+            "represent the developer-supplied potential-goal candidate "
+            "for bounded presentation"
+        ),
         "represented_source": {
+            # Stable exact identity of source candidate G, held apart from
+            # its kind, meaning text, and reference so later recovery
+            # identifies the candidate rather than a description of it.
+            "identity": "source:developer-supplied-grammar-acquisition-candidate",
             "kind": "developer-supplied-potential-goal-candidate",
             "attribution": "developer-supplied",
             "meaning": "establish richer shared grammar with the operator",
@@ -30,7 +38,11 @@ _DEVELOPER_SUPPLIED_SOURCES = (
     {
         "role": "presentation-navigation",
         "rendered_label": "Show current Standing",
+        "representation_purpose": (
+            "represent navigation to the current Standing View"
+        ),
         "represented_source": {
+            "identity": "source:operator-ingress-view-navigation",
             "kind": "operator-ingress-view-navigation",
             "attribution": "developer-supplied",
             "meaning": "navigate to the current Standing View",
@@ -42,7 +54,11 @@ _DEVELOPER_SUPPLIED_SOURCES = (
     {
         "role": "local-stop",
         "rendered_label": "Establish no such goal and stop locally",
+        "representation_purpose": (
+            "represent the developer-supplied local-stop treatment"
+        ),
         "represented_source": {
+            "identity": "source:developer-supplied-local-stop-treatment",
             "kind": "developer-supplied-local-stop-treatment",
             "attribution": "developer-supplied",
             "meaning": "establish no such goal and stop locally",
@@ -83,6 +99,7 @@ def form_operator_presentation(
     occurrence until :func:`emit_operator_presentation` records one.
     """
     presentation_id = new_id("operator_presentation")
+    scope = f"workspace:{workspace_id};session:{session_id}"
     alternatives = []
     coordinate_bindings: dict[str, str] = {}
     for position, source in enumerate(_DEVELOPER_SUPPLIED_SOURCES, start=1):
@@ -95,16 +112,30 @@ def form_operator_presentation(
                 "response_coordinate": coordinate,
                 "rendered_label": source["rendered_label"],
                 "represented_source": dict(source["represented_source"]),
+                # Each A-to-G representation relation preserves its own
+                # boundary; Presentation-level coordinates do not transfer
+                # to it automatically.
+                "representation": {
+                    "purpose": source["representation_purpose"],
+                    "scope": scope,
+                    "provenance": source["represented_source"]["reference"],
+                    # No separately recorded source-evidence events exist
+                    # for a developer-supplied source; empty is absence of
+                    # record, not negative standing and not Unknown.
+                    "evidence_event_ids": [],
+                    "known_loss": [
+                        "rendered label compresses represented candidate "
+                        "meaning"
+                    ],
+                    "unknowns": [],
+                    "conflicts": [],
+                },
             }
         )
         coordinate_bindings[coordinate] = alternative_id
-    standing_evidence_ids = sorted(
-        {
-            event_id
-            for attempt in session_standing["attempts"].values()
-            for event_id in attempt["event_ids"]
-        }
-    )
+    # The exact inventory of session events this formation consumed,
+    # including any prior Presentation formation and emission Evidence.
+    standing_evidence_ids = list(session_standing["consumed_event_ids"])
     formed_event = ledger.append(
         PRESENTATION_FORMED_KIND,
         workspace_id,
@@ -124,14 +155,15 @@ def form_operator_presentation(
                     "formation occurrence only; establishes no selection, "
                     "warrant, goal, or response treatment"
                 ),
-                scope=f"workspace:{workspace_id};session:{session_id}",
+                scope=scope,
                 occurrence=(
                     "alternatives, roles, token bindings, and represented-source "
                     "lineage durably recorded"
                 ),
             ),
             "purpose": (
-                "expose bounded alternatives supported by current session Standing"
+                "present developer-supplied bounded alternatives in the "
+                "current session Standing context"
             ),
             "alternatives": alternatives,
             "coordinate_bindings": coordinate_bindings,
@@ -140,7 +172,7 @@ def form_operator_presentation(
             "known_loss": [
                 "rendered label compresses represented candidate meaning"
             ],
-            "unknowns": ["operator response occurrence Unknown"],
+            "unknowns": [],
             "conflicts": [],
             "mutates_cluster": False,
         },
@@ -151,7 +183,8 @@ def form_operator_presentation(
         "workspace_id": workspace_id,
         "session_id": session_id,
         "purpose": (
-            "expose bounded alternatives supported by current session Standing"
+            "present developer-supplied bounded alternatives in the "
+            "current session Standing context"
         ),
         "alternatives": alternatives,
         "coordinate_bindings": coordinate_bindings,
@@ -160,7 +193,7 @@ def form_operator_presentation(
         "session_standing_as_of_event_id": session_standing["as_of_event_id"],
         "session_standing_evidence_ids": standing_evidence_ids,
         "known_loss": ["rendered label compresses represented candidate meaning"],
-        "unknowns": ["operator response occurrence Unknown"],
+        "unknowns": [],
         "conflicts": [],
     }
 

@@ -107,12 +107,15 @@ def test_alternatives_carry_complete_coordinates_and_evidence_lineage():
     assert presentation["known_loss"] == [
         "rendered label compresses represented candidate meaning"
     ]
-    assert presentation["unknowns"] == ["operator response occurrence Unknown"]
+    # No response occurrence exists at formation; that is absence, not
+    # Unknown, so the formed Presentation carries no Unknowns.
+    assert presentation["unknowns"] == []
     assert presentation["conflicts"] == []
     assert presentation["session_standing_evidence_ids"]
     recorded_ids = {event.id for event in ledger.list("w")}
     assert set(presentation["session_standing_evidence_ids"]) <= recorded_ids
     assert len(presentation["alternatives"]) == 3
+    purposes = set()
     for alternative in presentation["alternatives"]:
         assert alternative["alternative_id"]
         assert alternative["role"] in {
@@ -123,14 +126,27 @@ def test_alternatives_carry_complete_coordinates_and_evidence_lineage():
         assert alternative["response_coordinate"]
         assert alternative["rendered_label"]
         source = alternative["represented_source"]
+        assert source["identity"].startswith("source:")
+        assert source["identity"] != source["meaning"]
         assert source["kind"]
         assert source["attribution"] == "developer-supplied"
         assert source["meaning"]
         assert source["reference"]
+        representation = alternative["representation"]
+        assert representation["purpose"]
+        purposes.add(representation["purpose"])
+        assert representation["scope"] == "workspace:w;session:s"
+        assert representation["provenance"] == source["reference"]
+        assert representation["evidence_event_ids"] == []
+        assert representation["known_loss"]
+        assert representation["unknowns"] == []
+        assert representation["conflicts"] == []
         assert (
             presentation["coordinate_bindings"][alternative["response_coordinate"]]
             == alternative["alternative_id"]
         )
+    # The three representation relations carry distinct purposes.
+    assert len(purposes) == 3
 
 
 def test_grammar_acquisition_candidate_is_developer_supplied_not_inferred():
@@ -250,12 +266,19 @@ def test_next_console_iteration_recovers_c1_and_forms_c2():
     assert output.count("Bounded Presentation") == 2
     first_id, second_id = list(standing["presentations"])
     assert standing["current_presentation"]["presentation_id"] == second_id
-    c2_as_of = standing["presentations"][second_id][
-        "session_standing_as_of_event_id"
+    c1 = standing["presentations"][first_id]
+    c2 = standing["presentations"][second_id]
+    # C2's recorded formation consumed the Standing Evidence containing
+    # C1's formation and emission occurrences, not merely later events.
+    assert c1["formed_event_id"] in c2["session_standing_evidence_ids"]
+    assert c1["emitted_event_id"] in c2["session_standing_evidence_ids"]
+    # The represented source candidates keep stable exact identities
+    # across formations.
+    identities = lambda presentation: [
+        alternative["represented_source"]["identity"]
+        for alternative in presentation["alternatives"]
     ]
-    c1_formed = standing["presentations"][first_id]["formed_event_id"]
-    event_order = [event.id for event in console_ledger.list("w")]
-    assert event_order.index(c2_as_of) > event_order.index(c1_formed)
+    assert identities(c1) == identities(c2)
 
 
 def test_no_response_comparison_or_identification_is_recorded():
