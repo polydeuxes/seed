@@ -38,6 +38,9 @@ _DEVELOPER_SUPPLIED_SOURCES = (
         # may be consumed by the exact interaction-goal Consumer.  Neither
         # the role string nor the rendered label carries this relation.
         "consumer_treatment": {
+            # Stable treatment kind, distinct from the per-formation
+            # instantiated relation identity added at formation.
+            "treatment_kind": "bounded-interaction-goal-establishment",
             "identity": (
                 "treatment:developer-supplied-interaction-goal-establishment"
             ),
@@ -134,10 +137,35 @@ def form_operator_presentation(
         if source_treatment is not None:
             consumer_treatment = {
                 **source_treatment,
+                "relation_identity": f"treatment-relation:{alternative_id}",
                 "alternative_id": alternative_id,
                 "source_identity": source["represented_source"]["identity"],
                 "proposition": source["represented_source"]["meaning"],
                 "scope": scope,
+                # Structural Consumer Authority: standing, supported Acts,
+                # Evidence, and Scope as coordinates.  The empty Evidence
+                # list means the enclosing formation occurrence is the
+                # Evidence, per the established convention.
+                "consumer_authority": {
+                    "standing": "bounded",
+                    "supports": [
+                        "admit-exact-meaning-relation",
+                        "consume-exact-admitted-relation",
+                        "establish-bounded-interaction-goal-standing",
+                    ],
+                    "evidence_event_ids": [],
+                    "scope": {
+                        "alternative_id": alternative_id,
+                        "source_identity": source["represented_source"][
+                            "identity"
+                        ],
+                        "proposition": source["represented_source"]["meaning"],
+                        "consumer_purpose": source_treatment[
+                            "consumer_purpose"
+                        ],
+                        "session_scope": scope,
+                    },
+                },
                 "known_loss": [],
                 "unknowns": [],
                 "conflicts": [],
@@ -321,7 +349,8 @@ def render_operator_presentation(presentation: dict[str, Any]) -> str:
                 "  Operator intent remains Unknown. Operator Selection "
                 "remains Unknown.",
                 "  Operator Authority for the proposition remains "
-                "unresolved. Learning has not occurred.",
+                "unresolved. No Learning Standing is established by this "
+                "path.",
             )
         )
     lines.append("Respond with exactly one token:")

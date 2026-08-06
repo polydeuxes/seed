@@ -81,6 +81,33 @@ def run_interaction_goal_establishment(
     applicability_standing, basis = determine_goal_applicability(
         relation, recovery, treatment, scope=scope
     )
+    # The exact instantiated Consumer Authority, evidenced by the recorded
+    # formation occurrence, and the structural Consumer Responsibility every
+    # Act of this occurrence references.
+    consumer_authority = None
+    if treatment is not None and applicability_standing == "applicable":
+        consumer_authority = {
+            "identity": treatment["relation_identity"],
+            "kind": treatment["treatment_kind"],
+            "standing": "bounded",
+            "supports": list(treatment["consumer_authority"]["supports"]),
+            "evidence_event_ids": [relation["presentation_formed_event_id"]],
+            "scope": dict(treatment["consumer_authority"]["scope"]),
+            "boundary": treatment["authority_boundary"],
+            "attribution": treatment["attribution"],
+            "provenance": treatment["provenance"],
+        }
+    consumer_responsibility = {
+        "identity": consumer_ref,
+        "purpose": CONSUMER_PURPOSE,
+        "consumer": "interaction-goal-consumer",
+        "scope": scope,
+        "authority": consumer_authority,
+        "evidence_event_ids": [
+            relation["event_id"],
+            relation["presentation_formed_event_id"],
+        ],
+    }
     applicability_ref = new_id("goal_applicability")
     applicability_event = ledger.append(
         GOAL_APPLICABILITY_KIND,
@@ -90,6 +117,7 @@ def run_interaction_goal_establishment(
             "applicability_ref": applicability_ref,
             "consumer_ref": consumer_ref,
             "consumer_purpose": CONSUMER_PURPOSE,
+            "consumer_responsibility": consumer_responsibility,
             "meaning_relation_event_id": relation["event_id"],
             "relation_ref": relation["relation_ref"],
             "source_recovery_event_id": relation["source_recovery_event_id"],
@@ -175,6 +203,13 @@ def run_interaction_goal_establishment(
             "proposition": relation["proposition"],
             "consumer_scope": scope,
             "standing": "admitted",
+            "consumer_responsibility_identity": consumer_ref,
+            # The explicit constitutional basis for this exact movement.
+            "basis": {
+                "applicable_finding_event_id": applicability_event.id,
+                "consumer_responsibility_identity": consumer_ref,
+                "authority_support": "admit-exact-meaning-relation",
+            },
             "evidence_event_ids": [applicability_event.id, relation["event_id"]],
             "dimensions": _dimensions(
                 identity=admission_ref,
@@ -217,13 +252,13 @@ def run_interaction_goal_establishment(
             "source_identity": relation["source_identity"],
             "proposition": relation["proposition"],
             "consumer_scope": scope,
-            "consumer_authority": {
-                "identity": treatment["identity"],
-                "standing": "bounded",
-                "boundary": treatment["authority_boundary"],
-                "attribution": treatment["attribution"],
-                "provenance": treatment["provenance"],
+            "consumer_responsibility_identity": consumer_ref,
+            "basis": {
+                "admission_event_id": admission_event.id,
+                "consumer_responsibility_identity": consumer_ref,
+                "authority_support": "consume-exact-admitted-relation",
             },
+            "consumer_authority": consumer_authority,
             "evidence_event_ids": [
                 admission_event.id,
                 applicability_event.id,
@@ -279,13 +314,15 @@ def run_interaction_goal_establishment(
                 "this exact bounded interaction proceeds under the "
                 "proposition as its current goal"
             ),
-            "consumer_authority": {
-                "identity": treatment["identity"],
-                "standing": "bounded",
-                "boundary": treatment["authority_boundary"],
-                "attribution": treatment["attribution"],
-                "provenance": treatment["provenance"],
+            "consumer_responsibility_identity": consumer_ref,
+            "basis": {
+                "consumption_event_id": consumption_event.id,
+                "consumer_responsibility_identity": consumer_ref,
+                "authority_support": (
+                    "establish-bounded-interaction-goal-standing"
+                ),
             },
+            "consumer_authority": consumer_authority,
             "operator_authority": {
                 "standing": "unresolved",
                 "supports": [],
