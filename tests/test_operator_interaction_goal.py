@@ -603,6 +603,23 @@ def test_consumer_responsibility_and_authority_are_structural():
     determination = responsibility["determination_authority"]
     assert determination["standing"] == "bounded"
     assert determination["supports"] == ["determine-exact-goal-applicability"]
+    assert determination["scope"] == {
+        "meaning_relation_event_id": applicability_event.payload[
+            "meaning_relation_event_id"
+        ],
+        "alternative_id": applicability_event.payload["alternative"][
+            "alternative_id"
+        ],
+        "source_identity": applicability_event.payload["source_identity"],
+        "proposition": applicability_event.payload["proposition"],
+        "consumer_purpose": applicability_event.payload["consumer_purpose"],
+        "session_scope": applicability_event.payload["consumer_scope"],
+    }
+    assert applicability_event.payload["basis"] == {
+        "finding": "structural-agreement",
+        "responsibility_ref": responsibility_ref,
+        "authority_support": "determine-exact-goal-applicability",
+    }
     authority = responsibility["treatment_authority"]
     assert authority["kind"] == "bounded-interaction-goal-establishment"
     assert authority["identity"].startswith("treatment-relation:")
@@ -661,6 +678,63 @@ def test_consumer_responsibility_and_authority_are_structural():
         "bounded"
     )
     assert stop_responsibility["treatment_authority"] is None
+    assert stop_event.payload["basis"]["finding"] == "role-not-potential-goal"
+
+
+def test_projector_enforces_cross_coordinate_goal_identity_separation():
+    mutations = (
+        ("applicability", "consumer-responsibility"),
+        ("applicability", "act-result"),
+        ("admission", "reused-act"),
+        ("consumption", "act-result"),
+        ("goal_standing", "act-result"),
+    )
+    for result_key, mutation in mutations:
+        ledger = EventLedger()
+        _exchange_with_relation(ledger, "1\n")
+        result = _establish(ledger)
+        event = ledger.get(result[result_key]["event_id"])
+        if mutation == "consumer-responsibility":
+            responsibility_ref = event.payload["responsibility_ref"]
+            event.payload["consumer_ref"] = responsibility_ref
+            event.payload["consumer_responsibility"][
+                "consumer_identity"
+            ] = responsibility_ref
+        elif mutation == "reused-act":
+            applicability = ledger.get(result["applicability"]["event_id"])
+            event.payload["act"]["act_ref"] = applicability.payload["act"][
+                "act_ref"
+            ]
+        else:
+            result_ref_key = {
+                "applicability": "applicability_ref",
+                "consumption": "consumption_ref",
+                "goal_standing": "goal_standing_ref",
+            }[result_key]
+            event.payload["act"]["act_ref"] = event.payload[result_ref_key]
+        with pytest.raises(ValueError, match="duplicate goal identity"):
+            _standing(ledger)
+
+
+@pytest.mark.parametrize("kind", _GOAL_KINDS)
+@pytest.mark.parametrize(
+    "coordinate",
+    (
+        "identity",
+        "responsibility",
+        "standing",
+        "source_provenance",
+        "scope_locality",
+    ),
+)
+def test_projector_refuses_forged_standard_goal_dimensions(kind, coordinate):
+    ledger = EventLedger()
+    _exchange_with_relation(ledger, "1\n")
+    _establish(ledger)
+    event = next(event for event in ledger.list("w") if event.kind == kind)
+    event.payload["dimensions"][coordinate] = "forged-coordinate"
+    with pytest.raises(ValueError, match="dimensions"):
+        _standing(ledger)
 
 
 def test_projector_refuses_forged_goal_standing_claims():
