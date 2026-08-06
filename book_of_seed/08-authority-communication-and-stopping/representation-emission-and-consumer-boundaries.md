@@ -9,9 +9,9 @@ What must representation, communication, emission, consumer-local use, and respo
 ## Bounded resolution
 Seed may form a bounded representation from exact source material for a declared purpose and may emit that representation toward an exact candidate Consumer boundary. Representation formation is not emission occurrence.
 
-The representation carries only the Standing warranted by its source, responsible formation, purpose, Scope, Evidence, provenance, Authority limits, conflicts, limits, and responsibly established Unknowns. An artifact or representation does not supply the Warrant for the assertions it carries; Standing depends on the applicable kind-specific production or establishment boundary and its validated inputs.
+The representation carries only the Standing warranted by its source, responsible formation, purpose, Scope, Evidence, provenance, Authority limits, conflicts, limits, and responsibly established Unknowns.
 
-Lexical presentation is not positive coordinate instantiation. Naming a coordinate does not establish Applicability, does not establish that an exact responsible Act requires it, and does not establish Unknown Standing. A positively instantiated unresolved coordinate is not Unknown established by identity. An Unknown must be responsibly established for its exact subject, question, purpose, Scope, Evidence boundary, and occurrence. Absence of Evidence for an Act occurrence remains only absence of evidenced Act occurrence unless a responsible finding establishes nonoccurrence.
+Lexical presentation is not positive coordinate instantiation. Naming a coordinate does not establish Applicability, does not establish that an exact responsible Act requires it, and does not establish Unknown Standing. A positively instantiated unresolved coordinate is not Unknown established by identity. Absence of Evidence for an Act occurrence remains only absence of evidenced Act occurrence unless a responsible finding establishes nonoccurrence.
 
 Communication is likewise not proof of mutual understanding or establishment. Constitutional communication may describe the formation and emission of a representation, possible transport, possible receipt, or possible interpretation only to the extent those occurrences are separately evidenced. A message, report, rendered View, API result, CLI output, owner field, routing target, or adjacent process does not by itself prove actual consumer receipt, interpretation, uptake, lawful reliance, responsibility transition, authority transition, or external effect.
 
@@ -113,6 +113,7 @@ An external response is not verified external effect. Transport, delivery indica
 - Treating an emitted or delivered report as proof that the recipient received it, interpreted it, understood it, took it up, may rely on it without limits, accepted responsibility, received authority, or caused external realization.
 
 ## Related chapters
+- [Constitutional kinds and artifact standing](../01-grammar-and-standing/constitutional-kinds-and-artifact-standing.md)
 - [Authority scope](authority-scope.md)
 - [Evidence, provenance, and explanation](../05-evidence-and-knowledge/evidence-provenance-and-explanation.md)
 - [Testimony and established fact](../05-evidence-and-knowledge/testimony-and-established-fact.md)
