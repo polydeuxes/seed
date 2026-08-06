@@ -153,7 +153,8 @@ def test_one_attempt_behavior_unchanged_without_earlier_session_history():
     assert "session_standing" not in baseline
     assert "Session Standing" not in format_operator_ingress_view(baseline)
 
-    # The console passes no Standing to the first interaction of a session.
+    # The console passes no Standing to the first interaction of a session,
+    # and its interaction output is a bounded Presentation, not the View.
     input_stream = StringIO("solo material\nexit\n")
     output_stream = StringIO()
     console_ledger = EventLedger()
@@ -165,7 +166,7 @@ def test_one_attempt_behavior_unchanged_without_earlier_session_history():
         output_stream=output_stream,
     )
     rendered = output_stream.getvalue()
-    assert "Operator ingress View" in rendered
+    assert "Bounded Presentation" in rendered
     assert "Session Standing" not in rendered
 
 
@@ -183,10 +184,25 @@ def test_console_supplies_prior_session_standing_to_later_interactions():
     )
 
     rendered = output_stream.getvalue()
-    assert rendered.count("Operator ingress View") == 2
-    assert rendered.count("Session Standing") == 1
-    session_section = rendered[rendered.index("Session Standing") :]
-    assert "Prior preserved ingress occurrences: 1" in session_section
+    assert rendered.count("Bounded Presentation") == 2
+    standing = _standing(ledger)
+    assert len(standing["presentations"]) == 2
+    first_id, second_id = list(standing["presentations"])
+    assert standing["current_presentation"]["presentation_id"] == second_id
+    # The second Presentation's recorded formation consumed Standing that
+    # already contained the first interaction's events.
+    all_attempt_events = {
+        event_id
+        for attempt in standing["attempts"].values()
+        for event_id in attempt["event_ids"]
+    }
+    second_evidence = set(
+        standing["presentations"][second_id]["session_standing_evidence_ids"]
+    )
+    first_evidence = set(
+        standing["presentations"][first_id]["session_standing_evidence_ids"]
+    )
+    assert first_evidence < second_evidence <= all_attempt_events
 
 
 def test_projection_does_not_mutate_ledger_or_synthesize_events():

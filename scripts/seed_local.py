@@ -311,6 +311,10 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_ingress import run_operator_ingress_attempt
 from seed_runtime.operator_ingress_representation import capture_stdin_material
 from seed_runtime.operator_ingress_view import format_operator_ingress_view
+from seed_runtime.operator_presentation import (
+    emit_operator_presentation,
+    form_operator_presentation,
+)
 from seed_runtime.operator_session_standing import project_operator_session_standing
 from seed_runtime.facts import (
     Fact,
@@ -5675,9 +5679,22 @@ def run_persistent_operator_console(
             ),
         )
         if attempt_view["current_standing"]["preserved_ingress"] is not None:
-            rendered_view = format_operator_ingress_view(attempt_view)
-            output_stream.write(rendered_view)
-            output_stream.flush()
+            # The interaction output is a bounded Presentation formed from the
+            # session's current Standing (including this attempt).  The View
+            # remains the renderer behind the `show current Standing`
+            # navigation alternative rather than the default output.
+            current_standing = project_operator_session_standing(
+                ledger, workspace_id=workspace_id, session_id=session_id
+            )
+            presentation = form_operator_presentation(
+                ledger,
+                workspace_id=workspace_id,
+                session_id=session_id,
+                session_standing=current_standing,
+            )
+            emit_operator_presentation(
+                ledger, presentation=presentation, output_stream=output_stream
+            )
 
 
 def main(argv: list[str] | None = None) -> int:

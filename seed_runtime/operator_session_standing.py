@@ -11,9 +11,13 @@ _SUBJECT_BY_KIND = {
     "operator.ingress.ingress_occurred": "preserved_ingress",
     "operator.ingress.stopping_occurred": "interaction_closure",
 }
+_PRESENTATION_FORMED_KIND = "operator.presentation.formed"
+_PRESENTATION_EMITTED_KIND = "operator.presentation.emitted"
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
     "operator.ingress.representation_examined",
+    _PRESENTATION_FORMED_KIND,
+    _PRESENTATION_EMITTED_KIND,
 }
 
 
@@ -22,8 +26,8 @@ def project_operator_session_standing(
 ) -> dict[str, Any]:
     """Project bounded session-local Standing from already-recorded events.
 
-    Consumes only ``operator.ingress.*`` events stamped with this exact
-    workspace and session, in append order.  The result is fully recomputable
+    Consumes only ``operator.ingress.*`` and ``operator.presentation.*``
+    events stamped with this exact workspace and session, in append order.  The result is fully recomputable
     from the ledger and is not itself recorded: it exposes only standings,
     limits, and Unknowns the session's events already carry.  An empty
     coordinate is absence of record, not negative standing and not Unknown.
@@ -33,6 +37,8 @@ def project_operator_session_standing(
     attempts: dict[str, dict[str, Any]] = {}
     preserved_ingress_occurrences: list[dict[str, Any]] = []
     interaction_closures: list[dict[str, Any]] = []
+    presentations: dict[str, dict[str, Any]] = {}
+    current_presentation_id: str | None = None
     known_loss: set[str] = set()
     unknowns: set[str] = set()
     conflicts: set[str] = set()
@@ -42,24 +48,59 @@ def project_operator_session_standing(
     for event in ledger.list(workspace_id):
         if event.session_id != session_id:
             continue
-        if not event.kind.startswith("operator.ingress."):
+        if not (
+            event.kind.startswith("operator.ingress.")
+            or event.kind.startswith("operator.presentation.")
+        ):
             continue
         if event.kind not in _SUPPORTED_KINDS:
             raise ValueError(f"unsupported operator-ingress event: {event.kind}")
         event_count += 1
         as_of_event_id = event.id
-        attempt_ref = event.payload["attempt_ref"]
-        attempt = attempts.setdefault(
-            attempt_ref,
-            {"event_ids": [], "preserved_ingress": None, "interaction_closure": None},
-        )
-        attempt["event_ids"].append(event.id)
         for key, collected in (
             ("known_loss", known_loss),
             ("unknowns", unknowns),
             ("conflicts", conflicts),
         ):
             collected.update(event.payload.get(key, ()))
+        if event.kind == _PRESENTATION_FORMED_KIND:
+            payload = event.payload
+            presentations[payload["presentation_ref"]] = {
+                "presentation_id": payload["presentation_ref"],
+                "formed_event_id": event.id,
+                "emitted_event_id": None,
+                "purpose": payload["purpose"],
+                "alternatives": payload["alternatives"],
+                "coordinate_bindings": payload["coordinate_bindings"],
+                "session_standing_as_of_event_id": payload[
+                    "session_standing_as_of_event_id"
+                ],
+                "session_standing_evidence_ids": payload[
+                    "session_standing_evidence_ids"
+                ],
+                "scope": payload["dimensions"]["scope_locality"],
+                "provenance": payload["dimensions"]["source_provenance"],
+                "known_loss": payload["known_loss"],
+                "unknowns": payload["unknowns"],
+                "conflicts": payload["conflicts"],
+            }
+            continue
+        if event.kind == _PRESENTATION_EMITTED_KIND:
+            presentation_ref = event.payload["presentation_ref"]
+            if presentation_ref not in presentations:
+                raise ValueError(
+                    "presentation emission without recorded formation: "
+                    f"{presentation_ref}"
+                )
+            presentations[presentation_ref]["emitted_event_id"] = event.id
+            current_presentation_id = presentation_ref
+            continue
+        attempt_ref = event.payload["attempt_ref"]
+        attempt = attempts.setdefault(
+            attempt_ref,
+            {"event_ids": [], "preserved_ingress": None, "interaction_closure": None},
+        )
+        attempt["event_ids"].append(event.id)
         if event.kind == "operator.ingress.ingress_occurred":
             occurrence = {
                 "attempt_ref": attempt_ref,
@@ -87,6 +128,15 @@ def project_operator_session_standing(
         "attempts": attempts,
         "preserved_ingress_occurrences": preserved_ingress_occurrences,
         "interaction_closures": interaction_closures,
+        "presentations": presentations,
+        # The most recently emitted Presentation, complete with alternatives
+        # and bindings, so a later occurrence can consume its exact
+        # coordinates.  None means no emission is recorded in this session.
+        "current_presentation": (
+            presentations[current_presentation_id]
+            if current_presentation_id is not None
+            else None
+        ),
         # Exactly the relation standings recorded by session events.  No
         # current event kind records one, so this stays empty until a
         # responsible occurrence does; emptiness is absence of record only.
