@@ -15,6 +15,8 @@ _PRESENTATION_FORMED_KIND = "operator.presentation.formed"
 _PRESENTATION_EMITTED_KIND = "operator.presentation.emitted"
 _COMPARISON_KIND = "operator.exchange.comparison_occurred"
 _IDENTIFICATION_KIND = "operator.exchange.identification_occurred"
+_SOURCE_RECOVERED_KIND = "operator.presentation.source_recovered"
+_MEANING_RELATION_KIND = "operator.presentation.meaning_relation_established"
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
     "operator.ingress.representation_examined",
@@ -22,6 +24,8 @@ _SUPPORTED_KINDS = {
     _PRESENTATION_EMITTED_KIND,
     _COMPARISON_KIND,
     _IDENTIFICATION_KIND,
+    _SOURCE_RECOVERED_KIND,
+    _MEANING_RELATION_KIND,
 }
 
 
@@ -46,6 +50,10 @@ def project_operator_session_standing(
     comparisons: dict[str, dict[str, Any]] = {}
     identifications: dict[str, dict[str, Any]] = {}
     latest_exchange_finding: dict[str, Any] | None = None
+    source_recoveries: dict[str, dict[str, Any]] = {}
+    meaning_relations: dict[str, dict[str, Any]] = {}
+    latest_source_recovery: dict[str, Any] | None = None
+    latest_meaning_relation: dict[str, Any] | None = None
     known_loss: set[str] = set()
     unknowns: set[str] = set()
     conflicts: set[str] = set()
@@ -161,6 +169,77 @@ def project_operator_session_standing(
                 "identification": identification,
             }
             continue
+        if event.kind == _SOURCE_RECOVERED_KIND:
+            payload = event.payload
+            recovery = {
+                "recovery_ref": payload["recovery_ref"],
+                "event_id": event.id,
+                "presentation_ref": payload["presentation_ref"],
+                "identification_event_id": payload["identification_event_id"],
+                "response_attempt_ref": payload["response_attempt_ref"],
+                "alternative": payload["alternative"],
+                "source": payload["source"],
+            }
+            source_recoveries[payload["recovery_ref"]] = recovery
+            latest_source_recovery = recovery
+            continue
+        if event.kind == _MEANING_RELATION_KIND:
+            payload = event.payload
+            recovery_event_id = payload["source_recovery_event_id"]
+            recovery = source_recoveries.get(payload["recovery_ref"])
+            if recovery is None:
+                raise ValueError(
+                    "meaning relation without recorded source recovery: "
+                    f"{payload['recovery_ref']}"
+                )
+            # The joined pair must agree on every shared coordinate; a
+            # mismatched pair is structurally refused rather than composed.
+            agreements = (
+                (recovery_event_id, recovery["event_id"], "source_recovery_event_id"),
+                (
+                    payload["presentation_ref"],
+                    recovery["presentation_ref"],
+                    "presentation_ref",
+                ),
+                (
+                    payload["alternative_id"],
+                    recovery["alternative"]["alternative_id"],
+                    "alternative_id",
+                ),
+                (
+                    payload["source_identity"],
+                    recovery["source"]["identity"],
+                    "source_identity",
+                ),
+                (
+                    payload["source_reference"],
+                    recovery["source"]["reference"],
+                    "source_reference",
+                ),
+            )
+            for supplied, recorded, coordinate in agreements:
+                if supplied != recorded:
+                    raise ValueError(
+                        "meaning relation does not agree with its recorded "
+                        f"source recovery on {coordinate}"
+                    )
+            relation = {
+                "relation_ref": payload["relation_ref"],
+                "event_id": event.id,
+                "source_recovery_event_id": recovery_event_id,
+                "recovery_ref": payload["recovery_ref"],
+                "presentation_ref": payload["presentation_ref"],
+                "identification_event_id": payload["identification_event_id"],
+                "alternative_id": payload["alternative_id"],
+                "source_identity": payload["source_identity"],
+                "proposition": payload["proposition"],
+                "source_attribution": payload["source_attribution"],
+                "authority_separation": payload["authority_separation"],
+                "unknowns": payload["unknowns"],
+            }
+            meaning_relations[payload["relation_ref"]] = relation
+            latest_meaning_relation = relation
+            continue
         attempt_ref = event.payload["attempt_ref"]
         attempt = attempts.setdefault(
             attempt_ref,
@@ -213,6 +292,10 @@ def project_operator_session_standing(
         "comparisons": comparisons,
         "identifications": identifications,
         "latest_exchange_finding": latest_exchange_finding,
+        "source_recoveries": source_recoveries,
+        "meaning_relations": meaning_relations,
+        "latest_source_recovery": latest_source_recovery,
+        "latest_meaning_relation": latest_meaning_relation,
         "recorded_relation_standings": [],
         "known_loss": sorted(known_loss),
         "unknowns": sorted(unknowns),
