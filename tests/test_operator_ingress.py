@@ -396,7 +396,9 @@ def test_console_recurs_after_each_quiescent_non_eof_attempt():
     assert (
         len(StateProjector(ledger).project("console-w").operator_ingress_attempts) == 2
     )
-    assert output == "Seed console: `exit` exits.\n"
+    assert output.count("Operator ingress View\n") == 2
+    assert 'Represented material: "first ingress\\n"' in output
+    assert 'Represented material: "second ingress\\n"' in output
 
 
 class _RawStdin:
@@ -514,7 +516,7 @@ def test_console_admits_empty_stream_encoding_as_no_usable_testimony():
         == "implementation_utf8_fallback"
     )
     assert ingress.payload["decoded_text"] == "material\n"
-    assert output.getvalue() == "Seed console: `exit` exits.\n"
+    assert 'Represented material: "material\\n"' in output.getvalue()
 
 
 @pytest.mark.parametrize("encoding", (1, b"utf-8", object()))
@@ -551,7 +553,8 @@ def test_console_eof_after_ordinary_input_adds_no_second_attempt():
     assert (
         len(StateProjector(ledger).project("console-w").operator_ingress_attempts) == 1
     )
-    assert output == "Seed console: `exit` exits.\n"
+    assert output.count("Operator ingress View\n") == 1
+    assert 'Represented material: "ordinary ingress\\n"' in output
 
 
 def test_console_passes_its_capture_unchanged_to_the_bounded_attempt(monkeypatch):
@@ -560,6 +563,7 @@ def test_console_passes_its_capture_unchanged_to_the_bounded_attempt(monkeypatch
 
     def bounded_attempt(**kwargs):
         received.append(kwargs)
+        return {"current_standing": {"preserved_ingress": None}}
 
     monkeypatch.setattr(
         seed_local,
